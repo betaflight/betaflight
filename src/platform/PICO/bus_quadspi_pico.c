@@ -4,7 +4,6 @@
 
 #include "platform.h"
 
-#ifdef PICO
 #ifdef USE_QUADSPI
 
 #include <string.h>
@@ -18,8 +17,17 @@
 #include "pico/bootrom.h"
 #include "hardware/regs/qmi.h"
 #include "hardware/structs/qmi.h"
+#include "hardware/regs/xip_aux.h"
+#include "hardware/structs/xip_aux.h"
 #include "hardware/xip_cache.h"
 #include "drivers/time.h"
+#include "drivers/bus.h"
+#include "drivers/dma.h"
+#include "drivers/dma_impl.h"
+#include "drivers/nvic.h"
+
+#include "hardware/dma.h"
+#include "hardware/regs/dreq.h"
 
 // Provide platform QUADSPI hardware table for RP2350 (single logical device)
 const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
@@ -40,45 +48,18 @@ const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
     },
 };
 
-// Pin configure is a no-op on RP2350, QMI pins are fixed and controlled by ROM/QMI
-void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
-{
-    UNUSED(pConfig);
-    quadSpiDevice[QUADSPIDEV_1].dev = quadSpiHardware[0].reg;
-}
+static uint8_t dummyTx = 0x00; // During polled operation 0's are written so do the same
+static uint8_t dummyRx = 0xFF;
 
-static inline void pico_qspi_enter_cmd_mode(void)
-{
-    // Ensure XIP cache is clean before exiting XIP
-    xip_cache_clean_all();
-    rom_connect_internal_flash_fn connect_fn = (rom_connect_internal_flash_fn)rom_func_lookup_inline(ROM_FUNC_CONNECT_INTERNAL_FLASH);
-    rom_flash_exit_xip_fn exit_fn = (rom_flash_exit_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
-    connect_fn();
-    exit_fn();
-}
+// As per section 2.15 of the datasheet access registers at an offset of 0x4000
+// to prevent duplication of 8 bit values across 32 bit word
+#define xip_aux_hw_8bit ((xip_aux_hw_t *)(XIP_AUX_BASE + 0x4000))
 
-static inline void pico_qspi_exit_cmd_mode(void)
-{
-    flash_flush_cache();
-}
-
-// QMI direct helpers for CS1 transactions
-static inline void qmi_direct_enable(void) { hw_set_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_EN_BITS); }
-static inline void qmi_direct_disable(void) { hw_clear_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_EN_BITS); }
-static inline void qmi_cs1_assert(bool asserted) {
-    if (asserted) hw_set_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_ASSERT_CS1N_BITS);
-    else hw_clear_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_ASSERT_CS1N_BITS);
-}
-
-static inline void qmi_timeout_cleanup(void)
-{
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
-}
+// Write enable key for access control registers, see section 10.6 of datasheet
+#define ACCESSCTRL_XIP_CTRL_WE 0xacce0000
 
 // Default timeout for QSPI direct IO operations
-#define QSPI_TIMEOUT_MS 10
+#define QMI_TIMEOUT_US 5
 
 // Number of dummy clock cycles per consumed byte in direct-mode loops.
 // Justification: QSPI datasheets specify dummy cycles in bits. Our direct-mode
@@ -87,241 +68,486 @@ static inline void qmi_timeout_cleanup(void)
 // revision were to support sub-byte dummy handling, this could be revisited.
 #define QSPI_DUMMY_BITS_PER_BYTE 8
 
-static inline bool qmi_direct_io(const uint8_t *tx, uint8_t *rx, size_t count, uint32_t timeoutMs)
-{
-    size_t tx_remaining = count;
-    size_t rx_remaining = count;
-    // Prevent hangs: break out after timeout in ms
-    const timeMs_t start_ms = millis();
-    while (rx_remaining) {
-        uint32_t flags = qmi_hw->direct_csr;
-        bool can_put = !(flags & QMI_DIRECT_CSR_TXFULL_BITS);
-        bool can_get = !(flags & QMI_DIRECT_CSR_RXEMPTY_BITS);
+static void quadSpiSequenceStart(const extDevice_t *dev);
 
-        if (can_put && tx_remaining) {
-            qmi_hw->direct_tx = tx ? *tx++ : 0x00;
-            --tx_remaining;
+// Pin configure is a no-op on RP2350, QMI pins are fixed and controlled by ROM/QMI
+void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
+{
+    UNUSED(pConfig);
+    quadSpiDevice[QUADSPIDEV_1].dev = quadSpiHardware[0].reg;
+}
+
+// Wait for QMI direct mode to become idle (BUSY=0, RXEMPTY=1, TXEMPTY=1), with a small timeout
+static bool qmi_direct_wait_idle(timeDelta_t timeout_us)
+{
+    const timeUs_t start = micros();
+    do {
+        uint32_t csr = qmi_hw->direct_csr;
+        bool busy = csr & QMI_DIRECT_CSR_BUSY_BITS;
+        bool rxempty = csr & QMI_DIRECT_CSR_RXEMPTY_BITS;
+        bool txempty = csr & QMI_DIRECT_CSR_TXEMPTY_BITS;
+
+        if (!busy && rxempty && txempty) {
+            return true;
         }
-        if (can_get && rx_remaining) {
-            uint8_t b = (uint8_t)qmi_hw->direct_rx;
-            if (rx) {
-                *rx++ = b;
+    } while (cmpTimeUs(micros(), start) < timeout_us);
+
+    return false;
+}
+
+// QMI direct helpers for CS1 transactions
+static void qmi_direct_enable(void) { hw_set_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_EN_BITS); }
+static void qmi_direct_disable(void) { hw_clear_bits(&qmi_hw->direct_csr, QMI_DIRECT_CSR_EN_BITS); }
+static void qmi_cs1_assert(const extDevice_t *dev, bool asserted) {
+    if (asserted) {
+        IOLo(dev->busType_u.spi.csnPin);
+    } else {
+        // Make sure the access is complete before negating the CS
+        (void)qmi_direct_wait_idle(QMI_TIMEOUT_US);
+
+        // Negate Chip Select
+        IOHi(dev->busType_u.spi.csnPin);
+    }
+}
+
+//
+// Non-blocking QuadSPI sequence framework for PICO (RP2350 QMI)
+// Mirrors SPI bus segment queueing model. Uses DMA where appropriate and
+// returns immediately; completion is signaled via queued segments and
+// quadSpiIsBusy()/quadSpiWait().
+//
+
+bool quadSpiIsBusy(const extDevice_t *dev)
+{
+    if (!dev || !dev->bus) {
+        return false;
+    }
+    return (dev->bus->curSegment != (volatile busSegment_t *)BUS_QSPI_FREE);
+}
+
+void quadSpiRelease(const extDevice_t *dev)
+{
+    UNUSED(dev);
+}
+
+static dma_channel_config qspi_tx_cfg;
+static dma_channel_config qspi_rx_cfg;
+
+static void quadSpiIrqHandler(dmaChannelDescriptor_t* descriptor);
+
+void quadSpiInitBusDMA(busDevice_t *bus)
+{
+    bus->useDMA = true;
+
+    bus->dmaRx = &dmaDescriptors[dma_claim_unused_channel(true)];
+    bus->dmaTx = &dmaDescriptors[dma_claim_unused_channel(true)];
+
+    // Claim specific DMA channels and bind by identifier
+    // Allocate descriptors so dmaSetHandler knows the channel numbers
+    (void)dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaTx->channel), OWNER_QUADSPI_BK1IO0, 1);
+    (void)dmaAllocate(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), OWNER_QUADSPI_BK1IO1, 1);
+
+    // Register and enable handler
+    dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), quadSpiIrqHandler, NVIC_PRIO_SPI_DMA, 0);
+    dma_channel_set_irq0_enabled(bus->dmaRx->channel, true);
+}
+
+static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t *rxData)
+{
+    bool isTx = txData != NULL;
+    bool isRx = rxData != NULL;
+
+    if (!bus) {
+        return;
+    }
+
+    dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
+    dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
+
+    qspi_tx_cfg = dma_channel_get_default_config(dmaTx->channel);
+    channel_config_set_transfer_data_size(&qspi_tx_cfg, DMA_SIZE_8);
+    channel_config_set_read_increment(&qspi_tx_cfg, isTx);
+    channel_config_set_write_increment(&qspi_tx_cfg, false);
+    channel_config_set_dreq(&qspi_tx_cfg, DREQ_XIP_QMITX);
+
+    qspi_rx_cfg = dma_channel_get_default_config(dmaRx->channel);
+    channel_config_set_transfer_data_size(&qspi_rx_cfg, DMA_SIZE_8);
+    channel_config_set_read_increment(&qspi_rx_cfg, false);
+    channel_config_set_write_increment(&qspi_rx_cfg, isRx);
+    channel_config_set_dreq(&qspi_rx_cfg, DREQ_XIP_QMIRX);
+}
+
+static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
+{
+    if (!dev) {
+        return;
+    }
+
+    busDevice_t *bus = dev->bus;
+    if (!bus || !segment) {
+        return;
+    }
+
+    // Launch next segment via DMA
+    dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
+    dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
+
+    // Use the correct callback argument
+    dmaRx->userParam = (uint32_t)dev;
+
+    quadSpiInternalInitStream(bus, segment->u.buffers.txData, segment->u.buffers.rxData);
+
+    uint8_t *txData = segment->u.buffers.txData ? segment->u.buffers.txData : &dummyTx;
+    uint8_t *rxData = segment->u.buffers.rxData ? segment->u.buffers.rxData : &dummyRx;
+
+    dma_channel_configure(dmaTx->channel, &qspi_tx_cfg,
+                          &xip_aux_hw_8bit->qmi_direct_tx,
+                          txData,
+                          segment->len, false);
+    dma_channel_configure(dmaRx->channel, &qspi_rx_cfg,
+                          rxData,
+                          &xip_aux_hw_8bit->qmi_direct_rx,
+                          segment->len, false);
+
+    // Drain the RX buffer
+    timeUs_t start = micros();
+    while (!(qmi_hw->direct_csr & QMI_DIRECT_CSR_RXEMPTY_BITS)) {
+        // This timeout should never fire, and the consequences are undefined, but avoid hanging
+        if (cmpTimeUs(micros(), start) > QMI_TIMEOUT_US) {
+            break;
+        }
+        (void)qmi_hw->direct_rx;
+    }
+
+    // Trigger the DMAs
+    dma_start_channel_mask((1u << dmaTx->channel) | (1u << dmaRx->channel));
+}
+
+static void quadSpiIrqHandler(dmaChannelDescriptor_t* descriptor)
+{
+    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
+    busDevice_t *bus = dev->bus;
+    busSegment_t *nextSegment;
+
+    if (bus->curSegment->negateCS) {
+        // Negate Chip Select
+        qmi_cs1_assert(dev, false);
+    }
+
+    if (bus->curSegment->callback) {
+        switch(bus->curSegment->callback(dev->callbackArg)) {
+        case BUS_BUSY:
+            // Repeat the last DMA segment
+            bus->curSegment--;
+            break;
+
+        case BUS_ABORT:
+            // Skip to the end of the segment list
+            nextSegment = (busSegment_t *)bus->curSegment + 1;
+            while (nextSegment->len != 0) {
+                bus->curSegment = nextSegment;
+                nextSegment = (busSegment_t *)bus->curSegment + 1;
             }
-            --rx_remaining;
-        }
-        if (cmpTimeMs(millis(), start_ms) > (int32_t)timeoutMs) {
-            return false; // timeout; caller will deassert CS and disable direct mode
+            break;
+
+        case BUS_READY:
+        default:
+            // Advance to the next DMA segment
+            break;
         }
     }
-    return true;
+
+    // Advance through the segment list
+    // OK to discard the volatile qualifier here
+    nextSegment = (busSegment_t *)bus->curSegment + 1;
+
+    if (nextSegment->len == 0) {
+        if (!bus->curSegment->negateCS) {
+            // Always negate CS at the end of a transaction
+            qmi_cs1_assert(dev, false);
+        }
+
+        // If a following transaction has been linked, start it
+        if (nextSegment->u.link.dev) {
+            const extDevice_t *nextDev = nextSegment->u.link.dev;
+            busSegment_t *nextSegments = (busSegment_t *)nextSegment->u.link.segments;
+            // The end of the segment list has been reached
+            bus->curSegment = nextSegments;
+            nextSegment->u.link.dev = NULL;
+            nextSegment->u.link.segments = NULL;
+            quadSpiSequenceStart(nextDev);
+        } else {
+            // The end of the segment list has been reached, so mark transactions as complete
+            bus->curSegment = (busSegment_t *)BUS_QSPI_FREE;
+            qmi_direct_disable();
+       }
+    } else {
+        bool negateCS = bus->curSegment->negateCS;
+
+        bus->curSegment = nextSegment;
+
+        if (negateCS) {
+            // Assert Chip Select if necessary
+            qmi_cs1_assert(dev, true);
+        }
+
+        // Launch next
+        quadSpiDmaSegment(dev, (busSegment_t *)bus->curSegment);
+    }
 }
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+static void quadSpiSequenceStart(const extDevice_t *dev)
 {
-    UNUSED(instance);
-    UNUSED(dummyCycles);
-    uint8_t txbuf[1 + 0];
-    txbuf[0] = instruction;
+    if (!dev || !dev->bus) {
+        return;
+    }
 
-    pico_qspi_enter_cmd_mode();
+    busDevice_t *bus = dev->bus;
+    busSegment_t *segment = (busSegment_t *)bus->curSegment;
+
+    if (!segment || !segment->len) return;
+
     qmi_direct_enable();
-    qmi_cs1_assert(true);
-    // Send instruction
-    if (!qmi_direct_io(txbuf, NULL, 1, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
+
+    // Assert Chip Select to start the transfer
+    qmi_cs1_assert(dev, true);
+
+   // Prepare and kick off first segment via DMA
+    quadSpiDmaSegment(dev, segment);
+}
+
+void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
+{
+    if (!dev || !dev->bus) {
+        return;
     }
-    // Send payload (no readback)
-    if (out && length > 0) {
-        if (!qmi_direct_io(out, NULL, (size_t)length, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
+
+    busDevice_t *bus = dev->bus;
+
+    // Queue if busy; else claim and start
+    if (bus->curSegment) {
+        // Find end of new list
+        busSegment_t *endNew;
+        for (endNew = segments; endNew->len; endNew++);
+        // Find end of existing queued chain
+        busSegment_t *endCur = (busSegment_t *)bus->curSegment;
+        while (true) {
+            for (; endCur->len; endCur++);
+            if (endCur->u.link.segments == NULL) {
+                break;
+            } else {
+                endCur = (busSegment_t *)endCur->u.link.segments;
+            }
         }
+        endCur->u.link.dev = dev;
+        endCur->u.link.segments = segments;
+        return;
     }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
+
+    bus->curSegment = segments;
+    quadSpiSequenceStart(dev);
+}
+
+void quadSpiWait(const extDevice_t *dev)
+{
+    while (quadSpiIsBusy(dev)) {
+    }
+}
+
+static void encodeAddr(uint32_t address, uint8_t addressSize, uint8_t *addrBytes)
+{
+    uint8_t addrByteCount = addressSize/8;
+
+    if (addrByteCount > sizeof (address)) {
+        return;
+    }
+
+    for (int i = 0; i < addrByteCount; i++) {
+        addrBytes[addrByteCount - 1 - i] = (address >> (i << 3)) & 0xff;
+    }
+}
+
+bool quadSpiTransmit1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+{
+    busSegment_t segments[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {(uint8_t *)out, NULL}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    busSegment_t segments_dummy[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {NULL, NULL}, .len = dummyCycles/QSPI_DUMMY_BITS_PER_BYTE, .negateCS = false, NULL},
+        {.u.buffers = {(uint8_t *)out, NULL}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    // Ensure any prior DMA has completed before continuing
+    quadSpiWait(dev);
+
+    quadSpiSequence(dev, dummyCycles ? &segments_dummy[0] : &segments[0]);
+
+    quadSpiWait(dev);
+
     return true;
 }
 
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    UNUSED(instance);
-    uint8_t txbuf[1];
-    txbuf[0] = instruction;
+   busSegment_t segments[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {NULL, in}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
 
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    // Send instruction
-    if (!qmi_direct_io(txbuf, NULL, 1, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Consume dummy cycles as bytes
-    // Convert the number of dummy cycles into a number of bytes to transfer
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Read response by clocking out zeros
-    if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
+    busSegment_t segments_dummy[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {NULL, NULL}, .len = dummyCycles/QSPI_DUMMY_BITS_PER_BYTE, .negateCS = false, NULL},
+        {.u.buffers = {NULL, in}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
 
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
+    // Ensure any prior DMA has completed before continuing
+    quadSpiWait(dev);
+
+    quadSpiSequence(dev, dummyCycles ? &segments_dummy[0] : &segments[0]);
+
+    quadSpiWait(dev);
+
     return true;
 }
 
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+bool quadSpiInstructionWithData1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    return quadSpiTransmit1LINE(instance, instruction, dummyCycles, out, length);
+    return quadSpiTransmit1LINE(dev, instruction, dummyCycles, out, length);
 }
 
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
+bool quadSpiInstructionWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                         uint32_t address, uint8_t addressSize)
 {
-    UNUSED(instance);
-    // Build header [cmd][addr]
-    uint8_t hdr[1 + 4];
-    int idx = 0;
-    hdr[idx++] = instruction;
-    for (int i = (addressSize / 8) - 1; i >= 0; i--) {
-        hdr[idx++] = (address >> (i * 8)) & 0xFF;
-    }
+    // Ensure any prior DMA has completed before continuing
+    quadSpiWait(dev);
 
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Consume dummy cycles (if any)
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (dummyBytes) {
-        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
+    uint8_t addrBytes[addressSize/8];
+
+    encodeAddr(address, addressSize, addrBytes);
+
+    busSegment_t segments[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    busSegment_t segments_dummy[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = false, NULL},
+        {.u.buffers = {NULL, NULL}, .len = dummyCycles/QSPI_DUMMY_BITS_PER_BYTE, .negateCS = false, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    quadSpiSequence(dev, dummyCycles ? &segments_dummy[0] : &segments[0]);
+
+    quadSpiWait(dev);
+
     return true;
 }
 
-static int buildHeader(uint8_t *hdr, uint8_t instruction, uint32_t address, uint8_t addressSize)
-{
-    // Build tx: [cmd][addr bytes MSB..LSB][dummy]
-    int idx = 0;
-    hdr[idx++] = instruction;
-    for (int i = (addressSize/8) - 1; i >= 0; i--) {
-        hdr[idx++] = (address >> (i*8)) & 0xFF;
-    }
-
-    return idx;
-}
-
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
+bool quadSpiReceiveWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                     uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    UNUSED(instance);
-    // Build header and perform in one CS window
-    uint8_t hdr[1 + 4];
+    // Ensure any prior DMA has completed before continuing
+    quadSpiWait(dev);
 
-    int idx = buildHeader(hdr, instruction, address, addressSize);
+    uint8_t addrBytes[addressSize/8];
 
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Dummy after header (if any)
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (dummyBytes) {
-        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    // Read payload
-    if (!qmi_direct_io(NULL, in, length, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
+    encodeAddr(address, addressSize, addrBytes);
+
+    busSegment_t segments[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = false, NULL},
+        {.u.buffers = {NULL, in}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    busSegment_t segments_dummy[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = false, NULL},
+        {.u.buffers = {NULL, NULL}, .len = dummyCycles/QSPI_DUMMY_BITS_PER_BYTE, .negateCS = false, NULL},
+        {.u.buffers = {NULL, in}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    quadSpiSequence(dev, dummyCycles ? &segments_dummy[0] : &segments[0]);
+
+    quadSpiWait(dev);
+
     return true;
 }
 
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
+bool quadSpiTransmitWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                      uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    UNUSED(instance);
-    uint8_t hdr[1 + 4];
+    // Ensure any prior DMA has completed before continuing
+    quadSpiWait(dev);
 
-    int idx = buildHeader(hdr, instruction, address, addressSize);
+    uint8_t addrBytes[addressSize/8];
 
-    pico_qspi_enter_cmd_mode();
-    qmi_direct_enable();
-    qmi_cs1_assert(true);
-    if (!qmi_direct_io(hdr, NULL, (size_t)idx, QSPI_TIMEOUT_MS)) {
-        qmi_timeout_cleanup();
-        return false;
-    }
-    // Dummy after header (if any)
-    uint8_t dummyBytes = (dummyCycles + QSPI_DUMMY_BITS_PER_BYTE - 1) / QSPI_DUMMY_BITS_PER_BYTE;
-    if (dummyBytes) {
-        if (!qmi_direct_io(NULL, NULL, dummyBytes, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    if (out && length > 0) {
-        if (!qmi_direct_io(out, NULL, (size_t)length, QSPI_TIMEOUT_MS)) {
-            qmi_timeout_cleanup();
-            return false;
-        }
-    }
-    qmi_cs1_assert(false);
-    qmi_direct_disable();
-    pico_qspi_exit_cmd_mode();
+    encodeAddr(address, addressSize, addrBytes);
+
+    busSegment_t segments[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = false, NULL},
+        {.u.buffers = {(uint8_t *)out, NULL}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    busSegment_t segments_dummy[] = {
+        {.u.buffers = {&instruction, NULL}, .len = sizeof(instruction), .negateCS = false, NULL},
+        {.u.buffers = {addrBytes, NULL}, .len = addressSize/8, .negateCS = false, NULL},
+        {.u.buffers = {NULL, NULL}, .len = dummyCycles/QSPI_DUMMY_BITS_PER_BYTE, .negateCS = false, NULL},
+        {.u.buffers = {(uint8_t *)out, NULL}, .len = length, .negateCS = true, NULL},
+        {.u.link = {NULL, NULL}, .len = 0, .negateCS = true, NULL},
+    };
+
+    quadSpiSequence(dev, dummyCycles ? &segments_dummy[0] : &segments[0]);
+
+    quadSpiWait(dev);
+
     return true;
 }
 
 // 4LINE operations are not truly available via ROM command mode on QMI; emulate using 1LINE for now.
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // fast quad->fast serial
-    return quadSpiReceive1LINE(instance, instr, dummyCycles, in, length);
+    UNUSED(dummyCycles);
+
+    uint8_t instr = (instruction == 0x6B) ? 0x03 : instruction; // fast quad->fast serial
+    return quadSpiReceive1LINE(dev, instr, 0, in, length);
 }
 
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
+bool quadSpiReceiveWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                      uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    uint8_t instr = (instruction == 0x6B) ? 0x0B : instruction; // map to serial fast read
-    return quadSpiReceiveWithAddress1LINE(instance, instr, dummyCycles, address, addressSize, in, length);
+    UNUSED(dummyCycles);
+
+    uint8_t instr = (instruction == 0x6B) ? 0x03 : instruction; // map to serial fast read
+    return quadSpiReceiveWithAddress1LINE(dev, instr, 0, address, addressSize, in, length);
 }
 
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles,
+bool quadSpiTransmitWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                       uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
+    UNUSED(dummyCycles);
+
     uint8_t instr = (instruction == 0x32) ? 0x02 : instruction; // quad page prog -> serial page prog
-    return quadSpiTransmitWithAddress1LINE(instance, instr, dummyCycles, address, addressSize, out, length);
+    return quadSpiTransmitWithAddress1LINE(dev, instr, 0, address, addressSize, out, length);
 }
 
-void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
+void quadSpiSetDivisor(const extDevice_t *dev, uint16_t divisor)
 {
-    UNUSED(instance);
-    UNUSED(divisor);
+    if (dev) {
+        ((extDevice_t *)dev)->busType_u.spi.speed = divisor;
+    }
     // Pico ROM manages clocking for direct command mode; leave as-is.
 }
 
@@ -330,32 +556,22 @@ void quadSpiPreInit(void) {}
 
 void quadSpiInitDevice(quadSpiDevice_e device)
 {
-    UNUSED(device);
-    // Configure CS1 GPIO and size for external flash via FLASH_DEVINFO so ROM/QMI know about it.
-#if PICO_RP2350
-    // GPIO index for CS1 (bank0); default to 0 if not provided by target config
-#ifdef PICO_QSPI_CS1_GPIO
-    const uint cs1_gpio = PICO_QSPI_CS1_GPIO;
-#else
-    const uint cs1_gpio = 0u;
-#endif
-    // External flash size in bytes; default to 0 (none) if not provided
-#ifdef PICO_QSPI_CS1_SIZE_BYTES
-    const uint32_t cs1_size_bytes = PICO_QSPI_CS1_SIZE_BYTES;
-#else
-    const uint32_t cs1_size_bytes = 0u;
-#endif
-
-    if (cs1_gpio < NUM_BANK0_GPIOS) {
-        flash_devinfo_set_cs_gpio(1, cs1_gpio);
+    if (device >= QUADSPIDEV_COUNT) {
+        return;
     }
-    flash_devinfo_set_cs_size(1, flash_devinfo_bytes_to_size(cs1_size_bytes));
+
+    // Enable DMA access to QMI - Boot ROM defaults to 0xb8 (DMA disabled)
+    // Current default: 0xb8 = DBG|CORE1|CORE0|SP, but DMA bit is 0
+    // We need to set bit 6 (DMA) to enable DMA access to XIP_QMI
+    uint32_t current_qmi = accessctrl_hw->xip_qmi;
+    if (!(current_qmi & ACCESSCTRL_XIP_QMI_DMA_BITS)) {
+        // DMA access is disabled (bit 6 = 0) - enable it
+        accessctrl_hw->xip_qmi = (accessctrl_hw->xip_qmi & ACCESSCTRL_XIP_CTRL_BITS) |
+                                 ACCESSCTRL_XIP_CTRL_WE | ACCESSCTRL_XIP_QMI_DMA_BITS;
+    }
+
     // Winbond W25Q series support 64k (D8h) erase; enable to speed up erases if present
     flash_devinfo_set_d8h_erase_supported(true);
-#endif
 }
 
 #endif // USE_QUADSPI
-#endif // PICO
-
-
