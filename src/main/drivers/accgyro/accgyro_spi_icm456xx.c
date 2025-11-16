@@ -553,7 +553,7 @@ bool icm456xxGyroReadSPI(gyroDev_t *gyro)
         gyro->gyroDmaMaxDuration = 0;
 
 #ifdef USE_DMA
-        if (spiUseDMA(&gyro->dev)) {
+        if (/*spiUseDMA(&gyro->dev)*/ false) {
             gyro->dev.callbackArg = (uintptr_t)gyro;
             gyro->dev.txBuf[0] = ICM456XX_GYRO_DATA_X1_UI | 0x80;
             gyro->segments[0].len = ICM456XX_SPI_BUFFER_SIZE;
