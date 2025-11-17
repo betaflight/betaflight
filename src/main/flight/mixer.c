@@ -357,7 +357,8 @@ static bool applyCrashFlipModeToMotors(void)
             crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
 
             crashflipSuccess = attitudeChangeNeeded == 0.0f;
-            // boolean to automatically stop motors if flip appears successful
+            // boolean that previously was used to signal success to core.c crashflip code via a getter
+            // todo: probably not required anymore
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -864,9 +865,4 @@ float mixerGetThrottle(void)
 float mixerGetRcThrottle(void)
 {
     return rcThrottle;
-}
-
-bool crashFlipSuccessful(void)
-{
-    return crashflipSuccess;
 }
