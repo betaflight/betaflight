@@ -280,7 +280,9 @@ static bool accNeedsCalibration(void)
 
 void updateArmingStatus(void)
 {
+#ifdef USE_DSHOT
     static bool isArmingDisabledCrashFlip = false;
+#endif 
 
 if (ARMING_FLAG(ARMED)) {
     LED0_ON;
