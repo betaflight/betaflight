@@ -307,22 +307,23 @@ if (crashFlipModeActive) {
     }
 }
 #endif // USE_DSHOT
+
 } else { // arming switch on, but not yet armed; currently DISARMED
       // identify things that should delay, or prevent, arming, then arm
 
-        // Check if the power on arming grace time has elapsed
-        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)
-#ifdef USE_DSHOT
-    //prevent arming until it is possible to send DSHOT commands.
-    // Otherwise if the initial arming is in crash-flip the motor direction commands
-    // might not be sent.
-    && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled())
-#endif
-        ) {
-            // If so, unset the grace time arming disable flag
-            unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
-        }
+// Check if the power-on arming grace time has elapsed
+bool graceTimeElapsed = 
+    (getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME)
+    && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000);
 
+#ifdef USE_DSHOT
+// With DSHOT, we also require DSHOT to be ready
+graceTimeElapsed = graceTimeElapsed && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled());
+#endif
+
+if (graceTimeElapsed) {
+    unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+}
         // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
         if (!isUsingSticksForArming()) {
             static bool hadRx = false;
@@ -560,35 +561,36 @@ void tryArm(void)
         const timeUs_t currentTimeUs = micros();
 
 #ifdef USE_DSHOT
-        // Handle DShot factors that should delay arming
-        timeDelta_t beaconTimeDiff = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
-        if (beaconTimeDiff < DSHOT_BEACON_GUARD_DELAY_US && beaconTimeDiff >= 0) {
-            if (tryingToArm == ARMING_DELAYED_DISARMED) {
-#ifdef USE_LAUNCH_CONTROL
-                if (canUseLaunchControl()) {
-                    tryingToArm = ARMING_DELAYED_LAUNCH_CONTROL;
-#endif
-                } else {
-                    tryingToArm = ARMING_DELAYED_NORMAL;
-                }
-            }
-            return;
+// Handle DShot factors that should delay arming
+timeDelta_t beaconTimeDiff = cmpTimeUs(currentTimeUs, getLastDshotBeaconCommandTimeUs());
+if (beaconTimeDiff < DSHOT_BEACON_GUARD_DELAY_US && beaconTimeDiff >= 0) {
+    if (tryingToArm == ARMING_DELAYED_DISARMED) {
+        #ifdef USE_LAUNCH_CONTROL
+        if (canUseLaunchControl()) {
+            tryingToArm = ARMING_DELAYED_LAUNCH_CONTROL;
+        } else
+        #endif
+        {
+            tryingToArm = ARMING_DELAYED_NORMAL;
         }
-
-        if (isMotorProtocolDshot()) {
-#if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
-            // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
-            if (!featureIsEnabled(FEATURE_ESC_SENSOR) && useDshotTelemetry) {
-                dshotCleanTelemetryData();
-                if (motorConfig()->dev.useDshotEdt) {
-                    dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
-                }
-            }
-#endif
-
-            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
-            setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
     }
+    return;
+}
+
+if (isMotorProtocolDshot()) {
+    #if defined(USE_ESC_SENSOR) && defined(USE_DSHOT_TELEMETRY)
+    // Try to activate extended DSHOT telemetry only if no esc sensor exists and dshot telemetry is active
+    if (!featureIsEnabled(FEATURE_ESC_SENSOR) && useDshotTelemetry) {
+        dshotCleanTelemetryData();
+        if (motorConfig()->dev.useDshotEdt) {
+            dshotCommandWrite(ALL_MOTORS, getMotorCount(), DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE, DSHOT_CMD_TYPE_INLINE);
+        }
+    }
+    #endif
+
+    crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+    setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+}
 #endif // USE_DSHOT
 
 #ifdef USE_LAUNCH_CONTROL
