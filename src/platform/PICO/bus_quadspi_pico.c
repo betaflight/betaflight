@@ -156,11 +156,8 @@ void quadSpiInitBusDMA(busDevice_t *bus)
     dma_channel_set_irq0_enabled(bus->dmaRx->channel, true);
 }
 
-static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t *rxData, bool wide)
+static void quadSpiInternalInitStream(busDevice_t *bus, bool txIncrement, bool rxIncrement, bool wide)
 {
-    bool isTx = txData != NULL;
-    bool isRx = rxData != NULL;
-
     if (!bus) {
         return;
     }
@@ -170,14 +167,14 @@ static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t
 
     qspi_tx_cfg = dma_channel_get_default_config(dmaTx->channel);
     channel_config_set_transfer_data_size(&qspi_tx_cfg, wide ? DMA_SIZE_32 : DMA_SIZE_8);
-    channel_config_set_read_increment(&qspi_tx_cfg, isTx);
+    channel_config_set_read_increment(&qspi_tx_cfg, txIncrement);
     channel_config_set_write_increment(&qspi_tx_cfg, false);
     channel_config_set_dreq(&qspi_tx_cfg, DREQ_XIP_QMITX);
 
     qspi_rx_cfg = dma_channel_get_default_config(dmaRx->channel);
     channel_config_set_transfer_data_size(&qspi_rx_cfg, DMA_SIZE_8);
     channel_config_set_read_increment(&qspi_rx_cfg, false);
-    channel_config_set_write_increment(&qspi_rx_cfg, isRx);
+    channel_config_set_write_increment(&qspi_rx_cfg, rxIncrement);
     channel_config_set_dreq(&qspi_rx_cfg, DREQ_XIP_QMIRX);
 }
 
@@ -253,7 +250,7 @@ static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
 
-    quadSpiInternalInitStream(bus, segment->u.buffers.txData, segment->u.buffers.rxData, wide);
+    quadSpiInternalInitStream(bus, segment->u.buffers.txData != NULL, segment->u.buffers.rxData != NULL, wide);
 
     uint8_t *rxData = segment->u.buffers.rxData ? segment->u.buffers.rxData : &dummyRx;
     void *txData = wide ? (void *)direct_tx32 : (void *)segment->u.buffers.txData;
