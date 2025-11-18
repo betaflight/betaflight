@@ -48,7 +48,7 @@ const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
     },
 };
 
-static uint8_t dummyTx = 0x00; // During polled operation 0's are written so do the same
+static uint32_t dummyTx;
 static uint8_t dummyRx = 0xFF;
 
 // As per section 2.15 of the datasheet access registers at an offset of 0x4000
@@ -67,6 +67,10 @@ static uint8_t dummyRx = 0xFF;
 // We therefore convert from bits to bytes using 8 bits/byte. If a controller
 // revision were to support sub-byte dummy handling, this could be revisited.
 #define QSPI_DUMMY_BITS_PER_BYTE 8
+
+// To use QSPI for writes a buffer of 32 bit values to be written to the QMI_DIRECT_TX
+// register must be created
+#define QSPI_MAX_TX_BYTES 128
 
 static void quadSpiSequenceStart(const extDevice_t *dev);
 
@@ -152,11 +156,8 @@ void quadSpiInitBusDMA(busDevice_t *bus)
     dma_channel_set_irq0_enabled(bus->dmaRx->channel, true);
 }
 
-static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t *rxData)
+static void quadSpiInternalInitStream(busDevice_t *bus, bool txIncrement, bool rxIncrement, bool wide)
 {
-    bool isTx = txData != NULL;
-    bool isRx = rxData != NULL;
-
     if (!bus) {
         return;
     }
@@ -165,20 +166,27 @@ static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
 
     qspi_tx_cfg = dma_channel_get_default_config(dmaTx->channel);
-    channel_config_set_transfer_data_size(&qspi_tx_cfg, DMA_SIZE_8);
-    channel_config_set_read_increment(&qspi_tx_cfg, isTx);
+    channel_config_set_transfer_data_size(&qspi_tx_cfg, wide ? DMA_SIZE_32 : DMA_SIZE_8);
+    channel_config_set_read_increment(&qspi_tx_cfg, txIncrement);
     channel_config_set_write_increment(&qspi_tx_cfg, false);
     channel_config_set_dreq(&qspi_tx_cfg, DREQ_XIP_QMITX);
 
     qspi_rx_cfg = dma_channel_get_default_config(dmaRx->channel);
     channel_config_set_transfer_data_size(&qspi_rx_cfg, DMA_SIZE_8);
     channel_config_set_read_increment(&qspi_rx_cfg, false);
-    channel_config_set_write_increment(&qspi_rx_cfg, isRx);
+    channel_config_set_write_increment(&qspi_rx_cfg, rxIncrement);
     channel_config_set_dreq(&qspi_rx_cfg, DREQ_XIP_QMIRX);
 }
 
 static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
 {
+    // Buffer to hold the full 32 bit words so x2 and x4 widths can be used
+    STATIC_DMA_DATA_AUTO uint32_t direct_tx32[QSPI_MAX_TX_BYTES];
+    uint32_t direct_tx32_reset = 0;
+    // If the wide flag is true use the direct_tx32 buffer, otherwise optimise
+    // and use the txData directly
+    bool wide = true;
+
     if (!dev) {
         return;
     }
@@ -188,6 +196,53 @@ static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
         return;
     }
 
+    // Set the direction, input if there is data to be received
+    if (!segment->u.buffers.rxData) {
+        direct_tx32_reset |= QMI_DIRECT_TX_OE_BITS;
+    }
+
+    switch (segment->len & BUS_SEGMENT_LEN_WIDTH_MASK) {
+    case BUS_SEGMENT_LEN_WIDTH_X1:
+    default:
+        direct_tx32_reset |= QMI_DIRECT_TX_IWIDTH_VALUE_S << QMI_DIRECT_TX_IWIDTH_LSB;
+        wide = false;
+        break;
+
+    case BUS_SEGMENT_LEN_WIDTH_X2:
+        direct_tx32_reset |= QMI_DIRECT_TX_IWIDTH_VALUE_D << QMI_DIRECT_TX_IWIDTH_LSB;
+        break;
+
+    case BUS_SEGMENT_LEN_WIDTH_X4:
+        direct_tx32_reset |= QMI_DIRECT_TX_IWIDTH_VALUE_Q << QMI_DIRECT_TX_IWIDTH_LSB;
+        break;
+
+    }
+
+    if (wide) {
+        // Initialise the 32 bit buffer
+        if (segment->u.buffers.txData) {
+            if ((segment->len & BUS_SEGMENT_LEN_LENGTH_MASK) <= QSPI_MAX_TX_BYTES) {
+                for (int i = 0; i < (segment->len & BUS_SEGMENT_LEN_LENGTH_MASK); i++) {
+                    direct_tx32[i] = direct_tx32_reset | segment->u.buffers.txData[i];
+                }
+            } else {
+                // This isn't at all graceful, but it will be pretty evident when a write transfer fails completely.
+                // It's known that blackbox never uses a buffer more than 65 bytes, and writing over USB isn't supported.
+                // USB reads are unaffected.
+                // Abort the transaction
+                bus->curSegment = (busSegment_t *)BUS_QSPI_FREE;
+                // Negate CS
+                qmi_cs1_assert(dev, false);
+                return;
+            }
+        } else {
+            dummyTx = direct_tx32_reset;
+        }
+    } else {
+        // Default value for tx bytes
+        dummyTx = 0;
+    }
+
     // Launch next segment via DMA
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
@@ -195,19 +250,19 @@ static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
     // Use the correct callback argument
     dmaRx->userParam = (uint32_t)dev;
 
-    quadSpiInternalInitStream(bus, segment->u.buffers.txData, segment->u.buffers.rxData);
+    quadSpiInternalInitStream(bus, segment->u.buffers.txData != NULL, segment->u.buffers.rxData != NULL, wide);
 
-    uint8_t *txData = segment->u.buffers.txData ? segment->u.buffers.txData : &dummyTx;
     uint8_t *rxData = segment->u.buffers.rxData ? segment->u.buffers.rxData : &dummyRx;
+    void *txData = wide ? (void *)direct_tx32 : (void *)segment->u.buffers.txData;
 
     dma_channel_configure(dmaTx->channel, &qspi_tx_cfg,
-                          &xip_aux_hw_8bit->qmi_direct_tx,
-                          txData,
-                          segment->len, false);
+                          wide ? &xip_aux_hw->qmi_direct_tx : &xip_aux_hw_8bit->qmi_direct_tx,
+                          segment->u.buffers.txData ? txData : (void *)&dummyTx,
+                          segment->len & BUS_SEGMENT_LEN_LENGTH_MASK, false);
     dma_channel_configure(dmaRx->channel, &qspi_rx_cfg,
                           rxData,
                           &xip_aux_hw_8bit->qmi_direct_rx,
-                          segment->len, false);
+                          segment->len & BUS_SEGMENT_LEN_LENGTH_MASK, false);
 
     // Drain the RX buffer
     timeUs_t start = micros();
@@ -519,28 +574,19 @@ bool quadSpiTransmitWithAddress1LINE(const extDevice_t *dev, uint8_t instruction
 // 4LINE operations are not truly available via ROM command mode on QMI; emulate using 1LINE for now.
 bool quadSpiReceive4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    UNUSED(dummyCycles);
-
-    uint8_t instr = (instruction == 0x6B) ? 0x03 : instruction; // fast quad->fast serial
-    return quadSpiReceive1LINE(dev, instr, 0, in, length);
+    return quadSpiReceive1LINE(dev, instruction, dummyCycles, in, length | BUS_SEGMENT_LEN_WIDTH_X4);
 }
 
 bool quadSpiReceiveWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                      uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    UNUSED(dummyCycles);
-
-    uint8_t instr = (instruction == 0x6B) ? 0x03 : instruction; // map to serial fast read
-    return quadSpiReceiveWithAddress1LINE(dev, instr, 0, address, addressSize, in, length);
+    return quadSpiReceiveWithAddress1LINE(dev, instruction, dummyCycles, address, addressSize, in, length | BUS_SEGMENT_LEN_WIDTH_X4);
 }
 
 bool quadSpiTransmitWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles,
                                       uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    UNUSED(dummyCycles);
-
-    uint8_t instr = (instruction == 0x32) ? 0x02 : instruction; // quad page prog -> serial page prog
-    return quadSpiTransmitWithAddress1LINE(dev, instr, 0, address, addressSize, out, length);
+    return quadSpiTransmitWithAddress1LINE(dev, instruction, dummyCycles, address, addressSize, out, length | BUS_SEGMENT_LEN_WIDTH_X4);
 }
 
 void quadSpiSetDivisor(const extDevice_t *dev, uint16_t divisor)

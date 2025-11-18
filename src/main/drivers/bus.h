@@ -141,10 +141,22 @@ typedef struct busSegment_s {
             volatile struct busSegment_s *segments;
         } link;
     } u;
-    int len;
+    int len; // See also width encoding below
     bool negateCS; // Should CS be negated at the end of this segment
     busStatus_e (*callback)(uintptr_t arg);
 } busSegment_t;
+
+// The width of the transfer for a given segment is encoded in the len field where applicable
+#define BUS_SEGMENT_LEN_WIDTH_X1       0x00000000
+#ifdef USE_QUADSPI
+#define BUS_SEGMENT_LEN_WIDTH_X2       0x10000000
+#define BUS_SEGMENT_LEN_WIDTH_X4       0x20000000
+#endif
+#ifdef USE_OCTOSPI
+#define BUS_SEGMENT_LEN_WIDTH_X8       0x30000000
+#endif
+#define BUS_SEGMENT_LEN_WIDTH_MASK     0xf0000000
+#define BUS_SEGMENT_LEN_LENGTH_MASK    0x0fffffff
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
