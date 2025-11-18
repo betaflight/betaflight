@@ -183,6 +183,13 @@ static void quadSpiInternalInitStream(busDevice_t *bus, uint8_t *txData, uint8_t
 
 static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
 {
+    // Buffer to hold the full 32 bit words so x2 and x4 widths can be used
+    STATIC_DMA_DATA_AUTO uint32_t direct_tx32[QSPI_MAX_TX_BYTES];
+    uint32_t direct_tx32_reset = 0;
+    // If the wide flag is true use the direct_tx32 buffer, otherwise optimise
+    // and use the txData directly
+    bool wide = true;
+
     if (!dev) {
         return;
     }
@@ -191,13 +198,6 @@ static void quadSpiDmaSegment(const extDevice_t *dev, busSegment_t *segment)
     if (!bus || !segment) {
         return;
     }
-
-    // Buffer to hold the full 32 bit words so x2 and x4 widths can be used
-    static uint32_t direct_tx32[QSPI_MAX_TX_BYTES];
-    uint32_t direct_tx32_reset = 0;
-    // If the wide flag is true use the direct_tx32 buffer, otherwise optimise
-    // and use the txData directly
-    bool wide = true;
 
     // Set the direction, input if there is data to be received
     if (!segment->u.buffers.rxData) {
