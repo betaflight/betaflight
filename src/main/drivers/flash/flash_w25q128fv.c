@@ -467,6 +467,7 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
 #else
         segments[DATA2].len = bufferSizes[1];
 #endif
+        fdevice->bytesWritten += bufferSizes[1];
         segments[DATA2].negateCS = true;
         segments[DATA2].callback = w25q128fv_callbackWriteComplete;
     } else {
