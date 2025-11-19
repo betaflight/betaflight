@@ -346,7 +346,7 @@ void updateArmingStatus(void)
         // CrashFlip revert handling while DISARMED
         if (isArmingDisabledCrashFlip) {
             if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-                // Pilot manually disarmed by turning theARM switch OFF)
+                // Pilot manually disarmed by turning the ARM switch OFF)
                 isArmingDisabledCrashFlip = false;
                 unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
             }
