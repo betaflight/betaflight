@@ -284,8 +284,8 @@ void updateArmingStatus(void)
     static bool isArmingDisabledCrashFlip = false;
 #endif 
 
-if (ARMING_FLAG(ARMED)) {
-    LED0_ON;
+    if (ARMING_FLAG(ARMED)) {
+        LED0_ON;
 
 #ifdef USE_DSHOT
 // --- handle crashFlip behaviours while armed ---
@@ -308,39 +308,39 @@ if (crashFlipModeActive) {
 }
 #endif // USE_DSHOT
 
-} else { // arming switch on, but not yet armed; currently DISARMED
-      // identify things that should delay, or prevent, arming, then arm
+} else {
+    // arming switch on, but not yet armed; currently DISARMED
+    // identify things that should delay, or prevent, arming, then arm
 
-// Check if the power-on arming grace time has elapsed
-bool graceTimeElapsed = 
+    // Check if the power-on arming grace time has elapsed
+    bool graceTimeElapsed = 
     (getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME)
     && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000);
 
 #ifdef USE_DSHOT
-// With DSHOT, we also require DSHOT to be ready
-graceTimeElapsed = graceTimeElapsed && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled());
+    // With DSHOT, we also require DSHOT to be ready
+    graceTimeElapsed = graceTimeElapsed && (!isMotorProtocolDshot() || dshotStreamingCommandsAreEnabled());
 #endif
 
-if (graceTimeElapsed) {
-    unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
-}
-        // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
-        if (!isUsingSticksForArming()) {
-            static bool hadRx = false;
-            const bool haveRx = isRxReceivingSignal();
+    if (graceTimeElapsed) {
+        unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+    }
+    // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
+    if (!isUsingSticksForArming()) {
+        static bool hadRx = false;
+        const bool haveRx = isRxReceivingSignal();
 
-            const bool justGotRxBack = !hadRx && haveRx;
+        const bool justGotRxBack = !hadRx && haveRx;
 
-            if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
-                // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
-                setArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
-            } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
-                // If RX signal is OK and the arm switch is off, remove arming restriction
-                unsetArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
+        if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
+            // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
+            setArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
+        } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
+            // If RX signal is OK and the arm switch is off, remove arming restriction
+            unsetArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             }
-
-            hadRx = haveRx;
-        }
+        hadRx = haveRx;
+    }
 
 #ifdef USE_DSHOT
     // CrashFlip revert handling while DISARMED
