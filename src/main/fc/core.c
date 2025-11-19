@@ -476,6 +476,8 @@ void disarm(flightLogDisarmReason_e reason)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
         }
         DISABLE_ARMING_FLAG(ARMED);
+
+        crashFlipModeActive = false; 
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD

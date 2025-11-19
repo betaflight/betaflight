@@ -282,7 +282,7 @@ static bool applyCrashFlipModeToMotors(void)
     static float tiltAngleAtStart = 1.0f;
 #endif
 
-    if (!isCrashFlipModeActive()) {
+    if (!isCrashFlipModeActive() || !ARMING_FLAG(ARMED)) {
 #ifdef USE_ACC
         // trigger the capture of initial tilt angle on next activation of crashflip mode
         isTiltAngleAtStartSet = false;
