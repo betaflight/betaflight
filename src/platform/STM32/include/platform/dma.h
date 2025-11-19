@@ -57,7 +57,15 @@ typedef enum {
     DMA2_ST5_HANDLER,
     DMA2_ST6_HANDLER,
     DMA2_ST7_HANDLER,
-    DMA_LAST_HANDLER = DMA2_ST7_HANDLER
+    BDMA_CH0_HANDLER,
+    BDMA_CH1_HANDLER,
+    BDMA_CH2_HANDLER,
+    BDMA_CH3_HANDLER,
+    BDMA_CH4_HANDLER,
+    BDMA_CH5_HANDLER,
+    BDMA_CH6_HANDLER,
+    BDMA_CH7_HANDLER,
+    DMA_LAST_HANDLER = BDMA_CH7_HANDLER
 } dmaIdentifier_e;
 
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
@@ -84,8 +92,61 @@ typedef enum {
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
+// BDMA (Basic DMA) definitions for STM32H7
+#define DEFINE_BDMA_CHANNEL(c, f) { \
+    .dma = (DMA_TypeDef *)BDMA, \
+    .ref = (dmaResource_t *)BDMA_Channel ## c, \
+    .stream = c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = BDMA_Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_BDMA_IRQ_HANDLER(c, i) FAST_IRQ_HANDLER void BDMA_Channel ## c ## _IRQHandler(void) {\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
+                                                            }
+
+// Helper to remap DMA stream flags to BDMA channel flags
+#define BDMA_FLAG_REMAP(flag) \
+    (((flag) & DMA_IT_TCIF ? 0x02U : 0U) | \
+     ((flag) & DMA_IT_HTIF ? 0x04U : 0U) | \
+     ((flag) & DMA_IT_TEIF ? 0x08U : 0U) | \
+     ((flag) & DMA_IT_FEIF ? 0x01U : 0U))
+
+// Remap DMA stream flags to BDMA channel flags
+#define BDMA_FLAG_BIT(flag) \
+    (((flag) == DMA_IT_TCIF) ? 0x02U : \
+     ((flag) == DMA_IT_HTIF) ? 0x04U : \
+     ((flag) == DMA_IT_TEIF) ? 0x08U : \
+     ((flag) == DMA_IT_FEIF) ? 0x01U : 0U)
+
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if (IS_BDMA_INSTANCE((d)->ref)) { \
+            BDMA->IFCR = (BDMA_FLAG_BIT(flag) << (d)->flagsShift); \
+        } else if ((d)->flagsShift > 31) { \
+            (d)->dma->HIFCR = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            (d)->dma->LIFCR = ((flag) << (d)->flagsShift); \
+        } \
+    } while(0)
+
+#define DMA_GET_FLAG_STATUS(d, flag) \
+    (IS_BDMA_INSTANCE((d)->ref) ? \
+        (BDMA->ISR & (BDMA_FLAG_BIT(flag) << (d)->flagsShift)) : \
+        ((d)->flagsShift > 31 ? \
+            ((d)->dma->HISR & ((flag) << ((d)->flagsShift - 32))) : \
+            ((d)->dma->LISR & ((flag) << (d)->flagsShift))))
+
+// BDMA flag handling
+#define BDMA_CLEAR_FLAG(d, flag) BDMA->IFCR = (BDMA_FLAG_BIT(flag) << (d)->flagsShift)
+#define BDMA_GET_FLAG_STATUS(d, flag) (BDMA->ISR & (BDMA_FLAG_BIT(flag) << (d)->flagsShift))
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)

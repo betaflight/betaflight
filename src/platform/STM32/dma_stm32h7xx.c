@@ -52,6 +52,16 @@ dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA2, 5, 38),
     DEFINE_DMA_CHANNEL(DMA2, 6, 48),
     DEFINE_DMA_CHANNEL(DMA2, 7, 54),
+
+    // BDMA channels
+    DEFINE_BDMA_CHANNEL(0,  0),
+    DEFINE_BDMA_CHANNEL(1,  4),
+    DEFINE_BDMA_CHANNEL(2,  8),
+    DEFINE_BDMA_CHANNEL(3, 12),
+    DEFINE_BDMA_CHANNEL(4, 16),
+    DEFINE_BDMA_CHANNEL(5, 20),
+    DEFINE_BDMA_CHANNEL(6, 24),
+    DEFINE_BDMA_CHANNEL(7, 28),
 };
 
 /*
@@ -74,9 +84,27 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 6, DMA2_ST6_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
+/*
+ * BDMA IRQ Handlers
+ */
+DEFINE_BDMA_IRQ_HANDLER(0, BDMA_CH0_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(1, BDMA_CH1_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(2, BDMA_CH2_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(3, BDMA_CH3_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(4, BDMA_CH4_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(5, BDMA_CH5_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(6, BDMA_CH6_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(7, BDMA_CH7_HANDLER)
+
 static void enableDmaClock(int index)
 {
-    RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ? RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
+    if (dmaDescriptors[index].dma == DMA1) {
+        RCC_ClockCmd(RCC_AHB1(DMA1), ENABLE);
+    } else if (dmaDescriptors[index].dma == DMA2) {
+        RCC_ClockCmd(RCC_AHB1(DMA2), ENABLE);
+    } else if (dmaDescriptors[index].dma == (DMA_TypeDef *)BDMA) {
+        RCC_ClockCmd(RCC_AHB4(BDMA), ENABLE);
+    }
     // There seems to be no explicit control for DMAMUX1 clocking
 }
 
