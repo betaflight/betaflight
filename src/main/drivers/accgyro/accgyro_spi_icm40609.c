@@ -30,6 +30,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
@@ -40,6 +41,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 
@@ -216,6 +218,35 @@
 #define ICM40609_GYRO_UI_FILT_BW_ODR_DIV40   (7 << 0)
 #define ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 0) // Bit[3:0] - Low Latency
 #define ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 0) // Bit[3:0] - Low Latency
+
+typedef enum {
+    ICM40609_ODR_CONFIG_8K = 0,
+    ICM40609_ODR_CONFIG_4K,
+    ICM40609_ODR_CONFIG_2K,
+    ICM40609_ODR_CONFIG_1K,
+    ICM40609_ODR_CONFIG_COUNT
+} icm40609OdrConfig_e;
+
+static const uint8_t icm40609GyroOdrLut[ICM40609_ODR_CONFIG_COUNT] = {
+    [ICM40609_ODR_CONFIG_8K] = ICM40609_GYRO_ODR_8KHZ,
+    [ICM40609_ODR_CONFIG_4K] = ICM40609_GYRO_ODR_4KHZ,
+    [ICM40609_ODR_CONFIG_2K] = ICM40609_GYRO_ODR_2KHZ,
+    [ICM40609_ODR_CONFIG_1K] = ICM40609_GYRO_ODR_1KHZ,
+};
+
+static const uint8_t icm40609AccelOdrLut[ICM40609_ODR_CONFIG_COUNT] = {
+    [ICM40609_ODR_CONFIG_8K] = ICM40609_ACCEL_ODR_8KHZ,
+    [ICM40609_ODR_CONFIG_4K] = ICM40609_ACCEL_ODR_4KHZ,
+    [ICM40609_ODR_CONFIG_2K] = ICM40609_ACCEL_ODR_2KHZ,
+    [ICM40609_ODR_CONFIG_1K] = ICM40609_ACCEL_ODR_1KHZ,
+};
+
+static const uint16_t icm40609SampleRateHzLut[ICM40609_ODR_CONFIG_COUNT] = {
+    [ICM40609_ODR_CONFIG_8K] = 8000,
+    [ICM40609_ODR_CONFIG_4K] = 4000,
+    [ICM40609_ODR_CONFIG_2K] = 2000,
+    [ICM40609_ODR_CONFIG_1K] = 1000,
+};
 
 // REG_ACCEL_CONFIG_STATIC2 - 0x03 bit [0]
 #define ICM40609_ACCEL_AAF_DIS              (1 << 0)
@@ -661,20 +692,42 @@ void icm40609GyroInit(gyroDev_t *gyro)
 
     icm40609SetEndianess(dev, true);
 
-    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
-    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | ICM40609_GYRO_ODR_8KHZ);
-    gyro->scale = GYRO_SCALE_2000DPS;
-    gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-    gyro->gyroSampleRateHz = 8000;
+    const unsigned decim = llog2(gyro->mpuDividerDrops + 1);
+    const unsigned odrIndex = decim < ICM40609_ODR_CONFIG_COUNT ? decim : ICM40609_ODR_CONFIG_1K;
 
-    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | ICM40609_ACCEL_ODR_1KHZ );
+    const uint8_t gyroOdr = icm40609GyroOdrLut[odrIndex];
+    const uint8_t accelOdr = icm40609AccelOdrLut[odrIndex];
+    const uint16_t gyroSampleRateHz = icm40609SampleRateHzLut[odrIndex];
+
+    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
+    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | gyroOdr);
+    gyro->scale = GYRO_SCALE_2000DPS;
+    gyro->gyroSampleRateHz = gyroSampleRateHz;
+    gyro->accSampleRateHz = gyroSampleRateHz;
+    switch (odrIndex) {
+    case ICM40609_ODR_CONFIG_8K:
+        gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+        break;
+    case ICM40609_ODR_CONFIG_4K:
+        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
+        break;
+    case ICM40609_ODR_CONFIG_2K:
+        gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+        break;
+    default:
+        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+        break;
+    }
+    gyro->gyroShortPeriod = clockMicrosToCycles(1000000 / gyroSampleRateHz);
+
+    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | accelOdr);
 
     icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetGyroDec2M2(dev, true);
 
-    // Set filter bandwidth: Low Latency
+    // Leave UI filter in the low-latency path so the AAF provides the primary cutoff
     spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0,
                     ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR |
                     ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR);
@@ -682,10 +735,10 @@ void icm40609GyroInit(gyroDev_t *gyro)
     uint16_t gyroHWLpf; // Anti-Alias Filter (AAF) in Hz
     switch (gyroConfig()->gyro_hardware_lpf) {
     case GYRO_HARDWARE_LPF_NORMAL:
-        gyroHWLpf = 213;
+        gyroHWLpf = 258;
         break;
     case GYRO_HARDWARE_LPF_OPTION_1:
-        gyroHWLpf = 488;
+        gyroHWLpf = 536;
         break;
     case GYRO_HARDWARE_LPF_OPTION_2:
         gyroHWLpf = 997;
@@ -695,16 +748,16 @@ void icm40609GyroInit(gyroDev_t *gyro)
         gyroHWLpf = 1962;
         break;
 #endif
-        default:
-        gyroHWLpf = 213;
+    default:
+        gyroHWLpf = 258;
     }
 
     icm40609SetGyroAafByHz(dev, true, gyroHWLpf);
-    icm40609SetAccelAafByHz(dev, true, gyroHWLpf);
+    icm40609SetAccelAafByHz(dev, true, 258);
 
-    icm40609SetGyroNotch(dev, true, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
+    icm40609SetGyroNotch(dev, false, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
 
-    icm40609SetGyroHPF(dev, true, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
+    icm40609SetGyroHPF(dev, false, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
 
     // Enable interrupt
     spiWriteReg(dev, ICM40609_REG_INT_SOURCE0, ICM40609_UI_DRDY_INT1_EN);
