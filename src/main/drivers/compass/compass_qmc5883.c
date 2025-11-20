@@ -57,6 +57,7 @@
 // Sensor operation modes
 #define QMC5883L_MODE_STANDBY           0x00
 #define QMC5883L_MODE_CONTINUOUS        0x01
+#define QMC5883L_MODE_MASK              0x03
 
 #define QMC5883L_RNG_2G                 (0x00 << 4)
 #define QMC5883L_RNG_8G                 (0x01 << 4)
@@ -303,7 +304,7 @@ static bool qmc5883lDetect(magDev_t *magDev)
         // Should be in standby mode after soft reset and sensor is really present
         // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
         ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
-        if (ack && ((sig & 0x03) != QMC5883L_MODE_STANDBY)) {
+        if (ack && ((sig & QMC5883L_MODE_MASK) != QMC5883L_MODE_STANDBY)) {
             return false;
         }
 
