@@ -477,7 +477,6 @@ void disarm(flightLogDisarmReason_e reason)
         }
         DISABLE_ARMING_FLAG(ARMED);
 
-        crashFlipModeActive = false; 
         lastDisarmTimeUs = micros();
 
 #ifdef USE_OSD
@@ -505,6 +504,8 @@ void disarm(flightLogDisarmReason_e reason)
             statsOnDisarm();
         }
 #endif
+
+        crashFlipModeActive = false;
 
         // always set motor direction to normal on disarming
 #ifdef USE_DSHOT
