@@ -295,15 +295,21 @@ void updateArmingStatus(void)
                 crashFlipModeActive = false;
 
                 if (mixerConfig()->crashflip_auto_rearm) {
-                    // Auto re-arm enabled
+                    // Auto re-arm enabled, craft remains armed
                     setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
                     // After reversing the switch, motors are normal, pilot can fly
                 } else {
                     // Auto re-arm not enabled (manual mode)
                     disarm(DISARM_REASON_SWITCH);               // Stop motors and restore spin direction
                     setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // Block tryArm() until manual cycle
-                    isArmingDisabledCrashFlip = true;
+                    isArmingDisabledCrashFlip = true; // flag presence of a crashflip arming block
                 }
+            }
+            if (!IS_RC_MODE_ACTIVE(BOXARM)){
+                 // pilot put arm switch to disarmed position while armed and in crashflip mode
+                crashFlipModeActive = false;
+                // terminate crashflip mode immediately to ensure motors won't respond to sticks 
+                // to do - check behaviour if sticks were used for arming ???
             }
         }
 #endif // USE_DSHOT
