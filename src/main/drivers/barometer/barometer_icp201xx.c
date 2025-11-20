@@ -1,0 +1,889 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * ICP201XX Barometer Driver
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "platform.h"
+
+#if defined(USE_BARO) && (defined(USE_BARO_ICP201XX) || defined(USE_BARO_SPI_ICP201XX))
+
+#include "common/maths.h"
+#include "common/utils.h"
+
+#include "drivers/barometer/barometer.h"
+#include "drivers/bus.h"
+#include "drivers/bus_spi.h"
+#include "drivers/bus_spi_impl.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
+
+#include "barometer_icp201xx.h"
+
+// Register addresses
+#define ICP201XX_REG_EMPTY          0x00
+#define ICP201XX_REG_TRIM1_MSB      0x05
+#define ICP201XX_REG_TRIM2_LSB      0x06
+#define ICP201XX_REG_TRIM2_MSB      0x07
+#define ICP201XX_REG_DEVICE_ID      0x0C
+#define ICP201XX_REG_VERSION        0xD3
+#define ICP201XX_REG_OTP_CFG1       0xAC
+#define ICP201XX_REG_OTP_MR_LSB     0xAD
+#define ICP201XX_REG_OTP_MR_MSB     0xAE
+#define ICP201XX_REG_OTP_MRA_LSB    0xAF
+#define ICP201XX_REG_OTP_MRA_MSB    0xB0
+#define ICP201XX_REG_OTP_MRB_LSB    0xB1
+#define ICP201XX_REG_OTP_MRB_MSB    0xB2
+#define ICP201XX_REG_OTP_ADDR       0xB5
+#define ICP201XX_REG_OTP_CMD        0xB6
+#define ICP201XX_REG_OTP_RDATA      0xB8
+#define ICP201XX_REG_OTP_STATUS     0xB9
+#define ICP201XX_REG_OTP_DEBUG2     0xBC
+#define ICP201XX_REG_MASTER_LOCK    0xBE
+#define ICP201XX_REG_OTP_STATUS2    0xBF
+#define ICP201XX_REG_MODE_SELECT    0xC0
+#define ICP201XX_REG_INT_STATUS     0xC1
+#define ICP201XX_REG_FIFO_CONFIG    0xC3
+#define ICP201XX_REG_FIFO_FILL      0xC4
+#define ICP201XX_REG_DEVICE_STATUS  0xCD
+#define ICP201XX_REG_ERR            0x02
+#define ICP201XX_REG_PRESS_DATA_0   0xFA
+
+// FIFO configuration values
+#define ICP201XX_FIFO_MODE_PRES_TEMP  0x00
+
+// SPI commands
+#define ICP201XX_SPI_CMD_WRITE      0x33
+#define ICP201XX_SPI_CMD_READ       0x3C
+
+// Commands
+#define ICP201XX_CMD_SOFT_RESET     0x80
+#define ICP201XX_OTP_CMD_READ       0x10
+
+// Expected device ID
+#define ICP201XX_DEVICE_ID          0x63
+
+// Operation modes (bits 5-7 of MODE_SELECT)
+// Mode 0: BW=6.25Hz ODR=25Hz, Mode 1: BW=30Hz ODR=120Hz
+// Mode 2: BW=10Hz ODR=40Hz, Mode 3: BW=0.5Hz ODR=2Hz
+#define ICP201XX_OP_MODE0           (0 << 5)  // Mode 0: 25Hz ODR
+#define ICP201XX_OP_MODE1           (1 << 5)  // Mode 1: 120Hz ODR (high-speed with trend detection)
+#define ICP201XX_OP_MODE2           (2 << 5)  // Mode 2: 40Hz ODR
+#define ICP201XX_OP_MODE3           (3 << 5)  // Mode 3: 2Hz ODR
+
+// Select operation mode - Mode 1 for high-speed operation with averaging
+#define ICP201XX_OP_MODE            ICP201XX_OP_MODE1
+
+// Mode select bits (following ArduPilot layout)
+// Bit 0-1: FIFO readout mode (0=pres_temp)
+// Bit 2: Power mode (0=normal, 1=active) - USE NORMAL!
+// Bit 3: Measurement mode (1=continuous)
+// Bit 4: Forced trigger (0=standby)
+// Bit 5-7: Operation mode
+#define ICP201XX_MODE_POWER_NORMAL      (0 << 2)  // Normal power mode
+#define ICP201XX_MODE_MEAS_CONTINUOUS   (1 << 3)
+#define ICP201XX_FIFO_PRES_TEMP         (0 << 0)
+
+// Timing constants for Mode 1 (120Hz ODR = 8.3ms interval)
+#define ICP201XX_RESET_DELAY_MS         50
+#define ICP201XX_STARTUP_DELAY_MS       100   // Increased from 10ms to 100ms for more reliable detection
+#define ICP201XX_RETRY_DELAY_MS         2000  // Wait 2 seconds before retrying detection
+#define ICP201XX_MAX_DETECT_ATTEMPTS    3     // Try detection up to 3 times before giving up
+#define ICP201XX_READ_INTERVAL_MS       25    // Read every 25ms to collect ~3 samples at 120Hz
+#define ICP201XX_MAX_SPI_CLK_HZ         6000000
+#define ICP201XX_CONVERSION_INTERVAL_US 8333  // 8.3ms = 120Hz
+
+// Hardware timing requirement for MODE_SELECT register
+// This delay is UNCONDITIONAL and always applied after MODE_SELECT writes
+#define ICP201XX_MODE_SELECT_LATCH_US 200
+
+// Trend-weighted averaging configuration
+#define ICP201XX_SAMPLE_BUFFER_SIZE 8       // Hold up to 8 samples for trend analysis
+#define ICP201XX_MIN_SAMPLES_FOR_TREND 3    // Minimum samples needed for trend detection
+#define ICP201XX_TREND_THRESHOLD 0.5f       // Pa/ms - threshold for considering data trending
+
+// Sample structure for trend analysis
+typedef struct {
+    float pressure;      // Pressure in Pa
+    float temperature;   // Temperature in degrees C
+    uint32_t timestamp;  // Timestamp in milliseconds
+} baroSample_t;
+
+// Circular buffer for trend analysis
+static struct {
+    baroSample_t samples[ICP201XX_SAMPLE_BUFFER_SIZE];
+    uint8_t head;        // Next write position
+    uint8_t count;       // Number of valid samples
+} sampleBuffer = { .head = 0, .count = 0 };
+
+// Store last valid pressure and temperature to return when no new data available
+static int32_t lastValidPressure = 0;
+static int32_t lastValidTemperature = 0;
+
+// Rate limiting for reads
+static uint32_t lastFifoReadTime = 0;
+#define ICP201XX_MIN_READ_INTERVAL_MS 25  // Read every 25ms (collect ~3 samples at 120Hz)
+
+// DMA/Segment-based SPI state management
+// These buffers must be static to persist across function calls for DMA
+#define ICP201XX_MAX_READ_LEN 96  // Max FIFO size: 16 samples * 6 bytes per sample
+static uint8_t spiTxCmdBuf[2];     // Command + register address
+static uint8_t spiTxDummyBuf[ICP201XX_MAX_READ_LEN];  // Dummy bytes for read phase
+static uint8_t spiRxBuf[ICP201XX_MAX_READ_LEN];       // Received data
+static uint8_t spiRxCmdBuf[2];     // Dummy buffer for command phase RX
+
+// State machine for non-blocking FIFO reads
+typedef enum {
+    ICP201XX_STATE_IDLE,
+    ICP201XX_STATE_READ_FIFO_FILL_STARTED,
+    ICP201XX_STATE_READ_FIFO_DATA_STARTED,
+    ICP201XX_STATE_DATA_READY
+} icp201xxReadState_t;
+
+static icp201xxReadState_t readState = ICP201XX_STATE_IDLE;
+static uint8_t fifoFillBuf[1];
+static uint8_t fifoDataBuf[ICP201XX_MAX_READ_LEN];  // Buffer for multiple FIFO samples
+static uint8_t fifoSampleCount = 0;  // Total number of samples to read from FIFO
+
+// Forward declarations
+static bool icp201xxStartUT(baroDev_t *baro);
+static bool icp201xxGetUT(baroDev_t *baro);
+static bool icp201xxReadUT(baroDev_t *baro);
+static bool icp201xxStartUP(baroDev_t *baro);
+static bool icp201xxGetUP(baroDev_t *baro);
+static bool icp201xxReadUP(baroDev_t *baro);
+static void icp201xxCalculate(int32_t *pressure, int32_t *temperature);
+
+static void icp201xxDummyRead(const extDevice_t *dev)
+{
+    // Wait for any pending transfer to complete
+    if (busBusy(dev, NULL)) {
+        spiWait(dev);
+    }
+
+    static uint8_t dummyCmdBuf[2];
+    static uint8_t dummyTxBuf[1];
+    static uint8_t dummyRxBuf[3];
+
+    dummyCmdBuf[0] = ICP201XX_SPI_CMD_READ;
+    dummyCmdBuf[1] = ICP201XX_REG_EMPTY;
+    dummyTxBuf[0] = 0xFF;
+
+    // Use segments for dummy read too
+    static busSegment_t dummySegments[3];
+    dummySegments[0].u.buffers.txData = dummyCmdBuf;
+    dummySegments[0].u.buffers.rxData = dummyRxBuf;
+    dummySegments[0].len = 2;
+    dummySegments[0].negateCS = false;
+    dummySegments[0].callback = NULL;
+
+    dummySegments[1].u.buffers.txData = dummyTxBuf;
+    dummySegments[1].u.buffers.rxData = &dummyRxBuf[2];
+    dummySegments[1].len = 1;
+    dummySegments[1].negateCS = true;
+    dummySegments[1].callback = NULL;
+
+    dummySegments[2].u.link.dev = NULL;
+    dummySegments[2].u.link.segments = NULL;
+    dummySegments[2].len = 0;
+    dummySegments[2].negateCS = true;
+    dummySegments[2].callback = NULL;
+
+    spiSequence(dev, &dummySegments[0]);
+    spiWait(dev);
+}
+
+// Non-blocking read start - initiates DMA transfer
+static bool icp201xxReadRegStart(const extDevice_t *dev, uint8_t reg, uint8_t len)
+{
+    if (len > ICP201XX_MAX_READ_LEN) return false;
+
+    // Check if DMA/segment transfer is in progress
+    if (busBusy(dev, NULL)) {
+        return false;
+    }
+
+    // Prepare command buffer
+    spiTxCmdBuf[0] = ICP201XX_SPI_CMD_READ;
+    spiTxCmdBuf[1] = reg;
+
+    // Prepare dummy buffer for data phase
+    memset(spiTxDummyBuf, 0xFF, len);
+
+    // Set up two-phase SPI read using segments
+    // Phase 1: Send command + register address (don't negate CS)
+    // Phase 2: Send dummy bytes, receive data (negate CS at end)
+    static busSegment_t segments[3];
+    segments[0].u.buffers.txData = spiTxCmdBuf;
+    segments[0].u.buffers.rxData = spiRxCmdBuf;
+    segments[0].len = 2;
+    segments[0].negateCS = false;  // Keep CS low between phases
+    segments[0].callback = NULL;
+
+    segments[1].u.buffers.txData = spiTxDummyBuf;
+    segments[1].u.buffers.rxData = spiRxBuf;
+    segments[1].len = len;
+    segments[1].negateCS = true;   // Negate CS at end
+    segments[1].callback = NULL;
+
+    segments[2].u.link.dev = NULL;
+    segments[2].u.link.segments = NULL;
+    segments[2].len = 0;
+    segments[2].negateCS = true;
+    segments[2].callback = NULL;
+
+    // Start the DMA transfer (non-blocking)
+    spiSequence(dev, &segments[0]);
+
+    return true;
+}
+
+// Blocking read - for initialization only
+static bool icp201xxReadReg(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t len)
+{
+    if (!icp201xxReadRegStart(dev, reg, len)) {
+        return false;
+    }
+
+    // Wait for completion
+    spiWait(dev);
+
+    // Copy received data
+    memcpy(data, spiRxBuf, len);
+
+    // Perform dummy read if not reading EMPTY register
+    if (reg != ICP201XX_REG_EMPTY) {
+        icp201xxDummyRead(dev);
+    }
+
+    return true;
+}
+
+static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
+{
+    // Wait for any pending transfer
+    if (busBusy(dev, NULL)) {
+        spiWait(dev);
+    }
+
+    static uint8_t writeTxBuf[3];
+    static uint8_t writeRxBuf[3];
+
+    writeTxBuf[0] = ICP201XX_SPI_CMD_WRITE;
+    writeTxBuf[1] = reg;
+    writeTxBuf[2] = val;
+
+    // Single-phase write using segments
+    static busSegment_t writeSegments[2];
+    writeSegments[0].u.buffers.txData = writeTxBuf;
+    writeSegments[0].u.buffers.rxData = writeRxBuf;
+    writeSegments[0].len = 3;
+    writeSegments[0].negateCS = true;
+    writeSegments[0].callback = NULL;
+
+    writeSegments[1].u.link.dev = NULL;
+    writeSegments[1].u.link.segments = NULL;
+    writeSegments[1].len = 0;
+    writeSegments[1].negateCS = true;
+    writeSegments[1].callback = NULL;
+
+    spiSequence(dev, &writeSegments[0]);
+    spiWait(dev);
+
+    icp201xxDummyRead(dev);
+
+    // CRITICAL: Hardware timing requirement for MODE_SELECT register
+    // This delay is UNCONDITIONAL - always applied regardless of debug mode
+    // The register needs time to latch before it can be read back or affect operation
+    if (reg == ICP201XX_REG_MODE_SELECT) {
+        delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
+    }
+
+    return true;
+}
+
+static bool icp201xxSoftReset(const extDevice_t *dev)
+{
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, ICP201XX_CMD_SOFT_RESET)) {
+        return false;
+    }
+    delay(ICP201XX_RESET_DELAY_MS);
+    return true;
+}
+
+static bool icp201xxReadOTPData(const extDevice_t *dev, uint8_t addr, uint8_t *val)
+{
+    uint8_t otpStatus;
+
+    // Write the OTP address
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_ADDR, addr)) return false;
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CMD, ICP201XX_OTP_CMD_READ)) return false;
+
+    // Wait for OTP read completion
+    for (int i = 0; i < 1000; i++) {
+        if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS, &otpStatus, 1)) return false;
+        if (otpStatus == 0) break;
+        delayMicroseconds(1);
+    }
+
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_RDATA, val, 1)) return false;
+    return true;
+}
+
+static bool icp201xxBootSequence(const extDevice_t *dev)
+{
+    uint8_t bootupStatus, regVal, version;
+    uint8_t offset, gain, hfosc;
+
+    // Check version - B2 doesn't need boot sequence
+    if (!icp201xxReadReg(dev, ICP201XX_REG_VERSION, &version, 1)) return false;
+
+    if (version == 0xB2) {
+        return true; // B2 version doesn't need boot sequence
+    }
+
+    // Check if boot already done
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS2, &bootupStatus, 1)) return false;
+    if (bootupStatus & 0x01) return true; // Already done
+
+    // Activate OTP power domain
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, 0x04)) return false;
+    delay(5);
+
+    // Unlock master register
+    icp201xxWriteReg(dev, ICP201XX_REG_MASTER_LOCK, 0x1F);
+
+    // Enable OTP and write switch
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_CFG1, &regVal, 1)) return false;
+    regVal |= 0x03;
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CFG1, regVal)) return false;
+    delayMicroseconds(10);
+
+    // Toggle OTP reset
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_DEBUG2, &regVal, 1)) return false;
+    regVal |= (1 << 7);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_DEBUG2, regVal)) return false;
+    delayMicroseconds(10);
+    regVal &= ~(1 << 7);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_DEBUG2, regVal)) return false;
+    delayMicroseconds(10);
+
+    // Program redundant read registers
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MRA_LSB, 0x04);
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MRA_MSB, 0x04);
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MRB_LSB, 0x21);
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MRB_MSB, 0x20);
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MR_LSB, 0x10);
+    icp201xxWriteReg(dev, ICP201XX_REG_OTP_MR_MSB, 0x80);
+
+    // Read OTP calibration values
+    if (!icp201xxReadOTPData(dev, 0xF8, &offset)) return false;
+    if (!icp201xxReadOTPData(dev, 0xF9, &gain)) return false;
+    if (!icp201xxReadOTPData(dev, 0xFA, &hfosc)) return false;
+
+    // Write OTP values to trim registers
+    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM1_MSB, &regVal, 1)) return false;
+    regVal = (regVal & ~0x3F) | (offset & 0x3F);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM1_MSB, regVal)) return false;
+
+    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM2_MSB, &regVal, 1)) return false;
+    regVal = (regVal & ~0x70) | ((gain & 0x07) << 4);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM2_MSB, regVal)) return false;
+
+    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM2_LSB, &regVal, 1)) return false;
+    regVal = (regVal & ~0x7F) | (hfosc & 0x7F);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM2_LSB, regVal)) return false;
+
+    delayMicroseconds(10);
+
+    // Mark boot as complete
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS2, &regVal, 1)) return false;
+    regVal |= 0x01;
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_STATUS2, regVal)) return false;
+
+    // Disable OTP
+    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_CFG1, &regVal, 1)) return false;
+    regVal &= ~0x03;
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CFG1, regVal)) return false;
+
+    // Lock master register
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MASTER_LOCK, 0x00)) return false;
+
+    // Return to standby mode
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, 0x00)) return false;
+    delay(10);
+
+    return true;
+}
+
+static bool icp201xxFlushFifo(const extDevice_t *dev)
+{
+    // CRITICAL: Flush by writing 0x80 to FIFO_FILL per Arduino library
+    uint8_t regVal;
+    if (!icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &regVal, 1)) return false;
+    regVal |= 0x80;
+    return icp201xxWriteReg(dev, ICP201XX_REG_FIFO_FILL, regVal);
+}
+
+static bool icp201xxStartContinuous(const extDevice_t *dev)
+{
+    uint8_t modeReg, fifoFill;
+    uint8_t fifoPackets;
+
+    // CRITICAL: Soft reset before configuration (per fc-hwtest)
+    if (!icp201xxSoftReset(dev)) {
+        return false;
+    }
+
+    // CRITICAL: Use Read-Modify-Write for MODE_SELECT following Arduino library
+    // Write standby mode first
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, 0x00)) {
+        return false;
+    }
+    delay(5);
+
+    // Flush FIFO
+    icp201xxFlushFifo(dev);
+    delay(5);
+
+    // Clear any interrupt status
+    uint8_t intStatus = 0;
+    if (icp201xxReadReg(dev, ICP201XX_REG_INT_STATUS, &intStatus, 1)) {
+        if (intStatus != 0) {
+            // Clear by writing back
+            icp201xxWriteReg(dev, ICP201XX_REG_INT_STATUS, intStatus);
+        }
+    }
+
+    // Now build mode register using Read-Modify-Write for each field
+    // Start with reading current value
+    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
+        return false;
+    }
+
+    // Set forced meas trigger = 0 (standby)
+    modeReg &= ~(1 << 4);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+        return false;
+    }
+
+    // Set power mode = 0 (normal)
+    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
+        return false;
+    }
+    modeReg &= ~(1 << 2);
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+        return false;
+    }
+
+    // Set FIFO readout mode = 0 (pres+temp)
+    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
+        return false;
+    }
+    modeReg &= ~0x03;
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+        return false;
+    }
+
+    // Set measurement config (OP_MODE0 = bits 7-5 = 000)
+    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
+        return false;
+    }
+    modeReg &= ~0xE0; // Clear bits 7-5
+    modeReg |= ICP201XX_OP_MODE;
+
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+        return false;
+    }
+
+    // Finally set measurement mode = 1 (continuous) - bit 3
+    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
+        return false;
+    }
+    modeReg |= (1 << 3); // Set continuous mode
+    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+        return false;
+    }
+
+    delay(10);
+
+    // CRITICAL: Wait for FIR filter warmup - first 14 samples are invalid (per fc-hwtest/ArduPilot)
+    // At 120Hz ODR (MODE1), 14 samples = 117ms
+    const uint8_t targetSamples = 14;
+
+    for (int i = 0; i < 100; i++) {  // Max 1 second wait
+        delay(10);
+        if (icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &fifoFill, 1)) {
+            fifoPackets = fifoFill & 0x1F;
+            if (fifoPackets >= targetSamples) {
+                break;
+            }
+        }
+    }
+
+    // VALIDATION: Check if FIFO filled during warmup - if not, sensor is not working
+    if (fifoPackets == 0) {
+        return false;  // CRITICAL: Sensor not producing data
+    }
+
+    // Flush warmup samples
+    icp201xxFlushFifo(dev);
+
+    // Wait for fresh samples (at least 1)
+    for (int i = 0; i < 20; i++) {  // Max 200ms wait
+        delay(10);
+        if (icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &fifoFill, 1)) {
+            fifoPackets = fifoFill & 0x1F;
+            if (fifoPackets > 0) {
+                break;
+            }
+        }
+    }
+
+    // VALIDATION: Final check - FIFO must have data after flush
+    if (fifoPackets == 0) {
+        return false;  // CRITICAL: Sensor not recovering, fail detection
+    }
+
+    return true;
+}
+
+void icp201xxBusInit(const extDevice_t *dev)
+{
+#ifdef USE_BARO_SPI_ICP201XX
+    IOInit(dev->busType_u.spi.csnPin, OWNER_BARO_CS, 0);
+    IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_OUT_PP);
+    IOHi(dev->busType_u.spi.csnPin);
+    spiSetClkDivisor(dev, spiCalculateDivider(ICP201XX_MAX_SPI_CLK_HZ));
+#endif
+}
+
+void icp201xxBusDeinit(const extDevice_t *dev)
+{
+#ifdef USE_BARO_SPI_ICP201XX
+    IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_IPU);
+#endif
+}
+
+bool icp201xxDetect(baroDev_t *baro)
+{
+    // REAL SENSOR MODE with retry mechanism
+    uint8_t deviceID;
+    bool initSuccess = false;
+
+    // Try detection up to MAX_DETECT_ATTEMPTS times
+    for (int attempt = 1; attempt <= ICP201XX_MAX_DETECT_ATTEMPTS; attempt++) {
+        // Initial startup delay (longer on first attempt)
+        if (attempt == 1) {
+            delay(ICP201XX_STARTUP_DELAY_MS);
+        } else {
+            // Retry after additional delay
+            delay(ICP201XX_RETRY_DELAY_MS);
+        }
+
+        icp201xxBusInit(&baro->dev);
+
+        // Read device ID
+        if (!icp201xxReadReg(&baro->dev, ICP201XX_REG_DEVICE_ID, &deviceID, 1)) {
+            continue;  // Try again
+        }
+
+        if (deviceID != ICP201XX_DEVICE_ID) {
+            continue;  // Try again
+        }
+
+        // Boot sequence (OTP calibration) - soft reset is done inside StartContinuous
+        if (!icp201xxBootSequence(&baro->dev)) {
+            continue;  // Try again
+        }
+
+        // Register device with bus system
+        busDeviceRegister(&baro->dev);
+
+        // Start continuous measurement mode
+        if (!icp201xxStartContinuous(&baro->dev)) {
+            icp201xxBusDeinit(&baro->dev);
+            continue;  // Try again
+        }
+
+        // Success!
+        initSuccess = true;
+        break;
+    }
+
+    // Check if initialization succeeded
+    if (!initSuccess) {
+        return false;
+    }
+
+    // Initialize sample buffer and last valid values
+    sampleBuffer.head = 0;
+    sampleBuffer.count = 0;
+    lastValidPressure = 0;
+    lastValidTemperature = 0;
+    lastFifoReadTime = millis();
+
+    // Setup function pointers
+    baro->combined_read = true;
+    baro->ut_delay = 0;
+    baro->up_delay = 25000;  // 25ms (25000µs) delay - read every 25ms to collect ~3 samples at 120Hz
+    baro->start_ut = icp201xxStartUT;
+    baro->get_ut = icp201xxGetUT;
+    baro->read_ut = icp201xxReadUT;
+    baro->start_up = icp201xxStartUP;
+    baro->get_up = icp201xxGetUP;
+    baro->read_up = icp201xxReadUP;
+    baro->calculate = icp201xxCalculate;
+
+    return true;
+}
+
+static bool icp201xxStartUT(baroDev_t *baro)
+{
+    UNUSED(baro);
+    return true; // Continuous mode, always running
+}
+
+static bool icp201xxReadUT(baroDev_t *baro)
+{
+    UNUSED(baro);
+    return true;
+}
+
+static bool icp201xxGetUT(baroDev_t *baro)
+{
+    UNUSED(baro);
+    return true;
+}
+
+static bool icp201xxStartUP(baroDev_t *baro)
+{
+    UNUSED(baro);
+    // Sensor is in continuous mode, always sampling
+    return true;
+}
+
+static bool icp201xxGetUP(baroDev_t *baro)
+{
+    // Check if bus is busy
+    if (busBusy(&baro->dev, NULL)) {
+        return false;
+    }
+
+    // State machine for non-blocking FIFO reads
+    switch (readState) {
+        case ICP201XX_STATE_IDLE:
+            // Do nothing, wait for readUP to start a read
+            break;
+
+        case ICP201XX_STATE_READ_FIFO_FILL_STARTED:
+            // FIFO fill read completed, copy data
+            fifoFillBuf[0] = spiRxBuf[0];
+
+            // Check if FIFO has data
+            if ((fifoFillBuf[0] & 0x40) == 0) {  // Not empty
+                uint8_t fifoCount = fifoFillBuf[0] & 0x1F;
+                if (fifoCount > 0 && fifoCount <= 16) {
+                    // Try reading ALL FIFO packets in one transaction (test auto-increment)
+                    fifoSampleCount = fifoCount;
+                    uint8_t bytesToRead = fifoCount * 6;
+
+                    if (icp201xxReadRegStart(&baro->dev, ICP201XX_REG_PRESS_DATA_0, bytesToRead)) {
+                        readState = ICP201XX_STATE_READ_FIFO_DATA_STARTED;
+                    } else {
+                        readState = ICP201XX_STATE_IDLE;
+                    }
+                } else {
+                    readState = ICP201XX_STATE_IDLE;
+                }
+            } else {
+                readState = ICP201XX_STATE_IDLE;
+            }
+            break;
+
+        case ICP201XX_STATE_READ_FIFO_DATA_STARTED:
+            // All FIFO data read completed in one transaction, copy to buffer
+            memcpy(fifoDataBuf, spiRxBuf, fifoSampleCount * 6);
+            readState = ICP201XX_STATE_DATA_READY;
+            break;
+
+        case ICP201XX_STATE_DATA_READY:
+            // Data already processed in calculate, ready for next read
+            break;
+    }
+
+    return true;
+}
+
+static bool icp201xxReadUP(baroDev_t *baro)
+{
+    // Rate limit reads
+    uint32_t now = millis();
+    if (now - lastFifoReadTime < ICP201XX_MIN_READ_INTERVAL_MS) {
+        return true;  // Too soon, skip this read
+    }
+
+    // Only start a new read if idle
+    if (readState != ICP201XX_STATE_IDLE && readState != ICP201XX_STATE_DATA_READY) {
+        return true;  // Previous read still in progress
+    }
+
+    // Check if bus is busy
+    if (busBusy(&baro->dev, NULL)) {
+        return false;
+    }
+
+    lastFifoReadTime = now;
+
+    // Start non-blocking FIFO fill read
+    if (icp201xxReadRegStart(&baro->dev, ICP201XX_REG_FIFO_FILL, 1)) {
+        readState = ICP201XX_STATE_READ_FIFO_FILL_STARTED;
+    }
+
+    return true;
+}
+
+static void icp201xxCalculate(int32_t *pressure, int32_t *temperature)
+{
+    // Process data if available
+    if (readState == ICP201XX_STATE_DATA_READY) {
+        uint32_t currentTime = millis();
+
+        // Parse all samples from FIFO and add to trend buffer
+        for (uint8_t i = 0; i < fifoSampleCount; i++) {
+            uint8_t offset = i * 6;
+
+            // Check for invalid data patterns
+            bool validSample = true;
+
+            // All 0xFF = uninitialized/error
+            if (fifoDataBuf[offset + 0] == 0xFF && fifoDataBuf[offset + 1] == 0xFF &&
+                fifoDataBuf[offset + 2] == 0xFF && fifoDataBuf[offset + 3] == 0xFF &&
+                fifoDataBuf[offset + 4] == 0xFF && fifoDataBuf[offset + 5] == 0xFF) {
+                validSample = false;
+            }
+
+            // All 0x00 = sensor not measuring
+            if (fifoDataBuf[offset + 0] == 0x00 && fifoDataBuf[offset + 1] == 0x00 &&
+                fifoDataBuf[offset + 2] == 0x00 && fifoDataBuf[offset + 3] == 0x00 &&
+                fifoDataBuf[offset + 4] == 0x00 && fifoDataBuf[offset + 5] == 0x00) {
+                validSample = false;
+            }
+
+            if (validSample) {
+                // Parse pressure (20-bit signed, LSB first)
+                int32_t rawPress = ((int32_t)(fifoDataBuf[offset + 2] & 0x0F) << 16) |
+                                   ((int32_t)fifoDataBuf[offset + 1] << 8) |
+                                   fifoDataBuf[offset + 0];
+                if (rawPress & 0x080000) rawPress |= 0xFFF00000; // Sign extend
+
+                // Parse temperature (20-bit signed, LSB first)
+                int32_t rawTemp = ((int32_t)(fifoDataBuf[offset + 5] & 0x0F) << 16) |
+                                  ((int32_t)fifoDataBuf[offset + 4] << 8) |
+                                  fifoDataBuf[offset + 3];
+                if (rawTemp & 0x080000) rawTemp |= 0xFFF00000; // Sign extend
+
+                // Check if both are not zero
+                if (rawPress != 0 || rawTemp != 0) {
+                    // Convert to physical units
+                    float sensorPressure = ((float)rawPress * 40000.0f / 131072.0f) + 70000.0f;
+                    float sensorTemperature = ((float)rawTemp * 65.0f / 262144.0f) + 25.0f;
+
+                    // Sanity check
+                    if (sensorPressure >= 30000.0f && sensorPressure <= 110000.0f &&
+                        sensorTemperature >= -40.0f && sensorTemperature <= 85.0f) {
+
+                        // Add to circular buffer for trend analysis
+                        sampleBuffer.samples[sampleBuffer.head].pressure = sensorPressure;
+                        sampleBuffer.samples[sampleBuffer.head].temperature = sensorTemperature;
+                        sampleBuffer.samples[sampleBuffer.head].timestamp = currentTime;
+
+                        sampleBuffer.head = (sampleBuffer.head + 1) % ICP201XX_SAMPLE_BUFFER_SIZE;
+                        if (sampleBuffer.count < ICP201XX_SAMPLE_BUFFER_SIZE) {
+                            sampleBuffer.count++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Reset state for next read
+        readState = ICP201XX_STATE_IDLE;
+        fifoSampleCount = 0;
+    }
+
+    // Perform trend-weighted averaging if we have enough samples
+    if (sampleBuffer.count >= ICP201XX_MIN_SAMPLES_FOR_TREND) {
+        // Calculate statistics
+        float pSum = 0.0f, tSum = 0.0f;
+        float pMin = 999999.0f, pMax = 0.0f;
+
+        uint8_t oldestIdx = (sampleBuffer.head + ICP201XX_SAMPLE_BUFFER_SIZE - sampleBuffer.count) % ICP201XX_SAMPLE_BUFFER_SIZE;
+        uint8_t newestIdx = (sampleBuffer.head + ICP201XX_SAMPLE_BUFFER_SIZE - 1) % ICP201XX_SAMPLE_BUFFER_SIZE;
+
+        for (uint8_t i = 0; i < sampleBuffer.count; i++) {
+            uint8_t idx = (oldestIdx + i) % ICP201XX_SAMPLE_BUFFER_SIZE;
+            float p = sampleBuffer.samples[idx].pressure;
+            pSum += p;
+            tSum += sampleBuffer.samples[idx].temperature;
+            if (p < pMin) pMin = p;
+            if (p > pMax) pMax = p;
+        }
+
+        float pMean = pSum / sampleBuffer.count;
+        float tMean = tSum / sampleBuffer.count;
+
+        // Calculate trend (slope in Pa/ms)
+        float pOldest = sampleBuffer.samples[oldestIdx].pressure;
+        float pNewest = sampleBuffer.samples[newestIdx].pressure;
+        uint32_t tOldest = sampleBuffer.samples[oldestIdx].timestamp;
+        uint32_t tNewest = sampleBuffer.samples[newestIdx].timestamp;
+
+        float timeSpan = (float)(tNewest - tOldest);
+        float slope = 0.0f;
+        if (timeSpan > 0.0f) {
+            slope = (pNewest - pOldest) / timeSpan;
+        }
+
+        // Apply trend-weighted averaging
+        float finalPressure = pMean;
+
+        if (slope > ICP201XX_TREND_THRESHOLD) {
+            // Rising trend - bias toward higher values
+            // Bias factor: 0 to 0.5 based on slope strength
+            float biasFactor = slope / ICP201XX_TREND_THRESHOLD * 0.3f;
+            if (biasFactor > 0.5f) biasFactor = 0.5f;
+            finalPressure = pMean + (pMax - pMean) * biasFactor;
+        } else if (slope < -ICP201XX_TREND_THRESHOLD) {
+            // Falling trend - bias toward lower values
+            float biasFactor = (-slope) / ICP201XX_TREND_THRESHOLD * 0.3f;
+            if (biasFactor > 0.5f) biasFactor = 0.5f;
+            finalPressure = pMean + (pMin - pMean) * biasFactor;
+        }
+        // else: stable, use mean
+
+        // Store as last valid values
+        lastValidPressure = (int32_t)finalPressure;  // Pa
+        lastValidTemperature = (int32_t)(tMean * 100.0f);  // Centi-degrees
+
+        // Keep only the most recent sample for continuity
+        if (sampleBuffer.count > 1) {
+            baroSample_t newest = sampleBuffer.samples[newestIdx];
+            sampleBuffer.samples[0] = newest;
+            sampleBuffer.head = 1;
+            sampleBuffer.count = 1;
+        }
+    }
+
+    // Always return last valid values (even when buffer is empty)
+    *pressure = lastValidPressure;
+    *temperature = lastValidTemperature;
+}
+
+#endif // USE_BARO_ICP201XX
