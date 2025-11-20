@@ -303,7 +303,7 @@ static bool qmc5883lDetect(magDev_t *magDev)
         // Should be in standby mode after soft reset and sensor is really present
         // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
         ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
-        if (ack && sig != QMC5883L_MODE_STANDBY) {
+        if (ack && ((sig & 0x03) != QMC5883L_MODE_STANDBY)) {
             return false;
         }
 
