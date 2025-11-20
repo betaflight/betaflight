@@ -543,6 +543,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
 
     spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | odr->gyroOdr);
     spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, accelFsSel | odr->accelOdr);
+    delay(ICM456XX_GYRO_STARTUP_TIME_MS); // Allow gyro to settle after FS/ODR change
 
     gyro->scale = GYRO_SCALE_2000DPS;
     gyro->gyroSampleRateHz = odr->sampleRateHz;
@@ -552,6 +553,7 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
 
     icm456xx_enableSensors(dev, true);
+    delay(ICM456XX_SENSOR_ENABLE_DELAY_MS); // Allow sensors to power on and stabilize
 
     spiWriteReg(dev, ICM456XX_INT1_CONFIG2, ICM456XX_INT1_MODE_PULSED | ICM456XX_INT1_DRIVE_CIRCUIT_PP |
                                             ICM456XX_INT1_POLARITY_ACTIVE_HIGH);
