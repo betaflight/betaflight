@@ -149,9 +149,7 @@ int16_t magHold;
 static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
 
 static bool crashFlipModeActive = false;
-
 static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
-
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
 static int tryingToArm = ARMING_DELAYED_DISARMED;
@@ -280,40 +278,24 @@ static bool accNeedsCalibration(void)
 
 void updateArmingStatus(void)
 {
-#ifdef USE_DSHOT
-    static bool isArmingDisabledCrashFlip = false;
-#endif 
 
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
 
 #ifdef USE_DSHOT
-        // --- handle crashFlip behaviours while armed ---
-        if (crashFlipModeActive) {
-            if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-                // Pilot has reverted the crash flip switch while armed
-                crashFlipModeActive = false;
-
-                if (mixerConfig()->crashflip_auto_rearm) {
-                    // Auto re-arm enabled, craft remains armed
-                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-                    // After reversing the switch, motors are normal, pilot can fly
-                } else {
-                    // Auto re-arm not enabled (manual mode)
-                    disarm(DISARM_REASON_SWITCH);               // Stop motors and restore spin direction
-                    setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // Block tryArm() until manual cycle
-                    isArmingDisabledCrashFlip = true; // flag presence of a crashflip arming block
-                }
-            }
-            if (!IS_RC_MODE_ACTIVE(BOXARM)){
-                 // pilot put arm switch to disarmed position while armed and in crashflip mode
-                crashFlipModeActive = false;
-                // terminate crashflip mode immediately to ensure motors won't respond to sticks 
-                // to do - check behaviour if sticks were used for arming ???
-            }
+// --- handle crashFlip behaviours while armed ---
+if (crashFlipModeActive) {
+    if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+        // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
+        clearUserDisarmRequested();
+        disarm(DISARM_REASON_CRASHFLIP);              // stops motors, reverts crashflipMode, sets motor direction normal
+        if (!mixerConfig()->crashflip_auto_rearm) {
+            // Manual mode:  block arming until manual re-arm:
+            setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // block tryArm until user disarms manually
         }
+    }
+}
 #endif // USE_DSHOT
-
     } else {
         // arming switch on, but not yet armed; currently DISARMED
         // identify things that should delay, or prevent, arming, then arm
@@ -348,16 +330,13 @@ void updateArmingStatus(void)
         hadRx = haveRx;
         }
 
-#ifdef USE_DSHOT
-        // CrashFlip revert handling while DISARMED
-        if (isArmingDisabledCrashFlip) {
-            if (!IS_RC_MODE_ACTIVE(BOXARM)) {
-                // Pilot manually disarmed by turning the ARM switch OFF)
-                isArmingDisabledCrashFlip = false;
+        // --- Handle manual user re-arm after crashflip mode terminate by reversing crasfhflip switch---
+        if (getArmingDisableFlags() & ARMING_DISABLED_CRASHFLIP) {
+            if (wasUserDisarmRequested()) {
                 unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+                clearUserDisarmRequested();
             }
         }
-#endif // USE_DSHOT
 
         if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
@@ -501,12 +480,22 @@ void updateArmingStatus(void)
 
 void disarm(flightLogDisarmReason_e reason)
 {
-    
-if (ARMING_FLAG(ARMED)) {
+    (void)reason; // not used
+    // Terminate crashflip mode in any disarm
+    if (crashFlipModeActive) {
+        crashFlipModeActive = false;
+    }
+
+    // Check if the disarm was user-initiated
+    if (!wasUserDisarmRequested()) {
+        // Non-user disarm, clear the user-initated flag in rc_controls.c
+        clearUserDisarmRequested();
+    }
+
+    if (ARMING_FLAG(ARMED)) {
         if (!crashFlipModeActive) {
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
-
-        }           
+        }
         DISABLE_ARMING_FLAG(ARMED); // disarm now
         lastDisarmTimeUs = micros();
 

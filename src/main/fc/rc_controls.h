@@ -138,3 +138,7 @@ void processRcStickPositions(void);
 bool isUsingSticksForArming(void);
 
 void rcControlsInit(void);
+
+bool wasUserDisarmRequested(void); // Check if the user has requested a disarm since the last cleared
+
+void clearUserDisarmRequested(void); // Clear the user disarm request flag
