@@ -194,8 +194,16 @@ static bool qmc5883Init(magDev_t *magDev)
         ack = ack && busWriteRegister(dev, QMC5883L_REG_RESET, 0x01);
         ack = ack && busWriteRegister(dev, QMC5883L_REG_CONF1, QMC5883L_MODE_CONTINUOUS | QMC5883L_ODR_200HZ | QMC5883L_OSR_512 | QMC5883L_RNG_8G);
     } else {
-        // P variant default confs are expected to be written by detect path, but ensure magOdrHz is set
-        // No further writes here to avoid repeating detect-specific unlocks
+        // For P variant we perform the special unlock/config writes here (retaining original behavior)
+        if (!busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG)) {
+            return false;
+        }
+        if (!busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1)) {
+            return false;
+        }
+        if (!busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2)) {
+            return false;
+        }
     }
 
     if (!ack) {
@@ -337,17 +345,6 @@ static bool qmc5883pDetect(magDev_t *magDev)
     
     if (chipId != QMC5883P_ID_VAL) {
         // Wrong chip ID - not a QMC5883P or communication error
-        return false;
-    }
-
-    // For P variant we perform the special unlock/config writes here (retaining original behavior)
-    if (!busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG)) {
-        return false;
-    }
-    if (!busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1)) {
-        return false;
-    }
-    if (!busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2)) {
         return false;
     }
 
