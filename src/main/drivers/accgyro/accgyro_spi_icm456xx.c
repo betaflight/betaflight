@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -293,33 +294,83 @@ typedef enum {
     ICM456XX_ODR_CONFIG_COUNT
 } icm456xxOdrConfig_e;
 
-static const uint8_t icm456xxGyroOdrLut[ICM456XX_ODR_CONFIG_COUNT] = {
-    [ICM456XX_ODR_CONFIG_6K4] = ICM456XX_GYRO_ODR_6K4_LN,
-    [ICM456XX_ODR_CONFIG_3K2] = ICM456XX_GYRO_ODR_3K2_LN,
-    [ICM456XX_ODR_CONFIG_1K6] = ICM456XX_GYRO_ODR_1K6_LN,
-    [ICM456XX_ODR_CONFIG_800] = ICM456XX_GYRO_ODR_800_LN,
+typedef struct {
+    uint8_t gyroOdr;
+    uint8_t accelOdr;
+    uint16_t sampleRateHz;
+    gyroRateKHz_e gyroRateKHz;
+} icm456xxOdrLutEntry_t;
+
+static const icm456xxOdrLutEntry_t icm456xxOdrLut[] = {
+    [ICM456XX_ODR_CONFIG_6K4] = { ICM456XX_GYRO_ODR_6K4_LN, ICM456XX_ACCEL_ODR_6K4_LN, 6400, GYRO_RATE_6400_Hz },
+    [ICM456XX_ODR_CONFIG_3K2] = { ICM456XX_GYRO_ODR_3K2_LN, ICM456XX_ACCEL_ODR_3K2_LN, 3200, GYRO_RATE_3200_Hz },
+    [ICM456XX_ODR_CONFIG_1K6] = { ICM456XX_GYRO_ODR_1K6_LN, ICM456XX_ACCEL_ODR_1K6_LN, 1600, GYRO_RATE_3200_Hz },
+    [ICM456XX_ODR_CONFIG_800] = { ICM456XX_GYRO_ODR_800_LN, ICM456XX_ACCEL_ODR_800_LN, 800, GYRO_RATE_1_kHz },
 };
 
-static const uint8_t icm456xxAccelOdrLut[ICM456XX_ODR_CONFIG_COUNT] = {
-    [ICM456XX_ODR_CONFIG_6K4] = ICM456XX_ACCEL_ODR_6K4_LN,
-    [ICM456XX_ODR_CONFIG_3K2] = ICM456XX_ACCEL_ODR_3K2_LN,
-    [ICM456XX_ODR_CONFIG_1K6] = ICM456XX_ACCEL_ODR_1K6_LN,
-    [ICM456XX_ODR_CONFIG_800] = ICM456XX_ACCEL_ODR_800_LN,
-};
+static unsigned icm456xxGetBaseRateHz(const gyroDev_t *gyro)
+{
+    unsigned baseRateHz = gyro->gyroSampleRateHz;
+    if (!baseRateHz) {
+        switch (gyro->gyroRateKHz) {
+        case GYRO_RATE_1_kHz:
+            baseRateHz = 1000;
+            break;
+        case GYRO_RATE_3200_Hz:
+            baseRateHz = 3200;
+            break;
+        case GYRO_RATE_6400_Hz:
+            baseRateHz = 6400;
+            break;
+        case GYRO_RATE_6664_Hz:
+            baseRateHz = 6664;
+            break;
+        case GYRO_RATE_8_kHz:
+            baseRateHz = 8000;
+            break;
+        case GYRO_RATE_9_kHz:
+            baseRateHz = 9000;
+            break;
+        case GYRO_RATE_32_kHz:
+            baseRateHz = 32000;
+            break;
+        default:
+            break;
+        }
+    }
 
-static const uint16_t icm456xxSampleRateHzLut[ICM456XX_ODR_CONFIG_COUNT] = {
-    [ICM456XX_ODR_CONFIG_6K4] = 6400,
-    [ICM456XX_ODR_CONFIG_3K2] = 3200,
-    [ICM456XX_ODR_CONFIG_1K6] = 1600,
-    [ICM456XX_ODR_CONFIG_800] = 800,
-};
+    if (!baseRateHz) {
+        baseRateHz = icm456xxOdrLut[0].sampleRateHz;
+    }
 
-static const gyroRateKHz_e icm456xxRateEnumLut[ICM456XX_ODR_CONFIG_COUNT] = {
-    [ICM456XX_ODR_CONFIG_6K4] = GYRO_RATE_6400_Hz,
-    [ICM456XX_ODR_CONFIG_3K2] = GYRO_RATE_3200_Hz,
-    [ICM456XX_ODR_CONFIG_1K6] = GYRO_RATE_3200_Hz,
-    [ICM456XX_ODR_CONFIG_800] = GYRO_RATE_1_kHz,
-};
+    return baseRateHz;
+}
+
+static unsigned icm456xxGetTargetRateHz(const gyroDev_t *gyro)
+{
+    const unsigned baseRateHz = icm456xxGetBaseRateHz(gyro);
+    const unsigned decimator = gyro->mpuDividerDrops + 1;
+    return decimator ? (baseRateHz / decimator) : baseRateHz;
+}
+
+static unsigned icm456xxSelectOdrIndex(const gyroDev_t *gyro)
+{
+    const unsigned targetRateHz = icm456xxGetTargetRateHz(gyro);
+
+    unsigned bestIndex = 0;
+    unsigned bestDiff = UINT_MAX;
+
+    for (unsigned i = 0; i < ARRAYLEN(icm456xxOdrLut); i++) {
+        const unsigned entryRateHz = icm456xxOdrLut[i].sampleRateHz;
+        const unsigned diff = entryRateHz > targetRateHz ? entryRateHz - targetRateHz : targetRateHz - entryRateHz;
+        if (diff < bestDiff || (diff == bestDiff && entryRateHz > icm456xxOdrLut[bestIndex].sampleRateHz)) {
+            bestDiff = diff;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
+}
 
 static uint8_t getGyroLpfConfig(const gyroHardwareLpf_e hardwareLpf)
 {
@@ -472,11 +523,8 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, ICM456XX_GYRO_UI_LPFBW_BYPASS);
     }
 
-    const unsigned decim = llog2(gyro->mpuDividerDrops + 1);
-    const unsigned odrIndex = decim < ICM456XX_ODR_CONFIG_COUNT ? decim : (ICM456XX_ODR_CONFIG_COUNT - 1);
-    const uint8_t gyroOdr = icm456xxGyroOdrLut[odrIndex];
-    const uint8_t accelOdr = icm456xxAccelOdrLut[odrIndex];
-    const uint16_t sampleRateHz = icm456xxSampleRateHzLut[odrIndex];
+    const unsigned odrIndex = icm456xxSelectOdrIndex(gyro);
+    const icm456xxOdrLutEntry_t *odr = &icm456xxOdrLut[odrIndex];
 
     uint8_t accelFsSel = ICM456XX_ACCEL_FS_SEL_16G;
     switch (gyro->mpuDetectionResult.sensor) {
@@ -488,13 +536,13 @@ void icm456xxGyroInit(gyroDev_t *gyro)
         break;
     }
 
-    spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | gyroOdr);
-    spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, accelFsSel | accelOdr);
+    spiWriteReg(dev, ICM456XX_GYRO_CONFIG0, ICM456XX_GYRO_FS_SEL_2000DPS | odr->gyroOdr);
+    spiWriteReg(dev, ICM456XX_ACCEL_CONFIG0, accelFsSel | odr->accelOdr);
 
     gyro->scale = GYRO_SCALE_2000DPS;
-    gyro->gyroSampleRateHz = sampleRateHz;
-    gyro->accSampleRateHz = sampleRateHz;
-    gyro->gyroRateKHz = icm456xxRateEnumLut[odrIndex];
+    gyro->gyroSampleRateHz = odr->sampleRateHz;
+    gyro->accSampleRateHz = odr->sampleRateHz;
+    gyro->gyroRateKHz = odr->gyroRateKHz;
 
     gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
 
