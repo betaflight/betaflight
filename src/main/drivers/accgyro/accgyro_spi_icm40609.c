@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -224,35 +225,78 @@ typedef enum {
     ICM40609_ODR_CONFIG_4K,
     ICM40609_ODR_CONFIG_2K,
     ICM40609_ODR_CONFIG_1K,
-    ICM40609_ODR_CONFIG_COUNT
 } icm40609OdrConfig_e;
 
-static const struct {
+typedef struct {
     uint8_t gyroOdr;
-    uint8_t accOdr;
-    uint16_t rateHz;
-}  odrLut[] = {
- [ICM40609_ODR_CONFIG_8K] = {  ICM40609_GYRO_ODR_8KHZ, ICM40609_ACCEL_ODR_8KHZ, 8000 }, 
- ...
-    [ICM40609_ODR_CONFIG_8K] = ICM40609_GYRO_ODR_8KHZ,
-    [ICM40609_ODR_CONFIG_4K] = ICM40609_GYRO_ODR_4KHZ,
-    [ICM40609_ODR_CONFIG_2K] = ICM40609_GYRO_ODR_2KHZ,
-    [ICM40609_ODR_CONFIG_1K] = ICM40609_GYRO_ODR_1KHZ,
+    uint8_t accelOdr;
+    uint16_t sampleRateHz;
+    gyroRateKHz_e gyroRateKHz;
+} icm40609OdrLutEntry_t;
+
+static const icm40609OdrLutEntry_t icm40609OdrLut[] = {
+    [ICM40609_ODR_CONFIG_8K] = { ICM40609_GYRO_ODR_8KHZ, ICM40609_ACCEL_ODR_8KHZ, 8000, GYRO_RATE_8_kHz },
+    [ICM40609_ODR_CONFIG_4K] = { ICM40609_GYRO_ODR_4KHZ, ICM40609_ACCEL_ODR_4KHZ, 4000, GYRO_RATE_6400_Hz },
+    [ICM40609_ODR_CONFIG_2K] = { ICM40609_GYRO_ODR_2KHZ, ICM40609_ACCEL_ODR_2KHZ, 2000, GYRO_RATE_3200_Hz },
+    [ICM40609_ODR_CONFIG_1K] = { ICM40609_GYRO_ODR_1KHZ, ICM40609_ACCEL_ODR_1KHZ, 1000, GYRO_RATE_1_kHz },
 };
 
-static const uint8_t icm40609AccelOdrLut[ICM40609_ODR_CONFIG_COUNT] = {
-    [ICM40609_ODR_CONFIG_8K] = ICM40609_ACCEL_ODR_8KHZ,
-    [ICM40609_ODR_CONFIG_4K] = ICM40609_ACCEL_ODR_4KHZ,
-    [ICM40609_ODR_CONFIG_2K] = ICM40609_ACCEL_ODR_2KHZ,
-    [ICM40609_ODR_CONFIG_1K] = ICM40609_ACCEL_ODR_1KHZ,
-};
+static unsigned icm40609GetTargetRateHz(const gyroDev_t *gyro)
+{
+    unsigned baseRateHz = gyro->gyroSampleRateHz;
+    if (!baseRateHz) {
+        switch (gyro->gyroRateKHz) {
+        case GYRO_RATE_1_kHz:
+            baseRateHz = 1000;
+            break;
+        case GYRO_RATE_3200_Hz:
+            baseRateHz = 3200;
+            break;
+        case GYRO_RATE_6400_Hz:
+            baseRateHz = 6400;
+            break;
+        case GYRO_RATE_6664_Hz:
+            baseRateHz = 6664;
+            break;
+        case GYRO_RATE_8_kHz:
+            baseRateHz = 8000;
+            break;
+        case GYRO_RATE_9_kHz:
+            baseRateHz = 9000;
+            break;
+        case GYRO_RATE_32_kHz:
+            baseRateHz = 32000;
+            break;
+        default:
+            break;
+        }
+    }
 
-static const uint16_t icm40609SampleRateHzLut[ICM40609_ODR_CONFIG_COUNT] = {
-    [ICM40609_ODR_CONFIG_8K] = 8000,
-    [ICM40609_ODR_CONFIG_4K] = 4000,
-    [ICM40609_ODR_CONFIG_2K] = 2000,
-    [ICM40609_ODR_CONFIG_1K] = 1000,
-};
+    const unsigned decimator = gyro->mpuDividerDrops + 1;
+    return decimator ? (baseRateHz / decimator) : baseRateHz;
+}
+
+static unsigned icm40609SelectOdrIndex(const gyroDev_t *gyro)
+{
+    const unsigned targetRateHz = icm40609GetTargetRateHz(gyro);
+    if (!targetRateHz) {
+        return ARRAYLEN(icm40609OdrLut) - 1;
+    }
+
+    unsigned bestIndex = 0;
+    unsigned bestDiff = UINT_MAX;
+
+    for (unsigned i = 0; i < ARRAYLEN(icm40609OdrLut); i++) {
+        const unsigned entryRateHz = icm40609OdrLut[i].sampleRateHz;
+        const unsigned diff = entryRateHz > targetRateHz ? entryRateHz - targetRateHz : targetRateHz - entryRateHz;
+        if (diff < bestDiff || (diff == bestDiff && entryRateHz > icm40609OdrLut[bestIndex].sampleRateHz)) {
+            bestDiff = diff;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
+}
 
 // REG_ACCEL_CONFIG_STATIC2 - 0x03 bit [0]
 #define ICM40609_ACCEL_AAF_DIS              (1 << 0)
@@ -698,35 +742,18 @@ void icm40609GyroInit(gyroDev_t *gyro)
 
     icm40609SetEndianess(dev, true);
 
-    const unsigned decim = llog2(gyro->mpuDividerDrops + 1);
-    const unsigned odrIndex = decim < ICM40609_ODR_CONFIG_COUNT ? decim : ICM40609_ODR_CONFIG_1K;
-
-    const uint8_t gyroOdr = icm40609GyroOdrLut[odrIndex];
-    const uint8_t accelOdr = icm40609AccelOdrLut[odrIndex];
-    const uint16_t gyroSampleRateHz = icm40609SampleRateHzLut[odrIndex];
+    const unsigned odrIndex = icm40609SelectOdrIndex(gyro);
+    const icm40609OdrLutEntry_t *odr = &icm40609OdrLut[odrIndex];
 
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
-    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | gyroOdr);
+    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | odr->gyroOdr);
     gyro->scale = GYRO_SCALE_2000DPS;
-    gyro->gyroSampleRateHz = gyroSampleRateHz;
-    gyro->accSampleRateHz = gyroSampleRateHz;
-    switch (odrIndex) {
-    case ICM40609_ODR_CONFIG_8K:
-        gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-        break;
-    case ICM40609_ODR_CONFIG_4K:
-        gyro->gyroRateKHz = GYRO_RATE_6400_Hz;
-        break;
-    case ICM40609_ODR_CONFIG_2K:
-        gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
-        break;
-    default:
-        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
-        break;
-    }
-    gyro->gyroShortPeriod = clockMicrosToCycles(1000000 / gyroSampleRateHz);
+    gyro->gyroSampleRateHz = odr->sampleRateHz;
+    gyro->accSampleRateHz = odr->sampleRateHz;
+    gyro->gyroRateKHz = odr->gyroRateKHz;
+    gyro->gyroShortPeriod = clockMicrosToCycles(1000000 / odr->sampleRateHz);
 
-    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | accelOdr);
+    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | odr->accelOdr);
 
     icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
