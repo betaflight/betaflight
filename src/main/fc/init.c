@@ -407,6 +407,9 @@ void init(void)
 #ifdef USE_DEBUG_PIN
     dbgPinInit();
 #endif
+#ifdef USE_PINIO
+    pinioInit(pinioConfig());
+#endif
 
     debugMode = systemConfig()->debug_mode;
 
@@ -697,9 +700,6 @@ void init(void)
     servosFilterInit();
 #endif
 
-#ifdef USE_PINIO
-    pinioInit(pinioConfig());
-#endif
 
 #ifdef USE_PIN_PULL_UP_DOWN
     pinPullupPulldownInit();
