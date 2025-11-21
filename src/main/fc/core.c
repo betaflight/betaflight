@@ -323,14 +323,14 @@ if (crashFlipModeActive) {
             if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
                 setArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
-              } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
+            } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
                 // If RX signal is OK and the arm switch is off, remove arming restriction
                 unsetArmingDisabled(ARMING_DISABLED_NOT_DISARMED);
             }
         hadRx = haveRx;
         }
 
-        // --- Handle manual user re-arm after crashflip mode terminate by reversing crasfhflip switch---
+        //  Handle manual user re-arm after crashflip mode was terminated by reversing the crashflip switch
         if (getArmingDisableFlags() & ARMING_DISABLED_CRASHFLIP) {
             if (wasUserDisarmRequested()) {
                 unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
