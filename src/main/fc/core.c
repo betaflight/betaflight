@@ -481,10 +481,6 @@ if (crashFlipModeActive) {
 void disarm(flightLogDisarmReason_e reason)
 {
     (void)reason; // not used
-    // Terminate crashflip mode in any disarm
-    if (crashFlipModeActive) {
-        crashFlipModeActive = false;
-    }
 
     // Check if the disarm was user-initiated
     if (!wasUserDisarmRequested()) {
@@ -524,6 +520,10 @@ void disarm(flightLogDisarmReason_e reason)
             statsOnDisarm();
         }
 #endif
+    // Terminate crashflip mode in any disarm
+    if (crashFlipModeActive) {
+        crashFlipModeActive = false;
+    }
 
         // always set motor direction to normal on disarming
 #ifdef USE_DSHOT
