@@ -227,7 +227,13 @@ typedef enum {
     ICM40609_ODR_CONFIG_COUNT
 } icm40609OdrConfig_e;
 
-static const uint8_t icm40609GyroOdrLut[ICM40609_ODR_CONFIG_COUNT] = {
+static const struct {
+    uint8_t gyroOdr;
+    uint8_t accOdr;
+    uint16_t rateHz;
+}  odrLut[] = {
+ [ICM40609_ODR_CONFIG_8K] = {  ICM40609_GYRO_ODR_8KHZ, ICM40609_ACCEL_ODR_8KHZ, 8000 }, 
+ ...
     [ICM40609_ODR_CONFIG_8K] = ICM40609_GYRO_ODR_8KHZ,
     [ICM40609_ODR_CONFIG_4K] = ICM40609_GYRO_ODR_4KHZ,
     [ICM40609_ODR_CONFIG_2K] = ICM40609_GYRO_ODR_2KHZ,
