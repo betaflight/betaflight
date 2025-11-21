@@ -434,7 +434,7 @@ static bool icp201xxFlushFifo(const extDevice_t *dev)
 static bool icp201xxStartContinuous(const extDevice_t *dev)
 {
     uint8_t modeReg, fifoFill;
-    uint8_t fifoPackets;
+    uint8_t fifoPackets = 0;
 
     // CRITICAL: Soft reset before configuration (per fc-hwtest)
     if (!icp201xxSoftReset(dev)) {

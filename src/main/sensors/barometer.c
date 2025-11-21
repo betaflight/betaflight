@@ -134,11 +134,11 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #define DEFAULT_BARO_LPS22DF
 #endif
 #elif defined(USE_BARO_ICP201XX) || defined(USE_BARO_SPI_ICP201XX)
-#if defined(USE_BARO_SPI_ICP201XX)
+//#if defined(USE_BARO_SPI_ICP201XX) //uncomment these lines after i2c portion of the driver is implemented
 #define DEFAULT_BARO_SPI_ICP201XX
-#else
-#define DEFAULT_BARO_ICP201XX
-#endif
+//#else
+//#define DEFAULT_BARO_ICP201XX
+// #endif
 #endif
 
 #endif
