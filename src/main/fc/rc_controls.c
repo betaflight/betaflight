@@ -70,7 +70,7 @@
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
-static bool userDisarmRequested = false; // has the user requested a disarm, using either sticks or switches, whether armed or disarmed
+static bool disarmUserRequested = false; // has the user requested a disarm, using either sticks or switches, whether armed or disarmed
 
 float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
@@ -106,14 +106,14 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
-bool wasUserDisarmRequested(void)
+bool wasLastDisarmUserRequested(void)
 {
-    return userDisarmRequested;
+    return disarmUserRequested;
 }
 
-void clearUserDisarmRequested(void)
+void clearWasLastDisarmUserRequested(void)
 {
-    userDisarmRequested = false;
+    disarmUserRequested = false;
 }
 
 
@@ -183,7 +183,7 @@ void processRcStickPositions(void)
         } else {
             resetTryingToArm();
             // Disarming via ARM BOX
-              userDisarmRequested = true;
+              disarmUserRequested = true;
             resetArmingDisabled();
             const bool boxFailsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
             if (ARMING_FLAG(ARMED) && (failsafeIsReceivingRxData() || boxFailsafeSwitchIsOn)) {
@@ -203,7 +203,7 @@ void processRcStickPositions(void)
         if (rcDelayMs >= ARM_DELAY_MS && !doNotRepeat) {
             doNotRepeat = true;
             // Disarm on throttle down + yaw
-             userDisarmRequested = true;
+             disarmUserRequested = true;
             resetTryingToArm();
             if (ARMING_FLAG(ARMED)){
                 disarm(DISARM_REASON_STICKS);

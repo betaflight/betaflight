@@ -287,10 +287,11 @@ void updateArmingStatus(void)
 if (crashFlipModeActive) {
     if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
         // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
-        clearUserDisarmRequested();
+        clearWasLastDisarmUserRequested();
+        // tell disarm() that this was not a user generated disarm, and clear the flag in rc_controls so that it only becomes true when the pilot makes a new user manual disarm
         disarm(DISARM_REASON_CRASHFLIP);              // stops motors, reverts crashflipMode, sets motor direction normal
         if (!mixerConfig()->crashflip_auto_rearm) {
-            // Manual mode:  block arming until manual re-arm:
+            // we are in manual re-arm mode:  block arming until manual re-arm:
             setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // block tryArm until user disarms manually
         }
     }
@@ -330,11 +331,12 @@ if (crashFlipModeActive) {
         hadRx = haveRx;
         }
 
-        //  Handle manual user re-arm after crashflip mode was terminated by reversing the crashflip switch
         if (getArmingDisableFlags() & ARMING_DISABLED_CRASHFLIP) {
-            if (wasUserDisarmRequested()) {
+             // if, while disarmed, arming was blocked due to crashflip, eg in manual mode and the crashflip switch was reverted, watch for a manual user disarm
+             if (wasLastDisarmUserRequested()) {
+             // if there has been a new manual user disarm since the last time its flag was cleared, eg since the the crashflip switch was reverted in manual mode
                 unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
-                clearUserDisarmRequested();
+                // clear the armingDisabled block to permit re-arming
             }
         }
 
@@ -482,10 +484,9 @@ void disarm(flightLogDisarmReason_e reason)
 {
     (void)reason; // not used
 
-    // Check if the disarm was user-initiated
-    if (!wasUserDisarmRequested()) {
+    if (!wasLastDisarmUserRequested()) {
         // Non-user disarm, clear the user-initated flag in rc_controls.c
-        clearUserDisarmRequested();
+        clearWasLastDisarmUserRequested();
     }
 
     if (ARMING_FLAG(ARMED)) {
