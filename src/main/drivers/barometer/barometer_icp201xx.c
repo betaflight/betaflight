@@ -199,7 +199,7 @@ static void icp201xxDummyRead(const extDevice_t *dev)
     spiWait(dev);
 }
 
-// Non-blocking read start - initiates DMA transfer
+// Initiates a non-blocking DMA transfer to read a register
 static bool icp201xxReadRegStart(const extDevice_t *dev, uint8_t reg, uint8_t len)
 {
     if (len > ICP201XX_MAX_READ_LEN) return false;
@@ -244,7 +244,7 @@ static bool icp201xxReadRegStart(const extDevice_t *dev, uint8_t reg, uint8_t le
     return true;
 }
 
-// Blocking read - for initialization only
+// Attempts a read transfer. If it fails, doesn't block. If successfully started, waits for completion, and handles the dummy read requirement.
 static bool icp201xxReadReg(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t len)
 {
     if (!icp201xxReadRegStart(dev, reg, len)) {
@@ -265,6 +265,7 @@ static bool icp201xxReadReg(const extDevice_t *dev, uint8_t reg, uint8_t *data, 
     return true;
 }
 
+// A blocking operation for writing to the device
 static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
 {
     // Wait for any pending transfer
@@ -298,9 +299,9 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
 
     icp201xxDummyRead(dev);
 
-    // CRITICAL: Hardware timing requirement for MODE_SELECT register
-    // This delay is UNCONDITIONAL - always applied regardless of debug mode
-    // The register needs time to latch before it can be read back or affect operation
+    // Hardware timing requirement for MODE_SELECT register.
+    // This delay is mandatory and always applied.
+    // The register needs time to latch before it can be read back or affect operation.
     if (reg == ICP201XX_REG_MODE_SELECT) {
         delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
     }
@@ -424,7 +425,7 @@ static bool icp201xxBootSequence(const extDevice_t *dev)
 
 static bool icp201xxFlushFifo(const extDevice_t *dev)
 {
-    // CRITICAL: Flush by writing 0x80 to FIFO_FILL per Arduino library
+    // Flush the FIFO by writing the flush bit (0x80) to the FIFO_FILL register
     uint8_t regVal;
     if (!icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &regVal, 1)) return false;
     regVal |= 0x80;
@@ -436,12 +437,12 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     uint8_t modeReg, fifoFill;
     uint8_t fifoPackets = 0;
 
-    // CRITICAL: Soft reset before configuration (per fc-hwtest)
+    // Perform soft reset to ensure clean state before configuration
     if (!icp201xxSoftReset(dev)) {
         return false;
     }
 
-    // CRITICAL: Use Read-Modify-Write for MODE_SELECT following Arduino library
+    // Use Read-Modify-Write for MODE_SELECT to preserve other bits.
     // Write standby mode first
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, 0x00)) {
         return false;
@@ -513,8 +514,8 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
 
     delay(10);
 
-    // CRITICAL: Wait for FIR filter warmup - first 14 samples are invalid (per fc-hwtest/ArduPilot)
-    // At 120Hz ODR (MODE1), 14 samples = 117ms
+    // Wait for FIR filter warmup. The first few samples after mode change are invalid.
+    // At 120Hz ODR (MODE1), 14 samples = 117ms.
     const uint8_t targetSamples = 14;
 
     for (int i = 0; i < 100; i++) {  // Max 1 second wait
@@ -527,9 +528,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
         }
     }
 
-    // VALIDATION: Check if FIFO filled during warmup - if not, sensor is not working
+    // Check if FIFO filled during warmup - if not, sensor is not working
     if (fifoPackets == 0) {
-        return false;  // CRITICAL: Sensor not producing data
+        return false;  // Sensor not producing data
     }
 
     // Flush warmup samples
@@ -546,9 +547,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
         }
     }
 
-    // VALIDATION: Final check - FIFO must have data after flush
+    // Final check - FIFO must have data after flush
     if (fifoPackets == 0) {
-        return false;  // CRITICAL: Sensor not recovering, fail detection
+        return false;  // Sensor not recovering, fail detection
     }
 
     return true;
@@ -573,21 +574,26 @@ void icp201xxBusDeinit(const extDevice_t *dev)
 
 bool icp201xxDetect(baroDev_t *baro)
 {
-    // REAL SENSOR MODE with retry mechanism
+    // Real sensor detection with retry mechanism
     uint8_t deviceID;
     bool initSuccess = false;
 
+    // Brief wait to let the sensor come up
+    delay(ICP201XX_STARTUP_DELAY_MS);
+
+    // Initialize the bus
+    icp201xxBusInit(&baro->dev);
+
+    // Register device with bus system
+    busDeviceRegister(&baro->dev);
+
     // Try detection up to MAX_DETECT_ATTEMPTS times
-    for (int attempt = 1; attempt <= ICP201XX_MAX_DETECT_ATTEMPTS; attempt++) {
+    for (int attempt = 1; !initSuccess && attempt <= ICP201XX_MAX_DETECT_ATTEMPTS; attempt++) {
         // Initial startup delay (longer on first attempt)
-        if (attempt == 1) {
-            delay(ICP201XX_STARTUP_DELAY_MS);
-        } else {
+        if (attempt > 1) {
             // Retry after additional delay
             delay(ICP201XX_RETRY_DELAY_MS);
         }
-
-        icp201xxBusInit(&baro->dev);
 
         // Read device ID
         if (!icp201xxReadReg(&baro->dev, ICP201XX_REG_DEVICE_ID, &deviceID, 1)) {
@@ -603,9 +609,6 @@ bool icp201xxDetect(baroDev_t *baro)
             continue;  // Try again
         }
 
-        // Register device with bus system
-        busDeviceRegister(&baro->dev);
-
         // Start continuous measurement mode
         if (!icp201xxStartContinuous(&baro->dev)) {
             icp201xxBusDeinit(&baro->dev);
@@ -614,7 +617,6 @@ bool icp201xxDetect(baroDev_t *baro)
 
         // Success!
         initSuccess = true;
-        break;
     }
 
     // Check if initialization succeeded
@@ -647,19 +649,19 @@ bool icp201xxDetect(baroDev_t *baro)
 static bool icp201xxStartUT(baroDev_t *baro)
 {
     UNUSED(baro);
-    return true; // Continuous mode, always running
+    return true; // Continuous mode, measurement always running
 }
 
 static bool icp201xxReadUT(baroDev_t *baro)
 {
     UNUSED(baro);
-    return true;
+    return true; // Temperature is read alongside pressure in GetUP
 }
 
 static bool icp201xxGetUT(baroDev_t *baro)
 {
     UNUSED(baro);
-    return true;
+    return true; // Temperature data retrieved in GetUP
 }
 
 static bool icp201xxStartUP(baroDev_t *baro)
@@ -669,6 +671,8 @@ static bool icp201xxStartUP(baroDev_t *baro)
     return true;
 }
 
+// Handles the completion of SPI transfers initiated by ReadUP and processes the data.
+// Implements a state machine to read FIFO fill level, then read the data.
 static bool icp201xxGetUP(baroDev_t *baro)
 {
     // Check if bus is busy
@@ -678,7 +682,7 @@ static bool icp201xxGetUP(baroDev_t *baro)
 
     // State machine for non-blocking FIFO reads
     switch (readState) {
-    case ICP201XX_STATE_IDLE:
+        case ICP201XX_STATE_IDLE:
             // Do nothing, wait for readUP to start a read
             break;
 
@@ -686,8 +690,8 @@ static bool icp201xxGetUP(baroDev_t *baro)
             // FIFO fill read completed, copy data
             fifoFillBuf[0] = spiRxBuf[0];
 
-            // Check if FIFO has data
-            if ((fifoFillBuf[0] & 0x40) == 0) {  // Not empty
+            // Check Empty bit (bit 6). If 0, FIFO contains data.
+            if ((fifoFillBuf[0] & 0x40) == 0) {
                 uint8_t fifoCount = fifoFillBuf[0] & 0x1F;
                 if (fifoCount > 0 && fifoCount <= 16) {
                     // Try reading ALL FIFO packets in one transaction (test auto-increment)
@@ -721,11 +725,13 @@ static bool icp201xxGetUP(baroDev_t *baro)
     return true;
 }
 
+// Initiates the barometer update process.
+// Starts a non-blocking read of the FIFO fill level to determine how much data is available.
 static bool icp201xxReadUP(baroDev_t *baro)
 {
     // Rate limit reads
     uint32_t now = millis();
-    if (now - lastFifoReadTime < ICP201XX_MIN_READ_INTERVAL_MS) {
+    if (cmp32(now, lastFifoReadTime) < ICP201XX_MIN_READ_INTERVAL_MS) {
         return true;  // Too soon, skip this read
     }
 
