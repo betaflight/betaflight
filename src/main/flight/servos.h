@@ -22,7 +22,7 @@
 
 #include "pg/pg.h"
 #include "drivers/io_types.h"
-#include "drivers/servo.h"
+#include "drivers/servo_impl.h"
 
 // These must be consecutive, see 'reversedSources'
 enum {

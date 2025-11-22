@@ -28,7 +28,7 @@
 #include <math.h>
 #include "hardware/pwm.h"
 
-#include "drivers/servo.h"
+#include "drivers/servo_impl.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"

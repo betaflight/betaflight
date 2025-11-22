@@ -29,7 +29,7 @@
 
 #include "drivers/io.h"
 #include "drivers/pwm_output.h"
-#include "drivers/servo.h"
+#include "drivers/servo_impl.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
