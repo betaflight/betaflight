@@ -46,12 +46,9 @@
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
 
-typedef struct picoPwmMotors_s {
-    uint16_t slice;
-    uint16_t channel;
-} picoPwmMotors_t;
+#include "platform/pwm.h"
 
-static picoPwmMotors_t picoPwmMotors[MAX_SUPPORTED_MOTORS];
+static picoPwmOutput_t picoPwmMotors[MAX_SUPPORTED_MOTORS];
 static bool useContinuousUpdate = false;
 
 void pwmShutdownPulsesForAllMotors(void)
@@ -209,6 +206,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
         pwmMotors[motorIndex].enabled = true;
+        picoPwmMotors[motorIndex].initialised = true;
     }
 
     return true;

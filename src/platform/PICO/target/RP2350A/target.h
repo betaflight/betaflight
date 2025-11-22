@@ -158,8 +158,4 @@
 #undef USE_VTX_COMMON
 
 #undef USE_RPM_LIMIT
-
-#undef USE_SERVOS
-
 #undef USE_OSD_HD
-

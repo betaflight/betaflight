@@ -314,7 +314,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     int channelOffset = servoConfig()->channelForwardingStartChannel;
     const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
     for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
-        pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
+        servoWrite(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
 
@@ -326,7 +326,7 @@ STATIC_ASSERT(sizeof(servoWritten) * 8 >= MAX_SUPPORTED_SERVOS, servoWritten_is_
 
 static void writeServoWithTracking(uint8_t index, servoIndex_e servoname)
 {
-    pwmWriteServo(index, servo[servoname]);
+    servoWrite(index, servo[servoname]);
     servoWritten |= (1 << servoname);
 }
 
@@ -406,7 +406,7 @@ void writeServos(void)
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const uint8_t channelToForwardFrom = servoParams(i)->forwardFromChannel;
         if ((channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) && !(servoWritten & (1 << i))) {
-            pwmWriteServo(servoIndex++, servo[i]);
+            servoWrite(servoIndex++, servo[i]);
         }
     }
 
