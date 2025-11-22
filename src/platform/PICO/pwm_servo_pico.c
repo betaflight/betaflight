@@ -34,6 +34,8 @@
 #include "drivers/io_impl.h"
 #include "drivers/resource.h"
 
+#include "platform/pwm.h"
+
 // Standard servo PWM frequency
 #define SERVO_PWM_FREQUENCY_HZ 50.0f // 50 Hz (20ms period)
 
@@ -47,12 +49,7 @@
 // US_TO_COUNTS_FACTOR = (SYS_CLK_HZ / PWM_PRESCALER) / 1,000,000
 #define US_TO_COUNTS_FACTOR (SYS_CLK_HZ / (PWM_PRESCALER * 1000000.0f)) // ~1.953 counts/us
 
-typedef struct picoPwmServos_s {
-    uint16_t slice;
-    uint16_t channel;
-} picoPwmServos_t;
-
-static picoPwmServos_t picoPwmServos[MAX_SUPPORTED_SERVOS];
+static picoPwmOutput_t picoPwmServos[MAX_SUPPORTED_SERVOS];
 
 void servoDevInit(const servoDevConfig_t *servoDevConfig)
 {
@@ -60,22 +57,22 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
         return;
     }
 
-    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        const IO_t servoIO = IOGetByTag(servoDevConfig->ioTags[i]);
+    for (uint8_t index = 0; index < MAX_SUPPORTED_SERVOS; index++) {
+        const IO_t servoIO = IOGetByTag(servoDevConfig->ioTags[index]);
 
         if (!servoIO) {
             continue;
         }
 
         const uint8_t pin = IO_GPIOPinIdx(servoIO);
-        IOInit(servoIO, OWNER_SERVO, i);
+        IOInit(servoIO, OWNER_SERVO, RESOURCE_INDEX(index));
 
         const uint8_t slice = pwm_gpio_to_slice_num(pin);
         const uint8_t channel = pwm_gpio_to_channel(pin);
 
         // Store the hardware mapping for fast access in servoWrite
-        picoPwmServos[i].slice = slice;
-        picoPwmServos[i].channel = channel;
+        picoPwmServos[index].slice = slice;
+        picoPwmServos[index].channel = channel;
 
         gpio_set_function(pin, GPIO_FUNC_PWM);
         
@@ -85,27 +82,28 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
 
         // Set initial neutral position (using 'mid' value from config, typically 1500 us)
         const uint16_t neutral_pulse_us = servoDevConfig->servoCenterPulse; 
-        const uint16_t initial_level_counts = (uint16_t)roundf((float)neutral_pulse_us * US_TO_COUNTS_FACTOR);
+        const uint16_t initial_level = (uint16_t)roundf((float)neutral_pulse_us * US_TO_COUNTS_FACTOR);
         
-        pwm_set_chan_level(slice, channel, initial_level_counts);
+        pwm_set_chan_level(slice, channel, initial_level);
         
         // Enable the PWM slice
         pwm_set_enabled(slice, true);
+        picoPwmServos[index].initialised = true;
     }
 }
 
 void servoWrite(uint8_t index, float value)
 {
-    if (index >= MAX_SUPPORTED_SERVOS) {
+    if (index >= MAX_SUPPORTED_SERVOS || !picoPwmServos[index].initialised) {
         return;
     }
 
     // Ensure value is within a reasonable microsecond range (500us to 2500us)
     // to prevent hardware overflow or out-of-spec pulses.
-    float clamped_value = fmaxf(PWM_SERVO_MIN, fminf(PWM_SERVO_MAX, value));
+    const float clamped_value = fmaxf(PWM_SERVO_MIN, fminf(PWM_SERVO_MAX, value));
 
     // Convert the microsecond pulse width to PWM duty cycle counts
-    uint16_t level = (uint16_t)roundf(clamped_value * US_TO_COUNTS_FACTOR);
+    const uint16_t level = (uint16_t)roundf(clamped_value * US_TO_COUNTS_FACTOR);
 
     // Apply the new duty cycle level to the specific PWM channel
     pwm_set_chan_level(picoPwmServos[index].slice, picoPwmServos[index].channel, level);
