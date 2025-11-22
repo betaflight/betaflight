@@ -268,7 +268,13 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
         pCfg->blackbox_baudrateIndex = BAUD_115200;
     }
 
+#ifdef USE_USB_CDC_DEBUG
+    // USB CDC Debug mode: Disable MSP on USB VCP to allow raw debug output
+    serialConfig->portConfigs[0].functionMask = 0;
+#else
+    // Normal mode: Enable MSP on USB VCP
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+#endif
 
 #ifdef MSP_UART
     serialPortConfig_t *uart2Config = serialFindPortConfigurationMutable(MSP_UART);
@@ -500,11 +506,14 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
         if (portConfig->functionMask & FUNCTION_MSP) {
             mspPortCount++;
         }
+#ifndef USE_USB_CDC_DEBUG
+        // Normal mode: Require MSP to be enabled for the VCP port
         if (portConfig->identifier == SERIAL_PORT_USB_VCP
             && (portConfig->functionMask & FUNCTION_MSP) == 0) {
-            // Require MSP to be enabled for the VCP port
             return false;
         }
+#endif
+        // USB CDC Debug mode: Allow USB VCP without MSP
 
         uint8_t bitCount = popcount32(portConfig->functionMask);
 
