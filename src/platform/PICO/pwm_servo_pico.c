@@ -61,8 +61,7 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
     }
 
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        const ioTag_t tag = servoDevConfig->ioTags[i];
-        IO_t servoIO = IOGetByTag(tag);
+        const IO_t servoIO = IOGetByTag(servoDevConfig->ioTags[i]);
 
         if (!servoIO) {
             continue;
