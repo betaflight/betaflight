@@ -287,12 +287,13 @@ void updateArmingStatus(void)
 if (crashFlipModeActive) {
     if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
         // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
-        clearWasLastDisarmUserRequested();
-        // tell disarm() that this was not a user generated disarm, and clear the flag in rc_controls so that it only becomes true when the pilot makes a new user manual disarm
-        disarm(DISARM_REASON_CRASHFLIP);              // stops motors, reverts crashflipMode, sets motor direction normal
         if (!mixerConfig()->crashflip_auto_rearm) {
             // we are in manual re-arm mode:  block arming until manual re-arm:
-            setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // block tryArm until user disarms manually
+            setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // block tryArm() until user disarms manually
+            clearWasLastDisarmUserRequested();
+            // tell disarm() that this was not a user generated disarm
+            // also clear the flag in rc_controls so that it will only be true when the pilot makes a new user manual disarm
+            disarm(DISARM_REASON_CRASHFLIP); // stop the motors, revert crashflipMode and set motor direction normal
         }
     }
 }
@@ -530,9 +531,9 @@ void disarm(flightLogDisarmReason_e reason)
         setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
 #endif
 
-        // if ARMING_DISABLED_RUNAWAY_TAKEOFF is set then we want to play its beep pattern instead
+        // make disarming beeps, but not if ARMING_DISABLED (RUNAWAY_TAKEOFF or CRASH_DETECTED)
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
-            beeper(BEEPER_DISARMING);      // emit disarm tone
+            beeper(BEEPER_DISARMING);
         }
     }
 }
