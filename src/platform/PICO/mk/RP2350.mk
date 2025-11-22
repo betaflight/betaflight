@@ -540,11 +540,11 @@ MCU_COMMON_SRC = \
             PICO/exti_pico.c \
             PICO/io_pico.c \
             PICO/persistent.c \
-            PICO/pwm_pico.c \
+            PICO/pwm_motor_pico.c \
+            PICO/pwm_servo_pico.c \
             PICO/pwm_beeper_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
-            PICO/pwm_output_pico.c \
             PICO/uart/serial_uart_pico.c \
             PICO/uart/uart_hw.c \
             PICO/uart/uart_pio.c \

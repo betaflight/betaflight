@@ -22,14 +22,7 @@
 
 #include "pg/pg.h"
 #include "drivers/io_types.h"
-#include "drivers/pwm_output.h"
-
-#define PWM_SERVO_MIN   500       // minimum servo PWM pulse width which we can set from cli
-#define PWM_SERVO_MAX   2500      // maximum servo PWM pulse width which we can set from cli
-
-#define DEFAULT_SERVO_MIN 1000
-#define DEFAULT_SERVO_MIDDLE 1500
-#define DEFAULT_SERVO_MAX 2000
+#include "drivers/servo.h"
 
 // These must be consecutive, see 'reversedSources'
 enum {

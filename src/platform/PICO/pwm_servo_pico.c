@@ -28,7 +28,7 @@
 #include <math.h>
 #include "hardware/pwm.h"
 
-#include "drivers/pwm_output.h"
+#include "drivers/servo.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -47,9 +47,12 @@
 // US_TO_COUNTS_FACTOR = (SYS_CLK_HZ / PWM_PRESCALER) / 1,000,000
 #define US_TO_COUNTS_FACTOR (SYS_CLK_HZ / (PWM_PRESCALER * 1000000.0f)) // ~1.953 counts/us
 
-// Global storage to map the Betaflight servo index to the specific Pico PWM hardware
-static uint8_t servo_pin_to_slice[MAX_SUPPORTED_SERVOS];
-static uint8_t servo_pin_to_channel[MAX_SUPPORTED_SERVOS];
+typedef struct picoPwmMotors_s {
+    uint16_t slice;
+    uint16_t channel;
+} picoPwmServos_t;
+
+static picoPwmServos_t picoPwmServos[MAX_SUPPORTED_SERVOS];
 
 void servoDevInit(const servoDevConfig_t *servoDevConfig)
 {
@@ -68,12 +71,12 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
         const uint8_t pin = IO_GPIOPinIdx(servoIO);
         IOInit(servoIO, OWNER_SERVO, i);
 
-        uint8_t slice = pwm_gpio_to_slice_num(pin);
-        uint8_t channel = pwm_gpio_to_channel(pin);
+        const uint8_t slice = pwm_gpio_to_slice_num(pin);
+        const uint8_t channel = pwm_gpio_to_channel(pin);
 
-        // Store the hardware mapping for fast access in pwmWriteServo
-        servo_pin_to_slice[i] = slice;
-        servo_pin_to_channel[i] = channel;
+        // Store the hardware mapping for fast access in servoWrite
+        picoPwmServos[i].slice = slice;
+        picoPwmServos[i].channel = channel;
 
         gpio_set_function(pin, GPIO_FUNC_PWM);
         
@@ -92,24 +95,21 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
     }
 }
 
-void pwmWriteServo(uint8_t index, float value)
+void servoWrite(uint8_t index, float value)
 {
     if (index >= MAX_SUPPORTED_SERVOS) {
         return;
     }
 
-    uint8_t slice = servo_pin_to_slice[index];
-    uint8_t channel = servo_pin_to_channel[index];
-
     // Ensure value is within a reasonable microsecond range (500us to 2500us)
     // to prevent hardware overflow or out-of-spec pulses.
-    float clamped_value = fmaxf(500.0f, fminf(2500.0f, value));
+    float clamped_value = fmaxf(PWM_SERVO_MIN, fminf(PWM_SERVO_MAX, value));
 
     // Convert the microsecond pulse width to PWM duty cycle counts
-    uint16_t level_counts = (uint16_t)roundf(clamped_value * US_TO_COUNTS_FACTOR);
+    uint16_t level = (uint16_t)roundf(clamped_value * US_TO_COUNTS_FACTOR);
 
     // Apply the new duty cycle level to the specific PWM channel
-    pwm_set_chan_level(slice, channel, level_counts);
+    pwm_set_chan_level(picoPwmServos[index].slice, picoPwmServos[index].channel, level);
 }
 
 #endif
