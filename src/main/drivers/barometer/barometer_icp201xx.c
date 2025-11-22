@@ -678,7 +678,7 @@ static bool icp201xxGetUP(baroDev_t *baro)
 
     // State machine for non-blocking FIFO reads
     switch (readState) {
-        case ICP201XX_STATE_IDLE:
+    case ICP201XX_STATE_IDLE:
             // Do nothing, wait for readUP to start a read
             break;
 
