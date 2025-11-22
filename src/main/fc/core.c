@@ -334,7 +334,7 @@ if (crashFlipModeActive) {
         if (getArmingDisableFlags() & ARMING_DISABLED_CRASHFLIP) {
              // if, while disarmed, arming was blocked due to crashflip, eg in manual mode and the crashflip switch was reverted, watch for a manual user disarm
              if (wasLastDisarmUserRequested()) {
-             // if there has been a new manual user disarm since the last time its flag was cleared, eg since the the crashflip switch was reverted in manual mode
+             // if there has been a new manual user disarm since the last time its flag was cleared, eg since the crashflip switch was reverted in manual mode
                 unsetArmingDisabled(ARMING_DISABLED_CRASHFLIP);
                 // clear the armingDisabled block to permit re-arming
             }
@@ -482,7 +482,6 @@ if (crashFlipModeActive) {
 
 void disarm(flightLogDisarmReason_e reason)
 {
-    (void)reason; // not used
 
     if (!wasLastDisarmUserRequested()) {
         // Non-user disarm, clear the user-initated flag in rc_controls.c
