@@ -47,7 +47,7 @@
 // US_TO_COUNTS_FACTOR = (SYS_CLK_HZ / PWM_PRESCALER) / 1,000,000
 #define US_TO_COUNTS_FACTOR (SYS_CLK_HZ / (PWM_PRESCALER * 1000000.0f)) // ~1.953 counts/us
 
-typedef struct picoPwmMotors_s {
+typedef struct picoPwmServos_s {
     uint16_t slice;
     uint16_t channel;
 } picoPwmServos_t;
