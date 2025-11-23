@@ -1061,6 +1061,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_MIXER_TYPE,        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MIXER_TYPE }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, mixer_type) },
     { "crashflip_motor_percent",    VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_motor_percent) },
     { "crashflip_rate",             VAR_UINT8 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 250 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_rate) },
+    { "crashflip_auto_rearm",       VAR_INT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, crashflip_auto_rearm) },
 #ifdef USE_RPM_LIMIT
     { "rpm_limit",                  VAR_INT8   |  MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limit) },
     { "rpm_limit_p",                VAR_UINT16 |  MASTER_VALUE,  .config.minmaxUnsigned = { 0, 100 },        PG_MIXER_CONFIG, offsetof(mixerConfig_t, rpm_limit_p) },
@@ -1460,6 +1461,12 @@ const clivalue_t valueTable[] = {
     { "mavlink_mah_as_heading_divisor", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 30000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_mah_as_heading_divisor) },
     // mavlink telemetry flow control to prevent TX buffers overflow
     { "mavlink_min_txbuff", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 100 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_min_txbuff) },
+    { "mavlink_ext_status_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_extended_status_rate) },
+    { "mavlink_rc_chan_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_rc_channels_rate) },
+    { "mavlink_pos_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_position_rate) },
+    { "mavlink_extra1_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_extra1_rate) },
+    { "mavlink_extra2_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_extra2_rate) },
+    { "mavlink_extra3_rate", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, mavlink_extra3_rate) },
 #endif
 #ifdef USE_TELEMETRY_SENSORS_DISABLED_DETAILS
     { "telemetry_disabled_voltage",         VAR_UINT32  | MASTER_VALUE | MODE_BITSET, .config.bitpos = LOG2(SENSOR_VOLTAGE),         PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, disabledSensors)},

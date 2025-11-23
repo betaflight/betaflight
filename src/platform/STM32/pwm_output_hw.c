@@ -29,6 +29,7 @@
 
 #include "drivers/io.h"
 #include "drivers/pwm_output.h"
+#include "drivers/servo_impl.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
@@ -268,7 +269,7 @@ pwmOutputPort_t *pwmGetMotors(void)
 #ifdef USE_SERVOS
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
-void pwmWriteServo(uint8_t index, float value)
+void servoWrite(uint8_t index, float value)
 {
     if (index < MAX_SUPPORTED_SERVOS && servos[index].channel.ccr) {
         *servos[index].channel.ccr = lrintf(value);
