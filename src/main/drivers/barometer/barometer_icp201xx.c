@@ -133,10 +133,8 @@ static uint32_t lastFifoReadTime = 0;
 // DMA/Segment-based SPI state management
 // These buffers must be static to persist across function calls for DMA
 #define ICP201XX_MAX_READ_LEN 96  // Max FIFO size: 16 samples * 6 bytes per sample
-static uint8_t spiTxCmdBuf[2];     // Command + register address
-static uint8_t spiTxDummyBuf[ICP201XX_MAX_READ_LEN];  // Dummy bytes for read phase
-static uint8_t spiRxBuf[ICP201XX_MAX_READ_LEN];       // Received data
-static uint8_t spiRxCmdBuf[2];     // Dummy buffer for command phase RX
+static uint8_t spiTxBuf[ICP201XX_MAX_READ_LEN + 2];     // Command + register address + Dummy bytes
+static uint8_t spiRxBuf[ICP201XX_MAX_READ_LEN + 2];     // Received data (offset by 2 bytes)
 
 // State machine for non-blocking FIFO reads
 typedef enum {
@@ -167,33 +165,26 @@ static void icp201xxDummyRead(const extDevice_t *dev)
         spiWait(dev);
     }
 
-    static uint8_t dummyCmdBuf[2];
-    static uint8_t dummyTxBuf[1];
+    static uint8_t dummyTxBuf[3];
     static uint8_t dummyRxBuf[3];
 
-    dummyCmdBuf[0] = ICP201XX_SPI_CMD_READ;
-    dummyCmdBuf[1] = ICP201XX_REG_EMPTY;
-    dummyTxBuf[0] = 0xFF;
+    dummyTxBuf[0] = ICP201XX_SPI_CMD_READ;
+    dummyTxBuf[1] = ICP201XX_REG_EMPTY;
+    dummyTxBuf[2] = 0xFF;
 
     // Use segments for dummy read too
-    static busSegment_t dummySegments[3];
-    dummySegments[0].u.buffers.txData = dummyCmdBuf;
+    static busSegment_t dummySegments[2];
+    dummySegments[0].u.buffers.txData = dummyTxBuf;
     dummySegments[0].u.buffers.rxData = dummyRxBuf;
-    dummySegments[0].len = 2;
-    dummySegments[0].negateCS = false;
+    dummySegments[0].len = 3;
+    dummySegments[0].negateCS = true;
     dummySegments[0].callback = NULL;
 
-    dummySegments[1].u.buffers.txData = dummyTxBuf;
-    dummySegments[1].u.buffers.rxData = &dummyRxBuf[2];
-    dummySegments[1].len = 1;
+    dummySegments[1].u.link.dev = NULL;
+    dummySegments[1].u.link.segments = NULL;
+    dummySegments[1].len = 0;
     dummySegments[1].negateCS = true;
     dummySegments[1].callback = NULL;
-
-    dummySegments[2].u.link.dev = NULL;
-    dummySegments[2].u.link.segments = NULL;
-    dummySegments[2].len = 0;
-    dummySegments[2].negateCS = true;
-    dummySegments[2].callback = NULL;
 
     spiSequence(dev, &dummySegments[0]);
     spiWait(dev);
@@ -210,33 +201,23 @@ static bool icp201xxReadRegStart(const extDevice_t *dev, uint8_t reg, uint8_t le
     }
 
     // Prepare command buffer
-    spiTxCmdBuf[0] = ICP201XX_SPI_CMD_READ;
-    spiTxCmdBuf[1] = reg;
+    spiTxBuf[0] = ICP201XX_SPI_CMD_READ;
+    spiTxBuf[1] = reg;
+    memset(&spiTxBuf[2], 0xFF, len);
 
-    // Prepare dummy buffer for data phase
-    memset(spiTxDummyBuf, 0xFF, len);
-
-    // Set up two-phase SPI read using segments
-    // Phase 1: Send command + register address (don't negate CS)
-    // Phase 2: Send dummy bytes, receive data (negate CS at end)
-    static busSegment_t segments[3];
-    segments[0].u.buffers.txData = spiTxCmdBuf;
-    segments[0].u.buffers.rxData = spiRxCmdBuf;
-    segments[0].len = 2;
-    segments[0].negateCS = false;  // Keep CS low between phases
+    // Set up single-phase SPI read using segments
+    static busSegment_t segments[2];
+    segments[0].u.buffers.txData = spiTxBuf;
+    segments[0].u.buffers.rxData = spiRxBuf;
+    segments[0].len = len + 2;
+    segments[0].negateCS = true;
     segments[0].callback = NULL;
 
-    segments[1].u.buffers.txData = spiTxDummyBuf;
-    segments[1].u.buffers.rxData = spiRxBuf;
-    segments[1].len = len;
-    segments[1].negateCS = true;   // Negate CS at end
+    segments[1].u.link.dev = NULL;
+    segments[1].u.link.segments = NULL;
+    segments[1].len = 0;
+    segments[1].negateCS = true;
     segments[1].callback = NULL;
-
-    segments[2].u.link.dev = NULL;
-    segments[2].u.link.segments = NULL;
-    segments[2].len = 0;
-    segments[2].negateCS = true;
-    segments[2].callback = NULL;
 
     // Start the DMA transfer (non-blocking)
     spiSequence(dev, &segments[0]);
@@ -255,7 +236,7 @@ static bool icp201xxReadReg(const extDevice_t *dev, uint8_t reg, uint8_t *data, 
     spiWait(dev);
 
     // Copy received data
-    memcpy(data, spiRxBuf, len);
+    memcpy(data, &spiRxBuf[2], len);
 
     // Perform dummy read if not reading EMPTY register
     if (reg != ICP201XX_REG_EMPTY) {
@@ -688,7 +669,7 @@ static bool icp201xxGetUP(baroDev_t *baro)
 
         case ICP201XX_STATE_READ_FIFO_FILL_STARTED:
             // FIFO fill read completed, copy data
-            fifoFillBuf[0] = spiRxBuf[0];
+            fifoFillBuf[0] = spiRxBuf[2];
 
             // Check Empty bit (bit 6). If 0, FIFO contains data.
             if ((fifoFillBuf[0] & 0x40) == 0) {
@@ -713,7 +694,7 @@ static bool icp201xxGetUP(baroDev_t *baro)
 
         case ICP201XX_STATE_READ_FIFO_DATA_STARTED:
             // All FIFO data read completed in one transaction, copy to buffer
-            memcpy(fifoDataBuf, spiRxBuf, fifoSampleCount * 6);
+            memcpy(fifoDataBuf, &spiRxBuf[2], fifoSampleCount * 6);
             readState = ICP201XX_STATE_DATA_READY;
             break;
 
