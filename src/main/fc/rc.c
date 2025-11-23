@@ -270,7 +270,7 @@ static void scaleRawSetpointToFpvCamAngle(void)
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
-        sincosf_approx(rxConfig()->fpvCamAngleDegrees, &sinFactor, &cosFactor);
+        sincosf_approx(DEGREES_TO_RADIANS(rxConfig()->fpvCamAngleDegrees), &sinFactor, &cosFactor);
     }
 
     float roll = rawSetpoint[ROLL];
