@@ -308,10 +308,10 @@ static bool icp201xxReadOTPData(const extDevice_t *dev, uint8_t addr, uint8_t *v
     if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CMD, ICP201XX_OTP_CMD_READ)) return false;
 
     // Wait for OTP read completion
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 50; i++) {
         if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS, &otpStatus, 1)) return false;
         if (otpStatus == 0) break;
-        delayMicroseconds(1);
+        delayMicroseconds(20);
     }
 
     if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_RDATA, val, 1)) return false;
