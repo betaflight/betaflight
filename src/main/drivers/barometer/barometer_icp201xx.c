@@ -254,15 +254,15 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
         spiWait(dev);
     }
 
-    static uint8_t writeTxBuf[3];
-    static uint8_t writeRxBuf[3];
+    uint8_t writeTxBuf[3];
+    uint8_t writeRxBuf[3];
 
     writeTxBuf[0] = ICP201XX_SPI_CMD_WRITE;
     writeTxBuf[1] = reg;
     writeTxBuf[2] = val;
 
     // Single-phase write using segments
-    static busSegment_t writeSegments[2];
+    busSegment_t writeSegments[2];
     writeSegments[0].u.buffers.txData = writeTxBuf;
     writeSegments[0].u.buffers.rxData = writeRxBuf;
     writeSegments[0].len = 3;
