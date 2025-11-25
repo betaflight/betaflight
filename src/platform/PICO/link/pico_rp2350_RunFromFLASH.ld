@@ -23,9 +23,6 @@
 
 MEMORY
 {
-    /* TODO: Assuming for now that target has >= 4MB boot flash */
-    FLASH (rx)        : ORIGIN = 0x10000000, LENGTH = 4032K
-    FLASH_CONFIG (r)  : ORIGIN = 0x103F0000, LENGTH = 64K
     RAM(rwx) : ORIGIN =  0x20000000, LENGTH = 512k
     SCRATCH_X(rwx) : ORIGIN = 0x20080000, LENGTH = 4k
     SCRATCH_Y(rwx) : ORIGIN = 0x20081000, LENGTH = 4k
