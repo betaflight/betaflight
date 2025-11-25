@@ -1,5 +1,3 @@
-MEMORY
-{
-    FLASH (rx)        : ORIGIN = 0x10000000, LENGTH = 4032K
-    FLASH_CONFIG (r)  : ORIGIN = 0x103F0000, LENGTH = 64K
-}
+# Set the size of the primary flash.
+PRIMARY_FLASH = 4M;
+

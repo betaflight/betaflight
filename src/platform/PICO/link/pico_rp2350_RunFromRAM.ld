@@ -26,12 +26,7 @@
     __stack (== StackTop)
 */
 
-MEMORY
-{
-    RAM(rwx) : ORIGIN =  0x20000000, LENGTH = 512k
-    SCRATCH_X(rwx) : ORIGIN = 0x20080000, LENGTH = 4k
-    SCRATCH_Y(rwx) : ORIGIN = 0x20081000, LENGTH = 4k
-}
+INCLUDE "pico_rp2350_memory.ld"
 
 ENTRY(_entry_point)
 
