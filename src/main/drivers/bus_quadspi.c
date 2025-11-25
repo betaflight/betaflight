@@ -105,4 +105,45 @@ void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance)
         quadSpiDevice[device].errorCount = 0;
     }
 }
+
+// QSPI bus device array - consistent with SPI bus device pattern
+busDevice_t quadSpiBusDevice[QUADSPIDEV_COUNT];
+
+// Mark this bus as being QSPI and record the first owner to use it
+bool quadSpiSetBusInstance(extDevice_t *dev, uint32_t device)
+{
+    if ((device == 0) || (device > QUADSPIDEV_COUNT)) {
+        return false;
+    }
+
+    dev->bus = &quadSpiBusDevice[QUADSPI_CFG_TO_DEV(device)];
+
+    // By default each device should use QSPI DMA if the bus supports it
+    dev->useDMA = true;
+
+    if (dev->bus->busType == BUS_TYPE_QSPI) {
+        // This bus has already been initialised
+        dev->bus->deviceCount++;
+        return true;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    bus->busType_u.qspi.instance = quadSpiDevice[QUADSPI_CFG_TO_DEV(device)].dev;
+
+    if (bus->busType_u.qspi.instance == NULL) {
+        return false;
+    }
+
+    bus->busType = BUS_TYPE_QSPI;
+    bus->deviceCount = 1;
+    bus->curSegment = (volatile busSegment_t *)BUS_QSPI_FREE;
+#ifdef USE_DMA
+    bus->dmaInitTx = &dev->dmaInitTx;
+    bus->dmaInitRx = &dev->dmaInitRx;
+#endif
+    quadSpiInitBusDMA(bus);
+
+    return true;
+}
 #endif

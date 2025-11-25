@@ -200,7 +200,7 @@ bank operation mode. The code assumes dual bank operation, in which case the
 FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 */
 
-#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) 
+#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define FLASH_PAGE_PER_BANK 8
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define FLASH_PAGE_PER_BANK 128
