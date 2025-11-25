@@ -57,6 +57,7 @@
 // Sensor operation modes
 #define QMC5883L_MODE_STANDBY           0x00
 #define QMC5883L_MODE_CONTINUOUS        0x01
+#define QMC5883L_MODE_MASK              0x03
 
 #define QMC5883L_RNG_2G                 (0x00 << 4)
 #define QMC5883L_RNG_8G                 (0x01 << 4)
@@ -194,8 +195,12 @@ static bool qmc5883Init(magDev_t *magDev)
         ack = ack && busWriteRegister(dev, QMC5883L_REG_RESET, 0x01);
         ack = ack && busWriteRegister(dev, QMC5883L_REG_CONF1, QMC5883L_MODE_CONTINUOUS | QMC5883L_ODR_200HZ | QMC5883L_OSR_512 | QMC5883L_RNG_8G);
     } else {
-        // P variant default confs are expected to be written by detect path, but ensure magOdrHz is set
-        // No further writes here to avoid repeating detect-specific unlocks
+        // Step 1: Write special XYZ sign configuration value to register 0x29
+        ack = ack && busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG);
+        // Step 2: Configure CONF1 register with continuous mode, 100Hz ODR, 8G range, and OSR1=8
+        ack = ack && busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1);
+        // Step 3: Configure CONF2 register with OSR2=8 oversampling settings
+        ack = ack && busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2);
     }
 
     if (!ack) {
@@ -303,7 +308,7 @@ static bool qmc5883lDetect(magDev_t *magDev)
         // Should be in standby mode after soft reset and sensor is really present
         // Reading ChipID of 0xFF alone is not sufficient to be sure the QMC is present
         ack = busReadRegisterBuffer(dev, QMC5883L_REG_CONF1, &sig, 1);
-        if (ack && sig != QMC5883L_MODE_STANDBY) {
+        if (ack && ((sig & QMC5883L_MODE_MASK) != QMC5883L_MODE_STANDBY)) {
             return false;
         }
 
@@ -337,17 +342,6 @@ static bool qmc5883pDetect(magDev_t *magDev)
     
     if (chipId != QMC5883P_ID_VAL) {
         // Wrong chip ID - not a QMC5883P or communication error
-        return false;
-    }
-
-    // For P variant we perform the special unlock/config writes here (retaining original behavior)
-    if (!busWriteRegister(dev, QMC5883P_REG_XYZ_UNLOCK, QMC5883P_XYZ_SIGN_CONFIG)) {
-        return false;
-    }
-    if (!busWriteRegister(dev, QMC5883P_REG_CONF1, QMC5883P_DEFAULT_CONF1)) {
-        return false;
-    }
-    if (!busWriteRegister(dev, QMC5883P_REG_CONF2, QMC5883P_DEFAULT_CONF2)) {
         return false;
     }
 

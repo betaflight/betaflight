@@ -32,7 +32,7 @@
 #define I2C_TIMEOUT_US          10000
 #define I2C_TIMEOUT_SYS_TICKS   (I2C_TIMEOUT_US / 1000)
 
-#define I2C_PIN_SEL_MAX 4
+#define I2C_PIN_SEL_MAX 8
 
 typedef struct i2cPinDef_s {
     ioTag_t ioTag;
