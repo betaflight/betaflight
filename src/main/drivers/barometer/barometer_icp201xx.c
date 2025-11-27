@@ -283,6 +283,27 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
     return true;
 }
 
+// Helper function for read-modify-write operations on registers
+static int icp201xxModifyReg(const extDevice_t *dev, uint8_t reg, uint8_t clear_bits, uint8_t set_bits)
+{
+    uint8_t old;
+    
+    // Read current register value
+    if (!icp201xxReadReg(dev, reg, &old, 1)) {
+        return -1; // Error reading register
+    }
+    
+    // Calculate new value with clear and set operations
+    uint8_t new_val = (old & ~clear_bits) | set_bits;
+    
+    // Write the new value
+    if (!icp201xxWriteReg(dev, reg, new_val)) {
+        return -1; // Error writing register
+    }
+    
+    return old; // Return the old value
+}
+
 static bool icp201xxSoftReset(const extDevice_t *dev)
 {
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, ICP201XX_CMD_SOFT_RESET)) {
@@ -313,7 +334,7 @@ static bool icp201xxReadOTPData(const extDevice_t *dev, uint8_t addr, uint8_t *v
 
 static bool icp201xxBootSequence(const extDevice_t *dev)
 {
-    uint8_t bootupStatus, regVal, version;
+    uint8_t bootupStatus, version;
     uint8_t offset, gain, hfosc;
 
     // Check version - B2 doesn't need boot sequence
@@ -335,18 +356,13 @@ static bool icp201xxBootSequence(const extDevice_t *dev)
     icp201xxWriteReg(dev, ICP201XX_REG_MASTER_LOCK, 0x1F);
 
     // Enable OTP and write switch
-    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_CFG1, &regVal, 1)) return false;
-    regVal |= 0x03;
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CFG1, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_OTP_CFG1, 0, 0x03) < 0) return false;
     delayMicroseconds(10);
 
     // Toggle OTP reset
-    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_DEBUG2, &regVal, 1)) return false;
-    regVal |= (1 << 7);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_DEBUG2, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_OTP_DEBUG2, 0, (1 << 7)) < 0) return false;
     delayMicroseconds(10);
-    regVal &= ~(1 << 7);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_DEBUG2, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_OTP_DEBUG2, (1 << 7), 0) < 0) return false;
     delayMicroseconds(10);
 
     // Program redundant read registers
@@ -363,29 +379,19 @@ static bool icp201xxBootSequence(const extDevice_t *dev)
     if (!icp201xxReadOTPData(dev, 0xFA, &hfosc)) return false;
 
     // Write OTP values to trim registers
-    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM1_MSB, &regVal, 1)) return false;
-    regVal = (regVal & ~0x3F) | (offset & 0x3F);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM1_MSB, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_TRIM1_MSB, 0x3F, offset & 0x3F) < 0) return false;
 
-    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM2_MSB, &regVal, 1)) return false;
-    regVal = (regVal & ~0x70) | ((gain & 0x07) << 4);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM2_MSB, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_TRIM2_MSB, 0x70, (gain & 0x07) << 4) < 0) return false;
 
-    if (!icp201xxReadReg(dev, ICP201XX_REG_TRIM2_LSB, &regVal, 1)) return false;
-    regVal = (regVal & ~0x7F) | (hfosc & 0x7F);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_TRIM2_LSB, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_TRIM2_LSB, 0x7F, hfosc & 0x7F) < 0) return false;
 
     delayMicroseconds(10);
 
     // Mark boot as complete
-    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS2, &regVal, 1)) return false;
-    regVal |= 0x01;
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_STATUS2, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_OTP_STATUS2, 0, 0x01) < 0) return false;
 
     // Disable OTP
-    if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_CFG1, &regVal, 1)) return false;
-    regVal &= ~0x03;
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_CFG1, regVal)) return false;
+    if (icp201xxModifyReg(dev, ICP201XX_REG_OTP_CFG1, 0x03, 0) < 0) return false;
 
     // Lock master register
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MASTER_LOCK, 0x00)) return false;
@@ -399,16 +405,13 @@ static bool icp201xxBootSequence(const extDevice_t *dev)
 
 static bool icp201xxFlushFifo(const extDevice_t *dev)
 {
-    // Flush the FIFO by writing the flush bit (0x80) to the FIFO_FILL register
-    uint8_t regVal;
-    if (!icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &regVal, 1)) return false;
-    regVal |= 0x80;
-    return icp201xxWriteReg(dev, ICP201XX_REG_FIFO_FILL, regVal);
+    // Flush the FIFO by setting the flush bit (0x80) in the FIFO_FILL register
+    return (icp201xxModifyReg(dev, ICP201XX_REG_FIFO_FILL, 0, 0x80) >= 0);
 }
 
 static bool icp201xxStartContinuous(const extDevice_t *dev)
 {
-    uint8_t modeReg, fifoFill;
+    uint8_t fifoFill;
     uint8_t fifoPackets = 0;
 
     // Perform soft reset to ensure clean state before configuration
@@ -437,14 +440,8 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     }
 
     // Now build mode register using Read-Modify-Write for each field
-    // Start with reading current value
-    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
-        return false;
-    }
-
     // Set forced meas trigger = 0 (standby)
-    modeReg &= ~(1 << 4);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+    if (icp201xxModifyReg(dev, ICP201XX_REG_MODE_SELECT, (1 << 4), 0) < 0) {
         return false;
     }
 
@@ -452,11 +449,7 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Set power mode = 0 (normal)
-    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
-        return false;
-    }
-    modeReg &= ~(1 << 2);
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+    if (icp201xxModifyReg(dev, ICP201XX_REG_MODE_SELECT, (1 << 2), 0) < 0) {
         return false;
     }
 
@@ -464,11 +457,7 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Set FIFO readout mode = 0 (pres+temp)
-    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
-        return false;
-    }
-    modeReg &= ~0x03;
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+    if (icp201xxModifyReg(dev, ICP201XX_REG_MODE_SELECT, 0x03, 0) < 0) {
         return false;
     }
 
@@ -476,13 +465,7 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Set measurement config (OP_MODE0 = bits 7-5 = 000)
-    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
-        return false;
-    }
-    modeReg &= ~0xE0; // Clear bits 7-5
-    modeReg |= ICP201XX_OP_MODE;
-
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+    if (icp201xxModifyReg(dev, ICP201XX_REG_MODE_SELECT, 0xE0, ICP201XX_OP_MODE) < 0) {
         return false;
     }
 
@@ -490,11 +473,7 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Finally set measurement mode = 1 (continuous) - bit 3
-    if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
-        return false;
-    }
-    modeReg |= (1 << 3); // Set continuous mode
-    if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
+    if (icp201xxModifyReg(dev, ICP201XX_REG_MODE_SELECT, 0, (1 << 3)) < 0) {
         return false;
     }
 
