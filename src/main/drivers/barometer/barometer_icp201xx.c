@@ -287,20 +287,20 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
 static int icp201xxModifyReg(const extDevice_t *dev, uint8_t reg, uint8_t clear_bits, uint8_t set_bits)
 {
     uint8_t old;
-    
+
     // Read current register value
     if (!icp201xxReadReg(dev, reg, &old, 1)) {
         return -1; // Error reading register
     }
-    
+
     // Calculate new value with clear and set operations
     uint8_t new_val = (old & ~clear_bits) | set_bits;
-    
+
     // Write the new value
     if (!icp201xxWriteReg(dev, reg, new_val)) {
         return -1; // Error writing register
     }
-    
+
     return old; // Return the old value
 }
 
@@ -350,7 +350,7 @@ static bool icp201xxBootSequence(const extDevice_t *dev)
 
     // Activate OTP power domain
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, 0x04)) return false;
-    delay(5);
+    delay(4);
 
     // Unlock master register
     icp201xxWriteReg(dev, ICP201XX_REG_MASTER_LOCK, 0x1F);
