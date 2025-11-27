@@ -501,22 +501,6 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     // Flush warmup samples
     icp201xxFlushFifo(dev);
 
-    // Wait for fresh samples (at least 1)
-    for (int i = 0; i < 20; i++) {  // Max 200ms wait
-        delay(10);
-        if (icp201xxReadReg(dev, ICP201XX_REG_FIFO_FILL, &fifoFill, 1)) {
-            fifoPackets = fifoFill & 0x1F;
-            if (fifoPackets > 0) {
-                break;
-            }
-        }
-    }
-
-    // Final check - FIFO must have data after flush
-    if (fifoPackets == 0) {
-        return false;  // Sensor not recovering, fail detection
-    }
-
     return true;
 }
 
