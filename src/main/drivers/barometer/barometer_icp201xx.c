@@ -280,13 +280,6 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
 
     icp201xxDummyRead(dev);
 
-    // Hardware timing requirement for MODE_SELECT register.
-    // This delay is mandatory and always applied.
-    // The register needs time to latch before it can be read back or affect operation.
-    if (reg == ICP201XX_REG_MODE_SELECT) {
-        delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
-    }
-
     return true;
 }
 
@@ -455,6 +448,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
         return false;
     }
 
+    // When calling MODE_SELECT, a delay is necessary for the device to stabilize.
+    delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
+
     // Set power mode = 0 (normal)
     if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
         return false;
@@ -464,6 +460,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
         return false;
     }
 
+    // When calling MODE_SELECT, a delay is necessary for the device to stabilize.
+    delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
+
     // Set FIFO readout mode = 0 (pres+temp)
     if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
         return false;
@@ -472,6 +471,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
         return false;
     }
+
+    // When calling MODE_SELECT, a delay is necessary for the device to stabilize.
+    delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Set measurement config (OP_MODE0 = bits 7-5 = 000)
     if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
@@ -483,6 +485,9 @@ static bool icp201xxStartContinuous(const extDevice_t *dev)
     if (!icp201xxWriteReg(dev, ICP201XX_REG_MODE_SELECT, modeReg)) {
         return false;
     }
+
+    // When calling MODE_SELECT, a delay is necessary for the device to stabilize.
+    delayMicroseconds(ICP201XX_MODE_SELECT_LATCH_US);
 
     // Finally set measurement mode = 1 (continuous) - bit 3
     if (!icp201xxReadReg(dev, ICP201XX_REG_MODE_SELECT, &modeReg, 1)) {
