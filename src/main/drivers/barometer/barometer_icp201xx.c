@@ -642,7 +642,13 @@ static bool icp201xxGetUP(baroDev_t *baro)
             // Check Empty bit (bit 6). If 0, FIFO contains data.
             if ((fifoFillBuf[0] & 0x40) == 0) {
                 uint8_t fifoCount = fifoFillBuf[0] & 0x1F;
-                if (fifoCount > 0 && fifoCount <= 16) {
+                if (fifoCount > 0) {
+                    // fifoCount > 16 is reserved, but may indicate a device with larger FIFO
+                    // We cap it to 16 (our maximum buffer size) to prevent device freezing
+                    if (fifoCount > 16) {
+                        fifoCount = 16;
+                    }
+                    
                     // Try reading ALL FIFO packets in one transaction (test auto-increment)
                     fifoSampleCount = fifoCount;
                     uint8_t bytesToRead = fifoCount * 6;
@@ -662,8 +668,49 @@ static bool icp201xxGetUP(baroDev_t *baro)
 
         case ICP201XX_STATE_READ_FIFO_DATA_STARTED:
             // All FIFO data read completed in one transaction, copy to buffer
-            memcpy(fifoDataBuf, &spiRxBuf[2], fifoSampleCount * 6);
-            readState = ICP201XX_STATE_DATA_READY;
+            // The SPI transaction is atomic and guarantees all data is received
+            // in the order it was stored in the FIFO
+            
+            // Quick validation of the received data before copying
+            // Only check for completely invalid patterns (all 0xFF or all 0x00)
+            // This is an O(1) check that only examines the first and last byte
+            const uint8_t* dataPtr = &spiRxBuf[2];
+            const uint8_t dataLen = fifoSampleCount * 6;
+            bool validData = true;
+            
+            // Check first and last byte for invalid patterns
+            if (dataLen > 0) {
+                const uint8_t firstByte = dataPtr[0];
+                const uint8_t lastByte = dataPtr[dataLen - 1];
+                
+                // If all bytes are 0xFF or all bytes are 0x00, it's invalid
+                if ((firstByte == 0xFF && lastByte == 0xFF) || 
+                    (firstByte == 0x00 && lastByte == 0x00)) {
+                    // Double-check with a slightly more thorough test only if suspicious
+                    // Check 4 evenly spaced bytes across the buffer
+                    const uint8_t indices[] = {0, dataLen/3, 2*dataLen/3, dataLen-1};
+                    bool allSame = true;
+                    for (uint8_t i = 1; i < 4; i++) {
+                        if (dataPtr[indices[i]] != firstByte) {
+                            allSame = false;
+                            break;
+                        }
+                    }
+                    
+                    if (allSame) {
+                        validData = false;
+                    }
+                }
+            }
+            
+            if (validData) {
+                memcpy(fifoDataBuf, dataPtr, dataLen);
+                readState = ICP201XX_STATE_DATA_READY;
+            } else {
+                // Data validation failed, discard and reset
+                fifoSampleCount = 0;
+                readState = ICP201XX_STATE_IDLE;
+            }
             break;
 
         case ICP201XX_STATE_DATA_READY:
