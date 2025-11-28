@@ -287,21 +287,21 @@ static bool icp201xxWriteReg(const extDevice_t *dev, uint8_t reg, uint8_t val)
 static int icp201xxModifyReg(const extDevice_t *dev, uint8_t reg, uint8_t clear_bits, uint8_t set_bits)
 {
     uint8_t old;
-
+    
     // Read current register value
     if (!icp201xxReadReg(dev, reg, &old, 1)) {
         return -1; // Error reading register
     }
-
+    
     // Calculate new value with clear and set operations
     uint8_t new_val = (old & ~clear_bits) | set_bits;
-
+    
     // Write the new value
     if (!icp201xxWriteReg(dev, reg, new_val)) {
         return -1; // Error writing register
     }
-
-    return old; // Return the old value
+    
+    return new_val; // Return the new value
 }
 
 static bool icp201xxSoftReset(const extDevice_t *dev)
