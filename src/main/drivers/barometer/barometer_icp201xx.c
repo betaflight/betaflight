@@ -751,6 +751,27 @@ static bool icp201xxReadUP(baroDev_t *baro)
     return true;
 }
 
+// Checks if a sample from the FIFO buffer is valid
+// Returns true if the sample is valid, false if it contains invalid data patterns
+static bool icp201xxIsValidSample(uint8_t offset)
+{
+    // All 0xFF = uninitialized/error
+    if (fifoDataBuf[offset + 0] == 0xFF && fifoDataBuf[offset + 1] == 0xFF &&
+        fifoDataBuf[offset + 2] == 0xFF && fifoDataBuf[offset + 3] == 0xFF &&
+        fifoDataBuf[offset + 4] == 0xFF && fifoDataBuf[offset + 5] == 0xFF) {
+        return false;
+    }
+
+    // All 0x00 = sensor not measuring
+    if (fifoDataBuf[offset + 0] == 0x00 && fifoDataBuf[offset + 1] == 0x00 &&
+        fifoDataBuf[offset + 2] == 0x00 && fifoDataBuf[offset + 3] == 0x00 &&
+        fifoDataBuf[offset + 4] == 0x00 && fifoDataBuf[offset + 5] == 0x00) {
+        return false;
+    }
+
+    return true;
+}
+
 static void icp201xxCalculate(int32_t *pressure, int32_t *temperature)
 {
     // Process data if available
@@ -761,24 +782,7 @@ static void icp201xxCalculate(int32_t *pressure, int32_t *temperature)
         for (uint8_t i = 0; i < fifoSampleCount; i++) {
             uint8_t offset = i * 6;
 
-            // Check for invalid data patterns
-            bool validSample = true;
-
-            // All 0xFF = uninitialized/error
-            if (fifoDataBuf[offset + 0] == 0xFF && fifoDataBuf[offset + 1] == 0xFF &&
-                fifoDataBuf[offset + 2] == 0xFF && fifoDataBuf[offset + 3] == 0xFF &&
-                fifoDataBuf[offset + 4] == 0xFF && fifoDataBuf[offset + 5] == 0xFF) {
-                validSample = false;
-            }
-
-            // All 0x00 = sensor not measuring
-            if (fifoDataBuf[offset + 0] == 0x00 && fifoDataBuf[offset + 1] == 0x00 &&
-                fifoDataBuf[offset + 2] == 0x00 && fifoDataBuf[offset + 3] == 0x00 &&
-                fifoDataBuf[offset + 4] == 0x00 && fifoDataBuf[offset + 5] == 0x00) {
-                validSample = false;
-            }
-
-            if (validSample) {
+            if (icp201xxIsValidSample(offset)) {
                 // Parse pressure (20-bit signed, LSB first)
                 int32_t rawPress = ((int32_t)(fifoDataBuf[offset + 2] & 0x0F) << 16) |
                                    ((int32_t)fifoDataBuf[offset + 1] << 8) |
