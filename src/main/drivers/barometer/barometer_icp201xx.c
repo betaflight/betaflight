@@ -560,7 +560,6 @@ bool icp201xxDetect(baroDev_t *baro)
 
         // Start continuous measurement mode
         if (!icp201xxStartContinuous(&baro->dev)) {
-            icp201xxBusDeinit(&baro->dev);
             continue;  // Try again
         }
 
@@ -570,6 +569,7 @@ bool icp201xxDetect(baroDev_t *baro)
 
     // Check if initialization succeeded
     if (!initSuccess) {
+        icp201xxBusDeinit(&baro->dev);
         return false;
     }
 
