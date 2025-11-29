@@ -49,29 +49,34 @@ int main(int argc, char * argv[])
 
     // Perform early initialisation prior to USB
 #ifdef USE_MULTICORE
-    multicoreExecuteBlocking(earlyInit);
+    multicoreExecuteBlocking(initPhase1);
 #else
-    earlyInit();
+    initPhase1();
 #endif
 
     // initialise the USB CDC interface using core 0 all USB code, including
     // interrupts, must run on core 0
     cdc_usb_init();
 
-    // Now perform the main initialisation
+    // Now perform the core initialisation
 #ifdef USE_MULTICORE
-    multicoreExecuteBlocking(init);
+    multicoreExecuteBlocking(initPhase2);
 #else
-    init();
+    initPhase2();
+#endif
+
+    // MSC code must run on core 0 if needed
+    initMsc();
+
+    // Now perform the final initialisation
+#ifdef USE_MULTICORE
+    multicoreExecuteBlocking(initPhase3);
+#else
+    initPhase3();
 #endif
 
     // Launch the scheduler
     run();
-
-    // Enter a loop waking on any event/interrupt
-    while (true) {
-        __wfe();
-    }
 
     return 0;
 }

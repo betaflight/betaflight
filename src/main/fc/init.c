@@ -269,7 +269,7 @@ static void sdCardAndFSInit(void)
 }
 #endif
 
-void earlyInit(void)
+void initPhase1(void)
 {
 #if SERIAL_PORT_COUNT > 0
     printfSerialInit();
@@ -424,7 +424,7 @@ void earlyInit(void)
 #endif
 }
 
-void init(void)
+void initPhase2(void)
 {
 #if defined(USE_BUTTONS)
 
@@ -568,7 +568,10 @@ void init(void)
     sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
+}
 
+void initMsc(void)
+{
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
@@ -606,7 +609,10 @@ void init(void)
         }
     }
 #endif
+}
 
+void initPhase3(void)
+{
 #ifdef USE_PERSISTENT_MSC_RTC
     // if we didn't enter MSC mode then clear the persistent RTC value
     persistentObjectWrite(PERSISTENT_OBJECT_RTC_HIGH, 0);
