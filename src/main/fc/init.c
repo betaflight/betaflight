@@ -570,46 +570,49 @@ void initPhase2(void)
 #endif
 }
 
+#ifdef USE_USB_MSC
+bool checkMsc(void)
+{
+    return (mscCheckBootAndReset() || mscCheckButton());
+}
+
 void initMsc(void)
 {
-#ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
     mscInit();
-    if (mscCheckBootAndReset() || mscCheckButton()) {
-        ledInit(statusLedConfig());
+    ledInit(statusLedConfig());
 
 #ifdef USE_SDCARD
-        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-            if (sdcardConfig()->mode) {
-                if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                    sdCardAndFSInit();
-                    initFlags |= SD_INIT_ATTEMPTED;
-                }
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+        if (sdcardConfig()->mode) {
+            if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                sdCardAndFSInit();
+                initFlags |= SD_INIT_ATTEMPTED;
             }
-        }
-#endif
-
-#if defined(USE_FLASHFS)
-        // If the blackbox device is onboard flash, then initialize and scan
-        // it to identify the log files *before* starting the USB device to
-        // prevent timeouts of the mass storage device.
-        if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
-            emfat_init_files();
-        }
-#endif
-        // There's no more initialisation to be done, so enable DMA where possible for SPI
-#ifdef USE_SPI
-        spiInitBusDMA();
-#endif
-        if (mscStart() == 0) {
-             mscWaitForButton();
-        } else {
-            systemResetFromMsc();
         }
     }
 #endif
+
+#if defined(USE_FLASHFS)
+    // If the blackbox device is onboard flash, then initialize and scan
+    // it to identify the log files *before* starting the USB device to
+    // prevent timeouts of the mass storage device.
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
+        emfat_init_files();
+    }
+#endif
+    // There's no more initialisation to be done, so enable DMA where possible for SPI
+#ifdef USE_SPI
+    spiInitBusDMA();
+#endif
+    if (mscStart() == 0) {
+         mscWaitForButton();
+    } else {
+        systemResetFromMsc();
+    }
 }
+#endif
 
 void initPhase3(void)
 {

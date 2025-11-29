@@ -27,11 +27,12 @@
 
 #include "fc/init.h"
 
+#ifdef USE_MULTICORE
 #include "platform/multicore.h"
+#include "usb/usb_cdc.h"
+#endif
 
 #include "scheduler/scheduler.h"
-
-#include "usb/usb_cdc.h"
 
 void run(void);
 
@@ -47,31 +48,32 @@ int main(int argc, char * argv[])
     // Do basic system initialisation including multicore support if applicable
     systemInit();
 
-    // Perform early initialisation prior to USB
-#ifdef USE_MULTICORE
-    multicoreExecuteBlocking(initPhase1);
-#else
-    initPhase1();
+#ifdef USE_USB_MSC
+    if (checkMsc()) {
+        // MSC mode so boot using single core
+        initPhase1();
+        initPhase2();
+        initMsc();
+        // Never returns
+    }
 #endif
+
+#ifdef USE_MULTICORE
+    // Perform early initialisation prior to USB
+    multicoreExecuteBlocking(initPhase1);
 
     // initialise the USB CDC interface using core 0 all USB code, including
     // interrupts, must run on core 0
     cdc_usb_init();
 
     // Now perform the core initialisation
-#ifdef USE_MULTICORE
     multicoreExecuteBlocking(initPhase2);
-#else
-    initPhase2();
-#endif
-
-    // MSC code must run on core 0 if needed
-    initMsc();
 
     // Now perform the final initialisation
-#ifdef USE_MULTICORE
     multicoreExecuteBlocking(initPhase3);
 #else
+    initPhase1();
+    initPhase2();
     initPhase3();
 #endif
 

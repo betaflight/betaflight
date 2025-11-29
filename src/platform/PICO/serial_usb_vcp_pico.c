@@ -186,6 +186,10 @@ static const struct serialPortVTable usbVTable[] = {
 
 serialPort_t *usbVcpOpen(void)
 {
+#ifndef USE_MULTICORE
+    // initialise the USB CDC interface using core 0
+    cdc_usb_init();
+#endif
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;
