@@ -23,6 +23,10 @@
 
 #include "platform.h"
 
+#ifdef USE_VCP
+#include "drivers/serial_usb_vcp.h"
+#endif
+
 #include "drivers/system.h"
 
 #include "fc/init.h"
@@ -62,9 +66,11 @@ int main(int argc, char * argv[])
     // Perform early initialisation prior to USB
     multicoreExecuteBlocking(initPhase1);
 
+#ifdef USE_VCP
     // initialise the USB CDC interface using core 0 all USB code, including
     // interrupts, must run on core 0
-    cdc_usb_init();
+    usbVcpInit();
+#endif
 
     // Now perform the core initialisation
     multicoreExecuteBlocking(initPhase2);
@@ -73,6 +79,9 @@ int main(int argc, char * argv[])
     multicoreExecuteBlocking(initPhase3);
 #else
     initPhase1();
+#ifdef USE_VCP
+    usbVcpInit();
+#endif
     initPhase2();
     initPhase3();
 #endif
