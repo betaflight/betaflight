@@ -47,12 +47,18 @@
 
 #include "mixer_init.h"
 
+#ifndef YAW_MOTORS_REVERSED
+#define YAW_MOTORS_REVERSED 0
+#endif
+
 PG_REGISTER_WITH_RESET_FN(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 2);
 
 void pgResetFn_mixerConfig(mixerConfig_t *mixerConfig)
 {
     mixerConfig->mixerMode = DEFAULT_MIXER;
-    mixerConfig->yaw_motors_reversed = false;
+
+    mixerConfig->yaw_motors_reversed = YAW_MOTORS_REVERSED;
+
     mixerConfig->crashflip_motor_percent = 0;
 #ifdef USE_RACE_PRO
     mixerConfig->crashflip_rate = 30;
