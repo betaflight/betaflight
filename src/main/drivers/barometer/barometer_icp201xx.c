@@ -316,6 +316,7 @@ static bool icp201xxSoftReset(const extDevice_t *dev)
 static bool icp201xxReadOTPData(const extDevice_t *dev, uint8_t addr, uint8_t *val)
 {
     uint8_t otpStatus;
+    bool otpReady = false;
 
     // Write the OTP address
     if (!icp201xxWriteReg(dev, ICP201XX_REG_OTP_ADDR, addr)) return false;
@@ -324,8 +325,16 @@ static bool icp201xxReadOTPData(const extDevice_t *dev, uint8_t addr, uint8_t *v
     // Wait for OTP read completion
     for (int i = 0; i < 50; i++) {
         if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_STATUS, &otpStatus, 1)) return false;
-        if (otpStatus == 0) break;
+        if (otpStatus == 0) {
+            otpReady = true;
+            break;
+        }
         delayMicroseconds(20);
+    }
+
+    // Check if OTP read timed out
+    if (!otpReady) {
+        return false;
     }
 
     if (!icp201xxReadReg(dev, ICP201XX_REG_OTP_RDATA, val, 1)) return false;
