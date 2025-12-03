@@ -322,18 +322,6 @@ static unsigned icm456xxGetBaseRateHz(const gyroDev_t *gyro)
         case GYRO_RATE_6400_Hz:
             baseRateHz = 6400;
             break;
-        case GYRO_RATE_6664_Hz:
-            baseRateHz = 6664;
-            break;
-        case GYRO_RATE_8_kHz:
-            baseRateHz = 8000;
-            break;
-        case GYRO_RATE_9_kHz:
-            baseRateHz = 9000;
-            break;
-        case GYRO_RATE_32_kHz:
-            baseRateHz = 32000;
-            break;
         default:
             break;
         }
