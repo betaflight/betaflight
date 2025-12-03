@@ -62,7 +62,12 @@ void systemReset(void)
 {
     bprintf("*** PICO systemReset ***");
     //TODO: check
+
 #if 1
+#ifdef USE_MULTICORE
+    // Reset core 1
+    multicore_reset_core1();
+#endif
     watchdog_reboot(0, 0, 0);
 #else
     // this might be fine

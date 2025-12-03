@@ -461,7 +461,8 @@ DEVICE_FLAGS    += \
             -DPICO_NO_HARDWARE=0 \
             -DPICO_ON_DEVICE=1 \
             -DPICO_RP2350=1 \
-            -DPICO_USE_BLOCKED_RAM=0
+            -DPICO_USE_BLOCKED_RAM=0 \
+            -DPICO_CORE1_STACK_SIZE=0x1000
 
 ifeq ($(RUN_FROM_RAM),1)
 LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350_RunFromRAM.ld
