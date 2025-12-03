@@ -150,7 +150,7 @@ void systemResetToMsc(int timezoneOffsetMinutes)
 #else
     UNUSED(timezoneOffsetMinutes);
 #endif
-    NVIC_SystemReset();
+    systemReset();
 }
 
 void systemResetFromMsc(void)

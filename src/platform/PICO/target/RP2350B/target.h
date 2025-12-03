@@ -40,7 +40,7 @@
 #define RP2350B
 #endif
 
-//#define USE_MULTICORE
+#define USE_MULTICORE
 
 #define USE_UART0
 #define USE_UART1
