@@ -1454,6 +1454,9 @@ const clivalue_t valueTable[] = {
 #if defined(USE_TELEMETRY_IBUS)
     { "ibus_sensor",                VAR_UINT8  | MASTER_VALUE | MODE_ARRAY, .config.array.length = IBUS_SENSOR_COUNT, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, flysky_sensors)},
 #endif
+#if defined(USE_TELEMETRY_CRSF) && defined(USE_GPS)
+    { "telemetry_crsf_gps_altitude", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, crsf_gps_altitude) },
+#endif
 #ifdef USE_TELEMETRY_MAVLINK
     // Support for misusing the heading field in MAVlink to indicate mAh drawn for Connex Prosight OSD
     // Set to 10 to show a tenth of your capacity drawn.

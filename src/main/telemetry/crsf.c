@@ -255,7 +255,8 @@ MAYBE_UNUSED static void crsfFrameGps(sbuf_t *dst)
     sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
     sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
-    const uint16_t altitude = (constrain(getEstimatedAltitudeCm(), 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
+    const int32_t altitudeCm = telemetryConfig()->crsf_gps_altitude ? gpsSol.llh.altCm : getEstimatedAltitudeCm();
+    const uint16_t altitude = (constrain(altitudeCm, 0 * 100, 5000 * 100) / 100) + 1000; // constrain altitude from 0 to 5,000m
     sbufWriteU16BigEndian(dst, altitude);
     sbufWriteU8(dst, gpsSol.numSat);
 }
