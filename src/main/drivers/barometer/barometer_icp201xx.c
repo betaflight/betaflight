@@ -2,6 +2,7 @@
  * This file is part of Betaflight.
  *
  * ICP201XX Barometer Driver
+ *
  */
 
 #include <stdbool.h>
