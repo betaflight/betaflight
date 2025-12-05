@@ -1050,6 +1050,11 @@ TEST(ArmingPreventionTest, Paralyze)
 
 // STUBS
 extern "C" {
+    void sincosf_approx(float x, float *out_s, float *out_c) {
+        *out_s = sin_approx(x);
+        *out_c = cos_approx(x);
+    }
+
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
     bool isRxReceivingSignal(void) { return simulationHaveRx; }
