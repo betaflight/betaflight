@@ -362,6 +362,10 @@
 #define LSM6DSV_CTRL8_FS_XL_4G                          1
 #define LSM6DSV_CTRL8_FS_XL_8G                          2
 #define LSM6DSV_CTRL8_FS_XL_16G                         3
+#define LSM6DSV_CTRL8_FS_XL_BW_4                        0
+#define LSM6DSV_CTRL8_FS_XL_BW_10                       1
+#define LSM6DSV_CTRL8_FS_XL_BW_20                       2
+#define LSM6DSV_CTRL8_FS_XL_BW_45                       3
 
 // Control register 9 (R/W)
 #define LSM6DSV_CTRL9                       0x18
@@ -845,15 +849,16 @@
 #define LSM6DSV_FIFO_DATA_OUT_Z_L           0x7D
 #define LSM6DSV_FIFO_DATA_OUT_Z_H           0x7E
 
+#define LSM6DSK320X_WHO_AM_I_CONST          (0x75)
+
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev)
 {
     const uint8_t whoAmI = spiReadRegMsk(dev, LSM6DSV_WHO_AM_I);
-
-    if (whoAmI != LSM6DSV16X_WHO_AM_I_CONST) {
-        return MPU_NONE;
+    if ((whoAmI == LSM6DSV16X_WHO_AM_I_CONST) || (whoAmI == LSM6DSK320X_WHO_AM_I_CONST)) {
+        return LSM6DSV16X_SPI;
     }
 
-    return LSM6DSV16X_SPI;
+    return MPU_NONE;
 }
 
 static void lsm6dsv16xAccInit(accDev_t *acc)
@@ -944,46 +949,23 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
 
     // Wait for the device to be ready
     while (spiReadRegMsk(dev, LSM6DSV_CTRL3) & LSM6DSV_CTRL3_SW_RESET) {}
-
     // Autoincrement register address when doing block SPI reads and update continuously
     spiWriteReg(dev, LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
 
-    // Select high-accuracy ODR mode 1
+    // Select high-accuracy ODR mode 1 before leaving power-off mode
     spiWriteReg(dev, LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_MASK,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_SHIFT));
 
-    // Enable the accelerometer in high accuracy
-    spiWriteReg(dev, LSM6DSV_CTRL1,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
-                                    LSM6DSV_CTRL1_OP_MODE_XL_MASK,
-                                    LSM6DSV_CTRL1_OP_MODE_XL_SHIFT));
-
-    // Enable the gyro in high accuracy
-    spiWriteReg(dev, LSM6DSV_CTRL2,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_OP_MODE_G_HIGH_ACCURACY,
-                                    LSM6DSV_CTRL2_OP_MODE_G_MASK,
-                                    LSM6DSV_CTRL2_OP_MODE_G_SHIFT));
-
-    // Enable 16G sensitivity
+    // Enable 16G full-scale range and set accelerometer LPF2 bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL8,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_BW_4,
+                                    LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_MASK,
+                                    LSM6DSV_CTRL8_HP_LPF2_XL_BW_2_SHIFT) |
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
                                     LSM6DSV_CTRL8_FS_XL_MASK,
                                     LSM6DSV_CTRL8_FS_XL_SHIFT));
-
-    // Enable the accelerometer odr at 1kHz
-    spiWriteReg(dev, LSM6DSV_CTRL1,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_ODR_XL_1000HZ,
-                                    LSM6DSV_CTRL1_ODR_XL_MASK,
-                                    LSM6DSV_CTRL1_ODR_XL_SHIFT));
-
-    // Enable the gyro odr at 8kHz
-    spiWriteReg(dev, LSM6DSV_CTRL2,
-                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_ODR_G_8000HZ,
-                                    LSM6DSV_CTRL2_ODR_G_MASK,
-                                    LSM6DSV_CTRL2_ODR_G_SHIFT));
-
     // Enable 2000 deg/s sensitivity and selected LPF1 filter setting
     // Set the LPF1 filter bandwidth
     spiWriteReg(dev, LSM6DSV_CTRL6,
@@ -994,8 +976,29 @@ static void lsm6dsv16xGyroInit(gyroDev_t *gyro)
                                     LSM6DSV_CTRL6_FS_G_MASK,
                                     LSM6DSV_CTRL6_FS_G_SHIFT));
 
+    // Enable the accelerometer odr at 1kHz, in high accuracy
+    spiWriteReg(dev, LSM6DSV_CTRL1,
+           LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
+                                    LSM6DSV_CTRL1_OP_MODE_XL_MASK,
+                                    LSM6DSV_CTRL1_OP_MODE_XL_SHIFT) |
+           LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_ODR_XL_1000HZ,
+                                    LSM6DSV_CTRL1_ODR_XL_MASK,
+                                    LSM6DSV_CTRL1_ODR_XL_SHIFT));
+
+    // Enable the gyro odr at 8kHz, in high accuracy
+    spiWriteReg(dev, LSM6DSV_CTRL2,
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_OP_MODE_G_HIGH_ACCURACY,
+                                    LSM6DSV_CTRL2_OP_MODE_G_MASK,
+                                    LSM6DSV_CTRL2_OP_MODE_G_SHIFT) |
+                LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_ODR_G_8000HZ,
+                                    LSM6DSV_CTRL2_ODR_G_MASK,
+                                    LSM6DSV_CTRL2_ODR_G_SHIFT));
+
     // Enable the gyro digital LPF1 filter
     spiWriteReg(dev, LSM6DSV_CTRL7, LSM6DSV_CTRL7_LPF1_G_EN);
+
+    // Enable the acc digital LPF2 filter
+    spiWriteReg(dev, LSM6DSV_CTRL9, LSM6DSV_CTRL9_LPF2_XL_EN);
 
     // Generate pulse on interrupt line, not requiring a read to clear
     spiWriteReg(dev, LSM6DSV_CTRL4, LSM6DSV_CTRL4_DRDY_PULSED);
