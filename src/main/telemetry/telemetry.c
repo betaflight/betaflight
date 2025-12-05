@@ -79,7 +79,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
     },
     .disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED,
-    .crsf_gps_altitude = false,
+    .crsf_msl_altitude = false,
     .mavlink_mah_as_heading_divisor = 0,
     .mavlink_min_txbuff = 35,
     .mavlink_extended_status_rate = 2,
