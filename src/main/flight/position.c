@@ -239,7 +239,7 @@ int32_t getEstimatedAltitudeCm(void)
 #ifdef USE_GPS
 float getAltitudeAsl(void)
 {
-    return gpsSol.llh.altCm;
+    return STATE(GPS_FIX) ? gpsSol.llh.altCm : GPS_home_llh.altCm + getEstimatedAltitudeCm();
 }
 #endif
 
