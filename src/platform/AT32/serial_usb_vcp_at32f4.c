@@ -509,6 +509,7 @@ void usbVcpInit(void)
 
 serialPort_t *usbVcpOpen(void)
 {
+    usbVcpInit();
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;
