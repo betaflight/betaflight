@@ -4591,6 +4591,13 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
         }
 
         if (valueChanged) {
+            if (strcmp(val->name, "osd_custom_frame") == 0 ||
+                strcmp(val->name, "osd_custom_frame_pos_x") == 0 ||
+                strcmp(val->name, "osd_custom_frame_pos_y") == 0 ||
+                strcmp(val->name, "osd_custom_frame_width") == 0 ||
+                strcmp(val->name, "osd_custom_frame_height") == 0) {
+                osdUpdateCustomFrameElement();
+            }
             cliPrintf("%s set to ", val->name);
             cliPrintVar(cmdName, val, 0);
         } else {
