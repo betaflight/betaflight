@@ -32,6 +32,12 @@ ifeq (MINGW, $(findstring MINGW,$(UNAME)))
   MINGW := 1
 endif
 
+# Windows using MSYS shell
+ifeq (MSYS, $(findstring MSYS,$(UNAME)))
+  OSFAMILY := windows
+  MSYS := 1
+endif
+
 # Windows using Cygwin shell
 ifeq (CYGWIN ,$(findstring CYGWIN,$(UNAME)))
   OSFAMILY := windows

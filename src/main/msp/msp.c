@@ -1050,6 +1050,13 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         // API >= 1.46
         sbufWriteU16(dst, osdConfig()->link_quality_alarm);
 
+        // API >= 1.47
+        sbufWriteU8(dst, osdConfig()->custom_frame_pos_x);
+        sbufWriteU8(dst, osdConfig()->custom_frame_pos_y);
+        sbufWriteU8(dst, osdConfig()->custom_frame_width);
+        sbufWriteU8(dst, osdConfig()->custom_frame_height);
+        sbufWriteU8(dst, osdConfig()->custom_frame_enabled);
+
         break;
     }
 #endif // USE_OSD
@@ -4256,6 +4263,15 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
                 if (sbufBytesRemaining(src) >= 2) {
                     // API >= 1.46
                     osdConfigMutable()->link_quality_alarm = sbufReadU16(src);
+                }
+
+                if (sbufBytesRemaining(src) >= 5) { // API >= 1.47
+                    osdConfigMutable()->custom_frame_pos_x = sbufReadU8(src);
+                    osdConfigMutable()->custom_frame_pos_y = sbufReadU8(src);
+                    osdConfigMutable()->custom_frame_width = sbufReadU8(src);
+                    osdConfigMutable()->custom_frame_height = sbufReadU8(src);
+                    osdConfigMutable()->custom_frame_enabled = sbufReadU8(src);
+                    osdUpdateCustomFrameElement();
                 }
 
             } else if ((int8_t)addr == -2) {
