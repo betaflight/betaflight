@@ -811,6 +811,21 @@ static void osdElementCoreTemperature(osdElementParms_t *element)
 }
 #endif // USE_ADC_INTERNAL
 
+static void osdBackgroundCustomFrame(osdElementParms_t *element)
+{
+    const uint8_t xpos = element->elemPosX;
+    const uint8_t ypos = element->elemPosY;
+    const uint8_t width = constrain(osdConfig()->custom_frame_width, OSD_CUSTOM_FRAME_MIN_WIDTH, OSD_CUSTOM_FRAME_MAX_WIDTH);
+    const uint8_t height = constrain(osdConfig()->custom_frame_height, OSD_CUSTOM_FRAME_MIN_HEIGHT, OSD_CUSTOM_FRAME_MAX_HEIGHT);
+
+    osdDisplayWriteChar(element, xpos, ypos, DISPLAYPORT_SEVERITY_NORMAL, (char)SYM_CUSTOM_FRAME_TOP_LEFT);
+    osdDisplayWriteChar(element, xpos + width - 1, ypos, DISPLAYPORT_SEVERITY_NORMAL, (char)SYM_CUSTOM_FRAME_TOP_RIGHT);
+    osdDisplayWriteChar(element, xpos, ypos + height - 1, DISPLAYPORT_SEVERITY_NORMAL, (char)SYM_CUSTOM_FRAME_BOTTOM_LEFT);
+    osdDisplayWriteChar(element, xpos + width - 1, ypos + height - 1, DISPLAYPORT_SEVERITY_NORMAL, (char)SYM_CUSTOM_FRAME_BOTTOM_RIGHT);
+
+    element->drawElement = false;
+}
+
 static void osdBackgroundCameraFrame(osdElementParms_t *element)
 {
     static enum {TOP, MIDDLE, BOTTOM} renderPhase = TOP;
@@ -1847,6 +1862,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
     OSD_RC_CHANNELS,
     OSD_CAMERA_FRAME,
+    OSD_CUSTOM_FRAME,
 #ifdef USE_PERSISTENT_STATS
     OSD_TOTAL_FLIGHTS,
 #endif
@@ -1870,6 +1886,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_CAMERA_FRAME]            = NULL,  // only has background. Added first so it's the lowest "layer" and doesn't cover other elements
+    [OSD_CUSTOM_FRAME]            = NULL,  // background-only custom frame
     [OSD_RSSI_VALUE]              = osdElementRssi,
     [OSD_MAIN_BATT_VOLTAGE]       = osdElementMainBatteryVoltage,
     [OSD_CROSSHAIRS]              = osdElementCrosshairs,  // only has background, but needs to be over other elements (like artificial horizon)
@@ -2010,6 +2027,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 
 const osdElementDrawFn osdElementBackgroundFunction[OSD_ITEM_COUNT] = {
     [OSD_CAMERA_FRAME]            = osdBackgroundCameraFrame,
+    [OSD_CUSTOM_FRAME]            = osdBackgroundCustomFrame,
     [OSD_HORIZON_SIDEBARS]        = osdBackgroundHorizonSidebars,
     [OSD_CRAFT_NAME]              = osdBackgroundCraftName,
 #ifdef USE_OSD_STICK_OVERLAY

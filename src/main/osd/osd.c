@@ -156,9 +156,9 @@ escSensorData_t *osdEscDataCombined;
 
 STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
-PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 2);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -247,6 +247,26 @@ int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatStr
     buffer[pos] = '\0';
 
     return pos;
+}
+
+void osdUpdateCustomFrameElement(void)
+{
+    const uint8_t cols = osdConfig()->canvas_cols ? osdConfig()->canvas_cols : OSD_SD_COLS;
+    const uint8_t rows = osdConfig()->canvas_rows ? osdConfig()->canvas_rows : OSD_SD_ROWS;
+
+    const uint8_t x = MIN(osdConfig()->custom_frame_pos_x, cols ? cols - 1 : 0);
+    const uint8_t y = MIN(osdConfig()->custom_frame_pos_y, rows ? rows - 1 : 0);
+
+    uint16_t profileFlags = 0;
+    for (unsigned i = 1; i <= OSD_PROFILE_COUNT; i++) {
+        profileFlags |= OSD_PROFILE_FLAG(i);
+    }
+
+    if (osdConfig()->custom_frame_enabled) {
+        osdElementConfigMutable()->item_pos[OSD_CUSTOM_FRAME] = OSD_POS(x, y) | profileFlags;
+    } else {
+        osdElementConfigMutable()->item_pos[OSD_CUSTOM_FRAME] = 0;
+    }
 }
 
 void osdStatSetState(uint8_t statIndex, bool enabled)
@@ -361,7 +381,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RC_STATS
     osdStatSetState(OSD_STAT_FULL_THROTTLE_TIME, true);
     osdStatSetState(OSD_STAT_FULL_THROTTLE_COUNTER, true);
-    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);    
+    osdStatSetState(OSD_STAT_AVG_THROTTLE, true);
 #endif
 
     osdConfig->timers[OSD_TIMER_1] = osdTimerDefault[OSD_TIMER_1];
@@ -400,6 +420,12 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->camera_frame_width = 24;
     osdConfig->camera_frame_height = 11;
+
+    osdConfig->custom_frame_width = OSD_CUSTOM_FRAME_MIN_WIDTH;
+    osdConfig->custom_frame_height = OSD_CUSTOM_FRAME_MIN_HEIGHT;
+    osdConfig->custom_frame_pos_x = (OSD_SD_COLS / 2) - (osdConfig->custom_frame_width / 2);
+    osdConfig->custom_frame_pos_y = (OSD_SD_ROWS / 2) - (osdConfig->custom_frame_height / 2);
+    osdConfig->custom_frame_enabled = 0;
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;
@@ -460,6 +486,7 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS((midCol - 1), (midRow - 5));
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS((midCol - 1), (midRow - 1));
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS((midCol - 12), (midRow - 6));
+    osdElementConfig->item_pos[OSD_CUSTOM_FRAME]       = OSD_POS((midCol - 8), (midRow - 4));
     osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS((midCol - 2), (midRow - 1));
 }
 
@@ -563,6 +590,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse, osdDisplayPortDevice_e displayP
                 osdElementConfigMutable()->item_pos[i] = elemProfileType | OSD_POS(elemPosX, elemPosY);
             }
         }
+
+        osdUpdateCustomFrameElement();
     }
 }
 

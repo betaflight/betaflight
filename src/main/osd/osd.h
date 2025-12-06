@@ -48,6 +48,10 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_CAMERA_FRAME_MAX_WIDTH  30    // Characters per row supportes by MAX7456
 #define OSD_CAMERA_FRAME_MIN_HEIGHT 2
 #define OSD_CAMERA_FRAME_MAX_HEIGHT 16    // Rows supported by MAX7456 (PAL)
+#define OSD_CUSTOM_FRAME_MIN_WIDTH  2
+#define OSD_CUSTOM_FRAME_MAX_WIDTH  OSD_CAMERA_FRAME_MAX_WIDTH
+#define OSD_CUSTOM_FRAME_MIN_HEIGHT 2
+#define OSD_CUSTOM_FRAME_MAX_HEIGHT OSD_CAMERA_FRAME_MAX_HEIGHT
 
 #define OSD_FRAMERATE_MIN_HZ 1
 #define OSD_FRAMERATE_MAX_HZ 60
@@ -167,6 +171,7 @@ typedef enum {
     OSD_RSSI_DBM_VALUE,
     OSD_RC_CHANNELS,
     OSD_CAMERA_FRAME,
+    OSD_CUSTOM_FRAME,
     OSD_EFFICIENCY,
     OSD_TOTAL_FLIGHTS,
     OSD_UP_DOWN_REFERENCE,
@@ -338,6 +343,11 @@ typedef struct osdConfig_s {
     uint8_t logo_on_arming_duration;          // display duration in 0.1s units
     uint8_t camera_frame_width;               // The width of the box for the camera frame element
     uint8_t camera_frame_height;              // The height of the box for the camera frame element
+    uint8_t custom_frame_enabled;             // Enable custom frame rendering
+    uint8_t custom_frame_pos_x;               // X position for the custom frame element
+    uint8_t custom_frame_pos_y;               // Y position for the custom frame element
+    uint8_t custom_frame_width;               // The width of the custom frame element
+    uint8_t custom_frame_height;              // The height of the custom frame element
     uint16_t framerate_hz;
     uint8_t cms_background_type;              // For supporting devices, determines whether the CMS background is transparent or opaque
     uint8_t stat_show_cell_value;
@@ -413,3 +423,5 @@ void osdSetVisualBeeperState(bool state);
 statistic_t *osdGetStats(void);
 bool osdNeedsAccelerometer(void);
 int osdPrintFloat(char *buffer, char leadingSymbol, float value, char *formatString, unsigned decimalPlaces, bool round, char trailingSymbol);
+
+void osdUpdateCustomFrameElement(void);

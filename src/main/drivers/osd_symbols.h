@@ -165,3 +165,9 @@
 #define SYM_GPS_DEGREE              SYM_STICK_OVERLAY_SPRITE_HIGH  // kind of looks like the degree symbol
 #define SYM_GPS_MINUTE              0x27 // '
 #define SYM_GPS_SECOND              0x22 // "
+
+// Custom frame (crosshair) symbols
+#define SYM_CUSTOM_FRAME_TOP_LEFT     0xA1
+#define SYM_CUSTOM_FRAME_TOP_RIGHT    0xB6
+#define SYM_CUSTOM_FRAME_BOTTOM_LEFT  0xE9
+#define SYM_CUSTOM_FRAME_BOTTOM_RIGHT 0xFE
