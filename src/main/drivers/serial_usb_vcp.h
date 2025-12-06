@@ -34,6 +34,7 @@ typedef struct {
 
 void usbVcpInit(void);
 serialPort_t *usbVcpOpen(void);
+void usbVcpMarkInitialized(void);  // Mark USB as already initialized to prevent reinit
 struct serialPort_s;
 uint32_t usbVcpGetBaudRate(struct serialPort_s *instance);
 uint8_t usbVcpIsConnected(void);

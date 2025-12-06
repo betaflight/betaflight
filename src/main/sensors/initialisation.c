@@ -24,6 +24,7 @@
 
 #include "platform.h"
 
+#include "drivers/usb_cdc_debug.h"
 #include "common/utils.h"
 
 #include "config/config.h"
@@ -67,6 +68,7 @@ void sensorsPreInit(void)
 
 bool sensorsAutodetect(void)
 {
+    usbCdcPrintf("sensorsAutodetect: Starting...\r\n");
 
     // gyro must be initialised before accelerometer
 
@@ -79,7 +81,9 @@ bool sensorsAutodetect(void)
 #endif
 
 #ifdef USE_BARO
+    usbCdcPrintf("sensorsAutodetect: Calling baroInit()...\r\n");
     baroInit();
+    usbCdcPrintf("sensorsAutodetect: baroInit() complete\r\n");
 #endif
 
 #ifdef USE_MAG
