@@ -271,10 +271,6 @@ static void sdCardAndFSInit(void)
 
 void initPhase1(void)
 {
-#if SERIAL_PORT_COUNT > 0
-    printfSerialInit();
-#endif
-
     // Initialize task data as soon as possible. Has to be done before tasksInit(),
     // and any init code that may try to modify task behaviour before tasksInit().
     tasksInitData();
@@ -580,7 +576,6 @@ void initMsc(void)
 {
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
-    mscInit();
     ledInit(statusLedConfig());
 
 #ifdef USE_SDCARD
@@ -607,7 +602,7 @@ void initMsc(void)
     spiInitBusDMA();
 #endif
     if (mscStart() == 0) {
-         mscWaitForButton();
+        mscWaitForButton();
     } else {
         systemResetFromMsc();
     }
