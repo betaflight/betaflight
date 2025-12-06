@@ -294,6 +294,10 @@ if (crashFlipModeActive) {
             // tell disarm() that this was not a user generated disarm
             // also clear the flag in rc_controls so that it will only be true when the pilot makes a new user manual disarm
             disarm(DISARM_REASON_CRASHFLIP); // stop the motors, revert crashflipMode and set motor direction normal
+        } else {
+            // we are in auto re-arm mode, terminate crashflip mode and set motor direction normal
+            setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+            crashFlipModeActive = false;
         }
     }
 }
