@@ -86,10 +86,8 @@
 
 #ifdef BIT
 #undef BIT
-#define BIT(x) (1 << (x))
-#else
-#define BIT(x) (1 << (x))
 #endif
+#define BIT(x) (1 << (x))
 
 /*
 http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html

@@ -202,7 +202,7 @@ static const struct serialPortVTable usbVTable[] = {
 };
 
 void usbd_desc_string_update(void);
-serialPort_t *usbVcpOpen(void)
+void usbVcpInit(void)
 {
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
@@ -227,7 +227,10 @@ serialPort_t *usbVcpOpen(void)
         usb_intr_config();
         break;
     }
+}
 
+serialPort_t *usbVcpOpen(void)
+{
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;
