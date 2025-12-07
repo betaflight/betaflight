@@ -1145,8 +1145,6 @@ extern "C" {
 
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
-    bool crashFlipSuccessful(void) { return false; }
-
     void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
     {
        UNUSED(from);

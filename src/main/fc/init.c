@@ -185,6 +185,13 @@ void targetPreInit(void);
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
+static enum {
+    FLASH_INIT_ATTEMPTED                = (1 << 0),
+    SD_INIT_ATTEMPTED                   = (1 << 1),
+    SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
+    QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
+} initFlags = 0;
+
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
@@ -262,14 +269,8 @@ static void sdCardAndFSInit(void)
 }
 #endif
 
-void init(void)
+void initPhase1(void)
 {
-#if SERIAL_PORT_COUNT > 0
-    printfSerialInit();
-#endif
-
-    systemInit();
-
     // Initialize task data as soon as possible. Has to be done before tasksInit(),
     // and any init code that may try to modify task behaviour before tasksInit().
     tasksInitData();
@@ -285,14 +286,6 @@ void init(void)
 #if defined(USE_CONFIG_TARGET_PREINIT)
     configTargetPreInit();
 #endif
-
-    enum {
-        FLASH_INIT_ATTEMPTED                = (1 << 0),
-        SD_INIT_ATTEMPTED                   = (1 << 1),
-        SPI_BUSSES_INIT_ATTEMPTED           = (1 << 2),
-        QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED = (1 << 3),
-    };
-    uint8_t initFlags = 0;
 
 #ifdef CONFIG_IN_SDCARD
 
@@ -407,6 +400,9 @@ void init(void)
 #ifdef USE_DEBUG_PIN
     dbgPinInit();
 #endif
+#ifdef USE_PINIO
+    pinioInit(pinioConfig());
+#endif
 
     debugMode = systemConfig()->debug_mode;
 
@@ -422,7 +418,10 @@ void init(void)
 #if !defined(SIMULATOR_BUILD)
     EXTIInit();
 #endif
+}
 
+void initPhase2(void)
+{
 #if defined(USE_BUTTONS)
 
     buttonsInit();
@@ -565,45 +564,53 @@ void init(void)
     sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
+}
 
 #ifdef USE_USB_MSC
+bool checkMsc(void)
+{
+    return (mscCheckBootAndReset() || mscCheckButton());
+}
+
+void initMsc(void)
+{
 /* MSC mode will start after init, but will not allow scheduler to run,
  *  so there is no bottleneck in reading and writing data */
-    mscInit();
-    if (mscCheckBootAndReset() || mscCheckButton()) {
-        ledInit(statusLedConfig());
+    ledInit(statusLedConfig());
 
 #ifdef USE_SDCARD
-        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-            if (sdcardConfig()->mode) {
-                if (!(initFlags & SD_INIT_ATTEMPTED)) {
-                    sdCardAndFSInit();
-                    initFlags |= SD_INIT_ATTEMPTED;
-                }
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+        if (sdcardConfig()->mode) {
+            if (!(initFlags & SD_INIT_ATTEMPTED)) {
+                sdCardAndFSInit();
+                initFlags |= SD_INIT_ATTEMPTED;
             }
-        }
-#endif
-
-#if defined(USE_FLASHFS)
-        // If the blackbox device is onboard flash, then initialize and scan
-        // it to identify the log files *before* starting the USB device to
-        // prevent timeouts of the mass storage device.
-        if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
-            emfat_init_files();
-        }
-#endif
-        // There's no more initialisation to be done, so enable DMA where possible for SPI
-#ifdef USE_SPI
-        spiInitBusDMA();
-#endif
-        if (mscStart() == 0) {
-             mscWaitForButton();
-        } else {
-            systemResetFromMsc();
         }
     }
 #endif
 
+#if defined(USE_FLASHFS)
+    // If the blackbox device is onboard flash, then initialize and scan
+    // it to identify the log files *before* starting the USB device to
+    // prevent timeouts of the mass storage device.
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
+        emfat_init_files();
+    }
+#endif
+    // There's no more initialisation to be done, so enable DMA where possible for SPI
+#ifdef USE_SPI
+    spiInitBusDMA();
+#endif
+    if (mscStart() == 0) {
+        mscWaitForButton();
+    } else {
+        systemResetFromMsc();
+    }
+}
+#endif
+
+void initPhase3(void)
+{
 #ifdef USE_PERSISTENT_MSC_RTC
     // if we didn't enter MSC mode then clear the persistent RTC value
     persistentObjectWrite(PERSISTENT_OBJECT_RTC_HIGH, 0);
@@ -697,9 +704,6 @@ void init(void)
     servosFilterInit();
 #endif
 
-#ifdef USE_PINIO
-    pinioInit(pinioConfig());
-#endif
 
 #ifdef USE_PIN_PULL_UP_DOWN
     pinPullupPulldownInit();
