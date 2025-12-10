@@ -29,7 +29,7 @@
 
 #include "beeper.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 2);
+PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 3);
 
 PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
     .beeper_off_flags = DEFAULT_BEEPER_OFF_FLAGS,
