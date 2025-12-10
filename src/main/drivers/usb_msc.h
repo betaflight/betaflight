@@ -24,7 +24,7 @@
 
 #pragma once
 
-void mscInit(void);
+void mscButtonInit(void);
 bool mscCheckBootAndReset(void);
 uint8_t mscStart(void);
 bool mscCheckButton(void);

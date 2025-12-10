@@ -5308,7 +5308,8 @@ static bool strToPin(char *ptr, ioTag_t *tag)
         return true;
     } else {
         const unsigned port = (*ptr >= 'a') ? *ptr - 'a' : *ptr - 'A';
-        if (port < 8) {
+        // Ports A through I
+        if (port < 9) {
             ptr++;
 
             char *end;
