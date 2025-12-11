@@ -1,0 +1,51 @@
+name: Build STM32F405 Firmware
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-f405:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Cache toolchain
+        uses: actions/cache@v4
+        id: cache-toolchain
+        with:
+          path: tools
+          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+
+      - name: Install ARM toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make arm_sdk_install
+
+      - name: Install Pico tool
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make picotool_install
+
+      - name: Prepare configs
+        run: make configs
+
+      - name: Build MATEKF405
+        run: make EXTRA_FLAGS=-Werror MATEKF405
+
+      - name: Rename firmware file
+        run: |
+          mkdir output
+          # 找到构建出的 hex
+          HEX_FILE=$(ls obj/*.hex | head -n 1)
+          cp "$HEX_FILE" "output/betaflight_STM32F405.hex"
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: betaflight_STM32F405
+          path: output/betaflight_STM32F405.hex
