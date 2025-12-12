@@ -16,23 +16,24 @@
 #endif
 #include "drivers/usb_io.h"
 
-#define USB_CDC_DEBUG_BUFFER_SIZE 512
+#define USB_CDC_DEBUG_BUFFER_SIZE 256
 
 static char usbCdcDebugBuffer[USB_CDC_DEBUG_BUFFER_SIZE];
 
-void usbCdcPrintf(const char* format, ...)
+int usbCdcPrintf(const char* format, ...)
 {
     if (usbIsConnected() && usbIsConfigured()) {
         va_list args;
         va_start(args, format);
-        int len = vsnprintf(usbCdcDebugBuffer, USB_CDC_DEBUG_BUFFER_SIZE - 1, format, args);
+        int len = vsnprintf(usbCdcDebugBuffer, USB_CDC_DEBUG_BUFFER_SIZE, format, args);
         va_end(args);
-        
+
         if (len > 0 && len < USB_CDC_DEBUG_BUFFER_SIZE) {
-            usbCdcDebugBuffer[len] = '\0';
             CDC_Send_DATA((uint8_t*)usbCdcDebugBuffer, len);
+            return len;
         }
     }
+    return -1;
 }
 
 #endif
