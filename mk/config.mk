@@ -24,6 +24,9 @@ CONFIG_HEADER_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.h
 CONFIG_SOURCE_FILE  = $(CONFIG_DIR)/configs/$(CONFIG)/config.c
 INCLUDE_DIRS       += $(CONFIG_DIR)/configs/$(CONFIG)
 
+# include $(CONFIG)/config.mk if it exists
+-include $(CONFIG_DIR)/configs/$(CONFIG)/config.mk
+
 ifneq ($(wildcard $(CONFIG_HEADER_FILE)),)
 
 CONFIG_SRC :=
