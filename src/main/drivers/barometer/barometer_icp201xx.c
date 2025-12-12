@@ -521,6 +521,8 @@ void icp201xxBusInit(const extDevice_t *dev)
     IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_OUT_PP);
     IOHi(dev->busType_u.spi.csnPin);
     spiSetClkDivisor(dev, spiCalculateDivider(ICP201XX_MAX_SPI_CLK_HZ));
+#else
+    UNUSED(dev);
 #endif
 }
 
@@ -528,6 +530,8 @@ void icp201xxBusDeinit(const extDevice_t *dev)
 {
 #ifdef USE_BARO_SPI_ICP201XX
     IOConfigGPIO(dev->busType_u.spi.csnPin, IOCFG_IPU);
+#else
+    UNUSED(dev);
 #endif
 }
 
