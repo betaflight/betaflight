@@ -709,6 +709,10 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
         return;
     }
 
+#ifndef USE_ELRSV3
+    confirmCurrentTelemetryPayload(otaPktPtr->msp_ul.mspConfirm);
+#endif
+
     bool currentMspConfirmValue = getCurrentMspConfirm();
     receiveMspData(otaPktPtr->msp_ul.packageIndex, otaPktPtr->msp_ul.payload);
     if (currentMspConfirmValue != getCurrentMspConfirm()) {
