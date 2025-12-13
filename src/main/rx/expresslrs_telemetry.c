@@ -98,7 +98,7 @@ void setTelemetryDataToTransmit(const uint8_t lengthToTransmit, uint8_t* dataToT
     currentOffset = 0;
     currentPackage = 1;
     waitCount = 0;
-    senderState = (senderState == ELRS_SENDER_IDLE) ? ELRS_SENDING : ELRS_RESYNC_THEN_SEND;
+    senderState = (senderState == ELRS_SENDER_IDLE) ? ELRS_SEND_PENDING : ELRS_RESYNC_THEN_SEND;
 }
 
 bool isTelemetrySenderActive(void)
@@ -110,7 +110,7 @@ bool isTelemetrySenderActive(void)
  * Copy up to maxLen bytes from the current package to outData
  * packageIndex
  ***/
-uint8_t getCurrentTelemetryPayload(uint8_t *outData)
+uint8_t getCurrentTelemetryPayload(uint8_t *outData, uint8_t maxLen)
 {
     uint8_t packageIndex;
 
@@ -120,8 +120,12 @@ uint8_t getCurrentTelemetryPayload(uint8_t *outData)
     case ELRS_RESYNC_THEN_SEND:
         packageIndex = ELRS_TELEMETRY_MAX_PACKAGES;
         break;
+    case ELRS_SEND_PENDING:
+        // This package can now be acked
+        senderState = ELRS_SENDING;
+        // fallthrough
     case ELRS_SENDING:
-        bytesLastPayload = MIN((uint8_t)(length - currentOffset), ELRS_TELEMETRY_BYTES_PER_CALL);
+        bytesLastPayload = MIN((uint8_t)(length - currentOffset), maxLen);
         // If this is the last data chunk, and there has been at least one other packet
         // skip the blank packet needed for WAIT_UNTIL_NEXT_CONFIRM
         if (currentPackage > 1 && (currentOffset + bytesLastPayload) >= length) {
@@ -187,6 +191,9 @@ void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
 
         break;
 
+    case ELRS_SEND_PENDING:
+        // TelemetryConfirm acks are not accepted before sending
+        // fallthrough
     case ELRS_SENDER_IDLE:
         break;
     }

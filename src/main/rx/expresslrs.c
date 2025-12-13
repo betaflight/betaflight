@@ -429,9 +429,20 @@ static void expressLrsSendTelemResp(void)
     receiver.alreadyTelemResp = true;
 
     if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
+        uint8_t mspConfirm =
+#ifdef USE_MSP_OVER_TELEMETRY
+            getCurrentMspConfirm() ? 1 :
+#endif
+            0;
+
         otaPkt.type = ELRS_TLM_PACKET;
 #ifdef USE_ELRSV3
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_LINK;
+        otaPkt.tlm_dl.ul_link_stats.stats.mspConfirm = mspConfirm;
+#else
+        otaPkt.tlm_dl.mspConfirm = mspConfirm;
+        otaPkt.tlm_dl.ul_link_stats.stats.trueDiversityAvailable = 0; // no TrueDiversity SPI SX1280
+        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.ul_link_stats.payload, sizeof(otaPkt.tlm_dl.ul_link_stats.payload));
 #endif
         otaPkt.tlm_dl.ul_link_stats.stats.uplink_RSSI_1 = receiver.rssiFiltered > 0 ? 0 : -receiver.rssiFiltered;
         otaPkt.tlm_dl.ul_link_stats.stats.uplink_RSSI_2 = 0; //diversity not supported
@@ -439,16 +450,6 @@ static void expressLrsSendTelemResp(void)
         otaPkt.tlm_dl.ul_link_stats.stats.modelMatch = connectionHasModelMatch;
         otaPkt.tlm_dl.ul_link_stats.stats.lq = receiver.uplinkLQ;
         otaPkt.tlm_dl.ul_link_stats.stats.SNR = meanAccumulatorCalc(&snrFilter, -16);
-        uint8_t mspConfirm =
-#ifdef USE_MSP_OVER_TELEMETRY
-            getCurrentMspConfirm() ? 1 :
-#endif
-            0;
-#ifdef USE_ELRSV3
-        otaPkt.tlm_dl.ul_link_stats.stats.mspConfirm = mspConfirm;
-#else
-        otaPkt.tlm_dl.mspConfirm = mspConfirm;
-#endif
 
         nextTelemetryType = ELRS_TELEMETRY_TYPE_DATA;
         // Start the count at 1 because the next will be DATA and doing +1 before checking
@@ -467,13 +468,13 @@ static void expressLrsSendTelemResp(void)
 #else
         otaPkt.type = ELRS_MSP_DATA_PACKET;
 #endif
-        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload);
+        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload, sizeof(otaPkt.tlm_dl.payload));
     }
 
 #ifdef USE_ELRSV3
     uint16_t nonceValidator = 0;
 #else
-    uint16_t nonceValidator = receiver.nonceRX;
+    uint8_t nonceValidator = receiver.nonceRX + 1;
 #endif
     uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer ^ nonceValidator);
     otaPkt.crcHigh = (crc >> 8);
@@ -491,9 +492,8 @@ static void updatePhaseLock(void)
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
 
         if (receiver.timerState == ELRS_TIM_LOCKED) {
-            // limit rate of freq offset adjustment, use slot 1 because
-            // telemetry can fall on slot 1 and will never get here
-            if (receiver.nonceRX % 8 == 1) {
+            // limit rate of freq offset adjustment
+            if (receiver.nonceRX % 8 == 0) {
                 if (pl.offsetUs > 0) {
                     expressLrsTimerIncreaseFrequencyOffset();
                 } else if (pl.offsetUs < 0) {
