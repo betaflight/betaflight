@@ -653,17 +653,16 @@ static void initializeReceiver(void)
 
 static void OtaUpdateCrcInitFromUid(void)
 {
-    if (receiver.inBindingMode)
-    {
+    if (receiver.inBindingMode) {
+        // Binding mode uses 0 for ELRS V3 or the version for ELRS V4
 #ifdef USE_ELRSV3
         crcInitializer = 0;
 #else
         crcInitializer = ELRS_OTA_VERSION_ID;
 #endif
-    }
-    else
-    {
+    } else {
         crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
+        // The version is XORed to the low byte for ELRS V3 or the high byte for ELRS V4
 #ifdef USE_ELRSV3
         crcInitializer ^= ELRS_OTA_VERSION_ID;
 #else
