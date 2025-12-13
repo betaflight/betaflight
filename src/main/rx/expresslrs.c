@@ -524,7 +524,8 @@ static void updatePhaseLock(void)
 void expressLrsOnTimerTickISR(void) // this is 180 out of phase with the other callback, occurs mid-packet reception
 {
     updatePhaseLock();
-    receiver.nonceRX += 1;
+    if (!receiver.inBindingMode)
+        receiver.nonceRX += 1;
 
     // Save the LQ value before the inc() reduces it by 1
     receiver.uplinkLQ = lqGet();
@@ -675,6 +676,9 @@ static void OtaUpdateCrcInitFromUid(void)
 
 static void unpackBindPacket(volatile uint8_t *packet)
 {
+    // Binding over MSP only contains 4 bytes due to packet size limitations, clear out any leading bytes
+    rxExpressLrsSpiConfigMutable()->UID[0] = 0;
+    rxExpressLrsSpiConfigMutable()->UID[1] = 0;
     rxExpressLrsSpiConfigMutable()->UID[2] = packet[0];
     rxExpressLrsSpiConfigMutable()->UID[3] = packet[1];
     rxExpressLrsSpiConfigMutable()->UID[4] = packet[2];
@@ -1165,6 +1169,7 @@ static void enterBindingMode(void)
     // Set UID to special binding values
     receiver.UID = BindingUID;
     receiver.inBindingMode = true;
+    receiver.nonceRX = 0;
     OtaUpdateCrcInitFromUid();
 
     setRfLinkRate(bindingRateIndex);
