@@ -195,7 +195,11 @@ void fhssGenSequence(const uint32_t uidSeed, const elrsFreqDomain_e dom)
     seed = uidSeed;
     fhssConfig = &fhssConfigs[dom];
     seqCount = (256 / MAX(fhssConfig->freqCount, 1)) * fhssConfig->freqCount;
-    syncChannel = (fhssConfig->freqCount / 2) + 1;
+    syncChannel = (fhssConfig->freqCount / 2)
+#ifdef USE_ELRSV3
+    + 1
+#endif
+    ;
     freqSpread = (fhssConfig->freqStop - fhssConfig->freqStart) * ELRS_FREQ_SPREAD_SCALE / MAX((fhssConfig->freqCount - 1), 1);
 
     // initialize the sequence array
@@ -368,6 +372,7 @@ uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
 uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
 {
     switch (airRate) {
+#ifdef USE_ELRSV3
     case 0:
         return 0;
     case 1:
@@ -378,6 +383,12 @@ uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
         return 2;
     case 4:
         return 3;
+#else
+    case RATE_LORA_900_200HZ: return 0;
+    case RATE_LORA_900_100HZ: return 1;
+    case RATE_LORA_900_50HZ: return 2;
+    case RATE_LORA_900_25HZ: return 3;
+#endif
     default:
         return currentIndex;
     }
@@ -386,7 +397,8 @@ uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
 uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
 {
     switch (airRate) {
-    case 0:  // F1000
+#ifdef USE_ELRSV3
+   case 0:  // F1000
         return 0;
     case 1:  // F500
         return 1;
@@ -406,6 +418,14 @@ uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
         return currentIndex;
     case 9:  // 50Hz
         return 5;
+#else
+    case RATE_FLRC_2G4_1000HZ: return 0;
+    case RATE_FLRC_2G4_500HZ: return 1;
+    case RATE_LORA_2G4_500HZ: return 2;
+    case RATE_LORA_2G4_250HZ: return 3;
+    case RATE_LORA_2G4_150HZ: return 4;
+    case RATE_LORA_2G4_50HZ: return 5;
+#endif
     default:
         return currentIndex;
     }
