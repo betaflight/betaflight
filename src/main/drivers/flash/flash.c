@@ -206,6 +206,10 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     // Set the callback argument when calling back to this driver for DMA completion
     dev->callbackArg = (uint32_t)&flashDevice;
 
+
+#if defined(QUADSPI_TRAIT_CS_SOFTWARE)
+    // Required for RP2350, but not for STM32 MCUs where the CS is controlled by hardware.
+
     if (flashConfig->csTag) {
         dev->busType_u.spi.csnPin = IOGetByTag(flashConfig->csTag);
     } else {
@@ -215,6 +219,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     IOInit(dev->busType_u.spi.csnPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(dev->busType_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(dev->busType_u.spi.csnPin);
+#endif
 
     flashDevice.io.mode = FLASHIO_QUADSPI;
     flashDevice.io.handle.dev = dev;
