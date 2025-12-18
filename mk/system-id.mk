@@ -32,10 +32,6 @@ ifeq (MINGW, $(findstring MINGW,$(UNAME)))
   MINGW := 1
 endif
 
-# Windows using MSYS2 binaries, treat as per MINGW
-ifeq (MSYS_NT, $(findstring MSYS_NT,$(UNAME)))
-  OSFAMILY := windows
-  MINGW := 1
 # Windows using MinGW or MSYS2
 ifneq (,$(filter MINGW MSYS_NT,$(UNAME)))
   OSFAMILY := windows
