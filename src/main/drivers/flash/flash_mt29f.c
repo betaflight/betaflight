@@ -795,13 +795,6 @@ static void mt29f_addError(uint32_t address, uint8_t code)
  *
  * The number of bytes actually read is returned, which can be zero if an error or timeout occurred.
  */
-
-// Continuous read mode (BUF = 0):
-// (1) "Page Data Read" command is executed for the page pointed by address
-// (2) "Read Data" command is executed for bytes not requested and data are discarded
-// (3) "Read Data" command is executed and data are stored directly into caller's buffer
-//
-// Buffered read mode (BUF = 1), non-read ahead
 // (1) If currentBufferPage != requested page, then issue PAGE_DATA_READ on requested page.
 // (2) Compute transferLength as smaller of remaining length and requested length.
 // (3) Issue READ_DATA on column address.
@@ -860,7 +853,7 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
         busSegment_t segments[] = {
                 {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, mt29f_callbackReady},
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
-                {.u.buffers = {NULL, buffer}, length, true, NULL},
+                {.u.buffers = {NULL, buffer}, transferLength, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
@@ -873,7 +866,7 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
 
-        quadSpiReceiveWithAddress4LINES(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X4, 8, column, MT29F_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress4LINES(dev, MT29F_INSTRUCTION_READ_FROM_CACHE_X4, 8, column, MT29F_COLUMN_ADDRESS_SIZE, buffer, transferLength);
     }
 #endif
 
