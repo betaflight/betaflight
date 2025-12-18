@@ -91,7 +91,6 @@
 #define MT29F_STATUS_FLAG_ECC(status)   (((status) & MT29F_STATUS_FLAG_ECC_MASK) >> MT29F_STATUS_FLAG_ECC_POS)
 // CRBUSY = Cache read busy
 #define MT29F_STATUS_FLAG_CRBUSY        (1 << 7)
-#define MT29F_STATUS_PROGRAM_FAIL       (1 << 3)
 
 // Some useful defs and macros
 #define MT29F_PAGE_SIZE                 fdevice->geometry.pageSize
