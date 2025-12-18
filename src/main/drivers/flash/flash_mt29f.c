@@ -127,7 +127,7 @@ struct {
     uint16_t        pagesPerSector;
     uint16_t        pageSize;
 } mt29fFlashConfig[] = {
-    // Winbond MT29F1G01ABAFDWB-IT:F
+    // Micron MT29F1G01ABAFDWB-IT:F
     // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m78a-1gb-3v-nand-spi.pdf
     { 0x2C14, 1024, 64, 2048 },
     { 0, 0, 0, 0 },
