@@ -533,7 +533,7 @@ If pageProgramContinue observes the page boundary, then do nothing(?).
 
 static uint32_t programStartAddress;
 static uint32_t programLoadAddress;
-bool bufferDirty = false;
+static bool bufferDirty = false;
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
@@ -555,7 +555,7 @@ static busStatus_e w25n_callbackReady(uintptr_t arg)
 }
 
 #ifdef USE_QUADSPI
-bool isProgramming = false;
+static bool isProgramming = false;
 
 static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
