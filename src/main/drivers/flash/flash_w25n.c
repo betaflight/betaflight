@@ -115,7 +115,7 @@
 #define W25N_TIMEOUT_PAGE_READ_MS        2   // tREmax = 60us (ECC enabled)
 #define W25N_TIMEOUT_PAGE_PROGRAM_MS     2   // tPPmax = 700us
 #define W25N_TIMEOUT_BLOCK_ERASE_MS      15  // tBEmax = 10ms
-#define W25N_TIMEOUT_RESET_MS            500 // tRSTmax = 500ms
+#define W25N_TIMEOUT_RESET_MS            2   // tRSTmax = 500us
 
 // Sizes (in bits)
 #define W25N_STATUS_REGISTER_SIZE        8
