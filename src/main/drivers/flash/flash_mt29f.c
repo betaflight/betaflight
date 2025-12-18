@@ -885,6 +885,8 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
     case 0: // Successful read, no ECC correction
         break;
     case 1: // Successful read with ECC correction
+        mt29f_addError(address, eccCode);
+        break;
     case 2: // Uncorrectable ECC in a single page
     case 3: // Uncorrectable ECC in multiple pages
         mt29f_addError(address, eccCode);
