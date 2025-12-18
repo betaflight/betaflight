@@ -842,13 +842,18 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     uint32_t targetPage = W25N_LINEAR_TO_PAGE(address);
 
     // As data is buffered before being written a flush must be performed before attempting a read
+    bool was_dirty = bufferDirty;
     w25n_flush(fdevice);
 
-    if (currentPage != targetPage) {
+    bool page_change = (currentPage != targetPage);
+
+    if (was_dirty || page_change) {
         if (!w25n_waitForReady(fdevice)) {
             return 0;
         }
+    }
 
+    if (page_change) {
         currentPage = UINT32_MAX;
 
         w25n_performCommandWithPageAddress(&fdevice->io, W25N_INSTRUCTION_PAGE_DATA_READ, targetPage);
