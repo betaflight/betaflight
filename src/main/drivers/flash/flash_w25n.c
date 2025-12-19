@@ -944,7 +944,7 @@ LOCAL_UNUSED_FUNCTION static int w25n_readExtensionBytes(flashDevice_t *fdevice,
 
     w25n_performCommandWithPageAddress(&fdevice->io, W25N_INSTRUCTION_PAGE_DATA_READ, W25N_LINEAR_TO_PAGE(address));
 
-    uint32_t column = 2048;
+    uint32_t column = W25N_PAGE_SIZE;
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
