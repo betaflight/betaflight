@@ -75,6 +75,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define QUADSPI_TypeDef      void
 #define MAX_QUADSPI_PIN_SEL  1
 
+#define QUADSPI_TRAIT_CS_SOFTWARE       1
+
 #endif
 
 #define DMA_DATA_ZERO_INIT
