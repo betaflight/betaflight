@@ -848,12 +848,12 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     bool page_change = (currentPage != targetPage);
 
     if (was_dirty || page_change) {
+        // if the buffer was dirty, we re-read the freshly written data, including the results of any write failures
+
         if (!w25n_waitForReady(fdevice)) {
             return 0;
         }
-    }
 
-    if (page_change) {
         currentPage = UINT32_MAX;
 
         w25n_performCommandWithPageAddress(&fdevice->io, W25N_INSTRUCTION_PAGE_DATA_READ, targetPage);
