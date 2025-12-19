@@ -810,12 +810,12 @@ static int mt29f_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *bu
     bool page_change = (currentPage != targetPage);
 
     if (was_dirty || page_change) {
+        // if the buffer was dirty, we re-read the freshly written data, including the results of any write failures
+
         if (!mt29f_waitForReady(fdevice)) {
             return 0;
         }
-    }
 
-    if (page_change) {
         currentPage = UINT32_MAX;
 
         mt29f_performCommandWithPageAddress(&fdevice->io, MT29F_INSTRUCTION_PAGE_READ, targetPage);
