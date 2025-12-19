@@ -905,7 +905,7 @@ LOCAL_UNUSED_FUNCTION static int mt29f_readExtensionBytes(flashDevice_t *fdevice
 
     mt29f_performCommandWithPageAddress(&fdevice->io, MT29F_INSTRUCTION_PAGE_READ, MT29F_LINEAR_TO_PAGE(address));
 
-    uint32_t column = 2048;
+    uint32_t column = MT29F_PAGE_SIZE;
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
