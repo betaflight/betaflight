@@ -923,6 +923,8 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     case 0: // Successful read, no ECC correction
         break;
     case 1: // Successful read with ECC correction
+        w25n_addError(address, eccCode);
+        break;
     case 2: // Uncorrectable ECC in a single page
     case 3: // Uncorrectable ECC in multiple pages
         w25n_addError(address, eccCode);
