@@ -1,0 +1,14 @@
+{
+  "name": "betaflight devcontainer",
+  "build": {
+    "dockerfile": "containerfile",
+    "context": "."
+  },
+  "privileged": true,
+  "runArgs": [
+     "--userns=host", 
+     "--volume=/dev:/dev"
+  ],
+  "remoteUser": "devpod",
+  "features": {}
+}

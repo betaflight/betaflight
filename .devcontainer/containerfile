@@ -1,0 +1,81 @@
+# Use Debian 13 (Trixie) as base
+FROM docker.io/library/debian:13-slim
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package lists and install basic tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    locales \
+    git \
+    ca-certificates \
+    make \
+    usbutils \
+    sudo \
+    curl \
+    bash \
+    bash-completion \
+    xz-utils \
+    gcc \
+    g++ \
+    nano \
+    ssh \
+    btop \
+    && rm -rf /var/lib/apt/lists/*
+
+# Generate en_US.UTF-8 locale
+RUN sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen
+
+# Set environment variables for locale
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+# Install betaflight specific development tools
+# libblocksruntime-dev --> blocks library
+# python3-intelhex --> required to convert .hex files to .dfu files
+# dfu-util --> required for dfu flashing
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3-intelhex \
+    dfu-util \
+    libblocksruntime-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install clang-18 - version purposefully held back for stability
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    clang-18 \
+    llvm-18-dev \
+    libc++-18-dev \
+    libc++abi-18-dev \
+    libclang-rt-18-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Set clang/clang++ alternatives to clang-18
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+
+# Create a non-root user for DevPod/VSCodium
+ARG USERNAME=devpod
+ARG USER_UID=2000
+ARG USER_GID=$USER_UID
+
+# Create the user and primary group
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd --uid $USER_UID --gid $USER_GID -m $USERNAME --shell /bin/bash && \
+    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers 
+
+# Switch to non-root user
+USER $USERNAME
+
+# USER root
+
+# Set working directory
+WORKDIR /workspace
+
+# Default command
+CMD [ "bash" ]
