@@ -16,8 +16,8 @@ Docker provides the docker CLI for building and running containers.
 
 Follow the [official installation guide](https://docs.docker.com/engine/install/).
 
-After installation usually the docker service need to be started and the user should be added to the `docker` group.
-Details on how to do this is linux disto dependent - refer to your distribution manual for details on how to achieve this.
+After installation usually the docker service needs to be started and the user should be added to the `docker` group.
+Details on how to do this is linux distro dependent - refer to your distribution manual for details on how to achieve this.
 Below is an example that should work on both Debian and Ubuntu.
 
 ```bash
