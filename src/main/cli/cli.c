@@ -2608,7 +2608,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
     if (!text) {
         cliShowInvalidArgumentCountError(cmdName);
     } else {
-        text++;
+        text = skipSpace(text + 1);
         flashfsSeekAbs(address);
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
