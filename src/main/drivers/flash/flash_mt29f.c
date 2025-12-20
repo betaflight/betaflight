@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Dominic Clifton <me@dominiclifton.name>
+ * Based on the w25n driver by jflyper
  */
 
 #include <stdbool.h>

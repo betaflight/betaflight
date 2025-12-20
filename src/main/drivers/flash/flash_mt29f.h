@@ -17,7 +17,8 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  *
- * Author: jflyper
+ * Author: Dominic Clifton <me@dominiclifton.name>
+ * Based on the w25n driver by jflyper
  */
 
 #pragma once
