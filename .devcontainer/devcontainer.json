@@ -6,7 +6,7 @@
   },
   "privileged": true,
   "runArgs": [
-     "--userns=host", 
+     "--userns=host",
      "--volume=/dev:/dev"
   ],
   "remoteUser": "devpod",

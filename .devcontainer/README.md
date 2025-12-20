@@ -41,9 +41,9 @@ Once VS Code is installed, add the Dev Containers extension using the official g
 
 VSCode from Microsoft and its Dev Containers Extension are not fully open source.
 
-The VSCodium project: https://vscodium.com/ builds from the open source repository of VSCode stripping Mcirosoft proprietary code.
+The VSCodium project: https://vscodium.com/ builds from the open source repository of VSCode stripping Microsoft proprietary code.
 Similarly the devpod project: https://devpod.sh/ provides a wrapper similar to the Microsoft Dev Containers Extension around the open development container specification: https://containers.dev/.
-The two can be used together to achive something similar to Microsoft's proprietary solution.
+The two can be used together to achieve something similar to Microsoft's proprietary solution.
 
 Devpod is a tool for running devcontainers anywhere, including Docker, Podman, and remote machines. 
 Install it by downloading the appropriate binary or installer from the Devpod website or GitHub releases. 
@@ -57,7 +57,7 @@ For macOS and Windows users, Podman relies on a managed virtual machine.
 The official setup instructions for these platforms are included in the same installation guide above.
 
 Due to the fact that Podman is rootless by default integration with VSCode and the Dev Containers Extension is less ideal. 
-While Podman can run as root it is required to do so for every command and not easily achived by the default Dev Containers Extension.
+While Podman can run as root it is required to do so for every command and not easily achieved by the default Dev Containers Extension.
 
 With podman the build can be performed with:
 
@@ -71,7 +71,7 @@ Run the container with:
     sudo podman run -it --rm --privileged --volume=/dev:/dev -v "$PWD":/workspace --name betaflight betaflight
 ```
 
-## Known limitaions and quirks
+## Known limitations and quirks
 
 While devcontainers can be made truly universal for SW development this is not fully possible for this project due to the requirement for direct HW access to the flight controller on the USB bus.
 This becomes an issue with rootless podman that struggles to pass HW to the container.
@@ -98,4 +98,4 @@ For pure SW development or for cases where the flashing is done with the betafli
 
 These instructions are tested on Void Linux - no Mac OS or Windows.
 If you have issues creating the container on those platforms remove the `"--volume=/dev:/dev"` line. 
-You will lose the HW access from teh container but you can still develop code as long as you flash with the betaflight app.
+You will lose the HW access from the container but you can still develop code as long as you flash with the betaflight app.

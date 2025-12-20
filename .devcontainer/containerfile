@@ -72,8 +72,6 @@ RUN groupadd --gid $USER_GID $USERNAME && \
 # Switch to non-root user
 USER $USERNAME
 
-# USER root
-
 # Set working directory
 WORKDIR /workspace
 
