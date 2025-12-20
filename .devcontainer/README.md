@@ -5,7 +5,7 @@ NOTE: Unless otherwise specified all commands below should be run from the main 
 ## Why use devcontainers?
 
 Devcontainers provide a consistent, reproducible development environment that works the same across machines.
-They eliminate “works on my machine” issues by packaging tools, dependencies, and configurations inside a container. 
+They eliminate “works on my machine” issues by packaging tools, dependencies, and configurations inside a container.
 This makes onboarding faster, simplifies collaboration, and ensures your development setup stays clean and isolated.
 
 ## Installation of tools
@@ -14,7 +14,7 @@ This makes onboarding faster, simplifies collaboration, and ensures your develop
 
 Docker provides the docker CLI for building and running containers.
 
-Follow the official installation guide: https://docs.docker.com/engine/install/
+Follow the [official installation guide](https://docs.docker.com/engine/install/).
 
 After installation usually the docker service need to be started and the user should be added to the `docker` group.
 Details on how to do this is linux disto dependent - refer to your distribution manual for details on how to achieve this.
@@ -23,7 +23,7 @@ Below is an example that should work on both Debian and Ubuntu.
 ```bash
     sudo systemctl enable --now docker
     sudo usermod -aG docker $USERNAME
-    docker run hello-world 
+    docker run hello-world
 ```
 
 You might need to log out and in again after adding your user to the docker group before changes take effect.
@@ -32,37 +32,37 @@ You might need to log out and in again after adding your user to the docker grou
 
 To use devcontainers more effectively, you can install Visual Studio Code along with the Dev Containers extension.
 
-You can install VS Code by following the official instructions provided here: https://code.visualstudio.com/docs/setup/setup-overview
+You can install VS Code by following the [official instructions provided](https://code.visualstudio.com/docs/setup/setup-overview) for your operating system.
 
-Once VS Code is installed, add the Dev Containers extension using the official guide: https://code.visualstudio.com/docs/devcontainers/containers
+Once VS Code is installed, add the Dev Containers extension using the [official guide](https://code.visualstudio.com/docs/devcontainers/containers).
 
 
 ### Fully open source solution via devpod and VSCodium
 
 VSCode from Microsoft and its Dev Containers Extension are not fully open source.
 
-The VSCodium project: https://vscodium.com/ builds from the open source repository of VSCode stripping Microsoft proprietary code.
-Similarly the devpod project: https://devpod.sh/ provides a wrapper similar to the Microsoft Dev Containers Extension around the open development container specification: https://containers.dev/.
+The [VSCodium project](https://vscodium.com/) builds from the open source repository of VSCode stripping Microsoft proprietary code.
+Similarly the [devpod project](https://devpod.sh/) provides a wrapper similar to the Microsoft Dev Containers Extension around the open [development container specification](https://containers.dev/).
 The two can be used together to achieve something similar to Microsoft's proprietary solution.
 
-Devpod is a tool for running devcontainers anywhere, including Docker, Podman, and remote machines. 
-Install it by downloading the appropriate binary or installer from the Devpod website or GitHub releases. 
+Devpod is a tool for running devcontainers anywhere, including Docker, Podman, and remote machines.
+Install it by downloading the appropriate binary or installer from the Devpod website or GitHub releases.
 
 ### Using Podman as backend instead of docker
 
-Podman is a rootless, daemonless alternative to Docker that provides a compatible command‑line interface for managing containers. 
-Installation instructions for all supported platforms are available in the official Podman documentation: https://podman.io/docs/installation
+Podman is a rootless, daemonless alternative to Docker that provides a compatible command‑line interface for managing containers.
+Installation instructions for all supported platforms are available in the [official Podman documentation](https://podman.io/docs/installation).
 
-For macOS and Windows users, Podman relies on a managed virtual machine. 
+For macOS and Windows users, Podman relies on a managed virtual machine.
 The official setup instructions for these platforms are included in the same installation guide above.
 
-Due to the fact that Podman is rootless by default integration with VSCode and the Dev Containers Extension is less ideal. 
+Podman is rootless by default therefore integration with VSCode and the Dev Containers Extension is less ideal.
 While Podman can run as root it is required to do so for every command and not easily achieved by the default Dev Containers Extension.
 
-With podman the build can be performed with:
+With Podman the build can be performed with:
 
 ```bash
-    podman build -f .devcontainer/containerfile -t betaflight .
+    sudo podman build -f .devcontainer/containerfile -t betaflight .
 ```
 
 Run the container with:
@@ -71,10 +71,15 @@ Run the container with:
     sudo podman run -it --rm --privileged --volume=/dev:/dev -v "$PWD":/workspace --name betaflight betaflight
 ```
 
+Note that both commands are run with `sudo` and this gives a completely separate environment.
+This also means that commands like `sudo podman ps -a` will not show containers started with `podman` without `sudo` and vice versa.
+
+Once the rootfull Podman container is running you can connect to it with whatever IDE you want.
+
 ## Known limitations and quirks
 
 While devcontainers can be made truly universal for SW development this is not fully possible for this project due to the requirement for direct HW access to the flight controller on the USB bus.
-This becomes an issue with rootless podman that struggles to pass HW to the container.
+This becomes an issue with rootless Podman that struggles to pass HW to the container.
 Here docker has an advantage because its daemon actually runs as root.
 
 What this means for development in a devcontainer is that when calling for example:
@@ -83,7 +88,7 @@ What this means for development in a devcontainer is that when calling for examp
     make dfu_flash CONFIG=XX
 ```
 
-will fail with permissions error. 
+will fail with permissions error.
 This can be avoided by simply calling the command with sudo:
 
 ```bash
@@ -91,11 +96,12 @@ This can be avoided by simply calling the command with sudo:
 ```
 
 The negative of this approach is that the *.dfu file generated by the python conversion script will be output as the root user.
+To fix ownership after flashing, you can run: `sudo chown $USER:$USER obj/*.dfu`.
 
 The devcontainer can be made to run as non-root with UID and GID mappings between the host and the container, but this is not trivial as different distributions have different group values for `dialout` and `plugdev`.
 
 For pure SW development or for cases where the flashing is done with the betaflight app this is irrelevant.
 
-These instructions are tested on Void Linux - no Mac OS or Windows.
-If you have issues creating the container on those platforms remove the `"--volume=/dev:/dev"` line. 
+These instructions are tested on Void Linux but should apply to any Linux distro - no Mac OS or Windows.
+If you have issues creating the container on those platforms remove the `"--volume=/dev:/dev"` line.
 You will lose the HW access from the container but you can still develop code as long as you flash with the betaflight app.
