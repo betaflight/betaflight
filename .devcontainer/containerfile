@@ -11,6 +11,8 @@ RUN apt-get update && \
     git \
     ca-certificates \
     make \
+    cmake \
+    cppcheck \
     usbutils \
     sudo \
     curl \
@@ -22,6 +24,7 @@ RUN apt-get update && \
     nano \
     ssh \
     btop \
+    xxd \
     && rm -rf /var/lib/apt/lists/*
 
 # Generate en_US.UTF-8 locale
@@ -54,20 +57,27 @@ RUN apt-get update && \
     libclang-rt-18-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
 # Set clang/clang++ alternatives to clang-18
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
 
+# Install stm32flash from source - NOTE: make stm32flash_install points to a broken link
+RUN git clone git://git.code.sf.net/p/stm32flash/code stm32flash-code && \
+    cd stm32flash-code && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf stm32flash-code
+
 # Create a non-root user for DevPod/VSCodium
 ARG USERNAME=devpod
-ARG USER_UID=2000
+ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 # Create the user and primary group
 RUN groupadd --gid $USER_GID $USERNAME && \
     useradd --uid $USER_UID --gid $USER_GID -m $USERNAME --shell /bin/bash && \
-    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers 
+    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Switch to non-root user
 USER $USERNAME
