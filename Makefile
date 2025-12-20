@@ -415,7 +415,7 @@ TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
-CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_MAP)
 CLEAN_ARTIFACTS += $(TARGET_LST)
 CLEAN_ARTIFACTS += $(TARGET_DFU)
 CLEAN_ARTIFACTS += $(TARGET_UF2)
@@ -566,8 +566,12 @@ CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 ## clean             : clean up temporary / machine-generated files
 clean:
 	@echo "Cleaning $(TARGET_NAME)"
-	$(V0) rm -f $(CLEAN_ARTIFACTS)
-	$(V0) rm -rf $(TARGET_OBJ_DIR)
+	@echo "Removing artifacts:"
+	@echo $(CLEAN_ARTIFACTS) | tr ' ' '\n'
+	$(V1) rm -f $(CLEAN_ARTIFACTS)
+	@echo "Removing object directory:"
+	@echo $(TARGET_OBJ_DIR)
+	$(V1) rm -rf $(TARGET_OBJ_DIR)
 	@echo "Cleaning $(TARGET_NAME) succeeded."
 
 ## test_clean        : clean up temporary / machine-generated files (tests)
