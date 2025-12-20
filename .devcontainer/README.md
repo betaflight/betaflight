@@ -37,11 +37,11 @@ You can install VS Code by following the [official instructions provided](https:
 Once VS Code is installed, add the Dev Containers extension using the [official guide](https://code.visualstudio.com/docs/devcontainers/containers).
 
 
-### Fully open source solution via devpod and VSCodium
+### Fully open-source solution via devpod and VSCodium
 
-VSCode from Microsoft and its Dev Containers Extension are not fully open source.
+VSCode from Microsoft and its Dev Containers Extension are not fully open-source.
 
-The [VSCodium project](https://vscodium.com/) builds from the open source repository of VSCode stripping Microsoft proprietary code.
+The [VSCodium project](https://vscodium.com/) builds from the open-source repository of VSCode stripping Microsoft proprietary code.
 Similarly the [devpod project](https://devpod.sh/) provides a wrapper similar to the Microsoft Dev Containers Extension around the open [development container specification](https://containers.dev/).
 The two can be used together to achieve something similar to Microsoft's proprietary solution.
 
@@ -74,7 +74,7 @@ Run the container with:
 Note that both commands are run with `sudo` and this gives a completely separate environment.
 This also means that commands like `sudo podman ps -a` will not show containers started with `podman` without `sudo` and vice versa.
 
-Once the rootfull Podman container is running you can connect to it with whatever IDE you want.
+Once the rootful Podman container is running you can connect to it with whatever IDE you want.
 
 ## Known limitations and quirks
 
@@ -102,6 +102,6 @@ The devcontainer can be made to run as non-root with UID and GID mappings betwee
 
 For pure SW development or for cases where the flashing is done with the betaflight app this is irrelevant.
 
-These instructions are tested on Void Linux but should apply to any Linux distro - no Mac OS or Windows.
+These instructions are tested on Void Linux but should apply to any Linux distro - no macOS or Windows.
 If you have issues creating the container on those platforms remove the `"--volume=/dev:/dev"` line.
 You will lose the HW access from the container but you can still develop code as long as you flash with the betaflight app.
