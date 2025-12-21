@@ -28,14 +28,14 @@ endif
 
 # Detect all Windows-based POSIX environments (MinGW, MSYS, Cygwin)
 ifneq (,$(filter MINGW% MSYS% CYGWIN%,$(UNAME)))
-    OSFAMILY := windows
+  OSFAMILY := windows
     
-    # Set specific environment flags if needed
-    ifneq (,$(filter CYGWIN%,$(UNAME)))
-        CYGWIN := 1
-    else
-        MINGW := 1
-    endif
+  # Set specific environment flags if needed
+  ifneq (,$(filter CYGWIN%,$(UNAME)))
+    CYGWIN := 1
+  else
+    MINGW := 1
+  endif
 endif
 
 # report an error if we couldn't work out what OS this is running on
