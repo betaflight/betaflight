@@ -807,6 +807,8 @@ static void w25n_flush(flashDevice_t *fdevice)
 
         w25n_programExecute(fdevice, W25N_LINEAR_TO_PAGE(programStartAddress));
 
+        w25n_waitForReady(fdevice);
+
         bufferDirty = false;
     }
 }

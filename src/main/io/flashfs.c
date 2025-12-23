@@ -213,7 +213,6 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
 bool flashfsIsReady(void)
 {
     // Check for flash chip existence first, then check if idle and ready.
-    // Added check for erasing state.
 
     return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE || flashfsState == FLASHFS_ERASING) && flashIsReady());
 }
@@ -470,6 +469,10 @@ void flashfsSeekAbs(uint32_t offset)
  */
 void flashfsWriteByte(uint8_t byte)
 {
+    if (flashfsState == FLASHFS_ERASING) {
+        return;
+    }
+
 #ifdef USE_FLASH_TEST_PRBS
     if (debugMode == DEBUG_FLASH_TEST_PRBS) {
         debug[1]++;
@@ -500,6 +503,10 @@ void flashfsWriteByte(uint8_t byte)
  */
 void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
 {
+    if (flashfsState == FLASHFS_ERASING) {
+        return;
+    }
+
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
     int bufCount;
