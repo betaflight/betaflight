@@ -213,8 +213,9 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
 bool flashfsIsReady(void)
 {
     // Check for flash chip existence first, then check if idle and ready.
+    // Added check for erasing state.
 
-    return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE) && flashIsReady());
+    return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE || flashfsState == FLASHFS_ERASING) && flashIsReady());
 }
 
 bool flashfsIsSupported(void)
