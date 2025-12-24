@@ -111,6 +111,7 @@ COMMON_SRC = \
             drivers/serial.c \
             drivers/serial_impl.c \
             drivers/sound_beeper.c \
+            drivers/usb_cdc_debug.c \
             drivers/stack_check.c \
             drivers/timer_common.c \
             drivers/transponder_ir_arcitimer.c \
