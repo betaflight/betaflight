@@ -438,13 +438,27 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
+static bool flashWaitForReadyOrFail(void)
+{
+    if (!flashDevice.vTable->waitForReady) {
+        return true;
+    }
+
+    if (!flashDevice.vTable->waitForReady(&flashDevice)) {
+        failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+        return false;
+    }
+
+    return true;
+}
+
 MMFLASH_CODE void flashEraseSector(uint32_t address)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseSector(&flashDevice, address);
 
-    if (flashDevice.vTable->waitForReady) {
-        flashDevice.vTable->waitForReady(&flashDevice);
+    if (!flashWaitForReadyOrFail()) {
+        return;
     }
 }
 
@@ -453,8 +467,8 @@ void flashEraseCompletely(void)
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
 
-    if (flashDevice.vTable->waitForReady) {
-        flashDevice.vTable->waitForReady(&flashDevice);
+    if (!flashWaitForReadyOrFail()) {
+        return;
     }
 }
 
@@ -508,9 +522,7 @@ MMFLASH_CODE void flashFlush(void)
     if (flashDevice.vTable->flush) {
         flashDevice.vTable->flush(&flashDevice);
 
-        if (flashDevice.vTable->waitForReady) {
-            flashDevice.vTable->waitForReady(&flashDevice);
-        }
+        flashWaitForReadyOrFail();
     }
 }
 
