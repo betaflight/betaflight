@@ -32,9 +32,9 @@
 // The month the release is made
 #define FC_VERSION_MONTH            12
 // Increment when a bug-fix release is made (1 for initial YYYY.MM.X release)
-#define FC_VERSION_PATCH_LEVEL      1
+#define FC_VERSION_PATCH_LEVEL      2
 // Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
-#define FC_VERSION_SUFFIX
+#define FC_VERSION_SUFFIX "alpha"
 
 // Prepend "-" to non-empty suffix
 //  Minimal helper: only tests two cases — empty vs a single string literal
