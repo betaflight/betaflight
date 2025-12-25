@@ -217,6 +217,11 @@ bool flashfsIsReady(void)
     return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE) && flashIsReady());
 }
 
+bool flashfsIsEraseInProgress(void)
+{
+    return flashfsState == FLASHFS_ERASING;
+}
+
 bool flashfsIsSupported(void)
 {
     return flashfsSize > 0;
