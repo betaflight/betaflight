@@ -2570,7 +2570,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliWriterFlush();
     flashfsEraseCompletely();
 
-    while (!flashfsIsReady()) {
+    while (!flashfsIsReady() && !flashfsIsEraseInProgress()) {
 #ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {
@@ -2608,6 +2608,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
     if (!text) {
         cliShowInvalidArgumentCountError(cmdName);
     } else {
+        text++;
         flashfsSeekAbs(address);
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();

@@ -206,6 +206,10 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     // Set the callback argument when calling back to this driver for DMA completion
     dev->callbackArg = (uint32_t)&flashDevice;
 
+
+#if defined(QUADSPI_TRAIT_CS_SOFTWARE)
+    // Required for RP2350, but not for STM32 MCUs where the CS is controlled by hardware.
+
     if (flashConfig->csTag) {
         dev->busType_u.spi.csnPin = IOGetByTag(flashConfig->csTag);
     } else {
@@ -215,6 +219,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     IOInit(dev->busType_u.spi.csnPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(dev->busType_u.spi.csnPin, SPI_IO_CS_CFG);
     IOHi(dev->busType_u.spi.csnPin);
+#endif
 
     flashDevice.io.mode = FLASHIO_QUADSPI;
     flashDevice.io.handle.dev = dev;
@@ -433,16 +438,38 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
+static bool flashWaitForReadyOrFail(void)
+{
+    if (!flashDevice.vTable->waitForReady) {
+        return true;
+    }
+
+    if (!flashDevice.vTable->waitForReady(&flashDevice)) {
+        failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+        return false;
+    }
+
+    return true;
+}
+
 MMFLASH_CODE void flashEraseSector(uint32_t address)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseSector(&flashDevice, address);
+
+    if (!flashWaitForReadyOrFail()) {
+        return;
+    }
 }
 
 void flashEraseCompletely(void)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
+
+    if (!flashWaitForReadyOrFail()) {
+        return;
+    }
 }
 
 /* The callback, if provided, will receive the totoal number of bytes transfered
@@ -494,6 +521,8 @@ MMFLASH_CODE void flashFlush(void)
 {
     if (flashDevice.vTable->flush) {
         flashDevice.vTable->flush(&flashDevice);
+
+        flashWaitForReadyOrFail();
     }
 }
 
