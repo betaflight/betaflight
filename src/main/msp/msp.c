@@ -3123,7 +3123,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
 #if defined(USE_DYN_NOTCH_FILTER)
-            dynNotchConfigMutable()->dyn_notch_count = sbufReadU8(src);
+            i = sbufReadU8(src);
+            // verify dyn notch count
+            if (i > DYN_NOTCH_COUNT_MAX) {
+                return MSP_RESULT_ERROR;
+            }
+            dynNotchConfigMutable()->dyn_notch_count = i;
 #else
             sbufReadU8(src);
 #endif
