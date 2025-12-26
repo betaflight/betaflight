@@ -2323,6 +2323,8 @@ static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 }
 #endif // USE_SIMPLIFIED_TUNING
 
+static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
+
 static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
 
@@ -2385,14 +2387,14 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 return MSP_RESULT_ERROR;
             }
             int bytesRemaining = sbufBytesRemaining(dst);
-            mspPacket_t packetIn, packetOut;
-            sbufInit(&packetIn.buf, src->end, src->end); // there is no paramater for MSP_MULTIPLE_MSP
+            mspPacket_t packetOut;
             uint8_t* initialInputPtr = src->ptr;
             while (sbufBytesRemaining(src) && bytesRemaining > 0) {
                 uint8_t newMSP = sbufReadU8(src);
                 sbufInit(&packetOut.buf, dst->ptr + 1, dst->end); // reserve 1 byte for length
-                packetIn.cmd = newMSP;
-                mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
+                if (mspFcProcessOutCommand(srcDesc, newMSP, &packetOut, NULL) != MSP_RESULT_ACK) {
+                    return MSP_RESULT_ERROR;
+                }
                 uint8_t mspSize = sbufPtr(&packetOut.buf) - dst->ptr; // length included
                 bytesRemaining -= mspSize;
                 if (bytesRemaining >= 0) {
@@ -2404,8 +2406,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             for (int i = 0; i < maxMSPs; i++) {
                 uint8_t* sizePtr = sbufPtr(&packetOut.buf);
                 sbufWriteU8(&packetOut.buf, 0); // placeholder for reply size
-                packetIn.cmd = sbufReadU8(src);
-                mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
+                uint8_t newMSP = sbufReadU8(src);
+                // No need to check again
+                mspFcProcessOutCommand(srcDesc, newMSP, &packetOut, NULL);
                 *sizePtr = sbufPtr(&packetOut.buf) - (sizePtr + 1);
             }
             dst->ptr = packetOut.buf.ptr;
@@ -4456,6 +4459,22 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
 #endif
     } else {
         ret = mspCommonProcessInCommand(srcDesc, cmdMSP, src, mspPostProcessFn);
+    }
+    reply->result = ret;
+    return ret;
+}
+
+static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    int ret = MSP_RESULT_CMD_UNKNOWN;
+    sbuf_t *dst = &reply->buf;
+    // initialize reply by default
+    reply->cmd = cmdMSP;
+
+    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+        ret = MSP_RESULT_ACK;
+    } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
+        ret = MSP_RESULT_ACK;
     }
     reply->result = ret;
     return ret;
