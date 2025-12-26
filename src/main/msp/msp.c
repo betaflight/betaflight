@@ -2748,7 +2748,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     mac->modeLogic = sbufReadU8(src);
 
                     i = sbufReadU8(src);
-                    mac->linkedTo = findBoxByPermanentId(i)->boxId;
+                    const box_t *linkedToBox = findBoxByPermanentId(i);
+                    if (!linkedToBox) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    mac->linkedTo = linkedToBox->boxId;
                 }
                 rcControlsInit();
             } else {
