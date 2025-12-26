@@ -962,6 +962,15 @@ static void cliRepeat(char ch, uint8_t len)
 }
 #endif
 
+static char *skipSpace(char *buffer)
+{
+    while (*(buffer) == ' ') {
+        buffer++;
+    }
+
+    return buffer;
+}
+
 static void cliPrompt(void)
 {
     cliPrint("\r\n# ");
@@ -2603,12 +2612,12 @@ static void cliFlashVerify(const char *cmdName, char *cmdline)
 static void cliFlashWrite(const char *cmdName, char *cmdline)
 {
     const uint32_t address = atoi(cmdline);
-    const char *text = strchr(cmdline, ' ');
+    char *text = strchr(cmdline, ' ');
 
     if (!text) {
         cliShowInvalidArgumentCountError(cmdName);
     } else {
-        text++;
+        text = skipSpace(text + 1);
         flashfsSeekAbs(address);
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
@@ -3560,15 +3569,6 @@ static void cliMap(const char *cmdName, char *cmdline)
 
     buf[i] = '\0';
     cliPrintLinef("map %s", buf);
-}
-
-static char *skipSpace(char *buffer)
-{
-    while (*(buffer) == ' ') {
-        buffer++;
-    }
-
-    return buffer;
 }
 
 static char *checkCommand(char *cmdline, const char *command)
