@@ -3249,7 +3249,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
-            currentPidProfile->feedforward_averaging = sbufReadU8(src);
+            i = sbufReadU8(src);
+            if (i > 3) {
+                return MSP_RESULT_ERROR;
+            }
+            currentPidProfile->feedforward_averaging = i;
             currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
             currentPidProfile->feedforward_boost = sbufReadU8(src);
             currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
