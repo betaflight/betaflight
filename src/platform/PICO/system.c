@@ -24,7 +24,9 @@
 
 #include "platform.h"
 
+#include "common/time.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -132,19 +134,23 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     }
 }
 
+// We can make use of time_us_64 if BF defines USE_64BIT_TIME in future, but that will require some changes
+STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
+STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
+
 // Return system uptime in milliseconds (rollover in 49 days)
-uint32_t millis(void)
+timeMs_t millis(void)
 {
-    return (uint32_t)(time_us_64() / 1000);
+    return (timeMs_t)(time_us_64() / 1000);
 }
 
 // Return system uptime in micros (rollover in 71 mins)
-uint32_t micros(void)
+timeUs_t micros(void)
 {
     return time_us_32();
 }
 
-uint32_t microsISR(void)
+timeUs_t microsISR(void)
 {
     return micros();
 }
