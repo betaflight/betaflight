@@ -97,7 +97,7 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
 
 
 // remember to add to PICO_WRAPPED_FUNCTIONS in PICO_trace.mk
-TRACEvoidvoid(init)
+TRACEvoidvoid(initPhase1)
     TRACEvoidvoid(initEEPROM)
     TRACEvoidvoid(isEEPROMVersionValid)
     TRACEvoidvoid(writeUnmodifiedConfigToEEPROM)
