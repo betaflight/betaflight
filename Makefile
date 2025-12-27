@@ -380,6 +380,8 @@ ifneq ($(CONFIG),)
 TARGET_NAME := $(TARGET_NAME)_$(CONFIG)
 endif
 
+TARGET_NAME_CLEAN := $(TARGET_NAME)
+
 ifeq ($(REV),yes)
 TARGET_NAME := $(TARGET_NAME)_$(REVISION)
 endif
@@ -413,12 +415,8 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_BIN)
-CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
-CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_MAP)
-CLEAN_ARTIFACTS += $(TARGET_LST)
-CLEAN_ARTIFACTS += $(TARGET_DFU)
-CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
@@ -443,8 +441,6 @@ $(TARGET_DFU): $(TARGET_HEX)
 	$(V1) $(PYTHON) $(DFUSE-PACK) -i $< $@
 
 else
-CLEAN_ARTIFACTS += $(TARGET_UNPATCHED_BIN) $(TARGET_EXST_HASH_SECTION_FILE) $(TARGET_EXST_ELF)
-
 $(TARGET_UNPATCHED_BIN): $(TARGET_ELF)
 	@echo "Creating BIN (without checksum) $(TARGET_UNPATCHED_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
@@ -565,14 +561,28 @@ CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
+ifeq ($(strip $(TARGET_NAME)),)
+	@echo "No TARGET/CONFIG name specified. Performing full cleanup of $(BIN_DIR)"
+	@if [ -d "$(BIN_DIR)" ]; then \
+		echo "Removing directory: $(BIN_DIR)"; \
+		rm -rf "$(BIN_DIR)"; \
+	fi
+	@echo "Cleaning all succeeded."
+else
 	@echo "Cleaning $(TARGET_NAME)"
-	@echo "Removing artifacts:"
-	@echo $(CLEAN_ARTIFACTS) | tr ' ' '\n'
-	$(V1) rm -f $(CLEAN_ARTIFACTS)
-	@echo "Removing object directory:"
-	@echo $(TARGET_OBJ_DIR)
-	$(V1) rm -rf $(TARGET_OBJ_DIR)
+	$(eval FILES_TO_REMOVE := $(wildcard $(CLEAN_ARTIFACTS)))
+	@if [ -n "$(FILES_TO_REMOVE)" ]; then \
+		echo "Removing artifacts:"; \
+		echo $(FILES_TO_REMOVE) | tr ' ' '\n'; \
+		rm -f $(FILES_TO_REMOVE); \
+	fi
+	@if [ -d "$(TARGET_OBJ_DIR)" ]; then \
+		echo "Removing object directory:"; \
+		echo $(TARGET_OBJ_DIR); \
+		rm -rf $(TARGET_OBJ_DIR); \
+	fi
 	@echo "Cleaning $(TARGET_NAME) succeeded."
+endif
 
 ## test_clean        : clean up temporary / machine-generated files (tests)
 test-%_clean:
