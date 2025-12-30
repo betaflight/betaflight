@@ -382,7 +382,15 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &compassConfig()->mag_customAlignment);
+    // Custom alignments are applied via a transposed rotation matrix (matrixTrnVectorMul),
+    // which reverses rotation direction. Negate angles for mag so the resulting rotation
+    // matches the user-entered convention and the standard CW alignments.
+    sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
+    magCustomAlignment.roll = -magCustomAlignment.roll;
+    magCustomAlignment.pitch = -magCustomAlignment.pitch;
+    magCustomAlignment.yaw = -magCustomAlignment.yaw;
+
+    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
