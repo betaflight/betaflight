@@ -49,17 +49,17 @@ To support this schedule, our development phases will be structured as follows:
 
 For the `2025.12` release, due to the timing since the last release, we are extending the RC period to two months. The Release Candidate phase will begin in October 2025 and until the end of November 2025.
 
-### Requirements for the submission of new and updated targets
+### Requirements for the submission of new and updated target configuration
 
-The following new requirements for pull requests adding new targets or modifying existing targets are put in place from now on:
+The requirements for pull requests adding new targets or modifying existing targets are as follows:
 
-1. Read the [hardware specification](https://www.betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines)
+1. Read the [hardware specification](https://www.betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines). In order for the target to be considered "Betaflight Supported" it will need to meet these guidelines.
 
-2. No new F3 based targets will be accepted;
+2. Make sure you read the details for inclusion in the [cloud build system](https://www.betaflight.com/docs/development/manufacturer/config-target-guidance).
 
-3. For any new target that is to be added, only a Unified Target config into https://github.com/betaflight/unified-targets/tree/master/configs/default needs to be submitted. See the [instructions](https://www.betaflight.com/docs/manufacturer/creating-an-unified-target) for how to create a Unified Target configuration. If there is no Unified Target for the MCU type of the new target (see instructions above), then a 'legacy' format target definition into `src/main/target/` has to be submitted as well;
+3. For any new target that is to be added, only a target config file into https://github.com/betaflight/config needs to be submitted. See the [instructions](https://www.betaflight.com/docs/development/manufacturer/creating-configuration) for how to create a target configuration.
 
-4. For changes to existing targets, the change needs to be applied to the Unified Target config in https://github.com/betaflight/unified-targets/tree/master/configs/default. If no Unified Target configuration for the target exists, a new Unified Target configuration will have to be created and submitted. If there is no Unified Target for the MCU type of the new target (see instructions above), then an update to the 'legacy' format target definition in `src/main/target/` has to be submitted alongside the update to the Unified Target configuration.
+4. For changes to existing targets, the change needs to be applied to the target config (similar to point 3 above).
 
 
 ## Features
