@@ -51,16 +51,7 @@ For the `2025.12` release, due to the timing since the last release, we are exte
 
 ### Requirements for the submission of new and updated target configuration
 
-The requirements for pull requests adding new targets or modifying existing targets are as follows:
-
-1. Read the [hardware specification](https://www.betaflight.com/docs/development/manufacturer/manufacturer-design-guidelines). In order for the target to be considered "Betaflight Supported" it will need to meet these guidelines.
-
-2. Make sure you read the details for inclusion in the [cloud build system](https://www.betaflight.com/docs/development/manufacturer/config-target-guidance).
-
-3. For any new target that is to be added, only a target config file into https://github.com/betaflight/config needs to be submitted. See the [instructions](https://www.betaflight.com/docs/development/manufacturer/creating-configuration) for how to create a target configuration.
-
-4. For changes to existing targets, the change needs to be applied to the target config (similar to point 3 above).
-
+The requirements for pull requests adding new targets or modifying existing targets are available on the [betaflight.com website](https://www.betaflight.com/docs/development/manufacturer/requirements-for-submission-of-targets).
 
 ## Features
 
