@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -30,6 +31,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
@@ -40,6 +42,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 
@@ -216,6 +219,84 @@
 #define ICM40609_GYRO_UI_FILT_BW_ODR_DIV40   (7 << 0)
 #define ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 0) // Bit[3:0] - Low Latency
 #define ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 0) // Bit[3:0] - Low Latency
+
+typedef enum {
+    ICM40609_ODR_CONFIG_8K = 0,
+    ICM40609_ODR_CONFIG_4K,
+    ICM40609_ODR_CONFIG_2K,
+    ICM40609_ODR_CONFIG_1K,
+} icm40609OdrConfig_e;
+
+typedef struct {
+    uint8_t gyroOdr;
+    uint8_t accelOdr;
+    uint16_t sampleRateHz;
+    gyroRateKHz_e gyroRateKHz;
+} icm40609OdrLutEntry_t;
+
+static const icm40609OdrLutEntry_t icm40609OdrLut[] = {
+    [ICM40609_ODR_CONFIG_8K] = { ICM40609_GYRO_ODR_8KHZ, ICM40609_ACCEL_ODR_8KHZ, 8000, GYRO_RATE_8_kHz },
+    [ICM40609_ODR_CONFIG_4K] = { ICM40609_GYRO_ODR_4KHZ, ICM40609_ACCEL_ODR_4KHZ, 4000, GYRO_RATE_6400_Hz },
+    [ICM40609_ODR_CONFIG_2K] = { ICM40609_GYRO_ODR_2KHZ, ICM40609_ACCEL_ODR_2KHZ, 2000, GYRO_RATE_3200_Hz },
+    [ICM40609_ODR_CONFIG_1K] = { ICM40609_GYRO_ODR_1KHZ, ICM40609_ACCEL_ODR_1KHZ, 1000, GYRO_RATE_1_kHz },
+};
+
+static unsigned icm40609GetTargetRateHz(const gyroDev_t *gyro)
+{
+    unsigned baseRateHz = gyro->gyroSampleRateHz;
+    if (!baseRateHz) {
+        switch (gyro->gyroRateKHz) {
+        case GYRO_RATE_1_kHz:
+            baseRateHz = 1000;
+            break;
+        case GYRO_RATE_3200_Hz:
+            baseRateHz = 3200;
+            break;
+        case GYRO_RATE_6400_Hz:
+            baseRateHz = 6400;
+            break;
+        case GYRO_RATE_6664_Hz:
+            baseRateHz = 6664;
+            break;
+        case GYRO_RATE_8_kHz:
+            baseRateHz = 8000;
+            break;
+        case GYRO_RATE_9_kHz:
+            baseRateHz = 9000;
+            break;
+        case GYRO_RATE_32_kHz:
+            baseRateHz = 32000;
+            break;
+        default:
+            break;
+        }
+    }
+
+    const unsigned decimator = gyro->mpuDividerDrops + 1;
+    return decimator ? (baseRateHz / decimator) : baseRateHz;
+}
+
+static unsigned icm40609SelectOdrIndex(const gyroDev_t *gyro)
+{
+    const unsigned targetRateHz = icm40609GetTargetRateHz(gyro);
+    if (!targetRateHz) {
+        return ARRAYLEN(icm40609OdrLut) - 1;
+    }
+
+    unsigned bestIndex = 0;
+    unsigned bestDiff = UINT_MAX;
+
+    for (unsigned i = 0; i < ARRAYLEN(icm40609OdrLut); i++) {
+        const unsigned entryRateHz = icm40609OdrLut[i].sampleRateHz;
+        const unsigned diff = entryRateHz > targetRateHz ? entryRateHz - targetRateHz : targetRateHz - entryRateHz;
+        if (diff < bestDiff || (diff == bestDiff && entryRateHz > icm40609OdrLut[bestIndex].sampleRateHz)) {
+            bestDiff = diff;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
+}
 
 // REG_ACCEL_CONFIG_STATIC2 - 0x03 bit [0]
 #define ICM40609_ACCEL_AAF_DIS              (1 << 0)
@@ -661,20 +742,25 @@ void icm40609GyroInit(gyroDev_t *gyro)
 
     icm40609SetEndianess(dev, true);
 
-    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
-    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | ICM40609_GYRO_ODR_8KHZ);
-    gyro->scale = GYRO_SCALE_2000DPS;
-    gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-    gyro->gyroSampleRateHz = 8000;
+    const unsigned odrIndex = icm40609SelectOdrIndex(gyro);
+    const icm40609OdrLutEntry_t *odr = &icm40609OdrLut[odrIndex];
 
-    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | ICM40609_ACCEL_ODR_1KHZ );
+    icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
+    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | odr->gyroOdr);
+    gyro->scale = GYRO_SCALE_2000DPS;
+    gyro->gyroSampleRateHz = odr->sampleRateHz;
+    gyro->accSampleRateHz = odr->sampleRateHz;
+    gyro->gyroRateKHz = odr->gyroRateKHz;
+    gyro->gyroShortPeriod = clockMicrosToCycles(1000000 / odr->sampleRateHz);
+
+    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | odr->accelOdr);
 
     icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetGyroDec2M2(dev, true);
 
-    // Set filter bandwidth: Low Latency
+    // Leave UI filter in the low-latency path so the AAF provides the primary cutoff
     spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0,
                     ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR |
                     ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR);
@@ -682,10 +768,10 @@ void icm40609GyroInit(gyroDev_t *gyro)
     uint16_t gyroHWLpf; // Anti-Alias Filter (AAF) in Hz
     switch (gyroConfig()->gyro_hardware_lpf) {
     case GYRO_HARDWARE_LPF_NORMAL:
-        gyroHWLpf = 213;
+        gyroHWLpf = 258;
         break;
     case GYRO_HARDWARE_LPF_OPTION_1:
-        gyroHWLpf = 488;
+        gyroHWLpf = 536;
         break;
     case GYRO_HARDWARE_LPF_OPTION_2:
         gyroHWLpf = 997;
@@ -695,16 +781,16 @@ void icm40609GyroInit(gyroDev_t *gyro)
         gyroHWLpf = 1962;
         break;
 #endif
-        default:
-        gyroHWLpf = 213;
+    default:
+        gyroHWLpf = 258;
     }
 
     icm40609SetGyroAafByHz(dev, true, gyroHWLpf);
-    icm40609SetAccelAafByHz(dev, true, gyroHWLpf);
+    icm40609SetAccelAafByHz(dev, true, 258);
 
-    icm40609SetGyroNotch(dev, true, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
+    icm40609SetGyroNotch(dev, false, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
 
-    icm40609SetGyroHPF(dev, true, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
+    icm40609SetGyroHPF(dev, false, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
 
     // Enable interrupt
     spiWriteReg(dev, ICM40609_REG_INT_SOURCE0, ICM40609_UI_DRDY_INT1_EN);
