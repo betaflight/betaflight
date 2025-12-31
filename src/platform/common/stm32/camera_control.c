@@ -132,7 +132,7 @@ void cameraControlProcessImpl(void)
     }
 }
 
-void cameraControlKeyPressImpl(cameraControlKey_e key, uint32_t holdDurationMs)
+void cameraControlKeyPressImpl(cameraControlKey_e key, timeMs_t holdDurationMs)
 {
     if (!cameraControlRuntime || !cameraControlRuntime->enabled) {
         return;
