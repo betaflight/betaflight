@@ -39,7 +39,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/dshot_command.h"
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 #include "drivers/light_led.h"
 #include "drivers/mco.h"
 #include "drivers/pinio.h"

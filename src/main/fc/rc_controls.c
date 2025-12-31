@@ -35,7 +35,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 
 #include "config/config.h"
 #include "fc/core.h"

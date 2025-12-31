@@ -21,8 +21,14 @@
 
 #pragma once
 
-#include "drivers/camera_control.h"
+#include "platform.h"
+#include "drivers/pwm_output.h"
+#include "drivers/camera_control_impl.h"
 
-void cameraControlKeyPressImpl(cameraControlKey_e key, uint32_t holdDurationMs);
-void cameraControlInitImpl(cameraControlRuntime_t *cameraControlRuntime);
-void cameraControlProcessImpl(void);
+void cameraControlHi(void);
+void cameraControlLo(void);
+
+void cameraControlSoftwarePwmInit(void);
+void cameraControlSoftwarePwmEnable(uint32_t hiTime, uint32_t period);
+void cameraControlSoftwarePwmDisable(void);
+void cameraControlHardwarePwmInit(timerChannel_t *channel, const timerHardware_t *timerHardware, uint8_t inverted);

@@ -36,7 +36,7 @@
 #include "config/feature.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
