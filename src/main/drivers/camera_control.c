@@ -70,13 +70,13 @@ void cameraControlInit(void)
     cameraControlInitImpl(&cameraControlRuntime);
 }
 
-void cameraControlProcess(uint32_t currentTimeUs)
+void cameraControlProcess(timeUs_t currentTimeUs)
 {
     if (!cameraControlRuntime.enabled) {
         return;
     }
 
-    if (cameraControlRuntime.endTimeMillis && currentTimeUs >= 1000 * cameraControlRuntime.endTimeMillis) {
+    if (cameraControlRuntime.endTimeMillis && currentTimeUs / 1000 >= cameraControlRuntime.endTimeMillis) {
         // Key press duration ended, return to idle state
         cameraControlProcessImpl();
         cameraControlRuntime.endTimeMillis = 0;

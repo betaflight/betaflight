@@ -329,13 +329,13 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-static void taskCameraControl(uint32_t currentTime)
+static void taskCameraControl(timeUs_t currentTimeUs)
 {
     if (ARMING_FLAG(ARMED)) {
         return;
     }
 
-    cameraControlProcess(currentTime);
+    cameraControlProcess(currentTimeUs);
 }
 #endif
 

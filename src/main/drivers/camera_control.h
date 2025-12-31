@@ -48,7 +48,7 @@ typedef struct cameraControlRuntime_s{
     IO_t io;
     uint32_t period;
     uint8_t inverted;
-    uint32_t endTimeMillis;
+    timeMs_t endTimeMillis;
 } cameraControlRuntime_t;
 
 typedef struct cameraControlConfig_s {

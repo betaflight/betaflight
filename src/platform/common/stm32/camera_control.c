@@ -61,13 +61,17 @@ void cameraControlLo(void)
 
 void cameraControlInitImpl(cameraControlRuntime_t *runtime)
 {
+    if (!runtime || runtime->io == IO_NONE) {
+        return;
+    }
     cameraControlRuntime = runtime;
+    cameraControlRuntime->enabled = false;
+
     if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
         const timerHardware_t *timerHardware = timerAllocate(cameraControlConfig()->ioTag, OWNER_CAMERA_CONTROL, 0);
 
         if (!timerHardware) {
-            cameraControlRuntime->enabled = false;
             return;
         }
 
@@ -113,6 +117,10 @@ static float calculatePWMDutyCycle(const cameraControlKey_e key)
 
 void cameraControlProcessImpl(void)
 {
+    if (!cameraControlRuntime || !cameraControlRuntime->enabled) {
+        return;
+    }
+
     if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {
 #if defined(CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE)
         *channel.ccr = cameraControlRuntime->period;
@@ -126,6 +134,9 @@ void cameraControlProcessImpl(void)
 
 void cameraControlKeyPressImpl(cameraControlKey_e key, uint32_t holdDurationMs)
 {
+    if (!cameraControlRuntime || !cameraControlRuntime->enabled) {
+        return;
+    }
 
 #if defined(CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE) || defined(CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE)
     const float dutyCycle = calculatePWMDutyCycle(key);
@@ -159,7 +170,7 @@ void cameraControlKeyPressImpl(cameraControlKey_e key, uint32_t holdDurationMs)
             cameraControlSoftwarePwmDisable();
 
             // Reset to idle state
-            IOHi(cameraControlRuntime->io);
+            cameraControlHi();
         }
 #endif
     } else if (CAMERA_CONTROL_MODE_DAC == cameraControlConfig()->mode) {
