@@ -23,6 +23,6 @@
 
 #include "drivers/camera_control.h"
 
-void cameraControlKeyPressImpl(cameraControlKey_e key, uint32_t holdDurationMs);
+void cameraControlKeyPressImpl(cameraControlKey_e key, timeMs_t holdDurationMs);
 void cameraControlInitImpl(cameraControlRuntime_t *cameraControlRuntime);
 void cameraControlProcessImpl(void);

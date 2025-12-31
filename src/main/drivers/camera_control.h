@@ -22,7 +22,7 @@
 
 #include "io_types.h"
 #include "pg/pg.h"
-
+#include "drivers/time.h"
 
 #define CAMERA_CONTROL_PWM_RESOLUTION      128
 #define CAMERA_CONTROL_SOFT_PWM_RESOLUTION 448
@@ -67,5 +67,5 @@ typedef struct cameraControlConfig_s {
 PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
 
 void cameraControlInit(void);
-void cameraControlProcess(uint32_t currentTimeUs);
-void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
+void cameraControlProcess(timeUs_t currentTimeUs);
+void cameraControlKeyPress(cameraControlKey_e key, timeMs_t holdDurationMs);
