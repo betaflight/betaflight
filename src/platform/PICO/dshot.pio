@@ -43,8 +43,8 @@ bitloop:
     jmp    !osre, bitloop                   ; If not done output (finished shifting bits) then loop
     jmp    start
 outzero:
-    set    pins, 1                [14]      ; To output a '0', set high for 15 then low for 25
-    set    pins, 0                [20]      ; Delay to next "set" adds up to 25
+    set    pins, 1                [13]      ; To output a '0', set high for 14 then low for 26
+    set    pins, 0                [21]      ; Delay to next "set" adds up to 26
     jmp    !osre, bitloop         [1]       ; If not done output (finished shifting bits) then loop else wrap to start
 
 

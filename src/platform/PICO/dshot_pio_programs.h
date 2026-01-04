@@ -28,8 +28,8 @@ static const uint16_t dshot_600_program_instructions[] = {
     0xe600, //  7: set    pins, 0                [6]
     0x00e4, //  8: jmp    !osre, 4
     0x0000, //  9: jmp    0
-    0xee01, // 10: set    pins, 1                [14]
-    0xf400, // 11: set    pins, 0                [20]
+    0xed01, // 10: set    pins, 1                [13]
+    0xf500, // 11: set    pins, 0                [21]
     0x01e4, // 12: jmp    !osre, 4               [1]
             //     .wrap
 };
