@@ -785,4 +785,9 @@ bool mspSerialIsActiveWithin(timeMs_t timeoutMs)
     UNUSED(timeoutMs);
     return false;
 }
+
+bool mspSerialIsConfiguratorActive(void)
+{
+    return false;
+}
 }

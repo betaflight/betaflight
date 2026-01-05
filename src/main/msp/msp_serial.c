@@ -623,6 +623,11 @@ bool mspSerialIsActiveWithin(timeMs_t timeoutMs)
     return cmp32(millis(), lastActivity) < (int32_t)timeoutMs;
 }
 
+bool mspSerialIsConfiguratorActive(void)
+{
+    return mspSerialIsActiveWithin(MSP_ACTIVITY_DEFAULT_TIMEOUT_MS);
+}
+
 void mspSerialInit(void)
 {
     memset(mspPorts, 0, sizeof(mspPorts));
