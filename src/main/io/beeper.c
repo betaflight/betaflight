@@ -435,7 +435,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST
-            && !mspSerialIsActiveWithin(MSP_ACTIVITY_DEFAULT_TIMEOUT_MS)
+            && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }
