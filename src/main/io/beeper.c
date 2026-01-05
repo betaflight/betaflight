@@ -45,6 +45,8 @@
 #include "io/statusindicator.h"
 #include "io/vtx_control.h"
 
+#include "msp/msp_serial.h"
+
 #ifdef USE_GPS
 #include "io/gps.h"
 #endif
@@ -430,11 +432,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     if (!areMotorsRunning()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
-        const bool usbIn = usbCableIsInserted();
+        const bool configuratorActive = mspSerialIsActiveWithin(MSP_ACTIVITY_DEFAULT_TIMEOUT_MS);
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST
-            && !usbIn
+            && !configuratorActive
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }

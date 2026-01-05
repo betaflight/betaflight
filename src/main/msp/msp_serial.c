@@ -595,6 +595,34 @@ bool mspSerialWaiting(void)
     return false;
 }
 
+timeMs_t mspSerialLastActivityMs(void)
+{
+    timeMs_t latestActivity = 0;
+
+    for (mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (!mspPort->port || mspPort->lastActivityMs == 0) {
+            continue;
+        }
+
+        if (cmp32(mspPort->lastActivityMs, latestActivity) > 0) {
+            latestActivity = mspPort->lastActivityMs;
+        }
+    }
+
+    return latestActivity;
+}
+
+bool mspSerialIsActiveWithin(timeMs_t timeoutMs)
+{
+    const timeMs_t lastActivity = mspSerialLastActivityMs();
+
+    if (lastActivity == 0) {
+        return false;
+    }
+
+    return cmp32(millis(), lastActivity) < (int32_t)timeoutMs;
+}
+
 void mspSerialInit(void)
 {
     memset(mspPorts, 0, sizeof(mspPorts));

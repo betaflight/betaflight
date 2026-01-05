@@ -44,6 +44,8 @@
 
 #include "io/beeper.h"
 
+#include "msp/msp_serial.h"
+
 #include "rx/rx.h"
 
 #include "flight/pid.h"
@@ -87,6 +89,11 @@ const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
     "GPS-RESCUE",
 #endif
 };
+
+static bool configuratorIsActive(void)
+{
+    return mspSerialIsActiveWithin(MSP_ACTIVITY_DEFAULT_TIMEOUT_MS);
+}
 
 /*
  * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
@@ -242,14 +249,15 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 
     bool armed = ARMING_FLAG(ARMED);
     beeperMode_e beeperMode = BEEPER_SILENCE;
+    const bool configuratorActive = configuratorIsActive();
 
     if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_STAGE2)) {
         // Force immediate stage 2 responses if mode is failsafe stage2 to emulate immediate loss of signal without waiting
         receivingRxData = false;
     }
 
-    // Beep RX lost whenever no RC data is received and the USB cable is not connected
-    if (!receivingRxData && !usbCableIsInserted()) {
+    // Beep RX lost whenever no RC data is received and configurator is idle
+    if (!receivingRxData && !configuratorActive) {
         beeperMode = BEEPER_RX_LOST;
     }
 
