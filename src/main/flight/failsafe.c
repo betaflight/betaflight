@@ -244,7 +244,6 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
 
     bool armed = ARMING_FLAG(ARMED);
     beeperMode_e beeperMode = BEEPER_SILENCE;
-    const bool configuratorActive = mspSerialIsConfiguratorActive();
 
     if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_STAGE2)) {
         // Force immediate stage 2 responses if mode is failsafe stage2 to emulate immediate loss of signal without waiting
@@ -252,7 +251,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     }
 
     // Beep RX lost whenever no RC data is received and configurator is idle
-    if (!receivingRxData && !configuratorActive) {
+    if (!receivingRxData && !mspSerialIsConfiguratorActive()) {
         beeperMode = BEEPER_RX_LOST;
     }
 
