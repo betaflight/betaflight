@@ -137,3 +137,4 @@ int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int d
 uint32_t mspSerialTxBytesFree(void);
 timeMs_t mspSerialLastActivityMs(void);
 bool mspSerialIsActiveWithin(timeMs_t timeoutMs);
+bool mspSerialIsConfiguratorActive(void);
