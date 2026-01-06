@@ -611,12 +611,12 @@ bool gyroStartDownsampledCycle(void)
 }
 #endif
 
-int16_t gyroReadSensorTemperature(gyroSensor_t gyroSensor)
+int16_t gyroReadSensorTemperature(gyroSensor_t *gyroSensor)
 {
-    if (gyroSensor.gyroDev.temperatureFn) {
-        gyroSensor.gyroDev.temperatureFn(&gyroSensor.gyroDev, &gyroSensor.gyroDev.temperature);
+    if (gyroSensor->gyroDev.temperatureFn) {
+        gyroSensor->gyroDev.temperatureFn(&gyroSensor->gyroDev, &gyroSensor->gyroDev.temperature);
     }
-    return gyroSensor.gyroDev.temperature;
+    return gyroSensor->gyroDev.temperature;
 }
 
 void gyroReadTemperature(void)
@@ -625,7 +625,7 @@ void gyroReadTemperature(void)
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-            max_temp = MAX(max_temp, gyroReadSensorTemperature(gyro.gyroSensor[i]));
+            max_temp = MAX(max_temp, gyroReadSensorTemperature(&gyro.gyroSensor[i]));
         }
     }
 
