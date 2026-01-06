@@ -422,9 +422,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
-// Drive ESC beacons when requested:
-//  - RX link lost while configurator is not active (field retrieval), or
-//  - RX_SET via AUX with an active RX link (user-triggered beacon)
+    // Drive ESC beacons when requested:
+    //  - RX link lost while configurator is not active (field retrieval), or
+    //  - RX_SET via AUX with an active RX link (user-triggered beacon)
 #ifdef USE_DSHOT
     static const timeDelta_t dshotBeaconIntervalUs = DSHOT_BEACON_MODE_INTERVAL_US;
 
