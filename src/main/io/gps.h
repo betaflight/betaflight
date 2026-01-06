@@ -236,6 +236,7 @@ typedef struct gpsAccuracy_s {
     uint32_t hAcc;                  // horizontal accuracy in mm
     uint32_t vAcc;                  // vertical accuracy in mm
     uint32_t sAcc;                  // speed accuracy in mm/s
+    uint32_t headAcc;               // heading accuracy in degrees * 1e-5
 } gpsAccuracy_t;
 
 /* Only available on U-blox protocol */

@@ -206,3 +206,7 @@ void dynLpfGyroUpdate(float throttle);
 #ifdef USE_YAW_SPIN_RECOVERY
 void initYawSpinRecovery(int maxYawRate);
 #endif
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+float gyroGetDownsampled(int axis);
+void gyroStartDownsampledCycle(void);
+#endif

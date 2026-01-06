@@ -441,6 +441,9 @@
 #if defined(USE_SERIALRX_CRSF)
 
 #define USE_CRSF_V3
+#if defined(USE_TELEMETRY_CRSF) && defined(USE_CRSF_V3)
+#define USE_CRSF_ACCGYRO_TELEMETRY
+#endif
 
 #if defined(USE_TELEMETRY_CRSF) && defined(USE_CMS)
 #define USE_CRSF_CMS_TELEMETRY

@@ -2257,6 +2257,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.acc.hAcc = ubxRcvMsgPayload.ubxNavPvt.hAcc;
         gpsSol.acc.vAcc = ubxRcvMsgPayload.ubxNavPvt.vAcc;
         gpsSol.acc.sAcc = ubxRcvMsgPayload.ubxNavPvt.sAcc;
+        gpsSol.acc.headAcc = ubxRcvMsgPayload.ubxNavPvt.headAcc;
         // gSpeed & velD are in mm/s (int32_t), gpsSol.speed3d in cm/s (uint16_t)
         float gs = (float)ubxRcvMsgPayload.ubxNavPvt.gSpeed;
         float vd = (float)ubxRcvMsgPayload.ubxNavPvt.velD;

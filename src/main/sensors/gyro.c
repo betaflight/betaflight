@@ -79,6 +79,11 @@ static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 
 static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
 
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+static FAST_DATA_ZERO_INIT uint32_t downSampleCount;               // gyro sensor sample counter for telemetry
+static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling for telemetry
+#endif
+
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
 FAST_DATA uint8_t activePidLoopDenom = 1;
@@ -442,6 +447,13 @@ FAST_CODE void gyroUpdate(void)
         gyro.sampleSum[Z] += gyro.gyroADC[Z];
         gyro.sampleCount++;
     }
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+    // using simple averaging for telemetry downsampling
+    downSampleSum[X] += gyro.gyroADC[X];
+    downSampleSum[Y] += gyro.gyroADC[Y];
+    downSampleSum[Z] += gyro.gyroADC[Z];
+    downSampleCount++;
+#endif
 }
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyro
@@ -524,7 +536,25 @@ float gyroGetFilteredDownsampled(int axis)
     return gyroFilteredDownsampled[axis];
 }
 
-static int16_t gyroReadSensorTemperature(gyroSensor_t gyroSensor)
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+float gyroGetDownsampled(int axis)
+{
+    if (downSampleCount == 0) {
+        return gyro.gyroADC[axis];
+    }
+    return downSampleSum[axis] / downSampleCount;
+}
+
+void gyroStartDownsampledCycle(void)
+{
+    downSampleSum[X] = gyro.gyroADC[X];
+    downSampleSum[Y] = gyro.gyroADC[Y];
+    downSampleSum[Z] = gyro.gyroADC[Z];
+    downSampleCount = 1;
+}
+#endif
+
+int16_t gyroReadSensorTemperature(gyroSensor_t gyroSensor)
 {
     if (gyroSensor.gyroDev.temperatureFn) {
         gyroSensor.gyroDev.temperatureFn(&gyroSensor.gyroDev, &gyroSensor.gyroDev.temperature);

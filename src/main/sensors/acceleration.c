@@ -40,6 +40,10 @@
 #include "acceleration.h"
 
 FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+static FAST_DATA_ZERO_INIT uint32_t downSampleCount;               // accel sensor sample counter for telemetry
+static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling for telemetry
+#endif
 
 static inline void alignAccelerometer(void)
 {
@@ -121,7 +125,33 @@ void accUpdate(timeUs_t currentTimeUs)
     applyAccelerationTrims(accelerationRuntime.accelerationTrims);
     postProcessAccelerometer();
 
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+    // using simple averaging for telemetry downsampling
+    downSampleSum[X] += acc.accADC.v[X];
+    downSampleSum[Y] += acc.accADC.v[Y];
+    downSampleSum[Z] += acc.accADC.v[Z];
+    downSampleCount++;
+#endif
+
     acc.isAccelUpdatedAtLeastOnce = true;
 }
+
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+float accelGetDownsampled(int axis)
+{
+    if (downSampleCount == 0) {
+        return acc.accADC.v[axis];
+    }
+    return downSampleSum[axis] / downSampleCount;
+}
+
+void accelStartDownsampledCycle(void)
+{
+    downSampleCount = 1;
+    downSampleSum[X] = acc.accADC.v[X];
+    downSampleSum[Y] = acc.accADC.v[Y];
+    downSampleSum[Z] = acc.accADC.v[Z];
+}
+#endif
 
 #endif // USE_ACC
