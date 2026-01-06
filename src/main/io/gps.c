@@ -2234,7 +2234,7 @@ static bool UBLOX_parse_gps(void)
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_VELNED;
 #endif
         gpsSol.speed3d = ubxRcvMsgPayload.ubxNavVelned.speed_3d;       // cm/s
-        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavVelned.speed_2d;   // cm/s
+        gpsSol.groundSpeed = ubxRcvMsgPayload.ubxNavVelned.speed_2d;    // cm/s
         gpsSol.groundCourse = (uint16_t) (ubxRcvMsgPayload.ubxNavVelned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         gpsSol.velned.velN = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_north; // cm/s
         gpsSol.velned.velE = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_east; // cm/s
@@ -2260,8 +2260,8 @@ static bool UBLOX_parse_gps(void)
         // gSpeed & velD are in mm/s (int32_t), gpsSol.speed3d in cm/s (uint16_t)
         float gs = (float)ubxRcvMsgPayload.ubxNavPvt.gSpeed;
         float vd = (float)ubxRcvMsgPayload.ubxNavPvt.velD;
-        gpsSol.speed3d = (uint16_t)(sqrtf(sq(gs) + sq(vd)) * 0.1f);     // mm/s → cm/s
-        // Update 2D ground speed (mm/s → cm/s) for NAV-PVT when NAV-VELNED is disabled
+        gpsSol.speed3d = (uint16_t)(sqrtf(sq(gs) + sq(vd)) * 0.1f);     // mm/s -> cm/s
+        // Update 2D ground speed (mm/s -> cm/s) for NAV-PVT when NAV-VELNED is disabled
         gpsSol.groundSpeed = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10);    // cm/s
         gpsSol.groundCourse = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         gpsSol.dop.pdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
