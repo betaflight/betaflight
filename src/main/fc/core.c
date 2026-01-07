@@ -1045,8 +1045,8 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+        // and the alt_hold switch is activated
+        && IS_RC_MODE_ACTIVE(BOXALTHOLD)
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
