@@ -334,7 +334,7 @@ static void onSerialTimerBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture
 
 static void serialTimerTxConfigBL(const timerHardware_t *timerHardwarePtr, uint8_t portIndex, uint32_t baud)
 {
-    uint32_t clock = SystemCoreClock/2;
+    uint32_t clock = timerClock(timerHardwarePtr->tim);
     uint32_t timerPeriod;
     timerReset(timerHardwarePtr->tim);
     do {
@@ -405,7 +405,7 @@ static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8
 {
     // start bit is usually a FALLING signal
     timerReset(timerHardwarePtr->tim);
-    timerReconfigureTimeBase(timerHardwarePtr->tim, 0xFFFF, SystemCoreClock / 2);
+    timerReconfigureTimeBase(timerHardwarePtr->tim, 0xFFFF, timerClock(timerHardwarePtr->tim));
     timerChConfigIC(timerHardwarePtr, (options & SERIAL_INVERTED) ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeBL);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
@@ -529,7 +529,7 @@ static void escSerialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint
 {
     uint32_t timerPeriod = 34;
     timerReset(timerHardwarePtr->tim);
-    timerReconfigureTimeBase(timerHardwarePtr->tim, timerPeriod, MHZ_TO_HZ(1));
+    timerReconfigureTimeBase(timerHardwarePtr->tim, timerPeriod, timerClock(timerHardwarePtr->tim));
     timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimerEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].timerCb, NULL);
     timerStart(timerHardwarePtr->tim);
@@ -614,7 +614,7 @@ static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint
 {
     // start bit is usually a FALLING signal
     timerReset(timerHardwarePtr->tim);
-    timerReconfigureTimeBase(timerHardwarePtr->tim, 0xFFFF, MHZ_TO_HZ(1));
+    timerReconfigureTimeBase(timerHardwarePtr->tim, 0xFFFF, timerClock(timerHardwarePtr->tim));
     timerChConfigIC(timerHardwarePtr, ICPOLARITY_FALLING, 0);
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
