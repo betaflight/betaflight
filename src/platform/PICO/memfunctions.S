@@ -11,7 +11,7 @@
 // Wrapped memset and memcpy functions, code copied from rp2040 bootrom source
 // https://github.com/raspberrypi/pico-bootrom-rp2040/blob/master/bootrom/bootrom_misc.S
 
-// memset function assuming r0 and r1 are both word aligned
+// memcpy function assuming r0 and r1 are both word aligned
 wrapper_func memcpy_44
     mov ip, r0
     cmp r2, #8
