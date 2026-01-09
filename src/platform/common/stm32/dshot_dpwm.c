@@ -121,19 +121,20 @@ static void dshotPwmDisableMotors(void)
             xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
             LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
 #else
-            xDMA_Cmd(motor->timerHardware->dmaTimUPRef, DISABLE);
+            xDMA_Cmd(motor->timerHardware->dmaTimUPRef, FALSE);
+#if defined(AT32F435)
+            tmr_dma_request_enable(motor->timerHardware->tim, TMR_OVERFLOW_DMA_REQUEST, FALSE);
+#else
             TIM_DMACmd(motor->timerHardware->tim, TIM_DMA_Update, DISABLE);
+#endif
 #endif
         } else
 #endif
         {
             // For regular DShot, disable the channel-specific DMA
-#ifdef USE_FULL_LL_DRIVER
-            xLL_EX_DMA_DisableResource(motor->dmaRef);
-            LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
-#else
-            xDMA_Cmd(motor->dmaRef, DISABLE);
-            TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+            xDMA_Cmd(motor->dmaRef, FALSE);
+#if defined(AT32F435)
+            tmr_dma_request_enable(motor->timerHardware->tim, motor->timerDmaSource, FALSE);
 #endif
         }
     }
