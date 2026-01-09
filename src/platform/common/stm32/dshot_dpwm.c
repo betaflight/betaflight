@@ -105,8 +105,38 @@ static void dshotPwmShutdown(void)
 
 static void dshotPwmDisableMotors(void)
 {
-    // No special processing required
-    return;
+    // Stop all DMA channels to prevent interference when timer is reconfigured
+    // for ESC passthrough mode. Without this, DMA continues writing DShot data
+    // to timer registers, corrupting the serial baud rate timing.
+    for (int i = 0; i < dshotMotorCount; i++) {
+        motorDmaOutput_t *motor = getMotorDmaOutput(i);
+        if (!motor || !motor->configured) {
+            continue;
+        }
+
+#ifdef USE_DSHOT_DMAR
+        if (useBurstDshot) {
+            // For burst DShot, disable the timer update DMA
+#ifdef USE_FULL_LL_DRIVER
+            xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
+            LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
+#else
+            xDMA_Cmd(motor->timerHardware->dmaTimUPRef, DISABLE);
+            TIM_DMACmd(motor->timerHardware->tim, TIM_DMA_Update, DISABLE);
+#endif
+        } else
+#endif
+        {
+            // For regular DShot, disable the channel-specific DMA
+#ifdef USE_FULL_LL_DRIVER
+            xLL_EX_DMA_DisableResource(motor->dmaRef);
+            LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
+#else
+            xDMA_Cmd(motor->dmaRef, DISABLE);
+            TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+#endif
+        }
+    }
 }
 
 static bool dshotPwmEnableMotors(void)
