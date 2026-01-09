@@ -10,6 +10,7 @@ MCU_COMMON_SRC += \
             drivers/serial_pinconfig.c \
             common/stm32/bus_i2c_pinconfig.c \
             common/stm32/bus_spi_hw.c \
+            common/stm32/camera_control.c \
             common/stm32/io_impl.c \
             common/stm32/serial_uart_hw.c \
             common/stm32/serial_uart_pinconfig.c \
