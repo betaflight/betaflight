@@ -192,7 +192,7 @@ SECTIONS
 
     .tdata : {
         . = ALIGN(4);
-		*(.tdata .tdata.* .gnu.linkonce.td.*)
+        *(.tdata .tdata.* .gnu.linkonce.td.*)
         /* All data end */
         __tdata_end = .;
     } > RAM AT> FLASH
@@ -268,7 +268,7 @@ SECTIONS
         KEEP(*(.stack*))
     } > SCRATCH_Y
 
-    /* keep embedded end block as final entry into FLASH 
+    /* keep embedded end block as final entry into FLASH
      * - helps protect against partial/corrupt load into flash
      */
     .flash_end : {
@@ -280,6 +280,10 @@ SECTIONS
     /* Base address where the config is stored. */
     __config_start = ORIGIN(FLASH_CONFIG);
     __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
+
+    /* Base address for font data. */
+    __fontdata_start = ORIGIN(FLASH_FONT);
+    __fontdata_end = ORIGIN(FLASH_FONT) + LENGTH(FLASH_FONT);
 
     .pg_registry :
     {
