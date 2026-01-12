@@ -374,8 +374,11 @@ SYS_INCLUDE_DIRS += \
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp
 ARCH_FLAGS      += -DPICO_COPY_TO_RAM=$(RUN_FROM_RAM)
-# work around memcpy alignment issue
-ARCH_FLAGS      += -fno-builtin-memcpy
+
+# Work around memcpy alignment issue: compiler to generate function calls
+# rather than inlining code that is sometimes broken.
+# (Calls to memcpy, memset become calls to performant wrapped versions.)
+ARCH_FLAGS      += -fno-builtin-memcpy -fno-builtin-memset
 
 PICO_STDIO_USB_FLAGS = \
             -DLIB_PICO_PRINTF=1 \
@@ -405,7 +408,18 @@ PICO_STDIO_LD_FLAGS = $(foreach fn, $(PICO_STDIO_WRAP_FNS), -Wl,--wrap=$(fn))
 PICO_BIT_OPS_LD_FLAGS = \
             -Wl,--wrap=__ctzdi2
 
-EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS)
+PICO_LIB_SRC += \
+            PICO/memfunctions.S
+
+PICO_MEM_WRAP_FNS = \
+            memcpy_44 \
+            memcpy \
+            memset_4 \
+            memset
+
+PICO_MEM_LD_FLAGS = $(foreach fn, $(PICO_MEM_WRAP_FNS), -Wl,--wrap=$(fn))
+
+EXTRA_LD_FLAGS += $(PICO_STDIO_LD_FLAGS) $(PICO_TRACE_LD_FLAGS) $(PICO_FLOAT_LD_FLAGS) $(PICO_DOUBLE_LD_FLAGS) $(PICO_BIT_OPS_LD_FLAGS) $(PICO_MEM_LD_FLAGS)
 
 ifdef RP2350_TARGET
 
