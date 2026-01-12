@@ -478,17 +478,26 @@ DEVICE_FLAGS    += \
             -DPICO_USE_BLOCKED_RAM=0 \
             -DPICO_CORE1_STACK_SIZE=0x1000
 
-# Set the size of flash in the primary linker file (LD_SCRIPT),
-# other linker files loaded via EXTRA_LD_FLAGS.
-# PICO_FLASH_MB may be set from board-specific config.mk
 
-# Default 4MB
-PICO_FLASH_MB ?= 4
+# LD_SCRIPT must be set to the first included linker script.
+# Set the sizes of flash and contents in LD_SCRIPT, other linker files loaded via EXTRA_LD_FLAGS.
 
-LD_SCRIPT       = $(LINKER_DIR)/pico_flash_$(PICO_FLASH_MB)MB.ld
+# Optional board-specific linker script for setting the size of the primary flash, and the allocation for fonts.
+CONFIG_FLASH_MEM_SCRIPT = $(CONFIG_DIR)/configs/$(CONFIG)/pico_flash_mem.ld
+
+# If pico_flash_mem.ld exists in the config folder, use that, otherwise load defaults from pico_flash_mem_defaults.ld
+ifneq ($(wildcard $(CONFIG_FLASH_MEM_SCRIPT)),)
+LD_SCRIPT += $(CONFIG_FLASH_MEM_SCRIPT)
+else
+LD_SCRIPT += $(LINKER_DIR)/pico_flash_mem_defaults.ld
+endif
 
 ifeq ($(RUN_FROM_RAM),1)
-EXTRA_LD_FLAGS  += -T$(LINKER_DIR)/pico_rp2350_RunFromRAM.ld
+# RunFromRAM -> loads everything into RAM, fastest, uses most RAM
+# EXTRA_LD_FLAGS  += -T$(LINKER_DIR)/pico_rp2350_RunFromRAM.ld
+
+# RunFromHybrid -> load most code / data into RAM, with some exclusions (cli, pg, ...)
+EXTRA_LD_FLAGS  += -T$(LINKER_DIR)/pico_rp2350_RunFromHybrid.ld
 else
 EXTRA_LD_FLAGS  += -T$(LINKER_DIR)/pico_rp2350_RunFromFLASH.ld
 endif
@@ -561,6 +570,10 @@ MCU_COMMON_SRC = \
             PICO/dshot_pico.c \
             PICO/exti_pico.c \
             PICO/io_pico.c \
+            PICO/osd/font_betaflight.c \
+            PICO/osd/fb_osd_pico.c \
+            PICO/osd/osd_elements_pico.c \
+            PICO/osd/osd_pico.c \
             PICO/persistent.c \
             PICO/pwm_motor_pico.c \
             PICO/pwm_servo_pico.c \
@@ -602,3 +615,9 @@ PICO_LIB_OBJS = $(addsuffix .o, $(basename $(PICO_LIB_SRC)))
 PICO_LIB_OBJS += $(addsuffix .o, $(basename $(PICO_TRACE_SRC)))
 PICO_LIB_TARGETS := $(foreach pobj, $(PICO_LIB_OBJS), %/$(pobj))
 $(PICO_LIB_TARGETS): CC_DEFAULT_OPTIMISATION := $(PICO_LIB_OPTIMISATION)
+
+# Linker script pico_rp2350_RunFromRAM.ld modified to assign symbols from
+# certain files into flash instead of RAM (save memory without impacting performance), but
+# that can't work if build uses lto (link time optimisation has the effect of
+# breaking files up into temporary files)
+OPTIMISATION_BASE     := $(filter-out -flto=auto, $(OPTIMISATION_BASE))
