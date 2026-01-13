@@ -38,13 +38,13 @@ start:
 bitloop:
     out    y, 1                             ; Shift next bit into y
     jmp    !y, outzero                      ;
-    set    pins, 1                [29]      ; To output a '1' bit, set high for 30 then low for 10 (based on bitlength = 40 cycles)
-    set    pins, 0                [6]       ; Delay to next "set" adds up to 10
+    set    pins, 1                [26]      ; To output a '1' bit, set high for 27 then low for 13 (based on bitlength = 40 cycles)
+    set    pins, 0                [9]       ; Delay to next "set" adds up to 13
     jmp    !osre, bitloop                   ; If not done output (finished shifting bits) then loop
     jmp    start
 outzero:
-    set    pins, 1                [14]      ; To output a '0', set high for 15 then low for 25
-    set    pins, 0                [20]      ; Delay to next "set" adds up to 25
+    set    pins, 1                [12]      ; To output a '0', set high for 13 then low for 27
+    set    pins, 0                [22]      ; Delay to next "set" adds up to 27
     jmp    !osre, bitloop         [1]       ; If not done output (finished shifting bits) then loop else wrap to start
 
 
@@ -84,15 +84,15 @@ bitloop:
     out    y, 1           side 0            ; Shift next bit into y
     jmp    !y, outzero    side 0            ;
 outone:
-    set    pins, 0        side 0  [15]      ; To output a '1' bit, set low for 30 then high for 10 (based on bitlength = 40 cycles)
+    set    pins, 0        side 0  [12]      ; To output a '1' bit, set low for 27 then high for 13 (based on bitlength = 40 cycles)
     nop                   side 0  [13]
-    set    pins, 1        side 0  [6]       ; Delay to next "set" adds up to 10
+    set    pins, 1        side 0  [9]       ; Delay to next "set" adds up to 13
     jmp    !osre, bitloop side 0            ; If not done output (finished shifting bits) then loop
     jmp    receive        side 0
 outzero:
-    set    pins, 0        side 0  [14]      ; To output a '0', set low for 15 then high for 25
-    set    pins, 1        side 0  [15]      ; Delay to next "set" adds up to 25
-    jmp    !osre, bitloop side 0  [6]       ; If not done output (finished shifting bits) then loop else wrap to start
+    set    pins, 0        side 0  [12]      ; To output a '0', set low for 13 then high for 27
+    set    pins, 1        side 0  [15]      ; Delay to next "set" adds up to 27
+    jmp    !osre, bitloop side 0  [8]       ; If not done output (finished shifting bits) then loop else wrap to start
 ;;;;;;; (dropped because short of instruction space)   nop                                     ; line up timings vs. arriving at receive from outone
 receive:
     set    pindirs, 0     side 0
@@ -131,13 +131,13 @@ bitloop:
     out    y, 1                             ; Shift next bit into y
     jmp    !y, outzero                      ;
 outone:
-    set    pins, 0                [29]      ; To output a '1' bit, set low for 30 then high for 10 (based on bitlength = 40 cycles)
-    set    pins, 1                [6]       ; Delay to next "set" adds up to 10
+    set    pins, 0                [26]      ; To output a '1' bit, set low for 27 then high for 13 (based on bitlength = 40 cycles)
+    set    pins, 1                [9]       ; Delay to next "set" adds up to 13
     jmp    !osre, bitloop                   ; If not done output (finished shifting bits) then loop
     jmp    receive
 outzero:
-    set    pins, 0                [14]      ; To output a '0', set low for 15 then high for 25
-    set    pins, 1                [20]      ; Delay to next "set" adds up to 25
+    set    pins, 0                [12]      ; To output a '0', set low for 13 then high for 27
+    set    pins, 1                [22]      ; Delay to next "set" adds up to 27
     jmp    !osre, bitloop         [1]       ; If not done output (finished shifting bits) then loop else wrap to start
     nop                                     ; line up timings vs. arriving at receive from outone
 receive:
