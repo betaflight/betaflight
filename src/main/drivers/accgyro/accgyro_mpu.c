@@ -283,7 +283,7 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
         if (gyro->detectedEXTI > GYRO_EXTI_DETECT_THRESHOLD) {
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
-                gyro->dev.callbackArg = (uint32_t)gyro;
+                gyro->dev.callbackArg = (uintptr_t)gyro;
                 gyro->dev.txBuf[0] = gyro->dmaReadRegStart | 0x80;
                 gyro->segments[0].len = gyro->gyroDataReg - gyro->dmaReadRegStart + sizeof(uint8_t) + 3 * sizeof(int16_t);  // assumes gyros come last
                 gyro->segments[0].callback = mpuIntCallback;

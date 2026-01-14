@@ -390,7 +390,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 #if defined(USE_CRSF_V3)
                 crsfFrameErrorCnt = 0;
 #endif
-#if defined(USE_CRSF_V3)
+#if defined(USE_CRSF_V3) && defined(USE_TELEMETRY_CRSF)
                 crsfScheduleTelemetryResponse();
 #endif
                 switch (crsfFrame.frame.type) {
@@ -673,8 +673,12 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
     persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
-    // new frame time
-    frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US / (baudrate / CRSF_BAUDRATE);
+    // new frame time - use 64-bit arithmetic to avoid truncation and round up
+    if (baudrate > 0) {
+        frameTimeNeededUs = (timeDelta_t)(((uint64_t)CRSF_TIME_NEEDED_PER_FRAME_US * (uint64_t)CRSF_BAUDRATE + (baudrate - 1)) / baudrate);
+    } else {
+        frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US;
+    }
 #if defined(USE_TELEMETRY_CRSF)
     task_t* tlmTask = getTask(TASK_TELEMETRY);
     if (tlmTask && baudrate > CRSF_BAUDRATE) {

@@ -52,6 +52,7 @@
 
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
+#include "flight/pid.h"
 #include "flight/position.h"
 
 #include "io/displayport_crsf.h"
@@ -360,7 +361,9 @@ void crsfFrameGpsExtended(sbuf_t *dst)
 
     sbufWriteU16BigEndian(dst, gpsSol.velned.velN);
     sbufWriteU16BigEndian(dst, gpsSol.velned.velE);
-    sbufWriteU16BigEndian(dst, -gpsSol.velned.velD);
+    // Negate velD (NED down-positive to NEU up-positive), clamping to avoid overflow if velD == INT16_MIN
+    int16_t velU = (gpsSol.velned.velD == INT16_MIN) ? INT16_MAX : -gpsSol.velned.velD;
+    sbufWriteU16BigEndian(dst, velU);
 
     // 4. Horizontal Speed Accuracy (cm/s)
     // gpsSol.acc.sAcc is in mm/s -> divide by 10 for cm/s
@@ -389,11 +392,11 @@ void crsfFrameGpsExtended(sbuf_t *dst)
 
     // 10. Horizontal DOP (0.1 units)
     // gpsSol.dop.hdop is scaled by 100. Divide by 10 to get 0.1 units.
-    sbufWriteU8(dst, gpsSol.dop.hdop / 10);
+    sbufWriteU8(dst, MIN(gpsSol.dop.hdop / 10, UINT8_MAX));
 
     // 11. Vertical DOP (0.1 units)
     // gpsSol.dop.vdop is scaled by 100. Divide by 10 to get 0.1 units.
-    sbufWriteU8(dst, gpsSol.dop.vdop / 10);
+    sbufWriteU8(dst, MIN(gpsSol.dop.vdop / 10, UINT8_MAX));
 }
 #endif // USE_GPS
 
@@ -814,19 +817,17 @@ bool crsfFrameAccGyro(sbuf_t *dst, timeUs_t currentTimeUs)
         gyroAverage[axis] = gyroGetDownsampled(axis);
     }
 
-#define GRAVITY_EARTH (9.80665f)
-
     // Capture accel if available, use previous snapshot if not
     accelStartDownsampledCycle();
     float accAverage[XYZ_AXIS_COUNT];
     for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
-        accAverage[axis] = accelGetDownsampled(axis) * acc.dev.acc_1G_rec * GRAVITY_EARTH;
+        accAverage[axis] = accelGetDownsampled(axis) * acc.dev.acc_1G_rec * G_ACCELERATION;
     }
 
 // Convert dps 'x' (max ±2000) to 16-bit integer (max ±32767), clamped to prevent overflow
 #define DEGREES_TO_2KDPS16BIT(x) (int16_t)((constrainf((x), -2000.0f, 2000.0f) * INT16_MAX) / 2000.0f)
 // Convert acceleration 'x' in m/s^2 (max ±16*g) to 16-bit integer (max ±32767), clamped to prevent overflow
-#define ACCMSS_TO_16G16BIT(x) (int16_t)((constrainf((x), -16.0f * GRAVITY_EARTH, 16.0f * GRAVITY_EARTH) * INT16_MAX) / (16.0f * GRAVITY_EARTH))
+#define ACCMSS_TO_16G16BIT(x) (int16_t)((constrainf((x), -16.0f * G_ACCELERATION, 16.0f * G_ACCELERATION) * INT16_MAX) / (16.0f * G_ACCELERATION))
 
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
@@ -946,15 +947,17 @@ typedef enum {
     CRSF_FRAME_GPS_INDEX,
     CRSF_FRAME_VARIO_SENSOR_INDEX,
     CRSF_FRAME_HEARTBEAT_INDEX,
+    CRSF_FRAME_BARO_SENSOR_INDEX,     // raw baro frame for non-V3 builds (must not collide with other indices)
     CRSF_SCHEDULE_COUNT_MAX
 } crsfFrameTypeIndex_e;
 
 typedef enum {
-    CRSF_FRAME_GPS_TIME_INDEX,
-    CRSF_FRAME_GPS_EXTENDED_INDEX,
-    CRSF_FRAME_BARO_INDEX,
+    CRSF_TIMED_FRAME_GPS_INDEX,       // timed GPS frame (distinct from crsfFrameTypeIndex_e)
+    CRSF_TIMED_FRAME_GPS_TIME_INDEX,
+    CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX,
+    CRSF_TIMED_FRAME_BARO_INDEX,
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    CRSF_FRAME_ACCGYRO_INDEX,
+    CRSF_TIMED_FRAME_ACCGYRO_INDEX,
 #endif
     CRSF_TIMED_SCHEDULE_COUNT_MAX
 } crsfTimedFrameTypeIndex_e;
@@ -997,28 +1000,28 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_FRAME_GPS_TIME_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time > lastGpsSolnTime) {
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
-        crsfTimedSchedule &= ~BIT(CRSF_FRAME_GPS_TIME_INDEX);
+        crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX);
         return true;
     }
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time > lastGpsSolnTime) {
         crsfInitializeFrame(dst);
         crsfFrameGpsExtended(dst);
         crsfFinalize(dst);
-        crsfTimedSchedule &= ~BIT(CRSF_FRAME_GPS_EXTENDED_INDEX);    // tick-tock between GPS frames
+        crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX);    // tick-tock between GPS frames
         return true;
     }
 #endif
-    if (crsfTimedSchedule & BIT(CRSF_FRAME_GPS_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_INDEX) && gpsSol.time > lastGpsSolnTime) {
         crsfInitializeFrame(dst);
         crsfFrameGps(dst);
         crsfFinalize(dst);
 #if defined(USE_CRSF_V3)
         if (isCrsfV3Running) {
-            crsfTimedSchedule |= (BIT(CRSF_FRAME_GPS_EXTENDED_INDEX) | BIT(CRSF_FRAME_GPS_TIME_INDEX));
+            crsfTimedSchedule |= (BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) | BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX));
         }
 #endif
         lastGpsSolnTime = gpsSol.time;
@@ -1026,7 +1029,7 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
     }
 #endif
 #if defined(USE_BARO)
-    if (crsfTimedSchedule & BIT(CRSF_FRAME_BARO_INDEX) && currentTimeUs > lastBaroTime + 100000U) { // 10Hz baro update
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_BARO_INDEX) && cmpTimeUs(currentTimeUs, lastBaroTime) > 100000) { // 10Hz baro update
         crsfInitializeFrame(dst);
         crsfFrameBaro(dst);
         crsfFinalize(dst);
@@ -1071,7 +1074,7 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
         crsfFinalize(dst);
     }
 #if defined(USE_BARO) && !defined(USE_CRSF_V3)
-    if (currentSchedule & BIT(CRSF_FRAME_BARO_INDEX)) {
+    if (currentSchedule & BIT(CRSF_FRAME_BARO_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameBaro(dst);
         crsfFinalize(dst);
@@ -1122,6 +1125,8 @@ FAST_CODE void crsfScheduleTelemetryResponse(void)
     telemetryResponsePending = true;
 }
 
+// Scheduler check function for event-driven telemetry.
+// Parameters reserved for potential future rate-limiting or timing logic.
 bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -1188,9 +1193,9 @@ void initCrsfTelemetry(void)
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
 #ifdef USE_CRSF_V3
-        crsfTimedSchedule |= BIT(CRSF_FRAME_BARO_INDEX);
+        crsfTimedSchedule |= BIT(CRSF_TIMED_FRAME_BARO_INDEX);
 #else
-        crsfSchedule[index++] = BIT(CRSF_FRAME_BARO_INDEX);
+        crsfSchedule[index++] = BIT(CRSF_FRAME_BARO_SENSOR_INDEX);
 #endif
     }
 #endif
@@ -1203,7 +1208,7 @@ void initCrsfTelemetry(void)
     if (featureIsEnabled(FEATURE_GPS)
        && telemetryIsSensorEnabled(SENSOR_ALTITUDE | SENSOR_LAT_LONG | SENSOR_GROUND_SPEED | SENSOR_HEADING)) {
 #ifdef USE_CRSF_V3
-        crsfTimedSchedule |= BIT(CRSF_FRAME_GPS_INDEX) | BIT(CRSF_FRAME_GPS_TIME_INDEX) | BIT(CRSF_FRAME_GPS_EXTENDED_INDEX);
+        crsfTimedSchedule |= BIT(CRSF_TIMED_FRAME_GPS_INDEX) | BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) | BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX);
 #else
         crsfSchedule[index++] = BIT(CRSF_FRAME_GPS_INDEX);
 #endif
@@ -1211,7 +1216,7 @@ void initCrsfTelemetry(void)
 #endif
 #if defined(USE_CRSF_ACCGYRO_TELEMETRY) && defined(USE_CRSF_V3)
     if (crsfAccGyroEnabled() && (sensors(SENSOR_ACC) || sensors(SENSOR_GYRO))) {
-        crsfTimedSchedule |= BIT(CRSF_FRAME_ACCGYRO_INDEX);
+        crsfTimedSchedule |= BIT(CRSF_TIMED_FRAME_ACCGYRO_INDEX);
     }
 #endif
 #ifdef USE_VARIO
@@ -1221,7 +1226,7 @@ void initCrsfTelemetry(void)
 #endif
 
 #if defined(USE_CRSF_V3)
-    if (!(crsfTimedSchedule & BIT(CRSF_FRAME_ACCGYRO_INDEX))) {
+    if (!(crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_ACCGYRO_INDEX))) {
         while (index < (CRSF_CYCLETIME_US / CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) && index < CRSF_SCHEDULE_COUNT_MAX) {
             // schedule heartbeat to ensure that telemetry/heartbeat frames are sent at minimum 50Hz
             crsfSchedule[index++] = BIT(CRSF_FRAME_HEARTBEAT_INDEX);
