@@ -80,8 +80,15 @@ static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-static FAST_DATA_ZERO_INIT uint32_t downSampleCount;               // gyro sensor sample counter for telemetry
-static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling for telemetry
+// Seqlock pattern for lock-free synchronization between gyroUpdate (writer) and telemetry (reader)
+// gyroUpdate increments seqCount before AND after modifying data
+// Telemetry reads seqCount, copies data, reads seqCount again - if different, retry
+static volatile uint32_t seqCount;   // Sequence counter (odd = write in progress)
+static volatile FAST_DATA_ZERO_INIT uint32_t downSampleCount;
+static volatile FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
+// Snapshot for telemetry to read from
+static FAST_DATA_ZERO_INIT uint32_t snapshotCount;
+static FAST_DATA_ZERO_INIT float snapshotSum[XYZ_AXIS_COUNT];
 #endif
 
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
@@ -448,11 +455,17 @@ FAST_CODE void gyroUpdate(void)
         gyro.sampleCount++;
     }
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    // using simple averaging for telemetry downsampling
+    // Seqlock write: increment before modifying (makes seqCount odd)
+    seqCount++;
+    __asm volatile ("" ::: "memory");  // Compiler barrier
+
     downSampleSum[X] += gyro.gyroADC[X];
     downSampleSum[Y] += gyro.gyroADC[Y];
     downSampleSum[Z] += gyro.gyroADC[Z];
     downSampleCount++;
+
+    __asm volatile ("" ::: "memory");  // Compiler barrier
+    seqCount++;  // Increment after modifying (makes seqCount even)
 #endif
 }
 
@@ -537,20 +550,64 @@ float gyroGetFilteredDownsampled(int axis)
 }
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-float gyroGetDownsampled(int axis)
+bool gyroHasDownsampledData(void)
 {
-    if (downSampleCount == 0) {
-        return gyro.gyroADC[axis];
-    }
-    return downSampleSum[axis] / downSampleCount;
+    return snapshotCount > 0;
 }
 
-void gyroStartDownsampledCycle(void)
+float gyroGetDownsampled(int axis)
 {
-    downSampleSum[X] = gyro.gyroADC[X];
-    downSampleSum[Y] = gyro.gyroADC[Y];
-    downSampleSum[Z] = gyro.gyroADC[Z];
-    downSampleCount = 1;
+    if (snapshotCount == 0) {
+        return 0;  // No valid data yet
+    }
+    return snapshotSum[axis] / snapshotCount;
+}
+
+bool gyroStartDownsampledCycle(void)
+{
+    // Seqlock read: keep retrying until we get consistent data
+    uint32_t seq1, seq2;
+    float sum[XYZ_AXIS_COUNT];
+    uint32_t count;
+
+    do {
+        seq1 = seqCount;
+        if (seq1 & 1) {
+            // Odd seqCount means write in progress, spin
+            continue;
+        }
+
+        // Copy current values
+        sum[X] = downSampleSum[X];
+        sum[Y] = downSampleSum[Y];
+        sum[Z] = downSampleSum[Z];
+        count = downSampleCount;
+
+        __asm volatile ("" ::: "memory");  // Compiler barrier
+        seq2 = seqCount;
+    } while (seq1 != seq2);
+
+    // Only update snapshot if we got valid data
+    if (count > 0) {
+        snapshotSum[X] = sum[X];
+        snapshotSum[Y] = sum[Y];
+        snapshotSum[Z] = sum[Z];
+        snapshotCount = count;
+    }
+
+    // Reset accumulators using seqlock write pattern
+    seqCount++;
+    __asm volatile ("" ::: "memory");
+
+    downSampleSum[X] = 0;
+    downSampleSum[Y] = 0;
+    downSampleSum[Z] = 0;
+    downSampleCount = 0;
+
+    __asm volatile ("" ::: "memory");
+    seqCount++;
+
+    return count > 0;
 }
 #endif
 

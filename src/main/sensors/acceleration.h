@@ -103,6 +103,7 @@ void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
 void accInitFilters(void);
 void applyAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
+bool accelHasDownsampledData(void);
 float accelGetDownsampled(int axis);
-void accelStartDownsampledCycle(void);
+bool accelStartDownsampledCycle(void);
 #endif

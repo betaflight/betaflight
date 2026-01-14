@@ -41,8 +41,12 @@
 
 FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-static FAST_DATA_ZERO_INIT uint32_t downSampleCount;               // accel sensor sample counter for telemetry
-static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling for telemetry
+// Seqlock pattern for lock-free synchronization between accUpdate (writer) and telemetry (reader)
+static volatile uint32_t seqCount;
+static FAST_DATA_ZERO_INIT uint32_t downSampleCount;
+static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT uint32_t snapshotCount;
+static FAST_DATA_ZERO_INIT float snapshotSum[XYZ_AXIS_COUNT];
 #endif
 
 static inline void alignAccelerometer(void)
@@ -126,31 +130,81 @@ void accUpdate(timeUs_t currentTimeUs)
     postProcessAccelerometer();
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    // using simple averaging for telemetry downsampling
+    // Seqlock write: increment before modifying (makes seqCount odd)
+    seqCount++;
+    __asm volatile ("" ::: "memory");
+
     downSampleSum[X] += acc.accADC.v[X];
     downSampleSum[Y] += acc.accADC.v[Y];
     downSampleSum[Z] += acc.accADC.v[Z];
     downSampleCount++;
+
+    __asm volatile ("" ::: "memory");
+    seqCount++;  // Increment after modifying (makes seqCount even)
 #endif
 
     acc.isAccelUpdatedAtLeastOnce = true;
 }
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-float accelGetDownsampled(int axis)
+bool accelHasDownsampledData(void)
 {
-    if (downSampleCount == 0) {
-        return acc.accADC.v[axis];
-    }
-    return downSampleSum[axis] / downSampleCount;
+    return snapshotCount > 0;
 }
 
-void accelStartDownsampledCycle(void)
+float accelGetDownsampled(int axis)
 {
-    downSampleCount = 1;
-    downSampleSum[X] = acc.accADC.v[X];
-    downSampleSum[Y] = acc.accADC.v[Y];
-    downSampleSum[Z] = acc.accADC.v[Z];
+    if (snapshotCount == 0) {
+        return 0;  // No valid data yet
+    }
+    return snapshotSum[axis] / snapshotCount;
+}
+
+bool accelStartDownsampledCycle(void)
+{
+    // Seqlock read: keep retrying until we get consistent data
+    uint32_t seq1, seq2;
+    float sum[XYZ_AXIS_COUNT];
+    uint32_t count;
+
+    do {
+        seq1 = seqCount;
+        if (seq1 & 1) {
+            // Odd seqCount means write in progress, spin
+            continue;
+        }
+
+        // Copy current values
+        sum[X] = downSampleSum[X];
+        sum[Y] = downSampleSum[Y];
+        sum[Z] = downSampleSum[Z];
+        count = downSampleCount;
+
+        __asm volatile ("" ::: "memory");
+        seq2 = seqCount;
+    } while (seq1 != seq2);
+
+    // Only update snapshot if we got valid data
+    if (count > 0) {
+        snapshotSum[X] = sum[X];
+        snapshotSum[Y] = sum[Y];
+        snapshotSum[Z] = sum[Z];
+        snapshotCount = count;
+    }
+
+    // Reset accumulators using seqlock write pattern
+    seqCount++;
+    __asm volatile ("" ::: "memory");
+
+    downSampleSum[X] = 0;
+    downSampleSum[Y] = 0;
+    downSampleSum[Z] = 0;
+    downSampleCount = 0;
+
+    __asm volatile ("" ::: "memory");
+    seqCount++;
+
+    return count > 0;
 }
 #endif
 
