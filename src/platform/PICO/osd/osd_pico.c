@@ -225,7 +225,7 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
     bprintf("pbw %d, pbh %d, bpl %d", PICO_OSD_BUF_WIDTH, PICO_OSD_BUF_HEIGHT_MAX, PICO_OSD_BUF_LENGTH);
     bprintf("osdBuffer1: %p osdBuffer2: %p", osdBuffer1W, osdBuffer2W);
     bprintf("nx %d, ny %d", fb_nx, fb_ny);
-    memset(osdBufferA, PICO_OSD_BUF_LENGTH, 0);
+    memset(osdBufferA, 0, PICO_OSD_BUF_LENGTH);
     osdPioClearCharBuffer();
 
     if (!init_gpios()) {
