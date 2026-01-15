@@ -80,10 +80,14 @@ static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-// Seqlock pattern for lock-free synchronization between gyroUpdate (writer) and telemetry (reader)
-// gyroUpdate increments seqCount before AND after modifying data
-// Telemetry reads seqCount, copies data, reads seqCount again - if different, retry
-static volatile uint32_t seqCount;   // Sequence counter (odd = write in progress)
+// Two-counter seqlock pattern for lock-free synchronization:
+// - gyroSeq: only incremented by gyroUpdate (accumulator writes)
+// - resetSeq: only incremented by telemetry task (accumulator resets)
+// This ensures each seqlock has exactly one writer, avoiding dual-writer race conditions.
+// When resetSeq is odd (reset in progress), gyroUpdate skips accumulation to avoid corruption.
+// At most one sample per telemetry cycle may be skipped - negligible at 8kHz gyro rate.
+static volatile uint32_t gyroSeq;    // Sequence counter for gyro writes (odd = write in progress)
+static volatile uint32_t resetSeq;   // Sequence counter for resets (odd = reset in progress)
 static volatile FAST_DATA_ZERO_INIT uint32_t downSampleCount;
 static volatile FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
 // Snapshot for telemetry to read from
@@ -455,17 +459,21 @@ FAST_CODE void gyroUpdate(void)
         gyro.sampleCount++;
     }
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    // Seqlock write: increment before modifying (makes seqCount odd)
-    seqCount++;
-    __asm volatile ("" ::: "memory");  // Compiler barrier
+    // Skip accumulation if reset is in progress (resetSeq odd) to avoid corruption.
+    // At most one sample per telemetry cycle is skipped - negligible at 8kHz gyro rate.
+    if (!(resetSeq & 1)) {
+        // Seqlock write: increment before modifying (makes gyroSeq odd)
+        gyroSeq++;
+        __asm volatile ("" ::: "memory");  // Compiler barrier
 
-    downSampleSum[X] += gyro.gyroADC[X];
-    downSampleSum[Y] += gyro.gyroADC[Y];
-    downSampleSum[Z] += gyro.gyroADC[Z];
-    downSampleCount++;
+        downSampleSum[X] += gyro.gyroADC[X];
+        downSampleSum[Y] += gyro.gyroADC[Y];
+        downSampleSum[Z] += gyro.gyroADC[Z];
+        downSampleCount++;
 
-    __asm volatile ("" ::: "memory");  // Compiler barrier
-    seqCount++;  // Increment after modifying (makes seqCount even)
+        __asm volatile ("" ::: "memory");  // Compiler barrier
+        gyroSeq++;  // Increment after modifying (makes gyroSeq even)
+    }
 #endif
 }
 
@@ -565,15 +573,15 @@ float gyroGetDownsampled(int axis)
 
 bool gyroStartDownsampledCycle(void)
 {
-    // Seqlock read: keep retrying until we get consistent data
+    // Phase 1: Read using gyroSeq (protects against gyroUpdate writes)
     uint32_t seq1, seq2;
     float sum[XYZ_AXIS_COUNT];
     uint32_t count;
 
     do {
-        seq1 = seqCount;
+        seq1 = gyroSeq;
         if (seq1 & 1) {
-            // Odd seqCount means write in progress, spin
+            // Odd gyroSeq means write in progress, spin
             continue;
         }
 
@@ -584,7 +592,7 @@ bool gyroStartDownsampledCycle(void)
         count = downSampleCount;
 
         __asm volatile ("" ::: "memory");  // Compiler barrier
-        seq2 = seqCount;
+        seq2 = gyroSeq;
     } while (seq1 != seq2);
 
     // Only update snapshot if we got valid data
@@ -595,8 +603,8 @@ bool gyroStartDownsampledCycle(void)
         snapshotCount = count;
     }
 
-    // Reset accumulators using seqlock write pattern
-    seqCount++;
+    // Phase 2: Reset using resetSeq (signals gyroUpdate to skip accumulation)
+    resetSeq++;  // Makes resetSeq odd - gyroUpdate will skip
     __asm volatile ("" ::: "memory");
 
     downSampleSum[X] = 0;
@@ -605,7 +613,7 @@ bool gyroStartDownsampledCycle(void)
     downSampleCount = 0;
 
     __asm volatile ("" ::: "memory");
-    seqCount++;
+    resetSeq++;  // Makes resetSeq even - gyroUpdate resumes
 
     return count > 0;
 }
