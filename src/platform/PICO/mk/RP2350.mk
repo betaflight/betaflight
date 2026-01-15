@@ -470,8 +470,6 @@ else
 LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350_RunFromFLASH.ld
 endif
 
-STARTUP_SRC     = PICO/startup/bs2_default_padded_checksummed.S
-
 # Override the OPTIMISE_SPEED compiler setting to save flash space on these 512KB targets.
 # Performance is only slightly affected but around 50 kB of flash are saved.
 OPTIMISE_SPEED  = -O2
