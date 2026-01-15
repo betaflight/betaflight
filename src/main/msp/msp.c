@@ -1008,6 +1008,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
 
+            break;
         default:
             break;
         }

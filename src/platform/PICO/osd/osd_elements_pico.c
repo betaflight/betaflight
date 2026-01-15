@@ -614,7 +614,6 @@ static bool postProcessUntil(uint32_t limit_micros)
             // we are on the last word of a line, don't peek at the next word, reset line counter.
             wordNext = 0;
             wordIndex = 0;
-            y++;
         } else {
             wordNext = *(pWord + 1);
         }
@@ -627,11 +626,14 @@ static bool postProcessUntil(uint32_t limit_micros)
             blackUpdates |= (*(pWord - PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
         }
 
-        if (y < fb_ny) {
+        if (y < fb_ny - 1) {
             blackUpdates |= (*(pWord + PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
         }
 
         *pWord++ = wordThis | blackUpdates;
+        if (wordIndex == 0) {
+            y++;
+        }
     }
 
     pWord = 0;
