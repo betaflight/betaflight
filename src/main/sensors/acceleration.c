@@ -41,10 +41,16 @@
 
 FAST_DATA_ZERO_INIT acc_t acc;                       // acc access functions
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-// Seqlock pattern for lock-free synchronization between accUpdate (writer) and telemetry (reader)
-static volatile uint32_t seqCount;
-static FAST_DATA_ZERO_INIT uint32_t downSampleCount;
-static FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
+// Two-counter seqlock pattern for lock-free synchronization:
+// - accelSeq: only incremented by accUpdate (accumulator writes)
+// - resetSeq: only incremented by telemetry task (accumulator resets)
+// This ensures each seqlock has exactly one writer, avoiding dual-writer race conditions.
+// When resetSeq is odd (reset in progress), accUpdate skips accumulation to avoid corruption.
+// At most one sample per telemetry cycle may be skipped - negligible at 1kHz accel rate.
+static volatile uint32_t accelSeq;   // Sequence counter for accel writes (odd = write in progress)
+static volatile uint32_t resetSeq;   // Sequence counter for resets (odd = reset in progress)
+static volatile FAST_DATA_ZERO_INIT uint32_t downSampleCount;
+static volatile FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
 static FAST_DATA_ZERO_INIT uint32_t snapshotCount;
 static FAST_DATA_ZERO_INIT float snapshotSum[XYZ_AXIS_COUNT];
 #endif
@@ -130,17 +136,21 @@ void accUpdate(timeUs_t currentTimeUs)
     postProcessAccelerometer();
 
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    // Seqlock write: increment before modifying (makes seqCount odd)
-    seqCount++;
-    __asm volatile ("" ::: "memory");
+    // Skip accumulation if reset is in progress (resetSeq odd) to avoid corruption.
+    // At most one sample per telemetry cycle is skipped - negligible at 1kHz accel rate.
+    if (!(resetSeq & 1)) {
+        // Seqlock write: increment before modifying (makes accelSeq odd)
+        accelSeq++;
+        __asm volatile ("" ::: "memory");
 
-    downSampleSum[X] += acc.accADC.v[X];
-    downSampleSum[Y] += acc.accADC.v[Y];
-    downSampleSum[Z] += acc.accADC.v[Z];
-    downSampleCount++;
+        downSampleSum[X] += acc.accADC.v[X];
+        downSampleSum[Y] += acc.accADC.v[Y];
+        downSampleSum[Z] += acc.accADC.v[Z];
+        downSampleCount++;
 
-    __asm volatile ("" ::: "memory");
-    seqCount++;  // Increment after modifying (makes seqCount even)
+        __asm volatile ("" ::: "memory");
+        accelSeq++;  // Increment after modifying (makes accelSeq even)
+    }
 #endif
 
     acc.isAccelUpdatedAtLeastOnce = true;
@@ -162,15 +172,15 @@ float accelGetDownsampled(int axis)
 
 bool accelStartDownsampledCycle(void)
 {
-    // Seqlock read: keep retrying until we get consistent data
+    // Phase 1: Read using accelSeq (protects against accUpdate writes)
     uint32_t seq1, seq2;
     float sum[XYZ_AXIS_COUNT];
     uint32_t count;
 
     do {
-        seq1 = seqCount;
+        seq1 = accelSeq;
         if (seq1 & 1) {
-            // Odd seqCount means write in progress, spin
+            // Odd accelSeq means write in progress, spin
             continue;
         }
 
@@ -181,7 +191,7 @@ bool accelStartDownsampledCycle(void)
         count = downSampleCount;
 
         __asm volatile ("" ::: "memory");
-        seq2 = seqCount;
+        seq2 = accelSeq;
     } while (seq1 != seq2);
 
     // Only update snapshot if we got valid data
@@ -192,8 +202,8 @@ bool accelStartDownsampledCycle(void)
         snapshotCount = count;
     }
 
-    // Reset accumulators using seqlock write pattern
-    seqCount++;
+    // Phase 2: Reset using resetSeq (signals accUpdate to skip accumulation)
+    resetSeq++;  // Makes resetSeq odd - accUpdate will skip
     __asm volatile ("" ::: "memory");
 
     downSampleSum[X] = 0;
@@ -202,7 +212,7 @@ bool accelStartDownsampledCycle(void)
     downSampleCount = 0;
 
     __asm volatile ("" ::: "memory");
-    seqCount++;
+    resetSeq++;  // Makes resetSeq even - accUpdate resumes
 
     return count > 0;
 }
