@@ -914,20 +914,20 @@ void initPhase3(void)
             FALLTHROUGH;
 #endif
 
-#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
-        case OSD_DISPLAYPORT_DEVICE_MSP:
-            osdDisplayPort = displayPortMspInit();
-            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MSP) {
-                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
+#if defined(USE_FB_OSD)
+        case OSD_DISPLAYPORT_DEVICE_FBOSD:
+            if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;
                 break;
             }
             FALLTHROUGH;
 #endif
 
-#if defined(USE_FB_OSD)
-        case OSD_DISPLAYPORT_DEVICE_FBOSD:
-            if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
-                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
+        case OSD_DISPLAYPORT_DEVICE_MSP:
+            osdDisplayPort = displayPortMspInit();
+            if (osdDisplayPort || device == OSD_DISPLAYPORT_DEVICE_MSP) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MSP;
                 break;
             }
             FALLTHROUGH;
