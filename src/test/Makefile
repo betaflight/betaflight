@@ -457,6 +457,10 @@ position_estimator_unittest_DEFINES := \
 		USE_BARO= \
 		USE_RANGEFINDER=
 
+position_nav_unittest_SRC := \
+		$(USER_DIR)/flight/position_nav.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
