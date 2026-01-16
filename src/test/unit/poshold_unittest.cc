@@ -38,6 +38,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/position_estimator.h"
+    #include "flight/position_nav.h"
 
     #include "io/gps.h"
 
@@ -59,10 +60,17 @@ extern "C" {
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
 
+    // Nav stubs: position hold tests run without active navigation
+    void positionNavInit(void) { }
+    void positionNavReset(void) { }
+    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
+    bool positionNavHasActiveTarget(void) { return false; }
+    bool positionNavTargetReached(void) { return false; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
+    const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
+
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
-    float getAltitudeCmControl(void) { return 0.0f; }
-    float getAltitudeDerivativeControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 1.0f; }
 
     uint8_t armingFlags = 0;

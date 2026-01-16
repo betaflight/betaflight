@@ -39,8 +39,7 @@ typedef struct positionEstimate3d_s {
 void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
 
-// Request XY fusion (normally automatic from armed state / sensors / modes).
-// May re-initialize kfX/kfY when transitioning to enabled; disabling stops prediction only.
+// Enable/disable XY estimation (gated by position hold / rescue modes)
 void positionEstimatorEnableXY(bool enable);
 
 // Read the unified estimate

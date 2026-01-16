@@ -60,7 +60,6 @@ static float filteredAltitudeDerivative = 0.0f;
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
 static bool wasArmed = false;
-
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
@@ -127,7 +126,7 @@ void calculateEstimatedAltitude(void)
     controlAltitudeCm = kfAltCm;
     controlAltitudeDerivative = kfVelCm;
 
-    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
+    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, kfVelCm);
 
 #ifdef USE_VARIO
     estimatedVario = lrintf(filteredAltitudeDerivative);
@@ -154,16 +153,6 @@ float getAltitudeCm(void)
 float getAltitudeDerivative(void)
 {
     return filteredAltitudeDerivative;
-}
-
-float getAltitudeCmControl(void)
-{
-    return controlAltitudeCm;
-}
-
-float getAltitudeDerivativeControl(void)
-{
-    return controlAltitudeDerivative;
 }
 
 bool isAltitudeAvailable(void)

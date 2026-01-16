@@ -87,69 +87,6 @@
 
 #define RANGEFINDER_MIN_ALT_CM  10
 
-#ifdef USE_RANGEFINDER
-// Valid rangefinder sample for Z fusion and optical-flow scaling (driver returns cm).
-static bool rangefinderSampleAltitudeCm(float *altCm, float maxRangeCm)
-{
-    if (!sensors(SENSOR_RANGEFINDER) || !rangefinderIsHealthy()) {
-        return false;
-    }
-    const float alt = rangefinderGetLatestAltitude();
-    if (alt < RANGEFINDER_MIN_ALT_CM || alt > maxRangeCm) {
-        return false;
-    }
-    *altCm = alt;
-    return true;
-}
-#endif
-
-// True while armed if horizontal fusion should run (POS_HOLD, rescue, GPS, and/or optical flow).
-static bool positionEstimatorWantXYFusion(void)
-{
-    if (!ARMING_FLAG(ARMED)) {
-        return false;
-    }
-
-#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        return true;
-    }
-#endif
-
-#ifdef USE_GPS_RESCUE
-    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        return true;
-    }
-#endif
-
-#ifdef USE_GPS
-    if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-        if (posHoldConfig()->positionSource != POSHOLD_SOURCE_OPTICALFLOW_ONLY) {
-            return true;
-        }
-#else
-        return true;
-#endif
-    }
-#endif
-
-#if defined(USE_OPTICALFLOW) && defined(USE_RANGEFINDER)
-    if (sensors(SENSOR_OPTICALFLOW) && sensors(SENSOR_RANGEFINDER) &&
-        isOpticalflowHealthy() && rangefinderIsHealthy()) {
-#if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-        if (posHoldConfig()->positionSource != POSHOLD_SOURCE_GPS_ONLY) {
-            return true;
-        }
-#else
-        return true;
-#endif
-    }
-#endif
-
-    return false;
-}
-
 // Generic cross-calibration: correct drifting sensor offsets against the KF estimate
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
@@ -255,6 +192,7 @@ void positionEstimatorEnableXY(bool enable)
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
+        gpsArmLocationSet = false;
         if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
             armLocationGps = gpsSol.llh;
             gpsArmLocationSet = true;
@@ -334,6 +272,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
                                 altSource == ALTITUDE_SOURCE_GPS_ONLY ||
                                 altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER);
 
+    // Latch GPS origin on first valid fix after enable/reset
+    if (xyEnabled && !gpsArmLocationSet) {
+        armLocationGps = gpsSol.llh;
+        gpsArmLocationSet = true;
+    }
+
     // XY position + velocity measurements
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;
@@ -355,7 +299,7 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     // Z altitude measurement
     if (gpsAltAllowed) {
         if (!gpsAltOffsetSet) {
-            gpsAltOffsetCm = gpsSol.llh.altCm;
+            gpsAltOffsetCm = gpsSol.llh.altCm - kalmanGetPosition(&kfZ);
             gpsAltOffsetSet = true;
         }
 
@@ -415,19 +359,26 @@ static void feedBaroMeasurements(timeUs_t nowUs)
 static void feedRangefinderMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_RANGEFINDER
+    if (!sensors(SENSOR_RANGEFINDER) || !rangefinderIsHealthy()) {
+        return;
+    }
+
     const uint8_t altSource = positionConfig()->altitude_source;
     if (altSource == ALTITUDE_SOURCE_GPS_ONLY ||
         altSource == ALTITUDE_SOURCE_BARO_ONLY) {
         return;
     }
 
-    float altCm;
-    if (!rangefinderSampleAltitudeCm(&altCm, positionConfig()->rangefinder_max_range_cm)) {
+    // Only use rangefinder in DEFAULT or RANGEFINDER_PREFER or RANGEFINDER_ONLY modes
+    const float altCm = rangefinderGetLatestAltitude();
+    const float maxRange = positionConfig()->rangefinder_max_range_cm;
+
+    if (altCm < RANGEFINDER_MIN_ALT_CM || altCm > maxRange) {
         return;
     }
 
     if (!rangefinderOffsetSet) {
-        rangefinderAltOffsetCm = altCm;
+        rangefinderAltOffsetCm = altCm - kalmanGetPosition(&kfZ);
         rangefinderOffsetSet = true;
     }
 
@@ -466,23 +417,22 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     }
 #endif
 
-    const uint8_t altSource = positionConfig()->altitude_source;
-    if (altSource == ALTITUDE_SOURCE_BARO_ONLY || altSource == ALTITUDE_SOURCE_GPS_ONLY) {
+#ifdef USE_RANGEFINDER
+    if (!sensors(SENSOR_RANGEFINDER) || !rangefinderIsHealthy()) {
         return;
     }
 
-#ifdef USE_RANGEFINDER
-    float maxRangeCm = positionConfig()->rangefinder_max_range_cm;
+    const int32_t altitudeCm = rangefinderGetLatestAltitude();
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
-    maxRangeCm = fminf(maxRangeCm, (float)posHoldConfig()->opticalflowMaxRange);
+    const int32_t maxRangeCm = posHoldConfig()->opticalflowMaxRange;
+#else
+    const int32_t maxRangeCm = 400;
 #endif
-    float altitudeCmF;
-    if (!rangefinderSampleAltitudeCm(&altitudeCmF, maxRangeCm)) {
+
+    if (altitudeCm < 10 || altitudeCm > maxRangeCm) {
         return;
     }
-    const float altitudeCm = altitudeCmF;
 #else
-    UNUSED(altSource);
     return;  // Optical flow requires rangefinder for altitude scaling
 #endif
 
@@ -496,7 +446,7 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
-    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height
+    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder altitude
     const float vBFx = flow->processedFlowRates.x * altitudeCm;
     const float vBFy = flow->processedFlowRates.y * altitudeCm;
 
@@ -552,11 +502,6 @@ void positionEstimatorUpdate(void)
 {
     const timeUs_t nowUs = micros();
     const float dt = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
-
-    const bool wantXY = positionEstimatorWantXYFusion();
-    if (wantXY != xyEnabled) {
-        positionEstimatorEnableXY(wantXY);
-    }
 
     // Compute earth-frame linear acceleration from IMU
     float accelEast, accelNorth, accelUp;
@@ -673,6 +618,7 @@ void positionEstimatorResetXY(void)
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS
+    gpsArmLocationSet = false;
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         armLocationGps = gpsSol.llh;
         gpsArmLocationSet = true;
