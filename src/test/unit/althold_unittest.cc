@@ -37,6 +37,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/pid.h"
     #include "flight/position.h"
+    #include "flight/position_estimator.h"
 
     #include "io/gps.h"
 
@@ -126,6 +127,12 @@ extern "C" {
     }
 
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
+
+    static positionEstimate3d_t stubEstimate = {};
+
+    const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
+    void positionEstimatorEnableXY(bool /*enable*/) { }
+    bool positionEstimatorIsValidXY(void) { return false; }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);

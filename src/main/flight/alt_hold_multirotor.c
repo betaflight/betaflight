@@ -76,6 +76,9 @@ static void altHoldProcessTransitions(void) {
             altHold.isActive = true;
         }
     } else {
+        if (altHold.isActive) {
+            resetAltitudeControl();  // Reset throttle output when exiting altitude hold
+        }
         altHold.isActive = false;
     }
 

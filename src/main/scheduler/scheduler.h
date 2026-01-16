@@ -137,7 +137,7 @@ typedef enum {
 #ifdef USE_OPTICALFLOW
     TASK_OPTICALFLOW,
 #endif
-#if defined(USE_BARO) || defined(USE_GPS)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     TASK_ALTITUDE,
 #endif
 #ifdef USE_DASHBOARD
