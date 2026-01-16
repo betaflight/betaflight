@@ -2444,16 +2444,19 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {
     // We get here from osdAnalyzeActiveElements, after changes to the OSD from the Configurator (see msp.c).
-    if (backgroundLayerSupported) {
-        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
-        for (unsigned i = 0; i < activeOsdElementCount; i++) {
-            while (!osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]));
+    // Protect against enabling the OSD feature and clicking Save + Reboot, when osdDisplayPort will be null.
+    if (osdDisplayPort) {
+        if (backgroundLayerSupported) {
+            displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+            for (unsigned i = 0; i < activeOsdElementCount; i++) {
+                while (!osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]));
+            }
+            displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
+        } else {
+            // FB_OSD might need notification to redraw a background buffer.
+            displayRedrawBackground(osdDisplayPort);
         }
-        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
-    } else {
-        // FB_OSD might need notification to redraw a background buffer.
-        displayRedrawBackground(osdDisplayPort);
     }
 }
 
