@@ -170,6 +170,7 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
+            flight/position_estimator.c \
             flight/pos_hold_multirotor.c \
             flight/pos_hold_wing.c \
             flight/rpm_filter.c \
@@ -239,6 +240,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/rangefinder/rangefinder_nooploop.c \
+            drivers/rangefinder/rangefinder_upt1.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \

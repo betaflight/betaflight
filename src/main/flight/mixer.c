@@ -692,8 +692,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (applyCrashFlipModeToMotors()) {
         return;
         // if crash flip modeis being applied to the motors, mixing is done
-        
-        
+
+
     }
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];

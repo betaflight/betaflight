@@ -42,6 +42,7 @@ typedef enum {
     RANGEFINDER_NOOPLOOP_F    = 12,
     RANGEFINDER_NOOPLOOP_FP   = 13,
     RANGEFINDER_NOOPLOOP_F2MINI = 14,
+    RANGEFINDER_UPT1          = 15,
     RANGEFINDER_HARDWARE_COUNT,
 } rangefinderType_e;
 

@@ -246,14 +246,22 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
     [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
     [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
     [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
-    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
+    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI",
+    [RANGEFINDER_UPT1] = "UPT1"
 };
 
 // sync with opticalflowType_e
 const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
     [OPTICALFLOW_NONE] = "NONE",
-    [OPTICALFLOW_MT] = "MT"
+    [OPTICALFLOW_MT] = "MT",
+    [OPTICALFLOW_UPT1] = "UPT1"
 };
+
+#if defined(USE_POSITION_HOLD)
+const char * const lookupTablePosHoldSource[] = {
+    "AUTO", "GPS_ONLY", "OPTICALFLOW_ONLY"
+};
+#endif
 
 const char * const lookupTableOffOn[] = {
     "OFF", "ON"
@@ -576,7 +584,7 @@ static const char * const lookupTableGyroFilterDebug[] = {
 };
 
 static const char * const lookupTablePositionAltitudeSource[] = {
-    "DEFAULT", "BARO_ONLY", "GPS_ONLY"
+    "DEFAULT", "BARO_ONLY", "GPS_ONLY", "RANGEFINDER_PREFER", "RANGEFINDER_ONLY"
 };
 
 static const char * const lookupTableOffOnAuto[] = {
@@ -709,6 +717,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_OPTICALFLOW
     LOOKUP_TABLE_ENTRY(lookupTableOpticalflowHardware),
+#endif
+#ifdef USE_POSITION_HOLD
+    LOOKUP_TABLE_ENTRY(lookupTablePosHoldSource),
 #endif
 #ifdef USE_GYRO_OVERFLOW_CHECK
     LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck),
@@ -1240,6 +1251,9 @@ const clivalue_t valueTable[] = {
 #ifndef USE_WING
     { PARAM_NAME_POS_HOLD_WITHOUT_MAG, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, posHoldWithoutMag) },
     { PARAM_NAME_POS_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, deadband) },
+    { "poshold_position_source",       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSHOLD_SOURCE }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, positionSource) },
+    { "poshold_opticalflow_quality_min", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowQualityMin) },
+    { "poshold_opticalflow_max_range", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowMaxRange) },
 #endif // !USE_WING
 #endif // USE_POSITION_HOLD
 
@@ -2026,6 +2040,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ALTITUDE_SOURCE,       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSITION_ALT_SOURCE }, PG_POSITION, offsetof(positionConfig_t, altitude_source) },
     { PARAM_NAME_ALTITUDE_PREFER_BARO,  VAR_INT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSITION, offsetof(positionConfig_t, altitude_prefer_baro) },
     { PARAM_NAME_ALTITUDE_LPF,          VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_lpf) },
+    { "rangefinder_max_range_cm",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 1000 }, PG_POSITION, offsetof(positionConfig_t, rangefinder_max_range_cm) },
     { PARAM_NAME_ALTITUDE_D_LPF,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 10, 1000 }, PG_POSITION, offsetof(positionConfig_t, altitude_d_lpf) },
 
 // PG_AUTOPILOT
@@ -2040,10 +2055,11 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_ALTITUDE_F,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altitudeF) },
     { PARAM_NAME_AP_POSITION_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionP) },
     { PARAM_NAME_AP_POSITION_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionI) },
+    { PARAM_NAME_AP_POSITION_II,         VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionII) },
     { PARAM_NAME_AP_POSITION_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionD) },
     { PARAM_NAME_AP_POSITION_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionA) },
     { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 250 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
-    { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
+    { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
 #endif // !USE_WING
 
 // PG_MODE_ACTIVATION_CONFIG

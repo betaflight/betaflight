@@ -24,11 +24,20 @@
 
 #define TASK_ALTITUDE_RATE_HZ 100
 
+typedef enum {
+    ALTITUDE_SOURCE_DEFAULT = 0,
+    ALTITUDE_SOURCE_BARO_ONLY,
+    ALTITUDE_SOURCE_GPS_ONLY,
+    ALTITUDE_SOURCE_RANGEFINDER_PREFER,
+    ALTITUDE_SOURCE_RANGEFINDER_ONLY
+} altitudeSource_e;
+
 typedef struct positionConfig_s {
     uint8_t altitude_source;
     uint8_t altitude_prefer_baro;
     uint16_t altitude_lpf;                // lowpass cutoff (value / 100) Hz for altitude smoothing
     uint16_t altitude_d_lpf;              // lowpass for (value / 100) Hz for altitude derivative smoothing
+    uint16_t rangefinder_max_range_cm;    // Maximum rangefinder range to trust (cm)
 } positionConfig_t;
 
 PG_DECLARE(positionConfig_t, positionConfig);
