@@ -48,6 +48,9 @@
 #include "drivers/time.h"
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#ifdef USE_RANGEFINDER_UPT1
+#include "drivers/rangefinder/rangefinder_upt1.h"
+#endif
 
 #include "io/beeper.h"
 
@@ -94,6 +97,15 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
             }
 #endif
             break;
+
+#if defined(USE_RANGEFINDER_UPT1) && defined(USE_OPTICALFLOW)
+        case OPTICALFLOW_UPT1:
+            if (upt1OpticalflowDetect(dev)) {
+                opticalflowHardware = OPTICALFLOW_UPT1;
+                rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
 
         case OPTICALFLOW_NONE:
             opticalflowHardware = OPTICALFLOW_NONE;
