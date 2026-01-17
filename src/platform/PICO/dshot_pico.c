@@ -31,6 +31,7 @@
 #include "dshot_pico.h"
 #include "common/maths.h"
 
+
 #ifdef DSHOT_DEBUG_PIO
 #include "drivers/io_impl.h"
 
@@ -152,23 +153,75 @@ static void dshotUpdateComplete(void)
     pio_set_sm_mask_enabled(dshotPio, motorMask, false);
 
     if (useDshotTelemetry) {
-        // protect against SM getting stuck waiting for telemetry.
-        // TODO we could be more sophisticated about detecting that we are not stuck,
-        // then skipping the restart, to avoid unnecessary delays in the PIO code.
-        pio_restart_sm_mask(dshotPio, motorMask);
+        // For bidir DShot, the PIO program blocks at instruction 0 (pull block)
+        // waiting for TX data. When the SM completes its cycle (transmit + receive),
+        // it wraps back to instruction 0 and waits.
+        //
+        // PIO program structure:
+        //   0:     pull block (waiting for data) - SAFE
+        //   1-13:  transmit - NOT SAFE (would cause duplicate)
+        //   14-15: settling delay + switch to input - NOT SAFE
+        //   16:    wait 1 pin (wait for HIGH) - NOT SAFE
+        //   17:    set x (loop setup) - NOT SAFE
+        //   18:    wait 0 pin (wait for falling edge) - NOT SAFE
+        //   19-23: sampling telemetry - NOT SAFE (FIFO being filled)
+        //   24-31: post-receive (output mode + padding) - SAFE
+        //
+        // Safe states: PC=0 (waiting) or PC=24-31 (receive done, wrapping)
+        // In safe states, RX FIFO has complete telemetry data ready to drain.
+        //
+        // Strategy:
+        // - If SM is in safe state: Drain RX FIFO, put TX data
+        // - If SM is mid-cycle (1-23): leave it alone
+        // Track consecutive calls where SM is at wait instructions (PC=16 or 18)
+        // to distinguish normal ESC turnaround from truly stuck state
+        static uint8_t waitCount[MAX_SUPPORTED_MOTORS] = {0};
+
         for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
             if (outgoingPacket[motorIndex] >= 0) {
                 const motorOutput_t *motor = &dshotMotors[motorIndex];
-                pio_sm_clear_fifos(motor->pio, motor->pio_sm);
-                pio_sm_exec_wait_blocking(motor->pio, motor->pio_sm, pio_encode_jmp(motor->offset));
+                uint pc = pio_sm_get_pc(motor->pio, motor->pio_sm);
+                uint pcOffset = pc - motor->offset;
+
+                // Safe to send if at instruction 0 (waiting) or 24-31 (post-receive)
+                bool readyToSend = (pcOffset == 0) || (pcOffset >= 24);
+                bool atWaitInstr = (pcOffset == 16) || (pcOffset == 18);
+
+                if (readyToSend) {
+                    // SM completed its cycle - drain RX FIFO and send
+                    while (!pio_sm_is_rx_fifo_empty(motor->pio, motor->pio_sm)) {
+                        (void)pio_sm_get(motor->pio, motor->pio_sm);
+                    }
+                    pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+                    waitCount[motorIndex] = 0;
+                } else if (atWaitInstr) {
+                    // SM is at wait instructions (16 or 18)
+                    // Could be normal turnaround (~25µs) or truly stuck (ESC didn't respond)
+                    // Only restart if stuck for multiple consecutive calls (>125µs at 8kHz)
+                    waitCount[motorIndex]++;
+                    if (waitCount[motorIndex] >= 2) {
+                        // Stuck for >125µs - ESC definitely didn't respond, restart
+                        pio_sm_restart(motor->pio, motor->pio_sm);
+                        pio_sm_clear_fifos(motor->pio, motor->pio_sm);
+                        pio_sm_exec_wait_blocking(motor->pio, motor->pio_sm,
+                            pio_encode_jmp(motor->offset + dshot_600_bidir_BIDIR_START));
+                        pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+                        waitCount[motorIndex] = 0;
+                    }
+                    // else: First time at wait - might be normal turnaround, skip this update
+                } else {
+                    // SM is mid-transmit or mid-receive (1-15, 18-23) - skip
+                    waitCount[motorIndex] = 0;
+                }
             }
         }
-    }
-
-    for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
-        if (outgoingPacket[motorIndex] >= 0) {
-            const motorOutput_t *motor = &dshotMotors[motorIndex];
-            pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+    } else {
+        // Non-bidir: just put TX data, SMs will pull when enabled
+        for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
+            if (outgoingPacket[motorIndex] >= 0) {
+                const motorOutput_t *motor = &dshotMotors[motorIndex];
+                pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+            }
         }
     }
 
