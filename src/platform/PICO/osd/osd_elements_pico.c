@@ -84,7 +84,7 @@ static void cacheSidebarsInfo(uint8_t x, uint8_t y)
         infoSidebars.x1 = (x - AH_SIDEBAR_WIDTH_POS) * charWidth + charHalfWidth;
         infoSidebars.y1 = (y - AH_SIDEBAR_HEIGHT_POS) * charHeight; // not  + charHalfHeight because sub 0.5char*charHeight
         infoSidebars.yMid = y * charHeight + charHalfHeight;
-        infoSidebars.x2 = (x + AH_SIDEBAR_WIDTH_POS) * charWidth + charHalfWidth;;
+        infoSidebars.x2 = (x + AH_SIDEBAR_WIDTH_POS) * charWidth + charHalfWidth;
 //        infoSidebars.y2 = (y + AH_SIDEBAR_HEIGHT_POS) * charHeight;
         bgSidebarsState = bgItemPendingRender;
    }
@@ -117,7 +117,6 @@ static void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
     const int rollAngle = attitude.values.roll * ahSign;
     int pitchAngleUnconstrained = attitude.values.pitch * ahSign;
     int pitchAngle = constrain(pitchAngleUnconstrained, -maxPitch, maxPitch);
-
     infoArtificialHorizon.outOfRange = pitchAngle != pitchAngleUnconstrained;
 
     // Note that pitch is positive for the board / camera pointing down, and y coords increase going down the screen.
@@ -125,12 +124,19 @@ static void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
     const int displacementScale = (fb_ny - 64) / 2; // going to fit maxPitch to screen (vertically), less a bit for overscan.
     const float d2r = 3.14159265f * 2 / 360 / 10; // Extra scale factor of 10 for 10th of degree -> radian.
     // float trig functions are pretty quick on RP2350
-    float tp = tanf(pitchAngle * d2r);
     float cr = cosf(rollAngle * d2r);
     float sr = sinf(rollAngle * d2r);
-    float tscale = tp * displacementScale / tanf(maxPitch * d2r);
-    int xc = x * charWidth + charHalfWidth - tscale * sr;
-    int yc = y * charHeight + charHalfHeight - tscale * cr;
+    int xoff = 0;
+    int yoff = 0;
+    if (maxPitch > 0) {
+        float tp = tanf(pitchAngle * d2r);
+        float tscale = tp * displacementScale / tanf(maxPitch * d2r);
+        xoff = tscale * sr;
+        yoff = tscale * cr;
+    }
+
+    int xc = x * charWidth + charHalfWidth - xoff;
+    int yc = y * charHeight + charHalfHeight - yoff;
     infoArtificialHorizon.x1 = xc + barScale * cr;
     infoArtificialHorizon.y1 = yc - barScale * sr;
     infoArtificialHorizon.x2 = xc - barScale * cr;
