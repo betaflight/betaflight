@@ -201,9 +201,9 @@ void fbOsdFontUpdateCompletion(void)
     // Borrow the streamer functions from config.
     // __fontdata_start will be on a flash page size boundary (256 byte aligned)
     bprintf("FONT fbOsdFontUpdateCompletion start");
-    config_streamer_t streamer = {
-        .address = (uintptr_t)&__fontdata_start,
-    };
+    config_streamer_t streamer;
+    config_streamer_init(&streamer);
+    streamer.address = (uintptr_t)&__fontdata_start;
     config_streamer_write(&streamer, fontDataMagic, 4);
     config_streamer_write(&streamer, (const uint8_t *)fontData, FONTDATA_LENGTH);
     config_streamer_flush(&streamer);
