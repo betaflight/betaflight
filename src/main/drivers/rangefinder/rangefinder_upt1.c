@@ -73,12 +73,17 @@
 static serialPort_t *upt1SerialPort = NULL;
 
 typedef enum {
+    UPT1_FRAME_WAIT_RESET,
     UPT1_FRAME_STATE_WAIT_HEADER,
     UPT1_FRAME_STATE_WAIT_LENGTH,
     UPT1_FRAME_STATE_READING_DATA,
     UPT1_FRAME_STATE_WAIT_CKSUM,
     UPT1_FRAME_STATE_WAIT_FOOTER,
 } upt1FrameState_e;
+
+// Number of bytes of incoming data before sending the command to set protocol
+// This is the length of the version string
+#define UPT1_STARTUP_BYTE_COUNT 22
 
 static upt1FrameState_e upt1FrameState;
 static uint8_t upt1Frame[UPT1_DATA_LENGTH];  // 10 data bytes
@@ -101,20 +106,15 @@ void rangefinderUPT1Init(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
-    upt1FrameState = UPT1_FRAME_STATE_WAIT_HEADER;
+    upt1FrameState = UPT1_FRAME_WAIT_RESET ;
     upt1ReceivePosition = 0;
     upt1Value = RANGEFINDER_OUT_OF_RANGE;
-
-    // Send initialization command to configure device protocol
-    if (upt1SerialPort) {
-        const char *initCmd = "<set protocol upixels>";
-        serialWriteBuf(upt1SerialPort, (const uint8_t *)initCmd, strlen(initCmd));
-    }
 }
 
 void rangefinderUPT1Update(rangefinderDev_t *dev)
 {
     UNUSED(dev);
+    static uint32_t upt1_byte_count = 0;
 
     if (upt1SerialPort == NULL) {
         return;
@@ -122,8 +122,19 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
 
     while (serialRxBytesWaiting(upt1SerialPort)) {
         uint8_t c = serialRead(upt1SerialPort);
+        upt1_byte_count++;
 
         switch (upt1FrameState) {
+        case UPT1_FRAME_WAIT_RESET:
+            // Wait until data is flowing
+            if (upt1_byte_count >= UPT1_STARTUP_BYTE_COUNT) {
+                // Send initialization command to configure device protocol
+                const char *initCmd = "<set protocol upixels>";
+                serialWriteBuf(upt1SerialPort, (const uint8_t *)initCmd, strlen(initCmd));
+                upt1FrameState = UPT1_FRAME_STATE_WAIT_HEADER;
+            }
+            break;
+
         case UPT1_FRAME_STATE_WAIT_HEADER:
             if (c == UPT1_FRAME_HEADER) {
                 upt1FrameState = UPT1_FRAME_STATE_WAIT_LENGTH;
