@@ -248,7 +248,12 @@ int32_t rangefinderUPT1GetDistance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
-    return upt1Value;
+    if (hasUPT1RFNewData) {
+        hasUPT1RFNewData = false;
+        return upt1Value;
+    } else {
+        return RANGEFINDER_NO_NEW_DATA;
+    }
 }
 
 bool rangefinderUPT1Detect(rangefinderDev_t *dev)
@@ -299,6 +304,7 @@ static void upt1OpticalflowUpdate(opticalflowDev_t *dev)
 static void upt1OpticalflowGetData(opticalflowDev_t *dev, opticalflowData_t *result)
 {
     UNUSED(dev);
+
     *result = upt1OpticalflowSensorData;
 }
 
