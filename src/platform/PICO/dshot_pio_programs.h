@@ -70,32 +70,32 @@ static const uint16_t dshot_600_bidir_program_instructions[] = {
     0xe034, //  3: set    x, 20
     0x6041, //  4: out    y, 1
     0xe000, //  5: set    pins, 0
-    0x006b, //  6: jmp    !y, 11
-    0xbd42, //  7: nop                           [29]
-    0xed01, //  8: set    pins, 1                [13]
-    0x00e4, //  9: jmp    !osre, 4
-    0x000e, // 10: jmp    14
-    0xad42, // 11: nop                           [13]
-    0xfd01, // 12: set    pins, 1                [29]
-    0x00e4, // 13: jmp    !osre, 4
-    0xa742, // 14: nop                           [7]
-    0xe080, // 15: set    pindirs, 0
-    0x20a0, // 16: wait   1 pin, 0
-    0xe023, // 17: set    x, 3
-    0x2020, // 18: wait   0 pin, 0
-    0xe05f, // 19: set    y, 31
-    0x4001, // 20: in     pins, 1
-    0xa342, // 21: nop                           [3]
-    0x0094, // 22: jmp    y--, 20
-    0x0053, // 23: jmp    x--, 19
-    0xe081, // 24: set    pindirs, 1
-    0xe001, // 25: set    pins, 1
-    0xa042, // 26: nop
-    0xa042, // 27: nop
-    0xa042, // 28: nop
-    0xa042, // 29: nop
-    0xa042, // 30: nop
-    0xa042, // 31: nop
+    0x006e, //  6: jmp    !y, 14
+    0xbf42, //  7: nop                           [31]
+    0xbf42, //  8: nop                           [31]
+    0xb142, //  9: nop                           [17]
+    0xff01, // 10: set    pins, 1                [31]
+    0xa642, // 11: nop                           [6]
+    0x00e4, // 12: jmp    !osre, 4
+    0x0014, // 13: jmp    20
+    0xbf42, // 14: nop                           [31]
+    0xa642, // 15: nop                           [6]
+    0xff01, // 16: set    pins, 1                [31]
+    0xbf42, // 17: nop                           [31]
+    0xb142, // 18: nop                           [17]
+    0x00e4, // 19: jmp    !osre, 4
+    0xb442, // 20: nop                           [20]
+    0xe080, // 21: set    pindirs, 0
+    0x20a0, // 22: wait   1 pin, 0
+    0xe023, // 23: set    x, 3
+    0x2020, // 24: wait   0 pin, 0
+    0xe05f, // 25: set    y, 31
+    0x4001, // 26: in     pins, 1
+    0xaf42, // 27: nop                           [15]
+    0x009a, // 28: jmp    y--, 26
+    0x0059, // 29: jmp    x--, 25
+    0xe081, // 30: set    pindirs, 1
+    0xe001, // 31: set    pins, 1
             //     .wrap
 };
 

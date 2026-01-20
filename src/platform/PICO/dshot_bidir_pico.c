@@ -36,7 +36,9 @@
 // TODO use with TELEMETRY for cli report (or not)
 FAST_DATA_ZERO_INIT dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 
-#define DSHOT_BIDIR_BIT_PERIOD 48
+// Integer clock divider: PIO runs at 75 MHz (150 MHz / 2) for clean timing
+// This gives exactly 125 cycles per DShot bit and 100 cycles per telemetry bit
+#define DSHOT_BIDIR_BIT_PERIOD 125
 
 // Bidirectional DShot telemetry protocol:
 // - FC sends inverted DShot frame (idle HIGH, 1 = LOW pulse, 0 = HIGH pulse)
@@ -102,39 +104,72 @@ static const int8_t gcrDecodeLut[32] = {
 // based on the GCR-encoded value (0 RPM starts at ~11 samples, real RPM
 // values can start at ~5-6 samples). Normalizing would add phantom bits.
 
-// Actual oversampling rate is 5.5x (38.4 PIO cycles/bit ÷ 7 cycles/sample)
-// For run-length decoding: len = round(diff / 5.5) = (diff * 2 + 5) / 11
-#define OVERSAMPLE_WORDS 4   // 4 x 32 = 128 samples (need 115 for 21 bits at 5.5x)
+// Oversampling rate: 100 PIO cycles/bit ÷ 18 cycles/sample = 5.556x
+// For run-length decoding: len = round(diff / samplesPerBit) = round(diff * samplesToBits)
+#define DEFAULT_SAMPLES_TO_BITS 0.20f  // Default ~5.0 samples/bit (measured from BlueJay ESCs)
+#define OVERSAMPLE_WORDS 4   // 4 x 32 = 128 samples (need ~115 for 21 bits at ~5.49x)
 #define MAX_EDGES 32
+
+// Auto-calibration for ESC telemetry timing
+// At 0 RPM (0xFFF0), we know the exact pattern: 15 edges spanning 18 bits
+// By measuring the actual sample span, we can calculate the true samples-per-bit rate
+#define CALIBRATION_FRAMES 16       // Number of 0 RPM frames to average
+#define ZERO_RPM_EDGES 15           // 0 RPM pattern has exactly 15 edges
+#define ZERO_RPM_BIT_SPAN 18        // 18 bits between first and last edge for 0 RPM
+                                    // (edges at bit 2 and bit 20 of the RLE pattern)
+
+static float samplesToBits = DEFAULT_SAMPLES_TO_BITS;
+static bool calibrationComplete = false;
+static uint32_t calibrationSum = 0;      // Sum of sample spans
+static uint8_t calibrationCount = 0;     // Number of calibration frames collected
+
+// Failure reason tracking for debug
+typedef enum {
+    FAIL_NONE = 0,
+    FAIL_EDGE_COUNT,
+    FAIL_BIT_COUNT,
+    FAIL_GCR_DECODE,
+    FAIL_CHECKSUM
+} failReason_e;
+
+static failReason_e lastFailReason = FAIL_NONE;
+
+// Store edge info for calibration and debug
+static uint16_t lastEdgePositions[MAX_EDGES];
+static int lastEdgeCount;
+
+#ifdef PICO_TRACE
+#define dbgEdgePositions lastEdgePositions
+#define dbgEdgeCount lastEdgeCount
+#endif
 
 static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffer)
 {
-#ifdef PICO_TRACE
-    bprintf("M%d Raw: %08x %08x %08x %08x", motorIndex,
-            buffer[0], buffer[1], buffer[2], buffer[3]);
-#else
+#ifndef PICO_TRACE
     UNUSED(motorIndex);
 #endif
 
     // Find edges in the sample stream
     // Each word has 32 samples, MSB is earliest (left shift in PIO)
-    uint16_t edgePositions[MAX_EDGES];
-    int edgeCount = 0;
+    // Store in lastEdgePositions for calibration and debug
+    lastEdgeCount = 0;
 
     uint8_t lastBit = (buffer[0] >> 31) & 1;
 
-    for (int word = 0; word < OVERSAMPLE_WORDS && edgeCount < MAX_EDGES; word++) {
+    for (int word = 0; word < OVERSAMPLE_WORDS && lastEdgeCount < MAX_EDGES; word++) {
         uint32_t samples = buffer[word];
-        for (int bit = 31; bit >= 0 && edgeCount < MAX_EDGES; bit--) {
+        for (int bit = 31; bit >= 0 && lastEdgeCount < MAX_EDGES; bit--) {
             uint8_t currentBit = (samples >> bit) & 1;
             if (currentBit != lastBit) {
-                edgePositions[edgeCount++] = (word * 32) + (31 - bit);
+                int16_t pos = (word * 32) + (31 - bit);
+                lastEdgePositions[lastEdgeCount++] = pos;
                 lastBit = currentBit;
             }
         }
     }
 
-    if (edgeCount < 2) {
+    if (lastEdgeCount < 2) {
+        lastFailReason = FAIL_EDGE_COUNT;
         return DSHOT_TELEMETRY_INVALID;
     }
 
@@ -145,67 +180,159 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     // Normalizing would add phantom bits to the first run for non-zero RPM.
 
     // Convert edge positions to GCR bits using run-length decoding
-    // Each run of N samples at 5.5x oversampling: len = round(N / 5.5) = (N * 2 + 5) / 11
-    // Encoded as: 1 at MSB followed by (len-1) zeros
-    uint32_t gcrValue = 0;
-    uint32_t totalBits = 0;
-    uint16_t prevEdgePos = 0;  // Virtual start position
+    // Try different first_run values (1, 2, 3) to handle variable first edge timing
+    uint32_t decodedValue = DSHOT_TELEMETRY_INVALID;
 
-    for (int i = 0; i <= edgeCount; i++) {
-        uint32_t len;
-        if (i < edgeCount) {
-            int32_t diff = edgePositions[i] - prevEdgePos;
-            if (totalBits >= 21U) {
-                break;
+    for (int firstRun = 1; firstRun <= 3; firstRun++) {
+        uint32_t gcrValue = 1U << (firstRun - 1);  // first_run bits: 1 followed by (firstRun-1) zeros
+        uint32_t totalBits = firstRun;
+
+        // Process inter-edge gaps
+        for (int i = 1; i <= lastEdgeCount; i++) {
+            uint32_t len;
+            if (i < lastEdgeCount) {
+                int32_t diff = lastEdgePositions[i] - lastEdgePositions[i - 1];
+                if (totalBits >= 21U) {
+                    break;
+                }
+                len = (uint32_t)(diff * samplesToBits + 0.5f);
+            } else {
+                len = 21U - totalBits;  // Pad to 21 bits
             }
-            // len = round(diff / 5.5) using integer math: (diff * 2 + 5) / 11
-            len = (diff * 2U + 5U) / 11U;
+
+            if (len == 0) {
+                len = 1;
+            }
+
+            gcrValue <<= len;
+            gcrValue |= 1U << (len - 1U);
+            totalBits += len;
+        }
+
+        // Need exactly 21 bits (allow 22 due to timing jitter)
+        if (totalBits < 21U || totalBits > 22U) {
+            continue;
+        }
+
+        // Remove start bit (MSB) to get 20-bit GCR value
+        uint32_t gcr20 = gcrValue & 0xFFFFF;
+
+        // GCR decode: extract 4 nibbles from 4 x 5-bit symbols
+        uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
+        uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
+        uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
+        uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
+
+        // Check if all symbols are valid
+        if (n0 > 15 || n1 > 15 || n2 > 15 || n3 > 15) {
+            continue;
+        }
+
+        // Assemble 16-bit value and verify checksum
+        uint32_t candidateValue = (n3 << 12) | (n2 << 8) | (n1 << 4) | n0;
+        uint32_t csum = candidateValue;
+        csum = csum ^ (csum >> 8);
+        csum = csum ^ (csum >> 4);
+
+        if ((csum & 0xF) == 0xF) {
+            decodedValue = candidateValue;
+            break;
+        }
+    }
+
+    if (decodedValue == DSHOT_TELEMETRY_INVALID) {
+        // Determine failure reason from last attempt
+        uint32_t gcrValue = 1U << 2;  // first_run=3
+        uint32_t totalBits = 3;
+
+        for (int i = 1; i <= lastEdgeCount && totalBits < 21U; i++) {
+            uint32_t len;
+            if (i < lastEdgeCount) {
+                int32_t diff = lastEdgePositions[i] - lastEdgePositions[i - 1];
+                len = (uint32_t)(diff * samplesToBits + 0.5f);
+            } else {
+                len = 21U - totalBits;
+            }
+            if (len == 0) len = 1;
+            gcrValue <<= len;
+            gcrValue |= 1U << (len - 1U);
+            totalBits += len;
+        }
+
+        if (totalBits < 21U || totalBits > 22U) {
+            lastFailReason = FAIL_BIT_COUNT;
         } else {
-            len = 21U - totalBits;  // Pad to 21 bits
-        }
+            uint32_t gcr20 = gcrValue & 0xFFFFF;
+            uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
+            uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
+            uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
+            uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
 
-        if (len == 0) {
-            len = 1;
-        }
-
-        gcrValue <<= len;
-        gcrValue |= 1U << (len - 1U);
-        prevEdgePos = (i < edgeCount) ? edgePositions[i] : prevEdgePos;
-        totalBits += len;
-    }
-
-    if (totalBits != 21U) {
-        return DSHOT_TELEMETRY_INVALID;
-    }
-
-    // Remove start bit (MSB) to get 20-bit GCR value
-    uint32_t gcr20 = gcrValue & 0xFFFFF;
-
-    // GCR decode: extract 4 nibbles from 4 x 5-bit symbols
-    uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
-    uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
-    uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
-    uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
-
-    if (n0 > 15 || n1 > 15 || n2 > 15 || n3 > 15) {
+            if (n0 > 15 || n1 > 15 || n2 > 15 || n3 > 15) {
+                lastFailReason = FAIL_GCR_DECODE;
 #ifdef PICO_TRACE
-        bprintf("Invalid GCR: %02x %02x %02x %02x (gcr20=%05x)", n3, n2, n1, n0, gcr20);
+                static uint32_t gcrFailCount = 0;
+                if (motorIndex == 0 && (++gcrFailCount % 1000) == 1) {
+                    uint8_t sym3 = (gcr20 >> 15) & 0x1F;
+                    uint8_t sym2 = (gcr20 >> 10) & 0x1F;
+                    uint8_t sym1 = (gcr20 >> 5) & 0x1F;
+                    uint8_t sym0 = gcr20 & 0x1F;
+                    bprintf("M0 GCR fail: syms=%02x,%02x,%02x,%02x gcr20=%05x edges=%d",
+                            sym3, sym2, sym1, sym0, gcr20, dbgEdgeCount);
+                    bprintf("  pos: %d %d %d %d %d %d %d %d %d %d %d %d",
+                            dbgEdgePositions[0], dbgEdgePositions[1], dbgEdgePositions[2],
+                            dbgEdgePositions[3], dbgEdgePositions[4], dbgEdgePositions[5],
+                            dbgEdgePositions[6], dbgEdgePositions[7], dbgEdgePositions[8],
+                            dbgEdgePositions[9], dbgEdgePositions[10], dbgEdgePositions[11]);
+                }
 #endif
+            } else {
+                lastFailReason = FAIL_CHECKSUM;
+            }
+        }
         return DSHOT_TELEMETRY_INVALID;
     }
 
-    // Assemble 16-bit value and verify checksum
-    uint32_t decodedValue = (n3 << 12) | (n2 << 8) | (n1 << 4) | n0;
-    uint32_t csum = decodedValue;
-    csum = csum ^ (csum >> 8);
-    csum = csum ^ (csum >> 4);
+    lastFailReason = FAIL_NONE;
 
-    if ((csum & 0xF) != 0xF) {
+    // Auto-calibration: use 0 RPM frames to measure actual telemetry timing
+    // 0 RPM (0xFFF0) has exactly 15 edges spanning 18 bits
+    if (!calibrationComplete && decodedValue == 0xFFF0 && lastEdgeCount == ZERO_RPM_EDGES) {
+        // Measure sample span from first to last edge
+        uint32_t sampleSpan = lastEdgePositions[ZERO_RPM_EDGES - 1] - lastEdgePositions[0];
+
+        // Sanity check: span should be roughly 19 bits * 5 samples = 95 samples (allow 70-120)
+        if (sampleSpan >= 70 && sampleSpan <= 120) {
+            calibrationSum += sampleSpan;
+            calibrationCount++;
+
+            if (calibrationCount >= CALIBRATION_FRAMES) {
+                // Calculate average samples per bit and derive conversion factor
+                float avgSpan = (float)calibrationSum / CALIBRATION_FRAMES;
+                float samplesPerBit = avgSpan / ZERO_RPM_BIT_SPAN;
+                samplesToBits = 1.0f / samplesPerBit;
+                calibrationComplete = true;
+
+                bprintf("Telemetry calibrated: %d frames, avgSpan=%.1f, samplesPerBit=%.2f, samplesToBits=%.4f",
+                        CALIBRATION_FRAMES, (double)avgSpan, (double)samplesPerBit, (double)samplesToBits);
+            }
+        }
+    }
+
 #ifdef PICO_TRACE
-        bprintf("Checksum fail: csum=%x (expected 0xF), value=%04x", csum & 0xF, decodedValue);
-#endif
-        return DSHOT_TELEMETRY_INVALID;
+    // Occasionally print successful decodes for motor 0
+    static uint32_t successCount = 0;
+    if (motorIndex == 0 && (++successCount % 5000) == 1) {
+        uint16_t eRPM = (decodedValue >> 4) & 0xFFF;
+        bprintf("M0 OK: eRPM=%u (raw=%04x) edges=%d cal=%d",
+                eRPM, decodedValue, dbgEdgeCount, calibrationComplete);
+        bprintf("  pos: %d %d %d %d %d %d %d %d %d %d %d %d",
+                dbgEdgePositions[0], dbgEdgePositions[1], dbgEdgePositions[2],
+                dbgEdgePositions[3], dbgEdgePositions[4], dbgEdgePositions[5],
+                dbgEdgePositions[6], dbgEdgePositions[7], dbgEdgePositions[8],
+                dbgEdgePositions[9], dbgEdgePositions[10], dbgEdgePositions[11]);
     }
+#endif
 
     // Return 12-bit eRPM (remove 4-bit checksum)
     return (decodedValue >> 4) & 0xFFF;
@@ -218,7 +345,6 @@ bool dshotTelemetryWait(void)
     bool telemetryPending;
     const timeUs_t startTimeUs = micros();
 
-    bprintf("dshotTelemetryWait");
     do {
         telemetryPending = false;
 /*
@@ -303,7 +429,6 @@ bool dshotDecodeTelemetry(void)
 
         if (rawValue != DSHOT_TELEMETRY_INVALID) {
             if ((rawValue == 0x0E00) && (dshotCommandGetCurrent(motorIndex) == DSHOT_CMD_EXTENDED_TELEMETRY_ENABLE)) {
-                bprintf("\n** received dshot 0x0E00");
                 dshotTelemetryState.motorState[motorIndex].telemetryTypes = 1 << DSHOT_TELEMETRY_TYPE_STATE_EVENTS;
             } else {
                 dshotTelemetryState.motorState[motorIndex].rawValue = rawValue;
@@ -311,6 +436,41 @@ bool dshotDecodeTelemetry(void)
         } else {
             dshotTelemetryState.invalidPacketCount++;
         }
+
+#ifdef PICO_TRACE
+        // Periodic stats with failure breakdown
+        static uint32_t okCount = 0, reportCount = 0;
+        static uint32_t failEdge = 0, failBits = 0, failGcr = 0, failCsum = 0;
+        static uint32_t lastOk = 0, lastEdge = 0, lastBits = 0, lastGcr = 0, lastCsum = 0;
+        if (rawValue != DSHOT_TELEMETRY_INVALID) {
+            okCount++;
+        } else {
+            switch (lastFailReason) {
+                case FAIL_EDGE_COUNT: failEdge++; break;
+                case FAIL_BIT_COUNT:  failBits++; break;
+                case FAIL_GCR_DECODE: failGcr++;  break;
+                case FAIL_CHECKSUM:   failCsum++; break;
+                default: break;
+            }
+        }
+        if ((++reportCount % 40000) == 0) {
+            uint32_t dOk = okCount - lastOk;
+            uint32_t dEdge = failEdge - lastEdge;
+            uint32_t dBits = failBits - lastBits;
+            uint32_t dGcr = failGcr - lastGcr;
+            uint32_t dCsum = failCsum - lastCsum;
+            uint32_t dFail = dEdge + dBits + dGcr + dCsum;
+            uint32_t dTotal = dOk + dFail;
+            uint32_t pct = dTotal > 0 ? (dFail * 100) / dTotal : 0;
+            bprintf("t=%u ok=%u err=%u%% [edge=%u bits=%u gcr=%u csum=%u]",
+                    millis(), dOk, pct, dEdge, dBits, dGcr, dCsum);
+            lastOk = okCount;
+            lastEdge = failEdge;
+            lastBits = failBits;
+            lastGcr = failGcr;
+            lastCsum = failCsum;
+        }
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY_STATS
         updateDshotTelemetryQuality(&dshotTelemetryQuality[motorIndex], rawValue != DSHOT_TELEMETRY_INVALID, currentTimeMs);
