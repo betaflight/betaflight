@@ -416,10 +416,21 @@ bool dshotDecodeTelemetry(void)
             fifo_words--;
         }
 
-        // Read 4 words of oversampled data
+        // Read 4 words of oversampled data using NON-BLOCKING reads
+        // IMPORTANT: pio_sm_get_blocking can hang forever if FIFO is empty,
+        // which would trigger watchdog reset. Use non-blocking with re-check.
         uint32_t sampleBuffer[OVERSAMPLE_WORDS];
+        bool readOk = true;
         for (int i = 0; i < OVERSAMPLE_WORDS; i++) {
-            sampleBuffer[i] = pio_sm_get_blocking(motor->pio, motor->pio_sm);
+            if (pio_sm_is_rx_fifo_empty(motor->pio, motor->pio_sm)) {
+                // FIFO unexpectedly empty - skip this motor to avoid hanging
+                readOk = false;
+                break;
+            }
+            sampleBuffer[i] = pio_sm_get(motor->pio, motor->pio_sm);
+        }
+        if (!readOk) {
+            continue;
         }
 
         uint32_t rawValue = decodeOversampledTelemetry(motorIndex, sampleBuffer);
