@@ -1236,7 +1236,7 @@ static void gpsConfigureUblox(void)
                 }
                 break;
             case UBLOX_MSG_DOP:
-                // nav-pvt has what we need and is available M7 and above
+                // NAV-PVT only has pDOP (hDOP/vDOP estimated from pDOP in NAV-PVT handler)
                 if (gpsData.ubloxM9orAbove) {
                     ubloxSetMessageRateValSet(CFG_MSGOUT_UBX_NAV_DOP_UART1, 0);
                 } else if (gpsData.ubloxM7orAbove) {
@@ -2266,6 +2266,9 @@ static bool UBLOX_parse_gps(void)
         gpsSol.groundSpeed = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.gSpeed / 10);    // cm/s
         gpsSol.groundCourse = (uint16_t)(ubxRcvMsgPayload.ubxNavPvt.headMot / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         gpsSol.dop.pdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
+        // NAV-PVT doesn't provide hDOP/vDOP, estimate from pDOP (pDOP >= hDOP/vDOP, so this is conservative)
+        gpsSol.dop.hdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
+        gpsSol.dop.vdop = ubxRcvMsgPayload.ubxNavPvt.pDOP;
         gpsSol.velned.velN = (int16_t)(ubxRcvMsgPayload.ubxNavPvt.velN / 10); // cm/s
         gpsSol.velned.velE = (int16_t)(ubxRcvMsgPayload.ubxNavPvt.velE / 10); // cm/s
         gpsSol.velned.velD = (int16_t)(ubxRcvMsgPayload.ubxNavPvt.velD / 10); // cm/s
