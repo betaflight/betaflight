@@ -49,15 +49,18 @@ FAST_DATA_ZERO_INIT dshotTelemetryCycleCounters_t dshotDMAHandlerCycleCounters;
 // 'wait' instructions for precise edge synchronization, then samples 128 bits
 // into 4 words via autopush. Edge positions are converted to GCR bits using
 // run-length decoding (based on ArduPilot's proven algorithm).
+//
+// ERROR RATE LIMITATION:
+// With spinning motors, expect ~5-8% decode errors due to hardware constraints.
+// This is caused by inter-edge timing jitter where gaps fall on the boundary
+// between 1-bit and 2-bit runs. With ~5x oversampling and ESC timing jitter of
+// ~2 samples, borderline gaps cannot be reliably decoded. At 0 RPM (stationary),
+// error rate is <1% which satisfies Configurator thresholds.
 
 bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
 {
     bprintf("dshot_program_bidir_init on pin %d", pin);
-#ifdef DSHOT_DEBUG_PIO
-    pio_sm_config config = dshot_600_bidir_debug_program_get_default_config(offset);
-#else
     pio_sm_config config = dshot_600_bidir_program_get_default_config(offset);
-#endif
 
     sm_config_set_set_pins(&config, pin, 1);
     sm_config_set_in_pins(&config, pin);
@@ -86,12 +89,12 @@ bool dshot_program_bidir_init(PIO pio, uint sm, int offset, uint pin)
     return ok;
 }
 
-// GCR decode lookup table (maps 5-bit GCR to 4-bit nibble, -1 = invalid)
-static const int8_t gcrDecodeLut[32] = {
-    -1, -1, -1, -1, -1, -1, -1, -1,
-    -1,  9, 10, 11, -1, 13, 14, 15,
-    -1, -1,  2,  3, -1,  5,  6,  7,
-    -1,  0,  8,  1, -1,  4, 12, -1
+// GCR decode lookup table (maps 5-bit GCR to 4-bit nibble, 255 = invalid)
+static const uint8_t gcrDecodeLut[32] = {
+    255, 255, 255, 255, 255, 255, 255, 255,
+    255,  9, 10, 11, 255, 13, 14, 15,
+    255, 255,  2,  3, 255,  5,  6,  7,
+    255,  0,  8,  1, 255,  4, 12, 255
 };
 
 // Edge detection decoder for 5.5x oversampled telemetry
@@ -132,16 +135,13 @@ typedef enum {
     FAIL_CHECKSUM
 } failReason_e;
 
+#ifdef PICO_TRACE
 static failReason_e lastFailReason = FAIL_NONE;
+#endif
 
 // Store edge info for calibration and debug
 static uint16_t lastEdgePositions[MAX_EDGES];
 static int lastEdgeCount;
-
-#ifdef PICO_TRACE
-#define dbgEdgePositions lastEdgePositions
-#define dbgEdgeCount lastEdgeCount
-#endif
 
 static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffer)
 {
@@ -169,7 +169,9 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     }
 
     if (lastEdgeCount < 2) {
+#ifdef PICO_TRACE
         lastFailReason = FAIL_EDGE_COUNT;
+#endif
         return DSHOT_TELEMETRY_INVALID;
     }
 
@@ -180,42 +182,52 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     // Normalizing would add phantom bits to the first run for non-zero RPM.
 
     // Convert edge positions to GCR bits using run-length decoding
-    // Try different first_run values (1, 2, 3) to handle variable first edge timing
+    // First compute core pattern from inter-edge gaps (single pass with float math)
+    // Then try different first_run values by adjusting shift and padding
     uint32_t decodedValue = DSHOT_TELEMETRY_INVALID;
 
-    for (int firstRun = 1; firstRun <= 3; firstRun++) {
-        uint32_t gcrValue = 1U << (firstRun - 1);  // first_run bits: 1 followed by (firstRun-1) zeros
-        uint32_t totalBits = firstRun;
-
-        // Process inter-edge gaps
-        for (int i = 1; i <= lastEdgeCount; i++) {
-            uint32_t len;
-            if (i < lastEdgeCount) {
-                int32_t diff = lastEdgePositions[i] - lastEdgePositions[i - 1];
-                if (totalBits >= 21U) {
-                    break;
-                }
-                len = (uint32_t)(diff * samplesToBits + 0.5f);
-            } else {
-                len = 21U - totalBits;  // Pad to 21 bits
-            }
-
-            if (len == 0) {
-                len = 1;
-            }
-
-            gcrValue <<= len;
-            gcrValue |= 1U << (len - 1U);
-            totalBits += len;
+    // Compute core GCR pattern from inter-edge gaps
+    uint32_t coreGcr = 0;
+    uint32_t coreBits = 0;
+    for (int i = 1; i < lastEdgeCount; i++) {
+        int32_t diff = lastEdgePositions[i] - lastEdgePositions[i - 1];
+        uint32_t len = (uint32_t)(diff * samplesToBits + 0.5f);
+        // Ensure len >= 1 to avoid undefined behavior in (1U << (len - 1)).
+        // If edges are so close that len rounds to 0, treat as minimum 1-bit gap.
+        // This matches STM32 decoder which uses MAX(..., 1). Checksum will catch errors.
+        if (len == 0) {
+            len = 1;
         }
+        // Reject implausibly long runs to avoid undefined shift behavior (len >= 32)
+        // and to early-exit when the frame is clearly invalid
+        if (len > (21U - coreBits)) {
+            coreBits = 22U;  // Force invalid
+            break;
+        }
+        coreGcr <<= len;
+        coreGcr |= 1U << (len - 1U);
+        coreBits += len;
+        if (coreBits >= 21U) {
+            break;
+        }
+    }
 
-        // Need exactly 21 bits (allow 22 due to timing jitter)
-        if (totalBits < 21U || totalBits > 22U) {
+    // Try different first_run values (1, 2, 3) to handle variable first edge timing
+    for (int firstRun = 1; firstRun <= 3; firstRun++) {
+        // Calculate padding needed to reach 20 data bits
+        // gcr20 structure: [(firstRun-1) zeros] [coreBits] [paddingLen]
+        int32_t paddingLen = 20 - (firstRun - 1) - (int32_t)coreBits;
+
+        // Skip if padding is negative (too many bits) or would exceed 22 total
+        if (paddingLen < 0 || (firstRun + coreBits > 22U)) {
             continue;
         }
 
-        // Remove start bit (MSB) to get 20-bit GCR value
-        uint32_t gcr20 = gcrValue & 0xFFFFF;
+        // Build gcr20 directly: core shifted by padding, plus padding terminator
+        uint32_t gcr20 = coreGcr << paddingLen;
+        if (paddingLen > 0) {
+            gcr20 |= 1U << (paddingLen - 1);
+        }
 
         // GCR decode: extract 4 nibbles from 4 x 5-bit symbols
         uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
@@ -224,7 +236,7 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
         uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
 
         // Check if all symbols are valid
-        if (n0 > 15 || n1 > 15 || n2 > 15 || n3 > 15) {
+        if (n0 > 15U || n1 > 15U || n2 > 15U || n3 > 15U) {
             continue;
         }
 
@@ -241,36 +253,24 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     }
 
     if (decodedValue == DSHOT_TELEMETRY_INVALID) {
-        // Determine failure reason from last attempt
-        uint32_t gcrValue = 1U << 2;  // first_run=3
-        uint32_t totalBits = 3;
+#ifdef PICO_TRACE
+        // Determine failure reason using pre-computed coreGcr (firstRun=3 attempt)
+        int32_t paddingLen = 18 - (int32_t)coreBits;  // 20 - 2 - coreBits for firstRun=3
 
-        for (int i = 1; i <= lastEdgeCount && totalBits < 21U; i++) {
-            uint32_t len;
-            if (i < lastEdgeCount) {
-                int32_t diff = lastEdgePositions[i] - lastEdgePositions[i - 1];
-                len = (uint32_t)(diff * samplesToBits + 0.5f);
-            } else {
-                len = 21U - totalBits;
-            }
-            if (len == 0) len = 1;
-            gcrValue <<= len;
-            gcrValue |= 1U << (len - 1U);
-            totalBits += len;
-        }
-
-        if (totalBits < 21U || totalBits > 22U) {
+        if (paddingLen < 0 || coreBits > 19U) {
             lastFailReason = FAIL_BIT_COUNT;
         } else {
-            uint32_t gcr20 = gcrValue & 0xFFFFF;
+            uint32_t gcr20 = coreGcr << paddingLen;
+            if (paddingLen > 0) {
+                gcr20 |= 1U << (paddingLen - 1);
+            }
             uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
             uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
             uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
             uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
 
-            if (n0 > 15 || n1 > 15 || n2 > 15 || n3 > 15) {
+            if (n0 > 15U || n1 > 15U || n2 > 15U || n3 > 15U) {
                 lastFailReason = FAIL_GCR_DECODE;
-#ifdef PICO_TRACE
                 static uint32_t gcrFailCount = 0;
                 if (motorIndex == 0 && (++gcrFailCount % 1000) == 1) {
                     uint8_t sym3 = (gcr20 >> 15) & 0x1F;
@@ -278,23 +278,23 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
                     uint8_t sym1 = (gcr20 >> 5) & 0x1F;
                     uint8_t sym0 = gcr20 & 0x1F;
                     bprintf("M0 GCR fail: syms=%02x,%02x,%02x,%02x gcr20=%05x edges=%d",
-                            sym3, sym2, sym1, sym0, gcr20, dbgEdgeCount);
+                            sym3, sym2, sym1, sym0, gcr20, lastEdgeCount);
                     bprintf("  pos: %d %d %d %d %d %d %d %d %d %d %d %d",
-                            dbgEdgePositions[0], dbgEdgePositions[1], dbgEdgePositions[2],
-                            dbgEdgePositions[3], dbgEdgePositions[4], dbgEdgePositions[5],
-                            dbgEdgePositions[6], dbgEdgePositions[7], dbgEdgePositions[8],
-                            dbgEdgePositions[9], dbgEdgePositions[10], dbgEdgePositions[11]);
+                            lastEdgePositions[0], lastEdgePositions[1], lastEdgePositions[2],
+                            lastEdgePositions[3], lastEdgePositions[4], lastEdgePositions[5],
+                            lastEdgePositions[6], lastEdgePositions[7], lastEdgePositions[8],
+                            lastEdgePositions[9], lastEdgePositions[10], lastEdgePositions[11]);
                 }
-#endif
             } else {
                 lastFailReason = FAIL_CHECKSUM;
             }
         }
+#endif
         return DSHOT_TELEMETRY_INVALID;
     }
-
+#ifdef PICO_TRACE
     lastFailReason = FAIL_NONE;
-
+#endif
     // Auto-calibration: use 0 RPM frames to measure actual telemetry timing
     // 0 RPM (0xFFF0) has exactly 15 edges spanning 18 bits
     if (!calibrationComplete && decodedValue == 0xFFF0 && lastEdgeCount == ZERO_RPM_EDGES) {
@@ -325,12 +325,12 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     if (motorIndex == 0 && (++successCount % 5000) == 1) {
         uint16_t eRPM = (decodedValue >> 4) & 0xFFF;
         bprintf("M0 OK: eRPM=%u (raw=%04x) edges=%d cal=%d",
-                eRPM, decodedValue, dbgEdgeCount, calibrationComplete);
+                eRPM, decodedValue, lastEdgeCount, calibrationComplete);
         bprintf("  pos: %d %d %d %d %d %d %d %d %d %d %d %d",
-                dbgEdgePositions[0], dbgEdgePositions[1], dbgEdgePositions[2],
-                dbgEdgePositions[3], dbgEdgePositions[4], dbgEdgePositions[5],
-                dbgEdgePositions[6], dbgEdgePositions[7], dbgEdgePositions[8],
-                dbgEdgePositions[9], dbgEdgePositions[10], dbgEdgePositions[11]);
+                lastEdgePositions[0], lastEdgePositions[1], lastEdgePositions[2],
+                lastEdgePositions[3], lastEdgePositions[4], lastEdgePositions[5],
+                lastEdgePositions[6], lastEdgePositions[7], lastEdgePositions[8],
+                lastEdgePositions[9], lastEdgePositions[10], lastEdgePositions[11]);
     }
 #endif
 
@@ -430,6 +430,10 @@ bool dshotDecodeTelemetry(void)
             sampleBuffer[i] = pio_sm_get(motor->pio, motor->pio_sm);
         }
         if (!readOk) {
+            // Drain remaining RX FIFO to maintain frame alignment
+            while (!pio_sm_is_rx_fifo_empty(motor->pio, motor->pio_sm)) {
+                (void)pio_sm_get(motor->pio, motor->pio_sm);
+            }
             continue;
         }
 

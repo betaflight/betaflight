@@ -32,16 +32,6 @@
 #include "common/maths.h"
 
 
-#ifdef DSHOT_DEBUG_PIO
-#include "drivers/io_impl.h"
-
-#define DSHOT_DEBUG_SIDE(index)               \
-            (index == 0 ? DSHOT_DEBUG_SIDE0 : \
-             index == 1 ? DSHOT_DEBUG_SIDE1 : \
-             index == 2 ? DSHOT_DEBUG_SIDE2 : \
-             DSHOT_DEBUG_SIDE3)
-#endif
-
 static int32_t outgoingPacket[MAX_SUPPORTED_MOTORS]; // 16-bit packet or -1 for none pending.
 const PIO dshotPio = PIO_INSTANCE(PIO_DSHOT_INDEX); // currently only single pio supported => 4 motors.
 
@@ -337,11 +327,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[motorIndex]);
         pinIndexMin = pinIndex < pinIndexMin ? pinIndex : pinIndexMin;
         pinIndexMax = pinIndex > pinIndexMax ? pinIndex : pinIndexMax;
-
-#ifdef DSHOT_DEBUG_PIO
-        pinIndexMin = MIN(pinIndexMin, DSHOT_DEBUG_SIDE(motorIndex));
-        pinIndexMax = MAX(pinIndexMax, DSHOT_DEBUG_SIDE(motorIndex));
-#endif
     }
 
     int pioBase = 0;
@@ -362,11 +347,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     // NB the PIO block is limited to 32 instructions (shared across 4 state machines)
     int offset;
     if (useDshotTelemetry) {
-#ifdef DSHOT_DEBUG_PIO
-        offset = pio_add_program(dshotPio, &dshot_600_bidir_debug_program);
-#else
         offset = pio_add_program(dshotPio, &dshot_600_bidir_program);
-#endif
     } else {
         offset = pio_add_program(dshotPio, &dshot_600_program);
     }
@@ -377,15 +358,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         bprintf("*** dshot pio failed to add program [useDshotTelemetry = %d]", useDshotTelemetry);
         return false;
     }
-
-#ifdef DSHOT_DEBUG_PIO
-    for (int index = 0; index < 4; ++index) {
-        unsigned int sidePin = DSHOT_DEBUG_SIDE(index);
-        ioRecs[sidePin].owner = OWNER_SYSTEM;
-        pio_gpio_init(dshotPio, sidePin);
-        bprintf("dshot init sideset pin %d", sidePin);
-    }
-#endif
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
         outgoingPacket[motorIndex] = -1;
@@ -419,11 +391,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         bool dshotInit;
         if (useDshotTelemetry) {
             dshotInit = dshot_program_bidir_init(dshotPio, pio_sm, dshotMotors[motorIndex].offset, pinIndex);
-#ifdef DSHOT_DEBUG_PIO
-            int sidesetpin = DSHOT_DEBUG_SIDE(motorIndex);
-            pio_sm_set_consecutive_pindirs(dshotPio, pio_sm, sidesetpin, 1, true); // set pin to output
-            pio_sm_set_sideset_pins(dshotPio, pio_sm, sidesetpin);
-#endif
         } else {
             dshotInit = dshot_program_init(dshotPio, pio_sm, dshotMotors[motorIndex].offset, pinIndex);
         }

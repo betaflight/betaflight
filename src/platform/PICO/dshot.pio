@@ -52,15 +52,15 @@ outzero:
 ; Expect to receive frame ~30us (independent of DSHOT speed) after output frame.
 ;
 ; Transmit: 20 instructions (0-19)
-; Receive: 12 instructions (20-31):
+; Receive: 11 instructions (20-30):
 ;   20:    settling delay before switching to input
 ;   21:    switch to input mode
 ;   22:    wait 1 pin (wait for HIGH)
 ;   23:    set x (setup outer loop count before edge detection)
 ;   24:    wait 0 pin (wait for falling edge)
-;   25-29: 5.56x oversampling loop (4 outer x 32 inner = 128 samples)
-;   30-31: switch back to output, drive HIGH
-; Total: 32 instructions (no padding needed!)
+;   25-28: 5.56x oversampling loop (4 outer x 32 inner = 128 samples)
+;   29-30: switch back to output, drive HIGH
+; Total: 31 instructions (1 spare)
 
 .program dshot_600_bidir
 
@@ -106,20 +106,19 @@ receive:
     set    x, 3                             ; 23: Setup outer loop count (4 iterations) BEFORE edge detection
     wait   0 pin 0                          ; 24: Wait for falling edge (start bit)
     ; Inner loop: 18 cycles per sample at 75 MHz
-    ; in(1) + nop[15](16) + jmp(1) = 18 cycles
+    ; in[15](16) + jmp[1](2) = 18 cycles
     ; Telemetry bit = 100 cycles, so 100/18 = 5.56x oversampling
     ; 21 bits × 5.56 = 117 samples needed, fits in 128 with margin
 
 outer_loop:
     set    y, 31                            ; 25: 32 inner loop iterations
 inner_loop:
-    in     pins, 1                          ; 26: Sample pin into ISR (autopush every 32)
-    nop                          [15]       ; 27: Delay 16 cycles (1 + [15])
-    jmp    y--, inner_loop                  ; 28: Continue inner loop (1 cycle)
-    jmp    x--, outer_loop                  ; 29: Continue outer loop (1 cycle)
+    in     pins, 1               [15]       ; 26: Sample pin + 15 delay = 16 cycles
+    jmp    y--, inner_loop       [1]        ; 27: Continue inner loop + 1 delay = 2 cycles
+    jmp    x--, outer_loop                  ; 28: Continue outer loop (1 cycle)
 
     ; Sampling complete - 128 samples pushed via autopush (4 x 32-bit words)
     ; Set pin back to output HIGH (idle state) before wrapping.
-    set    pindirs, 1                       ; 30: Switch back to output mode
-    set    pins, 1                          ; 31: Set pin HIGH (idle state)
+    set    pindirs, 1                       ; 29: Switch back to output mode
+    set    pins, 1                          ; 30: Set pin HIGH (idle state)
 .wrap
