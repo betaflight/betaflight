@@ -624,17 +624,38 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 
 static void buildSensorNamesString(char *sensorNames, size_t maxLen, const char * const *lookupTable)
 {
+    if (maxLen == 0) {
+        return;
+    }
+
     sensorNames[0] = '\0';
     bool first = true;
+    size_t used = 0; // Track how much of the buffer we've used
 
     // Include ALL elements for clients (including AUTO and NONE)
     for (size_t j = 0; lookupTable[j] && lookupTable[j][0]; j++) {
         if (!first) {
-            strncat(sensorNames, ", ", maxLen - strlen(sensorNames) - 1);
+            // Check if we have space for separator ", "
+            if (used + 3 > maxLen) { // ", " + null terminator
+                break;
+            }
+            strcpy(sensorNames + used, ", ");
+            used += 2;
         }
-        strncat(sensorNames, lookupTable[j], maxLen - strlen(sensorNames) - 1);
+
+        // Check if we have space for this sensor name
+        size_t nameLen = strlen(lookupTable[j]);
+        if (used + nameLen + 1 > maxLen) { // name + null terminator
+            break;
+        }
+
+        strcpy(sensorNames + used, lookupTable[j]);
+        used += nameLen;
         first = false;
     }
+
+    // Ensure null termination
+    sensorNames[used] = '\0';
 }
 
 /*

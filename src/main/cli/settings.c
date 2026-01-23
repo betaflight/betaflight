@@ -165,7 +165,8 @@ const char * const lookupTableAccHardware[] = {
     "ICM45686",
     "ICM40609D",
     "IIM42652",
-    "VIRTUAL"
+    "VIRTUAL",
+    NULL
 };
 
 // sync with gyroHardware_e
@@ -193,29 +194,34 @@ const char * const lookupTableGyroHardware[] = {
     "ICM45686",
     "ICM40609D",
     "IIM42652",
-    "VIRTUAL"
+    "VIRTUAL",
+    NULL
 };
 
 #if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
 // sync with baroSensor_e
 const char * const lookupTableBaroHardware[] = {
-    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988", "BMP388", "DPS310", "2SMPB_02B", "LPS22DF", "VIRTUAL"
+    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988", "BMP388", "DPS310", "2SMPB_02B", "LPS22DF", "VIRTUAL",
+    NULL
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
 // sync with magSensor_e
 const char * const lookupTableMagHardware[] = {
-    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883", "LIS2MDL", "LIS3MDL", "MPU925X_AK8963", "IST8310"
+    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883", "LIS2MDL", "LIS3MDL", "MPU925X_AK8963", "IST8310",
+    NULL
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
 const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA"
+    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA",
+    NULL
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
 const char * const lookupTableOpticalflowHardware[] = {
-    "NONE", "MT"
+    "NONE", "MT",
+    NULL
 };
 #endif
 
