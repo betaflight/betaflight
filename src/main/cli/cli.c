@@ -4683,57 +4683,6 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliSensorNames(const char *cmdName, char *cmdline)
-{
-#if defined(USE_SENSOR_NAMES)
-    // Check if a specific sensor type was requested
-    if (!isEmpty(cmdline)) {
-        // Find matching sensor type
-        for (unsigned i = 0; i < ARRAYLEN(sensorTypeNames); i++) {
-            if (strcasecmp(cmdline, sensorTypeNames[i]) == 0) {
-                // Found matching sensor type, show only this one
-                cliPrintf("%s:", sensorTypeNames[i]);
-                cliPrintLinefeed();
-
-                const char * const *lookupTable = sensorHardwareNames[i];
-                for (unsigned j = 0; lookupTable[j] != NULL; j++) {
-                    cliPrintf("  %s", lookupTable[j]);
-                    cliPrintLinefeed();
-                }
-                return;
-            }
-        }
-        // No matching sensor type found
-        cliPrintErrorLinef(cmdName, "Unknown sensor type '%s'. Available types:", cmdline);
-        for (unsigned i = 0; i < ARRAYLEN(sensorTypeNames); i++) {
-            cliPrintf(" %s", sensorTypeNames[i]);
-        }
-        cliPrintLinefeed();
-        return;
-    }
-
-    // No parameter provided, show all sensor types
-    cliPrintLine("Available sensor hardware names:");
-    cliPrintLinefeed();
-
-    for (unsigned i = 0; i < ARRAYLEN(sensorTypeNames); i++) {
-        cliPrintf("%s:", sensorTypeNames[i]);
-        cliPrintLinefeed();
-
-        const char * const *lookupTable = sensorHardwareNames[i];
-        for (unsigned j = 0; lookupTable[j] != NULL; j++) {
-            cliPrintf("  %s", lookupTable[j]);
-            cliPrintLinefeed();
-        }
-        cliPrintLinefeed();
-    }
-#else
-    UNUSED(cmdName);
-    UNUSED(cmdline);
-    cliPrintLine("Sensor names not available (USE_SENSOR_NAMES not defined)");
-#endif
-}
-
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6738,7 +6687,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
-    CLI_COMMAND_DEF("sensor_names", "list all available sensor hardware names", "[sensor_type]", cliSensorNames),
 #if defined(USE_SIGNATURE)
     CLI_COMMAND_DEF("signature", "get / set the board type signature", "[signature]", cliSignature),
 #endif
