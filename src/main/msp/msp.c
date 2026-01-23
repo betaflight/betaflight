@@ -668,39 +668,6 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP2_SENSOR_NAMES: {
-        // Return complete lists of all supported sensor hardware names
-        for (int i = 0; i < SENSOR_INDEX_COUNT; i++) {
-            sbufWriteU8(dst, i);  // sensor index
-
-            static char sensorNames[256];
-
-            switch (i) {
-            case SENSOR_INDEX_GYRO:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableGyroHardware);
-                break;
-            case SENSOR_INDEX_ACC:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableAccHardware);
-                break;
-            case SENSOR_INDEX_BARO:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableBaroHardware);
-                break;
-            case SENSOR_INDEX_MAG:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableMagHardware);
-                break;
-            case SENSOR_INDEX_RANGEFINDER:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableRangefinderHardware);
-                break;
-            case SENSOR_INDEX_OPTICALFLOW:
-                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableOpticalflowHardware);
-                break;
-            }
-
-            sbufWritePString(dst, sensorNames);
-        }
-        break;
-    }
-
     case MSP_BOARD_INFO: {
         sbufWriteData(dst, systemConfig()->boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -2386,6 +2353,54 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         {
             const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
+        }
+        break;
+    case MSP2_SENSOR_NAMES:
+        {
+            const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
+            // Return sensor hardware names for the requested page (one sensor per page)
+            if (page >= 0 && page < SENSOR_INDEX_COUNT) {
+                // Check if we have enough buffer space (rough estimate: 200 bytes per sensor)
+                if (sbufBytesRemaining(dst) < 200) {
+                    return MSP_RESULT_ERROR; // Buffer too small
+                }
+
+                sbufWriteU8(dst, page);  // sensor index
+                static char sensorNames[256];
+
+                switch (page) {
+                case SENSOR_INDEX_GYRO:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableGyroHardware);
+                    break;
+                case SENSOR_INDEX_ACC:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableAccHardware);
+                    break;
+                case SENSOR_INDEX_BARO:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableBaroHardware);
+                    break;
+                case SENSOR_INDEX_MAG:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableMagHardware);
+                    break;
+                case SENSOR_INDEX_RANGEFINDER:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableRangefinderHardware);
+                    break;
+                case SENSOR_INDEX_OPTICALFLOW:
+                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableOpticalflowHardware);
+                    break;
+                default:
+                    return MSP_RESULT_ERROR; // Invalid page
+                }
+
+                // Final bounds check before writing the string
+                const size_t stringLen = strlen(sensorNames);
+                if (sbufBytesRemaining(dst) < 0 || (int)(stringLen + 1) > sbufBytesRemaining(dst)) { // +1 for length byte
+                    return MSP_RESULT_ERROR; // Not enough space
+                }
+
+                sbufWritePString(dst, sensorNames);
+            } else {
+                return MSP_RESULT_ERROR; // Invalid page number
+            }
         }
         break;
     case MSP_REBOOT:
