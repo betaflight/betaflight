@@ -627,10 +627,7 @@ static void buildSensorNamesString(char *sensorNames, size_t maxLen, const char 
     sensorNames[0] = '\0';
     bool first = true;
 
-    // Skip AUTO and NONE entries - start after AUTO if present, otherwise after NONE
-    size_t startIdx = strcmp(lookupTable[0], "AUTO") == 0 ? 2 : 1;
-
-    for (size_t j = startIdx; j < 50 && lookupTable[j] && lookupTable[j][0]; j++) {
+    for (size_t j = 0; j < 50 && lookupTable[j] && lookupTable[j][0]; j++) {
         if (!first) {
             strncat(sensorNames, ", ", maxLen - strlen(sensorNames) - 1);
         }
