@@ -622,42 +622,6 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 }
 #endif // USE_FLASHFS
 
-static void buildSensorNamesString(char *sensorNames, size_t maxLen, const char * const *lookupTable)
-{
-    if (maxLen == 0) {
-        return;
-    }
-
-    sensorNames[0] = '\0';
-    bool first = true;
-    size_t used = 0; // Track how much of the buffer we've used
-
-    // Include ALL elements for clients (including AUTO and NONE)
-    for (size_t j = 0; lookupTable[j] && lookupTable[j][0]; j++) {
-        if (!first) {
-            // Check if we have space for separator ", "
-            if (used + 3 > maxLen) { // ", " + null terminator
-                break;
-            }
-            strcpy(sensorNames + used, ", ");
-            used += 2;
-        }
-
-        // Check if we have space for this sensor name
-        size_t nameLen = strlen(lookupTable[j]);
-        if (used + nameLen + 1 > maxLen) { // name + null terminator
-            break;
-        }
-
-        strcpy(sensorNames + used, lookupTable[j]);
-        used += nameLen;
-        first = false;
-    }
-
-    // Ensure null termination
-    sensorNames[used] = '\0';
-}
-
 /*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
@@ -2375,49 +2339,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         {
             const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
             serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
-        }
-        break;
-    case MSP2_SENSOR_NAMES:
-        {
-            const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
-            // Return sensor hardware names for the requested page (one sensor per page)
-            if (page >= 0 && page < SENSOR_INDEX_COUNT) {
-                static char sensorNames[256];
-
-                switch (page) {
-                case SENSOR_INDEX_GYRO:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableGyroHardware);
-                    break;
-                case SENSOR_INDEX_ACC:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableAccHardware);
-                    break;
-                case SENSOR_INDEX_BARO:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableBaroHardware);
-                    break;
-                case SENSOR_INDEX_MAG:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableMagHardware);
-                    break;
-                case SENSOR_INDEX_RANGEFINDER:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableRangefinderHardware);
-                    break;
-                case SENSOR_INDEX_OPTICALFLOW:
-                    buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableOpticalflowHardware);
-                    break;
-                default:
-                    return MSP_RESULT_ERROR; // Invalid page
-                }
-                // Final bounds check before writing any bytes
-                const size_t stringLen = strlen(sensorNames);
-                const size_t required = 1 /* page */ + 1 /* length */ + stringLen;
-                if ((size_t)sbufBytesRemaining(dst) < required) {
-                    return MSP_RESULT_ERROR; // Not enough space
-                }
-
-                sbufWriteU8(dst, page);  // sensor index
-                sbufWritePString(dst, sensorNames);
-            } else {
-                return MSP_RESULT_ERROR; // Invalid page number
-            }
         }
         break;
     case MSP_REBOOT:
