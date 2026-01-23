@@ -2360,12 +2360,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             const int page = sbufBytesRemaining(src) ? sbufReadU8(src) : 0;
             // Return sensor hardware names for the requested page (one sensor per page)
             if (page >= 0 && page < SENSOR_INDEX_COUNT) {
-                // Check if we have enough buffer space (rough estimate: 200 bytes per sensor)
-                if (sbufBytesRemaining(dst) < 200) {
-                    return MSP_RESULT_ERROR; // Buffer too small
-                }
-
-                sbufWriteU8(dst, page);  // sensor index
                 static char sensorNames[256];
 
                 switch (page) {
@@ -2390,13 +2384,14 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 default:
                     return MSP_RESULT_ERROR; // Invalid page
                 }
-
-                // Final bounds check before writing the string
+                // Final bounds check before writing any bytes
                 const size_t stringLen = strlen(sensorNames);
-                if (sbufBytesRemaining(dst) < 0 || (int)(stringLen + 1) > sbufBytesRemaining(dst)) { // +1 for length byte
+                const size_t required = 1 /* page */ + 1 /* length */ + stringLen;
+                if ((size_t)sbufBytesRemaining(dst) < required) {
                     return MSP_RESULT_ERROR; // Not enough space
                 }
 
+                sbufWriteU8(dst, page);  // sensor index
                 sbufWritePString(dst, sensorNames);
             } else {
                 return MSP_RESULT_ERROR; // Invalid page number
