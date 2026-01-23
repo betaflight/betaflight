@@ -20,6 +20,7 @@
 
 #pragma once
 
+#define PARAM_NAME_GYRO_HARDWARE "gyro_hardware"
 #define PARAM_NAME_GYRO_HARDWARE_LPF "gyro_hardware_lpf"
 #define PARAM_NAME_GYRO_LPF1_TYPE "gyro_lpf1_type"
 #define PARAM_NAME_GYRO_LPF1_STATIC_HZ "gyro_lpf1_static_hz"

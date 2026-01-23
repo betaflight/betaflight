@@ -336,11 +336,13 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     gyroInitSensorFilters(gyroSensor);
 }
 
-STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
+STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev, gyroHardware_e gyroHardwareToUse)
 {
-    gyroHardware_e gyroHardware = GYRO_DEFAULT;
+    gyroHardware_e gyroHardware = gyroHardwareToUse;
 
     switch (gyroHardware) {
+    case GYRO_NONE:
+        FALLTHROUGH;
     case GYRO_DEFAULT:
         FALLTHROUGH;
 
@@ -555,7 +557,7 @@ static bool gyroDetectSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t 
     }
 #endif
 
-    const gyroHardware_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
+    const gyroHardware_e gyroHardware = gyroDetect(&gyroSensor->gyroDev, gyroConfig()->gyro_hardware);
     gyroSensor->gyroDev.gyroHardware = gyroHardware;
 
     return gyroHardware != GYRO_NONE;
