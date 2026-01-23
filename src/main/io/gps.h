@@ -246,6 +246,18 @@ typedef struct gpsVelned_s {
     int16_t velD; // down velocity, cm/s
 } gpsVelned_t;
 
+/* GPS date/time from NAV-PVT message */
+typedef struct gpsDateTime_s {
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t min;
+    uint8_t sec;
+    uint16_t millis;
+    bool valid;                     // true when date/time are valid from GPS
+} gpsDateTime_t;
+
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
@@ -257,6 +269,7 @@ typedef struct gpsSolutionData_s {
     uint8_t numSat;
     uint32_t time;                  // GPS msToW
     uint32_t navIntervalMs;         // interval between nav solutions in ms
+    gpsDateTime_t dateTime;         // GPS date/time from NAV-PVT
 } gpsSolutionData_t;
 
 /*
