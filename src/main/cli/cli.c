@@ -4685,8 +4685,6 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
 static void cliSensorNames(const char *cmdName, char *cmdline)
 {
-    UNUSED(cmdName);
-
 #if defined(USE_SENSOR_NAMES)
     // Check if a specific sensor type was requested
     if (!isEmpty(cmdline)) {
@@ -4730,6 +4728,8 @@ static void cliSensorNames(const char *cmdName, char *cmdline)
         cliPrintLinefeed();
     }
 #else
+    UNUSED(cmdName);
+    UNUSED(cmdline);
     cliPrintLine("Sensor names not available (USE_SENSOR_NAMES not defined)");
 #endif
 }
