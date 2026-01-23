@@ -36,6 +36,7 @@
 #include "build/version.h"
 
 #include "cli/cli.h"
+#include "cli/settings.h"
 
 #include "common/axis.h"
 #include "common/bitarray.h"
@@ -151,6 +152,7 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/sensors.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
@@ -620,6 +622,23 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 }
 #endif // USE_FLASHFS
 
+static void buildSensorNamesString(char *sensorNames, size_t maxLen, const char * const *lookupTable)
+{
+    sensorNames[0] = '\0';
+    bool first = true;
+
+    // Skip AUTO and NONE entries - start after AUTO if present, otherwise after NONE
+    size_t startIdx = strcmp(lookupTable[0], "AUTO") == 0 ? 2 : 1;
+
+    for (size_t j = startIdx; j < 50 && lookupTable[j] && lookupTable[j][0]; j++) {
+        if (!first) {
+            strncat(sensorNames, ", ", maxLen - strlen(sensorNames) - 1);
+        }
+        strncat(sensorNames, lookupTable[j], maxLen - strlen(sensorNames) - 1);
+        first = false;
+    }
+}
+
 /*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
@@ -649,6 +668,39 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     case MSP2_MCU_INFO: {
         sbufWriteU8(dst, getMcuTypeId());
         sbufWritePString(dst, getMcuTypeName());
+        break;
+    }
+
+    case MSP2_SENSOR_NAMES: {
+        // Return complete lists of all supported sensor hardware names
+        for (int i = 0; i < SENSOR_INDEX_COUNT; i++) {
+            sbufWriteU8(dst, i);  // sensor index
+
+            static char sensorNames[256];
+
+            switch (i) {
+            case SENSOR_INDEX_GYRO:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableGyroHardware);
+                break;
+            case SENSOR_INDEX_ACC:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableAccHardware);
+                break;
+            case SENSOR_INDEX_BARO:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableBaroHardware);
+                break;
+            case SENSOR_INDEX_MAG:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableMagHardware);
+                break;
+            case SENSOR_INDEX_RANGEFINDER:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableRangefinderHardware);
+                break;
+            case SENSOR_INDEX_OPTICALFLOW:
+                buildSensorNamesString(sensorNames, sizeof(sensorNames), lookupTableOpticalflowHardware);
+                break;
+            }
+
+            sbufWritePString(dst, sensorNames);
+        }
         break;
     }
 
