@@ -627,7 +627,8 @@ static void buildSensorNamesString(char *sensorNames, size_t maxLen, const char 
     sensorNames[0] = '\0';
     bool first = true;
 
-    for (size_t j = 0; j < 50 && lookupTable[j] && lookupTable[j][0]; j++) {
+    // Include ALL elements for clients (including AUTO and NONE)
+    for (size_t j = 0; lookupTable[j] && lookupTable[j][0]; j++) {
         if (!first) {
             strncat(sensorNames, ", ", maxLen - strlen(sensorNames) - 1);
         }
