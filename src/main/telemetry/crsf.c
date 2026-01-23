@@ -295,28 +295,13 @@ void crsfFrameGpsTime(sbuf_t *dst)
 {
     sbufWriteU8(dst, CRSF_FRAME_GPS_TIME_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS_TIME);
-
-#ifdef USE_RTC_TIME
-    dateTime_t dt;
-    memset(&dt, 0, sizeof(dateTime_t));
-    rtcGetDateTime(&dt);
-    sbufWriteU16BigEndian(dst, (int16_t)dt.year);
-    sbufWriteU8(dst, dt.month);
-    sbufWriteU8(dst, dt.day);
-    sbufWriteU8(dst, dt.hours);
-    sbufWriteU8(dst, dt.minutes);
-    sbufWriteU8(dst, dt.seconds);
-    sbufWriteU16BigEndian(dst, dt.millis);
-#else
-    // No RTC - send zeros
-    sbufWriteU16BigEndian(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU8(dst, 0);
-    sbufWriteU16BigEndian(dst, 0);
-#endif
+    sbufWriteU16BigEndian(dst, (int16_t)gpsSol.dateTime.year);
+    sbufWriteU8(dst, gpsSol.dateTime.month);
+    sbufWriteU8(dst, gpsSol.dateTime.day);
+    sbufWriteU8(dst, gpsSol.dateTime.hour);
+    sbufWriteU8(dst, gpsSol.dateTime.min);
+    sbufWriteU8(dst, gpsSol.dateTime.sec);
+    sbufWriteU16BigEndian(dst, gpsSol.dateTime.millis);
 }
 
 /*
@@ -1000,14 +985,14 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time != lastGpsSolnTime && gpsSol.dateTime.valid) {
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
         crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX);
         return true;
     }
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time != lastGpsSolnTime) {
         crsfInitializeFrame(dst);
         crsfFrameGpsExtended(dst);
         crsfFinalize(dst);
@@ -1015,7 +1000,7 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
         return true;
     }
 #endif
-    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_INDEX) && gpsSol.time > lastGpsSolnTime) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_INDEX) && gpsSol.time != lastGpsSolnTime) {
         crsfInitializeFrame(dst);
         crsfFrameGps(dst);
         crsfFinalize(dst);
@@ -1173,6 +1158,7 @@ void initCrsfTelemetry(void)
 #if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
 #endif
+    crsfTimedSchedule = 0;
 
     uint8_t index = 0;
     if (sensors(SENSOR_ACC) && telemetryIsSensorEnabled(SENSOR_PITCH | SENSOR_ROLL | SENSOR_HEADING)) {
@@ -1412,7 +1398,7 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     if (processCrsf(currentTimeUs, crsfLastCycleTime)) {
         crsfLastCycleTime = currentTimeUs;
 #ifdef USE_CRSF_ACCGYRO_TELEMETRY
-    } else if (crsfAccGyroEnabled()) {  // let the inbound request rate dictate the outbound rate
+    } else if (crsfAccGyroEnabled() && isCrsfV3Running) {  // let the inbound request rate dictate the outbound rate
         sbuf_t crsfPayloadBuf;
         sbuf_t *dst = &crsfPayloadBuf;
         crsfInitializeFrame(dst);
