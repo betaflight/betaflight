@@ -36,7 +36,6 @@
 #include "build/version.h"
 
 #include "cli/cli.h"
-#include "cli/settings.h"
 
 #include "common/axis.h"
 #include "common/bitarray.h"
@@ -152,7 +151,6 @@
 #include "sensors/gyro_init.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
-#include "sensors/sensors.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/telemetry.h"
