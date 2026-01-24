@@ -564,7 +564,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
+#ifdef USE_ACC
     LOOKUP_TABLE_ENTRY(accelerationSensorNames),
+#endif
 #ifdef USE_BARO
     LOOKUP_TABLE_ENTRY(baroSensorNames),
 #endif
