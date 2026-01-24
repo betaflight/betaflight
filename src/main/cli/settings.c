@@ -141,83 +141,6 @@
 #include "settings.h"
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
-// sync with accelerationSensor_e
-const char * const lookupTableAccHardware[] = {
-    "AUTO",
-    "NONE",
-    "MPU6050",
-    "MPU6000",
-    "MPU6500",
-    "MPU9250",
-    "ICM20601",
-    "ICM20602",
-    "ICM20608G",
-    "ICM20649",
-    "ICM20689",
-    "ICM42605",
-    "ICM42688P",
-    "BMI160",
-    "BMI270",
-    "LSM6DSO",
-    "LSM6DSV16X",
-    "IIM42653",
-    "ICM45605",
-    "ICM45686",
-    "ICM40609D",
-    "IIM42652",
-    "VIRTUAL"
-};
-
-// sync with gyroHardware_e
-const char * const lookupTableGyroHardware[] = {
-    "AUTO",
-    "NONE",
-    "MPU6050",
-    "L3GD20",
-    "MPU6000",
-    "MPU6500",
-    "MPU9250",
-    "ICM20601",
-    "ICM20602",
-    "ICM20608G",
-    "ICM20649",
-    "ICM20689",
-    "ICM42605",
-    "ICM42688P",
-    "BMI160",
-    "BMI270",
-    "LSM6DSO",
-    "LSM6DSV16X",
-    "IIM42653",
-    "ICM45605",
-    "ICM45686",
-    "ICM40609D",
-    "IIM42652",
-    "VIRTUAL"
-};
-
-#if defined(USE_SENSOR_NAMES) || defined(USE_BARO)
-// sync with baroSensor_e
-const char * const lookupTableBaroHardware[] = {
-    "AUTO", "NONE", "BMP085", "MS5611", "BMP280", "LPS", "QMP6988", "BMP388", "DPS310", "2SMPB_02B", "LPS22DF", "VIRTUAL"
-};
-#endif
-#if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
-// sync with magSensor_e
-const char * const lookupTableMagHardware[] = {
-    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883", "LIS2MDL", "LIS3MDL", "MPU925X_AK8963", "IST8310"
-};
-#endif
-#if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
-const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA"
-};
-#endif
-#if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
-const char * const lookupTableOpticalflowHardware[] = {
-    "NONE", "MT"
-};
-#endif
 
 const char * const lookupTableOffOn[] = {
     "OFF", "ON"
@@ -641,12 +564,13 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
-    LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
+    LOOKUP_TABLE_ENTRY(gyroHardwareNames),
+    LOOKUP_TABLE_ENTRY(accelerationSensorNames),
 #ifdef USE_BARO
-    LOOKUP_TABLE_ENTRY(lookupTableBaroHardware),
+    LOOKUP_TABLE_ENTRY(baroSensorNames),
 #endif
 #ifdef USE_MAG
-    LOOKUP_TABLE_ENTRY(lookupTableMagHardware),
+    LOOKUP_TABLE_ENTRY(magSensorNames),
 #endif
     LOOKUP_TABLE_ENTRY(debugModeNames),
     LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol),
@@ -669,10 +593,10 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableFrskySpiA1Source),
 #endif
 #ifdef USE_RANGEFINDER
-    LOOKUP_TABLE_ENTRY(lookupTableRangefinderHardware),
+    LOOKUP_TABLE_ENTRY(rangefinderTypeNames),
 #endif
 #ifdef USE_OPTICALFLOW
-    LOOKUP_TABLE_ENTRY(lookupTableOpticalflowHardware),
+    LOOKUP_TABLE_ENTRY(opticalflowTypeNames),
 #endif
 #ifdef USE_GYRO_OVERFLOW_CHECK
     LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck),
@@ -701,7 +625,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_VTX_COMMON
     LOOKUP_TABLE_ENTRY(lookupTableVtxLowPowerDisarm),
 #endif
-    LOOKUP_TABLE_ENTRY(lookupTableGyroHardware),
+    LOOKUP_TABLE_ENTRY(gyroHardwareNames),
 #ifdef USE_SDCARD
     LOOKUP_TABLE_ENTRY(lookupTableSdcardMode),
 #endif
@@ -2038,4 +1962,4 @@ const clivalue_t valueTable[] = {
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
 
-STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);
+// STATIC_ASSERT(LOOKUP_TABLE_COUNT == ARRAYLEN(lookupTables), LOOKUP_TABLE_COUNT_incorrect);

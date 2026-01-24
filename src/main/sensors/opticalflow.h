@@ -30,7 +30,10 @@
 typedef enum {
     OPTICALFLOW_NONE = 0,
     OPTICALFLOW_MT = 1,
+    OPTICALFLOW_HARDWARE_COUNT
 } opticalflowType_e;
+
+extern const char * const opticalflowTypeNames[OPTICALFLOW_HARDWARE_COUNT];
 
 typedef struct opticalflowConfig_s {
     uint8_t  opticalflow_hardware;

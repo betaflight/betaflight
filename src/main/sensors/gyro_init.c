@@ -73,6 +73,34 @@
 
 #include "gyro_init.h"
 
+// sync with gyroHardware_e
+const char * const gyroHardwareNames[GYRO_HARDWARE_COUNT] = {
+    [GYRO_NONE] = "NONE",
+    [GYRO_DEFAULT] = "AUTO",
+    [GYRO_MPU6050] = "MPU6050",
+    [GYRO_L3GD20] = "L3GD20",
+    [GYRO_MPU6000] = "MPU6000",
+    [GYRO_MPU6500] = "MPU6500",
+    [GYRO_MPU9250] = "MPU9250",
+    [GYRO_ICM20601] = "ICM20601",
+    [GYRO_ICM20602] = "ICM20602",
+    [GYRO_ICM20608G] = "ICM20608G",
+    [GYRO_ICM20649] = "ICM20649",
+    [GYRO_ICM20689] = "ICM20689",
+    [GYRO_ICM42605] = "ICM42605",
+    [GYRO_ICM42688P] = "ICM42688P",
+    [GYRO_BMI160] = "BMI160",
+    [GYRO_BMI270] = "BMI270",
+    [GYRO_LSM6DSO] = "LSM6DSO",
+    [GYRO_LSM6DSV16X] = "LSM6DSV16X",
+    [GYRO_IIM42653] = "IIM42653",
+    [GYRO_ICM45605] = "ICM45605",
+    [GYRO_ICM45686] = "ICM45686",
+    [GYRO_ICM40609D] = "ICM40609D",
+    [GYRO_IIM42652] = "IIM42652",
+    [GYRO_VIRTUAL] = "VIRTUAL"
+};
+
 // The gyro buffer is split 50/50, the first half for the transmit buffer, the second half for the receive buffer
 // This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed id other
 // gyro types are supported with SPI DMA.

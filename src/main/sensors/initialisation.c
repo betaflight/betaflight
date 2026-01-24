@@ -48,6 +48,55 @@
 #include "sensors/opticalflow.h"
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, OPTICALFLOW_NONE};
+
+// sync with baroSensor_e
+const char * const baroSensorNames[BARO_HARDWARE_COUNT] = {
+    [BARO_DEFAULT] = "AUTO",
+    [BARO_NONE] = "NONE",
+    [BARO_BMP085] = "BMP085",
+    [BARO_MS5611] = "MS5611",
+    [BARO_BMP280] = "BMP280",
+    [BARO_LPS] = "LPS",
+    [BARO_QMP6988] = "QMP6988",
+    [BARO_BMP388] = "BMP388",
+    [BARO_DPS310] = "DPS310",
+    [BARO_2SMPB_02B] = "2SMPB_02B",
+    [BARO_LPS22DF] = "LPS22DF",
+    [BARO_VIRTUAL] = "VIRTUAL"
+};
+
+// sync with magSensor_e
+const char * const magSensorNames[MAG_HARDWARE_COUNT] = {
+    [MAG_DEFAULT] = "AUTO",
+    [MAG_NONE] = "NONE",
+    [MAG_HMC5883] = "HMC5883",
+    [MAG_AK8975] = "AK8975",
+    [MAG_AK8963] = "AK8963",
+    [MAG_QMC5883] = "QMC5883",
+    [MAG_LIS2MDL] = "LIS2MDL",
+    [MAG_LIS3MDL] = "LIS3MDL",
+    [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
+    [MAG_IST8310] = "IST8310"
+};
+
+// sync with rangefinderType_e
+const char * const rangefinderTypeNames[RANGEFINDER_HARDWARE_COUNT] = {
+    [RANGEFINDER_NONE] = "NONE",
+    [RANGEFINDER_HCSR04] = "HCSR04",
+    [RANGEFINDER_TFMINI] = "TFMINI",
+    [RANGEFINDER_TF02] = "TF02",
+    [RANGEFINDER_MTF01] = "MTF01",
+    [RANGEFINDER_MTF02] = "MTF02",
+    [RANGEFINDER_MTF01P] = "MTF01P",
+    [RANGEFINDER_MTF02P] = "MTF02P",
+    [RANGEFINDER_TFNOVA] = "TFNOVA"
+};
+
+// sync with opticalflowType_e
+const char * const opticalflowTypeNames[OPTICALFLOW_HARDWARE_COUNT] = {
+    [OPTICALFLOW_NONE] = "NONE",
+    [OPTICALFLOW_MT] = "MT"
+};
 uint8_t detectedGyros[GYRO_COUNT];
 
 void sensorsPreInit(void)
