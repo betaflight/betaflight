@@ -137,6 +137,9 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
+#ifdef USE_OSD_CUSTOM_TEXT
+#include "osd/osd_custom_text.h"
+#endif
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -748,6 +751,10 @@ void initPhase3(void)
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
     }
+#endif
+
+#ifdef USE_OSD_CUSTOM_TEXT
+    osdCustomTextInit();
 #endif
 
 #ifdef USE_LED_STRIP

@@ -1714,6 +1714,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RANGEFINDER
     { "osd_lidar_dist_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LIDAR_DIST]) },
 #endif //USE_RANGEFINDER
+#ifdef USE_OSD_CUSTOM_TEXT
+    { "osd_custom_serial_text_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CUSTOM_SERIAL_TEXT]) },
+#endif //USE_OSD_CUSTOM_TEXT
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
