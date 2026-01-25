@@ -57,7 +57,12 @@ bool osdCustomTextInit(void)
     }
 
     // Use telemetry baud rate index for OSD custom text
-    const uint32_t baudrate = baudRates[portConfig->telemetry_baudrateIndex];
+    // Validate baud rate index and use safe default if out of range
+    uint8_t baudrateIndex = portConfig->telemetry_baudrateIndex;
+    if (baudrateIndex >= BAUD_COUNT) {
+        baudrateIndex = BAUD_115200; // Safe default
+    }
+    const uint32_t baudrate = baudRates[baudrateIndex];
 
     osdCustomTextSerialPort = openSerialPort(
         portConfig->identifier,
@@ -118,7 +123,7 @@ void osdCustomTextUpdate(timeUs_t currentTimeUs)
         else if (c != 0x00 && inputPos < (INPUT_BUFFER_SIZE - 1)) {
             inputBuffer[inputPos++] = c;
         }
-        // If buffer is full, keep overwriting the last position until we get a terminator
+        // If buffer is full, drop incoming bytes until terminator is received
         // This prevents buffer overflow while waiting for terminator
     }
 }
