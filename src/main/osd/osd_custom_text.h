@@ -22,7 +22,20 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "common/time.h"
+#include "pg/pg.h"
+
+typedef enum {
+    OSD_CUSTOM_TEXT_TERMINATOR_NULL = 0,
+    OSD_CUSTOM_TEXT_TERMINATOR_LF = 1,
+} osdCustomTextTerminator_e;
+
+typedef struct osdCustomTextConfig_s {
+    uint8_t terminator;
+} osdCustomTextConfig_t;
+
+PG_DECLARE(osdCustomTextConfig_t, osdCustomTextConfig);
 
 bool osdCustomTextInit(void);
 void osdCustomTextUpdate(timeUs_t currentTimeUs);

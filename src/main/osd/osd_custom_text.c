@@ -31,9 +31,18 @@
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "osd/osd_custom_text.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
 #define INPUT_BUFFER_SIZE 64
 #define DISPLAY_BUFFER_SIZE 32
+
+PG_REGISTER_WITH_RESET_FN(osdCustomTextConfig_t, osdCustomTextConfig, PG_OSD_CUSTOM_TEXT_CONFIG, 0);
+
+void pgResetFn_osdCustomTextConfig(osdCustomTextConfig_t *config)
+{
+    config->terminator = OSD_CUSTOM_TEXT_TERMINATOR_LF;
+}
 
 static serialPort_t *osdCustomTextSerialPort = NULL;
 static char inputBuffer[INPUT_BUFFER_SIZE];
@@ -80,19 +89,22 @@ void osdCustomTextUpdate(timeUs_t currentTimeUs)
         return;
     }
 
+    // Determine termination character based on config
+    const uint8_t termChar = (osdCustomTextConfig()->terminator == OSD_CUSTOM_TEXT_TERMINATOR_NULL) ? 0x00 : '\n';
+
     // Read all available bytes
     while (serialRxBytesWaiting(osdCustomTextSerialPort)) {
         const uint8_t c = serialRead(osdCustomTextSerialPort);
 
-        // Check for line feed (line terminator)
-        if (c == '\n') {
+        // Check for configured termination character
+        if (c == termChar) {
             if (inputPos > 0) {
                 // Copy input buffer to display buffer, truncate to fit
                 const uint8_t copyLen = (inputPos < (DISPLAY_BUFFER_SIZE - 1)) ? inputPos : (DISPLAY_BUFFER_SIZE - 1);
                 memcpy(displayBuffer, inputBuffer, copyLen);
                 displayBuffer[copyLen] = '\0';
             } else {
-                // Empty line clears the display
+                // Empty message clears the display
                 displayBuffer[0] = '\0';
             }
             // Reset input buffer
@@ -102,12 +114,12 @@ void osdCustomTextUpdate(timeUs_t currentTimeUs)
         else if (c == '\r') {
             // Do nothing, just skip
         }
-        // Buffer regular characters
-        else if (inputPos < (INPUT_BUFFER_SIZE - 1)) {
+        // Buffer regular characters (skip null bytes when not used as terminator)
+        else if (c != 0x00 && inputPos < (INPUT_BUFFER_SIZE - 1)) {
             inputBuffer[inputPos++] = c;
         }
-        // If buffer is full, keep overwriting the last position until we get a line feed
-        // This prevents buffer overflow while waiting for line terminator
+        // If buffer is full, keep overwriting the last position until we get a terminator
+        // This prevents buffer overflow while waiting for terminator
     }
 }
 
