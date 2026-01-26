@@ -275,28 +275,7 @@ static const char *const sensorTypeNames[] = {
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
 
 static const char * const *sensorHardwareNames[] = {
-    gyroHardwareNames, 
-    accelerationSensorNames, 
-#ifdef USE_BARO
-    baroSensorNames,
-#else
-    NULL,
-#endif
-#ifdef USE_MAG
-    magSensorNames,
-#else
-    NULL,
-#endif
-#ifdef USE_RANGEFINDER
-    rangefinderTypeNames,
-#else
-    NULL,
-#endif
-#ifdef USE_OPTICALFLOW
-    opticalflowTypeNames
-#else
-    NULL
-#endif
+    gyroHardwareNames, accelerationSensorNames, baroSensorNames, magSensorNames, rangefinderTypeNames, opticalflowTypeNames
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
