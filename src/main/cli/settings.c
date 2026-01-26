@@ -670,8 +670,12 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
     LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
+#ifdef USE_BARO
     LOOKUP_TABLE_ENTRY(lookupTableBaroHardware),
+#endif
+#ifdef USE_MAG
     LOOKUP_TABLE_ENTRY(lookupTableMagHardware),
+#endif
     LOOKUP_TABLE_ENTRY(debugModeNames),
     LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol),
 #ifdef USE_DSHOT_TELEMETRY
