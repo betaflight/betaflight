@@ -110,10 +110,15 @@ static void nooploopUpdate(rangefinderDev_t *dev)
     UNUSED(dev);
 
     static timeMs_t lastFrameReceivedMs = 0;
+    static timeMs_t firstUpdateMs = 0;
     const timeMs_t timeNowMs = millis();
 
     if (nooploopSerialPort == NULL) {
         return;
+    }
+
+    if (firstUpdateMs == 0) {
+        firstUpdateMs = timeNowMs;
     }
 
     while (serialRxBytesWaiting(nooploopSerialPort)) {
@@ -132,6 +137,9 @@ static void nooploopUpdate(rangefinderDev_t *dev)
                 nooploopFrame[1] = c;
                 nooploopFramePos = 2;
                 nooploopFrameState = NOOPLOOP_FRAME_STATE_READING;
+            } else if (c == NOOPLOOP_FRAME_SYNC_BYTE_0) {
+                nooploopFrame[0] = c;
+                nooploopFrameState = NOOPLOOP_FRAME_STATE_WAIT_SYNC1;
             } else {
                 nooploopFrameState = NOOPLOOP_FRAME_STATE_WAIT_SYNC0;
             }
@@ -153,7 +161,8 @@ static void nooploopUpdate(rangefinderDev_t *dev)
         }
     }
 
-    if (lastFrameReceivedMs && cmp32(timeNowMs, lastFrameReceivedMs) > NOOPLOOP_TIMEOUT_MS) {
+    if ((lastFrameReceivedMs && cmp32(timeNowMs, lastFrameReceivedMs) > NOOPLOOP_TIMEOUT_MS)
+        || (!lastFrameReceivedMs && cmp32(timeNowMs, firstUpdateMs) > NOOPLOOP_TIMEOUT_MS)) {
         nooploopLatestDistance = RANGEFINDER_HARDWARE_FAILURE;
         nooploopHasNewData = true;
         lastFrameReceivedMs = timeNowMs;
