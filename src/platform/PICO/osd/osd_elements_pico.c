@@ -342,7 +342,7 @@ static bool renderSidebarsUntil(uint32_t limit_micros)
     }
 
     int y = count + infoSidebars.y1;
-    while (micros() < limit_micros && count < maxCount) {
+    while (cmpTimeUs(limit_micros, micros()) > 0 && count < maxCount) {
         // bprintf("y = %d, x1=%d, x2=%d, y1 = %d", y,x1,x2, y1);
         // This is borderline for wanting to break down further (not to exceed limit_micros of around 20us by too much)
         if (count % 16 == 0) {
@@ -377,7 +377,7 @@ static bool renderAHUntil(uint32_t limit_micros)
 
     bool done = false;
     bool oor = infoArtificialHorizon.outOfRange;
-    while (micros() < limit_micros && !done) {
+    while (cmpTimeUs(limit_micros, micros()) > 0 && !done) {
 //        done = oor ? iterDashedDLineNext() :  iterDLineNext();
         done = oor ? iterDashedQLineNext() :  iterQLineNext();
         UNUSED(iterDashedDLineNext);
@@ -480,7 +480,7 @@ bool renderSticksBackgroundUntil(uint32_t limit_micros)
 {
     static int subState;
 
-    while (bgStickLeftState == bgItemPendingRender && micros() < limit_micros) {
+    while (bgStickLeftState == bgItemPendingRender && cmpTimeUs(limit_micros, micros()) > 0) {
         int xMid = infoStickLeft.xLeft + stickWidth / 2;
         int yMid = infoStickLeft.yTop + stickHeight / 2;
         if (subState == 0) {
@@ -493,7 +493,7 @@ bool renderSticksBackgroundUntil(uint32_t limit_micros)
         }
     }
 
-    while (bgStickRightState == bgItemPendingRender && micros() < limit_micros) {
+    while (bgStickRightState == bgItemPendingRender && cmpTimeUs(limit_micros, micros()) > 0) {
         int xMid = infoStickRight.xLeft + stickWidth / 2;
         int yMid = infoStickRight.yTop + stickHeight / 2;
         if (subState == 0) {
@@ -540,7 +540,7 @@ static void plotBlob(int x, int y)
     
 bool renderStickLeftUntil(uint32_t limit_micros)
 {
-    if (micros() < limit_micros) {
+    if (cmpTimeUs(limit_micros, micros()) > 0) {
         plotBlob(infoStickLeft.xStick, infoStickLeft.yStick);
         renderStickLeftComplete = true;
     }
@@ -550,7 +550,7 @@ bool renderStickLeftUntil(uint32_t limit_micros)
 
 bool renderStickRightUntil(uint32_t limit_micros)
 {
-    if (micros() < limit_micros) {
+    if (cmpTimeUs(limit_micros, micros()) > 0) {
         plotBlob(infoStickRight.xStick, infoStickRight.yStick);
         renderStickRightComplete = true;
     }
