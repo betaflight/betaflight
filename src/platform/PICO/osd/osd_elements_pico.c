@@ -99,7 +99,7 @@ typedef struct {
 } info_ah_t;
 
 static info_ah_t infoArtificialHorizon;
-static bool cachedAH;
+static bool renderAHComplete = true;
 
 // cf. osd_element.c implementation osdElementArtificialHorizon
 #define AH_SYMBOL_COUNT 9
@@ -142,7 +142,7 @@ static void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
     infoArtificialHorizon.x2 = xc - barScale * cr;
     infoArtificialHorizon.y2 = yc + barScale * sr;
 
-    cachedAH = true;
+    renderAHComplete = false;
 }
 
 typedef struct {
@@ -154,8 +154,8 @@ typedef struct {
 
 static info_stick_t infoStickLeft;
 static info_stick_t infoStickRight;
-static bool cachedStickLeft;
-static bool cachedStickRight;
+static bool renderStickLeftComplete = true;
+static bool renderStickRightComplete = true;
 
 typedef struct radioControls_s {
     uint8_t left_vertical;
@@ -227,7 +227,7 @@ static void cacheStickLeftInfo(void)
     rc_alias_e vertical_channel = radioModes[osdConfig()->overlay_radio_mode-1].left_vertical;
     rc_alias_e horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].left_horizontal;
     cacheStickInfo(&infoStickLeft, vertical_channel, horizontal_channel);
-    cachedStickLeft = true;
+    renderStickLeftComplete = false;
 }
 
 static void cacheStickRightInfo(void)
@@ -235,7 +235,7 @@ static void cacheStickRightInfo(void)
     rc_alias_e vertical_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_vertical;
     rc_alias_e horizontal_channel = radioModes[osdConfig()->overlay_radio_mode-1].right_horizontal;
     cacheStickInfo(&infoStickRight, vertical_channel, horizontal_channel);
-    cachedStickRight = true;
+    renderStickRightComplete = false;
 }
 
 bool drawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
@@ -281,6 +281,7 @@ bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
     case OSD_ARTIFICIAL_HORIZON:
 //#define testnoahhere
 #ifdef testnoahhere
+        // Useful for comparing with original char based AH.
         UNUSED(cacheArtificialHorizonInfo);
         return false;
 #else
@@ -369,10 +370,6 @@ static bool renderAHUntil(uint32_t limit_micros)
 {
     static bool first = true;
 
-    if (!cachedAH) {
-        return true; // Nothing to do here.
-    }
-
     if (first) {
         iterLineInit(infoArtificialHorizon.x1, infoArtificialHorizon.y1, infoArtificialHorizon.x2, infoArtificialHorizon.y2);
         first = false;
@@ -391,14 +388,13 @@ static bool renderAHUntil(uint32_t limit_micros)
     if (done) {
         // All done. Prepare for next time.
         first = true;
-        cachedAH = false;
-        return true; // Done with AH for this round.
+        renderAHComplete = true;
     }
 
-    return false;
+    return renderAHComplete;
 }
 
-static bool renderCharsComplete;
+static bool renderCharsComplete = true;
 
 bool renderCharsUntil(uint32_t limit_micros)
 {
@@ -422,10 +418,6 @@ bool renderCharsUntil(uint32_t limit_micros)
     const int fbbpl = fb_nx / 4; // bytes per line = pixels per line / pixels per byte
     const int bpCharLine = pypc * fbbpl;
     const int fbbpNextLine = bpCharLine - charsPerLine * bxpc; // byte increment from  (top left of) last char of line to first of next line.
-
-    if (renderCharsComplete) {
-        return true;
-    }
 
     if (0 == currentChar) {
         currentY = 0;
@@ -479,10 +471,9 @@ bool renderCharsUntil(uint32_t limit_micros)
         // Reached the end, reset.
         currentChar = 0;
         renderCharsComplete = true;
-        return true;
     }
 
-    return false;
+    return renderCharsComplete;
 }
 
 bool renderSticksBackgroundUntil(uint32_t limit_micros)
@@ -547,19 +538,24 @@ static void plotBlob(int x, int y)
     plot(x, y-1, 1);
 }
     
-bool renderSticksForegroundUntil(uint32_t limit_micros)
+bool renderStickLeftUntil(uint32_t limit_micros)
 {
-    if (cachedStickLeft && micros() < limit_micros) {
+    if (micros() < limit_micros) {
         plotBlob(infoStickLeft.xStick, infoStickLeft.yStick);
-        cachedStickLeft = false;
+        renderStickLeftComplete = true;
     }
 
-    if (cachedStickRight && micros() < limit_micros) {
+    return renderStickLeftComplete;
+}
+
+bool renderStickRightUntil(uint32_t limit_micros)
+{
+    if (micros() < limit_micros) {
         plotBlob(infoStickRight.xStick, infoStickRight.yStick);
-        cachedStickRight = false;
+        renderStickRightComplete = true;
     }
 
-    return (!cachedStickLeft && !cachedStickRight);
+    return renderStickRightComplete;
 }
 
 #if 0
@@ -691,10 +687,12 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     selectForegroundBuffer();
 
     // Continue with foreground elements, if not timed out.
+    // (Note each item has a static bool flag render..Complete that should be initialised to true.)
     complete = complete &&
-        renderAHUntil(limit_micros) &&
-        renderCharsUntil(limit_micros) &&
-        renderSticksForegroundUntil(limit_micros);
+        (renderAHComplete || renderAHUntil(limit_micros)) &&
+        (renderCharsComplete || renderCharsUntil(limit_micros)) &&
+        (renderStickLeftComplete || renderStickLeftUntil(limit_micros)) &&
+        (renderStickRightComplete || renderStickRightUntil(limit_micros));
 
 #if 1
     UNUSED(postProcessUntil);
@@ -702,7 +700,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     // Testing a post-process operation on the background buffer to start with
     // Post processing can e.g. surround white pixels with a black border
     selectBackgroundBuffer();
-    complete = complete && postProcessUntil(limit_micros);
+    complete = complete && (postProcessComplete || postProcessUntil(limit_micros));
     selectForegroundBuffer();
 #endif
 
