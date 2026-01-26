@@ -71,7 +71,8 @@ const char * const rangefinderHardwareNames[] = {
     "NOOPLOOP_F2P",
     "NOOPLOOP_F2PH",
     "NOOPLOOP_F",
-    "NOOPLOOP_FP"
+    "NOOPLOOP_FP",
+    "NOOPLOOP_F2MINI"
 };
 #endif
 
@@ -145,6 +146,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_NOOPLOOP_F2PH:
         case RANGEFINDER_NOOPLOOP_F:
         case RANGEFINDER_NOOPLOOP_FP:
+        case RANGEFINDER_NOOPLOOP_F2MINI:
             if (nooploopDetect(dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));

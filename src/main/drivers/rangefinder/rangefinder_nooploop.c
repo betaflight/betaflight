@@ -66,11 +66,12 @@ typedef struct {
 
 static const nooploopInfo_t *devInfo = NULL;
 static const nooploopInfo_t devInfos[] = {
-    { .rfType = RANGEFINDER_NOOPLOOP_F,    .rangeMin = 10, .rangeMax = 1000 },
-    { .rfType = RANGEFINDER_NOOPLOOP_FP,   .rangeMin = 10, .rangeMax = 1700 },
-    { .rfType = RANGEFINDER_NOOPLOOP_F2,   .rangeMin = 10, .rangeMax = 500  },
-    { .rfType = RANGEFINDER_NOOPLOOP_F2P,  .rangeMin = 10, .rangeMax = 1700 },
-    { .rfType = RANGEFINDER_NOOPLOOP_F2PH, .rangeMin = 10, .rangeMax = 3300 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F,      .rangeMin = 2, .rangeMax = 1000 },
+    { .rfType = RANGEFINDER_NOOPLOOP_FP,     .rangeMin = 2, .rangeMax = 1700 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2,     .rangeMin = 2, .rangeMax = 500  },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2P,    .rangeMin = 2, .rangeMax = 1700 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2PH,   .rangeMin = 2, .rangeMax = 3300 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2MINI, .rangeMin = 2, .rangeMax = 500  },
 };
 
 typedef enum {
