@@ -131,7 +131,6 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
-#include "sensors/sensors.h"
 
 #include "scheduler/scheduler.h"
 
@@ -142,104 +141,6 @@
 #include "settings.h"
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
-
-const char * const lookupTableOffOn[] = {
-    "OFF", "ON"
-};
-
-#ifdef USE_DSHOT_TELEMETRY
-static const char * const lookupTableDshotEdt[] = {
-    "OFF", "ON", "FORCE"
-};
-#endif
-
-static const char * const lookupTableCrashRecovery[] = {
-    "OFF", "ON" ,"BEEP", "DISARM"
-};
-
-static const char * const lookupTableUnit[] = {
-    "IMPERIAL", "METRIC", "BRITISH"
-};
-
-static const char * const lookupTableAlignment[] = {
-    "DEFAULT",
-    "CW0",
-    "CW90",
-    "CW180",
-    "CW270",
-    "CW0FLIP",
-    "CW90FLIP",
-    "CW180FLIP",
-    "CW270FLIP",
-    "CUSTOM",
-};
-
-#ifdef USE_GPS
-static const char * const lookupTableGpsProvider[] = {
-    "NMEA", "UBLOX", "MSP", "VIRTUAL"
-};
-
-static const char * const lookupTableGpsSbasMode[] = {
-    "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN", "NONE"
-};
-
-static const char * const lookupTableGpsUbloxModels[] = {
-    "PORTABLE", "STATIONARY", "PEDESTRIAN", "AUTOMOTIVE", "AT_SEA", "AIRBORNE_1G", "AIRBORNE_2G", "AIRBORNE_4G"
-};
-
-static const char * const lookupTableGpsUbloxUtcStandard[] = {
-    "AUTO", "USNO", "EU", "SU", "NTSC"
-};
-#endif
-
-#ifdef USE_SERVOS
-static const char * const lookupTableGimbalMode[] = {
-    "NORMAL", "MIXTILT"
-};
-#endif
-
-#ifdef USE_BLACKBOX
-static const char * const lookupTableBlackboxDevice[] = {
-    "NONE",
-    "SPIFLASH",
-    "SDCARD",
-    "SERIAL",
-#ifdef USE_BLACKBOX_VIRTUAL
-    "VIRTUAL",
-#endif
-};
-
-static const char * const lookupTableBlackboxMode[] = {
-    "NORMAL", "MOTOR_TEST", "ALWAYS"
-};
-
-static const char * const lookupTableBlackboxSampleRate[] = {
-    "1/1", "1/2", "1/4", "1/8", "1/16"
-};
-#endif
-
-#ifdef USE_SERIALRX
-static const char * const lookupTableSerialRX[] = {
-    "NONE",
-    "SPEK2048",
-    "SBUS",
-    "SUMD",
-    "SUMH",
-    "XB-B",
-    "XB-B-RJ01",
-    "IBUS",
-    "JETIEXBUS",
-    "CRSF",
-    "SRXL",
-    "CUSTOM",
-    "FPORT",
-    "SRXL2",
-    "GHST",
-    "SPEK1024",
-    "MAVLINK",
-};
-#endif
-
 // sync with gyroHardware_e
 const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_NONE] = "NONE",
@@ -343,6 +244,103 @@ const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = 
     [OPTICALFLOW_NONE] = "NONE",
     [OPTICALFLOW_MT] = "MT"
 };
+
+const char * const lookupTableOffOn[] = {
+    "OFF", "ON"
+};
+
+#ifdef USE_DSHOT_TELEMETRY
+static const char * const lookupTableDshotEdt[] = {
+    "OFF", "ON", "FORCE"
+};
+#endif
+
+static const char * const lookupTableCrashRecovery[] = {
+    "OFF", "ON" ,"BEEP", "DISARM"
+};
+
+static const char * const lookupTableUnit[] = {
+    "IMPERIAL", "METRIC", "BRITISH"
+};
+
+static const char * const lookupTableAlignment[] = {
+    "DEFAULT",
+    "CW0",
+    "CW90",
+    "CW180",
+    "CW270",
+    "CW0FLIP",
+    "CW90FLIP",
+    "CW180FLIP",
+    "CW270FLIP",
+    "CUSTOM",
+};
+
+#ifdef USE_GPS
+static const char * const lookupTableGpsProvider[] = {
+    "NMEA", "UBLOX", "MSP", "VIRTUAL"
+};
+
+static const char * const lookupTableGpsSbasMode[] = {
+    "AUTO", "EGNOS", "WAAS", "MSAS", "GAGAN", "NONE"
+};
+
+static const char * const lookupTableGpsUbloxModels[] = {
+    "PORTABLE", "STATIONARY", "PEDESTRIAN", "AUTOMOTIVE", "AT_SEA", "AIRBORNE_1G", "AIRBORNE_2G", "AIRBORNE_4G"
+};
+
+static const char * const lookupTableGpsUbloxUtcStandard[] = {
+    "AUTO", "USNO", "EU", "SU", "NTSC"
+};
+#endif
+
+#ifdef USE_SERVOS
+static const char * const lookupTableGimbalMode[] = {
+    "NORMAL", "MIXTILT"
+};
+#endif
+
+#ifdef USE_BLACKBOX
+static const char * const lookupTableBlackboxDevice[] = {
+    "NONE",
+    "SPIFLASH",
+    "SDCARD",
+    "SERIAL",
+#ifdef USE_BLACKBOX_VIRTUAL
+    "VIRTUAL",
+#endif
+};
+
+static const char * const lookupTableBlackboxMode[] = {
+    "NORMAL", "MOTOR_TEST", "ALWAYS"
+};
+
+static const char * const lookupTableBlackboxSampleRate[] = {
+    "1/1", "1/2", "1/4", "1/8", "1/16"
+};
+#endif
+
+#ifdef USE_SERIALRX
+static const char * const lookupTableSerialRX[] = {
+    "NONE",
+    "SPEK2048",
+    "SBUS",
+    "SUMD",
+    "SUMH",
+    "XB-B",
+    "XB-B-RJ01",
+    "IBUS",
+    "JETIEXBUS",
+    "CRSF",
+    "SRXL",
+    "CUSTOM",
+    "FPORT",
+    "SRXL2",
+    "GHST",
+    "SPEK1024",
+    "MAVLINK",
+};
+#endif
 
 #ifdef USE_RX_SPI
 // sync with rx_spi_protocol_e
