@@ -40,6 +40,8 @@
 #define NOOPLOOP_TIMEOUT_MS        (100 * 2)
 #define NOOPLOOP_TASK_PERIOD_MS    10
 
+#define NOOPLOOP_BAUDRATE           115200
+
 #define NOOPLOOP_MAX_RANGE_CM      800
 #define NOOPLOOP_DETECTION_CONE_DECIDEGREES 900
 
@@ -192,7 +194,7 @@ bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false;
     }
 
-    nooploopSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_NL, NULL, NULL, 921600, MODE_RXTX, 0);
+    nooploopSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_NL, NULL, NULL, NOOPLOOP_BAUDRATE, MODE_RXTX, 0);
     if (nooploopSerialPort == NULL) {
         return false;
     }
