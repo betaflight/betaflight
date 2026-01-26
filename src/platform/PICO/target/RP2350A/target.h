@@ -68,6 +68,9 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI
 
+#undef USE_DSHOT_BITBANG
+#define USE_DSHOT_TELEMETRY
+
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
@@ -78,6 +81,9 @@
 
 // Assume on-board flash (see linker files)
 #define CONFIG_IN_FLASH
+
+// Allow for font data in flash
+#define FONTDATA_IN_FLASH
 
 // Pico flash writes are all aligned and in batches of FLASH_PAGE_SIZE (256)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE   FLASH_PAGE_SIZE
@@ -109,7 +115,6 @@
 #undef USE_SERIALRX_GHST
 #undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
-#undef USE_SERIALRX_SBUS
 #undef USE_SERIALRX_SPEKTRUM
 #undef USE_SERIALRX_SUMD
 #undef USE_SERIALRX_SUMH
@@ -147,8 +152,6 @@
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 
-#undef USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
 #undef USE_ESC_SENSOR
 
 #undef USE_VTX
