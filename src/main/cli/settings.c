@@ -131,6 +131,7 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/sensors.h"
 
 #include "scheduler/scheduler.h"
 
