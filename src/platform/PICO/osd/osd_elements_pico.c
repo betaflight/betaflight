@@ -398,6 +398,8 @@ static bool renderAHUntil(uint32_t limit_micros)
     return false;
 }
 
+static bool renderCharsComplete;
+
 bool renderCharsUntil(uint32_t limit_micros)
 {
     // Saved state.
@@ -420,6 +422,10 @@ bool renderCharsUntil(uint32_t limit_micros)
     const int fbbpl = fb_nx / 4; // bytes per line = pixels per line / pixels per byte
     const int bpCharLine = pypc * fbbpl;
     const int fbbpNextLine = bpCharLine - charsPerLine * bxpc; // byte increment from  (top left of) last char of line to first of next line.
+
+    if (renderCharsComplete) {
+        return true;
+    }
 
     if (0 == currentChar) {
         currentY = 0;
@@ -472,6 +478,7 @@ bool renderCharsUntil(uint32_t limit_micros)
     if (currentChar == numChars) { // equivalently currentY == charLines
         // Reached the end, reset.
         currentChar = 0;
+        renderCharsComplete = true;
         return true;
     }
 
@@ -659,6 +666,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
 #endif
     if (firstOfVsync) {
         firstOfVsync = false;
+        renderCharsComplete = false;
 #ifdef OSD_DEBUG
         cycFirst = getCycleCounter();
         renderStartCycles += cycFirst - startVsyncCycles;
