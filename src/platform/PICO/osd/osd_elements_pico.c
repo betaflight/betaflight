@@ -58,10 +58,10 @@ void setBackgroundItemsPending(void)
 }
 
 typedef struct {
-    uint16_t x1;
-    uint16_t y1;
-    uint16_t x2;
-    uint16_t yMid;
+    int16_t x1;
+    int16_t y1;
+    int16_t x2;
+    int16_t yMid;
 } info_sidebars_t;
 
 static info_sidebars_t infoSidebars;
@@ -91,10 +91,10 @@ static void cacheSidebarsInfo(uint8_t x, uint8_t y)
 }
 
 typedef struct {
-    uint16_t x1;
-    uint16_t y1;
-    uint16_t x2;
-    uint16_t y2;
+    int16_t x1;
+    int16_t y1;
+    int16_t x2;
+    int16_t y2;
     bool outOfRange;
 } info_ah_t;
 
@@ -146,10 +146,10 @@ static void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
 }
 
 typedef struct {
-    uint16_t xLeft;
-    uint16_t yTop;
-    uint16_t xStick;
-    uint16_t yStick;
+    int16_t xLeft;
+    int16_t yTop;
+    int16_t xStick;
+    int16_t yStick;
 } info_stick_t;
 
 static info_stick_t infoStickLeft;
@@ -191,18 +191,18 @@ static void cacheStickInfo(info_stick_t *infoPtr, rc_alias_e vert, rc_alias_e ho
     UNUSED(vert);
     UNUSED(horiz);
     float tr = micros()*(6.283f/1000000.0f / 3);
-    infoPtr->xStick = (uint16_t)(infoPtr->xLeft + stickWidth/2 * (1 + cosf(tr)));
-    infoPtr->yStick = (uint16_t)(infoPtr->yTop + stickHeight/2 * (1 + sinf(tr)));
+    infoPtr->xStick = (int16_t)(infoPtr->xLeft + stickWidth/2 * (1 + cosf(tr)));
+    infoPtr->yStick = (int16_t)(infoPtr->yTop + stickHeight/2 * (1 + sinf(tr)));
 #else
     
     const float cursorX = constrainf(rcData[horiz], PWM_RANGE_MIN, PWM_RANGE_MAX);
     const float cursorY = constrainf(rcData[vert], PWM_RANGE_MIN, PWM_RANGE_MAX);
 
 
-    infoPtr->xStick = (uint16_t)scaleRangef(cursorX, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->xLeft, infoPtr->xLeft + stickWidth);
+    infoPtr->xStick = (int16_t)scaleRangef(cursorX, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->xLeft, infoPtr->xLeft + stickWidth);
 
     // note y inverted, cf. osd_elements.c
-    infoPtr->yStick = (uint16_t)scaleRangef(cursorY, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->yTop + stickHeight, infoPtr->yTop);
+    infoPtr->yStick = (int16_t)scaleRangef(cursorY, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->yTop + stickHeight, infoPtr->yTop);
 #endif
 }
 
