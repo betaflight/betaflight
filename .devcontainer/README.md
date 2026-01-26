@@ -103,7 +103,7 @@ Once VS Code is installed, add the Dev Containers extension using the [official 
 
 With these tools installed, you can open the betaflight repository in VS Code and use the Dev Containers extension to build and run the devcontainer defined in the `.devcontainer` folder.
 
-NOTE: Dev Containers extension i VSCode comes pre-configured for the `docker` binary.
+NOTE: Dev Containers extension in VSCode comes pre-configured for the `docker` binary.
     You can simply type `podman` in the extension setting to change the container provider.
 
 ### Fully open-source solution via devpod and VSCodium
