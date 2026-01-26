@@ -75,33 +75,6 @@
 
 #include "acceleration_init.h"
 
-// sync with accelerationSensor_e
-const char * const accelerationSensorNames[ACC_HARDWARE_COUNT] = {
-    [ACC_DEFAULT] = "AUTO",
-    [ACC_NONE] = "NONE",
-    [ACC_MPU6050] = "MPU6050",
-    [ACC_MPU6000] = "MPU6000",
-    [ACC_MPU6500] = "MPU6500",
-    [ACC_MPU9250] = "MPU9250",
-    [ACC_ICM20601] = "ICM20601",
-    [ACC_ICM20602] = "ICM20602",
-    [ACC_ICM20608G] = "ICM20608G",
-    [ACC_ICM20649] = "ICM20649",
-    [ACC_ICM20689] = "ICM20689",
-    [ACC_ICM42605] = "ICM42605",
-    [ACC_ICM42688P] = "ICM42688P",
-    [ACC_BMI160] = "BMI160",
-    [ACC_BMI270] = "BMI270",
-    [ACC_LSM6DSO] = "LSM6DSO",
-    [ACC_LSM6DSV16X] = "LSM6DSV16X",
-    [ACC_IIM42653] = "IIM42653",
-    [ACC_ICM45605] = "ICM45605",
-    [ACC_ICM45686] = "ICM45686",
-    [ACC_ICM40609D] = "ICM40609D",
-    [ACC_IIM42652] = "IIM42652",
-    [ACC_VIRTUAL] = "VIRTUAL"
-};
-
 #define CALIBRATING_ACC_CYCLES              400
 
 FAST_DATA_ZERO_INIT accelerationRuntime_t accelerationRuntime;
