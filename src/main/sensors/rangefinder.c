@@ -56,6 +56,21 @@
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
 
+#ifdef USE_SENSOR_NAMES
+const char * const rangefinderHardwareNames[] = {
+    "NONE",
+    "HCSR04",
+    "TFMINI",
+    "TF02",
+    "MTF01",
+    "MTF02",
+    "MTF01P",
+    "MTF02P",
+    "TFNOVA",
+    "NOOPLOOP_F2"
+};
+#endif
+
 //#include "uav_interconnect/uav_interconnect.h"
 
 // XXX Interface to CF/BF legacy(?) altitude estimation code.

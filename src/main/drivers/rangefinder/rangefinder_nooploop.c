@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -36,6 +37,15 @@
 #define NOOPLOOP_FRAME_SYNC_BYTE_0 0x57
 #define NOOPLOOP_FRAME_SYNC_BYTE_1 0x00
 #define NOOPLOOP_FRAME_LENGTH      16
+
+// Nooploop TOFSense F2 frame format (16 bytes total)
+// Byte 0: Sync byte 0 (0x57)
+// Byte 1: Sync byte 1 (0x00)
+// Bytes 2-7: Reserved/unused (per vendor examples)
+// Bytes 8-10: Distance in mm (24-bit signed little-endian)
+// Byte 11: Status (0xFF indicates invalid/out-of-range in vendor examples)
+// Bytes 12-14: Signal strength (uint16 little-endian) + reserved
+// Byte 15: Checksum (8-bit sum of bytes 0-14)
 
 #define NOOPLOOP_TIMEOUT_MS        (100 * 2)
 #define NOOPLOOP_TASK_PERIOD_MS    10
@@ -100,6 +110,9 @@ static int32_t nooploopProcessFrame(const uint8_t *frame)
         return RANGEFINDER_OUT_OF_RANGE;
     }
 
+    // The status byte is provided by the Nooploop sensor. Based on
+    // the vendor examples and ArduPilot backend, 0xFF indicates
+    // invalid/out-of-range readings. Other values are treated as valid.
     if (status == 0xFF) {
         return RANGEFINDER_OUT_OF_RANGE;
     }
@@ -165,8 +178,10 @@ static void nooploopUpdate(rangefinderDev_t *dev)
 
     if ((lastFrameReceivedMs && cmp32(timeNowMs, lastFrameReceivedMs) > NOOPLOOP_TIMEOUT_MS)
         || (!lastFrameReceivedMs && cmp32(timeNowMs, firstUpdateMs) > NOOPLOOP_TIMEOUT_MS)) {
-        nooploopLatestDistance = RANGEFINDER_HARDWARE_FAILURE;
-        nooploopHasNewData = true;
+        if (nooploopLatestDistance != RANGEFINDER_HARDWARE_FAILURE) {
+            nooploopLatestDistance = RANGEFINDER_HARDWARE_FAILURE;
+            nooploopHasNewData = true;
+        }
         lastFrameReceivedMs = timeNowMs;
     }
 }
