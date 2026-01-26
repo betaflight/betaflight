@@ -14,14 +14,15 @@ This makes onboarding faster, simplifies collaboration, and ensures your develop
 ## How is this different from the betaflight/cloudbuild repository?
 
 The betaflight/cloudbuild repository provides a containerized CI/CD environment for building and testing Betaflight firmware in the cloud.
-It is optimized for automated builds and may not include all the tools and configurations needed for local development. This devcontainer includes DFU utilities and OpenOCD debugger for example.
+It is optimized for automated builds and may not include all the tools and configurations needed for local development.
+This devcontainer includes DFU utilities and OpenOCD debugger for example.
 While similar to the cloudbuild container it is tailored for interactive development and debugging and avoids disruptions caused by changes in the cloudbuild repo.
 
 ## Defining UDEV rules on the host
 
 Devcontainers for HW development are a bit special, as they require HW access to the device.
 It can get tricky to make this universal, because not all Linux distributions use the same group numbers to control permissions.
-Typically to do HW development on an STM32, board the user would need at least `dialout` and `plugdev` permissions.
+Typically to do HW development on an STM32 board the user would need at least `dialout` and `plugdev` permissions.
 The `dialout` groups for example can be number 11, 18 or 20 on Void Linux, Fedora and Debian, respectively.
 
 The easiest way to deal with this is to define custom `udev` rules.
@@ -88,7 +89,7 @@ Details on how to do this is linux distro dependent - refer to your distribution
 Below is an example that should work on distributions with `systemd` (Debian and derivatives, RedHat and derivatives, etc.).
 
 ```bash
-    sudo systemctl enable --now docker  # Enabe and start the service
+    sudo systemctl enable --now docker  # Enable and start the service
     sudo usermod -aG docker $USERNAME  # you might need to log out and back in after this step
     docker run docker.io/library/hello-world  # Run an example to validate the install
 ```
