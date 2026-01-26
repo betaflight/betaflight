@@ -28,6 +28,8 @@
 
 #include "build/build_config.h"
 
+#include "common/utils.h"
+
 #include "io/serial.h"
 
 #include "drivers/time.h"
@@ -52,10 +54,24 @@
 
 #define NOOPLOOP_BAUDRATE           115200
 
-#define NOOPLOOP_MAX_RANGE_CM      800
 #define NOOPLOOP_DETECTION_CONE_DECIDEGREES 900
 
 static serialPort_t *nooploopSerialPort = NULL;
+
+typedef struct {
+    rangefinderType_e rfType;
+    uint16_t rangeMin;
+    uint16_t rangeMax;
+} nooploopInfo_t;
+
+static const nooploopInfo_t *devInfo = NULL;
+static const nooploopInfo_t devInfos[] = {
+    { .rfType = RANGEFINDER_NOOPLOOP_F,    .rangeMin = 10, .rangeMax = 1000 },
+    { .rfType = RANGEFINDER_NOOPLOOP_FP,   .rangeMin = 10, .rangeMax = 1700 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2,   .rangeMin = 10, .rangeMax = 500  },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2P,  .rangeMin = 10, .rangeMax = 1700 },
+    { .rfType = RANGEFINDER_NOOPLOOP_F2PH, .rangeMin = 10, .rangeMax = 3300 },
+};
 
 typedef enum {
     NOOPLOOP_FRAME_STATE_WAIT_SYNC0,
@@ -69,6 +85,16 @@ static uint8_t nooploopFramePos;
 
 static int32_t nooploopLatestDistance = RANGEFINDER_NO_NEW_DATA;
 static bool nooploopHasNewData = false;
+
+static const nooploopInfo_t* findInfo(rangefinderType_e rfType)
+{
+    for (const nooploopInfo_t* p = devInfos; p < ARRAYEND(devInfos); p++) {
+        if (p->rfType == rfType) {
+            return p;
+        }
+    }
+    return NULL;
+}
 
 static inline int32_t nooploopParseInt24(const uint8_t b0, const uint8_t b1, const uint8_t b2)
 {
@@ -106,7 +132,7 @@ static int32_t nooploopProcessFrame(const uint8_t *frame)
         return RANGEFINDER_OUT_OF_RANGE;
     }
 
-    if (distanceMm > (NOOPLOOP_MAX_RANGE_CM * 10)) {
+    if (devInfo && (distanceMm < (devInfo->rangeMin * 10) || distanceMm > (devInfo->rangeMax * 10))) {
         return RANGEFINDER_OUT_OF_RANGE;
     }
 
@@ -200,7 +226,8 @@ static int32_t nooploopGetDistance(rangefinderDev_t *dev)
 
 bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
 {
-    if (rfType != RANGEFINDER_NOOPLOOP_F2) {
+    const nooploopInfo_t *inf = findInfo(rfType);
+    if (!inf) {
         return false;
     }
 
@@ -215,7 +242,7 @@ bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
     }
 
     dev->delayMs = NOOPLOOP_TASK_PERIOD_MS;
-    dev->maxRangeCm = NOOPLOOP_MAX_RANGE_CM;
+    dev->maxRangeCm = inf->rangeMax;
 
     dev->detectionConeDeciDegrees = NOOPLOOP_DETECTION_CONE_DECIDEGREES;
     dev->detectionConeExtendedDeciDegrees = NOOPLOOP_DETECTION_CONE_DECIDEGREES;
@@ -223,6 +250,8 @@ bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
     dev->init = &nooploopInit;
     dev->update = &nooploopUpdate;
     dev->read = &nooploopGetDistance;
+
+    devInfo = inf;
 
     return true;
 }
