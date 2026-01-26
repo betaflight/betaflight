@@ -167,8 +167,8 @@ bool cliMode = false;
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
-#include "sensors/rangefinder.h"
-#include "sensors/opticalflow.h"
+// #include "sensors/rangefinder.h"
+// #include "sensors/opticalflow.h"
 
 #include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
