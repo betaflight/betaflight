@@ -153,6 +153,7 @@ static void nooploopUpdate(rangefinderDev_t *dev)
 
     static timeMs_t lastFrameReceivedMs = 0;
     static timeMs_t firstUpdateMs = 0;
+    static timeMs_t lastFailureReportMs = 0;
     const timeMs_t timeNowMs = millis();
 
     if (nooploopSerialPort == NULL) {
@@ -205,11 +206,13 @@ static void nooploopUpdate(rangefinderDev_t *dev)
 
     if ((lastFrameReceivedMs && cmp32(timeNowMs, lastFrameReceivedMs) > NOOPLOOP_TIMEOUT_MS)
         || (!lastFrameReceivedMs && cmp32(timeNowMs, firstUpdateMs) > NOOPLOOP_TIMEOUT_MS)) {
-        if (nooploopLatestDistance != RANGEFINDER_HARDWARE_FAILURE) {
-            nooploopLatestDistance = RANGEFINDER_HARDWARE_FAILURE;
-            nooploopHasNewData = true;
+        if (cmp32(timeNowMs, lastFailureReportMs) > NOOPLOOP_TIMEOUT_MS) {
+            if (nooploopLatestDistance != RANGEFINDER_HARDWARE_FAILURE) {
+                nooploopLatestDistance = RANGEFINDER_HARDWARE_FAILURE;
+                nooploopHasNewData = true;
+            }
+            lastFailureReportMs = timeNowMs;
         }
-        lastFrameReceivedMs = timeNowMs;
     }
 }
 
