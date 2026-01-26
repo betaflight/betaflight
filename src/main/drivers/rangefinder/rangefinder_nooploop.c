@@ -92,7 +92,7 @@ static int32_t nooploopProcessFrame(const uint8_t *frame)
     const int32_t distanceMm = nooploopParseInt24(frame[8], frame[9], frame[10]);
     const uint8_t status = frame[11];
 
-    if (distanceMm <= 0) {
+    if (distanceMm < 0) {
         return RANGEFINDER_OUT_OF_RANGE;
     }
 
