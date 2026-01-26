@@ -275,7 +275,7 @@ static const char *const sensorTypeNames[] = {
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
 
 static const char * const *sensorHardwareNames[] = {
-    gyroHardwareNames, accelerationSensorNames, baroSensorNames, magSensorNames, rangefinderTypeNames, opticalflowTypeNames
+    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
 };
 STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
@@ -4759,7 +4759,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
             }
             cliPrintf("(%d)", pos + 1);
 #if defined(USE_SENSOR_NAMES)
-            cliPrintf(" %s", gyroHardwareNames[detectedGyros[pos]]);
+            cliPrintf(" %s", lookupTableGyroHardware[detectedGyros[pos]]);
 #endif
             if (gyro.gyroEnabledBitmask & BIT(pos)) {
                 cliPrintf(" enabled");
