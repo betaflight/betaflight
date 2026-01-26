@@ -722,13 +722,11 @@ bool gyroInit(void)
     int firstGyro = firstEnabledGyro();
     if (firstGyro >= 0) {
         detectedSensors[SENSOR_INDEX_GYRO] = gyro.gyroSensor[firstGyro].gyroDev.gyroHardware;
-        gyroConfigMutable()->gyro_hardware = gyro.gyroSensor[firstGyro].gyroDev.gyroHardware;
         gyro.scale = gyro.gyroSensor[firstGyro].gyroDev.scale;
         gyro.rawSensorDev = &gyro.gyroSensor[firstGyro].gyroDev;
     } else {
         // no gyros enabled
         detectedSensors[SENSOR_INDEX_GYRO] = GYRO_NONE;
-        gyroConfigMutable()->gyro_hardware = GYRO_NONE;
         gyro.scale = 1.0f;
         gyro.rawSensorDev = NULL;
     }
