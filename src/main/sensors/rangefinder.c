@@ -42,6 +42,7 @@
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#include "drivers/rangefinder/rangefinder_nooploop.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -54,6 +55,26 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
+
+#ifdef USE_SENSOR_NAMES
+const char * const rangefinderHardwareNames[] = {
+    "NONE",
+    "HCSR04",
+    "TFMINI",
+    "TF02",
+    "MTF01",
+    "MTF02",
+    "MTF01P",
+    "MTF02P",
+    "TFNOVA",
+    "NOOPLOOP_F2",
+    "NOOPLOOP_F2P",
+    "NOOPLOOP_F2PH",
+    "NOOPLOOP_F",
+    "NOOPLOOP_FP",
+    "NOOPLOOP_F2MINI"
+};
+#endif
 
 //#include "uav_interconnect/uav_interconnect.h"
 
@@ -92,7 +113,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
 
-#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF)
+#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF) && !defined(USE_RANGEFINDER_NOOPLOOP)
     UNUSED(dev);
 #endif
 
@@ -118,6 +139,20 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             }
 #endif
             break;
+
+#if defined(USE_RANGEFINDER_NOOPLOOP)
+        case RANGEFINDER_NOOPLOOP_F2:
+        case RANGEFINDER_NOOPLOOP_F2P:
+        case RANGEFINDER_NOOPLOOP_F2PH:
+        case RANGEFINDER_NOOPLOOP_F:
+        case RANGEFINDER_NOOPLOOP_FP:
+        case RANGEFINDER_NOOPLOOP_F2MINI:
+            if (nooploopDetect(dev, rangefinderHardwareToUse)) {
+                rangefinderHardware = rangefinderHardwareToUse;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
 
 #if defined(USE_RANGEFINDER_MT)
         case RANGEFINDER_MTF01:

@@ -35,8 +35,19 @@ typedef enum {
     RANGEFINDER_MTF02       = 5,
     RANGEFINDER_MTF01P      = 6,
     RANGEFINDER_MTF02P      = 7,
-    RANGEFINDER_TFNOVA      = 8,
+    RANGEFINDER_TFNOVA        = 8,
+    RANGEFINDER_NOOPLOOP_F2   = 9,
+    RANGEFINDER_NOOPLOOP_F2P  = 10,
+    RANGEFINDER_NOOPLOOP_F2PH = 11,
+    RANGEFINDER_NOOPLOOP_F    = 12,
+    RANGEFINDER_NOOPLOOP_FP   = 13,
+    RANGEFINDER_NOOPLOOP_F2MINI = 14,
+    RANGEFINDER_HARDWARE_COUNT,
 } rangefinderType_e;
+
+#ifdef USE_SENSOR_NAMES
+extern const char * const rangefinderHardwareNames[];
+#endif
 
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
