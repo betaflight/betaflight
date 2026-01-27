@@ -66,8 +66,11 @@ typedef enum {
     GYRO_ICM45686,
     GYRO_ICM40609D,
     GYRO_IIM42652,
-    GYRO_VIRTUAL
+    GYRO_VIRTUAL,
+    GYRO_HARDWARE_COUNT
 } gyroHardware_e;
+
+extern const char * const gyroHardwareNames[GYRO_HARDWARE_COUNT];
 
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,

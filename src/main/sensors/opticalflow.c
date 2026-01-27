@@ -98,6 +98,10 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
         case OPTICALFLOW_NONE:
             opticalflowHardware = OPTICALFLOW_NONE;
             break;
+
+        default:
+            opticalflowHardware = OPTICALFLOW_NONE;
+            break;
     }
 
     if (opticalflowHardware == OPTICALFLOW_NONE) {
