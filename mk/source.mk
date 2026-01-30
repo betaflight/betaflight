@@ -159,6 +159,8 @@ COMMON_SRC = \
             flight/alt_hold_wing.c \
             flight/autopilot_multirotor.c \
             flight/autopilot_wing.c \
+            flight/kalman_filter_1d.c \
+            flight/altitude.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \
             flight/gps_rescue_multirotor.c \
