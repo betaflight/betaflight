@@ -39,13 +39,14 @@
 
 escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e source)
 {
+    if (motorIndex < 0 || motorIndex >= getMotorCount()) {
+        return NULL;
+    }
+
     switch (source) {
         case MOTOR_SENSOR_SOURCE_DSHOT:
 #ifdef USE_DSHOT_TELEMETRY
             static escSensorData_t dshotSensorData[MAX_SUPPORTED_MOTORS];
-            if (motorIndex < 0 || motorIndex >= getMotorCount()) {
-                return NULL;
-            }
             if (isDshotMotorTelemetryActive(motorIndex)) {
                 const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
                 dshotSensorData[motorIndex].rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
