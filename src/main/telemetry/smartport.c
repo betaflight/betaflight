@@ -633,7 +633,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_VFAS7      :
             case FSSP_DATAID_VFAS8      :
                 escData = getMotorSensorData(id - FSSP_DATAID_VFAS1, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-                if (escData) {
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, escData->voltage);
                     *clearToSend = false;
                 }
