@@ -150,7 +150,6 @@
 #define PARAM_NAME_SIMPLIFIED_GYRO_FILTER "simplified_gyro_filter"
 #define PARAM_NAME_SIMPLIFIED_GYRO_FILTER_MULTIPLIER "simplified_gyro_filter_multiplier"
 #define PARAM_NAME_DEBUG_MODE "debug_mode"
-#define PARAM_NAME_RPM_FILTER_HARMONICS "rpm_filter_harmonics"
 #define PARAM_NAME_RPM_FILTER_WEIGHTS "rpm_filter_weights"
 #define PARAM_NAME_RPM_FILTER_Q "rpm_filter_q"
 #define PARAM_NAME_RPM_FILTER_MIN_HZ "rpm_filter_min_hz"
