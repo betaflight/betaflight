@@ -159,6 +159,10 @@
 #include "hardware_revision.h"
 #endif
 
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+#include "io/displayport_msp.h"
+#endif
+
 #include "msp.h"
 
 static const char * const flightControllerIdentifier = FC_FIRMWARE_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -1082,6 +1086,39 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     return true;
 }
 
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+
+#define DISARM_DELAY_MULTIPLIER_US 100000
+
+static void mspDisplayportDelayDisarm(mspDescriptor_t srcDesc, boxBitmask_t *flightModeFlags)
+{
+    static mspDescriptor_t displayPortMspDescriptor;
+    static bool displayPortMspArmState = false;
+    static bool descriptorInitialized = false;
+
+    if (!descriptorInitialized) {
+        descriptorInitialized = true;
+        displayPortMspDescriptor = getMspSerialPortDescriptor(displayPortMspGetSerial());
+    }
+
+    if (displayPortMspDescriptor == srcDesc) {
+        bool currentArmState = bitArrayGet(flightModeFlags, BOXARM);
+        if (displayPortMspArmState) {
+            if (!currentArmState) {
+                if (cmpTimeUs(micros(), getLastDisarmTimeUs()) < DISARM_DELAY_MULTIPLIER_US * displayPortProfileMsp()->useDisarmDelay) {
+                    // Override the arm state reported on displayport MSP to indicate still armed
+                    bitArraySet(flightModeFlags, BOXARM);
+                } else {
+                    displayPortMspArmState = false;
+                }
+            }
+        } else {
+            displayPortMspArmState = currentArmState;
+        }
+    }
+}
+#endif
+
 static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *dst)
 {
     bool unsupportedCommand = false;
@@ -1095,6 +1132,9 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
     case MSP_STATUS: {
         boxBitmask_t flightModeFlags;
         const int flagBits = packFlightModeFlags(&flightModeFlags);
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+        mspDisplayportDelayDisarm(srcDesc, &flightModeFlags);
+#endif
 
         sbufWriteU16(dst, getTaskDeltaTimeUs(TASK_PID));
 #ifdef USE_I2C
