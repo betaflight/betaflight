@@ -45,6 +45,8 @@
 #include "io/statusindicator.h"
 #include "io/vtx_control.h"
 
+#include "msp/msp_serial.h"
+
 #ifdef USE_GPS
 #include "io/gps.h"
 #endif
@@ -421,7 +423,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #endif
 
     // Drive ESC beacons when requested:
-    //  - RX link lost while USB is disconnected (field retrieval), or
+    //  - RX link lost while configurator is not active (field retrieval), or
     //  - RX_SET via AUX with an active RX link (user-triggered beacon)
 #ifdef USE_DSHOT
     static const timeDelta_t dshotBeaconIntervalUs = DSHOT_BEACON_MODE_INTERVAL_US;
@@ -430,11 +432,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     if (!areMotorsRunning()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
-        const bool usbIn = usbCableIsInserted();
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST
-            && !usbIn
+            && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
         }

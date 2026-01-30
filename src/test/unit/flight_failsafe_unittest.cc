@@ -774,4 +774,20 @@ bool usbCableIsInserted(void)
 {
     return false;
 }
+
+timeMs_t mspSerialLastActivityMs(void)
+{
+    return 0;
+}
+
+bool mspSerialIsActiveWithin(timeMs_t timeoutMs)
+{
+    UNUSED(timeoutMs);
+    return false;
+}
+
+bool mspSerialIsConfiguratorActive(void)
+{
+    return false;
+}
 }
