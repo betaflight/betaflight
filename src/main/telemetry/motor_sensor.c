@@ -41,6 +41,39 @@
 
 escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e source)
 {
+    // Special case: ESC_SENSOR_COMBINED doesn't require a valid motor index
+    if (source == MOTOR_SENSOR_SOURCE_ESC_SENSOR && motorIndex == ESC_SENSOR_COMBINED) {
+#ifdef USE_ESC_SENSOR
+        if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+            static escSensorData_t combinedEscSensorData;
+            if (escSensorIsCombinedDataDirty()) {
+                const escSensorData_t *dataArray = escSensorGetDataArray();
+                combinedEscSensorData.dataAge = 0;
+                combinedEscSensorData.temperature = 0;
+                combinedEscSensorData.voltage = 0;
+                combinedEscSensorData.current = 0;
+                combinedEscSensorData.consumption = 0;
+                combinedEscSensorData.rpm = 0;
+                for (int i = 0; i < getMotorCount(); i++) {
+                    combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, dataArray[i].dataAge);
+                    combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, dataArray[i].temperature);
+                    combinedEscSensorData.voltage += dataArray[i].voltage;
+                    combinedEscSensorData.current += dataArray[i].current;
+                    combinedEscSensorData.consumption += dataArray[i].consumption;
+                    combinedEscSensorData.rpm += dataArray[i].rpm;
+                }
+                combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
+                combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
+                escSensorClearCombinedDataDirty();
+                DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_SENSOR_TMP, combinedEscSensorData.dataAge);
+            }
+            return &combinedEscSensorData;
+        }
+#endif
+        return NULL;
+    }
+
+    // Validate motor index for all other cases
     if (motorIndex < 0 || motorIndex >= getMotorCount()) {
         return NULL;
     }
@@ -64,35 +97,9 @@ escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e source)
         case MOTOR_SENSOR_SOURCE_ESC_SENSOR:
 #ifdef USE_ESC_SENSOR
             if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-                static escSensorData_t combinedEscSensorData;
-                if (motorIndex < getMotorCount()) {
-                    static escSensorData_t snapshot;
-                    escSensorCopyData(motorIndex, &snapshot);
-                    return &snapshot;
-                } else if (motorIndex == ESC_SENSOR_COMBINED) {
-                    if (escSensorIsCombinedDataDirty()) {
-                        const escSensorData_t *dataArray = escSensorGetDataArray();
-                        combinedEscSensorData.dataAge = 0;
-                        combinedEscSensorData.temperature = 0;
-                        combinedEscSensorData.voltage = 0;
-                        combinedEscSensorData.current = 0;
-                        combinedEscSensorData.consumption = 0;
-                        combinedEscSensorData.rpm = 0;
-                        for (int i = 0; i < getMotorCount(); i++) {
-                            combinedEscSensorData.dataAge = MAX(combinedEscSensorData.dataAge, dataArray[i].dataAge);
-                            combinedEscSensorData.temperature = MAX(combinedEscSensorData.temperature, dataArray[i].temperature);
-                            combinedEscSensorData.voltage += dataArray[i].voltage;
-                            combinedEscSensorData.current += dataArray[i].current;
-                            combinedEscSensorData.consumption += dataArray[i].consumption;
-                            combinedEscSensorData.rpm += dataArray[i].rpm;
-                        }
-                        combinedEscSensorData.voltage = combinedEscSensorData.voltage / getMotorCount();
-                        combinedEscSensorData.rpm = combinedEscSensorData.rpm / getMotorCount();
-                        escSensorClearCombinedDataDirty();
-                        DEBUG_SET(DEBUG_ESC_SENSOR, DEBUG_ESC_SENSOR_TMP, combinedEscSensorData.dataAge);
-                    }
-                    return &combinedEscSensorData;
-                }
+                static escSensorData_t snapshot;
+                escSensorCopyData(motorIndex, &snapshot);
+                return &snapshot;
             }
 #endif
             break;
