@@ -218,6 +218,7 @@
 #define MSP_UID                         160  // out message: Unique device ID
 #define MSP_GPSSVINFO                   164  // out message: Get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
+#define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings
