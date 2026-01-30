@@ -52,6 +52,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
+    #include "sensors/compass.h"
 
     #include "config/config.h"
 
@@ -401,6 +402,7 @@ extern "C" {
     uint8_t stateFlags;
     uint16_t flightModeFlags;
     baro_t baro;
+    mag_t mag;
 
     uint32_t microsISR(void) {return 0; }
 
