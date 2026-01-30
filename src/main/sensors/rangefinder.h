@@ -43,6 +43,7 @@ extern const char * const rangefinderTypeNames[RANGEFINDER_HARDWARE_COUNT];
 
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
+    uint8_t rangefinder_trust;
 } rangefinderConfig_t;
 
 PG_DECLARE(rangefinderConfig_t, rangefinderConfig);
