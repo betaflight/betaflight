@@ -118,18 +118,7 @@ static bool buildEscWarningMessage(char *warningText, bool isDshot) {
     escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
-        escSensorData_t *escData = NULL;
-        escSensorData_t escDataBuffer;
-        // Get sensor data based on type
-        if (isDshot) {
-            if (getDshotSensorData(&escDataBuffer, i)) {
-                escData = &escDataBuffer;
-            }
-        } else {
-#ifdef USE_ESC_SENSOR
-            escData = getEscSensorData(i);
-#endif
-        }
+        escSensorData_t *escData = getMotorSensorData(i, source);
 
         if (escData) {
             char alarmChars[ESC_ALARM_CHARS_SIZE];
