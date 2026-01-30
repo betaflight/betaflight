@@ -52,6 +52,8 @@
 
 #include "rx/rx.h"
 
+#include "sensors/esc_sensor.h"
+
 #define ERPM_PER_LSB            100.0f
 
 FAST_DATA_ZERO_INIT uint8_t dshotMotorCount = 0;
