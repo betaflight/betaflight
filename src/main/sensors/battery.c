@@ -501,10 +501,18 @@ uint8_t calculateBatteryPercentageRemaining(void)
         if (batteryCapacity > 0) {
             batteryPercentage = constrain(((float)batteryCapacity - currentMeter.mAhDrawn) * 100 / batteryCapacity, 0, 100);
         } else {
-            uint32_t batteryVoltage = (uint32_t)voltageMeter.displayFiltered;
+            uint32_t batteryVoltage = voltageMeter.displayFiltered;
             uint32_t batteryVoltageMin = batteryConfig()->vbatmincellvoltage * batteryCellCount;
             uint32_t batteryVoltageMax = batteryConfig()->vbatmaxcellvoltage * batteryCellCount;
-            batteryPercentage = (batteryVoltage <= batteryVoltageMin) ? 0 : (batteryVoltage >= batteryVoltageMax) ? 100 : (uint8_t)(((batteryVoltage - batteryVoltageMin) * 100) / (batteryVoltageMax - batteryVoltageMin));
+            if (batteryVoltage <= batteryVoltageMin) {
+                batteryPercentage = 0;
+            } else if (batteryVoltage >= batteryVoltageMax) {
+                batteryPercentage = 100;
+            } else if (batteryVoltageMax > batteryVoltageMin) {
+                batteryPercentage = (uint8_t)(((batteryVoltage - batteryVoltageMin) * 100) / (batteryVoltageMax - batteryVoltageMin));
+            } else {
+                batteryPercentage = 0;
+            }
         }
     }
 
