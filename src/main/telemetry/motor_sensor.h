@@ -24,10 +24,12 @@
 #include <stdbool.h>
 
 #include "sensors/esc_sensor.h"
+#include "common/time.h"
 
 typedef enum {
     MOTOR_SENSOR_SOURCE_DSHOT,
     MOTOR_SENSOR_SOURCE_ESC_SENSOR,
+    MOTOR_SENSOR_SOURCE_COUNT
 } motorSensorSource_e;
 
 escSensorData_t *getMotorSensorData(int motorIndex, motorSensorSource_e source);

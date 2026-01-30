@@ -22,6 +22,8 @@
 #include "platform.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "build/debug.h"
 #include "config/feature.h"
