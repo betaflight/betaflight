@@ -379,11 +379,11 @@ uint8_t calculateBatteryPercentageRemaining(void)
 
 int32_t getEstimatedAltitudeCm(void)
 {
-	return gpsSol.llh.altCm;    // function returns cm not m.
+    return gpsSol.llh.altCm;    // function returns cm not m.
 }
 
 int16_t getEstimatedVario(void) { return 0; }
-    
+
 int32_t getMAhDrawn(void)
 {
   return testmAhDrawn;

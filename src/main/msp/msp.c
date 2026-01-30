@@ -53,7 +53,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dshot.h"
@@ -641,9 +641,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_FC_VERSION:
-        sbufWriteU8(dst, FC_VERSION_MAJOR);
-        sbufWriteU8(dst, FC_VERSION_MINOR);
+        sbufWriteU8(dst, (uint8_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR)); // year since 2000
+        sbufWriteU8(dst, FC_VERSION_MONTH);
         sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
+        sbufWritePString(dst, FC_VERSION_STRING);
         break;
 
     case MSP2_MCU_INFO: {
@@ -948,6 +949,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_DEVICE_DETECTED   (1 << 5)
 #define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
+#define OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD (1 << 7)
 
         uint8_t osdFlags = 0;
 
@@ -972,7 +974,11 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 
             break;
         case OSD_DISPLAYPORT_DEVICE_MSP:
-            osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE;
+            osdFlags |= OSD_FLAGS_OSD_MSP_DEVICE
+#ifdef USE_MSP_DISPLAYPORT_FONT
+                        | OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD
+#endif
+            ;
             if (displayIsReady) {
                 osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
             }
@@ -1377,10 +1383,10 @@ case MSP_NAME:
 
         // added in 1.43
         sbufWriteU8(dst, currentControlRateProfile->rates_type);
-        
+
         // added in 1.47
         sbufWriteU8(dst, currentControlRateProfile->thrHover8);
-        
+
         break;
 
     case MSP_PID:
@@ -1606,8 +1612,8 @@ case MSP_NAME:
 #if defined(USE_RC_SMOOTHING_FILTER)
         sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_type
         sbufWriteU8(dst, rxConfig()->rc_smoothing_setpoint_cutoff);
-        sbufWriteU8(dst, 0); // was rxConfig()->rc_smoothing_feedforward_cutoff, now always combined with rc_smoothing_setpoint_cutoff
-        sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_input_type
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_throttle_cutoff); // was rc_smoothing_feedforward_cutoff
+        sbufWriteU8(dst, rxConfig()->rc_smoothing_auto_factor_throttle); //, was rxConfig()->rc_smoothing_input_type
         sbufWriteU8(dst, 0); // not required in API 1.44, was rxConfig()->rc_smoothing_derivative_type
 #else
         sbufWriteU8(dst, 0);
@@ -1629,7 +1635,7 @@ case MSP_NAME:
 #endif
         // Added in MSP API 1.44
 #if defined(USE_RC_SMOOTHING_FILTER)
-        sbufWriteU8(dst, rxConfig()->rc_smoothing_mode);
+        sbufWriteU8(dst, rxConfig()->rc_smoothing);
 #else
         sbufWriteU8(dst, 0);
 #endif
@@ -1825,16 +1831,6 @@ case MSP_NAME:
         // API 1.41 - Add multi-gyro indicator, selected gyro, and support for separate gyro 1 & 2 alignment
         sbufWriteU8(dst, getGyroDetectedFlags());
         sbufWriteU8(dst, gyroConfig()->gyro_enabled_bitmask); // deprecates gyro_to_use
-        // Added support for more then two IMUs in MSP API 1.47
-        for (int i = 0; i < 8; i++) {
-            sbufWriteU8(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->alignment : ALIGN_DEFAULT);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            for (unsigned j = 0; j < ARRAYLEN(gyroDeviceConfig(i)->customAlignment.raw); j++) {
-                sbufWriteU16(dst, i < GYRO_COUNT ? gyroDeviceConfig(i)->customAlignment.raw[j] : 0);
-            }
-        }
 
 #ifdef USE_MAG
         sbufWriteU16(dst, compassConfig()->mag_customAlignment.roll);
@@ -2118,6 +2114,14 @@ case MSP_NAME:
 #endif
         break;
 
+    case MSP2_GYRO_SENSOR_ACTIVE:
+#ifdef USE_GYRO
+        sbufWriteU8(dst, GYRO_COUNT);
+        for (unsigned i = 0; i < GYRO_COUNT; i++) {
+            sbufWriteU8(dst, detectedGyros[i]);
+        }
+#endif
+        break;
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG: {
         const vtxDevice_t *vtxDevice = vtxCommonDevice();
@@ -2995,31 +2999,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
         gyroConfigMutable()->gyro_enabled_bitmask = sbufReadU8(src);
-        // Added in API 1.47
-        if (sbufBytesRemaining(src) >= 8 * 7) {
-            for (int i = 0; i < 8; i++) {
-                const uint8_t alignment = sbufReadU8(src);
-                if (i < GYRO_COUNT) {
-                    gyroDeviceConfigMutable(i)->alignment = alignment;
-                }
-            }
-
-            for (int i = 0; i < 8; i++) {
-                if (i < GYRO_COUNT) {
-                     sensorAlignment_t customAlignment;
-                     for (unsigned j = 0; j < ARRAYLEN(customAlignment.raw); j++) {
-                        customAlignment.raw[j] = (int16_t)sbufReadU16(src);
-                     }
-                     if (i < GYRO_COUNT) {
-                        gyroDeviceConfigMutable(i)->customAlignment = customAlignment;
-                     }
-                } else {
-                    sbufReadU16(src); // skip unused custom alignment roll
-                    sbufReadU16(src); // skip unused custom alignment pitch
-                    sbufReadU16(src); // skip unused custom alignment yaw
-                }
-            }
-        }
 
         if (sbufBytesRemaining(src) >= 6) {
 #ifdef USE_MAG
@@ -3799,8 +3778,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #if defined(USE_RC_SMOOTHING_FILTER)
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_type
             configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_setpoint_cutoff, sbufReadU8(src));
-            sbufReadU8(src); // was rc_smoothing_feedforward_cutoff
-            sbufReadU8(src); // not required in API 1.44, was rc_smoothing_input_type
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_throttle_cutoff, sbufReadU8(src)); // was rc_smoothing_feedforward_cutoff
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_auto_factor_throttle, sbufReadU8(src)); // was rc_smoothing_input_type
             sbufReadU8(src); // not required in API 1.44, was rc_smoothing_derivative_type
 #else
             sbufReadU8(src);
@@ -3834,7 +3813,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 1) {
             // Added in MSP API 1.44
 #if defined(USE_RC_SMOOTHING_FILTER)
-            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing_mode, sbufReadU8(src));
+            configRebootUpdateCheckU8(&rxConfigMutable()->rc_smoothing, sbufReadU8(src));
 #else
             sbufReadU8(src);
 #endif

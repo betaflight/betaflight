@@ -106,7 +106,7 @@ vector2_t *vector2Rotate(vector2_t *result, const vector2_t *v, const float angl
     *result = tmp;
     return result;
 }
- 
+
 bool vector3Equal(const vector3_t *a, const vector3_t *b)
 {
     return (a->x == b->x) && (a->y == b->y) && (a->z == b->z);

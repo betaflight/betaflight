@@ -133,9 +133,15 @@ struct {
     // Cypress S25FL128L
     // Datasheet: https://www.cypress.com/file/316171/download
     { 0x016018, 133, 50, 256, 256 },
+    // Cypress S25FL128S
+    // Datasheet: https://www.infineon.com/row/public/documents/10/49/infineon-s25fl128s-s25fl256s-128-mb-16-mb-256-mb-32-mb-fl-s-flash-spi-multi-io-3-v-datasheet-en.pdf
+    { 0x012018, 104, 50, 256, 256 },
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // XMC XM25QH256B
+    // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
+    { 0x206019, 166, 80, 8192, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
@@ -165,7 +171,7 @@ static uint8_t m25p16_readStatus(flashDevice_t *fdevice)
     } else {
 #ifdef USE_QUADSPI
         if (fdevice->io.mode == FLASHIO_QUADSPI) {
-            quadSpiReceive1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_READ_STATUS_REG, 0, &status, 1);
+            quadSpiReceive1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_READ_STATUS_REG, 0, &status, 1);
         }
 #endif
     }
@@ -270,7 +276,7 @@ static void m25p16_configure(flashDevice_t *fdevice, uint32_t configurationFlags
         }
 #ifdef USE_QUADSPI
         else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-            quadSpiTransmit1LINE(fdevice->io.handle.quadSpi, W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE, 0, NULL, 0);
+            quadSpiTransmit1LINE(fdevice->io.handle.dev, W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE, 0, NULL, 0);
         }
 #endif
     }
@@ -288,7 +294,7 @@ static void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLon
 
 // Called in ISR context
 // A write enable has just been issued
-static busStatus_e m25p16_callbackWriteEnable(uint32_t arg)
+static busStatus_e m25p16_callbackWriteEnable(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -300,15 +306,15 @@ static busStatus_e m25p16_callbackWriteEnable(uint32_t arg)
 
 // Called in ISR context
 // Write operation has just completed
-static busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
+static busStatus_e m25p16_callbackWriteComplete(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    fdevice->currentWriteAddress += fdevice->callbackArg;
+    fdevice->currentWriteAddress += fdevice->bytesWritten;
 
     // Call transfer completion callback
     if (fdevice->callback) {
-        fdevice->callback(fdevice->callbackArg);
+        fdevice->callback(fdevice->bytesWritten);
     }
 
     return BUS_READY;
@@ -316,7 +322,7 @@ static busStatus_e m25p16_callbackWriteComplete(uint32_t arg)
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
-static busStatus_e m25p16_callbackReady(uint32_t arg)
+static busStatus_e m25p16_callbackReady(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
@@ -366,8 +372,8 @@ static void m25p16_eraseSectorQspi(flashDevice_t *fdevice, uint32_t address)
 {
     m25p16_waitForReady(fdevice);
 
-    quadSpiTransmit1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
-    quadSpiInstructionWithAddress1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_SECTOR_ERASE, 0, address, fdevice->isLargeFlash ? 32 : 24);
+    quadSpiTransmit1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
+    quadSpiInstructionWithAddress1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_SECTOR_ERASE, 0, address, fdevice->isLargeFlash ? 32 : 24);
 
     fdevice->couldBeBusy = true;
 }
@@ -398,14 +404,14 @@ static void m25p16_eraseCompletelyQspi(flashDevice_t *fdevice)
 {
     m25p16_waitForReady(fdevice);
 
-    quadSpiTransmit1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
-    quadSpiTransmit1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_BULK_ERASE, 0, NULL, 0);
+    quadSpiTransmit1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
+    quadSpiTransmit1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_BULK_ERASE, 0, NULL, 0);
 
     fdevice->couldBeBusy = true;
 }
 #endif
 
-static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void m25p16_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
@@ -438,7 +444,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
     // Patch the data segments
     segments[DATA1].u.buffers.txData = (uint8_t *)buffers[0];
     segments[DATA1].len = bufferSizes[0];
-    fdevice->callbackArg = bufferSizes[0];
+    fdevice->bytesWritten = bufferSizes[0];
 
     /* As the DATA2 segment may be used as the terminating segment, the rxData and txData may be overwritten
      * with a link to the following transaction (u.link.dev and u.link.segments respectively) so ensure that
@@ -458,7 +464,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         segments[DATA1].callback = NULL;
         segments[DATA2].u.buffers.txData = (uint8_t *)buffers[1];
         segments[DATA2].len = bufferSizes[1];
-        fdevice->callbackArg += bufferSizes[1];
+        fdevice->bytesWritten += bufferSizes[1];
         segments[DATA2].negateCS = true;
         segments[DATA2].callback = m25p16_callbackWriteComplete;
     } else {
@@ -472,7 +478,7 @@ static uint32_t m25p16_pageProgramContinue(flashDevice_t *fdevice, uint8_t const
         spiWait(fdevice->io.handle.dev);
     }
 
-    return fdevice->callbackArg;
+    return fdevice->bytesWritten;
 }
 
 static void m25p16_pageProgramFinish(flashDevice_t *fdevice)
@@ -495,7 +501,7 @@ static void m25p16_pageProgramFinish(flashDevice_t *fdevice)
  * If you want to write multiple buffers (whose sum of sizes is still not more than the page size) then you can
  * break this operation up into one beginProgram call, one or more continueProgram calls, and one finishProgram call.
  */
-static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void m25p16_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     m25p16_pageProgramBegin(fdevice, address, callback);
 
@@ -539,9 +545,9 @@ static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t c
 
     m25p16_waitForReady(fdevice);
 
-    quadSpiTransmit1LINE(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
+    quadSpiTransmit1LINE(fdevice->io.handle.dev, M25P16_INSTRUCTION_WRITE_ENABLE, 0, NULL, 0);
 
-    quadSpiTransmitWithAddress4LINES(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_QPAGE_PROGRAM, 0,
+    quadSpiTransmitWithAddress4LINES(fdevice->io.handle.dev, M25P16_INSTRUCTION_QPAGE_PROGRAM, 0,
                                      fdevice->currentWriteAddress, fdevice->isLargeFlash ? 32 : 24, pData, dataSize);
 
     fdevice->currentWriteAddress += dataSize;
@@ -555,7 +561,7 @@ static uint32_t m25p16_pageProgramContinueQspi(flashDevice_t *fdevice, uint8_t c
     return bufferSizes[0];
 }
 
-static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void m25p16_pageProgramQspi(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     m25p16_pageProgramBegin(fdevice, address, callback);
 
@@ -609,7 +615,7 @@ static int m25p16_readBytesQspi(flashDevice_t *fdevice, uint32_t address, uint8_
 {
     m25p16_waitForReady(fdevice);
 
-    quadSpiReceiveWithAddress4LINES(fdevice->io.handle.quadSpi, M25P16_INSTRUCTION_QUAD_READ, M25P16_FAST_READ_DUMMY_CYCLES,
+    quadSpiReceiveWithAddress4LINES(fdevice->io.handle.dev, M25P16_INSTRUCTION_QUAD_READ, M25P16_FAST_READ_DUMMY_CYCLES,
                                     address, fdevice->isLargeFlash ? 32 : 24, buffer, length);
 
     return length;

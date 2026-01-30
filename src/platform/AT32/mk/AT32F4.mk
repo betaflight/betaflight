@@ -127,6 +127,7 @@ MCU_COMMON_SRC = \
             common/stm32/bus_i2c_pinconfig.c \
             common/stm32/bus_spi_pinconfig.c \
             common/stm32/bus_spi_hw.c \
+            common/stm32/camera_control.c \
             common/stm32/serial_uart_hw.c \
             common/stm32/serial_uart_pinconfig.c \
             drivers/serial_escserial.c \
@@ -136,8 +137,9 @@ MCU_COMMON_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
+            common/stm32/ledstrip_ws2811_stm32.c \
             common/stm32/debug_pin.c \
-            common/stm32/ledstrip_ws2811_stm32.c
+            common/stm32/adc_impl.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/dshot_bitbang_shared.c \

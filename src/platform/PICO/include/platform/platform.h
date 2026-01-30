@@ -25,10 +25,11 @@
 
 #include "pico.h"
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
-#include "hardware/spi.h"
 #include "hardware/dma.h"
 #include "hardware/flash.h"
+#include "hardware/i2c.h"
+#include "hardware/spi.h"
+#include "hardware/uart.h"
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
@@ -50,7 +51,10 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
+
 #define USART_TypeDef        uart_inst_t
+#define UART_INST(uart)      (uart)
+
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
 //#define TIM_OCStructInit
@@ -67,6 +71,11 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 // SPI_INST converts to the correct type for use in pico-sdk functions.
 #define SPI_TypeDef          SPI0_Type
 #define SPI_INST(spi)        ((spi_inst_t *)(spi))
+
+#define QUADSPI_TypeDef      void
+#define MAX_QUADSPI_PIN_SEL  1
+
+#define QUADSPI_TRAIT_CS_SOFTWARE       1
 
 #endif
 
@@ -114,6 +123,7 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 
 #define SERIAL_UART_FIRST_INDEX     0
+#define SERIAL_PIOUART_FIRST_INDEX  0
 
 extern uint32_t systemUniqueId[3];
 
@@ -131,3 +141,11 @@ extern uint32_t systemUniqueId[3];
 
 #define USE_LATE_TASK_STATISTICS
 
+#ifndef DEFAULT_VOLTAGE_METER_SCALE
+// 100 = 1.00x (100%) scaling; override per target/board to match its VBAT divider
+#define DEFAULT_VOLTAGE_METER_SCALE   100
+#endif
+
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER

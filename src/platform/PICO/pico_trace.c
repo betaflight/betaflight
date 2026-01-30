@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
 #include "pico_trace.h"
 #include "pico/stdio.h"
 #include "pico/stdio_uart.h"
@@ -37,6 +38,10 @@ static const char* prefix[]= {
 
 static const int plen = sizeof(prefix)/sizeof(prefix[0]);
 
+#if !defined(PICO_TRACE_UART_INSTANCE) || !defined(PICO_TRACE_TX_GPIO) || !defined(PICO_TRACE_RX_GPIO)
+#error PICO_TRACE build requires defines for PICO_TRACE_UART_INSTANCE, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO
+#endif
+
 void picotrace_prefix(void)
 {
     stdio_printf(prefix[depth%plen]);
@@ -48,7 +53,7 @@ extern int REAL_FUNC(main)(int argc, char * argv[]);
 int WRAPPER_FUNC(main)(int argc, char * argv[])
 {
     //stdio_init_all();
-    stdio_uart_init();
+    stdio_uart_init_full(UART_INSTANCE(PICO_TRACE_UART_INSTANCE), 115200, PICO_TRACE_TX_GPIO, PICO_TRACE_RX_GPIO);
     tprintf("\n=== Betaflight main ===");
     depth++;
     int mr = REAL_FUNC(main)(argc, argv);
@@ -92,7 +97,9 @@ int WRAPPER_FUNC(main)(int argc, char * argv[])
 
 
 // remember to add to PICO_WRAPPED_FUNCTIONS in PICO_trace.mk
-TRACEvoidvoid(init)
+    TRACEvoidvoid(initPhase1)
+    TRACEvoidvoid(initPhase2)
+    TRACEvoidvoid(initPhase3)
     TRACEvoidvoid(initEEPROM)
     TRACEvoidvoid(isEEPROMVersionValid)
     TRACEvoidvoid(writeUnmodifiedConfigToEEPROM)

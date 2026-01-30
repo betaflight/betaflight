@@ -91,7 +91,6 @@ PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
 static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwareToUse)
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
-    requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardwareToUse;
 
 #if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF)
     UNUSED(dev);
@@ -133,6 +132,10 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
 
         case RANGEFINDER_NONE:
+            rangefinderHardware = RANGEFINDER_NONE;
+            break;
+
+        default:
             rangefinderHardware = RANGEFINDER_NONE;
             break;
     }

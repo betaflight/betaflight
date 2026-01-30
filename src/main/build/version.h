@@ -24,11 +24,33 @@
 
 #define FC_FIRMWARE_NAME            "Betaflight"
 #define FC_FIRMWARE_IDENTIFIER      "BTFL"
-#define FC_VERSION_MAJOR            4  // increment when a major release is made (big new feature, etc)
-#define FC_VERSION_MINOR            6  // increment when a minor release is made (small new feature, change etc)
-#define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
 
-#define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
+#define FC_CALVER_BASE_YEAR 2000
+
+// The year the release is made
+#define FC_VERSION_YEAR             2026
+// The month the release is made
+#define FC_VERSION_MONTH            6
+// Increment when a bug-fix release is made (0 for initial YYYY.MM.X release)
+#define FC_VERSION_PATCH_LEVEL      0
+// Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
+#define FC_VERSION_SUFFIX "alpha"
+
+// Prepend "-" to non-empty suffix
+//  Minimal helper: only tests two cases — empty vs a single string literal
+#define FC_PP_HAS_COMMA(...) FC_PP_HAS_COMMA_I(__VA_ARGS__, 1, 0)
+#define FC_PP_HAS_COMMA_I(_0,_1,_2,...) _2
+#define FC_PP_TRIGGER_PARENTHESIS_(...) ,
+#define FC_PP_IS_EMPTY_SIMPLE(...) FC_PP_HAS_COMMA(FC_PP_TRIGGER_PARENTHESIS_ __VA_ARGS__ (/*empty*/))
+//  Generate FC_VERSION_SUFFIX_STR
+#if FC_PP_IS_EMPTY_SIMPLE(FC_VERSION_SUFFIX)
+# define FC_VERSION_SUFFIX_STR ""
+#else
+# define FC_VERSION_SUFFIX_STR "-" FC_VERSION_SUFFIX
+#endif
+// Build the version string from components and suffix
+// this value also used as version string in Makefile
+#define FC_VERSION_STRING STR(FC_VERSION_YEAR) "." STR(FC_VERSION_MONTH) "." STR(FC_VERSION_PATCH_LEVEL) FC_VERSION_SUFFIX_STR
 
 extern const char* const targetName;
 
@@ -48,3 +70,8 @@ extern const char* const buildTime;  // "HH:MM:SS"
 
 extern const char* const buildKey;
 extern const char* const releaseName;
+
+STATIC_ASSERT(FC_VERSION_YEAR >= FC_CALVER_BASE_YEAR && FC_VERSION_YEAR <= FC_CALVER_BASE_YEAR + 255, FC_VERSION_YEAR_range);
+STATIC_ASSERT(FC_VERSION_MONTH >= 1 && FC_VERSION_MONTH <= 12, FC_VERSION_MONTH_range);
+STATIC_ASSERT(FC_VERSION_PATCH_LEVEL >= 0 && FC_VERSION_PATCH_LEVEL <= 255, FC_VERSION_PATCH_LEVEL_range);
+STATIC_ASSERT(sizeof(FC_VERSION_STRING) - 1 <= 255, FC_VERSION_STRING_too_long);

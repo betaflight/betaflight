@@ -54,14 +54,95 @@ typedef struct quadSpiDefaultConfig_s {
 
 const quadSpiDefaultConfig_t quadSpiDefaultConfig[] = {
 #ifdef USE_QUADSPI_DEVICE_1
+    /* Provide safe defaults when some per-target macros are missing */
+    #ifdef QUADSPI1_SCK_PIN
+        #define QSPI1_CLK_TAG IO_TAG(QUADSPI1_SCK_PIN)
+    #else
+        #define QSPI1_CLK_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK1_IO0_PIN
+        #define QSPI1_BK1_IO0_TAG IO_TAG(QUADSPI1_BK1_IO0_PIN)
+    #else
+        #define QSPI1_BK1_IO0_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK1_IO1_PIN
+        #define QSPI1_BK1_IO1_TAG IO_TAG(QUADSPI1_BK1_IO1_PIN)
+    #else
+        #define QSPI1_BK1_IO1_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK1_IO2_PIN
+        #define QSPI1_BK1_IO2_TAG IO_TAG(QUADSPI1_BK1_IO2_PIN)
+    #else
+        #define QSPI1_BK1_IO2_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK1_IO3_PIN
+        #define QSPI1_BK1_IO3_TAG IO_TAG(QUADSPI1_BK1_IO3_PIN)
+    #else
+        #define QSPI1_BK1_IO3_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK1_CS_PIN
+        #define QSPI1_BK1_CS_TAG IO_TAG(QUADSPI1_BK1_CS_PIN)
+    #else
+        #define QSPI1_BK1_CS_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK2_IO0_PIN
+        #define QSPI1_BK2_IO0_TAG IO_TAG(QUADSPI1_BK2_IO0_PIN)
+    #else
+        #define QSPI1_BK2_IO0_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK2_IO1_PIN
+        #define QSPI1_BK2_IO1_TAG IO_TAG(QUADSPI1_BK2_IO1_PIN)
+    #else
+        #define QSPI1_BK2_IO1_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK2_IO2_PIN
+        #define QSPI1_BK2_IO2_TAG IO_TAG(QUADSPI1_BK2_IO2_PIN)
+    #else
+        #define QSPI1_BK2_IO2_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK2_IO3_PIN
+        #define QSPI1_BK2_IO3_TAG IO_TAG(QUADSPI1_BK2_IO3_PIN)
+    #else
+        #define QSPI1_BK2_IO3_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_BK2_CS_PIN
+        #define QSPI1_BK2_CS_TAG IO_TAG(QUADSPI1_BK2_CS_PIN)
+    #else
+        #define QSPI1_BK2_CS_TAG IO_TAG_NONE
+    #endif
+    #ifdef QUADSPI1_MODE
+        #define QSPI1_MODE_VAL QUADSPI1_MODE
+    #else
+        #define QSPI1_MODE_VAL 0
+    #endif
+    #ifdef QUADSPI1_CS_FLAGS
+        #define QSPI1_CS_FLAGS_VAL QUADSPI1_CS_FLAGS
+    #else
+        #define QSPI1_CS_FLAGS_VAL 0
+    #endif
+
     {
         QUADSPIDEV_1,
-        IO_TAG(QUADSPI1_SCK_PIN),
-        IO_TAG(QUADSPI1_BK1_IO0_PIN), IO_TAG(QUADSPI1_BK1_IO1_PIN), IO_TAG(QUADSPI1_BK1_IO2_PIN), IO_TAG(QUADSPI1_BK1_IO3_PIN), IO_TAG(QUADSPI1_BK1_CS_PIN),
-        IO_TAG(QUADSPI1_BK2_IO0_PIN), IO_TAG(QUADSPI1_BK2_IO1_PIN), IO_TAG(QUADSPI1_BK2_IO2_PIN), IO_TAG(QUADSPI1_BK2_IO3_PIN), IO_TAG(QUADSPI1_BK2_CS_PIN),
-        QUADSPI1_MODE,
-        QUADSPI1_CS_FLAGS
+        QSPI1_CLK_TAG,
+        QSPI1_BK1_IO0_TAG, QSPI1_BK1_IO1_TAG, QSPI1_BK1_IO2_TAG, QSPI1_BK1_IO3_TAG, QSPI1_BK1_CS_TAG,
+        QSPI1_BK2_IO0_TAG, QSPI1_BK2_IO1_TAG, QSPI1_BK2_IO2_TAG, QSPI1_BK2_IO3_TAG, QSPI1_BK2_CS_TAG,
+        QSPI1_MODE_VAL,
+        QSPI1_CS_FLAGS_VAL
     },
+    /* Undefine helper macros to avoid bleeding into other units */
+    #undef QSPI1_CLK_TAG
+    #undef QSPI1_BK1_IO0_TAG
+    #undef QSPI1_BK1_IO1_TAG
+    #undef QSPI1_BK1_IO2_TAG
+    #undef QSPI1_BK1_IO3_TAG
+    #undef QSPI1_BK1_CS_TAG
+    #undef QSPI1_BK2_IO0_TAG
+    #undef QSPI1_BK2_IO1_TAG
+    #undef QSPI1_BK2_IO2_TAG
+    #undef QSPI1_BK2_IO3_TAG
+    #undef QSPI1_BK2_CS_TAG
+    #undef QSPI1_MODE_VAL
+    #undef QSPI1_CS_FLAGS_VAL
 #endif
 };
 

@@ -42,7 +42,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
- 
+
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
@@ -132,14 +132,15 @@
 #define ICM40609_GYRO_ODR_500HZ             0x0F
 
 // ACCEL_CONFIG0_REG - 0x50 bits [7:5]
-#define ICM40609_ACCEL_FS_SEL_16G           (0 << 5)
-#define ICM40609_ACCEL_FS_SEL_8G            (1 << 5)
-#define ICM40609_ACCEL_FS_SEL_4G            (2 << 5)
-#define ICM40609_ACCEL_FS_SEL_2G            (3 << 5)
-#define ICM40609_ACCEL_FS_SEL_1G            (4 << 5)
-#define ICM40609_ACCEL_FS_SEL_0_5G          (5 << 5)
-#define ICM40609_ACCEL_FS_SEL_0_25G         (6 << 5)
-#define ICM40609_ACCEL_FS_SEL_0_125G        (7 << 5)
+// Per ICM-40609-D datasheet DS-000330 v1.2 Table 6.1
+#define ICM40609_ACCEL_FS_SEL_32G           (0 << 5)  // ±32g (1024 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_16G           (1 << 5)  // ±16g (2048 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_8G            (2 << 5)  // ±8g (4096 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_4G            (3 << 5)  // ±4g (8192 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_2G            (4 << 5)  // ±2g (16384 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_1G            (5 << 5)  // ±1g (32768 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_0_5G          (6 << 5)  // ±0.5g (65536 LSB/g)
+#define ICM40609_ACCEL_FS_SEL_0_125G        (7 << 5)  // ±0.125g (262144 LSB/g)
 
 // ACCEL_CONFIG0_REG - 0x50 bits [3:0]
 #define ICM40609_ACCEL_ODR_32KHZ            0x01
@@ -202,8 +203,8 @@
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV16  (5 << 4)
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV20  (6 << 4)
 #define ICM40609_ACCEL_UI_FILT_BW_ODR_DIV40  (7 << 4)
-#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 4) // Bit[7:4] - Low Latency 
-#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 4) // Bit[7:4] - Low Latency 
+#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_400HZ_ODR   (14 << 4) // Bit[7:4] - Low Latency
+#define ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR (15 << 4) // Bit[7:4] - Low Latency
 
 // REG_GYRO_ACCEL_CONFIG0 - 0x52 bits [3:0]
 #define ICM40609_GYRO_UI_FILT_BW_ODR_DIV2    (0 << 0)
@@ -345,7 +346,7 @@ static const ICM40609_AafProfile aafProfiles[ICM40609_AAF_PROFILE_COUNT] = {
  * Note:
  *  Delay is independent of UI_FILT_BW when ODR = 8000Hz.
  *  5.4 UI FILTER BLOCK TDK ICM-40609D Datasheet Rev 1.2 (2023)
- * 
+ *
  *  Filter order (standard DSP behavior):
  *  1st order -6 dB/octave
  *  2nd order -12 dB/octave
@@ -431,11 +432,11 @@ static void icm40609GetAafParams(uint16_t targetHz, ICM40609_AafProfile* res)
     while (i < ICM40609_AAF_PROFILE_COUNT && targetHz >  aafProfiles[i].hz) {
          i++;
     }
-    if (i < ICM40609_AAF_PROFILE_COUNT) {  
+    if (i < ICM40609_AAF_PROFILE_COUNT) {
         *res = aafProfiles[i];
     } else {
         // not found - Requested frequency is higher than max available
-        *res = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1]; 
+        *res = aafProfiles[ICM40609_AAF_PROFILE_COUNT - 1];
     }
 }
 
@@ -447,7 +448,7 @@ static void icm40609SetAccelAafByHz(const extDevice_t *dev, bool aafEnable, uint
         ICM40609_AafProfile aafProfile;
 
         icm40609GetAafParams(targetHz, &aafProfile);
-    
+
         uint8_t reg03 = spiReadRegMsk(dev, ICM40609_REG_ACCEL_CONFIG_STATIC2);
 
         reg03 &= ~ICM40609_ACCEL_AAF_DIS; // Clear ACCEL_AAF_DIS to enable AAF
@@ -519,7 +520,7 @@ static void icm40609SetGyroHPF(const extDevice_t *dev, bool hpfEnable, icm40609H
 static void icm40609SetGyroNotch(const extDevice_t *dev, bool notchEnable, icm40609GyroNfBw_e bwSel, float fdesiredKhz)
 {
     if (fdesiredKhz < 1.0f || fdesiredKhz > 3.0f) {
-        return; // (1kHz to 3kHz) Operating the notch filter outside this range is not supported. 
+        return; // (1kHz to 3kHz) Operating the notch filter outside this range is not supported.
     }
 
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_1);
@@ -645,7 +646,7 @@ void icm40609AccInit(accDev_t *acc)
 {
     acc->acc_1G = 2048; // 16g scale
     acc->gyro->accSampleRateHz = 1000;
-    
+
 }
 
 void icm40609GyroInit(gyroDev_t *gyro)
@@ -657,26 +658,26 @@ void icm40609GyroInit(gyroDev_t *gyro)
     gyro->accDataReg = ICM40609_ACCEL_DATA_X1_UI;
     gyro->gyroDataReg = ICM40609_GYRO_DATA_X1_UI;
 
-    setGyroAccPowerMode(dev, false);
+    // Enable sensors before configuration - registers ignored when powered off
+    setGyroAccPowerMode(dev, true);
+    delay(35); // Sensor power-on stabilization time
 
     icm40609SetEndianess(dev, true);
 
+    // Configure accelerometer: 16g full-scale range, 1kHz ODR
     icm40609SelectUserBank(dev, ICM40609_USER_BANK_0);
-    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | ICM40609_GYRO_ODR_8KHZ);
-    gyro->scale = GYRO_SCALE_2000DPS;
-    gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-    gyro->gyroSampleRateHz = 8000;
+    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | ICM40609_ACCEL_ODR_1KHZ);
+    delay(10); // Accelerometer configuration delay
 
-    spiWriteReg(dev, ICM40609_REG_ACCEL_CONFIG0, ICM40609_ACCEL_FS_SEL_16G | ICM40609_ACCEL_ODR_1KHZ );
-
-    icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency (default)
+    // Configure filters before gyro
+    icm40609SetTempFiltBw(dev, ICM40609_TEMP_FILT_BW_4000HZ); // 4000Hz, 0.125ms latency
     icm40609SetGyroUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetAccelUiFiltOrder(dev, ICM40609_UI_FILT_ORDER_3RD);
     icm40609SetGyroDec2M2(dev, true);
 
     // Set filter bandwidth: Low Latency
-    spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0, 
-                    ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR | 
+    spiWriteReg(&gyro->dev, ICM40609_REG_GYRO_ACCEL_CONFIG0,
+                    ICM40609_ACCEL_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR |
                     ICM40609_GYRO_UI_FILT_BW_LP_TRIVIAL_200HZ_8XODR);
 
     uint16_t gyroHWLpf; // Anti-Alias Filter (AAF) in Hz
@@ -705,25 +706,30 @@ void icm40609GyroInit(gyroDev_t *gyro)
     icm40609SetGyroNotch(dev, true, ICM40609_GYRO_NF_BW_1449HZ, 1.5f);
 
     icm40609SetGyroHPF(dev, true, ICM40609_HPF_BW_1, ICM40609_HPF_ORDER_1ST);
-                  
+
+    // Configure gyro: 2000dps full-scale range, 8kHz ODR
+    spiWriteReg(dev, ICM40609_REG_GYRO_CONFIG0, ICM40609_GYRO_FS_SEL_2000DPS | ICM40609_GYRO_ODR_8KHZ);
+    gyro->scale = GYRO_SCALE_2000DPS;
+    gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+    gyro->gyroSampleRateHz = 8000;
+    delay(35); // Gyro startup time per DS-000330 Table 9-6
+
     // Enable interrupt
     spiWriteReg(dev, ICM40609_REG_INT_SOURCE0, ICM40609_UI_DRDY_INT1_EN);
 
     // Set INT1 to pulse mode, push-pull, active high
-    spiWriteReg(dev, ICM40609_REG_INT_CONFIG, 
-        ICM40609_INT1_MODE_PULSED | 
-        ICM40609_INT1_DRIVE_PUSH_PULL | 
-        ICM40609_INT1_POLARITY_ACTIVE_HIGH); 
+    spiWriteReg(dev, ICM40609_REG_INT_CONFIG,
+        ICM40609_INT1_MODE_PULSED |
+        ICM40609_INT1_DRIVE_PUSH_PULL |
+        ICM40609_INT1_POLARITY_ACTIVE_HIGH);
 
-    spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // auto clear after read
+    spiWriteReg(dev, ICM40609_REG_INT_CONFIG0, ICM40609_UI_DRDY_INT_CLEAR_STATUS); // Auto-clear on read
 
-    // Set INT1 pulse width to 8us, deassertion enabled, async reset disabled
+    // INT1: 8us pulse width, de-assertion enabled, async reset disabled
     spiWriteReg(dev, ICM40609_REG_INT_CONFIG1,
         ICM40609_INT_TPULSE_8US |
         ICM40609_INT_TDEASSERT_DISABLED |
         ICM40609_INT_ASYNC_RESET_DISABLED);
-
-    setGyroAccPowerMode(dev, true);
 
 }
 

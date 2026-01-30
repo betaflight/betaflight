@@ -182,7 +182,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     // given
     configureFailsafe();
     failsafeInit();
-    
+
     DISABLE_ARMING_FLAG(ARMED);
     resetCallCounters();
     failsafeStartMonitoring();
@@ -448,7 +448,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeKill)
     sysTickUptime += PERIOD_RXDATA_RECOVERY;
     failsafeOnValidDataReceived();
 
-    // when 
+    // when
     failsafeUpdateState();
 
     // we should still be in failsafe monitoring mode
@@ -491,7 +491,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage1OrStage2Drop)
 
     // when
     failsafeUpdateState();
-    
+
     // confirm that we are in idle mode
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_FALSE(failsafeIsActive());
@@ -523,7 +523,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage1OrStage2Drop)
     // receivingRxData is immediately true because signal exists
     failsafeOnValidDataReceived();
 
-    // when 
+    // when
     failsafeUpdateState();
 
     // we should now have exited failsafe
@@ -553,7 +553,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
 
     // when
     failsafeUpdateState();
-    
+
     // confirm that we are in idle mode
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_FALSE(failsafeIsActive());
@@ -570,7 +570,7 @@ TEST(FlightFailsafeTest, TestFailsafeSwitchModeStage2Land)
     EXPECT_TRUE(failsafeIsActive());               // stick induced failsafe allows re-arming
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
     EXPECT_EQ(0, CALL_COUNTER(COUNTER_MW_DISARM));
-    
+
     // should stay in landing for failsafe_landing_time (stage 2 landing period) of 1s
     sysTickUptime += failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
 
@@ -769,4 +769,9 @@ void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
 
 bool crashRecoveryModeActive(void) { return false; }
 void pinioBoxTaskControl(void) {}
+
+bool usbCableIsInserted(void)
+{
+    return false;
+}
 }

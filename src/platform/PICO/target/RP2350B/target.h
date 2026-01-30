@@ -40,10 +40,12 @@
 #define RP2350B
 #endif
 
-//#define USE_MULTICORE
+#define USE_MULTICORE
 
 #define USE_UART0
 #define USE_UART1
+#define USE_PIOUART0
+#define USE_PIOUART1
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 12
@@ -56,23 +58,22 @@
 #define USE_SPI_DMA_ENABLE_LATE
 #define MAX_SPI_PIN_SEL 6
 
+#define QUADSPIDEV_COUNT 1
+
 #define USE_I2C
 #define I2CDEV_COUNT 2
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
+#define USE_ADC
+
 #define USE_VCP
 
-// Enable MSC with SD card SPI backend for RP2350B target
 #define USE_USB_MSC
-#define USE_SDCARD
-#define USE_SDCARD_SPI
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
-#undef USE_FLASH
-#undef USE_FLASH_CHIP
 #undef USE_TIMER
 #undef USE_RCC
 
@@ -91,6 +92,17 @@
 // SERIALRX CRSF supported, also TELEMETRY_CRSF
 // #undef USE_CRSF
 // #undef USE_SERIALRX_CRSF
+
+// 0, 1 or 2 for pio0, pio1, pio2
+// maybe these more dynamic,
+// or configurable in config.h
+// Four state machines (sm) per pio block
+// pio0 -> dshot for motors 1,2,3,4
+// pio1 -> UART2, UART3
+// pio2 -> LED STRIP
+#define PIO_DSHOT_INDEX    0
+#define PIO_UART_INDEX     1
+#define PIO_LEDSTRIP_INDEX 2
 
 // Various untested or unsupported elements are undefined below
 
@@ -127,9 +139,6 @@
 #undef USE_MULTI_GYRO
 
 #undef USE_RANGEFINDER_HCSR04
-#undef USE_MAG
-#undef USE_MAG_HMC5883
-#undef USE_MAG_SPI_HMC5883
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
 #undef USE_SRXL
@@ -138,29 +147,9 @@
 
 #undef USE_SERIAL_PASSTHROUGH
 
-#undef USE_MSP_UART
-#undef USE_MSP_DISPLAYPORT
-
-#undef USE_DSHOT_TELEMETRY
+#undef USE_DSHOT_BITBANG
+#define USE_DSHOT_TELEMETRY
 #undef USE_ESC_SENSOR
 
-#undef USE_VTX
-#undef USE_VTX_TRAMP
-#undef USE_VTX_SMARTAUDIO
-#undef USE_SPEKTRUM_VTX_CONTROL
-#undef USE_VTX_COMMON
-#undef USE_FLASH_M25P16
-#undef USE_FLASH_W25N01G
-#undef USE_FLASH_W25N02K
-#undef USE_FLASH_W25M
-#undef USE_FLASH_W25M512
-#undef USE_FLASH_W25M02G
-#undef USE_FLASH_W25Q128FV
-#undef USE_FLASH_PY25Q128HA
-#undef USE_FLASH_W25Q64FV
-
 #undef USE_RPM_LIMIT
-
-#undef USE_SERVOS
-
 #undef USE_OSD_HD

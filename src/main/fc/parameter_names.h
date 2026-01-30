@@ -20,12 +20,13 @@
 
 #pragma once
 
+#define PARAM_NAME_GYRO_HARDWARE "gyro_hardware"
 #define PARAM_NAME_GYRO_HARDWARE_LPF "gyro_hardware_lpf"
 #define PARAM_NAME_GYRO_LPF1_TYPE "gyro_lpf1_type"
 #define PARAM_NAME_GYRO_LPF1_STATIC_HZ "gyro_lpf1_static_hz"
 #define PARAM_NAME_GYRO_LPF2_TYPE "gyro_lpf2_type"
 #define PARAM_NAME_GYRO_LPF2_STATIC_HZ "gyro_lpf2_static_hz"
-#define PARAM_NAME_GYRO_ENABLE_MASK "gyro_enable_bitmask"
+#define PARAM_NAME_GYRO_ENABLE_MASK "gyro_enabled_bitmask"
 #define PARAM_NAME_DYN_NOTCH_MAX_HZ "dyn_notch_max_hz"
 #define PARAM_NAME_DYN_NOTCH_COUNT "dyn_notch_count"
 #define PARAM_NAME_DYN_NOTCH_Q "dyn_notch_q"

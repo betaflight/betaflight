@@ -23,6 +23,7 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "drivers/bus.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -39,8 +40,8 @@
 
 #ifdef USE_QUADSPI
 
-#if !defined(STM32H7)
-#error Quad SPI unsupported on this MCU
+#if !(defined(STM32H7) || defined(STM32G4) || defined(PICO))
+#error Quad SPI unsupported on this MCU/platform
 #endif
 
 #define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -63,7 +64,9 @@ typedef enum {
     QUADSPIDEV_1   = 0,
 } quadSpiDevice_e;
 
-#define QUADSPIDEV_COUNT 1
+#ifndef QUADSPIDEV_COUNT
+#define QUADSPIDEV_COUNT 0
+#endif
 
 // Macros to convert between CLI bus number and spiDevice_e.
 #define QUADSPI_CFG_TO_DEV(x)   ((x) - 1)
@@ -103,20 +106,20 @@ typedef enum {
 void quadSpiPreInit(void);
 
 bool quadSpiInit(quadSpiDevice_e device);
-void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor);
+void quadSpiSetDivisor(const extDevice_t *dev, uint16_t divisor);
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool quadSpiTransmit1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
+bool quadSpiReceive1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool quadSpiReceive4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
 
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
+bool quadSpiInstructionWithData1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
 
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool quadSpiReceiveWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool quadSpiReceiveWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool quadSpiTransmitWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool quadSpiTransmitWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
 
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
+bool quadSpiInstructionWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
 
 //bool quadSpiIsBusBusy(SPI_TypeDef *instance);
 
@@ -125,6 +128,17 @@ void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance);
 
 quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance);
 QUADSPI_TypeDef *quadSpiInstanceByDevice(quadSpiDevice_e device);
+
+// BusDevice API - similar to SPI
+bool quadSpiSetBusInstance(extDevice_t *dev, uint32_t device);
+void quadSpiInitBusDMA(busDevice_t *bus);
+
+// QSPI non-blocking sequence API (modeled on SPI sequence API)
+// Launch a sequence of segments. Non-blocking on PICO; blocking shim on other platforms.
+void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments);
+void quadSpiWait(const extDevice_t *dev);
+bool quadSpiIsBusy(const extDevice_t *dev);
+void quadSpiRelease(const extDevice_t *dev);
 
 //
 // Config

@@ -194,14 +194,16 @@ void adcInternalStartConversion(void)
     adcInternalConversionInProgress = true;
 }
 
-uint16_t adcInternalReadVrefint(void)
+uint16_t adcInternalRead(adcSource_e source)
 {
-    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_2);
+    switch (source) {
+    case ADC_VREFINT:
+        return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
+    case ADC_TEMPSENSOR:
+        return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_2);
+    default:
+        return 0;
+    }
 }
 #endif
 
@@ -210,7 +212,7 @@ void adcInit(const adcConfig_t *config)
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
-    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
+    memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
@@ -228,7 +230,7 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
-    ADCDevice device = ADC_CFG_TO_DEV(config->device);
+    adcDevice_e device = ADC_CFG_TO_DEV(config->device);
 
     if (device == ADCINVALID) {
         return;
@@ -237,7 +239,7 @@ void adcInit(const adcConfig_t *config)
     adcDevice_t adc = adcHardware[device];
 
     bool adcActive = false;
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
             continue;
         }
@@ -279,6 +281,9 @@ void adcInit(const adcConfig_t *config)
     // Initialize for injected conversion
     adcInitInternalInjected(config);
 
+    adcOperatingConfig[ADC_VREFINT].enabled = true;
+    adcOperatingConfig[ADC_TEMPSENSOR].enabled = true;
+
     if (!adcActive) {
         return;
     }
@@ -287,7 +292,7 @@ void adcInit(const adcConfig_t *config)
     adcInitDevice(adc.ADCx, configuredAdcChannels);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (!adcOperatingConfig[i].enabled) {
             continue;
         }

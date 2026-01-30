@@ -498,10 +498,18 @@ static void osdCompleteInitialization(void)
     // Display betaflight logo
     osdDrawLogo(midCol - (OSD_LOGO_COLS) / 2, midRow - 5, DISPLAYPORT_SEVERITY_NORMAL);
 
-    char string_buffer[30];
-    tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, midCol + 5, midRow, DISPLAYPORT_SEVERITY_NORMAL, string_buffer);
-#ifdef USE_CMS
+    // sizeof includes the terminating NULL so add space for the V
+    char version_str_buf[sizeof(FC_VERSION_STRING) + 1];
+    tfp_sprintf(version_str_buf, "V%s", FC_VERSION_STRING);
+    size_t version_str_len = strlen(version_str_buf) + 1;
+
+    // For the OSD we only have uppercase
+    for (size_t i = 0; i < version_str_len; i++) {
+        version_str_buf[i] = toupper(version_str_buf[i]);
+    }
+    displayWrite(osdDisplayPort, midCol + 12 - version_str_len, midRow, DISPLAYPORT_SEVERITY_NORMAL, version_str_buf);
+
+    #ifdef USE_CMS
     displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
@@ -646,7 +654,7 @@ static void osdUpdateStats(void)
         stats.min_voltage = value;
     }
 
-    value = getAmperage() / 100;
+    value = getAmperage();
     if (stats.max_current < value) {
         stats.max_current = value;
     }
@@ -881,7 +889,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MAX_CURRENT:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-            tfp_sprintf(buff, "%d%c", stats.max_current, SYM_AMP);
+            osdPrintFloat(buff, SYM_NONE, stats.max_current / 100.0f, "", 2, false, SYM_AMP);
             osdDisplayStatisticLabel(midCol, displayRow, "MAX CURRENT", buff);
             return true;
         }

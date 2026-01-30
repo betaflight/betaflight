@@ -43,12 +43,14 @@ quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT] = { 0 };
 
 quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
 {
-#ifdef USE_QUADSPI_DEVICE_1
-    if (instance == QUADSPI) {
-        return QUADSPIDEV_1;
+    if (!instance) {
+        return QUADSPIINVALID;
     }
-#endif
-
+    for (size_t i = 0; i < QUADSPIDEV_COUNT; i++) {
+        if (quadSpiHardware[i].reg == instance) {
+            return quadSpiHardware[i].device;
+        }
+    }
     return QUADSPIINVALID;
 }
 
@@ -104,174 +106,44 @@ void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance)
     }
 }
 
-const quadSpiHardware_t quadSpiHardware[] = {
-#ifdef STM32H7
-    {
-        .device = QUADSPIDEV_1,
-        .reg = QUADSPI,
-        .clkPins = {
-            { DEFIO_TAG_E(PB2),  GPIO_AF9_QUADSPI },
-        },
-        .bk1IO0Pins = {
-            { DEFIO_TAG_E(PC9),  GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PD11), GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PF8),  GPIO_AF10_QUADSPI },
-        },
-        .bk1IO1Pins = {
-            { DEFIO_TAG_E(PC10), GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PD12), GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PF9),  GPIO_AF10_QUADSPI },
-        },
-        .bk1IO2Pins = {
-            { DEFIO_TAG_E(PE2),  GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PF7),  GPIO_AF9_QUADSPI },
-        },
-        .bk1IO3Pins = {
-            { DEFIO_TAG_E(PA1),  GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PD13), GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PF6),  GPIO_AF9_QUADSPI },
-        },
-        .bk1CSPins = {
-            { DEFIO_TAG_E(PB6),  GPIO_AF10_QUADSPI },
-            { DEFIO_TAG_E(PB10), GPIO_AF9_QUADSPI },
-            { DEFIO_TAG_E(PG6),  GPIO_AF10_QUADSPI },
-        },
-        .bk2IO0Pins = {
-            { DEFIO_TAG_E(PE7),  GPIO_AF10_QUADSPI },
-            //{ DEFIO_TAG_E(PH7),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
-        },
-        .bk2IO1Pins = {
-            { DEFIO_TAG_E(PE8),  GPIO_AF10_QUADSPI },
-            //{ DEFIO_TAG_E(PH3),  GPIO_AF9_QUADSPI }, // FIXME regenerate io_def_generated with support for GPIO 'H'
-        },
-        .bk2IO2Pins = {
-            { DEFIO_TAG_E(PE9),  GPIO_AF10_QUADSPI },
-            { DEFIO_TAG_E(PG9),  GPIO_AF9_QUADSPI },
-        },
-        .bk2IO3Pins = {
-            { DEFIO_TAG_E(PE10),  GPIO_AF10_QUADSPI },
-            { DEFIO_TAG_E(PG14),  GPIO_AF9_QUADSPI },
-        },
-        .bk2CSPins = {
-            { DEFIO_TAG_E(PC11),  GPIO_AF9_QUADSPI },
-        },
-        .rcc = RCC_AHB3(QSPI),
-    },
-#endif
-};
+// QSPI bus device array - consistent with SPI bus device pattern
+busDevice_t quadSpiBusDevice[QUADSPIDEV_COUNT];
 
-void quadSpiPinConfigure(const quadSpiConfig_t *pConfig)
+// Mark this bus as being QSPI and record the first owner to use it
+bool quadSpiSetBusInstance(extDevice_t *dev, uint32_t device)
 {
-    for (size_t hwindex = 0; hwindex < ARRAYLEN(quadSpiHardware); hwindex++) {
-        const quadSpiHardware_t *hw = &quadSpiHardware[hwindex];
-
-        if (!hw->reg) {
-            continue;
-        }
-
-        quadSpiDevice_e device = hw->device;
-        quadSpiDevice_t *pDev = &quadSpiDevice[device];
-
-        for (int pindex = 0; pindex < MAX_QUADSPI_PIN_SEL; pindex++) {
-            if (pConfig[device].ioTagClk == hw->clkPins[pindex].pin) {
-                pDev->clk = hw->clkPins[pindex].pin;
-            }
-            //
-            // BK1
-            //
-            if (pConfig[device].ioTagBK1IO0 == hw->bk1IO0Pins[pindex].pin) {
-                pDev->bk1IO0 = hw->bk1IO0Pins[pindex].pin;
-                pDev->bk1IO0AF = hw->bk1IO0Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK1IO1 == hw->bk1IO1Pins[pindex].pin) {
-                pDev->bk1IO1 = hw->bk1IO1Pins[pindex].pin;
-                pDev->bk1IO1AF = hw->bk1IO1Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK1IO2 == hw->bk1IO2Pins[pindex].pin) {
-                pDev->bk1IO2 = hw->bk1IO2Pins[pindex].pin;
-                pDev->bk1IO2AF = hw->bk1IO2Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK1IO3 == hw->bk1IO3Pins[pindex].pin) {
-                pDev->bk1IO3 = hw->bk1IO3Pins[pindex].pin;
-                pDev->bk1IO3AF = hw->bk1IO3Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK1CS == hw->bk1CSPins[pindex].pin) {
-                pDev->bk1CS = hw->bk1CSPins[pindex].pin;
-                pDev->bk1CSAF = hw->bk1CSPins[pindex].af;
-            }
-            //
-            // BK2
-            //
-            if (pConfig[device].ioTagBK2IO0 == hw->bk2IO0Pins[pindex].pin) {
-                pDev->bk2IO0 = hw->bk2IO0Pins[pindex].pin;
-                pDev->bk2IO0AF = hw->bk2IO0Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK2IO1 == hw->bk2IO1Pins[pindex].pin) {
-                pDev->bk2IO1 = hw->bk2IO1Pins[pindex].pin;
-                pDev->bk2IO1AF = hw->bk2IO1Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK2IO2 == hw->bk2IO2Pins[pindex].pin) {
-                pDev->bk2IO2 = hw->bk2IO2Pins[pindex].pin;
-                pDev->bk2IO2AF = hw->bk2IO2Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK2IO3 == hw->bk2IO3Pins[pindex].pin) {
-                pDev->bk2IO3 = hw->bk2IO3Pins[pindex].pin;
-                pDev->bk2IO3AF = hw->bk2IO3Pins[pindex].af;
-            }
-            if (pConfig[device].ioTagBK2CS == hw->bk2CSPins[pindex].pin) {
-                pDev->bk2CS = hw->bk2CSPins[pindex].pin;
-                pDev->bk2CSAF = hw->bk2CSPins[pindex].af;
-            }
-        }
-
-        if ((quadSpiConfig(device)->csFlags & QUADSPI_BK1_CS_MASK) == QUADSPI_BK1_CS_SOFTWARE) {
-            pDev->bk1CS = pConfig[device].ioTagBK1CS;
-        }
-        if ((quadSpiConfig(device)->csFlags & QUADSPI_BK2_CS_MASK) == QUADSPI_BK2_CS_SOFTWARE) {
-            pDev->bk2CS = pConfig[device].ioTagBK2CS;
-        }
-
-        bool haveResources = true;
-
-        // clock pins
-
-        haveResources = haveResources && pDev->clk;
-
-        // data pins
-
-        bool needBK1 = (pConfig[device].mode == QUADSPI_MODE_DUAL_FLASH) || (pConfig[device].mode == QUADSPI_MODE_BK1_ONLY);
-        if (needBK1) {
-            bool haveBK1Resources = pDev->bk1IO0 && pDev->bk1IO1 && pDev->bk1IO2 && pDev->bk1IO3 && pDev->bk1CS;
-            haveResources = haveResources && haveBK1Resources;
-        }
-
-        bool needBK2 = (pConfig[device].mode == QUADSPI_MODE_DUAL_FLASH) || (pConfig[device].mode == QUADSPI_MODE_BK2_ONLY);
-        if (needBK2) {
-            bool haveBK2Resources = pDev->bk2IO0 && pDev->bk2IO1 && pDev->bk2IO2 && pDev->bk2IO3;
-            haveResources = haveResources && haveBK2Resources;
-        }
-
-        // cs pins
-
-        if (needBK1) {
-            haveResources = haveResources && pDev->bk1CS;
-        }
-
-        bool needBK2CS =
-            (pConfig[device].mode == QUADSPI_MODE_DUAL_FLASH && (pConfig[device].csFlags & QUADSPI_CS_MODE_MASK) == QUADSPI_CS_MODE_SEPARATE) ||
-            (pConfig[device].mode == QUADSPI_MODE_BK2_ONLY);
-
-        if (needBK2CS) {
-            haveResources = haveResources && pDev->bk2CS;
-        }
-
-        if (haveResources) {
-            pDev->dev = hw->reg;
-#if PLATFORM_TRAIT_RCC
-            pDev->rcc = hw->rcc;
-#endif
-        }
+    if ((device == 0) || (device > QUADSPIDEV_COUNT)) {
+        return false;
     }
-}
 
+    dev->bus = &quadSpiBusDevice[QUADSPI_CFG_TO_DEV(device)];
+
+    // By default each device should use QSPI DMA if the bus supports it
+    dev->useDMA = true;
+
+    if (dev->bus->busType == BUS_TYPE_QSPI) {
+        // This bus has already been initialised
+        dev->bus->deviceCount++;
+        return true;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    bus->busType_u.qspi.instance = quadSpiDevice[QUADSPI_CFG_TO_DEV(device)].dev;
+
+    if (bus->busType_u.qspi.instance == NULL) {
+        return false;
+    }
+
+    bus->busType = BUS_TYPE_QSPI;
+    bus->deviceCount = 1;
+    bus->curSegment = (volatile busSegment_t *)BUS_QSPI_FREE;
+#ifdef USE_DMA
+    bus->dmaInitTx = &dev->dmaInitTx;
+    bus->dmaInitRx = &dev->dmaInitRx;
+#endif
+    quadSpiInitBusDMA(bus);
+
+    return true;
+}
 #endif

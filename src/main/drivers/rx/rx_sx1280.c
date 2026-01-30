@@ -83,7 +83,8 @@ FAST_CODE_PREF static bool sx1280PollBusy(void)
         if ((micros() - startTime) > SX1280_BUSY_TIMEOUT_US) {
             return false;
         } else {
-            __asm__("nop");
+            // Ensure a service window exists for interrupts
+            __NOP();
         }
     }
     return true;
@@ -226,7 +227,7 @@ bool sx1280Init(IO_t resetPin, IO_t busyPin)
 
     // Record the dev pointer for callbacks
     extDevice_t *dev = rxSpiGetDevice();
-    dev->callbackArg = (uint32_t)dev;
+    dev->callbackArg = (uintptr_t)dev;
 
     sx1280SetMode(SX1280_MODE_STDBY_RC);
     sx1280WriteCommand(SX1280_RADIO_SET_AUTOFS, 0x01);
@@ -608,22 +609,22 @@ void sx1280ClearIrqStatus(const uint16_t irqMask)
 
 // Forward Definitions for DMA Chain //
 static void sx1280IrqGetStatus(extiCallbackRec_t *cb);
-static busStatus_e sx1280IrqStatusRead(uint32_t arg);
+static busStatus_e sx1280IrqStatusRead(uintptr_t arg);
 static void sx1280IrqClearStatus(extiCallbackRec_t *cb);
-static busStatus_e sx1280IrqCmdComplete(uint32_t arg);
+static busStatus_e sx1280IrqCmdComplete(uintptr_t arg);
 static void sx1280ProcessIrq(extiCallbackRec_t *cb);
-static busStatus_e sx1280GotFIFOAddr(uint32_t arg);
+static busStatus_e sx1280GotFIFOAddr(uintptr_t arg);
 static void sx1280DoReadBuffer(extiCallbackRec_t *cb);
-static busStatus_e sx1280ReadBufferComplete(uint32_t arg);
+static busStatus_e sx1280ReadBufferComplete(uintptr_t arg);
 static void sx1280GetPacketStats(extiCallbackRec_t *cb);
-static busStatus_e sx1280GetStatsCmdComplete(uint32_t arg);
-static busStatus_e sx1280IsFhssReq(uint32_t arg);
+static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg);
+static busStatus_e sx1280IsFhssReq(uintptr_t arg);
 static void sx1280SetFrequency(extiCallbackRec_t *cb);
-static busStatus_e sx1280SetFreqComplete(uint32_t arg);
+static busStatus_e sx1280SetFreqComplete(uintptr_t arg);
 static void sx1280StartReceivingDMA(extiCallbackRec_t *cb);
-static busStatus_e sx1280EnableIRQs(uint32_t arg);
+static busStatus_e sx1280EnableIRQs(uintptr_t arg);
 static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb);
-static busStatus_e sx1280TelemetryComplete(uint32_t arg);
+static busStatus_e sx1280TelemetryComplete(uintptr_t arg);
 static void sx1280StartTransmittingDMA(extiCallbackRec_t *cb);
 
 FAST_IRQ_HANDLER void sx1280ISR(void)
@@ -658,7 +659,7 @@ FAST_IRQ_HANDLER static void sx1280IrqGetStatus(extiCallbackRec_t *cb)
 }
 
 // Read the IRQ status, and save it to irqStatus variable
-FAST_IRQ_HANDLER static busStatus_e sx1280IrqStatusRead(uint32_t arg)
+FAST_IRQ_HANDLER static busStatus_e sx1280IrqStatusRead(uintptr_t arg)
 {
     extDevice_t *dev = (extDevice_t *)arg;
 
@@ -707,7 +708,7 @@ FAST_IRQ_HANDLER static void sx1280IrqClearStatus(extiCallbackRec_t *cb)
 }
 
 // Callback follow clear of IRQ status
-FAST_IRQ_HANDLER static busStatus_e sx1280IrqCmdComplete(uint32_t arg)
+FAST_IRQ_HANDLER static busStatus_e sx1280IrqCmdComplete(uintptr_t arg)
 {
     UNUSED(arg);
 
@@ -755,7 +756,7 @@ FAST_IRQ_HANDLER static void sx1280ProcessIrq(extiCallbackRec_t *cb)
 }
 
 // First we read from the FIFO address register to determine the FIFO address
-static busStatus_e sx1280GotFIFOAddr(uint32_t arg)
+static busStatus_e sx1280GotFIFOAddr(uintptr_t arg)
 {
     extDevice_t *dev = (extDevice_t *)arg;
 
@@ -792,7 +793,7 @@ static void sx1280DoReadBuffer(extiCallbackRec_t *cb)
 }
 
 // Get the Packet Status and RSSI
-static busStatus_e sx1280ReadBufferComplete(uint32_t arg)
+static busStatus_e sx1280ReadBufferComplete(uintptr_t arg)
 {
     UNUSED(arg);
 
@@ -822,7 +823,7 @@ static void sx1280GetPacketStats(extiCallbackRec_t *cb)
 }
 
 // Process and decode the RF packet
-static busStatus_e sx1280GetStatsCmdComplete(uint32_t arg)
+static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg)
 {
     extDevice_t *dev = (extDevice_t *)arg;
     volatile uint8_t *payload = expressLrsGetPayloadBuffer();
@@ -850,7 +851,7 @@ void sx1280HandleFromTock(void)
 }
 
 // Next we need to check if we need to FHSS and then do so if needed
-static busStatus_e sx1280IsFhssReq(uint32_t arg)
+static busStatus_e sx1280IsFhssReq(uintptr_t arg)
 {
     UNUSED(arg);
 
@@ -887,7 +888,7 @@ static void sx1280SetFrequency(extiCallbackRec_t *cb)
 }
 
 // Determine if we need to go back to RX or if we need to send TLM data
-static busStatus_e sx1280SetFreqComplete(uint32_t arg)
+static busStatus_e sx1280SetFreqComplete(uintptr_t arg)
 {
     UNUSED(arg);
     pendingDoFHSS = false;
@@ -924,7 +925,7 @@ static void sx1280StartReceivingDMA(extiCallbackRec_t *cb)
     spiSequence(dev, segments);
 }
 
-static busStatus_e sx1280EnableIRQs(uint32_t arg)
+static busStatus_e sx1280EnableIRQs(uintptr_t arg)
 {
     UNUSED(arg);
 
@@ -960,7 +961,7 @@ static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb)
     spiSequence(dev, segments);
 }
 
-static busStatus_e sx1280TelemetryComplete(uint32_t arg)
+static busStatus_e sx1280TelemetryComplete(uintptr_t arg)
 {
     UNUSED(arg);
 

@@ -57,7 +57,7 @@ TEST(PwlUnittest, TestXSquared21)
     while (x <= 10.0f) {
         EXPECT_NEAR(pwlInterpolate(&pwlXSquared, x), xSquared(x, NULL), 0.1f);
         x += 0.1;
-    }    
+    }
 }
 
 

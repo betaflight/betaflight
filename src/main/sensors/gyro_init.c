@@ -311,6 +311,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_MPU9250:
     case GYRO_LSM6DSO:
     case GYRO_LSM6DSV16X:
+    case GYRO_LSM6DSK320X:
     case GYRO_ICM42688P:
     case GYRO_IIM42652:
     case GYRO_IIM42653:
@@ -468,7 +469,6 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
             case ICM_45605_SPI:
                 gyroHardware = GYRO_ICM45605;
                 break;
-            
             default:
                 gyroHardware = GYRO_NONE;
                 break;
@@ -514,6 +514,14 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
         FALLTHROUGH;
 #endif
 
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    case GYRO_LSM6DSK320X:
+        if (lsm6dsk320xSpiGyroDetect(dev)) {
+            gyroHardware = GYRO_LSM6DSK320X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
 
 #ifdef USE_ACCGYRO_ICM40609D
     case GYRO_ICM40609D:
@@ -618,7 +626,7 @@ bool gyroInit(void)
     }
     // always scan gyro_enabled_bitmask
     gyrosToScan |= gyroConfig()->gyro_enabled_bitmask;
-    
+
     // Ensure we scan all configured gyros on boards with multiple gyros
     // This fixes the issue where if the first gyro was previously detected but is now missing,
     // we still attempt to detect other gyros that may be present
@@ -631,12 +639,14 @@ bool gyroInit(void)
     gyro.gyroDebugAxis = gyroConfig()->gyro_filter_debug_axis;
 
     for (int i = 0; i < GYRO_COUNT; i++) {
+        detectedGyros[i] = GYRO_NONE;
         // Only attempt to detect a gyro if it's enabled or we're doing an auto-scan
         if (gyrosToScan & GYRO_MASK(i)) {
             if (gyroDetectSensor(&gyro.gyroSensor[i], gyroDeviceConfig(i))) {
                 // If we detected a gyro, make sure it's in the enabled bitmask
                 // This ensures that during first boot, all detected gyros are enabled
                 gyroDetectedFlags |= GYRO_MASK(i);
+                detectedGyros[i] = gyro.gyroSensor[i].gyroDev.gyroHardware;
             }
         }
     }

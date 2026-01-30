@@ -42,30 +42,32 @@ static void core1_main(void)
     while (true) {
 
         core_message_t msg;
-        queue_remove_blocking(&core1_queue, &msg);
+        if (queue_try_remove(&core1_queue, &msg)) {
+            switch (msg.command) {
+            case MULTICORE_CMD_FUNC:
+                if (msg.func) {
+                    msg.func();
+                }
+                break;
+            case MULTICORE_CMD_FUNC_BLOCKING:
+                if (msg.func) {
+                    msg.func();
 
-        switch (msg.command) {
-        case MULTICORE_CMD_FUNC:
-            if (msg.func) {
-                msg.func();
+                    // Send the result back to core0 (it will be blocking until this is done)
+                    bool result = true;
+                    queue_add_blocking(&core0_queue, &result);
+                }
+                break;
+            case MULTICORE_CMD_STOP:
+                multicore_reset_core1();
+                return; // Exit the core1_main function
+            default:
+                // unknown command or none
+                break;
             }
-            break;
-        case MULTICORE_CMD_FUNC_BLOCKING:
-            if (msg.func) {
-                msg.func();
-
-                // Send the result back to core0 (it will be blocking until this is done)
-                bool result = true;
-                queue_add_blocking(&core0_queue, &result);
-            }
-            break;
-        case MULTICORE_CMD_STOP:
-            multicore_reset_core1();
-            return; // Exit the core1_main function
-        default:
-            // unknown command or none
-            break;
         }
+
+        // TODO call scheduler here for core 1 tasks
 
         tight_loop_contents();
     }

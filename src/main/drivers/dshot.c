@@ -217,15 +217,15 @@ static void dshot_decode_telemetry_value(uint8_t motorIndex, uint32_t *pDecoded,
     uint16_t value = dshotTelemetryState.motorState[motorIndex].rawValue;
     bool isEdtEnabled = edtAlwaysDecode || (dshotTelemetryState.motorState[motorIndex].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
 
-    // https://github.com/bird-sanctuary/extended-dshot-telemetry   
+    // https://github.com/bird-sanctuary/extended-dshot-telemetry
     // Extract telemetry type field and check for eRPM conditions in one operation
     unsigned telemetryType = (value & 0x0f00) >> 8;  // 3 bits type + telemetry marker
     bool isErpm = !isEdtEnabled || (telemetryType & 0x01) || (telemetryType == 0);
-    
+
     if (isErpm) {
         *pDecoded = dshot_decode_eRPM_telemetry_value(value);
         *pType = DSHOT_TELEMETRY_TYPE_eRPM;
-        
+
         // Update debug buffer
         if (motorIndex < dshotMotorCount && motorIndex < DEBUG16_VALUE_COUNT) {
             DEBUG_SET(DEBUG_DSHOT_RPM_TELEMETRY, motorIndex, *pDecoded);
@@ -351,6 +351,27 @@ void dshotCleanTelemetryData(void)
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
 }
 
+bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
+    // Check if DShot telemetry is active for this motor
+    if (!isDshotMotorTelemetryActive(motorIndex)) {
+        return false;
+    }
+
+    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
+
+    dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
+
+    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
+
+    // Extract telemetry data if available
+    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ?
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
+
+    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
+
+    return true;
+}
 #endif // USE_DSHOT_TELEMETRY
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)

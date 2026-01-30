@@ -392,8 +392,10 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
                 case CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED:
                     if (crsfFrame.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
                         rxRuntimeState->lastRcFrameTimeUs = currentTimeUs;
-                        crsfFrameDone = true;
+                        // IMPORTANT: Copy frame data BEFORE setting flag to avoid race condition
+                        // where crsfFrameStatus() could see flag=true but read stale data
                         memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
+                        crsfFrameDone = true;
                     }
                     break;
 

@@ -111,6 +111,8 @@
 #define USE_ACC_SPI_ICM20689
 #define USE_GYRO_SPI_ICM20689
 #define USE_ACCGYRO_LSM6DSO
+#define USE_ACCGYRO_LSM6DSV16X
+#define USE_ACCGYRO_LSM6DSK320X
 #define USE_ACCGYRO_BMI270
 #define USE_GYRO_SPI_ICM42605
 #define USE_GYRO_SPI_ICM42688P
@@ -120,7 +122,6 @@
 #define USE_ACCGYRO_IIM42653
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-#define USE_ACCGYRO_LSM6DSV16X
 #define USE_ACCGYRO_ICM40609D
 
 #if TARGET_FLASH_SIZE > 512
@@ -220,7 +221,7 @@
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
-
+#define USE_SERIALRX_MAVLINK    // MAVLink protocol for serial RX
 #endif // USE_SERIALRX
 
 #if defined(USE_TELEMETRY)
@@ -404,7 +405,7 @@
 #define USE_GPS_RESCUE
 #endif // USE_GPS
 
-#if (defined(USE_OSD_HD) || defined(USE_OSD_SD)) && !defined(USE_OSD)
+#if (defined(USE_OSD_HD) || defined(USE_OSD_SD) || defined(USE_FRSKYOSD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
 #define USE_OSD
 #endif
@@ -448,6 +449,11 @@
 #endif
 
 #endif // defined(USE_SERIALRX_CRSF)
+
+// The SERIALRX_MAVLINK provider can not work without TELEMETRY_MAVLINK
+#if defined(USE_SERIALRX_MAVLINK) && !defined(USE_TELEMETRY_MAVLINK)
+#define USE_TELEMETRY_MAVLINK
+#endif
 
 // USE_RACE_PRO feature pack
 #ifdef USE_RACE_PRO

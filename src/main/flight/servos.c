@@ -77,6 +77,18 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
 #ifdef SERVO4_PIN
     servoConfig->dev.ioTags[3] = IO_TAG(SERVO4_PIN);
 #endif
+#ifdef SERVO5_PIN
+    servoConfig->dev.ioTags[4] = IO_TAG(SERVO5_PIN);
+#endif
+#ifdef SERVO6_PIN
+    servoConfig->dev.ioTags[5] = IO_TAG(SERVO6_PIN);
+#endif
+#ifdef SERVO7_PIN
+    servoConfig->dev.ioTags[6] = IO_TAG(SERVO7_PIN);
+#endif
+#ifdef SERVO8_PIN
+    servoConfig->dev.ioTags[7] = IO_TAG(SERVO8_PIN);
+#endif
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
@@ -302,7 +314,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     int channelOffset = servoConfig()->channelForwardingStartChannel;
     const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
     for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
-        pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
+        servoWrite(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
 
@@ -314,7 +326,7 @@ STATIC_ASSERT(sizeof(servoWritten) * 8 >= MAX_SUPPORTED_SERVOS, servoWritten_is_
 
 static void writeServoWithTracking(uint8_t index, servoIndex_e servoname)
 {
-    pwmWriteServo(index, servo[servoname]);
+    servoWrite(index, servo[servoname]);
     servoWritten |= (1 << servoname);
 }
 
@@ -394,7 +406,7 @@ void writeServos(void)
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const uint8_t channelToForwardFrom = servoParams(i)->forwardFromChannel;
         if ((channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) && !(servoWritten & (1 << i))) {
-            pwmWriteServo(servoIndex++, servo[i]);
+            servoWrite(servoIndex++, servo[i]);
         }
     }
 

@@ -42,6 +42,8 @@
 
 #define USE_UART0
 #define USE_UART1
+#define USE_PIOUART0
+#define USE_PIOUART1
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 8
@@ -84,6 +86,17 @@
 /* DMA Settings */
 #define DMA_IRQ_CORE_NUM 1 // Use core 1 for DMA IRQs
 #undef USE_DMA_SPEC // not yet required - possibly won't be used at all
+
+// 0, 1 or 2 for pio0, pio1, pio2
+// maybe these more dynamic,
+// or configurable in config.h
+// Four state machines (sm) per pio block
+// pio0 -> dshot for motors 1,2,3,4
+// pio1 -> UART2, UART3
+// pio2 -> LED STRIP
+#define PIO_DSHOT_INDEX    0
+#define PIO_UART_INDEX     1
+#define PIO_LEDSTRIP_INDEX 2
 
 // Various untested or unsupported elements are undefined below
 
@@ -134,7 +147,8 @@
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 
-#undef USE_DSHOT_TELEMETRY
+#undef USE_DSHOT_BITBANG
+#define USE_DSHOT_TELEMETRY
 #undef USE_ESC_SENSOR
 
 #undef USE_VTX
@@ -142,19 +156,6 @@
 #undef USE_VTX_SMARTAUDIO
 #undef USE_SPEKTRUM_VTX_CONTROL
 #undef USE_VTX_COMMON
-#undef USE_FLASH_M25P16
-#undef USE_FLASH_W25N01G
-#undef USE_FLASH_W25N02K
-#undef USE_FLASH_W25M
-#undef USE_FLASH_W25M512
-#undef USE_FLASH_W25M02G
-#undef USE_FLASH_W25Q128FV
-#undef USE_FLASH_PY25Q128HA
-#undef USE_FLASH_W25Q64FV
 
 #undef USE_RPM_LIMIT
-
-#undef USE_SERVOS
-
 #undef USE_OSD_HD
-

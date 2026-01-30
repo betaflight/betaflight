@@ -25,9 +25,8 @@
 
 #include <math.h>
 
-#include "drivers/camera_control_impl.h"
+#include "platform/camera_control.h"
 #include "drivers/nvic.h"
-#include "drivers/pwm_output.h"
 
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #include "build/atomic.h"

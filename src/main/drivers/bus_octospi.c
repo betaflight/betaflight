@@ -81,7 +81,7 @@ OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
 }
 
 const octoSpiHardware_t octoSpiHardware[] = {
-#if defined(STM32H730xx) || defined(STM32H723xx)
+#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
     {
         .device = OCTOSPIDEV_1,
         .reg = OCTOSPI1,

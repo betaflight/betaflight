@@ -44,8 +44,11 @@ typedef enum {
     MAG_LIS2MDL = 6,
     MAG_LIS3MDL = 7,
     MAG_MPU925X_AK8963 = 8,
-    MAG_IST8310 = 9
+    MAG_IST8310 = 9,
+    MAG_HARDWARE_COUNT
 } magSensor_e;
+
+extern const char * const magSensorNames[MAG_HARDWARE_COUNT];
 
 typedef struct mag_s {
     bool isNewMagADCFlag;

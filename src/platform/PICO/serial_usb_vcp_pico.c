@@ -31,15 +31,13 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
-
-#include "pg/usb.h"
-
-#include "usb/usb_cdc.h"
-
 #include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
+
 #include "platform/multicore.h"
+
+#include "usb/usb_cdc.h"
 
 static vcpPort_t vcpPort = { 0 };
 
@@ -186,13 +184,14 @@ static const struct serialPortVTable usbVTable[] = {
     }
 };
 
+void usbVcpInit(void)
+{
+    // initialise the USB CDC interface using core 0
+    cdc_usb_init();
+}
+
 serialPort_t *usbVcpOpen(void)
 {
-    // initialise the USB CDC interface
-    // potentially this could be done in a multicore task
-    //multicoreExecuteBlocking(&cdc_usb_init);
-    cdc_usb_init();
-
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;

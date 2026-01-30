@@ -118,9 +118,9 @@ static uint8_t skippedOSDAttempts = 0;
 #endif
 
 #if defined(USE_LATE_TASK_STATISTICS)
-static int16_t lateTaskCount = 0;
+static uint32_t lateTaskCount = 0;
 static uint32_t lateTaskTotal = 0;
-static int16_t taskCount = 0;
+static uint32_t taskCount = 0;
 static uint32_t lateTaskPercentage = 0;
 static uint32_t nextTimingCycles;
 static int32_t gyroCyclesNow;
@@ -601,7 +601,7 @@ FAST_CODE void scheduler(void)
                 // 10ths % of tasks late in last second
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 4, lateTaskPercentage);
 
-                float gyroCyclesStdDev = sqrt(devSquared/gyroCyclesCount);
+                float gyroCyclesStdDev = sqrtf(devSquared/gyroCyclesCount);
                 int32_t gyroCyclesStdDev100thus = clockCyclesTo100thMicros((int32_t)gyroCyclesStdDev);
                 DEBUG_SET(DEBUG_TIMING_ACCURACY, 7, gyroCyclesStdDev100thus);
                 DEBUG_SET(DEBUG_SCHEDULER_DETERMINISM, 7, gyroCyclesStdDev100thus);

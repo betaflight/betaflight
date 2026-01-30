@@ -31,4 +31,8 @@ typedef enum {
 
 extern uint8_t systemState;
 
-void init(void);
+void initPhase1(void);
+void initPhase2(void);
+void initPhase3(void);
+bool checkMsc(void);
+void initMsc(void);

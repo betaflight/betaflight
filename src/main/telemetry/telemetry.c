@@ -80,6 +80,13 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     },
     .disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED,
     .mavlink_mah_as_heading_divisor = 0,
+    .mavlink_min_txbuff = 35,
+    .mavlink_extended_status_rate = 2,
+    .mavlink_rc_channels_rate = 1,
+    .mavlink_position_rate = 2,
+    .mavlink_extra1_rate = 2,
+    .mavlink_extra2_rate = 2,
+    .mavlink_extra3_rate = 1,
 );
 
 void telemetryInit(void)
@@ -148,7 +155,8 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig, const Seri
         serialrxProvider == SERIALRX_SUMH ||
         serialrxProvider == SERIALRX_XBUS_MODE_B ||
         serialrxProvider == SERIALRX_XBUS_MODE_B_RJ01 ||
-        serialrxProvider == SERIALRX_IBUS)) {
+        serialrxProvider == SERIALRX_IBUS ||
+        serialrxProvider == SERIALRX_MAVLINK)) {
 
         return true;
     }

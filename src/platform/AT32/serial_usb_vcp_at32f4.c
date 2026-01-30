@@ -482,7 +482,7 @@ static const struct serialPortVTable usbVTable[] = {
     }
 };
 
-serialPort_t *usbVcpOpen(void)
+void usbVcpInit(void)
 {
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
@@ -505,7 +505,10 @@ serialPort_t *usbVcpOpen(void)
         &cdc_desc_handler);
 
     TxTimerConfig();
+}
 
+serialPort_t *usbVcpOpen(void)
+{
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;
