@@ -1258,7 +1258,11 @@ case MSP_NAME:
                 if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
                     escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
                     if (escData) {
+#ifdef USE_DSHOT_TELEMETRY
                         if (!isDshotMotorTelemetryActive(i)) { // Only use ESC RPM if DSHOT telemetry not available
+#else
+                        if (true) { // In ESC-sensor-only configs, always use ESC RPM
+#endif
                             rpm = lrintf(erpmToRpm(escData->rpm));
                         }
                         escTemperature = escData->temperature;
