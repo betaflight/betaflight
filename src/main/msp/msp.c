@@ -1212,85 +1212,85 @@ case MSP_NAME:
         break;
 
     // Added in API version 1.42
-    case MSP_MOTOR_TELEMETRY:
-        {
-            static timeUs_t lastUpdateUs = 0;
-            static int cachedRpm[MAX_SUPPORTED_MOTORS];
-            static uint16_t cachedInvalidPct[MAX_SUPPORTED_MOTORS];
-            static uint8_t cachedTemperature[MAX_SUPPORTED_MOTORS];
-            static uint16_t cachedVoltage[MAX_SUPPORTED_MOTORS];
-            static uint16_t cachedCurrent[MAX_SUPPORTED_MOTORS];
-            static uint16_t cachedConsumption[MAX_SUPPORTED_MOTORS];
-            timeUs_t currentTimeUs = micros();
+    case MSP_MOTOR_TELEMETRY: {
+        static timeUs_t lastUpdateUs = 0;
+        static int cachedRpm[MAX_SUPPORTED_MOTORS];
+        static uint16_t cachedInvalidPct[MAX_SUPPORTED_MOTORS];
+        static uint8_t cachedTemperature[MAX_SUPPORTED_MOTORS];
+        static uint16_t cachedVoltage[MAX_SUPPORTED_MOTORS];
+        static uint16_t cachedCurrent[MAX_SUPPORTED_MOTORS];
+        static uint16_t cachedConsumption[MAX_SUPPORTED_MOTORS];
+        timeUs_t currentTimeUs = micros();
 
-            // Update cache every 4ms (250Hz)
-            if (cmpTimeUs(currentTimeUs, lastUpdateUs) >= 4000) {
-                for (unsigned i = 0; i < getMotorCount(); i++) {
-                    int rpm = 0;
-                    uint16_t invalidPct = 10000; // 100.00%
-                    uint8_t escTemperature = 0;
-                    uint16_t escVoltage = 0;
-                    uint16_t escCurrent = 0;
-                    uint16_t escConsumption = 0;
+        // Update cache every 4ms (250Hz)
+        if (cmpTimeUs(currentTimeUs, lastUpdateUs) >= 4000) {
+            for (unsigned i = 0; i < getMotorCount(); i++) {
+                int rpm = 0;
+                uint16_t invalidPct = 10000; // 100.00%
+                uint8_t escTemperature = 0;
+                uint16_t escVoltage = 0;
+                uint16_t escCurrent = 0;
+                uint16_t escConsumption = 0;
 
 #ifdef USE_DSHOT_TELEMETRY
-                    if (useDshotTelemetry) {
-                        rpm = lrintf(getDshotRpm(i));
+                if (useDshotTelemetry) {
+                    rpm = lrintf(getDshotRpm(i));
 #ifdef USE_DSHOT_TELEMETRY_STATS
-                        if (isDshotMotorTelemetryActive(i)) {
-                            invalidPct = getDshotTelemetryMotorInvalidPercent(i);
-                        }
+                    if (isDshotMotorTelemetryActive(i)) {
+                        invalidPct = getDshotTelemetryMotorInvalidPercent(i);
+                    }
 #endif
-                        if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
-                            if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
-                                escTemperature = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
-                            }
-                            if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
-                                escCurrent = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
-                            }
-                            if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
-                                escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
-                            }
+                    if ((dshotTelemetryState.motorState[i].telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0) {
+                        if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
+                            escTemperature = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE];
+                        }
+                        if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) != 0) {
+                            escCurrent = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT];
+                        }
+                        if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
+                            escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
                         }
                     }
+                }
 #endif
 
 #ifdef USE_ESC_SENSOR
-                    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-                        escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
-                        if (escData) {
-                            if (!isDshotMotorTelemetryActive(i)) { // Only use ESC RPM if DSHOT telemetry not available
-                                rpm = lrintf(erpmToRpm(escData->rpm));
-                            }
-                            escTemperature = escData->temperature;
-                            escVoltage = escData->voltage;
-                            escCurrent = escData->current;
-                            escConsumption = escData->consumption;
+                if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
+                    escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                    if (escData) {
+                        if (!isDshotMotorTelemetryActive(i)) { // Only use ESC RPM if DSHOT telemetry not available
+                            rpm = lrintf(erpmToRpm(escData->rpm));
                         }
+                        escTemperature = escData->temperature;
+                        escVoltage = escData->voltage;
+                        escCurrent = escData->current;
+                        escConsumption = escData->consumption;
                     }
+                }
 #endif
 
-                    cachedRpm[i] = rpm;
-                    cachedInvalidPct[i] = invalidPct;
-                    cachedTemperature[i] = escTemperature;
-                    cachedVoltage[i] = escVoltage;
-                    cachedCurrent[i] = escCurrent;
-                    cachedConsumption[i] = escConsumption;
-                }
-                lastUpdateUs = currentTimeUs;
+                cachedRpm[i] = rpm;
+                cachedInvalidPct[i] = invalidPct;
+                cachedTemperature[i] = escTemperature;
+                cachedVoltage[i] = escVoltage;
+                cachedCurrent[i] = escCurrent;
+                cachedConsumption[i] = escConsumption;
             }
-
-            sbufWriteU8(dst, getMotorCount());
-            for (unsigned i = 0; i < getMotorCount(); i++) {
-                sbufWriteU32(dst, cachedRpm[i]);
-                sbufWriteU16(dst, cachedInvalidPct[i]);
-                sbufWriteU8(dst, cachedTemperature[i]);
-                sbufWriteU16(dst, cachedVoltage[i]);
-                sbufWriteU16(dst, cachedCurrent[i]);
-                sbufWriteU16(dst, cachedConsumption[i]);
-            }
+            lastUpdateUs = currentTimeUs;
         }
+
+        sbufWriteU8(dst, getMotorCount());
+        for (unsigned i = 0; i < getMotorCount(); i++) {
+            sbufWriteU32(dst, cachedRpm[i]);
+            sbufWriteU16(dst, cachedInvalidPct[i]);
+            sbufWriteU8(dst, cachedTemperature[i]);
+            sbufWriteU16(dst, cachedVoltage[i]);
+            sbufWriteU16(dst, cachedCurrent[i]);
+            sbufWriteU16(dst, cachedConsumption[i]);
+        }
+
         break;
+    }
 
     case MSP2_MOTOR_OUTPUT_REORDERING:
         {
