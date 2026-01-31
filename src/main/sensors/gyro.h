@@ -35,6 +35,8 @@
 
 #include "flight/pid.h"
 
+#include "flight/sensor_fusion.h"
+
 #include "pg/pg.h"
 
 #define LPF_MAX_HZ 1000 // so little filtering above 1000hz that if the user wants less delay, they must disable the filter
@@ -119,6 +121,10 @@ typedef struct gyro_s {
     uint8_t overflowAxisMask;
 #endif
     pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
+
+#if GYRO_COUNT > 1
+    sensorFusion_t sensorFusion;
+#endif
 } gyro_t;
 
 extern gyro_t gyro;
@@ -185,6 +191,13 @@ typedef struct gyroConfig_s {
     uint8_t simplified_gyro_filter_multiplier;
 
     uint8_t gyro_enabled_bitmask;
+    uint8_t fusion_type;
+    uint8_t fusion_tau;
+    uint8_t fusion_cluster_size;
+#ifdef USE_SIMULATE_GYRO_NOISE
+    uint8_t noisy_gyro;
+    uint8_t noise;
+#endif
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
