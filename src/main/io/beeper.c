@@ -430,7 +430,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     bool dshotBeaconRequested = false;
 
-    if (!areMotorsRunning()) {
+    if (!areMotorsRunning()
+        && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+             && getBatteryState() == BATTERY_NOT_PRESENT)) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
