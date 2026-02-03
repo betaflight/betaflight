@@ -463,7 +463,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     // Clamp the beacon timestamp to prevent 35-minute overflow
-    {
+    // Only clamp if a beacon has been sent before (timestamp != 0)
+    if (lastDshotBeaconCommandTimeUs != 0) {
         timeDelta_t age = cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs);
         if (age > BEACON_MAX_AGE_US) {
             lastDshotBeaconCommandTimeUs = currentTimeUs - BEACON_MAX_AGE_US;
