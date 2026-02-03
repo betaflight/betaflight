@@ -462,6 +462,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
             lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
         }
     }
+
+    // Clamp the beacon timestamp to prevent 35-minute overflow
+    {
+        timeDelta_t age = cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs);
+        if (age > BEACON_MAX_AGE_US) {
+            lastDshotBeaconCommandTimeUs = currentTimeUs - BEACON_MAX_AGE_US;
+        }
+    }
 #endif
     // Note: DShot beacon handling above must run even if no beeper sequence is active.
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
