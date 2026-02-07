@@ -265,13 +265,12 @@ static void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
-    static float cosFactor = 1.0f;
-    static float sinFactor = 0.0f;
+    float cosFactor = 1.0f;
+    float sinFactor = 0.0f;
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
-        cosFactor = cos_approx(rxConfig()->fpvCamAngleDegrees * RAD);
-        sinFactor = sin_approx(rxConfig()->fpvCamAngleDegrees * RAD);
+        sincosf_approx(DEGREES_TO_RADIANS(rxConfig()->fpvCamAngleDegrees), &sinFactor, &cosFactor);
     }
 
     float roll = rawSetpoint[ROLL];
