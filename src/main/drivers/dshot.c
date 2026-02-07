@@ -351,28 +351,6 @@ void dshotCleanTelemetryData(void)
     memset(&dshotTelemetryState, 0, sizeof(dshotTelemetryState));
 }
 
-bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
-    // Check if DShot telemetry is active for this motor
-    if (!isDshotMotorTelemetryActive(motorIndex)) {
-        return false;
-    }
-
-    const dshotTelemetryMotorState_t *motorState = &dshotTelemetryState.motorState[motorIndex];
-
-    dest->rpm = motorState->telemetryData[DSHOT_TELEMETRY_TYPE_eRPM];
-
-    const bool edt = (motorState->telemetryTypes & DSHOT_EXTENDED_TELEMETRY_MASK) != 0;
-
-    // Extract telemetry data if available
-    dest->temperature = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) ?
-        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE] : 0;
-
-    dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
-        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
-
-    return true;
-}
-
 #endif // USE_DSHOT_TELEMETRY
 
 #if defined(USE_ESC_SENSOR) || defined(USE_DSHOT_TELEMETRY)

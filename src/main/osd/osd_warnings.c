@@ -66,6 +66,8 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
+#include "telemetry/motor_sensor.h"
+
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
 #if defined(USE_ESC_SENSOR) || (defined(USE_DSHOT) && defined(USE_DSHOT_TELEMETRY))
@@ -110,29 +112,17 @@ static bool checkEscAlarmConditions(const escSensorData_t *data, uint8_t motorIn
 static bool buildEscWarningMessage(char *warningText, bool isDshot) {
     unsigned escErrorLength = 0;
     bool escWarning = false;
+    motorSensorSource_e source = isDshot ? MOTOR_SENSOR_SOURCE_DSHOT : MOTOR_SENSOR_SOURCE_ESC_SENSOR;
 
     // Write 'ESC' prefix
     escErrorLength += tfp_sprintf(warningText + escErrorLength, "ESC");
 
     for (unsigned i = 0; i < getMotorCount(); i++) {
-        escSensorData_t *escData = NULL;
-        escSensorData_t escDataBuffer;
-        // Get sensor data based on type
-        if (isDshot) {
-            if (getDshotSensorData(&escDataBuffer, i)) {
-                escData = &escDataBuffer;
-            }
-        } else {
-#ifdef USE_ESC_SENSOR
-            escData = getEscSensorData(i);
-#endif
-        }
+        escSensorData_t *escData = getMotorSensorData(i, source);
 
         if (escData) {
             char alarmChars[ESC_ALARM_CHARS_SIZE];
-            // Only show motor if it has alarms (problems only approach)
             if (checkEscAlarmConditions(escData, i, alarmChars)) {
-                // compute space needed: " " + digits(motor) + strlen(alarmChars)
                 const unsigned digits = (i + 1 >= 10) ? 2 : 1;
                 const unsigned needed = 1 + digits + strlen(alarmChars);
                 if (escErrorLength + needed >= OSD_WARNINGS_MAX_SIZE) {

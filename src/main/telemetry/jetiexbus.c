@@ -58,6 +58,7 @@
 
 #include "telemetry/jetiexbus.h"
 #include "telemetry/telemetry.h"
+#include "telemetry/motor_sensor.h"
 
 #define EXTEL_DATA_MSG      (0x40)
 #define EXTEL_UNMASK_TYPE   (0x3F)
@@ -449,9 +450,9 @@ static int32_t getSensorValue(uint8_t sensor)
         uint8_t validCount = 0;
         uint8_t count = getMotorCount();
         for (uint8_t i = 0; i < count; i++) {
-            const escSensorData_t *esc = getEscSensorData(i);
-            if (esc && esc->dataAge < ESC_DATA_INVALID) {
-                rpmSum10 += esc->rpm;
+            escSensorData_t *escData = getMotorSensorData(i, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+            if (escData && escData->dataAge < ESC_DATA_INVALID) {
+                rpmSum10 += escData->rpm;
                 validCount++;
             }
         }
