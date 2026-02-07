@@ -112,7 +112,11 @@ static void serialEnableCC(softSerial_t *softSerial)
 #ifdef USE_HAL_DRIVER
     TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_ENABLE);
 #else
+#if defined(USE_GDBSP_DRIVER)
+    gd32_timer_input_capture_config(softSerial->timerHardware->tim, softSerial->timerHardware->channel, ENABLE);
+#else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
+#endif
 #endif
 }
 
@@ -140,7 +144,11 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
 #ifdef USE_HAL_DRIVER
     TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_DISABLE);
 #else
+#if defined(USE_GDBSP_DRIVER)
+    gd32_timer_input_capture_config(softSerial->timerHardware->tim, softSerial->timerHardware->channel, DISABLE);
+#else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
+#endif
 #endif
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING); // leave AF mode; serialOutputPortActivate will follow immediately
     softSerial->rxActive = false;
