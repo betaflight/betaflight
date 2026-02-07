@@ -46,6 +46,7 @@
 
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
+#include "drivers/accgyro/accgyro_spi_icm20948.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
@@ -74,7 +75,7 @@
 #include "gyro_init.h"
 
 // The gyro buffer is split 50/50, the first half for the transmit buffer, the second half for the receive buffer
-// This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed id other
+// This buffer is large enough for the gyros currently supported in accgyro_mpu.c but should be reviewed if other
 // gyro types are supported with SPI DMA.
 #define GYRO_BUF_SIZE 32
 
@@ -295,7 +296,6 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     // The targetLooptime gets set later based on the active sensor's gyroSampleRateHz and pid_process_denom
     gyroSensor->gyroDev.gyroSampleRateHz = gyroSetSampleRate(&gyroSensor->gyroDev);
     gyroSensor->gyroDev.initFn(&gyroSensor->gyroDev);
-
     // As new gyros are supported, be sure to add them below based on whether they are subject to the overflow/inversion bug
     // Any gyro not explicitly defined will default to not having built-in overflow protection as a safe alternative.
     switch (gyroSensor->gyroDev.gyroHardware) {
@@ -326,6 +326,10 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_ICM20608G:
     case GYRO_ICM20649:  // we don't actually know if this is affected, but as there are currently no flight controllers using it we err on the side of caution
     case GYRO_ICM20689:
+        gyroSensor->gyroDev.gyroHasOverflowProtection = false;
+        break;
+    case GYRO_ICM20948:
+        // We set to false to err on side of caution, matching implementation of similar ICM-series until flight testing proves saturation behavior is 100% reliable.
         gyroSensor->gyroDev.gyroHasOverflowProtection = false;
         break;
 
@@ -425,6 +429,16 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     case GYRO_ICM20689:
         if (icm20689SpiGyroDetect(dev)) {
             gyroHardware = GYRO_ICM20689;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+
+#ifdef USE_GYRO_SPI_ICM20948
+    case GYRO_ICM20948:
+        if (icm20948SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_ICM20948;
             break;
         }
         FALLTHROUGH;
