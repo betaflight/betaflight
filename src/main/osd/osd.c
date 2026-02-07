@@ -161,7 +161,7 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 12);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 1);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 2);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
