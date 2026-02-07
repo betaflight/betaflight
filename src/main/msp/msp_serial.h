@@ -124,6 +124,8 @@ typedef struct mspPort_s {
     mspDescriptor_t descriptor;
 } mspPort_t;
 
+#define MSP_ACTIVITY_DEFAULT_TIMEOUT_MS 5000
+
 void mspSerialInit(void);
 bool mspSerialWaiting(void);
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn);
@@ -133,3 +135,6 @@ void mspSerialReleaseSharedTelemetryPorts(void);
 mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIdentifier);
 int mspSerialPush(serialPortIdentifier_e port, uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direction, mspVersion_e mspVersion);
 uint32_t mspSerialTxBytesFree(void);
+timeMs_t mspSerialLastActivityMs(void);
+bool mspSerialIsActiveWithin(timeMs_t timeoutMs);
+bool mspSerialIsConfiguratorActive(void);
