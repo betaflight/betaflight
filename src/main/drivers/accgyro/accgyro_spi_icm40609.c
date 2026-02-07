@@ -241,6 +241,7 @@
 #define ICM40609_ACCEL_UI_FILT_ORD_MASK     (0x03 << 3) // bits [4:3]
 #define ICM40609_ACCEL_DEC2_M2_ORD_MASK     (0x03 << 1) // bits [2:1]
 
+#define ICM40609_TEMP_DATA1                 0x1D
 #define ICM40609_ACCEL_DATA_X1_UI           0x1F
 #define ICM40609_GYRO_DATA_X1_UI            0x25
 
@@ -657,6 +658,10 @@ void icm40609GyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
     gyro->accDataReg = ICM40609_ACCEL_DATA_X1_UI;
     gyro->gyroDataReg = ICM40609_GYRO_DATA_X1_UI;
+    gyro->tempDataReg = ICM40609_TEMP_DATA1;
+    gyro->dmaReadRegStart = ICM40609_TEMP_DATA1;
+    gyro->tempScale = 1.0f / 132.48f;
+    gyro->tempZero = 25.0f;
 
     // Enable sensors before configuration - registers ignored when powered off
     setGyroAccPowerMode(dev, true);
