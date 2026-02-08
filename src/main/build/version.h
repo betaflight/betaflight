@@ -34,7 +34,7 @@
 // Increment when a bug-fix release is made (1 for initial YYYY.MM.X release)
 #define FC_VERSION_PATCH_LEVEL      2
 // Optional suffix for pre-releases (alpha, beta, rc1, etc). Use empty value (not "") for final releases
-#define FC_VERSION_SUFFIX "alpha"
+#define FC_VERSION_SUFFIX
 
 // Prepend "-" to non-empty suffix
 //  Minimal helper: only tests two cases — empty vs a single string literal
