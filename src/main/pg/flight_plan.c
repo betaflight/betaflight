@@ -24,7 +24,7 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "flight_plan.h"
+#include "pg/flight_plan.h"
 
 #if ENABLE_FLIGHT_PLAN
 

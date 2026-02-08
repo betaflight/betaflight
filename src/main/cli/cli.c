@@ -2620,9 +2620,6 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
-    // Get operation from args
-    char *operation = args[OP];
-
     // Check for clear operation
     if (strcasecmp(args[OP], "clear") == 0) {
         config->waypointCount = 0;
