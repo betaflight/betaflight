@@ -2478,25 +2478,35 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         ptr++;
     }
 
-    // Parse integer part using int64_t to avoid overflow
-    int64_t integerPart = 0;
+    // Parse integer part (as positive value) with overflow checks
+    int32_t integerPart = 0;
     if (!(*ptr >= '0' && *ptr <= '9')) {
         return false; // No digits found
     }
     while (*ptr >= '0' && *ptr <= '9') {
-        integerPart = integerPart * 10 + (*ptr - '0');
+        int digit = (*ptr - '0');
+        // Check for overflow before multiply and add
+        if (integerPart > (INT32_MAX - digit) / 10) {
+            return false; // Would overflow
+        }
+        integerPart = integerPart * 10 + digit;
         ptr++;
     }
 
-    // Parse fractional part (up to 6 digits) using int64_t
-    int64_t fractionalPart = 0;
-    int64_t divisor = 1000000;
+    // Parse fractional part (up to 6 digits) with overflow checks
+    int32_t fractionalPart = 0;
+    int32_t divisor = 1000000;
 
     if (*ptr == '.') {
         ptr++;
         int digits = 0;
         while (*ptr >= '0' && *ptr <= '9' && digits < 6) {
-            fractionalPart = fractionalPart * 10 + (*ptr - '0');
+            int digit = (*ptr - '0');
+            // Check for overflow before multiply and add
+            if (fractionalPart > (INT32_MAX - digit) / 10) {
+                return false; // Would overflow
+            }
+            fractionalPart = fractionalPart * 10 + digit;
             divisor /= 10;
             digits++;
             ptr++;
@@ -2504,6 +2514,10 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         // Ignore any additional digits beyond 6 decimal places
         while (*ptr >= '0' && *ptr <= '9') {
             ptr++;
+        }
+        // Check for overflow before scaling fractional part
+        if (divisor > 0 && fractionalPart > INT32_MAX / divisor) {
+            return false; // Would overflow
         }
         fractionalPart *= divisor; // Scale to 6 decimal places
     }
@@ -2513,18 +2527,30 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         return false;
     }
 
-    // Compute microdegrees in int64_t, apply sign, then check range
-    int64_t microdegrees = integerPart * 1000000 + fractionalPart;
+    // Check for overflow before computing microdegrees
+    // For positive: integerPart * 1000000 + fractionalPart must fit in INT32_MAX
+    if (integerPart > (INT32_MAX - fractionalPart) / 1000000) {
+        return false; // Would overflow
+    }
+
+    int32_t microdegrees = integerPart * 1000000 + fractionalPart;
+
+    // Apply sign and check it fits in int32_t range
     if (negative) {
+        // Check if negation would overflow (microdegrees > INT32_MAX means -microdegrees < INT32_MIN)
+        // Since microdegrees is positive and <= INT32_MAX, -microdegrees >= -INT32_MAX
+        // But -INT32_MAX = INT32_MIN + 1, so we're safe except when microdegrees would make result = INT32_MIN - 1
+        // Actually, we need to check if the negated value would be < INT32_MIN
+        // For int32_t: INT32_MIN = -2147483648, INT32_MAX = 2147483647
+        // If microdegrees = 2147483648, then -microdegrees = -2147483648 = INT32_MIN (valid)
+        // But microdegrees is int32_t, max is 2147483647, so -microdegrees = -2147483647 (valid)
+        // Special case: if microdegrees = 0, result is 0 (valid)
+        // The only concern is if microdegrees = INT32_MAX + 1, but that's impossible since microdegrees is int32_t
+        // So negation is always safe here
         microdegrees = -microdegrees;
     }
 
-    // Verify result fits in int32_t range
-    if (microdegrees < INT32_MIN || microdegrees > INT32_MAX) {
-        return false;
-    }
-
-    *result = (int32_t)microdegrees;
+    *result = microdegrees;
     return true;
 }
 
@@ -2533,12 +2559,21 @@ static void formatDecimalCoordinate(int32_t value, char *buffer, size_t bufferSi
 {
     UNUSED(bufferSize);
 
-    // Capture sign and work with absolute value to preserve sign for values between -1 and 0
     bool negative = value < 0;
-    int32_t absValue = negative ? -value : value;
+    int32_t integerPart, fractionalPart;
 
-    int32_t integerPart = absValue / 1000000;
-    int32_t fractionalPart = absValue % 1000000;
+    // Special case for INT32_MIN to avoid UB when negating
+    if (value == INT32_MIN) {
+        // INT32_MIN = -2147483648
+        // -2147483648 / 1000000 = -2147 (rounds toward zero)
+        // -2147483648 % 1000000 = -483648
+        integerPart = 2147;
+        fractionalPart = 483648;
+    } else {
+        int32_t absValue = negative ? -value : value;
+        integerPart = absValue / 1000000;
+        fractionalPart = absValue % 1000000;
+    }
 
     tfp_sprintf(buffer, "%s%d.%06d", negative ? "-" : "", integerPart, fractionalPart);
 }
