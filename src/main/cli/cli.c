@@ -2478,8 +2478,8 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         ptr++;
     }
 
-    // Parse integer part
-    int32_t integerPart = 0;
+    // Parse integer part using int64_t to avoid overflow
+    int64_t integerPart = 0;
     if (!(*ptr >= '0' && *ptr <= '9')) {
         return false; // No digits found
     }
@@ -2488,9 +2488,9 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         ptr++;
     }
 
-    // Parse fractional part (up to 6 digits)
-    int32_t fractionalPart = 0;
-    int32_t divisor = 1000000;
+    // Parse fractional part (up to 6 digits) using int64_t
+    int64_t fractionalPart = 0;
+    int64_t divisor = 1000000;
 
     if (*ptr == '.') {
         ptr++;
@@ -2513,7 +2513,18 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
         return false;
     }
 
-    *result = (integerPart * 1000000 + fractionalPart) * (negative ? -1 : 1);
+    // Compute microdegrees in int64_t, apply sign, then check range
+    int64_t microdegrees = integerPart * 1000000 + fractionalPart;
+    if (negative) {
+        microdegrees = -microdegrees;
+    }
+
+    // Verify result fits in int32_t range
+    if (microdegrees < INT32_MIN || microdegrees > INT32_MAX) {
+        return false;
+    }
+
+    *result = (int32_t)microdegrees;
     return true;
 }
 
@@ -2521,14 +2532,15 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
 static void formatDecimalCoordinate(int32_t value, char *buffer, size_t bufferSize)
 {
     UNUSED(bufferSize);
-    int32_t integerPart = value / 1000000;
-    int32_t fractionalPart = value % 1000000;
 
-    if (fractionalPart < 0) {
-        fractionalPart = -fractionalPart;
-    }
+    // Capture sign and work with absolute value to preserve sign for values between -1 and 0
+    bool negative = value < 0;
+    int32_t absValue = negative ? -value : value;
 
-    tfp_sprintf(buffer, "%d.%06d", integerPart, fractionalPart);
+    int32_t integerPart = absValue / 1000000;
+    int32_t fractionalPart = absValue % 1000000;
+
+    tfp_sprintf(buffer, "%s%d.%06d", negative ? "-" : "", integerPart, fractionalPart);
 }
 
 static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flightPlanConfig, const flightPlanConfig_t *defaultFlightPlanConfig, const char *headingStr)
@@ -2589,38 +2601,39 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         return;
     }
 
-    // Parse first argument (operation or legacy index)
-    char *ptr = cmdline;
-    while (*ptr == ' ') ptr++;
-    char *operation = ptr;
-    while (*ptr && *ptr != ' ') ptr++;
-    if (*ptr) *ptr++ = '\0';
-
-    // Check for clear operation
-    if (strcasecmp(operation, "clear") == 0) {
-        config->waypointCount = 0;
-        cliPrintLine("Waypoints cleared");
-        return;
-    }
-
-    // Check for list operation
-    if (strcasecmp(operation, "list") == 0) {
-        printWaypoint(DUMP_MASTER, flightPlanConfig(), NULL, NULL);
-        return;
-    }
-
-    // Parse arguments for insert/update/remove operations
+    // Parse arguments into args array
     enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, MAX_ARGS };
     char *args[MAX_ARGS];
     int argCount = 0;
 
-    ptr = cmdline;
+    char *ptr = cmdline;
     while (*ptr && argCount < MAX_ARGS) {
         while (*ptr == ' ') ptr++;
         if (*ptr == '\0') break;
         args[argCount++] = ptr;
         while (*ptr && *ptr != ' ') ptr++;
         if (*ptr) *ptr++ = '\0';
+    }
+
+    // Validate we have at least one argument
+    if (argCount == 0) {
+        return;
+    }
+
+    // Get operation from args
+    char *operation = args[OP];
+
+    // Check for clear operation
+    if (strcasecmp(args[OP], "clear") == 0) {
+        config->waypointCount = 0;
+        cliPrintLine("Waypoints cleared");
+        return;
+    }
+
+    // Check for list operation
+    if (strcasecmp(args[OP], "list") == 0) {
+        printWaypoint(DUMP_MASTER, flightPlanConfig(), NULL, NULL);
+        return;
     }
 
     // Check for remove operation
@@ -2694,8 +2707,19 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
 
     // Parse other values
     int32_t altitude = atoi(args[ALT]);
-    uint16_t speed = atoi(args[SPEED]);
-    uint16_t duration = atoi(args[DURATION]);
+
+    // Parse speed and duration as signed ints first to validate they're non-negative
+    int tmpSpeed = atoi(args[SPEED]);
+    int tmpDuration = atoi(args[DURATION]);
+
+    if (tmpSpeed < 0 || tmpSpeed > UINT16_MAX) {
+        cliShowArgumentRangeError(cmdName, "speed", 0, UINT16_MAX);
+        return;
+    }
+    if (tmpDuration < 0 || tmpDuration > UINT16_MAX) {
+        cliShowArgumentRangeError(cmdName, "duration", 0, UINT16_MAX);
+        return;
+    }
 
     // Parse type
     uint8_t type = 0;
@@ -2755,8 +2779,8 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     wp->latitude = latitude;
     wp->longitude = longitude;
     wp->altitude = altitude;
-    wp->speed = speed;
-    wp->duration = duration;
+    wp->speed = (uint16_t)tmpSpeed;
+    wp->duration = (uint16_t)tmpDuration;
     wp->type = type;
     wp->pattern = pattern;
 
