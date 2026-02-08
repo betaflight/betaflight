@@ -14,6 +14,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/flight_plan.c \
             pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
