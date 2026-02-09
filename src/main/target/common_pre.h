@@ -282,7 +282,7 @@
 
 #endif // !defined(CLOUD_BUILD)
 
-#if !defined(USE_LED_STRIP) && defined(USE_LED_STRIP_64)
+#if defined(USE_LED_STRIP_64) && !defined(USE_LED_STRIP)
 #define USE_LED_STRIP
 #endif
 
