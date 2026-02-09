@@ -330,6 +330,10 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
     case MAG_NONE:
         magHardware = MAG_NONE;
         break;
+
+    default:
+        magHardware = MAG_NONE;
+        break;
     }
 
     // MAG_MPU925X_AK8963 is an MPU925x configured as I2C passthrough to the built-in AK8963 magnetometer

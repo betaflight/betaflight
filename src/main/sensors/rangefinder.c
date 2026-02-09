@@ -169,6 +169,10 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_NONE:
             rangefinderHardware = RANGEFINDER_NONE;
             break;
+
+        default:
+            rangefinderHardware = RANGEFINDER_NONE;
+            break;
     }
 
     if (rangefinderHardware == RANGEFINDER_NONE) {
