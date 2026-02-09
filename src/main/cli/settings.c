@@ -229,7 +229,6 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
-// sync with opticalflowType_e
 const char * const lookupTableOpticalflowHardware[] = {
     "NONE", "MT"
 };
