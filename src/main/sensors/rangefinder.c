@@ -56,25 +56,6 @@
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
 
-#ifdef USE_SENSOR_NAMES
-const char * const rangefinderHardwareNames[] = {
-    "NONE",
-    "HCSR04",
-    "TFMINI",
-    "TF02",
-    "MTF01",
-    "MTF02",
-    "MTF01P",
-    "MTF02P",
-    "TFNOVA",
-    "NOOPLOOP_F2",
-    "NOOPLOOP_F2P",
-    "NOOPLOOP_F2PH",
-    "NOOPLOOP_F",
-    "NOOPLOOP_FP",
-    "NOOPLOOP_F2MINI"
-};
-#endif
 
 //#include "uav_interconnect/uav_interconnect.h"
 
