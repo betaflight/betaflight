@@ -204,19 +204,44 @@ const char * const lookupTableBaroHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
 // sync with magSensor_e
-const char * const lookupTableMagHardware[] = {
-    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883", "LIS2MDL", "LIS3MDL", "MPU925X_AK8963", "IST8310"
+const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
+    [MAG_DEFAULT] = "AUTO",
+    [MAG_NONE] = "NONE",
+    [MAG_HMC5883] = "HMC5883",
+    [MAG_AK8975] = "AK8975",
+    [MAG_AK8963] = "AK8963",
+    [MAG_QMC5883] = "QMC5883",
+    [MAG_LIS2MDL] = "LIS2MDL",
+    [MAG_LIS3MDL] = "LIS3MDL",
+    [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
+    [MAG_IST8310] = "IST8310"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
-const char * const lookupTableRangefinderHardware[] = {
-    "NONE", "HCSR04", "TFMINI", "TF02", "MTF01", "MTF02", "MTF01P", "MTF02P", "TFNOVA",
-    "NOOPLOOP_F2", "NOOPLOOP_F2P", "NOOPLOOP_F2PH", "NOOPLOOP_F", "NOOPLOOP_FP", "NOOPLOOP_F2MINI"
+// sync with rangefinderType_e
+const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = {
+    [RANGEFINDER_NONE] = "NONE",
+    [RANGEFINDER_HCSR04] = "HCSR04",
+    [RANGEFINDER_TFMINI] = "TFMINI",
+    [RANGEFINDER_TF02] = "TF02",
+    [RANGEFINDER_MTF01] = "MTF01",
+    [RANGEFINDER_MTF02] = "MTF02",
+    [RANGEFINDER_MTF01P] = "MTF01P",
+    [RANGEFINDER_MTF02P] = "MTF02P",
+    [RANGEFINDER_TFNOVA] = "TFNOVA",
+    [RANGEFINDER_NOOPLOOP_F2] = "NOOPLOOP_F2",
+    [RANGEFINDER_NOOPLOOP_F2P] = "NOOPLOOP_F2P",
+    [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
+    [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
+    [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
+    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
-const char * const lookupTableOpticalflowHardware[] = {
-    "NONE", "MT"
+// sync with opticalflowType_e
+const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
+    [OPTICALFLOW_NONE] = "NONE",
+    [OPTICALFLOW_MT] = "MT"
 };
 #endif
 
