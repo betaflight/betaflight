@@ -204,17 +204,8 @@ const char * const lookupTableBaroHardware[] = {
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_MAG)
 // sync with magSensor_e
-const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
-    [MAG_DEFAULT] = "AUTO",
-    [MAG_NONE] = "NONE",
-    [MAG_HMC5883] = "HMC5883",
-    [MAG_AK8975] = "AK8975",
-    [MAG_AK8963] = "AK8963",
-    [MAG_QMC5883] = "QMC5883",
-    [MAG_LIS2MDL] = "LIS2MDL",
-    [MAG_LIS3MDL] = "LIS3MDL",
-    [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
-    [MAG_IST8310] = "IST8310"
+const char * const lookupTableMagHardware[] = {
+    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963", "QMC5883", "LIS2MDL", "LIS3MDL", "MPU925X_AK8963", "IST8310"
 };
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_RANGEFINDER)
@@ -239,9 +230,8 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
 #endif
 #if defined(USE_SENSOR_NAMES) || defined(USE_OPTICALFLOW)
 // sync with opticalflowType_e
-const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
-    [OPTICALFLOW_NONE] = "NONE",
-    [OPTICALFLOW_MT] = "MT"
+const char * const lookupTableOpticalflowHardware[] = {
+    "NONE", "MT"
 };
 #endif
 
