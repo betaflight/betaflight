@@ -39,8 +39,6 @@ typedef enum {
     RANGEFINDER_HARDWARE_COUNT
 } rangefinderType_e;
 
-extern const char * const rangefinderTypeNames[RANGEFINDER_HARDWARE_COUNT];
-
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
 } rangefinderConfig_t;
