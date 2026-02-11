@@ -456,9 +456,6 @@ void beeperUpdate(timeUs_t currentTimeUs)
                 lastDshotBeaconCommandTimeUs = currentTimeUs;
                 dshotCommandWrite(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone, DSHOT_CMD_TYPE_INLINE);
             }
-        } else {
-            // make sure lastDshotBeaconCommandTimeUs is valid when DSHOT_BEACON_GUARD_DELAY_US elapses
-            lastDshotBeaconCommandTimeUs = currentTimeUs - dshotBeaconIntervalUs;
         }
     }
 #endif
