@@ -289,6 +289,9 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         case ICM42605_WHO_AM_I_CONST:
             icmDetected = ICM_42605_SPI;
             break;
+        case ICM42622P_WHO_AM_I_CONST:
+            icmDetected = ICM_42622P_SPI;
+            break;
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
             break;
@@ -330,6 +333,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
+    case ICM_42622P_SPI:
     case ICM_42688P_SPI:
     case IIM_42652_SPI:
     case IIM_42653_SPI:
@@ -425,7 +429,7 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     }
 
     // This sets the gyro/accel to the maximum FSR, depending on the chip
-    // ICM42605, ICM_42688P: 2000DPS and 16G.
+    // ICM42605, ICM42622P, ICM42688P: 2000DPS and 16G.
     // IIM42653: 4000DPS and 32G
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
     delay(15);
@@ -437,6 +441,7 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
 {
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
+    case ICM_42622P_SPI:
     case ICM_42688P_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
         break;
@@ -470,7 +475,7 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
         default:
             return aafLUT42605[AAF_CONFIG_258HZ];
         }
-
+    case ICM_42622P_SPI:
     case ICM_42688P_SPI:
     default:
         switch (config) {
@@ -490,4 +495,4 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
     }
 }
 
-#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
+#endif // USE_GYRO_SPI_ICM42605 || USE_ACCGYRO_ICM42622P || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
