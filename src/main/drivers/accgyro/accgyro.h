@@ -67,6 +67,7 @@ typedef enum {
     GYRO_ICM40609D,
     GYRO_IIM42652,
     GYRO_LSM6DSK320X,
+    GYRO_ICM42622P,
     GYRO_VIRTUAL,
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
