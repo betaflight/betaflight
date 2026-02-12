@@ -76,6 +76,13 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             gyroSampleRateHz = 9000;
             accSampleRateHz = 1125;
             break;
+
+       case ICM_20948_SPI: 
+            gyro->gyroRateKHz = GYRO_RATE_8_kHz;  // Start with 8kHz for safety
+            gyroSampleRateHz = 8000;
+            accSampleRateHz = 1000;               // 1kHz is a safe Accel rate
+            break;
+
 #ifdef USE_ACCGYRO_LSM6DSO
         case LSM6DSO_SPI:
             gyro->gyroRateKHz = GYRO_RATE_6664_Hz;

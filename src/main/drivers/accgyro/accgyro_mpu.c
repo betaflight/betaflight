@@ -49,6 +49,7 @@
 #include "drivers/accgyro/accgyro_spi_bmi270.h"
 #include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
+#include "drivers/accgyro/accgyro_spi_icm20948.h"
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
@@ -376,6 +377,9 @@ static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
 #ifdef USE_GYRO_SPI_ICM20649
     icm20649SpiDetect,
 #endif
+#ifdef USE_GYRO_SPI_ICM20948
+    icm20948SpiDetect,
+#endif
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
     icm456xxSpiDetect,
 #endif
@@ -485,7 +489,6 @@ bool mpuDetect(gyroDev_t *gyro, const gyroDeviceConfig_t *config)
 
 #ifdef USE_SPI_GYRO
     gyro->dev.bus->busType = BUS_TYPE_SPI;
-
     return detectSPISensorsAndUpdateDetectionResult(gyro, config);
 #else
     return false;
