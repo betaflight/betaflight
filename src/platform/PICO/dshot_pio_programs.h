@@ -57,51 +57,54 @@ static inline pio_sm_config dshot_600_program_get_default_config(uint offset) {
 // --------------- //
 
 #define dshot_600_bidir_wrap_target 0
-#define dshot_600_bidir_wrap 30
+#define dshot_600_bidir_wrap 28
 #define dshot_600_bidir_pio_version 0
 
 #define dshot_600_bidir_BIDIR_START 0
+
+#define dshot_600_bidir_offset_pull_data 0u
+#define dshot_600_bidir_offset_wait_one 16u
+#define dshot_600_bidir_offset_wait_zero 18u
+#define dshot_600_bidir_offset_complete 25u
 
 static const uint16_t dshot_600_bidir_program_instructions[] = {
             //     .wrap_target
     0x80a0, //  0: pull   block
     0xe081, //  1: set    pindirs, 1
     0x6050, //  2: out    y, 16
-    0xe034, //  3: set    x, 20
-    0x6041, //  4: out    y, 1
-    0xe000, //  5: set    pins, 0
-    0x006e, //  6: jmp    !y, 14
-    0xbf42, //  7: nop                           [31]
-    0xbf42, //  8: nop                           [31]
-    0xb142, //  9: nop                           [17]
-    0xff01, // 10: set    pins, 1                [31]
-    0xa642, // 11: nop                           [6]
-    0x00e4, // 12: jmp    !osre, 4
-    0x0014, // 13: jmp    20
-    0xbf42, // 14: nop                           [31]
-    0xa642, // 15: nop                           [6]
-    0xff01, // 16: set    pins, 1                [31]
-    0xbf42, // 17: nop                           [31]
-    0xb142, // 18: nop                           [17]
-    0x00e4, // 19: jmp    !osre, 4
-    0xb442, // 20: nop                           [20]
-    0xe080, // 21: set    pindirs, 0
-    0x20a0, // 22: wait   1 pin, 0
-    0xe023, // 23: set    x, 3
-    0x2020, // 24: wait   0 pin, 0
-    0xe05f, // 25: set    y, 31
-    0x4f01, // 26: in     pins, 1                [15]
-    0x019a, // 27: jmp    y--, 26                [1]
-    0x0059, // 28: jmp    x--, 25
-    0xe081, // 29: set    pindirs, 1
-    0xe001, // 30: set    pins, 1
+    0x6041, //  3: out    y, 1
+    0xff00, //  4: set    pins, 0                [31]
+    0x086b, //  5: jmp    !y, 11                 [8]
+    0xbf42, //  6: nop                           [31]
+    0xaa42, //  7: nop                           [10]
+    0xff01, //  8: set    pins, 1                [31]
+    0x07e3, //  9: jmp    !osre, 3               [7]
+    0x000e, // 10: jmp    14
+    0xff01, // 11: set    pins, 1                [31]
+    0xbf42, // 12: nop                           [31]
+    0x12e3, // 13: jmp    !osre, 3               [18]
+    0xb442, // 14: nop                           [20]
+    0xe080, // 15: set    pindirs, 0
+    0x20a0, // 16: wait   1 pin, 0
+    0xe023, // 17: set    x, 3
+    0x3020, // 18: wait   0 pin, 0               [16]
+    0xe05f, // 19: set    y, 31
+    0x4e01, // 20: in     pins, 1                [14]
+    0x0098, // 21: jmp    y--, 24
+    0x0053, // 22: jmp    x--, 19
+    0x0019, // 23: jmp    25
+    0x0114, // 24: jmp    20                     [1]
+    0xe081, // 25: set    pindirs, 1
+    0xe001, // 26: set    pins, 1
+    0xe044, // 27: set    y, 4
+    0x1d7c, // 28: jmp    !y, 28                 [29]
             //     .wrap
 };
 
 #if !PICO_NO_HARDWARE
 static const struct pio_program dshot_600_bidir_program = {
     .instructions = dshot_600_bidir_program_instructions,
-    .length = 31,
+    .length = 29,
     .origin = -1,
     .pio_version = dshot_600_bidir_pio_version,
 #if PICO_PIO_VERSION > 0

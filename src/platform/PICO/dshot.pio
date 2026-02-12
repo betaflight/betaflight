@@ -51,74 +51,80 @@ outzero:
 ; gpio_set_pulls(pin, true, false) provides pull-up for idle HIGH when pindirs=0
 ; Expect to receive frame ~30us (independent of DSHOT speed) after output frame.
 ;
-; Transmit: 20 instructions (0-19)
-; Receive: 11 instructions (20-30):
-;   20:    settling delay before switching to input
-;   21:    switch to input mode
-;   22:    wait 1 pin (wait for HIGH)
-;   23:    set x (setup outer loop count before edge detection)
-;   24:    wait 0 pin (wait for falling edge)
-;   25-28: 5.56x oversampling loop (4 outer x 32 inner = 128 samples)
-;   29-30: switch back to output, drive HIGH
-; Total: 31 instructions (1 spare)
+; Transmit: 14 instructions
+; Receive: 13 instructions
+;       settling delay before switching to input
+;       switch to input mode
+;       wait 1 pin (wait for HIGH)
+;       set x (setup outer loop count before edge detection)
+;       wait 0 pin (wait for falling edge)
+;       5.56x oversampling loop (4 outer x 32 inner = 128 samples)
+;       switch back to output, drive HIGH
+; Total: 27 instructions
 
 .program dshot_600_bidir
 
 .define public BIDIR_START 0
 
 .wrap_target
-pull_data:
-    pull   block                            ; 0: Wait for TX data
-    set    pindirs, 1                       ; 1: Switch to output mode
-    out    y, 16                            ; 2: Discard top 16 bits
-    set    x, 20                            ; 3: 21 bits to transmit
+PUBLIC pull_data:
+    pull   block                            ; Wait for TX data
+    set    pindirs, 1                       ; Switch to output mode
+    out    y, 16                            ; Discard top 16 bits
 bitloop_tx:
-    out    y, 1                             ; 4: Shift bit to y
-    set    pins, 0                          ; 5: Start of bit (LOW)
-    jmp    !y, outzero_tx                   ; 6: Branch on bit value
+    out    y, 1                             ; Shift bit to y
+    set    pins, 0               [31]       ; Start of bit (LOW)
+    jmp    !y, outzero_tx        [8]        ; Branch on bit value
 outone_tx:
     ; '1' bit: 84 cycles LOW (67%), 41 cycles HIGH (33%)
-    nop                          [31]       ; 7: 32 cycles
-    nop                          [31]       ; 8: 32 cycles
-    nop                          [17]       ; 9: 18 cycles (total delay=82, LOW=1+1+82=84)
-    set    pins, 1               [31]       ; 10: 32 cycles HIGH
-    nop                          [6]        ; 11: 7 cycles HIGH
-    jmp    !osre, bitloop_tx                ; 12: 1 cycle, + out(1) = 41 HIGH total
-    jmp    receive                          ; 13: Done TX -> receive
+    nop                          [31]       ; 32 cycles
+    nop                          [10]       ; 18 cycles (total delay=82, LOW=1+1+82=84)
+    set    pins, 1               [31]       ; 32 cycles HIGH
+    ; 7 cycles HIGH
+    jmp    !osre, bitloop_tx     [7]        ; 1 cycle, + out(1) = 41 HIGH total
+    jmp    receive                          ; Done TX -> receive
 outzero_tx:
     ; '0' bit: 41 cycles LOW (33%), 84 cycles HIGH (67%)
-    nop                          [31]       ; 14: 32 cycles
-    nop                          [6]        ; 15: 7 cycles (total delay=39, LOW=1+1+39=41)
-    set    pins, 1               [31]       ; 16: 32 cycles HIGH
-    nop                          [31]       ; 17: 32 cycles HIGH
-    nop                          [17]       ; 18: 18 cycles HIGH
-    jmp    !osre, bitloop_tx                ; 19: 1 cycle, + out(1) = 84 HIGH total
+    ; 7 cycles (total delay=39, LOW=1+1+39=41)
+    set    pins, 1               [31]       ; 32 cycles HIGH
+    nop                          [31]       ; 32 cycles HIGH
+    ; 18 cycles HIGH
+    jmp    !osre, bitloop_tx     [18]       ; 1 cycle, + out(1) = 84 HIGH total
 
 receive:
     ; Delay before switching to input to let line settle after TX
     ; ~280ns settling delay = 21 cycles at 75 MHz
-    nop                          [20]       ; 20: 21 cycles settling delay
-    set    pindirs, 0                       ; 21: Switch to input mode
+    nop                          [20]       ; 21 cycles settling delay
+    set    pindirs, 0                       ; Switch to input mode
     ; Wait for start bit (falling edge from idle HIGH)
     ; Using 'wait' instructions for precise, deterministic edge detection
     ; At 75 MHz (clkdiv=2), 'wait' has 0-1 cycle jitter = 0-13.3ns
-    wait   1 pin 0                          ; 22: Wait for line to go HIGH (idle)
-    set    x, 3                             ; 23: Setup outer loop count (4 iterations) BEFORE edge detection
-    wait   0 pin 0                          ; 24: Wait for falling edge (start bit)
+PUBLIC wait_one:
+    wait   1 pin 0                          ; Wait for line to go HIGH (idle)
+    set    x, 3                             ; Setup outer loop count (4 iterations) BEFORE edge detection
+PUBLIC wait_zero:
+    wait   0 pin 0               [16]       ; Wait for falling edge (start bit), then 18 cycles until in pins
     ; Inner loop: 18 cycles per sample at 75 MHz
-    ; in[15](16) + jmp[1](2) = 18 cycles
     ; Telemetry bit = 100 cycles, so 100/18 = 5.56x oversampling
-    ; 21 bits × 5.56 = 117 samples needed, fits in 128 with margin
+    ; 21 bits × 5.56 = 117 samples needed, fits in 128 with margin (actually only +20 bit periods until final edge)
+
 
 outer_loop:
-    set    y, 31                            ; 25: 32 inner loop iterations
+    set    y, 31                            ; 32 inner loop iterations
 inner_loop:
-    in     pins, 1               [15]       ; 26: Sample pin + 15 delay = 16 cycles
-    jmp    y--, inner_loop       [1]        ; 27: Continue inner loop + 1 delay = 2 cycles
-    jmp    x--, outer_loop                  ; 28: Continue outer loop (1 cycle)
+    in     pins, 1               [14]       ; Sample pin + 14 delay = 15 cycles
+    jmp    y--, delayed_inner_loop          ; Continue inner loop via detour + 1 delay = 3 cycles, total 18
+    jmp    x--, outer_loop                  ; Continue outer loop, total 18
+    jmp    complete
+delayed_inner_loop:
+    jmp    inner_loop            [1]
 
     ; Sampling complete - 128 samples pushed via autopush (4 x 32-bit words)
     ; Set pin back to output HIGH (idle state) before wrapping.
-    set    pindirs, 1                       ; 29: Switch back to output mode
-    set    pins, 1                          ; 30: Set pin HIGH (idle state)
+PUBLIC complete:
+    set    pindirs, 1                       ; Switch back to output mode
+    set    pins, 1                          ; Set pin HIGH (idle state)
+    set    y, 4                             ;
+delay_next_output:
+    jmp    !y, delay_next_output [29]       ; TODO how much min delay here? 2us seen somewhere?? 5*30/75 = 2 us
 .wrap
