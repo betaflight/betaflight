@@ -71,8 +71,6 @@ typedef enum {
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
 
-extern const char * const gyroHardwareNames[GYRO_HARDWARE_COUNT];
-
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
     GYRO_HARDWARE_LPF_OPTION_1,

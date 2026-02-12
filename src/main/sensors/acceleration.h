@@ -60,8 +60,6 @@ typedef enum {
     ACC_HARDWARE_COUNT
 } accelerationSensor_e;
 
-extern const char * const accelerationSensorNames[ACC_HARDWARE_COUNT];
-
 typedef struct acc_s {
     accDev_t dev;
     uint16_t sampleRateHz;
