@@ -236,8 +236,12 @@ bool mpuAccReadSPI(accDev_t *acc)
         // Wait for completion
         spiWait(&acc->gyro->dev);
 
-        // Fall through
-        FALLTHROUGH;
+        // Non-DMA read starts at accDataReg, so data is always at index 1
+        int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
+        acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
+        acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
+        acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
+        break;
     }
 
     case GYRO_EXTI_INT_DMA:
@@ -246,10 +250,12 @@ bool mpuAccReadSPI(accDev_t *acc)
         // up an old value.
 
         // This data was read from the gyro, which is the same SPI device as the acc
+        // Acc data may not start at index 1 if DMA read starts before acc registers (e.g. at temp register)
+        const uint8_t accDataIndex = ((acc->gyro->accDataReg - acc->gyro->dmaReadRegStart) >> 1) + 1;
         int16_t *accData = (int16_t *)acc->gyro->dev.rxBuf;
-        acc->ADCRaw[X] = __builtin_bswap16(accData[1]);
-        acc->ADCRaw[Y] = __builtin_bswap16(accData[2]);
-        acc->ADCRaw[Z] = __builtin_bswap16(accData[3]);
+        acc->ADCRaw[X] = __builtin_bswap16(accData[accDataIndex]);
+        acc->ADCRaw[Y] = __builtin_bswap16(accData[accDataIndex + 1]);
+        acc->ADCRaw[Z] = __builtin_bswap16(accData[accDataIndex + 2]);
         break;
     }
 
@@ -278,8 +284,8 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 #ifdef USE_DMA
             if (spiUseDMA(&gyro->dev)) {
                 gyro->dev.callbackArg = (uintptr_t)gyro;
-                gyro->dev.txBuf[0] = gyro->accDataReg | 0x80;
-                gyro->segments[0].len = gyro->gyroDataReg - gyro->accDataReg + sizeof(uint8_t) + 3 * sizeof(int16_t);
+                gyro->dev.txBuf[0] = gyro->dmaReadRegStart | 0x80;
+                gyro->segments[0].len = gyro->gyroDataReg - gyro->dmaReadRegStart + sizeof(uint8_t) + 3 * sizeof(int16_t);  // assumes gyros come last
                 gyro->segments[0].callback = mpuIntCallback;
                 gyro->segments[0].u.buffers.txData = gyro->dev.txBuf;
                 gyro->segments[0].u.buffers.rxData = &gyro->dev.rxBuf[1];
@@ -323,13 +329,16 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     case GYRO_EXTI_INT_DMA:
     {
         // Acc and gyro data may not be continuous (MPU6xxx has temperature in between)
-        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->accDataReg) >> 1) + 1;
+        const uint8_t gyroDataIndex = ((gyro->gyroDataReg - gyro->dmaReadRegStart) >> 1) + 1;
+        const uint8_t tempDataIndex = ((gyro->tempDataReg - gyro->dmaReadRegStart) >> 1) + 1;
 
         // If read was triggered in interrupt don't bother waiting. The worst that could happen is that we pick
         // up an old value.
         gyro->gyroADCRaw[X] = __builtin_bswap16(gyroData[gyroDataIndex]);
         gyro->gyroADCRaw[Y] = __builtin_bswap16(gyroData[gyroDataIndex + 1]);
         gyro->gyroADCRaw[Z] = __builtin_bswap16(gyroData[gyroDataIndex + 2]);
+        // temperature was read as well, so populate it
+        gyro->temperature = (int16_t)(((int16_t)__builtin_bswap16(gyroData[tempDataIndex])) * gyro->tempScale + gyro->tempZero);
         break;
     }
 
@@ -502,6 +511,8 @@ void mpuGyroInit(gyroDev_t *gyro)
     gyro->segments[1] = nullSegment;
     gyro->accDataReg = MPU_RA_ACCEL_XOUT_H;
     gyro->gyroDataReg = MPU_RA_GYRO_XOUT_H;
+    gyro->tempDataReg = MPU_RA_TEMP_OUT_H;
+    gyro->dmaReadRegStart = gyro->accDataReg;
     mpuIntExtiInit(gyro);
 }
 

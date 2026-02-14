@@ -101,6 +101,7 @@
 
 #define ICM426XX_RA_GYRO_DATA_X1                    0x25  // User Bank 0
 #define ICM426XX_RA_ACCEL_DATA_X1                   0x1F  // User Bank 0
+#define ICM426XX_RA_TEMP_DATA1                      0x1D  // User Bank 0
 
 #define ICM426XX_RA_INT_CONFIG                      0x14  // User Bank 0
 #define ICM426XX_INT1_MODE_PULSED                   (0 << 2)
@@ -371,6 +372,8 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
     gyro->accDataReg = ICM426XX_RA_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM426XX_RA_GYRO_DATA_X1;
+    gyro->tempDataReg = ICM426XX_RA_TEMP_DATA1;
+    gyro->dmaReadRegStart = gyro->tempDataReg;
 
     // Turn off ACC and GYRO so they can be configured
     // See section 12.9 in ICM-42688-P datasheet v1.7
@@ -444,10 +447,16 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     case ICM_42622P_SPI:
     case ICM_42688P_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
+        // ICM-42605/ICM-42688P: 132.48 LSB/°C for 16-bit register read, offset 25°C
+        gyro->tempScale = 1.0f / 132.48f;
+        gyro->tempZero = 25.0f;
         break;
     case IIM_42652_SPI:
     case IIM_42653_SPI:
         gyro->scale = GYRO_SCALE_4000DPS;
+        // IIM-42652/IIM-42653: 132.48 LSB/°C, offset 25°C
+        gyro->tempScale = 1.0f / 132.48f;
+        gyro->tempZero = 25.0f;
         break;
     default:
         return false;

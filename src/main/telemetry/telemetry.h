@@ -92,6 +92,7 @@ typedef struct telemetryConfig_s {
     uint8_t mavlink_extra1_rate;
     uint8_t mavlink_extra2_rate;
     uint8_t mavlink_extra3_rate;
+    uint8_t crsf_tlm_accgyro;
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
