@@ -2598,20 +2598,26 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             formatDecimalCoordinate(defaultWp->latitude, latBuffer, sizeof(latBuffer));
             formatDecimalCoordinate(defaultWp->longitude, lonBuffer, sizeof(lonBuffer));
 
+            const char *defaultTypeName = (defaultWp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[defaultWp->type] : "UNKNOWN";
+            const char *defaultPatternName = (defaultWp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[defaultWp->pattern] : "UNKNOWN";
+
             cliDefaultPrintLinef(dumpMask, equalsDefault, format,
                 i,
                 latBuffer,
                 lonBuffer,
                 defaultWp->altitude,
                 defaultWp->speed,
-                waypointTypeNames[defaultWp->type],
+                defaultTypeName,
                 defaultWp->duration,
-                waypointPatternNames[defaultWp->pattern]
+                defaultPatternName
             );
         }
 
         formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
         formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+
+        const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
+        const char *patternName = (wp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[wp->pattern] : "UNKNOWN";
 
         cliDumpPrintLinef(dumpMask, equalsDefault, format,
             i,
@@ -2619,9 +2625,9 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             lonBuffer,
             wp->altitude,
             wp->speed,
-            waypointTypeNames[wp->type],
+            typeName,
             wp->duration,
-            waypointPatternNames[wp->pattern]
+            patternName
         );
     }
 }
