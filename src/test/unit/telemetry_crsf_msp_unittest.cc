@@ -66,6 +66,7 @@ extern "C" {
     #include "telemetry/smartport.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
+    #include "sensors/compass.h"
 
     rssiSource_e rssiSource;
     bool handleMspFrame(uint8_t *frameStart, uint8_t frameLength, uint8_t *skipsBeforeResponse);
@@ -98,6 +99,7 @@ extern "C" {
 
     uint32_t dummyTimeUs;
     baro_t baro;
+    mag_t mag;
 }
 
 #include "unittest_macros.h"

@@ -151,6 +151,7 @@ enum {
 
 typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t gyro_hardware;                    // gyro hardware type (read-only, set during detection)
     uint8_t gyro_hardware_lpf;                // gyro DLPF setting
     uint8_t gyro_high_fsr;
 
@@ -205,4 +206,9 @@ void dynLpfGyroUpdate(float throttle);
 #endif
 #ifdef USE_YAW_SPIN_RECOVERY
 void initYawSpinRecovery(int maxYawRate);
+#endif
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+bool gyroHasDownsampledData(void);
+float gyroGetDownsampled(int axis);
+bool gyroStartDownsampledCycle(void);
 #endif

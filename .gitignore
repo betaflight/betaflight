@@ -60,3 +60,8 @@ eeprom.bin
 # changed to submodule
 #/src/config
 
+# Ignore AI Agent files for now in favour of
+# contributors being able to roll their own
+.claude
+AGENTS.md
+CLAUDE.md

@@ -36,6 +36,7 @@ typedef enum {
     BARO_2SMPB_02B = 9,
     BARO_LPS22DF = 10,
     BARO_VIRTUAL = 11,
+    BARO_HARDWARE_COUNT
 } baroSensor_e;
 
 typedef struct barometerConfig_s {

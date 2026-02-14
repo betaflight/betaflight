@@ -332,6 +332,10 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_NONE:
         baroHardware = BARO_NONE;
         break;
+
+    default:
+        baroHardware = BARO_NONE;
+        break;
     }
 
     if (baroHardware == BARO_NONE) {
