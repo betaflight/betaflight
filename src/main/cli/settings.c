@@ -1769,7 +1769,7 @@ const clivalue_t valueTable[] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     { "osd_custom_serial_text_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CUSTOM_SERIAL_TEXT]) },
     { "osd_custom_serial_text_terminator", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_CUSTOM_TEXT_TERMINATOR }, PG_OSD_CUSTOM_TEXT_CONFIG, offsetof(osdCustomTextConfig_t, terminator) },
-#endif //USE_OSD_CUSTOM_TEXT
+#endif //ENABLE_OSD_CUSTOM_TEXT
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
