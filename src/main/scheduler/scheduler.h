@@ -191,7 +191,7 @@ typedef enum {
 #ifdef USE_GIMBAL
     TASK_GIMBAL,
 #endif
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     TASK_OSD_CUSTOM_TEXT,
 #endif
 

@@ -137,7 +137,7 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
 #include "osd/osd_custom_text.h"
 #endif
 
@@ -753,7 +753,7 @@ void initPhase3(void)
     }
 #endif
 
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     osdCustomTextInit();
 #endif
 

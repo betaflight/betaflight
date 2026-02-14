@@ -164,7 +164,7 @@
 #include "io/vtx.h"
 
 #include "osd/osd.h"
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
 #include "osd/osd_custom_text.h"
 #endif
 #include "osd/osd_elements.h"
@@ -710,7 +710,7 @@ static void osdElementLidarDist(osdElementParms_t *element)
 }
 #endif
 
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
 static void osdElementCustomSerialText(osdElementParms_t *element)
 {
     const char* text = osdCustomTextGet();
@@ -1965,7 +1965,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RANGEFINDER
     OSD_LIDAR_DIST,
 #endif
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     OSD_CUSTOM_SERIAL_TEXT,
 #endif
 };
@@ -2115,7 +2115,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_RANGEFINDER
     [OSD_LIDAR_DIST]              = osdElementLidarDist,
 #endif
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
 };

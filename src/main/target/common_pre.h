@@ -41,6 +41,27 @@
 
 */
 
+/*
+  ENABLE_ vs USE_ Feature Flags
+
+  Betaflight is transitioning from USE_ to ENABLE_ for feature flags to provide more flexible
+  build-time configuration. The key difference is:
+
+  - USE_X_FEATURE: Uses #ifdef checks (defined/not defined only)
+  - ENABLE_X_FEATURE: Uses #if checks with a numeric value (0 or 1)
+
+  The primary advantage of ENABLE_ is that features can be explicitly disabled from the command
+  line by passing ENABLE_X_FEATURE=0, unlike USE_ flags which can only be enabled or left undefined.
+  This allows for more granular control during builds without modifying source files.
+
+  For backward compatibility, USE_ flags will continue to be supported in this file (common_pre.h)
+  only. When a USE_X_FEATURE is defined, it will automatically set ENABLE_X_FEATURE=1. Source code
+  should transition to using #if ENABLE_X_FEATURE guards instead of #ifdef USE_X_FEATURE.
+
+  The migration from USE_ to ENABLE_ will happen by attrition - as features are touched, they
+  should be converted to use ENABLE_ flags. There is no rush to convert all existing code.
+*/
+
 #define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
@@ -571,4 +592,10 @@
   #else
     #define GYRO_COUNT 1
   #endif
+#endif
+
+/* ENABLE CATCH ALLS HERE */
+
+#if defined(USE_OSD_CUSTOM_TEXT) && !defined(ENABLE_OSD_CUSTOM_TEXT)
+#define ENABLE_OSD_CUSTOM_TEXT 1
 #endif

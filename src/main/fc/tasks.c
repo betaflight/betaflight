@@ -80,7 +80,7 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
 #include "osd/osd_custom_text.h"
 #endif
 
@@ -482,7 +482,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_GIMBAL] = DEFINE_TASK("GIMBAL", NULL, NULL, gimbalUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
 #endif
 
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     [TASK_OSD_CUSTOM_TEXT] = DEFINE_TASK("OSD_CTEXT", NULL, NULL, osdCustomTextUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 };
@@ -679,7 +679,7 @@ void tasksInit(void)
     setTaskEnabled(TASK_GIMBAL, true);
 #endif
 
-#ifdef USE_OSD_CUSTOM_TEXT
+#if ENABLE_OSD_CUSTOM_TEXT
     setTaskEnabled(TASK_OSD_CUSTOM_TEXT, true);
 #endif
 }
