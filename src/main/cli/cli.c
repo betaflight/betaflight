@@ -2583,6 +2583,29 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
     const char *format = "waypoint insert %u %s %s %d %u %s %u %s";
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
 
+    // Determine if all waypoints equal their defaults
+    bool equalsDefaultAll = false;
+    if (flightPlanConfig->waypointCount > 0) {
+        if (defaultFlightPlanConfig) {
+            // Check if counts match
+            if (flightPlanConfig->waypointCount == defaultFlightPlanConfig->waypointCount) {
+                equalsDefaultAll = true;
+                // Check if all waypoints match their defaults
+                for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
+                    const waypoint_t *wp = &flightPlanConfig->waypoints[i];
+                    const waypoint_t *defaultWp = &defaultFlightPlanConfig->waypoints[i];
+                    if (memcmp(wp, defaultWp, sizeof(*wp)) != 0) {
+                        equalsDefaultAll = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Emit "waypoint clear" before inserts (suppressed in diff when equalsDefaultAll is true)
+        cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
+    }
+
     for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
         const waypoint_t *wp = &flightPlanConfig->waypoints[i];
         bool equalsDefault = false;
