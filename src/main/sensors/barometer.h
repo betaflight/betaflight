@@ -39,8 +39,6 @@ typedef enum {
     BARO_HARDWARE_COUNT
 } baroSensor_e;
 
-extern const char * const baroSensorNames[BARO_HARDWARE_COUNT];
-
 typedef struct barometerConfig_s {
     uint8_t baro_busType;
     uint8_t baro_spi_device;

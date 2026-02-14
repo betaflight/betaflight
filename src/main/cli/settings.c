@@ -167,6 +167,7 @@ const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_ICM40609D] = "ICM40609D",
     [GYRO_IIM42652] = "IIM42652",
     [GYRO_LSM6DSK320X] = "LSM6DSK320X",
+    [GYRO_ICM42622P] = "ICM42622P",
     [GYRO_VIRTUAL] = "VIRTUAL"
 };
 
@@ -195,6 +196,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_ICM40609D] = "ICM40609D",
     [ACC_IIM42652] = "IIM42652",
     [ACC_LSM6DSK320X] = "LSM6DSK320X",
+    [ACC_ICM42622P] = "ICM42622P",
     [ACC_VIRTUAL] = "VIRTUAL"
 };
 
@@ -238,7 +240,13 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
     [RANGEFINDER_MTF02] = "MTF02",
     [RANGEFINDER_MTF01P] = "MTF01P",
     [RANGEFINDER_MTF02P] = "MTF02P",
-    [RANGEFINDER_TFNOVA] = "TFNOVA"
+    [RANGEFINDER_TFNOVA] = "TFNOVA",
+    [RANGEFINDER_NOOPLOOP_F2] = "NOOPLOOP_F2",
+    [RANGEFINDER_NOOPLOOP_F2P] = "NOOPLOOP_F2P",
+    [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
+    [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
+    [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
+    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
 };
 
 // sync with opticalflowType_e
@@ -1468,6 +1476,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_TELEMETRY
     { "tlm_inverted",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, telemetry_inverted) },
     { "tlm_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, halfDuplex) },
+#if defined(USE_CRSF_ACCGYRO_TELEMETRY)
+    { "crsf_tlm_accgyro",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, crsf_tlm_accgyro) },
+#endif
 #if defined(USE_TELEMETRY_FRSKY_HUB)
 #if defined(USE_GPS)
     { "frsky_default_lat",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -9000, 9000 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, gpsNoFixLatitude) },

@@ -56,11 +56,10 @@ typedef enum {
     ACC_ICM40609D,
     ACC_IIM42652,
     ACC_LSM6DSK320X,
+    ACC_ICM42622P,
     ACC_VIRTUAL,
     ACC_HARDWARE_COUNT
 } accelerationSensor_e;
-
-extern const char * const accelerationSensorNames[ACC_HARDWARE_COUNT];
 
 typedef struct acc_s {
     accDev_t dev;
@@ -106,3 +105,8 @@ union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
 void accInitFilters(void);
 void applyAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+bool accelHasDownsampledData(void);
+float accelGetDownsampled(int axis);
+bool accelStartDownsampledCycle(void);
+#endif

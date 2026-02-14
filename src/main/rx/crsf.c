@@ -49,9 +49,11 @@
 #include "rx/rx.h"
 #include "rx/crsf.h"
 
+#include "fc/tasks.h"
+
 #include "telemetry/crsf.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US   1750 // a maximally sized 64byte payload will take ~1550us, round up to 1750.
+#define CRSF_TIME_NEEDED_PER_FRAME_US   1748 // a maximally sized 64byte payload will take ~1550us, round up to 1748.
 #define CRSF_TIME_BETWEEN_FRAMES_US     6667 // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
@@ -73,6 +75,7 @@ static timeUs_t crsfFrameStartAtUs = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 static float channelScale = CRSF_RC_CHANNEL_SCALE_LEGACY;
+static timeDelta_t frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US;
 
 #ifdef USE_RX_LINK_UPLINK_POWER
 #define CRSF_UPLINK_POWER_LEVEL_MW_ITEMS_COUNT 9
@@ -358,7 +361,7 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     debug[2] = currentTimeUs - crsfFrameStartAtUs;
 #endif
 
-    if (cmpTimeUs(currentTimeUs, crsfFrameStartAtUs) > CRSF_TIME_NEEDED_PER_FRAME_US) {
+    if (cmpTimeUs(currentTimeUs, crsfFrameStartAtUs) > frameTimeNeededUs) {
         // We've received a character after max time needed to complete a frame,
         // so this must be the start of a new frame.
 #if defined(USE_CRSF_V3)
@@ -387,6 +390,9 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 #if defined(USE_CRSF_V3)
                 crsfFrameErrorCnt = 0;
 #endif
+#if defined(USE_CRSF_V3) && defined(USE_TELEMETRY_CRSF)
+                crsfScheduleTelemetryResponse();
+#endif
                 switch (crsfFrame.frame.type) {
                 case CRSF_FRAMETYPE_RC_CHANNELS_PACKED:
                 case CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED:
@@ -402,9 +408,11 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
 #if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY)
                 case CRSF_FRAMETYPE_MSP_REQ:
                 case CRSF_FRAMETYPE_MSP_WRITE: {
-                    uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
-                    if (bufferCrsfMspFrame(frameStart, crsfFrame.frame.frameLength - 4)) {
-                        crsfScheduleMspResponse(crsfFrame.frame.payload[1]);
+                    if (crsfFrame.frame.frameLength >= 4) {
+                        uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                        if (bufferCrsfMspFrame(frameStart, crsfFrame.frame.frameLength - 4)) {
+                            crsfScheduleMspResponse(crsfFrame.frame.payload[1]);
+                        }
                     }
                     break;
                 }
@@ -669,6 +677,21 @@ void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
     serialSetBaudRate(serialPort, baudrate);
     persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
+    // new frame time - use 64-bit arithmetic to avoid truncation and round up
+    if (baudrate > 0) {
+        frameTimeNeededUs = (timeDelta_t)(((uint64_t)CRSF_TIME_NEEDED_PER_FRAME_US * (uint64_t)CRSF_BAUDRATE + (baudrate - 1)) / baudrate);
+    } else {
+        frameTimeNeededUs = CRSF_TIME_NEEDED_PER_FRAME_US;
+    }
+#if defined(USE_TELEMETRY_CRSF)
+    task_t* tlmTask = getTask(TASK_TELEMETRY);
+    if (tlmTask && baudrate > CRSF_BAUDRATE) {
+        // switch telemetry task to event driven
+        tlmTask->attribute->checkFunc = crsfTelemetryUpdateCheck;
+    } else if (tlmTask) {
+        tlmTask->attribute->checkFunc = NULL;
+    }
+#endif
 }
 
 bool crsfRxUseNegotiatedBaud(void)

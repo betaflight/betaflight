@@ -67,11 +67,10 @@ typedef enum {
     GYRO_ICM40609D,
     GYRO_IIM42652,
     GYRO_LSM6DSK320X,
+    GYRO_ICM42622P,
     GYRO_VIRTUAL,
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
-
-extern const char * const gyroHardwareNames[GYRO_HARDWARE_COUNT];
 
 typedef enum {
     GYRO_HARDWARE_LPF_NORMAL,
@@ -116,6 +115,8 @@ typedef struct gyroDev_s {
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];                      // raw data from sensor
     int16_t temperature;
+    float tempScale;
+    float tempZero;
     mpuDetectionResult_t mpuDetectionResult;
     sensor_align_e gyroAlign;
     gyroRateKHz_e gyroRateKHz;
@@ -139,6 +140,8 @@ typedef struct gyroDev_s {
     uint16_t accSampleRateHz;
     uint8_t accDataReg;
     uint8_t gyroDataReg;
+    uint8_t tempDataReg;
+    uint8_t dmaReadRegStart;
 } gyroDev_t;
 
 typedef struct accDev_s {

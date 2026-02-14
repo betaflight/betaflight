@@ -48,8 +48,6 @@ typedef enum {
     MAG_HARDWARE_COUNT
 } magSensor_e;
 
-extern const char * const magSensorNames[MAG_HARDWARE_COUNT];
-
 typedef struct mag_s {
     bool isNewMagADCFlag;
     vector3_t magADC;
