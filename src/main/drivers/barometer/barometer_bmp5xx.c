@@ -565,4 +565,4 @@ static void bmp5xxCalculate(int32_t *pressure, int32_t *temperature)
     }
 }
 
-#endif // defined(USE_BARO) && (defined(USE_BARO_BMP5XX) || defined(USE_BARO_SPI_BMP5XX))
+#endif // defined(USE_BARO) && (defined(USE_BARO_BMP580) || defined(USE_BARO_SPI_BMP580) || defined(USE_BARO_BMP581) || defined(USE_BARO_SPI_BMP581))
