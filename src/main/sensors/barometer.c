@@ -62,9 +62,7 @@
 
 baro_t baro;                        // barometer access functions
 
-// PG version 4: Added BARO_BMP580=11, BARO_BMP581=12, bumped BARO_VIRTUAL from 11 to 13
-// Old configs with BARO_VIRTUAL=11 will reset to defaults (auto-detect)
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
 
 #ifndef DEFAULT_BARO_DEVICE
 #define DEFAULT_BARO_DEVICE BARO_DEFAULT
