@@ -18,7 +18,7 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  *
- * BMP580 Driver
+ * BMP5xx Driver (supports BMP580, BMP581)
  *
  * References:
  * BMP580 datasheet - https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp580/
@@ -27,14 +27,14 @@
 
 #pragma once
 
-typedef struct bmp580Config_s {
+typedef struct bmp5xxConfig_s {
     ioTag_t eocTag;
-} bmp580Config_t;
+} bmp5xxConfig_t;
 
 /**
  * @brief Detect and initialize BMP580/BMP581 barometer
- * @param config Pointer to BMP580 configuration (EOC pin tag)
+ * @param config Pointer to BMP5xx configuration (EOC pin tag)
  * @param baro Pointer to barometer device structure to initialize
  * @return true if BMP580/BMP581 detected and initialized, false otherwise
  */
-bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro);
+bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro);
