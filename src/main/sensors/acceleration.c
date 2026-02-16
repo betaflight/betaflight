@@ -173,26 +173,25 @@ float accelGetDownsampled(int axis)
 bool accelStartDownsampledCycle(void)
 {
     // Phase 1: Read using accelSeq (protects against accUpdate writes)
-    uint32_t seq1, seq2;
+    uint32_t seq1;
     float sum[XYZ_AXIS_COUNT];
     uint32_t count;
 
     do {
         seq1 = accelSeq;
-        if (seq1 & 1) {
-            // Odd accelSeq means write in progress, spin
-            continue;
+        if (!(seq1 & 1)) {
+            // Even accelSeq means no write in progress, safe to copy
+            sum[X] = downSampleSum[X];
+            sum[Y] = downSampleSum[Y];
+            sum[Z] = downSampleSum[Z];
+            count = downSampleCount;
+
+            __asm volatile ("" ::: "memory");
+            if (seq1 == accelSeq) {
+                break;
+            }
         }
-
-        // Copy current values
-        sum[X] = downSampleSum[X];
-        sum[Y] = downSampleSum[Y];
-        sum[Z] = downSampleSum[Z];
-        count = downSampleCount;
-
-        __asm volatile ("" ::: "memory");
-        seq2 = accelSeq;
-    } while (seq1 != seq2);
+    } while (true);
 
     // Only update snapshot if we got valid data
     if (count > 0) {
