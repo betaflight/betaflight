@@ -151,6 +151,12 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
             }
             break;
 #endif
+#ifdef USE_CURRENT_METER_INA226
+        case VOLTAGE_METER_INA226:
+            voltageMeterINA226Refresh();
+            voltageMeterINA226Read(&voltageMeter);
+            break;
+#endif
         case VOLTAGE_METER_ADC:
             voltageMeterADCRefresh();
             voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, &voltageMeter);
@@ -401,6 +407,12 @@ void batteryInit(void)
 #endif
             break;
 
+        case VOLTAGE_METER_INA226:
+#ifdef USE_CURRENT_METER_INA226
+            voltageMeterINA226Init();
+#endif
+            break;
+
         case VOLTAGE_METER_ADC:
             voltageMeterADCInit();
             break;
@@ -435,6 +447,11 @@ void batteryInit(void)
             currentMeterMSPInit();
 #endif
             break;
+        case CURRENT_METER_INA226:
+#ifdef USE_CURRENT_METER_INA226
+            currentMeterINA226Init();
+#endif
+            break;
 
         default:
             break;
@@ -443,7 +460,11 @@ void batteryInit(void)
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 {
-    if (batteryCellCount == 0) {
+    // Note: Don't return early if batteryCellCount==0 for INA226!
+    // INA226 voltage reading depends on current meter refresh being called.
+    // We need to refresh current meter even before battery is detected.
+    
+    if (batteryCellCount == 0 && batteryConfig()->currentMeterSource != CURRENT_METER_INA226) {
         currentMeterReset(&currentMeter);
         return;
     }
@@ -482,6 +503,12 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 #ifdef USE_MSP_CURRENT_METER
             currentMeterMSPRefresh(currentTimeUs);
             currentMeterMSPRead(&currentMeter);
+#endif
+            break;
+        case CURRENT_METER_INA226:
+#ifdef USE_CURRENT_METER_INA226
+            currentMeterINA226Refresh(lastUpdateAt);
+            currentMeterINA226Read(&currentMeter);
 #endif
             break;
 
