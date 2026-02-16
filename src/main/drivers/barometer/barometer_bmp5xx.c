@@ -309,11 +309,12 @@ static bool bmp5xxBeginForcedMeasurement(const extDevice_t *dev)
  * @brief Detect and initialize BMP580/BMP581 barometer
  * @param config Pointer to BMP5xx configuration (I2C/SPI settings)
  * @param baro Pointer to barometer device structure to initialize
+ * @param detectedChip Pointer to store detected chip ID (0x50=BMP580, 0x51=BMP581), or NULL if not needed
  * @return true if BMP580/BMP581 detected and initialized, false otherwise
  * @note Configures sensor for Normal mode at 50Hz ODR with 128x pressure OSR,
  *       4x temperature OSR, and IIR filter coefficient 15
  */
-bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro)
+bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro, uint8_t *detectedChip)
 {
     delay(20);
 
@@ -426,6 +427,11 @@ bool bmp5xxDetect(const bmp5xxConfig_t *config, baroDev_t *baro)
     baro->calculate = bmp5xxCalculate;
 
     while (busBusy(&baro->dev, NULL));
+
+    // Return detected chip ID if requested
+    if (detectedChip) {
+        *detectedChip = chipId;
+    }
 
     return true;
 }
