@@ -213,6 +213,7 @@ const char * const lookupTableBaroHardware[BARO_HARDWARE_COUNT] = {
     [BARO_DPS310] = "DPS310",
     [BARO_2SMPB_02B] = "2SMPB_02B",
     [BARO_LPS22DF] = "LPS22DF",
+    [BARO_BMP580] = "BMP580",
     [BARO_VIRTUAL] = "VIRTUAL"
 };
 

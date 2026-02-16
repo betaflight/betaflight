@@ -165,6 +165,21 @@
 #define BMP580_DSP_COMP_PRESS_TEMP  (0x03)  // Enable pressure and temperature compensation
 #define BMP580_DSP_SHDW_SEL_IIR     (0x01 << 3)  // IIR output to shadow registers
 
+// DSP_IIR register bitfields (IIR filter coefficient selection)
+// Coefficients: 0=bypass, 1=1, 2=3, 3=7, 4=15, 5=31, 6=63, 7=127
+#define BMP580_IIR_COEF_BYPASS      (0x00)
+#define BMP580_IIR_COEF_1           (0x01)
+#define BMP580_IIR_COEF_3           (0x02)
+#define BMP580_IIR_COEF_7           (0x03)
+#define BMP580_IIR_COEF_15          (0x04)
+#define BMP580_IIR_COEF_31          (0x05)
+#define BMP580_IIR_COEF_63          (0x06)
+#define BMP580_IIR_COEF_127         (0x07)
+
+// IIR coefficient for pressure (bits 2:0) and temperature (bits 5:3)
+#define BMP580_IIR_PRESS(x)         ((x) & 0x07)
+#define BMP580_IIR_TEMP(x)          (((x) & 0x07) << 3)
+
 // INT_CONFIG register bitfields
 #define BMP580_INT_MODE_PULSED      (0x00)
 #define BMP580_INT_MODE_LATCHED     (0x01)
@@ -192,17 +207,16 @@
 #define BMP580_INT_STATUS_POR       (0x01 << 4)
 
 // Oversampling settings for measurement
-// 128X = maximum oversampling, lowest noise, ~10Hz update rate
-// Good for stable altitude hold where low latency is not critical
+// Pressure: 128X = maximum oversampling, lowest noise
+// Temperature: 4X = balanced (temperature changes slowly)
+// This combination gives ~10Hz update rate
 #define BMP580_PRESSURE_OSR         BMP580_OSR_PRESS_128X
-#define BMP580_TEMPERATURE_OSR      BMP580_OSR_TEMP_128X
+#define BMP580_TEMPERATURE_OSR      BMP580_OSR_TEMP_4X
 
 // Data frame size: temperature (3 bytes) + pressure (3 bytes)
 #define BMP580_DATA_FRAME_SIZE      6
 
 // Chip ID
-static uint8_t bmp580_chip_id = 0;
-
 // Uncompensated pressure and temperature (raw 24-bit values)
 static uint32_t bmp580_up = 0;
 static uint32_t bmp580_ut = 0;
@@ -210,10 +224,6 @@ static uint32_t bmp580_ut = 0;
 // DMA buffer for sensor data (extra byte for SPI dummy)
 static DMA_DATA_ZERO_INIT uint8_t sensor_data_buffer[BMP580_DATA_FRAME_SIZE + 1];
 static uint8_t *sensor_data = sensor_data_buffer;
-
-// Debug: last raw values for troubleshooting
-static uint32_t bmp580_last_raw_temp = 0;
-static uint32_t bmp580_last_raw_press = 0;
 
 static bool bmp580StartUT(baroDev_t *baro);
 static bool bmp580GetUT(baroDev_t *baro);
@@ -224,11 +234,21 @@ static bool bmp580ReadUP(baroDev_t *baro);
 
 static void bmp580Calculate(int32_t *pressure, int32_t *temperature);
 
+/**
+ * @brief Read multiple bytes from BMP580 register with bus-type handling
+ * @param dev Pointer to the external device structure
+ * @param reg Register address to read from
+ * @param data Buffer to store read data
+ * @param length Number of bytes to read
+ * @return true on success, false on failure
+ * @note For SPI, first byte is dummy and is discarded
+ */
 static bool bmp580ReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_t *data, uint8_t length)
 {
     if (dev->bus->busType == BUS_TYPE_SPI) {
         // For SPI: first byte is dummy on BMP5xx read
-        uint8_t buf[length + 1];
+        // Max read size: BMP580_DATA_FRAME_SIZE (6) + 1 dummy = 7 bytes
+        uint8_t buf[BMP580_DATA_FRAME_SIZE + 1];
         bool ret = busReadRegisterBuffer(dev, reg, buf, length + 1);
         if (ret) {
             memcpy(data, buf + 1, length);
@@ -241,16 +261,10 @@ static bool bmp580ReadRegisterBuffer(const extDevice_t *dev, uint8_t reg, uint8_
 
 static void bmp580_extiHandler(extiCallbackRec_t *cb)
 {
-#ifdef DEBUG
-    static uint32_t bmp580ExtiCallbackCounter = 0;
-    bmp580ExtiCallbackCounter++;
-#endif
-
-    baroDev_t *baro = container_of(cb, baroDev_t, exti);
-
-    // Clear interrupt status by reading INT_STATUS register
-    uint8_t intStatus = 0;
-    bmp580ReadRegisterBuffer(&baro->dev, BMP580_REG_INT_STATUS, &intStatus, 1);
+    // BMP580 is configured in pulsed interrupt mode, so the interrupt
+    // auto-clears after a short pulse. No need to read INT_STATUS register.
+    // Blocking I2C reads are not allowed in ISR context.
+    UNUSED(cb);
 }
 
 static void bmp580BusInit(const extDevice_t *dev)
@@ -278,6 +292,12 @@ static void bmp580BusDeinit(const extDevice_t *dev)
 #endif
 }
 
+/**
+ * @brief Trigger a forced measurement on BMP580
+ * @param dev Pointer to the external device structure
+ * @return true always (in Normal mode, measurements run continuously)
+ * @note This is a no-op when sensor runs in Normal (continuous) mode
+ */
 static bool bmp580BeginForcedMeasurement(const extDevice_t *dev)
 {
     UNUSED(dev);
@@ -285,6 +305,14 @@ static bool bmp580BeginForcedMeasurement(const extDevice_t *dev)
     return true;
 }
 
+/**
+ * @brief Detect and initialize BMP580/BMP581 barometer
+ * @param config Pointer to BMP580 configuration (I2C/SPI settings)
+ * @param baro Pointer to barometer device structure to initialize
+ * @return true if BMP580/BMP581 detected and initialized, false otherwise
+ * @note Configures sensor for Normal mode at 50Hz ODR with 128x pressure OSR,
+ *       4x temperature OSR, and IIR filter coefficient 15
+ */
 bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
 {
     delay(20);
@@ -299,6 +327,7 @@ bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
 
     extDevice_t *dev = &baro->dev;
     bool defaultAddressApplied = false;
+    uint8_t chipId = 0;
 
     bmp580BusInit(dev);
 
@@ -314,15 +343,15 @@ bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
     }
 
     // Read chip ID
-    bmp580ReadRegisterBuffer(dev, BMP580_REG_CHIP_ID, &bmp580_chip_id, 1);
+    bmp580ReadRegisterBuffer(dev, BMP580_REG_CHIP_ID, &chipId, 1);
 
-    if (bmp580_chip_id != BMP580_CHIP_ID && bmp580_chip_id != BMP581_CHIP_ID) {
+    if (chipId != BMP580_CHIP_ID && chipId != BMP581_CHIP_ID) {
         // Try secondary I2C address
         if (defaultAddressApplied) {
             dev->busType_u.i2c.address = BMP580_I2C_ADDR_SECONDARY;
-            bmp580ReadRegisterBuffer(dev, BMP580_REG_CHIP_ID, &bmp580_chip_id, 1);
+            bmp580ReadRegisterBuffer(dev, BMP580_REG_CHIP_ID, &chipId, 1);
 
-            if (bmp580_chip_id != BMP580_CHIP_ID && bmp580_chip_id != BMP581_CHIP_ID) {
+            if (chipId != BMP580_CHIP_ID && chipId != BMP581_CHIP_ID) {
                 bmp580BusDeinit(dev);
                 dev->busType_u.i2c.address = 0;
                 return false;
@@ -356,6 +385,11 @@ bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
     busWriteRegister(dev, BMP580_REG_DSP_CONFIG,
         BMP580_DSP_COMP_PRESS_TEMP | BMP580_DSP_SHDW_SEL_IIR);
 
+    // Configure IIR filter: register value 4 selects coefficient 15 for both pressure and temperature
+    // This provides good smoothing while maintaining reasonable response time
+    busWriteRegister(dev, BMP580_REG_DSP_IIR,
+        BMP580_IIR_PRESS(BMP580_IIR_COEF_15) | BMP580_IIR_TEMP(BMP580_IIR_COEF_15));
+
     // Configure oversampling
     busWriteRegister(dev, BMP580_REG_OSR_CONFIG,
         BMP580_PRESSURE_OSR | BMP580_TEMPERATURE_OSR | BMP580_OSR_PRESS_EN);
@@ -377,10 +411,17 @@ bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
     baro->get_up = bmp580GetUP;
     baro->read_up = bmp580ReadUP;
 
-    // Calculate measurement delay based on oversampling settings
-    // Base conversion time ~5ms, plus OSR overhead
-    // From datasheet: typical with 8x press OSR and 1x temp OSR ≈ 10ms
-    baro->up_delay = 15000;  // 15ms to be safe
+    // Combined read: temperature and pressure read together in UP phase
+    // This skips the dummy UT states in the barometer state machine
+    baro->combined_read = true;
+
+    // Measurement delay for polling mode
+    // With 128× pressure OSR and 4× temperature OSR, the datasheet specifies
+    // ~98ms single-shot conversion time. However, we use Normal mode (continuous)
+    // at 50Hz ODR, so fresh data is available in shadow registers without waiting
+    // for conversion. The 15ms delay is a safety margin for I2C read timing,
+    // not the actual conversion time.
+    baro->up_delay = 15000;  // 15ms - sufficient for Normal mode shadow register reads
 
     baro->calculate = bmp580Calculate;
 
@@ -389,6 +430,12 @@ bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro)
     return true;
 }
 
+/**
+ * @brief Start temperature measurement (dummy for BMP580)
+ * @param baro Pointer to barometer device
+ * @return true always
+ * @note Temperature is read together with pressure, this is a no-op
+ */
 static bool bmp580StartUT(baroDev_t *baro)
 {
     UNUSED(baro);
@@ -396,6 +443,12 @@ static bool bmp580StartUT(baroDev_t *baro)
     return true;
 }
 
+/**
+ * @brief Read temperature data (dummy for BMP580)
+ * @param baro Pointer to barometer device
+ * @return true always
+ * @note Temperature is read together with pressure in bmp580ReadUP
+ */
 static bool bmp580ReadUT(baroDev_t *baro)
 {
     UNUSED(baro);
@@ -403,6 +456,12 @@ static bool bmp580ReadUT(baroDev_t *baro)
     return true;
 }
 
+/**
+ * @brief Get temperature value (dummy for BMP580)
+ * @param baro Pointer to barometer device
+ * @return true always
+ * @note Temperature is parsed together with pressure in bmp580GetUP
+ */
 static bool bmp580GetUT(baroDev_t *baro)
 {
     UNUSED(baro);
@@ -410,12 +469,24 @@ static bool bmp580GetUT(baroDev_t *baro)
     return true;
 }
 
+/**
+ * @brief Start pressure measurement
+ * @param baro Pointer to barometer device
+ * @return true on success
+ * @note In Normal mode this is a no-op as measurements run continuously
+ */
 static bool bmp580StartUP(baroDev_t *baro)
 {
     // In normal mode, measurements run continuously - nothing to start
     return bmp580BeginForcedMeasurement(&baro->dev);
 }
 
+/**
+ * @brief Read pressure and temperature raw data from BMP580
+ * @param baro Pointer to barometer device
+ * @return true on successful I2C/SPI read, false on failure
+ * @note Reads 6 bytes: 3 for temperature + 3 for pressure
+ */
 static bool bmp580ReadUP(baroDev_t *baro)
 {
     // Use synchronous read for I2C - async reads can get stuck on PICO
@@ -426,6 +497,12 @@ static bool bmp580ReadUP(baroDev_t *baro)
         sensor_data, BMP580_DATA_FRAME_SIZE);
 }
 
+/**
+ * @brief Parse raw pressure and temperature data from buffer
+ * @param baro Pointer to barometer device
+ * @return true always
+ * @note Parses 24-bit raw values from sensor_data buffer into bmp580_ut and bmp580_up
+ */
 static bool bmp580GetUP(baroDev_t *baro)
 {
     UNUSED(baro);
@@ -440,13 +517,17 @@ static bool bmp580GetUP(baroDev_t *baro)
                 ((uint32_t)sensor_data[4] << 8) |
                 ((uint32_t)sensor_data[5] << 16);
 
-    // Store for debug
-    bmp580_last_raw_temp = bmp580_ut;
-    bmp580_last_raw_press = bmp580_up;
-
     return true;
 }
 
+/**
+ * @brief Calculate compensated pressure and temperature from raw values
+ * @param pressure Pointer to store pressure in Pa (can be NULL)
+ * @param temperature Pointer to store temperature in centidegrees (can be NULL)
+ * @note BMP580 outputs already compensated data:
+ *       - Temperature: raw / 65536 = deg C, converted to centidegrees
+ *       - Pressure: raw / 64 = Pa
+ */
 static void bmp580Calculate(int32_t *pressure, int32_t *temperature)
 {
     // BMP580 outputs already compensated data

@@ -43,10 +43,6 @@ To support this schedule, our development phases will be structured as follows:
 
 **Release Candidate (RC)**: A one-month period for final stabilization and testing before the official release.
 
-⚠️ **Important Note for the `2025.12` Release** ⚠️
-
-For the `2025.12` release, due to the timing since the last release, we are extending the RC period to two months. The Release Candidate phase will begin in October 2025 and until the end of November 2025.
-
 ### Requirements for the submission of new and updated target configuration
 
 The requirements for pull requests adding new targets or modifying existing targets are available on the [betaflight.com website](https://www.betaflight.com/docs/development/manufacturer/requirements-for-submission-of-targets).

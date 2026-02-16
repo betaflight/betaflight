@@ -31,4 +31,10 @@ typedef struct bmp580Config_s {
     ioTag_t eocTag;
 } bmp580Config_t;
 
+/**
+ * @brief Detect and initialize BMP580/BMP581 barometer
+ * @param config Pointer to BMP580 configuration (EOC pin tag)
+ * @param baro Pointer to barometer device structure to initialize
+ * @return true if BMP580/BMP581 detected and initialized, false otherwise
+ */
 bool bmp580Detect(const bmp580Config_t *config, baroDev_t *baro);

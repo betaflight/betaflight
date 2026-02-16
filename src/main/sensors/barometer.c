@@ -62,7 +62,9 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
+// PG version 4: Added BARO_BMP580=11, bumped BARO_VIRTUAL from 11 to 12
+// Old configs with BARO_VIRTUAL=11 will reset to defaults (auto-detect)
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
 
 #ifndef DEFAULT_BARO_DEVICE
 #define DEFAULT_BARO_DEVICE BARO_DEFAULT
@@ -194,7 +196,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 
     baroSensor_e baroHardware = baroHardwareToUse;
 
-#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP388) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)&& !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988) && !defined(USE_BARO_DPS310) && !defined(USE_BARO_SPI_DPS310) && !defined(DEFAULT_BARO_SPI_2SMBP_02B) && !defined(DEFAULT_BARO_2SMBP_02B) && !defined(USE_BARO_LPS22DF) && !defined(USE_BARO_BMP580)
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP388) && !defined(USE_BARO_SPI_BMP388) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280) && !defined(USE_BARO_QMP6988) && !defined(USE_BARO_SPI_QMP6988) && !defined(USE_BARO_DPS310) && !defined(USE_BARO_SPI_DPS310) && !defined(DEFAULT_BARO_SPI_2SMBP_02B) && !defined(DEFAULT_BARO_2SMBP_02B) && !defined(USE_BARO_LPS22DF) && !defined(USE_BARO_BMP580) && !defined(USE_BARO_SPI_BMP580)
     UNUSED(dev);
 #endif
 
