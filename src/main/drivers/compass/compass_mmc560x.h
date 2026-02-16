@@ -24,12 +24,12 @@
 #include "drivers/compass/compass.h"
 
 /**
- * @brief Detect and configure the MMC5603 magnetometer.
+ * @brief Detect and configure the MMC560X magnetometer.
  *
  * Reads the product ID register to verify the sensor is present, then sets up
  * the device callbacks for initialization and reading.
  *
  * @param magDev Pointer to the magnetometer device structure.
- * @return true if MMC5603 was detected, false otherwise.
+ * @return true if MMC560X was detected, false otherwise.
  */
-bool mmc5603Detect(magDev_t *magDev);
+bool mmc560xDetect(magDev_t *magDev);
