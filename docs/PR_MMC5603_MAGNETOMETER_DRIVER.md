@@ -44,6 +44,7 @@ This PR adds a new compass driver for the MEMSIC MMC5603NJ magnetometer, a high-
 | `src/main/sensors/compass.c` | Add MMC5603 to detection list |
 | `src/main/sensors/compass.h` | Add MAG_MMC5603 enum |
 | `src/main/target/common_post.h` | Add `USE_MAG_MMC5603` define |
+| `src/main/cli/settings.c` | Add MMC5603 to `lookupTableMagHardware` |
 | `mk/source.mk` | Add compass_mmc5603.c to build |
 
 ## Implementation Details
@@ -62,13 +63,16 @@ bool mmc5603Detect(magDev_t *magDev)
 ```c
 static bool mmc5603Init(magDev_t *magDev)
 {
-    // 1. Software reset
+    // 1. Software reset (CTRL1)
     // 2. Perform SET operation (eliminates offset)
     // 3. Configure bandwidth (2.0ms)
-    // 4. Set ODR to 100Hz
-    // 5. Enable continuous mode with auto SET/RESET
+    // 4. Set ODR to 100Hz (ODR register)
+    // 5. Enable CMM_FREQ_EN (CTRL0) - MUST be before CTRL2 per datasheet
+    // 6. Enable continuous mode CMM_EN (CTRL2)
 }
 ```
+
+**Note:** Per MMC5603NJ datasheet, CTRL0 (CMM_FREQ_EN) must be written before CTRL2 (CMM_EN) for proper continuous measurement mode operation.
 
 ### Data Reading (`mmc5603Read`)
 ```c

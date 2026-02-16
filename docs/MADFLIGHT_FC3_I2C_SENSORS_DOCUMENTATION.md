@@ -2,7 +2,7 @@
 # Complete Technical Documentation
 
 **Date:** February 15, 2026  
-**Last Updated:** February 15, 2026  
+**Last Updated:** February 16, 2026  
 **Author:** AI Assistant (GitHub Copilot)  
 **Board:** MADFLIGHT FC3 (https://madflight.com/Board-FC3/)  
 **MCU:** RP2350B (Raspberry Pi Pico 2) @ 150MHz  
@@ -19,7 +19,22 @@ This document details the complete development work performed to enable I2C sens
 | MMC5603 | Magnetometer | 0x30 | ✅ Working |
 | INA226 | Power Monitor | 0x40 | ✅ Working (current + voltage) |
 
-### Recent Updates (February 15, 2026)
+### Recent Updates (February 16, 2026)
+
+1. **MMC5603 Init Sequence Fix (Section 7.11):** Fixed initialization order per datasheet - CTRL0 (CMM_FREQ_EN) must be written before CTRL2 (CMM_EN) for proper continuous measurement mode.
+
+2. **MMC5603 CLI Lookup Table:** Added MMC5603 to `lookupTableMagHardware` in settings.c for CLI sensor selection.
+
+3. **MMC5603 Header Fix:** Changed include from `io_types.h` to `drivers/compass/compass.h` to properly resolve `magDev_t` type.
+
+4. **PR Branch Organization:** Split all changes into separate feature branches for cleaner pull requests:
+   - `feature/mmc5603-magnetometer` - MMC5603 driver
+   - `feature/bmp580-barometer` - BMP580 driver  
+   - `feature/ina226-power-monitor` - INA226 power monitor
+   - `fix/pico-i2c-error-handling` - PICO I2C fixes
+   - `docs/madflight-sensors` - Documentation
+
+### Previous Updates (February 15, 2026)
 
 1. **INA226 Read I2C Wait Fix (Section 7.7):** Discovered that PICO platform also requires `i2cBusy()` wait after read operations, not just writes. This fixed issues where INA226 returned stale or zero data.
 
@@ -128,11 +143,13 @@ static bool mmc5603Init(magDev_t *magDev)
     busWriteRegister(dev, MMC5603_REG_CTRL0, MMC5603_CTRL0_SET);
     delay(1);
 
-    // Configure bandwidth, ODR, continuous mode
+    // Configure bandwidth, ODR
     busWriteRegister(dev, MMC5603_REG_CTRL1, MMC5603_BW_2_0MS);
     busWriteRegister(dev, MMC5603_REG_ODR, MMC5603_ODR_100HZ);
-    busWriteRegister(dev, MMC5603_REG_CTRL2, MMC5603_CTRL2_CMM_EN | MMC5603_CTRL2_HPOWER | MMC5603_CTRL2_EN_PRD_SET);
+    
+    // IMPORTANT: Per datasheet, CTRL0 (CMM_FREQ_EN) must be written BEFORE CTRL2 (CMM_EN)
     busWriteRegister(dev, MMC5603_REG_CTRL0, MMC5603_CTRL0_CMM_FREQ_EN | MMC5603_CTRL0_AUTO_SR_EN);
+    busWriteRegister(dev, MMC5603_REG_CTRL2, MMC5603_CTRL2_CMM_EN | MMC5603_CTRL2_HPOWER | MMC5603_CTRL2_EN_PRD_SET);
     
     magDev->magOdrHz = 100;
     return true;
@@ -1279,6 +1296,39 @@ data->currentMa = (int32_t)(((int64_t)data->currentRaw * (int64_t)config->curren
 3. Maximum safe value for `uint32_t * N` is `4,294,967,295 / N`
    - For `* 1000000`: max safe input is ~4295 (about 4.3A)
    - 50A config with 50000 mA input was doomed to overflow
+
+---
+
+### 7.11 MMC5603 Initialization Register Order (February 16, 2026)
+
+**Discovery:** During Betaflight AI agent code review of MMC5603 driver.
+
+**Problem:** Initial implementation wrote CTRL2 (CMM_EN) before CTRL0 (CMM_FREQ_EN):
+
+```c
+// WRONG ORDER (original):
+busWriteRegister(dev, MMC5603_REG_CTRL2, MMC5603_CTRL2_CMM_EN | ...);  // CMM_EN first
+busWriteRegister(dev, MMC5603_REG_CTRL0, MMC5603_CTRL0_CMM_FREQ_EN | ...);  // CMM_FREQ_EN second
+```
+
+**Issue:** Per MMC5603NJ datasheet, `CMM_FREQ_EN` (in CTRL0) must be set BEFORE `CMM_EN` (in CTRL2) for proper continuous measurement mode. The datasheet states:
+> "For continuous mode measurement, set CMM_FREQ_EN bit first, then set CMM_EN bit."
+
+**Fix:** Reorder writes to comply with datasheet:
+
+```c
+// CORRECT ORDER (fixed):
+busWriteRegister(dev, MMC5603_REG_ODR, MMC5603_ODR_100HZ);            // 1. Set ODR
+busWriteRegister(dev, MMC5603_REG_CTRL0, MMC5603_CTRL0_CMM_FREQ_EN | ...);  // 2. CMM_FREQ_EN first
+busWriteRegister(dev, MMC5603_REG_CTRL2, MMC5603_CTRL2_CMM_EN | ...);        // 3. CMM_EN second
+```
+
+**Additional Fixes:**
+1. Added `USE_MAG_MMC5603` to `common_post.h` for automatic detection
+2. Fixed header include from `io_types.h` to `drivers/compass/compass.h`
+3. Added `[MAG_MMC5603] = "MMC5603"` to `lookupTableMagHardware` in settings.c
+
+**Lesson Learned:** Always carefully read datasheet register programming sequences. The order of register writes can matter significantly, especially when starting continuous modes.
 
 ---
 
