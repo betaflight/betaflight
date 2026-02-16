@@ -187,6 +187,9 @@
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
 #endif
+#ifndef USE_MAG_MMC5603
+#define USE_MAG_MMC5603
+#endif
 
 #endif // END MAG HW defines
 
