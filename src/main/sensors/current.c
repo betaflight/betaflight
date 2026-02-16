@@ -416,7 +416,9 @@ void currentMeterINA226Refresh(int32_t lastUpdateAt)
         if (scale == 0) {
             scale = 100;  // Safety: default to 1.00x if not configured
         }
-        ina226LastVoltageMv = (uint16_t)((uint32_t)data.busVoltageMv * scale / 100);
+        // Use wider integer to prevent overflow, then clamp to UINT16_MAX
+        uint32_t scaledVoltageMv = (uint32_t)data.busVoltageMv * scale / 100;
+        ina226LastVoltageMv = (scaledVoltageMv > UINT16_MAX) ? UINT16_MAX : (uint16_t)scaledVoltageMv;
         
         // Convert mA to centiamperes (1/100 A)
         int32_t centiAmps = data.currentMa / 10;

@@ -167,7 +167,13 @@ static void ina226CalculateCalibration(ina226Config_t *config)
     uint64_t denominator = (uint64_t)config->currentLsbNa * (uint64_t)config->shuntResistorMicroOhms;
     
     if (denominator > 0) {
-        config->calibrationValue = (uint16_t)(numerator / denominator);
+        uint64_t calResult = numerator / denominator;
+        // Clamp to UINT16_MAX to prevent silent truncation
+        if (calResult > UINT16_MAX) {
+            config->calibrationValue = UINT16_MAX;
+        } else {
+            config->calibrationValue = (uint16_t)calResult;
+        }
     } else {
         config->calibrationValue = 0;
     }
@@ -331,7 +337,8 @@ bool ina226Read(const ina226Config_t *config, ina226Data_t *data)
         data->powerRaw = regValue;
         // Power LSB = 25 * Current_LSB
         // power_mW = powerRaw * 25 * currentLsbNa / 1000000
-        data->powerMw = ((uint32_t)data->powerRaw * 25UL * config->currentLsbNa) / 1000000UL;
+        // Use 64-bit math to avoid overflow (powerRaw * 25 * currentLsbNa can exceed uint32_t)
+        data->powerMw = (uint32_t)(((uint64_t)data->powerRaw * 25ULL * (uint64_t)config->currentLsbNa) / 1000000ULL);
     } else {
         // No calibration - calculate current from shunt voltage and resistance
         // shuntVoltage_uV = shuntVoltageRaw * 2.5

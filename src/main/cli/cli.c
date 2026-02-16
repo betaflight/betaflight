@@ -4745,7 +4745,7 @@ static void cliI2cRead(const char *cmdName, char *cmdline)
     tok = strtok(NULL, " ");
     if (tok) len = atoi(tok);
     
-    if (addr < 0x08 || addr > 0x77 || len < 1 || len > 16) {
+    if (bus < 0 || bus >= I2CDEV_COUNT || addr < 0x08 || addr > 0x77 || reg < 0 || reg > 0xFF || len < 1 || len > 16) {
         cliPrintLinef("Usage: i2c_read <bus> <addr> <reg> [len]");
         cliPrintLinef("  bus: 0-%d", I2CDEV_COUNT - 1);
         cliPrintLinef("  addr: 0x08-0x77 (7-bit address)");
@@ -4792,11 +4792,12 @@ static void cliINA226Status(const char *cmdName, char *cmdline)
                   config->maxExpectedCurrentMa, config->vbatScale);
     
     // Calculate and show current LSB for debugging
-    uint32_t currentLsbNa = ((uint32_t)config->maxExpectedCurrentMa * 1000000UL) / 32768UL;
-    cliPrintLinef("  Calculated current_LSB: %lu nA (%lu.%02lu mA per bit)", 
-                  (unsigned long)currentLsbNa, 
-                  (unsigned long)(currentLsbNa / 1000000), 
-                  (unsigned long)((currentLsbNa % 1000000) / 10000));
+    // Use 64-bit math to avoid overflow when maxExpectedCurrentMa >= 4295 mA
+    uint64_t currentLsbNa = ((uint64_t)config->maxExpectedCurrentMa * 1000000ULL) / 32768ULL;
+    cliPrintLinef("  Calculated current_LSB: %llu nA (%llu.%02llu mA per bit)", 
+                  (unsigned long long)currentLsbNa, 
+                  (unsigned long long)(currentLsbNa / 1000000ULL), 
+                  (unsigned long long)((currentLsbNa % 1000000ULL) / 10000ULL));
     
     // Try direct read from INA226
     if (ina226IsInitialized()) {

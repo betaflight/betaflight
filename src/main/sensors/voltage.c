@@ -330,7 +330,12 @@ void voltageMeterINA226Init(void)
 #ifdef USE_CURRENT_METER_INA226
     memset(&voltageMeterINA226State, 0, sizeof(voltageMeterINA226State_t));
     pt1FilterInit(&voltageMeterINA226State.displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(SLOW_VOLTAGE_TASK_FREQ_HZ)));
-    // INA226 is initialized by currentMeterINA226Init() in current.c
+    
+    // If INA226 not yet initialized by current meter, initialize it now
+    // This allows voltage_meter_source=INA226 to work without requiring current_meter=INA226
+    if (!ina226IsInitialized()) {
+        currentMeterINA226Init();
+    }
     voltageMeterINA226Initialized = ina226IsInitialized();
 #endif
 }
@@ -344,6 +349,13 @@ void voltageMeterINA226Refresh(void)
         if (!voltageMeterINA226Initialized) {
             return;
         }
+    }
+    
+    // If voltage-only mode (current meter not using INA226), we need to trigger a read
+    // to update ina226LastVoltageMv. Call with lastUpdateAt=0 to avoid accumulating mAh.
+    // This allows voltage_meter_source=INA226 to work without current_meter=INA226.
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_INA226) {
+        currentMeterINA226Refresh(0);
     }
     
     // Get voltage from current meter's last read (no additional I2C call!)
