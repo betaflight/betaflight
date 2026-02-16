@@ -63,6 +63,19 @@ static bool ina226WriteRegister(i2cDevice_e device, uint8_t address, uint8_t reg
 }
 
 /**
+ * @brief Convert raw bus voltage register value to millivolts.
+ *
+ * INA226 bus voltage LSB = 1.25mV (125/100).
+ *
+ * @param rawValue Raw register value from INA226_REG_BUS_VOLTAGE.
+ * @return Bus voltage in millivolts.
+ */
+static inline uint16_t ina226RawToVoltageMv(uint16_t rawValue)
+{
+    return (uint16_t)((uint32_t)rawValue * 125 / 100);
+}
+
+/**
  * @brief Read a 16-bit value from an INA226 register.
  *
  * Handles byte order (MSB first) and waits for the I2C transaction to complete.
@@ -134,7 +147,10 @@ bool ina226Detect(i2cDevice_e device, uint8_t address)
     }
     
     ina226DetectStage = 3;  // Success
-    // Accept any device that responds - we'll validate values if needed
+    // Validate manufacturer ID (Texas Instruments = 0x5449)
+    if (ina226LastMfgId != INA226_MANUFACTURER_ID) {
+        return false;
+    }
     return true;
 }
 
@@ -313,7 +329,7 @@ bool ina226Read(const ina226Config_t *config, ina226Data_t *data)
     }
     data->busVoltageRaw = regValue;
     // Bus voltage: LSB = 1.25mV
-    data->busVoltageMv = (uint16_t)((uint32_t)data->busVoltageRaw * 125 / 100);
+    data->busVoltageMv = ina226RawToVoltageMv(data->busVoltageRaw);
     
     // Read current register (requires calibration to be set)
     if (config->calibrationValue > 0) {
@@ -396,7 +412,7 @@ bool ina226ReadVoltage(const ina226Config_t *config, uint16_t *voltageMv)
     }
     
     // Bus voltage: LSB = 1.25mV
-    *voltageMv = (uint16_t)((uint32_t)regValue * 125 / 100);
+    *voltageMv = ina226RawToVoltageMv(regValue);
     return true;
 }
 

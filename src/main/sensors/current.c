@@ -132,7 +132,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
 
-#if defined(USE_ADC) || defined(USE_VIRTUAL_CURRENT_METER)
+#if defined(USE_ADC) || defined(USE_VIRTUAL_CURRENT_METER) || defined(USE_CURRENT_METER_INA226)
 static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
 {
     state->mAhDrawnF = state->mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
@@ -401,8 +401,10 @@ void currentMeterINA226Refresh(int32_t lastUpdateAt)
     
     // Sanity check: limit lastUpdateAt to prevent overflow (max 10 seconds = 10,000,000 us)
     // This handles the case where ibatLastServiced was 0 on first call
+    // Skip mAh accumulation for unreasonable values rather than using fabricated delta
+    bool skipMahUpdate = false;
     if (lastUpdateAt > 10000000 || lastUpdateAt < 0) {
-        lastUpdateAt = 10000;  // Default to 10ms if unreasonable value
+        skipMahUpdate = true;
     }
     
     // Read ALL data at once (shunt voltage, bus voltage, current, power)
@@ -426,12 +428,11 @@ void currentMeterINA226Refresh(int32_t lastUpdateAt)
         currentMeterINA226State.amperageLatest = centiAmps;
         currentMeterINA226State.amperage = pt1FilterApply(&ina226Filter, centiAmps);
         
-        // Update mAh drawn
-        // Use float from the start to avoid integer overflow:
-        // mAh = centiAmps * lastUpdateAt_us / (100 * 1000 * 3600) = centiAmps * lastUpdateAt_us / 360000000
-        currentMeterINA226State.mahDrawnState.mAhDrawnF += 
-            (float)currentMeterINA226State.amperageLatest * (float)lastUpdateAt / (100.0f * 1000.0f * 3600.0f);
-        currentMeterINA226State.mahDrawnState.mAhDrawn = (int32_t)currentMeterINA226State.mahDrawnState.mAhDrawnF;
+        // Update mAh drawn (skip if lastUpdateAt was unreasonable)
+        if (!skipMahUpdate) {
+            updateCurrentmAhDrawnState(&currentMeterINA226State.mahDrawnState, 
+                                       currentMeterINA226State.amperageLatest, lastUpdateAt);
+        }
     }
 }
 

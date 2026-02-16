@@ -331,8 +331,11 @@ void voltageMeterINA226Init(void)
     memset(&voltageMeterINA226State, 0, sizeof(voltageMeterINA226State_t));
     pt1FilterInit(&voltageMeterINA226State.displayFilter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->vbatDisplayLpfPeriod), HZ_TO_INTERVAL(SLOW_VOLTAGE_TASK_FREQ_HZ)));
     
-    // If INA226 not yet initialized by current meter, initialize it now
-    // This allows voltage_meter_source=INA226 to work without requiring current_meter=INA226
+    // Cross-module initialization dependency:
+    // The INA226 hardware is shared between voltage and current meters.
+    // currentMeterINA226Init() performs the actual hardware init (I2C detect, reset, calibration).
+    // If voltage_meter_source=INA226 is set without current_meter=INA226, we must init it here.
+    // The init is idempotent - multiple calls are safe.
     if (!ina226IsInitialized()) {
         currentMeterINA226Init();
     }
