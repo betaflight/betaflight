@@ -31,7 +31,9 @@
 
 #include "platform.h"
 
-#if defined(USE_BARO) && (defined(USE_BARO_BMP5XX) || defined(USE_BARO_SPI_BMP5XX))
+#if defined(USE_BARO) && \
+    (defined(USE_BARO_BMP580) || defined(USE_BARO_SPI_BMP580) || \
+     defined(USE_BARO_BMP581) || defined(USE_BARO_SPI_BMP581))
 
 #include "build/build_config.h"
 #include "build/debug.h"

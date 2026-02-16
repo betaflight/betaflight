@@ -62,9 +62,9 @@
 
 baro_t baro;                        // barometer access functions
 
-// PG version 5: Added BARO_BMP580=12, BARO_BMP581=13, bumped BARO_VIRTUAL from 12 to 14
-// Old configs with BARO_VIRTUAL=12 will reset to defaults (auto-detect)
-PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 5);
+// PG version 4: Added BARO_BMP5XX=11, bumped BARO_VIRTUAL from 11 to 12
+// Added BARO_BMP580=13, BARO_BMP581=14 (no version bump needed - new high values)
+PG_REGISTER_WITH_RESET_FN(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
 
 #ifndef DEFAULT_BARO_DEVICE
 #define DEFAULT_BARO_DEVICE BARO_DEFAULT
@@ -326,7 +326,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
     case BARO_BMP5XX:
     case BARO_BMP580:
     case BARO_BMP581:
-#if defined(USE_BARO_BMP5XX) || defined(USE_BARO_SPI_BMP5XX)
+#if defined(USE_BARO_BMP580) || defined(USE_BARO_SPI_BMP580) || defined(USE_BARO_BMP581) || defined(USE_BARO_SPI_BMP581)
         {
             const bmp5xxConfig_t defaultBMP5XXConfig = {
                 .eocTag = barometerConfig()->baro_eoc_tag,
@@ -340,7 +340,7 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
                 } else if (detectedChip == 0x51) {
                     baroHardware = BARO_BMP581;
                 } else {
-                    baroHardware = BARO_BMP5XX;  // Fallback for unknown variant
+                    baroHardware = BARO_NONE;  // Unknown variant
                 }
                 break;
             }
