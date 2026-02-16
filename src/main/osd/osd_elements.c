@@ -171,6 +171,11 @@
 #include "pg/pilot.h"
 #include "pg/stats.h"
 
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+#include "pg/flight_plan.h"
+#include "flight/autopilot_waypoint.h"
+#endif
+
 #include "rx/rx.h"
 
 #include "sensors/adcinternal.h"
@@ -352,14 +357,10 @@ static void osdFormatAltitudeString(char * buff, int32_t altitudeCm, osdElementT
 }
 
 #ifdef USE_GPS
-static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
+static void osdFormatCoordinateFromLocation(char *buff, const gpsLocation_t *loc, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
 {
-    int32_t gpsValue = 0;
+    const int32_t gpsValue = (coordinateType == GPS_LONGITUDE) ? loc->lon : loc->lat;
     const char leadingSymbol = (coordinateType == GPS_LONGITUDE) ? SYM_LON : SYM_LAT;
-
-    if (STATE(GPS_FIX_EVER)) {  // don't display interim coordinates until we get the first position fix
-        gpsValue = (coordinateType == GPS_LONGITUDE) ? gpsSol.llh.lon : gpsSol.llh.lat;
-    }
 
     const int degreesPart = abs(gpsValue) / GPS_DEGREES_DIVIDER;
     int fractionalPart = abs(gpsValue) % GPS_DEGREES_DIVIDER;
@@ -371,10 +372,10 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         {
             *buff++ = SYM_SAT_L;
             *buff++ = SYM_SAT_R;
-            if (STATE(GPS_FIX_EVER)) {
+            if (loc->lat != 0 || loc->lon != 0) {
                 OLC_LatLon location;
-                location.lat = (double)gpsSol.llh.lat / GPS_DEGREES_DIVIDER;
-                location.lon = (double)gpsSol.llh.lon / GPS_DEGREES_DIVIDER;
+                location.lat = (double)loc->lat / GPS_DEGREES_DIVIDER;
+                location.lon = (double)loc->lon / GPS_DEGREES_DIVIDER;
                 OLC_Encode(&location, PLUS_CODE_DIGITS, buff);
             } else {
                 memset(buff, SYM_HYPHEN, PLUS_CODE_DIGITS + 1);
@@ -417,6 +418,15 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
         tfp_sprintf(buff, (variantType == OSD_ELEMENT_TYPE_1 ? "%u.%07u" : "%u.%04u"), degreesPart, fractionalPart);
         break;
     }
+}
+
+static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, osdElementType_e variantType)
+{
+    gpsLocation_t loc = {0};
+    if (STATE(GPS_FIX_EVER)) {  // don't display interim coordinates until we get the first position fix
+        loc = gpsSol.llh;
+    }
+    osdFormatCoordinateFromLocation(buff, &loc, coordinateType, variantType);
 }
 #endif // USE_GPS
 
@@ -706,6 +716,123 @@ static void osdElementLidarDist(osdElementParms_t *element)
     }
 }
 #endif
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+static void osdElementWpNumber(osdElementParms_t *element)
+{
+    if (FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanConfig()->waypointCount > 0) {
+        uint8_t current = waypointGetCurrentIndex();
+        uint8_t total = flightPlanConfig()->waypointCount;
+        tfp_sprintf(element->buff, "%c%u/%u", SYM_HOMEFLAG, current + 1, total);
+    } else {
+        tfp_sprintf(element->buff, "%c--/--", SYM_HOMEFLAG);
+    }
+}
+
+static void osdElementWpCurrentLat(osdElementParms_t *element)
+{
+    if (waypointIsValid(waypointGetCurrentIndex())) {
+        const waypoint_t *wp = &flightPlanConfig()->waypoints[waypointGetCurrentIndex()];
+        const gpsLocation_t loc = { .lat = wp->latitude, .lon = wp->longitude };
+        osdFormatCoordinateFromLocation(element->buff, &loc, GPS_LATITUDE, element->type);
+    } else {
+        tfp_sprintf(element->buff, "%c---", SYM_LAT);
+    }
+}
+
+static void osdElementWpCurrentLon(osdElementParms_t *element)
+{
+    if (waypointIsValid(waypointGetCurrentIndex())) {
+        const waypoint_t *wp = &flightPlanConfig()->waypoints[waypointGetCurrentIndex()];
+        const gpsLocation_t loc = { .lat = wp->latitude, .lon = wp->longitude };
+        osdFormatCoordinateFromLocation(element->buff, &loc, GPS_LONGITUDE, element->type);
+    } else {
+        tfp_sprintf(element->buff, "%c---", SYM_LON);
+    }
+}
+
+static void osdElementWpCurrentAlt(osdElementParms_t *element)
+{
+    if (waypointIsValid(waypointGetCurrentIndex())) {
+        const waypoint_t *wp = &flightPlanConfig()->waypoints[waypointGetCurrentIndex()];
+        int32_t alt = osdGetMetersToSelectedUnit(wp->altitude);
+        tfp_sprintf(element->buff, "%c%d%c", SYM_ALTITUDE, (int)alt, osdGetMetersToSelectedUnitSymbol());
+    } else {
+        tfp_sprintf(element->buff, "%c---%c", SYM_ALTITUDE, osdGetMetersToSelectedUnitSymbol());
+    }
+}
+
+static void osdElementWpDistance(osdElementParms_t *element)
+{
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        uint32_t distanceCm = waypointGetDistanceCm();
+        int32_t distanceMeters = distanceCm / 100;
+        osdFormatDistanceString(element->buff, distanceMeters, SYM_HOMEFLAG);
+
+        // Blink if close to waypoint (< 10m)
+        #define WP_BLINK_DISTANCE_CM 1000
+        if (distanceCm < WP_BLINK_DISTANCE_CM) {
+            SET_BLINK(OSD_WP_DISTANCE);
+        } else {
+            CLR_BLINK(OSD_WP_DISTANCE);
+        }
+    } else {
+        tfp_sprintf(element->buff, "%c----", SYM_HOMEFLAG);
+    }
+}
+
+static void osdElementWpDirection(osdElementParms_t *element)
+{
+    if (FLIGHT_MODE(AUTOPILOT_MODE) && STATE(GPS_FIX)) {
+        int32_t bearing = waypointGetBearingCdeg();  // centidegrees
+
+        // Convert to heading relative to aircraft (centidegrees to degrees, decidegrees to degrees)
+        int relativeHeading = (bearing / 100) - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        int symbol = osdGetDirectionSymbolFromHeading(relativeHeading);
+
+        element->buff[0] = symbol;
+        element->buff[1] = 0;
+    } else {
+        element->buff[0] = SYM_HYPHEN;
+        element->buff[1] = 0;
+    }
+}
+
+static void osdElementWpNextNumber(osdElementParms_t *element)
+{
+    if (FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanConfig()->waypointCount > 0) {
+        uint8_t next = waypointGetNextIndex();
+        if (next < flightPlanConfig()->waypointCount) {
+            tfp_sprintf(element->buff, "NEXT %u", next + 1);
+        } else {
+            tfp_sprintf(element->buff, "NEXT --");
+        }
+    } else {
+        tfp_sprintf(element->buff, "NEXT --");
+    }
+}
+
+static void osdElementWpEta(osdElementParms_t *element)
+{
+    if (FLIGHT_MODE(AUTOPILOT_MODE) && STATE(GPS_FIX)) {
+        uint32_t distanceCm = waypointGetDistanceCm();
+        uint16_t groundSpeedCmS = gpsSol.groundSpeed;  // cm/s
+
+        if (groundSpeedCmS > 10) {  // Only show if moving
+            uint32_t etaSeconds = distanceCm / groundSpeedCmS;
+
+            // Format as MM:SS
+            uint8_t minutes = etaSeconds / 60;
+            uint8_t seconds = etaSeconds % 60;
+            tfp_sprintf(element->buff, "%c%02u:%02u", SYM_PREV_LAP_TIME, minutes, seconds);
+        } else {
+            tfp_sprintf(element->buff, "%c--:--", SYM_PREV_LAP_TIME);
+        }
+    } else {
+        tfp_sprintf(element->buff, "%c--:--", SYM_PREV_LAP_TIME);
+    }
+}
+#endif // USE_GPS && ENABLE_FLIGHT_PLAN
 
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
@@ -1949,6 +2076,16 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RANGEFINDER
     OSD_LIDAR_DIST,
 #endif
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    OSD_WP_NUMBER,
+    OSD_WP_DISTANCE,
+    OSD_WP_DIRECTION,
+    OSD_WP_CURRENT_LAT,
+    OSD_WP_CURRENT_LON,
+    OSD_WP_CURRENT_ALT,
+    OSD_WP_NEXT_NUMBER,
+    OSD_WP_ETA,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2095,6 +2232,16 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RANGEFINDER
     [OSD_LIDAR_DIST]              = osdElementLidarDist,
+#endif
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    [OSD_WP_NUMBER]               = osdElementWpNumber,
+    [OSD_WP_CURRENT_LAT]          = osdElementWpCurrentLat,
+    [OSD_WP_CURRENT_LON]          = osdElementWpCurrentLon,
+    [OSD_WP_CURRENT_ALT]          = osdElementWpCurrentAlt,
+    [OSD_WP_DISTANCE]             = osdElementWpDistance,
+    [OSD_WP_DIRECTION]            = osdElementWpDirection,
+    [OSD_WP_NEXT_NUMBER]          = osdElementWpNextNumber,
+    [OSD_WP_ETA]                  = osdElementWpEta,
 #endif
 };
 

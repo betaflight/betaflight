@@ -43,6 +43,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
+#include "flight/autopilot.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 
@@ -64,6 +65,10 @@ static float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
+
+// Shadow array to store raw receiver data when autopilot is active
+// This allows monitoring for stick deflection without overwriting autopilot commands
+float rcCommandFromReceiver[4];
 
 static bool reverseMotors = false;
 static applyRatesFn *applyRates;
@@ -697,6 +702,20 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
 {
     isRxDataNew = true;
 
+    // Determine target array based on autopilot status
+    // If autopilot is active, write to shadow array (for override detection)
+    // Otherwise, write directly to rcCommand[]
+    float *targetRcCommand;
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        targetRcCommand = rcCommandFromReceiver;
+    } else
+#endif
+    {
+        targetRcCommand = rcCommand;
+    }
+
+    // Process receiver data into target array
     for (int axis = 0; axis < 3; axis++) {
         float rc = constrainf(rcData[axis] - rxConfig()->midrc, -500.0f, 500.0f); // -500 to 500
         float rcDeadband = 0;
@@ -706,7 +725,7 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
             rcDeadband  = rcControlsConfig()->yaw_deadband;
             rc *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
-        rcCommand[axis] = fapplyDeadband(rc, rcDeadband);
+        targetRcCommand[axis] = fapplyDeadband(rc, rcDeadband);
     }
 
     int32_t tmp;
@@ -722,41 +741,41 @@ FAST_CODE_NOINLINE void updateRcCommands(void)
         tmp = tmp * getLowVoltageCutoff()->percentage / 100;
     }
 
-    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
+    targetRcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (featureIsEnabled(FEATURE_3D) && !failsafeIsActive()) {
         if (!flight3DConfig()->switched_mode3d) {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+                fix12_t throttleScaler = qConstruct(targetRcCommand[THROTTLE] - 1000, 1000);
+                targetRcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
             }
         } else {
             if (IS_RC_MODE_ACTIVE(BOX3D)) {
                 reverseMotors = true;
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+                fix12_t throttleScaler = qConstruct(targetRcCommand[THROTTLE] - 1000, 1000);
+                targetRcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
             } else {
                 reverseMotors = false;
-                fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-                rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+                fix12_t throttleScaler = qConstruct(targetRcCommand[THROTTLE] - 1000, 1000);
+                targetRcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
             }
         }
     }
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         static vector3_t rcCommandBuff;
 
-        rcCommandBuff.x = rcCommand[ROLL];
-        rcCommandBuff.y = rcCommand[PITCH];
+        rcCommandBuff.x = targetRcCommand[ROLL];
+        rcCommandBuff.y = targetRcCommand[PITCH];
         if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
-            rcCommandBuff.z = rcCommand[YAW];
+            rcCommandBuff.z = targetRcCommand[YAW];
         } else {
             rcCommandBuff.z = 0;
         }
         imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
-        rcCommand[ROLL] = rcCommandBuff.x;
-        rcCommand[PITCH] = rcCommandBuff.y;
+        targetRcCommand[ROLL] = rcCommandBuff.x;
+        targetRcCommand[PITCH] = rcCommandBuff.y;
         if (!FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE | GPS_RESCUE_MODE)) {
-            rcCommand[YAW] = rcCommandBuff.z;
+            targetRcCommand[YAW] = rcCommandBuff.z;
         }
     }
 }

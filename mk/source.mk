@@ -14,6 +14,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/flight_plan.c \
             pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
@@ -158,6 +159,8 @@ COMMON_SRC = \
             flight/alt_hold_multirotor.c \
             flight/alt_hold_wing.c \
             flight/autopilot_multirotor.c \
+            flight/autopilot_waypoint.c \
+            flight/autopilot_guidance.c \
             flight/autopilot_wing.c \
             flight/dyn_notch_filter.c \
             flight/failsafe.c \

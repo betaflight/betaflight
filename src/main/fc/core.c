@@ -74,6 +74,8 @@
 #include "flight/position.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#include "flight/autopilot.h"
+#include "flight/autopilot_waypoint.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -92,6 +94,11 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
+
+#if ENABLE_FLIGHT_PLAN
+#include "pg/autopilot.h"
+#include "pg/flight_plan.h"
+#endif
 
 #include "rx/rc_stats.h"
 #include "rx/rx.h"
@@ -1096,6 +1103,71 @@ void processRxModes(timeUs_t currentTimeUs)
         }
     } else {
         DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+#endif
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    // Autopilot activation logic with RX loss policy support
+    const bool rcBoxActive = IS_RC_MODE_ACTIVE(BOXAUTOPILOT);
+    const bool gpsValid = sensors(SENSOR_GPS) && STATE(GPS_FIX);
+    const bool hasWaypoints = flightPlanConfig()->waypointCount > 0;
+    const bool rxLinkActive = !FLIGHT_MODE(FAILSAFE_MODE);  // RX link is active
+
+    // Check if autopilot should be active
+    bool shouldEnableAutopilot = false;
+
+    if (ARMING_FLAG(ARMED) && gpsValid && hasWaypoints) {
+        if (rcBoxActive && rxLinkActive) {
+            // Normal case: Box active and RX link good
+            shouldEnableAutopilot = true;
+        } else if (FLIGHT_MODE(AUTOPILOT_MODE) && !rxLinkActive) {
+            // Autopilot already active, RX lost - check policy
+            const autopilotRxLossPolicy_e policy = autopilotConfig()->rxLossPolicy;
+
+            switch (policy) {
+            case AP_RX_LOSS_CONTINUE:
+                // Continue mission despite RX loss
+                shouldEnableAutopilot = true;
+                break;
+
+            case AP_RX_LOSS_LAND:
+                // Land at current position via emergency landing waypoint
+                if (waypointGetState() != WP_STATE_LANDING && waypointGetState() != WP_STATE_COMPLETE) {
+                    waypointSetEmergencyLanding();
+                }
+                shouldEnableAutopilot = true;
+                break;
+
+            case AP_RX_LOSS_DISABLE:
+            default:
+                // Disable autopilot, use standard failsafe
+                shouldEnableAutopilot = false;
+                break;
+            }
+        }
+    }
+
+    if (shouldEnableAutopilot) {
+        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
+            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+
+            // Reset waypoint tracker on mode entry
+            waypointReset();
+
+            // Reset controllers with first waypoint target
+            const gpsLocation_t *target = waypointGetTarget();
+            resetPositionControl(target, TASK_PERIOD_HZ(100));
+            resetAltitudeControl();
+        }
+
+        // Force ANGLE mode when autopilot is active
+        // This allows autopilot to act as a "virtual pilot" generating RC commands
+        if (!FLIGHT_MODE(ANGLE_MODE)) {
+            ENABLE_FLIGHT_MODE(ANGLE_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+        // Note: Don't disable ANGLE mode here - pilot may have it enabled manually
     }
 #endif
 

@@ -35,4 +35,7 @@ bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
 bool isAutopilotInControl(void);
 
+void updateAutopilot(void);
+float autopilotGetYawRate(void);
+
 #endif // !USE_WING
