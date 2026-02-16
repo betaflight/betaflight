@@ -336,6 +336,8 @@ void voltageMeterINA226Init(void)
     // currentMeterINA226Init() performs the actual hardware init (I2C detect, reset, calibration).
     // If voltage_meter_source=INA226 is set without current_meter=INA226, we must init it here.
     // The init is idempotent - multiple calls are safe.
+    // NOTE: This assumes battery/current PG configs are already loaded before this init runs.
+    // The init order in main.c ensures batteryInit() is called after pgResetAll() so configs are valid.
     if (!ina226IsInitialized()) {
         currentMeterINA226Init();
     }

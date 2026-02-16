@@ -146,11 +146,13 @@ bool ina226Detect(i2cDevice_e device, uint8_t address)
         return false;
     }
     
-    ina226DetectStage = 3;  // Success
     // Validate manufacturer ID (Texas Instruments = 0x5449)
     if (ina226LastMfgId != INA226_MANUFACTURER_ID) {
+        ina226DetectStage = 4;  // Manufacturer ID mismatch
         return false;
     }
+    
+    ina226DetectStage = 3;  // Success
     return true;
 }
 
@@ -369,7 +371,8 @@ bool ina226Read(const ina226Config_t *config, ina226Data_t *data)
         }
         data->currentRaw = 0;
         data->powerRaw = 0;
-        data->powerMw = ((uint32_t)abs(data->currentMa) * (uint32_t)data->busVoltageMv) / 1000UL;
+        // Use uint64_t for consistency with calibrated path to prevent overflow with high current
+        data->powerMw = (uint32_t)(((uint64_t)abs(data->currentMa) * (uint64_t)data->busVoltageMv) / 1000ULL);
     }
     
     data->dataValid = true;
