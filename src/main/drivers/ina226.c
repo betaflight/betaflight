@@ -22,12 +22,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
 #ifdef USE_CURRENT_METER_INA226
 
+#include "common/maths.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/ina226.h"
 #include "drivers/time.h"
@@ -303,6 +303,12 @@ bool ina226Configure(const ina226Config_t *config)
  * Reads shunt voltage, bus voltage, current, and power registers.
  * Converts raw values to engineering units (mV, mA, mW).
  *
+ * NOTE: This performs 4 sequential I2C register reads with blocking busy-waits.
+ * The INA226 supports sequential register reads with auto-increment, but the
+ * current betaflight I2C API doesn't support multi-byte burst reads cleanly.
+ * At ~50Hz battery task rate, the latency is acceptable. Consider burst reads
+ * if lower latency is needed in the future.
+ *
  * @param config Pointer to INA226 configuration.
  * @param data   Pointer to data structure to fill with readings.
  * @return true if read succeeded, false otherwise.
@@ -372,7 +378,8 @@ bool ina226Read(const ina226Config_t *config, ina226Data_t *data)
         data->currentRaw = 0;
         data->powerRaw = 0;
         // Use uint64_t for consistency with calibrated path to prevent overflow with high current
-        data->powerMw = (uint32_t)(((uint64_t)abs(data->currentMa) * (uint64_t)data->busVoltageMv) / 1000ULL);
+        // Use ABS() macro from common/maths.h for type-safe int32_t absolute value
+        data->powerMw = (uint32_t)(((uint64_t)ABS(data->currentMa) * (uint64_t)data->busVoltageMv) / 1000ULL);
     }
     
     data->dataValid = true;

@@ -402,8 +402,9 @@ void currentMeterINA226Refresh(int32_t lastUpdateAt)
     // Sanity check: limit lastUpdateAt to prevent overflow (max 10 seconds = 10,000,000 us)
     // This handles the case where ibatLastServiced was 0 on first call
     // Skip mAh accumulation for unreasonable values rather than using fabricated delta
+    // Also skip when lastUpdateAt == 0 (voltage-only mode calling to trigger I2C read)
     bool skipMahUpdate = false;
-    if (lastUpdateAt > 10000000 || lastUpdateAt < 0) {
+    if (lastUpdateAt > 10000000 || lastUpdateAt <= 0) {
         skipMahUpdate = true;
     }
     
