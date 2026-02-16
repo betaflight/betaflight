@@ -54,9 +54,15 @@ static bool ina226WriteRegister(i2cDevice_e device, uint8_t address, uint8_t reg
     }
     
     // Wait for write to complete (important for PICO platform)
+    // Defensive timeout for cross-platform consistency (platform timeouts should trigger first)
     bool error = false;
-    while (i2cBusy(device, &error)) {
+    int timeout = 1000;
+    while (i2cBusy(device, &error) && --timeout > 0) {
         // Wait until transfer is complete
+    }
+    
+    if (timeout <= 0) {
+        return false;
     }
     
     return !error;
@@ -94,12 +100,14 @@ static bool ina226ReadRegister(i2cDevice_e device, uint8_t address, uint8_t reg,
     }
     
     // Wait for read to complete (important for PICO platform)
+    // Defensive timeout for cross-platform consistency (platform timeouts should trigger first)
     bool error = false;
-    while (i2cBusy(device, &error)) {
+    int timeout = 1000;
+    while (i2cBusy(device, &error) && --timeout > 0) {
         // Wait until transfer is complete
     }
     
-    if (error) {
+    if (timeout <= 0 || error) {
         return false;
     }
     
