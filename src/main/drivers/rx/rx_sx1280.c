@@ -66,7 +66,6 @@ static busyIntContext_t busyIntContext;
 
 static volatile timeUs_t sx1280Processing;
 
-static volatile bool pendingDoFHSS = false;
 static sx1280PacketTypes_e sx1280PacketMode;
 
 #define SX1280_BUSY_TIMEOUT_US 1000
@@ -618,10 +617,8 @@ static void sx1280DoReadBuffer(extiCallbackRec_t *cb);
 static busStatus_e sx1280ReadBufferComplete(uintptr_t arg);
 static void sx1280GetPacketStats(extiCallbackRec_t *cb);
 static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg);
-static busStatus_e sx1280IsFhssReq(uintptr_t arg);
 static void sx1280SetFrequency(extiCallbackRec_t *cb);
 static busStatus_e sx1280SetFreqComplete(uintptr_t arg);
-static void sx1280StartReceivingDMA(extiCallbackRec_t *cb);
 static busStatus_e sx1280EnableIRQs(uintptr_t arg);
 static void sx1280SendTelemetryBuffer(extiCallbackRec_t *cb);
 static busStatus_e sx1280TelemetryComplete(uintptr_t arg);
@@ -833,7 +830,10 @@ static busStatus_e sx1280GetStatsCmdComplete(uintptr_t arg)
 
     expressLrsSetRfPacketStatus(processRFPacket(payload, rxSpiGetLastExtiTimeUs()));
 
-    return sx1280IsFhssReq(arg);
+    // Regardless of the next state, after packet reception just reenable EXTI
+    // The decision about what to do next happens after TOCK
+    sx1280EnableExti();
+    return BUS_READY;
 }
 
 void sx1280HandleFromTock(void)
@@ -841,27 +841,13 @@ void sx1280HandleFromTock(void)
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         if (expressLrsIsFhssReq()) {
             if (sx1280EnableBusy()) {
-                pendingDoFHSS = false;
                 sx1280SetBusyFn(sx1280SetFrequency);
-            } else {
-                pendingDoFHSS = true;
             }
         }
+        else {
+            sx1280SetFreqComplete(0);
+        }
     }
-}
-
-// Next we need to check if we need to FHSS and then do so if needed
-static busStatus_e sx1280IsFhssReq(uintptr_t arg)
-{
-    UNUSED(arg);
-
-    if (expressLrsIsFhssReq()) {
-        sx1280SetBusyFn(sx1280SetFrequency);
-    } else {
-        sx1280SetFreqComplete(arg);
-    }
-
-    return BUS_READY;
 }
 
 // Set the frequency
@@ -891,52 +877,25 @@ static void sx1280SetFrequency(extiCallbackRec_t *cb)
 static busStatus_e sx1280SetFreqComplete(uintptr_t arg)
 {
     UNUSED(arg);
-    pendingDoFHSS = false;
 
     if (expressLrsTelemRespReq()) {
         expressLrsDoTelem();
         // if it's time to do TLM and we have enough to do so
         sx1280SetBusyFn(sx1280SendTelemetryBuffer);
     } else {
-        // we don't need to send TLM and we've already FHSS so just hop back into RX mode
-        sx1280SetBusyFn(sx1280StartReceivingDMA);
+        // we don't need to send TLM and we've already FHSS just reenable EXTI
+        sx1280EnableExti();
     }
 
     return BUS_READY;
-}
-
-// Go back into RX mode
-static void sx1280StartReceivingDMA(extiCallbackRec_t *cb)
-{
-    UNUSED(cb);
-    extDevice_t *dev = rxSpiGetDevice();
-
-    sx1280ClearBusyFn();
-
-    // Issue command to start receiving
-    // periodBase = 1ms, page 71 datasheet, set to FF for cont RX
-    STATIC_DMA_DATA_AUTO uint8_t irqSetRxCmd[] = {SX1280_RADIO_SET_RX, 0, 0xff, 0xff};
-
-    static busSegment_t segments[] = {
-            {.u.buffers = {irqSetRxCmd, NULL}, sizeof(irqSetRxCmd), true, sx1280EnableIRQs},
-            {.u.link = {NULL, NULL}, 0, false, NULL},
-    };
-
-    spiSequence(dev, segments);
 }
 
 static busStatus_e sx1280EnableIRQs(uintptr_t arg)
 {
     UNUSED(arg);
 
-    if (pendingDoFHSS) {
-        pendingDoFHSS = false;
-        sx1280SetBusyFn(sx1280SetFrequency);
-    } else {
-        // Switch back to waiting for EXTI interrupt
-        sx1280EnableExti();
-    }
-
+    // Switch back to waiting for EXTI interrupt
+    sx1280EnableExti();
     return BUS_READY;
 }
 
