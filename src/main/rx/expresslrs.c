@@ -426,12 +426,12 @@ static void expressLrsSendTelemResp(void)
 
     receiver.alreadyTelemResp = true;
 
-    if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
-        uint8_t mspConfirm =
+    uint8_t mspConfirm =
 #ifdef USE_MSP_OVER_TELEMETRY
-            getCurrentMspConfirm() ? 1 :
+        getCurrentMspConfirm() ? 1 :
 #endif
-            0;
+        0;
+    if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
 
         otaPkt.type = ELRS_TLM_PACKET;
 #ifdef USE_ELRSV3
@@ -465,6 +465,7 @@ static void expressLrsSendTelemResp(void)
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_DATA;
 #else
         otaPkt.type = ELRS_MSP_DATA_PACKET;
+        otaPkt.tlm_dl.mspConfirm = mspConfirm;
 #endif
         otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload, sizeof(otaPkt.tlm_dl.payload));
     }
@@ -698,15 +699,16 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
         return;
     }
 
-#ifndef USE_ELRSV3
-    confirmCurrentTelemetryPayload(otaPktPtr->msp_ul.mspConfirm);
-#endif
-
+#ifdef USE_ELRSV3
     bool currentMspConfirmValue = getCurrentMspConfirm();
+#endif
     receiveMspData(otaPktPtr->msp_ul.packageIndex, otaPktPtr->msp_ul.payload);
+#ifdef USE_ELRSV3
+    // If the confirm value flipped, then send a linkstats next to send the new confirm bit
     if (currentMspConfirmValue != getCurrentMspConfirm()) {
         nextTelemetryType = ELRS_TELEMETRY_TYPE_LINK;
     }
+#endif
     if (hasFinishedMspData()) {
         if (mspBuffer[ELRS_MSP_COMMAND_INDEX] == ELRS_MSP_SET_RX_CONFIG && mspBuffer[ELRS_MSP_COMMAND_INDEX + 1] == ELRS_MSP_MODEL_ID) { //mspReceiverComplete
             if (rxExpressLrsSpiConfig()->modelId != mspBuffer[9]) { //UpdateModelMatch
