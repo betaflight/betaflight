@@ -257,20 +257,20 @@ void receiveMspData(const uint8_t packageIndex, const volatile uint8_t* const re
         finishedData = true;
     } else if (packageIndex == mspCurrentPackage) {
         acceptData = true;
-        mspCurrentPackage++;
     }
     // If this is the first package from the sender, and we're mid-receive
     // assume the sender has restarted without resync or is freshly booted
     // skip the resync process entirely and just pretend this is a fresh boot too
-    else if (packageIndex == 1 && currentPackage > 1) {
-        currentPackage = 1;
-        currentOffset = 0;
+    else if (packageIndex == 1 && mspCurrentPackage > 1) {
+        mspCurrentPackage = 1;
+        mspCurrentOffset = 0;
         acceptData = true;
     }
 
     if (acceptData && (receiveData != NULL)) {
         uint8_t len = MIN((uint8_t)(mspLength - mspCurrentOffset), ELRS_MSP_BYTES_PER_CALL);
         memcpy(&mspData[mspCurrentOffset], (const uint8_t*) receiveData, len);
+        mspCurrentPackage++;
         mspCurrentOffset += len;
         mspConfirm = !mspConfirm;
     }
