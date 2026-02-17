@@ -70,6 +70,8 @@
 
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
 
+#define SBUS_TIME_NEEDED_PER_BYTE SBUS_TIME_NEEDED_PER_FRAME / SBUS_FRAME_SIZE
+
 #if !defined(SBUS_PORT_OPTIONS)
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
 #endif
@@ -117,7 +119,7 @@ static void sbusDataReceive(uint16_t c, void *data)
 
     const timeDelta_t sbusFrameTime = cmpTimeUs(nowUs, sbusFrameData->startAtUs);
 
-    if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500)) {
+    if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500) || sbusFrameTime > (long)(sbusFrameData->position * SBUS_TIME_NEEDED_PER_BYTE + 240)) {
         sbusFrameData->position = 0;
     }
 
