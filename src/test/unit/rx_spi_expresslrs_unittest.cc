@@ -490,7 +490,7 @@ extern "C" {
 
     void setTelemetryDataToTransmit(const uint8_t , uint8_t* ) {}
     bool isTelemetrySenderActive(void) { return false; }
-    uint8_t getCurrentTelemetryPayload(uint8_t *, size_t ) { return 0; }
+    uint8_t getCurrentTelemetryPayload(uint8_t *, uint8_t ) { return 0; }
     void confirmCurrentTelemetryPayload(const bool ) {}
     void updateTelemetryRate(const uint16_t , const uint8_t , const uint8_t ) {}
 
