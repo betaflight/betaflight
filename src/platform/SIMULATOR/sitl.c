@@ -66,6 +66,10 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "fc/runtime_config.h"
+#include "sensors/sensors.h"
+#include "pg/flight_plan.h"
+
 #include "io/gps.h"
 #include "io/gps_virtual.h"
 
@@ -224,6 +228,41 @@ static void updateState(const fdm_packet* pkt)
     last_ts.tv_sec = now_ts.tv_sec;
     last_ts.tv_nsec = now_ts.tv_nsec;
 
+    // Periodic debug: RX inputs and arming disable flags (every ~1s)
+    static uint64_t lastDebugTimeUs = 0;
+    if (realtime_now - lastDebugTimeUs >= 1000000) {
+        lastDebugTimeUs = realtime_now;
+
+        const armingDisableFlags_e flags = getArmingDisableFlags();
+        printf("[SITL] t=%dms simRate=%.3f RC[%s]: ", (int)millis(), simRate, rc_received ? "UDP" : "NONE");
+        for (int i = 0; i < 8; i++) {
+            printf("ch%d=%d ", i, (int)rcData[i]);
+        }
+        printf("\n");
+
+        if (flags) {
+            printf("[SITL] Arming disabled:");
+            for (unsigned i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
+                const armingDisableFlags_e flag = (1 << i);
+                if (flags & flag) {
+                    printf(" %s", getArmingDisableFlagName(flag));
+                }
+            }
+            printf("\n");
+        } else {
+            printf("[SITL] Arming: ENABLED\n");
+        }
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+        printf("[SITL] Autopilot: armed=%d gps=%d fix=%d wpts=%d mode=%d\n",
+            ARMING_FLAG(ARMED) ? 1 : 0,
+            sensors(SENSOR_GPS) ? 1 : 0,
+            STATE(GPS_FIX) ? 1 : 0,
+            flightPlanConfig()->waypointCount,
+            FLIGHT_MODE(AUTOPILOT_MODE) ? 1 : 0);
+#endif
+    }
+
     pthread_mutex_unlock(&updateLock); // can send PWM output now
 
 #if defined(SIMULATOR_GYROPID_SYNC)
@@ -251,18 +290,6 @@ static void* udpThread(void* data)
     return NULL;
 }
 
-static float readRCSITL(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
-{
-    UNUSED(rxRuntimeState);
-    return rcPkt.channels[channel];
-}
-
-static uint8_t rxRCFrameStatus(rxRuntimeState_t *rxRuntimeState)
-{
-    UNUSED(rxRuntimeState);
-    return RX_FRAME_COMPLETE;
-}
-
 static void *udpRCThread(void *data)
 {
     UNUSED(data);
@@ -276,13 +303,9 @@ static void *udpRCThread(void *data)
                     rcPkt.channels[0], rcPkt.channels[1],rcPkt.channels[2],rcPkt.channels[3],
                     rcPkt.channels[4], rcPkt.channels[5],rcPkt.channels[6],rcPkt.channels[7]);
 
-                rxRuntimeState.channelCount = SIMULATOR_MAX_RC_CHANNELS;
-                rxRuntimeState.rcReadRawFn = readRCSITL;
-                rxRuntimeState.rcFrameStatusFn = rxRCFrameStatus;
-
-                rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
                 rc_received = true;
             }
+            rxUpdateUdpChannels(rcPkt.channels, SIMULATOR_MAX_RC_CHANNELS);
         }
     }
 
@@ -565,8 +588,6 @@ static void pwmDisableMotors(void)
 
 static void pwmWriteMotor(uint8_t index, float value)
 {
-    if (pthread_mutex_trylock(&updateLock) != 0) return;
-
     if (index < MAX_SUPPORTED_MOTORS) {
         motorsPwm[index] = value - idlePulse;
     }
@@ -574,8 +595,6 @@ static void pwmWriteMotor(uint8_t index, float value)
     if (index < pwmRawPkt.motorCount) {
         pwmRawPkt.pwm_output_raw[index] = value;
     }
-
-    pthread_mutex_unlock(&updateLock); // can send PWM output now
 }
 
 static void pwmWriteMotorInt(uint8_t index, uint16_t value)
@@ -598,15 +617,13 @@ static void pwmCompleteMotorUpdate(void)
         outScale = 500.0;
     }
 
-    pwmPkt.motor_speed[3] = motorsPwm[0] / outScale;
-    pwmPkt.motor_speed[0] = motorsPwm[1] / outScale;
-    pwmPkt.motor_speed[1] = motorsPwm[2] / outScale;
-    pwmPkt.motor_speed[2] = motorsPwm[3] / outScale;
+    for (int i = 0; i < 4; i++) {
+        pwmPkt.motor_speed[i] = motorsPwm[i] / outScale;
+    }
 
     // get one "fdm_packet" can only send one "servo_packet"!!
     if (pthread_mutex_trylock(&updateLock) != 0) return;
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
-//    printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
     udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
 }
 

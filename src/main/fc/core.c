@@ -188,6 +188,9 @@ PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
 
 static bool isCalibrating(void)
 {
+#ifdef SIMULATOR_BUILD
+    return false;
+#else
     return (sensors(SENSOR_GYRO) && !gyroIsCalibrationComplete())
 #ifdef USE_ACC
         || (sensors(SENSOR_ACC) && !accIsCalibrationComplete())
@@ -199,6 +202,7 @@ static bool isCalibrating(void)
         || (sensors(SENSOR_MAG) && !compassIsCalibrationComplete())
 #endif
         ;
+#endif
 }
 
 #ifdef USE_LAUNCH_CONTROL

@@ -174,6 +174,9 @@ extern linkQualitySource_e linkQualitySource;
 extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
 
 void rxInit(void);
+#ifdef SIMULATOR_BUILD
+void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount);
+#endif
 void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
