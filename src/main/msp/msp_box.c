@@ -253,11 +253,11 @@ void initActiveBoxIds(void)
             BME(BOXGPSRESCUE);
         }
 #endif
-#if ENABLE_FLIGHT_PLAN
-        BME(BOXAUTOPILOT);
-#endif
         BME(BOXBEEPGPSCOUNT);
     }
+#if ENABLE_FLIGHT_PLAN
+    BME(BOXAUTOPILOT);
+#endif
 #endif
 
     BME(BOXFAILSAFE);
