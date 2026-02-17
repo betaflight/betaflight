@@ -40,7 +40,7 @@ STATIC_UNIT_TESTED uint16_t crc14tab[ELRS_CRC_LEN] = {0};
 
 static uint8_t volatile fhssIndex = 0;
 STATIC_UNIT_TESTED uint8_t fhssSequence[ELRS_NR_SEQUENCE_ENTRIES] = {0};
-static uint16_t seqCount = 0;
+STATIC_UNIT_TESTED uint16_t seqCount = 0;
 static uint8_t syncChannel = 0;
 static uint32_t freqSpread = 0;
 
