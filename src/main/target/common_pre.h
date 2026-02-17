@@ -575,7 +575,3 @@
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #endif
-
-#ifndef ENABLE_FLIGHT_PLAN
-#define ENABLE_FLIGHT_PLAN 0
-#endif

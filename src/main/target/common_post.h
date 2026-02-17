@@ -693,3 +693,16 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+/*
+    Place all ENABLE_ validation defines here.
+
+    This is where we check if they have yet to be defined, and if not,
+    we set them to their default values.
+
+    This is also where we can check for any invalid combinations of ENABLE_ defines
+    and throw errors if needed.
+*/
+
+#ifndef ENABLE_FLIGHT_PLAN
+#define ENABLE_FLIGHT_PLAN 0
+#endif
