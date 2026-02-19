@@ -101,12 +101,6 @@ static void rssiFilterReset(void)
 #endif //USE_RX_RSNR
 }
 
-#ifdef USE_ELRSV3
-#define PACKET_HANDLING_TO_TOCK_ISR_DELAY_US 250
-#else
-#define PACKET_HANDLING_TO_TOCK_ISR_DELAY_US 200
-#endif
-
 //
 // Event pair recorder
 //
@@ -475,7 +469,11 @@ static void expressLrsSendTelemResp(void)
 #ifdef USE_ELRSV3
     uint16_t nonceValidator = 0;
 #else
-    uint8_t nonceValidator = receiver.nonceRX + 1;
+    // This is a hack because this implementation sends telemetry right after a packet is received
+    // this is not a problem for all rates except F500, which will send telemetry in the previous
+    // packet period, which 4.0 will not accept, so we fake the validator to be in the correct/wrong period
+    bool isF500 = domainIsTeam24() && (receiver.rateIndex == 1);
+    uint8_t nonceValidator = receiver.nonceRX + (isF500 ? 0 : 1);
 #endif
     uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer ^ nonceValidator);
     otaPkt.crcHigh = (crc >> 8);
@@ -814,14 +812,8 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
     if (!validatePacketCrcStd(otaPktPtr)) {
         return RX_SPI_RECEIVED_NONE;
     }
-
-    // The extEvent defines where TOCK timer ISR is to be synced to, i.e. where the packet period begins.
-    // For rates where the TOA is longer than half the packet period schedule the TOCK for rougly 1x TOA before
-    // the TX's end of the period so telemetry is received by the TX in the correct period. For all others,
-    // schedule TOCK to be PACKET_TO_TOCK_SLACK (us) after RX packet reception.
-    // ELRS V3 should always use PACKET_HANDLING_TO_TOCK_ISR_DELAY_US but this is fine and only changes F500 telemetry timing
-    int32_t slack = MAX((int32_t)receiver.modParams->interval - 2 * (int32_t)receiver.rfPerfParams->toa, (int32_t)PACKET_HANDLING_TO_TOCK_ISR_DELAY_US);
-    phaseLockEprEvent(EPR_EXTERNAL, timeStampUs + slack);
+    const uint32_t PACKET_HANDLING_TO_TOCK_ISR_DELAY_US = 250;
+    phaseLockEprEvent(EPR_EXTERNAL, timeStampUs + PACKET_HANDLING_TO_TOCK_ISR_DELAY_US);
 
     bool shouldStartTimer = false;
     uint32_t timeStampMs = millis();
