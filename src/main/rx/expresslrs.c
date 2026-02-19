@@ -164,7 +164,6 @@ typedef struct phaseLockState_s {
 
     int32_t offsetUs;
     int32_t offsetDeltaUs;
-    int32_t previousOffsetUs;
 } phaseLockState_t;
 
 static phaseLockState_t pl;
@@ -489,6 +488,7 @@ static void updatePhaseLock(void)
 
         pl.offsetUs = simpleLPFilterUpdate(&pl.offsetFilter, pl.rawOffsetUs);
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
+        pl.previousRawOffsetUs = pl.rawOffsetUs;
 
         if (receiver.timerState == ELRS_TIM_LOCKED) {
             // limit rate of freq offset adjustment
@@ -507,11 +507,7 @@ static void updatePhaseLock(void)
             expressLrsUpdatePhaseShift(pl.offsetUs >> 2);
         }
 
-        pl.previousOffsetUs = pl.offsetUs;
-        pl.previousRawOffsetUs = pl.rawOffsetUs;
-
         expressLrsTimerDebug();
-
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 0, pl.rawOffsetUs);
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 1, pl.offsetUs);
     }
