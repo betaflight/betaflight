@@ -170,6 +170,7 @@ typedef struct phaseLockState_s {
 
     int32_t offsetUs;
     int32_t offsetDeltaUs;
+    int32_t previousOffsetUs;
 } phaseLockState_t;
 
 static phaseLockState_t pl;
@@ -399,12 +400,13 @@ volatile uint8_t *expressLrsGetPayloadBuffer(void)
 
 bool expressLrsIsFhssReq(void)
 {
-    uint8_t modresultFHSS = receiver.nonceRX % receiver.modParams->fhssHopInterval;
+    uint8_t modresultFHSS = (receiver.nonceRX + 1) % receiver.modParams->fhssHopInterval;
 
-    if ((receiver.modParams->fhssHopInterval == 0) || receiver.inBindingMode || (modresultFHSS != 0) || (receiver.connectionState == ELRS_DISCONNECTED)) {
+    if ((receiver.modParams->fhssHopInterval == 0) || receiver.alreadyFhss == true || receiver.inBindingMode || (modresultFHSS != 0) || (receiver.connectionState == ELRS_DISCONNECTED)) {
         return false;
     }
 
+    receiver.alreadyFhss = true;
     receiver.currentFreq = fhssGetNextFreq(receiver.freqOffset);
 
     return true;
@@ -412,12 +414,12 @@ bool expressLrsIsFhssReq(void)
 
 bool expressLrsTelemRespReq(void)
 {
-    uint8_t modresult = receiver.nonceRX % currTlmDenom;
+    uint8_t modresult = (receiver.nonceRX + 1) % currTlmDenom;
     if (receiver.inBindingMode || (receiver.connectionState == ELRS_DISCONNECTED) || (currTlmDenom == 1) || (modresult != 0)) {
         return false; // don't bother sending tlm if disconnected or TLM is off
     } else {
         return true;
-   }
+    }
 }
 
 static void expressLrsSendTelemResp(void)
@@ -473,7 +475,7 @@ static void expressLrsSendTelemResp(void)
 #ifdef USE_ELRSV3
     uint16_t nonceValidator = 0;
 #else
-    uint8_t nonceValidator = receiver.nonceRX;
+    uint8_t nonceValidator = receiver.nonceRX + 1;
 #endif
     uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer ^ nonceValidator);
     otaPkt.crcHigh = (crc >> 8);
@@ -489,7 +491,6 @@ static void updatePhaseLock(void)
 
         pl.offsetUs = simpleLPFilterUpdate(&pl.offsetFilter, pl.rawOffsetUs);
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
-        pl.previousRawOffsetUs = pl.rawOffsetUs;
 
         if (receiver.timerState == ELRS_TIM_LOCKED) {
             // limit rate of freq offset adjustment
@@ -508,7 +509,11 @@ static void updatePhaseLock(void)
             expressLrsUpdatePhaseShift(pl.offsetUs >> 2);
         }
 
+        pl.previousOffsetUs = pl.offsetUs;
+        pl.previousRawOffsetUs = pl.rawOffsetUs;
+
         expressLrsTimerDebug();
+
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 0, pl.rawOffsetUs);
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 1, pl.offsetUs);
     }
@@ -519,13 +524,19 @@ static void updatePhaseLock(void)
 //hwTimerCallbackTick
 void expressLrsOnTimerTickISR(void) // this is 180 out of phase with the other callback, occurs mid-packet reception
 {
+    updatePhaseLock();
+    if (!receiver.inBindingMode)
+        receiver.nonceRX += 1;
+
     // Save the LQ value before the inc() reduces it by 1
     receiver.uplinkLQ = lqGet();
     // Only advance the LQI period counter if we didn't send Telemetry this period
     if (!receiver.alreadyTelemResp) {
         lqNewPeriod();
     }
+
     receiver.alreadyTelemResp = false;
+    receiver.alreadyFhss = false;
 
     receiver.rxHandleFromTick();
 }
@@ -534,13 +545,10 @@ void expressLrsOnTimerTickISR(void) // this is 180 out of phase with the other c
 void expressLrsOnTimerTockISR(void)
 {
     uint32_t currentTimeUs = micros();
+
     phaseLockEprEvent(EPR_INTERNAL, currentTimeUs);
 
-    if (!receiver.inBindingMode)
-        receiver.nonceRX += 1;
-
     receiver.rxHandleFromTock();
-    updatePhaseLock();
 }
 
 static uint16_t lostConnectionCounter = 0;
@@ -563,6 +571,7 @@ static void lostConnection(void)
     lqReset();
     expressLrsPhaseLockReset();
     receiver.alreadyTelemResp = false;
+    receiver.alreadyFhss = false;
 
     if (!receiver.inBindingMode) {
         expressLrsTimerStop();
@@ -625,6 +634,7 @@ static void initializeReceiver(void)
     setRfLinkRate(receiver.rateIndex);
 
     receiver.started = false;
+    receiver.alreadyFhss = false;
     receiver.alreadyTelemResp = false;
     receiver.lockRFmode = false;
     receiver.timerState = ELRS_TIM_DISCONNECTED;

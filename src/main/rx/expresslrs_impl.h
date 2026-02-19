@@ -73,6 +73,7 @@ typedef struct elrsReceiver_s {
 
     uint8_t uplinkLQ;
 
+    bool alreadyFhss;
     bool alreadyTelemResp;
     bool lockRFmode;
     bool started;
