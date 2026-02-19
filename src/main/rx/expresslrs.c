@@ -466,7 +466,7 @@ static void expressLrsSendTelemResp(void)
     }
 
 #ifdef USE_ELRSV3
-    uint16_t nonceValidator = 0;
+    uint8_t nonceValidator = 0;
 #else
     // This is a hack because this implementation sends telemetry right after a packet is received
     // this is not a problem for all rates except F500, which will send telemetry in the previous
