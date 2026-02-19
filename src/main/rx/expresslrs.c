@@ -905,7 +905,7 @@ static void cycleRfMode(const uint32_t timeStampMs)
     if (receiver.lockRFmode == false && (timeStampMs - receiver.rfModeCycledAtMs) > (receiver.cycleIntervalMs * receiver.rfModeCycleMultiplier)) {
         receiver.rfModeCycledAtMs = timeStampMs;
         receiver.lastSyncPacketMs = timeStampMs;           // reset this variable
-        receiver.rateIndex = (receiver.rateIndex + 1) % ELRS_RATE_MAX;
+        receiver.rateIndex = (receiver.rateIndex + 1) % (domainIsTeam24() ? ELRS_RATE_MAX_24 : ELRS_RATE_MAX_900);
         setRfLinkRate(receiver.rateIndex); // switch between rates
         receiver.statsUpdatedAtMs = timeStampMs;
         lqReset();
