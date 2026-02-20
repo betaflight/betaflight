@@ -475,7 +475,7 @@ static void expressLrsSendTelemResp(void)
     // This is a hack because this implementation sends telemetry right after a packet is received
     // this is not a problem for all rates except F500, which will send telemetry in the previous
     // packet period, which 4.0 will not accept, so we fake the validator to be in the correct/wrong period
-    bool isF500 = domainIsTeam24() && (receiver.rateIndex == 1);
+    bool isF500 = receiver.modParams->v4Rate == RATE_FLRC_2G4_500HZ;
     uint8_t nonceValidator = receiver.nonceRX + (isF500 ? 0 : 1);
 #endif
     uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer ^ nonceValidator);
