@@ -112,7 +112,6 @@ typedef enum {
     TLM_RATIO_DISARMED, // TLM_RATIO_STD when disarmed, TLM_RATIO_NO_TLM when armed
 } elrsTlmRatio_e;
 
-#ifndef USE_ELRSV3
 typedef enum : uint8_t
 {
     // RATE_MODULATION_BAND_RATE_MODE for ELRS V4
@@ -150,7 +149,6 @@ typedef enum : uint8_t
     RATE_LORA_DUAL_100HZ_8CH = 100,
     RATE_LORA_DUAL_150HZ,
 } expresslrs_SyncV4_RFrates_e;
-#endif
 
 typedef enum {
     RATE_LORA_4HZ = 0,
@@ -179,6 +177,7 @@ typedef struct elrsModSettings_s {
     uint8_t index;
     elrsRadioType_e radioType;        // elrsRadioType_e
     elrsRfRate_e enumRate;            // Max value of 16 since only 4 bits have been assigned in the sync package.
+    expresslrs_SyncV4_RFrates_e v4Rate; // Band-independent rate sent in V4 sync packet
     uint8_t bw;
     uint8_t sf;
     uint8_t cr;
