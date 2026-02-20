@@ -622,6 +622,7 @@ void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
 void pidInitConfig(const pidProfile_t *) {}
+void applySimplifiedTuningPids(pidProfile_t *) {}
 void accStartCalibration(void) {}
 void gyroStartCalibration(bool isFirstArmingCalibration)
 {
