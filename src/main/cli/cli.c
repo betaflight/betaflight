@@ -4835,7 +4835,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrint("configured");
             }
         }
+#ifdef USE_GPS_UBLOX
         cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
     } else {
         cliPrint("NOT ENABLED");
     }
@@ -6952,5 +6954,89 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         cliWrite(0x2); // send start of text, initiating flow control
     }
 }
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
+}
+
+// Check if a line (after stripping comments/whitespace) matches a command name
+static bool lineIsCommand(const char *line, const char *command)
+{
+    // Skip leading whitespace
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    size_t cmdLen = strlen(command);
+    if (strncasecmp(line, command, cmdLen) != 0) {
+        return false;
+    }
+    // Must be end of string, whitespace, newline, or comment
+    char next = line[cmdLen];
+    return (next == '\0' || next == ' ' || next == '\t' ||
+            next == '\n' || next == '\r' || next == '#');
+}
+
+void cliProcessConfigFile(const char *filename)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "[CONFIG] Failed to open config file: %s\n", filename);
+        exit(1);
+    }
+
+    printf("[CONFIG] Processing config file: %s\n", filename);
+
+    // Enter CLI mode in interactive mode (output goes to stdout/terminal)
+    cliMode = true;
+    cliInteractive = true;
+
+    // Use a dummy serial port so waitForSerialPortToFinishTransmitting won't crash on NULL
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    // Set up writer to stdout
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)stdoutBufWrite, NULL);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+
+    char line[CLI_IN_BUFFER_SIZE];
+    while (fgets(line, sizeof(line), fp)) {
+        // Intercept 'save' - handle it ourselves to avoid the reboot/motorShutdown path
+        if (lineIsCommand(line, "save")) {
+            writeEEPROM();
+            printf("[CONFIG] Config file processed, EEPROM saved\n");
+            fclose(fp);
+            cliMode = false;
+            exit(0);
+        }
+
+        // Skip 'exit' commands in config files
+        if (lineIsCommand(line, "exit")) {
+            continue;
+        }
+
+        // Feed each character through the CLI processor
+        for (size_t i = 0; line[i]; i++) {
+            processCharacter(line[i]);
+        }
+        cliWriterFlush();
+    }
+
+    fclose(fp);
+
+    // If save wasn't in the file, save and exit anyway
+    writeEEPROM();
+    printf("[CONFIG] Config file processed, EEPROM saved\n");
+    cliMode = false;
+    exit(0);
+}
+#endif // CONFIG_IN_FILE
 
 #endif // USE_CLI

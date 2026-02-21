@@ -278,3 +278,6 @@ uint64_t millis64(void);
 int lockMainPID(void);
 
 int targetParseArgs(int argc, char * argv[]);
+#ifdef CONFIG_IN_FILE
+const char *targetGetConfigFile(void);
+#endif
