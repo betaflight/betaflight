@@ -7052,7 +7052,7 @@ void cliProcessConfigFile(const char *filename)
             bool hasNosave = false;
             char *tok = strtok(stripped, " \t\r\n");
             while (tok) {
-                if (strcmp(tok, "nosave") == 0) {
+                if (strcasecmp(tok, "nosave") == 0) {
                     hasNosave = true;
                     break;
                 }
