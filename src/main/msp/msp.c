@@ -1599,6 +1599,7 @@ case MSP_NAME:
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
         sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
+        sbufWriteU8(dst, mixerConfig()->crashflip_no_rearm);
         break;
 
     case MSP_RX_CONFIG:
@@ -3770,6 +3771,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
         if (sbufBytesRemaining(src) >= 1) {
             mixerConfigMutable()->yaw_motors_reversed = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            mixerConfigMutable()->crashflip_no_rearm = sbufReadU8(src);
         }
         break;
 
