@@ -1454,6 +1454,8 @@ case MSP_NAME:
             sbufWriteU8(dst, adjRange->range.endStep);
             sbufWriteU8(dst, adjRange->adjustmentConfig);
             sbufWriteU8(dst, adjRange->auxSwitchChannelIndex);
+            sbufWriteU16(dst, adjRange->adjustmentCenter);
+            sbufWriteU16(dst, adjRange->adjustmentScale);
         }
         break;
 
@@ -2791,6 +2793,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             adjRange->range.endStep = sbufReadU8(src);
             adjRange->adjustmentConfig = sbufReadU8(src);
             adjRange->auxSwitchChannelIndex = sbufReadU8(src);
+            if (sbufBytesRemaining(src) >= 4) {
+                adjRange->adjustmentCenter = sbufReadU16(src);
+                adjRange->adjustmentScale = sbufReadU16(src);
+            }
 
             activeAdjustmentRangeReset();
         } else {
