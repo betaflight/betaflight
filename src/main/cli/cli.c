@@ -7059,7 +7059,19 @@ void cliProcessConfigFile(const char *filename)
                 tok = strtok(NULL, " \t\r\n");
             }
             if (!hasNosave) {
-                static const char nosaveLine[] = "defaults nosave\n";
+                // Append 'nosave' to the original line (minus any trailing comment/whitespace)
+                // so that arguments like 'group_id 5' are preserved, e.g.:
+                //   "defaults"            -> "defaults nosave"
+                //   "defaults group_id 5" -> "defaults group_id 5 nosave"
+                char nosaveLine[CLI_IN_BUFFER_SIZE + 16];
+                strncpy(nosaveLine, stripped, sizeof(nosaveLine) - 16);
+                nosaveLine[sizeof(nosaveLine) - 16] = '\0';
+                // Trim trailing whitespace from the stripped content
+                size_t len = strlen(nosaveLine);
+                while (len > 0 && (nosaveLine[len - 1] == ' ' || nosaveLine[len - 1] == '\t' || nosaveLine[len - 1] == '\r' || nosaveLine[len - 1] == '\n')) {
+                    nosaveLine[--len] = '\0';
+                }
+                strcat(nosaveLine, " nosave\n");
                 for (size_t i = 0; nosaveLine[i]; i++) {
                     processCharacter(nosaveLine[i]);
                 }
