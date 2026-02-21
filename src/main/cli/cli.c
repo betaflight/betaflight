@@ -7007,6 +7007,7 @@ void cliProcessConfigFile(const char *filename)
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
     char line[CLI_IN_BUFFER_SIZE];
+    line[0] = '\0';
     while (fgets(line, sizeof(line), fp)) {
         // Intercept 'save' - handle it ourselves to avoid the reboot/motorShutdown path
         if (lineIsCommand(line, "save")) {
@@ -7022,10 +7023,33 @@ void cliProcessConfigFile(const char *filename)
             continue;
         }
 
+        // 'defaults' without 'nosave' triggers a reboot; convert to 'defaults nosave'
+        if (lineIsCommand(line, "defaults") && !strstr(line, "nosave")) {
+            static const char nosaveLine[] = "defaults nosave\n";
+            for (size_t i = 0; nosaveLine[i]; i++) {
+                processCharacter(nosaveLine[i]);
+            }
+            cliWriterFlush();
+            continue;
+        }
+
+        // Skip 'bl' and 'msc' - these trigger reboots/mode switches not valid during config file processing
+        if (lineIsCommand(line, "bl") || lineIsCommand(line, "msc")) {
+            continue;
+        }
+
         // Feed each character through the CLI processor
         for (size_t i = 0; line[i]; i++) {
             processCharacter(line[i]);
         }
+        cliWriterFlush();
+    }
+
+    // If the last line had no trailing newline, the command is buffered but not yet executed;
+    // send a newline to trigger its execution
+    size_t lastLineLen = strlen(line);
+    if (lastLineLen > 0 && line[lastLineLen - 1] != '\n' && line[lastLineLen - 1] != '\r') {
+        processCharacter('\n');
         cliWriterFlush();
     }
 
