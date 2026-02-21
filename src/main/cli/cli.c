@@ -6996,7 +6996,11 @@ void cliProcessConfigFile(const char *filename)
     cliMode = true;
     cliInteractive = true;
 
-    // Use a dummy serial port so waitForSerialPortToFinishTransmitting won't crash on NULL
+    // Use a dummy serial port to satisfy cliPort != NULL requirements.
+    // The vTable is intentionally left NULL (via memset) as a canary: any reboot-class
+    // command that reaches waitForSerialPortToFinishTransmitting() will crash immediately
+    // here rather than proceeding silently into motorShutdown()/systemReset(). Reboot-class
+    // commands (defaults, bl, msc, exit) must be intercepted above before processCharacter().
     static serialPort_t dummyPort;
     memset(&dummyPort, 0, sizeof(dummyPort));
     cliPort = &dummyPort;
