@@ -228,7 +228,7 @@ static void validateAndFixConfig(void)
 #endif
     if (
 #if defined(USE_GPS)
-        gpsConfig()->provider != GPS_MSP && !gpsSerial &&
+        gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial &&
 #endif
         true) {
         featureDisableImmediate(FEATURE_GPS);
