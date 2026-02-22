@@ -61,7 +61,7 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
 
-ifneq ($(filter macosx-arm%,$(OSFAMILY)-$(ARCHFAMILY)),)
+ifneq ($(filter macosx-arm% macosx-x86_64%,$(OSFAMILY)-$(ARCHFAMILY)),)
 
     CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations -fuse-linker-plugin
 
