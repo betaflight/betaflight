@@ -261,43 +261,40 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     uint32_t c2 = getCycleCounter();
 #endif
 
-    int32_t paddingLen;
     if (lastFailReason == FAIL_NONE) {
-        paddingLen = 21 - coreBits; // coreBits will have a leading 1, to be discarded
+        int32_t paddingLen = 21 - coreBits; // coreBits will have a leading 1, to be discarded
         if (paddingLen < 0) {
             lastFailReason = FAIL_BIT_COUNT;
-        }
-    }
-
-    if (lastFailReason == FAIL_NONE) {
-        // Build gcr20 directly: core shifted by padding, plus padding terminator
-        uint32_t gcr20 = coreGcr << paddingLen;
-        if (paddingLen > 0) {
-            // This happens when the original sample ended with a number of 1 data bits, which
-            // can't be separated from the following high values when ESC has finished sending.
-            gcr20 |= 1U << (paddingLen - 1);
-        }
-
-        // GCR decode: extract 4 nibbles from 4 x 5-bit symbols (discard top 21st bit)
-        uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
-        uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
-        uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
-        uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
-
-        // Check if all symbols are valid
-        if (n0 > 15U || n1 > 15U || n2 > 15U || n3 > 15U) {
-            lastFailReason = FAIL_GCR_DECODE;
         } else {
-            // Assemble 16-bit value and verify checksum
-            uint32_t candidateValue = (n3 << 12) | (n2 << 8) | (n1 << 4) | n0;
-            uint32_t csum = candidateValue;
-            csum = csum ^ (csum >> 8);
-            csum = csum ^ (csum >> 4);
+            // Build gcr20 directly: core shifted by padding, plus padding terminator
+            uint32_t gcr20 = coreGcr << paddingLen;
+            if (paddingLen > 0) {
+                // This happens when the original sample ended with a number of 1 data bits, which
+                // can't be separated from the following high values when ESC has finished sending.
+                gcr20 |= 1U << (paddingLen - 1);
+            }
 
-            if ((csum & 0xF) != 0xF) {
-                lastFailReason = FAIL_CHECKSUM;
+            // GCR decode: extract 4 nibbles from 4 x 5-bit symbols (discard top 21st bit)
+            uint8_t n3 = gcrDecodeLut[(gcr20 >> 15) & 0x1F];
+            uint8_t n2 = gcrDecodeLut[(gcr20 >> 10) & 0x1F];
+            uint8_t n1 = gcrDecodeLut[(gcr20 >> 5) & 0x1F];
+            uint8_t n0 = gcrDecodeLut[gcr20 & 0x1F];
+
+            // Check if all symbols are valid
+            if (n0 > 15U || n1 > 15U || n2 > 15U || n3 > 15U) {
+                lastFailReason = FAIL_GCR_DECODE;
             } else {
-                decodedValue = candidateValue;
+                // Assemble 16-bit value and verify checksum
+                uint32_t candidateValue = (n3 << 12) | (n2 << 8) | (n1 << 4) | n0;
+                uint32_t csum = candidateValue;
+                csum = csum ^ (csum >> 8);
+                csum = csum ^ (csum >> 4);
+
+                if ((csum & 0xF) != 0xF) {
+                    lastFailReason = FAIL_CHECKSUM;
+                } else {
+                    decodedValue = candidateValue;
+                }
             }
         }
     }
