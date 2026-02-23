@@ -43,6 +43,9 @@
 #define MT_OPTICALFLOW_MIN_RANGE 80  // mm
 #define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
 
+// Correct scaling of the flow requires multiplication of the scale factor by 2
+#define MTF01_OPTICAL_FLOW_SCALE (2 * 100.0f) // Flow rate is at 100cm
+
 static opticalflowData_t opticalflowSensorData = {0};
 
 static bool hasRFNewData = false;
@@ -159,10 +162,12 @@ void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     const mtRangefinderData_t * latestRangefinderData = getMTRangefinderData();
 
     const mtOpticalflowDataMessage_t * pkt = (const mtOpticalflowDataMessage_t *)bufferPtr;
+    const timeUs_t curTime = micros();
+    const float dt_s = (float)(curTime - opticalflowSensorData.timeStampUs) / 1e6f;
 
-    opticalflowSensorData.timeStampUs = micros();
-    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f;
-    opticalflowSensorData.flowRate.y  = (float)pkt->motionY / 1000.0f;
+    opticalflowSensorData.timeStampUs = curTime;
+    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / MTF01_OPTICAL_FLOW_SCALE / dt_s;
+    opticalflowSensorData.flowRate.y  = (float)pkt->motionY / MTF01_OPTICAL_FLOW_SCALE / dt_s;
     opticalflowSensorData.quality     = pkt->quality * 100 / 255;
 
     if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
