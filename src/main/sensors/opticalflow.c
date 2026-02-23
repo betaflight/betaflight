@@ -74,13 +74,13 @@
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
 static void applyLPF(vector2_t * flowRates);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 1);
 
 PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flip_x = 0,
-    .flow_lpf = 0
+    .flow_lpf = 100
 );
 
 static opticalflow_t opticalflow;
