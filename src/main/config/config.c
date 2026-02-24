@@ -222,17 +222,16 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if (gpsConfig()->provider == GPS_MSP && gpsSerial) {
+    if ((gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
-#endif
-    if (
-#if defined(USE_GPS)
-        gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial &&
-#endif
-        true) {
+
+    if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial) {
         featureDisableImmediate(FEATURE_GPS);
     }
+#else
+    featureDisableImmediate(FEATURE_GPS);
+#endif
 
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         // Fix filter settings to handle cases where an older configurator was used that
