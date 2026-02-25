@@ -1,0 +1,6 @@
+services:
+  betaflight-build:
+    build: .
+    volumes:
+      - .:/src
+    working_dir: /src
