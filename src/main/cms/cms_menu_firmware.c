@@ -150,6 +150,7 @@ static const void *cmsx_HoverCalibrationOnEnter(displayPort_t *pDisp)
 static const char* getFailReasonString(hoverCalibrationFailReason_e reason)
 {
     switch (reason) {
+        case HOVER_CAL_FAIL_WAITING_ARM: return "ARM & FLY";
         case HOVER_CAL_FAIL_DISARMED:    return "DISARMED";
         case HOVER_CAL_FAIL_NO_ALTITUDE: return "NO ALT";
         case HOVER_CAL_FAIL_TOO_LOW:     return "TOO LOW";

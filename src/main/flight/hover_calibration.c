@@ -121,7 +121,7 @@ static hoverCalibrationFailReason_e checkHoverStability(void)
 {
     // Must be armed
     if (!ARMING_FLAG(ARMED)) {
-        return HOVER_CAL_FAIL_DISARMED;
+        return HOVER_CAL_FAIL_WAITING_ARM;
     }
 
     // Must NOT be in altitude hold or GPS rescue (we want manual throttle)
@@ -175,6 +175,7 @@ void hoverCalibrationUpdate(void)
     // Check stability and get specific failure reason
     const hoverCalibrationFailReason_e stabilityResult = checkHoverStability();
     const bool stable = (stabilityResult == HOVER_CAL_FAIL_NONE);
+    const bool isDisarmed = (stabilityResult == HOVER_CAL_FAIL_DISARMED);
 
     // Track current instability reason for status display
     if (!stable) {
@@ -191,14 +192,32 @@ void hoverCalibrationUpdate(void)
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 6, hoverCal.result);
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 7, stabilityResult);
 
-    // If disarmed, abort with that specific reason
-    if (stabilityResult == HOVER_CAL_FAIL_DISARMED) {
-        hoverCalibrationFail(HOVER_CAL_FAIL_DISARMED);
+    // Handle disarmed state (WAITING_ARM)
+    if (isDisarmed) {
+        if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING && hoverCal.sampleCount > 0) {
+            // Was sampling and got some data - complete with what we have
+            // This handles the case where user lands after hovering
+            uint16_t avgThrottle = lrintf(hoverCal.throttleSum / hoverCal.sampleCount);
+            if (avgThrottle >= HOVER_CAL_THROTTLE_MIN && avgThrottle <= HOVER_CAL_THROTTLE_MAX) {
+                hoverCal.result = avgThrottle;
+                autopilotConfigMutable()->hoverThrottle = avgThrottle;
+                hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
+                hoverCal.failReason = HOVER_CAL_FAIL_NONE;
+                beeper(BEEPER_ACC_CALIBRATION);
+            } else {
+                hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
+            }
+        } else if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
+            // Was sampling but no data collected yet - fail
+            hoverCalibrationFail(HOVER_CAL_FAIL_DISARMED);
+        }
+        // If still in WAITING_STABLE, just keep waiting for arm - don't fail
+        // User needs to arm, fly, and hover to calibrate
         return;
     }
 
     if (!stable) {
-        // Lost stability - reset to waiting state
+        // Lost stability while armed - reset to waiting state
         if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
             // Was sampling, now lost stability - reset samples
             hoverCal.sampleCount = 0;

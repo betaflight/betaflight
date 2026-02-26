@@ -32,13 +32,14 @@ typedef enum {
 
 typedef enum {
     HOVER_CAL_FAIL_NONE = 0,
-    HOVER_CAL_FAIL_DISARMED,
+    HOVER_CAL_FAIL_WAITING_ARM,     // Waiting for user to arm (not a failure, just waiting)
     HOVER_CAL_FAIL_NO_ALTITUDE,
     HOVER_CAL_FAIL_TOO_LOW,
     HOVER_CAL_FAIL_NOT_LEVEL,
     HOVER_CAL_FAIL_MOVING,
     HOVER_CAL_FAIL_ALTHOLD_MODE,
-    HOVER_CAL_FAIL_RESULT_RANGE
+    HOVER_CAL_FAIL_RESULT_RANGE,
+    HOVER_CAL_FAIL_DISARMED         // Disarmed during sampling without enough data
 } hoverCalibrationFailReason_e;
 
 void hoverCalibrationInit(void);
