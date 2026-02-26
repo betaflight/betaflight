@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FB_OSD
+#if ENABLE_FB_OSD
 
 #include "common/utils.h"
 
@@ -267,4 +267,4 @@ bool fbOsdDisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **displa
 
     return true;
 }
-#endif // USE_FB_OSD
+#endif // ENABLE_FB_OSD

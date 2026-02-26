@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FB_OSD
+#if ENABLE_FB_OSD
 
 // #define DEBUG_TESTCARD
 
@@ -792,4 +792,4 @@ void plotTestCard(void)
 }
 #endif
 
-#endif // USE_FB_OSD
+#endif // ENABLE_FB_OSD

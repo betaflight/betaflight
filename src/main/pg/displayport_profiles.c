@@ -58,7 +58,7 @@ void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfil
 
 #endif
 
-#if defined(USE_FB_OSD)
+#if ENABLE_FB_OSD
 
 PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileFbOsd, PG_DISPLAY_PORT_FBOSD_CONFIG, 0);
 

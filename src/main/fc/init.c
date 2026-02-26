@@ -914,7 +914,7 @@ void initPhase3(void)
             FALLTHROUGH;
 #endif
 
-#if defined(USE_FB_OSD)
+#if ENABLE_FB_OSD
         case OSD_DISPLAYPORT_DEVICE_FBOSD:
             if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
                 osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;

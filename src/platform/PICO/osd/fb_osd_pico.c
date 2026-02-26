@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FB_OSD
+#if ENABLE_FB_OSD
 
 #include "config/config_streamer.h"
 #include "drivers/fb_osd_impl.h"
@@ -49,19 +49,24 @@ static bool inPALrange(int n)
     return n >= palHsyncs - 1 && n <= palHsyncs + 1;
 }
 
-static void fbOsdLoadFont(void)
+static bool fbOsdLoadFont(void)
 {
+    if (&__fontdata_end == &__fontdata_start) {
+        return false;
+    }
+
     // Retrieve font data from flash if present. Otherwise defaults to baked-in font in font_betaflight.c.
     uint8_t *ptr = (uint8_t *)&__fontdata_start;
     if (0 != memcmp(ptr, fontDataMagic, 4)) {
         bprintf("FONT did not detect font data in flash");
-        return;
+        return false;
     }
 
     ptr += 4;
     bprintf("FONT loading font from flash into ram");
     memcpy(fontData, ptr, FONTDATA_LENGTH);
     bprintf("FONT loaded font from flash into ram");
+    return true;
 }
 
 fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struct vcdProfile_s *vcdProfile)
@@ -78,13 +83,18 @@ fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struc
     videoSystem_e videoSystem = vcdProfile->video_system;
 
     if (first) {
-        fbOsdLoadFont();
+        if (!fbOsdLoadFont()) {
+            bprintf("FB_OSD fbOsdInit font data not configured");
+            return FB_OSD_INIT_NOT_CONFIGURED;
+        }
+
         if (!osdPioStartDetection()) {
+            bprintf("FB_OSD fbOsdInit failed to start sync detection");
             return FB_OSD_INIT_NOT_CONFIGURED;
         }
 
         first = false;
-        bprintf("fbOsdInit vcdProfile %p video system %d", vcdProfile, videoSystem);
+        bprintf("FB_OSD fbOsdInit vcdProfile %p video system %d", vcdProfile, videoSystem);
         return FB_OSD_INIT_INITIALISING;
     }
     
@@ -278,4 +288,4 @@ void fbOsdRedrawBackground(void)
     osdPioRedrawBackground();
 }
 
-#endif // USE_FB_OSD
+#endif // ENABLE_FB_OSD

@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef USE_FB_OSD
+#if ENABLE_FB_OSD
 
 #if !(defined OSD_W_PIN && defined OSD_EN_PIN && defined OSD_SYNC_PIN)
 #error This PICO OSD requires OSD_W_PIN, OSD_EN_PIN and OSD_SYNC_PIN to be defined
@@ -889,4 +889,4 @@ void osdPioWrite(uint8_t x, uint8_t y, const char *text)
     }
 }
 
-#endif // USE_FB_OSD
+#endif // ENABLE_FB_OSD
