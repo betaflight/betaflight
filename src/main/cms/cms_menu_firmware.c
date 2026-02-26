@@ -215,8 +215,8 @@ static const void *cmsStartHoverCalibration(displayPort_t *pDisp, const void *se
 static const OSD_Entry menuCalibrateHoverEntries[] = {
     { "-- HOVER CALIB --", OME_Label, NULL, NULL },
     { "1.START 2.EXIT", OME_Label, NULL, NULL },
-    { "3.ARM HOVER>50CM", OME_Label, NULL, NULL },
-    { "4.LAND TO SAVE", OME_Label, NULL, NULL },
+    { "3.ARM WAIT 3S", OME_Label, NULL, NULL },
+    { "4.STEADY HOVER 5S", OME_Label, NULL, NULL },
     { "STATUS", OME_String | DYNAMIC, NULL, hoverCalibrationStatus },
     { "START", OME_Funcall, cmsStartHoverCalibration, NULL },
     { "CURRENT", OME_UINT16 | DYNAMIC, NULL, &(OSD_UINT16_t){ &hoverCalibration_hoverThrottle, 1100, 1700, 1 } },
