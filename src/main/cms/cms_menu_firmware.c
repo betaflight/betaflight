@@ -51,6 +51,11 @@
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
 
+#ifdef USE_HOVER_CALIBRATION
+#include "flight/hover_calibration.h"
+#include "pg/autopilot.h"
+#endif
+
 #include "cms_menu_firmware.h"
 
 // Calibration
@@ -68,6 +73,10 @@ static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 #endif
 #if defined(USE_BARO)
 static char baroCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
+#endif
+#if defined(USE_HOVER_CALIBRATION)
+#define HOVER_CAL_STATUS_MAX_LENGTH 12
+static char hoverCalibrationStatus[HOVER_CAL_STATUS_MAX_LENGTH];
 #endif
 
 static const void *cmsx_CalibrationOnDisplayUpdate(displayPort_t *pDisp, const OSD_Entry *selected)
@@ -126,6 +135,93 @@ static const void *cmsCalibrateBaro(displayPort_t *pDisp, const void *self)
 }
 #endif
 
+#if defined(USE_HOVER_CALIBRATION)
+static uint16_t hoverCalibration_hoverThrottle;
+
+static const void *cmsx_HoverCalibrationOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    hoverCalibration_hoverThrottle = autopilotConfig()->hoverThrottle;
+
+    return NULL;
+}
+
+static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, const OSD_Entry *selected)
+{
+    UNUSED(pDisp);
+    UNUSED(selected);
+
+    // Update the display value from config (in case calibration changed it)
+    hoverCalibration_hoverThrottle = autopilotConfig()->hoverThrottle;
+
+    switch (getHoverCalibrationStatus()) {
+        case HOVER_CAL_STATUS_IDLE:
+            tfp_sprintf(hoverCalibrationStatus, "READY");
+            break;
+        case HOVER_CAL_STATUS_WAITING_STABLE:
+            tfp_sprintf(hoverCalibrationStatus, "STABILIZE...");
+            break;
+        case HOVER_CAL_STATUS_SAMPLING:
+            tfp_sprintf(hoverCalibrationStatus, "SAMPLE %3d%%", getHoverCalibrationProgress());
+            break;
+        case HOVER_CAL_STATUS_COMPLETE:
+            tfp_sprintf(hoverCalibrationStatus, "DONE: %4d", getHoverCalibrationResult());
+            break;
+        case HOVER_CAL_STATUS_FAILED:
+            tfp_sprintf(hoverCalibrationStatus, "FAILED");
+            break;
+        default:
+            tfp_sprintf(hoverCalibrationStatus, "---");
+            break;
+    }
+
+    return NULL;
+}
+
+static const void *cmsStartHoverCalibration(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    hoverCalibrationStart();
+
+    return NULL;
+}
+
+static const OSD_Entry menuCalibrateHoverEntries[] = {
+    { "-- HOVER CALIB --", OME_Label, NULL, NULL },
+    { "ARM AND HOVER", OME_Label, NULL, NULL },
+    { "STEADILY >50CM", OME_Label, NULL, NULL },
+    { " ", OME_Label, NULL, NULL },
+    { "STATUS", OME_String | DYNAMIC, NULL, hoverCalibrationStatus },
+    { "START", OME_Funcall, cmsStartHoverCalibration, NULL },
+    { "CURRENT", OME_UINT16 | DYNAMIC, NULL, &(OSD_UINT16_t){ &hoverCalibration_hoverThrottle, 1100, 1700, 1 } },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+
+static CMS_Menu cmsx_menuCalibrateHover = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "HOVERCALIBRATION",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_HoverCalibrationOnEnter,
+    .onExit = NULL,
+    .onDisplayUpdate = cmsx_HoverCalibrationOnDisplayUpdate,
+    .entries = menuCalibrateHoverEntries
+};
+
+static const void *cmsCalibrateHoverMenu(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(self);
+
+    cmsMenuChange(pDisp, &cmsx_menuCalibrateHover);
+
+    return NULL;
+}
+#endif
+
 #if defined(USE_ACC)
 static const OSD_Entry menuCalibrateAccEntries[] = {
     { "--- CALIBRATE ACC ---", OME_Label, NULL, NULL },
@@ -169,6 +265,9 @@ static const OSD_Entry menuCalibrationEntries[] = {
 #endif
 #if defined(USE_BARO)
     { "BARO", OME_Funcall | DYNAMIC, cmsCalibrateBaro, baroCalibrationStatus },
+#endif
+#if defined(USE_HOVER_CALIBRATION)
+    { "HOVER", OME_Funcall, cmsCalibrateHoverMenu, NULL },
 #endif
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL}
