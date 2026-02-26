@@ -95,7 +95,7 @@ static volatile bool in_safe_zone;
 static uint32_t safe_zone_start_us;
 bool transferredSinceVsync;
 
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
 // trace / debugging
 uint32_t startVsyncCycles;
 uint32_t startVsyncCyclesPrev;
@@ -422,7 +422,8 @@ int osdPioCountHSyncs(void)
 }
 
 
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
+
 static void vsync_callback_debug(void)
 {
     ++ddc;
@@ -509,7 +510,7 @@ static void vsync_callback_debug(void)
 
 static void vsync_callback(void)
 {
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
     startVsyncCyclesPrev = startVsyncCycles;
     startVsyncCycles=getCycleCounter();
 #endif
@@ -626,7 +627,7 @@ static void vsync_callback(void)
     aid = add_alarm_in_us(safe_zone_start_us, safe_zone_callback, 0, true);
     in_safe_zone = true;
     
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
     vsync_callback_debug();
 #endif
 }
@@ -673,7 +674,7 @@ void plot(int x, int y, int c)
     uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
 
     if (x<0 || y<0 || x>=fb_nx || y>=fb_ny) {
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
         badX = x;
         badY = y;
         badC = c;

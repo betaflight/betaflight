@@ -21,7 +21,8 @@
 
 #pragma once
 
-#define OSD_DEBUG
+// Uncomment to enable OSD debug counters and timing
+// #define OSD_FB_PICO_DEBUG
 
 #include <stdint.h>
 #include "drivers/display.h"
@@ -87,7 +88,7 @@ bool iterDashedDLineNext(void);
 bool iterDashedQLineNext(void);
 
 // trace / debugging
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
 extern uint32_t startVsyncCycles;
 extern uint32_t startVsyncCyclesPrev;
 extern int tus;
@@ -108,7 +109,7 @@ extern uint32_t renderWasCheckD;
 extern uint32_t renderWasTransfer;
 extern uint32_t dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8;
 
-// Macros to avoid wrapping all debug code in #ifdef OSD_DEBUG
+// Macros to avoid having to wrap all debug code in #ifdef OSD_FB_PICO_DEBUG
 #define DEBUG_ZERO(x) x=0
 #define DEBUG_INC(x) ++x
 #define DEBUG_COUNTER_INST(x) uint32_t x = getCycleCounter()

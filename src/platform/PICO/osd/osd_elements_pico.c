@@ -655,7 +655,7 @@ static bool postProcessUntil(uint32_t limit_micros)
 bool osdPioRenderScreenUntil(uint32_t limit_micros)
 {
     static bool firstOfVsync = true;
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
     uint32_t cRender = getCycleCounter();
     ++dd7;
     static uint32_t cycFirst;
@@ -663,7 +663,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     if (firstOfVsync) {
         firstOfVsync = false;
         renderCharsComplete = false;
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
         cycFirst = getCycleCounter();
         renderStartCycles += cycFirst - startVsyncCycles;
         renderStartCyclesMax = MAX(renderStartCyclesMax, getCycleCounter() - startVsyncCycles);
@@ -704,7 +704,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     selectForegroundBuffer();
 #endif
 
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
     uint32_t cd = getCycleCounter() - c1;
     renderTot += cd;
     if (cd > maxcycles) {
@@ -713,7 +713,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
 #endif
 
     if (complete) {
-#ifdef OSD_DEBUG
+#ifdef OSD_FB_PICO_DEBUG
         tusr++;
 
         uint32_t cycNow = getCycleCounter();
