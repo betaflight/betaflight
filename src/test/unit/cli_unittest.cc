@@ -108,6 +108,8 @@ extern "C" {
 
 const bool PRINT_TEST_DATA = false;
 
+// Verifies that cliSet correctly parses and stores an array-type setting
+// with mixed positive and negative integer values.
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
@@ -132,6 +134,8 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_EQ(  1, data[2]);
 }
 
+// Verifies that cliSet correctly writes a string value into a string-type setting
+// without any special flags (e.g. write-once protection).
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
     char *str = (char *)"str_unit_test    =   SAMPLE";
@@ -160,6 +164,8 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
     EXPECT_EQ(0,   data[6]);
 }
 
+// Verifies that a write-once string setting ignores subsequent writes after
+// the initial value is set, preserving the original value on re-assignment.
 TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
     char *str1 = (char *)"wos_unit_test    =   SAMPLE";
