@@ -409,10 +409,10 @@ uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
 }
 
-// Some CLI_COMMAND_DEF entries have a NULL description (e.g. flash_read, flash_write,
-// play_sound). Searching by a term that doesn't match their name forces the description
-// branch — without the null guard this was strcasestr(NULL, ...), undefined behaviour
-// that crashes on hosted targets.
+// Verifies that cliHelp does not dereference NULL when searching commands whose
+// description field is NULL (e.g. flash_read, flash_write, play_sound).
+// Prior to the fix, strcasestr(NULL, cmdline) was called for these entries,
+// which is undefined behaviour and causes a SIGSEGV on hosted targets.
 TEST(CLIUnittest, TestCliHelpNullDescription)
 {
     // "address" appears in the *args* of flash_read/flash_write but not in their names,

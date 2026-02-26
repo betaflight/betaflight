@@ -6719,6 +6719,9 @@ const clicmd_t cmdTable[] = {
 #endif
 };
 
+// Prints CLI commands that match the optional search string in cmdline.
+// Searches both command names and descriptions; descriptions may be NULL for
+// some commands and are skipped safely. Prints all commands when cmdline is empty.
 STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
 {
     bool anyMatches = false;
