@@ -61,6 +61,7 @@ extern "C" {
     #include "sensors/gyro.h"
 
     void cliSet(const char *cmdName, char *cmdline);
+    void cliHelp(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
@@ -406,4 +407,18 @@ const char *getMcuTypeName(void) { return targetName; }
 float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
+}
+
+// Some CLI_COMMAND_DEF entries have a NULL description (e.g. flash_read, flash_write,
+// play_sound). Searching by a term that doesn't match their name forces the description
+// branch — without the null guard this was strcasestr(NULL, ...), undefined behaviour
+// that crashes on hosted targets.
+TEST(CLIUnittest, TestCliHelpNullDescription)
+{
+    // "address" appears in the *args* of flash_read/flash_write but not in their names,
+    // and their descriptions are NULL — this is the exact case that triggered the UB.
+    cliHelp("help", (char *)"address");
+
+    // If we reach here without a crash/SIGSEGV the null guard is working.
+    SUCCEED();
 }
