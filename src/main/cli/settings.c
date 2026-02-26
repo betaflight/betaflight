@@ -227,7 +227,8 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
     [MAG_LIS2MDL] = "LIS2MDL",
     [MAG_LIS3MDL] = "LIS3MDL",
     [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
-    [MAG_IST8310] = "IST8310"
+    [MAG_IST8310] = "IST8310",
+    [MAG_MMC560X] = "MMC560X"
 };
 
 // sync with rangefinderType_e
