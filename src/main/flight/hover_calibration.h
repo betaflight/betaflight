@@ -30,6 +30,17 @@ typedef enum {
     HOVER_CAL_STATUS_FAILED
 } hoverCalibrationStatus_e;
 
+typedef enum {
+    HOVER_CAL_FAIL_NONE = 0,
+    HOVER_CAL_FAIL_DISARMED,
+    HOVER_CAL_FAIL_NO_ALTITUDE,
+    HOVER_CAL_FAIL_TOO_LOW,
+    HOVER_CAL_FAIL_NOT_LEVEL,
+    HOVER_CAL_FAIL_MOVING,
+    HOVER_CAL_FAIL_ALTHOLD_MODE,
+    HOVER_CAL_FAIL_RESULT_RANGE
+} hoverCalibrationFailReason_e;
+
 void hoverCalibrationInit(void);
 void hoverCalibrationUpdate(void);
 void hoverCalibrationStart(void);
@@ -37,6 +48,7 @@ void hoverCalibrationAbort(void);
 
 bool isHoverCalibrationActive(void);
 hoverCalibrationStatus_e getHoverCalibrationStatus(void);
+hoverCalibrationFailReason_e getHoverCalibrationFailReason(void);
 uint8_t getHoverCalibrationProgress(void);  // 0-100%
 uint16_t getHoverCalibrationResult(void);   // Last calibrated value
 

@@ -147,6 +147,20 @@ static const void *cmsx_HoverCalibrationOnEnter(displayPort_t *pDisp)
     return NULL;
 }
 
+static const char* getFailReasonString(hoverCalibrationFailReason_e reason)
+{
+    switch (reason) {
+        case HOVER_CAL_FAIL_DISARMED:    return "DISARMED";
+        case HOVER_CAL_FAIL_NO_ALTITUDE: return "NO ALT";
+        case HOVER_CAL_FAIL_TOO_LOW:     return "TOO LOW";
+        case HOVER_CAL_FAIL_NOT_LEVEL:   return "NOT LEVEL";
+        case HOVER_CAL_FAIL_MOVING:      return "MOVING";
+        case HOVER_CAL_FAIL_ALTHOLD_MODE:return "ALTHOLD ON";
+        case HOVER_CAL_FAIL_RESULT_RANGE:return "BAD RESULT";
+        default:                         return "";
+    }
+}
+
 static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, const OSD_Entry *selected)
 {
     UNUSED(pDisp);
@@ -155,12 +169,20 @@ static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, co
     // Update the display value from config (in case calibration changed it)
     hoverCalibration_hoverThrottle = autopilotConfig()->hoverThrottle;
 
-    switch (getHoverCalibrationStatus()) {
+    const hoverCalibrationStatus_e status = getHoverCalibrationStatus();
+    const hoverCalibrationFailReason_e failReason = getHoverCalibrationFailReason();
+
+    switch (status) {
         case HOVER_CAL_STATUS_IDLE:
             tfp_sprintf(hoverCalibrationStatus, "READY");
             break;
         case HOVER_CAL_STATUS_WAITING_STABLE:
-            tfp_sprintf(hoverCalibrationStatus, "STABILIZE...");
+            // Show why we're waiting if there's a reason
+            if (failReason != HOVER_CAL_FAIL_NONE) {
+                tfp_sprintf(hoverCalibrationStatus, "%s", getFailReasonString(failReason));
+            } else {
+                tfp_sprintf(hoverCalibrationStatus, "STABILIZE...");
+            }
             break;
         case HOVER_CAL_STATUS_SAMPLING:
             tfp_sprintf(hoverCalibrationStatus, "SAMPLE %3d%%", getHoverCalibrationProgress());
@@ -169,7 +191,7 @@ static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, co
             tfp_sprintf(hoverCalibrationStatus, "DONE: %4d", getHoverCalibrationResult());
             break;
         case HOVER_CAL_STATUS_FAILED:
-            tfp_sprintf(hoverCalibrationStatus, "FAILED");
+            tfp_sprintf(hoverCalibrationStatus, "FAIL:%s", getFailReasonString(failReason));
             break;
         default:
             tfp_sprintf(hoverCalibrationStatus, "---");

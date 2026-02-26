@@ -57,6 +57,7 @@
 
 typedef struct {
     hoverCalibrationStatus_e status;
+    hoverCalibrationFailReason_e failReason;
     uint16_t sampleCount;
     float throttleSum;
     timeMs_t stabilityStartTime;
@@ -70,6 +71,7 @@ static hoverCalibrationState_t hoverCal;
 void hoverCalibrationInit(void)
 {
     hoverCal.status = HOVER_CAL_STATUS_IDLE;
+    hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
     hoverCal.throttleSum = 0.0f;
     hoverCal.stabilityStartTime = 0;
@@ -80,11 +82,14 @@ void hoverCalibrationInit(void)
 
 void hoverCalibrationStart(void)
 {
-    if (hoverCal.status != HOVER_CAL_STATUS_IDLE) {
-        return;
+    // Allow restart from IDLE, COMPLETE, or FAILED states
+    if (hoverCal.status == HOVER_CAL_STATUS_WAITING_STABLE || 
+        hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
+        return;  // Already in progress
     }
 
     hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
+    hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
     hoverCal.throttleSum = 0.0f;
     hoverCal.stabilityStartTime = millis();
@@ -95,60 +100,65 @@ void hoverCalibrationStart(void)
     beeper(BEEPER_RX_SET);  // Short beep to confirm start
 }
 
+static void hoverCalibrationFail(hoverCalibrationFailReason_e reason)
+{
+    hoverCal.status = HOVER_CAL_STATUS_FAILED;
+    hoverCal.failReason = reason;
+    beeper(BEEPER_ACC_CALIBRATION_FAIL);  // 2 longer beeps for failure
+}
+
 void hoverCalibrationAbort(void)
 {
     if (hoverCal.status == HOVER_CAL_STATUS_IDLE) {
         return;
     }
 
-    hoverCal.status = HOVER_CAL_STATUS_FAILED;
-    beeper(BEEPER_ACC_CALIBRATION_FAIL);  // 2 longer beeps for failure
+    hoverCalibrationFail(HOVER_CAL_FAIL_DISARMED);
 }
 
-static bool isHoverStable(void)
+// Returns fail reason, or HOVER_CAL_FAIL_NONE if stable
+static hoverCalibrationFailReason_e checkHoverStability(void)
 {
     // Must be armed
     if (!ARMING_FLAG(ARMED)) {
-        return false;
+        return HOVER_CAL_FAIL_DISARMED;
     }
 
     // Must NOT be in altitude hold or GPS rescue (we want manual throttle)
 #ifdef USE_ALTITUDE_HOLD
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
-        return false;
+        return HOVER_CAL_FAIL_ALTHOLD_MODE;
     }
 #endif
 #ifdef USE_GPS_RESCUE
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        return false;
+        return HOVER_CAL_FAIL_ALTHOLD_MODE;
     }
 #endif
 
-    // Check altitude is above minimum (avoid ground effect/prop wash)
-#ifdef USE_BARO
-    if (!sensors(SENSOR_BARO) || getAltitudeCm() < HOVER_CAL_MIN_ALTITUDE_CM) {
-        return false;
-    }
-#else
-    // Without baro, we can't verify altitude - still allow calibration but less safe
+    // Check altitude sensor is available
     if (!isAltitudeAvailable()) {
-        return false;
+        return HOVER_CAL_FAIL_NO_ALTITUDE;
     }
-#endif
+
+    // Check altitude is above minimum (avoid ground effect/prop wash)
+    if (getAltitudeCm() < HOVER_CAL_MIN_ALTITUDE_CM) {
+        return HOVER_CAL_FAIL_TOO_LOW;
+    }
 
     // Check vertical velocity is low (hovering, not climbing/descending)
     const float verticalVelocity = fabsf(getAltitudeDerivative());
     if (verticalVelocity > HOVER_CAL_VELOCITY_THRESHOLD) {
-        return false;
+        return HOVER_CAL_FAIL_MOVING;
     }
 
     // Check attitude is level
     const float tiltCos = getCosTiltAngle();
     if (tiltCos < HOVER_CAL_TILT_COS_THRESHOLD) {
-        return false;
+        return HOVER_CAL_FAIL_NOT_LEVEL;
     }
 
-    return true;
+    return HOVER_CAL_FAIL_NONE;  // Stable!
 }
 
 void hoverCalibrationUpdate(void)
@@ -162,13 +172,14 @@ void hoverCalibrationUpdate(void)
 
     const timeMs_t currentTime = millis();
 
-    // Check if disarmed - abort calibration
-    if (!ARMING_FLAG(ARMED)) {
-        hoverCalibrationAbort();
-        return;
-    }
+    // Check stability and get specific failure reason
+    const hoverCalibrationFailReason_e stabilityResult = checkHoverStability();
+    const bool stable = (stabilityResult == HOVER_CAL_FAIL_NONE);
 
-    const bool stable = isHoverStable();
+    // Track current instability reason for status display
+    if (!stable) {
+        hoverCal.failReason = stabilityResult;
+    }
 
     // Debug output
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 0, hoverCal.status);
@@ -178,7 +189,13 @@ void hoverCalibrationUpdate(void)
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 4, hoverCal.sampleCount);
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 5, getHoverCalibrationProgress());
     DEBUG_SET(DEBUG_HOVER_CALIBRATION, 6, hoverCal.result);
-    DEBUG_SET(DEBUG_HOVER_CALIBRATION, 7, stable ? 1 : 0);
+    DEBUG_SET(DEBUG_HOVER_CALIBRATION, 7, stabilityResult);
+
+    // If disarmed, abort with that specific reason
+    if (stabilityResult == HOVER_CAL_FAIL_DISARMED) {
+        hoverCalibrationFail(HOVER_CAL_FAIL_DISARMED);
+        return;
+    }
 
     if (!stable) {
         // Lost stability - reset to waiting state
@@ -191,6 +208,9 @@ void hoverCalibrationUpdate(void)
         hoverCal.stabilityStartTime = currentTime;
         return;
     }
+    
+    // Clear fail reason when stable
+    hoverCal.failReason = HOVER_CAL_FAIL_NONE;
 
     // Stable - check which phase we're in
     if (hoverCal.status == HOVER_CAL_STATUS_WAITING_STABLE) {
@@ -233,13 +253,11 @@ void hoverCalibrationUpdate(void)
                     beeper(BEEPER_ACC_CALIBRATION);  // 2 short beeps for success
                 } else {
                     // Result out of bounds - fail
-                    hoverCal.status = HOVER_CAL_STATUS_FAILED;
-                    beeper(BEEPER_ACC_CALIBRATION_FAIL);
+                    hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
                 }
             } else {
                 // No samples collected - shouldn't happen but handle it
-                hoverCal.status = HOVER_CAL_STATUS_FAILED;
-                beeper(BEEPER_ACC_CALIBRATION_FAIL);
+                hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
             }
         }
     }
@@ -254,6 +272,11 @@ bool isHoverCalibrationActive(void)
 hoverCalibrationStatus_e getHoverCalibrationStatus(void)
 {
     return hoverCal.status;
+}
+
+hoverCalibrationFailReason_e getHoverCalibrationFailReason(void)
+{
+    return hoverCal.failReason;
 }
 
 uint8_t getHoverCalibrationProgress(void)
