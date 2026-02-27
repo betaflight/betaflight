@@ -75,7 +75,7 @@ static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 static char baroCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 #endif
 #if defined(USE_HOVER_CALIBRATION)
-#define HOVER_CAL_STATUS_MAX_LENGTH 12
+#define HOVER_CAL_STATUS_MAX_LENGTH 16
 static char hoverCalibrationStatus[HOVER_CAL_STATUS_MAX_LENGTH];
 #endif
 
@@ -219,7 +219,7 @@ static const OSD_Entry menuCalibrateHoverEntries[] = {
     { "4.STEADY HOVER 5S", OME_Label, NULL, NULL },
     { "STATUS", OME_String | DYNAMIC, NULL, hoverCalibrationStatus },
     { "START", OME_Funcall, cmsStartHoverCalibration, NULL },
-    { "CURRENT", OME_UINT16 | DYNAMIC, NULL, &(OSD_UINT16_t){ &hoverCalibration_hoverThrottle, 1100, 1700, 1 } },
+    { "CURRENT", OME_UINT16 | DYNAMIC, NULL, &(OSD_UINT16_t){ &hoverCalibration_hoverThrottle, 1050, 1800, 1 } },
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL }
 };
