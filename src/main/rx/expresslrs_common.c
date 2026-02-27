@@ -398,7 +398,7 @@ uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
 {
     switch (airRate) {
 #ifdef USE_ELRSV3
-   case 0:  // F1000
+    case 0:  // F1000
         return 0;
     case 1:  // F500
         return 1;
