@@ -314,13 +314,15 @@ static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"GPS_velned",         0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_velned",         1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_velned",         2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_time",          -1, UNSIGNED, PREDICT(PREVIOUS),   ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
 };
 
 // GPS home frame
 static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
     {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
     {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
+    {"GPS_home_epoch",    -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
 };
 #endif
 
@@ -1196,7 +1198,7 @@ static void writeGPSHomeFrame(void)
     blackboxWriteSignedVB(GPS_home_llh.lat);
     blackboxWriteSignedVB(GPS_home_llh.lon);
     blackboxWriteSignedVB(GPS_home_llh.altCm / 10); //log homes altitude, in increments of 0.1m
-    //TODO it'd be great if we could grab the GPS current time and write that too
+    blackboxWriteUnsignedVB(gpsDateTimeToEpoch(&gpsSol.dateTime));
 
     gpsHistory.GPS_home = GPS_home_llh;
 }
@@ -1232,6 +1234,8 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
     blackboxWriteSignedVB(gpsSol.velned.velN);
     blackboxWriteSignedVB(gpsSol.velned.velE);
     blackboxWriteSignedVB(gpsSol.velned.velD);
+
+    blackboxWriteUnsignedVB(gpsSol.time);
 
     gpsHistory.GPS_numSat = gpsSol.numSat;
     gpsHistory.GPS_coord = gpsSol.llh;
