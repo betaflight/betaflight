@@ -2224,14 +2224,19 @@ static int64_t dateTimeToUnixSeconds(uint16_t year, uint8_t month, uint8_t day, 
     return (int64_t)days * 86400 + hour * 3600 + min * 60 + sec;
 }
 
-// Public wrapper: convert gpsDateTime_t to Unix epoch seconds; returns 0 if not valid
+// Convert gpsDateTime_t to Unix epoch seconds; returns 0 if not valid
 uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt)
 {
-    if (!dt->valid) {
+    if (!dt || !dt->valid) {
         return 0;
     }
-    return (uint32_t)dateTimeToUnixSeconds(dt->year, dt->month, dt->day,
-                                           dt->hour, dt->min, dt->sec);
+
+    if (dt->year < 1980 || dt->month < 1 || dt->month > 12 || dt->day < 1 ||
+        dt->day > 31 || dt->hour > 23 || dt->min > 59 || dt->sec > 60) {
+        return 0;
+    }
+
+    return (uint32_t)dateTimeToUnixSeconds(dt->year, dt->month, dt->day, dt->hour, dt->min, dt->sec);
 }
 
 // Apply nanosecond correction to seconds/millis with proper borrow/carry
