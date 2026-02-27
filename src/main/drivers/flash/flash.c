@@ -31,6 +31,7 @@
 #include "drivers/flash/flash.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
+#include "drivers/flash/flash_mt29f.h"
 #include "drivers/flash/flash_w25n.h"
 #include "drivers/flash/flash_w25q128fv.h"
 #include "drivers/flash/flash_w25m.h"
@@ -173,6 +174,11 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
                         detected = true;
                     }
 #endif
+#if defined(USE_FLASH_MT29F)
+                    if (!detected && mt29f_identify(&flashDevice, jedecID)) {
+                        detected = true;
+                    }
+#endif
                 }
 #endif
             }
@@ -279,6 +285,11 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
                     detected = true;
                 }
 #endif
+#if defined(USE_FLASH_MT29F)
+                if (!detected && mt29f_identify(&flashDevice, jedecID)) {
+                    detected = true;
+                }
+#endif
             }
 
             if (detected) {
@@ -364,6 +375,12 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
 
 #ifdef USE_FLASH_W25M02G
     if (!detected && w25m_identify(&flashDevice, jedecID)) {
+        detected = true;
+    }
+#endif
+
+#ifdef USE_FLASH_MT29F
+    if (!detected && mt29f_identify(&flashDevice, jedecID)) {
         detected = true;
     }
 #endif
