@@ -435,11 +435,18 @@ void beeperUpdate(timeUs_t currentTimeUs)
              && getBatteryState() == BATTERY_NOT_PRESENT)) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
 
-        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence
+        // Suppress only during pre-arm bench testing (USB or MSP configurator active)
+        // Once armed (WAS_EVER_ARMED), beacons work regardless of connection for field recovery
         if (activeMode == BEEPER_RX_LOST
-            && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
-            dshotBeaconRequested = true;
+            
+            const bool isBenchEnvironment = !ARMING_FLAG(WAS_EVER_ARMED) && 
+                                            (usbCableIsInserted() || mspSerialIsConfiguratorActive());
+            
+            if (!isBenchEnvironment) {
+                dshotBeaconRequested = true;
+            }
         }
 
         // Allow user-triggered beacon via AUX switch while the RX link is healthy.
