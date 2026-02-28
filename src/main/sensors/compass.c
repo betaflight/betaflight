@@ -440,10 +440,76 @@ bool compassInit(void)
             v.z = magZero->raw[2];
 
             vector3_t tmp;
-            // apply B^T
+            // apply B^T (bring board-frame vector into pre-sensor frame)
             matrixTrnVectorMul(&tmp, &boardRotLocal, &v);
-            // apply S^T
-            matrixTrnVectorMul(&v, &magDev.rotationMatrix, &tmp);
+
+            // apply inverse of sensor alignment S^{-1} to get sensor-frame bias
+            if (magDev.magAlignment == ALIGN_CUSTOM) {
+                // for custom alignment we have a full rotation matrix; apply S^T
+                matrixTrnVectorMul(&v, &magDev.rotationMatrix, &tmp);
+            } else {
+                // for standard enum alignments, apply the inverse mapping (board->sensor)
+                // tmp currently holds B^T * mag_board
+                const vector3_t b = tmp;
+                vector3_t s;
+
+                switch (magDev.magAlignment) {
+                default:
+                case CW0_DEG:
+                    s.x = b.x;
+                    s.y = b.y;
+                    s.z = b.z;
+                    break;
+                case CW90_DEG:
+                    // S: sensor->board: b.x = s.y; b.y = -s.x; b.z = s.z
+                    // inverse: s.x = -b.y; s.y = b.x; s.z = b.z
+                    s.x = -b.y;
+                    s.y = b.x;
+                    s.z = b.z;
+                    break;
+                case CW180_DEG:
+                    // S: b.x = -s.x; b.y = -s.y; b.z = s.z -> inverse same as S
+                    s.x = -b.x;
+                    s.y = -b.y;
+                    s.z = b.z;
+                    break;
+                case CW270_DEG:
+                    // S: b.x = -s.y; b.y = s.x; b.z = s.z
+                    // inverse: s.x = b.y; s.y = -b.x; s.z = b.z
+                    s.x = b.y;
+                    s.y = -b.x;
+                    s.z = b.z;
+                    break;
+                case CW0_DEG_FLIP:
+                    // S: b.x = -s.x; b.y = s.y; b.z = -s.z -> inverse same as S
+                    s.x = -b.x;
+                    s.y = b.y;
+                    s.z = -b.z;
+                    break;
+                case CW90_DEG_FLIP:
+                    // S: b.x = s.y; b.y = s.x; b.z = -s.z
+                    // inverse: s.x = b.y; s.y = b.x; s.z = -b.z
+                    s.x = b.y;
+                    s.y = b.x;
+                    s.z = -b.z;
+                    break;
+                case CW180_DEG_FLIP:
+                    // S: b.x = s.x; b.y = -s.y; b.z = -s.z -> inverse: s.x = b.x; s.y = -b.y; s.z = -b.z
+                    s.x = b.x;
+                    s.y = -b.y;
+                    s.z = -b.z;
+                    break;
+                case CW270_DEG_FLIP:
+                    // S: b.x = -s.y; b.y = -s.x; b.z = -s.z
+                    // inverse: s.x = -b.y; s.y = -b.x; s.z = -b.z
+                    s.x = -b.y;
+                    s.y = -b.x;
+                    s.z = -b.z;
+                    break;
+                }
+
+                v = s;
+            }
 
             // store back rounded to int16 with clamping to avoid overflow/truncation
             long tmp0 = lrintf(v.x);
