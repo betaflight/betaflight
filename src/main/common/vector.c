@@ -233,7 +233,7 @@ matrix33_t *buildRotationMatrix(matrix33_t *result, const fp_angles_t *rpy)
 
 vector3_t *applyRotationMatrix(vector3_t *v, const matrix33_t *rotationMatrix)
 {
-    return matrixTrnVectorMul(v, rotationMatrix, v);
+    return matrixVectorMul(v, rotationMatrix, v);
 }
 
 matrix33_t *yawToRotationMatrixZ(matrix33_t *result, const float yaw)

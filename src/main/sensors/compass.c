@@ -400,14 +400,8 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    // Custom alignments are applied via a transposed rotation matrix (matrixTrnVectorMul),
-    // which reverses rotation direction. Negate angles for mag so the resulting rotation
-    // matches the user-entered convention and the standard CW alignments.
+    // Build rotation matrix from configured custom alignment. Angles are in decidegrees.
     sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
-    magCustomAlignment.roll = -magCustomAlignment.roll;
-    magCustomAlignment.pitch = -magCustomAlignment.pitch;
-    magCustomAlignment.yaw = -magCustomAlignment.yaw;
-
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
@@ -476,14 +470,13 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
-    if (magDev.magAlignment == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
-    } else {
-        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
-    }
-
     // get stored cal/bias values
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+
+    // apply stored calibration bias in sensor frame BEFORE applying any sensor/board alignment
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        mag.magADC.v[axis] -= magZero->raw[axis];
+    }
 
     // ** perform calibration, if initiated by switch or Configurator button **
     if (magCalProcessActive) {
@@ -531,9 +524,11 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    // remove saved cal/bias; this is zero while calibrating
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC.v[axis] -= magZero->raw[axis];
+    // apply sensor/board alignment after calibration bias has been removed
+    if (magDev.magAlignment == ALIGN_CUSTOM) {
+        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
+    } else {
+        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
     }
 
     if (debugMode == DEBUG_MAG_CALIB) {
