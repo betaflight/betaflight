@@ -135,6 +135,7 @@ extern uint32_t systemUniqueId[3];
 #define UART_TX_BUFFER_ATTRIBUTE
 #define UART_RX_BUFFER_ATTRIBUTE
 
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
 
 #define xDMA_GetCurrDataCounter(dma_resource) (((dma_channel_hw_t *)(dma_resource))->transfer_count)
