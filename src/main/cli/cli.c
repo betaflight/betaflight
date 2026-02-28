@@ -4835,7 +4835,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrint("configured");
             }
         }
+#ifdef USE_GPS_UBLOX
         cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
     } else {
         cliPrint("NOT ENABLED");
     }
@@ -6952,5 +6954,165 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         cliWrite(0x2); // send start of text, initiating flow control
     }
 }
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
+}
+
+// Check if a line (after stripping comments/whitespace) matches a command name
+static bool lineIsCommand(const char *line, const char *command)
+{
+    // Skip leading whitespace
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    size_t cmdLen = strlen(command);
+    if (strncasecmp(line, command, cmdLen) != 0) {
+        return false;
+    }
+    // Must be end of string, whitespace, newline, or comment
+    char next = line[cmdLen];
+    return (next == '\0' || next == ' ' || next == '\t' ||
+            next == '\n' || next == '\r' || next == '#');
+}
+
+void cliProcessConfigFile(const char *filename)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "[CONFIG] Failed to open config file: %s\n", filename);
+        exit(1);
+    }
+
+    printf("[CONFIG] Processing config file: %s\n", filename);
+
+    // Enter CLI mode in interactive mode (output goes to stdout/terminal)
+    cliMode = true;
+    cliInteractive = true;
+
+    // Use a dummy serial port to satisfy cliPort != NULL requirements.
+    // The vTable is intentionally left NULL (via memset) as a canary: any reboot-class
+    // command that reaches waitForSerialPortToFinishTransmitting() will crash immediately
+    // here rather than proceeding silently into motorShutdown()/systemReset(). Reboot-class
+    // commands (defaults, bl, msc, exit) must be intercepted above before processCharacter().
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    // Set up writer to stdout
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)stdoutBufWrite, NULL);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+
+    char line[CLI_IN_BUFFER_SIZE];
+    line[0] = '\0';
+    while (fgets(line, sizeof(line), fp)) {
+        // Intercept 'save' - handle it ourselves to avoid the reboot/motorShutdown path
+        if (lineIsCommand(line, "save")) {
+            if (tryPrepareSave("save")) {
+                writeEEPROM();
+                printf("[CONFIG] Config file processed, EEPROM saved\n");
+                fclose(fp);
+                cliMode = false;
+                exit(0);
+            } else {
+                printf("[CONFIG] prepareSave failed\n");
+                fclose(fp);
+                exit(1);
+            }
+        }
+
+        // Skip 'exit' commands in config files
+        if (lineIsCommand(line, "exit")) {
+            continue;
+        }
+
+        // 'defaults' without 'nosave' triggers a reboot; convert to 'defaults nosave'
+        if (lineIsCommand(line, "defaults")) {
+            // Strip inline comments before checking for 'nosave' argument so that
+            // e.g. "defaults # nosave" is not mistaken for carrying the nosave flag.
+            char stripped[CLI_IN_BUFFER_SIZE];
+            strncpy(stripped, line, sizeof(stripped) - 1);
+            stripped[sizeof(stripped) - 1] = '\0';
+            char *cp = strchr(stripped, '#');
+            if (cp) {
+                *cp = '\0';
+            }
+            cp = strstr(stripped, "//");
+            if (cp) {
+                *cp = '\0';
+            }
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            bool hasNosave = false;
+            char *tok = strtok(stripped, " \t\r\n");
+            while (tok) {
+                if (strcasecmp(tok, "nosave") == 0) {
+                    hasNosave = true;
+                    break;
+                }
+                tok = strtok(NULL, " \t\r\n");
+            }
+            if (!hasNosave) {
+                // Append 'nosave' to the original line (minus any trailing comment/whitespace)
+                // so that arguments like 'group_id 5' are preserved, e.g.:
+                //   "defaults"            -> "defaults nosave"
+                //   "defaults group_id 5" -> "defaults group_id 5 nosave"
+                char nosaveLine[CLI_IN_BUFFER_SIZE + 16];
+                strncpy(nosaveLine, stripped, sizeof(nosaveLine) - 16);
+                nosaveLine[sizeof(nosaveLine) - 16] = '\0';
+                // Trim trailing whitespace from the stripped content
+                size_t len = strlen(nosaveLine);
+                while (len > 0 && (nosaveLine[len - 1] == ' ' || nosaveLine[len - 1] == '\t' || nosaveLine[len - 1] == '\r' || nosaveLine[len - 1] == '\n')) {
+                    nosaveLine[--len] = '\0';
+                }
+                strcat(nosaveLine, " nosave\n");
+                for (size_t i = 0; nosaveLine[i]; i++) {
+                    processCharacter(nosaveLine[i]);
+                }
+                cliWriterFlush();
+                continue;
+            }
+        }
+
+        // Skip 'bl' and 'msc' - these trigger reboots/mode switches not valid during config file processing
+        if (lineIsCommand(line, "bl") || lineIsCommand(line, "msc")) {
+            continue;
+        }
+
+        // Feed each character through the CLI processor
+        for (size_t i = 0; line[i]; i++) {
+            processCharacter(line[i]);
+        }
+        cliWriterFlush();
+    }
+
+    // If the last line had no trailing newline, the command is buffered but not yet executed;
+    // send a newline to trigger its execution
+    size_t lastLineLen = strlen(line);
+    if (lastLineLen > 0 && line[lastLineLen - 1] != '\n' && line[lastLineLen - 1] != '\r') {
+        processCharacter('\n');
+        cliWriterFlush();
+    }
+
+    fclose(fp);
+
+    // If save wasn't in the file, save and exit anyway
+    if (tryPrepareSave("save")) {
+        writeEEPROM();
+        printf("[CONFIG] Config file processed, EEPROM saved\n");
+        cliMode = false;
+        exit(0);
+    } else {
+        printf("[CONFIG] prepareSave failed\n");
+        exit(1);
+    }
+}
+#endif // CONFIG_IN_FILE
 
 #endif // USE_CLI
