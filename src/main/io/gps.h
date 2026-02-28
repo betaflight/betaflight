@@ -106,7 +106,12 @@ typedef enum {
     CFG_SIGNAL_GAL_ENA = 0x10310021, // L
     CFG_SIGNAL_BDS_ENA = 0x10310022, // L
     CFG_SIGNAL_QZSS_ENA = 0x10310024, // L
+    CFG_SIGNAL_QZSS_L5_ENA = 0x10310017, // L
     CFG_SIGNAL_GLO_ENA = 0x10310025, // L
+    CFG_SIGNAL_GPS_L5_ENA = 0x10310004, // L
+    CFG_SIGNAL_NAVIC_ENA = 0x10310026, // L
+    CFG_SIGNAL_NAVIC_L5_ENA = 0x1031001d, // L
+    CFG_SIGNAL_L5_HEALTH_OVRD = 0x10320001, // L
     CFG_PM_OPERATEMODE = 0x20d00001, // E1
 } ubxValGetSetBytes_e;
 
@@ -309,6 +314,7 @@ typedef struct gpsData_s {
     bool ubloxM7orAbove;
     bool ubloxM8orAbove;
     bool ubloxM9orAbove;
+    bool ublox_L5_supported;
     bool ubloxUsingFlightModel;     // false = Acquire model, true = Flight model
 #ifdef USE_GPS_UBLOX
     uint32_t lastNavSolTs;          // time stamp of last UBCX message.  Used to calculate message delta
