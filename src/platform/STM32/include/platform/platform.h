@@ -413,6 +413,8 @@ extern uint8_t _dmaram_end__;
 #define UART_TRAIT_PINSWAP 1
 #endif
 
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
+
 #if defined(STM32F4)
 #define UARTHARDWARE_MAX_PINS 4
 #elif defined(STM32F7)
