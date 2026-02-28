@@ -176,8 +176,8 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
-    north_ef.x = cos_approx(imuMagneticDeclinationRad);
-    north_ef.y = -sin_approx(imuMagneticDeclinationRad);
+    sincosf_approx(imuMagneticDeclinationRad, &north_ef.y, &north_ef.x);
+    north_ef.y = -north_ef.y;
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
@@ -451,7 +451,9 @@ STATIC_UNIT_TESTED float imuCalcCourseErr(float courseOverGround)
 {
     // Compute COG heading unit vector in earth frame (ef) from scalar GPS CourseOverGround
     // Earth frame X is pointing north and sin/cos argument is anticlockwise. (|cog_ef| == 1.0)
-    const vector2_t cog_ef = {.x = cos_approx(-courseOverGround), .y = sin_approx(-courseOverGround)};
+    float sin, cos;
+    sincosf_approx(-courseOverGround, &sin, &cos);
+    const vector2_t cog_ef = {.x = cos, .y = sin};
 
     // Compute and normalise craft Earth frame heading vector from body X axis
     vector2_t heading_ef = {.x = rMat.m[X][X], .y = rMat.m[Y][X]};
@@ -562,14 +564,14 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
         initialYaw -= 3600;
     }
 
-    const float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
-    const float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    float cosRoll, sinRoll;
+    sincosf_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f, &sinRoll, &cosRoll);
 
-    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
-    const float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    float cosPitch, sinPitch;
+    sincosf_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f, &sinPitch, &cosPitch);
 
-    const float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
-    const float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    float cosYaw, sinYaw;
+    sincosf_approx(DECIDEGREES_TO_RADIANS(initialYaw) * 0.5f, &sinYaw, &cosYaw);
 
     const float q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
     const float q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
@@ -735,8 +737,9 @@ static int calculateThrottleAngleCorrection(void)
         return 0;
     }
     int angle = lrintf(acos_approx(getCosTiltAngle()) * throttleAngleScale);
-    if (angle > 900)
+    if (angle > 900) {
         angle = 900;
+    }
     return lrintf(throttleAngleValue * sin_approx(angle / (900.0f * M_PIf / 2.0f)));
 }
 
@@ -842,11 +845,13 @@ bool imuQuaternionHeadfreeOffsetSet(void)
 {
     if ((abs(attitude.values.roll) < 450)  && (abs(attitude.values.pitch) < 450)) {
         const float yaw = -atan2_approx((+2.0f * (qP.wz + qP.xy)), (+1.0f - 2.0f * (qP.yy + qP.zz)));
+        float sin, cos;
+        sincosf_approx(yaw/2, &sin, &cos);
 
-        offset.w = cos_approx(yaw/2);
+        offset.w = cos;
         offset.x = 0;
         offset.y = 0;
-        offset.z = sin_approx(yaw/2);
+        offset.z = sin;
 
         return true;
     } else {
