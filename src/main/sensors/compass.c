@@ -403,8 +403,14 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    // Build rotation matrix from configured custom alignment. Angles are in decidegrees.
+    // Custom alignments are applied via a transposed rotation matrix (matrixTrnVectorMul),
+    // which reverses rotation direction. Negate angles for mag so the resulting rotation
+    // matches the user-entered convention and the standard CW alignments.
     sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
+    magCustomAlignment.roll = -magCustomAlignment.roll;
+    magCustomAlignment.pitch = -magCustomAlignment.pitch;
+    magCustomAlignment.yaw = -magCustomAlignment.yaw;
+
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     // Migrate old stored magZero if necessary (older firmware stored magZero in board/frame)
