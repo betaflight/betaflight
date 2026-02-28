@@ -350,6 +350,8 @@ extern int32_t blackboxHeaderBudget;
 gpsSolutionData_t gpsSol;
 gpsLocation_t GPS_home_llh;
 
+uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *) { return 0; }
+
 gyro_t gyro;
 
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
