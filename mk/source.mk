@@ -173,6 +173,7 @@ COMMON_SRC = \
             flight/pos_hold_multirotor.c \
             flight/pos_hold_wing.c \
             flight/rpm_filter.c \
+            flight/sensor_fusion.c \
             flight/servos.c \
             flight/servos_tricopter.c \
             io/serial_4way.c \
@@ -455,6 +456,7 @@ SPEED_OPTIMISED_SRC += \
             flight/mixer.c \
             flight/pid.c \
             flight/rpm_filter.c \
+            flight/sensor_fusion.c \
             rx/ibus.c \
             rx/rc_stats.c \
             rx/rx.c \
