@@ -325,8 +325,8 @@ rc_controls_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/fc/rc_adjustments.c \
-		$(USER_DIR)/fc/rc_modes.c
-
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/config/simplified_tuning.c
 
 rx_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \

@@ -574,26 +574,25 @@ float gyroGetDownsampled(int axis)
 bool gyroStartDownsampledCycle(void)
 {
     // Phase 1: Read using gyroSeq (protects against gyroUpdate writes)
-    uint32_t seq1, seq2;
+    uint32_t seq1;
     float sum[XYZ_AXIS_COUNT];
     uint32_t count;
 
     do {
         seq1 = gyroSeq;
-        if (seq1 & 1) {
-            // Odd gyroSeq means write in progress, spin
-            continue;
+        if (!(seq1 & 1)) {
+            // Even gyroSeq means no write in progress, safe to copy
+            sum[X] = downSampleSum[X];
+            sum[Y] = downSampleSum[Y];
+            sum[Z] = downSampleSum[Z];
+            count = downSampleCount;
+
+            __asm volatile ("" ::: "memory");  // Compiler barrier
+            if (seq1 == gyroSeq) {
+                break;
+            }
         }
-
-        // Copy current values
-        sum[X] = downSampleSum[X];
-        sum[Y] = downSampleSum[Y];
-        sum[Z] = downSampleSum[Z];
-        count = downSampleCount;
-
-        __asm volatile ("" ::: "memory");  // Compiler barrier
-        seq2 = gyroSeq;
-    } while (seq1 != seq2);
+    } while (true);
 
     // Only update snapshot if we got valid data
     if (count > 0) {

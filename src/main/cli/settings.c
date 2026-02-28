@@ -213,6 +213,8 @@ const char * const lookupTableBaroHardware[BARO_HARDWARE_COUNT] = {
     [BARO_DPS310] = "DPS310",
     [BARO_2SMPB_02B] = "2SMPB_02B",
     [BARO_LPS22DF] = "LPS22DF",
+    [BARO_BMP580] = "BMP580",
+    [BARO_BMP581] = "BMP581",
     [BARO_VIRTUAL] = "VIRTUAL"
 };
 
@@ -227,7 +229,8 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
     [MAG_LIS2MDL] = "LIS2MDL",
     [MAG_LIS3MDL] = "LIS3MDL",
     [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
-    [MAG_IST8310] = "IST8310"
+    [MAG_IST8310] = "IST8310",
+    [MAG_MMC560X] = "MMC560X"
 };
 
 // sync with rangefinderType_e

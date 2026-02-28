@@ -101,8 +101,6 @@ static void rssiFilterReset(void)
 #endif //USE_RX_RSNR
 }
 
-#define PACKET_HANDLING_TO_TOCK_ISR_DELAY_US 250
-
 //
 // Event pair recorder
 //
@@ -166,7 +164,6 @@ typedef struct phaseLockState_s {
 
     int32_t offsetUs;
     int32_t offsetDeltaUs;
-    int32_t previousOffsetUs;
 } phaseLockState_t;
 
 static phaseLockState_t pl;
@@ -198,6 +195,10 @@ static uint8_t mspBuffer[ELRS_MSP_BUFFER_SIZE];
 
 static void setRssiChannelData(uint16_t *rcData)
 {
+#ifndef USE_ELRSV3
+    // In ELRS V4, Arm (ch5) is copied to ch14 to mimic the behavior of the fullres modes which have it as an extra channel
+    rcData[ELRS_ARM_V4_CHANNEL] = rcData[ELRS_ARM_V3_CHANNEL];
+#endif
     rcData[ELRS_LQ_CHANNEL] = scaleRange(receiver.uplinkLQ, 0, 100, 988, 2011);
     rcData[ELRS_RSSI_CHANNEL] = scaleRange(constrain(receiver.rssiFiltered, receiver.rfPerfParams->sensitivity, -50), receiver.rfPerfParams->sensitivity, -50, 988, 2011);
 }
@@ -223,7 +224,7 @@ static void unpackAnalogChannelData(uint16_t *rcData, volatile elrsOtaPacket_t c
     }
 
     // The low latency switch
-    rcData[4] = convertSwitch1b(otaPktPtr->rc.ch4);
+    rcData[ELRS_ARM_V3_CHANNEL] = convertSwitch1b(otaPktPtr->rc.ch4);
 }
 
 /**
@@ -279,12 +280,17 @@ static void unpackChannelDataHybridWide(uint16_t *rcData, volatile elrsOtaPacket
     } else {
         uint8_t bins;
         uint16_t switchValue;
-        if (currTlmDenom > 1 && currTlmDenom < 8) {
-            bins = 63;
-            switchValue = switchByte & 0x3F; // 6-bit
-        } else {
+    #ifdef USE_ELRSV3
+        // ELRS V3 switched between 6 and 7 bit mode depending on TLM ratio
+        // ELRS V4 always uses 6 bit mode
+        if (currTlmDenom < 2 || currTlmDenom > 4) {
             bins = 127;
             switchValue = switchByte & 0x7F; // 7-bit
+        } else
+    #endif
+        {
+            bins = 63;
+            switchValue = switchByte & 0x3F; // 6-bit
         }
 
         rcData[5 + wideSwitchIndex] = convertSwitchNb(switchValue, bins);
@@ -340,7 +346,7 @@ static void setRfLinkRate(const uint8_t index)
         receiver.modParams->cr,
         receiver.currentFreq,
         receiver.modParams->preambleLen,
-        receiver.UID[5] & 0x01,
+        receiver.inBindingMode || (receiver.UID[5] & 0x01),
         elrsUidToSeed(receiver.UID),
         crcInitializer,
         receiver.modParams->radioType == RADIO_TYPE_SX128x_FLRC
@@ -357,7 +363,11 @@ static void setRfLinkRate(const uint8_t index)
     telemBurstValid = false;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
+  #ifdef USE_ELRSV3
     rxSetRfMode((uint8_t)receiver.modParams->enumRate);
+  #else
+    rxSetRfMode((uint8_t)receiver.modParams->v4Rate);
+  #endif
 #endif
 }
 
@@ -414,21 +424,30 @@ static void expressLrsSendTelemResp(void)
     elrsOtaPacket_t otaPkt = {0};
 
     receiver.alreadyTelemResp = true;
-    otaPkt.type = ELRS_TLM_PACKET;
 
-    if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
-        otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_LINK;
-        otaPkt.tlm_dl.ul_link_stats.uplink_RSSI_1 = receiver.rssiFiltered > 0 ? 0 : -receiver.rssiFiltered;
-        otaPkt.tlm_dl.ul_link_stats.uplink_RSSI_2 = 0; //diversity not supported
-        otaPkt.tlm_dl.ul_link_stats.antenna = 0;
-        otaPkt.tlm_dl.ul_link_stats.modelMatch = connectionHasModelMatch;
-        otaPkt.tlm_dl.ul_link_stats.lq = receiver.uplinkLQ;
-        otaPkt.tlm_dl.ul_link_stats.SNR = meanAccumulatorCalc(&snrFilter, -16);
+    uint8_t mspConfirm =
 #ifdef USE_MSP_OVER_TELEMETRY
-        otaPkt.tlm_dl.ul_link_stats.mspConfirm = getCurrentMspConfirm() ? 1 : 0;
-#else
-        otaPkt.tlm_dl.ul_link_stats.mspConfirm = 0;
+        getCurrentMspConfirm() ? 1 :
 #endif
+        0;
+    if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
+
+        otaPkt.type = ELRS_TLM_PACKET;
+#ifdef USE_ELRSV3
+        otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_LINK;
+        otaPkt.tlm_dl.ul_link_stats.stats.mspConfirm = mspConfirm;
+#else
+        otaPkt.tlm_dl.mspConfirm = mspConfirm;
+        otaPkt.tlm_dl.ul_link_stats.stats.trueDiversityAvailable = 0; // no TrueDiversity SPI SX1280
+        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.ul_link_stats.payload, sizeof(otaPkt.tlm_dl.ul_link_stats.payload));
+#endif
+        otaPkt.tlm_dl.ul_link_stats.stats.uplink_RSSI_1 = receiver.rssiFiltered > 0 ? 0 : -receiver.rssiFiltered;
+        otaPkt.tlm_dl.ul_link_stats.stats.uplink_RSSI_2 = 0; //diversity not supported
+        otaPkt.tlm_dl.ul_link_stats.stats.antenna = 0;
+        otaPkt.tlm_dl.ul_link_stats.stats.modelMatch = connectionHasModelMatch;
+        otaPkt.tlm_dl.ul_link_stats.stats.lq = receiver.uplinkLQ;
+        otaPkt.tlm_dl.ul_link_stats.stats.SNR = meanAccumulatorCalc(&snrFilter, -16);
+
         nextTelemetryType = ELRS_TELEMETRY_TYPE_DATA;
         // Start the count at 1 because the next will be DATA and doing +1 before checking
         // against Max below is for some reason 10 bytes more code
@@ -440,11 +459,26 @@ static void expressLrsSendTelemResp(void)
             nextTelemetryType = ELRS_TELEMETRY_TYPE_LINK;
         }
 
+#ifdef USE_ELRSV3
+        otaPkt.type = ELRS_TLM_PACKET;
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_DATA;
-        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload);
+#else
+        otaPkt.type = ELRS_MSP_DATA_PACKET;
+        otaPkt.tlm_dl.mspConfirm = mspConfirm;
+#endif
+        otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload, sizeof(otaPkt.tlm_dl.payload));
     }
 
-    uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer);
+#ifdef USE_ELRSV3
+    uint8_t nonceValidator = 0;
+#else
+    // This is a hack because this implementation sends telemetry right after a packet is received
+    // this is not a problem for all rates except F500, which will send telemetry in the previous
+    // packet period, which 4.0 will not accept, so we fake the validator to be in the correct/wrong period
+    bool isF500 = receiver.modParams->v4Rate == RATE_FLRC_2G4_500HZ;
+    uint8_t nonceValidator = receiver.nonceRX + (isF500 ? 0 : 1);
+#endif
+    uint16_t crc = calcCrc14((uint8_t *) &otaPkt, 7, crcInitializer ^ nonceValidator);
     otaPkt.crcHigh = (crc >> 8);
     otaPkt.crcLow = crc;
     memcpy((uint8_t *) telemetryPacket, (uint8_t *) &otaPkt, ELRS_RX_TX_BUFF_SIZE);
@@ -458,11 +492,11 @@ static void updatePhaseLock(void)
 
         pl.offsetUs = simpleLPFilterUpdate(&pl.offsetFilter, pl.rawOffsetUs);
         pl.offsetDeltaUs = simpleLPFilterUpdate(&pl.offsetDxFilter, pl.rawOffsetUs - pl.previousRawOffsetUs);
+        pl.previousRawOffsetUs = pl.rawOffsetUs;
 
         if (receiver.timerState == ELRS_TIM_LOCKED) {
-            // limit rate of freq offset adjustment, use slot 1 because
-            // telemetry can fall on slot 1 and will never get here
-            if (receiver.nonceRX % 8 == 1) {
+            // limit rate of freq offset adjustment
+            if (receiver.nonceRX % 8 == 0) {
                 if (pl.offsetUs > 0) {
                     expressLrsTimerIncreaseFrequencyOffset();
                 } else if (pl.offsetUs < 0) {
@@ -477,11 +511,7 @@ static void updatePhaseLock(void)
             expressLrsUpdatePhaseShift(pl.offsetUs >> 2);
         }
 
-        pl.previousOffsetUs = pl.offsetUs;
-        pl.previousRawOffsetUs = pl.rawOffsetUs;
-
         expressLrsTimerDebug();
-
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 0, pl.rawOffsetUs);
         DEBUG_SET(DEBUG_RX_EXPRESSLRS_PHASELOCK, 1, pl.offsetUs);
     }
@@ -493,7 +523,8 @@ static void updatePhaseLock(void)
 void expressLrsOnTimerTickISR(void) // this is 180 out of phase with the other callback, occurs mid-packet reception
 {
     updatePhaseLock();
-    receiver.nonceRX += 1;
+    if (!receiver.inBindingMode)
+        receiver.nonceRX += 1;
 
     // Save the LQ value before the inc() reduces it by 1
     receiver.uplinkLQ = lqGet();
@@ -619,17 +650,41 @@ static void initializeReceiver(void)
     receiver.rfModeCycleMultiplier = ELRS_MODE_CYCLE_MULTIPLIER_SLOW / 2;
 }
 
+static void OtaUpdateCrcInitFromUid(void)
+{
+    if (receiver.inBindingMode) {
+        // Binding mode uses 0 for ELRS V3 or the version for ELRS V4
+#ifdef USE_ELRSV3
+        crcInitializer = 0;
+#else
+        crcInitializer = ELRS_OTA_VERSION_ID;
+#endif
+    } else {
+        crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
+        // The version is XORed to the low byte for ELRS V3 or the high byte for ELRS V4
+#ifdef USE_ELRSV3
+        crcInitializer ^= ELRS_OTA_VERSION_ID;
+#else
+        // shift OTA_VERSION_ID to the high byte to leave room for
+        // xor-ing in the nonce in the GenerateCRC and ValidateCRC function
+        crcInitializer ^= (uint16_t)ELRS_OTA_VERSION_ID << 8;
+#endif
+    }
+}
+
 static void unpackBindPacket(volatile uint8_t *packet)
 {
+    // Binding over MSP only contains 4 bytes due to packet size limitations, clear out any leading bytes
+    rxExpressLrsSpiConfigMutable()->UID[0] = 0;
+    rxExpressLrsSpiConfigMutable()->UID[1] = 0;
     rxExpressLrsSpiConfigMutable()->UID[2] = packet[0];
     rxExpressLrsSpiConfigMutable()->UID[3] = packet[1];
     rxExpressLrsSpiConfigMutable()->UID[4] = packet[2];
     rxExpressLrsSpiConfigMutable()->UID[5] = packet[3];
 
     receiver.UID = rxExpressLrsSpiConfigMutable()->UID;
-    crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
-    crcInitializer ^= ELRS_OTA_VERSION_ID;
     receiver.inBindingMode = false;
+    OtaUpdateCrcInitFromUid();
     receiver.configChanged = true; //after initialize as it sets it to false
 }
 
@@ -652,11 +707,16 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
         return;
     }
 
+#ifdef USE_ELRSV3
     bool currentMspConfirmValue = getCurrentMspConfirm();
+#endif
     receiveMspData(otaPktPtr->msp_ul.packageIndex, otaPktPtr->msp_ul.payload);
+#ifdef USE_ELRSV3
+    // If the confirm value flipped, then send a linkstats next to send the new confirm bit
     if (currentMspConfirmValue != getCurrentMspConfirm()) {
         nextTelemetryType = ELRS_TELEMETRY_TYPE_LINK;
     }
+#endif
     if (hasFinishedMspData()) {
         if (mspBuffer[ELRS_MSP_COMMAND_INDEX] == ELRS_MSP_SET_RX_CONFIG && mspBuffer[ELRS_MSP_COMMAND_INDEX + 1] == ELRS_MSP_MODEL_ID) { //mspReceiverComplete
             if (rxExpressLrsSpiConfig()->modelId != mspBuffer[9]) { //UpdateModelMatch
@@ -676,7 +736,11 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
 static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr, const uint32_t timeStampMs)
 {
     // Verify the first two of three bytes of the binding ID, which should always match
-    if (otaPktPtr->sync.UID3 != receiver.UID[3] || otaPktPtr->sync.UID4 != receiver.UID[4]) {
+    if (
+#ifdef USE_ELRSV3
+        otaPktPtr->sync.UID3 != receiver.UID[3] ||
+#endif
+        otaPktPtr->sync.UID4 != receiver.UID[4]) {
         return false;
     }
 
@@ -724,6 +788,7 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
 static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
 {
     uint16_t const inCRC = ((uint16_t) otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
+#ifdef USE_ELRSV3
     // For smHybrid the CRC only has the packet type in byte 0
     // For smWide the FHSS slot is added to the CRC in byte 0 on PACKET_TYPE_RCDATAs
     if (otaPktPtr->type == ELRS_RC_DATA_PACKET && receiver.switchMode == SM_WIDE) {
@@ -731,7 +796,12 @@ static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
     } else {
         otaPktPtr->crcHigh = 0;
     }
-    uint16_t const calculatedCRC = calcCrc14((uint8_t *) otaPktPtr, 7, crcInitializer);
+    uint16_t nonceValidator = 0;
+#else
+    uint16_t nonceValidator = (otaPktPtr->type == ELRS_SYNC_PACKET) ? 0 : receiver.nonceRX;
+    otaPktPtr->crcHigh = 0;
+#endif
+    uint16_t const calculatedCRC = calcCrc14((uint8_t *) otaPktPtr, 7, crcInitializer ^ nonceValidator);
     return inCRC == calculatedCRC;
 }
 
@@ -742,7 +812,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
     if (!validatePacketCrcStd(otaPktPtr)) {
         return RX_SPI_RECEIVED_NONE;
     }
-
+    const uint32_t PACKET_HANDLING_TO_TOCK_ISR_DELAY_US = 250;
     phaseLockEprEvent(EPR_EXTERNAL, timeStampUs + PACKET_HANDLING_TO_TOCK_ISR_DELAY_US);
 
     bool shouldStartTimer = false;
@@ -757,8 +827,15 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
             if (receiver.switchMode == SM_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
-                if ((currTlmDenom < 8) || wideSwitchIndex == 7) {
-                    confirmCurrentTelemetryPayload((otaPktPtr->rc.switches & 0x40) >> 6);
+#ifdef USE_ELRSV3
+                // In ELRS V3 WIDE mode the confrm bit is only in every packet in 1:2 or 1:4 TLM ratio
+                // In ELRS V4 the confirm bit is in every RC_DATA packet
+                bool telemInEveryPacket = (currTlmDenom > 1) && (currTlmDenom < 8);
+#else
+                bool telemInEveryPacket = true;
+#endif
+                if (telemInEveryPacket || wideSwitchIndex == 7) {
+                    confirmCurrentTelemetryPayload(otaPktPtr->rc.switches & (1 << 6));
                 }
             } else {
                 confirmCurrentTelemetryPayload(otaPktPtr->rc.switches & (1 << 6));
@@ -768,9 +845,6 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         break;
     case ELRS_MSP_DATA_PACKET:
         processRFMspPacket(otaPktPtr);
-        break;
-    case ELRS_TLM_PACKET:
-        //not implemented
         break;
     case ELRS_SYNC_PACKET:
         shouldStartTimer = processRFSyncPacket(otaPktPtr, timeStampMs) && !receiver.inBindingMode;
@@ -831,7 +905,7 @@ static void cycleRfMode(const uint32_t timeStampMs)
     if (receiver.lockRFmode == false && (timeStampMs - receiver.rfModeCycledAtMs) > (receiver.cycleIntervalMs * receiver.rfModeCycleMultiplier)) {
         receiver.rfModeCycledAtMs = timeStampMs;
         receiver.lastSyncPacketMs = timeStampMs;           // reset this variable
-        receiver.rateIndex = (receiver.rateIndex + 1) % ELRS_RATE_MAX;
+        receiver.rateIndex = (receiver.rateIndex + 1) % (domainIsTeam24() ? ELRS_RATE_MAX_24 : ELRS_RATE_MAX_900);
         setRfLinkRate(receiver.rateIndex); // switch between rates
         receiver.statsUpdatedAtMs = timeStampMs;
         lqReset();
@@ -935,13 +1009,11 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
         || rxExpressLrsSpiConfig()->UID[4] || rxExpressLrsSpiConfig()->UID[5]) {
         receiver.inBindingMode = false;
         receiver.UID = rxExpressLrsSpiConfig()->UID;
-        crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
-        crcInitializer ^= ELRS_OTA_VERSION_ID;
     } else {
         receiver.inBindingMode = true;
         receiver.UID = BindingUID;
-        crcInitializer = 0;
     }
+    OtaUpdateCrcInitFromUid();
 
     expressLrsPhaseLockReset();
 
@@ -1093,8 +1165,9 @@ static void enterBindingMode(void)
 {
     // Set UID to special binding values
     receiver.UID = BindingUID;
-    crcInitializer = 0;
     receiver.inBindingMode = true;
+    receiver.nonceRX = 0;
+    OtaUpdateCrcInitFromUid();
 
     setRfLinkRate(bindingRateIndex);
     receiver.startReceiving();

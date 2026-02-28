@@ -35,7 +35,9 @@ typedef enum {
     BARO_DPS310 = 8,
     BARO_2SMPB_02B = 9,
     BARO_LPS22DF = 10,
-    BARO_VIRTUAL = 11,
+    BARO_BMP580 = 11,
+    BARO_BMP581 = 12,
+    BARO_VIRTUAL = 13,
     BARO_HARDWARE_COUNT
 } baroSensor_e;
 

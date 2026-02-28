@@ -187,6 +187,9 @@
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
 #endif
+#ifndef USE_MAG_MMC560X
+#define USE_MAG_MMC560X
+#endif
 
 #endif // END MAG HW defines
 
@@ -437,7 +440,7 @@
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N) || defined(USE_FLASH_MT29F))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif
