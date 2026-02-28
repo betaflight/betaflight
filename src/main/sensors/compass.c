@@ -445,8 +445,11 @@ bool compassInit(void)
 
             // apply inverse of sensor alignment S^{-1} to get sensor-frame bias
             if (magDev.magAlignment == ALIGN_CUSTOM) {
-                // for custom alignment we have a full rotation matrix; apply S^T
-                matrixTrnVectorMul(&v, &magDev.rotationMatrix, &tmp);
+                // magDev.rotationMatrix was built from negated angles to match runtime
+                // application (transposed multiply). For migration we need S^T where S is
+                // the true sensor rotation. Since magDev.rotationMatrix currently holds
+                // the transposed form, use non-transposed multiply to apply S^T.
+                matrixVectorMul(&v, &magDev.rotationMatrix, &tmp);
             } else {
                 // for standard enum alignments, apply the inverse mapping (board->sensor)
                 // tmp currently holds B^T * mag_board
@@ -512,18 +515,19 @@ bool compassInit(void)
             }
 
             // store back rounded to int16 with clamping to avoid overflow/truncation
+            static inline int16_t clampLongToInt16(long v)
+            {
+                if (v > INT16_MAX) return INT16_MAX;
+                if (v < INT16_MIN) return INT16_MIN;
+                return (int16_t)v;
+            }
+
             long tmp0 = lrintf(v.x);
             long tmp1 = lrintf(v.y);
             long tmp2 = lrintf(v.z);
-            if (tmp0 > INT16_MAX) tmp0 = INT16_MAX;
-            if (tmp0 < INT16_MIN) tmp0 = INT16_MIN;
-            if (tmp1 > INT16_MAX) tmp1 = INT16_MAX;
-            if (tmp1 < INT16_MIN) tmp1 = INT16_MIN;
-            if (tmp2 > INT16_MAX) tmp2 = INT16_MAX;
-            if (tmp2 < INT16_MIN) tmp2 = INT16_MIN;
-            magZero->raw[0] = (int16_t)tmp0;
-            magZero->raw[1] = (int16_t)tmp1;
-            magZero->raw[2] = (int16_t)tmp2;
+            magZero->raw[0] = clampLongToInt16(tmp0);
+            magZero->raw[1] = clampLongToInt16(tmp1);
+            magZero->raw[2] = clampLongToInt16(tmp2);
         }
 
         compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
@@ -601,8 +605,12 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
 
     // apply stored calibration bias in sensor frame BEFORE applying any sensor/board alignment
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC.v[axis] -= magZero->raw[axis];
+    // When actively calibrating and movement has started, skip applying the old bias so the
+    // estimator sees raw sensor values (otherwise it would converge to the delta).
+    if (!(magCalProcessActive && didMovementStart)) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            mag.magADC.v[axis] -= magZero->raw[axis];
+        }
     }
 
     // ** perform calibration, if initiated by switch or Configurator button **
