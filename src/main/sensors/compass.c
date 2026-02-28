@@ -121,6 +121,14 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 
 #define COMPASS_CALIB_VERSION 1
 
+// Clamp a long value into the int16 range.
+static inline int16_t clampLongToInt16(long v)
+{
+    if (v > INT16_MAX) return INT16_MAX;
+    if (v < INT16_MIN) return INT16_MIN;
+    return (int16_t)v;
+}
+
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
     compassConfig->mag_alignment = MAG_ALIGN;
@@ -515,13 +523,6 @@ bool compassInit(void)
             }
 
             // store back rounded to int16 with clamping to avoid overflow/truncation
-            static inline int16_t clampLongToInt16(long v)
-            {
-                if (v > INT16_MAX) return INT16_MAX;
-                if (v < INT16_MIN) return INT16_MIN;
-                return (int16_t)v;
-            }
-
             long tmp0 = lrintf(v.x);
             long tmp1 = lrintf(v.y);
             long tmp2 = lrintf(v.z);
