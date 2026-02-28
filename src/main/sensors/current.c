@@ -40,10 +40,15 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 
+#ifdef USE_CURRENT_METER_INA226
+#include "drivers/bus_i2c.h"
+#include "drivers/ina226.h"
+#endif
+
 #include "current.h"
 
 const char * const currentMeterSourceNames[CURRENT_METER_COUNT] = {
-    "NONE", "ADC", "VIRTUAL", "ESC", "MSP"
+    "NONE", "ADC", "VIRTUAL", "ESC", "MSP", "INA226"
 };
 
 const uint8_t currentMeterIds[] = {
@@ -68,6 +73,9 @@ const uint8_t currentMeterIds[] = {
 #endif
 #ifdef USE_MSP_CURRENT_METER
     CURRENT_METER_ID_MSP_1,
+#endif
+#ifdef USE_CURRENT_METER_INA226
+    CURRENT_METER_ID_INA226_1,
 #endif
 };
 
@@ -124,7 +132,7 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     return centiAmps; // Returns Centiamps to maintain compatability with the rest of the code
 }
 
-#if defined(USE_ADC) || defined(USE_VIRTUAL_CURRENT_METER)
+#if defined(USE_ADC) || defined(USE_VIRTUAL_CURRENT_METER) || defined(USE_CURRENT_METER_INA226)
 static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
 {
     state->mAhDrawnF = state->mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
@@ -291,6 +299,154 @@ void currentMeterMSPRead(currentMeter_t *meter)
 #endif
 
 //
+// INA226
+//
+
+#ifdef USE_CURRENT_METER_INA226
+
+#ifndef DEFAULT_INA226_I2C_DEVICE
+#define DEFAULT_INA226_I2C_DEVICE 1  // 1 = I2CDEV_0 (internal I2C bus)
+#endif
+
+#ifndef DEFAULT_INA226_ADDRESS
+#define DEFAULT_INA226_ADDRESS INA226_I2C_ADDR_DEFAULT  // 0x40
+#endif
+
+#ifndef DEFAULT_INA226_SHUNT_RESISTANCE
+#define DEFAULT_INA226_SHUNT_RESISTANCE 1000  // 1mΩ = 1000µΩ
+#endif
+
+#ifndef DEFAULT_INA226_MAX_CURRENT
+#define DEFAULT_INA226_MAX_CURRENT 50000  // 50A
+#endif
+
+#ifndef DEFAULT_INA226_VBAT_SCALE
+#define DEFAULT_INA226_VBAT_SCALE 100  // 100 = 1.00x (no scaling)
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(currentSensorINA226Config_t, currentSensorINA226Config, PG_CURRENT_SENSOR_INA226_CONFIG, 1);
+
+PG_RESET_TEMPLATE(currentSensorINA226Config_t, currentSensorINA226Config,
+    .i2cDevice = DEFAULT_INA226_I2C_DEVICE,
+    .address = DEFAULT_INA226_ADDRESS,
+    .shuntResistanceMicroOhms = DEFAULT_INA226_SHUNT_RESISTANCE,
+    .maxExpectedCurrentMa = DEFAULT_INA226_MAX_CURRENT,
+    .vbatScale = DEFAULT_INA226_VBAT_SCALE,
+);
+
+static currentMeterINA226State_t currentMeterINA226State;
+static ina226Config_t ina226Cfg;
+static bool ina226Initialized = false;
+static pt1Filter_t ina226Filter;
+static uint16_t ina226LastVoltageMv = 0;  // Last read voltage in mV (shared with voltage meter)
+
+// Store last detection result for diagnostics
+static uint8_t ina226LastDetectResult = 0;  // 0=not tried, 1=success, 2=mfg_id fail, 3=die_id fail, 4=init fail
+
+uint8_t ina226GetDetectResult(void) {
+    return ina226LastDetectResult;
+}
+
+bool ina226IsInitialized(void) {
+    return ina226Initialized;
+}
+
+uint16_t ina226GetLastVoltageMv(void) {
+    return ina226LastVoltageMv;
+}
+
+void currentMeterINA226Init(void)
+{
+    memset(&currentMeterINA226State, 0, sizeof(currentMeterINA226State_t));
+    ina226Initialized = false;
+    ina226LastDetectResult = 0;
+
+    const currentSensorINA226Config_t *config = currentSensorINA226Config();
+    
+    // Wait for INA226 to power up (datasheet says 10us typical, but give it more time)
+    delay(10);
+    
+    // Configure INA226 - i2cDevice follows Betaflight convention: 1 = I2CDEV_0, 2 = I2CDEV_1, etc.
+    if (config->i2cDevice < 1 || config->i2cDevice > I2CDEV_COUNT) {
+        // Invalid device, use default
+        ina226Cfg.i2cDevice = I2CDEV_0;
+    } else {
+        ina226Cfg.i2cDevice = I2C_CFG_TO_DEV(config->i2cDevice);
+    }
+    
+    ina226Cfg.address = config->address;
+    ina226Cfg.shuntResistorMicroOhms = config->shuntResistanceMicroOhms;
+    ina226Cfg.maxCurrentMa = config->maxExpectedCurrentMa;
+    
+    // Try to initialize at configured address only
+    // Note: If INA226 is not present, this will fail silently to avoid I2C bus errors
+    if (ina226Init(&ina226Cfg)) {
+        ina226Initialized = true;
+        ina226LastDetectResult = 1;  // Success
+        // Initialize the filter with a 10Hz cutoff (similar to ADC current filter)
+        pt1FilterInit(&ina226Filter, pt1FilterGain(GET_BATTERY_LPF_FREQUENCY(batteryConfig()->ibatLpfPeriod), HZ_TO_INTERVAL(50)));
+    } else {
+        ina226LastDetectResult = 4;  // Init failed
+    }
+}
+
+void currentMeterINA226Refresh(int32_t lastUpdateAt)
+{
+    if (!ina226Initialized) {
+        currentMeterINA226State.amperageLatest = 0;
+        currentMeterINA226State.amperage = 0;
+        ina226LastVoltageMv = 0;
+        return;
+    }
+    
+    // Sanity check: limit lastUpdateAt to prevent overflow (max 10 seconds = 10,000,000 us)
+    // This handles the case where ibatLastServiced was 0 on first call
+    // Skip mAh accumulation for unreasonable values rather than using fabricated delta
+    // Also skip when lastUpdateAt == 0 (voltage-only mode calling to trigger I2C read)
+    bool skipMahUpdate = false;
+    if (lastUpdateAt > 10000000 || lastUpdateAt <= 0) {
+        skipMahUpdate = true;
+    }
+    
+    // Read ALL data at once (shunt voltage, bus voltage, current, power)
+    // This avoids multiple I2C transactions
+    ina226Data_t data;
+    if (ina226Read(&ina226Cfg, &data)) {
+        // Store voltage for voltage meter to use (no separate I2C call needed)
+        // Apply calibration scale: vbatScale=100 means 1.00x, vbatScale=103 means 1.03x
+        const currentSensorINA226Config_t *config = currentSensorINA226Config();
+        uint8_t scale = config->vbatScale;
+        if (scale == 0) {
+            scale = 100;  // Safety: default to 1.00x if not configured
+        }
+        // Use wider integer to prevent overflow, then clamp to UINT16_MAX
+        uint32_t scaledVoltageMv = (uint32_t)data.busVoltageMv * scale / 100;
+        ina226LastVoltageMv = (scaledVoltageMv > UINT16_MAX) ? UINT16_MAX : (uint16_t)scaledVoltageMv;
+        
+        // Convert mA to centiamperes (1/100 A)
+        int32_t centiAmps = data.currentMa / 10;
+        
+        currentMeterINA226State.amperageLatest = centiAmps;
+        currentMeterINA226State.amperage = pt1FilterApply(&ina226Filter, centiAmps);
+        
+        // Update mAh drawn (skip if lastUpdateAt was unreasonable)
+        if (!skipMahUpdate) {
+            updateCurrentmAhDrawnState(&currentMeterINA226State.mahDrawnState, 
+                                       currentMeterINA226State.amperageLatest, lastUpdateAt);
+        }
+    }
+}
+
+void currentMeterINA226Read(currentMeter_t *meter)
+{
+    meter->amperageLatest = currentMeterINA226State.amperageLatest;
+    meter->amperage = currentMeterINA226State.amperage;
+    meter->mAhDrawn = currentMeterINA226State.mahDrawnState.mAhDrawn;
+}
+
+#endif // USE_CURRENT_METER_INA226
+
+//
 // API for current meters using IDs
 //
 // This API is used by MSP, for configuration/status.
@@ -318,6 +474,11 @@ void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
     else if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
         int motor = id - CURRENT_METER_ID_ESC_MOTOR_1;
         currentMeterESCReadMotor(motor, meter);
+    }
+#endif
+#ifdef USE_CURRENT_METER_INA226
+    else if (id == CURRENT_METER_ID_INA226_1) {
+        currentMeterINA226Read(meter);
     }
 #endif
     else {

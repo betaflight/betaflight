@@ -164,9 +164,14 @@ bool cliMode = false;
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
+#include "sensors/current.h"
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
+
+#ifdef USE_CURRENT_METER_INA226
+#include "drivers/ina226.h"
+#endif
 
 #include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
@@ -4684,6 +4689,213 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
+#if defined(USE_I2C)
+static void cliI2cScan(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    
+    int busNum = 0;
+    if (*cmdline) {
+        busNum = atoi(cmdline);
+    }
+    
+    if (busNum < 0 || busNum >= I2CDEV_COUNT) {
+        cliPrintLinef("Usage: i2c_scan [bus] (0-%d)", I2CDEV_COUNT - 1);
+        return;
+    }
+    
+    i2cDevice_e device = busNum;
+    
+    cliPrintLinef("Scanning I2C bus %d...", busNum);
+    
+    int foundCount = 0;
+    for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+        uint8_t data;
+        // Try to read one byte from address 0x00
+        if (i2cRead(device, addr, 0x00, 1, &data)) {
+            cliPrintLinef("  Found device at 0x%02X (dec %d)", addr, addr);
+            foundCount++;
+        }
+        delay(1);  // Small delay between scans
+    }
+    
+    if (foundCount == 0) {
+        cliPrintLinef("No devices found on I2C bus %d", busNum);
+    } else {
+        cliPrintLinef("Found %d device(s) on I2C bus %d", foundCount, busNum);
+    }
+}
+
+static void cliI2cRead(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    
+    int bus = 0, addr = 0, reg = 0, len = 1;
+    
+    char *ptr = cmdline;
+    char *tok;
+    
+    // Parse: bus addr reg [len]
+    tok = strtok(ptr, " ");
+    if (tok) bus = atoi(tok);
+    tok = strtok(NULL, " ");
+    if (tok) addr = strtol(tok, NULL, 0);  // allows 0x prefix
+    tok = strtok(NULL, " ");
+    if (tok) reg = strtol(tok, NULL, 0);
+    tok = strtok(NULL, " ");
+    if (tok) len = atoi(tok);
+    
+    if (bus < 0 || bus >= I2CDEV_COUNT || addr < 0x08 || addr > 0x77 || reg < 0 || reg > 0xFF || len < 1 || len > 16) {
+        cliPrintLinef("Usage: i2c_read <bus> <addr> <reg> [len]");
+        cliPrintLinef("  bus: 0-%d", I2CDEV_COUNT - 1);
+        cliPrintLinef("  addr: 0x08-0x77 (7-bit address)");
+        cliPrintLinef("  reg: register address (0x00-0xFF)");
+        cliPrintLinef("  len: bytes to read (1-16, default 1)");
+        return;
+    }
+    
+    uint8_t data[16];
+    if (i2cRead((i2cDevice_e)bus, addr, reg, len, data)) {
+        cliPrintf("I2C[%d] 0x%02X reg 0x%02X:", bus, addr, reg);
+        for (int i = 0; i < len; i++) {
+            cliPrintf(" %02X", data[i]);
+        }
+        if (len == 2) {
+            // Show 16-bit value (big-endian, common for sensors)
+            uint16_t val16 = ((uint16_t)data[0] << 8) | data[1];
+            cliPrintf(" (=0x%04X, %u)", val16, val16);
+        }
+        cliPrintLinefeed();
+    } else {
+        cliPrintLinef("I2C read failed");
+    }
+}
+#endif
+
+#ifdef USE_CURRENT_METER_INA226
+static void cliINA226Status(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+    
+    cliPrintLinef("INA226 Current Sensor Status:");
+    cliPrintLinef("  Initialized: %s", ina226IsInitialized() ? "YES" : "NO");
+    cliPrintLinef("  Detect stage: %d (0=not tried, 1=mfg fail, 2=die fail, 3=ok)", ina226GetDetectStage());
+    cliPrintLinef("  Init stage: %d (0=not tried, 1=detect fail, 2=reset fail, 3=config fail, 4=ok)", ina226GetInitStage());
+    cliPrintLinef("  Last Manufacturer ID: 0x%04X (expected 0x5449 'TI')", ina226GetLastMfgId());
+    cliPrintLinef("  Last Die ID: 0x%04X (expected 0x2260)", ina226GetLastDieId());
+    
+    // Show configuration
+    const currentSensorINA226Config_t *config = currentSensorINA226Config();
+    cliPrintLinef("  Config: i2c_device=%d, address=0x%02X, shunt=%d uOhm, max_current=%d mA, vbat_scale=%d", 
+                  config->i2cDevice, config->address, config->shuntResistanceMicroOhms, 
+                  config->maxExpectedCurrentMa, config->vbatScale);
+    
+    // Calculate and show current LSB for debugging
+    // Use 64-bit math to avoid overflow when maxExpectedCurrentMa >= 4295 mA
+    uint64_t currentLsbNa = ((uint64_t)config->maxExpectedCurrentMa * 1000000ULL) / 32768ULL;
+    cliPrintLinef("  Calculated current_LSB: %llu nA (%llu.%02llu mA per bit)", 
+                  (unsigned long long)currentLsbNa, 
+                  (unsigned long long)(currentLsbNa / 1000000ULL), 
+                  (unsigned long long)((currentLsbNa % 1000000ULL) / 10000ULL));
+    
+    // Try direct read from INA226
+    if (ina226IsInitialized()) {
+        // Read current meter state
+        currentMeter_t meter;
+        currentMeterINA226Read(&meter);
+        cliPrintLinef("  Current (from state): %d.%02d A", meter.amperage / 100, ABS(meter.amperage) % 100);
+        cliPrintLinef("  mAh drawn: %d", meter.mAhDrawn);
+        
+        // Show cached voltage
+        uint16_t voltageMv = ina226GetLastVoltageMv();
+        cliPrintLinef("  Voltage (cached): %d.%02d V", voltageMv / 1000, (voltageMv % 1000) / 10);
+        
+        // Try calling ina226Read directly with proper calibration
+        cliPrintLinef("  --- Driver Read Test (with calibration) ---");
+        i2cDevice_e i2cDev = config->i2cDevice > 0 ? (config->i2cDevice - 1) : I2CDEV_0;
+        ina226Config_t testCfg = {
+            .i2cDevice = i2cDev,
+            .address = config->address,
+            .shuntResistorMicroOhms = config->shuntResistanceMicroOhms,
+            .maxCurrentMa = config->maxExpectedCurrentMa,
+            .calibrationValue = 0,
+            .currentLsbNa = currentLsbNa
+        };
+        // Calculate calibration
+        uint64_t numerator = 5120000000000ULL;
+        uint64_t denominator = (uint64_t)currentLsbNa * (uint64_t)config->shuntResistanceMicroOhms;
+        if (denominator > 0) {
+            testCfg.calibrationValue = (uint16_t)(numerator / denominator);
+        }
+        cliPrintLinef("  Calibration value: %d", testCfg.calibrationValue);
+        
+        ina226Data_t testData;
+        bool readOk = ina226Read(&testCfg, &testData);
+        cliPrintLinef("  ina226Read() returned: %s", readOk ? "TRUE" : "FALSE");
+        if (readOk) {
+            cliPrintLinef("  shuntVoltageRaw: %d (LSB=2.5uV -> %d uV)", 
+                          testData.shuntVoltageRaw, 
+                          (testData.shuntVoltageRaw * 25) / 10);
+            cliPrintLinef("  busVoltageRaw: 0x%04X", testData.busVoltageRaw);
+            cliPrintLinef("  busVoltageMv: %d", testData.busVoltageMv);
+            cliPrintLinef("  currentRaw: %d", testData.currentRaw);
+            cliPrintLinef("  currentMa: %ld", (long)testData.currentMa);
+            cliPrintLinef("  powerMw: %lu", (unsigned long)testData.powerMw);
+            cliPrintLinef("  dataValid: %s", testData.dataValid ? "YES" : "NO");
+        }
+        
+        // Force manual refresh and check result
+        cliPrintLinef("  --- Manual Refresh Test ---");
+        currentMeterINA226Refresh(1000);  // 1000us = 1ms fake update time
+        voltageMv = ina226GetLastVoltageMv();
+        cliPrintLinef("  After refresh voltage: %d.%02d V", voltageMv / 1000, (voltageMv % 1000) / 10);
+        
+        // Try direct I2C read of shunt voltage register (0x01)
+        cliPrintLinef("  --- Direct I2C Read Test ---");
+        uint8_t rxBuf[2] = { 0 };
+        bool i2cError = false;
+        
+        // Read shunt voltage register (0x01)
+        if (i2cRead(i2cDev, config->address, 0x01, 2, rxBuf)) {
+            while (i2cBusy(i2cDev, &i2cError)) {}
+            int16_t rawShunt = (int16_t)((rxBuf[0] << 8) | rxBuf[1]);
+            int32_t shuntUv = (rawShunt * 25) / 10;  // 2.5uV per LSB
+            cliPrintLinef("  Shunt voltage raw: %d -> %ld uV", rawShunt, (long)shuntUv);
+            // Calculate current from shunt voltage
+            if (config->shuntResistanceMicroOhms > 0) {
+                int32_t calcCurrentMa = (rawShunt * 2500L) / (int32_t)config->shuntResistanceMicroOhms;
+                cliPrintLinef("  Calc current from shunt: %ld mA", (long)calcCurrentMa);
+            }
+        }
+        
+        // Read bus voltage register (0x02)
+        if (i2cRead(i2cDev, config->address, 0x02, 2, rxBuf)) {
+            while (i2cBusy(i2cDev, &i2cError)) {}
+            uint16_t rawVoltage = (rxBuf[0] << 8) | rxBuf[1];
+            uint16_t voltageMvDirect = (uint32_t)rawVoltage * 125 / 100;
+            cliPrintLinef("  Bus voltage raw: 0x%04X -> %d mV", rawVoltage, voltageMvDirect);
+        }
+    }
+}
+
+static void cliINA226Init(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+    
+    cliPrintLinef("Manually initializing INA226...");
+    currentMeterINA226Init();
+    
+    if (ina226IsInitialized()) {
+        cliPrintLinef("INA226 initialized successfully!");
+    } else {
+        cliPrintLinef("INA226 initialization failed!");
+        cliPrintLinef("  Init stage: %d (1=detect, 2=reset, 3=config)", ina226GetInitStage());
+    }
+}
+#endif
+
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6636,6 +6848,14 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if defined(USE_I2C)
+    CLI_COMMAND_DEF("i2c_read", "read I2C register", "<bus> <addr> <reg> [len]", cliI2cRead),
+    CLI_COMMAND_DEF("i2c_scan", "scan I2C bus for devices", "[bus]", cliI2cScan),
+#endif
+#ifdef USE_CURRENT_METER_INA226
+    CLI_COMMAND_DEF("ina226_init", "manually initialize INA226", NULL, cliINA226Init),
+    CLI_COMMAND_DEF("ina226_status", "show INA226 current sensor status", NULL, cliINA226Status),
+#endif
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif

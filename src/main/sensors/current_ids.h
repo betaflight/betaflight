@@ -72,4 +72,7 @@ typedef enum {
     CURRENT_METER_ID_MSP_1 = 90,       // 90-99 for MSP meters
     CURRENT_METER_ID_MSP_2,
 
+    CURRENT_METER_ID_INA226_1 = 100,   // 100-109 for INA226 meters
+    CURRENT_METER_ID_INA226_2,
+
 } currentMeterId_e;

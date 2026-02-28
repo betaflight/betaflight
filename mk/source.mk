@@ -329,6 +329,7 @@ COMMON_SRC += \
             drivers/compass/compass_mpu925x_ak8963.c \
             drivers/compass/compass_qmc5883.c \
             drivers/compass/compass_virtual.c \
+            drivers/ina226.c \
             drivers/max7456.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_rtc6705_soft_spi.c
