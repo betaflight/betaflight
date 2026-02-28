@@ -406,4 +406,5 @@ const char *getMcuTypeName(void) { return targetName; }
 float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
+const uint16_t *getBuildOptions(unsigned *count) { *count = 0; return NULL; }
 }
