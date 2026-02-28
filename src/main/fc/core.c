@@ -149,6 +149,12 @@ int16_t magHold;
 static FAST_DATA_ZERO_INIT uint8_t pidUpdateCounter;
 
 static bool crashFlipModeActive = false;
+static bool crashflipExitThrottleWait = false;
+static bool crashflipRearmPending = false;
+static timeUs_t crashflipDisarmTimeUs = 0;
+
+#define CRASHFLIP_REARM_DELAY_US 500000  // 500ms zero-throttle before re-arming so ESC accepts direction cmd
+
 static timeUs_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 static int lastArmingDisabledReason = 0;
 static timeUs_t lastDisarmTimeUs;
@@ -283,24 +289,27 @@ void updateArmingStatus(void)
         LED0_ON;
 
 #ifdef USE_DSHOT
-// --- handle crashFlip behaviours while armed ---
-if (crashFlipModeActive) {
-    if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
-        // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
-        if (!mixerConfig()->crashflip_auto_rearm) {
-            // we are in manual re-arm mode:  block arming until manual re-arm:
-            setArmingDisabled(ARMING_DISABLED_CRASHFLIP); // block tryArm() until user disarms manually
-            clearWasLastDisarmUserRequested();
-            // tell disarm() that this was not a user generated disarm
-            // also clear the flag in rc_controls so that it will only be true when the pilot makes a new user manual disarm
-            disarm(DISARM_REASON_CRASHFLIP); // stop the motors, revert crashflipMode and set motor direction normal
-        } else {
-            // we are in auto re-arm mode, terminate crashflip mode and set motor direction normal
-            setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-            crashFlipModeActive = false;
+        if (mixerConfig()->crashflip_no_rearm && isMotorProtocolDshot()) {
+            // No-rearm crashflip: toggle triggers a brief disarm so that the
+            // normal tryArm() path re-arms with the correct motor direction.
+            if (crashFlipModeActive != IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+                crashFlipModeActive = false;
+                DISABLE_ARMING_FLAG(ARMED);
+                crashflipRearmPending = true;
+                crashflipDisarmTimeUs = micros();
+            }
+        } else if (crashFlipModeActive) {
+            if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+                if (!mixerConfig()->crashflip_auto_rearm) {
+                    setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+                    clearWasLastDisarmUserRequested();
+                    disarm(DISARM_REASON_CRASHFLIP);
+                } else {
+                    setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                    crashFlipModeActive = false;
+                }
+            }
         }
-    }
-}
 #endif // USE_DSHOT
     } else {
         // arming switch on, but not yet armed; currently DISARMED
@@ -529,6 +538,7 @@ void disarm(flightLogDisarmReason_e reason)
     if (crashFlipModeActive) {
         crashFlipModeActive = false;
     }
+    crashflipExitThrottleWait = false;
 
         // always set motor direction to normal on disarming
 #ifdef USE_DSHOT
@@ -544,13 +554,30 @@ void disarm(flightLogDisarmReason_e reason)
 
 void tryArm(void)
 {
+    // No-rearm crashflip: hold off re-arming until ESCs have had enough
+    // zero-throttle time to accept the direction command during tryArm().
+    static bool crashflipRearmAttempt = false;
+    if (crashflipRearmPending) {
+        if (cmpTimeUs(micros(), crashflipDisarmTimeUs) >= CRASHFLIP_REARM_DELAY_US) {
+            crashflipRearmPending = false;
+            crashflipRearmAttempt = true;
+        } else {
+            return;
+        }
+    }
+
     if (armingConfig()->gyro_cal_on_first_arm) {
         gyroStartCalibration(true);
     }
 
-
     updateArmingStatus();
-    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed, 
+
+    // The programmatic disarm never cycled the arm switch off, so
+    // ARMING_DISABLED_ARM_SWITCH would permanently lock out re-arming.
+    if (crashflipRearmAttempt) {
+        crashflipRearmAttempt = false;
+        unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+    }
 
 
     if (!isArmingDisabled()) {
@@ -1406,6 +1433,16 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 bool isCrashFlipModeActive(void)
 {
     return crashFlipModeActive;
+}
+
+bool isCrashFlipExitThrottleWait(void)
+{
+    return crashflipExitThrottleWait;
+}
+
+bool isCrashFlipDirectionPending(void)
+{
+    return false;
 }
 
 timeUs_t getLastDisarmTimeUs(void)
