@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #include "platform.h"
 
@@ -443,14 +444,24 @@ bool compassInit(void)
             // apply S^T
             matrixTrnVectorMul(&v, &magDev.rotationMatrix, &tmp);
 
-            // store back rounded to int16
-            magZero->raw[0] = lrintf(v.x);
-            magZero->raw[1] = lrintf(v.y);
-            magZero->raw[2] = lrintf(v.z);
+            // store back rounded to int16 with clamping to avoid overflow/truncation
+            long tmp0 = lrintf(v.x);
+            long tmp1 = lrintf(v.y);
+            long tmp2 = lrintf(v.z);
+            if (tmp0 > INT16_MAX) tmp0 = INT16_MAX;
+            if (tmp0 < INT16_MIN) tmp0 = INT16_MIN;
+            if (tmp1 > INT16_MAX) tmp1 = INT16_MAX;
+            if (tmp1 < INT16_MIN) tmp1 = INT16_MIN;
+            if (tmp2 > INT16_MAX) tmp2 = INT16_MAX;
+            if (tmp2 < INT16_MIN) tmp2 = INT16_MIN;
+            magZero->raw[0] = (int16_t)tmp0;
+            magZero->raw[1] = (int16_t)tmp1;
+            magZero->raw[2] = (int16_t)tmp2;
         }
 
         compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
-        saveConfigAndNotify();
+        // mark config dirty and defer actual EEPROM write to a safer point in boot
+        setConfigDirty();
     }
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
