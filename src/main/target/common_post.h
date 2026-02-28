@@ -217,7 +217,7 @@
 
 #endif // defined(USE_RX_CC2500)
 
-#if defined(CAMERA_CONTROL_PIN) && defined(USE_VTX) && !defined(USE_CAMERA_CONTROL)
+#if defined(CAMERA_CONTROL_PIN) && defined(USE_OSD_SD) && !defined(USE_CAMERA_CONTROL)
 #define USE_CAMERA_CONTROL
 #endif
 
