@@ -459,6 +459,7 @@
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
+#define USE_OSD_CUSTOM_TEXT
 
 #if defined(USE_GPS)
 #define USE_CMS_GPS_RESCUE_MENU
@@ -591,4 +592,10 @@
   #else
     #define GYRO_COUNT 1
   #endif
+#endif
+
+/* ENABLE CATCH ALLS HERE */
+
+#if defined(USE_OSD_CUSTOM_TEXT) && !defined(ENABLE_OSD_CUSTOM_TEXT)
+#define ENABLE_OSD_CUSTOM_TEXT 1
 #endif
