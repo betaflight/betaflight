@@ -2688,6 +2688,128 @@ void GPS_calc_longitude_scaling(int32_t lat)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+// Rolling Origin System - Local Tangent Plane Navigation
+// Maintains a coordinate origin that resets every 500m for precision
+//
+
+typedef struct navigationOrigin_s {
+    gpsLocation_t originLLH;        // Current origin in LLA coordinates
+    float originCosLat;             // cos(latitude) at origin for longitude scaling
+    uint32_t distanceFromOriginCm;  // Distance from origin to current position
+    bool isValid;                   // Whether origin has been initialized
+} navigationOrigin_t;
+
+static navigationOrigin_t navOrigin = {
+    .isValid = false,
+    .distanceFromOriginCm = 0,
+    .originCosLat = 1.0f
+};
+
+// Initialize navigation origin
+void navOriginInit(const gpsLocation_t *initialPos)
+{
+    navOrigin.originLLH = *initialPos;
+    navOrigin.originCosLat = cos_approx(DEGREES_TO_RADIANS((float)initialPos->lat / GPS_DEGREES_DIVIDER));
+    navOrigin.distanceFromOriginCm = 0;
+    navOrigin.isValid = true;
+}
+
+// Convert LLH coordinates to NED (North-East-Down) relative to current origin
+void navOriginLLHtoNED(const gpsLocation_t *llh, vector3_t *ned)
+{
+    if (!navOrigin.isValid) {
+        // Origin not initialized - return zero vector
+        ned->x = 0.0f;
+        ned->y = 0.0f;
+        ned->z = 0.0f;
+        return;
+    }
+
+    // Calculate deltas from origin
+    const int32_t deltaLat = llh->lat - navOrigin.originLLH.lat;
+
+    // Use int64_t for deltaLon: near the 180° meridian the raw difference
+    // of two int32_t longitudes can exceed int32_t range (up to ±3.6e9).
+    const int64_t deg360 = 360 * (int64_t)GPS_DEGREES_DIVIDER;
+    int64_t deltaLon64 = (int64_t)llh->lon - (int64_t)navOrigin.originLLH.lon;
+
+    // Wrap into [-180°, +180°) range
+    if (deltaLon64 > deg360 / 2) {
+        deltaLon64 -= deg360;
+    } else if (deltaLon64 < -deg360 / 2) {
+        deltaLon64 += deg360;
+    }
+
+    // Safe to narrow: after wrapping the value fits in int32_t
+    const int32_t deltaLon = (int32_t)deltaLon64;
+
+    // Convert to NED (cm)
+    ned->x = (float)deltaLat * EARTH_ANGLE_TO_CM;  // North
+    ned->y = (float)deltaLon * navOrigin.originCosLat * EARTH_ANGLE_TO_CM;  // East
+    ned->z = -(float)(llh->altCm - navOrigin.originLLH.altCm);  // Down (negative altitude)
+}
+
+// Convert NED coordinates to LLH relative to current origin
+void navOriginNEDtoLLH(const vector3_t *ned, gpsLocation_t *llh)
+{
+    if (!navOrigin.isValid) {
+        // Origin not initialized - return origin
+        *llh = navOrigin.originLLH;
+        return;
+    }
+
+    // Convert from NED (cm) back to LLA
+    int32_t deltaLat = (int32_t)(ned->x / EARTH_ANGLE_TO_CM);
+    int32_t deltaLon = (int32_t)(ned->y / (navOrigin.originCosLat * EARTH_ANGLE_TO_CM));
+
+    llh->lat = navOrigin.originLLH.lat + deltaLat;
+    llh->lon = navOrigin.originLLH.lon + deltaLon;
+    llh->altCm = navOrigin.originLLH.altCm - (int32_t)ned->z;  // Down to Up conversion
+}
+
+// Reset the origin to a new position
+static void navOriginReset(const gpsLocation_t *newOrigin)
+{
+    navOrigin.originLLH = *newOrigin;
+    navOrigin.originCosLat = cos_approx(DEGREES_TO_RADIANS((float)newOrigin->lat / GPS_DEGREES_DIVIDER));
+    navOrigin.distanceFromOriginCm = 0;
+}
+
+// Update navigation origin, reset if distance exceeds threshold
+void navOriginUpdate(const gpsLocation_t *currentPos)
+{
+    if (!navOrigin.isValid) {
+        navOriginInit(currentPos);
+        return;
+    }
+
+    // Calculate distance from current origin
+    vector3_t currentNED;
+    navOriginLLHtoNED(currentPos, &currentNED);
+
+    // 2D distance (ignore altitude for reset decision)
+    float distSq = currentNED.x * currentNED.x + currentNED.y * currentNED.y;
+    navOrigin.distanceFromOriginCm = (uint32_t)sqrtf(distSq);
+
+    // Reset origin if we've traveled more than 500m
+    if (navOrigin.distanceFromOriginCm > NAV_ORIGIN_RESET_DISTANCE_CM) {
+        navOriginReset(currentPos);
+    }
+}
+
+// Get distance from origin (for debugging/telemetry)
+uint32_t navOriginGetDistanceCm(void)
+{
+    return navOrigin.distanceFromOriginCm;
+}
+
+// Check if origin is valid
+bool navOriginIsValid(void)
+{
+    return navOrigin.isValid;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
 // Calculate the distance flown from gps position data
 //
 static void GPS_calculateDistanceFlown(bool initialize)
@@ -2716,6 +2838,7 @@ void GPS_reset_home_position(void)
             // those checks are always true for tryArm, but may not be true for gyro cal
             GPS_home_llh = gpsSol.llh;
             GPS_calc_longitude_scaling(gpsSol.llh.lat);
+            navOriginInit(&gpsSol.llh);  // Initialize rolling origin for navigation
             ENABLE_STATE(GPS_FIX_HOME);
             // no point beeping success here since:
             // when triggered by tryArm, the arming beep is modified to indicate the GPS home fix status on arming, and

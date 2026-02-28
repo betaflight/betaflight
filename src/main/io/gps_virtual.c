@@ -28,7 +28,13 @@
 
 #include "io/gps_virtual.h"
 
-static gpsSolutionData_t gpsVirtualData;
+static gpsSolutionData_t gpsVirtualData = {
+    .numSat = 12,
+    .dop.pdop = 10,
+    .acc.hAcc = 500,
+    .acc.vAcc = 500,
+    .acc.sAcc = 400,
+};
 
 void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course)
 {

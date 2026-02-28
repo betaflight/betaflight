@@ -109,6 +109,10 @@ bool cliMode = false;
 #include "flight/position.h"
 #include "flight/servos.h"
 
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+#include "flight/autopilot_waypoint.h"
+#endif
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
@@ -123,6 +127,7 @@ bool cliMode = false;
 
 #include "msp/msp.h"
 #include "msp/msp_box.h"
+#include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
 
 #include "osd/osd.h"
@@ -133,6 +138,7 @@ bool cliMode = false;
 #include "pg/board.h"
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
+#include "pg/flight_plan.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
 #include "pg/mco.h"
@@ -2447,6 +2453,452 @@ static void cliServoMix(const char *cmdName, char *cmdline)
     }
 }
 #endif
+
+#if ENABLE_FLIGHT_PLAN
+
+static const char * const waypointTypeNames[] = {
+    "FLYOVER", "FLYBY", "HOLD", "LAND"
+};
+
+static const char * const waypointPatternNames[] = {
+    "ORBIT", "FIGURE8"
+};
+
+// Parse decimal coordinate string to int32 (degrees * 10^7)
+// Accepts formats like: -33.5429890, 151.6664560, -33.5, 151
+static bool parseDecimalCoordinate(const char *str, int32_t *result)
+{
+    if (!str || !result) {
+        return false;
+    }
+
+    bool negative = false;
+    const char *ptr = str;
+
+    // Handle sign
+    if (*ptr == '-') {
+        negative = true;
+        ptr++;
+    } else if (*ptr == '+') {
+        ptr++;
+    }
+
+    // Parse integer part (as positive value) with overflow checks
+    int32_t integerPart = 0;
+    if (!(*ptr >= '0' && *ptr <= '9')) {
+        return false; // No digits found
+    }
+    while (*ptr >= '0' && *ptr <= '9') {
+        int digit = (*ptr - '0');
+        // Check for overflow before multiply and add
+        if (integerPart > (INT32_MAX - digit) / 10) {
+            return false; // Would overflow
+        }
+        integerPart = integerPart * 10 + digit;
+        ptr++;
+    }
+
+    // Parse fractional part (up to 7 digits) with overflow checks
+    int32_t fractionalPart = 0;
+    int32_t divisor = 10000000;
+
+    if (*ptr == '.') {
+        ptr++;
+        int digits = 0;
+        while (*ptr >= '0' && *ptr <= '9' && digits < 7) {
+            int digit = (*ptr - '0');
+            // Check for overflow before multiply and add
+            if (fractionalPart > (INT32_MAX - digit) / 10) {
+                return false; // Would overflow
+            }
+            fractionalPart = fractionalPart * 10 + digit;
+            divisor /= 10;
+            digits++;
+            ptr++;
+        }
+        // Ignore any additional digits beyond 7 decimal places
+        while (*ptr >= '0' && *ptr <= '9') {
+            ptr++;
+        }
+        // Check for overflow before scaling fractional part
+        if (divisor > 0 && fractionalPart > INT32_MAX / divisor) {
+            return false; // Would overflow
+        }
+        fractionalPart *= divisor; // Scale to 7 decimal places
+    }
+
+    // Check for trailing garbage
+    if (*ptr != '\0') {
+        return false;
+    }
+
+    // Check for overflow before computing result
+    // For positive: integerPart * 10000000 + fractionalPart must fit in INT32_MAX
+    if (integerPart > (INT32_MAX - fractionalPart) / 10000000) {
+        return false; // Would overflow
+    }
+
+    int32_t microdegrees = integerPart * 10000000 + fractionalPart;
+
+    // Apply sign and check it fits in int32_t range
+    if (negative) {
+        // Check if negation would overflow (microdegrees > INT32_MAX means -microdegrees < INT32_MIN)
+        // Since microdegrees is positive and <= INT32_MAX, -microdegrees >= -INT32_MAX
+        // But -INT32_MAX = INT32_MIN + 1, so we're safe except when microdegrees would make result = INT32_MIN - 1
+        // Actually, we need to check if the negated value would be < INT32_MIN
+        // For int32_t: INT32_MIN = -2147483648, INT32_MAX = 2147483647
+        // If microdegrees = 2147483648, then -microdegrees = -2147483648 = INT32_MIN (valid)
+        // But microdegrees is int32_t, max is 2147483647, so -microdegrees = -2147483647 (valid)
+        // Special case: if microdegrees = 0, result is 0 (valid)
+        // The only concern is if microdegrees = INT32_MAX + 1, but that's impossible since microdegrees is int32_t
+        // So negation is always safe here
+        microdegrees = -microdegrees;
+    }
+
+    *result = microdegrees;
+    return true;
+}
+
+// Format coordinate as decimal string with 7 decimal places
+static void formatDecimalCoordinate(int32_t value, char *buffer, size_t bufferSize)
+{
+    UNUSED(bufferSize);
+
+    bool negative = value < 0;
+    int32_t integerPart, fractionalPart;
+
+    // Special case for INT32_MIN to avoid UB when negating
+    if (value == INT32_MIN) {
+        // INT32_MIN = -2147483648
+        // -2147483648 / 10000000 = -214 (rounds toward zero)
+        // -2147483648 % 10000000 = -7483648
+        integerPart = 214;
+        fractionalPart = 7483648;
+    } else {
+        int32_t absValue = negative ? -value : value;
+        integerPart = absValue / 10000000;
+        fractionalPart = absValue % 10000000;
+    }
+
+    tfp_sprintf(buffer, "%s%d.%07d", negative ? "-" : "", integerPart, fractionalPart);
+}
+
+static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flightPlanConfig, const flightPlanConfig_t *defaultFlightPlanConfig, const char *headingStr)
+{
+    const char *format = "waypoint insert %u %s %s %d %u %s %u %s";
+    headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
+
+    // Determine if all waypoints equal their defaults
+    bool equalsDefaultAll = false;
+    if (flightPlanConfig->waypointCount > 0) {
+        if (defaultFlightPlanConfig) {
+            // Check if counts match
+            if (flightPlanConfig->waypointCount == defaultFlightPlanConfig->waypointCount) {
+                equalsDefaultAll = true;
+                // Check if all waypoints match their defaults
+                for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
+                    const waypoint_t *wp = &flightPlanConfig->waypoints[i];
+                    const waypoint_t *defaultWp = &defaultFlightPlanConfig->waypoints[i];
+                    if (memcmp(wp, defaultWp, sizeof(*wp)) != 0) {
+                        equalsDefaultAll = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Emit "waypoint clear" before inserts (suppressed in diff when equalsDefaultAll is true)
+        cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
+    }
+
+    for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
+        const waypoint_t *wp = &flightPlanConfig->waypoints[i];
+        bool equalsDefault = false;
+
+        char latBuffer[16];
+        char lonBuffer[16];
+
+        if (defaultFlightPlanConfig && i < defaultFlightPlanConfig->waypointCount) {
+            const waypoint_t *defaultWp = &defaultFlightPlanConfig->waypoints[i];
+            equalsDefault = !memcmp(wp, defaultWp, sizeof(*wp));
+            headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
+
+            formatDecimalCoordinate(defaultWp->latitude, latBuffer, sizeof(latBuffer));
+            formatDecimalCoordinate(defaultWp->longitude, lonBuffer, sizeof(lonBuffer));
+
+            const char *defaultTypeName = (defaultWp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[defaultWp->type] : "UNKNOWN";
+            const char *defaultPatternName = (defaultWp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[defaultWp->pattern] : "UNKNOWN";
+
+            cliDefaultPrintLinef(dumpMask, equalsDefault, format,
+                i,
+                latBuffer,
+                lonBuffer,
+                defaultWp->altitude,
+                defaultWp->speed,
+                defaultTypeName,
+                defaultWp->duration,
+                defaultPatternName
+            );
+        }
+
+        formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
+        formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+
+        const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
+        const char *patternName = (wp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[wp->pattern] : "UNKNOWN";
+
+        cliDumpPrintLinef(dumpMask, equalsDefault, format,
+            i,
+            latBuffer,
+            lonBuffer,
+            wp->altitude,
+            wp->speed,
+            typeName,
+            wp->duration,
+            patternName
+        );
+    }
+}
+
+static void cliWaypoint(const char *cmdName, char *cmdline)
+{
+    flightPlanConfig_t *config = flightPlanConfigMutable();
+
+    // Defensive: detect corrupted waypointCount from EEPROM
+    if (config->waypointCount > MAX_WAYPOINTS) {
+        config->waypointCount = 0;
+        cliPrintErrorLinef(cmdName, "WAYPOINT COUNT CORRUPTED, CLEARED");
+    }
+
+    // No arguments - list all waypoints
+    if (isEmpty(cmdline)) {
+        printWaypoint(DUMP_MASTER, flightPlanConfig(), NULL, NULL);
+        return;
+    }
+
+    // Parse arguments into args array
+    enum { OP = 0, INDEX, LAT, LON, ALT, SPEED, TYPE, DURATION, PATTERN, MAX_ARGS };
+    char *args[MAX_ARGS];
+    int argCount = 0;
+
+    char *ptr = cmdline;
+    while (*ptr && argCount < MAX_ARGS) {
+        while (*ptr == ' ') ptr++;
+        if (*ptr == '\0') break;
+        args[argCount++] = ptr;
+        while (*ptr && *ptr != ' ') ptr++;
+        if (*ptr) *ptr++ = '\0';
+    }
+
+    // Validate we have at least one argument
+    if (argCount == 0) {
+        return;
+    }
+
+    // Check for clear operation
+    if (strcasecmp(args[OP], "clear") == 0) {
+        config->waypointCount = 0;
+        cliPrintLine("Waypoints cleared");
+        return;
+    }
+
+    // Check for list operation
+    if (strcasecmp(args[OP], "list") == 0) {
+        printWaypoint(DUMP_MASTER, flightPlanConfig(), NULL, NULL);
+        return;
+    }
+
+    // Check for status operation
+    if (strcasecmp(args[OP], "status") == 0) {
+        cliPrintLinef("Waypoint count: %u", config->waypointCount);
+
+        // List configured waypoints
+        if (config->waypointCount > 0) {
+            cliPrintLine("\nConfigured waypoints:");
+            for (int i = 0; i < config->waypointCount; i++) {
+                const waypoint_t *wp = &config->waypoints[i];
+                char latBuffer[16];
+                char lonBuffer[16];
+                formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
+                formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+                cliPrintLinef("  [%d] %s %s %dm %s",
+                    i, latBuffer, lonBuffer, wp->altitude, waypointTypeNames[wp->type]);
+            }
+        }
+
+        // TODO: Add runtime status when Phase 3 (waypoint tracker) is complete
+        // This will show: current waypoint, state, distance, bearing, etc.
+        cliPrintLine("\nRuntime status: Not yet implemented (requires Phase 3)");
+        return;
+    }
+
+    // Check for remove operation
+    if (strcasecmp(args[OP], "remove") == 0) {
+        if (argCount != 2) {
+            cliShowInvalidArgumentCountError(cmdName);
+            return;
+        }
+
+        int index = atoi(args[INDEX]);
+        if (index < 0 || index >= config->waypointCount) {
+            cliShowArgumentRangeError(cmdName, "index", 0, config->waypointCount - 1);
+            return;
+        }
+
+        // Shift waypoints down to fill the gap
+        for (int i = index; i < config->waypointCount - 1; i++) {
+            config->waypoints[i] = config->waypoints[i + 1];
+        }
+        config->waypointCount--;
+
+        cliPrintLinef("Waypoint %d removed, %d waypoints remaining", index, config->waypointCount);
+        return;
+    }
+
+    // Check for insert or update operation
+    bool isInsert = strcasecmp(args[OP], "insert") == 0;
+    bool isUpdate = strcasecmp(args[OP], "update") == 0;
+
+    if (!isInsert && !isUpdate) {
+        cliPrintErrorLinef(cmdName, "INVALID OPERATION. USE: list, status, insert, update, remove, clear");
+        return;
+    }
+
+    if (argCount != 9) {
+        cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
+    // Parse index
+    int index = atoi(args[INDEX]);
+
+    if (isInsert) {
+        // For insert, index can be 0 to waypointCount (inclusive, to append)
+        if (index < 0 || index > config->waypointCount || config->waypointCount >= MAX_WAYPOINTS) {
+            if (config->waypointCount >= MAX_WAYPOINTS) {
+                cliPrintErrorLinef(cmdName, "WAYPOINT LIST FULL");
+            } else {
+                cliShowArgumentRangeError(cmdName, "index", 0, config->waypointCount);
+            }
+            return;
+        }
+    } else {
+        // For update, index must be within existing waypoints
+        if (index < 0 || index >= config->waypointCount) {
+            cliShowArgumentRangeError(cmdName, "index", 0, config->waypointCount - 1);
+            return;
+        }
+    }
+
+    // Parse coordinates (decimal format with up to 7 decimal places)
+    int32_t latitude, longitude;
+    if (!parseDecimalCoordinate(args[LAT], &latitude)) {
+        cliPrintErrorLinef(cmdName, "INVALID LATITUDE FORMAT. USE: -90.0000000 to 90.0000000");
+        return;
+    }
+    if (!parseDecimalCoordinate(args[LON], &longitude)) {
+        cliPrintErrorLinef(cmdName, "INVALID LONGITUDE FORMAT. USE: -180.0000000 to 180.0000000");
+        return;
+    }
+
+    // Parse other values
+    int32_t altitude = atoi(args[ALT]);
+
+    // Parse speed and duration as signed ints first to validate they're non-negative
+    int tmpSpeed = atoi(args[SPEED]);
+    int tmpDuration = atoi(args[DURATION]);
+
+    if (tmpSpeed < 0 || tmpSpeed > UINT16_MAX) {
+        cliShowArgumentRangeError(cmdName, "speed", 0, UINT16_MAX);
+        return;
+    }
+    if (tmpDuration < 0 || tmpDuration > UINT16_MAX) {
+        cliShowArgumentRangeError(cmdName, "duration", 0, UINT16_MAX);
+        return;
+    }
+
+    // Parse type
+    uint8_t type = 0;
+    bool typeFound = false;
+    for (uint8_t i = 0; i < ARRAYLEN(waypointTypeNames); i++) {
+        if (strcasecmp(args[TYPE], waypointTypeNames[i]) == 0) {
+            type = i;
+            typeFound = true;
+            break;
+        }
+    }
+    if (!typeFound) {
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        return;
+    }
+
+    // Parse pattern
+    uint8_t pattern = 0;
+    bool patternFound = false;
+    for (uint8_t i = 0; i < ARRAYLEN(waypointPatternNames); i++) {
+        if (strcasecmp(args[PATTERN], waypointPatternNames[i]) == 0) {
+            pattern = i;
+            patternFound = true;
+            break;
+        }
+    }
+    if (!patternFound) {
+        cliPrintErrorLinef(cmdName, "INVALID PATTERN. USE: ORBIT, FIGURE8");
+        return;
+    }
+
+    // Validate ranges (stored as degrees * 10^7)
+    if (latitude < -900000000 || latitude > 900000000) {
+        cliPrintErrorLinef(cmdName, "LATITUDE OUT OF RANGE. USE: -90.0 to 90.0");
+        return;
+    }
+    if (longitude < -1800000000 || longitude > 1800000000) {
+        cliPrintErrorLinef(cmdName, "LONGITUDE OUT OF RANGE. USE: -180.0 to 180.0");
+        return;
+    }
+    if (altitude < 0) {
+        cliShowArgumentRangeError(cmdName, "altitude", 0, INT32_MAX);
+        return;
+    }
+
+    // Perform insert or update
+    if (isInsert) {
+        // Shift waypoints up to make room
+        for (int i = config->waypointCount; i > index; i--) {
+            config->waypoints[i] = config->waypoints[i - 1];
+        }
+        config->waypointCount++;
+    }
+
+    // Set waypoint data
+    waypoint_t *wp = &config->waypoints[index];
+    wp->latitude = latitude;
+    wp->longitude = longitude;
+    wp->altitude = altitude;
+    wp->speed = (uint16_t)tmpSpeed;
+    wp->duration = (uint16_t)tmpDuration;
+    wp->type = type;
+    wp->pattern = pattern;
+
+    char latBuffer[16];
+    char lonBuffer[16];
+    formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
+    formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+
+    cliPrintLinef("waypoint %s %u %s %s %d %u %s %u %s",
+        isInsert ? "insert" : "update",
+        index,
+        latBuffer,
+        lonBuffer,
+        wp->altitude,
+        wp->speed,
+        waypointTypeNames[wp->type],
+        wp->duration,
+        waypointPatternNames[wp->pattern]
+    );
+}
+
+#endif // ENABLE_FLIGHT_PLAN
 
 #ifdef USE_SDCARD
 
@@ -4835,7 +5287,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrint("configured");
             }
         }
+#ifdef USE_GPS_UBLOX
         cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
     } else {
         cliPrint("NOT ENABLED");
     }
@@ -5000,6 +5454,18 @@ static void printVersion(bool printBoardInfo)
 #else
     UNUSED(printBoardInfo);
 #endif
+}
+
+static void cliOptions(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    unsigned count;
+    const uint16_t *options = getBuildOptions(&count);
+    for (unsigned i = 0; i < count; i++) {
+        cliPrintLinef("%u", options[i]);
+    }
 }
 
 static void cliVersion(const char *cmdName, char *cmdline)
@@ -6427,6 +6893,10 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 #endif
 
             printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0), "rxfail");
+
+#if ENABLE_FLIGHT_PLAN
+            printWaypoint(dumpMask, &flightPlanConfig_Copy, flightPlanConfig(), "waypoint");
+#endif
         }
 
         if (dumpMask & HARDWARE_ONLY) {
@@ -6659,6 +7129,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 #endif
+    CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
@@ -6716,6 +7187,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_VTX_TABLE
     CLI_COMMAND_DEF("vtx_info", "vtx power config dump", NULL, cliVtxInfo),
     CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
+#endif
+#if ENABLE_FLIGHT_PLAN
+    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
 #endif
 };
 
@@ -6952,5 +7426,89 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         cliWrite(0x2); // send start of text, initiating flow control
     }
 }
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
+}
+
+// Check if a line (after stripping comments/whitespace) matches a command name
+static bool lineIsCommand(const char *line, const char *command)
+{
+    // Skip leading whitespace
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    size_t cmdLen = strlen(command);
+    if (strncasecmp(line, command, cmdLen) != 0) {
+        return false;
+    }
+    // Must be end of string, whitespace, newline, or comment
+    char next = line[cmdLen];
+    return (next == '\0' || next == ' ' || next == '\t' ||
+            next == '\n' || next == '\r' || next == '#');
+}
+
+void cliProcessConfigFile(const char *filename)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "[CONFIG] Failed to open config file: %s\n", filename);
+        return;
+    }
+
+    printf("[CONFIG] Processing config file: %s\n", filename);
+
+    // Enter CLI mode in interactive mode (output goes to stdout/terminal)
+    cliMode = true;
+    cliInteractive = true;
+
+    // Use a dummy serial port so waitForSerialPortToFinishTransmitting won't crash on NULL
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    // Set up writer to stdout
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)stdoutBufWrite, NULL);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+
+    char line[CLI_IN_BUFFER_SIZE];
+    while (fgets(line, sizeof(line), fp)) {
+        // Intercept 'save' - handle it ourselves to avoid the reboot/motorShutdown path
+        if (lineIsCommand(line, "save")) {
+            writeEEPROM();
+            printf("[CONFIG] Config file processed, EEPROM saved\n");
+            fclose(fp);
+            cliMode = false;
+            exit(0);
+        }
+
+        // Skip 'exit' commands in config files
+        if (lineIsCommand(line, "exit")) {
+            continue;
+        }
+
+        // Feed each character through the CLI processor
+        for (size_t i = 0; line[i]; i++) {
+            processCharacter(line[i]);
+        }
+        cliWriterFlush();
+    }
+
+    fclose(fp);
+
+    // If save wasn't in the file, save and exit anyway
+    writeEEPROM();
+    printf("[CONFIG] Config file processed, EEPROM saved\n");
+    cliMode = false;
+    exit(0);
+}
+#endif // CONFIG_IN_FILE
 
 #endif // USE_CLI

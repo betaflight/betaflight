@@ -127,6 +127,18 @@ extern "C" {
 
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
 
+    void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing) {
+        UNUSED(from);
+        UNUSED(to);
+        UNUSED(dist3d);
+        if (dist) *dist = 0;
+        if (bearing) *bearing = 0;
+    }
+
+    void navOriginUpdate(const gpsLocation_t* /*currentPos*/) { }
+
+    void navOriginLLHtoNED(const gpsLocation_t* /*llh*/, vector3_t* /*ned*/) { }
+
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);

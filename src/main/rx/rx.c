@@ -194,6 +194,30 @@ static bool nullProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
+#if ENABLE_RX_UDP
+static uint16_t udpChannelData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+static bool udpFrameReceived = false;
+
+static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
+{
+    UNUSED(rxRuntimeState);
+    return udpChannelData[channel];
+}
+
+static uint8_t frameStatusUdp(rxRuntimeState_t *rxRuntimeState)
+{
+    UNUSED(rxRuntimeState);
+    return udpFrameReceived ? RX_FRAME_COMPLETE : RX_FRAME_PENDING;
+}
+
+void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount)
+{
+    const uint8_t count = MIN(channelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
+    memcpy(udpChannelData, channels, count * sizeof(uint16_t));
+    udpFrameReceived = true;
+}
+#endif
+
 STATIC_UNIT_TESTED bool isPulseValid(uint16_t pulseDuration)
 {
     return  pulseDuration >= rxConfig()->rx_min_usec &&
@@ -283,6 +307,9 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 
 void rxInit(void)
 {
+#if ENABLE_RX_UDP
+    rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
+#else
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_PARALLEL_PWM;
     } else if (featureIsEnabled(FEATURE_RX_PPM)) {
@@ -296,6 +323,7 @@ void rxInit(void)
     } else {
         rxRuntimeState.rxProvider = RX_PROVIDER_NONE;
     }
+#endif
     rxRuntimeState.serialrxProvider = rxConfig()->serialrx_provider;
     rxRuntimeState.rcReadRawFn = nullReadRawRC;
     rxRuntimeState.rcFrameStatusFn = nullFrameStatus;
@@ -369,6 +397,15 @@ void rxInit(void)
     case RX_PROVIDER_PPM:
     case RX_PROVIDER_PARALLEL_PWM:
         rxPwmInit(rxConfig(), &rxRuntimeState);
+
+        break;
+#endif
+
+#if ENABLE_RX_UDP
+    case RX_PROVIDER_UDP:
+        rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+        rxRuntimeState.rcReadRawFn = readRCUdp;
+        rxRuntimeState.rcFrameStatusFn = frameStatusUdp;
 
         break;
 #endif

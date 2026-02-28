@@ -171,9 +171,12 @@ typedef enum {
 
 extern linkQualitySource_e linkQualitySource;
 
-extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
+extern rxRuntimeState_t rxRuntimeState; // TODO: consider removing this global state
 
 void rxInit(void);
+#if ENABLE_RX_UDP
+void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount);
+#endif
 void rxProcessPending(bool state);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);

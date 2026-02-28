@@ -61,6 +61,10 @@
 #include "flight/position.h"
 #include "flight/pos_hold.h"
 
+#if ENABLE_FLIGHT_PLAN
+#include "flight/autopilot_common.h"
+#endif
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -266,6 +270,16 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+static void taskAutopilot(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        updateAutopilot();
+    }
+}
+#endif
+
 #ifdef USE_MAG
 static void taskUpdateMag(timeUs_t currentTimeUs)
 {
@@ -407,6 +421,12 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 
 #ifdef USE_BARO
     [TASK_BARO] = DEFINE_TASK("BARO", NULL, NULL, taskUpdateBaro, TASK_PERIOD_HZ(TASK_BARO_RATE_HZ), TASK_PRIORITY_LOW),
+#endif
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    // 100Hz needed for: PT3 upsampling of GPS-rate PID output, altitude I-term integration, and orbit/figure-8 pattern angles.
+    // Heavy position PID computation is gated by gpsHasNewData() and only runs at GPS rate (5-10Hz).
+    [TASK_AUTOPILOT] = DEFINE_TASK("AUTOPILOT", NULL, NULL, taskAutopilot, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS)
@@ -573,6 +593,10 @@ void tasksInit(void)
 
 #ifdef USE_POSITION_HOLD
     setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS));
+#endif
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    setTaskEnabled(TASK_AUTOPILOT, featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_MAG

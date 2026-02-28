@@ -131,6 +131,9 @@ typedef enum {
 #ifdef USE_BARO
     TASK_BARO,
 #endif
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    TASK_AUTOPILOT,
+#endif
 #ifdef USE_RANGEFINDER
     TASK_RANGEFINDER,
 #endif
