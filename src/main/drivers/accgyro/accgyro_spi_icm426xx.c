@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -293,6 +293,9 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         case ICM42622P_WHO_AM_I_CONST:
             icmDetected = ICM_42622P_SPI;
             break;
+        case ICM42686P_WHO_AM_I_CONST:
+            icmDetected = ICM_42686P_SPI;
+            break;
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
             break;
@@ -322,8 +325,16 @@ void icm426xxAccInit(accDev_t *acc)
     switch (acc->mpuDetectionResult.sensor) {
     case IIM_42653_SPI:
     case IIM_42652_SPI:
+    // FOR TESTING
+#if ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
         acc->acc_1G = 512 * 2; // Accel scale 32g (1024 LSB/g)
         break;
+    // FOR TESTING
+#if !ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     default:
         acc->acc_1G = 512 * 4; // Accel scale 16g (2048 LSB/g)
         break;
@@ -335,6 +346,7 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
     case ICM_42622P_SPI:
+    case ICM_42686P_SPI:
     case ICM_42688P_SPI:
     case IIM_42652_SPI:
     case IIM_42653_SPI:
@@ -433,7 +445,19 @@ void icm426xxGyroInit(gyroDev_t *gyro)
 
     // This sets the gyro/accel to the maximum FSR, depending on the chip
     // ICM42605, ICM42622P, ICM42688P: 2000DPS and 16G.
-    // IIM42653: 4000DPS and 32G
+    // ICM42686P, IIM42652, IIM42653: 4000DPS and 32G
+
+    // FOR TESTING
+#if ENABLE_42686_EXTENDED_RANGE
+    if (gyro->mpuDetectionResult.sensor == ICM_42686P_SPI) {
+        // For the 42686P, set gyro to 4000DPS and acc to 32G if extended range testing is enabled
+        spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (1 << 5) | (odrConfig & 0x0F)); // Set gyro FSR to 4000DPS
+        delay(15);
+        spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (1 << 5) | (odrConfig & 0x0F)); // Set accel FSR to 32G
+        delay(15);
+        return;
+    }
+#endif
     spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
     delay(15);
     spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
@@ -445,16 +469,26 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
     case ICM_42622P_SPI:
+
+    // FOR TESTING
+#if !ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     case ICM_42688P_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
-        // ICM-42605/ICM-42688P: 132.48 LSB/°C for 16-bit register read, offset 25°C
+        // ICM-42605/ICM-42622P/ICM-42688P: 132.48 LSB/°C for 16-bit register read, offset 25°C
         gyro->tempScale = 1.0f / 132.48f;
         gyro->tempZero = 25.0f;
         break;
+
+    // FOR TESTING
+#if ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     case IIM_42652_SPI:
     case IIM_42653_SPI:
         gyro->scale = GYRO_SCALE_4000DPS;
-        // IIM-42652/IIM-42653: 132.48 LSB/°C, offset 25°C
+        // ICM-42686P/IIM-42652/IIM-42653: 132.48 LSB/°C, offset 25°C
         gyro->tempScale = 1.0f / 132.48f;
         gyro->tempZero = 25.0f;
         break;
@@ -485,6 +519,7 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
             return aafLUT42605[AAF_CONFIG_258HZ];
         }
     case ICM_42622P_SPI:
+    case ICM_42686P_SPI:
     case ICM_42688P_SPI:
     default:
         switch (config) {
@@ -504,4 +539,4 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
     }
 }
 
-#endif // USE_GYRO_SPI_ICM42605 || USE_ACCGYRO_ICM42622P || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
+#endif // USE_GYRO_SPI_ICM42605 || USE_ACCGYRO_ICM42622P || USE_ACCGYRO_ICM42686P || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
