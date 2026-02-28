@@ -123,6 +123,7 @@ bool cliMode = false;
 
 #include "msp/msp.h"
 #include "msp/msp_box.h"
+#include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
 
 #include "osd/osd.h"
@@ -5002,6 +5003,18 @@ static void printVersion(bool printBoardInfo)
 #endif
 }
 
+static void cliOptions(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    unsigned count;
+    const uint16_t *options = getBuildOptions(&count);
+    for (unsigned i = 0; i < count; i++) {
+        cliPrintLinef("%u", options[i]);
+    }
+}
+
 static void cliVersion(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -6659,6 +6672,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 #endif
+    CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
