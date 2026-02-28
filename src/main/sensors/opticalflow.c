@@ -40,6 +40,8 @@
 
 #include "fc/runtime_config.h"
 
+#include "flight/imu.h"
+
 #include "scheduler/scheduler.h"
 
 #include "pg/pg.h"
@@ -48,6 +50,9 @@
 #include "drivers/time.h"
 #include "drivers/rangefinder/rangefinder.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
+#ifdef USE_RANGEFINDER_UPT1
+#include "drivers/rangefinder/rangefinder_upt1.h"
+#endif
 
 #include "io/beeper.h"
 
@@ -59,22 +64,28 @@
 #define OPTICALFLOW_CALIBRATION_DURATION_MS 30000
 #define RATE_SCALE_RESOLUTION (1000.0f)
 
+// Delay between gyro rotation and corresponding optical flow
+// TODO make this sensor dependent
+#define GYRO_SAMPLE_DELAY 3
+
+#define ROTATION_GYRO_LIMIT (float)200.0
+
 // static prototypes
 static void applySensorRotation(vector2_t * dst, vector2_t * src);
 static void applyLPF(vector2_t * flowRates);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig, PG_OPTICALFLOW_CONFIG, 1);
 
 PG_RESET_TEMPLATE(opticalflowConfig_t, opticalflowConfig,
     .opticalflow_hardware = OPTICALFLOW_NONE,
     .rotation = 0,
     .flip_x = 0,
-    .flow_lpf = 0
+    .flow_lpf = 100
 );
 
 static opticalflow_t opticalflow;
-float cosRotAngle = 1.0f;
-float sinRotAngle = 0.0f;
+static float cosRotAngle = 1.0f;
+static float sinRotAngle = 0.0f;
 static pt2Filter_t xFlowLpf, yFlowLpf;
 
 // ======================================================================
@@ -94,6 +105,18 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
             }
 #endif
             break;
+
+#if defined(USE_RANGEFINDER_UPT1) && defined(USE_OPTICALFLOW)
+        case OPTICALFLOW_UPT1:
+            if (upt1OpticalflowDetect(dev)) {
+                opticalflowHardware = OPTICALFLOW_UPT1;
+                rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
+#ifdef USE_POSITION_HOLD
+                rescheduleTask(TASK_POSHOLD, TASK_PERIOD_MS(dev->delayMs));
+#endif
+            }
+            break;
+#endif
 
         case OPTICALFLOW_NONE:
             opticalflowHardware = OPTICALFLOW_NONE;
@@ -157,21 +180,50 @@ void opticalflowProcess(void) {
     if (deltaTimeUs != 0) { // New data
         vector2_t raw = data.flowRate;
         vector2_t processed;
+        uint8_t delayedGyroSampleIndex;
 
         applySensorRotation(&processed, &raw);
+
+        // Attenuate the optical flow when body rotation is detected
+        // There is a delay between a detected gyro motion and this
+        // being seen in the optical flow output
+        static uint8_t gyroSampleIndex = 0;
+        static float xRotation[GYRO_SAMPLE_DELAY];
+        static float yRotation[GYRO_SAMPLE_DELAY];
+
+        gyroSampleIndex = (gyroSampleIndex + 1) % GYRO_SAMPLE_DELAY;
+        xRotation[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
+        yRotation[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
+        delayedGyroSampleIndex = (gyroSampleIndex + 1) % GYRO_SAMPLE_DELAY;
+
+        DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(yRotation[gyroSampleIndex]) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(yRotation[delayedGyroSampleIndex]) * 1000));
+
+        // Subtract the rate of body rotation (converted from dps to rad/s) from the
+        // optical flow
+        processed.x -= DEGREES_TO_RADIANS(xRotation[delayedGyroSampleIndex]);
+        processed.y -= DEGREES_TO_RADIANS(yRotation[delayedGyroSampleIndex]);
+
+        // For large rates of body rotation the velocity will be unreliable, so zero
+        if (fabsf(xRotation[delayedGyroSampleIndex]) > ROTATION_GYRO_LIMIT) {
+            processed.x = 0;
+        }
+        if (fabsf(yRotation[delayedGyroSampleIndex]) > ROTATION_GYRO_LIMIT) {
+            processed.y = 0;
+        }
+        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 5, lrintf(processed.y * 1000));
+
         applyLPF(&processed);
+
+        DEBUG_SET(DEBUG_OPTICALFLOW, 6, lrintf(processed.x * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 7, lrintf(processed.y * 1000));
 
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;
         opticalflow.timeStampUs  = data.timeStampUs;
-
-        // DEBUG SECTION
-        DEBUG_SET(DEBUG_OPTICALFLOW, 0, opticalflow.quality);
-        DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(opticalflow.rawFlowRates.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(opticalflow.rawFlowRates.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(opticalflow.processedFlowRates.x * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(opticalflow.processedFlowRates.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 5, deltaTimeUs);
     }
 }
 
@@ -189,7 +241,7 @@ static void applyLPF(vector2_t * flowRates) {
     flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);
 }
 
-LOCAL_UNUSED_FUNCTION static const opticalflow_t * getLatestFlowOpticalflowData(void) {
+const opticalflow_t * getOpticalFlowData(void) {
     return &opticalflow;
 }
 

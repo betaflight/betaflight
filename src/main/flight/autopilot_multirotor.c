@@ -34,27 +34,51 @@
 
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/position_estimator.h"
 #include "rx/rx.h"
 #include "sensors/gyro.h"
+#include "sensors/opticalflow.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
 
 #include "pg/autopilot.h"
+#include "pg/pos_hold_multirotor.h"
 #include "autopilot.h"
 
-#define ALTITUDE_P_SCALE  0.01f
-#define ALTITUDE_I_SCALE  0.003f
-#define ALTITUDE_D_SCALE  0.01f
-#define ALTITUDE_F_SCALE  0.01f
-#define POSITION_P_SCALE  0.0012f
-#define POSITION_I_SCALE  0.0001f
-#define POSITION_D_SCALE  0.0015f
-#define POSITION_A_SCALE  0.0008f
+#define ALTITUDE_P_SCALE       0.01f
+#define ALTITUDE_I_SCALE       0.003f
+#define ALTITUDE_D_SCALE       0.01f
+#define ALTITUDE_F_SCALE       0.01f
+#define POSITION_OF_P_SCALE    0.0033f
+#define POSITION_OF_I_SCALE    0.0021f
+#define POSITION_OF_II_SCALE   (0.25f * POSITION_OF_I_SCALE)  // Slow integral is 25% of I gain
+#define POSITION_OF_D_SCALE    0.00011f
+#define POSITION_GPS_P_SCALE   0.0012f
+#define POSITION_GPS_I_SCALE   0.0001f
+#define POSITION_GPS_D_SCALE   0.0015f
+#define POSITION_GPS_A_SCALE   0.0008f
+
+#define POSITION_OF_IWINDUP_LIMIT 250.0f
+
+// Field angle of UPT1 is 30 deg, so limit max angle to half that, or 15 deg.
+
 #define UPSAMPLING_CUTOFF_HZ 5.0f
 
 static pidCoefficient_t altitudePidCoeffs;
-static pidCoefficient_t positionPidCoeffs;
+static pidCoefficient_t positionGPSPidCoeffs;
 
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
+
+#ifdef USE_OPTICALFLOW
+static pidCoefficient_t positionOFPidCoeffs;
+static positionSource_e lastActiveSource = POSITION_SOURCE_NONE;
+static float positionErrorIntegral[RP_AXIS_COUNT];
+static float previousAxisVelocity[RP_AXIS_COUNT];
+static timeUs_t lastFlowCallUs = 0;
+#endif
+
+#define FLOW_DATA_INTERVAL_DEFAULT  0.02f // 50Hz nominal, used for filter init only
 
 typedef struct efPidAxis_s {
     bool isStopping;
@@ -91,6 +115,10 @@ static autopilotState_t ap = {
 };
 
 float autopilotAngle[RP_AXIS_COUNT];
+#ifdef USE_OPTICALFLOW
+static pt2Filter_t flowDLpf[RP_AXIS_COUNT];
+#endif
+
 
 static void resetEFAxisFilters(efPidAxis_t* efAxis, const float vaGain)
 {
@@ -134,6 +162,14 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
     const float taskInterval = 1.0f / taskRateHz;
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
     resetUpsampleFilters(); // clear accumlator from previous iterations
+#ifdef USE_OPTICALFLOW
+    lastActiveSource = POSITION_SOURCE_NONE;
+    lastFlowCallUs = 0;
+    for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
+        positionErrorIntegral[i] = 0.0f;
+        previousAxisVelocity[i] = 0.0f;
+    }
+#endif
 }
 
 void autopilotInit(void)
@@ -145,10 +181,16 @@ void autopilotInit(void)
     altitudePidCoeffs.Ki = cfg->altitudeI * ALTITUDE_I_SCALE;
     altitudePidCoeffs.Kd = cfg->altitudeD * ALTITUDE_D_SCALE;
     altitudePidCoeffs.Kf = cfg->altitudeF * ALTITUDE_F_SCALE;
-    positionPidCoeffs.Kp = cfg->positionP * POSITION_P_SCALE;
-    positionPidCoeffs.Ki = cfg->positionI * POSITION_I_SCALE;
-    positionPidCoeffs.Kd = cfg->positionD * POSITION_D_SCALE;
-    positionPidCoeffs.Kf = cfg->positionA * POSITION_A_SCALE; // Kf used for acceleration
+#ifdef USE_OPTICALFLOW
+    positionOFPidCoeffs.Kp = cfg->positionP * POSITION_OF_P_SCALE;
+    positionOFPidCoeffs.Ki = cfg->positionI * POSITION_OF_I_SCALE;
+    positionOFPidCoeffs.Kii = cfg->positionII * POSITION_OF_II_SCALE;
+    positionOFPidCoeffs.Kd = cfg->positionD * POSITION_OF_D_SCALE;
+#endif
+    positionGPSPidCoeffs.Kp = cfg->positionP * POSITION_GPS_P_SCALE;
+    positionGPSPidCoeffs.Ki = cfg->positionI * POSITION_GPS_I_SCALE;
+    positionGPSPidCoeffs.Kd = cfg->positionD * POSITION_GPS_D_SCALE;
+    positionGPSPidCoeffs.Kf = cfg->positionA * POSITION_GPS_A_SCALE; // Kf used for acceleration
     // initialise filters with approximate filter gains; location isn't used at this point.
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f); // 5Hz, assuming 100Hz task rate at init
     resetUpsampleFilters();
@@ -158,10 +200,17 @@ void autopilotInit(void)
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
         resetEFAxisFilters(&ap.efAxis[i], vaGain);
     }
+
+#ifdef USE_OPTICALFLOW
+    const float flowDGain = pt2FilterGain(0.25f / FLOW_DATA_INTERVAL_DEFAULT, FLOW_DATA_INTERVAL_DEFAULT);
+    pt2FilterInit(&flowDLpf[X], flowDGain);
+    pt2FilterInit(&flowDLpf[Y], flowDGain);
+#endif
 }
 
 void resetAltitudeControl (void) {
     altitudeI = 0.0f;
+    throttleOut = 0.0f;  // Reset throttle output
 }
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
@@ -238,7 +287,138 @@ bool positionControl(void)
     static vector2_t debugGpsDistance = { 0 };     // keep last calculated distance for DEBUG
     static vector2_t debugPidSumEF = { 0 };        // and last pidsum in EF
     static uint16_t gpsStamp = 0;
+
+#ifdef USE_OPTICALFLOW
+    // Try optical flow position control first
+    positionSource_e currentSource = POSITION_SOURCE_GPS;
+    const positionEstimate_t *flowPos = getOpticalFlowPosition();
+    const uint8_t posSource = posHoldConfig()->positionSource;
+    bool useOpticalFlow = false;
+
+    // Measure true call interval
+    const timeUs_t nowUs = micros();
+    float flowDataInterval = FLOW_DATA_INTERVAL_DEFAULT;
+    if (lastFlowCallUs > 0) {
+        const float measuredInterval = (nowUs - lastFlowCallUs) / 1e6f;
+        // Sanity clamp: accept 1ms to 1s
+        if (measuredInterval > 0.001f && measuredInterval < 1.0f) {
+            flowDataInterval = measuredInterval;
+        }
+    }
+    lastFlowCallUs = nowUs;
+
+    // Check if we should use optical flow (updateOpticalFlowPosition() called earlier in updatePosHold)
+    if ((posSource == POSHOLD_SOURCE_AUTO || posSource == POSHOLD_SOURCE_OPTICALFLOW_ONLY) &&
+        sensors(SENSOR_OPTICALFLOW) && isOpticalflowHealthy() &&
+        sensors(SENSOR_RANGEFINDER) && rangefinderIsHealthy() &&
+        flowPos->isValid && isOpticalFlowPositionValid()) {
+        useOpticalFlow = true;
+        currentSource = POSITION_SOURCE_OPTICALFLOW;
+
+        // Detect source transition or first activation
+        if (lastActiveSource != POSITION_SOURCE_OPTICALFLOW) {
+            // Transitioning to optical flow (from GPS, NONE, or anything else)
+            // Reset optical flow position and target to (0,0) to hold current position
+            // This prevents jump when first enabling POSHOLD or switching sources
+            vector2_t zeroPos = {{0, 0}};
+            resetOpticalFlowPosition(&zeroPos);
+            // Reset PID integral and derivative state
+            positionErrorIntegral[X] = 0.0f;
+            positionErrorIntegral[Y] = 0.0f;
+            previousAxisVelocity[X] = 0.0f;
+            previousAxisVelocity[Y] = 0.0f;
+        }
+    }
+
+    if (useOpticalFlow) {
+        // Optical flow position control
+        const float flowDataFreq = 1.0f / flowDataInterval;
+
+        vector2_t pidSum = { 0 };
+
+        for (axis_e axis = X; axis <= Y; axis++) {
+            const float axisVelocity = flowPos->velocity.v[axis];
+            const float axisDistance = (flowPos->position.v[axis] - flowPos->targetPosition.v[axis]);
+
+            // P - acts on velocity (damping)
+            const float pidP = axisVelocity * positionOFPidCoeffs.Kp;
+            pidSum.v[axis] += pidP;
+
+            // I - acts on distance (position spring / integral of velocity)
+            const float pidI = axisDistance * positionOFPidCoeffs.Ki;
+            pidSum.v[axis] += pidI;
+
+            // II - slow integral of distance (drift correction)
+            positionErrorIntegral[axis] += axisDistance * flowDataInterval;
+            positionErrorIntegral[axis] = constrainf(positionErrorIntegral[axis],
+                                                     -POSITION_OF_IWINDUP_LIMIT,
+                                                     POSITION_OF_IWINDUP_LIMIT);
+            const float pidII = positionErrorIntegral[axis] * positionOFPidCoeffs.Kii;
+            pidSum.v[axis] += pidII;
+
+            // D - acts on acceleration
+            const float delta = (axisVelocity - previousAxisVelocity[axis]) * flowDataFreq;
+            previousAxisVelocity[axis] = axisVelocity;
+            float pidD = -pt2FilterApply(&flowDLpf[axis], delta) * positionOFPidCoeffs.Kd;
+            pidSum.v[axis] += pidD;
+
+            // Debug: P, I+II, D, PIDsum per axis
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 0 + axis, lrintf(pidP * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 2 + axis, lrintf((pidI + pidII) * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 4 + axis, lrintf(pidD * 1000));
+        }
+
+        // Handle stick input and convert to body frame
+        vector2_t anglesBF;
+        if (ap.sticksActive) {
+            // If sticks are active, allow pilot control and reset integral
+            anglesBF = (vector2_t){{0, 0}};
+            positionErrorIntegral[X] = 0.0f;
+            positionErrorIntegral[Y] = 0.0f;
+            // Update target to current position to avoid jump when sticks are released
+            setOpticalFlowTarget(&flowPos->position);
+            // Update sanity check distance (use velocity magnitude as proxy for speed)
+            const float speedCmS = vector2Norm(&flowPos->velocity);
+            ap.sanityCheckDistance = sanityCheckDistance(speedCmS);
+        } else {
+            // X should control Roll, Y should control Pitch
+            // Direct mapping unlike GPS where rotation is required
+            anglesBF.v[AI_ROLL] = pidSum.x;   // X → Roll
+            anglesBF.v[AI_PITCH] = -pidSum.y;  // Y → Pitch
+
+            // Limit angle vector to maxAngle
+            const float mag = vector2Norm(&anglesBF);
+            if (mag > ap.maxAngle && mag > 0.0f) {
+                vector2Scale(&anglesBF, &anglesBF, ap.maxAngle / mag);
+            }
+        }
+        ap.pidSumBF = anglesBF;
+
+        lastActiveSource = currentSource;
+    } else if (posSource == POSHOLD_SOURCE_OPTICALFLOW_ONLY) {
+        // Optical flow required but not available
+        return false;
+    } else
+#endif // USE_OPTICALFLOW
+
+    // Fall back to GPS position control
     if (gpsHasNewData(&gpsStamp)) {
+#ifdef USE_OPTICALFLOW
+        currentSource = POSITION_SOURCE_GPS;
+
+        // Detect source transition: Optical Flow → GPS
+        if (lastActiveSource == POSITION_SOURCE_OPTICALFLOW) {
+            // Transitioning from optical flow to GPS
+            // Set GPS target to current GPS position to prevent jump
+            ap.targetLocation = gpsSol.llh;
+            // Reset estimator history to avoid derivative/acceleration spikes
+            for (axisEF_e i = LON; i <= LAT; i++) {
+                ap.efAxis[i].previousDistance = 0.0f;
+                ap.efAxis[i].previousVelocity = 0.0f;
+            }
+        }
+#endif
+
         const float gpsDataInterval = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.05 - 2.5s
         const float gpsDataFreq = getGpsDataFrequencyHz();
 
@@ -267,13 +447,13 @@ bool positionControl(void)
             const float axisDistance = gpsDistance.v[efAxisIdx];
 
             // ** P **
-            const float pidP = axisDistance * positionPidCoeffs.Kp;
+            const float pidP = axisDistance * positionGPSPidCoeffs.Kp;
             pidSum.v[efAxisIdx] += pidP;
 
             // ** I **
             // only add to iTerm while in hold phase
             efAxis->integral += efAxis->isStopping ? 0.0f : axisDistance * gpsDataInterval;
-            const float pidI = efAxis->integral * positionPidCoeffs.Ki;
+            const float pidI = efAxis->integral * positionGPSPidCoeffs.Ki;
             pidSum.v[efAxisIdx] += pidI;
 
             // ** D ** //
@@ -283,7 +463,7 @@ bool positionControl(void)
             efAxis->previousDistance = axisDistance;
             pt1FilterUpdateCutoff(&efAxis->velocityLpf, vaGain);
             const float velocityFiltered = pt1FilterApply(&efAxis->velocityLpf, velocity);
-            float pidD = velocityFiltered * positionPidCoeffs.Kd;
+            float pidD = velocityFiltered * positionGPSPidCoeffs.Kd;
 
             // differentiate velocity another time to get acceleration
             float acceleration = (velocityFiltered - efAxis->previousVelocity) * gpsDataFreq;
@@ -291,7 +471,7 @@ bool positionControl(void)
             // apply second filter to acceleration (acc is filtered twice)
             pt1FilterUpdateCutoff(&efAxis->accelerationLpf, vaGain);
             const float accelerationFiltered = pt1FilterApply(&efAxis->accelerationLpf, acceleration);
-            const float pidA = accelerationFiltered * positionPidCoeffs.Kf;
+            const float pidA = accelerationFiltered * positionGPSPidCoeffs.Kf;
 
             if (ap.sticksActive) {
                 // sticks active 'phase', prepare to enter stopping
@@ -364,6 +544,10 @@ bool positionControl(void)
             }
         }
         ap.pidSumBF = anglesBF;    // this value will be upsampled
+
+#ifdef USE_OPTICALFLOW
+        lastActiveSource = currentSource;
+#endif
     }
 
     // Final output to pid.c Angle Mode at 100Hz with PT3 upsampling
@@ -371,6 +555,9 @@ bool positionControl(void)
         // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
         autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], ap.pidSumBF.v[i]);
     }
+
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(autopilotAngle[X] * 100));   // deg * 100
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, lrintf(autopilotAngle[Y] * 100));   // deg * 100
 
     if (debugAxis < 2) {
         // this is different from @ctzsnooze version

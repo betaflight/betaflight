@@ -1739,6 +1739,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_II, "%d",        autopilotConfig()->positionII);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);

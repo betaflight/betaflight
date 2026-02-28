@@ -370,6 +370,7 @@ typedef struct pidCoefficient_s {
     float Ki;
     float Kd;
     float Kf;
+    float Kii;
 } pidCoefficient_t;
 
 typedef struct tpaSpeedParams_s {

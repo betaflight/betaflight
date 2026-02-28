@@ -43,6 +43,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
+#include "sensors/rangefinder.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -59,6 +60,9 @@ static pt2Filter_t altitudeDerivativeLpf;
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0; // in cm/s
 #endif
+#ifdef USE_RANGEFINDER
+#define RANGEFINDER_MIN_ALT 10 // Min height in cm
+#endif
 
 void positionInit(void)
 {
@@ -73,19 +77,14 @@ void positionInit(void)
     pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
 }
 
-typedef enum {
-    DEFAULT = 0,
-    BARO_ONLY,
-    GPS_ONLY
-} altitudeSource_e;
-
-PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 6);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7);
 
 PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
-    .altitude_source = DEFAULT,
-    .altitude_prefer_baro = 100, // percentage 'trust' of baro data
+    .altitude_source = ALTITUDE_SOURCE_DEFAULT,
+    .altitude_prefer_baro = 100,
     .altitude_lpf = 300,
     .altitude_d_lpf = 100,
+    .rangefinder_max_range_cm = 400,
 );
 
 #if defined(USE_BARO) || defined(USE_GPS)
@@ -102,6 +101,13 @@ void calculateEstimatedAltitude(void)
     float gpsTrust = 0.3f; // if no pDOP value, use 0.3, intended range 0-1;
     bool haveBaroAlt = false; // true if baro exists and has been calibrated on power up
     bool haveGpsAlt = false; // true if GPS is connected and while it has a 3D fix, set each run to false
+
+#ifdef USE_RANGEFINDER
+    float rangefinderAltCm = 0.0f;
+    bool haveRangefinderAlt = false;
+    static float rangefinderAltOffsetCm = 0.0f;
+    static bool rangefinderOffsetSet = false;
+#endif
 
     // *** Get sensor data
 #ifdef USE_BARO
@@ -126,21 +132,39 @@ void calculateEstimatedAltitude(void)
         gpsTrust = MIN(gpsTrust, 0.9f);
     }
 #endif
+#ifdef USE_RANGEFINDER
+    if (sensors(SENSOR_RANGEFINDER) && rangefinderIsHealthy()) {
+        rangefinderAltCm = rangefinderGetLatestAltitude();
+        // Only use rangefinder below configured max range
+        if (rangefinderAltCm > RANGEFINDER_MIN_ALT && rangefinderAltCm < positionConfig()->rangefinder_max_range_cm) {
+            haveRangefinderAlt = true;
+        }
+    }
+#endif
 
     //  ***  DISARMED  ***
     if (!ARMING_FLAG(ARMED)) {
         if (wasArmed) { // things to run once, on disarming, after being armed
             useZeroedGpsAltitude = false; // reset, and wait for valid GPS data to zero the GPS signal
             wasArmed = false;
+#ifdef USE_RANGEFINDER
+            rangefinderAltOffsetCm = 0.0f; // reset rangefinder offset
+#endif
         }
 
         newBaroAltOffsetCm = 0.2f * baroAltCm + 0.8f * newBaroAltOffsetCm; // smooth some recent baro samples
         displayAltitudeCm = baroAltCm - baroAltOffsetCm; // if no GPS altitude, show un-smoothed Baro altitude in OSD and sensors tab, using most recent offset.
 
+#ifdef USE_RANGEFINDER
+        if (rangefinderAltCm > 0) {
+            rangefinderAltOffsetCm = rangefinderAltCm;
+        }
+#endif
+
         if (haveGpsAlt) { // watch for valid GPS altitude data to get a zero value from
             gpsAltOffsetCm = gpsAltCm; // update the zero offset value with the most recent valid gps altitude reading
             useZeroedGpsAltitude = true; // we can use this offset to zero the GPS altitude on arming
-            if (!(positionConfig()->altitude_source == BARO_ONLY)) {
+            if (!(positionConfig()->altitude_source == ALTITUDE_SOURCE_BARO_ONLY)) {
                 displayAltitudeCm = gpsAltCm; // estimatedAltitude shows most recent ASL GPS altitude in OSD and sensors, while disarmed
             }
         }
@@ -151,9 +175,22 @@ void calculateEstimatedAltitude(void)
         if (!wasArmed) { // things to run once, on arming, after being disarmed
             baroAltOffsetCm = newBaroAltOffsetCm;
             wasArmed = true;
+#ifdef USE_RANGEFINDER
+            rangefinderOffsetSet = false;
+#endif
         }
 
         baroAltCm -= baroAltOffsetCm; // use smoothed baro with most recent zero from disarm period
+
+#ifdef USE_RANGEFINDER
+        if (!rangefinderOffsetSet && rangefinderAltCm > 0) {
+            rangefinderAltOffsetCm = rangefinderAltCm;
+            rangefinderOffsetSet = true;
+        }
+        if (haveRangefinderAlt) {
+            rangefinderAltCm -= rangefinderAltOffsetCm;
+        }
+#endif
 
         if (haveGpsAlt) { // update relativeAltitude with every new gpsAlt value, or hold the previous value until 3D lock recovers
             if (!useZeroedGpsAltitude && haveBaroAlt) { // armed without zero offset, can use baro values to zero later
@@ -169,18 +206,46 @@ void calculateEstimatedAltitude(void)
         }
         DEBUG_SET(DEBUG_ALTITUDE, 2, lrintf(zeroedAltitudeCm / 10.0f)); // Relative altitude above takeoff, to 0.1m, rolls over at 3,276.7m
 
-        // Empirical mixing of GPS and Baro altitudes
-        if (useZeroedGpsAltitude && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == GPS_ONLY)) {
-            if (haveBaroAlt && positionConfig()->altitude_source == DEFAULT) {
+        // Altitude source priority and fusion
+        const uint8_t altSource = positionConfig()->altitude_source;
+
+#ifdef USE_RANGEFINDER
+        // Rangefinder has highest priority when available and configured
+        if (haveRangefinderAlt && (altSource == ALTITUDE_SOURCE_RANGEFINDER_ONLY ||
+                                   altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER ||
+                                   altSource == ALTITUDE_SOURCE_DEFAULT)) {
+            zeroedAltitudeCm = rangefinderAltCm;
+            // Align GPS/Baro offsets to the rangefinder so there is no step
+            // when the craft ascends past rangefinder_max_range_cm
+            if (haveGpsAlt) {
+                gpsAltOffsetCm = gpsAltCm - rangefinderAltCm;
+                useZeroedGpsAltitude = true;
+            }
+            if (haveBaroAlt) {
+                baroAltOffsetCm += baroAltCm - rangefinderAltCm;
+            }
+            DEBUG_SET(DEBUG_ALTITUDE, 4, 1); // altitude source: rangefinder
+        } else if (altSource == ALTITUDE_SOURCE_RANGEFINDER_ONLY && !haveRangefinderAlt) {
+            zeroedAltitudeCm = 0.0f;
+            DEBUG_SET(DEBUG_ALTITUDE, 4, 0); // altitude source: none (rangefinder unavailable)
+        } else
+#endif
+        // GPS/Baro fusion
+        if (useZeroedGpsAltitude && (altSource == ALTITUDE_SOURCE_DEFAULT || altSource == ALTITUDE_SOURCE_GPS_ONLY || altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER)) {
+            if (haveBaroAlt && (altSource == ALTITUDE_SOURCE_DEFAULT || altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER)) {
                 // mix zeroed GPS with Baro altitude data, if Baro data exists if are in default altitude control mode
                 const float absDifferenceM = fabsf(zeroedAltitudeCm - baroAltCm) / 100.0f * positionConfig()->altitude_prefer_baro / 100.0f;
                 if (absDifferenceM > 1.0f) { // when there is a large difference, favour Baro
                     gpsTrust /=  absDifferenceM;
                 }
                 zeroedAltitudeCm = zeroedAltitudeCm * gpsTrust + baroAltCm * (1.0f - gpsTrust);
+                DEBUG_SET(DEBUG_ALTITUDE, 4, 2); // altitude source: GPS/Baro mix
+            } else {
+                DEBUG_SET(DEBUG_ALTITUDE, 4, 3); // altitude source: GPS only
             }
-        } else if (haveBaroAlt && (positionConfig()->altitude_source == DEFAULT || positionConfig()->altitude_source == BARO_ONLY)) {
+        } else if (haveBaroAlt && (altSource == ALTITUDE_SOURCE_DEFAULT || altSource == ALTITUDE_SOURCE_BARO_ONLY || altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER)) {
             zeroedAltitudeCm = baroAltCm; // use Baro if no GPS data, or we want Baro only
+            DEBUG_SET(DEBUG_ALTITUDE, 4, 4); // altitude source: Baro only
         }
     }
 
@@ -212,7 +277,16 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(zeroedAltitudeCm));
 
-    altitudeAvailable = haveGpsAlt || haveBaroAlt;
+    altitudeAvailable = haveGpsAlt || haveBaroAlt
+#ifdef USE_RANGEFINDER
+        || haveRangefinderAlt
+#endif
+        ;
+#ifdef USE_RANGEFINDER
+    if (positionConfig()->altitude_source == ALTITUDE_SOURCE_RANGEFINDER_ONLY && !haveRangefinderAlt) {
+        altitudeAvailable = false;
+    }
+#endif
 }
 
 #endif //defined(USE_BARO) || defined(USE_GPS)

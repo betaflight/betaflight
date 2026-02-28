@@ -38,6 +38,7 @@ typedef struct autopilotConfig_s {
     uint8_t altitudeF;
     uint8_t positionP;
     uint8_t positionI;
+    uint8_t positionII;
     uint8_t positionD;
     uint8_t positionA;
     uint8_t positionCutoff;
