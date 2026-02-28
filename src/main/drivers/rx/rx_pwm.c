@@ -322,7 +322,7 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     }
 }
 
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
@@ -343,6 +343,24 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
     HAL_TIM_IC_ConfigChannel(Handle, &TIM_ICInitStructure, channel);
     HAL_TIM_IC_Start_IT(Handle,channel);
+}
+#elif defined(USE_GDBSP_DRIVER)
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
+{
+    timer_ic_parameter_struct timer_icinitpara;
+
+    timer_channel_input_struct_para_init(&timer_icinitpara);
+    timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
+    timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
+    timer_icinitpara.icpolarity = polarity;
+
+    if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
+        timer_icinitpara.icfilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
+    } else {
+        timer_icinitpara.icfilter = 0x00;
+    }
+
+    timer_input_capture_config((uint32_t)tim, channel, &timer_icinitpara);
 }
 #else
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -413,8 +431,11 @@ static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
         if (!motors[motorIndex].enabled || motors[motorIndex].channel.tim != pwmTimer) {
             continue;
         }
-
+#if defined(USE_GDBSP_DRIVER)
+        ppmCountDivisor = timerClock(pwmTimer) / timerPrescaler(pwmTimer);
+#else
         ppmCountDivisor = timerClock(pwmTimer) / (pwmTimer->PSC + 1);
+#endif
         return;
     }
 }

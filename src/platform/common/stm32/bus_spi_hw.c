@@ -112,6 +112,12 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = system_core_clock / 2;
+#elif defined(GD32F4)
+    if(freq > 30000000){
+        freq = 30000000;
+    }
+
+    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -137,6 +143,12 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
     if ((spiClk / spiClkDivisor) > 36000000){
         return 36000000;
     }
+#elif defined(GD32F4)
+    uint32_t spiClk = SystemCoreClock / 2;
+
+    if ((spiClk / spiClkDivisor) > 30000000){
+        return 30000000;
+    }
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -147,7 +159,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 void spiInitBusDMA(void)
 {
     uint32_t device;
-#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4) || defined(GD32F4)) && defined(USE_DSHOT_BITBANG)
     /* Check https://www.st.com/resource/en/errata_sheet/dm00037591-stm32f405407xx-and-stm32f415417xx-device-limitations-stmicroelectronics.pdf
      * section 2.1.10 which reports an errata that corruption may occurs on DMA2 if AHB peripherals (eg GPIO ports) are
      * access concurrently with APB peripherals (eg SPI busses). Bitbang DSHOT uses DMA2 to write to GPIO ports. If this
@@ -181,7 +193,7 @@ void spiInitBusDMA(void)
 
             if (dmaTxChannelSpec) {
                 dmaTxIdentifier = dmaGetIdentifier(dmaTxChannelSpec->ref);
-#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4) || defined(GD32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 2)) {
                     dmaTxIdentifier = DMA_NONE;
                     break;
@@ -192,7 +204,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -219,7 +231,7 @@ void spiInitBusDMA(void)
 
             if (dmaRxChannelSpec) {
                 dmaRxIdentifier = dmaGetIdentifier(dmaRxChannelSpec->ref);
-#if (defined(STM32F4) || defined(APM32F4)) && defined(USE_DSHOT_BITBANG)
+#if (defined(STM32F4) || defined(APM32F4) || defined(GD32F4)) && defined(USE_DSHOT_BITBANG)
                 if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 2)) {
                     dmaRxIdentifier = DMA_NONE;
                     break;
@@ -230,7 +242,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

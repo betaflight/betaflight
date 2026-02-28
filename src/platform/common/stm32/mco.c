@@ -81,7 +81,7 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 #endif
         break;
     case MCODEV_2: // MCO2 on PC9
-#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4) || defined(GD32F4)
         io = IOGetByTag(DEFIO_TAG_E(PC9));
         IOInit(io, OWNER_MCO, 2);
 #if defined(STM32F7)
@@ -90,6 +90,9 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 #elif defined(APM32F4)
         DAL_RCM_MCOConfig(RCM_MCO2, RCM_MCO2SOURCE_PLLI2SCLK, RCM_MCODIV_4);
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH,  GPIO_NOPULL), GPIO_AF0_MCO);
+#elif defined(GD32F4)
+        rcu_ckout1_config(RCU_CKOUT1SRC_PLLI2SR, RCU_CKOUT1_DIV4);
+        IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE), GPIO_AF_0);
 #else
         // All F4s
         RCC_MCO2Config(RCC_MCO2Source_PLLI2SCLK, RCC_MCO2Div_4);
@@ -105,7 +108,7 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
 
 void mcoInit(void)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(APM32F4) || defined(GD32F4)
     // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
     mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
 #elif defined(STM32G4)
