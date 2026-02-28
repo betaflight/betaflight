@@ -29,6 +29,7 @@
 #define DSHOT_BEACON_GUARD_DELAY_US 1200000  // Time to separate DShot beacon and arming/disarming events
                                              // to prevent interference with motor direction commands
 #define DSHOT_BEACON_MODE_INTERVAL_US     450000  // at least 450ms between successive DShot beacon iterations to allow time for ESC to play tone
+#define BEACON_MAX_AGE_US                 60000000 // Maximum age for beacon timestamp clamping (60 seconds)
 #endif
 
 typedef enum {

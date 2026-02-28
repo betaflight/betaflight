@@ -43,6 +43,7 @@
 #include "pg/msp.h"
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+static timeMs_t mspConfiguratorActivityMs;
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
 {
@@ -435,6 +436,9 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     mspPostProcessFnPtr mspPostProcessFn = NULL;
     const mspResult_e status = mspProcessCommandFn(msp->descriptor, &command, &reply, &mspPostProcessFn);
 
+    // Consider any MSP command (typically from configurator) as activity for gating beacons
+    mspConfiguratorActivityMs = millis();
+
     if (status != MSP_RESULT_NO_REPLY) {
         sbufSwitchToReader(&reply.buf, outBufHead); // change streambuf direction
         mspSerialEncode(msp, &reply, msp->mspVersion);
@@ -598,6 +602,43 @@ bool mspSerialWaiting(void)
         }
     }
     return false;
+}
+
+timeMs_t mspSerialLastActivityMs(void)
+{
+    timeMs_t latestActivity = 0;
+
+    for (mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (!mspPort->port || mspPort->lastActivityMs == 0) {
+            continue;
+        }
+
+        if (cmp32(mspPort->lastActivityMs, latestActivity) > 0) {
+            latestActivity = mspPort->lastActivityMs;
+        }
+    }
+
+    return latestActivity;
+}
+
+bool mspSerialIsActiveWithin(timeMs_t timeoutMs)
+{
+    const timeMs_t lastActivity = mspSerialLastActivityMs();
+
+    if (lastActivity == 0) {
+        return false;
+    }
+
+    return cmp32(millis(), lastActivity) < (int32_t)timeoutMs;
+}
+
+bool mspSerialIsConfiguratorActive(void)
+{
+    if (mspConfiguratorActivityMs == 0) {
+        return false;
+    }
+
+    return cmp32(millis(), mspConfiguratorActivityMs) < (int32_t)MSP_ACTIVITY_DEFAULT_TIMEOUT_MS;
 }
 
 void mspSerialInit(void)
