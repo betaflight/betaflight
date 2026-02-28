@@ -82,7 +82,15 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO            static
-#define FAST_IRQ_HANDLER
+
+#if PICO_COPY_TO_RAM == 0
+#define FAST_CODE                       __attribute__((section(".fastcode")))
+#else
+#define FAST_CODE
+#endif
+
+#define FAST_IRQ_HANDLER                FAST_CODE
+
 
 #define DEFAULT_CPU_OVERCLOCK           0
 

@@ -135,6 +135,7 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
         dmaDescriptors[index].irqN = core ? DMA_IRQ_1_IRQn : DMA_IRQ_0_IRQn;
         irq_handler_t irq_handler = core ? dma_irq1_handler : dma_irq0_handler;
 
+        bprintf("dmaSetHandler on id %d, going to set exclusive handler [%p] for %d", identifier, dmaDescriptors[index].irqN, irq_handler);
         irq_set_exclusive_handler(dmaDescriptors[index].irqN, irq_handler);
         irq_set_enabled(dmaDescriptors[index].irqN, true);
 

@@ -647,6 +647,10 @@ extern uint8_t eepromData[EEPROM_SIZE];
 struct linker_symbol;
 extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
 extern struct linker_symbol __config_end;
+#ifdef FONTDATA_IN_FLASH
+extern struct linker_symbol __fontdata_start; // configured via linker script when building binaries.
+extern struct linker_symbol __fontdata_end;
+#endif
 #endif
 
 #ifndef USE_ITERM_RELAX
