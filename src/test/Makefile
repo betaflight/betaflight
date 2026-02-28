@@ -38,7 +38,7 @@ alignsensor_unittest_SRC := \
 
 althold_unittest_SRC := \
 		$(USER_DIR)/flight/alt_hold_multirotor.c \
-		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/autopilot_common.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
@@ -56,14 +56,14 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/autopilot_common.c \
 		$(USER_DIR)/flight/gps_rescue_multirotor.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
 
 autopilot_multirotor_unittest_SRC := \
-		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/autopilot_common.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \

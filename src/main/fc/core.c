@@ -1155,8 +1155,8 @@ void processRxModes(timeUs_t currentTimeUs)
         if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
             ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
 
-            // Reset waypoint tracker on mode entry
-            waypointReset();
+            // Resume from current waypoint (or reset to WP0 on first engagement)
+            waypointResume();
 
             // Reset controllers with first waypoint target
             const gpsLocation_t *target = waypointGetTarget();

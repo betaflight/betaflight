@@ -607,9 +607,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
 #if defined(USE_GPS)
     UNUSED(imuComputeQuaternionFromRPY);
-    UNUSED(imuDebug_GPS_RESCUE_HEADING);
     UNUSED(imuCalcCourseErr);
     UNUSED(imuCalcGroundspeedGain);
+#endif
+#if defined(USE_MAG) && defined(USE_GPS_RESCUE)
+    UNUSED(imuDebug_GPS_RESCUE_HEADING);
 #endif
 }
 #else

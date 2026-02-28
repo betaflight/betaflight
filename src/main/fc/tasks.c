@@ -62,7 +62,7 @@
 #include "flight/pos_hold.h"
 
 #if ENABLE_FLIGHT_PLAN
-#include "flight/autopilot_multirotor.h"
+#include "flight/autopilot_common.h"
 #endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -593,6 +593,10 @@ void tasksInit(void)
 
 #ifdef USE_POSITION_HOLD
     setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS));
+#endif
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    setTaskEnabled(TASK_AUTOPILOT, featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_MAG

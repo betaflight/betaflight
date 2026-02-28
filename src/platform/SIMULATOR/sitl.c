@@ -51,6 +51,7 @@
 #include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/barometer/barometer_virtual.h"
 #include "flight/imu.h"
+#include "flight/position.h"
 
 #include "config/feature.h"
 #include "config/config.h"
@@ -66,9 +67,16 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "fc/rc.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "sensors/sensors.h"
 #include "pg/flight_plan.h"
+
+#if ENABLE_FLIGHT_PLAN
+#include "flight/autopilot_waypoint.h"
+#include "flight/autopilot_common.h"
+#endif
 
 #include "io/gps.h"
 #include "io/gps_virtual.h"
@@ -94,6 +102,91 @@ static udpLink_t stateLink, pwmLink, pwmRawLink, rcLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
+static const char *configFilePath = NULL;
+
+// GPX track logging for post-flight visualization (enabled with --gpx)
+static FILE *gpxTrackFile = NULL;
+static bool gpxHeaderWritten = false;
+static bool gpxEnabled = false;
+
+static const char *gpxWaypointTypeName(uint8_t type)
+{
+    switch (type) {
+    case WAYPOINT_TYPE_FLYOVER: return "FLYOVER";
+    case WAYPOINT_TYPE_FLYBY:   return "FLYBY";
+    case WAYPOINT_TYPE_HOLD:    return "HOLD";
+    case WAYPOINT_TYPE_LAND:    return "LAND";
+    default:                    return "UNKNOWN";
+    }
+}
+
+static void gpxTrackOpen(void)
+{
+    gpxTrackFile = fopen("sitl_track.gpx", "w");
+    if (gpxTrackFile) {
+        fprintf(gpxTrackFile,
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<gpx version=\"1.1\" creator=\"Betaflight SITL\"\n"
+            "     xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+
+        // Write flight plan waypoints as GPX waypoints (points of interest)
+        const flightPlanConfig_t *plan = flightPlanConfig();
+        for (uint8_t i = 0; i < plan->waypointCount && i < MAX_WAYPOINTS; i++) {
+            const waypoint_t *wp = &plan->waypoints[i];
+            fprintf(gpxTrackFile,
+                "  <wpt lat=\"%.7f\" lon=\"%.7f\">\n"
+                "    <ele>%.2f</ele>\n"
+                "    <name>WP%d %s</name>\n"
+                "  </wpt>\n",
+                (double)wp->latitude / 1e7,
+                (double)wp->longitude / 1e7,
+                (double)wp->altitude / 100.0,
+                i, gpxWaypointTypeName(wp->type));
+        }
+
+        fprintf(gpxTrackFile,
+            "  <trk>\n"
+            "    <name>SITL Flight Track</name>\n"
+            "    <trkseg>\n");
+        gpxHeaderWritten = true;
+    }
+}
+
+static void gpxTrackWrite(double lat, double lon, double altM, uint32_t simTimeMs)
+{
+    if (!gpxTrackFile) {
+        gpxTrackOpen();
+    }
+    if (!gpxTrackFile) {
+        return;
+    }
+    // Format time as HH:MM:SS from simulation milliseconds
+    const uint32_t totalSec = simTimeMs / 1000;
+    const uint32_t h = totalSec / 3600;
+    const uint32_t m = (totalSec % 3600) / 60;
+    const uint32_t s = totalSec % 60;
+    fprintf(gpxTrackFile,
+        "      <trkpt lat=\"%.7f\" lon=\"%.7f\">\n"
+        "        <ele>%.2f</ele>\n"
+        "        <time>2026-01-01T%02u:%02u:%02uZ</time>\n"
+        "      </trkpt>\n",
+        lat, lon, altM, h, m, s);
+    fflush(gpxTrackFile);
+}
+
+static void gpxTrackClose(void)
+{
+    if (gpxTrackFile && gpxHeaderWritten) {
+        fprintf(gpxTrackFile,
+            "    </trkseg>\n"
+            "  </trk>\n"
+            "</gpx>\n");
+        fclose(gpxTrackFile);
+        gpxTrackFile = NULL;
+        gpxHeaderWritten = false;
+        printf("[SITL] GPS track written to sitl_track.gpx\n");
+    }
+}
 
 #define PORT_PWM_RAW    9001    // Out
 #define PORT_PWM        9002    // Out
@@ -102,14 +195,41 @@ static char simulator_ip[32] = "127.0.0.1";
 
 int targetParseArgs(int argc, char * argv[])
 {
-    //The first argument should be target IP.
-    if (argc > 1) {
-        strcpy(simulator_ip, argv[1]);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            printf("Betaflight SITL\n");
+            printf("Usage: %s [options]\n", argv[0]);
+            printf("Options:\n");
+            printf("  --ip <address>     Simulator IP address (default: %s)\n", simulator_ip);
+            printf("  --config <file>    Load CLI config file, save to EEPROM, and exit\n");
+            printf("  --gpx              Write GPS track to sitl_track.gpx\n");
+            printf("  --help, -h         Show this help message\n");
+            exit(0);
+        } else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
+            configFilePath = argv[++i];
+        } else if (strcmp(argv[i], "--ip") == 0 && i + 1 < argc) {
+            strncpy(simulator_ip, argv[++i], sizeof(simulator_ip) - 1);
+            simulator_ip[sizeof(simulator_ip) - 1] = '\0';
+        } else if (strcmp(argv[i], "--gpx") == 0) {
+            gpxEnabled = true;
+        } else {
+            fprintf(stderr, "[SITL] Unknown argument: %s (use --help for usage)\n", argv[i]);
+            exit(1);
+        }
+    }
+
+    if (configFilePath) {
+        printf("[SITL] Config file: %s (will load, save to EEPROM, and exit)\n", configFilePath);
     }
 
     printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n",
            simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
     return 0;
+}
+
+const char *targetGetConfigFile(void)
+{
+    return configFilePath;
 }
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
@@ -150,21 +270,31 @@ static void updateState(const fdm_packet* pkt)
         return;
     }
 
+    // The BetaflightPlugin reads angular velocity from the IMU *sensor* entity
+    // (components::AngularVelocity on imuEntity), so the data arrives in the
+    // sensor frame. The IMU sensor pose is Rx(π) relative to the FLU link,
+    // which makes the sensor frame effectively FRD (X=fwd, Y=right, Z=down).
+    //
+    // BF gyro conventions:
+    //   Roll  = +wx_FRD (roll right)          → keep X
+    //   Pitch = -wy_FRD (BF positive = nose down, opposite to FRD) → negate Y
+    //   Yaw   = +wz_FRD (CW viewed from above)                    → keep Z
     int16_t x,y,z;
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
     virtualAccSet(virtualAccDev, x, y, z);
-//    printf("[acc]%lf,%lf,%lf\n", pkt->imu_linear_acceleration_xyz[0], pkt->imu_linear_acceleration_xyz[1], pkt->imu_linear_acceleration_xyz[2]);
 
     x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    z = constrain(pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
     virtualGyroSet(virtualGyroDev, x, y, z);
-//    printf("[gyr]%lf,%lf,%lf\n", pkt->imu_angular_velocity_rpy[0], pkt->imu_angular_velocity_rpy[1], pkt->imu_angular_velocity_rpy[2]);
 
-    // temperature in 0.01 C = 25 deg
-    virtualBaroSet(pkt->pressure, 2500);
+    // Compute barometric pressure from altitude using standard atmosphere model
+    // P = 101325 * (1 - 2.25577e-5 * h)^5.25588, h in meters
+    const double altMeters = pkt->position_xyz[2];
+    const int32_t pressure = (int32_t)(101325.0 * pow(1.0 - 2.25577e-5 * altMeters, 5.25588));
+    virtualBaroSet(pressure, 2500);
 #if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
@@ -192,7 +322,16 @@ static void updateState(const fdm_packet* pkt)
     zf = atan2(t3, t4) * RAD2DEG;
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
-    imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1], pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
+    // The Gazebo BetaflightPlugin computes the quaternion as Rx(π)*M*Rx(π)
+    // (a similarity transform), but Betaflight needs the body(FRD)-to-world(NED)
+    // quaternion: ENUtoNED * M * FRDtoFLU = Rz(π/2) * Rx(π) * M * Rx(π).
+    // Pre-multiply by Rz(90°) to correct: q' = q_Rz(π/2) * q_plugin
+    const float qw = pkt->imu_orientation_quat[0];
+    const float qx = pkt->imu_orientation_quat[1];
+    const float qy = pkt->imu_orientation_quat[2];
+    const float qz = pkt->imu_orientation_quat[3];
+    static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
+    imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
 #endif
 #endif
 
@@ -200,13 +339,40 @@ static void updateState(const fdm_packet* pkt)
     const double longitude = pkt->position_xyz[0];
     const double latitude = pkt->position_xyz[1];
     const double altitude = pkt->position_xyz[2];
+
+    // Gazebo Harmonic's SphericalFromLocalPosition inverts horizontal position
+    // deltas: moving East in the ENU world frame produces DECREASING longitude,
+    // and moving North produces DECREASING latitude. Mirror the GPS position
+    // around the initial origin to correct this 180° horizontal inversion.
+    static double originLat = 0, originLon = 0;
+    static bool gpsOriginSet = false;
+    if (!gpsOriginSet) {
+        originLat = latitude;
+        originLon = longitude;
+        gpsOriginSet = true;
+    }
+    const double correctedLat = 2.0 * originLat - latitude;
+    const double correctedLon = 2.0 * originLon - longitude;
+
     const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
     const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
+    // Plugin provides ENU velocity when spherical coords configured: [0]=East, [1]=North
+    // Velocity from WorldLinearVelocity is correct (matches physical motion direction).
+    // Course = atan2(East, North) gives standard aviation bearing from North, clockwise.
     double course = atan2(pkt->velocity_xyz[0], pkt->velocity_xyz[1]) * RAD2DEG;
     if (course < 0.0) {
         course += 360.0;
     }
-    setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
+    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course);
+
+    // Write GPX trackpoint at ~1Hz for post-flight visualization
+    if (gpxEnabled) {
+        static uint64_t lastGpxTimeUs = 0;
+        if (realtime_now - lastGpxTimeUs >= 1000000) {
+            lastGpxTimeUs = realtime_now;
+            gpxTrackWrite(correctedLat, correctedLon, altitude, millis());
+        }
+    }
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
@@ -228,20 +394,14 @@ static void updateState(const fdm_packet* pkt)
     last_ts.tv_sec = now_ts.tv_sec;
     last_ts.tv_nsec = now_ts.tv_nsec;
 
-    // Periodic debug: RX inputs and arming disable flags (every ~1s)
+    // Periodic debug: status and key telemetry (every ~1s)
     static uint64_t lastDebugTimeUs = 0;
     if (realtime_now - lastDebugTimeUs >= 1000000) {
         lastDebugTimeUs = realtime_now;
 
         const armingDisableFlags_e flags = getArmingDisableFlags();
-        printf("[SITL] t=%dms simRate=%.3f RC[%s]: ", (int)millis(), simRate, rc_received ? "UDP" : "NONE");
-        for (int i = 0; i < 8; i++) {
-            printf("ch%d=%d ", i, (int)rcData[i]);
-        }
-        printf("\n");
-
         if (flags) {
-            printf("[SITL] Arming disabled:");
+            printf("[SITL] t=%dms Arming disabled:", (int)millis());
             for (unsigned i = 0; i < ARMING_DISABLE_FLAGS_COUNT; i++) {
                 const armingDisableFlags_e flag = (1 << i);
                 if (flags & flag) {
@@ -249,17 +409,59 @@ static void updateState(const fdm_packet* pkt)
                 }
             }
             printf("\n");
-        } else {
-            printf("[SITL] Arming: ENABLED\n");
         }
 
-#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
-        printf("[SITL] Autopilot: armed=%d gps=%d fix=%d wpts=%d mode=%d\n",
-            ARMING_FLAG(ARMED) ? 1 : 0,
-            sensors(SENSOR_GPS) ? 1 : 0,
-            STATE(GPS_FIX) ? 1 : 0,
-            flightPlanConfig()->waypointCount,
-            FLIGHT_MODE(AUTOPILOT_MODE) ? 1 : 0);
+#if defined(USE_GPS)
+        printf("[SITL] t=%dms  spd=%.2fm/s  pos=(%d,%d)  alt=%.2fm  att=(%.1f,%.1f,%.1f)",
+            (int)millis(),
+            (double)gpsSol.groundSpeed * 0.01,
+            gpsSol.llh.lat, gpsSol.llh.lon,
+            (double)getAltitudeCm() * 0.01,
+            (double)attitude.values.roll * 0.1, (double)attitude.values.pitch * 0.1, (double)attitude.values.yaw * 0.1);
+#if ENABLE_FLIGHT_PLAN
+        {
+            static const char *wpStateNames[] = {
+                "IDLE", "CLIMB", "APPROACH", "ARRIVED", "HOLD", "ORBIT", "FIG8", "LAND", "DONE"
+            };
+            const waypointState_e wpState = waypointGetState();
+            const char *stName = (wpState < ARRAYLEN(wpStateNames)) ? wpStateNames[wpState] : "?";
+
+            if (FLIGHT_MODE(AUTOPILOT_MODE) && wpState != WP_STATE_IDLE && wpState != WP_STATE_COMPLETE) {
+                printf("  wp=%d/%d dist=%.1fm %s",
+                    waypointGetCurrentIndex(),
+                    flightPlanConfig()->waypointCount - 1,
+                    (double)waypointGetDistanceCm() * 0.01,
+                    stName);
+            } else {
+                printf("  %s", stName);
+            }
+        }
+#endif
+        printf("\n");
+#if ENABLE_FLIGHT_PLAN
+#ifndef USE_WING
+        // Diagnostic: show PID commands, velocity, and position correction during nav
+        if (FLIGHT_MODE(AUTOPILOT_MODE) && waypointGetState() != WP_STATE_IDLE) {
+            const autopilotDebugState_t *dbg = autopilotGetDebugState();
+            printf("[DIAG] BF(R=%.1f,P=%.1f) RC(R=%.1f%%,P=%.1f%%,Y=%.1f%%) brg=%.1f intcpt=%.1f crs=%.1f hErr=%.1f trnR=%.1f tgtAlt=%.2fm nSc=%.2f bld=%.1f spd=%.2fm/s L1(%s,len=%.0f,dte=%.0f) nav=%s\n",
+                (double)dbg->pidSumBFRoll, (double)dbg->pidSumBFPitch,
+                (double)(rcCommand[ROLL] / 5.0f), (double)(rcCommand[PITCH] / 5.0f), (double)(rcCommand[YAW] / 5.0f),
+                (double)dbg->desiredBearing * 0.1,
+                (double)dbg->interceptBearing,
+                (double)gpsSol.groundCourse * 0.1,
+                (double)dbg->interceptHeadingError,
+                (double)dbg->interceptTurnRate,
+                (double)dbg->targetAltCm * 0.01,
+                (double)dbg->navScale,
+                (double)dbg->buildupAngleLimit,
+                (double)gpsSol.groundSpeed * 0.01,
+                dbg->l1Active ? "ON" : "OFF",
+                (double)dbg->l1PathLength,
+                (double)dbg->l1DistToEnd,
+                dbg->navOriginValid ? "ok" : "NO");
+        }
+#endif
+#endif
 #endif
     }
 
@@ -337,6 +539,9 @@ void systemInit(void)
 
     clock_gettime(CLOCK_MONOTONIC, &start_time);
     printf("[system]Init...\n");
+
+    // Register GPX track cleanup so the file is properly closed on exit
+    atexit(gpxTrackClose);
 
     SystemCoreClock = 500 * 1e6; // virtual 500MHz
 

@@ -405,11 +405,8 @@
 
 #endif // !defined(CORE_BUILD)
 
-#ifdef USE_GPS
-#define USE_GPS_NMEA
-#define USE_GPS_UBLOX
-#define USE_GPS_RESCUE
-#endif // USE_GPS
+// Note: USE_GPS secondary defines (USE_GPS_NMEA, USE_GPS_UBLOX, USE_GPS_RESCUE)
+// are in common_post.h because SITL defines USE_GPS in target.h (after common_pre.h)
 
 #if (defined(USE_OSD_HD) || defined(USE_OSD_SD) || defined(USE_FRSKYOSD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
@@ -570,8 +567,4 @@
   #else
     #define GYRO_COUNT 1
   #endif
-#endif
-
-#if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
-#define ENABLE_FLIGHT_PLAN 1
 #endif

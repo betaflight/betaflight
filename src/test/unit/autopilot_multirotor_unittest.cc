@@ -35,7 +35,7 @@ extern "C" {
     #include "fc/rc_controls.h"
     #include "fc/runtime_config.h"
 
-    #include "flight/autopilot_multirotor.h"
+    #include "flight/autopilot_common.h"
     #include "flight/imu.h"
     #include "flight/position.h"
 
@@ -172,6 +172,14 @@ extern "C" {
         }
     }
 
+    void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing) {
+        UNUSED(from);
+        UNUSED(to);
+        UNUSED(dist3d);
+        if (dist) *dist = 0;
+        if (bearing) *bearing = 0;
+    }
+
     void navOriginUpdate(const gpsLocation_t* currentPos) {
         UNUSED(currentPos);
     }
@@ -210,6 +218,22 @@ extern "C" {
     const gpsLocation_t* wpGetWaypointLocation(void) {
         static gpsLocation_t loc = { .lat = 0, .lon = 0, .altCm = 0 };
         return &loc;
+    }
+
+    // Platform detection stub
+    bool isFixedWing(void) { return false; }
+
+    // Altitude interpolation stubs
+    int32_t waypointGetPreviousAltCm(void) { return 0; }
+    float waypointGetLegLengthCm(void) { return 0.0f; }
+    float l1GuidanceGetPathLength(void) { return 0.0f; }
+    float l1GuidanceGetDesiredBearing(void) { return 0.0f; }
+    void calculateOrbitPosition(int32_t centerLat, int32_t centerLon,
+                                uint16_t radiusCm, float angleDeg,
+                                gpsLocation_t *result) {
+        UNUSED(centerLat); UNUSED(centerLon);
+        UNUSED(radiusCm); UNUSED(angleDeg);
+        if (result) { result->lat = 0; result->lon = 0; }
     }
 
     // IMU stubs

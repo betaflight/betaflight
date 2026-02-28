@@ -417,8 +417,17 @@ static FAST_CODE void processRcSmoothingFilter(void)
 
     // Apply smoothing filters when RC smoothing is enabled
     for (int i = 0; i < PRIMARY_CHANNEL_COUNT; i++) {
+        float filtered = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
+#if ENABLE_FLIGHT_PLAN
+        // When autopilot controls throttle, don't overwrite rcCommand[THROTTLE]
+        // with the smoothed value — the autopilot already provides smooth output.
+        // The filter state still updates so it tracks for a clean hand-back.
+        if (i == THROTTLE && FLIGHT_MODE(AUTOPILOT_MODE)) {
+            continue;
+        }
+#endif
         float *dst = i == THROTTLE ? &rcCommand[i] : &setpointRate[i];
-        *dst = pt3FilterApply(&rcSmoothingData.filterSetpoint[i], rxDataToSmooth[i]);
+        *dst = filtered;
     }
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         feedforwardSmoothed[axis] = pt3FilterApply(&rcSmoothingData.filterFeedforward[axis], feedforwardRaw[axis]);

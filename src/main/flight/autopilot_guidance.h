@@ -34,7 +34,16 @@ typedef struct l1Guidance_s {
     float alongTrackDistance;    // Distance along path from start (cm)
     float lookaheadDistance;     // L1 lookahead distance (cm)
     vector2_t carrotPoint;       // Target point on path (NED 2D, cm)
+    float desiredBearing;        // Bearing from position to carrot (centidegrees, 0-35999)
     bool isActive;               // Whether L1 guidance is active
+
+    // Arc transition state: smooth carrot rotation between track segments
+    bool arcActive;              // Arc transition in progress
+    float arcBearing;            // Current arc bearing (degrees, 0-360)
+    float arcDirection;          // +1.0 = clockwise, -1.0 = counter-clockwise
+    float arcRate;               // Effective turn rate for this arc (deg/s, scaled for large turns)
+    float arcStartBearing;       // Pending arc start bearing (degrees, 0-360)
+    bool arcStartValid;          // Whether arcStartBearing was set
 } l1Guidance_t;
 
 // Initialize L1 guidance system
@@ -47,7 +56,7 @@ void l1GuidanceReset(void);
 void l1GuidanceSetPath(const vector2_t *start, const vector2_t *end);
 
 // Update L1 guidance and compute carrot point
-void l1GuidanceUpdate(const vector2_t *position, float groundSpeedCmS);
+void l1GuidanceUpdate(const vector2_t *position, float groundSpeedCmS, float dt);
 
 // Get the carrot point (target position for position controller)
 const vector2_t* l1GuidanceGetCarrot(void);
@@ -61,8 +70,21 @@ float l1GuidanceGetAlongTrackDistance(void);
 // Get lookahead distance for debugging/telemetry
 float l1GuidanceGetLookaheadDistance(void);
 
+// Get path length for altitude interpolation
+float l1GuidanceGetPathLength(void);
+
+// Get desired bearing from position to carrot (centidegrees, 0-35999)
+float l1GuidanceGetDesiredBearing(void);
+
 // Check if L1 guidance is active
 bool l1GuidanceIsActive(void);
 
 // Enable/disable L1 guidance
 void l1GuidanceSetActive(bool active);
+
+// Set the arc start bearing for the next path transition.
+// Call before l1GuidanceSetPath() to enable arc transition from the current heading.
+void l1GuidanceSetArcStart(float courseDeg);
+
+// Check if arc transition is active
+bool l1GuidanceIsArcActive(void);

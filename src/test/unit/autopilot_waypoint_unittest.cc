@@ -1073,6 +1073,7 @@ extern "C" {
 
     float getAltitudeCm(void) { return mockAltitudeCm; }
     bool isBelowLandingAltitude(void) { return mockBelowLandingAlt; }
+    bool isFixedWing(void) { return false; }
 
     void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to,
                                   bool useTinyCalc, uint32_t *dist, int32_t *bearing) {
@@ -1101,12 +1102,32 @@ extern "C" {
         UNUSED(end);
     }
 
+    void l1GuidanceSetArcStart(float courseDeg) {
+        UNUSED(courseDeg);
+    }
+
     void l1GuidanceSetActive(bool active) {
         mockL1Active = active;
     }
 
     bool l1GuidanceIsActive(void) {
         return mockL1Active;
+    }
+
+    bool l1GuidanceIsArcActive(void) {
+        return false;
+    }
+
+    float l1GuidanceGetAlongTrackDistance(void) {
+        return 0.0f;
+    }
+
+    float l1GuidanceGetPathLength(void) {
+        return 0.0f;
+    }
+
+    bool navOriginIsValid(void) {
+        return true;
     }
 
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {

@@ -194,7 +194,7 @@ static bool nullProcessFrame(const rxRuntimeState_t *rxRuntimeState)
     return true;
 }
 
-#ifdef SIMULATOR_BUILD
+#if ENABLE_RX_UDP
 static uint16_t udpChannelData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool udpFrameReceived = false;
 
@@ -307,7 +307,7 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 
 void rxInit(void)
 {
-#ifdef SIMULATOR_BUILD
+#if ENABLE_RX_UDP
     rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
 #else
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
@@ -401,7 +401,7 @@ void rxInit(void)
         break;
 #endif
 
-#ifdef SIMULATOR_BUILD
+#if ENABLE_RX_UDP
     case RX_PROVIDER_UDP:
         rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
         rxRuntimeState.rcReadRawFn = readRCUdp;

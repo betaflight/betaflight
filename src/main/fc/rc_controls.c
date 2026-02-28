@@ -119,6 +119,10 @@ void clearWasLastDisarmUserRequested(void)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
+    if (FLIGHT_MODE(AUTOPILOT_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
+        return THROTTLE_HIGH;
+    }
+
     if (featureIsEnabled(FEATURE_3D)) {
         if (IS_RC_MODE_ACTIVE(BOX3D) || flight3DConfig()->switched_mode3d) {
             if (rcData[THROTTLE] < rxConfig()->mincheck) {

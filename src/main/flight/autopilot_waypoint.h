@@ -30,6 +30,7 @@
 // Waypoint state machine states
 typedef enum {
     WP_STATE_IDLE = 0,          // Not active
+    WP_STATE_CLIMBING,          // Climbing to minNavAlt (level flight, no horizontal nav)
     WP_STATE_APPROACHING,       // Flying toward waypoint
     WP_STATE_ARRIVED,           // Within arrival radius
     WP_STATE_HOLDING,           // Maintaining position at HOLD waypoint
@@ -53,14 +54,19 @@ typedef struct {
     timeUs_t landingStartTime;      // When landing sequence started
     float patternAngle;             // Current angle in pattern (degrees, 0-360)
     float landingStartAltitude;     // Altitude when landing started (cm)
+    int32_t previousWaypointAltCm;  // Previous waypoint altitude (AMSL, cm)
+    float legLengthCm;              // Total horizontal distance of current leg (cm)
     bool isValid;                   // Is waypoint system valid
 } waypointTracker_t;
 
 // Initialize waypoint system
 void waypointInit(void);
 
-// Reset waypoint tracker (call when entering autopilot mode)
+// Reset waypoint tracker to WP0 (call for initial engagement)
 void waypointReset(void);
+
+// Resume from current waypoint (call when re-engaging autopilot mode)
+void waypointResume(void);
 
 // Main state machine update (call at 100Hz)
 void waypointUpdate(timeUs_t currentTimeUs);
@@ -89,6 +95,9 @@ int32_t waypointGetBearingCdeg(void);
 // Get current state
 waypointState_e waypointGetState(void);
 
+// Set state (used by autopilot controller for climb phase overlay)
+void waypointSetState(waypointState_e state);
+
 // Check if system is valid
 bool waypointIsSystemValid(void);
 
@@ -97,6 +106,17 @@ uint8_t waypointGetCurrentType(void);
 
 // Get time remaining in hold (deciseconds, 0 = infinite)
 uint16_t waypointGetHoldTimeRemaining(void);
+
+// Get previous waypoint altitude (AMSL, cm) for altitude interpolation
+int32_t waypointGetPreviousAltCm(void);
+
+// Get total leg length (cm) for altitude interpolation
+float waypointGetLegLengthCm(void);
+
+// Calculate orbit pattern target position (used by autopilot_common.c for wing climb orbit)
+void calculateOrbitPosition(int32_t centerLat, int32_t centerLon,
+                            uint16_t radiusCm, float angleDeg,
+                            gpsLocation_t *result);
 
 // Inject emergency landing at current GPS position (for RX loss)
 void waypointSetEmergencyLanding(void);

@@ -21,8 +21,6 @@
 
 #include "platform.h"
 
-#ifndef USE_WING
-
 #include "flight/autopilot.h"
 
 #include "pg/pg.h"
@@ -30,13 +28,13 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 6);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
     .hoverThrottle = 1275,
     .throttleMin = 1100,
-    .throttleMax = 1700,
+    .throttleMax = 1900,
     .altitudeP = 15,
     .altitudeI = 15,
     .altitudeD = 15,
@@ -66,8 +64,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity
     .yawP = 50,                       // 0.5 P gain
     .yawD = 10,                       // 0.1 D gain
-    .maxYawRate = 90,                 // 90 deg/s max
-    .minYawVelocity = 100,            // 1.0 m/s minimum (GPS ground course valid)
+    .maxYawRate = 30,                 // 30 deg/s max
+    .minForwardVelocity = 300,        // 3.0 m/s minimum forward velocity (GPS course reliability / stall prevention)
 
     // Velocity buildup (acceleration from stationary)
     .velocityBuildupMaxPitch = 8,     // 8° max pitch bias for acceleration
@@ -92,6 +90,10 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .l1MinLookahead = 1000,           // 10m minimum lookahead
     .l1MaxLookahead = 10000,          // 100m maximum lookahead
     .l1MaxCrossTrackError = 10000,    // 100m max XTE before fallback
+    .l1TurnRate = 8,                  // 8 deg/s arc transition rate between waypoints
+
+    // Vertical track
+    .minNavAltitudeM = 5,                 // 5m AGL before horizontal navigation begins
 
     // Safety: RX loss policy
     .rxLossPolicy = AP_RX_LOSS_DISABLE,  // Disable autopilot on RX loss (use standard failsafe)
@@ -100,5 +102,3 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .maxDistanceFromHomeM = 0,            // Disabled by default
     .geofenceAction = AP_GEOFENCE_LAND,   // Land at current position
 );
-
-#endif // !USE_WING

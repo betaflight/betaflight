@@ -115,6 +115,7 @@ extern "C" {
     static waypointState_e mockWaypointState = WP_STATE_IDLE;
     static bool mockEmergencyLandingCalled = false;
     static bool mockWaypointResetCalled = false;
+    static bool mockWaypointResumeCalled = false;
     static gpsLocation_t mockWaypointTarget = {};
 }
 
@@ -139,6 +140,7 @@ static void resetCoreTestState(void)
     mockWaypointState = WP_STATE_IDLE;
     mockEmergencyLandingCalled = false;
     mockWaypointResetCalled = false;
+    mockWaypointResumeCalled = false;
     memset(&mockWaypointTarget, 0, sizeof(mockWaypointTarget));
 
     flightModeFlags = 0;
@@ -233,7 +235,7 @@ TEST(AutopilotCoreUnittest, AutopilotActivatesWithBoxAndGps)
 
     EXPECT_TRUE(FLIGHT_MODE(AUTOPILOT_MODE));
     EXPECT_TRUE(FLIGHT_MODE(ANGLE_MODE));
-    EXPECT_TRUE(mockWaypointResetCalled);
+    EXPECT_TRUE(mockWaypointResumeCalled);
 }
 
 TEST(AutopilotCoreUnittest, AutopilotDoesNotActivateWithoutGps)
@@ -539,6 +541,11 @@ extern "C" {
 
     void waypointReset(void) {
         mockWaypointResetCalled = true;
+        mockWaypointState = WP_STATE_APPROACHING;
+    }
+
+    void waypointResume(void) {
+        mockWaypointResumeCalled = true;
         mockWaypointState = WP_STATE_APPROACHING;
     }
 

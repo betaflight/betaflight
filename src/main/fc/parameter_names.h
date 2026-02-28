@@ -194,7 +194,7 @@
 #define PARAM_NAME_AP_YAW_P "ap_yaw_p"
 #define PARAM_NAME_AP_YAW_D "ap_yaw_d"
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
-#define PARAM_NAME_AP_MIN_YAW_VELOCITY "ap_min_yaw_velocity"
+#define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
 
 // Phase 5: Velocity buildup
 #define PARAM_NAME_AP_VELOCITY_BUILDUP_MAX_PITCH "ap_velocity_buildup_max_pitch"
@@ -212,6 +212,7 @@
 #define PARAM_NAME_AP_LANDING_SPIRAL_RATE "ap_landing_spiral_rate"
 #define PARAM_NAME_AP_LANDING_VELOCITY_THRESHOLD "ap_landing_velocity_threshold"
 #define PARAM_NAME_AP_LANDING_THROTTLE_THRESHOLD "ap_landing_throttle_threshold"
+#define PARAM_NAME_AP_MIN_NAV_ALTITUDE_M "ap_min_nav_altitude_m"
 #define PARAM_NAME_AP_RX_LOSS_POLICY "ap_rx_loss_policy"
 #define PARAM_NAME_AP_MAX_DISTANCE_FROM_HOME "ap_max_distance_from_home"
 #define PARAM_NAME_AP_GEOFENCE_ACTION "ap_geofence_action"
@@ -222,6 +223,7 @@
 #define PARAM_NAME_AP_L1_MIN_LOOKAHEAD "ap_l1_min_lookahead"
 #define PARAM_NAME_AP_L1_MAX_LOOKAHEAD "ap_l1_max_lookahead"
 #define PARAM_NAME_AP_L1_MAX_CROSS_TRACK_ERROR "ap_l1_max_cross_track_error"
+#define PARAM_NAME_AP_L1_TURN_RATE "ap_l1_turn_rate"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"

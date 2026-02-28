@@ -44,6 +44,7 @@
 
 #include "flight/autopilot_waypoint.h"
 #include "flight/autopilot.h"
+#include "flight/mixer.h"
 #include "flight/position.h"
 #include "flight/autopilot_guidance.h"
 
@@ -59,6 +60,8 @@ static waypointTracker_t wpTracker = {
     .landingStartTime = 0,
     .patternAngle = 0.0f,
     .landingStartAltitude = 0.0f,
+    .previousWaypointAltCm = 0,
+    .legLengthCm = 0.0f,
     .isValid = false,
 };
 
@@ -114,10 +117,11 @@ void waypointSetReturnToHome(void)
 {
     flightPlanConfig_t *config = flightPlanConfigMutable();
 
-    // Waypoint 0: fly to home position
+    // Waypoint 0: fly to home position (altitude AMSL = relative + home AMSL)
+    const int32_t currentAltAMSL = (int32_t)getAltitudeCm() + GPS_home_llh.altCm;
     config->waypoints[0].latitude = GPS_home_llh.lat;
     config->waypoints[0].longitude = GPS_home_llh.lon;
-    config->waypoints[0].altitude = (int32_t)getAltitudeCm();
+    config->waypoints[0].altitude = currentAltAMSL;
     config->waypoints[0].speed = 0;
     config->waypoints[0].duration = 0;
     config->waypoints[0].type = WAYPOINT_TYPE_FLYOVER;
@@ -126,7 +130,7 @@ void waypointSetReturnToHome(void)
     // Waypoint 1: land at home position
     config->waypoints[1].latitude = GPS_home_llh.lat;
     config->waypoints[1].longitude = GPS_home_llh.lon;
-    config->waypoints[1].altitude = (int32_t)getAltitudeCm();
+    config->waypoints[1].altitude = currentAltAMSL;
     config->waypoints[1].speed = 0;
     config->waypoints[1].duration = 0;
     config->waypoints[1].type = WAYPOINT_TYPE_LAND;
@@ -143,7 +147,7 @@ void waypointSetReturnToHome(void)
 
     wpTracker.targetLocation.lat = GPS_home_llh.lat;
     wpTracker.targetLocation.lon = GPS_home_llh.lon;
-    wpTracker.targetLocation.altCm = (int32_t)getAltitudeCm();
+    wpTracker.targetLocation.altCm = currentAltAMSL;
 }
 
 void waypointReset(void)
@@ -187,17 +191,59 @@ void waypointReset(void)
     wpTracker.targetLocation.lon = wp->longitude;
     wpTracker.targetLocation.altCm = wp->altitude;
 
+    // Initialize altitude interpolation: first leg starts from minNavAlt
+    const autopilotConfig_t *cfg = autopilotConfig();
+    wpTracker.previousWaypointAltCm = cfg->minNavAltitudeM * 100 + GPS_home_llh.altCm;
+
+    // Compute leg length from current position to WP0
+    uint32_t distToWp0 = 0;
+    GPS_distance_cm_bearing(&gpsSol.llh, &wpTracker.targetLocation, false, &distToWp0, NULL);
+    wpTracker.legLengthCm = (float)distToWp0;
+
     // Initialize previous position to current GPS position
+    previousPosition = gpsSol.llh;
+}
+
+void waypointResume(void)
+{
+    // Resume from the current waypoint if the flight plan was already in progress.
+    // Called on mode re-engagement so the pilot doesn't lose progress.
+    if (!wpTracker.isValid || wpTracker.state == WP_STATE_IDLE || wpTracker.state == WP_STATE_COMPLETE) {
+        // No valid in-progress plan — do a full reset from WP0
+        waypointReset();
+        return;
+    }
+
+    const flightPlanConfig_t *plan = flightPlanConfig();
+    if (wpTracker.currentIndex >= plan->waypointCount) {
+        waypointReset();
+        return;
+    }
+
+    // Re-enter approach state for the current waypoint
+    wpTracker.state = WP_STATE_APPROACHING;
+    wpTracker.holdStartTime = 0;
+    wpTracker.arrivalTime = 0;
+    wpTracker.patternAngle = 0.0f;
+
+    // Update target to current waypoint (may have been overwritten by landing/orbit logic)
+    const waypoint_t *wp = &plan->waypoints[wpTracker.currentIndex];
+    wpTracker.targetLocation.lat = wp->latitude;
+    wpTracker.targetLocation.lon = wp->longitude;
+    wpTracker.targetLocation.altCm = wp->altitude;
+
+    // Reset previous position for plane crossing detection
     previousPosition = gpsSol.llh;
 }
 
 void waypointSetEmergencyLanding(void)
 {
-    // Inject a LAND waypoint at the current GPS position
+    // Inject a LAND waypoint at the current GPS position (altitude AMSL)
+    const int32_t currentAltAMSL = (int32_t)getAltitudeCm() + GPS_home_llh.altCm;
     flightPlanConfig_t *config = flightPlanConfigMutable();
     config->waypoints[0].latitude = gpsSol.llh.lat;
     config->waypoints[0].longitude = gpsSol.llh.lon;
-    config->waypoints[0].altitude = (int32_t)getAltitudeCm();
+    config->waypoints[0].altitude = currentAltAMSL;
     config->waypoints[0].speed = 0;
     config->waypoints[0].duration = 0;
     config->waypoints[0].type = WAYPOINT_TYPE_LAND;
@@ -214,7 +260,7 @@ void waypointSetEmergencyLanding(void)
     // Set target location to current position
     wpTracker.targetLocation.lat = gpsSol.llh.lat;
     wpTracker.targetLocation.lon = gpsSol.llh.lon;
-    wpTracker.targetLocation.altCm = (int32_t)getAltitudeCm();
+    wpTracker.targetLocation.altCm = currentAltAMSL;
 }
 
 // Calculate orbit pattern target position
@@ -222,9 +268,9 @@ void waypointSetEmergencyLanding(void)
 // radiusCm: radius in centimeters
 // angleDeg: current angle (0-360 degrees, 0 = North, clockwise)
 // result: calculated GPS position on orbit
-static void calculateOrbitPosition(int32_t centerLat, int32_t centerLon,
-                                    uint16_t radiusCm, float angleDeg,
-                                    gpsLocation_t *result)
+void calculateOrbitPosition(int32_t centerLat, int32_t centerLon,
+                            uint16_t radiusCm, float angleDeg,
+                            gpsLocation_t *result)
 {
     // Convert radius from cm to degrees (approximate)
     // At equator: 1 degree latitude ≈ 111km = 11,100,000 cm
@@ -373,12 +419,14 @@ static bool hasPassedWaypointPlane(const gpsLocation_t *prevPos,
     toCurr.y = currNED.y - pathNED.y;
 
     // Dot product with path direction
-    // Positive = ahead of waypoint, Negative = behind waypoint
+    // Positive = on the departure side (toward next WP), Negative = on the approach side
     float prevDot = toPrev.x * pathDir.x + toPrev.y * pathDir.y;
     float currDot = toCurr.x * pathDir.x + toCurr.y * pathDir.y;
 
-    // Crossed the plane when sign changes from negative to positive
-    return (prevDot < 0.0f && currDot >= 0.0f);
+    // Crossed the plane when the sign changes in either direction.
+    // Normal case (approach from behind): negative → positive
+    // First WP or same-side approach: positive → negative
+    return (prevDot < 0.0f && currDot >= 0.0f) || (prevDot >= 0.0f && currDot < 0.0f);
 }
 
 void waypointUpdate(timeUs_t currentTimeUs)
@@ -426,11 +474,19 @@ void waypointUpdate(timeUs_t currentTimeUs)
         // Nothing to do
         break;
 
+    case WP_STATE_CLIMBING:
+        // Managed by autopilot controller (autopilot_common.c), not the waypoint state machine.
+        // Level flight until minNavAlt is reached; state transitions to APPROACHING on completion.
+        break;
+
     case WP_STATE_APPROACHING: {
         const waypoint_t *currentWp = &plan->waypoints[wpTracker.currentIndex];
 
-        // Enable L1 guidance if configured and we have a path to follow
-        if (cfg->l1Enable && !l1GuidanceIsActive() && plan->waypointCount > 1) {
+        // Enable L1 guidance if configured and we have a path to follow.
+        // Requires navOrigin to be valid for accurate NED conversion.
+        // If origin isn't valid yet (first cycle before positionControl runs),
+        // positionControl() will activate L1 on its first GPS update.
+        if (cfg->l1Enable && !l1GuidanceIsActive() && plan->waypointCount > 1 && navOriginIsValid()) {
             // Create L1 path from previous waypoint (or current position for first waypoint) to current waypoint
             vector3_t currentNED, targetNED;
             navOriginLLHtoNED(&gpsSol.llh, &currentNED);
@@ -501,6 +557,17 @@ void waypointUpdate(timeUs_t currentTimeUs)
             // HOLD and LAND: Use tight arrival radius for precision
             if (wpTracker.distanceToCurrent <= cfg->waypointHoldRadius) {
                 shouldTransition = true;
+            } else if (cfg->l1Enable && l1GuidanceIsActive()
+                       && l1GuidanceGetAlongTrackDistance() > l1GuidanceGetPathLength()
+                       && wpTracker.distanceToCurrent <= cfg->waypointArrivalRadius) {
+                // Craft has passed the endpoint along the track and is within
+                // the arrival radius but missed the tight hold radius.
+                // Require the distance check because large cross-track error
+                // (from an arc transition) can push the along-track projection
+                // past the endpoint while the craft is still far from the
+                // waypoint.  Without this, LAND triggers prematurely and the
+                // descent kills navScale authority.
+                shouldTransition = true;
             }
             break;
         }
@@ -559,6 +626,7 @@ void waypointUpdate(timeUs_t currentTimeUs)
                 vector2_t pathStart = { .x = arrivedWpNED.x, .y = arrivedWpNED.y };
                 vector2_t pathEnd = { .x = newCurrentWpNED.x, .y = newCurrentWpNED.y };
 
+                l1GuidanceSetArcStart(gpsSol.groundCourse * 0.1f);
                 l1GuidanceSetPath(&pathStart, &pathEnd);
                 l1GuidanceSetActive(true);
             }
@@ -594,8 +662,13 @@ void waypointUpdate(timeUs_t currentTimeUs)
             wpTracker.state = WP_STATE_FIGURE8;
             wpTracker.patternAngle = 0.0f;  // Start at left loop north
             wpTracker.patternCenter = wpTracker.targetLocation;  // Figure-8 centered at waypoint
+        } else if (isFixedWing()) {
+            // Wing cannot hover — force orbit pattern
+            wpTracker.state = WP_STATE_ORBITING;
+            wpTracker.patternAngle = 0.0f;
+            wpTracker.patternCenter = wpTracker.targetLocation;
         } else {
-            // Just hold position
+            // Multirotor: just hold position
             // Check if hold duration expired (0 = infinite hold)
             if (currentWp->duration > 0) {
                 timeDelta_t holdDuration = (currentWp->duration * 100000);  // deciseconds to microseconds
@@ -678,7 +751,7 @@ void waypointUpdate(timeUs_t currentTimeUs)
     }
 
     case WP_STATE_LANDING: {
-        // Progressive descent for gentle landing with optional spiral pattern
+        // Progressive descent for gentle landing with optional spiral/orbit pattern
         static timeUs_t belowAltitudeStartTime = 0;
         static int32_t landingCenterLat = 0;
         static int32_t landingCenterLon = 0;
@@ -687,42 +760,57 @@ void waypointUpdate(timeUs_t currentTimeUs)
         // Initialize landing on first entry
         if (wpTracker.landingStartTime == 0) {
             wpTracker.landingStartTime = currentTimeUs;
-            wpTracker.landingStartAltitude = getAltitudeCm();
+            // Store start altitude in AMSL for consistent altitude reference
+            wpTracker.landingStartAltitude = getAltitudeCm() + GPS_home_llh.altCm;
             belowAltitudeStartTime = 0;  // Reset touchdown timer
             // Store landing center point
             landingCenterLat = currentWp->latitude;
             landingCenterLon = currentWp->longitude;
+            // Initialize pattern angle for wing orbit descent
+            wpTracker.patternAngle = 0.0f;
         }
 
         // Calculate time in landing phase (seconds)
         const float landingTimeS = (currentTimeUs - wpTracker.landingStartTime) / 1000000.0f;
 
-        // Calculate target altitude based on descent rate
+        // Calculate target altitude based on descent rate (AMSL)
         // landingDescentRate is in cm/s
         const float descentCm = cfg->landingDescentRate * landingTimeS;
         const float targetAltCm = wpTracker.landingStartAltitude - descentCm;
 
-        // Stop descent at landing altitude threshold
-        const float landingAltitudeCm = cfg->landingAltitudeM * 100.0f;
+        // Stop descent at landing altitude threshold (convert AGL threshold to AMSL)
+        const float landingAltitudeCm = cfg->landingAltitudeM * 100.0f + GPS_home_llh.altCm;
         if (targetAltCm < landingAltitudeCm) {
             wpTracker.targetLocation.altCm = (int32_t)landingAltitudeCm;
         } else {
             wpTracker.targetLocation.altCm = (int32_t)targetAltCm;
         }
 
-        // Horizontal position: straight down or spiral pattern
-        if (cfg->landingSpiralEnable) {
-            // Spiral descent to avoid vortex ring state
-            // Calculate spiral angle based on time and rotation rate
+        // Horizontal position: platform-specific descent pattern
+        if (isFixedWing()) {
+            // Wing: descending orbit at holdOrbitRadius (cannot hover)
+            const float angleIncrement = cfg->maxTurnRate * 0.01f;
+            wpTracker.patternAngle += angleIncrement;
+            if (wpTracker.patternAngle >= 360.0f) {
+                wpTracker.patternAngle -= 360.0f;
+            }
+            calculateOrbitPosition(landingCenterLat, landingCenterLon,
+                                   cfg->holdOrbitRadius, wpTracker.patternAngle,
+                                   &wpTracker.targetLocation);
+            // Preserve the descent altitude (orbit function doesn't set altCm)
+            if (targetAltCm < landingAltitudeCm) {
+                wpTracker.targetLocation.altCm = (int32_t)landingAltitudeCm;
+            } else {
+                wpTracker.targetLocation.altCm = (int32_t)targetAltCm;
+            }
+        } else if (cfg->landingSpiralEnable) {
+            // Multirotor: spiral descent to avoid vortex ring state
             const float spiralAngleDeg = landingTimeS * cfg->landingSpiralRate;
             const float spiralAngleRad = spiralAngleDeg * (M_PIf / 180.0f);
 
-            // Calculate offset from center in NED frame
-            const float offsetNorth = cfg->landingSpiralRadius * cos_approx(spiralAngleRad);  // cm
-            const float offsetEast = cfg->landingSpiralRadius * sin_approx(spiralAngleRad);   // cm
+            const float offsetNorth = cfg->landingSpiralRadius * cos_approx(spiralAngleRad);
+            const float offsetEast = cfg->landingSpiralRadius * sin_approx(spiralAngleRad);
 
-            // Convert offset to lat/lon (flat-earth approximation)
-            // Calculate cos(lat) for longitude scaling at landing location
             const float cosLat = cos_approx(DEGREES_TO_RADIANS((float)landingCenterLat / GPS_DEGREES_DIVIDER));
 
             const int32_t latOffset = (int32_t)(offsetNorth / EARTH_ANGLE_TO_CM);
@@ -731,7 +819,7 @@ void waypointUpdate(timeUs_t currentTimeUs)
             wpTracker.targetLocation.lat = landingCenterLat + latOffset;
             wpTracker.targetLocation.lon = landingCenterLon + lonOffset;
         } else {
-            // Straight descent - maintain position at waypoint
+            // Multirotor: straight descent - maintain position at waypoint
             wpTracker.targetLocation.lat = landingCenterLat;
             wpTracker.targetLocation.lon = landingCenterLon;
         }
@@ -743,23 +831,19 @@ void waypointUpdate(timeUs_t currentTimeUs)
 
         // All conditions must be met for touchdown
         if (altitudeCondition && velocityCondition && throttleCondition) {
-            // Start touchdown timer
             if (belowAltitudeStartTime == 0) {
                 belowAltitudeStartTime = currentTimeUs;
             }
 
             const timeDelta_t belowAltitudeDuration = cmpTimeUs(currentTimeUs, belowAltitudeStartTime);
-            const timeDelta_t detectionThreshold = cfg->landingDetectionTime * 100000; // deciseconds to microseconds
+            const timeDelta_t detectionThreshold = cfg->landingDetectionTime * 100000;
 
             if (belowAltitudeDuration >= detectionThreshold) {
-                // Touchdown detected - transition to complete state
-                // Disarm will be handled by pid.c jerk detection
                 wpTracker.state = WP_STATE_COMPLETE;
-                wpTracker.landingStartTime = 0;  // Reset for next landing
+                wpTracker.landingStartTime = 0;
                 belowAltitudeStartTime = 0;
             }
         } else {
-            // Reset timer if any condition fails
             belowAltitudeStartTime = 0;
         }
         break;
@@ -786,6 +870,10 @@ void waypointAdvanceToNext(void)
         // Save previous waypoint location for L1 path setup
         gpsLocation_t prevWpLoc = wpTracker.targetLocation;
 
+        // Save previous waypoint altitude for altitude interpolation
+        const waypoint_t *prevWp = &plan->waypoints[wpTracker.currentIndex];
+        wpTracker.previousWaypointAltCm = prevWp->altitude;
+
         // Advance to next waypoint
         wpTracker.currentIndex = wpTracker.nextIndex;
         wpTracker.nextIndex = (wpTracker.currentIndex + 1 < plan->waypointCount)
@@ -798,6 +886,11 @@ void waypointAdvanceToNext(void)
         wpTracker.targetLocation.lon = wp->longitude;
         wpTracker.targetLocation.altCm = wp->altitude;
 
+        // Compute leg length between previous and new waypoints
+        uint32_t legDist = 0;
+        GPS_distance_cm_bearing(&prevWpLoc, &wpTracker.targetLocation, false, &legDist, NULL);
+        wpTracker.legLengthCm = (float)legDist;
+
         // Reset to approaching state
         wpTracker.state = WP_STATE_APPROACHING;
         wpTracker.holdStartTime = 0;
@@ -806,7 +899,7 @@ void waypointAdvanceToNext(void)
         // Re-enable L1 guidance for the new path segment
         // l1GuidanceUpdate() can deactivate itself near endpoints, so
         // explicitly re-activate when starting a new segment
-        if (cfg->l1Enable && plan->waypointCount > 1) {
+        if (cfg->l1Enable && plan->waypointCount > 1 && navOriginIsValid()) {
             vector3_t prevNED, newNED;
             navOriginLLHtoNED(&prevWpLoc, &prevNED);
             gpsLocation_t newWpLoc = wpTracker.targetLocation;
@@ -815,7 +908,28 @@ void waypointAdvanceToNext(void)
             vector2_t pathStart = { .x = prevNED.x, .y = prevNED.y };
             vector2_t pathEnd = { .x = newNED.x, .y = newNED.y };
 
+            l1GuidanceSetArcStart(gpsSol.groundCourse * 0.1f);
             l1GuidanceSetPath(&pathStart, &pathEnd);
+
+            // For HOLD/LAND waypoints: check if the leg is too short for
+            // the arc to converge.  The turning diameter at current speed
+            // is 2 * V / ω.  If that exceeds the leg length, the craft
+            // would fly past the waypoint during the arc.  In that case
+            // skip the L1 approach and go directly to ARRIVED so the
+            // HOLD orbit or LAND descent orbit takes over, joining the
+            // alignment arc seamlessly into the orbit pattern.
+            if (l1GuidanceIsArcActive() && cfg->l1TurnRate > 0
+                && (wp->type == WAYPOINT_TYPE_HOLD || wp->type == WAYPOINT_TYPE_LAND)) {
+                const float turnRadiusCm = (float)gpsSol.groundSpeed
+                                           / ((float)cfg->l1TurnRate * (M_PIf / 180.0f));
+                if (2.0f * turnRadiusCm > wpTracker.legLengthCm) {
+                    // Leg too short — transition to ARRIVED immediately.
+                    l1GuidanceSetActive(false);
+                    wpTracker.state = WP_STATE_ARRIVED;
+                    return;
+                }
+            }
+
             l1GuidanceSetActive(true);
         }
 
@@ -862,6 +976,11 @@ waypointState_e waypointGetState(void)
     return wpTracker.state;
 }
 
+void waypointSetState(waypointState_e state)
+{
+    wpTracker.state = state;
+}
+
 bool waypointIsSystemValid(void)
 {
     return wpTracker.isValid;
@@ -897,6 +1016,16 @@ uint16_t waypointGetHoldTimeRemaining(void)
     }
 
     return (uint16_t)((total - elapsed) / 100000);  // Convert back to deciseconds
+}
+
+int32_t waypointGetPreviousAltCm(void)
+{
+    return wpTracker.previousWaypointAltCm;
+}
+
+float waypointGetLegLengthCm(void)
+{
+    return wpTracker.legLengthCm;
 }
 
 #endif // ENABLE_FLIGHT_PLAN
