@@ -92,7 +92,8 @@ static compassBiasEstimator_t compassBiasEstimator;
 magDev_t magDev;
 mag_t mag;
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
+// bumped PG version to allow adding `mag_calib_version` to persisted config
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 5);
 
 // If the i2c bus is busy, try again in 500us
 #define COMPASS_BUS_BUSY_INTERVAL_US 500
