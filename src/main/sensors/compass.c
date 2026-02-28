@@ -117,6 +117,8 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 #define MAG_I2C_ADDRESS 0
 #endif
 
+#define COMPASS_CALIB_VERSION 1
+
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
     compassConfig->mag_alignment = MAG_ALIGN;
@@ -160,6 +162,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
+    compassConfig->mag_calib_version = COMPASS_CALIB_VERSION;
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -403,6 +406,46 @@ bool compassInit(void)
     // Build rotation matrix from configured custom alignment. Angles are in decidegrees.
     sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
+
+    // Migrate old stored magZero if necessary (older firmware stored magZero in board/frame)
+    if (compassConfig()->mag_calib_version != COMPASS_CALIB_VERSION) {
+        flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+
+        // only attempt migration if a calibration exists (non-zero bias)
+        bool hadCalibration = (magZero->raw[0] != 0) || (magZero->raw[1] != 0) || (magZero->raw[2] != 0);
+
+        if (hadCalibration) {
+            matrix33_t boardRotLocal;
+            fp_angles_t boardAngles;
+            boardAngles.angles.roll  = degreesToRadians(boardAlignment()->rollDegrees);
+            boardAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
+            boardAngles.angles.yaw   = degreesToRadians(boardAlignment()->yawDegrees);
+            buildRotationMatrix(&boardRotLocal, &boardAngles);
+
+            // sensor rotation matrix is magDev.rotationMatrix (built from mag_customAlignment)
+            // We need to transform magZero which was stored in board-frame into sensor-frame by applying
+            // the inverse of the full alignment A = B * S. For rotation matrices inverse == transpose,
+            // so magZero_sensor = S^T * (B^T * magZero_board)
+            vector3_t v;
+            v.x = magZero->raw[0];
+            v.y = magZero->raw[1];
+            v.z = magZero->raw[2];
+
+            vector3_t tmp;
+            // apply B^T
+            matrixTrnVectorMul(&tmp, &boardRotLocal, &v);
+            // apply S^T
+            matrixTrnVectorMul(&v, &magDev.rotationMatrix, &tmp);
+
+            // store back rounded to int16
+            magZero->raw[0] = lrintf(v.x);
+            magZero->raw[1] = lrintf(v.y);
+            magZero->raw[2] = lrintf(v.z);
+        }
+
+        compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
+        saveConfigAndNotify();
+    }
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
