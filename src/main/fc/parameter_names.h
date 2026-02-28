@@ -276,3 +276,30 @@
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif
+
+#ifdef USE_AIRPLANE_SAS
+#define PARAM_NAME_PSAS_PITCH_STICK_GAIN "psas_pitch_stick_gain"
+#define PARAM_NAME_PSAS_PITCH_DAMPING_GAIN "psas_pitch_damping_gain"
+#define PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ "psas_pitch_damping_filter_freq"
+#define PARAM_NAME_PSAS_PITCH_STABILITY_GAIN "psas_pitch_stability_gain"
+#define PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN "psas_pitch_accel_p_gain"
+#define PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN "psas_pitch_accel_i_gain"
+#define PARAM_NAME_PSAS_PITCH_ACCEL_MAX "psas_pitch_accel_max"
+#define PARAM_NAME_PSAS_PITCH_ACCEL_MIN "psas_pitch_accel_min"
+#define PARAM_NAME_PSAS_ROLL_STICK_GAIN "psas_roll_stick_gain"
+#define PARAM_NAME_PSAS_ROLL_DAMPING_GAIN "psas_roll_damping_gain"
+#define PARAM_NAME_PSAS_YAW_STICK_GAIN "psas_yaw_stick_gain"
+#define PARAM_NAME_PSAS_YAW_DAMPING_GAIN "psas_yaw_damping_gain"
+#define PARAM_NAME_PSAS_YAW_DAMPING_FILTER_FREQ "psas_yaw_damping_filter_freq"
+#define PARAM_NAME_PSAS_YAW_STABILITY_GAIN "psas_yaw_stability_gain"
+#define PARAM_NAME_PSAS_WING_LOAD "psas_wing_load"
+#define PARAM_NAME_PSAS_AIR_DENSITY "psas_air_density"
+#define PARAM_NAME_PSAS_LIFT_C_LIMIT "psas_lift_c_limit"
+#define PARAM_NAME_PSAS_AOA_LIMITER_GAIN "psas_aoa_limiter_gain"
+#define PARAM_NAME_PSAS_AOA_LIMITER_FILTER_FREQ "psas_aoa_limiter_filter_freq"
+#define PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME "psas_aoa_limiter_forecast_time"
+#define PARAM_NAME_PSAS_SERVO_TIME "psas_servo_time"
+#define PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START "psas_roll_yaw_clift_start"
+#define PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP "psas_roll_yaw_clift_stop"
+#define PARAM_NAME_PSAS_ROLL_TO_YAW_LINK "psas_roll_to_yaw_link"
+#endif
