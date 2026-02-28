@@ -54,7 +54,11 @@
   line by passing ENABLE_X_FEATURE=0, unlike USE_ flags which can only be enabled or left undefined.
   This allows for more granular control during builds without modifying source files.
 
-  For backward compatibility, USE_ flags will continue to be supported in this file (common_pre.h)
+  This is especially beneficial for CI builds and custom user builds where certain features may need
+  to be turned off without editing code. It also assists in debugging and testing by allowing features
+  to be toggled on/off easily.
+
+  For backward compatibility, USE_ flags will continue to be supported in the file (common_post.h)
   only. When a USE_X_FEATURE is defined, it will automatically set ENABLE_X_FEATURE=1. Source code
   should transition to using #if ENABLE_X_FEATURE guards instead of #ifdef USE_X_FEATURE.
 
