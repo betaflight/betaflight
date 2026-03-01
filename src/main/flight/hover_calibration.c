@@ -64,7 +64,6 @@ typedef struct {
     hoverCalibrationStatus_e status;
     hoverCalibrationFailReason_e failReason;
     uint16_t sampleCount;
-    float throttleSum;
     timeMs_t stabilityStartTime;
     timeMs_t samplingStartTime;
     timeMs_t lastProgressBeepTime;
@@ -116,7 +115,6 @@ void hoverCalibrationInit(void)
     hoverCal.status = HOVER_CAL_STATUS_IDLE;
     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
-    hoverCal.throttleSum = 0.0f;
     hoverCal.stabilityStartTime = 0;
     hoverCal.samplingStartTime = 0;
     hoverCal.lastProgressBeepTime = 0;
@@ -135,7 +133,6 @@ void hoverCalibrationStart(void)
     hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
-    hoverCal.throttleSum = 0.0f;
     hoverCal.stabilityStartTime = millis();
     hoverCal.samplingStartTime = 0;
     hoverCal.lastProgressBeepTime = 0;
@@ -303,7 +300,6 @@ void hoverCalibrationUpdate(void)
         if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
             // Was sampling, now lost stability - reset samples
             hoverCal.sampleCount = 0;
-            hoverCal.throttleSum = 0.0f;
         }
         hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
         hoverCal.stabilityStartTime = currentTime;
@@ -322,7 +318,6 @@ void hoverCalibrationUpdate(void)
             hoverCal.samplingStartTime = currentTime;
             hoverCal.lastProgressBeepTime = currentTime;
             hoverCal.sampleCount = 0;
-            hoverCal.throttleSum = 0.0f;
             beeper(BEEPER_RX_SET);  // Beep to indicate sampling started
         }
         return;
@@ -335,8 +330,6 @@ void hoverCalibrationUpdate(void)
             hoverCal.throttleSamples[hoverCal.sampleCount] = rcData[THROTTLE];
             hoverCal.sampleCount++;
         }
-        // Also accumulate sum for fallback/debug
-        hoverCal.throttleSum += rcData[THROTTLE];
 
         // Progress beep
         if (cmpTimeMs(currentTime, hoverCal.lastProgressBeepTime) >= HOVER_CAL_PROGRESS_BEEP_MS) {
