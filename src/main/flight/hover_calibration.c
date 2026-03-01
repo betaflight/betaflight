@@ -50,8 +50,7 @@
 
 // Calibration parameters
 #define HOVER_CAL_MIN_ALTITUDE_CM       50      // Must be >50cm to avoid ground effect/prop wash
-#define HOVER_CAL_VELOCITY_THRESHOLD    100.0f  // cm/s - vertical velocity threshold for "stable" (relaxed from 30)
-#define HOVER_CAL_TILT_COS_THRESHOLD    0.940f  // ~20 degrees max tilt (relaxed from ~10 degrees)
+#define HOVER_CAL_TILT_COS_THRESHOLD    0.866f  // cos(30°) - reject samples during aggressive banking
 #define HOVER_CAL_ARM_DELAY_MS          3000    // Wait 3s after arming before calibration can begin
 #define HOVER_CAL_STABILITY_TIME_MS     2000    // Must be stable for 2s before sampling starts
 #define HOVER_CAL_SAMPLE_TIME_MS        5000    // Collect samples for 5 seconds
@@ -215,22 +214,14 @@ static hoverCalibrationFailReason_e checkHoverStability(void)
     }
 
     // Velocity and tilt checks are informational but don't block sampling
-    // The user is responsible for hovering steadily - we just average what they give us
-    // This makes the calibration more forgiving of sensor noise
+    // Check attitude is reasonably level to reject samples during forward flight
+    // Using cos(30°) ≈ 0.866 as threshold - generous but rejects aggressive banking
+    const float tiltCos = getCosTiltAngle();
+    if (tiltCos < HOVER_CAL_TILT_COS_THRESHOLD) {
+        return HOVER_CAL_FAIL_NOT_LEVEL;
+    }
 
-    // Check vertical velocity (warn but continue if too fast)
-    // const float verticalVelocity = fabsf(getAltitudeDerivative());
-    // if (verticalVelocity > HOVER_CAL_VELOCITY_THRESHOLD) {
-    //     return HOVER_CAL_FAIL_MOVING;
-    // }
-
-    // Check attitude is level (warn but continue if tilted)
-    // const float tiltCos = getCosTiltAngle();
-    // if (tiltCos < HOVER_CAL_TILT_COS_THRESHOLD) {
-    //     return HOVER_CAL_FAIL_NOT_LEVEL;
-    // }
-
-    return HOVER_CAL_FAIL_NONE;  // Good enough to sample!
+    return HOVER_CAL_FAIL_NONE;
 }
 
 void hoverCalibrationUpdate(void)
