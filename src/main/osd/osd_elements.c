@@ -717,11 +717,7 @@ static void osdElementAdjustmentRange(osdElementParms_t *element)
 }
 static void osdElementSimplifiedSliderPos(osdElementParms_t *element)
 {
-    // Example slider values, replace with actual slider value retrieval
-    // Retrieve slider values from pidProfile and gyroConfig
     extern pidProfile_t *currentPidProfile;
-    extern gyroConfig_t *currentGyroConfig;
-
     int sliderValues[] = {
         currentPidProfile->simplified_d_gain,
         currentPidProfile->simplified_pi_gain,
@@ -731,7 +727,7 @@ static void osdElementSimplifiedSliderPos(osdElementParms_t *element)
         currentPidProfile->simplified_roll_pitch_ratio,
         currentPidProfile->simplified_pitch_pi_gain,
         currentPidProfile->simplified_master_multiplier,
-        currentGyroConfig->simplified_gyro_filter_multiplier,
+        gyroConfig()->simplified_gyro_filter_multiplier,
         currentPidProfile->simplified_dterm_filter_multiplier
     };
     const char *sliderNames[] = {
