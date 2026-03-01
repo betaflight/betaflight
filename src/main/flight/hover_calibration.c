@@ -19,9 +19,6 @@
 
 #ifdef USE_HOVER_CALIBRATION
 
-#include <math.h>
-#include <stdlib.h>
-
 #include "build/debug.h"
 
 #include "common/maths.h"
@@ -57,56 +54,30 @@
 #define HOVER_CAL_THROTTLE_MIN          1050    // Sanity bounds for result (relaxed from 1100)
 #define HOVER_CAL_THROTTLE_MAX          1800    // (relaxed from 1700)
 #define HOVER_CAL_PROGRESS_BEEP_MS      1000    // Beep every 1s during sampling
-#define HOVER_CAL_MAX_SAMPLES           500     // Max samples for median calculation (5s @ 100Hz)
+#define HOVER_CAL_MIN_SAMPLES           50      // Minimum samples required for valid calibration
 
 typedef struct {
     hoverCalibrationStatus_e status;
     hoverCalibrationFailReason_e failReason;
     uint16_t sampleCount;
+    uint32_t throttleSum;           // Running sum for average calculation
     timeMs_t stabilityStartTime;
     timeMs_t samplingStartTime;
     timeMs_t lastProgressBeepTime;
     timeMs_t armTime;               // Time when armed state was first detected
     uint16_t result;
     bool wasArmedDuringCalibration; // Track if we ever detected armed state
-    uint16_t throttleSamples[HOVER_CAL_MAX_SAMPLES]; // Store samples for median calculation
 } hoverCalibrationState_t;
 
 static hoverCalibrationState_t hoverCal;
 
-// Comparison function for qsort
-static int compareUint16(const void *a, const void *b)
-{
-    return (int)(*(const uint16_t *)a) - (int)(*(const uint16_t *)b);
-}
-
-// Calculate median of stored throttle samples using trimmed mean (25th-75th percentile)
-static uint16_t calculateMedianThrottle(void)
+// Calculate average throttle from accumulated samples
+static uint16_t calculateAverageThrottle(void)
 {
     if (hoverCal.sampleCount == 0) {
         return 0;
     }
-    
-    // Sort the samples array
-    qsort(hoverCal.throttleSamples, hoverCal.sampleCount, sizeof(uint16_t), compareUint16);
-    
-    // Use interquartile mean (average of middle 50% of samples) for robustness
-    const uint16_t q1Index = hoverCal.sampleCount / 4;
-    const uint16_t q3Index = (hoverCal.sampleCount * 3) / 4;
-    
-    uint32_t sum = 0;
-    uint16_t count = 0;
-    for (uint16_t i = q1Index; i < q3Index; i++) {
-        sum += hoverCal.throttleSamples[i];
-        count++;
-    }
-    
-    if (count == 0) {
-        // Fallback to simple median if not enough samples for IQM
-        return hoverCal.throttleSamples[hoverCal.sampleCount / 2];
-    }
-    
-    return (uint16_t)(sum / count);
+    return (uint16_t)(hoverCal.throttleSum / hoverCal.sampleCount);
 }
 
 void hoverCalibrationInit(void)
@@ -114,6 +85,7 @@ void hoverCalibrationInit(void)
     hoverCal.status = HOVER_CAL_STATUS_IDLE;
     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
+    hoverCal.throttleSum = 0;
     hoverCal.stabilityStartTime = 0;
     hoverCal.samplingStartTime = 0;
     hoverCal.lastProgressBeepTime = 0;
@@ -132,6 +104,7 @@ void hoverCalibrationStart(void)
     hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
     hoverCal.sampleCount = 0;
+    hoverCal.throttleSum = 0;
     hoverCal.stabilityStartTime = millis();
     hoverCal.samplingStartTime = 0;
     hoverCal.lastProgressBeepTime = 0;
@@ -260,13 +233,11 @@ void hoverCalibrationUpdate(void)
         if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING && hoverCal.sampleCount > 0) {
             // Was sampling and got some data - complete with what we have
             // This handles the case where user lands after hovering
-            // Need a reasonable minimum sample count to get a valid median
-            const uint16_t minSamplesForCompletion = 50;  // ~0.5 seconds of samples
-            if (hoverCal.sampleCount >= minSamplesForCompletion) {
-                uint16_t medianThrottle = calculateMedianThrottle();
-                if (medianThrottle >= HOVER_CAL_THROTTLE_MIN && medianThrottle <= HOVER_CAL_THROTTLE_MAX) {
-                    hoverCal.result = medianThrottle;
-                    autopilotConfigMutable()->hoverThrottle = medianThrottle;
+            if (hoverCal.sampleCount >= HOVER_CAL_MIN_SAMPLES) {
+                uint16_t avgThrottle = calculateAverageThrottle();
+                if (avgThrottle >= HOVER_CAL_THROTTLE_MIN && avgThrottle <= HOVER_CAL_THROTTLE_MAX) {
+                    hoverCal.result = avgThrottle;
+                    autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
                     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
                     beeper(BEEPER_ACC_CALIBRATION);
@@ -291,6 +262,7 @@ void hoverCalibrationUpdate(void)
         if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
             // Was sampling, now lost stability - reset samples
             hoverCal.sampleCount = 0;
+            hoverCal.throttleSum = 0;
         }
         hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
         hoverCal.stabilityStartTime = currentTime;
@@ -309,18 +281,17 @@ void hoverCalibrationUpdate(void)
             hoverCal.samplingStartTime = currentTime;
             hoverCal.lastProgressBeepTime = currentTime;
             hoverCal.sampleCount = 0;
+            hoverCal.throttleSum = 0;
             beeper(BEEPER_RX_SET);  // Beep to indicate sampling started
         }
         return;
     }
 
     if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
-        // Collect throttle sample - use rcData (raw receiver value) not rcCommand (transformed)
-        // Store in array for median calculation, if we have space
-        if (hoverCal.sampleCount < HOVER_CAL_MAX_SAMPLES) {
-            hoverCal.throttleSamples[hoverCal.sampleCount] = rcData[THROTTLE];
-            hoverCal.sampleCount++;
-        }
+        // Collect throttle sample using running average
+        // Use rcData (raw receiver value) not rcCommand (transformed)
+        hoverCal.throttleSum += rcData[THROTTLE];
+        hoverCal.sampleCount++;
 
         // Progress beep
         if (cmpTimeMs(currentTime, hoverCal.lastProgressBeepTime) >= HOVER_CAL_PROGRESS_BEEP_MS) {
@@ -330,15 +301,15 @@ void hoverCalibrationUpdate(void)
 
         // Check if sampling complete
         if (cmpTimeMs(currentTime, hoverCal.samplingStartTime) >= HOVER_CAL_SAMPLE_TIME_MS) {
-            // Calculate median throttle using interquartile mean for robustness
-            if (hoverCal.sampleCount > 0) {
-                uint16_t medianThrottle = calculateMedianThrottle();
+            // Calculate average throttle
+            if (hoverCal.sampleCount >= HOVER_CAL_MIN_SAMPLES) {
+                uint16_t avgThrottle = calculateAverageThrottle();
 
                 // Validate result is within sane bounds
-                if (medianThrottle >= HOVER_CAL_THROTTLE_MIN && medianThrottle <= HOVER_CAL_THROTTLE_MAX) {
+                if (avgThrottle >= HOVER_CAL_THROTTLE_MIN && avgThrottle <= HOVER_CAL_THROTTLE_MAX) {
                     // Success! Store result
-                    hoverCal.result = medianThrottle;
-                    autopilotConfigMutable()->hoverThrottle = medianThrottle;
+                    hoverCal.result = avgThrottle;
+                    autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
                     beeper(BEEPER_ACC_CALIBRATION);  // 2 short beeps for success
                 } else {
@@ -346,7 +317,7 @@ void hoverCalibrationUpdate(void)
                     hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
                 }
             } else {
-                // No samples collected - shouldn't happen but handle it
+                // Not enough samples collected
                 hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
             }
         }
