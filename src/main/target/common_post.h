@@ -696,3 +696,18 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+/*****************************************************
+
+ Place any ENABLE_X_FEATURE=0 definitions here for those
+ yet to be defined, and also for any backward compatibility
+ with USE_ flags.
+
+ e.g.
+
+ #if !defined(ENABLE_X_FEATURE) && defined(USE_X_FEATURE)
+ #define ENABLE_X_FEATURE 1
+ #elif !defined(ENABLE_X_FEATURE)
+ #define ENABLE_X_FEATURE 0
+ #endif
+
+******************************************************/
