@@ -41,5 +41,6 @@ PG_REGISTER_WITH_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig, PG_SCHEDULER
 PG_RESET_TEMPLATE(schedulerConfig_t, schedulerConfig,
     .rxRelaxDeterminism = SCHEDULER_RELAX_RX,
     .osdRelaxDeterminism = SCHEDULER_RELAX_OSD,
-    .cpuLatePercentageLimit = CPU_LOAD_LATE_LIMIT
+    .cpuLatePercentageLimit = CPU_LOAD_LATE_LIMIT,
+    .debugTask = 0
 );
