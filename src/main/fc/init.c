@@ -103,6 +103,7 @@
 #include "flight/pid_init.h"
 #include "flight/position.h"
 #include "flight/pos_hold.h"
+#include "flight/hover_calibration.h"
 #include "flight/servos.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -810,6 +811,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#ifdef USE_HOVER_CALIBRATION
+    hoverCalibrationInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
