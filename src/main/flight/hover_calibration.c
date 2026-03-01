@@ -69,6 +69,7 @@ typedef struct {
     timeMs_t armTime;               // Time when armed state was first detected
     uint16_t result;
     bool wasArmedDuringCalibration; // Track if we ever detected armed state
+    bool pendingSave;               // Config save pending until disarm
 } hoverCalibrationState_t;
 
 static hoverCalibrationState_t hoverCal;
@@ -93,6 +94,7 @@ void hoverCalibrationInit(void)
     hoverCal.lastProgressBeepTime = 0;
     hoverCal.armTime = 0;
     hoverCal.result = 0;
+    hoverCal.pendingSave = false;
 }
 
 void hoverCalibrationStart(void)
@@ -113,6 +115,7 @@ void hoverCalibrationStart(void)
     hoverCal.armTime = 0;
     hoverCal.result = 0;
     hoverCal.wasArmedDuringCalibration = false;
+    hoverCal.pendingSave = false;
 
     beeper(BEEPER_RX_SET);  // Short beep to confirm start
 }
@@ -201,6 +204,12 @@ static hoverCalibrationFailReason_e checkHoverStability(void)
 
 void hoverCalibrationUpdate(void)
 {
+    // Handle pending config save on disarm (deferred from in-flight completion)
+    if (hoverCal.pendingSave && !ARMING_FLAG(ARMED)) {
+        saveConfigAndNotify();
+        hoverCal.pendingSave = false;
+    }
+
     // Only process if calibration is active
     if (hoverCal.status == HOVER_CAL_STATUS_IDLE ||
         hoverCal.status == HOVER_CAL_STATUS_COMPLETE ||
@@ -310,11 +319,12 @@ void hoverCalibrationUpdate(void)
 
                 // Validate result is within sane bounds
                 if (avgThrottle >= HOVER_CAL_THROTTLE_MIN && avgThrottle <= HOVER_CAL_THROTTLE_MAX) {
-                    // Success! Store result
+                    // Success! Store result in RAM - defer EEPROM save until disarm
+                    // to avoid flash write during flight
                     hoverCal.result = avgThrottle;
                     autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
-                    saveConfigAndNotify();
+                    hoverCal.pendingSave = true;
                     beeper(BEEPER_ACC_CALIBRATION);  // 2 short beeps for success
                 } else {
                     // Result out of bounds - fail
