@@ -19,6 +19,8 @@
 
 #ifdef USE_HOVER_CALIBRATION
 
+#include <math.h>
+
 #include "build/debug.h"
 
 #include "common/maths.h"
@@ -240,6 +242,7 @@ void hoverCalibrationUpdate(void)
                     autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
                     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
+                    saveConfigAndNotify();
                     beeper(BEEPER_ACC_CALIBRATION);
                 } else {
                     hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
@@ -311,6 +314,7 @@ void hoverCalibrationUpdate(void)
                     hoverCal.result = avgThrottle;
                     autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
+                    saveConfigAndNotify();
                     beeper(BEEPER_ACC_CALIBRATION);  // 2 short beeps for success
                 } else {
                     // Result out of bounds - fail
