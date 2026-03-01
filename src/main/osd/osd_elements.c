@@ -715,6 +715,53 @@ static void osdElementAdjustmentRange(osdElementParms_t *element)
         tfp_sprintf(element->buff, "%s: %3d", name, getAdjustmentsRangeValue());
     }
 }
+static void osdElementSimplifiedSliderPos(osdElementParms_t *element)
+{
+    // Example slider values, replace with actual slider value retrieval
+    // Retrieve slider values from pidProfile and gyroConfig
+    extern pidProfile_t *currentPidProfile;
+    extern gyroConfig_t *currentGyroConfig;
+
+    int sliderValues[] = {
+        currentPidProfile->simplified_d_gain,
+        currentPidProfile->simplified_pi_gain,
+        currentPidProfile->simplified_feedforward_gain,
+        currentPidProfile->simplified_d_max_gain,
+        currentPidProfile->simplified_i_gain,
+        currentPidProfile->simplified_roll_pitch_ratio,
+        currentPidProfile->simplified_pitch_pi_gain,
+        currentPidProfile->simplified_master_multiplier,
+        currentGyroConfig->simplified_gyro_filter_multiplier,
+        currentPidProfile->simplified_dterm_filter_multiplier
+    };
+    const char *sliderNames[] = {
+        "Damping",
+        "Tracking",
+        "Stick Response",
+        "D Max Gain",
+        "Drift/Wobble",
+        "Pitch Damping",
+        "Pitch Tracking",
+        "Master Multiplier",
+        "Gyro Filter",
+        "DTerm Filter"
+    };
+    const int sliderCount = sizeof(sliderValues) / sizeof(sliderValues[0]);
+    const int barWidth = 20; // Number of characters for the bar
+
+    char *buff = element->buff;
+    int offset = 0;
+    for (int i = 0; i < sliderCount; i++) {
+        int value = sliderValues[i]; // Range: 0 to 200 (percent)
+        int filled = value * barWidth / 200; // Map 0..200 to 0..barWidth
+        offset += tfp_sprintf(buff + offset, "%s: [", sliderNames[i]);
+        for (int j = 0; j < barWidth; j++) {
+            buff[offset++] = (j < filled) ? '|' : ' ';
+        }
+        offset += tfp_sprintf(buff + offset, "] %d%%\n", value);
+    }
+    buff[offset] = '\0';
+}
 #endif // USE_OSD_ADJUSTMENTS
 
 static void osdElementAltitude(osdElementParms_t *element)
@@ -1867,6 +1914,7 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
     OSD_ALTITUDE,
+    OSD_SIMPLIFIED_SLIDER_POS,
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
@@ -2022,6 +2070,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_OSD_ADJUSTMENTS
     [OSD_ADJUSTMENT_RANGE]        = osdElementAdjustmentRange,
+    [OSD_SIMPLIFIED_SLIDER_POS]   = osdElementSimplifiedSliderPos,
 #endif
 #ifdef USE_ADC_INTERNAL
     [OSD_CORE_TEMPERATURE]        = osdElementCoreTemperature,

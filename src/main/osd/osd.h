@@ -195,6 +195,7 @@ typedef enum {
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
     OSD_LIDAR_DIST,
+    OSD_SIMPLIFIED_SLIDER_POS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
