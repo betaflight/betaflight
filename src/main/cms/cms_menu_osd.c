@@ -131,6 +131,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #endif
     {"ALTITUDE",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ALTITUDE]},
     {"POWER",              OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_POWER]},
+    {"PIDs Master Multiplier",  OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PIDS_MASTER_MULTIPLIER]},
+    {"PIDs Tuning Sliders",     OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PIDS_TUNING_SLIDERS]},
+    {"Filter Sliders",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_FILTER_SLIDERS]},
     {"ROLL PID",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS]},
     {"PITCH PID",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS]},
     {"YAW PID",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_YAW_PIDS]},

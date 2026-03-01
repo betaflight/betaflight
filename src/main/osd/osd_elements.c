@@ -178,6 +178,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
+#include "sensors/gyro.h"
 
 #ifdef USE_GPS_PLUS_CODES
 // located in lib/main/google/olc
@@ -1551,6 +1552,115 @@ static void osdElementPidRateProfile(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%d-%d", getCurrentPidProfileIndex() + 1, getCurrentControlRateProfileIndex() + 1);
 }
 
+static void osdRenderSliderBars(char *buff, const int *values, const char **names, int count, int barWidth, const char **extraLabels, const float *extraValues)
+{
+    int offset = 0;
+    for (int i = 0; i < count; i++) {
+        int value = values[i]; // Range: 0 to 200 (percent)
+        int filled = value * barWidth / 200; // Map 0..200 to 0..barWidth
+        offset += tfp_sprintf(buff + offset, "%s: [", names[i]);
+        for (int j = 0; j < barWidth; j++) {
+            buff[offset++] = (j < filled) ? '|' : ' ';
+        }
+        float numericValue = value / 100.0f;
+        offset += tfp_sprintf(buff + offset, "] %.2f", (double)numericValue);
+        if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
+            offset += tfp_sprintf(buff + offset, " | %s: %.2f", extraLabels[i], (double)extraValues[i]);
+        }
+        offset += tfp_sprintf(buff + offset, "\n");
+    }
+    buff[offset] = '\0';
+}
+
+static void osdElementPidsMasterMultiplier(osdElementParms_t *element)
+{
+    extern pidProfile_t *currentPidProfile;
+    const int value = currentPidProfile->simplified_master_multiplier;
+    const int values[1] = { value };
+    const char *names[1] = { "Master Multiplier" };
+    const char *extraLabels[1] = { "RD" };
+    float extraValues[1] = { currentPidProfile->pid[ROLL].D };
+    osdRenderSliderBars(element->buff, values, names, 1, 10, extraLabels, extraValues);
+}
+
+static void osdElementPidsTuningSliders(osdElementParms_t *element)
+{
+    extern pidProfile_t *currentPidProfile;
+    const int values[] = {
+        currentPidProfile->simplified_d_gain,
+        currentPidProfile->simplified_pi_gain,
+        currentPidProfile->simplified_feedforward_gain,
+        currentPidProfile->simplified_d_max_gain,
+        currentPidProfile->simplified_i_gain,
+        currentPidProfile->simplified_roll_pitch_ratio,
+        currentPidProfile->simplified_pitch_pi_gain,
+        currentPidProfile->simplified_master_multiplier
+    };
+    const char *names[] = {
+        "Damping",
+        "Tracking",
+        "Stick Response",
+        "D Max Gain",
+        "Drift/Wobble",
+        "Pitch Damping",
+        "Pitch Tracking",
+        "Master Multiplier"
+    };
+    const char *extraLabels[8] = {
+        "RD",
+        "RP",
+        "RFF",
+        "RDmax",
+        "RI",
+        NULL,
+        "PP",
+        NULL
+    };
+    float extraValues[8] = {
+        currentPidProfile->pid[ROLL].D,
+        currentPidProfile->pid[ROLL].P,
+        currentPidProfile->pid[ROLL].F,
+        currentPidProfile->d_max[ROLL],
+        currentPidProfile->pid[ROLL].I,
+        -1,
+        currentPidProfile->pid[PITCH].P,
+        -1
+    };
+    // For Pitch D-Gain after roll_pitch_ratio
+    extraLabels[5] = "PD";
+    extraValues[5] = currentPidProfile->pid[PITCH].D;
+    osdRenderSliderBars(element->buff, values, names, 8, 10, extraLabels, extraValues);
+}
+
+static void osdElementFilterSliders(osdElementParms_t *element)
+{
+    extern pidProfile_t *currentPidProfile;
+
+    #if defined(UNIT_TEST) || defined(USE_UNIT_TESTS)
+        // Unit-test builds often don't link PG accessors/instances.
+        // Provide a minimal fallback so the file compiles.
+        static const gyroConfig_t testGyroCfg = {
+            .simplified_gyro_filter_multiplier = 100,
+            .gyro_lpf1_dyn_min_hz = 100,
+        };
+        const gyroConfig_t *gyroCfg = &testGyroCfg;
+    #else
+        const gyroConfig_t *gyroCfg = gyroConfig();
+    #endif
+
+    const int values[] = {
+        gyroCfg->simplified_gyro_filter_multiplier,
+        currentPidProfile->simplified_dterm_filter_multiplier
+    };
+    const char *names[] = {
+        "Gyro Filter",
+        "DTerm Filter"
+    };
+    const char *extraLabels[2] = { "G-LPF1", "D-LPF1" };
+    float extraValues[2] = { gyroCfg->gyro_lpf1_dyn_min_hz, currentPidProfile->dterm_lpf1_static_hz };
+    osdRenderSliderBars(element->buff, values, names, 2, 10, extraLabels, extraValues);
+}
+
 static void osdElementPidsPitch(osdElementParms_t *element)
 {
     osdFormatPID(element->buff, "PIT", PID_PITCH);
@@ -1867,6 +1977,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
     OSD_ALTITUDE,
+    OSD_PIDS_MASTER_MULTIPLIER,
+    OSD_PIDS_TUNING_SLIDERS,
+    OSD_FILTER_SLIDERS,
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
@@ -1983,6 +2096,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_GPS_SATS]                = osdElementGpsSats,
 #endif
     [OSD_ALTITUDE]                = osdElementAltitude,
+    [OSD_PIDS_MASTER_MULTIPLIER]  = osdElementPidsMasterMultiplier,
+    [OSD_PIDS_TUNING_SLIDERS]     = osdElementPidsTuningSliders,
+    [OSD_FILTER_SLIDERS]          = osdElementFilterSliders,
     [OSD_ROLL_PIDS]               = osdElementPidsRoll,
     [OSD_PITCH_PIDS]              = osdElementPidsPitch,
     [OSD_YAW_PIDS]                = osdElementPidsYaw,
