@@ -430,106 +430,104 @@ bool compassInit(void)
         // Perform migration when stored calib version differs. Don't silently skip
         // migration just because all three axes happen to be zero — a zero
         // calibration is technically valid and should be preserved.
-        {
-            matrix33_t boardRotLocal;
-            fp_angles_t boardAngles;
-            boardAngles.angles.roll  = degreesToRadians(boardAlignment()->rollDegrees);
-            boardAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
-            boardAngles.angles.yaw   = degreesToRadians(boardAlignment()->yawDegrees);
-            buildRotationMatrix(&boardRotLocal, &boardAngles);
+        matrix33_t boardRotLocal;
+        fp_angles_t boardAngles;
+        boardAngles.angles.roll  = degreesToRadians(boardAlignment()->rollDegrees);
+        boardAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
+        boardAngles.angles.yaw   = degreesToRadians(boardAlignment()->yawDegrees);
+        buildRotationMatrix(&boardRotLocal, &boardAngles);
 
-            // sensor rotation matrix is magDev.rotationMatrix (built from mag_customAlignment)
-            // We need to transform magZero which was stored in board-frame into sensor-frame by applying
-            // the inverse of the full alignment A = B * S. For rotation matrices inverse == transpose,
-            // so magZero_sensor = S^T * (B^T * magZero_board)
-            vector3_t v;
-            v.x = magZero->raw[0];
-            v.y = magZero->raw[1];
-            v.z = magZero->raw[2];
+        // sensor rotation matrix is magDev.rotationMatrix (built from mag_customAlignment)
+        // We need to transform magZero which was stored in board-frame into sensor-frame by applying
+        // the inverse of the full alignment A = B * S. For rotation matrices inverse == transpose,
+        // so magZero_sensor = S^T * (B^T * magZero_board)
+        vector3_t v;
+        v.x = magZero->raw[0];
+        v.y = magZero->raw[1];
+        v.z = magZero->raw[2];
 
-            vector3_t tmp;
-            // apply B^T (bring board-frame vector into pre-sensor frame)
-            matrixTrnVectorMul(&tmp, &boardRotLocal, &v);
+        vector3_t tmp;
+        // apply B^T (bring board-frame vector into pre-sensor frame)
+        matrixTrnVectorMul(&tmp, &boardRotLocal, &v);
 
-            // apply inverse of sensor alignment S^{-1} to get sensor-frame bias
-            if (magDev.magAlignment == ALIGN_CUSTOM) {
-                // magDev.rotationMatrix was built from negated angles to match runtime
-                // application (transposed multiply). For migration we need S^T where S is
-                // the true sensor rotation. Since magDev.rotationMatrix currently holds
-                // the transposed form, use non-transposed multiply to apply S^T.
-                matrixVectorMul(&v, &magDev.rotationMatrix, &tmp);
-            } else {
-                // for standard enum alignments, apply the inverse mapping (board->sensor)
-                // tmp currently holds B^T * mag_board
-                const vector3_t b = tmp;
-                vector3_t s;
+        // apply inverse of sensor alignment S^{-1} to get sensor-frame bias
+        if (magDev.magAlignment == ALIGN_CUSTOM) {
+            // magDev.rotationMatrix was built from negated angles to match runtime
+            // application (transposed multiply). For migration we need S^T where S is
+            // the true sensor rotation. Since magDev.rotationMatrix currently holds
+            // the transposed form, use non-transposed multiply to apply S^T.
+            matrixVectorMul(&v, &magDev.rotationMatrix, &tmp);
+        } else {
+            // for standard enum alignments, apply the inverse mapping (board->sensor)
+            // tmp currently holds B^T * mag_board
+            const vector3_t b = tmp;
+            vector3_t s;
 
-                switch (magDev.magAlignment) {
-                default:
-                case CW0_DEG:
-                    s.x = b.x;
-                    s.y = b.y;
-                    s.z = b.z;
-                    break;
-                case CW90_DEG:
-                    // S: sensor->board: b.x = s.y; b.y = -s.x; b.z = s.z
-                    // inverse: s.x = -b.y; s.y = b.x; s.z = b.z
-                    s.x = -b.y;
-                    s.y = b.x;
-                    s.z = b.z;
-                    break;
-                case CW180_DEG:
-                    // S: b.x = -s.x; b.y = -s.y; b.z = s.z -> inverse same as S
-                    s.x = -b.x;
-                    s.y = -b.y;
-                    s.z = b.z;
-                    break;
-                case CW270_DEG:
-                    // S: b.x = -s.y; b.y = s.x; b.z = s.z
-                    // inverse: s.x = b.y; s.y = -b.x; s.z = b.z
-                    s.x = b.y;
-                    s.y = -b.x;
-                    s.z = b.z;
-                    break;
-                case CW0_DEG_FLIP:
-                    // S: b.x = -s.x; b.y = s.y; b.z = -s.z -> inverse same as S
-                    s.x = -b.x;
-                    s.y = b.y;
-                    s.z = -b.z;
-                    break;
-                case CW90_DEG_FLIP:
-                    // S: b.x = s.y; b.y = s.x; b.z = -s.z
-                    // inverse: s.x = b.y; s.y = b.x; s.z = -b.z
-                    s.x = b.y;
-                    s.y = b.x;
-                    s.z = -b.z;
-                    break;
-                case CW180_DEG_FLIP:
-                    // S: b.x = s.x; b.y = -s.y; b.z = -s.z -> inverse: s.x = b.x; s.y = -b.y; s.z = -b.z
-                    s.x = b.x;
-                    s.y = -b.y;
-                    s.z = -b.z;
-                    break;
-                case CW270_DEG_FLIP:
-                    // S: b.x = -s.y; b.y = -s.x; b.z = -s.z
-                    // inverse: s.x = -b.y; s.y = -b.x; s.z = -b.z
-                    s.x = -b.y;
-                    s.y = -b.x;
-                    s.z = -b.z;
-                    break;
-                }
-
-                v = s;
+            switch (magDev.magAlignment) {
+            default:
+            case CW0_DEG:
+                s.x = b.x;
+                s.y = b.y;
+                s.z = b.z;
+                break;
+            case CW90_DEG:
+                // S: sensor->board: b.x = s.y; b.y = -s.x; b.z = s.z
+                // inverse: s.x = -b.y; s.y = b.x; s.z = b.z
+                s.x = -b.y;
+                s.y = b.x;
+                s.z = b.z;
+                break;
+            case CW180_DEG:
+                // S: b.x = -s.x; b.y = -s.y; b.z = s.z -> inverse same as S
+                s.x = -b.x;
+                s.y = -b.y;
+                s.z = b.z;
+                break;
+            case CW270_DEG:
+                // S: b.x = -s.y; b.y = s.x; b.z = s.z
+                // inverse: s.x = b.y; s.y = -b.x; s.z = b.z
+                s.x = b.y;
+                s.y = -b.x;
+                s.z = b.z;
+                break;
+            case CW0_DEG_FLIP:
+                // S: b.x = -s.x; b.y = s.y; b.z = -s.z -> inverse same as S
+                s.x = -b.x;
+                s.y = b.y;
+                s.z = -b.z;
+                break;
+            case CW90_DEG_FLIP:
+                // S: b.x = s.y; b.y = s.x; b.z = -s.z
+                // inverse: s.x = b.y; s.y = b.x; s.z = -b.z
+                s.x = b.y;
+                s.y = b.x;
+                s.z = -b.z;
+                break;
+            case CW180_DEG_FLIP:
+                // S: b.x = s.x; b.y = -s.y; b.z = -s.z -> inverse: s.x = b.x; s.y = -b.y; s.z = -b.z
+                s.x = b.x;
+                s.y = -b.y;
+                s.z = -b.z;
+                break;
+            case CW270_DEG_FLIP:
+                // S: b.x = -s.y; b.y = -s.x; b.z = -s.z
+                // inverse: s.x = -b.y; s.y = -b.x; s.z = -b.z
+                s.x = -b.y;
+                s.y = -b.x;
+                s.z = -b.z;
+                break;
             }
 
-            // store back rounded to int16 with clamping to avoid overflow/truncation
-            long tmp0 = lrintf(v.x);
-            long tmp1 = lrintf(v.y);
-            long tmp2 = lrintf(v.z);
-            magZero->raw[0] = clampLongToInt16(tmp0);
-            magZero->raw[1] = clampLongToInt16(tmp1);
-            magZero->raw[2] = clampLongToInt16(tmp2);
+            v = s;
         }
+
+        // store back rounded to int16 with clamping to avoid overflow/truncation
+        long tmp0 = lrintf(v.x);
+        long tmp1 = lrintf(v.y);
+        long tmp2 = lrintf(v.z);
+        magZero->raw[0] = clampLongToInt16(tmp0);
+        magZero->raw[1] = clampLongToInt16(tmp1);
+        magZero->raw[2] = clampLongToInt16(tmp2);
 
         compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
         // mark config dirty and defer actual EEPROM write to a safer point in boot
@@ -602,8 +600,27 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
-    // get stored cal/bias values
+    // make magZero available for the early movement-detection below
     flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+
+    // If calibration was requested, check for movement start early so we can
+    // avoid subtracting the old bias on the very first movement sample.
+    if (magCalProcessActive && cmpTimeUs(magCalEndTime, currentTimeUs) > 0 && !didMovementStart) {
+        float gyroNormSquared = 0.0f;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
+        }
+        if (gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
+            beeper(BEEPER_READY_BEEP);
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                magZero->raw[axis] = 0;
+            }
+            didMovementStart = true;
+            magCalEndTime = micros() + CALIBRATION_TIME_US;
+        }
+    }
+
+    // get stored cal/bias values (magZero already declared above)
 
     // apply stored calibration bias in sensor frame BEFORE applying any sensor/board alignment
     // When actively calibrating and movement has started, skip applying the old bias so the
@@ -617,35 +634,8 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     // ** perform calibration, if initiated by switch or Configurator button **
     if (magCalProcessActive) {
         if (cmpTimeUs(magCalEndTime, currentTimeUs) > 0) {
-                // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
-            float gyroNormSquared = 0.0f;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
-            }
-            if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
-                // movement has started
-                beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad (does this work?)
-                // zero the old cal/bias values, but first save them so we can
-                // undo the earlier subtraction performed above in this same
-                // update. On the iteration when movement is detected the code
-                // already subtracted the stored bias; restore it so the
-                // estimator sees raw sensor values.
-                int32_t oldBias[XYZ_AXIS_COUNT];
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    oldBias[axis] = magZero->raw[axis];
-                    magZero->raw[axis] = 0;
-                }
-                didMovementStart = true;
-                // the user has CALIBRATION_TIME_US from now to move the quad in all directions
-                magCalEndTime = micros() + CALIBRATION_TIME_US;
-                // undo the bias subtraction that occurred earlier this update
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    mag.magADC.v[axis] += (float)oldBias[axis];
-                }
-            }
-            // start acquiring mag data and computing new cal factors
+            // when movement has started, feed raw mag samples to the estimator
             if (didMovementStart) {
-                // LED will flash at task rate while calibrating, looks like 'ON' all the time.
                 LED0_ON;
                 compassBiasEstimatorApply(&compassBiasEstimator, &mag.magADC);
             }
