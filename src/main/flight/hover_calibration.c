@@ -75,7 +75,6 @@ typedef struct {
 } hoverCalibrationState_t;
 
 static hoverCalibrationState_t hoverCal;
-static bool beepedOnArm = false;  // Debug: track if we beeped when armed detected
 
 // Comparison function for qsort
 static int compareUint16(const void *a, const void *b)
@@ -143,7 +142,6 @@ void hoverCalibrationStart(void)
     hoverCal.armTime = 0;
     hoverCal.result = 0;
     hoverCal.wasArmedDuringCalibration = false;
-    beepedOnArm = false;  // Reset debug flag
 
     beeper(BEEPER_RX_SET);  // Short beep to confirm start
 }
@@ -176,12 +174,6 @@ static hoverCalibrationFailReason_e checkHoverStability(void)
             // First time detecting armed state - record the time
             hoverCal.wasArmedDuringCalibration = true;
             hoverCal.armTime = currentTime;
-        }
-        
-        // Debug: beep once when armed is first detected during calibration
-        if (!beepedOnArm) {
-            beeper(BEEPER_RX_SET);  // Single beep to confirm armed detected
-            beepedOnArm = true;
         }
         
         // Enforce minimum time after arming before allowing calibration
