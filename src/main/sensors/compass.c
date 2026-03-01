@@ -427,10 +427,10 @@ bool compassInit(void)
     if (compassConfig()->mag_calib_version != COMPASS_CALIB_VERSION) {
         flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
 
-        // only attempt migration if a calibration exists (non-zero bias)
-        bool hadCalibration = (magZero->raw[0] != 0) || (magZero->raw[1] != 0) || (magZero->raw[2] != 0);
-
-        if (hadCalibration) {
+        // Perform migration when stored calib version differs. Don't silently skip
+        // migration just because all three axes happen to be zero — a zero
+        // calibration is technically valid and should be preserved.
+        {
             matrix33_t boardRotLocal;
             fp_angles_t boardAngles;
             boardAngles.angles.roll  = degreesToRadians(boardAlignment()->rollDegrees);
@@ -625,13 +625,23 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
             if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
                 // movement has started
                 beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad (does this work?)
-                // zero the old cal/bias values
+                // zero the old cal/bias values, but first save them so we can
+                // undo the earlier subtraction performed above in this same
+                // update. On the iteration when movement is detected the code
+                // already subtracted the stored bias; restore it so the
+                // estimator sees raw sensor values.
+                int32_t oldBias[XYZ_AXIS_COUNT];
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    oldBias[axis] = magZero->raw[axis];
                     magZero->raw[axis] = 0;
                 }
                 didMovementStart = true;
                 // the user has CALIBRATION_TIME_US from now to move the quad in all directions
                 magCalEndTime = micros() + CALIBRATION_TIME_US;
+                // undo the bias subtraction that occurred earlier this update
+                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                    mag.magADC.v[axis] += (float)oldBias[axis];
+                }
             }
             // start acquiring mag data and computing new cal factors
             if (didMovementStart) {
