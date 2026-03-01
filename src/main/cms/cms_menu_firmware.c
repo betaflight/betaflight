@@ -75,7 +75,7 @@ static char accCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 static char baroCalibrationStatus[CALIBRATION_STATUS_MAX_LENGTH];
 #endif
 #if defined(USE_HOVER_CALIBRATION)
-#define HOVER_CAL_STATUS_MAX_LENGTH 16
+#define HOVER_CAL_STATUS_MAX_LENGTH 20
 static char hoverCalibrationStatus[HOVER_CAL_STATUS_MAX_LENGTH];
 #endif
 
