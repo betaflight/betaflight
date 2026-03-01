@@ -48,6 +48,8 @@
 #include "flight/pid_init.h"
 #include "config/simplified_tuning.h"
 
+#include "sensors/gyro.h"
+
 #include "io/beeper.h"
 #include "io/ledstrip.h"
 #include "io/pidaudio.h"
@@ -68,8 +70,35 @@
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 2);
 
-// Track whether the multiplier center has been initialized
-static bool potBasePositionInitialized = false;
+// Center/base position arrays for each adjustment function
+// Function pointer typedefs for adjustment handlers
+typedef void (*AdjustmentSetter)(int value);
+typedef void (*AdjustmentTuning)(void);
+
+static int centerPosition[ADJUSTMENT_FUNCTION_COUNT] = { 0 };
+static int baseSliderPosition[ADJUSTMENT_FUNCTION_COUNT] = { 0 };
+typedef struct {
+    AdjustmentSetter set;
+    AdjustmentTuning tune;
+} AdjustmentHandler;
+
+// Adjustment handler registration macro for future scalability
+#define REGISTER_ADJUSTMENT_HANDLER(func, setter, tuner) \
+    [func] = { setter, tuner }
+
+// Handler table for all adjustment functions
+static AdjustmentHandler adjustmentHandlers[ADJUSTMENT_FUNCTION_COUNT] = {
+    REGISTER_ADJUSTMENT_HANDLER(ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER, setMasterMultiplier, applyMasterTuning),
+    REGISTER_ADJUSTMENT_HANDLER(ADJUSTMENT_SIMPLIFIED_GYRO_MULTIPLIER, setGyroMultiplier, applyGyroTuning),
+    // Add more handlers here as needed
+};
+
+// Center/base position arrays for each adjustment function
+static int centerPosition[ADJUSTMENT_FUNCTION_COUNT] = { 0 };
+static int baseSliderPosition[ADJUSTMENT_FUNCTION_COUNT] = { 0 };
+
+// Track whether the multiplier center has been initialized for each adjustment function
+static bool potBasePositionInitialized[ADJUSTMENT_FUNCTION_COUNT] = { false };
 
 uint8_t pidAudioPositionToModeMap[7] = {
     // on a pot with a center detent, it's easy to have center area for off/default, then three positions to the left and three to the right.
@@ -232,6 +261,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .data = { .switchPositions = 3 }
     }, {
         .adjustmentFunction = ADJUSTMENT_LED_DIMMER,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = 100 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_SIMPLIFIED_GYRO_MULTIPLIER,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 100 }
     }, {
@@ -611,6 +644,35 @@ static int applyAbsoluteAdjustment(controlRateConfig_t *controlRateConfig, adjus
     return newValue;
 }
 
+// Helper for center-initialized relative adjustments
+int applyCenterRelativeAdjustment(
+    adjustmentFunction_e adjustmentFunction,
+    uint8_t position,
+    uint16_t adjustmentScale,
+    int currentSliderPosition
+)
+{
+    if (!potBasePositionInitialized[adjustmentFunction]) {
+        centerPosition[adjustmentFunction] = position;
+        baseSliderPosition[adjustmentFunction] = currentSliderPosition;
+        potBasePositionInitialized[adjustmentFunction] = true;
+    }
+    int scaleFactor = constrain((adjustmentScale > 0) ? adjustmentScale : 125, 0, 250);
+    int delta = (position - centerPosition[adjustmentFunction]) * scaleFactor / 100;
+    int newValue = constrain(baseSliderPosition[adjustmentFunction] + delta, 20, 200);
+
+    if (newValue != currentSliderPosition) {
+        if (adjustmentHandlers[adjustmentFunction].set) {
+            adjustmentHandlers[adjustmentFunction].set(newValue);
+        }
+        if (adjustmentHandlers[adjustmentFunction].tune) {
+            adjustmentHandlers[adjustmentFunction].tune();
+        }
+        blackboxLogInflightAdjustmentEvent(adjustmentFunction, newValue);
+    }
+    return newValue;
+}
+
 static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, uint8_t position, uint16_t adjustmentScale)
 {
     uint8_t beeps = 0;
@@ -636,30 +698,29 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         break;
     case ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER:
         {
-            static int centerPosition = 0;
-            static int baseMultiplier = 100;
-
-            // When first entering adjustment range, initialize
-            if (!potBasePositionInitialized) {
-                centerPosition = position;
-                baseMultiplier = currentPidProfile->simplified_master_multiplier;
-                potBasePositionInitialized = true;
-            }
-
-            // Compute change from center with configurable sensitivity
-            int scaleFactor = constrain((adjustmentScale > 0) ? adjustmentScale : 125, 0, 250); // Use adjustmentScale (default to 125 = 1.25x if not set)
-            int delta = (position - centerPosition) * scaleFactor / 100; // Scale by dividing by 100
-            int newValue = constrain(baseMultiplier + delta, 20, 200);
-            
-            // Apply PID update immediately if changed
-            if (newValue != currentPidProfile->simplified_master_multiplier) {
-                currentPidProfile->simplified_master_multiplier = newValue;
-                applySimplifiedTuningPids(currentPidProfile);
-                pidInitConfig(currentPidProfile);
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER, newValue);
+            int result = applyCenterRelativeAdjustment(
+                ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER,
+                position,
+                adjustmentScale,
+                currentPidProfile->simplified_master_multiplier
+            );
+            if (result != currentPidProfile->simplified_master_multiplier) {
                 beeps = 1;
             }
             return currentPidProfile->simplified_master_multiplier;
+        }
+    case ADJUSTMENT_SIMPLIFIED_GYRO_MULTIPLIER:
+        {
+            int result = applyCenterRelativeAdjustment(
+                ADJUSTMENT_SIMPLIFIED_GYRO_MULTIPLIER,
+                position,
+                adjustmentScale,
+                gyroConfigMutable()->simplified_gyro_filter_multiplier
+            );
+            if (result != gyroConfigMutable()->simplified_gyro_filter_multiplier) {
+                beeps = 1;
+            }
+            return gyroConfigMutable()->simplified_gyro_filter_multiplier;
         }
         break;
     case ADJUSTMENT_PID_AUDIO:
@@ -880,11 +941,27 @@ static void processContinuosAdjustments(controlRateConfig_t *controlRateConfig)
             }
         } else {
             adjustmentState->lastRcData = 0;
-            if (adjustmentFunction == ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER) {
-                potBasePositionInitialized = false;
+            // Reset initialization flag for any center-initialized adjustment
+            if (adjustmentFunction < ADJUSTMENT_FUNCTION_COUNT) {
+                potBasePositionInitialized[adjustmentFunction] = false;
             }
         }
     }
+}
+
+// --- Adjustment setter/tuning functions ---
+static void setMasterMultiplier(int updateInputValue) {
+    currentPidProfile->simplified_master_multiplier = updateInputValue;
+}
+static void applyMasterTuning(void) {
+    applySimplifiedTuningPids(currentPidProfile);
+    pidInitConfig(currentPidProfile);
+}
+static void setGyroMultiplier(int updateInputValue) {
+    gyroConfigMutable()->simplified_gyro_filter_multiplier = updateInputValue;
+}
+static void applyGyroTuning(void) {
+    applySimplifiedTuningGyroFilters(gyroConfigMutable());
 }
 
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
