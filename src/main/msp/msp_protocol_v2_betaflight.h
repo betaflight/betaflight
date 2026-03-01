@@ -32,6 +32,8 @@
 #define MSP2_SENSOR_OPTICALFLOW             0x300B
 #define MSP2_MCU_INFO                       0x300C
 #define MSP2_GYRO_SENSOR_ACTIVE             0x300D
+#define MSP2_MOTOR_SERVO_RESOURCE           0x300E  // Get motor and servo pin assignments
+#define MSP2_SET_MOTOR_SERVO_RESOURCE       0x300F  // Set motor or servo pin assignment
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1

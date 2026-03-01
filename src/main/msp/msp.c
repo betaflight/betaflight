@@ -1288,6 +1288,29 @@ case MSP_NAME:
         }
         break;
 
+    case MSP2_MOTOR_SERVO_RESOURCE:
+        {
+            // Return motor and servo pin assignments
+            // Format: [motorCount][servoCount][motor0_ioTag]...[motorN_ioTag][servo0_ioTag]...[servoN_ioTag]
+            sbufWriteU8(dst, MAX_SUPPORTED_MOTORS);
+#ifdef USE_SERVOS
+            sbufWriteU8(dst, MAX_SUPPORTED_SERVOS);
+#else
+            sbufWriteU8(dst, 0);
+#endif
+            // Motor ioTags (1 byte each)
+            for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+                sbufWriteU8(dst, motorConfig()->dev.ioTags[i]);
+            }
+#ifdef USE_SERVOS
+            // Servo ioTags (1 byte each)
+            for (unsigned i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+                sbufWriteU8(dst, servoConfig()->dev.ioTags[i]);
+            }
+#endif
+        }
+        break;
+
 #ifdef USE_VTX_COMMON
     case MSP2_GET_VTX_DEVICE_STATUS: {
         const vtxDevice_t *vtxDevice = vtxCommonDevice();
@@ -3601,6 +3624,54 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 }
 
                 motorConfigMutable()->dev.motorOutputReordering[i] = value;
+            }
+        }
+        break;
+
+    case MSP2_SET_MOTOR_SERVO_RESOURCE:
+        {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
+
+            if (dataSize != 3) {
+                return MSP_RESULT_ERROR;
+            }
+
+            // Set a single motor or servo resource
+            // Format: [resourceType][index][ioTag]
+            // resourceType: 0 = MOTOR, 1 = SERVO
+            const uint8_t resourceType = sbufReadU8(src);
+            const uint8_t index = sbufReadU8(src);
+            const ioTag_t ioTag = sbufReadU8(src);
+
+            // Validate ioTag: must be 0 (NONE) or refer to an existing pin
+            if (ioTag != 0 && IOGetByTag(ioTag) == NULL) {
+                return MSP_RESULT_ERROR;
+            }
+
+            if (resourceType == 0) {
+                // Motor
+                if (index < MAX_SUPPORTED_MOTORS) {
+                    motorConfigMutable()->dev.ioTags[index] = ioTag;
+                    setRebootRequired();
+                } else {
+                    return MSP_RESULT_ERROR;
+                }
+            }
+#ifdef USE_SERVOS
+            else if (resourceType == 1) {
+                // Servo
+                if (index < MAX_SUPPORTED_SERVOS) {
+                    servoConfigMutable()->dev.ioTags[index] = ioTag;
+                    setRebootRequired();
+                } else {
+                    return MSP_RESULT_ERROR;
+                }
+            }
+#endif
+            else {
+                return MSP_RESULT_ERROR;
             }
         }
         break;
