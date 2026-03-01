@@ -263,6 +263,11 @@ void hoverCalibrationUpdate(void)
         } else if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
             // Was sampling but no data collected yet - fail
             hoverCalibrationFail(HOVER_CAL_FAIL_DISARMED);
+        } else if (hoverCal.status == HOVER_CAL_STATUS_WAITING_STABLE) {
+            // Disarmed while waiting for stability - reset arm tracking so
+            // re-arm will enforce a fresh 3-second delay
+            hoverCal.wasArmedDuringCalibration = false;
+            hoverCal.armTime = 0;
         }
         // If still in WAITING_STABLE, just keep waiting for arm - don't fail
         // User needs to arm, fly, and hover to calibrate
