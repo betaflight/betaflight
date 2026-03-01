@@ -55,6 +55,7 @@
 
 #include "flight/alt_hold.h"
 #include "flight/gps_rescue.h"
+#include "flight/hover_calibration.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -285,6 +286,9 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
     calculateEstimatedAltitude();
+#ifdef USE_HOVER_CALIBRATION
+    hoverCalibrationUpdate();
+#endif
 }
 #endif // USE_BARO || USE_GPS
 

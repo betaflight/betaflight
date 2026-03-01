@@ -47,10 +47,6 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#ifdef USE_HOVER_CALIBRATION
-#include "flight/hover_calibration.h"
-#endif
-
 static float displayAltitudeCm = 0.0f;
 static bool altitudeAvailable = false;
 
@@ -217,10 +213,6 @@ void calculateEstimatedAltitude(void)
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(zeroedAltitudeCm));
 
     altitudeAvailable = haveGpsAlt || haveBaroAlt;
-
-#ifdef USE_HOVER_CALIBRATION
-    hoverCalibrationUpdate();
-#endif
 }
 
 #endif //defined(USE_BARO) || defined(USE_GPS)
