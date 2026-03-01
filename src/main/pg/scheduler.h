@@ -22,17 +22,6 @@
 
 #include "pg/pg.h"
 
-#ifndef SCHEDULER_RELAX_RX
-#define SCHEDULER_RELAX_RX  25
-#endif
-
-#ifndef SCHEDULER_RELAX_OSD
-#define SCHEDULER_RELAX_OSD 25
-#endif
-
-// Tenths of a % of tasks late
-#define CPU_LOAD_LATE_LIMIT 10
-
 typedef struct schedulerConfig_s {
     uint16_t rxRelaxDeterminism;
     uint16_t osdRelaxDeterminism;
