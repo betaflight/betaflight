@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <limits.h>
 
 #include "platform.h"
 
@@ -120,14 +119,6 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 #endif
 
 #define COMPASS_CALIB_VERSION 1
-
-// Clamp a long value into the int16 range.
-static inline int16_t clampLongToInt16(long v)
-{
-    if (v > INT16_MAX) return INT16_MAX;
-    if (v < INT16_MIN) return INT16_MIN;
-    return (int16_t)v;
-}
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
@@ -423,114 +414,16 @@ bool compassInit(void)
 
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
-    // Migrate old stored magZero if necessary (older firmware stored magZero in board/frame)
+    // magZero is now applied in the sensor frame (before alignment), so old
+    // calibration data stored in the board-aligned frame is no longer valid.
+    // Clear it and require the user to recalibrate rather than attempting a
+    // complex and error-prone coordinate transform of the stored bias.
     if (compassConfig()->mag_calib_version != COMPASS_CALIB_VERSION) {
         flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
-
-        // Perform migration when stored calib version differs. Don't silently skip
-        // migration just because all three axes happen to be zero — a zero
-        // calibration is technically valid and should be preserved.
-        matrix33_t boardRotLocal;
-        fp_angles_t boardAngles;
-        boardAngles.angles.roll  = degreesToRadians(boardAlignment()->rollDegrees);
-        boardAngles.angles.pitch = degreesToRadians(boardAlignment()->pitchDegrees);
-        boardAngles.angles.yaw   = degreesToRadians(boardAlignment()->yawDegrees);
-        buildRotationMatrix(&boardRotLocal, &boardAngles);
-
-        // sensor rotation matrix is magDev.rotationMatrix (built from mag_customAlignment)
-        // We need to transform magZero which was stored in board-frame into sensor-frame by applying
-        // the inverse of the full alignment A = B * S. For rotation matrices inverse == transpose,
-        // so magZero_sensor = S^T * (B^T * magZero_board)
-        vector3_t v;
-        v.x = magZero->raw[0];
-        v.y = magZero->raw[1];
-        v.z = magZero->raw[2];
-
-        vector3_t tmp;
-        // apply B^T (bring board-frame vector into pre-sensor frame)
-        matrixTrnVectorMul(&tmp, &boardRotLocal, &v);
-
-        // apply inverse of sensor alignment S^{-1} to get sensor-frame bias
-        if (magDev.magAlignment == ALIGN_CUSTOM) {
-            // magDev.rotationMatrix was built from negated angles to match runtime
-            // application (transposed multiply). For migration we need S^T where S is
-            // the true sensor rotation. Since magDev.rotationMatrix currently holds
-            // the transposed form, use non-transposed multiply to apply S^T.
-            matrixVectorMul(&v, &magDev.rotationMatrix, &tmp);
-        } else {
-            // for standard enum alignments, apply the inverse mapping (board->sensor)
-            // tmp currently holds B^T * mag_board
-            const vector3_t b = tmp;
-            vector3_t s;
-
-            switch (magDev.magAlignment) {
-            default:
-            case CW0_DEG:
-                s.x = b.x;
-                s.y = b.y;
-                s.z = b.z;
-                break;
-            case CW90_DEG:
-                // S: sensor->board: b.x = s.y; b.y = -s.x; b.z = s.z
-                // inverse: s.x = -b.y; s.y = b.x; s.z = b.z
-                s.x = -b.y;
-                s.y = b.x;
-                s.z = b.z;
-                break;
-            case CW180_DEG:
-                // S: b.x = -s.x; b.y = -s.y; b.z = s.z -> inverse same as S
-                s.x = -b.x;
-                s.y = -b.y;
-                s.z = b.z;
-                break;
-            case CW270_DEG:
-                // S: b.x = -s.y; b.y = s.x; b.z = s.z
-                // inverse: s.x = b.y; s.y = -b.x; s.z = b.z
-                s.x = b.y;
-                s.y = -b.x;
-                s.z = b.z;
-                break;
-            case CW0_DEG_FLIP:
-                // S: b.x = -s.x; b.y = s.y; b.z = -s.z -> inverse same as S
-                s.x = -b.x;
-                s.y = b.y;
-                s.z = -b.z;
-                break;
-            case CW90_DEG_FLIP:
-                // S: b.x = s.y; b.y = s.x; b.z = -s.z
-                // inverse: s.x = b.y; s.y = b.x; s.z = -b.z
-                s.x = b.y;
-                s.y = b.x;
-                s.z = -b.z;
-                break;
-            case CW180_DEG_FLIP:
-                // S: b.x = s.x; b.y = -s.y; b.z = -s.z -> inverse: s.x = b.x; s.y = -b.y; s.z = -b.z
-                s.x = b.x;
-                s.y = -b.y;
-                s.z = -b.z;
-                break;
-            case CW270_DEG_FLIP:
-                // S: b.x = -s.y; b.y = -s.x; b.z = -s.z
-                // inverse: s.x = -b.y; s.y = -b.x; s.z = -b.z
-                s.x = -b.y;
-                s.y = -b.x;
-                s.z = -b.z;
-                break;
-            }
-
-            v = s;
-        }
-
-        // store back rounded to int16 with clamping to avoid overflow/truncation
-        long tmp0 = lrintf(v.x);
-        long tmp1 = lrintf(v.y);
-        long tmp2 = lrintf(v.z);
-        magZero->raw[0] = clampLongToInt16(tmp0);
-        magZero->raw[1] = clampLongToInt16(tmp1);
-        magZero->raw[2] = clampLongToInt16(tmp2);
-
+        magZero->raw[0] = 0;
+        magZero->raw[1] = 0;
+        magZero->raw[2] = 0;
         compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
-        // mark config dirty and defer actual EEPROM write to a safer point in boot
         setConfigDirty();
     }
 
