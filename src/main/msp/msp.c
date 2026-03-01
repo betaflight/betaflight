@@ -3630,6 +3630,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
     case MSP2_SET_MOTOR_SERVO_RESOURCE:
         {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
+
             if (dataSize != 3) {
                 return MSP_RESULT_ERROR;
             }
@@ -3641,10 +3645,16 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const uint8_t index = sbufReadU8(src);
             const ioTag_t ioTag = sbufReadU8(src);
 
+            // Validate ioTag: must be 0 (NONE) or refer to an existing pin
+            if (ioTag != 0 && IOGetByTag(ioTag) == NULL) {
+                return MSP_RESULT_ERROR;
+            }
+
             if (resourceType == 0) {
                 // Motor
                 if (index < MAX_SUPPORTED_MOTORS) {
                     motorConfigMutable()->dev.ioTags[index] = ioTag;
+                    setRebootRequired();
                 } else {
                     return MSP_RESULT_ERROR;
                 }
@@ -3654,6 +3664,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 // Servo
                 if (index < MAX_SUPPORTED_SERVOS) {
                     servoConfigMutable()->dev.ioTags[index] = ioTag;
+                    setRebootRequired();
                 } else {
                     return MSP_RESULT_ERROR;
                 }
