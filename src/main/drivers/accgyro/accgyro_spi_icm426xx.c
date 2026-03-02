@@ -325,13 +325,11 @@ void icm426xxAccInit(accDev_t *acc)
     switch (acc->mpuDetectionResult.sensor) {
     case IIM_42653_SPI:
     case IIM_42652_SPI:
-    // FOR TESTING
 #if ENABLE_42686_EXTENDED_RANGE
     case ICM_42686P_SPI:
 #endif
         acc->acc_1G = 512 * 2; // Accel scale 32g (1024 LSB/g)
         break;
-    // FOR TESTING
 #if !ENABLE_42686_EXTENDED_RANGE
     case ICM_42686P_SPI:
 #endif
@@ -445,25 +443,24 @@ void icm426xxGyroInit(gyroDev_t *gyro)
 
     // Set the gyro/accel full-scale range (FSR) and output data rate (ODR).
     //
-    // ICM-42688-P FS_SEL mapping: 0 = ±2000DPS / ±16G (max)
-    // ICM-42686-P FS_SEL mapping: 0 = ±4000DPS / ±32G, 1 = ±2000DPS / ±16G
-    // IIM-42652/53 FS_SEL mapping: 0 = ±4000DPS / ±32G (max)
+    // FS_SEL mapping per variant (GYRO_FS_SEL / ACCEL_FS_SEL bits [7:5]):
+    //   ICM-42605/ICM-42622P/ICM-42688-P: FS_SEL=0 → ±2000DPS / ±16G (max)
+    //   ICM-42686-P:                      FS_SEL=0 → ±4000DPS / ±32G, FS_SEL=1 → ±2000DPS / ±16G
+    //   IIM-42652/IIM-42653:              FS_SEL=0 → ±4000DPS / ±32G (max)
     //
-    // For normal operation we target ±2000DPS / ±16G on all chips.
-    // ICM-42686-P needs FS_SEL=1 to achieve this; the others use FS_SEL=0.
+    // ICM-42605/ICM-42622P/ICM-42688-P use FS_SEL=0 for ±2000DPS / ±16G.
+    // ICM-42686-P requires FS_SEL=1 for ±2000DPS / ±16G (FS_SEL=0 is its extended ±4000DPS / ±32G range).
+    // IIM-42652/IIM-42653 use FS_SEL=0 for their native ±4000DPS / ±32G range.
 
-#if ENABLE_42686_EXTENDED_RANGE
     if (gyro->mpuDetectionResult.sensor == ICM_42686P_SPI) {
+#if ENABLE_42686_EXTENDED_RANGE
         // ICM-42686-P extended range: FS_SEL=0 → ±4000DPS gyro, ±32G accel
         spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
         delay(15);
         spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
         delay(15);
         return;
-    }
 #endif
-
-    if (gyro->mpuDetectionResult.sensor == ICM_42686P_SPI) {
         // ICM-42686-P: FS_SEL=1 → ±2000DPS gyro, ±16G accel
         spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (1 << 5) | (odrConfig & 0x0F));
         delay(15);
@@ -471,7 +468,7 @@ void icm426xxGyroInit(gyroDev_t *gyro)
         delay(15);
     } else {
         // ICM-42688-P/ICM-42605/ICM-42622P: FS_SEL=0 → ±2000DPS / ±16G
-        // IIM-42652/IIM-42653:               FS_SEL=0 → ±4000DPS / ±32G
+        // IIM-42652/IIM-42653:              FS_SEL=0 → ±4000DPS / ±32G
         spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
         delay(15);
         spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
@@ -485,7 +482,6 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
     case ICM_42605_SPI:
     case ICM_42622P_SPI:
 
-    // FOR TESTING
 #if !ENABLE_42686_EXTENDED_RANGE
     case ICM_42686P_SPI:
 #endif
@@ -496,7 +492,6 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
         gyro->tempZero = 25.0f;
         break;
 
-    // FOR TESTING
 #if ENABLE_42686_EXTENDED_RANGE
     case ICM_42686P_SPI:
 #endif
