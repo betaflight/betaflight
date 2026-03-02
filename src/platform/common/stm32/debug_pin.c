@@ -30,7 +30,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "io_platform.h"
+#include "platform/io_impl.h"
 
 typedef struct dbgPinState_s {
     GPIO_TypeDef *gpio;

@@ -29,7 +29,7 @@
 
 #include "drivers/nvic.h"
 #include "drivers/io_impl.h"
-#include "io_platform.h"
+#include "platform/io_impl.h"
 #include "drivers/exti.h"
 
 typedef struct {
