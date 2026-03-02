@@ -78,11 +78,6 @@ typedef enum {
 
 typedef struct
 {
-    void *test;
-} GPIO_TypeDef;
-
-typedef struct
-{
     void* test;
 } TIM_TypeDef;
 

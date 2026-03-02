@@ -32,12 +32,6 @@ ioRec_t* IO_Rec(IO_t io)
     return io;
 }
 
-GPIO_TypeDef* IO_GPIO(IO_t io)
-{
-    const ioRec_t *ioRec = IO_Rec(io);
-    return ioRec->gpio;
-}
-
 uint16_t IO_Pin(IO_t io)
 {
     const ioRec_t *ioRec = IO_Rec(io);

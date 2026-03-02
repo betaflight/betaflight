@@ -178,16 +178,6 @@ typedef enum {
 
 typedef struct
 {
-  uint32_t IDR;
-  uint32_t ODR;
-  uint32_t BSRR;
-  uint32_t BRR;
-} GPIO_TypeDef;
-
-#define GPIOA_BASE ((intptr_t)0x0001)
-
-typedef struct
-{
     void* test;
 } TIM_TypeDef;
 
