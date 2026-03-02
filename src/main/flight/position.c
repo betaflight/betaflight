@@ -243,11 +243,12 @@ float getAltitudeAsl(void)
         return gpsSol.llh.altCm;
     }
 
-    // Optional: only use home AMSL if home is known; otherwise fall back to relative altitude.
-    if (STATE(GPS_FIX_HOME)) { // or an equivalent "home is valid" check if available
-        return GPS_home_llh.altCm + getEstimatedAltitudeCm();
+    // Only use home AMSL if home is known
+    if (STATE(GPS_FIX_HOME)) {
+        return (float)GPS_home_llh.altCm + (float)getEstimatedAltitudeCm();
     }
 
+    // Otherwise fall back to relative altitude
     return getEstimatedAltitudeCm();
 }
 #endif
