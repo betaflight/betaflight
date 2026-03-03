@@ -36,7 +36,6 @@
 #include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "platform/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/motor.h"
