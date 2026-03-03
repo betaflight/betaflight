@@ -42,7 +42,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define I2C_TypeDef          i2c_inst_t
 #define I2C_INST(i2c)        (i2c)
 
-#define GPIO_TypeDef         io_bank0_hw_t
 //#define GPIO_InitTypeDef
 #define TIM_TypeDef          void*
 //#define TIM_OCInitTypeDef

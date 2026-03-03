@@ -32,6 +32,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
