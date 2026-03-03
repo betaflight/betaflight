@@ -34,9 +34,8 @@
 .program osd_tx_pal
 
 ; First display on "even" field 1 at (second half of) this line (official = 23), on "odd" field 2 at this + 313 (official = 336)
-; e.g. skip hsync on lines 6,7,...,22 (17 such, so counter = 16)
-;.define firstDisplayLine 23
-.define firstDisplayLine 21
+; e.g. skip hsync on lines 6,7,...,22 (17 such, so counter = 23 - 7 = 16)
+.define firstDisplayLine 23
 .define skipHsyncs firstDisplayLine - 7
 
 ; adjust from nominally correct values to centre on screen

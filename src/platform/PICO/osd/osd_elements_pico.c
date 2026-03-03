@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "common/printf.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "fc/rc_controls.h"
@@ -39,6 +40,12 @@
 // local
 #include "osd_pico_internal.h"
 #include "font_betaflight.h"
+#include "osd_element_ah.h"
+
+// Current format for font data stored in memory is based on 12x18 glyphs.
+#define FONTDATA_CHAR_WIDTH  12
+#define FONTDATA_CHAR_HEIGHT 18
+#define FONTDATA_BYTES_PER_CHAR ((FONTDATA_CHAR_WIDTH / 4) * FONTDATA_CHAR_HEIGHT)
 
 typedef enum {
     bgItemPendingCache = 0,
@@ -57,6 +64,12 @@ void setBackgroundItemsPending(void)
     bgStickRightState = bgItemPendingCache;
 }
 
+static void renderCharAtAligned(uint8_t ch, int px, int py);
+
+#ifdef OSD_FB_PICO_PIXEL_MODE
+
+static void renderCharAt(uint8_t ch, int px, int py);
+
 typedef struct {
     int16_t x1;
     int16_t y1;
@@ -66,83 +79,22 @@ typedef struct {
 
 static info_sidebars_t infoSidebars;
 
-// cf. osd_element.c implementation osdBackgroundHorizonSidebars
-static const int charWidth = PICO_OSD_CHAR_WIDTH;
-static const int charHeight = PICO_OSD_CHAR_HEIGHT;
-static const int charHalfWidth = charWidth / 2;
-static const int charHalfHeight = charHeight / 2;
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 static void cacheSidebarsInfo(uint8_t x, uint8_t y)
 {
-    // Cache the top left cornder and right edge in buffer coords
+    // Cache the top left corner and right edge in buffer coords
     // given the centre in char coords.
     // Sidebars are static (background), unchanging until reboot (or config change),
     // so only calculate once.
 
     if (bgSidebarsState == bgItemPendingCache) {
-        infoSidebars.x1 = (x - AH_SIDEBAR_WIDTH_POS) * charWidth + charHalfWidth;
-        infoSidebars.y1 = (y - AH_SIDEBAR_HEIGHT_POS) * charHeight; // not  + charHalfHeight because sub 0.5char*charHeight
-        infoSidebars.yMid = y * charHeight + charHalfHeight;
-        infoSidebars.x2 = (x + AH_SIDEBAR_WIDTH_POS) * charWidth + charHalfWidth;
-//        infoSidebars.y2 = (y + AH_SIDEBAR_HEIGHT_POS) * charHeight;
+        infoSidebars.x1 = (x - AH_SIDEBAR_WIDTH_POS) * PICO_OSD_CHAR_WIDTH + PICO_OSD_CHAR_WIDTH / 2;
+        infoSidebars.y1 = y  * PICO_OSD_CHAR_HEIGHT - AH_SIDEBAR_HEIGHT_POS * 18; // hard code 18 = original char height
+        infoSidebars.yMid = y * PICO_OSD_CHAR_HEIGHT + PICO_OSD_CHAR_HEIGHT / 2;
+        infoSidebars.x2 = (x + AH_SIDEBAR_WIDTH_POS) * PICO_OSD_CHAR_WIDTH + PICO_OSD_CHAR_WIDTH / 2;
         bgSidebarsState = bgItemPendingRender;
    }
-}
-
-typedef struct {
-    int16_t x1;
-    int16_t y1;
-    int16_t x2;
-    int16_t y2;
-    bool outOfRange;
-} info_ah_t;
-
-static info_ah_t infoArtificialHorizon;
-static bool renderAHComplete = true;
-
-// cf. osd_element.c implementation osdElementArtificialHorizon
-#define AH_SYMBOL_COUNT 9
-static void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
-{
-    // Takes about 5us (every 20ms)
-    // Adjust to central y value of character-based AH element.
-    y += (AH_SYMBOL_COUNT - 1) / 2;
-
-    // Get pitch and roll limits in tenths of degrees
-    const int ahSign = osdConfig()->ahInvert ? -1 : 1;
-    const int maxPitch = osdConfig()->ahMaxPitch * 10;
-    // roll is uncontrained now. // const int maxRoll = osdConfig()->ahMaxRoll * 10;
-    // const int rollAngle = constrain(attitude.values.roll * ahSign, -maxRoll, maxRoll);
-    const int rollAngle = attitude.values.roll * ahSign;
-    int pitchAngleUnconstrained = attitude.values.pitch * ahSign;
-    int pitchAngle = constrain(pitchAngleUnconstrained, -maxPitch, maxPitch);
-    infoArtificialHorizon.outOfRange = pitchAngle != pitchAngleUnconstrained;
-
-    // Note that pitch is positive for the board / camera pointing down, and y coords increase going down the screen.
-    static const int barScale = (AH_SIDEBAR_WIDTH_POS - 2) * charWidth; // The AH bar should fit nicely between the Sidebars.
-    const int displacementScale = (fb_ny - 64) / 2; // going to fit maxPitch to screen (vertically), less a bit for overscan.
-    const float d2r = 3.14159265f * 2 / 360 / 10; // Extra scale factor of 10 for 10th of degree -> radian.
-    // float trig functions are pretty quick on RP2350
-    float cr = cosf(rollAngle * d2r);
-    float sr = sinf(rollAngle * d2r);
-    int xoff = 0;
-    int yoff = 0;
-    if (maxPitch > 0) {
-        float tp = tanf(pitchAngle * d2r);
-        float tscale = tp * displacementScale / tanf(maxPitch * d2r);
-        xoff = tscale * sr;
-        yoff = tscale * cr;
-    }
-
-    int xc = x * charWidth + charHalfWidth - xoff;
-    int yc = y * charHeight + charHalfHeight - yoff;
-    infoArtificialHorizon.x1 = xc + barScale * cr;
-    infoArtificialHorizon.y1 = yc - barScale * sr;
-    infoArtificialHorizon.x2 = xc - barScale * cr;
-    infoArtificialHorizon.y2 = yc + barScale * sr;
-
-    renderAHComplete = false;
 }
 
 typedef struct {
@@ -172,13 +124,9 @@ static const radioControls_t radioModes[4] = {
 };
 
 // Stick overlay size
-#define OSD_STICK_OVERLAY_WIDTH 7
-#define OSD_STICK_OVERLAY_HEIGHT 5
+static const int stickWidth = 86;
+static const int stickHeight = 86;
 
-static const int stickWidth = charWidth * OSD_STICK_OVERLAY_WIDTH;
-static const int stickHeight = charHeight * OSD_STICK_OVERLAY_HEIGHT;
-
-//#define TEST_STICK_INPUTS
 static void cacheStickBackgroundInfo(info_stick_t *infoPtr, uint8_t x, uint8_t y)
 {
     infoPtr->xLeft = charWidth * x;
@@ -187,23 +135,22 @@ static void cacheStickBackgroundInfo(info_stick_t *infoPtr, uint8_t x, uint8_t y
 
 static void cacheStickInfo(info_stick_t *infoPtr, rc_alias_e vert, rc_alias_e horiz)
 {
-#ifdef TEST_STICK_INPUTS
+#ifdef DEBUG_OSD_STICKS_TEST
     UNUSED(vert);
     UNUSED(horiz);
     float tr = micros()*(6.283f/1000000.0f / 3);
     infoPtr->xStick = (int16_t)(infoPtr->xLeft + stickWidth/2 * (1 + cosf(tr)));
     infoPtr->yStick = (int16_t)(infoPtr->yTop + stickHeight/2 * (1 + sinf(tr)));
 #else
-    
+
     const float cursorX = constrainf(rcData[horiz], PWM_RANGE_MIN, PWM_RANGE_MAX);
     const float cursorY = constrainf(rcData[vert], PWM_RANGE_MIN, PWM_RANGE_MAX);
-
 
     infoPtr->xStick = (int16_t)scaleRangef(cursorX, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->xLeft, infoPtr->xLeft + stickWidth);
 
     // note y inverted, cf. osd_elements.c
     infoPtr->yStick = (int16_t)scaleRangef(cursorY, PWM_RANGE_MIN, PWM_RANGE_MAX, infoPtr->yTop + stickHeight, infoPtr->yTop);
-#endif
+#endif // DEBUG_OSD_STICKS_TEST
 }
 
 static void cacheStickLeftBackgroundInfo(uint8_t x, uint8_t y)
@@ -238,84 +185,41 @@ static void cacheStickRightInfo(void)
     renderStickRightComplete = false;
 }
 
-bool drawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
-{
-    switch (item) {
-    case OSD_HORIZON_SIDEBARS:
-        cacheSidebarsInfo(elemPosX, elemPosY);
-        return true;
-    case OSD_STICK_OVERLAY_LEFT:
-        cacheStickLeftBackgroundInfo(elemPosX, elemPosY);
-        return true;
+typedef struct {
+    const char *str;
+    uint16_t strLength;
+    uint16_t x;
+    uint16_t y;
+    int16_t charAdvance;
+    uint16_t strIndex;
+} renderStringData_t;
 
-    case OSD_STICK_OVERLAY_RIGHT:
-        cacheStickRightBackgroundInfo(elemPosX, elemPosY);
-        return true;
-        
-    default:
-        // Not handled here
-        return false;
+static renderStringData_t renderStringData;
+
+void renderStringInit(const char *str, uint16_t initX, uint16_t y, int charAdvance)
+{
+    renderStringData.str = str;
+    renderStringData.strLength = strlen(str);
+    renderStringData.x = initX;
+    renderStringData.y = y;
+    renderStringData.charAdvance = charAdvance;
+    renderStringData.strIndex = 0;
+}
+
+bool renderStringNext(void)
+{
+    if (renderStringData.strIndex < renderStringData.strLength) {
+        renderCharAt(renderStringData.str[renderStringData.strIndex++], renderStringData.x, renderStringData.y);
+        renderStringData.x += renderStringData.charAdvance;
     }
-}
 
-bool osdPioDrawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
-{
-    DEBUG_COUNTER_INST(c1);
-    bool ret = drawBackgroundItem(item, elemPosX, elemPosY);
-    DEBUG_COUNTER_ACC(drawBGTot, c1);
-    return ret;
-}
-
-bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
-{    
-//#define testNoPixelElements
-#ifdef testNoPixelElements
-    UNUSED(item);
-    UNUSED(elemPosX);
-    UNUSED(elemPosY);
-    UNUSED(cacheArtificialHorizonInfo);
-    return false;
-#else
-    switch (item) {
-    // Cache information for rendering an osd item later on.
-    case OSD_ARTIFICIAL_HORIZON:
-//#define testnoahhere
-#ifdef testnoahhere
-        // Useful for comparing with original char based AH.
-        UNUSED(cacheArtificialHorizonInfo);
-        return false;
-#else
-        cacheArtificialHorizonInfo(elemPosX, elemPosY);
-        return true;
-#endif
-
-    case OSD_STICK_OVERLAY_LEFT:
-        cacheStickLeftInfo();
-        return true;
-
-    case OSD_STICK_OVERLAY_RIGHT:
-        cacheStickRightInfo();
-        return true;
-
-    default:
-        // Not handled here
-        return false;
-    }
-#endif
-}
-
-bool osdPioDrawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
-{
-    DEBUG_COUNTER_INST(c1);
-    bool ret = drawForegroundItem(item, elemPosX, elemPosY);
-    DEBUG_COUNTER_ACC(drawFGTot,c1);
-    return ret;
+    return !(renderStringData.strIndex < renderStringData.strLength);
 }
 
 static bool renderSidebarsUntil(uint32_t limit_micros)
 {
     static int count = -1;
-    static const int maxCount = (2*AH_SIDEBAR_HEIGHT_POS + 1) * charHeight + 1;
+    static const int maxCount = (2*AH_SIDEBAR_HEIGHT_POS + 1) * 18 + 1; // hard code 18 = original charHeight
 
     if (bgSidebarsState != bgItemPendingRender) {
         return true; // Nothing to do here.
@@ -325,7 +229,7 @@ static bool renderSidebarsUntil(uint32_t limit_micros)
     int x2 = infoSidebars.x2;
 
     if (count < 0) {
-        // Render the central indicators. 
+        // Render the central indicators.
         int yMid = infoSidebars.yMid;
         for (int i=1; i<6; ++i) {
             plot(x1 + 16 - i, yMid + i, 2);
@@ -364,116 +268,6 @@ static bool renderSidebarsUntil(uint32_t limit_micros)
     }
 
     return false;
-}
-
-static bool renderAHUntil(uint32_t limit_micros)
-{
-    static bool first = true;
-
-    if (first) {
-        iterLineInit(infoArtificialHorizon.x1, infoArtificialHorizon.y1, infoArtificialHorizon.x2, infoArtificialHorizon.y2);
-        first = false;
-    }
-
-    bool done = false;
-    bool oor = infoArtificialHorizon.outOfRange;
-    while (cmpTimeUs(limit_micros, micros()) > 0 && !done) {
-//        done = oor ? iterDashedDLineNext() :  iterDLineNext();
-        done = oor ? iterDashedQLineNext() :  iterQLineNext();
-        UNUSED(iterDashedDLineNext);
-        UNUSED(iterDLineNext);
-        // line with arrow rather than dashed line?
-    }
-
-    if (done) {
-        // All done. Prepare for next time.
-        first = true;
-        renderAHComplete = true;
-    }
-
-    return renderAHComplete;
-}
-
-static bool renderCharsComplete = true;
-
-bool renderCharsUntil(uint32_t limit_micros)
-{
-    // Saved state.
-    // Position: currentChar (and cached currentY, currentX, currentPtr).
-    static int currentChar;
-    static int currentY;
-    static int currentX;
-    static uint8_t *currentPtr;
-
-    // ** NOTE ** charsPerLine doesn't correspond with pixels or bytes per line,
-    // because we have some spare: 368 pixels not 360 for alignment reasons
-
-    // TODO rename these...
-    // REM *** if we use hoffs or equivalent, do same in plot and other drawing routines
-    const int hoffs = 0; //0..2 (using 90 of 92 bytes)
-    const int pxpc = PICO_OSD_CHAR_WIDTH;
-    const int bxpc = pxpc / 4; // 4 pixels per byte -> 3 bytes to go across by 1 char
-    const int pypc = PICO_OSD_CHAR_HEIGHT;
-    const int bpc  = bxpc * pypc;
-    const int fbbpl = fb_nx / 4; // bytes per line = pixels per line / pixels per byte
-    const int bpCharLine = pypc * fbbpl;
-    const int fbbpNextLine = bpCharLine - charsPerLine * bxpc; // byte increment from  (top left of) last char of line to first of next line.
-
-    if (0 == currentChar) {
-        currentY = 0;
-        currentX = 0;
-        currentPtr = osdBufferA + hoffs;
-    }
-
-    DEBUG_INC(tus);
-    while (currentY < charLines) {
-        if (osdCharLineInUse[currentY]) {
-            // currentPtr is pointer to topleft of char dest on osdBufferA
-            while (cmpTimeUs(limit_micros, micros()) > 0 && currentX < charsPerLine) {
-                uint8_t c = osdCharBuffer[currentChar++];
-                // Buffer is always cleared after vsync before we start updating it. So, we can
-                // ignore empty characters.
-                // *** TODO check char 0 and char 32 (spc) are always transparent (max7456 code clears to 0x20)
-                if (c!=0x20 && c!=0) {
-                    // 1 char = 12 pixels = 3 bytes. 4 chars = 48 pixels = 12 bytes = 3 words
-                    const uint8_t * fontp = &fontData[c * bpc]; // 3 bytes per 12 pixel char line, 18 lines
-                    uint8_t * bufPtr = currentPtr;
-                    for (int j=0; j<pypc; ++j) {
-                        // write out loop of bxpc (bytes per char = 3)
-                        *bufPtr++ = *fontp++;
-                        *bufPtr++ = *fontp++;
-                        *bufPtr++ = *fontp++;
-                        bufPtr += fbbpl - 3; // new line, back 3 bytes
-                    }
-                }
-
-                currentPtr += bxpc;
-                currentX++;
-            }
-
-            if (currentX < charsPerLine) {
-                // timed out
-                break;
-            }
-
-            // Completed a char line, pointer is at top left of last character of line.
-            currentX = 0;
-            currentY++;
-            currentPtr += fbbpNextLine;
-        } else {
-            currentY++;
-            currentChar += charsPerLine;
-            currentPtr += bpCharLine;
-        }
-    }
-
-    if (currentChar == numChars) { // equivalently currentY == charLines
-        // Reached the end, reset.
-        currentChar = 0;
-        renderCharsComplete = true;
-    }
-
-    return renderCharsComplete;
 }
 
 bool renderSticksBackgroundUntil(uint32_t limit_micros)
@@ -537,7 +331,7 @@ static void plotBlob(int x, int y)
     plot(x+1, y-1, 1);
     plot(x, y-1, 1);
 }
-    
+
 bool renderStickLeftUntil(uint32_t limit_micros)
 {
     if (cmpTimeUs(limit_micros, micros()) > 0) {
@@ -558,95 +352,305 @@ bool renderStickRightUntil(uint32_t limit_micros)
     return renderStickRightComplete;
 }
 
-#if 0
-// Prototyping - slow version of psotProcessUntil
-static bool isWhite(int x, int y)
+static void renderCharAt(uint8_t ch, int px, int py)
 {
-    uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
-    uint8_t * pByte = plotBuffer + PICO_OSD_BUF_WIDTH * y;
-    pByte += (int)(x/4); // 4 pixels per byte
-    static uint8_t masks[4] = {0b00000011, 0b00001100, 0b00110000, 0b11000000};
-    uint8_t col = *(pByte) & masks[x%4];
-    return col & 0b01010101;
-}
-
-static bool postProcessUntil0(uint32_t limit_micros)
-{
-    UNUSED(limit_micros);
-//    uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
-//    for (int y=0; y<fb_ny; ++y) {
-// Testing with/without
-    for (int y=85; y<200; ++y) {
-//        uint8_t * pByte = plotBuffer + PICO_OSD_BUF_WIDTH * y;
-        for (int x=0; x<fb_nx; ++x) {
-            // if not white but adjacent (say orthongonally) to white, ensure black
-            if (!isWhite(x,y)) {
-                if (isWhite(x-1,y) || isWhite(x+1,y) || isWhite(x,y-1) || isWhite(x,y+1)) {
-                    plot(x,y,1);
-                }
-            }
-        }
+    if (ch == 0x20 || ch == 0) {
+        return;
     }
 
-    return true;
+    int xBitShift = 2 * (px % 4); // sub-byte (bit) offset
+    if (xBitShift == 0) {
+        // Byte-aligned.
+        renderCharAtAligned(ch, px, py);
+    } else {
+        const uint8_t *fontp = &fontData[ch * FONTDATA_BYTES_PER_CHAR];
+        uint8_t *bufPtr = osdBufferA + py * PICO_OSD_BUF_WIDTH + (px / 4);
+        uint8_t mask1 = 0xff << xBitShift;
+        uint8_t mask2 = ~mask1;
+
+        // TODO Note currently only supports OSD_BYTES_PER_CHAR == 2,
+        // can add support here for OSD_BYTES_PER_CHAR == 3
+        for (int j=0; j<PICO_OSD_GLYPH_HEIGHT; ++j) {
+            uint32_t fontBits = (*((uint16_t *)fontp)) << xBitShift;
+            fontp+= 3;
+            bufPtr[0] = (bufPtr[0] & mask2) | fontBits;
+            bufPtr[1] = fontBits >> 8;
+            bufPtr[2] = (bufPtr[2] & mask1) | fontBits >> 16;
+            bufPtr += PICO_OSD_BUF_WIDTH;
+        }
+    }
 }
+
+static bool drawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
+{
+    switch (item) {
+    case OSD_HORIZON_SIDEBARS:
+        cacheSidebarsInfo(elemPosX, elemPosY);
+        return true;
+
+    case OSD_STICK_OVERLAY_LEFT:
+        cacheStickLeftBackgroundInfo(elemPosX, elemPosY);
+        return true;
+
+    case OSD_STICK_OVERLAY_RIGHT:
+        cacheStickRightBackgroundInfo(elemPosX, elemPosY);
+        return true;
+
+    default:
+        // Not handled here
+        return false;
+    }
+}
+
+static bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
+{
+    switch (item) {
+    // Cache information for rendering an osd item later on.
+    case OSD_ARTIFICIAL_HORIZON:
+//#define testnoahhere
+#ifdef testnoahhere
+        // Useful for comparing with original char based AH.
+        UNUSED(cacheArtificialHorizonInfo);
+        return false;
+#else
+        cacheArtificialHorizonInfo(elemPosX, elemPosY);
+        return true;
 #endif
+
+    case OSD_STICK_OVERLAY_LEFT:
+        cacheStickLeftInfo();
+        return true;
+
+    case OSD_STICK_OVERLAY_RIGHT:
+        cacheStickRightInfo();
+        return true;
+
+    default:
+        // Not handled here
+        return false;
+    }
+}
+#endif // #ifdef OSD_FB_PICO_PIXEL_MODE
+
+#if OSD_FB_PICO_POSTPROCESS
+static bool postProcessComplete = true;
 
 static bool postProcessUntil(uint32_t limit_micros)
 {
-    // Plot Black points around every White point (don't overwrite a White point).
-    UNUSED(limit_micros); // TODO limit time taken, exit and resume
+    ADJUST_LIMIT_MICROS(10);
+    // pp_mode 1 <- UL only left/upper black
+    // pp_mode 2 <- UDLR
+    // pp_mode 3 <- UD LL RR or approximation
+    // pp_mode 6 <- UDLR and diagonals
+    // Plot Black points around White points (don't overwrite a White point).
+
     uint32_t *plotBufferW = (uint32_t *)(plotToBackground ? osdBufferBackground : osdBufferA);
     static int y;
-    static int wordIndex; // index of word along a line, in 0..22
     static uint32_t *pWord;
-    static uint32_t wordPrev;
-    static uint32_t wordThis;
-    static uint32_t wordNext;
+
+    DEBUG_COUNTER_INST(c1);
 
     if (!pWord) {
         pWord = plotBufferW;
         y = 0;
+        DEBUG_ZERO(dd3);
     }
 
-    while (pWord < plotBufferW + fb_words) {
-        if (wordIndex == 0) {
-            wordThis = 0;
-            wordNext = *pWord;
-        }
+    const uint32_t *maxPWord = plotBufferW + fb_words;
+    // assert fb_words divisible by 32
+    // and by 23
 
-        wordPrev = wordThis;
-        wordThis = wordNext;
+    while (pWord < maxPWord && (cmpTimeUs(limit_micros, micros()) > 0)) {
+        uint32_t wordNext = *pWord;
+        uint32_t wordThis = 0;
+        bool notLastLine = y < fb_ny - 1;
+        for (int dosome = PICO_OSD_LINE_WORDS; dosome > 0; dosome--) {
 
-        wordIndex++;
-        if (wordIndex == PICO_OSD_LINE_WORDS) {
-            // we are on the last word of a line, don't peek at the next word, reset line counter.
-            wordNext = 0;
-            wordIndex = 0;
-        } else {
+            uint32_t wordPrev = wordThis;
+            wordThis = wordNext;
             wordNext = *(pWord + 1);
+
+            uint32_t whiteThis = wordThis & 0x55555555; // pick out all of the OSD_W (low bits) of each bit pair (OSD_EN, OSD_W).
+            uint32_t blackUpdates;
+
+#if OSD_FB_PICO_POSTPROCESS == 1
+            blackUpdates = (whiteThis >> 1);
+            blackUpdates |= (wordNext & 0x1) << 31;
+
+            if (notLastLine) {
+                blackUpdates |= (*(pWord + PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
+            }
+            UNUSED(wordPrev);
+#elif OSD_FB_PICO_POSTPROCESS == 2
+            blackUpdates = (whiteThis >> 1) | (whiteThis << 3); // set OSD_EN according to adjacent OSD_W.
+            blackUpdates |= (wordPrev & 0x40000000) >> 29;
+            blackUpdates |= (wordNext & 0x1) << 31;
+
+            if (y != 0) {
+                blackUpdates |= (*(pWord - PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
+            }
+
+            if (notLastLine) {
+                blackUpdates |= (*(pWord + PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
+            }
+#elif OSD_FB_PICO_POSTPROCESS == 3
+                blackUpdates = (whiteThis >> 1) | (whiteThis << 3) | (whiteThis >> 3) | (whiteThis << 5); // set OSD_EN according to adjacent OSD_W.
+                blackUpdates |= ((wordPrev & 0x40000000) >> 29) | ((wordPrev & 0x50000000) >> 27);
+                blackUpdates |= ((wordNext & 0x1) << 31) | ((wordNext & 0x5) << 29);
+
+                if (y != 0) {
+                    blackUpdates |= (*(pWord - PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
+                }
+
+                if (notLastLine) {
+                    blackUpdates |= (*(pWord + PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
+                }
+
+                break;
+#elif OSD_FB_PICO_POSTPROCESS == 6
+                blackUpdates = (whiteThis >> 1) | (whiteThis << 3); // set OSD_EN according to adjacent OSD_W.
+                blackUpdates |= (wordPrev & 0x40000000) >> 29;
+                blackUpdates |= (wordNext & 0x1) << 31;
+
+                if (y != 0) {
+                    uint32_t wordUp = *(pWord - PICO_OSD_LINE_WORDS) & 0x55555555;
+                    blackUpdates |= wordUp << 1 | wordUp << 3 | wordUp >> 1;
+                }
+
+                if (notLastLine) {
+                    uint32_t wordUp = *(pWord + PICO_OSD_LINE_WORDS) & 0x55555555;
+                    blackUpdates |= wordUp << 1 | wordUp << 3 | wordUp >> 1;
+                }
+#else
+                blackUpdates = 0;
+                UNUSED(blackUpdates);
+                UNUSED(whiteThis);
+                UNUSED(wordPrev);
+                UNUSED(notLastLine);
+                // unknown
+#endif
+
+            *pWord++ = wordThis | blackUpdates;
         }
 
-        uint32_t whiteThis = wordThis & 0x55555555; // pick out all of the OSD_W (low bits) of each bit pair (OSD_EN, OSD_W).
-        uint32_t blackUpdates = (whiteThis >> 1) | (whiteThis << 3); // set OSD_EN according to adjacent OSD_W.
-        blackUpdates |= (wordPrev & 0x40000000) >> 29;
-        blackUpdates |= (wordNext & 0x1) << 31;
-        if (y != 0) {
-            blackUpdates |= (*(pWord - PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
-        }
+        y++;
+    }
 
-        if (y < fb_ny - 1) {
-            blackUpdates |= (*(pWord + PICO_OSD_LINE_WORDS) & 0x55555555) << 1;
-        }
+    DEBUG_COUNTER_ACC(dd3, c1);
 
-        *pWord++ = wordThis | blackUpdates;
-        if (wordIndex == 0) {
-            y++;
+    if (pWord == maxPWord) {
+        pWord = 0;
+        postProcessComplete = true;
+        DEBUG_ZERO(c1);
+    }
+
+    return postProcessComplete;
+}
+#endif
+
+bool osdPioDrawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
+{
+#ifdef OSD_FB_PICO_PIXEL_MODE
+    DEBUG_COUNTER_INST(c1);
+    bool ret = drawBackgroundItem(item, elemPosX, elemPosY);
+    DEBUG_COUNTER_ACC(drawBGTot, c1);
+    return ret;
+#else
+    UNUSED(item);
+    UNUSED(elemPosX);
+    UNUSED(elemPosY);
+    return false;
+#endif
+}
+
+bool osdPioDrawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
+{
+#ifdef OSD_FB_PICO_PIXEL_MODE
+    DEBUG_COUNTER_INST(c1);
+    bool ret = drawForegroundItem(item, elemPosX, elemPosY);
+    DEBUG_COUNTER_ACC(drawFGTot,c1);
+    return ret;
+#else
+    UNUSED(item);
+    UNUSED(elemPosX);
+    UNUSED(elemPosY);
+    return false;
+#endif
+}
+
+static bool renderCharsComplete = true;
+
+static void renderCharAtAligned(uint8_t ch, int px, int py)
+{
+    const uint8_t *fontp = &fontData[ch * FONTDATA_BYTES_PER_CHAR];
+    uint8_t *bufPtr = osdBufferA + py * PICO_OSD_BUF_WIDTH + (px / 4);
+    for (int j=0; j<PICO_OSD_GLYPH_HEIGHT; ++j) {
+        bufPtr[0] = *fontp++;
+        bufPtr[1] = *fontp++;
+#if OSD_BYTES_PER_CHAR > 2
+        bufPtr[2] = *fontp++;
+#else
+        fontp++;
+#endif
+        bufPtr += PICO_OSD_BUF_WIDTH;
+    }
+}
+
+bool renderCharsUntil(uint32_t limit_micros)
+{
+    // Saved state.
+    // Position: currentChar (and cached currentY, currentX).
+    static int currentChar;
+    static int currentY;
+    static int currentX;
+    ADJUST_LIMIT_MICROS(4);
+    // NOTE charsPerLine doesn't match up with pixels or bytes per line,
+    // because we have some spare: 368 pixels not 360 for alignment reasons
+
+    // REM if we use hoffs or equivalent, do same in plot and other drawing routines
+    //    const int hoffs = 0; //0..2 (using 90 of 92 bytes)
+
+    if (0 == currentChar) {
+        currentY = 0;
+        currentX = 0;
+    }
+
+    while (currentY < charLines) {
+        if (osdCharLineInUse[currentY]) {
+            int cyRow = currentY * PICO_OSD_CHAR_HEIGHT;
+            while (cmpTimeUs(limit_micros, micros()) > 0 && currentX < charsPerLine) {
+                uint8_t c = osdCharBuffer[currentChar++];
+                // Buffer is always cleared after vsync before we start updating it. Any required characters
+                // will have been written to the buffer, so we can ignore empty characters.
+                // *** TODO check char 0 and char 32 (spc) are always transparent (max7456 code clears to 0x20)
+                if (c!=0x20 && c!=0) {
+                    renderCharAtAligned(c, currentX * PICO_OSD_CHAR_WIDTH, cyRow);
+                }
+
+                currentX++;
+            }
+
+            if (currentX < charsPerLine) {
+                // timed out
+                break;
+            }
+
+            // Completed a char line
+            currentX = 0;
+            currentY++;
+        } else {
+            currentY++;
+            currentChar += charsPerLine;
         }
     }
 
-    pWord = 0;
-    return true;
+    if (currentY == charLines) {
+        // Reached the end, reset.
+        currentChar = 0;
+        renderCharsComplete = true;
+    }
+
+    return renderCharsComplete;
 }
 
 // Update screen buffer (paint characters etc to buffer), up until a time limit.
@@ -655,7 +659,8 @@ static bool postProcessUntil(uint32_t limit_micros)
 bool osdPioRenderScreenUntil(uint32_t limit_micros)
 {
     static bool firstOfVsync = true;
-#ifdef OSD_FB_PICO_DEBUG
+
+#ifdef DEBUG_OSD_FB_PICO
     uint32_t cRender = getCycleCounter();
     ++dd7;
     static uint32_t cycFirst;
@@ -663,7 +668,10 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     if (firstOfVsync) {
         firstOfVsync = false;
         renderCharsComplete = false;
-#ifdef OSD_FB_PICO_DEBUG
+#if OSD_FB_PICO_POSTPROCESS
+        postProcessComplete = false;
+#endif
+#ifdef DEBUG_OSD_FB_PICO
         cycFirst = getCycleCounter();
         renderStartCycles += cycFirst - startVsyncCycles;
         renderStartCyclesMax = MAX(renderStartCyclesMax, getCycleCounter() - startVsyncCycles);
@@ -672,13 +680,15 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
 
 #ifdef DEBUG_TESTCARD
     UNUSED(limit_micros);
+    void plotTestCard(void);
     plotTestCard();
-    transferredSinceVsync = true;
+    transferredSinceVSync = true;
     return false;
 #endif
 
     DEBUG_COUNTER_INST(c1);
 
+#ifdef OSD_FB_PICO_PIXEL_MODE
     // Proceed with rendering background elements if/as required, if not timed out.
     selectBackgroundBuffer();
     bool complete =
@@ -688,23 +698,25 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
 
     // Continue with foreground elements, if not timed out.
     // (Note each item has a static bool flag render..Complete that should be initialised to true.)
+    // Render functions are started and completed in strictly sequential order.
     complete = complete &&
         (renderAHComplete || renderAHUntil(limit_micros)) &&
         (renderCharsComplete || renderCharsUntil(limit_micros)) &&
         (renderStickLeftComplete || renderStickLeftUntil(limit_micros)) &&
         (renderStickRightComplete || renderStickRightUntil(limit_micros));
-
-#if 1
-    UNUSED(postProcessUntil);
 #else
-    // Testing a post-process operation on the background buffer to start with
-    // Post processing can e.g. surround white pixels with a black border
-    selectBackgroundBuffer();
-    complete = complete && (postProcessComplete || postProcessUntil(limit_micros));
-    selectForegroundBuffer();
+    // Not in pixel mode, render chars only.
+    bool complete = renderCharsComplete || renderCharsUntil(limit_micros);
 #endif
 
-#ifdef OSD_FB_PICO_DEBUG
+#if OSD_FB_PICO_POSTPROCESS
+    // Testing a post-process operation on the foreground buffer
+    // Post processing can e.g. surround white pixels with a black border
+    complete = complete && (postProcessComplete || postProcessUntil(limit_micros));
+
+#endif
+
+#ifdef DEBUG_OSD_FB_PICO
     uint32_t cd = getCycleCounter() - c1;
     renderTot += cd;
     if (cd > maxcycles) {
@@ -713,23 +725,21 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
 #endif
 
     if (complete) {
-#ifdef OSD_FB_PICO_DEBUG
+#ifdef DEBUG_OSD_FB_PICO
         tusr++;
 
         uint32_t cycNow = getCycleCounter();
-        renderEndCycles += cycNow - startVsyncCycles;
         uint32_t rdd = cycNow - startVsyncCycles;
+        renderEndCycles += rdd;
         if (rdd > renderEndCyclesMax) {
             dd1 = cycNow - cycFirst;
             renderEndCyclesMax = rdd;
         }
+        dd2 += cycNow - cRender;
 #endif
 
         firstOfVsync = true;
-        transferredSinceVsync = true;
-#ifdef OSD_DEBUG
-        dd2 += cycNow - cRender;
-#endif
+        transferredSinceVSync = true;
         return false; // Nothing more to draw.
     }
 

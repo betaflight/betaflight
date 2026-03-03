@@ -1697,8 +1697,7 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
 static void osdElementStickOverlay(osdElementParms_t *element)
 {
     // Now draw the cursor
-
-#ifdef OSD_STICKS_TEST
+#ifdef DEBUG_OSD_STICKS_TEST
     // for quick testing of stick overlays without requiring any RC input
     UNUSED(radioModes);
     float tr = micros()*(6.283f/1000000.0f / 3);
@@ -1717,7 +1716,7 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
     const uint8_t cursorX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
     const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
-#endif
+#endif // DEBUG_OSD_STICKS_TEST
 
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 

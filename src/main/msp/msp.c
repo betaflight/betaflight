@@ -971,9 +971,11 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 #define OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD (1 << 7)
 
+#if ENABLE_FB_OSD
 // TODO allocated a new flag for FB_OSD (maybe reuse 1 << 1 ? ), and update Configurator accordingly.
 // For now, pretend to Configurator that we are max7456
 #define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
+#endif
 
         uint8_t osdFlags = 0;
 
@@ -1008,6 +1010,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             }
 
             break;
+#if ENABLE_FB_OSD
         case OSD_DISPLAYPORT_DEVICE_FBOSD:
             osdFlags |= OSD_FLAGS_OSD_HARDWARE_FB_OSD;
             if (displayIsReady) {
@@ -1015,6 +1018,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             }
 
             break;
+#endif
         default:
             break;
         }

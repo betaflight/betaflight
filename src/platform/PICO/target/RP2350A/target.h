@@ -94,15 +94,27 @@
 #undef USE_DMA_SPEC // not yet required - possibly won't be used at all
 
 // 0, 1 or 2 for pio0, pio1, pio2
-// maybe these more dynamic,
-// or configurable in config.h
+// These can be predefined in config.h
 // Four state machines (sm) per pio block
+// Defaults
 // pio0 -> dshot for motors 1,2,3,4
-// pio1 -> UART2, UART3
-// pio2 -> LED STRIP
+// pio1 -> PIOUART0, PIOUART1
+// pio2 -> LED STRIP, FB_OSD
+#ifndef PIO_DSHOT_INDEX
 #define PIO_DSHOT_INDEX    0
+#endif
+
+#ifndef PIO_UART_INDEX
 #define PIO_UART_INDEX     1
+#endif
+
+#ifndef PIO_LEDSTRIP_INDEX
 #define PIO_LEDSTRIP_INDEX 2
+#endif
+
+#ifndef PIO_OSD_INDEX
+#define PIO_OSD_INDEX 2
+#endif
 
 // Various untested or unsupported elements are undefined below
 

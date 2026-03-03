@@ -23,13 +23,7 @@
 
 #include <stdint.h>
 
-#ifdef OSD_FB_PICO_FLASH_FONT
+extern bool renderAHComplete;
 
-extern uint8_t * fontData;
-
-#else
-
-#define FONTDATA_LENGTH (18*3*256)
-extern uint8_t fontData[FONTDATA_LENGTH];
-
-#endif
+void cacheArtificialHorizonInfo(uint8_t x, uint8_t y);
+bool renderAHUntil(uint32_t limit_micros);

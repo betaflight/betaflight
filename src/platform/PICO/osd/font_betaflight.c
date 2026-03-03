@@ -28,6 +28,10 @@
 #include <stdint.h>
 
 // MAX7456 font
+#ifdef OSD_FB_PICO_FLASH_FONT
+uint8_t * fontData;
+#else
+
 uint8_t fontData[18*3*256] = {
     0b00000000, 0b00000000, 0b00000000,
     0b00000000, 0b00000000, 0b00000000,
@@ -4893,5 +4897,7 @@ uint8_t fontData[18*3*256] = {
     0b00000000, 0b00000000, 0b00000000,
     0b00000000, 0b00000000, 0b00000000,
 };
+
+#endif
 
 #endif // ENABLE_FB_OSD

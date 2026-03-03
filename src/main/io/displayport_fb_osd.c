@@ -256,7 +256,7 @@ bool fbOsdDisplayPortInit(const vcdProfile_t *vcdProfile, displayPort_t **displa
     // (compare with) max7456 allows row and col adjust to be changed in settings in order
     // to reduce the character grid, so can reduce rows by up to 3, cols by up to 6
     fbOsdDisplayPort.rows = displayRows + displayPortProfileFbOsd()->rowAdjust;
-    fbOsdDisplayPort.cols = 30 + displayPortProfileFbOsd()->colAdjust;
+    fbOsdDisplayPort.cols = VIDEO_COLUMNS_SD + displayPortProfileFbOsd()->colAdjust;
 
     displayInit(&fbOsdDisplayPort, &fbOsdVTable, DISPLAYPORT_DEVICE_TYPE_FBOSD);
 

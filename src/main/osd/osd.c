@@ -1386,9 +1386,9 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 
     // Early check for displayPort blocking OSD action, avoids repeated calls to main task function (osdUpdate)
     // and avoids scheduler issues with spikes in task duration.
-     if ((osdState == OSD_STATE_CHECK || osdState == OSD_STATE_TRANSFER) && displayIsTransferInProgress(osdDisplayPort)) {
-         return false;
-     }
+    if ((osdState == OSD_STATE_CHECK || osdState == OSD_STATE_TRANSFER) && displayIsTransferInProgress(osdDisplayPort)) {
+        return false;
+    }
 
     return (osdState != OSD_STATE_IDLE);
 }

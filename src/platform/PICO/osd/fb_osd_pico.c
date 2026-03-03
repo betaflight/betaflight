@@ -33,8 +33,11 @@
 #include "drivers/time.h"
 #include "font_betaflight.h"
 #include "osd_pico.h"
+#include "osd_pico_internal.h"
 
+#ifndef OSD_FB_PICO_FLASH_FONT
 static uint8_t fontDataMagic[] = {'p', 'f', 'n', 't'};
+#endif
 
 static bool inNTSCrange(int n)
 {
@@ -55,6 +58,11 @@ static bool fbOsdLoadFont(void)
         return false;
     }
 
+#ifdef OSD_FB_PICO_FLASH_FONT
+    fontData = (uint8_t *)&__fontdata_start;
+    bprintf("FONT resides in flash, no loading required");
+    return true;
+#else
     // Retrieve font data from flash if present. Otherwise defaults to baked-in font in font_betaflight.c.
     uint8_t *ptr = (uint8_t *)&__fontdata_start;
     if (0 != memcmp(ptr, fontDataMagic, 4)) {
@@ -67,6 +75,7 @@ static bool fbOsdLoadFont(void)
     memcpy(fontData, ptr, FONTDATA_LENGTH);
     bprintf("FONT loaded font from flash into ram");
     return true;
+#endif
 }
 
 fbOsdInitStatus_e fbOsdInit(const struct fbOsdConfig_s *fbOsdConfig, const struct vcdProfile_s *vcdProfile)
@@ -168,55 +177,71 @@ bool fbOsdReInitIfRequired(bool forceStallCheck)
     return false;
 }
 
-
-// Limit time taken for an individual call to fbOsdDrawScreen.
-// NB not a true limit, we are allowed to start a new operation if time has not gone past this,
-// so it might end up being exceeded by the length of the longest individual operation.
-
-// set this low to diagnose long operations
-// #define DRAWSCREEN_TIME_LIMIT_US 5
-
-#define DRAWSCREEN_TIME_LIMIT_US 15
-
 // Return true if not complete.
 bool fbOsdDrawScreen(void)
 {
-    // Try to spend no more than DRAWSCREEN_TIME_LIMIT_US on each iteration, will keep
+    // Try to spend no more than OSD_DRAWSCREEN_TIME_LIMIT_US on each iteration, will keep
     // on calling in here until we return false for "all done".
-    return osdPioRenderScreenUntil(micros() + DRAWSCREEN_TIME_LIMIT_US);
+    return osdPioRenderScreenUntil(micros() + OSD_DRAWSCREEN_TIME_LIMIT_US);
 }
 
+#ifdef OSD_FB_PICO_FLASH_FONT
+static config_streamer_t osd_streamer;
+#endif
+
 // Write a character into the font data storage (in RAM)
-bool fbOsdWriteFontCharacter(uint8_t char_address, const uint8_t *font_data)
+bool fbOsdWriteFontCharacter(uint8_t char_address, const uint8_t *char_data)
 {
+#ifdef OSD_FB_PICO_FLASH_FONT
+    // *** NOTE assumes we receive characters in order, starting from 0,
+    // ***      so that a flash erase occurs at the start and every 4096 bytes as required
+    UNUSED(char_address);
+    static bool startedFontUpdate;
+    if (!startedFontUpdate) {
+        config_streamer_init(&osd_streamer);
+        osd_streamer.address = (uintptr_t)&__fontdata_start;
+        bprintf("FONT fbOsdWriteFontCharacter start font update, char %d", char_address);
+        startedFontUpdate = true;
+    }
+
+    uint8_t buf[54];
+    uint8_t *p = buf;
+#else
+    uint8_t *p = fontData + 54*char_address;
+#endif
     uint8_t bitConv[] = {0b10, 0b00, 0b11, 0b00};
     // MCM format 00 = black, 01 = transparent, 10 = white, 11 = transparent
     // -> FB format 10 = black, 11 = white, 00 = transparent
-    uint8_t *p = fontData + 54*char_address;
     for (int i=0; i<54; ++i) {
-        uint8_t c = *font_data++;
+        uint8_t c = *char_data++;
         uint8_t d = bitConv[c&0x3] << 6;
         d |= bitConv[(c>>2)&0x3] << 4;
         d |= bitConv[(c>>4)&0x3] << 2;
         d |= bitConv[c>>6];
         *p++ = d;
     }
-
+#ifdef OSD_FB_PICO_FLASH_FONT
+    config_streamer_write(&osd_streamer, buf, 54);
+#endif
     return true;
 }
 
 void fbOsdFontUpdateCompletion(void)
 {
+    bprintf("FONT fbOsdFontUpdateCompletion start");
+#ifdef OSD_FB_PICO_FLASH_FONT
+    config_streamer_flush(&osd_streamer);
+#else
     // The font has been updated in place (in RAM). Copy out of RAM back into flash.
     // Borrow the streamer functions from config.
     // __fontdata_start will be on a flash page size boundary (256 byte aligned)
-    bprintf("FONT fbOsdFontUpdateCompletion start");
     config_streamer_t streamer;
     config_streamer_init(&streamer);
     streamer.address = (uintptr_t)&__fontdata_start;
     config_streamer_write(&streamer, fontDataMagic, 4);
     config_streamer_write(&streamer, (const uint8_t *)fontData, FONTDATA_LENGTH);
     config_streamer_flush(&streamer);
+#endif
     bprintf("FONT fbOsdFontUpdateCompletion end");
 }
     

@@ -20,9 +20,15 @@
 
 #pragma once
 
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+#define VIDEO_COLUMNS_SD          DEBUG_OSD_TEST_COLS
+#define VIDEO_LINES_NTSC          DEBUG_OSD_TEST_ROWS_NTSC
+#define VIDEO_LINES_PAL           DEBUG_OSD_TEST_ROWS_PAL
+#else
 #define VIDEO_COLUMNS_SD          30
 #define VIDEO_LINES_NTSC          13
 #define VIDEO_LINES_PAL           16
+#endif
 
 typedef enum {
     DISPLAYPORT_DEVICE_TYPE_MAX7456 = 0,

@@ -572,6 +572,7 @@ MCU_COMMON_SRC = \
             PICO/io_pico.c \
             PICO/osd/font_betaflight.c \
             PICO/osd/fb_osd_pico.c \
+            PICO/osd/osd_element_ah.c \
             PICO/osd/osd_elements_pico.c \
             PICO/osd/osd_pico.c \
             PICO/persistent.c \
@@ -616,8 +617,10 @@ PICO_LIB_OBJS += $(addsuffix .o, $(basename $(PICO_TRACE_SRC)))
 PICO_LIB_TARGETS := $(foreach pobj, $(PICO_LIB_OBJS), %/$(pobj))
 $(PICO_LIB_TARGETS): CC_DEFAULT_OPTIMISATION := $(PICO_LIB_OPTIMISATION)
 
-# Linker script pico_rp2350_RunFromRAM.ld modified to assign symbols from
+# Linker script pico_rp2350_RunFromHybrid.ld modified to assign symbols from
 # certain files into flash instead of RAM (save memory without impacting performance), but
 # that can't work if build uses lto (link time optimisation has the effect of
 # breaking files up into temporary files)
+ifeq ($(RUN_FROM_RAM),1)
 OPTIMISATION_BASE     := $(filter-out -flto=auto, $(OPTIMISATION_BASE))
+endif

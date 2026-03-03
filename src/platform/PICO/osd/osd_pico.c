@@ -55,7 +55,7 @@ static const PIO osdPio = PIO_INSTANCE(PIO_OSD_INDEX);
 static const uint osdPioIrq = PIO_IRQ_NUM(osdPio, 0);
 
 const int fb_nx = PICO_OSD_BUF_WIDTH * 4;
-const int charsPerLine = 30;
+const int charsPerLine = OSD_SD_COLS; // corresponding to OSD_CHAR_BUFFER_LENGTH
 
 // PAL / NTSC, require initialisation
 int fb_ny;
@@ -91,14 +91,14 @@ static int dma_chan_bg_to_bufA;
 static int dma_chan_bufB_to_fifo;
 
 // buffer update control (avoid tearing etc.)
-static volatile bool in_safe_zone;
-static uint32_t safe_zone_start_us;
-bool transferredSinceVsync;
+bool transferredSinceVSync;
 
-#ifdef OSD_FB_PICO_DEBUG
+#ifdef DEBUG_OSD_FB_PICO
 // trace / debugging
+
+#include "scheduler/scheduler.h"
+
 uint32_t startVsyncCycles;
-uint32_t startVsyncCyclesPrev;
 int tus;
 int tusr;
 uint32_t maxcycles;
@@ -119,6 +119,7 @@ static int badY;
 static int badC = -1;
 static int ddc=0;
 
+static uint16_t us_per_vsync;
 #endif
 
 __attribute__((aligned(4))) uint8_t osdCharBuffer[OSD_CHAR_BUFFER_LENGTH];
@@ -139,7 +140,7 @@ static bool init_gpios(void)
             bprintf("*** OSD_EN_GPIO must be next pin up from OSD_W_GPIO (%d vs %d)", osd_en_gpio, osd_w_gpio);
             return false;
         }
-        
+
         osd_sync_gpio = IO_GPIOPinIdxByTag(IO_TAG(OSD_SYNC_PIN));
         if (osd_sync_gpio != osd_en_gpio + 1) {
             // might relax this... wait GPIO vs wait PINS if single SM, or just separate SMs
@@ -157,30 +158,14 @@ static bool init_gpios(void)
 
 void osdPioClearCharBuffer(void)
 {
-    DEBUG_INC(dd6);
-    DEBUG_COUNTER_INST(c1);
     memset(osdCharBuffer, 0x20, OSD_CHAR_BUFFER_LENGTH);
     memset(osdCharLineInUse, 0, OSD_SD_ROWS);
-    DEBUG_COUNTER_DIFF(dd8,c1);
-}
-
-int64_t safe_zone_callback(alarm_id_t id, void * user_data)
-{
-    UNUSED(id);
-    UNUSED(user_data);
-    in_safe_zone = false;
-    return 0; // don't automatically reschedule
 }
 
 bool osdPioBufferAvailable(void)
 {
-    if (transferredSinceVsync) {
+    if (transferredSinceVSync) {
         // We have completed a draw / render pass since the last vsync, don't start a new one.
-        return false;
-    }
-
-    if (!in_safe_zone) {
-        DEBUG_INC(nisz);
         return false;
     }
 
@@ -218,8 +203,10 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
 
     // PAL field period = 20000us, NTSC ~= 16833us.
     // Disallow TRANSFER operations (render to osdBufferA) during final 1000us or so.
-    safe_zone_start_us = isPAL ? 19000 : 15800;
-    in_safe_zone = true;
+#ifdef DEBUG_OSD_FB_PICO
+    us_per_vsync = isPAL ? 20000 : 16667;
+#endif
+
 
     bprintf("OSD osd_init_device lines %d words %d", displayLines, fb_words);
     bprintf("pbw %d, pbh %d, bpl %d", PICO_OSD_BUF_WIDTH, PICO_OSD_BUF_HEIGHT_MAX, PICO_OSD_BUF_LENGTH);
@@ -246,7 +233,7 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
     pio_gpio_init(osdPio, osd_w_gpio);
     pio_gpio_init(osdPio, osd_en_gpio);
 
-    // Default config with wrap set    
+    // Default config with wrap set
     pio_sm_config config = isPAL ? osd_tx_pal_program_get_default_config(osd_tx_offset)
         : osd_tx_ntsc_program_get_default_config(osd_tx_offset);
 
@@ -422,13 +409,12 @@ int osdPioCountHSyncs(void)
 }
 
 
-#ifdef OSD_FB_PICO_DEBUG
+#ifdef DEBUG_OSD_FB_PICO
 
 static void vsync_callback_debug(void)
 {
     ++ddc;
 
-// #define NN 250
 #define NN 50
 
     static uint32_t vmax = 0;
@@ -447,10 +433,8 @@ static void vsync_callback_debug(void)
 
     static uint32_t n_to_c;
 
-    dd3 = MAX(dd3,dd2); dd2 = 0;
-
     if (ddc % NN == 0) {
-//        bprintf("%d vsync_callback busy %d %d (previous tainted n to c %d)",c, business, busybuf, n_to_c);
+        schedulerIgnoreTaskExecTime();
 #if 0
         bprintf("%d vsync_callback busy %d %d nisz %d dmb %d (previous tainted n to c %d)",
                 ddc, business, busybuf, nisz, dmb, n_to_c);
@@ -471,31 +455,30 @@ static void vsync_callback_debug(void)
             printq = 0;
             bprintf("%d completed %d, ave us (duty cycle) per vsync render %d (%.1f), "
                     "start ave %.1f max %.1f, end ave %.1f max %.1f "
-                    "[%d %d %d %d %d %d]",
+                    "max %.1f [%d %d %d %d %d %d]",
                     ddc, tusr,
-                    renderTot/(NN*150), ((double)renderTot)/(NN*(150*20000/100)),
+                    renderTot/(NN*150), ((double)renderTot)/(NN*(150*us_per_vsync/100)),
                     ((double)renderStartCycles)/(NN*150), ((double)renderStartCyclesMax)/(150),
                     ((double)renderEndCycles)/(NN*150), ((double)renderEndCyclesMax)/(150),
-                    dd1/150,dd2/150,dd3/150,dd6,dd7,dd8
+                    (double)(((float)maxcycles) / 150), dd1/150,dd2/150,dd3/150,dd6,dd7,dd8
                    );
+
+            if (badC != -1) {
+                bprintf("*** detected out of range plot, last was %d, %d, %d", badX, badY, badC);
+                badC = -1;
+            }
+#if 0
+            bprintf(", fg %d (%.1f), bg %d (%.1f), fg+bg %d (%.1f)",
+                    drawBGTot/(NN*150), ((double)drawBGTot)/(NN*150*us_per_vsync/100),
+                    drawFGTot/(NN*150), ((double)drawFGTot)/(NN*150*us_per_vsync/100),
+                    (drawFGTot + drawBGTot)/(NN*150), ((double)(drawFGTot + drawBGTot))/(NN*150*us_per_vsync/100));
+#endif
         }
 
         dd1 = dd2 = dd3 = dd4 = dd5 = dd6 = dd7 = dd8 = 0;
 
-#if 0
-                bprintf(", fg %d (%.1f), bg %d (%.1f), fg+bg %d (%.1f)",
-                drawBGTot/(NN*150), ((double)drawBGTot)/(NN*150*20000/100),
-                drawFGTot/(NN*150), ((double)drawFGTot)/(NN*150*20000/100),
-                (drawFGTot + drawBGTot)/(NN*150), ((double)(drawFGTot + drawBGTot))/(NN*150*20000/100));
-#endif
-        if (badC != -1) {
-            bprintf("*** detected out of range plot, last was %d, %d, %d", badX, badY, badC);
-            badC = -1;
-        }
-
         renderStartCycles = 0; renderEndCycles = 0;
         renderStartCyclesMax = 0; renderEndCyclesMax = 0;
-//        bprintf("max ah cache cycles %d", maxAHI);
         renderTot = 0; drawFGTot = 0; drawBGTot = 0;
         maxcycles = 0;
         tus = 0; tusr = 0;
@@ -506,50 +489,38 @@ static void vsync_callback_debug(void)
 
     szo = szn;
 }
-#endif
+#endif // #ifdef DEBUG_OSD_FB_PICO
 
 static void vsync_callback(void)
 {
-#ifdef OSD_FB_PICO_DEBUG
-    startVsyncCyclesPrev = startVsyncCycles;
-    startVsyncCycles=getCycleCounter();
+    // Start new dma as soon as possible
+    // * stop any dma in progress
+    // * flip buffer pointers
+    // * reset the read address and transfer count on the channel
+    // * clear pio tx fifo just in case
+    // * start dma
+    // * clear interrupt flag
+
+#ifdef DEBUG_OSD_FB_PICO
+    if (transferredSinceVSync) {
+        startVsyncCycles=getCycleCounter();
+    }
 #endif
 
-    // static int fieldOddEven;
-    // fieldOddEven = fieldOddEven ^ 0x1;  // odd or even field (we can't tell which is which), alternate 0, 1
-
-    // If for some reason the complete draw and render sequence takes longer than fits into the vsync period,
+    // If the complete draw and render sequence takes longer than fits into this vsync period,
     // don't flip the buffers (display will be jerky but complete, no tearing / flicker)
-    bool flipThisVSync = transferredSinceVsync;
-
+    bool flipThisVSync = transferredSinceVSync;
     if (flipThisVSync) {
         // We have completed rendering into bufferA, rename so that's now bufferB and will be dma-d to screen.
         // Then (below) get bufferA ready for more rendering (dma background buffer into the new bufferA).
         uint8_t * tptr = osdBufferA;
         osdBufferA = osdBufferB;
         osdBufferB = tptr;
-        transferredSinceVsync = false;
+        transferredSinceVSync = false;
     }
-
-    // Need to clear the IRQ flag state from the PIO.
-    // This just writes a 1 to a register, doesn't mess with SM execution    
-//    pio_interrupt_clear(osdPio, 0);
-
-    // start new dma as soon as possible, or at any rate before doing significant update work
-
-    // * stop any dma in progress
-    // * flip buffer (or alternate buffers)
-    // * reset the read address and transfer count on the channel
-    // * start dma
-    // * do any work to update the buffer
-    // * clear pio tx fifo
-
-//#define testdmaabort
 
     static int business;
     static int busybuf;
-
-
 
 #if 0
     // Note on dma channel aborts, workaround for RP2350 erratum, in the case that dma has a handler
@@ -562,7 +533,6 @@ static void vsync_callback(void)
     // re-enable the channel on IRQ0
     dma_channel_set_irq0_enabled(channel, true);
 #endif
-
 
     if (dma_channel_is_busy(dma_chan_bg_to_bufA)) {
         // Unexpected, PIO shouldn't get back to vsync IRQ unless dma buf2->fifo has started
@@ -580,7 +550,7 @@ static void vsync_callback(void)
 
     pio_sm_clear_fifos(osdPio, osd_tx_sm);
 
-    // Reset the incrementing addresses
+    // Reset the address for DMA that incremented, read from the current osdBufferB.
     dma_channel_set_read_addr(dma_chan_bufB_to_fifo, osdBufferB, false);
 
     if (dmaClearBackgroundBuffer) {
@@ -603,7 +573,7 @@ static void vsync_callback(void)
             false                   // Don't start immediately
         );
     }
-    
+
     if (dmaClearBackgroundBuffer || flipThisVSync) {
         // Start DMA for bg->osdBufferA (effectively clears screen buffer)
         // which chains to DMA for osdBufferB -> screen
@@ -617,17 +587,10 @@ static void vsync_callback(void)
     dmaClearBackgroundBuffer = false;
 
     // Probably best clear the interrupt here at the end, just in case there are re-trigger issues if cleared earlier...
+    // This just writes a 1 to a register, doesn't mess with SM execution
     pio_interrupt_clear(osdPio, 0);
 
-    // Protect against starting a render operation just before a vsync callback.
-    static alarm_id_t aid = -1 ;
-    if (aid != -1) {
-        cancel_alarm(aid);
-    }
-    aid = add_alarm_in_us(safe_zone_start_us, safe_zone_callback, 0, true);
-    in_safe_zone = true;
-    
-#ifdef OSD_FB_PICO_DEBUG
+#ifdef DEBUG_OSD_FB_PICO
     vsync_callback_debug();
 #endif
 }
@@ -660,21 +623,48 @@ void osdPioDisableDevice(void) {
 
 void osdPioRedrawBackground(void)
 {
-    bprintf("OSD osdPioRedrawBackground setting dmaClearBackgroundBuffer to true");
     dmaClearBackgroundBuffer = true;
 }
 
+#ifdef OSD_FB_PICO_PIXEL_MODE
+
+#ifdef OSD_FB_PICO_POSTPROCESS
+// Only plotting white pixels, adding black pixels in post processing
+void plot(int x, int y, int c)
+{
+    DEBUG_COUNTER_INST(c1);
+    UNUSED(c);
+    uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
+
+    if (x<0 || y<0 || x>=fb_nx || y>=fb_ny) {
+#ifdef DEBUG_OSD_FB_PICO
+        badX = x;
+        badY = y;
+        badC = 2;
+#endif
+        return;
+    }
+
+    uint8_t * pByte = plotBuffer + PICO_OSD_BUF_WIDTH * y;
+    pByte += (int)(x/4); // 4 pixels per byte
+    *pByte =(*pByte) | (0b11 << (2 * (x%4)));
+    DEBUG_COUNTER_ACC(dd6, c1);
+    DEBUG_INC(dd8);
+}
+
+#else
 
 void plot(int x, int y, int c)
 {
     // c =  0 -> transparent (no overlay)   W=any EN=0
     // c =  1 -> black                      W=0   EN=1
     // c =  2 -> white                      W=1   EN=1
+    uint32_t c1 = getCycleCounter();
 
     uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
 
     if (x<0 || y<0 || x>=fb_nx || y>=fb_ny) {
-#ifdef OSD_FB_PICO_DEBUG
+#ifdef DEBUG_OSD_FB_PICO
         badX = x;
         badY = y;
         badC = c;
@@ -684,17 +674,16 @@ void plot(int x, int y, int c)
 
     uint8_t * pByte = plotBuffer + PICO_OSD_BUF_WIDTH * y;
     pByte += (int)(x/4); // 4 pixels per byte
-#if 0
-    if (pByte<plotBuffer || pByte>=plotBuffer + PICO_OSD_BUF_LENGTH) {
-        bprintf("huh %p (%p) %d, %d, %d",pByte,plotBuffer, x,y,c);
-    }
-#endif
     static uint8_t masks[4] = {0b00000011, 0b00001100, 0b00110000, 0b11000000};
     static uint8_t  cols[4] = {0b00000000, 0b10101010, 0b11111111, 0b00000000};
     uint8_t mask = masks[x%4];
     uint8_t col = cols[c];
     *pByte = ((*pByte) &(~mask)) | (mask&col);
+    DEBUG_COUNTER_ACC(dd6, c1);
+    DEBUG_INC(dd8);
 }
+
+#endif // #ifdef OSD_FB_PICO_POSTPROCESS
 
 void hLine(int x, int y, int count, int col)
 {
@@ -719,7 +708,6 @@ void dvLine(int x, int y, int count)
     }
 }
 
-    
 // WARNING iter line functions are designed to be called iteratively, but only from one source at a time
 // (only keeps track of one pixel counter, delta etc.)
 
@@ -743,21 +731,21 @@ static void iterLineDataInit(iterLineData_t *data, int x1, int y1, int x2, int y
         data->delta = (float)dy / dx;
         if (x1 < x2) {
             data->ic = x1;
-            data->fc = (float)y1;
+            data->fc = (float)y1 + 0.5f;
             data->maxCount = x2 - x1 + 1;
         } else {
             data->ic = x2;
-            data->fc = (float)y2;
+            data->fc = (float)y2 + 0.5f;
             data->maxCount = x1 - x2 + 1;
         }
     } else {
         data->delta = dy == 0 ? 0.0f : (float)dx / dy; // cope with case of a single point.
         if (y1 < y2) {
-            data->fc = (float)x1;
+            data->fc = (float)x1 + 0.5f;
             data->ic = y1;
             data->maxCount = y2 - y1 + 1;
         } else {
-            data->fc = (float)x2;
+            data->fc = (float)x2 + 0.5f;
             data->ic = y2;
             data->maxCount = y1 - y2 + 1;
         }
@@ -770,6 +758,75 @@ static iterLineData_t iterLineData;
 void iterLineInit(int x1, int y1, int x2, int y2)
 {
     iterLineDataInit(&iterLineData, x1, y1, x2, y2);
+}
+
+static bool iterHLineNext(void)
+{
+    // NB only white pixels here...
+    int remaining = iterLineData.maxCount - iterLineData.count;
+    int todo = MIN(remaining, 16);  // do up to 16 pixels per call
+    uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
+
+    // suppose y is in range
+    uint8_t *pRow = plotBuffer + PICO_OSD_BUF_WIDTH * (int)iterLineData.fc;
+    int x = iterLineData.ic;
+
+    // Handle unaligned start (partial first byte)
+    while (todo > 0 && (x & 3) != 0) {
+        int shift = (x & 3) * 2;
+        pRow[x/4] = (pRow[x/4]) | (0x03 << shift);
+        x++; todo--;
+    }
+
+    // Handle full bytes (4 pixels each)
+    while (todo >= 4) {
+        pRow[x/4] = 0xFF;     // 4 white pixels
+        x += 4; todo -= 4;
+    }
+
+    // Handle unaligned end (partial last byte)
+    while (todo > 0) {
+        int shift = (x & 3) * 2;
+        pRow[x/4] = (pRow[x/4]) | (0x03 << shift);
+        x++; todo--;
+    }
+
+    iterLineData.count += x - iterLineData.ic;
+    iterLineData.ic = x;
+    return iterLineData.count >= iterLineData.maxCount;
+}
+
+
+bool iterLineNext(void)
+{
+    if (iterLineData.shallow && iterLineData.delta == 0.0f) {
+        return iterHLineNext();
+    }
+
+    int mintodo = 4;
+    while (mintodo > 0 && iterLineData.count < iterLineData.maxCount) {
+
+        if (iterLineData.shallow) {
+            plot(iterLineData.ic, iterLineData.fc, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+            plot(iterLineData.ic, iterLineData.fc + 1, 1);
+#endif
+            iterLineData.ic++;
+            iterLineData.fc += iterLineData.delta;
+        } else {
+            plot(iterLineData.fc, iterLineData.ic, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+            plot(iterLineData.fc + 1, iterLineData.ic, 1);
+#endif
+            iterLineData.ic++;
+            iterLineData.fc += iterLineData.delta;
+        }
+
+        iterLineData.count++;
+        mintodo--;
+    }
+
+    return iterLineData.count >= iterLineData.maxCount;
 }
 
 bool iterDLineNext(void)
@@ -796,28 +853,41 @@ bool iterDLineNext(void)
 
 bool iterQLineNext(void)
 {
-    if (iterLineData.count >= iterLineData.maxCount) {
-        return true; // all done.
-    }
+    int mintodo = 2;
+    while (mintodo > 0 && iterLineData.count < iterLineData.maxCount) {
+#ifdef OSD_FB_PICO_POSTPROCESS
+        if (iterLineData.shallow) {
+            plot(iterLineData.ic, iterLineData.fc, 2);
+            plot(iterLineData.ic, iterLineData.fc + 1, 2);
+        } else {
+            plot(iterLineData.fc, iterLineData.ic, 2);
+            plot(iterLineData.fc + 1, iterLineData.ic, 2);
+        }
 
-    if (iterLineData.shallow) {
-        plot(iterLineData.ic, iterLineData.fc, 2);
-        plot(iterLineData.ic, iterLineData.fc + 1, 2);
-        plot(iterLineData.ic, iterLineData.fc + 2, 1);
-        plot(iterLineData.ic, iterLineData.fc - 1, 1);
         iterLineData.ic++;
         iterLineData.fc += iterLineData.delta;
-    } else {
-        plot(iterLineData.fc, iterLineData.ic, 2);
-        plot(iterLineData.fc + 1, iterLineData.ic, 2);
-        plot(iterLineData.fc + 2, iterLineData.ic, 1);
-        plot(iterLineData.fc - 1, iterLineData.ic, 1);
-        iterLineData.ic++;
-        iterLineData.fc += iterLineData.delta;
+#else
+        if (iterLineData.shallow) {
+            plot(iterLineData.ic, iterLineData.fc, 2);
+            plot(iterLineData.ic, iterLineData.fc + 1, 2);
+            plot(iterLineData.ic, iterLineData.fc + 2, 1);
+            plot(iterLineData.ic, iterLineData.fc - 1, 1);
+            iterLineData.ic++;
+            iterLineData.fc += iterLineData.delta;
+        } else {
+            plot(iterLineData.fc, iterLineData.ic, 2);
+            plot(iterLineData.fc + 1, iterLineData.ic, 2);
+            plot(iterLineData.fc + 2, iterLineData.ic, 1);
+            plot(iterLineData.fc - 1, iterLineData.ic, 1);
+            iterLineData.ic++;
+            iterLineData.fc += iterLineData.delta;
+        }
+#endif
+        iterLineData.count++;
+        mintodo--;
     }
 
-    iterLineData.count++;
-    return false;
+    return iterLineData.count >= iterLineData.maxCount;
 }
 
 bool iterDashedDLineNext(void)
@@ -869,6 +939,8 @@ bool iterDashedQLineNext(void)
     iterLineData.count++;
     return false;
 }
+
+#endif // OSD_FB_PICO_PIXEL_MODE
 
 void osdPioWriteChar(uint8_t x, uint8_t y, uint8_t c)
 {
