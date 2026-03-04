@@ -33,6 +33,7 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
@@ -65,7 +66,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     }
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
-    TMR_TypeDef *timer = timerHardware->tim;
+    TMR_TypeDef *timer = (TMR_TypeDef *)timerHardware->tim;
     timerChannel = timerHardware->channel;
     output = timerHardware->output;
     alternateFunction = timerHardware->alternateFunction;

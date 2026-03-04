@@ -42,6 +42,7 @@
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 
@@ -91,28 +92,28 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     // TIM_OCStruct.TIM_Pulse = 10; // Duty doesn't matter, but too value small would make monitor output invalid
 
-    tmr_channel_value_set(timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), 10);
+    tmr_channel_value_set((tmr_type *)timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), 10);
 
-    TIM_Cmd(timhw->tim, FALSE);
+    TIM_Cmd((TIM_TypeDef *)timhw->tim, FALSE);
 
-    timerOCInit(timhw->tim, timhw->channel, &TIM_OCStruct);
+    timerOCInit((tmr_type *)timhw->tim, timhw->channel, &TIM_OCStruct);
 
-    tmr_channel_enable(timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), TRUE);
+    tmr_channel_enable((tmr_type *)timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), TRUE);
 
-    timerOCPreloadConfig(timhw->tim, timhw->channel, TRUE);
+    timerOCPreloadConfig((tmr_type *)timhw->tim, timhw->channel, TRUE);
 
 #ifdef DEBUG_MONITOR_PACER
     if (timhw->tag) {
         IO_t io = IOGetByTag(timhw->tag);
         IOConfigGPIOAF(io, IOCFG_AF_PP, timhw->alternateFunction);
         IOInit(io, OWNER_DSHOT_BITBANG, 0);
-        TIM_CtrlPWMOutputs(timhw->tim, TRUE);
+        TIM_CtrlPWMOutputs((tmr_type *)timhw->tim, TRUE);
     }
 #endif
 
     // Enable and keep it running
 
-    TIM_Cmd(timhw->tim, TRUE);
+    TIM_Cmd((TIM_TypeDef *)timhw->tim, TRUE);
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
@@ -163,7 +164,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     // Reinitialize pacer timer for output
 
-    bbPort->timhw->tim->pr = bbPort->outputARR;
+    ((tmr_type *)bbPort->timhw->tim)->pr = bbPort->outputARR;
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 
@@ -195,8 +196,8 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     // Reinitialize pacer timer for input
 
-    bbPort->timhw->tim->cval = 0;
-    bbPort->timhw->tim->pr = bbPort->inputARR;
+    ((tmr_type *)bbPort->timhw->tim)->cval = 0;
+    ((tmr_type *)bbPort->timhw->tim)->pr = bbPort->inputARR;
 
     bbDMA_Cmd(bbPort, TRUE);
 
@@ -260,20 +261,20 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     init->TIM_CounterMode = TMR_COUNT_UP;
     init->TIM_Period = period; */
 
-    tmr_base_init(bbPort->timhw->tim, period, 0);
-    tmr_clock_source_div_set(bbPort->timhw->tim, TMR_CLOCK_DIV1);
-    tmr_cnt_dir_set(bbPort->timhw->tim, TMR_COUNT_UP);
-    tmr_period_buffer_enable(bbPort->timhw->tim, TRUE);
+    tmr_base_init((tmr_type *)bbPort->timhw->tim, period, 0);
+    tmr_clock_source_div_set((tmr_type *)bbPort->timhw->tim, TMR_CLOCK_DIV1);
+    tmr_cnt_dir_set((tmr_type *)bbPort->timhw->tim, TMR_COUNT_UP);
+    tmr_period_buffer_enable((tmr_type *)bbPort->timhw->tim, TRUE);
 
     //TIM_TimeBaseInit(bbPort->timhw->tim, init, DISABLE);
 
-    tmr_period_buffer_enable(bbPort->timhw->tim, TRUE);
+    tmr_period_buffer_enable((tmr_type *)bbPort->timhw->tim, TRUE);
 }
 
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, confirm_state NewState)
+void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState)
 {
     // TIM_DMACmd(TIMx, TIM_DMASource, NewState);
-    tmr_dma_request_enable(TIMx, TIM_DMASource, NewState);
+    tmr_dma_request_enable((tmr_type *)TIMx, TIM_DMASource, NewState);
 }
 
 void bbDMA_ITConfig(bbPort_t *bbPort)

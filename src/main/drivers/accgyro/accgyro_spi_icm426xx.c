@@ -229,17 +229,17 @@ static bool initExternalClock(const extDevice_t *dev)
     IOInit(io, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
     IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
 
-    const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
+    const uint32_t clock = timerClock(timer);  // Get the timer clock frequency
     const uint16_t period = clock / ICM426XX_CLKIN_FREQ;
 
     // Calculate duty cycle value for 50%
     const uint16_t value = period / 2;
 
     // Configure PWM output
-    pwmOutConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
+    pwmOutputConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
 
     // Set CCR value
-    *pwmGyroClk.channel.ccr = value - 1;
+    pwmWriteChannel(&pwmGyroClk.channel, value - 1);
 
     return true;
 }

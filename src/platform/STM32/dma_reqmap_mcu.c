@@ -45,7 +45,7 @@ typedef struct dmaPeripheralMapping_s {
 } dmaPeripheralMapping_t;
 
 typedef struct dmaTimerMapping_s {
-    TIM_TypeDef *tim;
+    void *tim;
     uint8_t channel;
 #if defined(STM32H7) || defined(STM32G4)
     uint8_t dmaRequest;
@@ -553,7 +553,7 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
     return DMA_OPT_UNUSED;
 }
 
-const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(TIM_TypeDef *tim, uint8_t channel, dmaoptValue_t dmaopt)
+const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(void *tim, uint8_t channel, dmaoptValue_t dmaopt)
 {
     if (dmaopt < 0 || dmaopt >= MAX_TIMER_DMA_OPTIONS) {
         return NULL;

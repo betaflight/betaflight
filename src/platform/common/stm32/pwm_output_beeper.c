@@ -60,7 +60,7 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
         IOInit(beeperPwm.io, OWNER_BEEPER, 0);
         IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
         freqBeep = frequency;
-        pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
+        pwmOutputConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
 
         *beeperPwm.channel.ccr = 0;
         beeperPwm.enabled = false;

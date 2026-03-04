@@ -32,6 +32,9 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+
+#include "platform/timer.h"
+
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
@@ -68,7 +71,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
-    timer = timerHardware->tim;
+    timer = (TIM_TypeDef *)timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 
 #if defined(USE_DMA_SPEC)

@@ -32,6 +32,7 @@
 #include "stm32h5xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),   .inputIrq = TIM1_CC_IRQn},
@@ -188,7 +189,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 #endif
 
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClockFromInstance(const void *tim)
 {
     int timpre;
     uint32_t pclk;
@@ -228,5 +229,10 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 
     return pclk * periphToKernel[timpre][ppre];
 
+}
+
+uint32_t timerClock(const timerHardware_t *timHw)
+{
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

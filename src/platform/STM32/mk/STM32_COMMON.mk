@@ -16,6 +16,7 @@ MCU_COMMON_SRC += \
             common/stm32/serial_uart_pinconfig.c \
             common/stm32/dshot_dpwm.c \
             STM32/pwm_output_hw.c \
+            common/stm32/rx_pwm_hw.c \
             common/stm32/pwm_output_dshot_shared.c \
             common/stm32/pwm_output_beeper.c \
             common/stm32/dshot_bitbang_shared.c \

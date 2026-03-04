@@ -172,6 +172,7 @@ MCU_COMMON_SRC = \
         APM32/persistent_apm32.c \
         APM32/pwm_output_apm32.c \
         APM32/pwm_output_dshot_apm32.c \
+        common/stm32/rx_pwm_hw.c \
         APM32/rcm_apm32.c \
         APM32/serial_uart_apm32.c \
         APM32/timer_apm32.c \
