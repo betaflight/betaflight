@@ -130,7 +130,12 @@ float pow_approx(float a, float b);
 #else
 #define sin_approx(x)       sinf(x)
 #define cos_approx(x)       cosf(x)
-#define sincosf_approx(x, *out_s, *out_c) sincosf(x, *out_s, *out_c)
+// slower non fast math version
+static inline void sincosf_approx(float x, float *out_s, float *out_c)
+{
+    *out_s = sinf(x);
+    *out_c = cosf(x);
+}
 #define atan2_approx(y,x)   atan2f(y,x)
 #define acos_approx(x)      acosf(x)
 #define tan_approx(x)       tanf(x)
