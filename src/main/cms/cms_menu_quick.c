@@ -51,10 +51,11 @@
 
 static controlRateConfig_t rateProfile;
 static uint8_t rateProfileIndex;
-static batteryConfig_t batteryProfile;
+static batteryProfile_t cmsx_batteryProfile;
 static uint8_t  cmsx_motorOutputLimit;
 static uint8_t pidProfileIndex;
 static pidProfile_t *pidProfile;
+static uint8_t batteryProfileIndex;
 
 static const void *quickMenuOnEnter(displayPort_t *pDisp)
 {
@@ -64,7 +65,8 @@ static const void *quickMenuOnEnter(displayPort_t *pDisp)
 
     rateProfileIndex = getCurrentControlRateProfileIndex();
     memcpy(&rateProfile, controlRateProfiles(rateProfileIndex), sizeof(controlRateConfig_t));
-    memcpy(&batteryProfile, batteryConfigMutable(), sizeof(batteryConfig_t));
+    batteryProfileIndex = systemConfig()->activeBatteryProfile;
+    memcpy(&cmsx_batteryProfile, batteryProfilesMutable(batteryProfileIndex), sizeof(batteryProfile_t));
 
     cmsx_motorOutputLimit = pidProfile->motor_output_limit;
 
@@ -77,7 +79,7 @@ static const void *cmsx_RateProfileWriteback(displayPort_t *pDisp, const OSD_Ent
     UNUSED(self);
 
     memcpy(controlRateProfilesMutable(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
-        memcpy(batteryConfigMutable(), &batteryProfile, sizeof(batteryConfig_t));
+    memcpy(batteryProfilesMutable(batteryProfileIndex), &cmsx_batteryProfile, sizeof(batteryProfile_t));
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidProfile->motor_output_limit = cmsx_motorOutputLimit;
@@ -97,7 +99,7 @@ static const OSD_Entry menuMainEntries[] =
     { "THR LIM TYPE",  OME_TAB,    NULL, &(OSD_TAB_t)   { &rateProfile.throttle_limit_type, THROTTLE_LIMIT_TYPE_COUNT - 1, lookupTableThrottleLimitType } },
     { "THR LIM %",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.throttle_limit_percent, 25,  100,  1 } },
     { "MTR OUT LIM %", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_motorOutputLimit, MOTOR_OUTPUT_LIMIT_PERCENT_MIN,  MOTOR_OUTPUT_LIMIT_PERCENT_MAX,  1 } },
-    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &batteryProfile.forceBatteryCellCount, 0, 24, 1 } },
+    { "FORCE CELLS",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_batteryProfile.forceBatteryCellCount, 0, 24, 1 } },
 #if defined(USE_VTX_CONTROL)
 #if defined(USE_VTX_RTC6705) || defined(USE_VTX_SMARTAUDIO) || defined(USE_VTX_TRAMP)
     {"VTX", OME_Funcall, cmsSelectVtx, NULL},

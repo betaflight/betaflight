@@ -44,6 +44,7 @@
 
 #define PID_PROFILE_COUNT 4
 #define CONTROL_RATE_PROFILE_COUNT 4
+#define BATTERY_PROFILE_COUNT 3
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS

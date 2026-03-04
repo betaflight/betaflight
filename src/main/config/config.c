@@ -105,7 +105,7 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 4);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -119,6 +119,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .hseMhz = SYSTEM_HSE_MHZ,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_UNCONFIGURED,
     .enableStickArming = false,
+    .activeBatteryProfile = 0,
 );
 
 bool isEepromWriteInProgress(void)
@@ -141,6 +142,12 @@ uint8_t getCurrentControlRateProfileIndex(void)
     return systemConfig()->activeRateProfile;
 }
 
+// Returns the active battery profile index.
+uint8_t getCurrentBatteryProfileIndex(void)
+{
+    return systemConfig()->activeBatteryProfile;
+}
+
 void resetConfig(void)
 {
     pgResetAll();
@@ -154,6 +161,7 @@ static void activateConfig(void)
 {
     loadPidProfile();
     loadControlRateProfile();
+    loadBatteryProfile();
 
     initRcProcessing();
 
@@ -514,10 +522,12 @@ static void validateAndFixConfig(void)
     validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
 
     // validate that the minimum battery cell voltage is less than the maximum cell voltage
-    // reset to defaults if not
-    if (batteryConfig()->vbatmincellvoltage >=  batteryConfig()->vbatmaxcellvoltage) {
-        batteryConfigMutable()->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
-        batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+    // reset to defaults if not (check all battery profiles)
+    for (unsigned i = 0; i < BATTERY_PROFILE_COUNT; i++) {
+        if (batteryProfiles(i)->vbatmincellvoltage >= batteryProfiles(i)->vbatmaxcellvoltage) {
+            batteryProfilesMutable(i)->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
+            batteryProfilesMutable(i)->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+        }
     }
 
 #ifdef USE_MSP_DISPLAYPORT
@@ -651,6 +661,11 @@ void validateAndFixGyroConfig(void)
         systemConfigMutable()->pidProfileIndex = 0;
     }
     loadPidProfile();
+
+    if (systemConfig()->activeBatteryProfile >= BATTERY_PROFILE_COUNT) {
+        systemConfigMutable()->activeBatteryProfile = 0;
+    }
+    loadBatteryProfile();
 }
 
 #ifdef USE_BLACKBOX
