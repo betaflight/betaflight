@@ -199,7 +199,6 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 uint32_t timerClock(const timerHardware_t *timHw)
 {
-    UNUSED(timHw);
-    return system_core_clock;
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

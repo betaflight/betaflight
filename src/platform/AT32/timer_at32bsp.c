@@ -338,8 +338,26 @@ static void timerNVICConfigure(uint8_t irq)
 // Helper for callers that only have a void* timer instance
 uint32_t timerClockFromInstance(const void *tim)
 {
-    UNUSED(tim);
-    return system_core_clock;
+    const tmr_type *tim_ptr = (const tmr_type *)tim;
+
+    crm_clocks_freq_type clk_freq;
+    crm_clocks_freq_get(&clk_freq);
+
+    if (tim_ptr == TMR1 || tim_ptr == TMR8 || tim_ptr == TMR9 || tim_ptr == TMR10 || tim_ptr == TMR11 || tim_ptr == TMR20) {
+        // APB2 timers
+        uint32_t pclk = clk_freq.apb2_freq;
+        if (CRM->cfg_bit.apb2div >= 4) {
+            pclk *= 2;
+        }
+        return pclk;
+    } else {
+        // APB1 timers: TMR2-7, TMR12-14
+        uint32_t pclk = clk_freq.apb1_freq;
+        if (CRM->cfg_bit.apb1div >= 4) {
+            pclk *= 2;
+        }
+        return pclk;
+    }
 }
 
 void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uint32_t hz)
