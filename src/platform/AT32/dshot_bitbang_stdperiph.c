@@ -91,7 +91,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     tmr_channel_value_set((tmr_type *)timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), 10);
 
-    TIM_Cmd((TIM_TypeDef *)timhw->tim, FALSE);
+    tmr_counter_enable((tmr_type *)timhw->tim, FALSE);
 
     timerOCInit((tmr_type *)timhw->tim, timhw->channel, &TIM_OCStruct);
 
@@ -110,7 +110,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     // Enable and keep it running
 
-    TIM_Cmd((TIM_TypeDef *)timhw->tim, TRUE);
+    tmr_counter_enable((tmr_type *)timhw->tim, TRUE);
 }
 
 #ifdef USE_DMA_REGISTER_CACHE

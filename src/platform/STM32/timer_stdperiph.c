@@ -895,6 +895,10 @@ void timerForceOverflow(void *tim)
     TIM_TypeDef *tim_ptr = (TIM_TypeDef *)tim;
     uint8_t timerIndex = lookupTimerIndex(tim);
 
+    if (timerIndex >= USED_TIMER_COUNT) {
+        return;
+    }
+
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         // Save the current count so that PPM reading will work on the same timer that was forced to overflow
         timerConfig[timerIndex].forcedOverflowTimerValue = tim_ptr->CNT + 1;
@@ -972,13 +976,16 @@ uint16_t timerGetPrescalerByDesiredMhz(void *tim, uint16_t mhz)
 
 uint16_t timerGetPeriodByPrescaler(void *tim, uint16_t prescaler, uint32_t hz)
 {
+    if (hz == 0) {
+        return 0;
+    }
     return (uint16_t)((timerClockFromInstance(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(void *tim, uint32_t hz)
 {
     // protection here for desired hertz > SystemCoreClock???
-    if (hz > timerClockFromInstance(tim)) {
+    if (hz == 0 || hz > timerClockFromInstance(tim)) {
         return 0;
     }
     return (uint16_t)((timerClockFromInstance(tim) + hz / 2 ) / hz) - 1;

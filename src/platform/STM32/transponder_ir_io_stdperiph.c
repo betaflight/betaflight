@@ -60,10 +60,10 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     if (!ioTag) {
-        return;
+        return false;
     }
 
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -72,7 +72,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
     if (!timerHardware) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
     timer = (TIM_TypeDef *)timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
@@ -81,7 +83,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec == NULL) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     dmaRef = dmaSpec->ref;
@@ -96,7 +100,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 #endif
 
     if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0)) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     transponderIO = IOGetByTag(ioTag);
@@ -164,6 +170,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
     xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
+
+    return true;
 }
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
@@ -186,7 +194,9 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
             return false;
     }
 
-    transponderIrHardwareInit(ioTag, &transponder);
+    if (!transponderIrHardwareInit(ioTag, &transponder)) {
+        return false;
+    }
 
     return true;
 }

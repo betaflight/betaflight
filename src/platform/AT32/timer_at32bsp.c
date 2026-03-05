@@ -344,6 +344,9 @@ uint32_t timerClockFromInstance(const void *tim)
 
 void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uint32_t hz)
 {
+    if (hz == 0) {
+        return;
+    }
     tmr_type *tim_ptr = (tmr_type *)timHw->tim;
     //timer, period, perscaler
     tmr_base_init(tim_ptr,(period - 1) & 0xFFFF,(timerClock(timHw) / hz) - 1);
@@ -738,6 +741,10 @@ void timerForceOverflow(void *tim)
     tmr_type *tim_ptr = (tmr_type *)tim;
     uint8_t timerIndex = lookupTimerIndex(tim_ptr);
 
+    if (timerIndex >= USED_TIMER_COUNT) {
+        return;
+    }
+
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         // Save the current count so that PPM reading will work on the same timer that was forced to overflow
         timerConfig[timerIndex].forcedOverflowTimerValue = tim_ptr->cval + 1;
@@ -797,13 +804,16 @@ uint16_t timerGetPrescalerByDesiredMhz(void *tim, uint16_t mhz)
 
 uint16_t timerGetPeriodByPrescaler(void *tim, uint16_t prescaler, uint32_t hz)
 {
+    if (hz == 0) {
+        return 0;
+    }
     return (uint16_t)((timerClockFromInstance(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(void *tim, uint32_t hz)
 {
     // protection here for desired hertz > SystemCoreClock???
-    if (hz > timerClockFromInstance(tim)) {
+    if (hz == 0 || hz > timerClockFromInstance(tim)) {
         return 0;
     }
     return (uint16_t)((timerClockFromInstance(tim) + hz / 2 ) / hz) - 1;
