@@ -1577,8 +1577,8 @@ static void osdElementPidsMasterMultiplier(osdElementParms_t *element)
     extern pidProfile_t *currentPidProfile;
     const int value = currentPidProfile->simplified_master_multiplier;
     const int values[1] = { value };
-    const char *names[1] = { "Mlt" };
-    const char *extraLabels[1] = { "rD" };
+    const char *names[1] = { "MLT" };
+    const char *extraLabels[1] = { "RD" };
     float extraValues[1] = { currentPidProfile->pid[ROLL].D };
     osdRenderSliderBars(element->buff, values, names, 1, 8, extraLabels, extraValues);
 }
@@ -1597,23 +1597,23 @@ static void osdElementPidsTuningSliders(osdElementParms_t *element)
         currentPidProfile->simplified_master_multiplier
     };
     const char *names[] = {
-        "Dmp",
-        "Trk",
-        "Stk",
-        "Dmx",
-        "Drf",
-        "PiD",
-        "PiT",
-        "Mlt"
+        "DMP",
+        "TRK",
+        "STK",
+        "DMX",
+        "DRF",
+        "PID",
+        "PIT",
+        "MLT"
     };
     const char *extraLabels[8] = {
-        "rD",
-        "rP",
-        "rFF",
-        "rDx",
-        "rI",
-        "pD",
-        "pP",
+        "RD",
+        "RP",
+        "RFF",
+        "RDX",
+        "RI",
+        "PD",
+        "PP",
         NULL
     };
     float extraValues[8] = {
@@ -1650,8 +1650,8 @@ static void osdElementFilterSliders(osdElementParms_t *element)
         currentPidProfile->simplified_dterm_filter_multiplier
     };
     const char *names[] = {
-        "Gftr",
-        "Dftr"
+        "GF",
+        "DF"
     };
     const char *extraLabels[2] = { "L1-", "L1-" };
     float extraValues[2] = { gyroCfg->gyro_lpf1_dyn_min_hz, currentPidProfile->dterm_lpf1_static_hz };
