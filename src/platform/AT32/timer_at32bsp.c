@@ -545,22 +545,21 @@ void timerChannelConfigInput(const timerHardware_t *timHw, bool polarityRising, 
     tmr_input_channel_init(timHw->tim,&tmr_icInitStructure,TMR_CHANNEL_INPUT_DIV_1);
 }
 
+// Internal helper
+static inline volatile timCCR_t* timerGetCCRPointer(tmr_type *tim, uint8_t channel)
+{
+    switch (channel) {
+    case 1: return (volatile timCCR_t*)(&tim->c1dt);
+    case 2: return (volatile timCCR_t*)(&tim->c2dt);
+    case 3: return (volatile timCCR_t*)(&tim->c3dt);
+    case 4: return (volatile timCCR_t*)(&tim->c4dt);
+    default: return NULL;
+    }
+}
+
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
-    tmr_type *tim = (tmr_type *)timHw->tim;
-
-    if (timHw->channel == 1) {
-        return (volatile timCCR_t*)(&tim->c1dt);
-    } else if (timHw->channel == 2) {
-        return (volatile timCCR_t*)(&tim->c2dt);
-    } else if (timHw->channel == 3) {
-        return (volatile timCCR_t*)(&tim->c3dt);
-    } else if (timHw->channel == 4) {
-        return (volatile timCCR_t*)(&tim->c4dt);
-    } else {
-        return NULL;
-    }
-
+    return timerGetCCRPointer((tmr_type *)timHw->tim, timHw->channel);
 }
 
 static void timCCxHandler(void *tim, timerConfig_t *timerConfig)
@@ -783,23 +782,9 @@ void timerOCPreloadConfig(tmr_type *tim, uint8_t channel, uint16_t preload)
     tmr_output_channel_buffer_enable(tim, TIM_CH_TO_SELCHANNEL(channel), preload);
 }
 
-//tmr_channel_value_get
 volatile timCCR_t* timerCCR(void *tim, uint8_t channel)
 {
-    tmr_type *tim_ptr = (tmr_type *)tim;
-
-    if (channel == 1) {
-        return (volatile timCCR_t*)(&tim_ptr->c1dt);
-    } else if (channel == 2) {
-        return (volatile timCCR_t*)(&tim_ptr->c2dt);
-    } else if (channel == 3) {
-        return (volatile timCCR_t*)(&tim_ptr->c3dt);
-    } else if (channel == 4) {
-        return (volatile timCCR_t*)(&tim_ptr->c4dt);
-    } else {
-        return NULL;
-    }
-
+    return timerGetCCRPointer((tmr_type *)tim, channel);
 }
 
 uint16_t timerDmaSource(uint8_t channel)
