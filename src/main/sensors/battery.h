@@ -144,4 +144,3 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 const lowVoltageCutoff_t *getLowVoltageCutoff(void);
 
 void loadBatteryProfile(void);
-void changeBatteryProfile(uint8_t profileIndex);

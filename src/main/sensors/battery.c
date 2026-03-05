@@ -201,6 +201,25 @@ static void updateBatteryBeeperAlert(void)
     }
 }
 
+// Detects the number of battery cells based on the current voltage reading.
+static unsigned autoDetectCellCount(void)
+{
+    unsigned cells = (voltageMeter.displayFiltered / currentBatteryProfile->vbatmaxcellvoltage) + 1;
+    if (cells > MAX_AUTO_DETECT_CELL_COUNT) {
+        cells = MAX_AUTO_DETECT_CELL_COUNT;
+    }
+    return cells;
+}
+
+// Recalculates warning and critical voltage thresholds from the current profile and cell count.
+static void recalculateBatteryThresholds(void)
+{
+    batteryWarningVoltage = batteryCellCount * currentBatteryProfile->vbatwarningcellvoltage;
+    batteryCriticalVoltage = batteryCellCount * currentBatteryProfile->vbatmincellvoltage;
+    batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
+    batteryCriticalHysteresisVoltage = (batteryCriticalVoltage > batteryConfig()->vbathysteresis) ? batteryCriticalVoltage - batteryConfig()->vbathysteresis : 0;
+}
+
 bool isVoltageFromBattery(void)
 {
     if (!currentBatteryProfile) {
@@ -225,12 +244,7 @@ void batteryUpdatePresence(void)
         if (currentBatteryProfile->forceBatteryCellCount != 0) {
             batteryCellCount = currentBatteryProfile->forceBatteryCellCount;
         } else {
-            unsigned cells = (voltageMeter.displayFiltered / currentBatteryProfile->vbatmaxcellvoltage) + 1;
-            if (cells > MAX_AUTO_DETECT_CELL_COUNT) {
-                // something is wrong, we expect MAX_CELL_COUNT cells maximum (and autodetection will be problematic at 6+ cells)
-                cells = MAX_AUTO_DETECT_CELL_COUNT;
-            }
-            batteryCellCount = cells;
+            batteryCellCount = autoDetectCellCount();
 
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfileFromCellCount(batteryCellCount);
@@ -239,10 +253,7 @@ void batteryUpdatePresence(void)
 #ifdef USE_RPM_LIMIT
         mixerResetRpmLimiter();
 #endif
-        batteryWarningVoltage = batteryCellCount * currentBatteryProfile->vbatwarningcellvoltage;
-        batteryCriticalVoltage = batteryCellCount * currentBatteryProfile->vbatmincellvoltage;
-        batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
-        batteryCriticalHysteresisVoltage = (batteryCriticalVoltage > batteryConfig()->vbathysteresis) ? batteryCriticalVoltage - batteryConfig()->vbathysteresis : 0;
+        recalculateBatteryThresholds();
         lowVoltageCutoff.percentage = 100;
         lowVoltageCutoff.startTime = 0;
     } else if (voltageState != BATTERY_NOT_PRESENT
@@ -411,19 +422,12 @@ void changeBatteryProfile(uint8_t profileIndex)
         batteryCellCount = currentBatteryProfile->forceBatteryCellCount;
     } else if (batteryPresent && voltageState == BATTERY_OK && (batteryCellCount == 0 || wasForced)) {
         // Re-detect cell count when switching to auto-detect or if count was lost
-        unsigned cells = (voltageMeter.displayFiltered / currentBatteryProfile->vbatmaxcellvoltage) + 1;
-        if (cells > MAX_AUTO_DETECT_CELL_COUNT) {
-            cells = MAX_AUTO_DETECT_CELL_COUNT;
-        }
-        batteryCellCount = cells;
+        batteryCellCount = autoDetectCellCount();
     }
 
     // Recalculate warning/critical thresholds for the new profile
     if (batteryPresent && batteryCellCount > 0) {
-        batteryWarningVoltage = batteryCellCount * currentBatteryProfile->vbatwarningcellvoltage;
-        batteryCriticalVoltage = batteryCellCount * currentBatteryProfile->vbatmincellvoltage;
-        batteryWarningHysteresisVoltage = (batteryWarningVoltage > batteryConfig()->vbathysteresis) ? batteryWarningVoltage - batteryConfig()->vbathysteresis : 0;
-        batteryCriticalHysteresisVoltage = (batteryCriticalVoltage > batteryConfig()->vbathysteresis) ? batteryCriticalVoltage - batteryConfig()->vbathysteresis : 0;
+        recalculateBatteryThresholds();
     }
 }
 

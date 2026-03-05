@@ -521,12 +521,24 @@ static void validateAndFixConfig(void)
 
     validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
 
-    // validate that the minimum battery cell voltage is less than the maximum cell voltage
-    // reset to defaults if not (check all battery profiles)
+    // validate battery profile voltages and field bounds, reset to defaults if invalid
     for (unsigned i = 0; i < BATTERY_PROFILE_COUNT; i++) {
-        if (batteryProfiles(i)->vbatmincellvoltage >= batteryProfiles(i)->vbatmaxcellvoltage) {
+        const batteryProfile_t *profile = batteryProfiles(i);
+        if (profile->vbatmincellvoltage >= profile->vbatmaxcellvoltage
+            || profile->vbatwarningcellvoltage < profile->vbatmincellvoltage
+            || profile->vbatwarningcellvoltage > profile->vbatmaxcellvoltage
+            || profile->vbatfullcellvoltage < profile->vbatwarningcellvoltage
+            || profile->vbatfullcellvoltage > profile->vbatmaxcellvoltage) {
             batteryProfilesMutable(i)->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
             batteryProfilesMutable(i)->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+            batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
+            batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
+        }
+        if (profile->forceBatteryCellCount > 24) {
+            batteryProfilesMutable(i)->forceBatteryCellCount = 0;
+        }
+        if (profile->consumptionWarningPercentage > 100) {
+            batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
         }
     }
 
