@@ -191,6 +191,7 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
+    simulatedThrottleRaised = true;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -245,6 +246,11 @@ void setupAbsoluteControlTest(uint8_t gain)
 {
     resetTest();
     pidProfile->abs_control_gain = gain;
+    // Enable iterm_relax so that pidInitFilters initializes acLpf correctly.
+    // Without this, acLpf.k=0 (uninitialized) and absolute control filtering
+    // produces incorrect results when the test runs without testItermRelax before it.
+    pidProfile->iterm_relax = ITERM_RELAX_RP;
+    pidRuntime.itermRelax = ITERM_RELAX_RP;  // pidInitFilters reads this before pidInitConfig sets it
     pidInit(pidProfile);
     ENABLE_ARMING_FLAG(ARMED);
     pidStabilisationState(PID_STABILISATION_ON);
@@ -744,6 +750,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         // advance the time to avoid initialized state prevention of crash recovery
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
 
     EXPECT_TRUE(crashRecoveryModeActive());
@@ -757,10 +764,11 @@ TEST(pidControllerTest, testCrashRecoveryMode)
         gyro.gyroADCf[FD_PITCH] += gyro.gyroADCf[FD_PITCH];
         // advance the time to avoid initialized state prevention of crash recovery
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
     EXPECT_TRUE(crashRecoveryModeActive());
 
-    // Test 2: Crash detection on yaw axis
+    // Test 3: Crash detection on yaw axis
     setupCrashRecoveryTest();
 
     gyro.gyroADCf[FD_YAW] = 800;
@@ -770,6 +778,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
         gyro.gyroADCf[FD_YAW] += gyro.gyroADCf[FD_YAW];
         // advance the time to avoid initialized state prevention of crash recovery
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
     EXPECT_TRUE(crashRecoveryModeActive());
 
@@ -782,6 +791,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     for (int loop = 0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
     EXPECT_TRUE(crashRecoveryModeActive());
 
@@ -838,6 +848,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     for (int loop = 0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
     EXPECT_TRUE(crashRecoveryModeActive());
 
@@ -850,6 +861,7 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     for (int loop = 0; loop <= loopsToCrashTime; loop++) {
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
     EXPECT_TRUE(crashRecoveryModeActive());
     // During crash recovery, PID values should still be calculated
@@ -1030,18 +1042,21 @@ TEST(pidControllerTest, testAbsoluteControl)
     EXPECT_FLOAT_EQ(originalItermErrorRate, itermErrorRate);
     EXPECT_FLOAT_EQ(originalSetpoint, currentPidSetpoint);
 
-    // Test 3: Different gain values (20, 50, 100)
+    // Test 3: Different gain values produce proportional corrections
+    // Use axisError=1.0 to produce an unclamped correction that scales with gain.
+    // With acLpf(k≈0.356, state=0), setpoint=10, gyroRate=0, axisError=1.0:
+    //   acErrorRate ≈ gminac ≈ -9.317, axisError_new ≈ 1.0 - 9.317*0.008 ≈ 0.9255
+    //   acCorrection = axisError_new * gain → scales linearly with gain
     // Gain = 20
     setupAbsoluteControlTest(20);
 
     gyroRate = 0;
     itermErrorRate = 10;
     currentPidSetpoint = 10;
-    axisError[FD_PITCH] = 0;
+    axisError[FD_PITCH] = 1.0f;
 
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    // With gain=20, correction should be roughly twice that of gain=10
-    EXPECT_GT(currentPidSetpoint, 10.0f); // Should increase setpoint
+    EXPECT_NEAR(28.5, currentPidSetpoint, calculateTolerance(28.5));
 
     // Gain = 50
     setupAbsoluteControlTest(50);
@@ -1049,10 +1064,10 @@ TEST(pidControllerTest, testAbsoluteControl)
     gyroRate = 0;
     itermErrorRate = 10;
     currentPidSetpoint = 10;
-    axisError[FD_PITCH] = 0;
+    axisError[FD_PITCH] = 1.0f;
 
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
-    EXPECT_GT(currentPidSetpoint, 10.0f);
+    EXPECT_NEAR(56.3, currentPidSetpoint, calculateTolerance(56.3));
 
     // Test 4: Error accumulation limits (±20 default limit)
     setupAbsoluteControlTest(10);
@@ -1083,22 +1098,22 @@ TEST(pidControllerTest, testAbsoluteControl)
     // Test 5: Setpoint filtering (HPF/LPF interaction)
     setupAbsoluteControlTest(10);
 
-    // Test with large setpoint jump
+    // Test with large setpoint jump and non-zero axisError so correction is produced.
+    // The acLpf state changes between calls, causing different HPF content and different corrections.
     gyroRate = 0;
     itermErrorRate = 0;
     currentPidSetpoint = 500; // Large setpoint
-    axisError[FD_PITCH] = 0;
+    axisError[FD_PITCH] = 5.0f;
 
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
     float setpoint1 = currentPidSetpoint;
 
-    // Apply again with same large setpoint
+    // Apply again with same large setpoint - acLpf state has changed so correction differs
     currentPidSetpoint = 500;
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
     float setpoint2 = currentPidSetpoint;
 
-    // LPF should cause setpoints to be different (filtering effect)
-    // Second call should show filtering has stabilized somewhat
+    // LPF state change between calls causes different HPF content and different corrections
     EXPECT_NE(setpoint1, setpoint2);
 
     // Test 6: Multi-axis independence (ROLL, PITCH, YAW)
@@ -1196,16 +1211,7 @@ TEST(pidControllerTest, testAbsoluteControl)
 TEST(pidControllerTest, testDtermFiltering)
 {
     // Test 1: Basic filter initialization and operation
-    resetTest();
-    pidProfile->dterm_notch_hz = 260;
-    pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidProfile->dterm_lpf2_static_hz = 0; // Disabled
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 260);
 
     // Generate D-term with gyro change
     gyro.gyroADCf[FD_ROLL] = 0;
@@ -1219,14 +1225,7 @@ TEST(pidControllerTest, testDtermFiltering)
     // Test 2: Different LPF1 filter types produce D-term output
     const lowpassFilterType_e filterTypes[] = {FILTER_PT1, FILTER_BIQUAD, FILTER_PT2, FILTER_PT3};
     for (int f = 0; f < 4; f++) {
-        resetTest();
-        pidProfile->dterm_lpf1_static_hz = 100;
-        pidProfile->dterm_lpf1_type = filterTypes[f];
-        pidProfile->dterm_lpf2_static_hz = 0;
-        pidInit(pidProfile);
-
-        ENABLE_ARMING_FLAG(ARMED);
-        pidStabilisationState(PID_STABILISATION_ON);
+        setupDtermFilterTest(100, filterTypes[f]);
 
         gyro.gyroADCf[FD_ROLL] = 0;
         pidController(pidProfile, currentTestTime());
@@ -1238,16 +1237,10 @@ TEST(pidControllerTest, testDtermFiltering)
     }
 
     // Test 3: LPF2 enabled with different filter types
-    for (int f = 0; f < 3; f++) {
-        resetTest();
-        pidProfile->dterm_lpf1_static_hz = 100;
-        pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-        pidProfile->dterm_lpf2_static_hz = 80;
+    for (int f = 0; f < 4; f++) {
+        setupDtermFilterTest(100, FILTER_BIQUAD, 80);
         pidProfile->dterm_lpf2_type = filterTypes[f];
         pidInit(pidProfile);
-
-        ENABLE_ARMING_FLAG(ARMED);
-        pidStabilisationState(PID_STABILISATION_ON);
 
         gyro.gyroADCf[FD_ROLL] = 0;
         pidController(pidProfile, currentTestTime());
@@ -1259,15 +1252,7 @@ TEST(pidControllerTest, testDtermFiltering)
     }
 
     // Test 4: Notch filter enabled
-    resetTest();
-    pidProfile->dterm_notch_hz = 260;
-    pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 260);
 
     gyro.gyroADCf[FD_ROLL] = 0;
     pidController(pidProfile, currentTestTime());
@@ -1278,14 +1263,7 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(0.0f, pidData[FD_ROLL].D);
 
     // Test 5: Notch filter disabled (hz=0)
-    resetTest();
-    pidProfile->dterm_notch_hz = 0; // Disabled
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 0);
 
     gyro.gyroADCf[FD_ROLL] = 0;
     pidController(pidProfile, currentTestTime());
@@ -1295,14 +1273,7 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(0.0f, pidData[FD_ROLL].D);
 
     // Test 6: All filters disabled (freq=0) - raw D-term
-    resetTest();
-    pidProfile->dterm_notch_hz = 0;
-    pidProfile->dterm_lpf1_static_hz = 0;
-    pidProfile->dterm_lpf2_static_hz = 0;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(0, FILTER_BIQUAD);
 
     gyro.gyroADCf[FD_ROLL] = 0;
     pidController(pidProfile, currentTestTime());
@@ -1313,13 +1284,7 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(0.0f, pidData[FD_ROLL].D);
 
     // Test 7: Per-axis independence
-    resetTest();
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD);
 
     // Different gyro changes on each axis
     setAllGyroRates(0, 0, 0);
@@ -1336,13 +1301,7 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(pidData[FD_ROLL].D, pidData[FD_PITCH].D);
 
     // Test 8: Step response - D-term reacts to gyro changes
-    resetTest();
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD);
 
     gyro.gyroADCf[FD_ROLL] = 0;
     pidController(pidProfile, currentTestTime());
@@ -1362,17 +1321,9 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(dtermStepUp, dtermStepDown);
 
     // Test 9: Full filter chain (Notch + LPF1 + LPF2)
-    resetTest();
-    pidProfile->dterm_notch_hz = 260;
-    pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidProfile->dterm_lpf2_static_hz = 80;
+    setupDtermFilterTest(100, FILTER_BIQUAD, 80, 260);
     pidProfile->dterm_lpf2_type = FILTER_PT1;
     pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
 
     gyro.gyroADCf[FD_ROLL] = 0;
     pidController(pidProfile, currentTestTime());
@@ -1383,13 +1334,7 @@ TEST(pidControllerTest, testDtermFiltering)
     EXPECT_NE(0.0f, pidData[FD_ROLL].D);
 
     // Test 10: Integration with full PID loop over time
-    resetTest();
-    pidProfile->dterm_lpf1_static_hz = 100;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
-    pidInit(pidProfile);
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupDtermFilterTest(100, FILTER_BIQUAD);
 
     // Run through varying gyro values
     int nonZeroPtermCount = 0;
