@@ -73,7 +73,6 @@ void bbGpioSetup(bbMotor_t *bbMotor)
         IOWrite(bbMotor->io, 0);
     }
 
-    // is this needed here?
     IOConfigGPIO(bbMotor->io, IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_PUSH_PULL, bbPuPdMode));
 }
 
@@ -89,8 +88,6 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     TIM_OCStruct.oc_idle_state = TRUE;
     TIM_OCStruct.oc_output_state = TRUE;
     TIM_OCStruct.oc_polarity = TMR_OUTPUT_ACTIVE_LOW;
-
-    // TIM_OCStruct.TIM_Pulse = 10; // Duty doesn't matter, but too value small would make monitor output invalid
 
     tmr_channel_value_set((tmr_type *)timhw->tim, TIM_CH_TO_SELCHANNEL(timhw->channel), 10);
 
@@ -183,7 +180,6 @@ void bbSwitchToInput(bbPort_t *bbPort)
     }
 
     // Reinitialize port group DMA for input
-
     dmaResource_t *dmaResource = bbPort->dmaResource;
 #ifdef USE_DMA_REGISTER_CACHE
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegInput);
@@ -195,7 +191,6 @@ void bbSwitchToInput(bbPort_t *bbPort)
 #endif
 
     // Reinitialize pacer timer for input
-
     ((tmr_type *)bbPort->timhw->tim)->cval = 0;
     ((tmr_type *)bbPort->timhw->tim)->pr = bbPort->inputARR;
 
@@ -214,13 +209,8 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     dma_default_para_init(dmainit);
 
     dmainit->loop_mode_enable = FALSE;
-    // dmainit->DMA_Channel = bbPort->dmaChannel;
     dmainit->peripheral_inc_enable = FALSE;
     dmainit->memory_inc_enable = TRUE;
-    /* dmainit->DMA_FIFOMode = DMA_FIFOMode_Enable ;
-    dmainit->DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull ;
-    dmainit->DMA_MemoryBurst = DMA_MemoryBurst_Single ;
-    dmainit->DMA_PeripheralBurst = DMA_PeripheralBurst_Single; */
 
     if (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) {
         dmainit->priority = DMA_PRIORITY_VERY_HIGH;
@@ -254,26 +244,14 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
 {
-    /*TIM_TimeBaseInitTypeDef *init = &bbPort->timeBaseInit;
-
-    init->TIM_Prescaler = 0; // Feed raw timerClock
-    init->TIM_ClockDivision = TMR_CLOCK_DIV1;
-    init->TIM_CounterMode = TMR_COUNT_UP;
-    init->TIM_Period = period; */
-
     tmr_base_init((tmr_type *)bbPort->timhw->tim, period, 0);
     tmr_clock_source_div_set((tmr_type *)bbPort->timhw->tim, TMR_CLOCK_DIV1);
     tmr_cnt_dir_set((tmr_type *)bbPort->timhw->tim, TMR_COUNT_UP);
-    tmr_period_buffer_enable((tmr_type *)bbPort->timhw->tim, TRUE);
-
-    //TIM_TimeBaseInit(bbPort->timhw->tim, init, DISABLE);
-
     tmr_period_buffer_enable((tmr_type *)bbPort->timhw->tim, TRUE);
 }
 
 void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState)
 {
-    // TIM_DMACmd(TIMx, TIM_DMASource, NewState);
     tmr_dma_request_enable((tmr_type *)TIMx, TIM_DMASource, NewState);
 }
 

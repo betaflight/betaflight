@@ -71,6 +71,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
+    if (!timerHardware) {
+        return;
+    }
     timer = (TIM_TypeDef *)timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 

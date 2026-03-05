@@ -36,7 +36,7 @@
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 void cameraControlHardwarePwmInit(timerChannel_t *channel, const timerHardware_t *timerHardware, uint8_t inverted)
 {
-    pwmOutputConfig(channel, timerHardware, timerClockFromInstance(TMR6), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);
+    pwmOutputConfig(channel, timerHardware, timerClock(timerHardware), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);
 }
 #endif
 

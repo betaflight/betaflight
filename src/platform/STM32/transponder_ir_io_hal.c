@@ -74,6 +74,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     }
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
+    if (!timerHardware) {
+        return;
+    }
     TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
     timerChannel = timerHardware->channel;
     output = timerHardware->output;

@@ -42,10 +42,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define I2C_TypeDef          i2c_inst_t
 #define I2C_INST(i2c)        (i2c)
 
-//#define GPIO_InitTypeDef
-#define TIM_TypeDef          void*
-//#define TIM_OCInitTypeDef
-
 #define DMA_TypeDef          void*
 #define DMA_InitTypeDef      dma_channel_config
 
@@ -56,14 +52,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
-//#define TIM_OCStructInit
-//#define TIM_Cmd
-//#define TIM_CtrlPWMOutputs
-//#define TIM_TimeBaseInit
-//#define TIM_ARRPreloadConfig
-//#define SystemCoreClock
-//#define EXTI_TypeDef
-//#define EXTI_InitTypeDef
 
 // We have to use SPI0_Type (or void) because config will pass in SPI0, SPI1,
 // which are defined in pico-sdk as SPI0_Type*.

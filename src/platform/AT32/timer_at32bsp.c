@@ -573,16 +573,24 @@ static void timCCxHandler(void *tim, timerConfig_t *timerConfig)
                 break;
             }
             case __builtin_clz(TMR_C1_FLAG):
-                timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim_ptr->c1dt);
+                if (timerConfig->edgeCallback[0] && timerConfig->edgeCallback[0]->fn) {
+                    timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], tim_ptr->c1dt);
+                }
                 break;
             case __builtin_clz(TMR_C2_FLAG):
-                timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim_ptr->c2dt);
+                if (timerConfig->edgeCallback[1] && timerConfig->edgeCallback[1]->fn) {
+                    timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], tim_ptr->c2dt);
+                }
                 break;
             case __builtin_clz(TMR_C3_FLAG):
-                timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim_ptr->c3dt);
+                if (timerConfig->edgeCallback[2] && timerConfig->edgeCallback[2]->fn) {
+                    timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], tim_ptr->c3dt);
+                }
                 break;
             case __builtin_clz(TMR_C4_FLAG):
-                timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim_ptr->c4dt);
+                if (timerConfig->edgeCallback[3] && timerConfig->edgeCallback[3]->fn) {
+                    timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], tim_ptr->c4dt);
+                }
                 break;
         }
     }

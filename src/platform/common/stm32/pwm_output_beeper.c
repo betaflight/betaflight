@@ -55,7 +55,7 @@ void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
     const timerHardware_t *timer = timerAllocate(tag, OWNER_BEEPER, 0);
     IO_t beeperIO = IOGetByTag(tag);
 
-    if (beeperIO && timer) {
+    if (beeperIO && timer && frequency) {
         beeperPwm.io = beeperIO;
         IOInit(beeperPwm.io, OWNER_BEEPER, 0);
         IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);

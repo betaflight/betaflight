@@ -24,14 +24,24 @@
 
 #include "platform.h"
 
-#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
-
 #include "drivers/timer.h"
 #include "drivers/timer_impl.h"
 
 #include "platform/timer.h"
 
 #ifdef USE_HAL_DRIVER
+
+void timerChannelEnable(const timerHardware_t *timHw)
+{
+    TIM_CCxChannelCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_ENABLE);
+}
+
+void timerChannelDisable(const timerHardware_t *timHw)
+{
+    TIM_CCxChannelCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_DISABLE);
+}
+
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
 void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
 {
@@ -49,17 +59,21 @@ void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
     HAL_TIM_IC_Start_IT(Handle, channel);
 }
 
+#endif
+
+#else
+
 void timerChannelEnable(const timerHardware_t *timHw)
 {
-    TIM_CCxChannelCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_ENABLE);
+    TIM_CCxCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_Enable);
 }
 
 void timerChannelDisable(const timerHardware_t *timHw)
 {
-    TIM_CCxChannelCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_DISABLE);
+    TIM_CCxCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_Disable);
 }
 
-#else
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
 void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
 {
@@ -73,16 +87,6 @@ void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
     TIM_ICInitStructure.TIM_ICFilter = filter;
 
     TIM_ICInit((TIM_TypeDef *)tim, &TIM_ICInitStructure);
-}
-
-void timerChannelEnable(const timerHardware_t *timHw)
-{
-    TIM_CCxCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_Enable);
-}
-
-void timerChannelDisable(const timerHardware_t *timHw)
-{
-    TIM_CCxCmd((TIM_TypeDef *)timHw->tim, timHw->channel, TIM_CCx_Disable);
 }
 
 #endif

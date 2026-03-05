@@ -244,7 +244,7 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
 
 const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(void *tim, uint8_t channel, dmaoptValue_t dmaopt)
 {
-    if (dmaopt < 0 || dmaopt >= MAX_PERIPHERAL_DMA_OPTIONS) {
+    if (dmaopt < 0 || dmaopt >= MAX_TIMER_DMA_OPTIONS) {
         return NULL;
     }
 
