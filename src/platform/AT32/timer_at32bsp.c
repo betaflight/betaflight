@@ -547,18 +547,19 @@ void timerChannelConfigInput(const timerHardware_t *timHw, bool polarityRising, 
 
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
-
     tmr_type *tim = (tmr_type *)timHw->tim;
-    if(timHw->channel == 1)
+
+    if (timHw->channel == 1) {
         return (volatile timCCR_t*)(&tim->c1dt);
-    else if(timHw->channel == 2)
+    } else if (timHw->channel == 2) {
         return (volatile timCCR_t*)(&tim->c2dt);
-    else if(timHw->channel == 3)
+    } else if (timHw->channel == 3) {
         return (volatile timCCR_t*)(&tim->c3dt);
-    else if(timHw->channel == 4)
+    } else if (timHw->channel == 4) {
         return (volatile timCCR_t*)(&tim->c4dt);
-    else
-        return (volatile timCCR_t*)((volatile char*)&tim->c1dt + (timHw->channel-1)*0x04); //for 32bit need to debug
+    } else {
+        return NULL;
+    }
 
 }
 
@@ -787,16 +788,17 @@ volatile timCCR_t* timerCCR(void *tim, uint8_t channel)
 {
     tmr_type *tim_ptr = (tmr_type *)tim;
 
-    if(channel ==1)
+    if (channel == 1) {
         return (volatile timCCR_t*)(&tim_ptr->c1dt);
-    else if(channel ==2)
+    } else if (channel == 2) {
         return (volatile timCCR_t*)(&tim_ptr->c2dt);
-    else if(channel ==3)
+    } else if (channel == 3) {
         return (volatile timCCR_t*)(&tim_ptr->c3dt);
-    else if(channel ==4)
+    } else if (channel == 4) {
         return (volatile timCCR_t*)(&tim_ptr->c4dt);
-    else
-        return (volatile timCCR_t*)((volatile char*)&tim_ptr->c1dt + (channel-1)*0x04); //for 32bit need to debug
+    } else {
+        return NULL;
+    }
 
 }
 
