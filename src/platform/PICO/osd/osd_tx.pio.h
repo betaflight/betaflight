@@ -139,7 +139,7 @@ static inline pio_sm_config osd_tx_ntsc_program_get_default_config(uint offset) 
 // -------------- //
 
 #define osd_count_sync_wrap_target 0
-#define osd_count_sync_wrap 20
+#define osd_count_sync_wrap 24
 #define osd_count_sync_pio_version 1
 
 #define osd_count_sync_offset_ready 1u
@@ -148,13 +148,13 @@ static const uint16_t osd_count_sync_program_instructions[] = {
             //     .wrap_target
     0x4060, //  0: in     null, 32
     0x80a0, //  1: pull   block
-    0x6040, //  2: out    y, 32
-    0xa0e2, //  3: mov    osr, y
-    0x20a0, //  4: wait   1 pin, 0
-    0x2020, //  5: wait   0 pin, 0
-    0xe02e, //  6: set    x, 14
-    0x1c47, //  7: jmp    x--, 7                 [28]
-    0x00c5, //  8: jmp    pin, 5
+    0x20a0, //  2: wait   1 pin, 0
+    0x2020, //  3: wait   0 pin, 0
+    0xe02e, //  4: set    x, 14
+    0x1c45, //  5: jmp    x--, 5                 [28]
+    0x00c2, //  6: jmp    pin, 2
+    0x6040, //  7: out    y, 32
+    0xa0e2, //  8: mov    osr, y
     0x20a0, //  9: wait   1 pin, 0
     0x2020, // 10: wait   0 pin, 0
     0xe028, // 11: set    x, 8
@@ -162,18 +162,22 @@ static const uint16_t osd_count_sync_program_instructions[] = {
     0x00ca, // 13: jmp    pin, 10
     0xe025, // 14: set    x, 5
     0x1c4f, // 15: jmp    x--, 15                [28]
-    0x00d3, // 16: jmp    pin, 19
-    0x4040, // 17: in     y, 32
-    0x0001, // 18: jmp    1
-    0x008a, // 19: jmp    y--, 10
-    0x0002, // 20: jmp    2
+    0x00d7, // 16: jmp    pin, 23
+    0x6020, // 17: out    x, 32
+    0xa0e1, // 18: mov    osr, x
+    0x00b5, // 19: jmp    x != y, 21
+    0x000a, // 20: jmp    10
+    0x4040, // 21: in     y, 32
+    0x0001, // 22: jmp    1
+    0x008a, // 23: jmp    y--, 10
+    0x0002, // 24: jmp    2
             //     .wrap
 };
 
 #if !PICO_NO_HARDWARE
 static const struct pio_program osd_count_sync_program = {
     .instructions = osd_count_sync_program_instructions,
-    .length = 21,
+    .length = 25,
     .origin = -1,
     .pio_version = osd_count_sync_pio_version,
 #if PICO_PIO_VERSION > 0

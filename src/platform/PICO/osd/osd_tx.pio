@@ -163,15 +163,14 @@ start:
     IN NULL, 32              ; clear ISR
 PUBLIC ready:                ; program will pause here until CPU reads the data and then sends to FIFO
     PULL block               ; (re)start when CPU sends initLines to the tx fifo
-recover:
-    out y, 32                ; shift in initLines from osr
-    mov osr, y               ; reset osr
+waitVSync:
     wait 1 PIN, 0
-waitInitialVSync:
     wait 0 PIN, 0
     set x, 14
 d0: jmp x--, d0       [28]
-    jmp PIN, waitInitialVSync ; shorter than VSync pulse at ~ 15*29/75 ~ 5.8us
+    jmp PIN, waitVSync       ; shorter than VSync pulse at ~ 15*29/75 ~ 5.8us
+    out y, 32                ; shift in initLines from osr
+    mov osr, y               ; reset osr
     wait 1 PIN, 0
 waitsync:
     wait 0 PIN, 0
@@ -181,12 +180,19 @@ d1: jmp x--, d1       [28]   ; wait then test for PIN being high
     set x, 5
 d2: jmp x--, d2       [28]
     jmp PIN, hsync           ; shorter than VSync pulse at ~ 15*29/75 ~ 5.8us
+
+    out x, 32
+    mov osr, x               ; check is y == initLines (indicating vsync directly after vsync)?
+    jmp x!=y, vsync          ; ok, it's a new vsync after some hsyncs
+    jmp waitsync             ; otherwise continue waiting for first hsync
+
 vsync:
-    IN y, 32                 ; put count into ISR
+    IN y, 32                 ; vsync after >= 1 hsync, put count into ISR
     jmp ready
+
 hsync:
     jmp y--, waitsync
-    jmp recover              ; counted beyond initLines: unusual, try to find another VSync
+    jmp waitVSync            ; counted beyond initLines: unusual, try to find another VSync
 
 
 ; ;;;; prototype 2x SM, one just detects different sync types
