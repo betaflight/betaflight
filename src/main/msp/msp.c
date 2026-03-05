@@ -4211,7 +4211,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         const uint16_t vbatMax = sbufReadU16(src);
         const uint16_t vbatWarn = sbufReadU16(src);
         const uint16_t vbatFull = sbufReadU16(src);
+        const uint16_t capacity = sbufReadU16(src);
+        const uint8_t forceCellCount = sbufReadU8(src);
+        const uint8_t consumptionWarnPct = sbufReadU8(src);
         if (vbatMin > vbatWarn || vbatWarn > vbatFull || vbatFull > vbatMax) {
+            return MSP_RESULT_ERROR;
+        }
+        if (forceCellCount > 24 || consumptionWarnPct > 100) {
             return MSP_RESULT_ERROR;
         }
         batteryProfile_t *profile = batteryProfilesMutable(profileIndex);
@@ -4219,12 +4225,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         profile->vbatmaxcellvoltage = vbatMax;
         profile->vbatwarningcellvoltage = vbatWarn;
         profile->vbatfullcellvoltage = vbatFull;
-        profile->batteryCapacity = sbufReadU16(src);
-        const uint8_t forceCellCount = sbufReadU8(src);
-        const uint8_t consumptionWarnPct = sbufReadU8(src);
-        if (forceCellCount > 24 || consumptionWarnPct > 100) {
-            return MSP_RESULT_ERROR;
-        }
+        profile->batteryCapacity = capacity;
         profile->forceBatteryCellCount = forceCellCount;
         profile->consumptionWarningPercentage = consumptionWarnPct;
         break;
@@ -4334,18 +4335,25 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
         if (sbufBytesRemaining(src) < 7) {
             return MSP_RESULT_ERROR;
         }
-        batteryProfile_t *profile = batteryProfilesMutable(systemConfig()->activeBatteryProfile);
-        profile->vbatmincellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn1 in MWC2.3 GUI
-        profile->vbatmaxcellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
-        profile->vbatwarningcellvoltage = sbufReadU8(src) * 10;  // vbatlevel when buzzer starts to alert
-        profile->batteryCapacity = sbufReadU16(src);
+        uint16_t vbatMin = sbufReadU8(src) * 10;      // vbatlevel_warn1 in MWC2.3 GUI
+        uint16_t vbatMax = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
+        uint16_t vbatWarn = sbufReadU8(src) * 10;      // vbatlevel when buzzer starts to alert
+        const uint16_t capacity = sbufReadU16(src);
         batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
-            profile->vbatmincellvoltage = sbufReadU16(src);
-            profile->vbatmaxcellvoltage = sbufReadU16(src);
-            profile->vbatwarningcellvoltage = sbufReadU16(src);
+            vbatMin = sbufReadU16(src);
+            vbatMax = sbufReadU16(src);
+            vbatWarn = sbufReadU16(src);
         }
+        if (vbatMin > vbatWarn || vbatWarn > vbatMax) {
+            return MSP_RESULT_ERROR;
+        }
+        batteryProfile_t *profile = batteryProfilesMutable(systemConfig()->activeBatteryProfile);
+        profile->vbatmincellvoltage = vbatMin;
+        profile->vbatmaxcellvoltage = vbatMax;
+        profile->vbatwarningcellvoltage = vbatWarn;
+        profile->batteryCapacity = capacity;
         break;
     }
 
