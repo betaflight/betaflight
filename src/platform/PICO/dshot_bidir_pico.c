@@ -196,7 +196,7 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
     while (shiftcount > 0 && edgeCount < MAX_EDGES) {
         uint32_t testword = ones ? ~w0 : w0;
         if (testword == 0) {
-            break;  // Remaining bits are all the same polarity
+            break;  // Remaining bits are all the same polarity, also, we don't want to rely on behaviour of clz(0).
         }
         int runLength = __builtin_clz(testword);
         edgeDiffs[edgeCount++] = runLength;
@@ -214,8 +214,10 @@ static uint32_t decodeOversampledTelemetry(int motorIndex, const uint32_t *buffe
         shiftcount -= runLength;
     }
 
-    // Don't want to count last run of ones. "Padding" will be deduced later.
-    edgeCount--;
+    // Don't want to count last run of ones. "Padding" will be deduced later. (NB ones flag has been inverted at this point.)
+    if (!ones) {
+        edgeCount--;
+    }
 
     if (edgeCount < 2 || edgeCount > 21) {
         lastFailReason = FAIL_EDGE_COUNT;
