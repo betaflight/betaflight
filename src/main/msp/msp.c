@@ -2983,8 +2983,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (i >= MAX_SERVO_RULES) {
             return MSP_RESULT_ERROR;
         } else {
-            customServoMixersMutable(i)->targetChannel = sbufReadU8(src);
-            customServoMixersMutable(i)->inputSource = sbufReadU8(src);
+            const uint8_t targetChannel = sbufReadU8(src);
+            const uint8_t inputSource = sbufReadU8(src);
+            if (targetChannel >= MAX_SUPPORTED_SERVOS || inputSource >= INPUT_SOURCE_COUNT) {
+                return MSP_RESULT_ERROR;
+            }
+            customServoMixersMutable(i)->targetChannel = targetChannel;
+            customServoMixersMutable(i)->inputSource = inputSource;
             customServoMixersMutable(i)->rate = sbufReadU8(src);
             customServoMixersMutable(i)->speed = sbufReadU8(src);
             customServoMixersMutable(i)->min = sbufReadU8(src);
