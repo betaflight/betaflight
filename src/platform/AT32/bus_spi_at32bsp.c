@@ -67,7 +67,7 @@ static void spiSetDivisorBRreg(spi_type *instance, uint16_t divisor)
 #undef BR_BITS
 }
 
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
 
@@ -121,7 +121,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
         dmaInitRx->loop_mode_enable = FALSE;
         dmaInitRx->peripheral_base_addr = (uint32_t)&bus->busType_u.spi.instance->dt;
-        dmaInitRx->priority = DMA_PRIORITY_LOW;
+        dmaInitRx->priority = DMA_PRIORITY_MEDIUM;
         dmaInitRx->peripheral_inc_enable = FALSE;
         dmaInitRx->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
 

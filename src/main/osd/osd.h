@@ -278,7 +278,6 @@ typedef enum {
     OSD_WARNING_CRASHFLIP,
     OSD_WARNING_ESC_FAIL,
     OSD_WARNING_CORE_TEMPERATURE,
-    OSD_WARNING_RC_SMOOTHING,
     OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
@@ -379,7 +378,7 @@ typedef struct statistic_s {
     int16_t max_speed;
     int16_t min_voltage; // /100
     uint16_t end_voltage;
-    int16_t max_current; // /10
+    int16_t max_current; // /100
     uint8_t min_rssi;
     int32_t max_altitude;
     int16_t max_distance;

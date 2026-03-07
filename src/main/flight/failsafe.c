@@ -32,6 +32,7 @@
 #include "pg/rx.h"
 
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 
 #include "config/config.h"
 #include "fc/core.h"
@@ -247,8 +248,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
         receivingRxData = false;
     }
 
-    // Beep RX lost only if we are not seeing data and are armed or have been armed earlier
-    if (!receivingRxData && (armed || ARMING_FLAG(WAS_EVER_ARMED))) {
+    // Beep RX lost whenever no RC data is received and the USB cable is not connected
+    if (!receivingRxData && !usbCableIsInserted()) {
         beeperMode = BEEPER_RX_LOST;
     }
 

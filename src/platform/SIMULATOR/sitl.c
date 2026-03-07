@@ -32,7 +32,6 @@
 
 #include "build/debug.h"
 
-#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor_impl.h"
@@ -40,7 +39,9 @@
 #include "drivers/serial_tcp.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/usb_io.h"
 #include "drivers/pwm_output.h"
+#include "drivers/servo_impl.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/light_led.h"
 
@@ -609,7 +610,7 @@ static void pwmCompleteMotorUpdate(void)
     udpSend(&pwmRawLink, &pwmRawPkt, sizeof(servo_packet_raw));
 }
 
-void pwmWriteServo(uint8_t index, float value)
+void servoWrite(uint8_t index, float value)
 {
     servosPwm[index] = value;
     if (index + pwmRawPkt.motorCount < SIMULATOR_MAX_PWM_CHANNELS) {
@@ -645,7 +646,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
 
     pwmMotorCount = device->count;
     device->vTable = &vTable;
-    
+
     printf("Initialized motor count %d\n", pwmMotorCount);
     pwmRawPkt.motorCount = pwmMotorCount;
 
@@ -656,13 +657,6 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
     }
 
     return true;
-}
-
-// ADC part
-uint16_t adcGetChannel(uint8_t channel)
-{
-    UNUSED(channel);
-    return 0;
 }
 
 // stack part
@@ -783,6 +777,11 @@ IO_t IOGetByTag(ioTag_t tag)
 {
     UNUSED(tag);
     return NULL;
+}
+
+bool usbCableIsInserted(void)
+{
+    return false;
 }
 
 const mcuTypeInfo_t *getMcuTypeInfo(void)

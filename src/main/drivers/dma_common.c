@@ -17,7 +17,6 @@
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "platform.h"
 
 #ifdef USE_DMA
@@ -26,28 +25,31 @@
 
 #include "dma.h"
 
-dmaIdentifier_e dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
+bool dmaAllocate(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
 {
-    if (dmaGetOwner(identifier)->owner != OWNER_FREE) {
-        return DMA_NONE;
-    }
-
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
-
     // Prevent Wstringop-overflow warning
     if (index < 0 || index >= DMA_LAST_HANDLER) {
-        return DMA_NONE;
+        return false;
     }
 
-    dmaDescriptors[index].owner.owner = owner;
-    dmaDescriptors[index].owner.resourceIndex = resourceIndex;
+    if (dmaDescriptors[index].resourceOwner.owner != OWNER_FREE) {
+        return false;
+    }
 
-    return identifier;
+    dmaDescriptors[index].resourceOwner.owner = owner;
+    dmaDescriptors[index].resourceOwner.index = resourceIndex;
+
+    return true;
 }
 
 const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier)
 {
-    return &dmaDescriptors[DMA_IDENTIFIER_TO_INDEX(identifier)].owner;
+    const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+    if (index < 0 || index >= DMA_LAST_HANDLER) {
+        return &resourceOwnerInvalid;
+    }
+    return &dmaDescriptors[index].resourceOwner;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const dmaResource_t* channel)

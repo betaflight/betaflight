@@ -112,7 +112,7 @@ static void sdcard_reset(void)
 
 // Called in ISR context
 // Wait until idle indicated by a read value of SDCARD_IDLE_TOKEN
-static busStatus_e sdcard_callbackIdle(uint32_t arg)
+static busStatus_e sdcard_callbackIdle(uintptr_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -135,7 +135,7 @@ static busStatus_e sdcard_callbackIdle(uint32_t arg)
 
 // Called in ISR context
 // Wait until idle is no longer indicated by a read value of SDCARD_IDLE_TOKEN
-static busStatus_e sdcard_callbackNotIdle(uint32_t arg)
+static busStatus_e sdcard_callbackNotIdle(uintptr_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -340,7 +340,7 @@ typedef enum {
 
 /// Called in ISR context
 // Wait until the arrival of the SDCARD_SINGLE_BLOCK_READ_START_TOKEN token
-static busStatus_e sdcard_callbackNotIdleDataBlock(uint32_t arg)
+static busStatus_e sdcard_callbackNotIdleDataBlock(uintptr_t arg)
 {
     sdcard_t *sdcard = (sdcard_t *)arg;
     extDevice_t *dev = &sdcard->dev;
@@ -393,7 +393,7 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
         return SDCARD_RECEIVE_BLOCK_IN_PROGRESS;
     case SDCARD_SINGLE_BLOCK_READ_START_TOKEN:
        return SDCARD_RECEIVE_SUCCESS;
-    default: 
+    default:
        return SDCARD_RECEIVE_ERROR;
     }
 }
@@ -567,7 +567,7 @@ static void sdcardSpi_init(const sdcardConfig_t *config, const spiPinConfig_t *s
     sdcard.dev.busType_u.spi.csnPin = chipSelectIO;
 
     // Set the callback argument when calling back to this driver for DMA completion
-    sdcard.dev.callbackArg = (uint32_t)&sdcard;
+    sdcard.dev.callbackArg = (uintptr_t)&sdcard;
 
     // Max frequency is initially 400kHz
 

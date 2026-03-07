@@ -112,6 +112,36 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_LPUART1
     SERIAL_PORT_LPUART1,
 #endif
+#ifdef USE_PIOUART0
+    SERIAL_PORT_PIOUART0,
+#endif
+#ifdef USE_PIOUART1
+    SERIAL_PORT_PIOUART1,
+#endif
+#ifdef USE_PIOUART2
+    SERIAL_PORT_PIOUART2,
+#endif
+#ifdef USE_PIOUART3
+    SERIAL_PORT_PIOUART3,
+#endif
+#ifdef USE_PIOUART4
+    SERIAL_PORT_PIOUART4,
+#endif
+#ifdef USE_PIOUART5
+    SERIAL_PORT_PIOUART5,
+#endif
+#ifdef USE_PIOUART6
+    SERIAL_PORT_PIOUART6,
+#endif
+#ifdef USE_PIOUART7
+    SERIAL_PORT_PIOUART7,
+#endif
+#ifdef USE_PIOUART8
+    SERIAL_PORT_PIOUART8,
+#endif
+#ifdef USE_PIOUART9
+    SERIAL_PORT_PIOUART9,
+#endif
 };
 
 const char* serialPortNames[SERIAL_PORT_COUNT] = {
@@ -159,6 +189,36 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 #ifdef USE_LPUART1
     "LPUART1",
+#endif
+#ifdef USE_PIOUART0
+    "PIOUART0",
+#endif
+#ifdef USE_PIOUART1
+    "PIOUART1",
+#endif
+#ifdef USE_PIOUART2
+    "PIOUART2",
+#endif
+#ifdef USE_PIOUART3
+    "PIOUART3",
+#endif
+#ifdef USE_PIOUART4
+    "PIOUART4",
+#endif
+#ifdef USE_PIOUART5
+    "PIOUART5",
+#endif
+#ifdef USE_PIOUART6
+    "PIOUART6",
+#endif
+#ifdef USE_PIOUART7
+    "PIOUART7",
+#endif
+#ifdef USE_PIOUART8
+    "PIOUART8",
+#endif
+#ifdef USE_PIOUART9
+    "PIOUART9",
 #endif
 };
 
@@ -519,6 +579,7 @@ serialPort_t *openSerialPort(
 #if defined(USE_UART)
     case SERIALTYPE_UART:
     case SERIALTYPE_LPUART:
+    case SERIALTYPE_PIOUART:
 #if defined(SIMULATOR_BUILD)
         // emulate serial ports over TCP
         serialPort = serTcpOpen(identifier, rxCallback, rxCallbackData, baudRate, mode, options);

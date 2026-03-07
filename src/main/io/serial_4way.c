@@ -143,9 +143,8 @@ inline void setEscOutput(uint8_t selEsc)
 
 uint8_t esc4wayInit(void)
 {
-    motorShutdown();
     uint8_t escIndex = 0;
-
+    motorDisable();
     memset(&escHardware, 0, sizeof(escHardware));
     for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (motorIsMotorEnabled(i)) {
@@ -158,7 +157,6 @@ uint8_t esc4wayInit(void)
             }
         }
     }
-    motorDisable();
     escCount = escIndex;
     return escCount;
 }

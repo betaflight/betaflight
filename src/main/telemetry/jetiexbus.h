@@ -20,6 +20,18 @@
 
 #pragma once
 
+#define JETI_EXBUS_TELEMETRY_FRAME_LEN 128
+
+// Maximum length of the EX telemetry message payload (bytes)
+// Used to derive the maximum EXBUS request buffer size on the producer side.
+#define EXTEL_MAX_LEN 26
+
+// Producer-side buffer size for incoming EXBUS request frames (bytes).
+// EXBUS_OVERHEAD is 8 bytes (6 header + 2 CRC), so 8 + EXTEL_MAX_LEN = 34.
+// Keep this as the single source of truth; consumers should size their frames
+// to be >= EXBUS_MAX_REQUEST_BUFFER_SIZE.
+#define EXBUS_MAX_REQUEST_BUFFER_SIZE   (8 + EXTEL_MAX_LEN)
+
 void initJetiExBusTelemetry(void);
 void checkJetiExBusTelemetryState(void);
 void handleJetiExBusTelemetry(void);

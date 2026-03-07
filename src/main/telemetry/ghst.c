@@ -111,11 +111,15 @@ static void ghstFramePackTelemetry(sbuf_t *dst)
 
     sbufWriteU16(dst, getMAhDrawn() / 10);                      // units of 10mAh (range of 0-655.36Ah)
 
-    sbufWriteU8(dst, 0x00);                     // Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
+    sbufWriteU8(dst, 0x00);                                     // Rx Voltage, units of 100mV (not passed from BF, added in Ghost Rx)
 
-    sbufWriteU8(dst, 0x00);                     // tbd1
-    sbufWriteU8(dst, 0x00);                     // tbd2
-    sbufWriteU8(dst, 0x00);                     // tbd3
+    uint8_t packFlags = 0;
+    if (!ARMING_FLAG(ARMED)) {                                  // inverted to be backwards compatible
+        packFlags |= PACK_FLAGS_Disarmed;
+    }
+    sbufWriteU8(dst, packFlags);                                // flags
+    sbufWriteU8(dst, 0x00);                                     // tbd2
+    sbufWriteU8(dst, 0x00);                                     // tbd3
 }
 
 // GPS data, primary, positional data
@@ -234,7 +238,7 @@ static void ghstSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
     DEBUG_SET(DEBUG_GHST_MSP, 1, ++mspFrameCounter);
 
     ghstInitializeFrame(dst);                                                               // addr
-    sbufWriteU8(dst, GHST_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);   // lenght
+    sbufWriteU8(dst, GHST_PAYLOAD_SIZE + GHST_FRAME_LENGTH_CRC + GHST_FRAME_LENGTH_TYPE);   // length
     sbufWriteU8(dst, GHST_DL_MSP_RESP);                                                 // type
     sbufWriteData(dst, payload, payloadSize);                                           // payload
     for(int i = 0; i < GHST_PAYLOAD_SIZE - payloadSize; ++i) {                          // payload fill zeroes

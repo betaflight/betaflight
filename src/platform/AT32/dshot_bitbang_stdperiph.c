@@ -128,9 +128,9 @@ static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache)
 {
     dmaRegCache->CCR = ((DMA_ARCH_TYPE *)dmaResource)->ctrl;
-	dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->dtcnt;
-	dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->paddr ;
-	dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->maddr ;
+    dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->dtcnt;
+    dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->paddr ;
+    dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->maddr ;
 }
 #endif
 

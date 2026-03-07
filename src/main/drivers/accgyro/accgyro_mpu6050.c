@@ -97,6 +97,9 @@ static void mpu6050GyroInit(gyroDev_t *gyro)
             0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
 
     busWriteRegister(&gyro->dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+
+    gyro->tempScale = 1.0f / 340.0f;
+    gyro->tempZero = 36.53f;
 }
 
 bool mpu6050GyroDetect(gyroDev_t *gyro)

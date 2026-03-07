@@ -51,9 +51,9 @@
 
 #ifdef USE_D_MAX
 #define D_MAX_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
-#define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect
-#define D_MAX_GAIN_FACTOR 0.00008f
-#define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f
+#define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect. Do not set to Zero to avoid div/0 error
+#define D_MAX_GYRO_GAIN_FACTOR 0.00008f
+#define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f // same DMax gain with either rate of change source; not intended preserve legacy behaviour
 #endif
 
 #define ATTITUDE_CUTOFF_HZ 50
@@ -536,9 +536,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
             pidRuntime.dMaxPercent[axis] = 1.0f;
         }
     }
-    pidRuntime.dMaxGyroGain = D_MAX_GAIN_FACTOR * pidProfile->d_max_gain / D_MAX_LOWPASS_HZ;
-    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_gain * pidProfile->d_max_advance / 100.0f / D_MAX_LOWPASS_HZ;
-    // lowpass included inversely in gain since stronger lowpass decreases peak effect
+    const float dmaxLpfInv = 1.0f / D_MAX_LOWPASS_HZ; // lowpass included inversely in gain since stronger lowpass decreases peak effect
+    pidRuntime.dMaxGyroGain = D_MAX_GYRO_GAIN_FACTOR * pidProfile->d_max_gain * dmaxLpfInv;
+    pidRuntime.dMaxSetpointGain = D_MAX_SETPOINT_GAIN_FACTOR * pidProfile->d_max_advance * dmaxLpfInv;
 #endif
 
 #if defined(USE_AIRMODE_LPF)
@@ -549,7 +549,12 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.feedforwardTransition = pidProfile->feedforward_transition / 100.0f;
     pidRuntime.feedforwardTransitionInv = (pidProfile->feedforward_transition == 0) ? 0.0f : 100.0f / pidProfile->feedforward_transition;
     pidRuntime.feedforwardAveraging = pidProfile->feedforward_averaging;
-    pidRuntime.feedforwardSmoothFactor = 1.0f - (0.01f * pidProfile->feedforward_smooth_factor);
+    // feedforward_smooth_factor effect previously would change based on packet looprate
+    // normalizing to 250hz packet rate as that is the most commonly used ELRS packet rate
+    float scaledSmoothFactor = 0.01f * pidProfile->feedforward_smooth_factor;
+    float rxDt = 1.0f / 250.0f;
+    float feedforwardSmoothingTau = (rxDt * scaledSmoothFactor) / (1.0f - scaledSmoothFactor);
+    pidRuntime.feedforwardSmoothFactor = feedforwardSmoothingTau;
     pidRuntime.feedforwardJitterFactor = pidProfile->feedforward_jitter_factor;
     pidRuntime.feedforwardJitterFactorInv = 1.0f / (1.0f + pidProfile->feedforward_jitter_factor);
     pidRuntime.feedforwardBoostFactor = 0.001f * pidProfile->feedforward_boost;

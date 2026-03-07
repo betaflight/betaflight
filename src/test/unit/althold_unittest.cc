@@ -44,7 +44,7 @@ extern "C" {
 
     #include "pg/alt_hold.h"
     #include "pg/autopilot.h"
-    
+
     #include "sensors/acceleration.h"
     #include "sensors/gyro.h"
 

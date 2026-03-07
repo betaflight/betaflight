@@ -84,7 +84,6 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
     UNUSED(dev);
 
     opticalflowType_e opticalflowHardware = OPTICALFLOW_NONE;
-    requestedSensors[SENSOR_INDEX_OPTICALFLOW] = opticalflowHardwareToUse;
 
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
@@ -99,6 +98,10 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
         case OPTICALFLOW_NONE:
             opticalflowHardware = OPTICALFLOW_NONE;
             break;
+
+        default:
+            opticalflowHardware = OPTICALFLOW_NONE;
+            break;
     }
 
     if (opticalflowHardware == OPTICALFLOW_NONE) {
@@ -108,7 +111,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 
     detectedSensors[SENSOR_INDEX_OPTICALFLOW] = opticalflowHardware;
     sensorsSet(SENSOR_OPTICALFLOW);
-    return true;    
+    return true;
 }
 
 bool opticalflowInit(void) {
@@ -147,17 +150,17 @@ void opticalflowProcess(void) {
     opticalflowData_t data = {0};
     uint32_t deltaTimeUs = 0;
     opticalflow.dev.read(&opticalflow.dev, &data);
-    
+
     opticalflow.quality = data.quality;
     deltaTimeUs = cmp32(data.timeStampUs, opticalflow.timeStampUs);
-    
+
     if (deltaTimeUs != 0) { // New data
         vector2_t raw = data.flowRate;
         vector2_t processed;
-        
+
         applySensorRotation(&processed, &raw);
         applyLPF(&processed);
-        
+
         opticalflow.rawFlowRates = raw;
         opticalflow.processedFlowRates = processed;
         opticalflow.timeStampUs  = data.timeStampUs;
@@ -180,7 +183,7 @@ static void applySensorRotation(vector2_t * dst, vector2_t * src) {
 static void applyLPF(vector2_t * flowRates) {
     if (opticalflowConfig()->flow_lpf == 0) {
         return;
-    }    
+    }
 
     flowRates->x = pt2FilterApply(&xFlowLpf, flowRates->x);
     flowRates->y = pt2FilterApply(&yFlowLpf, flowRates->y);

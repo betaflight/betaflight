@@ -61,6 +61,7 @@
 #include "io/ledstrip.h"
 
 #include "rx/rx.h"
+#include "rx/mavlink.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -71,6 +72,8 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
+
+#include "build/debug.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -83,6 +86,8 @@
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
+#define MAVLINK_SYSTEM_ID 1
+#define MAVLINK_COMPONENT_ID MAV_COMP_ID_AUTOPILOT1
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static serialPort_t *mavlinkPort = NULL;
@@ -90,44 +95,10 @@ static const serialPortConfig_t *portConfig;
 
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
+static uint32_t lastMavlinkMessageTime = 0;
 
-/* MAVLink datastream rates in Hz */
-static const uint8_t mavRates[] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2, //2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 5, //5Hz
-    [MAV_DATA_STREAM_POSITION] = 2, //2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 10, //10Hz
-    [MAV_DATA_STREAM_EXTRA2] = 10 //2Hz
-};
-
-#define MAXSTREAMS ARRAYLEN(mavRates)
-
-static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
-
-static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
-{
-    uint8_t rate = (uint8_t) mavRates[streamNum];
-    if (rate == 0) {
-        return 0;
-    }
-
-    if (mavTicks[streamNum] == 0) {
-        // we're triggering now, setup the next trigger point
-        if (rate > TELEMETRY_MAVLINK_MAXRATE) {
-            rate = TELEMETRY_MAVLINK_MAXRATE;
-        }
-
-        mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
-        return 1;
-    }
-
-    // count down at TASK_RATE_HZ
-    mavTicks[streamNum]--;
-    return 0;
-}
 
 static void mavlinkSerialWrite(uint8_t * buf, uint16_t length)
 {
@@ -179,27 +150,6 @@ void configureMAVLinkTelemetryPort(void)
     mavlinkTelemetryEnabled = true;
 }
 
-void checkMAVLinkTelemetryState(void)
-{
-    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
-        if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
-            mavlinkPort = telemetrySharedPort;
-            mavlinkTelemetryEnabled = true;
-        }
-    } else {
-        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
-
-        if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
-            return;
-        }
-
-        if (newTelemetryEnabledValue)
-            configureMAVLinkTelemetryPort();
-        else
-            freeMAVLinkTelemetryPort();
-    }
-}
-
 static void mavlinkSendSystemStatus(void)
 {
     uint16_t msgLength;
@@ -230,7 +180,7 @@ static void mavlinkSendSystemStatus(void)
         batteryRemaining = isBatteryVoltageConfigured() ? calculateBatteryPercentageRemaining() : batteryRemaining;
     }
 
-    mavlink_msg_sys_status_pack(0, 200, &mavMsg,
+    mavlink_msg_sys_status_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
         //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
         // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
@@ -260,15 +210,24 @@ static void mavlinkSendSystemStatus(void)
         // errors_count3 Autopilot-specific errors
         0,
         // errors_count4 Autopilot-specific errors
+        0,
+        // extended parameters, set to zero
+        0,
+        0,
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 static void mavlinkSendRCChannelsAndRSSI(void)
 {
     uint16_t msgLength;
-    mavlink_msg_rc_channels_raw_pack(0, 200, &mavMsg,
+    mavlink_msg_rc_channels_raw_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_boot_ms Timestamp (milliseconds since system boot)
         millis(),
         // port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
@@ -293,6 +252,11 @@ static void mavlinkSendRCChannelsAndRSSI(void)
         scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 254));
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 3, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 #if defined(USE_GPS)
@@ -316,7 +280,7 @@ static void mavlinkSendPosition(void)
         }
     }
 
-    mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
+    mavlink_msg_gps_raw_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
         micros(),
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
@@ -327,21 +291,33 @@ static void mavlinkSendPosition(void)
         gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.altCm * 10,
-        // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
-        // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
-        // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
+        // eph GPS HDOP horizontal dilution of position (unitless * 100). If unknown, set to: UINT16_MAX
+        gpsSol.dop.hdop,
+        // epv GPS VDOP vertical dilution of position (unitless * 100). If unknown, set to: UINT16_MAX
+        gpsSol.dop.vdop,
+        // vel GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
         gpsSol.groundSpeed,
-        // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
+        // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
         gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
-        gpsSol.numSat);
+        gpsSol.numSat,
+        // Altitude [mm] (above WGS84, EGM96 ellipsoid). Positive for up.
+        gpsSol.llh.altCm * 10,
+        // h_acc [mm] Position uncertainty
+        gpsSol.acc.hAcc,
+        // v_acc [mm] Altitude uncertainty
+        gpsSol.acc.vAcc,
+        // vel_acc [mm/s] Speed uncertainty
+        gpsSol.acc.sAcc,
+        // [degE5] Heading / track uncertainty - Unused
+        UINT32_MAX,
+        //Yaw in earth frame from north. Use 0 if this GPS does not provide yaw - Unused
+        0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
     // Global position
-    mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
+    mavlink_msg_global_position_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
         micros(),
         // lat Latitude in 1E7 degrees
@@ -353,33 +329,40 @@ static void mavlinkSendPosition(void)
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
         getEstimatedAltitudeCm() * 10,
         // Ground X Speed (Latitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velN,
         // Ground Y Speed (Longitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velE,
         // Ground Z Speed (Altitude), expressed as m/s * 100
-        0,
+        gpsSol.velned.velD,
         // heading Current heading in degrees, in compass units (0..360, 0=north)
         headingOrScaledMilliAmpereHoursDrawn()
     );
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    mavlink_msg_gps_global_origin_pack(0, 200, &mavMsg,
-        // latitude Latitude (WGS84), expressed as * 1E7
+    mavlink_msg_gps_global_origin_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        // Latitude (WGS84), expressed as * 1E7
         GPS_home_llh.lat,
-        // longitude Longitude (WGS84), expressed as * 1E7
+        // Longitude (WGS84), expressed as * 1E7
         GPS_home_llh.lon,
-        // altitude Altitude(WGS84), expressed as * 1000
-        0);
+        // Altitude(WGS84), expressed as * 1000
+        GPS_home_llh.altCm * 10,
+        // Timestamp
+        micros());
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 #endif
 
 static void mavlinkSendAttitude(void)
 {
     uint16_t msgLength;
-    mavlink_msg_attitude_pack(0, 200, &mavMsg,
+    mavlink_msg_attitude_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_boot_ms Timestamp (milliseconds since system boot)
         millis(),
         // roll Roll angle (rad)
@@ -396,6 +379,11 @@ static void mavlinkSendAttitude(void)
         0);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 5, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
 }
 
 static void mavlinkSendHUDAndHeartbeat(void)
@@ -415,7 +403,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
 
     mavAltitude = getEstimatedAltitudeCm() / 100.0f;
 
-    mavlink_msg_vfr_hud_pack(0, 200, &mavMsg,
+    mavlink_msg_vfr_hud_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // airspeed Current airspeed in m/s
         mavAirSpeed,
         // groundspeed Current ground speed in m/s
@@ -431,9 +419,9 @@ static void mavlinkSendHUDAndHeartbeat(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
-    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+    uint8_t mavModes = MAV_MODE_MANUAL_DISARMED;
     if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
+        mavModes |= MAV_MODE_MANUAL_ARMED;
 
     uint8_t mavSystemType;
     switch (mixerConfig()->mixerMode)
@@ -493,7 +481,7 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavSystemState = MAV_STATE_STANDBY;
     }
 
-    mavlink_msg_heartbeat_pack(0, 200, &mavMsg,
+    mavlink_msg_heartbeat_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
         mavSystemType,
         // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
@@ -506,48 +494,201 @@ static void mavlinkSendHUDAndHeartbeat(void)
         mavSystemState);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 6, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
+}
+
+static void mavlinkSendBatteryStatus(void)
+{
+    uint16_t msgLength;
+
+    uint16_t voltages[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN];
+    uint16_t voltagesExt[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN];
+    memset(voltages, 0xff, sizeof(voltages));
+    memset(voltagesExt, 0, sizeof(voltagesExt));
+    if (isBatteryVoltageConfigured()) {
+        uint8_t batteryCellCount = getBatteryCellCount();
+        if (batteryCellCount > 0 && telemetryConfig()->report_cell_voltage) {
+            for (int cell=0; cell < batteryCellCount && cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN + MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN; cell++) {
+                if (cell < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN) {
+                    voltages[cell] = getBatteryAverageCellVoltage() * 10;
+                } else {
+                    voltagesExt[cell - MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN] = getBatteryAverageCellVoltage() * 10;
+                }
+            }
+        } else {
+            voltages[0] = getBatteryVoltage() * 10;
+        }
+    }
+
+    // Battery amperage in centiamps (cA), -1 if not available
+    int16_t batteryAmperage = -1;
+    if (isAmperageConfigured()) {
+        batteryAmperage = getAmperage(); // Already in cA (0.01A)
+    }
+
+    // mAh consumed, -1 if not available
+    int32_t amperageConsumed = -1;
+    if (isAmperageConfigured()) {
+        amperageConsumed = getMAhDrawn(); // This is the key field for "Capa"
+    }
+
+    // Battery percentage remaining
+    int8_t batteryRemaining = -1;
+    if (isBatteryVoltageConfigured()) {
+        batteryRemaining = calculateBatteryPercentageRemaining();
+    }
+
+    // Temperature: INT16_MAX if unknown
+    int16_t temperature = INT16_MAX;
+
+    mavlink_msg_battery_status_pack(
+        MAVLINK_SYSTEM_ID,
+        MAVLINK_COMPONENT_ID,
+        &mavMsg,
+        0,                    // id: Battery ID (0 = main battery)
+        0,                    // battery_function: 0 = MAV_BATTERY_FUNCTION_UNKNOWN
+        0,                    // type: 0 = MAV_BATTERY_TYPE_UNKNOWN (could use MAV_BATTERY_TYPE_LIPO = 1)
+        temperature,          // temperature: INT16_MAX = unknown
+        voltages,             // voltages[10]: Cell voltages in mV
+        batteryAmperage,      // current_battery: Current in cA
+        amperageConsumed,     // current_consumed: mAh drawn (CRITICAL for "Capa")
+        -1,                   // energy_consumed: -1 = not available (could calculate from Wh if needed)
+        batteryRemaining,     // battery_remaining: Percentage 0-100
+        0,                    // time_remaining: 0 = not calculated
+        MAV_BATTERY_CHARGE_STATE_UNDEFINED, // charge_state: 0 = MAV_BATTERY_CHARGE_STATE_UNDEFINED
+        voltagesExt,          // voltages_ext[4]: Cells 11-14, not used
+        0,                    // mode: 0 = normal
+        0                     // fault_bitmask: 0 = no faults
+    );
+
+    msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+
+    // Packets transmit counter to debug actual data rate
+    static uint32_t transmitCounter = 0;
+    DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 7, transmitCounter);
+    transmitCounter = (transmitCounter + 1) % 100;
+}
+
+/* MAVLink telemetry data streams
+* Rate values are zero-initialized and populated from CLI settings via configureMAVLinkStreamRates()
+*/
+static mavlinkTelemetryStream_t mavTelemetryStreams[] = {
+    [MAV_DATA_STREAM_EXTENDED_STATUS] = {
+        .rate = 0,
+        .updateTime = 0,
+        .streamFunc = mavlinkSendSystemStatus,
+    },
+    [MAV_DATA_STREAM_RC_CHANNELS] = {
+        .rate = 0,
+        .updateTime = 0,
+        .streamFunc = mavlinkSendRCChannelsAndRSSI,
+    },
+    [MAV_DATA_STREAM_POSITION] = {
+        .rate = 0,
+        .updateTime = 0,
+#ifdef USE_GPS
+        .streamFunc = mavlinkSendPosition,
+#else
+        .streamFunc = NULL,
+#endif
+    },
+    [MAV_DATA_STREAM_EXTRA1] = {
+        .rate = 0,
+        .updateTime = 0,
+        .streamFunc = mavlinkSendAttitude,
+    },
+    [MAV_DATA_STREAM_EXTRA2] = {
+        .rate = 0,
+        .updateTime = 0,
+        .streamFunc = mavlinkSendHUDAndHeartbeat,
+    },
+    [MAV_DATA_STREAM_EXTRA3] = {
+        .rate = 0,
+        .updateTime = 0,
+        .streamFunc = mavlinkSendBatteryStatus,
+    }
+};
+#define TELEMETRIES_STREAM_COUNT ARRAYLEN(mavTelemetryStreams)
+
+static void configureMAVLinkStreamRates(void)
+{
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTENDED_STATUS].rate = telemetryConfig()->mavlink_extended_status_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_RC_CHANNELS].rate = telemetryConfig()->mavlink_rc_channels_rate;
+#ifdef USE_GPS
+    mavTelemetryStreams[MAV_DATA_STREAM_POSITION].rate = telemetryConfig()->mavlink_position_rate;
+#endif
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA1].rate = telemetryConfig()->mavlink_extra1_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA2].rate = telemetryConfig()->mavlink_extra2_rate;
+    mavTelemetryStreams[MAV_DATA_STREAM_EXTRA3].rate = telemetryConfig()->mavlink_extra3_rate;
+
+    // Seed timers to avoid burst on enable
+    timeMs_t nowMs = millis();
+    for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
+        const uint8_t rate = mavTelemetryStreams[i].rate;
+        // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
+        mavTelemetryStreams[i].updateTime = (rate > 0) ? nowMs + (timeMs_t)(1000 / rate) + 3 * i : 0;
+    }
 }
 
 static void processMAVLinkTelemetry(void)
 {
-    // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
-        mavlinkSendSystemStatus();
+    timeMs_t currentTimeMs = millis();
+    for (uint16_t i = 0; i < TELEMETRIES_STREAM_COUNT; i++) {
+        if (mavTelemetryStreams[i].rate != 0 && mavTelemetryStreams[i].streamFunc != NULL) {
+            if (currentTimeMs >= mavTelemetryStreams[i].updateTime) {
+                mavTelemetryStreams[i].streamFunc();
+                mavTelemetryStreams[i].updateTime = currentTimeMs + (timeMs_t)(1000 / mavTelemetryStreams[i].rate);
+            }
+        }
     }
+}
 
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_RC_CHANNELS)) {
-        mavlinkSendRCChannelsAndRSSI();
-    }
+void checkMAVLinkTelemetryState(void)
+{
+    if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
+        if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
+            mavlinkPort = telemetrySharedPort;
+            mavlinkTelemetryEnabled = true;
+            configureMAVLinkStreamRates();
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
 
-#ifdef USE_GPS
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition();
-    }
-#endif
+        if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
+            return;
+        }
 
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA1)) {
-        mavlinkSendAttitude();
-    }
-
-    if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
-        mavlinkSendHUDAndHeartbeat();
+        if (newTelemetryEnabledValue) {
+            configureMAVLinkTelemetryPort();
+            configureMAVLinkStreamRates();
+        } else {
+            freeMAVLinkTelemetryPort();
+        }
     }
 }
 
 void handleMAVLinkTelemetry(void)
 {
-    if (!mavlinkTelemetryEnabled) {
+    if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
     }
 
-    if (!mavlinkPort) {
-        return;
-    }
-
+    bool shouldSendTelemetry = false;
     uint32_t now = micros();
-    if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+    if (isValidMavlinkTxBuffer()) {
+        shouldSendTelemetry = shouldSendMavlinkTelemetry();
+    } else if ((now - lastMavlinkMessageTime) >= TELEMETRY_MAVLINK_DELAY) {
+        shouldSendTelemetry = true;
+    }
+
+    if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
-        lastMavlinkMessage = now;
+        lastMavlinkMessageTime = now;
     }
 }
 

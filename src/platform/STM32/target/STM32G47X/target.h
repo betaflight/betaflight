@@ -21,11 +21,11 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "SG47"
+#define TARGET_BOARD_IDENTIFIER "G473"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32G47x"
+#define USBD_PRODUCT_STRING     "Betaflight STM32G473"
 #endif
 
 #define USE_I2C_DEVICE_1
@@ -46,6 +46,8 @@
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
 #define USE_SPI_DEVICE_4
+
+#define QUADSPIDEV_COUNT 1
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

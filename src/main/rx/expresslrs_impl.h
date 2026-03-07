@@ -18,16 +18,15 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-// expresslrs packet header types
-// 00 -> standard 4 channel data packet
-// 01 -> switch data packet
-// 11 -> tlm packet
-// 10 -> sync packet with hop data
 typedef enum {
     ELRS_RC_DATA_PACKET = 0x00,
     ELRS_MSP_DATA_PACKET = 0x01,
     ELRS_SYNC_PACKET = 0x02,
+#ifdef USE_ELRSV3
     ELRS_TLM_PACKET = 0x03,
+#else
+    ELRS_TLM_PACKET = 0x00,
+#endif
 } elrsPacketType_e;
 
 typedef enum {

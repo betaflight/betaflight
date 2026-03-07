@@ -26,16 +26,16 @@ ifeq ($(UNAME), Darwin)
   OSFAMILY := macosx
 endif
 
-# Windows using MinGW shell
-ifeq (MINGW, $(findstring MINGW,$(UNAME)))
+# Detect all Windows-based POSIX environments (MinGW, MSYS, Cygwin)
+ifneq (,$(filter MINGW% MSYS% CYGWIN%,$(UNAME)))
   OSFAMILY := windows
-  MINGW := 1
-endif
 
-# Windows using Cygwin shell
-ifeq (CYGWIN ,$(findstring CYGWIN,$(UNAME)))
-  OSFAMILY := windows
-  CYGWIN := 1
+  # Set specific environment flags if needed
+  ifneq (,$(filter CYGWIN%,$(UNAME)))
+    CYGWIN := 1
+  else
+    MINGW := 1
+  endif
 endif
 
 # report an error if we couldn't work out what OS this is running on

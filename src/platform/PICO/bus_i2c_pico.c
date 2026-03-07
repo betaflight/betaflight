@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "pg/bus_i2c.h"
 
@@ -96,7 +96,7 @@ void i2cPinConfigure(const i2cConfig_t *i2cConfig)
             continue;
         }
 
-        I2CDevice device = hardware->device;
+        i2cDevice_e device = hardware->device;
         i2cDevice_t *pDev = &i2cDevice[device];
 
         memset(pDev, 0, sizeof(*pDev));
@@ -132,7 +132,7 @@ uint16_t i2cGetErrorCounter(void)
     return i2cErrorCount;
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data)
 {
     // Start non-blocking write
     if (!i2cWriteBuffer(device, addr, reg, 1, &data)) {
@@ -147,7 +147,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data)
+bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data)
 {
     // We don't ever write more bytes than will fit in the FIFO, but, just in case, validate args
     if (device == I2CINVALID || device >= I2CDEV_COUNT || len == 0 || len >= I2C_FIFO_BUFFER_DEPTH) {
@@ -200,7 +200,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, ui
     return true;
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
+bool i2cRead(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
 {
     // Start non-blocking read
     if (!i2cReadBuffer(device, addr, reg, len, buf)) {
@@ -228,7 +228,7 @@ static void i2c_load_read_commands(i2c_hw_t *hw, uint8_t len, bool final_batch)
     }
 }
 
-bool i2cReadBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
+bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT || len == 0) {
         return false;
@@ -303,7 +303,7 @@ bool i2cReadBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uin
     return true;
 }
 
-bool i2cBusy(I2CDevice device, bool *error)
+bool i2cBusy(i2cDevice_e device, bool *error)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
@@ -418,7 +418,7 @@ static void i2c_irq1_handler(void)
     i2c_irq_handler(&i2c_contexts[I2CDEV_1]);
 }
 
-void i2cInit(I2CDevice device)
+void i2cInit(i2cDevice_e device)
 {
     if (device == I2CINVALID) {
         return;
@@ -430,12 +430,13 @@ void i2cInit(I2CDevice device)
 
     const IO_t scl = pDev->scl;
     const IO_t sda = pDev->sda;
-    const uint8_t sclPin = IO_Pin(scl);
-    const uint8_t sdaPin = IO_Pin(sda);
 
     if (!hardware || !scl || !sda) {
         return;
     }
+
+    const uint8_t sclPin = IO_Pin(scl);
+    const uint8_t sdaPin = IO_Pin(sda);
 
     // Set owners
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
@@ -485,4 +486,4 @@ void i2cInit(I2CDevice device)
     }
 }
 
-#endif // #if defined(USE_I2C) && !defined(SOFT_I2C)
+#endif // #if defined(USE_I2C) && !defined(USE_SOFT_I2C)

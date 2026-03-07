@@ -279,14 +279,16 @@ static bool applyCrashFlipModeToMotors(void)
 {
 #ifdef USE_ACC
     static bool isTiltAngleAtStartSet = false;
+     // forces a new tilt angle to be saved at when a new crashFlip mode starts
     static float tiltAngleAtStart = 1.0f;
 #endif
 
     if (!isCrashFlipModeActive()) {
 #ifdef USE_ACC
-        // trigger the capture of initial tilt angle on next activation of crashflip mode
+
         isTiltAngleAtStartSet = false;
-        // default the success flag to false, to block quick re-arming unless successful
+        // keep clearing the tiltAngleSet flag while crashFlip mode is not active
+        // will be set true, if false, when crashFlip mode is activated
 #endif
         // signal that crashflip mode is off
         return false;
@@ -344,17 +346,19 @@ static bool applyCrashFlipModeToMotors(void)
         if (sensors(SENSOR_ACC)) {
             const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
             if (!isTiltAngleAtStartSet) {
-                tiltAngleAtStart = tiltAngle;
-                isTiltAngleAtStartSet = true;
-                crashflipSuccess = false;
+            // first tun after activating crashFlip mode...
+            tiltAngleAtStart = tiltAngle;
+            isTiltAngleAtStartSet = true;
+            crashflipSuccess = false;
             }
             // attitudeChangeNeeded is 1.0 at the start, decreasing to 0 when attitude change exceeds approx 90 degrees
             const float attitudeChangeNeeded = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
             // no attenuation unless a significant attitude change has occurred
             crashflipAttitudeAttenuator = attitudeChangeNeeded > halfComplete ? 1.0f : attitudeChangeNeeded / halfComplete;
 
-            // signal success to enable quick restart, if attitude change implies success when reverting the switch
             crashflipSuccess = attitudeChangeNeeded == 0.0f;
+            // boolean that previously was used to signal success to core.c crashflip code via a getter
+            // todo: probably not required anymore
         }
 #endif // USE_ACC
         // Calculate an attenuation factor based on rate of rotation... note:
@@ -686,7 +690,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     if (applyCrashFlipModeToMotors()) {
-        return; // if crash flip mode has been applied to the motors, mixing is done
+        return;
+        // if crash flip modeis being applied to the motors, mixing is done
+        
+        
     }
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];
@@ -858,9 +865,4 @@ float mixerGetThrottle(void)
 float mixerGetRcThrottle(void)
 {
     return rcThrottle;
-}
-
-bool crashFlipSuccessful(void)
-{
-    return crashflipSuccess;
 }

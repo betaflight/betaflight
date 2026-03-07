@@ -29,15 +29,17 @@
 #include "usbd_msc.h"
 #else
 #include "usbd_msc_mem.h"
-#ifndef AT32F435
+#if !defined(AT32F435) && !defined(PICO)
 #include "usbd_msc_core.h"
 #endif
 #endif
 
 #include "usbd_storage.h"
 
+#if !(defined(PICO))
 #ifdef USE_HAL_DRIVER
 USBD_StorageTypeDef *USBD_STORAGE_fops;
 #else
 USBD_STORAGE_cb_TypeDef *USBD_STORAGE_fops;
+#endif
 #endif

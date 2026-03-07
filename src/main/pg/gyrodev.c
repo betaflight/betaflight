@@ -230,7 +230,7 @@ static void gyroResetSpiDeviceConfig(gyroDeviceConfig_t *devconf, SPI_TypeDef *i
 #endif
 
 #if defined(USE_I2C_GYRO) && !(GYRO_COUNT > 1)
-static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, I2CDevice i2cbus, ioTag_t extiTag, uint8_t alignment, sensorAlignment_t customAlignment)
+static void gyroResetI2cDeviceConfig(gyroDeviceConfig_t *devconf, i2cDevice_e i2cbus, ioTag_t extiTag, uint8_t alignment, sensorAlignment_t customAlignment)
 {
     devconf->busType = BUS_TYPE_I2C;
     devconf->i2cBus = I2C_DEV_TO_CFG(i2cbus);
@@ -301,6 +301,6 @@ void pgResetFn_gyroDeviceConfig(gyroDeviceConfig_t *devconf)
     // I2C gyros appear as a sole gyro in single gyro boards.
 #if defined(USE_I2C_GYRO) && !(GYRO_COUNT > 1)
     devconf[0].i2cBus = I2C_DEV_TO_CFG(I2CINVALID); // XXX Not required?
-    gyroResetI2cDeviceConfig(&devconf[0], I2C_DEVICE, IO_TAG(GYRO_1_EXTI_PIN), GYRO_1_ALIGN, customAlignment1);
+    gyroResetI2cDeviceConfig(&devconf[0], I2C_DEVICE, IO_TAG(GYRO_1_EXTI_PIN), GYRO_1_ALIGN, GYRO_1_CUSTOM_ALIGN);
 #endif
 }

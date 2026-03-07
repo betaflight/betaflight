@@ -76,7 +76,7 @@
 #endif
 
 typedef struct spiDefaultConfig_s {
-    SPIDevice device;
+    spiDevice_e device;
     ioTag_t sck;
     ioTag_t miso;
     ioTag_t mosi;

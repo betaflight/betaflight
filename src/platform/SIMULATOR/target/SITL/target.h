@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "common/utils.h"
 
@@ -169,22 +170,6 @@ typedef enum
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
-typedef enum {
-    EXTI_Trigger_Rising = 0x08,
-    EXTI_Trigger_Falling = 0x0C,
-    EXTI_Trigger_Rising_Falling = 0x10
-} EXTITrigger_TypeDef;
-
-typedef struct
-{
-  uint32_t IDR;
-  uint32_t ODR;
-  uint32_t BSRR;
-  uint32_t BRR;
-} GPIO_TypeDef;
-
-#define GPIOA_BASE ((intptr_t)0x0001)
-
 typedef struct
 {
     void* test;

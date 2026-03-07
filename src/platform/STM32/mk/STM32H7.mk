@@ -186,13 +186,13 @@ STARTUP_SRC         = STM32/startup/startup_stm32h723xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 
+
 else ifeq ($(TARGET_MCU),STM32H730xx)
 DEVICE_FLAGS       += -DSTM32H730xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h730_128m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32h730xx.s
 DEFAULT_TARGET_FLASH := 128
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
-
 
 ifeq ($(TARGET_FLASH),)
 MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
@@ -207,6 +207,25 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h730_exst.ld
 LD_SCRIPTS          = $(LINKER_DIR)/stm32_h730_common.ld $(LINKER_DIR)/stm32_h730_common_post.ld
 endif
 
+else ifeq ($(TARGET_MCU),STM32H735xx)
+DEVICE_FLAGS       += -DSTM32H735xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h735_1m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h735xx.s
+DEFAULT_TARGET_FLASH := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ifeq ($(TARGET_FLASH),)
+MCU_FLASH_SIZE := $(DEFAULT_TARGET_FLASH)
+endif
+
+ifeq ($(EXST),yes)
+FIRMWARE_SIZE      := 1024
+# TARGET_FLASH now becomes the amount of MEMORY-MAPPED address space that is occupied by the firmware
+# and the maximum size of the data stored on the external flash device.
+MCU_FLASH_SIZE     := FIRMWARE_SIZE
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_ram_h735_exst.ld
+LD_SCRIPTS          = $(LINKER_DIR)/stm32_h735_common.ld $(LINKER_DIR)/stm32_h735_common_post.ld
+endif
 
 else ifeq ($(TARGET_MCU),STM32H750xx)
 DEVICE_FLAGS       += -DSTM32H750xx

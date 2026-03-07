@@ -17,8 +17,8 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            **Do you want to test this code? You can flash it directly from Betaflight Configurator:**
-            - Simply put `#${{ github.event.number }}` (this pull request number) in the `Select commit` field of the Configurator firmware flasher tab (you need to `Enable expert mode`, `Show release candidates` and `Development`).
+            **Do you want to test this code? You can flash it directly from the Betaflight App:**
+            - Simply put `#${{ github.event.number }}` (this pull request number) in the `Select commit` field in the Firmware Flasher tab (you need to `Enable expert mode`, `Show release candidates` and `Development`).
 
             _**WARNING:** It may be unstable. Use only for testing!_
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

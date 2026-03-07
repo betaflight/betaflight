@@ -20,9 +20,13 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SH56"
+#ifndef TARGET_BOARD_IDENTIFIER
+#define TARGET_BOARD_IDENTIFIER "H563"
+#endif
 
+#ifndef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_STRING     "Betaflight STM32H563"
+#endif
 
 #undef USE_PWM
 #undef USE_PWM_OUTPUT

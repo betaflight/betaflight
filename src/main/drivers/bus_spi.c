@@ -45,7 +45,7 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
-SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
+spiDevice_e spiDeviceByInstance(const SPI_TypeDef *instance)
 {
 #ifdef USE_SPI_DEVICE_0
     if (instance == SPI0) {
@@ -92,7 +92,7 @@ SPIDevice spiDeviceByInstance(const SPI_TypeDef *instance)
     return SPIINVALID;
 }
 
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+SPI_TypeDef *spiInstanceByDevice(spiDevice_e device)
 {
     if (device == SPIINVALID || device >= SPIDEV_COUNT) {
         return NULL;
@@ -101,7 +101,7 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
     return spiDevice[device].dev;
 }
 
-bool spiInit(SPIDevice device)
+bool spiInit(spiDevice_e device)
 {
     switch (device) {
     case SPIINVALID:

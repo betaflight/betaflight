@@ -65,6 +65,7 @@ typedef enum {
     MCU_TYPE_AT32F435M,
     MCU_TYPE_RP2350A,
     MCU_TYPE_RP2350B,
+    MCU_TYPE_H735,
     MCU_TYPE_COUNT,
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;

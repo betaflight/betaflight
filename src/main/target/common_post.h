@@ -110,11 +110,13 @@
     && !defined(USE_ACC_SPI_ICM20689) \
     && !defined(USE_ACC_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
+    && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
     && !defined(USE_ACC_SPI_MPU9250) \
@@ -133,12 +135,14 @@
     && !defined(USE_GYRO_SPI_ICM20649) \
     && !defined(USE_GYRO_SPI_ICM20689) \
     && !defined(USE_GYRO_SPI_ICM42605) \
+    && !defined(USE_ACCGYRO_ICM42622P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
     && !defined(USE_GYRO_SPI_MPU9250) \
@@ -183,6 +187,9 @@
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
 #endif
+#ifndef USE_MAG_MMC560X
+#define USE_MAG_MMC560X
+#endif
 
 #endif // END MAG HW defines
 
@@ -210,7 +217,7 @@
 
 #endif // defined(USE_RX_CC2500)
 
-#if defined(CAMERA_CONTROL_PIN) && defined(USE_VTX) && !defined(USE_CAMERA_CONTROL)
+#if defined(CAMERA_CONTROL_PIN) && defined(USE_OSD_SD) && !defined(USE_CAMERA_CONTROL)
 #define USE_CAMERA_CONTROL
 #endif
 
@@ -269,6 +276,7 @@
 #undef USE_SERIALRX_SUMH
 #undef USE_SERIALRX_XBUS
 #undef USE_SERIALRX_FPORT
+#undef USE_SERIALRX_MAVLINK
 #endif
 
 #if !defined(USE_TELEMETRY)
@@ -314,9 +322,10 @@
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
 #undef USE_CRSF_V3
+#undef USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
-#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF)
+#if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF) && !defined(USE_SERIALRX_MAVLINK)
 #undef USE_RX_RSSI_DBM
 #endif
 
@@ -330,6 +339,11 @@
 
 #if !defined(USE_TELEMETRY_CRSF)
 #undef USE_CRSF_V3
+#undef USE_CRSF_ACCGYRO_TELEMETRY
+#endif
+
+#if !defined(USE_CRSF_V3)
+#undef USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
 #if !defined(USE_SERIALRX_JETIEXBUS)
@@ -426,7 +440,7 @@
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N) || defined(USE_FLASH_MT29F))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif
@@ -484,9 +498,10 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
+    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_IIM42653) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X) \
+    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
@@ -608,7 +623,7 @@
 #endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP)
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
@@ -681,3 +696,18 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+/*****************************************************
+
+ Place any ENABLE_X_FEATURE=0 definitions here for those
+ yet to be defined, and also for any backward compatibility
+ with USE_ flags.
+
+ e.g.
+
+ #if !defined(ENABLE_X_FEATURE) && defined(USE_X_FEATURE)
+ #define ENABLE_X_FEATURE 1
+ #elif !defined(ENABLE_X_FEATURE)
+ #define ENABLE_X_FEATURE 0
+ #endif
+
+******************************************************/

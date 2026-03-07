@@ -195,13 +195,13 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     uint32_t ppre;
 
     // This function is used to calculate the timer clock frequency.
-    // RM0481 (Rev 3) Table 
+    // RM0481 (Rev 3) Table
 
 
     RCC_ClkInitTypeDef  clkConfig, uint32_t fLatency
     HAL_RCC_GetClockConfig(&clkConfig, &fLatency);
 
-    if ((uintptr_t)tim >= APB2PERIPH_BASE ) { // APB2 
+    if ((uintptr_t)tim >= APB2PERIPH_BASE ) { // APB2
         pclk = HAL_RCC_GetPCLK2Freq();
         ppre = clkConfig.APB2CLKDivider;
     } else {  // all other timers are on APB1
@@ -212,9 +212,9 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 #define PC(m) (0x80 | (m))  // multiply pclk
 #define HC(m) (0x00 | (m))  // multiply hclk
         static const uint8_t timpreTab[2][8] = { //  see RM0481 TIMPRE: timers clocks prescaler selection
-        //  1      1      1      1      2      4      8      16 
-        { HC(1), HC(1), HC(1), HC(1), HC(1), PC(2), PC(2), PC(2) }, // TIMPRE = 0 
-        { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }     // TIMPRE = 1 
+        //  1      1      1      1      2      4      8      16
+        { HC(1), HC(1), HC(1), HC(1), HC(1), PC(2), PC(2), PC(2) }, // TIMPRE = 0
+        { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }     // TIMPRE = 1
       }
 #undef PC
 #undef HC

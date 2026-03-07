@@ -106,6 +106,46 @@ UART_BUFFERS(10);
 UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #endif
 
+#ifdef USE_PIOUART0
+UART_BUFFERS(Pio0); // -> uartPio0RxBuffer etc.
+#endif
+
+#ifdef USE_PIOUART1
+UART_BUFFERS(Pio1);
+#endif
+
+#ifdef USE_PIOUART2
+UART_BUFFERS(Pio2);
+#endif
+
+#ifdef USE_PIOUART3
+UART_BUFFERS(Pio3);
+#endif
+
+#ifdef USE_PIOUART4
+UART_BUFFERS(Pio4);
+#endif
+
+#ifdef USE_PIOUART5
+UART_BUFFERS(Pio5);
+#endif
+
+#ifdef USE_PIOUART6
+UART_BUFFERS(Pio6);
+#endif
+
+#ifdef USE_PIOUART7
+UART_BUFFERS(Pio7);
+#endif
+
+#ifdef USE_PIOUART8
+UART_BUFFERS(Pio8);
+#endif
+
+#ifdef USE_PIOUART9
+UART_BUFFERS(Pio9);
+#endif
+
 #undef UART_BUFFERS
 
 // store only devices configured for target (USE_UARTx)
@@ -183,8 +223,31 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
     return UARTDEV_INVALID;
 }
 
+#if SERIAL_PIOUART_COUNT > 0
+FAST_DATA_ZERO_INIT uartDevice_t pioUartDevice[SERIAL_PIOUART_COUNT];
+#endif
+
+uartDevice_t *pioUartDeviceFromIdentifier(serialPortIdentifier_e identifier)
+{
+    // PIOUART devices must be used in order continuously from PIOUART0 (i.e. USE_PIOUART0 then USE_PIOUART1 ...)
+#if SERIAL_PIOUART_COUNT > 0
+    int offset = identifier - SERIAL_PORT_PIOUART_FIRST;
+    if (offset >= 0 && offset < SERIAL_PIOUART_COUNT) {
+        return &pioUartDevice[offset];
+    }
+#else
+    UNUSED(identifier);
+#endif
+
+    return NULL;
+}
+
 uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
 {
+    if (serialType(identifier) == SERIALTYPE_PIOUART) {
+        return pioUartDeviceFromIdentifier(identifier);
+    }
+
     const uartDeviceIdx_e deviceIdx = uartDeviceIdxFromIdentifier(identifier);
     return deviceIdx != UARTDEV_INVALID ? &uartDevice[deviceIdx] : NULL;
 }

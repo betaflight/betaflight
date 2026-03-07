@@ -29,6 +29,18 @@
 #define RC_SMOOTHING_AUTO_FACTOR_MAX 250
 #endif
 
+typedef struct feedforwardData_s {
+    float prevRcCommand[XYZ_AXIS_COUNT];
+    float prevRcCommandDeltaAbs[XYZ_AXIS_COUNT];
+    float prevSetpoint[XYZ_AXIS_COUNT];
+    float prevSetpointSpeed[XYZ_AXIS_COUNT];
+    float prevSetpointSpeedDelta[XYZ_AXIS_COUNT];
+    bool isPrevPacketDuplicate[XYZ_AXIS_COUNT];
+    float prevRxInterval[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointSpeed[XYZ_AXIS_COUNT];
+    pt1Filter_t filterSetpointDelta[XYZ_AXIS_COUNT];
+} feedforwardData_t;
+
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
@@ -40,12 +52,10 @@ void resetYawAxis(void);
 void initRcProcessing(void);
 bool isMotorsReversed(void);
 rcSmoothingFilter_t *getRcSmoothingData(void);
-bool rcSmoothingAutoCalculate(void);
-bool rcSmoothingInitializationComplete(void);
 
 float getMaxRcRate(int axis);
 float getFeedforward(int axis);
 
 void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal);
-uint16_t getCurrentRxRateHz(void);
+float getCurrentRxRateHz(void);
 bool getRxRateValid(void);

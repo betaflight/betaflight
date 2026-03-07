@@ -68,7 +68,7 @@ static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor
     return (ffs(divisor) - 2) << 3;// SPI_CR1_BR_Pos
 }
 
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     spiDevice_t *spi = &spiDevice[device];
 
@@ -122,7 +122,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->Mode = DDL_DMA_MODE_NORMAL;
         dmaInitRx->Direction = DDL_DMA_DIRECTION_PERIPH_TO_MEMORY;
         dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DATA;
-        dmaInitRx->Priority = DDL_DMA_PRIORITY_LOW;
+        dmaInitRx->Priority = DDL_DMA_PRIORITY_MEDIUM;
         dmaInitRx->PeriphOrM2MSrcIncMode  = DDL_DMA_PERIPH_NOINCREMENT;
         dmaInitRx->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
     }

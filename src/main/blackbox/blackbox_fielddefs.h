@@ -20,7 +20,7 @@
 
 #pragma once
 
-typedef enum FlightLogFieldCondition {
+typedef enum {
     FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2,
@@ -58,7 +58,7 @@ typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2,
-    
+
 #ifdef USE_WING
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_WING_S_0,
     FLIGHT_LOG_FIELD_CONDITION_NONZERO_WING_S_1,
@@ -79,9 +79,9 @@ typedef enum FlightLogFieldCondition {
 
     FLIGHT_LOG_FIELD_CONDITION_FIRST = FLIGHT_LOG_FIELD_CONDITION_ALWAYS,
     FLIGHT_LOG_FIELD_CONDITION_LAST = FLIGHT_LOG_FIELD_CONDITION_NEVER
-} FlightLogFieldCondition;
+} flightLogFieldCondition_e;
 
-typedef enum FlightLogFieldSelect_e { // no more than 32
+typedef enum { // no more than 32
     FLIGHT_LOG_FIELD_SELECT_PID = 0,
     FLIGHT_LOG_FIELD_SELECT_RC_COMMANDS,
     FLIGHT_LOG_FIELD_SELECT_SETPOINT,
@@ -99,9 +99,9 @@ typedef enum FlightLogFieldSelect_e { // no more than 32
     FLIGHT_LOG_FIELD_SELECT_GYROUNFILT,
     FLIGHT_LOG_FIELD_SELECT_SERVO,
     FLIGHT_LOG_FIELD_SELECT_COUNT
-} FlightLogFieldSelect_e;
+} flightLogFieldSelect_e;
 
-typedef enum FlightLogFieldPredictor {
+typedef enum {
     //No prediction:
     FLIGHT_LOG_FIELD_PREDICTOR_0              = 0,
 
@@ -138,9 +138,9 @@ typedef enum FlightLogFieldPredictor {
     //Predict that this field is the minimum motor output
     FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR       = 11
 
-} FlightLogFieldPredictor;
+} flightLogFieldPredictor_e;
 
-typedef enum FlightLogFieldEncoding {
+typedef enum {
     FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB       = 0, // Signed variable-byte
     FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB     = 1, // Unsigned variable-byte
     FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT       = 3, // Unsigned variable-byte but we negate the value before storing, value is 14 bits
@@ -149,12 +149,12 @@ typedef enum FlightLogFieldEncoding {
     FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8,
     FLIGHT_LOG_FIELD_ENCODING_NULL            = 9, // Nothing is written to the file, take value to be zero
     FLIGHT_LOG_FIELD_ENCODING_TAG2_3SVARIABLE = 10
-} FlightLogFieldEncoding;
+} flightLogFieldEncoding_e;
 
-typedef enum FlightLogFieldSign {
+typedef enum {
     FLIGHT_LOG_FIELD_UNSIGNED = 0,
     FLIGHT_LOG_FIELD_SIGNED   = 1
-} FlightLogFieldSign;
+} flightLogFieldSign_e;
 
 typedef struct flightLogEvent_syncBeep_s {
     uint32_t time;

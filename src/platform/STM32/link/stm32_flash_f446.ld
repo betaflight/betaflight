@@ -19,8 +19,7 @@
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 10K
-    FLASH_CUSTOM_DEFAULTS (r) : ORIGIN = 0x08002800, LENGTH = 6K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
     FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
     FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
 

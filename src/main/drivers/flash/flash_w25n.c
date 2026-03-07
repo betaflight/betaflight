@@ -115,7 +115,7 @@
 #define W25N_TIMEOUT_PAGE_READ_MS        2   // tREmax = 60us (ECC enabled)
 #define W25N_TIMEOUT_PAGE_PROGRAM_MS     2   // tPPmax = 700us
 #define W25N_TIMEOUT_BLOCK_ERASE_MS      15  // tBEmax = 10ms
-#define W25N_TIMEOUT_RESET_MS            500 // tRSTmax = 500ms
+#define W25N_TIMEOUT_RESET_MS            2   // tRSTmax = 500us
 
 // Sizes (in bits)
 #define W25N_STATUS_REGISTER_SIZE        8
@@ -171,8 +171,8 @@ static void w25n_performOneByteCommand(flashDeviceIO_t *io, uint8_t command)
     }
 #ifdef USE_QUADSPI
     else if (io->mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
-        quadSpiTransmit1LINE(quadSpi, command, 0, NULL, 0);
+        extDevice_t *dev = io->handle.dev;
+        quadSpiTransmit1LINE(dev, command, 0, NULL, 0);
     }
 #endif
 }
@@ -196,9 +196,9 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
     }
 #ifdef USE_QUADSPI
     else if (io->mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+        extDevice_t *dev = io->handle.dev;
 
-        quadSpiInstructionWithAddress1LINE(quadSpi, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
+        quadSpiInstructionWithAddress1LINE(dev, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
     }
 #endif
 }
@@ -229,10 +229,10 @@ static uint8_t w25n_readRegister(flashDeviceIO_t *io, uint8_t reg)
 #ifdef USE_QUADSPI
     else if (io->mode == FLASHIO_QUADSPI) {
 
-        QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+        extDevice_t *dev = io->handle.dev;
 
         uint8_t in[W25N_STATUS_REGISTER_SIZE / 8];
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, in, sizeof(in));
+        quadSpiReceiveWithAddress1LINE(dev, W25N_INSTRUCTION_READ_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, in, sizeof(in));
 
         return in[0];
     }
@@ -261,9 +261,9 @@ static void w25n_writeRegister(flashDeviceIO_t *io, uint8_t reg, uint8_t data)
    }
 #ifdef USE_QUADSPI
    else if (io->mode == FLASHIO_QUADSPI) {
-       QUADSPI_TypeDef *quadSpi = io->handle.quadSpi;
+       extDevice_t *dev = io->handle.dev;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, &data, 1);
+       quadSpiTransmitWithAddress1LINE(dev, W25N_INSTRUCTION_WRITE_STATUS_REG, 0, reg, W25N_STATUS_REGISTER_SIZE, &data, 1);
    }
 #endif
 }
@@ -450,9 +450,9 @@ static void w25n_programDataLoad(flashDevice_t *fdevice, uint16_t columnAddress,
    }
 #ifdef USE_QUADSPI
    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-       QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+       extDevice_t *dev = fdevice->io.handle.dev;
 
-       quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+       quadSpiTransmitWithAddress1LINE(dev, W25N_INSTRUCTION_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
     }
 #endif
 
@@ -481,9 +481,9 @@ static void w25n_randomProgramDataLoad(flashDevice_t *fdevice, uint16_t columnAd
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+        extDevice_t *dev = fdevice->io.handle.dev;
 
-        quadSpiTransmitWithAddress1LINE(quadSpi, W25N_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
+        quadSpiTransmitWithAddress1LINE(dev, W25N_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD, 0, columnAddress, W25N_STATUS_COLUMN_ADDRESS_SIZE, data, length);
      }
 #endif
 
@@ -533,11 +533,11 @@ If pageProgramContinue observes the page boundary, then do nothing(?).
 
 static uint32_t programStartAddress;
 static uint32_t programLoadAddress;
-bool bufferDirty = false;
+static bool bufferDirty = false;
 
 // Called in ISR context
 // Check if the status was busy and if so repeat the poll
-static busStatus_e w25n_callbackReady(uint32_t arg)
+static busStatus_e w25n_callbackReady(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
     extDevice_t *dev = fdevice->io.handle.dev;
@@ -555,9 +555,9 @@ static busStatus_e w25n_callbackReady(uint32_t arg)
 }
 
 #ifdef USE_QUADSPI
-bool isProgramming = false;
+static bool isProgramming = false;
 
-static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
 
@@ -627,7 +627,7 @@ static void w25n_pageProgramFinish(flashDevice_t *fdevice)
     }
 }
 #else
-static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uint32_t length))
+static void w25n_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
     fdevice->callback = callback;
     fdevice->currentWriteAddress = address;
@@ -638,7 +638,7 @@ static uint32_t currentPage = UINT32_MAX;
 
 // Called in ISR context
 // A write enable has just been issued
-static busStatus_e w25n_callbackWriteEnable(uint32_t arg)
+static busStatus_e w25n_callbackWriteEnable(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
@@ -650,14 +650,14 @@ static busStatus_e w25n_callbackWriteEnable(uint32_t arg)
 
 // Called in ISR context
 // Write operation has just completed
-static busStatus_e w25n_callbackWriteComplete(uint32_t arg)
+static busStatus_e w25n_callbackWriteComplete(uintptr_t arg)
 {
     flashDevice_t *fdevice = (flashDevice_t *)arg;
 
-    fdevice->currentWriteAddress += fdevice->callbackArg;
+    fdevice->currentWriteAddress += fdevice->bytesWritten;
     // Call transfer completion callback
     if (fdevice->callback) {
-        fdevice->callback(fdevice->callbackArg);
+        fdevice->callback(fdevice->bytesWritten);
     }
 
     return BUS_READY;
@@ -758,7 +758,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         programSegment++;
     }
 
-    fdevice->callbackArg = bufferSizes[0];
+    fdevice->bytesWritten = bufferSizes[0];
 
     spiSequence(fdevice->io.handle.dev, programSegment);
 
@@ -768,7 +768,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         spiWait(fdevice->io.handle.dev);
     }
 
-    return fdevice->callbackArg;
+    return fdevice->bytesWritten;
 }
 
 static void w25n_pageProgramFinish(flashDevice_t *fdevice)
@@ -793,7 +793,7 @@ static void w25n_pageProgramFinish(flashDevice_t *fdevice)
  * break this operation up into one beginProgram call, one or more continueProgram calls, and one finishProgram call.
  */
 
-static void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uint32_t length))
+static void w25n_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
     w25n_pageProgramBegin(fdevice, address, callback);
     w25n_pageProgramContinue(fdevice, &data, &length, 1);
@@ -842,9 +842,14 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     uint32_t targetPage = W25N_LINEAR_TO_PAGE(address);
 
     // As data is buffered before being written a flush must be performed before attempting a read
+    bool was_dirty = bufferDirty;
     w25n_flush(fdevice);
 
-    if (currentPage != targetPage) {
+    bool page_change = (currentPage != targetPage);
+
+    if (was_dirty || page_change) {
+        // if the buffer was dirty, we re-read the freshly written data, including the results of any write failures
+
         if (!w25n_waitForReady(fdevice)) {
             return 0;
         }
@@ -885,7 +890,7 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
         busSegment_t segments[] = {
                 {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, w25n_callbackReady},
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
-                {.u.buffers = {NULL, buffer}, length, true, NULL},
+                {.u.buffers = {NULL, buffer}, transferLength, true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
         };
 
@@ -896,10 +901,10 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+        extDevice_t *dev = fdevice->io.handle.dev;
 
-        //quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
-        quadSpiReceiveWithAddress4LINES(quadSpi, W25N_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        //quadSpiReceiveWithAddress1LINE(dev, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, transferLength);
+        quadSpiReceiveWithAddress4LINES(dev, W25N_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, transferLength);
     }
 #endif
 
@@ -918,6 +923,8 @@ static int w25n_readBytes(flashDevice_t *fdevice, uint32_t address, uint8_t *buf
     case 0: // Successful read, no ECC correction
         break;
     case 1: // Successful read with ECC correction
+        w25n_addError(address, eccCode);
+        break;
     case 2: // Uncorrectable ECC in a single page
     case 3: // Uncorrectable ECC in multiple pages
         w25n_addError(address, eccCode);
@@ -937,7 +944,7 @@ LOCAL_UNUSED_FUNCTION static int w25n_readExtensionBytes(flashDevice_t *fdevice,
 
     w25n_performCommandWithPageAddress(&fdevice->io, W25N_INSTRUCTION_PAGE_DATA_READ, W25N_LINEAR_TO_PAGE(address));
 
-    uint32_t column = 2048;
+    uint32_t column = W25N_PAGE_SIZE;
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
@@ -965,9 +972,9 @@ LOCAL_UNUSED_FUNCTION static int w25n_readExtensionBytes(flashDevice_t *fdevice,
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+        extDevice_t *dev = fdevice->io.handle.dev;
 
-        quadSpiReceiveWithAddress1LINE(quadSpi, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
+        quadSpiReceiveWithAddress1LINE(dev, W25N_INSTRUCTION_READ_DATA, 8, column, W25N_STATUS_COLUMN_ADDRESS_SIZE, buffer, length);
     }
 #endif
 
@@ -1010,7 +1017,7 @@ typedef volatile struct cb_context_s {
 
 // Called in ISR context
 // Read of BBLUT entry has just completed
-static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
+static busStatus_e w25n_readBBLUTCallback(uintptr_t arg)
 {
     cb_context_t *cb_context = (cb_context_t *)arg;
     flashDevice_t *fdevice = cb_context->fdevice;
@@ -1029,11 +1036,10 @@ static busStatus_e w25n_readBBLUTCallback(uint32_t arg)
 
 LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
 {
-    cb_context_t cb_context;
-    uint8_t in[4];
+    UNUSED(bblut);
+    UNUSED(lutsize);
 
-    cb_context.fdevice = fdevice;
-    fdevice->callbackArg = (uint32_t)&cb_context;
+    uint8_t in[4];
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         extDevice_t *dev = fdevice->io.handle.dev;
@@ -1042,10 +1048,6 @@ LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t
 
         cmd[0] = W25N_INSTRUCTION_READ_BBM_LUT;
         cmd[1] = 0;
-
-        cb_context.bblut = &bblut[0];
-        cb_context.lutsize = lutsize;
-        cb_context.lutindex = 0;
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
@@ -1060,13 +1062,13 @@ LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+        extDevice_t *dev = fdevice->io.handle.dev;
 
         // Note: Using HAL QuadSPI there doesn't appear to be a way to send 2 bytes, then blocks of 4 bytes, while keeping the CS line LOW
         // thus, we have to read the entire BBLUT in one go and process the result.
 
         uint8_t bblutBuffer[W25N_BBLUT_TABLE_ENTRY_COUNT * W25N_BBLUT_TABLE_ENTRY_SIZE];
-        quadSpiReceive1LINE(quadSpi, W25N_INSTRUCTION_READ_BBM_LUT, 8, bblutBuffer, sizeof(bblutBuffer));
+        quadSpiReceive1LINE(dev, W25N_INSTRUCTION_READ_BBM_LUT, 8, bblutBuffer, sizeof(bblutBuffer));
 
         for (int i = 0, offset = 0 ; i < lutsize ; i++, offset += 4) {
             if (i < W25N_BBLUT_TABLE_ENTRY_COUNT) {
@@ -1102,10 +1104,10 @@ LOCAL_UNUSED_FUNCTION static void w25n_writeBBLUT(flashDevice_t *fdevice, uint16
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        QUADSPI_TypeDef *quadSpi = fdevice->io.handle.quadSpi;
+        extDevice_t *dev = fdevice->io.handle.dev;
 
         uint8_t data[4] = { lba >> 8, lba, pba >> 8, pba };
-        quadSpiInstructionWithData1LINE(quadSpi, W25N_INSTRUCTION_BB_MANAGEMENT, 0, data, sizeof(data));
+        quadSpiInstructionWithData1LINE(dev, W25N_INSTRUCTION_BB_MANAGEMENT, 0, data, sizeof(data));
     }
 #endif
 

@@ -23,6 +23,7 @@
 #include "platform.h"
 
 #include "drivers/io_types.h"
+#include "drivers/bus_i2c.h"  // for i2cDevice_e
 
 #if PLATFORM_TRAIT_RCC
 #include "platform/rcc_types.h"
@@ -31,7 +32,7 @@
 #define I2C_TIMEOUT_US          10000
 #define I2C_TIMEOUT_SYS_TICKS   (I2C_TIMEOUT_US / 1000)
 
-#define I2C_PIN_SEL_MAX 4
+#define I2C_PIN_SEL_MAX 8
 
 typedef struct i2cPinDef_s {
     ioTag_t ioTag;
@@ -47,7 +48,7 @@ typedef struct i2cPinDef_s {
 #endif
 
 typedef struct i2cHardware_s {
-    I2CDevice device;
+    i2cDevice_e device;
     I2C_TypeDef *reg;
     i2cPinDef_t sclPins[I2C_PIN_SEL_MAX];
     i2cPinDef_t sdaPins[I2C_PIN_SEL_MAX];

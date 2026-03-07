@@ -168,6 +168,9 @@ void icm20689GyroInit(gyroDev_t *gyro)
     spiWriteReg(dev, MPU_RA_INT_PIN_CFG, ICM20689_INT_ANYRD_2CLEAR);
 
     spiWriteReg(dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+
+    gyro->tempScale = 0.003f;
+    gyro->tempZero = 25.0f;
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

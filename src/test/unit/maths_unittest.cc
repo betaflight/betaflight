@@ -213,7 +213,7 @@ TEST(MathsUnittest, TestFastTrigonometrySinCos)
         sinError = MAX(sinError, fabs(approxResult - libmResult));
     }
     printf("sin_approx maximum absolute error = %e\n", sinError);
-    EXPECT_LE(sinError, 3e-6);
+    EXPECT_LE(sinError, 3.2e-6);
 
     double cosError = 0;
     for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {

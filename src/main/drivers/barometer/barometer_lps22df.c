@@ -95,7 +95,7 @@
 #define LPS22DF_CTRL_REG1_ODR_75HZ                      6
 #define LPS22DF_CTRL_REG1_ODR_100HZ                     7
 #define LPS22DF_CTRL_REG1_ODR_200HZ                     8
-#define LPS22DF_CTRL_REG1_AVG_MASK                      0x03
+#define LPS22DF_CTRL_REG1_AVG_MASK                      0x07
 #define LPS22DF_CTRL_REG1_AVG_SHIFT                     0
 #define LPS22DF_CTRL_REG1_AVG_4                         0
 #define LPS22DF_CTRL_REG1_AVG_8                         1
@@ -207,6 +207,9 @@
 
 #define LPS22DF_I2C_ADDR              0x5D
 
+// 10ms timeout for reset response
+#define LPS22DF_RESET_TIMEOUT  10
+
 static uint8_t lps22df_chip_id = 0;
 
 // uncompensated pressure and temperature
@@ -282,11 +285,28 @@ bool lps22dfDetect(baroDev_t *baro)
     // Reset the device
     busWriteRegister(dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_SWRESET);
 
-    // Enable one-shot ODR and averaging at 16
-    busWriteRegister(dev, LPS22DF_CTRL_REG1, LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_ODR_ONE_SHOT,
+    // Wait for the device to be ready
+    uint8_t lps22df_chip_swreset = 0;
+    const timeMs_t pollStart = millis();
+
+    do {
+        busReadRegisterBuffer(dev, LPS22DF_CTRL_REG2, &lps22df_chip_swreset, 1);
+
+        if (cmpTimeMs(millis(), pollStart) > LPS22DF_RESET_TIMEOUT) {
+            return false;
+        }
+    } while (lps22df_chip_swreset & LPS22DF_CTRL_REG2_SWRESET);
+
+    // Autoincrement register address when doing block SPI reads and update continuously
+    busWriteRegister(dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_EN_LPFP |
+                          LPS22DF_CTRL_REG2_LFPF_CFG |
+                          LPS22DF_CTRL_REG2_BDU);
+
+    // Set continuous ODR=10 Hz and averaging=512 samples
+    busWriteRegister(dev, LPS22DF_CTRL_REG1, LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_ODR_10HZ,
                                                                  LPS22DF_CTRL_REG1_ODR_MASK,
                                                                  LPS22DF_CTRL_REG1_ODR_SHIFT) |
-                                             LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_AVG_16,
+                                             LSM6DSV_ENCODE_BITS(LPS22DF_CTRL_REG1_AVG_512,
                                                                  LPS22DF_CTRL_REG1_AVG_MASK,
                                                                  LPS22DF_CTRL_REG1_AVG_SHIFT));
 
@@ -330,9 +350,9 @@ static bool lps22dfGetUT(baroDev_t *baro)
 
 static bool lps22dfStartUP(baroDev_t *baro)
 {
-    // start measurement
-    // Trigger one-shot enable block data update to ensure LSB/MSB are coherent
-    return busWriteRegister(&baro->dev, LPS22DF_CTRL_REG2, LPS22DF_CTRL_REG2_ONESHOT | LPS22DF_CTRL_REG2_BDU);
+    UNUSED(baro);
+    // dummy
+    return true;
 }
 
 static bool lps22dfReadUP(baroDev_t *baro)

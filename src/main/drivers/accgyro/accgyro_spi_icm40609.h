@@ -22,7 +22,7 @@
 #pragma once
 
 #include "drivers/bus.h"
- 
+
 void icm40609AccInit(accDev_t *acc);
 void icm40609GyroInit(gyroDev_t *gyro);
 

@@ -59,6 +59,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
+    #include "sensors/compass.h"
 
     #include "msp/msp_serial.h"
 
@@ -69,6 +70,7 @@ extern "C" {
     rssiSource_e rssiSource;
     bool airMode;
     baro_t baro;
+    mag_t mag;
 
     uint16_t testBatteryVoltage = 0;
     int32_t testAmperage = 0;
@@ -379,11 +381,11 @@ uint8_t calculateBatteryPercentageRemaining(void)
 
 int32_t getEstimatedAltitudeCm(void)
 {
-	return gpsSol.llh.altCm;    // function returns cm not m.
+    return gpsSol.llh.altCm;    // function returns cm not m.
 }
 
 int16_t getEstimatedVario(void) { return 0; }
-    
+
 int32_t getMAhDrawn(void)
 {
   return testmAhDrawn;

@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
 #include <string.h>
 #include "drivers/exti.h"
 #include "common/utils.h"
@@ -35,6 +36,10 @@ static uint32_t extiEventMask[DEFIO_USED_COUNT];
 
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config, extiTrigger_t trigger)
 {
+    if (!io) {
+        return;
+    }
+
     uint32_t gpio = IO_Pin(io);
 
     UNUSED(irqPriority); // Just stick with default GPIO irq priority for now
@@ -60,6 +65,17 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
         extiEventMask[gpio] = GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL;
         break;
     }
+}
+
+void EXTIRelease(IO_t io)
+{
+    if (!io) {
+        return;
+    }
+
+    EXTIDisable(io);
+    extiChannelRec_t *rec = &extiChannelRecs[IO_Pin(io)];
+    rec->handler = NULL;
 }
 
 static void EXTI_IRQHandler(uint gpio, uint32_t event_mask)
@@ -92,10 +108,18 @@ void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
 
 void EXTIEnable(IO_t io)
 {
+    if (!io) {
+        return;
+    }
+
     gpio_set_irq_enabled(IO_Pin(io), extiEventMask[IO_Pin(io)], true);
 }
 
 void EXTIDisable(IO_t io)
 {
+    if (!io) {
+        return;
+    }
+
     gpio_set_irq_enabled(IO_Pin(io), 0, false);
 }

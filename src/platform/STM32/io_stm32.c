@@ -22,6 +22,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "platform/rcc.h"
 
 #include "common/utils.h"
@@ -59,7 +60,7 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB4(GPIOF) },
     { RCC_AHB4(GPIOG) },
     { RCC_AHB4(GPIOH) },
-#if !(defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx))
+#if !(defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx))
     { RCC_AHB4(GPIOI) },
 #endif
 };

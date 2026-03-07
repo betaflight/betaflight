@@ -29,7 +29,6 @@
 #include "pg/pg_ids.h"
 
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
 #include "drivers/io.h"
 
 #include "pg/adc.h"
@@ -38,68 +37,28 @@ PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
 
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
-    adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
-    adcConfig->dmaopt[ADCDEV_1] = ADC1_DMA_OPT;
-// These conditionals need to match the ones used in 'src/main/drivers/adc.h'.
-#if defined(ADC2)
-    adcConfig->dmaopt[ADCDEV_2] = ADC2_DMA_OPT;
-#endif
-#if defined(ADC3)
-    adcConfig->dmaopt[ADCDEV_3] = ADC3_DMA_OPT;
-#endif
-#if defined(ADC4)
-    adcConfig->dmaopt[ADCDEV_4] = ADC4_DMA_OPT;
-#endif
-#if defined(ADC5)
-    adcConfig->dmaopt[ADCDEV_5] = ADC5_DMA_OPT;
-#endif
-
 #ifdef ADC_VBAT_PIN
     adcConfig->vbat.enabled = true;
     adcConfig->vbat.ioTag = IO_TAG(ADC_VBAT_PIN);
-#if defined(STM32H7)
-#ifdef ADC_VBAT_INSTANCE
-    adcConfig->vbat.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_VBAT_INSTANCE));
-#else
-    adcConfig->vbat.device = adcConfig->device;
-#endif
-#endif
 #endif
 
 #ifdef ADC_EXTERNAL1_PIN
     adcConfig->external1.enabled = true;
     adcConfig->external1.ioTag = IO_TAG(ADC_EXTERNAL1_PIN);
-#if defined(STM32H7)
-#ifdef ADC_EXTERNAL1_INSTANCE
-    adcConfig->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_EXTERNAL1_INSTANCE));
-#else
-    adcConfig->external1.device = adcConfig->device;
-#endif
-#endif
 #endif
 
 #ifdef ADC_CURR_PIN
     adcConfig->current.enabled = true;
     adcConfig->current.ioTag = IO_TAG(ADC_CURR_PIN);
-#if defined(STM32H7)
-#ifdef ADC_CURR_INSTANCE
-    adcConfig->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_CURR_INSTANCE));
-#else
-    adcConfig->current.device = adcConfig->device;
-#endif
-#endif
 #endif
 
 #ifdef ADC_RSSI_PIN
     adcConfig->rssi.enabled = true;
     adcConfig->rssi.ioTag = IO_TAG(ADC_RSSI_PIN);
-#if defined(STM32H7)
-#ifdef ADC_RSSI_INSTANCE
-    adcConfig->rssi.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_RSSI_INSTANCE));
-#else
-    adcConfig->rssi.device = adcConfig->device;
 #endif
-#endif
+
+#if PLATFORM_TRAIT_ADC_DEVICE
+    platform_pgResetFn_adcConfig(adcConfig);
 #endif
 
     adcConfig->vrefIntCalibration = 0;

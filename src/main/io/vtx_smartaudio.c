@@ -498,6 +498,7 @@ static void saSendFrame(uint8_t *buf, int len)
             prepend00 = vtxSettingsConfig()->softserialAlt;
             break;
         case SERIALTYPE_UART:
+        case SERIALTYPE_PIOUART:
         case SERIALTYPE_LPUART: // decide HW uarts by MCU type
 #ifdef AT32F4
             prepend00 = false;

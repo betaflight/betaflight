@@ -27,6 +27,18 @@
 #define CFG_TUD_CDC_RX_BUFSIZE  256
 #define CFG_TUD_CDC_TX_BUFSIZE  256
 
+// Enable Mass Storage Class for TinyUSB on PICO platform
+#ifndef CFG_TUD_MSC
+#define CFG_TUD_MSC             1
+#endif
+// Reasonable defaults; TinyUSB will fall back if unspecified
+#ifndef CFG_TUD_MSC_MAXLUN
+#define CFG_TUD_MSC_MAXLUN      1
+#endif
+#ifndef CFG_TUD_MSC_EP_BUFSIZE
+#define CFG_TUD_MSC_EP_BUFSIZE  512
+#endif
+
 #define TUP_DCD_EDPT_ISO_ALLOC
 #define TUP_DCD_ENDPOINT_MAX    16
 

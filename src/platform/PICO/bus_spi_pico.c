@@ -138,7 +138,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
             continue;
         }
 
-        SPIDevice device = hw->device;
+        const spiDevice_e device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {
@@ -170,7 +170,7 @@ static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 }
 
 /*
-  
+
 enum spi_cpha_t { SPI_CPHA_0 = 0, SPI_CPHA_1 = 1 }
 Enumeration of SPI CPHA (clock phase) values.
 
@@ -206,9 +206,7 @@ Must be SPI_MSB_FIRST, no other values supported on the PL022
 
 
 */
-
-
-void spiInitDevice(SPIDevice device)
+void spiInitDevice(spiDevice_e device)
 {
     bprintf("pico spiInitDevice %d",device);
     const spiDevice_t *spi = &spiDevice[device];
@@ -227,6 +225,7 @@ void spiInitDevice(SPIDevice device)
     gpio_set_function(IO_PINBYTAG(spi->miso), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->mosi), GPIO_FUNC_SPI);
     gpio_set_function(IO_PINBYTAG(spi->sck), GPIO_FUNC_SPI);
+    gpio_set_pulls(IO_PINBYTAG(spi->miso), true, false); // Pullup MISO
     bprintf("spi initialised device %p [sck %d mosi %d miso %d]",
             spi->dev, IO_PINBYTAG(spi->sck), IO_PINBYTAG(spi->mosi), IO_PINBYTAG(spi->miso));
 }
@@ -338,7 +337,12 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
         uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
         bytesProcessed = spi_read_blocking(SPI_INST(instance), repeated_tx_data, rxData, len);
     } else {
-        bprintf("\n*** unexpected spiInternalReadWriteBufPolled with no tx, rx");
+        // Just force dummy cycles
+        uint8_t repeated_tx_data = 0xff; // cf. dummyTxByte in stm bus_spi_ll.c and for DMA here
+        uint8_t dropped_rx_data;
+        for (int i = 0; i < len; i++) {
+            bytesProcessed += spi_read_blocking(SPI_INST(instance), repeated_tx_data, &dropped_rx_data, 1);
+        }
     }
 
     return bytesProcessed == len;
@@ -404,7 +408,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     dma_start_channel_mask(channelMask);
 #endif
 }
-    
+
 // DMA transfer setup and start
 void spiSequenceStart(const extDevice_t *dev)
 {
@@ -418,7 +422,7 @@ void spiSequenceStart(const extDevice_t *dev)
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
     bus->initSegment = true;
-    
+
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
         spiSetClockFromSpeed(SPI_INST(instance), dev->busType_u.spi.speed);

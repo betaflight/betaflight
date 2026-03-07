@@ -24,7 +24,9 @@
 
 #include "platform.h"
 
+#include "common/time.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -35,7 +37,9 @@
 #include "hardware/clocks.h"
 #include "hardware/timer.h"
 #include "hardware/watchdog.h"
+#include "pico/bootrom.h"
 #include "pico/unique_id.h"
+// flash.h used by PICO QSPI helpers is included where needed in PICO bus/flash code
 
 ///////////////////////////////////////////////////
 
@@ -60,7 +64,12 @@ void systemReset(void)
 {
     bprintf("*** PICO systemReset ***");
     //TODO: check
+
 #if 1
+#ifdef USE_MULTICORE
+    // Reset core 1
+    multicore_reset_core1();
+#endif
     watchdog_reboot(0, 0, 0);
 #else
     // this might be fine
@@ -107,6 +116,7 @@ void systemInit(void)
     pico_get_unique_board_id(&id);
     memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
 
+
 #ifdef USE_MULTICORE
     multicoreStart();
 #endif // USE_MULTICORE
@@ -114,23 +124,33 @@ void systemInit(void)
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
-    UNUSED(requestType);
-    //TODO: implement
+    switch (requestType) {
+    case BOOTLOADER_REQUEST_ROM:
+        rom_reset_usb_boot_extra(-1, 0, false);
+        break;
+    case BOOTLOADER_REQUEST_FLASH:
+    default:
+        systemReset();
+    }
 }
 
+// We can make use of time_us_64 if BF defines USE_64BIT_TIME in future, but that will require some changes
+STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
+STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
+
 // Return system uptime in milliseconds (rollover in 49 days)
-uint32_t millis(void)
+timeMs_t millis(void)
 {
-    return (uint32_t)(time_us_64() / 1000);
+    return (timeMs_t)(time_us_64() / 1000);
 }
 
 // Return system uptime in micros (rollover in 71 mins)
-uint32_t micros(void)
+timeUs_t micros(void)
 {
     return time_us_32();
 }
 
-uint32_t microsISR(void)
+timeUs_t microsISR(void)
 {
     return micros();
 }

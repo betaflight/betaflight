@@ -276,7 +276,7 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialTestResetBuffers()
 {
-    serialReadStub = { {0} }; 
+    serialReadStub = { {0} };
     serialWriteStub = { {0} };
 }
 

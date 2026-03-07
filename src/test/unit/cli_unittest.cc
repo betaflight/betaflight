@@ -61,6 +61,7 @@ extern "C" {
     #include "sensors/gyro.h"
 
     void cliSet(const char *cmdName, char *cmdline);
+    void cliHelp(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
@@ -75,6 +76,7 @@ extern "C" {
     const char * const buildKey = NULL;
     const char * const releaseName = NULL;
 
+    gyro_t gyro;
 
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
@@ -106,6 +108,8 @@ extern "C" {
 
 const bool PRINT_TEST_DATA = false;
 
+// Verifies that cliSet correctly parses and stores an array-type setting
+// with mixed positive and negative integer values.
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
@@ -130,6 +134,8 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_EQ(  1, data[2]);
 }
 
+// Verifies that cliSet correctly writes a string value into a string-type setting
+// without any special flags (e.g. write-once protection).
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
     char *str = (char *)"str_unit_test    =   SAMPLE";
@@ -158,6 +164,8 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
     EXPECT_EQ(0,   data[6]);
 }
 
+// Verifies that a write-once string setting ignores subsequent writes after
+// the initial value is set, preserving the original value on re-assignment.
 TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
     char *str1 = (char *)"wos_unit_test    =   SAMPLE";
@@ -402,7 +410,22 @@ void delay(uint32_t) {}
 displayPort_t *osdGetDisplayPort(osdDisplayPortDevice_e *) { return NULL; }
 mcuTypeId_e getMcuTypeId(void) { return MCU_TYPE_UNKNOWN; }
 const char *getMcuTypeName(void) { return targetName; }
-uint16_t getCurrentRxRateHz(void) { return 0; }
+float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
+const uint16_t *getBuildOptions(unsigned *count) { *count = 0; return NULL; }
+}
+
+// Verifies that cliHelp does not dereference NULL when searching commands whose
+// description field is NULL (e.g. flash_read, flash_write, play_sound).
+// Prior to the fix, strcasestr(NULL, cmdline) was called for these entries,
+// which is undefined behaviour and causes a SIGSEGV on hosted targets.
+TEST(CLIUnittest, TestCliHelpNullDescription)
+{
+    // "address" appears in the *args* of flash_read/flash_write but not in their names,
+    // and their descriptions are NULL — this is the exact case that triggered the UB.
+    cliHelp("help", (char *)"address");
+
+    // If we reach here without a crash/SIGSEGV the null guard is working.
+    SUCCEED();
 }

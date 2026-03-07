@@ -21,7 +21,7 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "SH74"
+#define TARGET_BOARD_IDENTIFIER "H743"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
@@ -51,6 +51,8 @@
 #define USE_SPI_DEVICE_4
 #define USE_SPI_DEVICE_5
 #define USE_SPI_DEVICE_6
+
+#define QUADSPIDEV_COUNT 1
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

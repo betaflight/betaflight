@@ -73,8 +73,8 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Stream ## s ## _IRQn, \
     .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
     }
 
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) FAST_IRQ_HANDLER void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
@@ -156,8 +156,8 @@ typedef enum {
     .flagsShift = f, \
     .irqN = d ## _Channel ## c ## _IRQn, \
     .userParam = 0, \
-    .owner.owner = 0, \
-    .owner.resourceIndex = 0 \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
     }
 
 #define DMA_HANDLER_CODE

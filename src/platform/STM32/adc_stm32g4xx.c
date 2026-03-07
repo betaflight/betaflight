@@ -38,7 +38,7 @@
 #include "drivers/sensor.h"
 
 #include "drivers/adc.h"
-#include "drivers/adc_impl.h"
+#include "platform/adc_impl.h"
 
 #include "pg/adc.h"
 
@@ -87,7 +87,7 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .ADCx = ADC4,
         .rccADC = RCC_AHB2(ADC345),
 #if !defined(USE_DMA_SPEC)
-        .dmaResource = (dmaResource_t *)ADC3_DMA_CHANNEL,
+        .dmaResource = (dmaResource_t *)ADC4_DMA_CHANNEL,
         .channel = DMA_REQUEST_ADC4,
 #endif
     },
@@ -176,7 +176,7 @@ const adcTagMap_t adcTagMap[] = {
 
 // An array to convert rank number to encoded rank code for HAL.
 // Note that the table only list possible values, as rank for any single conversion
-// will not exceed maximum number of input sources (ADC_CHANNEL_COUNT).
+// will not exceed maximum number of input sources (ADC_SOURCE_COUNT).
 static uint32_t adcRegularRank[] = {
     0,                     // ranks is counted by 1-origin; dodge zero.
     ADC_REGULAR_RANK_1,
@@ -254,7 +254,7 @@ static void adcInitCalibrationValues(void)
 // Need this separate from the main adcValue[] array, because channels are numbered
 // by ADC instance order that is different from ADC_xxx numbering.
 
-volatile DMA_RAM_R uint16_t adcConversionBuffer[ADC_CHANNEL_COUNT] __attribute__((aligned(32)));
+volatile DMA_RAM_R uint16_t adcConversionBuffer[ADC_SOURCE_COUNT] __attribute__((aligned(32)));
 
 void adcInit(const adcConfig_t *config)
 {
@@ -281,17 +281,22 @@ void adcInit(const adcConfig_t *config)
     adcInitCalibrationValues();
 #endif
 
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_SOURCE_COUNT; i++) {
         int map;
         int dev;
 
-        if (i == ADC_TEMPSENSOR) {
+        switch(i) {
+#ifdef USE_ADC_INTERNAL
+        case ADC_TEMPSENSOR:
             map = ADC_TAG_MAP_TEMPSENSOR;
             dev = ADCDEV_1;
-        } else if (i == ADC_VREFINT) {
+            break;
+        case ADC_VREFINT:
             map = ADC_TAG_MAP_VREFINT;
             dev = ADCDEV_1;
-        } else {
+            break;
+#endif
+        default:
             if (!adcOperatingConfig[i].tag) {
                 continue;
             }
@@ -305,14 +310,17 @@ void adcInit(const adcConfig_t *config)
             // Find an ADC device that can handle this input pin
 
             for (dev = 0; dev < ADCDEV_COUNT; dev++) {
-                if (!adcDevice[dev].ADCx
-#ifndef USE_DMA_SPEC
-                     || !adcDevice[dev].dmaResource
-#endif
-                   ) {
+                if (!adcDevice[dev].ADCx) {
                     // Instance not activated
                     continue;
                 }
+
+#ifndef USE_DMA_SPEC
+                if (!adcDevice[dev].dmaResource) {
+                    continue;
+                }
+#endif
+
                 if (adcTagMap[map].devices & (1 << dev)) {
                     // Found an activated ADC instance for this input pin
                     break;
@@ -380,7 +388,7 @@ void adcInit(const adcConfig_t *config)
 
         int rank = 1;
 
-        for (int adcChan = 0; adcChan < ADC_CHANNEL_COUNT; adcChan++) {
+        for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++) {
 
             if (!adcOperatingConfig[adcChan].enabled) {
                 continue;
@@ -408,11 +416,16 @@ void adcInit(const adcConfig_t *config)
 
         // Configure DMA for this ADC peripheral
 
+        dmaIdentifier_e dmaIdentifier;
 #ifdef USE_DMA_SPEC
         const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
 
-        dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaSpec || !dmaSpec->ref) {
+            return;
+        }
+
+        dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
+        if (!dmaIdentifier || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 
@@ -484,8 +497,7 @@ void adcGetChannelValues(void)
 {
     // Transfer values in conversion buffer into adcValues[]
     // Cache coherency should be maintained by MPU facility
-
-    for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
+    for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
         }
@@ -504,28 +516,29 @@ void adcInternalStartConversion(void)
     return;
 }
 
-static uint16_t adcInternalRead(int channel)
+static int adcPrivateVref = -1;
+static int adcPrivateTemp = -1;
+
+uint16_t adcInternalRead(adcSource_e source)
 {
-    int dmaIndex = adcOperatingConfig[channel].dmaIndex;
+    const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
+    if (dmaIndex >= ADC_SOURCE_COUNT) {
+        return 0;
+    }
 
-    return adcConversionBuffer[dmaIndex];
-}
-
-int adcPrivateVref = -1;
-int adcPrivateTemp = -1;
-
-uint16_t adcInternalReadVrefint(void)
-{
-    uint16_t value = adcInternalRead(ADC_VREFINT);
-adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
-    return value;
-}
-
-uint16_t adcInternalReadTempsensor(void)
-{
-    uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
-    return value;
+    uint16_t value = adcConversionBuffer[dmaIndex];
+    switch (source) {
+    case ADC_VREFINT:
+        adcPrivateVref = __HAL_ADC_CALC_VREFANALOG_VOLTAGE(value, ADC_RESOLUTION_12B);
+        return value;
+    case ADC_TEMPSENSOR:
+        if (adcPrivateVref >= 0) {
+            adcPrivateTemp = __HAL_ADC_CALC_TEMPERATURE(adcPrivateVref, value, ADC_RESOLUTION_12B);
+        }
+        return value;
+    default:
+        return 0;
+    }
 }
 #endif // USE_ADC_INTERNAL
 #endif // USE_ADC

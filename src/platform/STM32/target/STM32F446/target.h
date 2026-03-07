@@ -22,7 +22,7 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER         "S446"
+#define TARGET_BOARD_IDENTIFIER "F446"
 #endif
 
 #ifndef USBD_PRODUCT_STRING

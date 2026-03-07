@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#if defined(USE_I2C) && !defined(SOFT_I2C)
+#if defined(USE_I2C) && !defined(USE_SOFT_I2C)
 
 #include "drivers/io.h"
 #include "drivers/nvic.h"
@@ -48,14 +48,16 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_1,
         .reg = I2C1,
         .sclPins = {
-            I2CPINDEF(PB6, GPIO_MUX_4),
-            I2CPINDEF(PB8, GPIO_MUX_4),
-            I2CPINDEF(PC6, GPIO_MUX_4),
+            I2CPINDEF(PA9,  GPIO_MUX_8),
+            I2CPINDEF(PB6,  GPIO_MUX_4),
+            I2CPINDEF(PB8,  GPIO_MUX_4),
+            I2CPINDEF(PC6,  GPIO_MUX_4),
         },
         .sdaPins = {
-            I2CPINDEF(PB7, GPIO_MUX_4),
-            I2CPINDEF(PB9, GPIO_MUX_4),
-            I2CPINDEF(PC7, GPIO_MUX_4),
+            I2CPINDEF(PA10, GPIO_MUX_8),
+            I2CPINDEF(PB7,  GPIO_MUX_4),
+            I2CPINDEF(PB9,  GPIO_MUX_4),
+            I2CPINDEF(PC7,  GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EVT_IRQn,
@@ -67,15 +69,20 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_2,
         .reg = I2C2,
         .sclPins = {
-            I2CPINDEF(PA0,  GPIO_MUX_4),
+            I2CPINDEF(PA0,  GPIO_MUX_4),			
+            I2CPINDEF(PA11, GPIO_MUX_4),
             I2CPINDEF(PB10, GPIO_MUX_4),
             I2CPINDEF(PD12, GPIO_MUX_4),
             I2CPINDEF(PH2,  GPIO_MUX_4),
         },
         .sdaPins = {
             I2CPINDEF(PA1,  GPIO_MUX_4),
+            I2CPINDEF(PA12, GPIO_MUX_4),
             I2CPINDEF(PB3,  GPIO_MUX_4),
+            I2CPINDEF(PB9,  GPIO_MUX_7),
             I2CPINDEF(PB11, GPIO_MUX_4),
+            I2CPINDEF(PC12, GPIO_MUX_4),
+            I2CPINDEF(PD13, GPIO_MUX_4),
             I2CPINDEF(PH3,  GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C2),
@@ -88,11 +95,18 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .device = I2CDEV_3,
         .reg = I2C3,
         .sclPins = {
-            I2CPINDEF(PC0, GPIO_MUX_4),
+            I2CPINDEF(PA8,  GPIO_MUX_4),
+            I2CPINDEF(PB13, GPIO_MUX_7),
+            I2CPINDEF(PB15, GPIO_MUX_4),
+            I2CPINDEF(PC0,  GPIO_MUX_4),
+            I2CPINDEF(PD14, GPIO_MUX_4),
         },
         .sdaPins = {
-            I2CPINDEF(PC1, GPIO_MUX_4),
-        I2CPINDEF(PB14, GPIO_MUX_4),
+            I2CPINDEF(PB4,  GPIO_MUX_4),
+            I2CPINDEF(PB14, GPIO_MUX_4),
+            I2CPINDEF(PC1,  GPIO_MUX_4),
+            I2CPINDEF(PC9,  GPIO_MUX_4),
+            I2CPINDEF(PD15, GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EVT_IRQn,
@@ -103,7 +117,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-void i2cInit(I2CDevice device)
+void i2cInit(i2cDevice_e device)
 {
     if (device == I2CINVALID) {
         return;

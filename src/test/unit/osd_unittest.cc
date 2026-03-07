@@ -1199,7 +1199,7 @@ TEST_F(OsdTest, TestGpsElements)
 
     sensorsSet(SENSOR_GPS);
     osdAnalyzeActiveElements();
-    
+
     // when
     simulationGpsHealthy = false;
     gpsSol.numSat = 0;

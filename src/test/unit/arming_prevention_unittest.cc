@@ -1050,6 +1050,11 @@ TEST(ArmingPreventionTest, Paralyze)
 
 // STUBS
 extern "C" {
+    void sincosf_approx(float x, float *out_s, float *out_c) {
+        *out_s = sin_approx(x);
+        *out_c = cos_approx(x);
+    }
+
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
     bool isRxReceivingSignal(void) { return simulationHaveRx; }
@@ -1145,8 +1150,6 @@ extern "C" {
 
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
-    bool crashFlipSuccessful(void) { return false; }
-
     void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
     {
        UNUSED(from);

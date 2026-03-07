@@ -70,7 +70,7 @@ void pgResetFn_pinioBoxConfig(pinioBoxConfig_t *config)
     config->permanentId[1] = PINIO2_BOX;
     config->permanentId[2] = PINIO3_BOX;
     config->permanentId[3] = PINIO4_BOX;
-   // rest is reset to NONE 
+   // rest is reset to NONE
    for (unsigned i = 4; i < PINIO_COUNT; i++) {
        config->permanentId[i] = PERMANENT_ID_NONE;
    }

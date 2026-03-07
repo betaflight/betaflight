@@ -222,17 +222,14 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if (gpsConfig()->provider == GPS_MSP && gpsSerial) {
+    if ((gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
-#endif
-    if (
-#if defined(USE_GPS)
-        gpsConfig()->provider != GPS_MSP && !gpsSerial &&
-#endif
-        true) {
+
+    if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial) {
         featureDisableImmediate(FEATURE_GPS);
     }
+#endif
 
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         // Fix filter settings to handle cases where an older configurator was used that
@@ -408,7 +405,7 @@ static void validateAndFixConfig(void)
     if (systemConfig()->configurationState == CONFIGURATION_STATE_UNCONFIGURED) {
         // enable some compiled-in features by default
         uint32_t autoFeatures =
-            FEATURE_OSD | FEATURE_LED_STRIP;
+            FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP;
 #if defined(USE_SOFTSERIAL)
         // enable softserial if at least one pin is configured
         for (unsigned i = RESOURCE_SOFTSERIAL_OFFSET; i < RESOURCE_SOFTSERIAL_OFFSET + RESOURCE_SOFTSERIAL_COUNT; i++) {
