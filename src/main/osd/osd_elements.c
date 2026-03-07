@@ -1562,9 +1562,10 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
         for (int j = 0; j < barWidth; j++) {
             buff[offset++] = (j < filled) ? '|' : ' ';
         }
-        float numericValue = value / 100.0f;
-        // Debug: show both int and float value
-        offset += tfp_sprintf(buff + offset, "] %d (%.2f)", value, (double)numericValue);
+        // Manual float formatting: show as X.X
+        int intPart = value / 100;
+        int fracPart = (value % 100 + 5) / 10; // Round to nearest tenth
+        offset += tfp_sprintf(buff + offset, "] %d.%d", intPart, fracPart);
         if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
             offset += tfp_sprintf(buff + offset, " | %s: %d", extraLabels[i], (int)extraValues[i]);
         }
