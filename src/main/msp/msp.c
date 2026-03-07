@@ -2673,6 +2673,51 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         }
         break;
 
+    case MSP2_CLI_SETTING_INFO:
+        {
+            const int len = sbufBytesRemaining(src);
+            if (len == 0 || len > 128) {
+                return MSP_RESULT_ERROR;
+            }
+
+            // parse request: name\0<offset_u16>  (offset is optional, defaults to 0)
+            char payload[129];
+            sbufReadData(src, payload, len);
+            payload[len] = '\0';
+
+            // find null terminator within payload to separate name from offset
+            const char *name = payload;
+            uint16_t offset = 0;
+            const void *nul = memchr(payload, '\0', len);
+            const int nameLen = (const char *)nul - payload;
+            const int afterNul = len - nameLen - 1;
+            if (afterNul >= 2) {
+                offset = (uint8_t)payload[nameLen + 1] | ((uint8_t)payload[nameLen + 2] << 8);
+            }
+
+            // reserve space for the total size header
+            const int remaining = sbufBytesRemaining(dst);
+            if (remaining < (int)sizeof(uint16_t)) {
+                return MSP_RESULT_ERROR;
+            }
+            sbufWriteU16(dst, 0); // placeholder, filled below
+
+            // write directly into the sbuf output, windowed by offset
+            int totalLen = 0;
+            const int written = cliGetSettingInfoByName(name, offset, (char *)sbufPtr(dst), sbufBytesRemaining(dst), &totalLen);
+            if (written < 0) {
+                return MSP_RESULT_ERROR;
+            }
+
+            // patch the total size header
+            uint8_t *hdr = sbufPtr(dst) - written - sizeof(uint16_t);
+            hdr[0] = totalLen & 0xFF;
+            hdr[1] = (totalLen >> 8) & 0xFF;
+
+            sbufAdvance(dst, written);
+        }
+        break;
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }

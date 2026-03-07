@@ -4748,6 +4748,160 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
     return written;
 }
 
+// windowed writer: tracks logical position through the full response but only
+// copies bytes that fall within the output window [offset, offset + bufLen)
+typedef struct {
+    char *buf;
+    int bufLen;
+    int offset;
+    int pos;       // logical position in the full response
+    int written;   // bytes actually written to buf
+} settingInfoWriter_t;
+
+static void infoWriterInit(settingInfoWriter_t *w, int offset, char *buf, int bufLen)
+{
+    w->buf = buf;
+    w->bufLen = bufLen;
+    w->offset = offset;
+    w->pos = 0;
+    w->written = 0;
+}
+
+static void infoWriteData(settingInfoWriter_t *w, const char *data, int len)
+{
+    for (int i = 0; i < len; i++) {
+        if (w->pos >= w->offset && w->written < w->bufLen) {
+            w->buf[w->written++] = data[i];
+        }
+        w->pos++;
+    }
+}
+
+static void infoWriteString(settingInfoWriter_t *w, const char *str)
+{
+    infoWriteData(w, str, strlen(str));
+}
+
+static void infoWriteChar(settingInfoWriter_t *w, char c)
+{
+    infoWriteData(w, &c, 1);
+}
+
+int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen, int *totalLen)
+{
+    const uint16_t index = cliGetSettingIndex(name, strlen(name));
+    if (index >= valueTableEntryCount) {
+        return -1;
+    }
+
+    const clivalue_t *val = &valueTable[index];
+    const pgRegistry_t *pg = pgFind(val->pgn);
+    if (!pg) {
+        return -1;
+    }
+
+    settingInfoWriter_t w;
+    infoWriterInit(&w, offset, buf, bufLen);
+
+    // pgn
+    char tmp[64];
+    int n = tfp_sprintf(tmp, "pgn=%u\n", val->pgn);
+    infoWriteData(&w, tmp, n);
+
+    switch (val->type & VALUE_MODE_MASK) {
+    case MODE_DIRECT:
+        switch (val->type & VALUE_TYPE_MASK) {
+        case VAR_UINT32:
+            n = tfp_sprintf(tmp, "type=uint32\nmin=0\nmax=%u\n", val->config.u32Max);
+            break;
+        case VAR_INT32:
+            n = tfp_sprintf(tmp, "type=int32\nmin=%d\nmax=%d\n", -val->config.d32Max, val->config.d32Max);
+            break;
+        case VAR_UINT8:
+            n = tfp_sprintf(tmp, "type=uint8\nmin=%d\nmax=%d\n", val->config.minmaxUnsigned.min, val->config.minmaxUnsigned.max);
+            break;
+        case VAR_INT8:
+            n = tfp_sprintf(tmp, "type=int8\nmin=%d\nmax=%d\n", val->config.minmax.min, val->config.minmax.max);
+            break;
+        case VAR_UINT16:
+            n = tfp_sprintf(tmp, "type=uint16\nmin=%d\nmax=%d\n", val->config.minmaxUnsigned.min, val->config.minmaxUnsigned.max);
+            break;
+        case VAR_INT16:
+            n = tfp_sprintf(tmp, "type=int16\nmin=%d\nmax=%d\n", val->config.minmax.min, val->config.minmax.max);
+            break;
+        default:
+            n = 0;
+            break;
+        }
+        infoWriteData(&w, tmp, n);
+        break;
+    case MODE_LOOKUP: {
+        const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
+        infoWriteString(&w, "type=lookup\nvalues=");
+        bool first = true;
+        for (unsigned i = 0; i < tableEntry->valueCount; i++) {
+            if (tableEntry->values[i]) {
+                if (!first) {
+                    infoWriteChar(&w, ',');
+                }
+                infoWriteString(&w, tableEntry->values[i]);
+                first = false;
+            }
+        }
+        infoWriteChar(&w, '\n');
+        break;
+    }
+    case MODE_BITSET:
+        infoWriteString(&w, "type=bitset\nvalues=OFF,ON\n");
+        break;
+    case MODE_ARRAY:
+        switch (val->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            infoWriteString(&w, "type=uint8[]\n");
+            break;
+        case VAR_INT8:
+            infoWriteString(&w, "type=int8[]\n");
+            break;
+        case VAR_UINT16:
+            infoWriteString(&w, "type=uint16[]\n");
+            break;
+        case VAR_INT16:
+            infoWriteString(&w, "type=int16[]\n");
+            break;
+        case VAR_UINT32:
+            infoWriteString(&w, "type=uint32[]\n");
+            break;
+        case VAR_INT32:
+            infoWriteString(&w, "type=int32[]\n");
+            break;
+        }
+        n = tfp_sprintf(tmp, "length=%d\n", val->config.array.length);
+        infoWriteData(&w, tmp, n);
+        break;
+    case MODE_STRING:
+        n = tfp_sprintf(tmp, "type=string\nminlength=%d\nmaxlength=%d\n",
+            val->config.string.minlength, val->config.string.maxlength);
+        infoWriteData(&w, tmp, n);
+        break;
+    }
+
+    // get default value by temporarily resetting configs
+    pidProfileIndexToUse = getCurrentPidProfileIndex();
+    rateProfileIndexToUse = getCurrentControlRateProfileIndex();
+    backupAndResetConfigs();
+    const int valueOffset = getValueOffset(val);
+    infoWriteString(&w, "default=");
+    char defBuf[128];
+    const int defLen = sprintValuePointer(defBuf, sizeof(defBuf), val, (uint8_t *)pg->address + valueOffset);
+    infoWriteData(&w, defBuf, defLen);
+    restoreConfigs(0);
+    pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
+    rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+    *totalLen = w.pos;
+    return w.written;
+}
+
 bool cliSetSettingByName(const char *cmdline)
 {
     const char *eqptr = strstr(cmdline, "=");
