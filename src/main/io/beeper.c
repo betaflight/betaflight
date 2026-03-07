@@ -248,6 +248,15 @@ static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
     return NULL;
 }
 
+// Returns true when the "USB beeping" option is disabled and we detect
+// a bench/configurator environment (no battery, or USB + active MSP).
+static bool beeperIsMuzzledByUsb(void)
+{
+    return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+        && (getBatteryState() == BATTERY_NOT_PRESENT
+            || (usbCableIsInserted() && mspSerialIsConfiguratorActive()));
+}
+
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
@@ -256,8 +265,7 @@ static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
 void beeper(beeperMode_e mode)
 {
     if (mode == BEEPER_SILENCE
-        || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && getBatteryState() == BATTERY_NOT_PRESENT )
+        || beeperIsMuzzledByUsb()
         || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
         beeperSilence();
         return;
@@ -431,8 +439,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     bool dshotBeaconRequested = false;
 
     if (!areMotorsRunning()
-        && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-             && getBatteryState() == BATTERY_NOT_PRESENT)) {
+        && !beeperIsMuzzledByUsb()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence
