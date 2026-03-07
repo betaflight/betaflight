@@ -1563,7 +1563,8 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
             buff[offset++] = (j < filled) ? '|' : ' ';
         }
         float numericValue = value / 100.0f;
-        offset += tfp_sprintf(buff + offset, "] %.2f", (double)numericValue);
+        // Debug: show both int and float value
+        offset += tfp_sprintf(buff + offset, "] %d (%.2f)", value, (double)numericValue);
         if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
             offset += tfp_sprintf(buff + offset, " | %s: %d", extraLabels[i], (int)extraValues[i]);
         }
