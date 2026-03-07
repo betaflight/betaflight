@@ -28,6 +28,9 @@ bool cliProcess(void);
 struct serialPort_s;
 void cliEnter(struct serialPort_s *serialPort, bool interactive);
 
+int cliGetSettingByName(const char *name, char *buf, int bufLen);
+bool cliSetSettingByName(const char *cmdline);
+
 #ifdef USE_CLI_DEBUG_PRINT
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);

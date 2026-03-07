@@ -2635,6 +2635,44 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         break;
 #endif
 
+    case MSP2_CLI_SETTING:
+        {
+            const int len = sbufBytesRemaining(src);
+            if (len == 0 || len > 128) {
+                return MSP_RESULT_ERROR;
+            }
+            char cmdline[129];
+            sbufReadData(src, cmdline, len);
+            cmdline[len] = '\0';
+
+            if (strstr(cmdline, "=")) {
+                // set mode: "name = value"
+                if (!cliSetSettingByName(cmdline)) {
+                    return MSP_RESULT_ERROR;
+                }
+            }
+
+            // get/response: return "name = value"
+            // for set, this confirms the new value; for get, this returns the current value
+            char buf[128];
+            // extract just the name (before '=' if present)
+            char *eq = strstr(cmdline, "=");
+            if (eq) {
+                // trim trailing spaces from name
+                char *nameEnd = eq;
+                while (nameEnd > cmdline && *(nameEnd - 1) == ' ') {
+                    nameEnd--;
+                }
+                *nameEnd = '\0';
+            }
+            const int written = cliGetSettingByName(cmdline, buf, sizeof(buf));
+            if (written < 0) {
+                return MSP_RESULT_ERROR;
+            }
+            sbufWriteData(dst, buf, written);
+        }
+        break;
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }

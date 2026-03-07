@@ -502,45 +502,41 @@ static void getMinMax(const clivalue_t *var, int *min, int *max)
     }
 }
 
-static void printValuePointer(const char *cmdName, const clivalue_t *var, const void *valuePointer, bool full)
+static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, const void *valuePointer)
 {
+    int written = 0;
+
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
-        for (int i = 0; i < var->config.array.length; i++) {
+        for (int i = 0; i < var->config.array.length && written < bufLen; i++) {
+            int val = 0;
             switch (var->type & VALUE_TYPE_MASK) {
             default:
             case VAR_UINT8:
-                // uint8_t array
-                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+                val = ((uint8_t *)valuePointer)[i];
                 break;
-
             case VAR_INT8:
-                // int8_t array
-                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+                val = ((int8_t *)valuePointer)[i];
                 break;
-
             case VAR_UINT16:
-                // uin16_t array
-                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+                val = ((uint16_t *)valuePointer)[i];
                 break;
-
             case VAR_INT16:
-                // int16_t array
-                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+                val = ((int16_t *)valuePointer)[i];
                 break;
-
             case VAR_UINT32:
-                // uin32_t array
-                cliPrintf("%u", ((uint32_t *)valuePointer)[i]);
+                val = ((uint32_t *)valuePointer)[i];
                 break;
-
             case VAR_INT32:
-                // in32_t array
-                cliPrintf("%d", ((int32_t *)valuePointer)[i]);
+                val = ((int32_t *)valuePointer)[i];
                 break;
             }
-
-            if (i < var->config.array.length - 1) {
-                cliPrint(",");
+            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                written += tfp_sprintf(buf + written, "%u", (uint32_t)val);
+            } else {
+                written += tfp_sprintf(buf + written, "%d", val);
+            }
+            if (i < var->config.array.length - 1 && written < bufLen) {
+                buf[written++] = ',';
             }
         }
     } else {
@@ -549,27 +545,90 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
             value = *(uint8_t *)valuePointer;
-
             break;
         case VAR_INT8:
             value = *(int8_t *)valuePointer;
-
             break;
         case VAR_UINT16:
             value = *(uint16_t *)valuePointer;
-
             break;
         case VAR_INT16:
             value = *(int16_t *)valuePointer;
-
             break;
         case VAR_UINT32:
             value = *(uint32_t *)valuePointer;
-
             break;
         case VAR_INT32:
             value = *(int32_t *)valuePointer;
+            break;
+        }
 
+        switch (var->type & VALUE_MODE_MASK) {
+        case MODE_DIRECT:
+            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                written = tfp_sprintf(buf, "%u", (uint32_t)value);
+            } else {
+                written = tfp_sprintf(buf, "%d", value);
+            }
+            break;
+        case MODE_LOOKUP:
+            if (value < lookupTables[var->config.lookup.tableIndex].valueCount) {
+                const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
+                written = MIN((int)strlen(str), bufLen - 1);
+                memcpy(buf, str, written);
+            }
+            break;
+        case MODE_BITSET:
+            if (value & 1 << var->config.bitpos) {
+                written = MIN(2, bufLen - 1);
+                memcpy(buf, "ON", written);
+            } else {
+                written = MIN(3, bufLen - 1);
+                memcpy(buf, "OFF", written);
+            }
+            break;
+        case MODE_STRING: {
+                const char *str = (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer;
+                written = MIN((int)strlen(str), bufLen - 1);
+                memcpy(buf, str, written);
+            }
+            break;
+        }
+    }
+
+    if (written < bufLen) {
+        buf[written] = '\0';
+    }
+    return written;
+}
+
+static void printValuePointer(const char *cmdName, const clivalue_t *var, const void *valuePointer, bool full)
+{
+    char buf[128];
+    sprintValuePointer(buf, sizeof(buf), var, valuePointer);
+    cliPrint(buf);
+
+    if ((var->type & VALUE_MODE_MASK) != MODE_ARRAY) {
+        int value = 0;
+
+        switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            value = *(uint8_t *)valuePointer;
+            break;
+        case VAR_INT8:
+            value = *(int8_t *)valuePointer;
+            break;
+        case VAR_UINT16:
+            value = *(uint16_t *)valuePointer;
+            break;
+        case VAR_INT16:
+            value = *(int16_t *)valuePointer;
+            break;
+        case VAR_UINT32:
+            value = *(uint32_t *)valuePointer;
+            break;
+        case VAR_INT32:
+            value = *(int32_t *)valuePointer;
             break;
         }
 
@@ -577,14 +636,12 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
         switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                cliPrintf("%u", (uint32_t)value);
                 if ((uint32_t)value > var->config.u32Max) {
                     valueIsCorrupted = true;
                 } else if (full) {
                     cliPrintf(" 0 %u", var->config.u32Max);
                 }
             } else if ((var->type & VALUE_TYPE_MASK) == VAR_INT32) {
-                cliPrintf("%d", (int32_t)value);
                 if ((int32_t)value > var->config.d32Max || (int32_t)value < -var->config.d32Max) {
                     valueIsCorrupted = true;
                 } else if (full) {
@@ -594,8 +651,6 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
                 int min;
                 int max;
                 getMinMax(var, &min, &max);
-
-                cliPrintf("%d", value);
                 if ((value < min) || (value > max)) {
                     valueIsCorrupted = true;
                 } else if (full) {
@@ -604,21 +659,9 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             }
             break;
         case MODE_LOOKUP:
-            if (value < lookupTables[var->config.lookup.tableIndex].valueCount) {
-                cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
-            } else {
+            if (value >= lookupTables[var->config.lookup.tableIndex].valueCount) {
                 valueIsCorrupted = true;
             }
-            break;
-        case MODE_BITSET:
-            if (value & 1 << var->config.bitpos) {
-                cliPrintf("ON");
-            } else {
-                cliPrintf("OFF");
-            }
-            break;
-        case MODE_STRING:
-            cliPrintf("%s", (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer);
             break;
         }
 
@@ -4683,6 +4726,221 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
         // no equals, check for matching variables.
         cliGet(cmdName, cmdline);
     }
+}
+
+int cliGetSettingByName(const char *name, char *buf, int bufLen)
+{
+    const uint16_t index = cliGetSettingIndex(name, strlen(name));
+    if (index >= valueTableEntryCount) {
+        return -1;
+    }
+
+    const clivalue_t *val = &valueTable[index];
+    const pgRegistry_t *rec = pgFind(val->pgn);
+    if (!rec) {
+        return -1;
+    }
+
+    const void *ptr = rec->address + getValueOffset(val);
+
+    int written = tfp_sprintf(buf, "%s = ", val->name);
+    written += sprintValuePointer(buf + written, bufLen - written, val, ptr);
+    return written;
+}
+
+bool cliSetSettingByName(const char *cmdline)
+{
+    const char *eqptr = strstr(cmdline, "=");
+    if (!eqptr) {
+        return false;
+    }
+
+    // find the end of the variable name (trim trailing spaces before '=')
+    const char *nameEnd = eqptr;
+    while (nameEnd > cmdline && *(nameEnd - 1) == ' ') {
+        nameEnd--;
+    }
+    const size_t nameLen = nameEnd - cmdline;
+    if (nameLen == 0) {
+        return false;
+    }
+
+    // skip the '=' and any spaces
+    const char *valStr = eqptr + 1;
+    while (*valStr == ' ') {
+        valStr++;
+    }
+
+    const uint16_t index = cliGetSettingIndex(cmdline, nameLen);
+    if (index >= valueTableEntryCount) {
+        return false;
+    }
+
+    const clivalue_t *val = &valueTable[index];
+    const pgRegistry_t *rec = pgFind(val->pgn);
+    if (!rec) {
+        return false;
+    }
+
+    void *ptr = CONST_CAST(void *, rec->address + getValueOffset(val));
+
+    switch (val->type & VALUE_MODE_MASK) {
+    case MODE_DIRECT: {
+            if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                uint32_t v = strtoul(valStr, NULL, 10);
+                if (v > val->config.u32Max) {
+                    return false;
+                }
+                *(uint32_t *)ptr = v;
+            } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT32) {
+                int32_t v = strtol(valStr, NULL, 10);
+                if (v > val->config.d32Max || v < -val->config.d32Max) {
+                    return false;
+                }
+                *(int32_t *)ptr = v;
+            } else {
+                int v = atoi(valStr);
+                int min, max;
+                getMinMax(val, &min, &max);
+                if (v < min || v > max) {
+                    return false;
+                }
+                switch (val->type & VALUE_TYPE_MASK) {
+                case VAR_UINT8:
+                    *(uint8_t *)ptr = v;
+                    break;
+                case VAR_INT8:
+                    *(int8_t *)ptr = v;
+                    break;
+                case VAR_UINT16:
+                    *(uint16_t *)ptr = v;
+                    break;
+                case VAR_INT16:
+                    *(int16_t *)ptr = v;
+                    break;
+                }
+            }
+        }
+        break;
+
+    case MODE_LOOKUP:
+    case MODE_BITSET: {
+            int tableIndex;
+            if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
+                tableIndex = TABLE_OFF_ON;
+            } else {
+                tableIndex = val->config.lookup.tableIndex;
+            }
+            const lookupTableEntry_t *tableEntry = &lookupTables[tableIndex];
+            bool matched = false;
+            for (uint32_t i = 0; i < tableEntry->valueCount && !matched; i++) {
+                if (tableEntry->values[i] && strcasecmp(tableEntry->values[i], valStr) == 0) {
+                    matched = true;
+                    if ((val->type & VALUE_MODE_MASK) == MODE_BITSET) {
+                        uint32_t mask;
+                        switch (val->type & VALUE_TYPE_MASK) {
+                        case VAR_UINT8:
+                            mask = (1 << val->config.bitpos) & 0xff;
+                            *(uint8_t *)ptr = i ? (*(uint8_t *)ptr | mask) : (*(uint8_t *)ptr & ~mask);
+                            break;
+                        case VAR_UINT16:
+                            mask = (1 << val->config.bitpos) & 0xffff;
+                            *(uint16_t *)ptr = i ? (*(uint16_t *)ptr | mask) : (*(uint16_t *)ptr & ~mask);
+                            break;
+                        case VAR_UINT32:
+                            mask = 1 << val->config.bitpos;
+                            *(uint32_t *)ptr = i ? (*(uint32_t *)ptr | mask) : (*(uint32_t *)ptr & ~mask);
+                            break;
+                        default:
+                            break;
+                        }
+                    } else {
+                        switch (val->type & VALUE_TYPE_MASK) {
+                        case VAR_UINT8:
+                            *(uint8_t *)ptr = i;
+                            break;
+                        case VAR_INT8:
+                            *(int8_t *)ptr = i;
+                            break;
+                        case VAR_UINT16:
+                            *(uint16_t *)ptr = i;
+                            break;
+                        case VAR_INT16:
+                            *(int16_t *)ptr = i;
+                            break;
+                        case VAR_UINT32:
+                            *(uint32_t *)ptr = i;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!matched) {
+                return false;
+            }
+        }
+        break;
+
+    case MODE_ARRAY: {
+            const uint8_t arrayLength = val->config.array.length;
+            const char *p = valStr;
+            for (int i = 0; i < arrayLength && p && *p; i++) {
+                while (*p == ' ') {
+                    p++;
+                }
+                switch (val->type & VALUE_TYPE_MASK) {
+                case VAR_UINT8:
+                    ((uint8_t *)ptr)[i] = (uint8_t)atoi(p);
+                    break;
+                case VAR_INT8:
+                    ((int8_t *)ptr)[i] = (int8_t)atoi(p);
+                    break;
+                case VAR_UINT16:
+                    ((uint16_t *)ptr)[i] = (uint16_t)atoi(p);
+                    break;
+                case VAR_INT16:
+                    ((int16_t *)ptr)[i] = (int16_t)atoi(p);
+                    break;
+                case VAR_UINT32:
+                    ((uint32_t *)ptr)[i] = (uint32_t)strtoul(p, NULL, 10);
+                    break;
+                case VAR_INT32:
+                    ((int32_t *)ptr)[i] = (int32_t)strtol(p, NULL, 10);
+                    break;
+                }
+                const char *comma = strchr(p, ',');
+                p = comma ? comma + 1 : NULL;
+            }
+        }
+        break;
+
+    case MODE_STRING: {
+            while (*valStr == ' ') {
+                valStr++;
+            }
+            const unsigned int len = strlen(valStr);
+            const uint8_t max = val->config.string.maxlength;
+            const uint8_t min = val->config.string.minlength;
+            const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 ||
+                                    strlen((char *)ptr) == 0 ||
+                                    strncmp(valStr, (char *)ptr, len) == 0);
+            if (!updatable || len == 0 || len > max) {
+                return false;
+            }
+            memset((char *)ptr, 0, max);
+            if (len >= min && strncmp(valStr, emptyName, len)) {
+                memcpy((char *)ptr, valStr, len);
+            }
+        }
+        break;
+
+    default:
+        return false;
+    }
+
+    return true;
 }
 
 static void cliStatus(const char *cmdName, char *cmdline)
