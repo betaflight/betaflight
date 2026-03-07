@@ -1563,7 +1563,7 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
             buff[offset++] = (j < filled) ? '|' : ' ';
         }
         float numericValue = value / 100.0f;
-        offset += tfp_sprintf(buff + offset, "] %.1f", (double)numericValue);
+        offset += tfp_sprintf(buff + offset, "] %.2f", (double)numericValue);
         if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
             offset += tfp_sprintf(buff + offset, " | %s: %d", extraLabels[i], (int)extraValues[i]);
         }
@@ -1575,8 +1575,7 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
 static void osdElementPidsMasterMultiplier(osdElementParms_t *element)
 {
     extern pidProfile_t *currentPidProfile;
-    const int value = currentPidProfile->simplified_master_multiplier;
-    const int values[1] = { value };
+    const int values[1] = { currentPidProfile->simplified_master_multiplier };
     const char *names[1] = { "MLT" };
     const char *extraLabels[1] = { "RD" };
     float extraValues[1] = { currentPidProfile->pid[ROLL].D };
