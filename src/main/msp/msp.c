@@ -2645,7 +2645,8 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             sbufReadData(src, cmdline, len);
             cmdline[len] = '\0';
 
-            if (strstr(cmdline, "=")) {
+            char *eq = strstr(cmdline, "=");
+            if (eq) {
                 // set mode: "name = value"
                 if (!cliSetSettingByName(cmdline)) {
                     return MSP_RESULT_ERROR;
@@ -2656,7 +2657,6 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             // for set, this confirms the new value; for get, this returns the current value
             char buf[128];
             // extract just the name (before '=' if present)
-            char *eq = strstr(cmdline, "=");
             if (eq) {
                 // trim trailing spaces from name
                 char *nameEnd = eq;
@@ -2666,7 +2666,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 *nameEnd = '\0';
             }
             const int written = cliGetSettingByName(cmdline, buf, sizeof(buf));
-            if (written < 0) {
+            if (written < 0 || written > sbufBytesRemaining(dst)) {
                 return MSP_RESULT_ERROR;
             }
             sbufWriteData(dst, buf, written);

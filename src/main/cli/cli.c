@@ -4851,6 +4851,10 @@ bool cliSetSettingByName(const char *cmdline)
                             mask = 1 << val->config.bitpos;
                             *(uint32_t *)ptr = i ? (*(uint32_t *)ptr | mask) : (*(uint32_t *)ptr & ~mask);
                             break;
+                        case VAR_INT32:
+                            mask = 1 << val->config.bitpos;
+                            *(int32_t *)ptr = i ? (*(int32_t *)ptr | mask) : (*(int32_t *)ptr & ~mask);
+                            break;
                         default:
                             break;
                         }
@@ -4870,6 +4874,9 @@ bool cliSetSettingByName(const char *cmdline)
                             break;
                         case VAR_UINT32:
                             *(uint32_t *)ptr = i;
+                            break;
+                        case VAR_INT32:
+                            *(int32_t *)ptr = i;
                             break;
                         default:
                             break;
