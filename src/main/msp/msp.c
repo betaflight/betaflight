@@ -2689,10 +2689,15 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             const char *name = payload;
             uint16_t offset = 0;
             const void *nul = memchr(payload, '\0', len);
-            const int nameLen = (const char *)nul - payload;
-            const int afterNul = len - nameLen - 1;
-            if (afterNul >= 2) {
-                offset = (uint8_t)payload[nameLen + 1] | ((uint8_t)payload[nameLen + 2] << 8);
+            int nameLen;
+            if (nul) {
+                nameLen = (const char *)nul - payload;
+                const int afterNul = len - nameLen - 1;
+                if (afterNul >= 2) {
+                    offset = (uint8_t)payload[nameLen + 1] | ((uint8_t)payload[nameLen + 2] << 8);
+                }
+            } else {
+                nameLen = len;
             }
 
             // reserve space for the total size header
@@ -2709,8 +2714,8 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 return MSP_RESULT_ERROR;
             }
 
-            // patch the total size header
-            uint8_t *hdr = sbufPtr(dst) - written - sizeof(uint16_t);
+            // patch the total size header (2 bytes immediately before current position)
+            uint8_t *hdr = sbufPtr(dst) - sizeof(uint16_t);
             hdr[0] = totalLen & 0xFF;
             hdr[1] = (totalLen >> 8) & 0xFF;
 

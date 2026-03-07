@@ -530,10 +530,18 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 val = ((int32_t *)valuePointer)[i];
                 break;
             }
-            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                written += tfp_sprintf(buf + written, "%u", (uint32_t)val);
-            } else {
-                written += tfp_sprintf(buf + written, "%d", val);
+            if (written < bufLen) {
+                char tmp[16];
+                int n;
+                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                    n = tfp_sprintf(tmp, "%u", (uint32_t)val);
+                } else {
+                    n = tfp_sprintf(tmp, "%d", val);
+                }
+                const int rem = bufLen - written;
+                const int copy = MIN(n, rem);
+                memcpy(buf + written, tmp, copy);
+                written += copy;
             }
             if (i < var->config.array.length - 1 && written < bufLen) {
                 buf[written++] = ',';
@@ -564,15 +572,20 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
         }
 
         switch (var->type & VALUE_MODE_MASK) {
-        case MODE_DIRECT:
-            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                written = tfp_sprintf(buf, "%u", (uint32_t)value);
-            } else {
-                written = tfp_sprintf(buf, "%d", value);
+        case MODE_DIRECT: {
+                char tmp[16];
+                int n;
+                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                    n = tfp_sprintf(tmp, "%u", (uint32_t)value);
+                } else {
+                    n = tfp_sprintf(tmp, "%d", value);
+                }
+                written = MIN(n, bufLen - 1);
+                memcpy(buf, tmp, written);
             }
             break;
         case MODE_LOOKUP:
-            if (value < lookupTables[var->config.lookup.tableIndex].valueCount) {
+            if (value >= 0 && value < lookupTables[var->config.lookup.tableIndex].valueCount) {
                 const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
                 written = MIN((int)strlen(str), bufLen - 1);
                 memcpy(buf, str, written);
@@ -4743,8 +4756,19 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
 
     const void *ptr = rec->address + getValueOffset(val);
 
-    int written = tfp_sprintf(buf, "%s = ", val->name);
-    written += sprintValuePointer(buf + written, bufLen - written, val, ptr);
+    // write prefix "name = " bounded by bufLen
+    const int nameLen = strlen(val->name);
+    int written = 0;
+    const int copy = MIN(nameLen, bufLen - 1);
+    memcpy(buf, val->name, copy);
+    written = copy;
+    const char eq[] = " = ";
+    for (int i = 0; i < 3 && written < bufLen - 1; i++) {
+        buf[written++] = eq[i];
+    }
+    if (written < bufLen) {
+        written += sprintValuePointer(buf + written, bufLen - written, val, ptr);
+    }
     return written;
 }
 
@@ -4891,7 +4915,7 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
     backupAndResetConfigs();
     const int valueOffset = getValueOffset(val);
     infoWriteString(&w, "default=");
-    char defBuf[128];
+    char defBuf[256];
     const int defLen = sprintValuePointer(defBuf, sizeof(defBuf), val, (uint8_t *)pg->address + valueOffset);
     infoWriteData(&w, defBuf, defLen);
     restoreConfigs(0);
