@@ -507,7 +507,7 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
     int written = 0;
 
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
-        for (int i = 0; i < var->config.array.length && written < bufLen; i++) {
+        for (int i = 0; i < var->config.array.length && written < bufLen - 1; i++) {
             int val = 0;
             switch (var->type & VALUE_TYPE_MASK) {
             default:
@@ -530,7 +530,7 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 val = ((int32_t *)valuePointer)[i];
                 break;
             }
-            if (written < bufLen) {
+            if (written < bufLen - 1) {
                 char tmp[16];
                 int n;
                 if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
@@ -538,12 +538,12 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 } else {
                     n = tfp_sprintf(tmp, "%d", val);
                 }
-                const int rem = bufLen - written;
+                const int rem = bufLen - 1 - written;
                 const int copy = MIN(n, rem);
                 memcpy(buf + written, tmp, copy);
                 written += copy;
             }
-            if (i < var->config.array.length - 1 && written < bufLen) {
+            if (i < var->config.array.length - 1 && written < bufLen - 1) {
                 buf[written++] = ',';
             }
         }
@@ -587,8 +587,10 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
         case MODE_LOOKUP:
             if (value >= 0 && value < lookupTables[var->config.lookup.tableIndex].valueCount) {
                 const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
-                written = MIN((int)strlen(str), bufLen - 1);
-                memcpy(buf, str, written);
+                if (str) {
+                    written = MIN((int)strlen(str), bufLen - 1);
+                    memcpy(buf, str, written);
+                }
             }
             break;
         case MODE_BITSET:
@@ -672,7 +674,7 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             }
             break;
         case MODE_LOOKUP:
-            if (value >= lookupTables[var->config.lookup.tableIndex].valueCount) {
+            if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount) {
                 valueIsCorrupted = true;
             }
             break;
@@ -4743,6 +4745,10 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 
 int cliGetSettingByName(const char *name, char *buf, int bufLen)
 {
+    if (bufLen <= 0) {
+        return 0;
+    }
+
     const uint16_t index = cliGetSettingIndex(name, strlen(name));
     if (index >= valueTableEntryCount) {
         return -1;
@@ -4760,13 +4766,15 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
     const int nameLen = strlen(val->name);
     int written = 0;
     const int copy = MIN(nameLen, bufLen - 1);
-    memcpy(buf, val->name, copy);
-    written = copy;
+    if (copy > 0) {
+        memcpy(buf, val->name, copy);
+        written = copy;
+    }
     const char eq[] = " = ";
     for (int i = 0; i < 3 && written < bufLen - 1; i++) {
         buf[written++] = eq[i];
     }
-    if (written < bufLen) {
+    if (bufLen - written > 0) {
         written += sprintValuePointer(buf + written, bufLen - written, val, ptr);
     }
     return written;
