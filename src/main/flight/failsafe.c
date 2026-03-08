@@ -251,12 +251,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
     }
 
     // Beep RX lost whenever no RC data is received outside bench environment
-    // Bench environment = pre-arm state with USB cable or MSP configurator active
-    // Once armed (WAS_EVER_ARMED), beacons work regardless of connection for field recovery
-    const bool isBenchEnvironment = !ARMING_FLAG(WAS_EVER_ARMED)
-                                    && (usbCableIsInserted() || mspSerialIsConfiguratorActive());
-    
-    if (!receivingRxData && !isBenchEnvironment) {
+    if (!receivingRxData && !mspSerialIsConfiguratorActive()) {
         beeperMode = BEEPER_RX_LOST;
     }
 

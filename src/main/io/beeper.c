@@ -248,14 +248,6 @@ static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
     return NULL;
 }
 
-// Returns true when the "USB beeping" option is disabled and an active
-// configurator session is detected (USB connected with recent MSP traffic).
-static bool beeperIsSuppressedByConfigurator(void)
-{
-    return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-        && usbCableIsInserted() && mspSerialIsConfiguratorActive();
-}
-
 /*
  * Called to activate/deactivate beeper, using the given "BEEPER_..." value.
  * This function returns immediately (does not block).
@@ -264,7 +256,6 @@ static bool beeperIsSuppressedByConfigurator(void)
 void beeper(beeperMode_e mode)
 {
     if (mode == BEEPER_SILENCE
-        || beeperIsSuppressedByConfigurator()
         || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
             && getBatteryState() == BATTERY_NOT_PRESENT)
         || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
@@ -439,22 +430,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     bool dshotBeaconRequested = false;
 
-    if (!areMotorsRunning()
-        && !beeperIsSuppressedByConfigurator()) {
+    if (!areMotorsRunning()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
 
-        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence
-        // Suppress only during pre-arm bench testing (USB or MSP configurator active)
-        // Once armed (WAS_EVER_ARMED), beacons work regardless of connection for field recovery
+        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST
+            && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
-            
-            const bool isBenchEnvironment = !ARMING_FLAG(WAS_EVER_ARMED) && 
-                                            (usbCableIsInserted() || mspSerialIsConfiguratorActive());
-            
-            if (!isBenchEnvironment) {
-                dshotBeaconRequested = true;
-            }
+            dshotBeaconRequested = true;
         }
 
         // Allow user-triggered beacon via AUX switch while the RX link is healthy.
