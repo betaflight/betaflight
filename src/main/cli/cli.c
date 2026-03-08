@@ -619,7 +619,7 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
 
 static void printValuePointer(const char *cmdName, const clivalue_t *var, const void *valuePointer, bool full)
 {
-    char buf[128];
+    char buf[256];
     sprintValuePointer(buf, sizeof(buf), var, valuePointer);
     cliPrint(buf);
 
@@ -4976,6 +4976,10 @@ bool cliSetSettingByName(const char *cmdline)
         valStr++;
     }
 
+    if (*valStr == '\0') {
+        return false;
+    }
+
     const uint16_t index = cliGetSettingIndex(cmdline, nameLen);
     if (index >= valueTableEntryCount) {
         return false;
@@ -5148,7 +5152,7 @@ bool cliSetSettingByName(const char *cmdline)
             const uint8_t min = val->config.string.minlength;
             const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 ||
                                     strlen((char *)ptr) == 0 ||
-                                    strncmp(valStr, (char *)ptr, len) == 0);
+                                    strcmp(valStr, (char *)ptr) == 0);
             if (!updatable || len == 0 || len > max) {
                 return false;
             }

@@ -2635,6 +2635,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         break;
 #endif
 
+#ifdef USE_CLI
     case MSP2_CLI_SETTING:
         {
             const int len = sbufBytesRemaining(src);
@@ -2666,13 +2667,19 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 *nameEnd = '\0';
             }
             const int written = cliGetSettingByName(cmdline, buf, sizeof(buf));
-            if (written < 0 || written > sbufBytesRemaining(dst)) {
-                return MSP_RESULT_ERROR;
+            if (written < 0 || written > (int)sbufBytesRemaining(dst)) {
+                if (!eq) {
+                    return MSP_RESULT_ERROR;
+                }
+                // set succeeded but echo failed; acknowledge the set
+            } else {
+                sbufWriteData(dst, buf, written);
             }
-            sbufWriteData(dst, buf, written);
         }
         break;
+#endif
 
+#ifdef USE_CLI
     case MSP2_CLI_SETTING_INFO:
         {
             const int len = sbufBytesRemaining(src);
@@ -2722,6 +2729,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             sbufAdvance(dst, written);
         }
         break;
+#endif
 
     default:
         return MSP_RESULT_CMD_UNKNOWN;
