@@ -1552,30 +1552,24 @@ static void osdElementPidRateProfile(osdElementParms_t *element)
     tfp_sprintf(element->buff, "%d-%d", getCurrentPidProfileIndex() + 1, getCurrentControlRateProfileIndex() + 1);
 }
 
-static void osdRenderSliderBars(char *buff, const int *values, const char **names, int count, int barWidth, const char **extraLabels, const float *extraValues)
+static void osdRenderSliderBars(char *buff, int value, const char *name, int barWidth, const char *extraLabel, float extraValue)
 {
     int offset = 0;
-    for (int i = 0; i < count; i++) {
-        int value = values[i]; // Range: 0 to 200 (percent)
-        int filled = value * barWidth / 200; // Map 0..200 to 0..barWidth
-        offset += tfp_sprintf(buff + offset, "%s[", names[i]);
-        for (int j = 0; j < barWidth; j++) {
-            buff[offset++] = (j < filled) ? '|' : ' ';
-        }
-        int intPart = value / 100;
-        int fracPart = (value % 100 + 5) / 10; // Round to nearest tenth
-        if (fracPart == 10) {
-            intPart += 1;
-            fracPart = 0;
-        }
-        offset += tfp_sprintf(buff + offset, "]%d.%d", intPart, fracPart);
-        if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
-            offset += tfp_sprintf(buff + offset, "|%s:%d", extraLabels[i], (int)extraValues[i]);
-        }
-        if (i < count - 1) {
-            buff[offset++] = '\r';
-            buff[offset++] = '\n';
-        }
+    // Range: 0 to 200 (percent)
+    int filled = value * barWidth / 200; // Map 0..200 to 0..barWidth
+    offset += tfp_sprintf(buff + offset, "%s[", name);
+    for (int j = 0; j < barWidth; j++) {
+        buff[offset++] = (j < filled) ? '|' : ' ';
+    }
+    int intPart = value / 100;
+    int fracPart = (value % 100 + 5) / 10; // Round to nearest tenth
+    if (fracPart == 10) {
+        intPart += 1;
+        fracPart = 0;
+    }
+    offset += tfp_sprintf(buff + offset, "]%d.%d", intPart, fracPart);
+    if (extraLabel && extraValue >= 0) {
+        offset += tfp_sprintf(buff + offset, "|%s:%d", extraLabel, (int)extraValue);
     }
     buff[offset] = '\0';
 }
@@ -1587,7 +1581,7 @@ static void osdElementPidsTuningSliderDmp(osdElementParms_t *element) {
     const char *name = "DMP";
     const char *extraLabel = "RD";
     float extraValue = currentPidProfile->pid[ROLL].D;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderTrk(osdElementParms_t *element) {
@@ -1596,7 +1590,7 @@ static void osdElementPidsTuningSliderTrk(osdElementParms_t *element) {
     const char *name = "TRK";
     const char *extraLabel = "RP";
     float extraValue = currentPidProfile->pid[ROLL].P;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderStk(osdElementParms_t *element) {
@@ -1605,7 +1599,7 @@ static void osdElementPidsTuningSliderStk(osdElementParms_t *element) {
     const char *name = "STK";
     const char *extraLabel = "RFF";
     float extraValue = currentPidProfile->pid[ROLL].F;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderDmx(osdElementParms_t *element) {
@@ -1614,7 +1608,7 @@ static void osdElementPidsTuningSliderDmx(osdElementParms_t *element) {
     const char *name = "DMX";
     const char *extraLabel = "RDX";
     float extraValue = currentPidProfile->d_max[ROLL];
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderDrf(osdElementParms_t *element) {
@@ -1623,7 +1617,7 @@ static void osdElementPidsTuningSliderDrf(osdElementParms_t *element) {
     const char *name = "DRF";
     const char *extraLabel = "RI";
     float extraValue = currentPidProfile->pid[ROLL].I;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderPid(osdElementParms_t *element) {
@@ -1632,7 +1626,7 @@ static void osdElementPidsTuningSliderPid(osdElementParms_t *element) {
     const char *name = "PID";
     const char *extraLabel = "PD";
     float extraValue = currentPidProfile->pid[PITCH].D;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderPit(osdElementParms_t *element) {
@@ -1641,16 +1635,16 @@ static void osdElementPidsTuningSliderPit(osdElementParms_t *element) {
     const char *name = "PIT";
     const char *extraLabel = "PP";
     float extraValue = currentPidProfile->pid[PITCH].P;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsTuningSliderMlt(osdElementParms_t *element) {
     extern pidProfile_t *currentPidProfile;
     int value = currentPidProfile->simplified_master_multiplier;
     const char *name = "MLT";
-    const char *extraLabel = NULL;
-    float extraValue = -1;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    const char *extraLabel = "RD";
+    float extraValue = currentPidProfile->pid[ROLL].D;
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 // Individual filter slider OSD elements
@@ -1669,7 +1663,7 @@ static void osdElementFilterSliderGyro(osdElementParms_t *element) {
     const char *name = "GF";
     const char *extraLabel = "L1-";
     float extraValue = gyroCfg->gyro_lpf1_dyn_min_hz;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementFilterSliderDterm(osdElementParms_t *element) {
@@ -1678,7 +1672,7 @@ static void osdElementFilterSliderDterm(osdElementParms_t *element) {
     const char *name = "DF";
     const char *extraLabel = "L1-";
     float extraValue = currentPidProfile->dterm_lpf1_static_hz;
-    osdRenderSliderBars(element->buff, &value, &name, 1, 8, &extraLabel, &extraValue);
+    osdRenderSliderBars(element->buff, value, name, 8, extraLabel, extraValue);
 }
 
 static void osdElementPidsPitch(osdElementParms_t *element)
