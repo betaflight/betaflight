@@ -1573,7 +1573,8 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
             offset += tfp_sprintf(buff + offset, "|%s:%d", extraLabels[i], (int)extraValues[i]);
         }
         if (i < count - 1) {
-            buff[offset++] = '\r\n';
+            buff[offset++] = '\r';
+            buff[offset++] = '\n';
         }
     }
     buff[offset] = '\0';
