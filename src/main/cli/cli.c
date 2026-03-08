@@ -4627,10 +4627,22 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                 const uint8_t arrayLength = val->config.array.length;
                 char *valPtr = eqptr;
 
+                // skip leading spaces and check for empty value
+                if (valPtr) {
+                    valPtr = skipSpace(valPtr);
+                }
+                if (!valPtr || !*valPtr) {
+                    break;
+                }
+
                 int i = 0;
                 while (i < arrayLength && valPtr != NULL) {
                     // skip spaces
                     valPtr = skipSpace(valPtr);
+
+                    if (!*valPtr) {
+                        break;
+                    }
 
                     // process substring starting at valPtr
                     // note: no need to copy substrings for atoi()
@@ -4697,6 +4709,10 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     valPtr = strchr(valPtr, ',') + 1;
 
                     i++;
+                }
+
+                if (i == 0) {
+                    break;
                 }
             }
 
@@ -4917,18 +4933,21 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
         break;
     }
 
-    // get default value by temporarily resetting configs
+    // get default value by resetting a copy of the PG config (non-destructive)
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
-    backupAndResetConfigs();
     const int valueOffset = getValueOffset(val);
-    infoWriteString(&w, "default=");
-    char defBuf[256];
-    const int defLen = sprintValuePointer(defBuf, sizeof(defBuf), val, (uint8_t *)pg->address + valueOffset);
-    infoWriteData(&w, defBuf, defLen);
-    restoreConfigs(0);
     pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+
+    const uint16_t pgSizeBytes = pgSize(pg);
+    uint8_t defaultBuf[pgSizeBytes];
+    pgResetCopy(defaultBuf, val->pgn);
+
+    infoWriteString(&w, "default=");
+    char defBuf[256];
+    const int defLen = sprintValuePointer(defBuf, sizeof(defBuf), val, defaultBuf + valueOffset);
+    infoWriteData(&w, defBuf, defLen);
 
     *totalLen = w.pos;
     return w.written;
@@ -5077,11 +5096,18 @@ bool cliSetSettingByName(const char *cmdline)
         break;
 
     case MODE_ARRAY: {
+            if (!valStr || !*valStr) {
+                return false;
+            }
             const uint8_t arrayLength = val->config.array.length;
             const char *p = valStr;
+            int parsedCount = 0;
             for (int i = 0; i < arrayLength && p && *p; i++) {
                 while (*p == ' ') {
                     p++;
+                }
+                if (!*p) {
+                    break;
                 }
                 switch (val->type & VALUE_TYPE_MASK) {
                 case VAR_UINT8:
@@ -5103,8 +5129,12 @@ bool cliSetSettingByName(const char *cmdline)
                     ((int32_t *)ptr)[i] = (int32_t)strtol(p, NULL, 10);
                     break;
                 }
+                parsedCount++;
                 const char *comma = strchr(p, ',');
                 p = comma ? comma + 1 : NULL;
+            }
+            if (parsedCount == 0) {
+                return false;
             }
         }
         break;
