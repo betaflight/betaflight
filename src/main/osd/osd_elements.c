@@ -1674,15 +1674,6 @@ static void osdElementFilterSliderGyro(osdElementParms_t *element) {
 
 static void osdElementFilterSliderDterm(osdElementParms_t *element) {
     extern pidProfile_t *currentPidProfile;
-#if defined(UNIT_TEST) || defined(USE_UNIT_TESTS)
-    static const gyroConfig_t testGyroCfg = {
-        .simplified_gyro_filter_multiplier = 100,
-        .gyro_lpf1_dyn_min_hz = 100,
-    };
-    const gyroConfig_t *gyroCfg = &testGyroCfg;
-#else
-    const gyroConfig_t *gyroCfg = gyroConfig();
-#endif
     int value = currentPidProfile->simplified_dterm_filter_multiplier;
     const char *name = "DF";
     const char *extraLabel = "L1-";
