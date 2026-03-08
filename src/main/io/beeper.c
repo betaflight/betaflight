@@ -461,12 +461,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     // Clamp the beacon timestamp to prevent 35-minute overflow
-    // Only clamp if a beacon has been sent before (timestamp != 0)
-    if (lastDshotBeaconCommandTimeUs != 0) {
-        timeDelta_t age = cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs);
-        if (age > BEACON_MAX_AGE_US) {
-            lastDshotBeaconCommandTimeUs = currentTimeUs - BEACON_MAX_AGE_US;
-        }
+    // Handle both never-sent (zero) and stale timestamps
+    timeDelta_t age = cmpTimeUs(currentTimeUs, lastDshotBeaconCommandTimeUs);
+    if (age < 0 || age > BEACON_MAX_AGE_US) {
+        lastDshotBeaconCommandTimeUs = currentTimeUs - BEACON_MAX_AGE_US;
     }
 #endif
     // Note: DShot beacon handling above must run even if no beeper sequence is active.
