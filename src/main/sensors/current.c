@@ -368,8 +368,8 @@ void currentMeterINA226Init(void)
     
     // Configure INA226 - i2cDevice follows Betaflight convention: 1 = I2CDEV_0, 2 = I2CDEV_1, etc.
     if (config->i2cDevice < 1 || config->i2cDevice > I2CDEV_COUNT) {
-        // Invalid device, use default
-        ina226Cfg.i2cDevice = I2CDEV_0;
+        // Invalid device, use first available I2C bus (portable across all targets)
+        ina226Cfg.i2cDevice = I2CDEV_FIRST;
     } else {
         ina226Cfg.i2cDevice = I2C_CFG_TO_DEV(config->i2cDevice);
     }
@@ -434,6 +434,11 @@ void currentMeterINA226Refresh(int32_t lastUpdateAt)
             updateCurrentmAhDrawnState(&currentMeterINA226State.mahDrawnState, 
                                        currentMeterINA226State.amperageLatest, lastUpdateAt);
         }
+    } else {
+        // Read failed — clear values to avoid stale battery telemetry after I2C faults
+        currentMeterINA226State.amperageLatest = 0;
+        currentMeterINA226State.amperage = 0;
+        ina226LastVoltageMv = 0;
     }
 }
 

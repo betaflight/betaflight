@@ -28,6 +28,7 @@
 #ifdef USE_CURRENT_METER_INA226
 
 #include "common/maths.h"
+#include "common/time.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/ina226.h"
 #include "drivers/time.h"
@@ -53,16 +54,14 @@ static bool ina226WriteRegister(i2cDevice_e device, uint8_t address, uint8_t reg
         return false;
     }
     
-    // Wait for write to complete (important for PICO platform)
-    // Defensive timeout for cross-platform consistency (platform timeouts should trigger first)
+    // Wait for write to complete with elapsed-time timeout
+    // Use micros() for deterministic behavior across MCU/optimization levels
     bool error = false;
-    int timeout = 1000;
-    while (i2cBusy(device, &error) && --timeout > 0) {
-        // Wait until transfer is complete
-    }
-    
-    if (timeout <= 0) {
-        return false;
+    const timeUs_t timeoutAt = micros() + 10000;  // 10ms timeout
+    while (i2cBusy(device, &error)) {
+        if (cmpTimeUs(micros(), timeoutAt) >= 0) {
+            return false;  // Timed out
+        }
     }
     
     return !error;
@@ -99,15 +98,17 @@ static bool ina226ReadRegister(i2cDevice_e device, uint8_t address, uint8_t reg,
         return false;
     }
     
-    // Wait for read to complete (important for PICO platform)
-    // Defensive timeout for cross-platform consistency (platform timeouts should trigger first)
+    // Wait for read to complete with elapsed-time timeout
+    // Use micros() for deterministic behavior across MCU/optimization levels
     bool error = false;
-    int timeout = 1000;
-    while (i2cBusy(device, &error) && --timeout > 0) {
-        // Wait until transfer is complete
+    const timeUs_t timeoutAt = micros() + 10000;  // 10ms timeout
+    while (i2cBusy(device, &error)) {
+        if (cmpTimeUs(micros(), timeoutAt) >= 0) {
+            return false;  // Timed out
+        }
     }
     
-    if (timeout <= 0 || error) {
+    if (error) {
         return false;
     }
     

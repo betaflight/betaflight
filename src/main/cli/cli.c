@@ -4794,10 +4794,14 @@ static void cliINA226Status(const char *cmdName, char *cmdline)
     // Calculate and show current LSB for debugging
     // Use 64-bit math to avoid overflow when maxExpectedCurrentMa >= 4295 mA
     uint64_t currentLsbNa = ((uint64_t)config->maxExpectedCurrentMa * 1000000ULL) / 32768ULL;
-    cliPrintLinef("  Calculated current_LSB: %llu nA (%llu.%02llu mA per bit)", 
-                  (unsigned long long)currentLsbNa, 
-                  (unsigned long long)(currentLsbNa / 1000000ULL), 
-                  (unsigned long long)((currentLsbNa % 1000000ULL) / 10000ULL));
+    // Use uint32_t casts — Betaflight's printf does not support %llu reliably
+    uint32_t lsbNaLo = (uint32_t)(currentLsbNa & 0xFFFFFFFF);
+    uint32_t lsbMaPart = (uint32_t)(currentLsbNa / 1000000ULL);
+    uint32_t lsbMaFrac = (uint32_t)((currentLsbNa % 1000000ULL) / 10000ULL);
+    cliPrintLinef("  Calculated current_LSB: %lu nA (%lu.%02lu mA per bit)",
+                  (unsigned long)lsbNaLo,
+                  (unsigned long)lsbMaPart,
+                  (unsigned long)lsbMaFrac);
     
     // Try direct read from INA226
     if (ina226IsInitialized()) {
@@ -4813,7 +4817,7 @@ static void cliINA226Status(const char *cmdName, char *cmdline)
         
         // Try calling ina226Read directly with proper calibration
         cliPrintLinef("  --- Driver Read Test (with calibration) ---");
-        i2cDevice_e i2cDev = config->i2cDevice > 0 ? (config->i2cDevice - 1) : I2CDEV_0;
+        i2cDevice_e i2cDev = config->i2cDevice > 0 ? I2C_CFG_TO_DEV(config->i2cDevice) : I2CDEV_FIRST;
         ina226Config_t testCfg = {
             .i2cDevice = i2cDev,
             .address = config->address,
@@ -4858,7 +4862,10 @@ static void cliINA226Status(const char *cmdName, char *cmdline)
         
         // Read shunt voltage register (0x01)
         if (i2cRead(i2cDev, config->address, 0x01, 2, rxBuf)) {
-            while (i2cBusy(i2cDev, &i2cError)) {}
+            timeUs_t busyTimeout = micros() + 10000;
+            while (i2cBusy(i2cDev, &i2cError)) {
+                if (cmpTimeUs(micros(), busyTimeout) >= 0) break;
+            }
             int16_t rawShunt = (int16_t)((rxBuf[0] << 8) | rxBuf[1]);
             int32_t shuntUv = (rawShunt * 25) / 10;  // 2.5uV per LSB
             cliPrintLinef("  Shunt voltage raw: %d -> %ld uV", rawShunt, (long)shuntUv);
@@ -4871,7 +4878,10 @@ static void cliINA226Status(const char *cmdName, char *cmdline)
         
         // Read bus voltage register (0x02)
         if (i2cRead(i2cDev, config->address, 0x02, 2, rxBuf)) {
-            while (i2cBusy(i2cDev, &i2cError)) {}
+            timeUs_t busyTimeout2 = micros() + 10000;
+            while (i2cBusy(i2cDev, &i2cError)) {
+                if (cmpTimeUs(micros(), busyTimeout2) >= 0) break;
+            }
             uint16_t rawVoltage = (rxBuf[0] << 8) | rxBuf[1];
             uint16_t voltageMvDirect = (uint32_t)rawVoltage * 125 / 100;
             cliPrintLinef("  Bus voltage raw: 0x%04X -> %d mV", rawVoltage, voltageMvDirect);
