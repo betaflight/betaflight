@@ -1554,15 +1554,17 @@ static void osdElementPidRateProfile(osdElementParms_t *element)
 
 static void osdRenderSliderBars(char *buff, const int *values, const char **names, int count, int barWidth, const char **extraLabels, const float *extraValues)
 {
-    int offset = 0;
+    // Use dynamic OSD row length for analog/digital compatibility
+    const int rowLen = osdConfig()->canvas_cols;
     for (int i = 0; i < count; i++) {
+        int rowOffset = i * rowLen;
         int value = values[i]; // Range: 0 to 200 (percent)
         int filled = value * barWidth / 200; // Map 0..200 to 0..barWidth
+        int offset = rowOffset;
         offset += tfp_sprintf(buff + offset, "%s[", names[i]);
         for (int j = 0; j < barWidth; j++) {
             buff[offset++] = (j < filled) ? '|' : ' ';
         }
-        // Manual float formatting: show as X.X
         int intPart = value / 100;
         int fracPart = (value % 100 + 5) / 10; // Round to nearest tenth
         if (fracPart == 10) {
@@ -1573,11 +1575,12 @@ static void osdRenderSliderBars(char *buff, const int *values, const char **name
         if (extraLabels && extraValues && extraLabels[i] && extraValues[i] >= 0) {
             offset += tfp_sprintf(buff + offset, "|%s:%d", extraLabels[i], (int)extraValues[i]);
         }
-        if (i < count - 1) {
-            offset += tfp_sprintf(buff + offset, "\r");
+        // Pad the rest of the row with spaces
+        while (offset < rowOffset + rowLen - 1) {
+            buff[offset++] = ' ';
         }
+        buff[offset++] = '\0';
     }
-    buff[offset] = '\0';
 }
 
 static void osdElementPidsMasterMultiplier(osdElementParms_t *element)
