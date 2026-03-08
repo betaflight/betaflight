@@ -774,4 +774,9 @@ bool usbCableIsInserted(void)
 {
     return false;
 }
+
+bool mspSerialIsConfiguratorActive(void)
+{
+    return false;
+}
 }
