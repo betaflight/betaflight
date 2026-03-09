@@ -417,3 +417,4 @@ float getGpsDataIntervalSeconds(void);  // range 0.05 - 2.5s
 float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
+uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt);
