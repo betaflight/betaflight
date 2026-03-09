@@ -3034,6 +3034,7 @@ static void cliVtxTable(const char *cmdName, char *cmdline)
     } else if (strcasecmp(tok, "powerlabels") == 0) {
         // Power labels
         char label[VTX_TABLE_MAX_POWER_LEVELS][VTX_TABLE_POWER_LABEL_LENGTH + 1];
+        memset(label, 0, sizeof(label));
         int levels = vtxTableConfigMutable()->powerLevels;
         int count;
         for (count = 0; count < levels && (tok = strtok_r(NULL, " ", &saveptr)); count++) {
