@@ -520,6 +520,25 @@ TEST(CLIUnittest, TestSetSettingByNameNotFound)
     EXPECT_FALSE(result);
 }
 
+// Verifies cliSetSettingByName rejects a partial array (fewer elements than length).
+TEST(CLIUnittest, TestSetSettingByNamePartialArray)
+{
+    // First set to known values
+    cliSetSettingByName("array_unit_test = 10,20,30");
+
+    // Attempt partial update with only 1 of 3 elements
+    bool result = cliSetSettingByName("array_unit_test = 99");
+    EXPECT_FALSE(result);
+
+    // Original values should be unchanged
+    const uint16_t index = cliGetSettingIndex((char *)"array_unit_test", 15);
+    EXPECT_LT(index, valueTableEntryCount);
+    int8_t *data = (int8_t *)cliGetValuePointer(&valueTable[index]);
+    EXPECT_EQ(10, data[0]);
+    EXPECT_EQ(20, data[1]);
+    EXPECT_EQ(30, data[2]);
+}
+
 // Verifies cliSetSettingByName returns false when value is empty.
 TEST(CLIUnittest, TestSetSettingByNameEmptyValue)
 {

@@ -5104,14 +5104,22 @@ bool cliSetSettingByName(const char *cmdline)
                 return false;
             }
             const uint8_t arrayLength = val->config.array.length;
+
+            // count comma-separated elements before writing anything
+            int elementCount = 1;
+            for (const char *c = valStr; *c; c++) {
+                if (*c == ',') {
+                    elementCount++;
+                }
+            }
+            if (elementCount != arrayLength) {
+                return false;
+            }
+
             const char *p = valStr;
-            int parsedCount = 0;
             for (int i = 0; i < arrayLength && p && *p; i++) {
                 while (*p == ' ') {
                     p++;
-                }
-                if (!*p) {
-                    break;
                 }
                 switch (val->type & VALUE_TYPE_MASK) {
                 case VAR_UINT8:
@@ -5133,12 +5141,8 @@ bool cliSetSettingByName(const char *cmdline)
                     ((int32_t *)ptr)[i] = (int32_t)strtol(p, NULL, 10);
                     break;
                 }
-                parsedCount++;
                 const char *comma = strchr(p, ',');
                 p = comma ? comma + 1 : NULL;
-            }
-            if (parsedCount == 0) {
-                return false;
             }
         }
         break;
