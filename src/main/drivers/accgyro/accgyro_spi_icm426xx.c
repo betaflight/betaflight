@@ -277,10 +277,6 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
     icm426xxSoftReset(dev);
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
-#if defined(USE_GYRO_CLKIN)
-    icm426xxEnableExternalClock(dev);
-#endif
-
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     do {
@@ -316,6 +312,14 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
             return MPU_NONE;
         }
     } while (attemptsRemaining--);
+
+#if defined(USE_GYRO_CLKIN)
+    // IMM42652/53 also support external clock but it's not currently tested and may require different handling, so only enable for 42688P for now.
+    if (icmDetected == ICM_42688P_SPI) {
+        icm426xxEnableExternalClock(dev);
+    }
+
+#endif
 
     return icmDetected;
 }
