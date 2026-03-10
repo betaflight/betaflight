@@ -21,15 +21,29 @@ MAKE_SCRIPT_DIR := $(ROOT)/mk
 include $(MAKE_SCRIPT_DIR)/system-id.mk
 
 # Setup locale
-LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(USER_DIR)/locales/*/bf_locale.h)))))
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(USER_DIR)/locales/*/bf_locale.xml)))))
 ifeq ($(LOCALE),)
     LOCALE := en
 endif
 ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
     $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
 endif
+
 INCLUDE_DIRS := $(USER_DIR)/locales/$(LOCALE)
 
+LOCALES_DIR := $(USER_DIR)/locales
+
+LOCALE_GENERATED_HEADERS := \
+    $(LOCALES_DIR)/untranslated.h \
+    $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
@@ -760,6 +774,18 @@ $1_OBJS = $$(patsubst \
 $1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
 $1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
 endif
+
+# Only source files that directly include locales/localisation.h
+# need generated locale headers before compilation.
+$1_LOCALE_DEP_SRC := $(shell grep -l \
+	'#include "locales/localisation.h"' \
+	$($1_SRC) 2>/dev/null)
+
+$1_LOCALE_DEP_OBJS := $$(patsubst \
+	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
+	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$($1_LOCALE_DEP_SRC:.c=.c.o)))
+
+$$($1_LOCALE_DEP_OBJS): $(LOCALE_GENERATED_HEADERS)
 
 # $$(info $1 -v-v-------)
 # $$(info $1_SRC:  $$($1_SRC))
