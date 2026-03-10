@@ -600,6 +600,42 @@ bool mspSerialWaiting(void)
     return false;
 }
 
+/*
+ * Returns true when a configurator-class MSP port has seen inbound
+ * activity in the last MSP_ACTIVITY_DEFAULT_TIMEOUT_MS (5 s).
+ *
+ * Only pure FUNCTION_MSP ports count.  Ports that also carry
+ * FUNCTION_VTX_MSP (HD VTX / DisplayPort) are excluded so that
+ * peripheral traffic does not accidentally muzzle the beeper.
+ */
+bool mspSerialIsConfiguratorActive(void)
+{
+    const timeMs_t now = millis();
+
+    for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (!mspPort->port || mspPort->lastActivityMs == 0) {
+            continue;
+        }
+
+        const serialPortConfig_t *cfg =
+            serialFindPortConfiguration(mspPort->port->identifier);
+        if (!cfg) {
+            continue;
+        }
+
+        // Skip ports shared with a VTX — those are peripherals, not configurators
+        if (cfg->functionMask & FUNCTION_VTX_MSP) {
+            continue;
+        }
+
+        if (cmp32(now, mspPort->lastActivityMs) < (int32_t)MSP_ACTIVITY_DEFAULT_TIMEOUT_MS) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void mspSerialInit(void)
 {
     memset(mspPorts, 0, sizeof(mspPorts));

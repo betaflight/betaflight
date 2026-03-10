@@ -2224,6 +2224,21 @@ static int64_t dateTimeToUnixSeconds(uint16_t year, uint8_t month, uint8_t day, 
     return (int64_t)days * 86400 + hour * 3600 + min * 60 + sec;
 }
 
+// Convert gpsDateTime_t to Unix epoch seconds; returns 0 if not valid
+uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt)
+{
+    if (!dt || !dt->valid) {
+        return 0;
+    }
+
+    if (dt->year < 1980 || dt->month < 1 || dt->month > 12 || dt->day < 1 ||
+        dt->day > 31 || dt->hour > 23 || dt->min > 59 || dt->sec > 60) {
+        return 0;
+    }
+
+    return (uint32_t)dateTimeToUnixSeconds(dt->year, dt->month, dt->day, dt->hour, dt->min, dt->sec);
+}
+
 // Apply nanosecond correction to seconds/millis with proper borrow/carry
 static void applyNanoCorrection(int64_t *unixSeconds, uint16_t *millis, int32_t nano)
 {
