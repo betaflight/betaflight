@@ -470,7 +470,7 @@ extern "C" {
         return (a / b) + destFrom;
     }
 
-    void expressLrsInitialiseTimer(TIM_TypeDef *, elrsReceiver_t *) {}
+    void expressLrsInitialiseTimer(const timerHardware_t *, timerOvrHandlerRec_t *) {}
     void expressLrsTimerEnableIRQs(void) {}
     void expressLrsUpdateTimerInterval(uint16_t ) {}
     void expressLrsUpdatePhaseShift(int32_t ) {}

@@ -32,6 +32,9 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+
+#include "platform/timer.h"
+
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
@@ -57,10 +60,10 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     if (!ioTag) {
-        return;
+        return false;
     }
 
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -68,14 +71,21 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_InitTypeDef DMA_InitStructure;
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
-    timer = timerHardware->tim;
+    if (!timerHardware) {
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
+    }
+    timer = (TIM_TypeDef *)timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec == NULL) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     dmaRef = dmaSpec->ref;
@@ -90,7 +100,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 #endif
 
     if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0)) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     transponderIO = IOGetByTag(ioTag);
@@ -158,6 +170,8 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
     xDMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
+
+    return true;
 }
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
@@ -180,7 +194,9 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
             return false;
     }
 
-    transponderIrHardwareInit(ioTag, &transponder);
+    if (!transponderIrHardwareInit(ioTag, &transponder)) {
+        return false;
+    }
 
     return true;
 }

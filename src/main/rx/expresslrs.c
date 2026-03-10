@@ -74,6 +74,8 @@
 #include "rx/expresslrs_impl.h"
 #include "rx/expresslrs_telemetry.h"
 
+static const timerHardware_t elrsTimerHw = { .tim = RX_EXPRESSLRS_TIMER_INSTANCE };
+
 UNIT_TESTED elrsReceiver_t receiver;
 static const uint8_t BindingUID[6] = {0,1,2,3,4,5}; // Special binding UID values
 static uint16_t crcInitializer = 0;
@@ -1017,7 +1019,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 
     expressLrsPhaseLockReset();
 
-    expressLrsInitialiseTimer(RX_EXPRESSLRS_TIMER_INSTANCE, &receiver.timerUpdateCb);
+    expressLrsInitialiseTimer(&elrsTimerHw, &receiver.timerUpdateCb);
     expressLrsTimerStop();
 
     generateCrc14Table();

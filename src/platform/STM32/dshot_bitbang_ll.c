@@ -41,6 +41,7 @@
 #include "drivers/pwm_output.h" // XXX for pwmOutputPort_t motors[]; should go away with refactoring
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 #include "pwm_output_dshot_shared.h"
 
 #include "pg/motor.h"
@@ -99,13 +100,13 @@ void bbTimerChannelInit(bbPort_t *bbPort)
     ocInit.CompareValue = 10; // Duty doesn't matter, but too value small would make monitor output invalid
 
     //TIM_Cmd(bbPort->timhw->tim, DISABLE);
-    LL_TIM_DisableCounter(bbPort->timhw->tim);
+    LL_TIM_DisableCounter((TIM_TypeDef *)bbPort->timhw->tim);
 
     //timerOCInit(timhw->tim, timhw->channel, &TIM_OCStruct);
-    LL_TIM_OC_Init(timhw->tim, bbPort->llChannel, &ocInit);
+    LL_TIM_OC_Init((TIM_TypeDef *)timhw->tim, bbPort->llChannel, &ocInit);
 
     //timerOCPreloadConfig(timhw->tim, timhw->channel, TIM_OCPreload_Enable);
-    LL_TIM_OC_EnablePreload(timhw->tim, bbPort->llChannel);
+    LL_TIM_OC_EnablePreload((TIM_TypeDef *)timhw->tim, bbPort->llChannel);
 
 #ifdef DEBUG_MONITOR_PACER
     if (timhw->tag) {
@@ -113,14 +114,14 @@ void bbTimerChannelInit(bbPort_t *bbPort)
         IOConfigGPIOAF(io, IOCFG_AF_PP, timhw->alternateFunction);
         IOInit(io, OWNER_DSHOT_BITBANG, 0);
         //TIM_CtrlPWMOutputs(timhw->tim, ENABLE);
-        LL_TIM_EnableAllOutputs(timhw->tim);
+        LL_TIM_EnableAllOutputs((TIM_TypeDef *)timhw->tim);
     }
 #endif
 
     // Enable and keep it running
 
     //TIM_Cmd(bbPort->timhw->tim, ENABLE);
-    LL_TIM_EnableCounter(bbPort->timhw->tim);
+    LL_TIM_EnableCounter((TIM_TypeDef *)bbPort->timhw->tim);
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
@@ -194,7 +195,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     // Reinitialize pacer timer for output
 
-    bbPort->timhw->tim->ARR = bbPort->outputARR;
+    ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 }
@@ -226,7 +227,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     // Reinitialize pacer timer for input
 
-    bbPort->timhw->tim->ARR = bbPort->inputARR;
+    ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->inputARR;
 
     bbDMA_Cmd(bbPort, ENABLE);
 
@@ -296,17 +297,17 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     init->CounterMode = LL_TIM_COUNTERMODE_UP;
     init->Autoreload = period;
     //TIM_TimeBaseInit(bbPort->timhw->tim, &bbPort->timeBaseInit);
-    LL_TIM_Init(bbPort->timhw->tim, init);
-    MODIFY_REG(bbPort->timhw->tim->CR1, TIM_CR1_ARPE, TIM_AUTORELOAD_PRELOAD_ENABLE);
+    LL_TIM_Init((TIM_TypeDef *)bbPort->timhw->tim, init);
+    MODIFY_REG(((TIM_TypeDef *)bbPort->timhw->tim)->CR1, TIM_CR1_ARPE, TIM_AUTORELOAD_PRELOAD_ENABLE);
 }
 
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
+void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
 {
     //TIM_DMACmd(TIMx, TIM_DMASource, NewState);
     if (NewState == ENABLE) {
-        SET_BIT(TIMx->DIER, TIM_DMASource);
+        SET_BIT(((TIM_TypeDef *)TIMx)->DIER, TIM_DMASource);
     } else {
-        CLEAR_BIT(TIMx->DIER, TIM_DMASource);
+        CLEAR_BIT(((TIM_TypeDef *)TIMx)->DIER, TIM_DMASource);
     }
 }
 

@@ -70,15 +70,6 @@ typedef enum
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
-typedef struct
-{
-    void* test;
-} TIM_TypeDef;
-
-typedef struct
-{
-    void* test;
-} TIM_OCInitTypeDef;
 
 typedef struct {
     void* test;
