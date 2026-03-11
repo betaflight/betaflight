@@ -61,7 +61,7 @@
 typedef struct {
     hoverCalibrationStatus_e status;
     hoverCalibrationFailReason_e failReason;
-    uint16_t sampleCount;
+    uint32_t sampleCount;
     uint32_t throttleSum;           // Running sum for average calculation
     timeMs_t stabilityStartTime;
     timeMs_t samplingStartTime;
@@ -251,7 +251,7 @@ void hoverCalibrationUpdate(void)
                     autopilotConfigMutable()->hoverThrottle = avgThrottle;
                     hoverCal.status = HOVER_CAL_STATUS_COMPLETE;
                     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
-                    saveConfigAndNotify();
+                    hoverCal.pendingSave = true;
                     beeper(BEEPER_ACC_CALIBRATION);
                 } else {
                     hoverCalibrationFail(HOVER_CAL_FAIL_RESULT_RANGE);
@@ -275,16 +275,26 @@ void hoverCalibrationUpdate(void)
     }
 
     if (!stable) {
-        // Lost stability while armed - reset to waiting state
         if (hoverCal.status == HOVER_CAL_STATUS_SAMPLING) {
-            // Was sampling, now lost stability - reset samples
-            hoverCal.sampleCount = 0;
-            hoverCal.throttleSum = 0;
+            // Lost stability during sampling - skip this sample but keep accumulated data.
+            // Only reset fully if instability persists long enough (stability window expired).
+            if (cmpTimeMs(currentTime, hoverCal.stabilityStartTime) >= HOVER_CAL_STABILITY_TIME_MS) {
+                // Instability held long enough to invalidate all samples - reset
+                hoverCal.sampleCount = 0;
+                hoverCal.throttleSum = 0;
+                hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
+                hoverCal.stabilityStartTime = currentTime;
+            }
+            // else: brief spike - just skip this sample, don't change state
+        } else {
+            hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
+            hoverCal.stabilityStartTime = currentTime;
         }
-        hoverCal.status = HOVER_CAL_STATUS_WAITING_STABLE;
-        hoverCal.stabilityStartTime = currentTime;
         return;
     }
+
+    // Reset the stability timer while stable so only sustained instability resets sampling
+    hoverCal.stabilityStartTime = currentTime;
     
     // Clear fail reason when stable
     hoverCal.failReason = HOVER_CAL_FAIL_NONE;
