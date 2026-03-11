@@ -36,7 +36,6 @@ typedef enum {
     HOVER_CAL_FAIL_NO_ALTITUDE,
     HOVER_CAL_FAIL_TOO_LOW,
     HOVER_CAL_FAIL_NOT_LEVEL,
-    HOVER_CAL_FAIL_MOVING,
     HOVER_CAL_FAIL_ALTHOLD_MODE,
     HOVER_CAL_FAIL_RESULT_RANGE,
     HOVER_CAL_FAIL_DISARMED         // Disarmed during sampling without enough data

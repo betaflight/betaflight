@@ -155,7 +155,6 @@ static const char* getFailReasonString(hoverCalibrationFailReason_e reason)
         case HOVER_CAL_FAIL_NO_ALTITUDE: return "NO ALT";
         case HOVER_CAL_FAIL_TOO_LOW:     return "TOO LOW";
         case HOVER_CAL_FAIL_NOT_LEVEL:   return "NOT LEVEL";
-        case HOVER_CAL_FAIL_MOVING:      return "MOVING";
         case HOVER_CAL_FAIL_ALTHOLD_MODE:return "ALTHOLD ON";
         case HOVER_CAL_FAIL_RESULT_RANGE:return "BAD RESULT";
         default:                         return "";
@@ -173,6 +172,9 @@ static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, co
     const hoverCalibrationStatus_e status = getHoverCalibrationStatus();
     const hoverCalibrationFailReason_e failReason = getHoverCalibrationFailReason();
 
+    // All format strings are verified to fit within HOVER_CAL_STATUS_MAX_LENGTH (20).
+    // Guarantee the buffer is always NUL-terminated as a safety net against future edits.
+    hoverCalibrationStatus[HOVER_CAL_STATUS_MAX_LENGTH - 1] = '\0';
     switch (status) {
         case HOVER_CAL_STATUS_IDLE:
             tfp_sprintf(hoverCalibrationStatus, "READY");
