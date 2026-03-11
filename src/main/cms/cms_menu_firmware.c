@@ -172,9 +172,10 @@ static const void *cmsx_HoverCalibrationOnDisplayUpdate(displayPort_t *pDisp, co
     const hoverCalibrationStatus_e status = getHoverCalibrationStatus();
     const hoverCalibrationFailReason_e failReason = getHoverCalibrationFailReason();
 
-    // All format strings are verified to fit within HOVER_CAL_STATUS_MAX_LENGTH (20).
-    // Guarantee the buffer is always NUL-terminated as a safety net against future edits.
-    hoverCalibrationStatus[HOVER_CAL_STATUS_MAX_LENGTH - 1] = '\0';
+    // Longest possible output: "FAIL:ALTHOLD ON" = 15 chars + NUL = 16 bytes.
+    // HOVER_CAL_STATUS_MAX_LENGTH (20) is verified to be large enough for all cases below.
+    // If new fail reasons or format strings are added, update this check accordingly.
+    STATIC_ASSERT(HOVER_CAL_STATUS_MAX_LENGTH >= 16, hover_cal_status_buffer_too_small);
     switch (status) {
         case HOVER_CAL_STATUS_IDLE:
             tfp_sprintf(hoverCalibrationStatus, "READY");
