@@ -275,7 +275,7 @@
 #define USE_ESCSERIAL_SIMONK
 #define USE_ALTITUDE_HOLD
 #define USE_POSITION_HOLD
-#if !defined(USE_WING) && (defined(USE_BARO) || defined(USE_GPS))
+#if !defined(USE_WING) && (defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER))
 #define USE_HOVER_CALIBRATION
 #endif
 
