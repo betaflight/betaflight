@@ -803,7 +803,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         success = osdFormatRtcDateTime(&buff[0]);
 #endif
         if (!success) {
-            tfp_sprintf(buff, "NO RTC");
+            tfp_sprintf(buff, STR_OSD_STAT_RTC_NO);
         }
 
         displayWrite(osdDisplayPort, midCol - 13, displayRow, DISPLAYPORT_SEVERITY_NORMAL, buff);
