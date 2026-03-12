@@ -1167,7 +1167,7 @@ static void gpsConfigureUblox(void)
                 ubloxSendNAV5Message(gpsConfig()->gps_ublox_acquire_model);
                 break;
             case UBLOX_CFG_ANA:
-                if (gpsData.ubloxM7orAbove) { // NavX5 support existed in M5 - in theory we could remove that check
+                if (gpsData.ubloxM7orAbove && gpsConfig()->gps_ublox_enable_ana) {
                     ubloxAssistNowAutonomous();
                 } else {
                     gpsData.state_position++;
