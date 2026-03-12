@@ -548,7 +548,7 @@ static sdcardOperationStatus_e sdcardSdio_writeBlock(uint32_t blockIndex, uint8_
  * Returns:
  *     SDCARD_OPERATION_SUCCESS     - Multi-block write has been queued
  *     SDCARD_OPERATION_BUSY        - The card is already busy and cannot accept your write
- *     SDCARD_OPERATION_FAILURE     - A fatal error occured, card will be reset
+ *     SDCARD_OPERATION_FAILURE     - A fatal error occurred, card will be reset
  */
 static sdcardOperationStatus_e sdcardSdio_beginWriteBlocks(uint32_t blockIndex, uint32_t blockCount)
 {
