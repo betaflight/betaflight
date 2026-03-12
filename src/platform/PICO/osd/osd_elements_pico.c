@@ -464,11 +464,11 @@ static bool postProcessUntil(uint32_t limit_micros)
         uint32_t wordNext = *pWord;
         uint32_t wordThis = 0;
         bool notLastLine = y < fb_ny - 1;
-        for (int dosome = PICO_OSD_LINE_WORDS; dosome > 0; dosome--) {
+        for (int dosome = PICO_OSD_LINE_WORDS - 1; dosome >= 0; dosome--) {
 
             uint32_t wordPrev = wordThis;
             wordThis = wordNext;
-            wordNext = *(pWord + 1);
+            wordNext = dosome ? *(pWord + 1) : 0;
 
             uint32_t whiteThis = wordThis & 0x55555555; // pick out all of the OSD_W (low bits) of each bit pair (OSD_EN, OSD_W).
             uint32_t blackUpdates;
@@ -512,6 +512,7 @@ static bool postProcessUntil(uint32_t limit_micros)
                 blackUpdates |= (wordPrev & 0x40000000) >> 29;
                 blackUpdates |= (wordNext & 0x1) << 31;
 
+                // NB misses out on diagonals that arise from previous or following words on lines above/below.
                 if (y != 0) {
                     uint32_t wordUp = *(pWord - PICO_OSD_LINE_WORDS) & 0x55555555;
                     blackUpdates |= wordUp << 1 | wordUp << 3 | wordUp >> 1;
