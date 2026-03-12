@@ -40,6 +40,7 @@ typedef struct gpsConfig_s {
     bool gps_use_3d_speed;
     bool sbas_integrity;
     uint8_t gps_ublox_utc_standard;
+    uint8_t gps_ublox_enable_ana;
     char nmeaCustomCommands[NMEA_CUSTOM_COMMANDS_MAX_LENGTH + 1];
 } gpsConfig_t;
 
