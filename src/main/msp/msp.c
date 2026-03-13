@@ -1333,6 +1333,7 @@ case MSP_NAME:
         {
             // Return motor and servo pin assignments
             // Format: [motorCount][servoCount][motor0_ioTag]...[motorN_ioTag][servo0_ioTag]...[servoN_ioTag]
+            STATIC_ASSERT(sizeof(ioTag_t) == sizeof(uint8_t), ioTag_size_must_be_one_byte);
             sbufWriteU8(dst, MAX_SUPPORTED_MOTORS);
 #ifdef USE_SERVOS
             sbufWriteU8(dst, MAX_SUPPORTED_SERVOS);
