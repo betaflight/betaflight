@@ -55,9 +55,9 @@
   <string name="STR_OSD_STAT_MAX_FFT_THRT" maxLength="8" comment="localization of: 'THRT&lt;20%'">GAS&lt;20%</string>
   <string name="STR_OSD_STAT_MIN_RSSI_DBM" maxLength="12" comment="localization of: 'MIN RSSI DBM'">MIN RSSI DBM</string>
   <string name="STR_OSD_STAT_MIN_RSNR" maxLength="8" comment="localization of: 'MIN RSNR'">MIN RSNR</string>
-  <string name="STR_USE_PERSISTENT_STATS" maxLength="14" comment="localization of: 'TOTAL FLIGHTS'">TOTAL FLYVNING</string>
-  <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="localization of: 'TOTAL FLIGHT TIME'">TOTAL FLYVE TID</string>
-  <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="localization of: 'TOTAL DISTANCE'">TOTAL DISTANCE</string>
+  <string name="STR_OSD_STAT_TOTAL_FLIGHTS" maxLength="14" comment="localization of: 'TOTAL FLIGHTS'">IALT FLØJET</string>
+  <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="localization of: 'TOTAL FLIGHT TIME'">IALT FLYVE TID</string>
+  <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="localization of: 'TOTAL DISTANCE'">IALT DISTANCE</string>
   <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="12" comment="localization of: '&gt;CRASH FLIP&lt;'">&gt;CRASH FLIP&lt;</string>
   <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="13" comment="localization of: 'CRASH FLIP SWITCH'">CRASH FLIP +</string>
   <string name="STR_OSDW_BEACON_ON" maxLength="10" comment="localization of: ' BEACON ON'"> BEACON +</string>

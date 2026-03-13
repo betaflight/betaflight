@@ -15,14 +15,6 @@
   <string name="STR_OSDE_DISARMED_HD" maxLength="14" comment="HD localization of: '*** DISARMED ***'">** DISARMED **</string>
   <string name="STR_OSD_STATS" maxLength="13" comment="localization of: '--- STATS ---'">--- STATS ---</string>
   <string name="STR_OSD_STATS_HD" maxLength="18" comment="HD localization of: '--- STATISTICS ---'">--- STATISTICS ---</string>
-  <string name="STR_OSD_TIMER_ON_TIME" maxLength="9" comment="localization of: 'ON TIME  '">ON TIME  </string>
-  <string name="STR_OSD_TIMER_ON_TIME_HD" maxLength="14" comment="HD localization of: 'ON TIME    '">ON TIME    </string>
-  <string name="STR_OSD_TIMER_TOTAL_ARM" maxLength="9" comment="localization of: 'TOTAL ARM'">TOTAL ARM</string>
-  <string name="STR_OSD_TIMER_TOTAL_ARM_HD" maxLength="14" comment="HD localization of: 'TOTAL ARMED'">TOTAL ARMED</string>
-  <string name="STR_OSD_TIMER_LAST_ARM" maxLength="9" comment="localization of: 'LAST ARM '">LAST ARM </string>
-  <string name="STR_OSD_TIMER_LAST_ARM_HD" maxLength="14" comment="HD localization of: 'LAST ARMED '">LAST ARMED </string>
-  <string name="STR_OSD_TIMER_ON_ARM" maxLength="9" comment="localization of: 'ON/ARM   '">ON/ARM   </string>
-  <string name="STR_OSD_TIMER_ON_ARM_HD" maxLength="11" comment="HD localization of: 'ON/ARMED   '">ON/ARMED   </string>
   <string name="STR_OSD_STAT_RTC_NO" maxLength="6" comment="localization of: 'NO RTC'">NO RTC</string>
   <string name="STR_OSD_STAT_MAX_ALTITUDE" maxLength="12" comment="localization of: 'MAX ALTITUDE'">MAX ALTITUDE</string>
   <string name="STR_OSD_STAT_MAX_ALTITUDE_HD" maxLength="17" comment="HD localization of: 'MAXIMAL ALTITUDE'">MAXIMAL ALTITUDE</string>
@@ -56,9 +48,17 @@
   <string name="STR_OSD_STAT_MAX_FFT_THRT" maxLength="8" comment="localization of: 'THRT&lt;20%'">THRT&lt;20%</string>
   <string name="STR_OSD_STAT_MIN_RSSI_DBM" maxLength="12" comment="localization of: 'MIN RSSI DBM'">MIN RSSI DBM</string>
   <string name="STR_OSD_STAT_MIN_RSNR" maxLength="8" comment="localization of: 'MIN RSNR'">MIN RSNR</string>
-  <string name="STR_USE_PERSISTENT_STATS" maxLength="14" comment="localization of: 'TOTAL FLIGHTS'">TOTAL FLIGHTS</string>
+  <string name="STR_OSD_STAT_TOTAL_FLIGHTS" maxLength="14" comment="localization of: 'TOTAL FLIGHTS'">TOTAL FLIGHTS</string>
   <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="localization of: 'TOTAL FLIGHT TIME'">TOTAL FLIGHT TIME</string>
   <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="localization of: 'TOTAL DISTANCE'">TOTAL DISTANCE</string>
+  <string name="STR_OSD_TIMER_ON_TIME" maxLength="9" comment="localization of: 'ON TIME  '">ON TIME  </string>
+  <string name="STR_OSD_TIMER_ON_TIME_HD" maxLength="14" comment="HD localization of: 'ON TIME    '">ON TIME    </string>
+  <string name="STR_OSD_TIMER_TOTAL_ARM" maxLength="9" comment="localization of: 'TOTAL ARM'">TOTAL ARM</string>
+  <string name="STR_OSD_TIMER_TOTAL_ARM_HD" maxLength="14" comment="HD localization of: 'TOTAL ARMED'">TOTAL ARMED</string>
+  <string name="STR_OSD_TIMER_LAST_ARM" maxLength="9" comment="localization of: 'LAST ARM '">LAST ARM </string>
+  <string name="STR_OSD_TIMER_LAST_ARM_HD" maxLength="14" comment="HD localization of: 'LAST ARMED '">LAST ARMED </string>
+  <string name="STR_OSD_TIMER_ON_ARM" maxLength="9" comment="localization of: 'ON/ARM   '">ON/ARM   </string>
+  <string name="STR_OSD_TIMER_ON_ARM_HD" maxLength="11" comment="HD localization of: 'ON/ARMED   '">ON/ARMED   </string>
   <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="12" comment="localization of: '&gt;CRASH FLIP&lt;'">&gt;CRASH FLIP&lt;</string>
   <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="13" comment="localization of: 'CRASH FLIP SW'">CRASH FLIP SW</string>
   <string name="STR_OSDW_BEACON_ON" maxLength="10" comment="localization of: ' BEACON ON'"> BEACON ON</string>

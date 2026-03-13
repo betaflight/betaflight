@@ -127,7 +127,6 @@ bool cliMode = false;
 #include "msp/msp_protocol.h"
 
 #include "locales/localisation.h"
-
 #include "osd/osd.h"
 
 #include "pg/adc.h"

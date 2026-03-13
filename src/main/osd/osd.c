@@ -82,7 +82,6 @@
 #include "io/gps.h"
 
 #include "locales/localisation.h"
-
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
@@ -1007,7 +1006,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 #ifdef USE_PERSISTENT_STATS
     case OSD_STAT_TOTAL_FLIGHTS:
         itoa(statsConfig()->stats_total_flights, buff, 10);
-        osdDisplayStatisticLabel(midCol, displayRow, STR_USE_PERSISTENT_STATS, buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_TOTAL_FLIGHTS, buff);
         return true;
 
     case OSD_STAT_TOTAL_TIME: {
