@@ -329,7 +329,7 @@ typedef enum {
     UBLOX_MSG_GSA,          //  7. GSA: GNSS DOP and Active Satellites
     UBLOX_MSG_RMC,          //  8. RMC: Recommended Minimum data
     UBLOX_ACQUIRE_MODEL,    //  9
-    UBLOX_CFG_ANA,          // 10  ANA: if M10, enable autonomous mode
+    UBLOX_CFG_ANA,          // 10  ANA: if M7 or above, enable autonomous mode
     UBLOX_SET_SBAS,         // 11. Sets SBAS
     UBLOX_SET_PMS,          // 12. Sets Power Mode
     UBLOX_MSG_NAV_PVT,      // 13. set NAV-PVT rate
