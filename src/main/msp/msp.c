@@ -3872,6 +3872,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 // Motor
                 if (index < MAX_SUPPORTED_MOTORS) {
                     motorConfigMutable()->dev.ioTags[index] = ioTag;
+                    writeEEPROM();
                     setRebootRequired();
                 } else {
                     return MSP_RESULT_ERROR;
@@ -3882,6 +3883,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 // Servo
                 if (index < MAX_SUPPORTED_SERVOS) {
                     servoConfigMutable()->dev.ioTags[index] = ioTag;
+                    writeEEPROM();
                     setRebootRequired();
                 } else {
                     return MSP_RESULT_ERROR;
