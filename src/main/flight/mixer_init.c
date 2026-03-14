@@ -364,13 +364,31 @@ void mixerInitProfile(void)
 
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     mixerRuntime.vbatSagCompensationFactor = 0.0f;
+    mixerRuntime.vbatSagThrottleCompensationFactor = 0.0f;
+    mixerRuntime.vbatRangeToCompensate = 0.0f;
+    mixerRuntime.vbatFull = (float)currentPidProfile->vbat_sag_max_voltage;
+    mixerRuntime.vbatMin = (float)currentPidProfile->vbat_sag_min_voltage;
+    mixerRuntime.vbatTarget = (currentPidProfile->vbat_sag_target > 0)
+                              ? (float)currentPidProfile->vbat_sag_target
+                              : (float)batteryConfig()->vbatwarningcellvoltage;
+
+    if (mixerRuntime.vbatMin > mixerRuntime.vbatFull) {
+        mixerRuntime.vbatMin = mixerRuntime.vbatFull;
+    }
+
+    if (mixerRuntime.vbatFull > mixerRuntime.vbatTarget) {
+        // Helper for motor output limit compensation only. Do not compensate if target is higher than max voltage
+        mixerRuntime.vbatRangeToCompensate = mixerRuntime.vbatFull - mixerRuntime.vbatTarget;
+    }
+
     if (currentPidProfile->vbat_sag_compensation > 0 && !RPM_LIMIT_ACTIVE) {
-        //TODO: Make this voltage user configurable
-        mixerRuntime.vbatFull = CELL_VOLTAGE_FULL_CV;
-        mixerRuntime.vbatRangeToCompensate = mixerRuntime.vbatFull - batteryConfig()->vbatwarningcellvoltage;
-        if (mixerRuntime.vbatRangeToCompensate > 0) {
-            mixerRuntime.vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
-        }
+        // Enables motor output limit compensation
+        mixerRuntime.vbatSagCompensationFactor = ((float)currentPidProfile->vbat_sag_compensation) / 100.0f;
+    }
+
+    if (currentPidProfile->vbat_sag_throttle_compensation > 0 && !RPM_LIMIT_ACTIVE) {
+        // Enables throttle compensation
+        mixerRuntime.vbatSagThrottleCompensationFactor = ((float)currentPidProfile->vbat_sag_throttle_compensation) / 100.0f;
     }
 #endif
 

@@ -267,6 +267,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .vbat_sag_throttle_compensation = 0,
+        .vbat_sag_max_voltage = 420,
+        .vbat_sag_min_voltage = 350,
+        .vbat_sag_target = 0,
     );
 }
 

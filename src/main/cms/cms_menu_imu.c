@@ -528,6 +528,10 @@ static uint8_t  cmsx_d_max_advance;
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
 static uint8_t  cmsx_vbat_sag_compensation;
+static uint8_t  cmsx_vbat_sag_throttle_compensation;
+static uint16_t cmsx_vbat_sag_max_voltage;
+static uint16_t cmsx_vbat_sag_min_voltage;
+static uint16_t cmsx_vbat_sag_target;
 #endif
 
 #ifdef USE_ITERM_RELAX
@@ -598,6 +602,10 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     cmsx_vbat_sag_compensation = pidProfile->vbat_sag_compensation;
+    cmsx_vbat_sag_throttle_compensation = pidProfile->vbat_sag_throttle_compensation;
+    cmsx_vbat_sag_max_voltage = pidProfile->vbat_sag_max_voltage;
+    cmsx_vbat_sag_min_voltage = pidProfile->vbat_sag_min_voltage;
+    cmsx_vbat_sag_target = pidProfile->vbat_sag_target;
 #endif
     cmsx_tpa_rate = pidProfile->tpa_rate;
     cmsx_tpa_breakpoint = pidProfile->tpa_breakpoint;
@@ -656,6 +664,10 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
     pidProfile->vbat_sag_compensation = cmsx_vbat_sag_compensation;
+    pidProfile->vbat_sag_throttle_compensation = cmsx_vbat_sag_throttle_compensation;
+    pidProfile->vbat_sag_max_voltage = cmsx_vbat_sag_max_voltage;
+    pidProfile->vbat_sag_min_voltage = cmsx_vbat_sag_min_voltage;
+    pidProfile->vbat_sag_target = cmsx_vbat_sag_target;
 #endif
     pidProfile->tpa_rate = cmsx_tpa_rate;
     pidProfile->tpa_breakpoint = cmsx_tpa_breakpoint;
@@ -664,7 +676,7 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
     pidProfile->tpa_low_always = cmsx_tpa_low_always;
     pidProfile->landing_disarm_threshold = cmsx_landing_disarm_threshold;
 
-    initEscEndpoints();
+    changePidProfile(pidProfileIndex); // To apply all parameters
     return NULL;
 }
 
@@ -715,7 +727,11 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
 #endif
 
 #ifdef USE_BATTERY_VOLTAGE_SAG_COMPENSATION
-    { "VBAT_SAG_COMP", OME_UINT8,  NULL, &(OSD_UINT8_t) { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
+    { "VBAT_SAG_COMP",     OME_UINT8,   NULL, &(OSD_UINT8_t)  { &cmsx_vbat_sag_compensation, 0, 150, 1 } },
+    { "VBAT_SAG_THR_COMP", OME_UINT8,   NULL, &(OSD_UINT8_t)  { &cmsx_vbat_sag_throttle_compensation, 0, 255, 1 } },
+    { "VBAT_SAG_MAX_V",    OME_UINT16,  NULL, &(OSD_UINT16_t) { &cmsx_vbat_sag_max_voltage, 350, 440, 1 } },
+    { "VBAT_SAG_MIN_V",    OME_UINT16,  NULL, &(OSD_UINT16_t) { &cmsx_vbat_sag_min_voltage, 200, 440, 1 } },
+    { "VBAT_SAG_TARGET",   OME_UINT16,  NULL, &(OSD_UINT16_t) { &cmsx_vbat_sag_target, 0, 880, 1 } },
 #endif
 
     { "TPA RATE",      OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_tpa_rate, 0, 100, 1, 10} },
