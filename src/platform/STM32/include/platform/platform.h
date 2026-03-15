@@ -470,11 +470,6 @@ extern uint8_t _dmaram_end__;
 #define ENABLE_SDIO_INIT 0
 #endif
 
-// H7 requires early SDIO GPIO init
-#if defined(STM32H7) && !defined(ENABLE_SDIO_INIT) && defined(USE_SDCARD_SDIO)
-#define ENABLE_SDIO_INIT 1
-#endif
-
 // QUAD SPI
 #if defined(STM32H7)
 #define MAX_QUADSPI_PIN_SEL 3
