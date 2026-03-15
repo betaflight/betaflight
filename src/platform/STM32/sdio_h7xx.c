@@ -209,7 +209,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     HAL_NVIC_EnableIRQ(sdioHardware->irqn);
 }
 
-void SDIO_GPIO_Init(void)
+void sdioInitialize(void)
 {
     if (!sdioHardware) {
         return;
