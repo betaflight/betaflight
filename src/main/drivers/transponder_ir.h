@@ -109,6 +109,6 @@ void transponderIrWaitForTransmitComplete(void);
 void transponderIrUpdateData(const uint8_t* transponderData);
 void transponderIrTransmit(void);
 
-bool transponderIsIrReady(void);
+bool transponderIrIsReady(void);
 
 extern volatile uint8_t transponderIrDataTransferInProgress;
