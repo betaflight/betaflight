@@ -159,6 +159,7 @@ int dmaGetHandlerCount(void)
 
 int dmaGetDeviceNumber(dmaIdentifier_e identifier)
 {
+    UNUSED(identifier);
     return DMA_DEVICE_NO(identifier);
 }
 
