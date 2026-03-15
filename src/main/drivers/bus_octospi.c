@@ -82,7 +82,7 @@ OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
 
 bool octoSpiInit(octoSpiDevice_e device)
 {
-    for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
+    for (size_t hwindex = 0; hwindex < OCTOSPIDEV_COUNT; hwindex++) {
         const octoSpiHardware_t *hw = &octoSpiHardware[hwindex];
 
         const octoSpiDevice_e hwDevice = hw->device;
