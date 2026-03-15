@@ -15,8 +15,8 @@
   <string name="STR_OSDE_DISARMED_HD" maxLength="14" comment="HD localization of: '*** DISARMED ***'">** DE-AKTIV **</string>
   <string name="STR_OSD_STATS" maxLength="13" comment="localization of: '--- STATS ---'">- STATISTIK -</string>
   <string name="STR_OSD_STATS_HD" maxLength="18" comment="HD localization of: '--- STATISTICS ---'">--- STATISTIK ---</string>
-  <string name="STR_OSD_STAT_MAX_ALTITUDE" maxLength="12" comment="localization of: 'MAX ALTITUDE'">MAX HOEJDE</string>
-  <string name="STR_OSD_STAT_MAX_ALTITUDE_HD" maxLength="17" comment="HD localization of: 'MAXIMAL ALTITUDE'">MAXIMAL HOEJDE</string>
+  <string name="STR_OSD_STAT_MAX_ALTITUDE" maxLength="12" comment="localization of: 'MAX ALTITUDE'">MAX HØJDE</string>
+  <string name="STR_OSD_STAT_MAX_ALTITUDE_HD" maxLength="17" comment="HD localization of: 'MAXIMAL ALTITUDE'">MAXIMAL HØJDE</string>
   <string name="STR_OSD_STAT_MAX_SPEED" maxLength="12" comment="localization of: 'MAX SPEED   '">MAX FART    </string>
   <string name="STR_OSD_STAT_MAX_SPEED_HD" maxLength="17" comment="HD localization of: 'MAXIMAL SPEED   '">MAXIMAL FART</string>
   <string name="STR_OSD_STAT_MAX_DISTANCE" maxLength="12" comment="localization of: 'MAX DISTANCE'">MAX DISTANCE</string>
@@ -29,8 +29,8 @@
   <string name="STR_OSD_STAT_BATTERY_AVG" maxLength="13" comment="localization of: 'AVG BATT CELL'">GNM BATT CELL</string>
   <string name="STR_OSD_STAT_BATTERY" maxLength="7" comment="localization of: 'BATTERY'">BATTERI</string>
   <string name="STR_OSD_STAT_MIN_RSSI" maxLength="8" comment="localization of: 'MIN RSSI'">MIN RSSI</string>
-  <string name="STR_OSD_STAT_MAX_CURRENT" maxLength="11" comment="localization of: 'MAX CURRENT'">MAX STROEM</string>
-  <string name="STR_OSD_STAT_MAX_CURRENT_HD" maxLength="16" comment="HD localization of: 'MAXIMAL CURRENT'">MAXIMAL STROEM</string>
+  <string name="STR_OSD_STAT_MAX_CURRENT" maxLength="11" comment="localization of: 'MAX CURRENT'">MAX STRØM</string>
+  <string name="STR_OSD_STAT_MAX_CURRENT_HD" maxLength="16" comment="HD localization of: 'MAXIMAL CURRENT'">MAXIMAL STRØM</string>
   <string name="STR_OSD_STAT_USED_MAH" maxLength="9" comment="localization of: 'USED MAH'">BRUGT MAH</string>
   <string name="STR_OSD_STAT_WATT_HOURS_DRAWN" maxLength="15" comment="localization of: 'USED WATT HOURS'">BRUGT WATT TIME</string>
   <string name="STR_OSD_STAT_BLACKBOX" maxLength="8" comment="localization of: 'BLACKBOX'">BLACKBOX</string>
