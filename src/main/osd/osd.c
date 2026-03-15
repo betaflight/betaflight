@@ -1033,19 +1033,19 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         const int minutes = seconds / 60;
         seconds = seconds % 60;
         tfp_sprintf(buff, "%02d:%02d", minutes, seconds);
-        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT TIME", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_FULL_THROTTLE_TIME, buff);
         return true;
     }
 
     case OSD_STAT_FULL_THROTTLE_COUNTER: {
         itoa(RcStatsGetFullThrottleCounter(), buff, 10);
-        osdDisplayStatisticLabel(midCol, displayRow, "100% THRT COUNT", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_FULL_THROTTLE_COUNTER, buff);
         return true;
     }
 
     case OSD_STAT_AVG_THROTTLE: {
         itoa(RcStatsGetAverageThrottle(), buff, 10);
-        osdDisplayStatisticLabel(midCol, displayRow, "AVG THROTTLE", buff);
+        osdDisplayStatisticLabel(midCol, displayRow, STR_OSD_STAT_AVG_THROTTLE, buff);
         return true;
     }
 #endif // USE_RC_STATS
