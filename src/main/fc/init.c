@@ -560,7 +560,7 @@ void initPhase2(void)
         initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
-#if ENABLE_SDIO_INIT && !defined(CONFIG_IN_SDCARD)
+#if ENABLE_SDIO_INIT && defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD)
     sdioPinConfigure();
     sdioInitialize();
 #endif
