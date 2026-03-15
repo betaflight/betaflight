@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 #ifdef USE_HAL_DRIVER
 #include "usbd_msc.h"
 typedef USBD_StorageTypeDef USBD_MSC_StorageType;
