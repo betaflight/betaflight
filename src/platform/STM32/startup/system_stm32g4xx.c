@@ -330,13 +330,20 @@ void systemClockSetHSEValue(uint32_t frequency)
     }
 }
 
-void OverclockRebootIfNecessary(unsigned requestedOverclockLevel)
+void OverclockRebootIfNecessary(uint32_t targetMhz)
 {
-    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
-
-    if (requestedOverclockLevel >= OVERCLOCK_LEVELS ) {
-        requestedOverclockLevel = 0;
+    // Translate targetMhz to a level index in sysclkSeries8
+    unsigned requestedOverclockLevel = 0;
+    if (targetMhz != 0) {
+        for (unsigned i = 0; i < OVERCLOCK_LEVELS; i++) {
+            if (sysclkSeries8[i] == targetMhz) {
+                requestedOverclockLevel = i;
+                break;
+            }
+        }
     }
+
+    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
 
     // If we are not running at the requested speed or
     // we are running on PLL-HSI even HSE has been set,
