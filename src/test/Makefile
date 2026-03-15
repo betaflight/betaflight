@@ -737,7 +737,7 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(INCLUDE_DIRS) $(TEST_DIR) $(USER_DIR)
+test_include_dirs  = $1 $(INCLUDE_DIRS) $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
