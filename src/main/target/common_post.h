@@ -714,3 +714,7 @@ extern struct linker_symbol __config_end;
  #endif
 
 ******************************************************/
+
+#if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 0
+#endif
