@@ -50,9 +50,9 @@
   <string name="STR_OSD_STAT_TOTAL_FLIGHTS" maxLength="14" comment="localization of: 'TOTAL FLIGHTS'">IALT FLØJET</string>
   <string name="STR_OSD_STAT_TOTAL_TIME" maxLength="17" comment="localization of: 'TOTAL FLIGHT TIME'">IALT FLYVE TID</string>
   <string name="STR_OSD_STAT_TOTAL_DIST" maxLength="14" comment="localization of: 'TOTAL DISTANCE'">IALT DISTANCE</string>
-  <string name="STR_OSD_STAT_FULL_THROTTLE_TIME" maxLength="15" comment="localization of: '100% THRT TIME'">100% THRT TIME</string>
-  <string name="STR_OSD_STAT_FULL_THROTTLE_COUNTER" maxLength="15" comment="localization of: '100% THRT COUNT'">100% THRT COUNT</string>
-  <string name="STR_OSD_STAT_AVG_THROTTLE" maxLength="15" comment="localization of: 'AVG THROTTLE'">AVG THROTTLE</string>
+  <string name="STR_OSD_STAT_FULL_THROTTLE_TIME" maxLength="15" comment="localization of: '100% THRT TIME'">100% GAS TIME</string>
+  <string name="STR_OSD_STAT_FULL_THROTTLE_COUNTER" maxLength="15" comment="localization of: '100% THRT COUNT'">100% GAS ANTAL</string>
+  <string name="STR_OSD_STAT_AVG_THROTTLE" maxLength="15" comment="localization of: 'AVG THROTTLE'">GAS GENNEMSNIT</string>
   <string name="STR_OSD_TIMER_ON_TIME" maxLength="9" comment="localization of: 'ON TIME  '">ON TIME </string>
   <string name="STR_OSD_TIMER_ON_TIME_HD" maxLength="14" comment="HD localization of: 'ON TIME  '">ON TIME </string>
   <string name="STR_OSD_TIMER_TOTAL_ARM" maxLength="9" comment="localization of: 'TOTAL ARM'">TOTAL AKT</string>
@@ -61,8 +61,8 @@
   <string name="STR_OSD_TIMER_LAST_ARM_HD" maxLength="14" comment="HD localization of: 'LAST ARMED '">SIDST AKTIV</string>
   <string name="STR_OSD_TIMER_ON_ARM" maxLength="9" comment="localization of: 'ON/ARM   '">TIL/AKT </string>
   <string name="STR_OSD_TIMER_ON_ARM_HD" maxLength="11" comment="HD localization of: 'ON/ARMED   '">TIL/AKTIV  </string>
-  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="12" comment="localization of: '&gt;CRASH FLIP&lt;'">&gt;CRASH FLIP&lt;</string>
-  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="13" comment="localization of: 'CRASH FLIP SWITCH'">CRASH FLIP +</string>
+  <string name="STR_OSDW_CRASH_FLIP_WARNING" maxLength="12" comment="localization of: '&gt;CRASH FLIP&lt;'">&gt;STYRT FLIP&lt;</string>
+  <string name="STR_OSDW_CRASH_FLIP_SWITCH" maxLength="13" comment="localization of: 'CRASH FLIP SWITCH'">STYRT FLIP +</string>
   <string name="STR_OSDW_BEACON_ON" maxLength="10" comment="localization of: ' BEACON ON'"> BEACON +</string>
   <string name="STR_OSDW_ARM_IN" maxLength="6" comment="localization of: 'ARM IN'">AKTIV</string>
   <string name="STR_OSDW_ARM_IN_HD" maxLength="11" comment="HD localization of: 'ARMED IN'">AKTIV I</string>
@@ -74,7 +74,7 @@
   <string name="STR_OSDW_LINK_QUALITY" maxLength="12" comment="localization of: 'LINK QUALITY'">LINK KVALI</string>
   <string name="STR_OSDW_LAND_NOW" maxLength="9" comment="localization of: ' LAND NOW'"> LAND NU</string>
   <string name="STR_OSDW_CPU_OVERLOAD" maxLength="12" comment="localization of: 'CPU OVERLOAD'">CPU BELASTET</string>
-  <string name="STR_OSDW_RESCUE_NA" maxLength="10" comment="localization of: 'RESCUE N/A'">FEJLSIK NA</string>
+  <string name="STR_OSDW_RESCUE_NA" maxLength="10" comment="localization of: 'RESCUE N/A'">FEJLS. N/A</string>
   <string name="STR_OSDW_RESCUE_NA_HD" maxLength="20" comment="HD localization of: 'RESCUE NOT AVAILABLE'">FEJLSIKR IKKE MULIG</string>
   <string name="STR_OSDW_RESCUE_OFF" maxLength="12" comment="localization of: 'RESCUE OFF'">FEJLSIKR FRA</string>
   <string name="STR_OSDW_POSHOLD_FAIL" maxLength="12" comment="localization of: 'POSHOLD FAIL'">POSHOLD FEJL</string>
