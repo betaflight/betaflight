@@ -204,16 +204,19 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
     dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 
-    if (dmaRef) {
-        sdcard.dmaIdentifier = dmaGetIdentifier(dmaRef);
+    if (!dmaRef) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
 
-        if (sdcard.dmaIdentifier == 0) {
-            sdcard.state = SDCARD_STATE_NOT_PRESENT;
-            return;
-        }
+    sdcard.dmaIdentifier = dmaGetIdentifier(dmaRef);
+
+    if (sdcard.dmaIdentifier == 0) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
     }
 #else
-    dmaResource_t *dmaRef = (dmaResource_t *)SDCARD_SDIO_DMA_OPT;
+    dmaResource_t *dmaRef = NULL;
 #endif
     if (sdioConfig()->useCache) {
         sdcard.useCache = 1;

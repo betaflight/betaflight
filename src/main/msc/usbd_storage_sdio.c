@@ -169,7 +169,7 @@ static int8_t STORAGE_Init (uint8_t lun)
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
     dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 #else
-    dmaResource_t *dmaRef = (dmaResource_t *)SDCARD_SDIO_DMA_OPT;
+    dmaResource_t *dmaRef = NULL;
 #endif
     if (!SD_InitialiseHardware(dmaRef)) {
         return 1;
