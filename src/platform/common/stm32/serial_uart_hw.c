@@ -41,6 +41,7 @@
 #include "drivers/serial_uart_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 
 #include "pg/serial_uart.h"
 

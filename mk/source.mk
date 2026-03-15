@@ -99,7 +99,7 @@ COMMON_SRC = \
             drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
-            drivers/dma_common.c \
+            drivers/dma.c \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/light_led.c \

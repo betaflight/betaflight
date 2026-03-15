@@ -39,6 +39,7 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
+#include "drivers/dma.h"
 #include "drivers/sdio.h"
 
 typedef struct SD_Handle_s
@@ -255,7 +256,7 @@ void SDIO_GPIO_Init(void)
     IOConfigGPIO(cmd, IOCFG_OUT_PP);
 }
 
-bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+bool SD_InitialiseHardware(dmaResource_t *dma)
 {
     UNUSED(dma);
 

@@ -32,6 +32,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "drivers/nvic.h"
 #include "pg/bus_spi.h"
