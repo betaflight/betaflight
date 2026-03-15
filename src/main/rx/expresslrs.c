@@ -1031,7 +1031,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 #endif
 
     // Timer IRQs must only be enabled after the receiver is configured otherwise race conditions occur.
-    expressLrsTimerEnableIRQs();
+    expressLrsTimerEnableIRQs(&elrsTimerHw);
 
     return true;
 }
