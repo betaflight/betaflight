@@ -80,17 +80,6 @@ OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
     return octoSpiDevice[device].dev;
 }
 
-const octoSpiHardware_t octoSpiHardware[] = {
-#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
-    {
-        .device = OCTOSPIDEV_1,
-        .reg = OCTOSPI1,
-    }
-#else
-#error MCU not supported.
-#endif
-};
-
 bool octoSpiInit(octoSpiDevice_e device)
 {
     for (size_t hwindex = 0; hwindex < ARRAYLEN(octoSpiHardware); hwindex++) {
