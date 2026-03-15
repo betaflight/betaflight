@@ -465,8 +465,7 @@ TEST(CLIUnittest, TestGetSettingByNameSmallBuffer)
     memset(buf, 0, sizeof(buf));
     int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
 
-    EXPECT_GT(written, 0);
-    EXPECT_LE(written, 9); // must not exceed bufLen - 1
+    EXPECT_LT(written, 0); // truncated output must return error
 }
 
 // Verifies cliGetSettingByName returns 0 when buffer length is zero.

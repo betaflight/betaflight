@@ -4706,7 +4706,12 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     }
 
                     // find next comma (or end of string)
-                    valPtr = strchr(valPtr, ',') + 1;
+                    char *next = strchr(valPtr, ',');
+                    if (!next) {
+                        i++;
+                        break;
+                    }
+                    valPtr = next + 1;
 
                     i++;
                 }
@@ -4786,12 +4791,29 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
         memcpy(buf, val->name, copy);
         written = copy;
     }
+    if (copy < nameLen) {
+        buf[written] = '\0';
+        return -1;
+    }
     const char eq[] = " = ";
     for (int i = 0; i < 3 && written < bufLen - 1; i++) {
         buf[written++] = eq[i];
     }
-    if (bufLen - written > 0) {
-        written += sprintValuePointer(buf + written, bufLen - written, val, ptr);
+    if (written < copy + 3) {
+        buf[written] = '\0';
+        return -1;
+    }
+    const int remaining = bufLen - written;
+    if (remaining <= 0) {
+        buf[bufLen - 1] = '\0';
+        return -1;
+    }
+    const int valueLen = sprintValuePointer(buf + written, remaining, val, ptr);
+    written += valueLen;
+    if (valueLen >= remaining - 1) {
+        // buffer completely full — likely truncated
+        buf[written < bufLen ? written : bufLen - 1] = '\0';
+        return -1;
     }
     return written;
 }
@@ -5105,44 +5127,99 @@ bool cliSetSettingByName(const char *cmdline)
             }
             const uint8_t arrayLength = val->config.array.length;
 
-            // count comma-separated elements before writing anything
-            int elementCount = 1;
-            for (const char *c = valStr; *c; c++) {
-                if (*c == ',') {
-                    elementCount++;
+            // parse and validate all elements into a temp buffer before writing
+            // max array length in settings is 50, each element max 4 bytes (uint32)
+            uint32_t tempValues[50];
+            if (arrayLength > (int)ARRAYLEN(tempValues)) {
+                return false;
+            }
+
+            int elementCount = 0;
+            const char *p = valStr;
+            while (p && *p) {
+                // skip leading spaces
+                while (*p == ' ') {
+                    p++;
+                }
+                if (!*p) {
+                    break;
+                }
+
+                // reject empty tokens (leading/trailing/consecutive commas)
+                if (*p == ',') {
+                    return false;
+                }
+
+                if (elementCount >= arrayLength) {
+                    return false; // too many elements
+                }
+
+                // parse and validate the token
+                char *endptr;
+                long lval;
+                unsigned long ulval;
+                switch (val->type & VALUE_TYPE_MASK) {
+                case VAR_UINT8:
+                case VAR_UINT16:
+                case VAR_UINT32:
+                    ulval = strtoul(p, &endptr, 10);
+                    if (endptr == p) {
+                        return false; // no digits parsed
+                    }
+                    tempValues[elementCount] = (uint32_t)ulval;
+                    break;
+                default:
+                    lval = strtol(p, &endptr, 10);
+                    if (endptr == p) {
+                        return false; // no digits parsed
+                    }
+                    tempValues[elementCount] = (uint32_t)lval;
+                    break;
+                }
+
+                // after the number, only spaces or comma or end-of-string are valid
+                while (*endptr == ' ') {
+                    endptr++;
+                }
+                if (*endptr != ',' && *endptr != '\0') {
+                    return false; // trailing garbage in token
+                }
+
+                elementCount++;
+
+                if (*endptr == ',') {
+                    p = endptr + 1;
+                } else {
+                    break;
                 }
             }
+
             if (elementCount != arrayLength) {
                 return false;
             }
 
-            const char *p = valStr;
-            for (int i = 0; i < arrayLength && p && *p; i++) {
-                while (*p == ' ') {
-                    p++;
-                }
+            // all validated — write to destination
+            for (int i = 0; i < arrayLength; i++) {
                 switch (val->type & VALUE_TYPE_MASK) {
                 case VAR_UINT8:
-                    ((uint8_t *)ptr)[i] = (uint8_t)atoi(p);
+                    ((uint8_t *)ptr)[i] = (uint8_t)tempValues[i];
                     break;
                 case VAR_INT8:
-                    ((int8_t *)ptr)[i] = (int8_t)atoi(p);
+                    ((int8_t *)ptr)[i] = (int8_t)tempValues[i];
                     break;
                 case VAR_UINT16:
-                    ((uint16_t *)ptr)[i] = (uint16_t)atoi(p);
+                    ((uint16_t *)ptr)[i] = (uint16_t)tempValues[i];
                     break;
                 case VAR_INT16:
-                    ((int16_t *)ptr)[i] = (int16_t)atoi(p);
+                    ((int16_t *)ptr)[i] = (int16_t)tempValues[i];
                     break;
                 case VAR_UINT32:
-                    ((uint32_t *)ptr)[i] = (uint32_t)strtoul(p, NULL, 10);
+                    ((uint32_t *)ptr)[i] = (uint32_t)tempValues[i];
                     break;
                 case VAR_INT32:
-                    ((int32_t *)ptr)[i] = (int32_t)strtol(p, NULL, 10);
+                    ((int32_t *)ptr)[i] = (int32_t)tempValues[i];
                     break;
                 }
-                const char *comma = strchr(p, ',');
-                p = comma ? comma + 1 : NULL;
             }
         }
         break;
