@@ -111,6 +111,8 @@
 #define I2C_TRAIT_STATE 1
 #define I2C_TRAIT_AF_PIN 1
 
+#define GPIO_PIN_RESET 0
+
 #ifndef STM32F4
 #define STM32F4
 #endif
