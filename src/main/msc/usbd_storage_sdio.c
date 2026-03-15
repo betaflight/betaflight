@@ -171,7 +171,7 @@ static int8_t STORAGE_Init (uint8_t lun)
 #else
     dmaResource_t *dmaRef = NULL;
 #endif
-    if (!SD_InitialiseHardware(dmaRef)) {
+    if (!dmaRef || !SD_InitialiseHardware(dmaRef)) {
         return 1;
     }
 
