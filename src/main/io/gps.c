@@ -718,18 +718,7 @@ static void ubloxAssistNowAutonomous(void) {
         memset(&tx_buffer, 0, sizeof(ubxMessage_t));
         tx_buffer.payload.cfg_nav5x.version = 0x0002;
         tx_buffer.payload.cfg_nav5x.mask1 = 0x4000;
-        tx_buffer.payload.cfg_nav5x.mask2 = 0x0;
-        tx_buffer.payload.cfg_nav5x.minSVs = 0;
-        tx_buffer.payload.cfg_nav5x.maxSVs = 0;
-        tx_buffer.payload.cfg_nav5x.minCNO = 0;
-        tx_buffer.payload.cfg_nav5x.reserved1 = 0;
-        tx_buffer.payload.cfg_nav5x.iniFix3D = 0;
-        tx_buffer.payload.cfg_nav5x.ackAiding = 0;
-        tx_buffer.payload.cfg_nav5x.wknRollover = 0;
-        tx_buffer.payload.cfg_nav5x.sigAttenCompMode = 0;
-        tx_buffer.payload.cfg_nav5x.usePPP = 0;
         tx_buffer.payload.cfg_nav5x.aopCfg = 0x1; //bit 0 = useAOP
-        tx_buffer.payload.cfg_nav5x.useAdr = 0;
         ubloxSendConfigMessage(&tx_buffer, MSG_CFG_NAVX_SETTINGS, sizeof(ubxCfgNav5x_t), false);
     }
 }
