@@ -502,12 +502,15 @@ static void getMinMax(const clivalue_t *var, int *min, int *max)
     }
 }
 
+// Returns the full required length (excluding NUL), copying up to bufLen-1 bytes.
+// If return value >= bufLen, the output was truncated.
+// Returns -1 if the value is corrupted (e.g., NULL lookup entry).
 static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, const void *valuePointer)
 {
-    int written = 0;
+    int required = 0;
 
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
-        for (int i = 0; i < var->config.array.length && written < bufLen - 1; i++) {
+        for (int i = 0; i < var->config.array.length; i++) {
             int val = 0;
             switch (var->type & VALUE_TYPE_MASK) {
             default:
@@ -530,21 +533,24 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 val = ((int32_t *)valuePointer)[i];
                 break;
             }
-            if (written < bufLen - 1) {
-                char tmp[16];
-                int n;
-                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                    n = tfp_sprintf(tmp, "%u", (uint32_t)val);
-                } else {
-                    n = tfp_sprintf(tmp, "%d", val);
-                }
-                const int rem = bufLen - 1 - written;
-                const int copy = MIN(n, rem);
-                memcpy(buf + written, tmp, copy);
-                written += copy;
+            char tmp[16];
+            int n;
+            if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32) {
+                n = tfp_sprintf(tmp, "%u", (uint32_t)val);
+            } else {
+                n = tfp_sprintf(tmp, "%d", val);
             }
-            if (i < var->config.array.length - 1 && written < bufLen - 1) {
-                buf[written++] = ',';
+            if (required < bufLen - 1) {
+                const int rem = bufLen - 1 - required;
+                const int copy = MIN(n, rem);
+                memcpy(buf + required, tmp, copy);
+            }
+            required += n;
+            if (i < var->config.array.length - 1) {
+                if (required < bufLen - 1) {
+                    buf[required] = ',';
+                }
+                required++;
             }
         }
     } else {
@@ -580,41 +586,47 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 } else {
                     n = tfp_sprintf(tmp, "%d", value);
                 }
-                written = MIN(n, bufLen - 1);
-                memcpy(buf, tmp, written);
+                const int copy = MIN(n, bufLen - 1);
+                memcpy(buf, tmp, copy);
+                required = n;
             }
             break;
         case MODE_LOOKUP:
             if (value >= 0 && value < lookupTables[var->config.lookup.tableIndex].valueCount) {
                 const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
-                if (str) {
-                    written = MIN((int)strlen(str), bufLen - 1);
-                    memcpy(buf, str, written);
+                if (!str) {
+                    if (bufLen > 0) {
+                        buf[0] = '\0';
+                    }
+                    return -1;
                 }
+                required = strlen(str);
+                const int copy = MIN(required, bufLen - 1);
+                memcpy(buf, str, copy);
             }
             break;
-        case MODE_BITSET:
-            if (value & 1 << var->config.bitpos) {
-                written = MIN(2, bufLen - 1);
-                memcpy(buf, "ON", written);
-            } else {
-                written = MIN(3, bufLen - 1);
-                memcpy(buf, "OFF", written);
+        case MODE_BITSET: {
+                const char *str = (value & 1 << var->config.bitpos) ? "ON" : "OFF";
+                required = strlen(str);
+                const int copy = MIN(required, bufLen - 1);
+                memcpy(buf, str, copy);
             }
             break;
         case MODE_STRING: {
                 const char *str = (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer;
-                written = MIN((int)strlen(str), bufLen - 1);
-                memcpy(buf, str, written);
+                required = strlen(str);
+                const int copy = MIN(required, bufLen - 1);
+                memcpy(buf, str, copy);
             }
             break;
         }
     }
 
-    if (written < bufLen) {
+    const int written = MIN(required, bufLen - 1);
+    if (written >= 0 && written < bufLen) {
         buf[written] = '\0';
     }
-    return written;
+    return required;
 }
 
 static void printValuePointer(const char *cmdName, const clivalue_t *var, const void *valuePointer, bool full)
@@ -674,7 +686,8 @@ static void printValuePointer(const char *cmdName, const clivalue_t *var, const 
             }
             break;
         case MODE_LOOKUP:
-            if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount) {
+            if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount
+                || !lookupTables[var->config.lookup.tableIndex].values[value]) {
                 valueIsCorrupted = true;
             }
             break;
@@ -4843,12 +4856,17 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
         return -1;
     }
     const int valueLen = sprintValuePointer(buf + written, remaining, val, ptr);
-    written += valueLen;
-    if (valueLen > remaining - 1) {
-        // buffer completely full — likely truncated
-        buf[written < bufLen ? written : bufLen - 1] = '\0';
+    if (valueLen < 0) {
+        // corrupted value (e.g., NULL lookup entry)
+        buf[written] = '\0';
         return -1;
     }
+    if (valueLen >= remaining) {
+        // truncated
+        buf[bufLen - 1] = '\0';
+        return -1;
+    }
+    written += valueLen;
     return written;
 }
 
@@ -5004,7 +5022,7 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
     infoWriteString(&w, "default=");
     char defBuf[256];
     const int defLen = sprintValuePointer(defBuf, sizeof(defBuf), val, defaultBuf + valueOffset);
-    infoWriteData(&w, defBuf, defLen);
+    infoWriteData(&w, defBuf, defLen >= 0 ? MIN(defLen, (int)sizeof(defBuf) - 1) : 0);
 
     *totalLen = w.pos;
     return w.written;
@@ -5027,15 +5045,31 @@ bool cliSetSettingByName(const char *cmdline)
         return false;
     }
 
-    // skip the '=' and any spaces
+    // skip the '=' and any leading spaces
     const char *valStr = eqptr + 1;
     while (*valStr == ' ') {
         valStr++;
     }
 
-    if (*valStr == '\0') {
+    // trim trailing spaces
+    const char *valEnd = valStr + strlen(valStr);
+    while (valEnd > valStr && *(valEnd - 1) == ' ') {
+        valEnd--;
+    }
+
+    if (valEnd == valStr) {
         return false;
     }
+
+    // make a trimmed copy for parsing
+    const size_t valLen = valEnd - valStr;
+    char valBuf[128];
+    if (valLen >= sizeof(valBuf)) {
+        return false;
+    }
+    memcpy(valBuf, valStr, valLen);
+    valBuf[valLen] = '\0';
+    valStr = valBuf;
 
     const uint16_t index = cliGetSettingIndex(cmdline, nameLen);
     if (index >= valueTableEntryCount) {
