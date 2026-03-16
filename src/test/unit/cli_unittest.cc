@@ -428,6 +428,7 @@ TEST(CLIUnittest, TestGetSettingByNameArray)
     int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
 
     EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
     buf[written] = '\0';
     EXPECT_STREQ("array_unit_test = 10,-20,30", buf);
 }
@@ -443,6 +444,7 @@ TEST(CLIUnittest, TestGetSettingByNameString)
     int written = cliGetSettingByName("str_unit_test", buf, sizeof(buf));
 
     EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
     buf[written] = '\0';
     EXPECT_STREQ("str_unit_test = HELLO", buf);
 }
@@ -501,6 +503,7 @@ TEST(CLIUnittest, TestSetSettingByNameString)
     memset(buf, 0, sizeof(buf));
     int written = cliGetSettingByName("str_unit_test", buf, sizeof(buf));
     EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
     buf[written] = '\0';
     EXPECT_STREQ("str_unit_test = WORLD", buf);
 }
@@ -570,6 +573,7 @@ TEST(CLIUnittest, TestGetSettingInfoByNameArray)
 
     EXPECT_GT(written, 0);
     EXPECT_GT(totalLen, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
     buf[written] = '\0';
 
     // Should contain PGN, type, and length info
@@ -589,6 +593,7 @@ TEST(CLIUnittest, TestGetSettingInfoByNameString)
     int written = cliGetSettingInfoByName("str_unit_test", 0, buf, sizeof(buf), &totalLen);
 
     EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
     buf[written] = '\0';
 
     EXPECT_TRUE(strstr(buf, "type=string") != NULL);
