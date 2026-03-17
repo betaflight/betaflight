@@ -603,7 +603,7 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
             }
             break;
         case MODE_BITSET: {
-                const char *str = (value & 1 << var->config.bitpos) ? "ON" : "OFF";
+                const char *str = (value & 1U << var->config.bitpos) ? "ON" : "OFF";
                 required = strlen(str);
                 const int copy = MIN(required, bufLen - 1);
                 memcpy(buf, str, copy);
@@ -709,7 +709,7 @@ static bool valuePtrEqualsDefault(const clivalue_t *var, const void *ptr, const 
         elementCount = var->config.array.length;
     }
     if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
-        mask = 1 << var->config.bitpos;
+        mask = 1U << var->config.bitpos;
     }
     for (int i = 0; i < elementCount; i++) {
         switch (var->type & VALUE_TYPE_MASK) {
@@ -954,7 +954,7 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
     if ((var->type & VALUE_MODE_MASK) == MODE_BITSET) {
         switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
-            mask = (1 << var->config.bitpos) & 0xff;
+            mask = (1U << var->config.bitpos) & 0xff;
             if (value) {
                 workValue = *(uint8_t *)ptr | mask;
             } else {
@@ -964,7 +964,7 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             break;
 
         case VAR_UINT16:
-            mask = (1 << var->config.bitpos) & 0xffff;
+            mask = (1U << var->config.bitpos) & 0xffff;
             if (value) {
                 workValue = *(uint16_t *)ptr | mask;
             } else {
@@ -974,7 +974,7 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             break;
 
         case VAR_UINT32:
-            mask = 1 << var->config.bitpos;
+            mask = 1U << var->config.bitpos;
             if (value) {
                 workValue = *(uint32_t *)ptr | mask;
             } else {
@@ -984,7 +984,7 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
             break;
 
         case VAR_INT32:
-            mask = 1 << var->config.bitpos;
+            mask = 1U << var->config.bitpos;
             if (value) {
                 workValue = *(int32_t *)ptr | mask;
             } else {
@@ -4926,6 +4926,9 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
     if (!name || !totalLen) {
         return -1;
     }
+    if (offset < 0) {
+        return -1;
+    }
     if (bufLen > 0 && !buf) {
         return -1;
     }
@@ -5176,19 +5179,19 @@ bool cliSetSettingByName(const char *cmdline)
                         uint32_t mask;
                         switch (val->type & VALUE_TYPE_MASK) {
                         case VAR_UINT8:
-                            mask = (1 << val->config.bitpos) & 0xff;
+                            mask = (1U << val->config.bitpos) & 0xff;
                             *(uint8_t *)ptr = i ? (*(uint8_t *)ptr | mask) : (*(uint8_t *)ptr & ~mask);
                             break;
                         case VAR_UINT16:
-                            mask = (1 << val->config.bitpos) & 0xffff;
+                            mask = (1U << val->config.bitpos) & 0xffff;
                             *(uint16_t *)ptr = i ? (*(uint16_t *)ptr | mask) : (*(uint16_t *)ptr & ~mask);
                             break;
                         case VAR_UINT32:
-                            mask = 1 << val->config.bitpos;
+                            mask = 1U << val->config.bitpos;
                             *(uint32_t *)ptr = i ? (*(uint32_t *)ptr | mask) : (*(uint32_t *)ptr & ~mask);
                             break;
                         case VAR_INT32:
-                            mask = 1 << val->config.bitpos;
+                            mask = 1U << val->config.bitpos;
                             *(int32_t *)ptr = i ? (*(int32_t *)ptr | mask) : (*(int32_t *)ptr & ~mask);
                             break;
                         default:
