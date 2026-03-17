@@ -4816,6 +4816,9 @@ int cliGetSettingByName(const char *name, char *buf, int bufLen)
     if (bufLen <= 0) {
         return 0;
     }
+    if (!name || !buf) {
+        return -1;
+    }
 
     const uint16_t index = cliGetSettingIndex(name, strlen(name));
     if (index >= valueTableEntryCount) {
@@ -4911,6 +4914,13 @@ static void infoWriteChar(settingInfoWriter_t *w, char c)
 
 int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen, int *totalLen)
 {
+    if (!name || !totalLen) {
+        return -1;
+    }
+    if (bufLen > 0 && !buf) {
+        return -1;
+    }
+
     const uint16_t index = cliGetSettingIndex(name, strlen(name));
     if (index >= valueTableEntryCount) {
         return -1;
@@ -5030,6 +5040,10 @@ int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen,
 
 bool cliSetSettingByName(const char *cmdline)
 {
+    if (!cmdline) {
+        return false;
+    }
+
     const char *eqptr = strstr(cmdline, "=");
     if (!eqptr) {
         return false;
