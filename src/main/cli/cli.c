@@ -591,15 +591,16 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
                 required = n;
             }
             break;
-        case MODE_LOOKUP:
-            if (value >= 0 && value < lookupTables[var->config.lookup.tableIndex].valueCount) {
-                const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
-                if (!str) {
+        case MODE_LOOKUP: {
+                if (value < 0 || value >= lookupTables[var->config.lookup.tableIndex].valueCount
+                    || !lookupTables[var->config.lookup.tableIndex].values[value]) {
                     if (bufLen > 0) {
                         buf[0] = '\0';
                     }
                     return -1;
                 }
+
+                const char *str = lookupTables[var->config.lookup.tableIndex].values[value];
                 required = strlen(str);
                 const int copy = MIN(required, bufLen - 1);
                 memcpy(buf, str, copy);
@@ -613,8 +614,10 @@ static int sprintValuePointer(char *buf, int bufLen, const clivalue_t *var, cons
             }
             break;
         case MODE_STRING: {
-                const char *str = (strlen((char *)valuePointer) == 0) ? "-" : (char *)valuePointer;
-                required = strlen(str);
+                const int maxLen = var->config.string.maxlength;
+                const size_t sLen = strnlen((const char *)valuePointer, maxLen);
+                const char *str = (sLen == 0) ? "-" : (const char *)valuePointer;
+                required = (sLen == 0) ? 1 : (int)sLen;
                 const int copy = MIN(required, bufLen - 1);
                 memcpy(buf, str, copy);
             }
@@ -4592,17 +4595,17 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
         case VAR_UINT16:
         case VAR_UINT32:
             ulval = strtoul(p, &endptr, 10);
-            if (endptr == p) {
-                return false; // no digits parsed
+            if (endptr == p || ulval > UINT32_MAX) {
+                return false;
             }
             tempValues[elementCount] = (uint32_t)ulval;
             break;
         default:
             lval = strtol(p, &endptr, 10);
-            if (endptr == p) {
-                return false; // no digits parsed
+            if (endptr == p || lval < INT32_MIN || lval > INT32_MAX) {
+                return false;
             }
-            tempValues[elementCount] = (uint32_t)lval;
+            tempValues[elementCount] = (uint32_t)(int32_t)lval;
             break;
         }
 
@@ -4619,11 +4622,17 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
         if (*endptr == ',') {
             p = endptr + 1;
         } else {
+            p = endptr;
             break;
         }
     }
 
     if (elementCount != arrayLength) {
+        return false;
+    }
+
+    // reject trailing comma (p advanced past comma but no element followed)
+    if (p > valStr && *(p - 1) == ',') {
         return false;
     }
 
