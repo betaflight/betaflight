@@ -4594,6 +4594,10 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
         case VAR_UINT8:
         case VAR_UINT16:
         case VAR_UINT32:
+            // reject negative input for unsigned types
+            if (*p == '-') {
+                return false;
+            }
             ulval = strtoul(p, &endptr, 10);
             if (endptr == p || ulval > UINT32_MAX) {
                 return false;
@@ -5086,7 +5090,7 @@ bool cliSetSettingByName(const char *cmdline)
 
     // make a trimmed copy for parsing
     const size_t valLen = valEnd - valStr;
-    char valBuf[128];
+    char valBuf[CLI_IN_BUFFER_SIZE];
     if (valLen >= sizeof(valBuf)) {
         return false;
     }
@@ -5238,8 +5242,8 @@ bool cliSetSettingByName(const char *cmdline)
             const uint8_t max = val->config.string.maxlength;
             const uint8_t min = val->config.string.minlength;
             const bool updatable = ((val->config.string.flags & STRING_FLAGS_WRITEONCE) == 0 ||
-                                    strlen((char *)ptr) == 0 ||
-                                    strcmp(valStr, (char *)ptr) == 0);
+                                    strnlen((const char *)ptr, max) == 0 ||
+                                    strncmp(valStr, (const char *)ptr, max) == 0);
             if (!updatable || len == 0 || len > max) {
                 return false;
             }
