@@ -46,7 +46,6 @@
 #include "common/filter.h"
 
 #include "drivers/io.h"
-#include "drivers/nvic.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
