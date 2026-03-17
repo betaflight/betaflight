@@ -627,6 +627,8 @@ TEST(CLIUnittest, TestGetSettingInfoByNameOffset)
     EXPECT_EQ(totalLen, totalLen2); // total size should be the same regardless of offset
 
     // The offset buffer should match the full buffer starting at position 5
+    ASSERT_GE(offsetWritten, 0);
+    ASSERT_LE(5 + offsetWritten, fullWritten);
     EXPECT_EQ(0, memcmp(fullBuf + 5, offsetBuf, offsetWritten));
 }
 

@@ -178,10 +178,6 @@ static serialPort_t *cliPort = NULL;
 static bool cliInteractive = false;
 static timeMs_t cliEntryTime = 0;
 
-// Space required to set array parameters
-#define CLI_IN_BUFFER_SIZE  256
-#define CLI_OUT_BUFFER_SIZE 64
-
 static bufWriter_t cliWriterDesc;
 static bufWriter_t *cliWriter = NULL;
 static bufWriter_t *cliErrorWriter = NULL;
@@ -5115,23 +5111,26 @@ bool cliSetSettingByName(const char *cmdline)
     case MODE_DIRECT: {
             char *endptr;
             if ((val->type & VALUE_TYPE_MASK) == VAR_UINT32) {
-                uint32_t v = strtoul(valStr, &endptr, 10);
+                if (*valStr == '-') {
+                    return false;
+                }
+                unsigned long long v = strtoull(valStr, &endptr, 10);
                 if (endptr == valStr || *endptr != '\0') {
                     return false;
                 }
                 if (v > val->config.u32Max) {
                     return false;
                 }
-                *(uint32_t *)ptr = v;
+                *(uint32_t *)ptr = (uint32_t)v;
             } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT32) {
-                int32_t v = strtol(valStr, &endptr, 10);
+                long long v = strtoll(valStr, &endptr, 10);
                 if (endptr == valStr || *endptr != '\0') {
                     return false;
                 }
                 if (v > val->config.d32Max || v < -val->config.d32Max) {
                     return false;
                 }
-                *(int32_t *)ptr = v;
+                *(int32_t *)ptr = (int32_t)v;
             } else {
                 long v = strtol(valStr, &endptr, 10);
                 if (endptr == valStr || *endptr != '\0') {

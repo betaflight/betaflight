@@ -2638,11 +2638,13 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 #ifdef USE_CLI
     case MSP2_CLI_SETTING:
         {
+            _Static_assert(MSP_PORT_INBUF_SIZE < CLI_IN_BUFFER_SIZE,
+                           "MSP input buffer must be smaller than CLI input buffer");
             const int len = sbufBytesRemaining(src);
-            if (len == 0 || len > 128) {
+            if (len == 0) {
                 return MSP_RESULT_ERROR;
             }
-            char cmdline[129];
+            char cmdline[len + 1];
             sbufReadData(src, cmdline, len);
             cmdline[len] = '\0';
 
@@ -2656,7 +2658,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
 
             // get/response: return "name = value"
             // for set, this confirms the new value; for get, this returns the current value
-            char buf[128];
+            char buf[len + 1];
             // extract just the name (before '=' if present)
             if (eq) {
                 // trim trailing spaces from name
@@ -2666,7 +2668,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 }
                 *nameEnd = '\0';
             }
-            const int written = cliGetSettingByName(cmdline, buf, sizeof(buf));
+            const int written = cliGetSettingByName(cmdline, buf, len + 1);
             if (written < 0 || written > (int)sbufBytesRemaining(dst)) {
                 if (!eq) {
                     return MSP_RESULT_ERROR;
