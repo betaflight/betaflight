@@ -33,6 +33,7 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
@@ -58,14 +59,17 @@ FAST_IRQ_HANDLER static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* 
     transponderIrDataTransferInProgress = 0;
 }
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     if (!ioTag) {
-        return;
+        return false;
     }
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
-    TMR_TypeDef *timer = timerHardware->tim;
+    if (!timerHardware) {
+        return false;
+    }
+    TMR_TypeDef *timer = (TMR_TypeDef *)timerHardware->tim;
     timerChannel = timerHardware->channel;
     output = timerHardware->output;
     alternateFunction = timerHardware->alternateFunction;
@@ -74,7 +78,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec == NULL) {
-        return;
+        return false;
     }
 
     dmaResource_t *dmaRef = dmaSpec->ref;
@@ -86,7 +90,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaRef);
     if (dmaRef == NULL || !dmaAllocate(dmaIdentifier, OWNER_TRANSPONDER, 0)) {
-        return;
+        return false;
     }
 
     /* Time base configuration */
@@ -104,7 +108,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TmrHandle.Init.CounterMode = TMR_COUNTERMODE_UP;
     if (DAL_TMR_PWM_Init(&TmrHandle) != DAL_OK) {
         /* Initialization Error */
-        return;
+        return false;
     }
 
     /* IO configuration */
@@ -146,7 +150,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     /* Initialize TIMx DMA handle */
     if (DAL_DMA_Init(TmrHandle.hdma[dmaIndex]) != DAL_OK) {
         /* Initialization Error */
-        return;
+        return false;
     }
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
@@ -163,22 +167,24 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     TMR_OCInitStructure.OCFastMode = TMR_OCFAST_DISABLE;
     if (DAL_TMR_PWM_ConfigChannel(&TmrHandle, &TMR_OCInitStructure, timerChannel) != DAL_OK) {
         /* Configuration Error */
-        return;
+        return false;
     }
 
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         if (DAL_TMREx_PWMN_Start(&TmrHandle, timerChannel) != DAL_OK) {
             /* Starting PWM generation Error */
-            return;
+            return false;
         }
     } else {
         if (DAL_TMR_PWM_Start(&TmrHandle, timerChannel) != DAL_OK) {
             /* Starting PWM generation Error */
-            return;
+            return false;
         }
     }
 
     transponderInitialised = true;
+
+    return true;
 }
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
@@ -201,7 +207,9 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
             return false;
     }
 
-    transponderIrHardwareInit(ioTag, &transponder);
+    if (!transponderIrHardwareInit(ioTag, &transponder)) {
+        return false;
+    }
 
     return true;
 }

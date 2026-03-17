@@ -34,6 +34,7 @@
 #include "platform/rcc.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "platform/light_ws2811strip_stm32.h"
@@ -62,7 +63,7 @@ bool ws2811LedStripHardwareInit(void)
         return false;
     }
 
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
     timerChannel = timerHardware->channel;
 
     dmaResource_t *dmaRef;

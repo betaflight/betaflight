@@ -37,7 +37,7 @@
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 void cameraControlHardwarePwmInit(timerChannel_t *channel, const timerHardware_t *timerHardware, uint8_t inverted)
 {
-    pwmOutConfig(channel, timerHardware, timerClock(timerHardware->tim), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);    
+    pwmOutputConfig(channel, timerHardware, timerClock(timerHardware), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);
 }
 #endif
 
@@ -56,13 +56,13 @@ void TIMER6_IRQHandler(void)
 
 void cameraControlSoftwarePwmInit(void)
 {
-    nvic_irq_enable(TIMER5_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));  
+    nvic_irq_enable(TIMER5_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
     rcu_periph_clock_enable(RCU_TIMER5);
     TIMER_PSC(TIMER5) = 0;
 
-    nvic_irq_enable(TIMER6_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));  
+    nvic_irq_enable(TIMER6_IRQn, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
     rcu_periph_clock_enable(RCU_TIMER6);
-    TIMER_PSC(TIMER6) = 0;  
+    TIMER_PSC(TIMER6) = 0;
 }
 
 void cameraControlSoftwarePwmEnable(uint32_t hiTime, uint32_t period)
@@ -73,7 +73,7 @@ void cameraControlSoftwarePwmEnable(uint32_t hiTime, uint32_t period)
     timer_counter_value_config(TIMER6, 0);
     timer_autoreload_value_config(TIMER6, period);
 
-    ATOMIC_BLOCK(NVIC_PRIO_TIMER) { 
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         timer_enable(TIMER5);
         timer_enable(TIMER6);
     }

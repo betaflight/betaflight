@@ -51,4 +51,6 @@ int getCrsfMspFrame(uint8_t *frame, uint8_t *payload, const uint8_t payloadSize)
 void speedNegotiationProcess(uint32_t currentTime);
 bool crsfBaudNegotiationInProgress(void);
 uint32_t getCrsfCachedBaudrate(void);
+void crsfScheduleTelemetryResponse(void);
+bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 #endif

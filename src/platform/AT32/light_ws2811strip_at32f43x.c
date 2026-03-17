@@ -37,6 +37,7 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "platform/light_ws2811strip_stm32.h"

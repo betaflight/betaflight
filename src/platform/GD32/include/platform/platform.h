@@ -38,40 +38,9 @@
 
 #ifdef GD32F4
 
-/* DMA data mode type */
-typedef enum {
-    DMA_DATA_MODE_SINGLE = 0,
-    DMA_DATA_MODE_MULTI  = 1
-} dma_data_mode_enum;
-
-/* DMA general configuration struct */
-typedef struct
-{
-    dma_data_mode_enum data_mode;
-    dma_subperipheral_enum sub_periph;
-    union {
-        dma_single_data_parameter_struct init_struct_s;
-        dma_multi_data_parameter_struct  init_struct_m;
-    } config;
-} dma_general_config_struct;  //todo: move to dma_bsp.h
-
-#endif // GD32F4
-
-#ifdef GD32F4
-
-#define PLATFORM_TRAIT_ADC_DEVICE 1
-
 #define SPI_TRAIT_AF_PORT         1
-#define SPI_TRAIT_AF_PIN          1
-#define I2C_TRAIT_STATE           1
-#define I2C_TRAIT_AF_PIN          1
 #define I2CDEV_COUNT              3
-#define PLATFORM_TRAIT_RCC        1
 #define UART_TRAIT_AF_PORT        1
-#define UART_TRAIT_AF_PIN         1
-#define UART_TRAIT_PINSWAP        1
-#define SERIAL_TRAIT_PIN_CONFIG   1
-#define DMA_TRAIT_CHANNEL         1
 
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
@@ -85,6 +54,21 @@ typedef struct
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+
+#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
+#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
+
+#endif // GD32F4
+
+#define PLATFORM_TRAIT_ADC_DEVICE   1
+#define PLATFORM_TRAIT_RCC          1
+#define I2C_TRAIT_STATE             1
+#define I2C_TRAIT_AF_PIN            1
+#define UART_TRAIT_PINSWAP          1
+#define SERIAL_TRAIT_PIN_CONFIG     1
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
+#define DMA_TRAIT_CHANNEL           1
+
 
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
 #define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
@@ -105,16 +89,13 @@ typedef struct DMA_Channel_TypeDef DMA_Channel_TypeDef;
 typedef struct SPI_TypeDef         SPI_TypeDef;
 typedef struct ADC_TypeDef         ADC_TypeDef;
 typedef struct USART_TypeDef       USART_TypeDef;
-typedef struct EXTI_TypeDef         EXTI_TypeDef;
-typedef struct EXTI_InitTypeDef     EXTI_InitTypeDef;
+typedef struct EXTI_TypeDef        EXTI_TypeDef;
+typedef struct EXTI_InitTypeDef    EXTI_InitTypeDef;
 #define DMA_InitTypeDef            dma_general_config_struct
 #define TIM_OCInitTypeDef          timer_oc_parameter_struct
 #define TIM_ICInitTypeDef          timer_ic_parameter_struct
 #define TIM_OCStructInit           timer_channel_output_struct_para_init
 #define TIM_TimeBaseInitTypeDef    timer_parameter_struct
-
-#define TIM_ICPolarity_Falling      TIMER_IC_POLARITY_FALLING
-#define TIM_ICPolarity_Rising       TIMER_IC_POLARITY_RISING
 
 #define Bit_RESET                  0
 
@@ -136,13 +117,6 @@ typedef struct EXTI_InitTypeDef     EXTI_InitTypeDef;
 #define DMA1_CH7_BASE        (DMA1 + 0xB8)
 
 extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
-extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state);
-extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
-
-#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
-#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
-
-#endif // GD32F4
 
 #define USE_ADC_DEVICE_0
 

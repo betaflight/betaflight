@@ -32,6 +32,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
@@ -44,6 +45,7 @@
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 #include "pg/pinio.h"
@@ -78,18 +80,18 @@ uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
  const timerHardware_t bbTimerHardware[] = {
- #if defined(GD32F4) 
-     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1),  
+ #if defined(GD32F4)
+     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH3, NONE,   0, 0),
- 
+
      DEF_TIMER(TIMER0,  CH0, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH0, NONE,   0, 2),
      DEF_TIMER(TIMER0,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH3, NONE,   0, 0),
- 
+
  #else
  #error MCU dependent code required
  #endif
@@ -165,7 +167,7 @@ static void bbOutputDataClear(uint32_t *buffer)
 
 // bbPacer management
 
-static bbPacer_t *bbFindMotorPacer(TIM_TypeDef *tim)
+static bbPacer_t *bbFindMotorPacer(void *tim)
 {
     for (int i = 0; i < MAX_MOTOR_PACERS; i++) {
 
@@ -225,7 +227,7 @@ const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t ti
 {
     for (int index = 0; index < usedMotorPorts; index++) {
         const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
-        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
             return bitbangTimer;
         }
     }
@@ -328,7 +330,7 @@ static void bbFindPacerTimer(void)
     for (int bbPortIndex = 0; bbPortIndex < MAX_SUPPORTED_MOTOR_PORTS; bbPortIndex++) {
         for (unsigned timerIndex = 0; timerIndex < ARRAYLEN(bbTimerHardware); timerIndex++) {
             const timerHardware_t *timer = &bbTimerHardware[timerIndex];
-            int timNumber = timerGetTIMNumber(timer->tim);
+            int timNumber = timerGetTIMNumber(timer);
             if ((motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM1 && timNumber != 1)
                 || (motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM8 && timNumber != 8)) {
                 continue;
@@ -345,7 +347,7 @@ static void bbFindPacerTimer(void)
 
             for (int index = 0; index < bbPortIndex; index++) {
                 const timerHardware_t* t = bbPorts[index].timhw;
-                if (timerGetTIMNumber(t->tim) == timNumber && timer->channel == t->channel) {
+                if (timerGetTIMNumber(t) == timNumber && timer->channel == t->channel) {
                     timerConflict = true;
                     break;
                 }
@@ -374,7 +376,7 @@ static void bbFindPacerTimer(void)
 
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
-    uint32_t timerclock = timerClock(bbPort->timhw->tim);
+    uint32_t timerclock = timerClock(bbPort->timhw);
 
     uint32_t outputFreq = getDshotBaseFrequency(dshotProtocolType);
     dshotFrameUs = 1000000 * 17 * 3 / outputFreq;

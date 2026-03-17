@@ -32,6 +32,7 @@
 #include "gd32f4xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = (void *)TIMER0,  .rcc = RCC_APB2(TIMER0),  .inputIrq = TIMER0_Channel_IRQn},
@@ -44,12 +45,12 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = (void *)TIMER5,  .rcc = RCC_APB1(TIMER5),  .inputIrq = TIMER5_DAC_IRQn},
     { .TIMx = (void *)TIMER6,  .rcc = RCC_APB1(TIMER6),  .inputIrq = TIMER6_IRQn},
 #else
-    { .TIMx = (void *)TIMER4,  .rcc = RCC_APB1(TIMER4),  .inputIrq = 0}, 
+    { .TIMx = (void *)TIMER4,  .rcc = RCC_APB1(TIMER4),  .inputIrq = 0},
     { .TIMx = (void *)TIMER5,  .rcc = RCC_APB1(TIMER5),  .inputIrq = 0},
     { .TIMx = (void *)TIMER6,  .rcc = RCC_APB1(TIMER6),  .inputIrq = 0},
 #endif /* GD32F450 || GD32F460 || GD32F470 || (GD32F405) || defined (GD32F425)  defined (GD32F407) || defined (GD32F427)  */
 
-    { .TIMx = (void *)TIMER7,  .rcc = RCC_APB2(TIMER7),  .inputIrq = TIMER7_Channel_IRQn},    
+    { .TIMx = (void *)TIMER7,  .rcc = RCC_APB2(TIMER7),  .inputIrq = TIMER7_Channel_IRQn},
     { .TIMx = (void *)TIMER8,  .rcc = RCC_APB2(TIMER8),  .inputIrq = TIMER0_BRK_TIMER8_IRQn},
     { .TIMx = (void *)TIMER9,  .rcc = RCC_APB2(TIMER9),  .inputIrq = TIMER0_UP_TIMER9_IRQn},
     { .TIMx = (void *)TIMER10, .rcc = RCC_APB2(TIMER10), .inputIrq = TIMER0_TRG_CMT_TIMER10_IRQn},
@@ -94,7 +95,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIMER(TIMER0, CH1N, PB0, 0, 0),
     DEF_TIMER(TIMER0, CH2N, PB1, 0, 0),
     DEF_TIMER(TIMER1, CH3,  PB2, 0, 0),
-    DEF_TIMER(TIMER1, CH1,  PB3, 0, 0),  
+    DEF_TIMER(TIMER1, CH1,  PB3, 0, 0),
     DEF_TIMER(TIMER1, CH2,  PB10, 0, 0),
     DEF_TIMER(TIMER1, CH3,  PB11, 0, 0),
     DEF_TIMER(TIMER0, CH0N, PB13, 0, 0),
@@ -155,7 +156,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClockFromInstance(const void *tim)
 {
     uint32_t timer = (uint32_t)tim;
     if (timer == TIMER7 || timer == TIMER0 || timer == TIMER8 || timer == TIMER9 || timer == TIMER10) {
@@ -165,10 +166,9 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     }
 }
 
-uint32_t timerPrescaler(const TIM_TypeDef *tim)
+uint32_t timerClock(const timerHardware_t *timHw)
 {
-    uint32_t timer = (uint32_t)tim;
-    return TIMER_PSC(timer) + 1;
+    return timerClockFromInstance(timHw->tim);
 }
 
 void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state)

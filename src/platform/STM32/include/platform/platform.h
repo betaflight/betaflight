@@ -203,6 +203,12 @@
 #define SCHEDULER_DELAY_LIMIT           100
 #endif
 
+// Allow RX and OSD tasks to be scheduled at the second attempt on F411 processors
+#if defined(STM32F411xE)
+#define SCHEDULER_RELAX_RX  1
+#define SCHEDULER_RELAX_OSD 1
+#endif
+
 // Set the default cpu_overclock to the first level (108MHz) for F411
 // Helps with looptime stability as the CPU is borderline when running native gyro sampling
 #if defined(USE_OVERCLOCK) && defined(STM32F411xE)
@@ -412,6 +418,8 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
 #define UART_TRAIT_PINSWAP 1
 #endif
+
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
 
 #if defined(STM32F4)
 #define UARTHARDWARE_MAX_PINS 4

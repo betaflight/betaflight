@@ -41,6 +41,9 @@
 #include "drivers/timer.h"
 #include "drivers/timer_impl.h"
 
+#include "platform/timer.h"
+#include "platform/rcc.h"
+
 #define TIM_N(n) (1 << (n))
 
 /*
@@ -60,7 +63,7 @@ typedef struct timerConfig_s {
     timerOvrHandlerRec_t *updateCallback;
 
     // per-channel
-    timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
+    timerEdgeHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
     timerOvrHandlerRec_t *overflowCallback[CC_CHANNELS_PER_TIMER];
 
     // state
@@ -84,7 +87,7 @@ timerInfo_t timerInfo[USED_TIMER_COUNT];
 // return index of timer in timer table. Lowest timer has index 0
 #define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
 
-static uint8_t lookupTimerIndex(const TIM_TypeDef *tim) // TIM_TypeDef只有
+static uint8_t lookupTimerIndex(const void *tim)
 {
 #define _CASE_SHF 10           // amount we can safely shift timer address to the right. gcc will throw error if some timers overlap
 #define _CASE_(tim, index) case ((unsigned)tim >> _CASE_SHF): return index; break
@@ -94,7 +97,7 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim) // TIM_TypeDef只有
     switch ((unsigned)tim >> _CASE_SHF) {
 #if USED_TIMERS & TIM_N(0)
         _CASE(0);
-#endif        
+#endif
 #if USED_TIMERS & TIM_N(1)
         _CASE(1);
 #endif
@@ -264,7 +267,7 @@ const int8_t timerNumbers[USED_TIMER_COUNT] = {
 #undef _DEF
 };
 
-int8_t timerGetNumberByIndex(uint8_t index) 
+int8_t timerGetNumberByIndex(uint8_t index)
 {
     if (index < USED_TIMER_COUNT) {
         return timerNumbers[index];
@@ -278,16 +281,16 @@ int8_t timerGetIndexByNumber(uint8_t number)
     return TIM_N(number) & USED_TIMERS ? popcount((TIM_N(number) - 1) & USED_TIMERS) : -1;
 }
 
-int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
+int8_t timerGetTIMNumber(const timerHardware_t *timHw)
 {
-    const uint8_t index = lookupTimerIndex(tim);
+    const uint8_t index = lookupTimerIndex(timHw->tim);
 
     return timerGetNumberByIndex(index);
 }
 
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
-    return channel;    
+    return channel;
 }
 
 uint8_t timerLookupChannelIndex(const uint16_t channel)
@@ -295,7 +298,7 @@ uint8_t timerLookupChannelIndex(const uint16_t channel)
     return lookupChannelIndex(channel);
 }
 
-rccPeriphTag_t timerRCC(const TIM_TypeDef *tim)
+rccPeriphTag_t timerRCC(const void *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
@@ -305,10 +308,10 @@ rccPeriphTag_t timerRCC(const TIM_TypeDef *tim)
     return 0;
 }
 
-uint8_t timerInputIrq(const TIM_TypeDef *tim)
+uint8_t timerInputInterrupt(const timerHardware_t *timHw)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
-        if (timerDefinitions[i].TIMx == tim) {
+        if (timerDefinitions[i].TIMx == timHw->tim) {
             return timerDefinitions[i].inputIrq;
         }
     }
@@ -320,33 +323,28 @@ static void timerNVICConfigure(uint8_t irq)
     nvic_irq_enable(irq , NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
 }
 
-void timerReconfigureTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
-{
-    configTimeBase(tim, period, hz);
-}
-
-void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
+void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uint32_t hz)
 {
     timer_parameter_struct timer_initpara;
 
     timer_struct_para_init(&timer_initpara);
 
     timer_initpara.period            = (period - 1) & 0xFFFF;
-    timer_initpara.prescaler         = (timerClock(tim) / hz) - 1;
+    timer_initpara.prescaler         = (timerClock(timHw) / hz) - 1;
     timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;
     timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;
     timer_initpara.counterdirection  = TIMER_COUNTER_UP;
     timer_initpara.repetitioncounter = 0;
-    timer_init((uint32_t)tim, &timer_initpara);
+    timer_init((uint32_t)timHw->tim, &timer_initpara);
 }
 
 // old interface for PWM inputs. It should be replaced
 void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
 {
-    configTimeBase(timerHardwarePtr->tim, period, hz);
+    timerReconfigureTimeBase(timerHardwarePtr, period, hz);
     timer_enable((uint32_t)timerHardwarePtr->tim);
 
-    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    uint8_t irq = timerInputInterrupt(timerHardwarePtr);
     timerNVICConfigure(irq);
 
     switch (irq) {
@@ -374,7 +372,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         return;
     if (irqPriority < timerInfo[timer].priority) {
         // it would be better to set priority in the end, but current startup sequence is not ready
-        configTimeBase((void *)usedTimers[timer], 0, 1);
+        timerReconfigureTimeBase(timHw, 0, 1);
         timer_enable(usedTimers[timer]);
 
         nvic_irq_enable(irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
@@ -383,12 +381,12 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
     }
 }
 
-void timerChCCHandlerInit(timerCCHandlerRec_t *self, timerCCHandlerCallback *fn)
+void timerChannelEdgeHandlerInit(timerEdgeHandlerRec_t *self, timerCCHandlerCallback *fn)
 {
     self->fn = fn;
 }
 
-void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
+void timerChannelOverflowHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn)
 {
     self->fn = fn;
     self->next = NULL;
@@ -396,7 +394,7 @@ void timerChOvrHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *
 
 // update overflow callback list
 // some synchronization mechanism is neccesary to avoid disturbing other channels (BASEPRI used now)
-static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, const TIM_TypeDef *tim)
+static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, const void *tim)
 {
     timerOvrHandlerRec_t **chain = &cfg->overflowCallbackActive;
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
@@ -422,7 +420,7 @@ static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, const TIM_TypeDef *
 }
 
 // config edge and overflow callback for channel. Try to avoid per-channel overflowCallback, it is a bit expensive
-void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *edgeCallback, timerOvrHandlerRec_t *overflowCallback)
+void timerChannelConfigCallbacks(const timerHardware_t *timHw, timerEdgeHandlerRec_t *edgeCallback, timerOvrHandlerRec_t *overflowCallback)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -442,21 +440,21 @@ void timerChConfigCallbacks(const timerHardware_t *timHw, timerCCHandlerRec_t *e
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
 }
 
-void timerConfigUpdateCallback(const TIM_TypeDef *tim, timerOvrHandlerRec_t *updateCallback)
+void timerConfigUpdateCallback(const timerHardware_t *timHw, timerOvrHandlerRec_t *updateCallback)
 {
-    uint8_t timerIndex = lookupTimerIndex(tim);
+    uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
 
     timerConfig[timerIndex].updateCallback = updateCallback;
-    timerChConfig_UpdateOverflow(&timerConfig[timerIndex], tim);
+    timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
 }
 
 // configure callbacks for pair of channels (1+2 or 3+4).
 // Hi(2,4) and Lo(1,3) callbacks are specified, it is not important which timHw channel is used.
 // This is intended for dual capture mode (each channel handles one transition)
-void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_t *edgeCallbackLo, timerCCHandlerRec_t *edgeCallbackHi, timerOvrHandlerRec_t *overflowCallback)
+void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerEdgeHandlerRec_t *edgeCallbackLo, timerEdgeHandlerRec_t *edgeCallbackHi, timerOvrHandlerRec_t *overflowCallback)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -482,20 +480,20 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
 
     // enable channel IRQs
     if (edgeCallbackLo) {
-        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo)); 
-        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo)); 
+        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo));
+        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo));
     }
 
     if (edgeCallbackHi) {
-        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi)); 
-        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));        
+        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));
+        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));
     }
 
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
 }
 
 // enable/disable IRQ for low channel in dual configuration
-void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newState)
+void timerChannelConfigInterruptDualLo(const timerHardware_t *timHw, FunctionalState newState)
 {
     if (newState) {
         timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(timHw->channel &~ TIMER_CH_1));
@@ -505,7 +503,7 @@ void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newStat
 }
 
 // enable or disable IRQ
-void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
+void timerChannelConfigInterrupt(const timerHardware_t *timHw, FunctionalState newState)
 {
     if (newState) {
         timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(timHw->channel));
@@ -515,13 +513,13 @@ void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
 }
 
 // clear Compare/Capture flag for channel
-void timerChClearCCFlag(const timerHardware_t *timHw)
+void timerChannelClearFlag(const timerHardware_t *timHw)
 {
     timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(timHw->channel));
 }
 
 // configure timer channel GPIO mode
-void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
+void timerChannelConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
     IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
@@ -548,7 +546,7 @@ static unsigned getFilter(unsigned ticks)
 }
 
 // Configure input capture
-void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+void timerChannelConfigInput(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     timer_ic_parameter_struct timer_icinitpara;
     timer_channel_input_struct_para_init(&timer_icinitpara);
@@ -556,12 +554,12 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
     timer_icinitpara.icfilter    = getFilter(inputFilterTicks);
-    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara); 
+    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara);
 }
 
 // configure dual channel input channel for capture
 // polarity is for Low channel (capture order is always Lo - Hi)
-void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
+void timerChannelConfigInputDual(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterTicks)
 {
     timer_ic_parameter_struct timer_icinitpara;
     bool directRising = (timHw->channel & TIMER_CH_1) ? !polarityRising : polarityRising;
@@ -573,14 +571,14 @@ void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsi
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
     timer_icinitpara.icfilter    = getFilter(inputFilterTicks);
-    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara); 
+    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara);
     // configure indirect channel
     timer_icinitpara.icpolarity  = directRising ? TIMER_IC_POLARITY_FALLING : TIMER_IC_POLARITY_RISING;
     timer_icinitpara.icselection = TIMER_IC_SELECTION_INDIRECTTI;
     timer_input_capture_config((uint32_t)(timHw->tim), (timHw->channel ^ TIMER_CH_1), &timer_icinitpara); // get opposite channel no
 }
 
-void timerChICPolarity(const timerHardware_t *timHw, bool polarityRising)
+void timerChannelInputPolarity(const timerHardware_t *timHw, bool polarityRising)
 {
     timCCER_t tmpccer = TIMER_CHCTL2((uint32_t)(timHw->tim));
     tmpccer &= ~(TIMER_CHCTL2_CH0P << (timHw->channel << 2));
@@ -603,12 +601,12 @@ volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile uint32_t*)((uintptr_t)&TIMER_CH0CV((uint32_t)(timHw->tim))) + (timHw->channel));
 }
 
-void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
+void timerChannelConfigOutput(const timerHardware_t* timHw, bool outEnable, bool stateHigh)
 {
     timer_oc_parameter_struct timer_ocintpara;
     timer_channel_output_struct_para_init(&timer_ocintpara);
 
-    uint16_t ocmode; 
+    uint16_t ocmode;
     if (outEnable) {
         ocmode = TIMER_OC_MODE_INACTIVE;
         timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
@@ -618,16 +616,16 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
         }
         timer_ocintpara.ocpolarity  = stateHigh ? TIMER_OC_POLARITY_HIGH : TIMER_OC_POLARITY_LOW;
     } else {
-        ocmode = TIMER_OC_MODE_TIMING;   
+        ocmode = TIMER_OC_MODE_TIMING;
     }
 
     timer_channel_output_config((uint32_t)(timHw->tim), timHw->channel, &timer_ocintpara);
-    timer_channel_output_mode_config((uint32_t)(timHw->tim), timHw->channel, ocmode); 
+    timer_channel_output_mode_config((uint32_t)(timHw->tim), timHw->channel, ocmode);
     timer_channel_output_shadow_config((uint32_t)(timHw->tim), timHw->channel, TIMER_OC_SHADOW_DISABLE);
 }
 
 
-static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
+static void timCCxHandler(void *tim, timerConfig_t *timerConfig)
 {
     uint16_t capture;
     unsigned tim_status;
@@ -659,22 +657,22 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
                 break;
             }
             case __builtin_clz(TIMER_INT_CH0):
-                if (timerConfig->edgeCallback[0]) {
+                if (timerConfig->edgeCallback[0] && timerConfig->edgeCallback[0]->fn) {
                     timerConfig->edgeCallback[0]->fn(timerConfig->edgeCallback[0], TIMER_CH0CV((uint32_t)tim));
                 }
                 break;
             case __builtin_clz(TIMER_INT_CH1):
-                if (timerConfig->edgeCallback[1]) {
+                if (timerConfig->edgeCallback[1] && timerConfig->edgeCallback[1]->fn) {
                         timerConfig->edgeCallback[1]->fn(timerConfig->edgeCallback[1], TIMER_CH1CV((uint32_t)tim));
                 }
                 break;
             case __builtin_clz(TIMER_INT_CH2):
-                if (timerConfig->edgeCallback[2]) {
+                if (timerConfig->edgeCallback[2] && timerConfig->edgeCallback[2]->fn) {
                         timerConfig->edgeCallback[2]->fn(timerConfig->edgeCallback[2], TIMER_CH2CV((uint32_t)tim));
                 }
                 break;
             case __builtin_clz(TIMER_INT_CH3):
-                if (timerConfig->edgeCallback[3]) {
+                if (timerConfig->edgeCallback[3] && timerConfig->edgeCallback[3]->fn) {
                         timerConfig->edgeCallback[3]->fn(timerConfig->edgeCallback[3], TIMER_CH3CV((uint32_t)tim));
                 }
                 break;
@@ -682,7 +680,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
     }
 }
 
-static inline void timUpdateHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
+static inline void timUpdateHandler(void *tim, timerConfig_t *timerConfig)
 {
     uint16_t capture;
     unsigned tim_status;
@@ -812,9 +810,9 @@ void timerInit(void)
     }
 }
 
-void timerStart(TIM_TypeDef *tim)
+void timerStart(const timerHardware_t *timHw)
 {
-    timer_enable((uint32_t)tim);
+    timer_enable((uint32_t)timHw->tim);
 }
 
 /*!
@@ -823,9 +821,13 @@ void timerStart(TIM_TypeDef *tim)
     \param[out] none
     \retval     none
 */
-void timerForceOverflow(TIM_TypeDef *tim)
+void timerForceOverflow(void *tim)
 {
-    uint8_t timerIndex = lookupTimerIndex((const TIM_TypeDef *)tim);
+    uint8_t timerIndex = lookupTimerIndex(tim);
+
+    if (timerIndex >= USED_TIMER_COUNT) {
+        return;
+    }
 
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         // Save the current count so that PPM reading will work on the same timer that was forced to overflow
@@ -851,7 +853,7 @@ void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t ocshadow)
     timer_channel_output_shadow_config((uint32_t)tim, channel, ocshadow);
 }
 
-volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
+volatile timCCR_t* timerCCR(void *tim, uint8_t channel)
 {
     return (volatile timCCR_t*)((volatile uint32_t*)(&TIMER_CH0CV((uint32_t)tim)) + (channel));
 }
@@ -871,61 +873,76 @@ uint16_t timerDmaSource(uint8_t channel)
     return 0;
 }
 
-uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+uint16_t timerGetPrescalerByDesiredMhz(void *tim, uint16_t mhz)
 {
     return timerGetPrescalerByDesiredHertz(tim, MHZ_TO_HZ(mhz));
 }
 
-uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
+uint16_t timerGetPeriodByPrescaler(void *tim, uint16_t prescaler, uint32_t hz)
 {
-    return (uint16_t)((timerClock(tim) / (prescaler + 1)) / hz);
-}
-
-uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
-{
-    // protection here for desired hertz > SystemCoreClock???
-    if (hz > timerClock(tim)) {
+    if (hz == 0) {
         return 0;
     }
-    return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
+    return (uint16_t)((timerClockFromInstance(tim) / (prescaler + 1)) / hz);
 }
 
-void timerReset(TIM_TypeDef *timer)
+uint16_t timerGetPrescalerByDesiredHertz(void *tim, uint32_t hz)
 {
-    timer_deinit((uint32_t)timer);
+    // protection here for desired hertz > SystemCoreClock???
+    if (hz > timerClockFromInstance(tim)) {
+        return 0;
+    }
+    return (uint16_t)((timerClockFromInstance(tim) + hz / 2 ) / hz) - 1;
 }
 
-void timerSetPeriod(TIM_TypeDef *timer, uint32_t period)
+void timerReset(const timerHardware_t *timHw)
 {
-    TIMER_CAR((uint32_t)timer) = period;
+    timer_deinit((uint32_t)timHw->tim);
 }
 
-uint32_t timerGetPeriod(TIM_TypeDef *timer)
+void timerSetPeriod(const timerHardware_t *timHw, uint32_t period)
 {
-    return TIMER_CAR((uint32_t)timer);
+    TIMER_CAR((uint32_t)timHw->tim) = period;
 }
 
-void timerSetCounter(TIM_TypeDef *timer, uint32_t counter)
+uint32_t timerGetPeriod(const timerHardware_t *timHw)
 {
-    TIMER_CNT((uint32_t)timer) = counter;
+    return TIMER_CAR((uint32_t)timHw->tim);
 }
 
-void timerDisable(TIM_TypeDef *timer)
+void timerSetCounter(const timerHardware_t *timHw, uint32_t counter)
 {
-    timer_interrupt_disable((uint32_t)timer, TIMER_INT_UP);
-    timer_disable((uint32_t)timer);
+    TIMER_CNT((uint32_t)timHw->tim) = counter;
 }
 
-void timerEnable(TIM_TypeDef *timer)
+void timerDisable(const timerHardware_t *timHw)
 {
-    timer_enable((uint32_t)timer);
-    timer_event_software_generate((uint32_t)timer, TIMER_EVENT_SRC_UPG);
+    timer_interrupt_disable((uint32_t)timHw->tim, TIMER_INT_UP);
+    timer_disable((uint32_t)timHw->tim);
 }
 
-void timerEnableInterrupt(TIM_TypeDef *timer)
+void timerEnable(const timerHardware_t *timHw)
 {
-    timer_flag_clear((uint32_t)timer, TIMER_FLAG_UP);
-    timer_interrupt_enable((uint32_t)timer, TIMER_INT_UP);
+    timer_enable((uint32_t)timHw->tim);
+    timer_event_software_generate((uint32_t)timHw->tim, TIMER_EVENT_SRC_UPG);
+}
+
+void timerEnableInterrupt(const timerHardware_t *timHw)
+{
+    timer_flag_clear((uint32_t)timHw->tim, TIMER_FLAG_UP);
+    timer_interrupt_enable((uint32_t)timHw->tim, TIMER_INT_UP);
+}
+
+uint32_t timerGetPrescaler(const timerHardware_t *timHw)
+{
+    uint32_t timer = (uint32_t)timHw->tim;
+    return TIMER_PSC(timer);
+}
+
+void *timerFindTimerHandle(void *tim)
+{
+    UNUSED(tim);
+    return NULL;
 }
 
 #endif

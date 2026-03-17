@@ -24,9 +24,7 @@
 #include "platform.h"
 #include "drivers/resource.h"
 
-#if defined(GD32F4)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
-#endif
 
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 
@@ -52,14 +50,25 @@ typedef enum {
     DMA_LAST_HANDLER = DMA1_CH7_HANDLER
 } dmaIdentifier_e;
 
-/* DMA general initialize struct */
+
+/* DMA data mode type */
+typedef enum {
+    DMA_DATA_MODE_SINGLE = 0,
+    DMA_DATA_MODE_MULTI  = 1
+} dma_data_mode_enum;
+
+/* DMA general configuration struct */
 typedef struct
 {
-    uint32_t single_mode;                               /* single or multiple mode */
-    int sub_periph;                                     /* specify DMA channel peripheral */
-    void * general_init_s;                              /* single or multiple struct */
-} dma_general_init_struct;
-
+    dma_data_mode_enum data_mode;
+#if defined(GD32F4)
+    dma_subperipheral_enum sub_periph;
+#endif
+    union {
+        dma_single_data_parameter_struct init_struct_s;
+        dma_multi_data_parameter_struct  init_struct_m;
+    } config;
+} dma_general_config_struct;  //todo: move to dma_bsp.h
 
 uint32_t dmaGetChannel(const uint8_t channel);
 

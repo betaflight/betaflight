@@ -16,24 +16,23 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps:
-      - name: Code Checkout
-        uses: actions/checkout@v5
-
       - name: Fetch build artifacts
         uses: actions/download-artifact@v5
 
-      - name: List assets
-        run: ls -al Assets
+      - name: List downloaded artifacts
+        run: ls -al
 
       - name: Attach assets to release
         run: |
           set -x
           ASSETS=()
-          for asset in ./*/*.hex; do
-            ASSETS+=("$asset")
-            echo "$asset"
+          for asset in ./*/*.hex ./*/*.uf2; do
+            if [ -f "$asset" ]; then
+              ASSETS+=("$asset")
+              echo "$asset"
+            fi
           done
           TAG_NAME="${GITHUB_REF##*/}"
-          gh release upload "${TAG_NAME}" "${ASSETS[@]}"
+          gh release upload "${TAG_NAME}" "${ASSETS[@]}" -R "${GITHUB_REPOSITORY}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

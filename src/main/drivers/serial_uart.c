@@ -516,7 +516,7 @@ const struct serialPortVTable uartVTable[] = {
     {                                                           \
         uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
         uartIrqHandler(uartPort);                               \
-    }  
+    }
 #else
 #define UART_IRQHandler(type, number, dev)                      \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
@@ -525,6 +525,10 @@ const struct serialPortVTable uartVTable[] = {
         uartIrqHandler(uartPort);                               \
     }                                                           \
 /**/
+#endif
+
+#ifdef USE_UART0
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART1 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART1

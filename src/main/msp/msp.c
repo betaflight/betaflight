@@ -53,7 +53,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dshot.h"
@@ -1326,6 +1326,21 @@ case MSP_NAME:
         sbufWriteU16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         break;
 
+    case MSP_ATTITUDE_QUATERNION: {
+        const float q_scale = 0x7FFF;
+        // Create temporary int16_t variables
+        int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
+        int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
+        int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        // Write their bit representation as uint16_t
+        sbufWriteU16(dst, *(uint16_t*)&w);
+        sbufWriteU16(dst, *(uint16_t*)&x);
+        sbufWriteU16(dst, *(uint16_t*)&y);
+        sbufWriteU16(dst, *(uint16_t*)&z);
+        break;
+    }
+
     case MSP_ALTITUDE:
         sbufWriteU32(dst, getEstimatedAltitudeCm());
 #ifdef USE_VARIO
@@ -1439,6 +1454,8 @@ case MSP_NAME:
             sbufWriteU8(dst, adjRange->range.endStep);
             sbufWriteU8(dst, adjRange->adjustmentConfig);
             sbufWriteU8(dst, adjRange->auxSwitchChannelIndex);
+            sbufWriteU16(dst, adjRange->adjustmentCenter);
+            sbufWriteU16(dst, adjRange->adjustmentScale);
         }
         break;
 
@@ -2323,6 +2340,8 @@ static void writePidfs(pidProfile_t* pidProfile, sbuf_t *dst)
 }
 #endif // USE_SIMPLIFIED_TUNING
 
+static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
+
 static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t *src, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
 
@@ -2385,14 +2404,14 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                 return MSP_RESULT_ERROR;
             }
             int bytesRemaining = sbufBytesRemaining(dst);
-            mspPacket_t packetIn, packetOut;
-            sbufInit(&packetIn.buf, src->end, src->end); // there is no paramater for MSP_MULTIPLE_MSP
+            mspPacket_t packetOut;
             uint8_t* initialInputPtr = src->ptr;
             while (sbufBytesRemaining(src) && bytesRemaining > 0) {
                 uint8_t newMSP = sbufReadU8(src);
                 sbufInit(&packetOut.buf, dst->ptr + 1, dst->end); // reserve 1 byte for length
-                packetIn.cmd = newMSP;
-                mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
+                if (mspFcProcessOutCommand(srcDesc, newMSP, &packetOut, NULL) != MSP_RESULT_ACK) {
+                    return MSP_RESULT_ERROR;
+                }
                 uint8_t mspSize = sbufPtr(&packetOut.buf) - dst->ptr; // length included
                 bytesRemaining -= mspSize;
                 if (bytesRemaining >= 0) {
@@ -2404,8 +2423,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
             for (int i = 0; i < maxMSPs; i++) {
                 uint8_t* sizePtr = sbufPtr(&packetOut.buf);
                 sbufWriteU8(&packetOut.buf, 0); // placeholder for reply size
-                packetIn.cmd = sbufReadU8(src);
-                mspFcProcessCommand(srcDesc, &packetIn, &packetOut, NULL);
+                uint8_t newMSP = sbufReadU8(src);
+                // No need to check again
+                mspFcProcessOutCommand(srcDesc, newMSP, &packetOut, NULL);
                 *sizePtr = sbufPtr(&packetOut.buf) - (sizePtr + 1);
             }
             dst->ptr = packetOut.buf.ptr;
@@ -2748,7 +2768,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     mac->modeLogic = sbufReadU8(src);
 
                     i = sbufReadU8(src);
-                    mac->linkedTo = findBoxByPermanentId(i)->boxId;
+                    const box_t *linkedToBox = findBoxByPermanentId(i);
+                    if (!linkedToBox) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    mac->linkedTo = linkedToBox->boxId;
                 }
                 rcControlsInit();
             } else {
@@ -2769,6 +2793,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             adjRange->range.endStep = sbufReadU8(src);
             adjRange->adjustmentConfig = sbufReadU8(src);
             adjRange->auxSwitchChannelIndex = sbufReadU8(src);
+            if (sbufBytesRemaining(src) >= 4) {
+                adjRange->adjustmentCenter = sbufReadU16(src);
+                adjRange->adjustmentScale = sbufReadU16(src);
+            }
 
             activeAdjustmentRangeReset();
         } else {
@@ -2955,8 +2983,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (i >= MAX_SERVO_RULES) {
             return MSP_RESULT_ERROR;
         } else {
-            customServoMixersMutable(i)->targetChannel = sbufReadU8(src);
-            customServoMixersMutable(i)->inputSource = sbufReadU8(src);
+            const uint8_t targetChannel = sbufReadU8(src);
+            const uint8_t inputSource = sbufReadU8(src);
+            if (targetChannel >= MAX_SUPPORTED_SERVOS || inputSource >= INPUT_SOURCE_COUNT) {
+                return MSP_RESULT_ERROR;
+            }
+            customServoMixersMutable(i)->targetChannel = targetChannel;
+            customServoMixersMutable(i)->inputSource = inputSource;
             customServoMixersMutable(i)->rate = sbufReadU8(src);
             customServoMixersMutable(i)->speed = sbufReadU8(src);
             customServoMixersMutable(i)->min = sbufReadU8(src);
@@ -3123,7 +3156,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
 #if defined(USE_DYN_NOTCH_FILTER)
-            dynNotchConfigMutable()->dyn_notch_count = sbufReadU8(src);
+            i = sbufReadU8(src);
+            // verify dyn notch count
+            if (i > DYN_NOTCH_COUNT_MAX) {
+                return MSP_RESULT_ERROR;
+            }
+            dynNotchConfigMutable()->dyn_notch_count = i;
 #else
             sbufReadU8(src);
 #endif
@@ -3240,7 +3278,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.44
 #if defined(USE_FEEDFORWARD)
-            currentPidProfile->feedforward_averaging = sbufReadU8(src);
+            i = sbufReadU8(src);
+            if (i > 3) {
+                return MSP_RESULT_ERROR;
+            }
+            currentPidProfile->feedforward_averaging = i;
             currentPidProfile->feedforward_smooth_factor = sbufReadU8(src);
             currentPidProfile->feedforward_boost = sbufReadU8(src);
             currentPidProfile->feedforward_max_rate_limit = sbufReadU8(src);
@@ -4443,6 +4485,22 @@ mspResult_e mspFcProcessCommand(mspDescriptor_t srcDesc, mspPacket_t *cmd, mspPa
 #endif
     } else {
         ret = mspCommonProcessInCommand(srcDesc, cmdMSP, src, mspPostProcessFn);
+    }
+    reply->result = ret;
+    return ret;
+}
+
+static mspResult_e mspFcProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    int ret = MSP_RESULT_CMD_UNKNOWN;
+    sbuf_t *dst = &reply->buf;
+    // initialize reply by default
+    reply->cmd = cmdMSP;
+
+    if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+        ret = MSP_RESULT_ACK;
+    } else if (mspProcessOutCommand(srcDesc, cmdMSP, dst)) {
+        ret = MSP_RESULT_ACK;
     }
     reply->result = ret;
     return ret;

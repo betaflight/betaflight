@@ -23,6 +23,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "platform/rcc.h"
 
 #include "common/utils.h"

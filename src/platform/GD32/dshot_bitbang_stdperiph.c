@@ -42,6 +42,7 @@
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 #include "pg/motor.h"
 
 void bbGpioSetup(bbMotor_t *bbMotor)
@@ -84,7 +85,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     timer_ocintpara.ocidlestate = TIMER_OC_IDLE_STATE_HIGH;
     timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
-    timer_ocintpara.ocpolarity  = TIMER_OC_POLARITY_LOW;       
+    timer_ocintpara.ocpolarity  = TIMER_OC_POLARITY_LOW;
 
     timer_channel_output_pulse_value_config((uint32_t)(timhw->tim), timhw->channel, 10);
 
@@ -144,7 +145,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     // Normal: Use CR (higher half)
     // Inverted: Use BOP (lower half)
 
-    WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR); 
+    WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR);
 
     // Set GPIO to output
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
@@ -269,7 +270,7 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     timer_auto_reload_shadow_enable((uint32_t)(bbPort->timhw->tim));
 }
 
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
+void bbTIM_DMACmd(void* TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
 {
     if(ENABLE == NewState){
         timer_dma_enable((uint32_t)TIMx, TIM_DMASource);

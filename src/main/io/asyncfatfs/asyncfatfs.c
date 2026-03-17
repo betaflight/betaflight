@@ -3324,7 +3324,7 @@ static void afatfs_findLargestContiguousFreeBlockBegin(void)
  * Returns:
  *     AFATFS_OPERATION_IN_PROGRESS - SD card is busy, call again later to resume
  *     AFATFS_OPERATION_SUCCESS - When the search has finished and afatfs.initState.freeSpaceSearch has been updated with the details of the best gap.
- *     AFATFS_OPERATION_FAILURE - When a read error occured
+ *     AFATFS_OPERATION_FAILURE - When a read error occurred
  */
 static afatfsOperationStatus_e afatfs_findLargestContiguousFreeBlockContinue(void)
 {
@@ -3344,7 +3344,7 @@ static afatfsOperationStatus_e afatfs_findLargestContiguousFreeBlockContinue(voi
                     break;
 
                     case AFATFS_FIND_CLUSTER_FATAL:
-                        // Some sort of read error occured
+                        // Some sort of read error occurred
                         return AFATFS_OPERATION_FAILURE;
 
                     case AFATFS_FIND_CLUSTER_NOT_FOUND:
@@ -3385,7 +3385,7 @@ static afatfsOperationStatus_e afatfs_findLargestContiguousFreeBlockContinue(voi
                     break;
 
                     case AFATFS_FIND_CLUSTER_FATAL:
-                        // Some sort of read error occured
+                        // Some sort of read error occurred
                         return AFATFS_OPERATION_FAILURE;
 
                     case AFATFS_FIND_CLUSTER_IN_PROGRESS:

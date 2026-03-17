@@ -652,7 +652,7 @@ static void osdUpdateStats(void)
         stats.min_voltage = value;
     }
 
-    value = getAmperage() / 100;
+    value = getAmperage();
     if (stats.max_current < value) {
         stats.max_current = value;
     }
@@ -887,7 +887,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
 
     case OSD_STAT_MAX_CURRENT:
         if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-            tfp_sprintf(buff, "%d%c", stats.max_current, SYM_AMP);
+            osdPrintFloat(buff, SYM_NONE, stats.max_current / 100.0f, "", 2, false, SYM_AMP);
             osdDisplayStatisticLabel(midCol, displayRow, "MAX CURRENT", buff);
             return true;
         }

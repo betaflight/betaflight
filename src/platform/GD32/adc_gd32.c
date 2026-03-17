@@ -97,9 +97,9 @@ static void adcInitDevice(uint32_t adc_periph, int channelCount)
 #ifdef USE_ADC_INTERNAL
     adc_special_function_config(adc_periph, ADC_SCAN_MODE, ENABLE);
 #else
-    if(channelCount > 1) 
+    if(channelCount > 1)
         adc_special_function_config(adc_periph, ADC_SCAN_MODE, ENABLE);
-    else 
+    else
         adc_special_function_config(adc_periph, ADC_SCAN_MODE, DISABLE);
 #endif
 

@@ -37,6 +37,7 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "platform/light_ws2811strip_stm32.h"
 
@@ -54,7 +55,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     static uint32_t counter = 0;
 #endif
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) {   
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) {
 #if defined(USE_WS2811_SINGLE_COLOUR)
         counter++;
         if (counter == WS2811_LED_STRIP_LENGTH) {
@@ -70,7 +71,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
         xDMA_Cmd(descriptor->ref, DISABLE);
 #endif
 
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);  
+        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);
     }
 }
 
@@ -201,14 +202,14 @@ bool ws2811LedStripHardwareInit(void)
 #endif
 
 #if defined(USE_WS2811_SINGLE_COLOUR)
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE; 
+    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
 #else
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE; 
+    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
 #endif
 
     gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
-    xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);    
+    xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 
     return true;
 }

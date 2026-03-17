@@ -118,9 +118,9 @@ static uint8_t skippedOSDAttempts = 0;
 #endif
 
 #if defined(USE_LATE_TASK_STATISTICS)
-static int16_t lateTaskCount = 0;
+static uint32_t lateTaskCount = 0;
 static uint32_t lateTaskTotal = 0;
-static int16_t taskCount = 0;
+static uint32_t taskCount = 0;
 static uint32_t lateTaskPercentage = 0;
 static uint32_t nextTimingCycles;
 static int32_t gyroCyclesNow;

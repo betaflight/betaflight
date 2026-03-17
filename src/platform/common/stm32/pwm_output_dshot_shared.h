@@ -28,7 +28,7 @@ extern FAST_DATA_ZERO_INIT uint8_t dmaMotorTimerCount;
 extern FAST_DATA_ZERO_INIT motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 extern FAST_DATA_ZERO_INIT motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
-uint8_t getTimerIndex(TIM_TypeDef *timer);
+uint8_t getTimerIndex(void *timer);
 motorDmaOutput_t *getMotorDmaOutput(unsigned index);
 void dshotEnableChannels(unsigned motorCount);
 

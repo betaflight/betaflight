@@ -60,7 +60,7 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 5);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 6);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inverted = false,
@@ -87,6 +87,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .mavlink_extra1_rate = 2,
     .mavlink_extra2_rate = 2,
     .mavlink_extra3_rate = 1,
+    .crsf_tlm_accgyro = 0,
 );
 
 void telemetryInit(void)

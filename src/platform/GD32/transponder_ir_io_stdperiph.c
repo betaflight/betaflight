@@ -33,6 +33,9 @@
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+
+#include "platform/timer.h"
+
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_erlt.h"
 #include "drivers/transponder_ir_ilap.h"
@@ -58,11 +61,11 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     }
 }
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
+bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 {
     (void) transponder;
     if (!ioTag) {
-        return;
+        return false;
     }
 
     timer_parameter_struct timer_initpara;
@@ -70,6 +73,11 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     dma_single_data_parameter_struct dma_init_struct;
 
     const timerHardware_t *timerHardware = timerAllocate(ioTag, OWNER_TRANSPONDER, 0);
+    if (!timerHardware) {
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
+    }
     timer = timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 
@@ -77,7 +85,9 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec == NULL) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     dmaRef = dmaSpec->ref;
@@ -88,22 +98,21 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 #endif
 
     if (dmaRef == NULL || !dmaAllocate(dmaGetIdentifier(dmaRef), OWNER_TRANSPONDER, 0)) {
-        return;
+        timer = NULL;
+        dmaRef = NULL;
+        return false;
     }
 
     transponderIO = IOGetByTag(ioTag);
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
-    
+
     dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
-    if (transponder->timer_hz == 0 || transponder->timer_carrier_hz == 0) {
-        return;
-    }
     uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
     uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
 
@@ -156,17 +165,19 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 
 #if defined(GD32F4)
-    dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_32BIT; 
+    dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
 #endif
 
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE; 
+    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dma_init_struct.priority = DMA_PRIORITY_HIGH;
-    
+
     gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
 
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
 
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
+
+    return true;
 }
 
 bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider)
@@ -189,7 +200,9 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
             return false;
     }
 
-    transponderIrHardwareInit(ioTag, &transponder);
+    if (!transponderIrHardwareInit(ioTag, &transponder)) {
+        return false;
+    }
 
     return true;
 }

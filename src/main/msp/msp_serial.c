@@ -261,11 +261,16 @@ static void mspSerialProcessReceivedPacketData(mspPort_t *mspPort, uint8_t c)
             mspPort->checksum2 = crc8_dvb_s2(mspPort->checksum2, c);
             if (mspPort->offset == sizeof(mspHeaderV2_t)) {
                 mspHeaderV2_t * hdrv2 = (mspHeaderV2_t *)&mspPort->inBuf[0];
-                mspPort->dataSize = hdrv2->size;
-                mspPort->cmdMSP = hdrv2->cmd;
-                mspPort->cmdFlags = hdrv2->flags;
-                mspPort->offset = 0;                // re-use buffer
-                mspPort->packetState = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_NATIVE : MSP_CHECKSUM_V2_NATIVE;
+                // verify length
+                if (hdrv2->size > MSP_PORT_INBUF_SIZE) {
+                    mspPort->packetState = MSP_IDLE;
+                } else {
+                    mspPort->dataSize = hdrv2->size;
+                    mspPort->cmdMSP = hdrv2->cmd;
+                    mspPort->cmdFlags = hdrv2->flags;
+                    mspPort->offset = 0;                // re-use buffer
+                    mspPort->packetState = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_NATIVE : MSP_CHECKSUM_V2_NATIVE;
+                }
             }
             break;
 
@@ -592,6 +597,42 @@ bool mspSerialWaiting(void)
             return true;
         }
     }
+    return false;
+}
+
+/*
+ * Returns true when a configurator-class MSP port has seen inbound
+ * activity in the last MSP_ACTIVITY_DEFAULT_TIMEOUT_MS (5 s).
+ *
+ * Only pure FUNCTION_MSP ports count.  Ports that also carry
+ * FUNCTION_VTX_MSP (HD VTX / DisplayPort) are excluded so that
+ * peripheral traffic does not accidentally muzzle the beeper.
+ */
+bool mspSerialIsConfiguratorActive(void)
+{
+    const timeMs_t now = millis();
+
+    for (const mspPort_t *mspPort = mspPorts; mspPort < ARRAYEND(mspPorts); mspPort++) {
+        if (!mspPort->port || mspPort->lastActivityMs == 0) {
+            continue;
+        }
+
+        const serialPortConfig_t *cfg =
+            serialFindPortConfiguration(mspPort->port->identifier);
+        if (!cfg) {
+            continue;
+        }
+
+        // Skip ports shared with a VTX — those are peripherals, not configurators
+        if (cfg->functionMask & FUNCTION_VTX_MSP) {
+            continue;
+        }
+
+        if (cmp32(now, mspPort->lastActivityMs) < (int32_t)MSP_ACTIVITY_DEFAULT_TIMEOUT_MS) {
+            return true;
+        }
+    }
+
     return false;
 }
 

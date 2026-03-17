@@ -495,7 +495,7 @@ static bool lineSent[SPEKTRUM_SRXL_DEVICE_TEXTGEN_ROWS];
 int spektrumTmTextGenPutChar(uint8_t col, uint8_t row, char c)
 {
     if (row < SPEKTRUM_SRXL_TEXTGEN_BUFFER_ROWS && col < SPEKTRUM_SRXL_TEXTGEN_BUFFER_COLS) {
-      // Only update and force a tm transmision if something has actually changed.
+      // Only update and force a tm transmission if something has actually changed.
         if (srxlTextBuff[row][col] != c) {
           srxlTextBuff[row][col] = c;
           lineSent[row] = false;

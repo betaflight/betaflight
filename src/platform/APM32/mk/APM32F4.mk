@@ -172,6 +172,7 @@ MCU_COMMON_SRC = \
         APM32/persistent_apm32.c \
         APM32/pwm_output_apm32.c \
         APM32/pwm_output_dshot_apm32.c \
+        common/stm32/rx_pwm_hw.c \
         APM32/rcm_apm32.c \
         APM32/serial_uart_apm32.c \
         APM32/timer_apm32.c \
@@ -184,6 +185,7 @@ MCU_COMMON_SRC = \
         drivers/bus_spi_config.c \
         common/stm32/bus_i2c_pinconfig.c \
         common/stm32/bus_spi_hw.c \
+        common/stm32/camera_control.c \
         common/stm32/bus_spi_pinconfig.c \
         common/stm32/serial_uart_hw.c \
         common/stm32/serial_uart_pinconfig.c \

@@ -91,7 +91,7 @@ extern DSHOT_DMA_BUFFER_UNIT dshotBurstDmaBuffer[MAX_DMA_TIMERS][DSHOT_DMA_BUFFE
 #endif
 
 typedef struct {
-    TIM_TypeDef *timer;
+    void *timer;
 #if defined(USE_DSHOT)
     uint16_t outputPeriod;
 #if defined(USE_DSHOT_DMAR)

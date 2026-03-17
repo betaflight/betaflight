@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -101,6 +101,7 @@
 
 #define ICM426XX_RA_GYRO_DATA_X1                    0x25  // User Bank 0
 #define ICM426XX_RA_ACCEL_DATA_X1                   0x1F  // User Bank 0
+#define ICM426XX_RA_TEMP_DATA1                      0x1D  // User Bank 0
 
 #define ICM426XX_RA_INT_CONFIG                      0x14  // User Bank 0
 #define ICM426XX_INT1_MODE_PULSED                   (0 << 2)
@@ -228,17 +229,17 @@ static bool initExternalClock(const extDevice_t *dev)
     IOInit(io, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
     IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
 
-    const uint32_t clock = timerClock(timer->tim);  // Get the timer clock frequency
+    const uint32_t clock = timerClock(timer);  // Get the timer clock frequency
     const uint16_t period = clock / ICM426XX_CLKIN_FREQ;
 
     // Calculate duty cycle value for 50%
     const uint16_t value = period / 2;
 
     // Configure PWM output
-    pwmOutConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
+    pwmOutputConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
 
     // Set CCR value
-    *pwmGyroClk.channel.ccr = value - 1;
+    pwmWriteChannel(&pwmGyroClk.channel, value - 1);
 
     return true;
 }
@@ -276,10 +277,6 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
     icm426xxSoftReset(dev);
     spiWriteReg(dev, ICM426XX_RA_PWR_MGMT0, 0x00);
 
-#if defined(USE_GYRO_CLKIN)
-    icm426xxEnableExternalClock(dev);
-#endif
-
     uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     do {
@@ -288,6 +285,12 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         switch (whoAmI) {
         case ICM42605_WHO_AM_I_CONST:
             icmDetected = ICM_42605_SPI;
+            break;
+        case ICM42622P_WHO_AM_I_CONST:
+            icmDetected = ICM_42622P_SPI;
+            break;
+        case ICM42686P_WHO_AM_I_CONST:
+            icmDetected = ICM_42686P_SPI;
             break;
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
@@ -310,6 +313,14 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         }
     } while (attemptsRemaining--);
 
+#if defined(USE_GYRO_CLKIN)
+    // IMM42652/53 also support external clock but it's not currently tested and may require different handling, so only enable for 42688P for now.
+    if (icmDetected == ICM_42688P_SPI) {
+        icm426xxEnableExternalClock(dev);
+    }
+
+#endif
+
     return icmDetected;
 }
 
@@ -318,8 +329,14 @@ void icm426xxAccInit(accDev_t *acc)
     switch (acc->mpuDetectionResult.sensor) {
     case IIM_42653_SPI:
     case IIM_42652_SPI:
+#if ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
         acc->acc_1G = 512 * 2; // Accel scale 32g (1024 LSB/g)
         break;
+#if !ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     default:
         acc->acc_1G = 512 * 4; // Accel scale 16g (2048 LSB/g)
         break;
@@ -330,6 +347,8 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
 {
     switch (acc->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
+    case ICM_42622P_SPI:
+    case ICM_42686P_SPI:
     case ICM_42688P_SPI:
     case IIM_42652_SPI:
     case IIM_42653_SPI:
@@ -367,6 +386,8 @@ void icm426xxGyroInit(gyroDev_t *gyro)
     mpuGyroInit(gyro);
     gyro->accDataReg = ICM426XX_RA_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM426XX_RA_GYRO_DATA_X1;
+    gyro->tempDataReg = ICM426XX_RA_TEMP_DATA1;
+    gyro->dmaReadRegStart = gyro->tempDataReg;
 
     // Turn off ACC and GYRO so they can be configured
     // See section 12.9 in ICM-42688-P datasheet v1.7
@@ -424,12 +445,32 @@ void icm426xxGyroInit(gyroDev_t *gyro)
         gyro->gyroRateKHz = GYRO_RATE_1_kHz;
     }
 
-    // This sets the gyro/accel to the maximum FSR, depending on the chip
-    // ICM42605, ICM_42688P: 2000DPS and 16G.
-    // IIM42653: 4000DPS and 32G
-    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
+    // Set the gyro/accel full-scale range (FSR) and output data rate (ODR).
+    //
+    // FS_SEL mapping per variant (GYRO_FS_SEL / ACCEL_FS_SEL bits [7:5]):
+    //   ICM-42605/ICM-42622P/ICM-42688-P: FS_SEL=0 → ±2000DPS / ±16G (max)
+    //   ICM-42686-P:                      FS_SEL=0 → ±4000DPS / ±32G, FS_SEL=1 → ±2000DPS / ±16G
+    //   IIM-42652/IIM-42653:              FS_SEL=0 → ±4000DPS / ±32G (max)
+    //
+    // ICM-42605/ICM-42622P/ICM-42688-P use FS_SEL=0 for ±2000DPS / ±16G.
+    // ICM-42686-P requires FS_SEL=1 for ±2000DPS / ±16G (FS_SEL=0 is its extended ±4000DPS / ±32G range).
+    // IIM-42652/IIM-42653 use FS_SEL=0 for their native ±4000DPS / ±32G range.
+
+    uint8_t fsSel = 0;
+    if (gyro->mpuDetectionResult.sensor == ICM_42686P_SPI) {
+#if ENABLE_42686_EXTENDED_RANGE
+        fsSel = 0; // ICM-42686-P extended range: FS_SEL=0 → ±4000DPS / ±32G
+#else
+        fsSel = 1; // ICM-42686-P normal:         FS_SEL=1 → ±2000DPS / ±16G
+#endif
+    }
+    // All other variants use FS_SEL=0:
+    //   ICM-42605/ICM-42622P/ICM-42688-P → ±2000DPS / ±16G
+    //   IIM-42652/IIM-42653              → ±4000DPS / ±32G
+
+    spiWriteReg(dev, ICM426XX_RA_GYRO_CONFIG0, (fsSel << 5) | (odrConfig & 0x0F));
     delay(15);
-    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (0 << 5) | (odrConfig & 0x0F));
+    spiWriteReg(dev, ICM426XX_RA_ACCEL_CONFIG0, (fsSel << 5) | (odrConfig & 0x0F));
     delay(15);
 }
 
@@ -437,12 +478,27 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
 {
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_42605_SPI:
+    case ICM_42622P_SPI:
+
+#if !ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     case ICM_42688P_SPI:
         gyro->scale = GYRO_SCALE_2000DPS;
+        // ICM-42605/ICM-42622P/ICM-42686P/ICM-42688P: 132.48 LSB/°C for 16-bit register read, offset 25°C
+        gyro->tempScale = 1.0f / 132.48f;
+        gyro->tempZero = 25.0f;
         break;
+
+#if ENABLE_42686_EXTENDED_RANGE
+    case ICM_42686P_SPI:
+#endif
     case IIM_42652_SPI:
     case IIM_42653_SPI:
         gyro->scale = GYRO_SCALE_4000DPS;
+        // ICM-42686P (extended range) / IIM-42652 / IIM-42653: 132.48 LSB/°C, offset 25°C
+        gyro->tempScale = 1.0f / 132.48f;
+        gyro->tempZero = 25.0f;
         break;
     default:
         return false;
@@ -470,7 +526,8 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
         default:
             return aafLUT42605[AAF_CONFIG_258HZ];
         }
-
+    case ICM_42622P_SPI:
+    case ICM_42686P_SPI:
     case ICM_42688P_SPI:
     default:
         switch (config) {
@@ -490,4 +547,4 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
     }
 }
 
-#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
+#endif // USE_GYRO_SPI_ICM42605 || USE_ACCGYRO_ICM42622P || USE_ACCGYRO_ICM42686P || USE_GYRO_SPI_ICM42688P || USE_ACCGYRO_IIM42652 || USE_ACCGYRO_IIM42653
