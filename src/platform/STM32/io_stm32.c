@@ -73,6 +73,21 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOE) },
     { RCC_AHB2(GPIOF) },
 };
+#elif defined(STM32N6)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB4(GPIOA) },
+    { RCC_AHB4(GPIOB) },
+    { RCC_AHB4(GPIOC) },
+    { RCC_AHB4(GPIOD) },
+    { RCC_AHB4(GPIOE) },
+    { RCC_AHB4(GPIOF) },
+    { RCC_AHB4(GPIOG) },
+    { RCC_AHB4(GPIOH) },
+    { RCC_AHB4(GPION) },
+    { RCC_AHB4(GPIOO) },
+    { RCC_AHB4(GPIOP) },
+    { RCC_AHB4(GPIOQ) },
+};
 #else
 # error "IO PortDefs not defined for MCU"
 #endif
@@ -83,7 +98,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;
@@ -190,7 +205,7 @@ void IOToggle(IO_t io)
 #endif
 }
 
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
