@@ -91,6 +91,73 @@
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
+#elif defined(STM32N6)
+
+#define HPDMA1_CH0_HANDLER     (DMA_FIRST_HANDLER + 0)
+#define HPDMA1_CH1_HANDLER     (DMA_FIRST_HANDLER + 1)
+#define HPDMA1_CH2_HANDLER     (DMA_FIRST_HANDLER + 2)
+#define HPDMA1_CH3_HANDLER     (DMA_FIRST_HANDLER + 3)
+#define HPDMA1_CH4_HANDLER     (DMA_FIRST_HANDLER + 4)
+#define HPDMA1_CH5_HANDLER     (DMA_FIRST_HANDLER + 5)
+#define HPDMA1_CH6_HANDLER     (DMA_FIRST_HANDLER + 6)
+#define HPDMA1_CH7_HANDLER     (DMA_FIRST_HANDLER + 7)
+#define HPDMA1_CH8_HANDLER     (DMA_FIRST_HANDLER + 8)
+#define HPDMA1_CH9_HANDLER     (DMA_FIRST_HANDLER + 9)
+#define HPDMA1_CH10_HANDLER    (DMA_FIRST_HANDLER + 10)
+#define HPDMA1_CH11_HANDLER    (DMA_FIRST_HANDLER + 11)
+#define HPDMA1_CH12_HANDLER    (DMA_FIRST_HANDLER + 12)
+#define HPDMA1_CH13_HANDLER    (DMA_FIRST_HANDLER + 13)
+#define HPDMA1_CH14_HANDLER    (DMA_FIRST_HANDLER + 14)
+#define HPDMA1_CH15_HANDLER    (DMA_FIRST_HANDLER + 15)
+#define GPDMA1_CH0_HANDLER     (DMA_FIRST_HANDLER + 16)
+#define GPDMA1_CH1_HANDLER     (DMA_FIRST_HANDLER + 17)
+#define GPDMA1_CH2_HANDLER     (DMA_FIRST_HANDLER + 18)
+#define GPDMA1_CH3_HANDLER     (DMA_FIRST_HANDLER + 19)
+#define GPDMA1_CH4_HANDLER     (DMA_FIRST_HANDLER + 20)
+#define GPDMA1_CH5_HANDLER     (DMA_FIRST_HANDLER + 21)
+#define GPDMA1_CH6_HANDLER     (DMA_FIRST_HANDLER + 22)
+#define GPDMA1_CH7_HANDLER     (DMA_FIRST_HANDLER + 23)
+#define GPDMA1_CH8_HANDLER     (DMA_FIRST_HANDLER + 24)
+#define GPDMA1_CH9_HANDLER     (DMA_FIRST_HANDLER + 25)
+#define GPDMA1_CH10_HANDLER    (DMA_FIRST_HANDLER + 26)
+#define GPDMA1_CH11_HANDLER    (DMA_FIRST_HANDLER + 27)
+#define GPDMA1_CH12_HANDLER    (DMA_FIRST_HANDLER + 28)
+#define GPDMA1_CH13_HANDLER    (DMA_FIRST_HANDLER + 29)
+#define GPDMA1_CH14_HANDLER    (DMA_FIRST_HANDLER + 30)
+#define GPDMA1_CH15_HANDLER    (DMA_FIRST_HANDLER + 31)
+#define DMA_LAST_HANDLER       GPDMA1_CH15_HANDLER
+
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 16) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 16))
+#define DMA_OUTPUT_INDEX    0
+#define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+
+#define DEFINE_DMA_CHANNEL(d, c, f) { \
+    .dma = d, \
+    .ref = (dmaResource_t *)d ## _Channel ## c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, i) FAST_IRQ_HANDLER void d ## _Channel ## c ## _IRQHandler(void) {\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
+                                                            }
+
+// N6 GPDMA/HPDMA uses per-channel flag registers (CSR for status, CFCR for clear)
+#define DMA_CLEAR_FLAG(d, flag) ((DMA_Channel_TypeDef*)(d)->ref)->CFCR = (flag)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_Channel_TypeDef*)(d)->ref)->CSR & (flag))
+
+#define DMA_IT_TCIF         DMA_CSR_TCF
+#define DMA_IT_HTIF         DMA_CSR_HTF
+#define DMA_IT_TEIF         DMA_CSR_DTEF
+
 #else
 
 #if defined(STM32G4)
@@ -191,6 +258,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
         (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
         (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
 #endif
+#elif defined(STM32N6)
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #elif defined(STM32G4)
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
