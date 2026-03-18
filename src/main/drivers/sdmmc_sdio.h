@@ -30,8 +30,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-
 #include "drivers/dma.h"
+
 #ifdef STM32F4
 #include "stm32f4xx.h"
 #endif

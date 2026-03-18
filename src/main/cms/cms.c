@@ -144,7 +144,7 @@ bool cmsDisplayPortSelect(const displayPort_t *instance)
 
 // XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
 // dynamically depending on size of the active output device,
-// or statically to accomodate sizes of all supported devices.
+// or statically to accommodate sizes of all supported devices.
 //
 // Device characteristics
 // OLED

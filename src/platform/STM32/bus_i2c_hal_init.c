@@ -185,6 +185,51 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .er_irq = I2C4_ER_IRQn,
     },
 #endif
+#elif defined(STM32N6)
+#ifdef USE_I2C_DEVICE_1
+    {
+        .device = I2CDEV_1,
+        .reg = I2C1,
+        .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
+        .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
+        .rcc = RCC_APB1(I2C1),
+        .ev_irq = I2C1_EV_IRQn,
+        .er_irq = I2C1_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_2
+    {
+        .device = I2CDEV_2,
+        .reg = I2C2,
+        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
+        .rcc = RCC_APB1(I2C2),
+        .ev_irq = I2C2_EV_IRQn,
+        .er_irq = I2C2_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_3
+    {
+        .device = I2CDEV_3,
+        .reg = I2C3,
+        .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
+        .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
+        .rcc = RCC_APB1(I2C3),
+        .ev_irq = I2C3_EV_IRQn,
+        .er_irq = I2C3_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_4
+    {
+        .device = I2CDEV_4,
+        .reg = I2C4,
+        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF4_I2C4), I2CPINDEF(PB8, GPIO_AF4_I2C4) },
+        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF4_I2C4), I2CPINDEF(PB9, GPIO_AF4_I2C4) },
+        .rcc = RCC_APB4(I2C4),
+        .ev_irq = I2C4_EV_IRQn,
+        .er_irq = I2C4_ER_IRQn,
+    },
+#endif
 #endif
 };
 
@@ -218,7 +263,7 @@ void i2cInit(i2cDevice_e device)
 #if defined(STM32F7)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
-#elif defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 #else
@@ -249,6 +294,9 @@ void i2cInit(i2cDevice_e device)
     //   I2C123 : D2PCLK1 (rcc_pclk1 for APB1)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (pHandle->Instance == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
+#elif defined(STM32N6)
+    // N6: All I2C peripherals on APB1
+    i2cPclk = HAL_RCC_GetPCLK1Freq();
 #else
 #error Unknown MCU type
 #endif
