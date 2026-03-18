@@ -417,7 +417,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     case TIM1_CC_IRQn:
 #if defined(STM32F7)
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
-#elif defined(STM32H7)
+#elif defined(STM32H7) || defined(STM32N6)
         timerNVICConfigure(TIM1_UP_IRQn);
 #elif defined(STM32G4)
         timerNVICConfigure(TIM1_UP_TIM16_IRQn);
@@ -426,7 +426,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 #endif
         break;
     case TIM8_CC_IRQn:
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32N6)
         timerNVICConfigure(TIM8_UP_IRQn);
 #else
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
@@ -882,7 +882,7 @@ static inline void timUpdateHandler(void *tim, timerConfig_t *timerConfig)
 
 #if USED_TIMERS & TIM_N(1)
 _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
-#  if defined(STM32H7)
+#  if defined(STM32H7) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM1_UP_IRQHandler, 1);
 #  elif defined(STM32G4)
 #    if USED_TIMERS & TIM_N(16)
