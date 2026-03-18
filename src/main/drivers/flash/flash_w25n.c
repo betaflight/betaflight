@@ -120,6 +120,8 @@
 #define W25N_STATUS_PAGE_ADDRESS_SIZE    16
 #define W25N_STATUS_COLUMN_ADDRESS_SIZE  16
 
+static uint32_t maxReadClkSPIHz;
+
 typedef struct bblut_s {
     uint16_t pba;
     uint16_t lba;
@@ -128,19 +130,20 @@ typedef struct bblut_s {
 // Table of recognised FLASH devices
 struct {
     uint32_t        jedecID;
+	uint16_t        maxReadClkSPIMHz;
     flashSector_t   sectors;
     uint16_t        pagesPerSector;
     uint16_t        pageSize;
 } w25nFlashConfig[] = {
     // Winbond W25N01GV
     // Datasheet: https://www.winbond.com/resource-files/W25N01GV%20Rev%20R%20070323.pdf
-    { 0xEFAA21, 2048, 64, 1024 },
+    { 0xEFAA21, 100, 2048, 64, 1024 },
     // Winbond W25N02KV
     // Datasheet: https://www.winbond.com/resource-files/W25N02KVxxIRU_Datasheet_RevM.pdf
-    { 0xEFAA22, 2048, 64, 2048 },
+    { 0xEFAA22, 100, 2048, 64, 2048 },
     // Macronix MX35LF2GE4AD
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX35LF2GE4AD,%203V,%202Gb,%20v1.6.pdf
-    { 0xC22603, 2048, 64, 2048 },
+    { 0xC22603, 80, 2048, 64, 2048 },
     { 0, 0, 0, 0 },
 };
 
@@ -199,7 +202,7 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
     else if (io->mode == FLASHIO_QUADSPI) {
         extDevice_t *dev = io->handle.dev;
 
-        quadSpiInstructionWithAddress1LINE(dev, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
+        quadSpiInstructionWithAddress1LINE(dev, command, 0, pageAddress & 0xffffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
     }
 #endif
 }
@@ -340,6 +343,7 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
 
     for (index = 0; w25nFlashConfig[index].jedecID; index++) {
         if (w25nFlashConfig[index].jedecID == jedecID) {
+			maxReadClkSPIHz = w25nFlashConfig[index].maxReadClkSPIMHz * 1000000;
             geometry->sectors = w25nFlashConfig[index].sectors;
             geometry->pagesPerSector = w25nFlashConfig[index].pagesPerSector;
             geometry->pageSize = w25nFlashConfig[index].pageSize;
@@ -396,7 +400,7 @@ static void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     // If it ever run out, the device becomes unusable.
 
     if (fdevice->io.mode == FLASHIO_SPI) {    // Need to set clock speed for 8kHz logging support with SPI
-        spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(100000000));
+		spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(maxReadClkSPIHz));
     }
 
     w25n_deviceInit(fdevice);
