@@ -360,6 +360,10 @@ static void bbFindPacerTimer(void)
 #ifdef USE_DMA_SPEC
             dmaoptValue_t dmaopt = dmaGetOptionByTimer(timer);
             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timer->tim, timer->channel, dmaopt);
+
+            if(!dmaChannelSpec) {
+                continue;
+            }
             dmaResource_t *dma = dmaChannelSpec->ref;
 #else
             dmaResource_t *dma = timer->dmaRef;

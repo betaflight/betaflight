@@ -528,7 +528,7 @@ const struct serialPortVTable uartVTable[] = {
 #endif
 
 #ifdef USE_UART0
-UART_IRQHandler(USART, 0, UARTDEV_0) // USART1 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART0 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART1

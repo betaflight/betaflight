@@ -84,7 +84,7 @@ void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
     timer_channel_input_struct_para_init(&timer_icinitpara);
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
-    timer_icinitpara.icpolarity =  (polarity == TIMER_POLARITY_RISING) ? TIMER_IC_POLARITY_RISING : TIMER_IC_POLARITY_FALLING;;
+    timer_icinitpara.icpolarity =  (polarity == TIMER_POLARITY_RISING) ? TIMER_IC_POLARITY_RISING : TIMER_IC_POLARITY_FALLING;
     timer_icinitpara.icfilter = filter;
 
     timer_input_capture_config((uint32_t)tim, channel, &timer_icinitpara);
