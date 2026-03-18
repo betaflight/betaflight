@@ -491,7 +491,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
         FALLTHROUGH;
     case BeepOn:
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))
+            && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && mspSerialIsConfiguratorActive())) {
             BEEP_ON;
             beeperIsOn = true;
             visualBeep = true;
