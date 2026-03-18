@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(STM32N6)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
 #endif
 
@@ -32,6 +32,9 @@
 #elif defined(STM32H7)
 // H7 has stream based DMA and channel based BDMA, but we ignore BDMA (for now).
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
+#elif defined(STM32N6)
+// N6 uses HPDMA1 and GPDMA1, both channel-based.
+#define DMA_ARCH_TYPE DMA_Channel_TypeDef
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef
 #endif
@@ -94,6 +97,78 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
+
+#elif defined(STM32N6)
+
+typedef enum {
+    DMA_NONE = 0,
+    DMA_FIRST_HANDLER = 1,
+    HPDMA1_CH0_HANDLER = DMA_FIRST_HANDLER,
+    HPDMA1_CH1_HANDLER,
+    HPDMA1_CH2_HANDLER,
+    HPDMA1_CH3_HANDLER,
+    HPDMA1_CH4_HANDLER,
+    HPDMA1_CH5_HANDLER,
+    HPDMA1_CH6_HANDLER,
+    HPDMA1_CH7_HANDLER,
+    HPDMA1_CH8_HANDLER,
+    HPDMA1_CH9_HANDLER,
+    HPDMA1_CH10_HANDLER,
+    HPDMA1_CH11_HANDLER,
+    HPDMA1_CH12_HANDLER,
+    HPDMA1_CH13_HANDLER,
+    HPDMA1_CH14_HANDLER,
+    HPDMA1_CH15_HANDLER,
+    GPDMA1_CH0_HANDLER,
+    GPDMA1_CH1_HANDLER,
+    GPDMA1_CH2_HANDLER,
+    GPDMA1_CH3_HANDLER,
+    GPDMA1_CH4_HANDLER,
+    GPDMA1_CH5_HANDLER,
+    GPDMA1_CH6_HANDLER,
+    GPDMA1_CH7_HANDLER,
+    GPDMA1_CH8_HANDLER,
+    GPDMA1_CH9_HANDLER,
+    GPDMA1_CH10_HANDLER,
+    GPDMA1_CH11_HANDLER,
+    GPDMA1_CH12_HANDLER,
+    GPDMA1_CH13_HANDLER,
+    GPDMA1_CH14_HANDLER,
+    GPDMA1_CH15_HANDLER,
+    DMA_LAST_HANDLER = GPDMA1_CH15_HANDLER
+} dmaIdentifier_e;
+
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 16) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 16))
+#define DMA_OUTPUT_INDEX    0
+#define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+
+#define DEFINE_DMA_CHANNEL(d, c, f) { \
+    .dma = d, \
+    .ref = (dmaResource_t *)d ## _Channel ## c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, i) void d ## _Channel ## c ## _IRQHandler(void) {\
+                                            const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                            dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                            if (handler) \
+                                                handler(&dmaDescriptors[index]); \
+                                        }
+
+// N6: each DMA channel has individual CSR (status) and CFCR (flag clear) registers
+#define DMA_CLEAR_FLAG(d, flag) ((DMA_Channel_TypeDef *)d->ref)->CFCR = (flag)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_Channel_TypeDef *)d->ref)->CSR & (flag))
+
+// N6 DMA channel interrupt flags (from CSR register)
+#define DMA_IT_TCIF         DMA_CSR_TCF
+#define DMA_IT_HTIF         DMA_CSR_HTF
+#define DMA_IT_TEIF         DMA_CSR_DTEF
 
 #else
 
@@ -203,6 +278,8 @@ typedef enum {
         (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
         (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
 #endif
+#elif defined(STM32N6)
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #elif defined(STM32G4)
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
