@@ -46,10 +46,8 @@
 
 #define W25N_INSTRUCTION_RDID             0x9F
 #define W25N_INSTRUCTION_DEVICE_RESET     0xFF
-#define W25N_INSTRUCTION_READ_STATUS_REG  0x05
-#define W25N_INSTRUCTION_READ_STATUS_ALTERNATE_REG  0x0F
-#define W25N_INSTRUCTION_WRITE_STATUS_REG 0x01
-#define W25N_INSTRUCTION_WRITE_STATUS_ALTERNATE_REG 0x1F
+#define W25N_INSTRUCTION_READ_STATUS_REG  0x0F
+#define W25N_INSTRUCTION_WRITE_STATUS_REG 0x1F
 #define W25N_INSTRUCTION_WRITE_ENABLE     0x06
 #define W25N_INSTRUCTION_DIE_SELECT       0xC2
 #define W25N_INSTRUCTION_BLOCK_ERASE      0xD8
@@ -140,6 +138,9 @@ struct {
     // Winbond W25N02KV
     // Datasheet: https://www.winbond.com/resource-files/W25N02KVxxIRU_Datasheet_RevM.pdf
     { 0xEFAA22, 2048, 64, 2048 },
+    // Macronix MX35LF2GE4AD
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX35LF2GE4AD,%203V,%202Gb,%20v1.6.pdf
+    { 0xC22603, 2048, 64, 2048 },
     { 0, 0, 0, 0 },
 };
 
@@ -182,7 +183,7 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
     if (io->mode == FLASHIO_SPI) {
         extDevice_t *dev = io->handle.dev;
 
-        uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
+        uint8_t cmd[] = { command, (pageAddress >> 16) & 0xff, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
 
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
@@ -740,6 +741,7 @@ static uint32_t w25n_pageProgramContinue(flashDevice_t *fdevice, uint8_t const *
         // Flash the loaded data
         currentPage = W25N_LINEAR_TO_PAGE(programStartAddress);
 
+        progExecCmd[1] = (currentPage >> 16) & 0xff;
         progExecCmd[2] = (currentPage >> 8) & 0xff;
         progExecCmd[3] = currentPage & 0xff;
 
