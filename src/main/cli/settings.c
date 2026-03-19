@@ -463,14 +463,20 @@ static const char * const lookupTableRatesType[] = {
 #ifdef USE_OVERCLOCK
 static const char * const lookupOverclock[] = {
     "OFF",
-#if defined(STM32F40_41xxx) || defined(STM32G4)
-    "192MHZ", "216MHZ", "240MHZ"
-#elif defined(STM32F411xE)
-    "108MHZ", "120MHZ"
-#elif defined(STM32F7)
-    "240MHZ"
-#elif defined(APM32F405xx) || defined(APM32F407xx)
-    "192MHZ", "216MHZ", "240MHZ"
+#if ENABLE_OVERCLOCK_108_MHZ
+    "108MHZ",
+#endif
+#if ENABLE_OVERCLOCK_120_MHZ
+    "120MHZ",
+#endif
+#if ENABLE_OVERCLOCK_192_MHZ
+    "192MHZ",
+#endif
+#if ENABLE_OVERCLOCK_216_MHZ
+    "216MHZ",
+#endif
+#if ENABLE_OVERCLOCK_240_MHZ
+    "240MHZ",
 #endif
 };
 #endif
