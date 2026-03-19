@@ -210,6 +210,9 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_DMA_RAM
+#if !defined(ENABLE_AFATFS_DMA_CACHE)
+#define ENABLE_AFATFS_DMA_CACHE 1
+#endif
 #define USE_USB_MSC
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
