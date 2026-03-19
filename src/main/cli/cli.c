@@ -4830,6 +4830,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
             const char * const *names = sensorHardwareNames(i, NULL);
+            if (!names) {
+                continue;
+            }
             const char *sensorHardware = names[sensorHardwareIndex];
 
             cliPrintf("%s: %s", sensorTypeDisplayNames[i], sensorHardware);
