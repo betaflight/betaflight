@@ -68,6 +68,7 @@ static bool mspVtxConfigChanged = false;
 static timeUs_t mspVtxLastTimeUs = 0;
 static bool prevLowPowerDisarmedState = false;
 static timeUs_t lastMspDisarmTimeUs = 0;
+static bool disarmTimestampValid = false;
 
 static const vtxVTable_t mspVTable; // forward
 static vtxDevice_t vtxMsp = {
@@ -94,12 +95,15 @@ static bool isLowPowerDisarmed(void)
 /**
  * Lazily records the disarm timestamp on the first call after a disarm event.
  * Only sets the timestamp when the FC has been armed at least once and is
- * currently disarmed, avoiding false triggers at boot.
+ * currently disarmed, avoiding false triggers at boot.  Uses a separate
+ * validity flag so that a zero-valued timestamp (wraparound edge case) is
+ * handled correctly.
  */
 static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
 {
-    if (lastMspDisarmTimeUs == 0 && !ARMING_FLAG(ARMED) && ARMING_FLAG(WAS_EVER_ARMED)) {
+    if (!disarmTimestampValid && !ARMING_FLAG(ARMED) && ARMING_FLAG(WAS_EVER_ARMED)) {
         lastMspDisarmTimeUs = currentTimeUs;
+        disarmTimestampValid = true;
     }
 }
 
@@ -111,7 +115,7 @@ static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
 static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
 {
     const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
-    if (delaySeconds == 0 || lastMspDisarmTimeUs == 0) {
+    if (delaySeconds == 0 || !disarmTimestampValid) {
         return true;
     }
 
@@ -139,7 +143,7 @@ static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
  */
 void resetMspDisarmTimestamp(void)
 {
-    lastMspDisarmTimeUs = 0;
+    disarmTimestampValid = false;
 }
 
 /**
