@@ -4711,6 +4711,10 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
 
     int count;
     const char * const *names = sensorHardwareNames(sensor, &count);
+    if (!names) {
+        cliPrintErrorLinef(cmdName, "SENSOR NOT AVAILABLE: %s", cmdline);
+        return;
+    }
     for (int i = 0; i < count; i++) {
         if (i > 0) {
             cliPrint(",");
