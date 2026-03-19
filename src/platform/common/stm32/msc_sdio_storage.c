@@ -13,13 +13,14 @@ bool mscSdioInitDma(void)
 #ifdef USE_DMA_SPEC
     const dmaChannelSpec_t *dmaChannelSpec =
         dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
-    if (!dmaChannelSpec) return false;
-    return SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref);
-#elif defined(PLATFORM_TRAIT_SDIO_INIT)
-    return SD_Initialize_LL(0);
+    dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 #else
-    return SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
+    dmaResource_t *dmaRef = NULL;
 #endif
+    if (!dmaRef) {
+        return false;
+    }
+    return SD_InitialiseHardware(dmaRef);
 }
 
 #endif
