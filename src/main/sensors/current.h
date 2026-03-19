@@ -29,6 +29,7 @@ typedef enum {
     CURRENT_METER_VIRTUAL,
     CURRENT_METER_ESC,
     CURRENT_METER_MSP,
+    CURRENT_METER_INA226,
     CURRENT_METER_COUNT
 } currentMeterSource_e;
 
@@ -113,6 +114,28 @@ typedef struct currentMeterMSPState_s {
 } currentMeterMSPState_t;
 
 //
+// INA226
+//
+
+#ifdef USE_CURRENT_METER_INA226
+typedef struct currentMeterINA226State_s {
+    currentMeterMAhDrawnState_t mahDrawnState;
+    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
+    int32_t amperageLatest;     // current read by current sensor in centiampere (1/100th A) (unfiltered)
+} currentMeterINA226State_t;
+
+typedef struct currentSensorINA226Config_s {
+    uint8_t i2cDevice;          // I2C device index (1-based, 0 = auto)
+    uint8_t address;            // I2C address (7-bit)
+    uint16_t shuntResistanceMicroOhms;  // Shunt resistor value in µΩ
+    uint16_t maxExpectedCurrentMa;      // Maximum expected current in mA (for calibration)
+    uint8_t vbatScale;          // Voltage scale factor (100 = 1.00x, 103 = 1.03x)
+} currentSensorINA226Config_t;
+
+PG_DECLARE(currentSensorINA226Config_t, currentSensorINA226Config);
+#endif
+
+//
 // Current Meter API
 //
 
@@ -135,6 +158,13 @@ void currentMeterMSPInit(void);
 void currentMeterMSPRefresh(timeUs_t currentTimeUs);
 void currentMeterMSPRead(currentMeter_t *meter);
 void currentMeterMSPSet(uint16_t amperage, uint16_t mAhDrawn);
+
+void currentMeterINA226Init(void);
+void currentMeterINA226Refresh(int32_t lastUpdateAt);
+void currentMeterINA226Read(currentMeter_t *meter);
+uint8_t ina226GetDetectResult(void);
+bool ina226IsInitialized(void);
+uint16_t ina226GetLastVoltageMv(void);  // Get voltage from last INA226 read (shared with voltage meter)
 
 //
 // API for reading current meters by id.
