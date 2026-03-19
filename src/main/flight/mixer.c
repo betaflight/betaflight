@@ -689,11 +689,18 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
+    if (isCrashFlipDirectionPending()) {
+        applyMotorStop();
+        return;
+    }
+
     if (applyCrashFlipModeToMotors()) {
         return;
-        // if crash flip modeis being applied to the motors, mixing is done
-        
-        
+    }
+
+    if (isCrashFlipExitThrottleWait()) {
+        applyMotorStop();
+        return;
     }
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];
