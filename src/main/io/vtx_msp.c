@@ -263,9 +263,11 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #endif
         break;
     case MSP_VTX_STATUS_READY:
-        if (isLowPowerDisarmedWithDelay(currentTimeUs) != prevLowPowerDisarmedState) {
+    {
+        const bool currLowPowerDisarmed = isLowPowerDisarmedWithDelay(currentTimeUs);
+        if (currLowPowerDisarmed != prevLowPowerDisarmedState) {
             mspVtxConfigChanged = true;
-            prevLowPowerDisarmedState = isLowPowerDisarmedWithDelay(currentTimeUs);
+            prevLowPowerDisarmedState = currLowPowerDisarmed;
         }
 
         // send an update if stuff has changed with 200ms period
@@ -287,6 +289,7 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #endif
         }
         break;
+    }
     default:
         mspVtxStatus = MSP_VTX_STATUS_OFFLINE;
         break;
