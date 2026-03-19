@@ -91,6 +91,11 @@ static bool isLowPowerDisarmed(void)
         (vtxSettingsConfig()->lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED))));
 }
 
+/**
+ * Lazily records the disarm timestamp on the first call after a disarm event.
+ * Only sets the timestamp when the FC has been armed at least once and is
+ * currently disarmed, avoiding false triggers at boot.
+ */
 static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
 {
     if (lastMspDisarmTimeUs == 0 && !ARMING_FLAG(ARMED) && ARMING_FLAG(WAS_EVER_ARMED)) {
@@ -98,6 +103,11 @@ static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
     }
 }
 
+/**
+ * Returns true when the configured mspDisarmDelay has elapsed since disarm,
+ * or immediately if no delay is configured / no disarm timestamp is recorded.
+ * Uses cmp32() for safe 32-bit unsigned wraparound handling.
+ */
 static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
 {
     const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
@@ -109,6 +119,11 @@ static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
     return cmp32((uint32_t)currentTimeUs, (uint32_t)lastMspDisarmTimeUs) >= (int32_t)delayUs;
 }
 
+/**
+ * Delay-aware version of isLowPowerDisarmed().  Returns true only after the
+ * configured mspDisarmDelay has elapsed, keeping the VTX at full power during
+ * the delay window.
+ */
 static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
 {
     if (!isLowPowerDisarmed()) {
@@ -118,11 +133,22 @@ static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
     return isMspDisarmDelayElapsed(currentTimeUs);
 }
 
+/**
+ * Resets the disarm timestamp so that the next disarm event will be freshly
+ * recorded.  Called from getBoxIdState() when an arm transition is detected.
+ */
 void resetMspDisarmTimestamp(void)
 {
     lastMspDisarmTimeUs = 0;
 }
 
+/**
+ * Returns true while the MSP disarm delay is active — i.e. the FC is disarmed
+ * but the configured delay has not yet elapsed.  Used by getBoxIdState(BOXARM)
+ * to keep reporting armed status to the VTX during the delay window, which
+ * prevents digital VTX systems (e.g. DJI) from stopping video recording
+ * immediately on disarm.
+ */
 bool isMspArmedDelayActive(timeUs_t currentTimeUs)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -149,6 +175,10 @@ void setMspVtxDeviceStatusReady(const int descriptor)
     }
 }
 
+/**
+ * Builds a 15-byte MSP VTX configuration frame.  Uses the delay-aware
+ * low-power check so the VTX stays at full power during mspDisarmDelay.
+ */
 STATIC_UNIT_TESTED void prepareMspFrame(uint8_t *mspFrame, const timeUs_t currentTimeUs)
 {
     mspFrame[0] = VTXDEV_MSP;
