@@ -26,6 +26,8 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "drivers/accgyro/accgyro.h"
 
 #include "sensors/acceleration.h"
@@ -162,6 +164,7 @@ static const char * const sensorTypeNames[] = {
     [SENSOR_INDEX_RANGEFINDER] = "rangefinder",
     [SENSOR_INDEX_OPTICALFLOW] = "opticalflow",
 };
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_length_mismatch);
 
 static const struct {
     const char * const *names;
@@ -174,6 +177,7 @@ static const struct {
     [SENSOR_INDEX_RANGEFINDER]  = { lookupTableRangefinderHardware,  RANGEFINDER_HARDWARE_COUNT },
     [SENSOR_INDEX_OPTICALFLOW]  = { lookupTableOpticalflowHardware,  OPTICALFLOW_HARDWARE_COUNT },
 };
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareTables), sensorHardwareTables_length_mismatch);
 
 const char * const *sensorHardwareNames(sensorIndex_e sensor, int *count)
 {
