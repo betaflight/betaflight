@@ -517,14 +517,17 @@ extern uint8_t _dmaram_end__;
 #define I2CDEV_COUNT 4
 #endif
 
+// F4 has a different SDIO driver that doesn't require early GPIO init
+#if defined(STM32F4) && !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 0
+#endif
+
 // QUAD SPI
 #if defined(STM32H7) || defined(STM32N6)
 #define MAX_QUADSPI_PIN_SEL 3
-#define PLATFORM_TRAIT_SDIO_INIT 1
 #endif
 #if defined(STM32G4)
 #define MAX_QUADSPI_PIN_SEL 4
-#define PLATFORM_TRAIT_SDIO_INIT 1
 #endif
 
 // F4 has non-8MHz boards
