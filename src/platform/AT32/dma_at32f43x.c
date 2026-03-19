@@ -28,7 +28,8 @@
 #ifdef USE_DMA
 
 #include "drivers/nvic.h"
-#include "drivers/dma.h"
+#include "drivers/dma_impl.h"
+#include "platform/dma.h"
 #include "platform/rcc.h"
 #include "drivers/resource.h"
 
@@ -73,8 +74,8 @@ DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_CH7_HANDLER)
 
 static void enableDmaClock(int index)
 {
-    RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ?  RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
-    dmamux_enable(dmaDescriptors[index].dma,TRUE);
+    RCC_ClockCmd(dmaDescriptors[index].dma == (void *)DMA1 ?  RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
+    dmamux_enable((dma_type *)dmaDescriptors[index].dma, TRUE);
 }
 
 void dmaEnable(dmaIdentifier_e identifier)
@@ -87,7 +88,7 @@ void dmaEnable(dmaIdentifier_e identifier)
 void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t  dmaMuxId)
 {
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
-    dmamux_init(dmaDescriptors[index].dmamux, dmaMuxId);
+    dmamux_init((dmamux_channel_type *)dmaDescriptors[index].dmamux, dmaMuxId);
 }
 
 void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
@@ -99,5 +100,30 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     dmaDescriptors[index].userParam = userParam;
 
     nvic_irq_enable(dmaDescriptors[index].irqN, NVIC_PRIORITY_BASE(priority), NVIC_PRIORITY_SUB(priority));
+}
+
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    return dma_data_number_get((DMA_ARCH_TYPE *)ref);
 }
 #endif

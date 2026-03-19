@@ -59,6 +59,8 @@
 #include "stm32h7xx_hal.h"
 #elif defined(STM32G4)
 #include "stm32g4xx_hal.h"
+#elif defined(STM32N6)
+#include "stm32n6xx_hal.h"
 #else
 #error Unknown MCU
 #endif

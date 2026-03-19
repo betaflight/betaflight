@@ -99,7 +99,7 @@ COMMON_SRC = \
             drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
-            drivers/dma_common.c \
+            drivers/dma.c \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/light_led.c \
@@ -257,6 +257,7 @@ COMMON_SRC = \
             io/ledstrip.c \
             io/pidaudio.c \
             osd/osd.c \
+            osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
@@ -526,6 +527,7 @@ SIZE_OPTIMISED_SRC += \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
             osd/osd.c \
+            osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
             rx/rx_bind.c \

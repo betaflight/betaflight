@@ -110,6 +110,10 @@ typedef struct
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 #define NVIC_PriorityGroup_2 0x500
+#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
 
 #define MCU_TYPE_ID   99
 #define MCU_TYPE_NAME "UNIT_TEST"

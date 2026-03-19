@@ -44,6 +44,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+#include "platform/dma.h"
 
 // XXX uartReconfigure does not handle resource management properly.
 
