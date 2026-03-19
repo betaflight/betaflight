@@ -75,7 +75,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/Core/Include \
+                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
                    $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
                    $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
@@ -149,7 +149,7 @@ SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM55
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk
