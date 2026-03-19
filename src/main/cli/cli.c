@@ -5354,10 +5354,10 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
+        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {

@@ -35,6 +35,7 @@
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 
