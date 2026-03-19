@@ -4681,6 +4681,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
+#if defined(USE_SENSOR_NAMES)
 static void cliSensorHardware(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
@@ -4723,6 +4724,7 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
     }
     cliPrintLinefeed();
 }
+#endif // USE_SENSOR_NAMES
 
 static void cliStatus(const char *cmdName, char *cmdline)
 {
@@ -6739,7 +6741,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
+#if defined(USE_SENSOR_NAMES)
     CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
+#endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
 #if defined(USE_PINIO)
