@@ -106,12 +106,10 @@
 
 // Various untested or unsupported elements are undefined below
 
-#undef USE_RX_SPI
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef USE_RX_CC2500
-#undef USE_RX_EXPRESSLRS
-#undef USE_RX_SX1280
+#undef USE_RX_SX127X
 #undef USE_SERIALRX_GHST
 #undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
