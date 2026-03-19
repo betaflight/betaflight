@@ -144,7 +144,7 @@ struct {
     // Macronix MX35LF2GE4AD
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX35LF2GE4AD,%203V,%202Gb,%20v1.6.pdf
     { 0xC22603, 80, 2048, 64, 2048 },
-    { 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0 },
 };
 
 static bool w25n_waitForReady(flashDevice_t *fdevice);
