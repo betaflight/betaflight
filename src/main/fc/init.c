@@ -137,6 +137,9 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
+#if ENABLE_OSD_CUSTOM_TEXT
+#include "osd/osd_custom_text.h"
+#endif
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -560,9 +563,9 @@ void initPhase2(void)
         initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
-#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && PLATFORM_TRAIT_SDIO_INIT
+#if ENABLE_SDIO_INIT && defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD)
     sdioPinConfigure();
-    SDIO_GPIO_Init();
+    sdioInitialize();
 #endif
 }
 
@@ -748,6 +751,10 @@ void initPhase3(void)
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
     }
+#endif
+
+#if ENABLE_OSD_CUSTOM_TEXT
+    osdCustomTextInit();
 #endif
 
 #ifdef USE_LED_STRIP
