@@ -4829,8 +4829,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
-            const char * const *names = sensorHardwareNames(i, NULL);
-            if (!names) {
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            if (!names || sensorHardwareIndex >= count) {
                 continue;
             }
             const char *sensorHardware = names[sensorHardwareIndex];
