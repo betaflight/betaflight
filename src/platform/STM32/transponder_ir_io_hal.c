@@ -261,7 +261,7 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     return true;
 }
 
-bool isTransponderIrReady(void)
+bool transponderIrIsReady(void)
 {
     return !transponderIrDataTransferInProgress;
 }
