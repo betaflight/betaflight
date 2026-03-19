@@ -34,6 +34,7 @@
 
 #include "cms/cms_menu_vtx_msp.h"
 #include "common/crc.h"
+#include "common/maths.h"
 #include "config/feature.h"
 
 #include "drivers/vtx_common.h"
@@ -66,6 +67,7 @@ static uint8_t mspConfPitMode = 0;
 static bool mspVtxConfigChanged = false;
 static timeUs_t mspVtxLastTimeUs = 0;
 static bool prevLowPowerDisarmedState = false;
+static timeUs_t lastMspDisarmTimeUs = 0;
 
 static const vtxVTable_t mspVTable; // forward
 static vtxDevice_t vtxMsp = {
@@ -89,6 +91,51 @@ static bool isLowPowerDisarmed(void)
         (vtxSettingsConfig()->lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED))));
 }
 
+static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
+{
+    if (lastMspDisarmTimeUs == 0 && !ARMING_FLAG(ARMED) && ARMING_FLAG(WAS_EVER_ARMED)) {
+        lastMspDisarmTimeUs = currentTimeUs;
+    }
+}
+
+static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
+{
+    const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
+    if (delaySeconds == 0 || lastMspDisarmTimeUs == 0) {
+        return true;
+    }
+
+    const uint32_t delayUs = (uint32_t)delaySeconds * 1000000u;
+    return cmp32((uint32_t)currentTimeUs, (uint32_t)lastMspDisarmTimeUs) >= (int32_t)delayUs;
+}
+
+static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
+{
+    if (!isLowPowerDisarmed()) {
+        return false;
+    }
+    ensureDisarmTimestampSet(currentTimeUs);
+    return isMspDisarmDelayElapsed(currentTimeUs);
+}
+
+void resetMspDisarmTimestamp(void)
+{
+    lastMspDisarmTimeUs = 0;
+}
+
+bool isMspArmedDelayActive(timeUs_t currentTimeUs)
+{
+    if (ARMING_FLAG(ARMED)) {
+        return false;
+    }
+    const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
+    if (delaySeconds == 0 || !ARMING_FLAG(WAS_EVER_ARMED)) {
+        return false;
+    }
+    ensureDisarmTimestampSet(currentTimeUs);
+    return !isMspDisarmDelayElapsed(currentTimeUs);
+}
+
 void setMspVtxDeviceStatusReady(const int descriptor)
 {
     if (mspVtxStatus != MSP_VTX_STATUS_READY && vtxTableConfig()->bands && vtxTableConfig()->channels && vtxTableConfig()->powerLevels) {
@@ -102,12 +149,12 @@ void setMspVtxDeviceStatusReady(const int descriptor)
     }
 }
 
-void prepareMspFrame(uint8_t *mspFrame)
+STATIC_UNIT_TESTED void prepareMspFrame(uint8_t *mspFrame, const timeUs_t currentTimeUs)
 {
     mspFrame[0] = VTXDEV_MSP;
     mspFrame[1] = vtxSettingsConfig()->band;
     mspFrame[2] = vtxSettingsConfig()->channel;
-    mspFrame[3] = isLowPowerDisarmed() ? 1 : vtxSettingsConfig()->power; // index based
+    mspFrame[3] = isLowPowerDisarmedWithDelay(currentTimeUs) ? 1 : vtxSettingsConfig()->power; // index based
     mspFrame[4] = mspConfPitMode;
     mspFrame[5] = vtxSettingsConfig()->freq & 0xFF;
     mspFrame[6] = (vtxSettingsConfig()->freq >> 8) & 0xFF;
@@ -186,15 +233,15 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #endif
         break;
     case MSP_VTX_STATUS_READY:
-        if (isLowPowerDisarmed() != prevLowPowerDisarmedState) {
+        if (isLowPowerDisarmedWithDelay(currentTimeUs) != prevLowPowerDisarmedState) {
             mspVtxConfigChanged = true;
-            prevLowPowerDisarmedState = isLowPowerDisarmed();
+            prevLowPowerDisarmedState = isLowPowerDisarmedWithDelay(currentTimeUs);
         }
 
         // send an update if stuff has changed with 200ms period
         if (mspVtxConfigChanged && cmp32(currentTimeUs, mspVtxLastTimeUs) >= MSP_VTX_REQUEST_PERIOD_US) {
 
-            prepareMspFrame(frame);
+            prepareMspFrame(frame, currentTimeUs);
 
             if (isCrsfPortConfig(portConfig)) {
                 mspCrsfPush(MSP_VTX_CONFIG, frame, sizeof(frame));

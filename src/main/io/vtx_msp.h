@@ -20,9 +20,11 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "build/build_config.h"
+#include "common/time.h"
 
 typedef enum {
     // Offline - device hasn't responded yet
@@ -32,4 +34,5 @@ typedef enum {
 
 bool vtxMspInit(void);
 void setMspVtxDeviceStatusReady(const int descriptor);
-void prepareMspFrame(uint8_t *mspFrame);
+bool isMspArmedDelayActive(timeUs_t currentTimeUs);
+void resetMspDisarmTimestamp(void);
