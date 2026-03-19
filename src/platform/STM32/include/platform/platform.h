@@ -188,6 +188,10 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+// SERIAL_CHECK_TX is broken on F7, skip it unless USE_F7_CHECK_TX is defined
+#if !defined(USE_F7_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 1
+#endif
 #endif // STM32F7
 
 #ifdef STM32H7

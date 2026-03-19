@@ -715,6 +715,10 @@ extern struct linker_symbol __config_end;
 
 ******************************************************/
 
+#if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 0
+#endif
+
 #if !defined(ENABLE_SDIO_INIT)
 #define ENABLE_SDIO_INIT 0
 #endif
