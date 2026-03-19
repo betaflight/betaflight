@@ -23,6 +23,7 @@
 
 #include "platform.h"
 #include "common/utils.h"
+#include "platform/dma.h"
 
 // allow conditional definition of DMA related members
 #if defined(USE_TIMER_DMA)

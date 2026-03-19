@@ -30,7 +30,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "platform/dma.h"
+#include "drivers/dma.h"
+
 #ifdef STM32F4
 #include "stm32f4xx.h"
 #endif
@@ -218,7 +219,7 @@ typedef struct
 extern           SD_CardInfo_t               SD_CardInfo;
 extern           SD_CardType_t               SD_CardType;
 
-bool             SD_Initialize_LL            (DMA_ARCH_TYPE *dma);
+bool             SD_InitialiseHardware            (dmaResource_t *dma);
 SD_Error_t       SD_Init                     (void);
 bool             SD_IsDetected             (void);
 bool             SD_GetState                 (void);

@@ -167,15 +167,11 @@ static int8_t STORAGE_Init (uint8_t lun)
 
 #ifdef USE_DMA_SPEC
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
-
-    if (!dmaChannelSpec || !SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref)) {
+    dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 #else
-#if defined(STM32H7) // H7 uses IDMA
-    if (!SD_Initialize_LL(0)) {
-#else
-    if (!SD_Initialize_LL(SDCARD_SDIO_DMA_OPT)) {
+    dmaResource_t *dmaRef = NULL;
 #endif
-#endif // USE_DMA_SPEC
+    if (!dmaRef || !SD_InitialiseHardware(dmaRef)) {
         return 1;
     }
 
