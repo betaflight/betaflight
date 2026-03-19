@@ -50,14 +50,14 @@ STDPERIPH_SRC   = \
             stm32n6xx_ll_utils.c
 
 
-#USB
-USBCORE_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Core
+#USB (use H7's USB Device Library which is API-compatible with N6)
+USBCORE_DIR = STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core
 USBCORE_SRC = \
             $(USBCORE_DIR)/Src/usbd_core.c \
             $(USBCORE_DIR)/Src/usbd_ctlreq.c \
             $(USBCORE_DIR)/Src/usbd_ioreq.c
 
-USBCDC_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
@@ -77,6 +77,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
                    $(CMSIS_DIR)/Core/Include \
                    $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -84,6 +85,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
+
+# Suppress old-style-definition warnings in vendor HAL sources
+CFLAGS_DISABLED += -Wold-style-definition
 
 ifeq ($(TARGET_MCU),STM32N657xx)
 DEVICE_FLAGS       += -DSTM32N657xx
