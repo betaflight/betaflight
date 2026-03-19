@@ -50,14 +50,14 @@ STDPERIPH_SRC   = \
             stm32n6xx_ll_utils.c
 
 
-#USB (use H7's USB Device Library which is API-compatible with N6)
-USBCORE_DIR = STM32H7/Middlewares/ST/STM32_USB_Device_Library/Core
+#USB
+USBCORE_DIR = STM32_USB_Device_Library_HAL/Core
 USBCORE_SRC = \
             $(USBCORE_DIR)/Src/usbd_core.c \
             $(USBCORE_DIR)/Src/usbd_ctlreq.c \
             $(USBCORE_DIR)/Src/usbd_ioreq.c
 
-USBCDC_DIR = STM32H7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
