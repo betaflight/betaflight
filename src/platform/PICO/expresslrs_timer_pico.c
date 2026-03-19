@@ -35,11 +35,13 @@
 
 #if defined(USE_RX_EXPRESSLRS) && defined(USE_EXPRESSLRS_TIMER_PICO)
 
+#include "hardware/irq.h"
 #include "hardware/timer.h"
 
 #include "build/debug.h"
 #include "build/debug_pin.h"
 
+#include "drivers/nvic.h"
 #include "drivers/timer.h"
 #include "drivers/rx/expresslrs_driver.h"
 
@@ -214,8 +216,8 @@ void expressLrsInitialiseTimer(const timerHardware_t *timHw, timerOvrHandlerRec_
     // Register the callback; this also enables the alarm's NVIC IRQ.
     hardware_alarm_set_callback(alarmNum, alarmCallback);
 
-    // TODO: consider raising the alarm IRQ priority with irq_set_priority()
-    // if phase-lock accuracy proves insufficient at high ELRS rates.
+    // Raise the alarm IRQ priority to match the timer priority used on STM32.
+    irq_set_priority(hardware_alarm_get_irq_num(alarmNum), NVIC_PRIO_TIMER);
 
     expressLrsRecalculatePhaseShiftLimits();
 }
