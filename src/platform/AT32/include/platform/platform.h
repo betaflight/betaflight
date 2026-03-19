@@ -71,6 +71,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define ADC_INTERNAL_VBAT4_ENABLED 0
 
+#define GPIO_PIN_RESET 0
+
 /* AT32F4 we need to specify the ADC device for each channel */
 #define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
