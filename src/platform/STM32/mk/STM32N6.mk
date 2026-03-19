@@ -86,8 +86,8 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
-# Suppress old-style-definition warnings in vendor HAL sources
-CFLAGS_DISABLED += -Wold-style-definition
+# Suppress old-style-definition warning in vendor HAL source (ST bug: empty () instead of (void))
+SRC_CFLAGS_stm32n6xx_hal_rcc_ex.c := -Wno-old-style-definition
 
 ifeq ($(TARGET_MCU),STM32N657xx)
 DEVICE_FLAGS       += -DSTM32N657xx
