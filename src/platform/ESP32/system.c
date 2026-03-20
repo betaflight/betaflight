@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <reent.h>
 
 #include "platform.h"
 
@@ -186,6 +187,14 @@ void failureMode(failureMode_e mode)
 void unusedPinsInit(void)
 {
     // NOOP for now
+}
+
+// Newlib reentrant stub — single-threaded, no FreeRTOS
+static struct _reent s_reent;
+
+struct _reent *__getreent(void)
+{
+    return &s_reent;
 }
 
 const mcuTypeInfo_t *getMcuTypeInfo(void)
