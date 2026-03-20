@@ -278,7 +278,8 @@ static void servoConfigureOutput(void)
 static bool hasIndividualServoForwarding(void)
 {
     for (int index = 0; index < MAX_SUPPORTED_SERVOS; index++) {
-        if (servoParams(index)->forwardFromChannel != (int8_t)CHANNEL_FORWARDING_DISABLED) {
+        const uint8_t channelToForwardFrom = servoParams(index)->forwardFromChannel;
+        if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) {
             return true;
         }
     }
