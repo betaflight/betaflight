@@ -15,3 +15,9 @@
 	branch = main
 	ignore = dirty
 	update = none
+[submodule "lib/main/esp-idf"]
+	path = lib/main/esp-idf
+	url = https://github.com/espressif/esp-idf.git
+	branch = v5.4
+	ignore = dirty
+	update = none
