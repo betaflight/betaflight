@@ -46,8 +46,15 @@
 
 #define W25N_INSTRUCTION_RDID             0x9F
 #define W25N_INSTRUCTION_DEVICE_RESET     0xFF
+#if defined(USE_FLASH_W25N02K)
 #define W25N_INSTRUCTION_READ_STATUS_REG  0x0F
 #define W25N_INSTRUCTION_WRITE_STATUS_REG 0x1F
+#else
+#define W25N_INSTRUCTION_READ_STATUS_REG  0x05
+#define W25N_INSTRUCTION_READ_STATUS_ALTERNATE_REG  0x0F
+#define W25N_INSTRUCTION_WRITE_STATUS_REG 0x01
+#define W25N_INSTRUCTION_WRITE_STATUS_ALTERNATE_REG 0x1F
+#endif
 #define W25N_INSTRUCTION_WRITE_ENABLE     0x06
 #define W25N_INSTRUCTION_DIE_SELECT       0xC2
 #define W25N_INSTRUCTION_BLOCK_ERASE      0xD8
@@ -130,7 +137,7 @@ typedef struct bblut_s {
 // Table of recognised FLASH devices
 struct {
     uint32_t        jedecID;
-	uint16_t        maxReadClkSPIMHz;
+    uint16_t        maxReadClkSPIMHz;
     flashSector_t   sectors;
     uint16_t        pagesPerSector;
     uint16_t        pageSize;
