@@ -8,3 +8,8 @@
 	url = https://github.com/raspberrypi/pico-sdk.git
 	branch = master
 	ignore = dirty
+[submodule "lib/main/esp-idf"]
+	path = lib/main/esp-idf
+	url = https://github.com/espressif/esp-idf.git
+	branch = v5.4
+	ignore = dirty
