@@ -567,6 +567,26 @@
 #define USE_WS2811_SINGLE_COLOUR
 #endif
 
+#if !defined(ENABLE_SIMULATOR)
+#define ENABLE_SIMULATOR 0
+#endif
+
+#if ENABLE_SIMULATOR
+#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#else
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+
 #if ENABLE_SIMULATOR || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_DYN_NOTCH_FILTER
@@ -712,22 +732,6 @@ extern struct linker_symbol __config_end;
  #endif
 
 ******************************************************/
-
-#if !defined(ENABLE_SIMULATOR)
-#define ENABLE_SIMULATOR 0
-#endif
-
-#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
-#define ENABLE_SIMULATOR_MULTITHREAD 0
-#endif
-
-#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
-#define ENABLE_SIMULATOR_IMU_SYNC 0
-#endif
-
-#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
-#define ENABLE_SIMULATOR_GYROPID_SYNC 0
-#endif
 
 #if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
 #define ENABLE_SERIAL_SKIP_CHECK_TX 0
