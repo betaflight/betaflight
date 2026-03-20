@@ -64,7 +64,7 @@ jobs:
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-tools-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}
+          key: ${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}
 
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -130,11 +130,23 @@ jobs:
           key: ${{ needs.setup.outputs.esp-idf-key }}
 
       - name: Fetch toolchain from cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-tools-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}
+          key: ${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}
+
+      - name: Install ARM toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make arm_sdk_install
+
+      - name: Install PICO toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true' && steps.platform.outputs.sdk == 'pico'
+        run: make picotool_install
+
+      - name: Install ESP32 toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true' && steps.platform.outputs.sdk == 'esp32'
+        run: make esp_tools_install
 
       - name: Hydrate configuration
         id: get-config
