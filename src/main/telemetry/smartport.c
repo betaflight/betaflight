@@ -80,6 +80,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#include "telemetry/motor_sensor.h"
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 #include "telemetry/telemetry.h"
@@ -631,8 +632,8 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_VFAS6      :
             case FSSP_DATAID_VFAS7      :
             case FSSP_DATAID_VFAS8      :
-                escData = getEscSensorData(id - FSSP_DATAID_VFAS1);
-                if (escData != NULL) {
+                escData = getMotorSensorData(id - FSSP_DATAID_VFAS1, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, escData->voltage);
                     *clearToSend = false;
                 }
@@ -651,15 +652,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_CURRENT6   :
             case FSSP_DATAID_CURRENT7   :
             case FSSP_DATAID_CURRENT8   :
-                escData = getEscSensorData(id - FSSP_DATAID_CURRENT1);
-                if (escData != NULL) {
+                escData = getMotorSensorData(id - FSSP_DATAID_CURRENT1, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, escData->current);
                     *clearToSend = false;
                 }
                 break;
             case FSSP_DATAID_RPM        :
-                escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                if (escData != NULL) {
+                escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, lrintf(erpmToRpm(escData->rpm)));
                     *clearToSend = false;
                 }
@@ -672,15 +673,15 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_RPM6       :
             case FSSP_DATAID_RPM7       :
             case FSSP_DATAID_RPM8       :
-                escData = getEscSensorData(id - FSSP_DATAID_RPM1);
-                if (escData != NULL) {
+                escData = getMotorSensorData(id - FSSP_DATAID_RPM1, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, lrintf(erpmToRpm(escData->rpm)));
                     *clearToSend = false;
                 }
                 break;
             case FSSP_DATAID_TEMP        :
-                escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                if (escData != NULL) {
+                escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, escData->temperature);
                     *clearToSend = false;
                 }
@@ -693,8 +694,8 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_TEMP6      :
             case FSSP_DATAID_TEMP7      :
             case FSSP_DATAID_TEMP8      :
-                escData = getEscSensorData(id - FSSP_DATAID_TEMP1);
-                if (escData != NULL) {
+                escData = getMotorSensorData(id - FSSP_DATAID_TEMP1, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+                if (escData && escData->dataAge != ESC_DATA_INVALID) {
                     smartPortSendPackage(id, escData->temperature);
                     *clearToSend = false;
                 }
