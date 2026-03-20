@@ -14,7 +14,13 @@ PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32-S3 toolchain
-ARM_SDK_PREFIX := xtensa-esp32s3-elf-
+# Use local install path if available, otherwise fall back to PATH
+ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp32s3-elf/*/xtensa-esp32s3-elf/bin))
+ifneq ($(ESP_TOOLS_BIN),)
+  ARM_SDK_PREFIX := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-
+else
+  ARM_SDK_PREFIX := xtensa-esp32s3-elf-
+endif
 
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
