@@ -37,5 +37,5 @@ typedef struct displayPortProfile_s {
 } displayPortProfile_t;
 
 PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
-
 PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);
+PG_DECLARE(displayPortProfile_t, displayPortProfileFbOsd);
