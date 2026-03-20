@@ -395,6 +395,7 @@ extern "C" {
     mag_t mag;
 
     gpsSolutionData_t gpsSol;
+    gpsLocation_t GPS_home_llh;
 
     uint8_t debugMode;
     int16_t debug[DEBUG16_VALUE_COUNT];
