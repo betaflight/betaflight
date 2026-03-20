@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
+      pico-sdk-key: ${{ steps.sdk-keys.outputs.pico-sdk }}
+      esp-idf-key: ${{ steps.sdk-keys.outputs.esp-idf }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -25,32 +27,44 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Compute SDK cache key
-        id: sdk-key
-        run: echo "key=$(git rev-parse HEAD:lib/main/pico-sdk)-$(git rev-parse HEAD:lib/main/esp-idf)" >> $GITHUB_OUTPUT
+      - name: Compute SDK cache keys
+        id: sdk-keys
+        run: |
+          echo "pico-sdk=${{ runner.os }}-pico-sdk-$(git rev-parse HEAD:lib/main/pico-sdk)" >> $GITHUB_OUTPUT
+          echo "esp-idf=${{ runner.os }}-esp-idf-$(git rev-parse HEAD:lib/main/esp-idf)" >> $GITHUB_OUTPUT
 
-      - name: Cache platform SDKs
+      - name: Cache pico-sdk
         uses: actions/cache@v4
-        id: cache-sdks
+        id: cache-pico-sdk
         with:
           path: |
             lib/main/pico-sdk
-            lib/main/esp-idf
-            .git/modules/lib/main
-          key: ${{ runner.os }}-platform-sdks-${{ steps.sdk-key.outputs.key }}
+            .git/modules/lib/main/pico-sdk
+          key: ${{ steps.sdk-keys.outputs.pico-sdk }}
 
-      - name: Hydrate platform SDKs
-        if: steps.cache-sdks.outputs.cache-hit != 'true'
-        run: |
-          git submodule update --init --checkout --recursive -- lib/main/pico-sdk
-          git submodule update --init --checkout --recursive -- lib/main/esp-idf
+      - name: Hydrate pico-sdk
+        if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
+        run: git submodule update --init --checkout --recursive -- lib/main/pico-sdk
+
+      - name: Cache esp-idf
+        uses: actions/cache@v4
+        id: cache-esp-idf
+        with:
+          path: |
+            lib/main/esp-idf
+            .git/modules/lib/main/esp-idf
+          key: ${{ steps.sdk-keys.outputs.esp-idf }}
+
+      - name: Hydrate esp-idf
+        if: steps.cache-esp-idf.outputs.cache-hit != 'true'
+        run: git submodule update --init --checkout --recursive -- lib/main/esp-idf
 
       - name: Cache build toolchain
         uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+          key: ${{ runner.os }}-tools-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/tools.mk') }}
 
       - name: Download and install toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -59,6 +73,10 @@ jobs:
       - name: Build pico tool and install
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make picotool_install
+
+      - name: Install ESP32 toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make esp_tools_install
 
       - name: Hydrate configuration
         id: get-config
@@ -82,32 +100,41 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Compute SDK cache key
-        id: sdk-key
-        run: echo "key=$(git rev-parse HEAD:lib/main/pico-sdk)-$(git rev-parse HEAD:lib/main/esp-idf)" >> $GITHUB_OUTPUT
+      - name: Detect target platform
+        id: platform
+        run: |
+          if [ -d "src/platform/PICO/target/${{ matrix.target }}" ]; then
+            echo "sdk=pico" >> $GITHUB_OUTPUT
+          elif [ -d "src/platform/ESP32/target/${{ matrix.target }}" ]; then
+            echo "sdk=esp32" >> $GITHUB_OUTPUT
+          else
+            echo "sdk=none" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Cache platform SDKs
-        uses: actions/cache@v4
-        id: cache-sdks
+      - name: Restore pico-sdk from cache
+        if: steps.platform.outputs.sdk == 'pico'
+        uses: actions/cache/restore@v4
         with:
           path: |
             lib/main/pico-sdk
-            lib/main/esp-idf
-            .git/modules/lib/main
-          key: ${{ runner.os }}-platform-sdks-${{ steps.sdk-key.outputs.key }}
+            .git/modules/lib/main/pico-sdk
+          key: ${{ needs.setup.outputs.pico-sdk-key }}
 
-      - name: Hydrate platform SDKs
-        if: steps.cache-sdks.outputs.cache-hit != 'true'
-        run: |
-          git submodule update --init --checkout --recursive -- lib/main/pico-sdk
-          git submodule update --init --checkout --recursive -- lib/main/esp-idf
+      - name: Restore esp-idf from cache
+        if: steps.platform.outputs.sdk == 'esp32'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            lib/main/esp-idf
+            .git/modules/lib/main/esp-idf
+          key: ${{ needs.setup.outputs.esp-idf-key }}
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v4
         id: cache-toolchain
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+          key: ${{ runner.os }}-tools-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/tools.mk') }}
 
       - name: Hydrate configuration
         id: get-config
