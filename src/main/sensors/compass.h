@@ -67,6 +67,7 @@ typedef struct compassConfig_s {
     ioTag_t interruptTag;
     flightDynamicsTrims_t magZero;
     sensorAlignment_t mag_customAlignment;
+    uint8_t mag_calib_version;
 } compassConfig_t;
 
 typedef struct compassBiasEstimator_s {
