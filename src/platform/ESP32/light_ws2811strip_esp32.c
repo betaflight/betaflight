@@ -44,4 +44,20 @@ void ws2811LedStripDMAEnable(void)
     // NOOP
 }
 
+void ws2811LedStripInit(ioTag_t ioTag, ledStripFormatRGB_e ledFormat)
+{
+    UNUSED(ioTag);
+    UNUSED(ledFormat);
+}
+
+void ws2811LedStripStartTransfer(void)
+{
+}
+
+void ws2811LedStripUpdateTransferBuffer(const rgbColor24bpp_t *color, unsigned ledIndex)
+{
+    UNUSED(color);
+    UNUSED(ledIndex);
+}
+
 #endif // USE_LED_STRIP

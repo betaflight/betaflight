@@ -32,7 +32,6 @@
 #include "drivers/io.h"
 
 const spiHardware_t spiHardware[SPIDEV_COUNT] = { 0 };
-spiDevice_t spiDevice[SPIDEV_COUNT] = { 0 };
 
 void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 {
@@ -103,15 +102,19 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
     return false;
 }
 
-bool spiBusy(const extDevice_t *dev)
-{
-    UNUSED(dev);
-    return false;
-}
-
 void spiSequenceStart(const extDevice_t *dev)
 {
     UNUSED(dev);
+}
+
+uint16_t spiCalculateDivider(uint32_t freq)
+{
+    UNUSED(freq);
+    return 0;
+}
+
+void spiInitBusDMA(void)
+{
 }
 
 #endif // USE_SPI

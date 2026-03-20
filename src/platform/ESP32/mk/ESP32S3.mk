@@ -14,8 +14,8 @@ PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32-S3 toolchain
-# Use local install path if available, otherwise fall back to PATH
-ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp32s3-elf/*/xtensa-esp32s3-elf/bin))
+# ESP-IDF v5.x uses unified xtensa-esp-elf toolchain (with per-target symlinks)
+ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
 ifneq ($(ESP_TOOLS_BIN),)
   ARM_SDK_PREFIX := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-
 else
@@ -59,8 +59,6 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
-            drivers/bus_spi.c \
-            drivers/bus_spi_config.c \
             drivers/bus_i2c_utils.c \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \

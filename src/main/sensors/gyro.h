@@ -106,7 +106,7 @@ typedef struct gyro_s {
     uint8_t gyroDebugMode;
     bool gyroHasOverflowProtection;
     bool useMultiGyroDebugging;
-    flight_dynamics_index_t gyroDebugAxis;
+    int gyroDebugAxis;
 
 #ifdef USE_DYN_LPF
     uint8_t dynLpfFilter;
