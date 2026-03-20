@@ -263,6 +263,14 @@ void gyroInitFilters(void)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         pt1FilterInit(&gyro.imuGyroFilter[axis], k);
     }
+
+#if GYRO_COUNT > 1
+    initSensorFusion(&gyro.sensorFusion, gyroConfig()->fusion_tau / 100.0f, gyro.targetLooptime * 1e-6f
+#ifdef USE_SIMULATE_GYRO_NOISE
+    , gyroConfig()->noisy_gyro, gyroConfig()->noise / 10.0f
+#endif
+    );
+#endif
 }
 
 #if defined(USE_GYRO_SLEW_LIMITER)
