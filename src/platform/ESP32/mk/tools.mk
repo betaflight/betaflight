@@ -3,12 +3,18 @@
 # For standalone use, the Xtensa GCC toolchain can be installed separately.
 ESP_IDF_PATH ?= $(ROOT_DIR)/lib/main/esp-idf
 
+# Stamp file indicating esp-idf has been hydrated
+ESP_IDF_STAMP := $(ESP_IDF_PATH)/.git
+
 ## esp_sdk            : Hydrate ESP-IDF submodule
 .PHONY: esp_sdk
-esp_sdk:
-	@echo "Updating esp-idf"
+esp_sdk: $(ESP_IDF_STAMP)
+
+# Auto-hydrate esp-idf when needed as a build dependency
+$(ESP_IDF_STAMP):
+	@echo "Hydrating esp-idf submodule"
 	$(V1) git submodule update --init --recursive -- lib/main/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
-	@echo "esp-idf updated"
+	@echo "esp-idf ready"
 
 ## esp_tools_install  : Install ESP32 toolchain via esp-idf
 .PHONY: esp_tools_install

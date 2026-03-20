@@ -6,6 +6,9 @@
 
 DEFAULT_OUTPUT := bin
 
+# Auto-hydrate esp-idf submodule when building ESP32 targets
+PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
+
 # ESP-IDF location (when submodule is hydrated)
 ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
 

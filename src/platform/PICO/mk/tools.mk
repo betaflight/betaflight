@@ -6,6 +6,9 @@ PICOTOOL_DIR    := $(TOOLS_DIR)/picotool
 PICO_SDK_PATH   ?= $(ROOT_DIR)/lib/main/pico-sdk
 PICOTOOL        ?= $(PICOTOOL_DIR)/picotool
 
+# Stamp file indicating pico-sdk has been hydrated
+PICO_SDK_STAMP  := $(PICO_SDK_PATH)/.git
+
 ifneq ($(filter picotool_install uf2,$(MAKECMDGOALS)),)
     ifeq ($(wildcard $(PICO_SDK_PATH)/CMakeLists.txt),)
         $(error "PICO_SDK_PATH ($(PICO_SDK_PATH)) does not point to a valid Pico SDK. Please 'make pico_sdk' to hydrate the Pico SDK.")
@@ -22,11 +25,15 @@ ifneq ($(filter uf2,$(MAKECMDGOALS)),)
     endif
 endif
 
+## pico_sdk           : Hydrate Pico SDK submodule
 .PHONY: pico_sdk
-pico_sdk:
-	@echo "Updating pico-sdk"
+pico_sdk: $(PICO_SDK_STAMP)
+
+# Auto-hydrate pico-sdk when needed as a build dependency
+$(PICO_SDK_STAMP):
+	@echo "Hydrating pico-sdk submodule"
 	$(V1) git submodule update --init --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
-	@echo "pico-sdk updated"
+	@echo "pico-sdk ready"
 
 .PHONY: picotool_install
 picotool_install: | $(DL_DIR) $(TOOLS_DIR)
