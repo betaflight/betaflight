@@ -25,7 +25,7 @@ pico_sdk: $(PICO_SDK_STAMP)
 # Auto-hydrate pico-sdk when needed as a build dependency
 $(PICO_SDK_STAMP):
 	@echo "Hydrating pico-sdk submodule"
-	$(V1) git submodule update --init --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
+	$(V1) git submodule update --init --checkout --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
 	@echo "pico-sdk ready"
 
 .PHONY: picotool_install

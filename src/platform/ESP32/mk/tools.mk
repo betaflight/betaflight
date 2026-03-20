@@ -13,7 +13,7 @@ esp_sdk: $(ESP_IDF_STAMP)
 # Auto-hydrate esp-idf when needed as a build dependency
 $(ESP_IDF_STAMP):
 	@echo "Hydrating esp-idf submodule"
-	$(V1) git submodule update --init --recursive -- lib/main/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
+	$(V1) git submodule update --init --checkout --recursive -- lib/main/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
 	@echo "esp-idf ready"
 
 ## esp_tools_install  : Install ESP32 toolchain via esp-idf
