@@ -402,6 +402,10 @@ bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
 bool persistBoardInformation(void) { return true; };
 
+const char * const *sensorHardwareNames(sensorIndex_e, int *count) { if (count) *count = 0; return NULL; }
+sensorIndex_e sensorIndexFromName(const char *) { return SENSOR_INDEX_COUNT; }
+const char *sensorTypeName(sensorIndex_e) { return NULL; }
+
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }

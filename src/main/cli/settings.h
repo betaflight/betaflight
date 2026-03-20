@@ -115,7 +115,6 @@ typedef enum {
 #ifdef USE_VTX_COMMON
     TABLE_VTX_LOW_POWER_DISARM,
 #endif
-    TABLE_GYRO_HARDWARE,
 #ifdef USE_SDCARD
     TABLE_SDCARD_MODE,
 #endif
@@ -253,20 +252,6 @@ extern const uint16_t valueTableEntryCount;
 extern const clivalue_t valueTable[];
 //extern const uint8_t lookupTablesEntryCount;
 
-extern const char * const lookupTableGyroHardware[];
-
-extern const char * const lookupTableAccHardware[];
-//extern const uint8_t lookupTableAccHardwareEntryCount;
-
-extern const char * const lookupTableBaroHardware[];
-//extern const uint8_t lookupTableBaroHardwareEntryCount;
-
-extern const char * const lookupTableMagHardware[];
-//extern const uint8_t lookupTableMagHardwareEntryCount;
-
-extern const char * const lookupTableRangefinderHardware[];
-
-extern const char * const lookupTableOpticalflowHardware[];
 
 extern const char * const lookupTableLedstripColors[];
 
