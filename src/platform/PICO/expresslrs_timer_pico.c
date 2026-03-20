@@ -110,13 +110,15 @@ static void alarmCallback(uint alarm)
         dbgPinHi(0);
 
         int32_t adjustedPeriod = (int32_t)halfPeriod + timerState.frequencyOffsetTicks;
+        if (adjustedPeriod < 1) adjustedPeriod = 1;
+        if (adjustedPeriod > (int32_t)(2 * halfPeriod)) adjustedPeriod = (int32_t)(2 * halfPeriod);
 
         // Advance the absolute target by the adjusted half-period.  Using an
         // absolute target (not "now + period") avoids drift accumulation.
         nextAlarmTime = delayed_by_us(nextAlarmTime, (uint64_t)adjustedPeriod);
         if (hardware_alarm_set_target(alarmNum, nextAlarmTime)) {
             // Target was already in the past; reschedule from now to recover.
-            nextAlarmTime = make_timeout_time_us(halfPeriod);
+            nextAlarmTime = make_timeout_time_us((uint64_t)adjustedPeriod);
             hardware_alarm_set_target(alarmNum, nextAlarmTime);
         }
 
@@ -134,9 +136,12 @@ static void alarmCallback(uint alarm)
         // Consume the phase shift; it must not carry into the next cycle.
         timerState.phaseShiftUs = 0;
 
+        if (adjustedPeriod < 1) adjustedPeriod = 1;
+        if (adjustedPeriod > (int32_t)(2 * halfPeriod)) adjustedPeriod = (int32_t)(2 * halfPeriod);
+
         nextAlarmTime = delayed_by_us(nextAlarmTime, (uint64_t)adjustedPeriod);
         if (hardware_alarm_set_target(alarmNum, nextAlarmTime)) {
-            nextAlarmTime = make_timeout_time_us(halfPeriod);
+            nextAlarmTime = make_timeout_time_us((uint64_t)adjustedPeriod);
             hardware_alarm_set_target(alarmNum, nextAlarmTime);
         }
 
