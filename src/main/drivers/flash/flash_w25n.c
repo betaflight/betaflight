@@ -37,7 +37,11 @@
 
 // BB replacement area
 #define W25N_BB_MARKER_BLOCKS           1
+#if defined(USE_FLASH_MX35LF2G)
+#define W25N_BB_REPLACEMENT_BLOCKS      40
+#else
 #define W25N_BB_REPLACEMENT_BLOCKS      20
+#endif
 #define W25N_BB_MANAGEMENT_BLOCKS       (W25N_BB_REPLACEMENT_BLOCKS + W25N_BB_MARKER_BLOCKS)
 // blocks are zero-based index; when negative, it is from end of flash
 #define W25N_BB_MANAGEMENT_START_BLOCK  (-W25N_BB_MANAGEMENT_BLOCKS)
@@ -46,7 +50,7 @@
 
 #define W25N_INSTRUCTION_RDID             0x9F
 #define W25N_INSTRUCTION_DEVICE_RESET     0xFF
-#if defined(USE_FLASH_W25N02K)
+#if defined(USE_FLASH_MX35LF2G)
 #define W25N_INSTRUCTION_READ_STATUS_REG  0x0F
 #define W25N_INSTRUCTION_WRITE_STATUS_REG 0x1F
 #else
@@ -86,8 +90,11 @@
 
 // Bits in config/status register 2 (W25N_CONF_REG)
 #define W25N_CONFIG_ECC_ENABLE         (1 << 4)
+#if defined(USE_FLASH_MX35LF2G)
+#define W25N_CONFIG_BUFFER_READ_MODE   (0 << 2)
+#else
 #define W25N_CONFIG_BUFFER_READ_MODE   (1 << 3)
-
+#endif
 // Bits in config/status register 3 (W25N_STATREG)
 #define W25N_STATUS_BBM_LUT_FULL       (1 << 6)
 #define W25N_STATUS_FLAG_ECC_POS       4
