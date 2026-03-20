@@ -49,6 +49,7 @@ extern "C" {
 
     uint8_t debugMode;
     int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t armingFlags = 0;
 }
 
 #include "unittest_macros.h"
@@ -155,14 +156,17 @@ TEST(SensorGyro, Update)
 // STUBS
 
 extern "C" {
-
-uint32_t micros(void) {return 0;}
-void beeper(beeperMode_e) {}
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE };
-uint8_t detectedGyros[GYRO_COUNT] = { GYRO_NONE };
-timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
-void sensorsSet(uint32_t) {}
-void schedulerResetTaskStatistics(taskId_e) {}
-int getArmingDisableFlags(void) {return 0;}
-void writeEEPROM(void) {}
+    uint32_t micros(void) {return 0;}
+    void beeper(beeperMode_e) {}
+    uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE };
+    uint8_t detectedGyros[GYRO_COUNT] = { GYRO_NONE };
+    timeDelta_t getGyroUpdateRate(void) {return gyro.targetLooptime;}
+    void sensorsSet(uint32_t) {}
+    void schedulerResetTaskStatistics(taskId_e) {}
+    int getArmingDisableFlags(void) {return 0;}
+    void writeEEPROM(void) {}
+    // Stubs for RC deflection and throttle used by gyro drift estimator gating
+    float getRcDeflectionAbs(int) { return 0.0f; }
+    float mixerGetRcThrottle(void) { return 0.0f; }
+    float imuGetMahonyIntegralFB(void) { return 0.0f; }
 }

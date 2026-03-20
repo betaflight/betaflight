@@ -209,13 +209,18 @@ static float invSqrt(float x)
 // headingErrMag - heading error (in earth frame) derived from magnetometter, rad/s around Z axis (* dcmKpGain)
 // headingErrCog - heading error (in earth frame) derived from CourseOverGround, rad/s around Z axis (* dcmKpGain)
 // dcmKpGain - gain applied to all error sources
+static float mahonyIntegralFB[XYZ_AXIS_COUNT] = {0};
+
 STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
                                 float gx, float gy, float gz,
                                 bool useAcc, float ax, float ay, float az,
                                 float headingErrMag, float headingErrCog,
                                 const float dcmKpGain)
 {
-    static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
+    // Use static array for external access
+    float *integralFBx = &mahonyIntegralFB[X];
+    float *integralFBy = &mahonyIntegralFB[Y];
+    float *integralFBz = &mahonyIntegralFB[Z];
 
     // Calculate general spin rate (rad/s)
     const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
@@ -252,20 +257,20 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
             const float dcmKiGain = imuRuntimeConfig.imuDcmKi;
-            integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
-            integralFBy += dcmKiGain * ey * dt;
-            integralFBz += dcmKiGain * ez * dt;
+            *integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
+            *integralFBy += dcmKiGain * ey * dt;
+            *integralFBz += dcmKiGain * ez * dt;
         }
     } else {
-        integralFBx = 0.0f;    // prevent integral windup
-        integralFBy = 0.0f;
-        integralFBz = 0.0f;
+        *integralFBx = 0.0f;    // prevent integral windup
+        *integralFBy = 0.0f;
+        *integralFBz = 0.0f;
     }
 
     // Apply proportional and integral feedback
-    gx += dcmKpGain * ex + integralFBx;
-    gy += dcmKpGain * ey + integralFBy;
-    gz += dcmKpGain * ez + integralFBz;
+    gx += dcmKpGain * ex + *integralFBx;
+    gy += dcmKpGain * ey + *integralFBy;
+    gz += dcmKpGain * ez + *integralFBz;
 
     // Integrate rate of change of quaternion
     gx *= (0.5f * dt);
@@ -294,6 +299,13 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     imuComputeRotationMatrix();
 
     attitudeIsEstablished = true;
+}
+
+// Getter for Mahony I-term (integral feedback)
+void imuGetMahonyIntegralFB(float out[XYZ_AXIS_COUNT]) {
+    out[X] = mahonyIntegralFB[X];
+    out[Y] = mahonyIntegralFB[Y];
+    out[Z] = mahonyIntegralFB[Z];
 }
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
