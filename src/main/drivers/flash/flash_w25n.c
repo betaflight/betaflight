@@ -104,8 +104,11 @@
 #define W25N_STATUS_ERASE_FAIL         (1 << 2)
 #define W25N_STATUS_FLAG_WRITE_ENABLED (1 << 1)
 #define W25N_STATUS_FLAG_BUSY          (1 << 0)
-
+#if defined(USE_FLASH_MX35LF2G)
+#define W25N_BBLUT_TABLE_ENTRY_COUNT     40
+#else
 #define W25N_BBLUT_TABLE_ENTRY_COUNT     20
+#endif
 #define W25N_BBLUT_TABLE_ENTRY_SIZE      4  // in bytes
 
 // Bits in LBA for BB LUT
