@@ -21,8 +21,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Compute SDK cache key
+        id: sdk-key
+        run: echo "key=$(git rev-parse HEAD:lib/main/pico-sdk)-$(git rev-parse HEAD:lib/main/esp-idf)" >> $GITHUB_OUTPUT
+
+      - name: Cache platform SDKs
+        uses: actions/cache@v4
+        id: cache-sdks
         with:
-          submodules: recursive
+          path: |
+            lib/main/pico-sdk
+            lib/main/esp-idf
+            .git/modules/lib/main
+          key: ${{ runner.os }}-platform-sdks-${{ steps.sdk-key.outputs.key }}
+
+      - name: Hydrate platform SDKs
+        if: steps.cache-sdks.outputs.cache-hit != 'true'
+        run: |
+          git submodule update --init --checkout --recursive -- lib/main/pico-sdk
+          git submodule update --init --checkout --recursive -- lib/main/esp-idf
 
       - name: Cache build toolchain
         uses: actions/cache@v4
@@ -57,8 +78,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Compute SDK cache key
+        id: sdk-key
+        run: echo "key=$(git rev-parse HEAD:lib/main/pico-sdk)-$(git rev-parse HEAD:lib/main/esp-idf)" >> $GITHUB_OUTPUT
+
+      - name: Cache platform SDKs
+        uses: actions/cache@v4
+        id: cache-sdks
         with:
-          submodules: recursive
+          path: |
+            lib/main/pico-sdk
+            lib/main/esp-idf
+            .git/modules/lib/main
+          key: ${{ runner.os }}-platform-sdks-${{ steps.sdk-key.outputs.key }}
+
+      - name: Hydrate platform SDKs
+        if: steps.cache-sdks.outputs.cache-hit != 'true'
+        run: |
+          git submodule update --init --checkout --recursive -- lib/main/pico-sdk
+          git submodule update --init --checkout --recursive -- lib/main/esp-idf
 
       - name: Fetch toolchain from cache
         uses: actions/cache@v4
