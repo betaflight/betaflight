@@ -87,4 +87,14 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     return false;
 }
 
+void i2cPinConfigure(const struct i2cConfig_s *i2cConfig)
+{
+    UNUSED(i2cConfig);
+}
+
+uint16_t i2cGetErrorCounter(void)
+{
+    return 0;
+}
+
 #endif // USE_I2C

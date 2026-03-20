@@ -268,8 +268,8 @@ static CMS_Menu menuAlarms = {
     .entries = menuAlarmsEntries,
 };
 
-osd_timer_source_e timerSource[OSD_TIMER_COUNT];
-osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
+uint8_t timerSource[OSD_TIMER_COUNT];
+uint8_t timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
 static const void *menuTimersOnEnter(displayPort_t *pDisp)
@@ -335,7 +335,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
-static displayPortBackground_e osdMenuBackgroundType;
+static uint8_t osdMenuBackgroundType;
 
 static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
 {

@@ -19,24 +19,43 @@ MEMORY
 }
 
 /* Default entry point */
-ENTRY(app_main)
+ENTRY(main)
+
+/* Stack at end of DRAM */
+_estack = ORIGIN(dram_seg) + LENGTH(dram_seg);
+_Min_Stack_Size = 0x800;
 
 SECTIONS
 {
     .iram.text :
     {
         _iram_text_start = ABSOLUTE(.);
-        *(.iram1 .iram1.*)
-        *(.iram.text .iram.text.*)
+        *(.iram1.literal .iram1.*)
+        *(.iram.text.literal .iram.text .iram.text.*)
         _iram_text_end = ABSOLUTE(.);
     } > iram_seg
 
     .flash.text :
     {
         _stext = .;
-        *(.text .text.*)
         *(.literal .literal.*)
+        *(.text .text.*)
         _etext = .;
+    } > flash_seg
+
+    .pg_registry :
+    {
+        PROVIDE_HIDDEN (__pg_registry_start = .);
+        KEEP (*(.pg_registry))
+        KEEP (*(SORT(.pg_registry.*)))
+        PROVIDE_HIDDEN (__pg_registry_end = .);
+    } > flash_seg
+
+    .pg_resetdata :
+    {
+        PROVIDE_HIDDEN (__pg_resetdata_start = .);
+        KEEP (*(.pg_resetdata))
+        PROVIDE_HIDDEN (__pg_resetdata_end = .);
     } > flash_seg
 
     .flash.rodata :

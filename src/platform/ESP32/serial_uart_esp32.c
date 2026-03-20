@@ -30,17 +30,7 @@
 #include "drivers/serial_uart_impl.h"
 
 // ESP32-S3 has 3 UART controllers (UART0, UART1, UART2)
-
-// UART buffers
-#ifdef USE_UART0
-UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, 0, T);
-UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, 0, R);
-#endif
-
-#ifdef USE_UART1
-UART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, 1, T);
-UART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, 1, R);
-#endif
+// UART buffers are defined in drivers/serial_uart.c
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART0
@@ -77,8 +67,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
 };
 
-uartDevice_t uartDevice[UARTDEV_COUNT] = { 0 };
-
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {
     UNUSED(pSerialPinConfig);
@@ -109,4 +97,13 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
 void uartTryStartTxDMA(uartPort_t *s)
 {
     UNUSED(s);
+}
+
+uartPort_t *serialUART(uartDevice_t *uart, uint32_t baudRate, portMode_e mode, portOptions_e options)
+{
+    UNUSED(uart);
+    UNUSED(baudRate);
+    UNUSED(mode);
+    UNUSED(options);
+    return NULL;
 }
