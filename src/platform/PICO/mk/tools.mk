@@ -9,17 +9,10 @@ PICOTOOL        ?= $(PICOTOOL_DIR)/picotool
 # Stamp file indicating pico-sdk has been hydrated
 PICO_SDK_STAMP  := $(PICO_SDK_PATH)/.git
 
-ifneq ($(filter picotool_install uf2,$(MAKECMDGOALS)),)
-    ifeq ($(wildcard $(PICO_SDK_PATH)/CMakeLists.txt),)
-        $(error "PICO_SDK_PATH ($(PICO_SDK_PATH)) does not point to a valid Pico SDK. Please 'make pico_sdk' to hydrate the Pico SDK.")
-    endif
-endif
-
+# Resolve picotool from local install or PATH
 ifneq ($(filter uf2,$(MAKECMDGOALS)),)
     ifeq (,$(wildcard $(PICOTOOL)))
-        ifeq (,$(shell which picotool 2>/dev/null))
-            $(error "picotool not in the PATH or configured. Run 'make picotool_install' to install in the tools folder.")
-        else
+        ifneq (,$(shell which picotool 2>/dev/null))
             PICOTOOL := picotool
         endif
     endif
@@ -36,7 +29,7 @@ $(PICO_SDK_STAMP):
 	@echo "pico-sdk ready"
 
 .PHONY: picotool_install
-picotool_install: | $(DL_DIR) $(TOOLS_DIR)
+picotool_install: | $(PICO_SDK_STAMP) $(DL_DIR) $(TOOLS_DIR)
 picotool_install: picotool_clean
 	@echo "\n CLONE     $(PICOTOOL_REPO)"
 	$(V1) git clone --depth 1 $(PICOTOOL_REPO) "$(PICOTOOL_DL_DIR)" || { echo "Failed to clone picotool repository"; exit 1; }
