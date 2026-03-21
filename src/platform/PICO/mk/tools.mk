@@ -30,17 +30,21 @@ $(PICO_SDK_STAMP):
 
 .PHONY: picotool_install
 picotool_install: | $(PICO_SDK_STAMP) $(DL_DIR) $(TOOLS_DIR)
-picotool_install: picotool_clean
-	@echo "\n CLONE     $(PICOTOOL_REPO)"
-	$(V1) git clone --depth 1 $(PICOTOOL_REPO) "$(PICOTOOL_DL_DIR)" || { echo "Failed to clone picotool repository"; exit 1; }
-	@echo "\n BUILD      $(PICOTOOL_BUILD_DIR)"
-	$(V1) [ -d "$(PICOTOOL_DIR)" ] || mkdir -p $(PICOTOOL_DIR)
-	$(V1) [ -d "$(PICOTOOL_BUILD_DIR)" ] || mkdir -p $(PICOTOOL_BUILD_DIR)
-	$(V1) cmake -S $(PICOTOOL_DL_DIR) -B $(PICOTOOL_BUILD_DIR) -D PICO_SDK_PATH=$(PICO_SDK_PATH) || { echo "CMake configuration failed"; exit 1; }
-	$(V1) $(MAKE) -C $(PICOTOOL_BUILD_DIR) || { echo "picotool build failed"; exit 1; }
-	$(V1) cp $(PICOTOOL_BUILD_DIR)/picotool $(PICOTOOL_DIR)/picotool || { echo "Failed to install picotool binary"; exit 1; }
-	@echo "\n VERSION:"
-	$(V1) $(PICOTOOL_DIR)/picotool version
+	@if [ -x "$(PICOTOOL_DIR)/picotool" ]; then \
+		echo "picotool already installed:"; \
+		$(PICOTOOL_DIR)/picotool version; \
+	else \
+		echo "\n CLONE     $(PICOTOOL_REPO)"; \
+		$(RM) -rf "$(PICOTOOL_DL_DIR)"; \
+		git clone --depth 1 $(PICOTOOL_REPO) "$(PICOTOOL_DL_DIR)" || { echo "Failed to clone picotool repository"; exit 1; }; \
+		echo "\n BUILD      $(PICOTOOL_BUILD_DIR)"; \
+		mkdir -p "$(PICOTOOL_DIR)" "$(PICOTOOL_BUILD_DIR)"; \
+		cmake -S $(PICOTOOL_DL_DIR) -B $(PICOTOOL_BUILD_DIR) -D PICO_SDK_PATH=$(PICO_SDK_PATH) || { echo "CMake configuration failed"; exit 1; }; \
+		$(MAKE) -C $(PICOTOOL_BUILD_DIR) || { echo "picotool build failed"; exit 1; }; \
+		cp $(PICOTOOL_BUILD_DIR)/picotool $(PICOTOOL_DIR)/picotool || { echo "Failed to install picotool binary"; exit 1; }; \
+		echo "\n VERSION:"; \
+		$(PICOTOOL_DIR)/picotool version; \
+	fi
 
 .PHONY: picotool_clean
 picotool_clean:
