@@ -38,6 +38,7 @@
 #include "drivers/time.h"
 #include "platform/rcc.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/light_led.h"
 
 #include "build/debug.h"
@@ -865,7 +866,7 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
     uint32_t   reg;
     uint32_t   SCR[2] = {0, 0};
 
-    if((SD_CardType == SD_STD_CAPACITY_V1_1) || (SD_CardType == SD_STD_CAPACITY_V2_0) || 
+    if((SD_CardType == SD_STD_CAPACITY_V1_1) || (SD_CardType == SD_STD_CAPACITY_V2_0) ||
         (SD_CardType == SD_HIGH_CAPACITY)) {
 
         if(WideMode == SD_BUS_WIDE_8B) {

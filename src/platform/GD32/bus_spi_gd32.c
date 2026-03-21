@@ -35,6 +35,8 @@
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"
+#include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "platform/rcc.h"
 

@@ -30,6 +30,8 @@
 #define U_ID_1 (*(uint32_t*)0x1fff7a14)
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
 
+#define GPIO_PIN_RESET 0
+
 #ifndef GD32F4
 #define GD32F4
 #endif
@@ -77,6 +79,25 @@
 #define WRITE_REG(REG, VAL)   ((REG) = (VAL))
 #define READ_REG(REG)         ((REG))
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+
+/* DMA data mode type */
+typedef enum {
+    DMA_DATA_MODE_SINGLE = 0,
+    DMA_DATA_MODE_MULTI  = 1
+} dma_data_mode_enum;
+
+/* DMA general configuration struct */
+typedef struct
+{
+    dma_data_mode_enum data_mode;
+#if defined(GD32F4)
+    dma_subperipheral_enum sub_periph;
+#endif
+    union {
+        dma_single_data_parameter_struct init_struct_s;
+        dma_multi_data_parameter_struct  init_struct_m;
+    } config;
+} dma_general_config_struct;  //todo: move to dma_bsp.h
 
 typedef struct I2C_TypeDef         I2C_TypeDef;
 typedef struct I2C_HandleTypeDef   I2C_HandleTypeDef;
@@ -244,6 +265,12 @@ extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 #define _UART_GET_PREFIX_UARTDEV_9 UART
 #define _UART_GET_PREFIX_UARTDEV_10 USART
 #define _UART_GET_PREFIX_UARTDEV_LP1 LPUART
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PRIGROUP_PRE2_SUB2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 
 // #if defined(GD32F4)
 // We need to redefine ADC0, ADC1, etc.,

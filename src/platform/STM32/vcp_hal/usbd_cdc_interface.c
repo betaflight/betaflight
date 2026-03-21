@@ -108,7 +108,7 @@ static int8_t CDC_Itf_Receive(uint8_t* pbuf, uint32_t *Len);
 // The CDC_Itf_TransmitCplt field was introduced in MiddleWare that comes with
 // H7 V1.8.0.
 // Other MCU can be add here as the MiddleWare version advances.
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32N6)
 static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum);
 #endif
 
@@ -121,7 +121,7 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
   CDC_Itf_DeInit,
   CDC_Itf_Control,
   CDC_Itf_Receive,
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32N6)
   CDC_Itf_TransmitCplt
 #endif
 };
@@ -325,7 +325,7 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
     return (USBD_OK);
 }
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32N6)
 static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 {
     UNUSED(Buf);

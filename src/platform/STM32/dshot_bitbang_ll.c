@@ -33,6 +33,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
@@ -53,7 +54,7 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32N6)
     bbPort->gpioModeMask |= (GPIO_MODER_MODE0 << (pinIndex * 2)); // A minor name change in H7 CMSIS
 #else
     bbPort->gpioModeMask |= (GPIO_MODER_MODER0 << (pinIndex * 2));
@@ -138,6 +139,10 @@ static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     ((DMA_ARCH_TYPE *)dmaResource)->CNDTR = dmaRegCache->CNDTR;
     ((DMA_ARCH_TYPE *)dmaResource)->CPAR = dmaRegCache->CPAR;
     ((DMA_ARCH_TYPE *)dmaResource)->CMAR = dmaRegCache->CMAR;
+#elif defined(STM32N6)
+    // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
+    UNUSED(dmaResource);
+    UNUSED(dmaRegCache);
 #else
 #error MCU dependent code required
 #endif
@@ -156,6 +161,10 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->CNDTR;
     dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->CPAR;
     dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->CMAR;
+#elif defined(STM32N6)
+    // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
+    UNUSED(dmaResource);
+    UNUSED(dmaRegCache);
 #else
 #error MCU dependent code required
 #endif
@@ -185,7 +194,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegOutput);
 #else
     //xDMA_DeInit(dmaResource);
-    xLL_EX_DMA_Deinit(dmaResource);
+    xLL_EX_DMA_DeInit(dmaResource);
     //xDMA_Init(dmaResource, &bbPort->outputDmaInit);
     xLL_EX_DMA_Init(dmaResource, &bbPort->outputDmaInit);
     // Needs this, as it is DeInit'ed above...
@@ -216,7 +225,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
     bbLoadDMARegs(dmaResource, &bbPort->dmaRegInput);
 #else
     //xDMA_DeInit(dmaResource);
-    xLL_EX_DMA_Deinit(dmaResource);
+    xLL_EX_DMA_DeInit(dmaResource);
     //xDMA_Init(dmaResource, &bbPort->inputDmaInit);
     xLL_EX_DMA_Init(dmaResource, &bbPort->inputDmaInit);
 
@@ -237,6 +246,11 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
 void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 {
+#if defined(STM32N6)
+    // TODO: N6 HPDMA/GPDMA DMA preconfiguration not yet implemented
+    UNUSED(bbPort);
+    UNUSED(direction);
+#else
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
     LL_DMA_StructInit(dmainit);
@@ -286,6 +300,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegInput);
 #endif
     }
+#endif // !STM32N6
 }
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
@@ -319,6 +334,9 @@ void bbDMA_ITConfig(bbPort_t *bbPort)
 
 #if defined(STM32G4)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_TEIE);
+#elif defined(STM32N6)
+    // TODO: N6 HPDMA/GPDMA interrupt configuration not yet implemented
+    UNUSED(bbPort);
 #else
     SET_BIT(((DMA_Stream_TypeDef *)(bbPort->dmaResource))->CR, DMA_SxCR_TCIE|DMA_SxCR_TEIE);
 #endif

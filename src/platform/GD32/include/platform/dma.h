@@ -28,47 +28,23 @@
 
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 
-typedef enum {
-    DMA_NONE = 0,
-    DMA_FIRST_HANDLER = 1,
-    DMA0_CH0_HANDLER = DMA_FIRST_HANDLER,
-    DMA0_CH1_HANDLER,
-    DMA0_CH2_HANDLER,
-    DMA0_CH3_HANDLER,
-    DMA0_CH4_HANDLER,
-    DMA0_CH5_HANDLER,
-    DMA0_CH6_HANDLER,
-    DMA0_CH7_HANDLER,
-    DMA1_CH0_HANDLER,
-    DMA1_CH1_HANDLER,
-    DMA1_CH2_HANDLER,
-    DMA1_CH3_HANDLER,
-    DMA1_CH4_HANDLER,
-    DMA1_CH5_HANDLER,
-    DMA1_CH6_HANDLER,
-    DMA1_CH7_HANDLER,
-    DMA_LAST_HANDLER = DMA1_CH7_HANDLER
-} dmaIdentifier_e;
-
-
-/* DMA data mode type */
-typedef enum {
-    DMA_DATA_MODE_SINGLE = 0,
-    DMA_DATA_MODE_MULTI  = 1
-} dma_data_mode_enum;
-
-/* DMA general configuration struct */
-typedef struct
-{
-    dma_data_mode_enum data_mode;
-#if defined(GD32F4)
-    dma_subperipheral_enum sub_periph;
-#endif
-    union {
-        dma_single_data_parameter_struct init_struct_s;
-        dma_multi_data_parameter_struct  init_struct_m;
-    } config;
-} dma_general_config_struct;  //todo: move to dma_bsp.h
+#define DMA0_CH0_HANDLER    (DMA_FIRST_HANDLER + 0)
+#define DMA0_CH1_HANDLER    (DMA_FIRST_HANDLER + 1)
+#define DMA0_CH2_HANDLER    (DMA_FIRST_HANDLER + 2)
+#define DMA0_CH3_HANDLER    (DMA_FIRST_HANDLER + 3)
+#define DMA0_CH4_HANDLER    (DMA_FIRST_HANDLER + 4)
+#define DMA0_CH5_HANDLER    (DMA_FIRST_HANDLER + 5)
+#define DMA0_CH6_HANDLER    (DMA_FIRST_HANDLER + 6)
+#define DMA0_CH7_HANDLER    (DMA_FIRST_HANDLER + 7)
+#define DMA1_CH0_HANDLER    (DMA_FIRST_HANDLER + 8)
+#define DMA1_CH1_HANDLER    (DMA_FIRST_HANDLER + 9)
+#define DMA1_CH2_HANDLER    (DMA_FIRST_HANDLER + 10)
+#define DMA1_CH3_HANDLER    (DMA_FIRST_HANDLER + 11)
+#define DMA1_CH4_HANDLER    (DMA_FIRST_HANDLER + 12)
+#define DMA1_CH5_HANDLER    (DMA_FIRST_HANDLER + 13)
+#define DMA1_CH6_HANDLER    (DMA_FIRST_HANDLER + 14)
+#define DMA1_CH7_HANDLER    (DMA_FIRST_HANDLER + 15)
+#define DMA_LAST_HANDLER    DMA1_CH7_HANDLER
 
 uint32_t dmaGetChannel(const uint8_t channel);
 

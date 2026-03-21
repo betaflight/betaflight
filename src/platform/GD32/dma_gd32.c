@@ -29,6 +29,7 @@
 
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "platform/rcc.h"
 #include "drivers/resource.h"
 
@@ -160,6 +161,35 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     nvic_irq_enable(dmaDescriptors[index].irqN, NVIC_PRIORITY_BASE(priority), NVIC_PRIORITY_SUB(priority));
 }
 
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    uint32_t dma_periph ;
+    int channel;
+
+    gd32_dma_chbase_parse((uint32_t)ref, &dma_periph, &channel);
+    return dma_transfer_number_get(dma_periph, channel);
+}
+
 
 void gd32_dma_chbase_parse(uint32_t dma_chan_base, uint32_t *dma_periph, int *dma_channel)
 {
@@ -284,7 +314,7 @@ void gd32_dma_memory_addr_config(uint32_t dma_chan_base, uint32_t address, uint8
     int channel;
 
     gd32_dma_chbase_parse(dma_chan_base, &dma_periph, &channel);
- 
+
     dma_memory_address_config(dma_periph, channel, memory_flag, address);
 }
 

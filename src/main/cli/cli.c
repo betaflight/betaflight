@@ -269,15 +269,10 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char *const sensorTypeNames[] = {
+static const char *const sensorTypeDisplayNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
 };
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
-
-static const char * const *sensorHardwareNames[] = {
-    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
-};
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeDisplayNames), sensorTypeDisplayNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
 
 static const char *configurationStates[] = {
@@ -4686,6 +4681,51 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
+#if defined(USE_SENSOR_NAMES)
+static void cliSensorHardware(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        // List all sensor types and their supported hardware
+        for (unsigned i = 0; i < SENSOR_INDEX_COUNT; i++) {
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            const char *typeName = sensorTypeName(i);
+            if (names && typeName) {
+                cliPrintf("%s: ", typeName);
+                for (int j = 0; j < count; j++) {
+                    if (j > 0) {
+                        cliPrint(",");
+                    }
+                    cliPrint(names[j]);
+                }
+                cliPrintLinefeed();
+            }
+        }
+        return;
+    }
+
+    sensorIndex_e sensor = sensorIndexFromName(cmdline);
+    if (sensor >= SENSOR_INDEX_COUNT) {
+        cliPrintErrorLinef(cmdName, "INVALID SENSOR TYPE: %s", cmdline);
+        return;
+    }
+
+    int count;
+    const char * const *names = sensorHardwareNames(sensor, &count);
+    if (!names) {
+        cliPrintErrorLinef(cmdName, "SENSOR NOT AVAILABLE: %s", cmdline);
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            cliPrint(",");
+        }
+        cliPrint(names[i]);
+    }
+    cliPrintLinefeed();
+}
+#endif // USE_SENSOR_NAMES
+
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -4746,7 +4786,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Sensors
 #if defined(USE_SENSOR_NAMES)
-    cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
+    cliPrintf("%s: ", sensorTypeDisplayNames[SENSOR_INDEX_GYRO]);
 #else
     cliPrintf("GYRO: ");
 #endif
@@ -4786,14 +4826,19 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
-    for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
+    for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
         const uint32_t mask = (1U << i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
-            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            if (!names || sensorHardwareIndex >= count) {
+                continue;
+            }
+            const char *sensorHardware = names[sensorHardwareIndex];
 
-            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
+            cliPrintf("%s: %s", sensorTypeDisplayNames[i], sensorHardware);
 #if defined(USE_ACC)
             if (i == SENSOR_INDEX_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
@@ -5354,10 +5399,10 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
+        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
@@ -6695,6 +6740,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("save", "save and reboot (default)", "[noreboot]", cliSave),
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
+#endif
+#if defined(USE_SENSOR_NAMES)
+    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)

@@ -31,6 +31,8 @@
 
 #include "common/utils.h"
 #include "drivers/inverter.h"
+#include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 
@@ -82,7 +84,7 @@ void uartReconfigure(uartPort_t *uartPort)
         if (uartPort->rxDMAResource) {
             dma_single_data_parameter_struct dma_init_struct;
             dma_single_data_para_struct_init(&dma_init_struct);
-            
+
             dma_init_struct.periph_addr = uartPort->rxDMAPeripheralBaseAddr;
             dma_init_struct.memory0_addr = (uint32_t)uartPort->port.rxBuffer;
             dma_init_struct.number = uartPort->port.rxBufferSize;
@@ -92,7 +94,7 @@ void uartReconfigure(uartPort_t *uartPort)
             dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
             dma_init_struct.direction = DMA_PERIPH_TO_MEMORY;
             dma_init_struct.priority = DMA_PRIORITY_MEDIUM;
-            
+
             xDMA_DeInit(uartPort->rxDMAResource);
             gd32_dma_init((uint32_t)uartPort->rxDMAResource, &dma_init_struct);
             xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
@@ -114,7 +116,7 @@ void uartReconfigure(uartPort_t *uartPort)
         if (uartPort->txDMAResource) {
             dma_single_data_parameter_struct dma_init_struct;
             dma_single_data_para_struct_init(&dma_init_struct);
-            
+
             dma_init_struct.periph_addr = uartPort->txDMAPeripheralBaseAddr;
             dma_init_struct.memory0_addr = (uint32_t)uartPort->port.txBuffer;
             dma_init_struct.number = uartPort->port.txBufferSize;
@@ -131,14 +133,14 @@ void uartReconfigure(uartPort_t *uartPort)
 
             xDMA_ITConfig(uartPort->txDMAResource, DMA_INT_FTF | DMA_INT_FEE | DMA_INT_TAE | DMA_INT_SDE, ENABLE);
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
-            
+
             usart_dma_transmit_config((uint32_t)uartPort->USARTx, USART_TRANSMIT_DMA_ENABLE);
         } else
 #endif
         {
             usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
         }
-        
+
         usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TC);
     }
 

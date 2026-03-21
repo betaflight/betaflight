@@ -30,6 +30,7 @@
 #include "build/debug.h"
 
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"

@@ -76,6 +76,9 @@
 #include "io/vtx_rtc6705.h"
 
 #include "osd/osd.h"
+#if ENABLE_OSD_CUSTOM_TEXT
+#include "osd/osd_custom_text.h"
+#endif
 
 #include "pg/adc.h"
 #include "pg/alt_hold.h"
@@ -131,6 +134,7 @@
 #include "sensors/gyro.h"
 #include "sensors/rangefinder.h"
 #include "sensors/opticalflow.h"
+#include "sensors/sensors.h"
 
 #include "scheduler/scheduler.h"
 
@@ -140,125 +144,7 @@
 
 #include "settings.h"
 
-// Sensor names (used in lookup tables for *_hardware settings and in status command output)
-// sync with gyroHardware_e
-const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
-    [GYRO_NONE] = "NONE",
-    [GYRO_DEFAULT] = "AUTO",
-    [GYRO_MPU6050] = "MPU6050",
-    [GYRO_L3GD20] = "L3GD20",
-    [GYRO_MPU6000] = "MPU6000",
-    [GYRO_MPU6500] = "MPU6500",
-    [GYRO_MPU9250] = "MPU9250",
-    [GYRO_ICM20601] = "ICM20601",
-    [GYRO_ICM20602] = "ICM20602",
-    [GYRO_ICM20608G] = "ICM20608G",
-    [GYRO_ICM20649] = "ICM20649",
-    [GYRO_ICM20689] = "ICM20689",
-    [GYRO_ICM42605] = "ICM42605",
-    [GYRO_ICM42688P] = "ICM42688P",
-    [GYRO_BMI160] = "BMI160",
-    [GYRO_BMI270] = "BMI270",
-    [GYRO_LSM6DSO] = "LSM6DSO",
-    [GYRO_LSM6DSV16X] = "LSM6DSV16X",
-    [GYRO_IIM42653] = "IIM42653",
-    [GYRO_ICM45605] = "ICM45605",
-    [GYRO_ICM45686] = "ICM45686",
-    [GYRO_ICM40609D] = "ICM40609D",
-    [GYRO_IIM42652] = "IIM42652",
-    [GYRO_LSM6DSK320X] = "LSM6DSK320X",
-    [GYRO_ICM42622P] = "ICM42622P",
-    [GYRO_ICM42686P] = "ICM42686P",
-    [GYRO_VIRTUAL] = "VIRTUAL"
-};
-
-// sync with accelerationSensor_e
-const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
-    [ACC_DEFAULT] = "AUTO",
-    [ACC_NONE] = "NONE",
-    [ACC_MPU6050] = "MPU6050",
-    [ACC_MPU6000] = "MPU6000",
-    [ACC_MPU6500] = "MPU6500",
-    [ACC_MPU9250] = "MPU9250",
-    [ACC_ICM20601] = "ICM20601",
-    [ACC_ICM20602] = "ICM20602",
-    [ACC_ICM20608G] = "ICM20608G",
-    [ACC_ICM20649] = "ICM20649",
-    [ACC_ICM20689] = "ICM20689",
-    [ACC_ICM42605] = "ICM42605",
-    [ACC_ICM42688P] = "ICM42688P",
-    [ACC_BMI160] = "BMI160",
-    [ACC_BMI270] = "BMI270",
-    [ACC_LSM6DSO] = "LSM6DSO",
-    [ACC_LSM6DSV16X] = "LSM6DSV16X",
-    [ACC_IIM42653] = "IIM42653",
-    [ACC_ICM45605] = "ICM45605",
-    [ACC_ICM45686] = "ICM45686",
-    [ACC_ICM40609D] = "ICM40609D",
-    [ACC_IIM42652] = "IIM42652",
-    [ACC_LSM6DSK320X] = "LSM6DSK320X",
-    [ACC_ICM42622P] = "ICM42622P",
-    [ACC_ICM42686P] = "ICM42686P",
-    [ACC_VIRTUAL] = "VIRTUAL"
-};
-
-// sync with baroSensor_e
-const char * const lookupTableBaroHardware[BARO_HARDWARE_COUNT] = {
-    [BARO_DEFAULT] = "AUTO",
-    [BARO_NONE] = "NONE",
-    [BARO_BMP085] = "BMP085",
-    [BARO_MS5611] = "MS5611",
-    [BARO_BMP280] = "BMP280",
-    [BARO_LPS] = "LPS",
-    [BARO_QMP6988] = "QMP6988",
-    [BARO_BMP388] = "BMP388",
-    [BARO_DPS310] = "DPS310",
-    [BARO_2SMPB_02B] = "2SMPB_02B",
-    [BARO_LPS22DF] = "LPS22DF",
-    [BARO_BMP580] = "BMP580",
-    [BARO_BMP581] = "BMP581",
-    [BARO_VIRTUAL] = "VIRTUAL"
-};
-
-// sync with magSensor_e
-const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
-    [MAG_DEFAULT] = "AUTO",
-    [MAG_NONE] = "NONE",
-    [MAG_HMC5883] = "HMC5883",
-    [MAG_AK8975] = "AK8975",
-    [MAG_AK8963] = "AK8963",
-    [MAG_QMC5883] = "QMC5883",
-    [MAG_LIS2MDL] = "LIS2MDL",
-    [MAG_LIS3MDL] = "LIS3MDL",
-    [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
-    [MAG_IST8310] = "IST8310",
-    [MAG_MMC560X] = "MMC560X"
-};
-
-// sync with rangefinderType_e
-const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = {
-    [RANGEFINDER_NONE] = "NONE",
-    [RANGEFINDER_HCSR04] = "HCSR04",
-    [RANGEFINDER_TFMINI] = "TFMINI",
-    [RANGEFINDER_TF02] = "TF02",
-    [RANGEFINDER_MTF01] = "MTF01",
-    [RANGEFINDER_MTF02] = "MTF02",
-    [RANGEFINDER_MTF01P] = "MTF01P",
-    [RANGEFINDER_MTF02P] = "MTF02P",
-    [RANGEFINDER_TFNOVA] = "TFNOVA",
-    [RANGEFINDER_NOOPLOOP_F2] = "NOOPLOOP_F2",
-    [RANGEFINDER_NOOPLOOP_F2P] = "NOOPLOOP_F2P",
-    [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
-    [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
-    [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
-    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
-};
-
-// sync with opticalflowType_e
-const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
-    [OPTICALFLOW_NONE] = "NONE",
-    [OPTICALFLOW_MT] = "MT"
-};
+// Sensor hardware name lookup tables are defined in sensors/sensors.c
 
 const char * const lookupTableOffOn[] = {
     "OFF", "ON"
@@ -460,14 +346,20 @@ static const char * const lookupTableRatesType[] = {
 #ifdef USE_OVERCLOCK
 static const char * const lookupOverclock[] = {
     "OFF",
-#if defined(STM32F40_41xxx) || defined(STM32G4)
-    "192MHZ", "216MHZ", "240MHZ"
-#elif defined(STM32F411xE)
-    "108MHZ", "120MHZ"
-#elif defined(STM32F7)
-    "240MHZ"
-#elif defined(APM32F405xx) || defined(APM32F407xx)
-    "192MHZ", "216MHZ", "240MHZ"
+#if ENABLE_OVERCLOCK_108_MHZ
+    "108MHZ",
+#endif
+#if ENABLE_OVERCLOCK_120_MHZ
+    "120MHZ",
+#endif
+#if ENABLE_OVERCLOCK_192_MHZ
+    "192MHZ",
+#endif
+#if ENABLE_OVERCLOCK_216_MHZ
+    "216MHZ",
+#endif
+#if ENABLE_OVERCLOCK_240_MHZ
+    "240MHZ",
 #endif
 };
 #endif
@@ -604,6 +496,12 @@ const char * const lookupTableOsdDisplayPortDevice[] = {
 static const char * const lookupTableOsdLogoOnArming[] = {
     "OFF", "ON", "FIRST_ARMING",
 };
+
+#if ENABLE_OSD_CUSTOM_TEXT
+static const char * const lookupTableOsdCustomTextTerminator[] = {
+    "NULL", "LF",
+};
+#endif
 #endif
 const char * const lookupTableSimplifiedTuningPidsMode[] = {
     "OFF", "RP", "RPY",
@@ -682,12 +580,12 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRxSpi),
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableGyroHardwareLpf),
-    LOOKUP_TABLE_ENTRY(lookupTableAccHardware),
+    { lookupTableAccHardware, ACC_HARDWARE_COUNT },
 #ifdef USE_BARO
-    LOOKUP_TABLE_ENTRY(lookupTableBaroHardware),
+    { lookupTableBaroHardware, BARO_HARDWARE_COUNT },
 #endif
 #ifdef USE_MAG
-    LOOKUP_TABLE_ENTRY(lookupTableMagHardware),
+    { lookupTableMagHardware, MAG_HARDWARE_COUNT },
 #endif
     LOOKUP_TABLE_ENTRY(debugModeNames),
     LOOKUP_TABLE_ENTRY(lookupTablePwmProtocol),
@@ -710,10 +608,10 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableFrskySpiA1Source),
 #endif
 #ifdef USE_RANGEFINDER
-    LOOKUP_TABLE_ENTRY(lookupTableRangefinderHardware),
+    { lookupTableRangefinderHardware, RANGEFINDER_HARDWARE_COUNT },
 #endif
 #ifdef USE_OPTICALFLOW
-    LOOKUP_TABLE_ENTRY(lookupTableOpticalflowHardware),
+    { lookupTableOpticalflowHardware, OPTICALFLOW_HARDWARE_COUNT },
 #endif
 #ifdef USE_GYRO_OVERFLOW_CHECK
     LOOKUP_TABLE_ENTRY(lookupTableGyroOverflowCheck),
@@ -742,7 +640,6 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_VTX_COMMON
     LOOKUP_TABLE_ENTRY(lookupTableVtxLowPowerDisarm),
 #endif
-    LOOKUP_TABLE_ENTRY(lookupTableGyroHardware),
 #ifdef USE_SDCARD
     LOOKUP_TABLE_ENTRY(lookupTableSdcardMode),
 #endif
@@ -766,6 +663,9 @@ const lookupTableEntry_t lookupTables[] = {
 
 #ifdef USE_OSD
     LOOKUP_TABLE_ENTRY(lookupTableOsdLogoOnArming),
+#if ENABLE_OSD_CUSTOM_TEXT
+    LOOKUP_TABLE_ENTRY(lookupTableOsdCustomTextTerminator),
+#endif
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableMixerType),
     LOOKUP_TABLE_ENTRY(lookupTableSimplifiedTuningPidsMode),
@@ -788,7 +688,6 @@ const lookupTableEntry_t lookupTables[] = {
 
 const clivalue_t valueTable[] = {
 // PG_GYRO_CONFIG
-    { PARAM_NAME_GYRO_HARDWARE,     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware) },
     { PARAM_NAME_GYRO_HARDWARE_LPF, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
 
 #if defined(USE_GYRO_SPI_ICM20649)
@@ -1759,6 +1658,10 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RANGEFINDER
     { "osd_lidar_dist_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LIDAR_DIST]) },
 #endif //USE_RANGEFINDER
+#if ENABLE_OSD_CUSTOM_TEXT
+    { "osd_custom_serial_text_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_CUSTOM_SERIAL_TEXT]) },
+    { "osd_custom_serial_text_terminator", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_CUSTOM_TEXT_TERMINATOR }, PG_OSD_CUSTOM_TEXT_CONFIG, offsetof(osdCustomTextConfig_t, terminator) },
+#endif //ENABLE_OSD_CUSTOM_TEXT
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG

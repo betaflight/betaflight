@@ -35,6 +35,7 @@
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 
@@ -252,18 +253,18 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF);
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_HTF);
-        
+
         if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE)) {
             dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE);
         }
-        
+
         handleUsartTxDma(s);
     }
-    
+
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_TAE)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_TAE);
     }
-    
+
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_SDE)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_SDE);
     }

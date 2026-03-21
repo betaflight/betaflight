@@ -471,7 +471,7 @@ extern "C" {
     }
 
     void expressLrsInitialiseTimer(const timerHardware_t *, timerOvrHandlerRec_t *) {}
-    void expressLrsTimerEnableIRQs(void) {}
+    void expressLrsTimerEnableIRQs(const timerHardware_t *) {}
     void expressLrsUpdateTimerInterval(uint16_t ) {}
     void expressLrsUpdatePhaseShift(int32_t ) {}
     void expressLrsTimerIncreaseFrequencyOffset(void) {}

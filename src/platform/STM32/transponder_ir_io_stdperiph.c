@@ -28,6 +28,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
@@ -201,7 +202,7 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     return true;
 }
 
-bool isTransponderIrReady(void)
+bool transponderIrIsReady(void)
 {
     return !transponderIrDataTransferInProgress;
 }
