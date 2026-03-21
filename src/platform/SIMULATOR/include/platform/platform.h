@@ -21,6 +21,8 @@
 
 #pragma once
 
+#define ENABLE_SIMULATOR 1
+
 #define IOCFG_OUT_PP        0
 #define IOCFG_OUT_OD        0
 #define IOCFG_AF_PP         0
