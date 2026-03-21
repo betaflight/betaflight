@@ -16,6 +16,22 @@ MEMORY
     iram_seg (RWX) :   org = 0x40370000, len = 320K
     dram_seg (RW)  :   org = 0x3FC88000, len = 416K
     flash_seg (RX) :   org = 0x42000000, len = 8M
+
+    /* Peripheral register regions (memory-mapped I/O) */
+    periph_uart0_seg (RW) :   org = 0x60000000, len = 0x1000
+    periph_gpio_seg (RW) :    org = 0x60004000, len = 0x1000
+    periph_uart1_seg (RW) :   org = 0x60010000, len = 0x1000
+    periph_i2c0_seg (RW) :    org = 0x60013000, len = 0x1000
+    periph_rmt_seg (RW) :     org = 0x60016000, len = 0x800
+    periph_rmtmem_seg (RW) :  org = 0x60016800, len = 0x800
+    periph_ledc_seg (RW) :    org = 0x60019000, len = 0x1000
+    periph_systimer_seg (RW): org = 0x60023000, len = 0x1000
+    periph_spi2_seg (RW) :    org = 0x60024000, len = 0x1000
+    periph_spi3_seg (RW) :    org = 0x60025000, len = 0x1000
+    periph_i2c1_seg (RW) :    org = 0x60027000, len = 0x1000
+    periph_uart2_seg (RW) :   org = 0x6002E000, len = 0x1000
+    periph_usb_serial_seg (RW): org = 0x60038000, len = 0x1000
+    periph_system_seg (RW) :  org = 0x600C0000, len = 0x1000
 }
 
 /* Default entry point */
@@ -38,8 +54,7 @@ SECTIONS
     .flash.text :
     {
         _stext = .;
-        *(.literal .literal.*)
-        *(.text .text.*)
+        *(.literal .literal.* .text .text.*)
         _etext = .;
     } > flash_seg
 
@@ -98,6 +113,22 @@ SECTIONS
     /* Config flash storage - last 64KB of flash */
     __config_start = ORIGIN(flash_seg) + LENGTH(flash_seg) - 64K;
     __config_end = ORIGIN(flash_seg) + LENGTH(flash_seg);
+
+    /* Peripheral register mappings at fixed hardware addresses */
+    .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg
+    .peripheral_gpio (NOLOAD) :     { *(.peripheral_gpio) }    > periph_gpio_seg
+    .peripheral_uart1 (NOLOAD) :    { *(.peripheral_uart1) }   > periph_uart1_seg
+    .peripheral_i2c0 (NOLOAD) :     { *(.peripheral_i2c0) }    > periph_i2c0_seg
+    .peripheral_rmt (NOLOAD) :      { *(.peripheral_rmt) }     > periph_rmt_seg
+    .peripheral_rmtmem (NOLOAD) :   { *(.peripheral_rmtmem) }  > periph_rmtmem_seg
+    .peripheral_ledc (NOLOAD) :     { *(.peripheral_ledc) }    > periph_ledc_seg
+    .peripheral_systimer (NOLOAD) : { *(.peripheral_systimer) } > periph_systimer_seg
+    .peripheral_spi2 (NOLOAD) :     { *(.peripheral_spi2) }    > periph_spi2_seg
+    .peripheral_spi3 (NOLOAD) :     { *(.peripheral_spi3) }    > periph_spi3_seg
+    .peripheral_i2c1 (NOLOAD) :     { *(.peripheral_i2c1) }    > periph_i2c1_seg
+    .peripheral_uart2 (NOLOAD) :    { *(.peripheral_uart2) }   > periph_uart2_seg
+    .peripheral_usb_serial (NOLOAD): { *(.peripheral_usb_serial) } > periph_usb_serial_seg
+    .peripheral_system (NOLOAD) :   { *(.peripheral_system) }  > periph_system_seg
 
     /DISCARD/ :
     {

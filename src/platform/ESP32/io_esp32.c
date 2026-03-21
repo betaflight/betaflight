@@ -21,6 +21,13 @@
 
 #include "platform.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "hal/gpio_ll.h"
+#pragma GCC diagnostic pop
+#include "soc/gpio_struct.h"
+#include "esp_rom_gpio.h"
+
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 
@@ -51,8 +58,7 @@ bool IORead(IO_t io)
     if (!io) {
         return false;
     }
-    // TODO: gpio_get_level(IO_Pin(io))
-    return false;
+    return gpio_ll_get_level(&GPIO, IO_Pin(io));
 }
 
 void IOWrite(IO_t io, bool hi)
@@ -60,8 +66,7 @@ void IOWrite(IO_t io, bool hi)
     if (!io) {
         return;
     }
-    // TODO: gpio_set_level(IO_Pin(io), hi)
-    UNUSED(hi);
+    gpio_ll_set_level(&GPIO, IO_Pin(io), hi);
 }
 
 void IOHi(IO_t io)
@@ -69,7 +74,7 @@ void IOHi(IO_t io)
     if (!io) {
         return;
     }
-    // TODO: gpio_set_level(IO_Pin(io), 1)
+    gpio_ll_set_level(&GPIO, IO_Pin(io), 1);
 }
 
 void IOLo(IO_t io)
@@ -77,7 +82,7 @@ void IOLo(IO_t io)
     if (!io) {
         return;
     }
-    // TODO: gpio_set_level(IO_Pin(io), 0)
+    gpio_ll_set_level(&GPIO, IO_Pin(io), 0);
 }
 
 void IOToggle(IO_t io)
@@ -85,7 +90,8 @@ void IOToggle(IO_t io)
     if (!io) {
         return;
     }
-    // TODO: read current level and toggle
+    uint16_t pin = IO_Pin(io);
+    gpio_ll_set_level(&GPIO, pin, !gpio_ll_get_level(&GPIO, pin));
 }
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
@@ -94,8 +100,31 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
         return;
     }
 
-    UNUSED(cfg);
-    // TODO: use gpio_config() with cfg decoded via IO_CONFIG macro
+    uint16_t pin = IO_Pin(io);
+    uint8_t mode = cfg & 0x03;
+    uint8_t pupd = (cfg >> 5) & 0x03;
+
+    // Select GPIO function for this pad
+    esp_rom_gpio_pad_select_gpio(pin);
+
+    if (mode == BF_GPIO_MODE_OUTPUT) {
+        gpio_ll_output_enable(&GPIO, pin);
+        gpio_ll_input_disable(&GPIO, pin);
+    } else {
+        gpio_ll_output_disable(&GPIO, pin);
+        gpio_ll_input_enable(&GPIO, pin);
+    }
+
+    if (pupd & BF_GPIO_PULLUP) {
+        gpio_ll_pullup_en(&GPIO, pin);
+    } else {
+        gpio_ll_pullup_dis(&GPIO, pin);
+    }
+    if (pupd & BF_GPIO_PULLDOWN) {
+        gpio_ll_pulldown_en(&GPIO, pin);
+    } else {
+        gpio_ll_pulldown_dis(&GPIO, pin);
+    }
 }
 
 IO_t IOGetByTag(ioTag_t tag)

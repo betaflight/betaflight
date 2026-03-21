@@ -27,26 +27,53 @@
 
 #if defined(CONFIG_IN_FLASH)
 
+#include "esp_rom_spiflash.h"
+
+// Flash base address for memory-mapped access
+#define ESP32_FLASH_BASE  0x42000000
+
+// Convert memory-mapped address to flash offset
+#define FLASH_ADDR_TO_OFFSET(addr)  ((addr) - ESP32_FLASH_BASE)
+
+static bool sectorErased = false;
+static uint32_t lastErasedSector = UINT32_MAX;
+
 void configUnlock(void)
 {
-    // NOOP
+    sectorErased = false;
+    lastErasedSector = UINT32_MAX;
 }
 
 void configLock(void)
 {
-    // NOOP
+    // NOOP - no locking needed for ROM flash API
 }
 
 void configClearFlags(void)
 {
-    // NOOP
+    sectorErased = false;
+    lastErasedSector = UINT32_MAX;
 }
 
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
 {
-    UNUSED(address);
-    UNUSED(buffer);
-    // TODO: use esp_partition_write()
+    uint32_t flashOffset = FLASH_ADDR_TO_OFFSET(address);
+
+    // Erase sector if needed (4KB sectors)
+    uint32_t sector = flashOffset / 4096;
+    if (sector != lastErasedSector) {
+        if (esp_rom_spiflash_erase_sector(sector) != 0) {
+            return CONFIG_RESULT_FAILURE;
+        }
+        lastErasedSector = sector;
+        sectorErased = true;
+    }
+
+    // Write data (CONFIG_STREAMER_BUFFER_SIZE bytes)
+    if (esp_rom_spiflash_write(flashOffset, (const uint32_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE) != 0) {
+        return CONFIG_RESULT_FAILURE;
+    }
+
     return CONFIG_RESULT_SUCCESS;
 }
 

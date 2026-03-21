@@ -24,10 +24,28 @@ endif
 
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
-            $(TARGET_PLATFORM_DIR)/include
+            $(TARGET_PLATFORM_DIR)/include \
+            $(ESP_IDF_DIR)/components/hal/include \
+            $(ESP_IDF_DIR)/components/hal/esp32s3/include \
+            $(ESP_IDF_DIR)/components/hal/platform_port/include \
+            $(ESP_IDF_DIR)/components/soc/esp32s3/include \
+            $(ESP_IDF_DIR)/components/soc/esp32s3/register \
+            $(ESP_IDF_DIR)/components/soc/include \
+            $(ESP_IDF_DIR)/components/esp_rom/include \
+            $(ESP_IDF_DIR)/components/esp_rom/esp32s3 \
+            $(ESP_IDF_DIR)/components/esp_common/include \
+            $(ESP_IDF_DIR)/components/esp_hw_support/include \
+            $(ESP_IDF_DIR)/components/esp_system/include \
+            $(ESP_IDF_DIR)/components/log/include \
+            $(ESP_IDF_DIR)/components/newlib/platform_include \
+            $(ESP_IDF_DIR)/components/xtensa/include \
+            $(ESP_IDF_DIR)/components/xtensa/esp32s3/include \
+            $(ESP_IDF_DIR)/components/esp_timer/include \
+            $(ESP_IDF_DIR)/components/freertos/config/include \
+            $(ESP_IDF_DIR)/components/freertos/config/xtensa/include
 
 # Architecture flags for Xtensa LX7 (ESP32-S3)
-ARCH_FLAGS = -mlongcalls
+ARCH_FLAGS = -mlongcalls -mtext-section-literals
 
 DEVICE_FLAGS += \
             -DESP32S3 \
@@ -38,6 +56,9 @@ MCU_FLASH_SIZE := 8192
 LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
 
 STARTUP_SRC =
+
+# ROM linker scripts that provide symbols for ROM functions (esp_rom_delay_us, etc.)
+ESP_ROM_LD_DIR = $(ESP_IDF_DIR)/components/esp_rom/esp32s3/ld
 
 # Override default LD_FLAGS since the ARM-specific ones don't apply
 LD_FLAGS = -lm \
@@ -52,6 +73,8 @@ LD_FLAGS = -lm \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT) \
+              -T$(ESP_ROM_LD_DIR)/esp32s3.rom.ld \
+              -T$(ESP_ROM_LD_DIR)/esp32s3.rom.api.ld \
               $(EXTRA_LD_FLAGS)
 
 # Platform source files (stub implementations)
@@ -80,9 +103,17 @@ MCU_COMMON_SRC = \
             ESP32/serial_uart_esp32.c \
             ESP32/serial_usb_vcp_esp32.c \
             ESP32/system.c \
-            ESP32/light_ws2811strip_esp32.c
+            ESP32/light_ws2811strip_esp32.c \
+            ESP32/periph_regs_esp32.c
 
-# No vendor peripheral library sources yet (will add ESP-IDF components later)
-DEVICE_STDPERIPH_SRC =
+# ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)
+# Paths are relative to LIB_MAIN_DIR (lib/main) since that's in VPATH
+DEVICE_STDPERIPH_SRC = \
+            esp-idf/components/soc/esp32s3/gpio_periph.c \
+            esp-idf/components/soc/esp32s3/i2c_periph.c \
+            esp-idf/components/soc/esp32s3/uart_periph.c \
+            esp-idf/components/soc/esp32s3/ledc_periph.c \
+            esp-idf/components/soc/esp32s3/rmt_periph.c \
+            esp-idf/components/soc/esp32s3/interrupts.c
 
 MCU_EXCLUDES =
