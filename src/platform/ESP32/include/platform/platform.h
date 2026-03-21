@@ -109,29 +109,32 @@ extern esp32_peripheral_t esp32UartDev2;
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
 
-// GPIO mode constants
-#define GPIO_MODE_INPUT     0
-#define GPIO_MODE_OUTPUT    1
-#define GPIO_PULLUP         1
-#define GPIO_PULLDOWN       2
+// GPIO mode constants for IO_CONFIG macro
+// Names prefixed with BF_ to avoid conflict with ESP-IDF gpio_types.h
+// which defines GPIO_MODE_INPUT/OUTPUT as enum members.
+#define BF_GPIO_MODE_INPUT     0
+#define BF_GPIO_MODE_OUTPUT    1
+#define BF_GPIO_PULLUP         1
+#define BF_GPIO_PULLDOWN       2
 
 #define IO_CONFIG(mode, speed, pupd) ((mode) | ((speed) << 2) | ((pupd) << 5))
 
-#define IOCFG_OUT_PP          IO_CONFIG(GPIO_MODE_OUTPUT, 0, 0)
-#define IOCFG_OUT_OD          IO_CONFIG(GPIO_MODE_OUTPUT, 0, 0)
+#define IOCFG_OUT_PP          IO_CONFIG(BF_GPIO_MODE_OUTPUT, 0, 0)
+#define IOCFG_OUT_OD          IO_CONFIG(BF_GPIO_MODE_OUTPUT, 0, 0)
 #define IOCFG_AF_PP           0
 #define IOCFG_AF_OD           0
-#define IOCFG_IPD             IO_CONFIG(GPIO_MODE_INPUT, 0, 0)
-#define IOCFG_IPU             IO_CONFIG(GPIO_MODE_INPUT, 0, 0)
-#define IOCFG_IN_FLOATING     IO_CONFIG(GPIO_MODE_INPUT, 0, 0)
+#define IOCFG_IPD             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
+#define IOCFG_IPU             IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
+#define IOCFG_IN_FLOATING     IO_CONFIG(BF_GPIO_MODE_INPUT, 0, 0)
 
 #define SPI_IO_AF_CFG           0
 #define SPI_IO_AF_SCK_CFG_HIGH  0
 #define SPI_IO_AF_SCK_CFG_LOW   0
 #define SPI_IO_AF_SDI_CFG       0
-#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT, 0, 0)
-#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT, 0, GPIO_PULLUP)
+#define SPI_IO_CS_CFG           IO_CONFIG(BF_GPIO_MODE_OUTPUT, 0, 0)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(BF_GPIO_MODE_INPUT, 0, BF_GPIO_PULLUP)
 
+#define SERIAL_TRAIT_PIN_CONFIG     1
 #define SERIAL_UART_FIRST_INDEX     0
 
 extern uint32_t SystemCoreClock;

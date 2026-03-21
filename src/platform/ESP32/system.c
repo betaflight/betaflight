@@ -33,6 +33,15 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "hal/systimer_ll.h"
+#pragma GCC diagnostic pop
+#include "esp_rom_sys.h"
+#include "soc/systimer_struct.h"
+#include "soc/efuse_reg.h"
+#include "soc/soc.h"
+
 // ESP32-S3 runs at 240 MHz by default
 uint32_t SystemCoreClock = 240000000;
 
@@ -50,9 +59,8 @@ uint32_t systemUniqueId[3] = { 0 };
 static uint32_t usTicks = 0;
 static float usTicksInv = 0.0f;
 
-// Stub: will use ESP-IDF esp_timer / CCOUNT register
-static volatile uint32_t sysTickUptime = 0;
-static volatile uint32_t sysTickValStamp = 0;
+// ESP32-S3 systimer runs at 16 MHz (XTAL_CLK), each tick = 62.5 ns
+#define SYSTIMER_TICKS_PER_US  16
 
 void cycleCounterInit(void)
 {
@@ -64,16 +72,24 @@ void systemInit(void)
 {
     cycleCounterInit();
 
-    // TODO: read ESP32 MAC address into systemUniqueId via esp_efuse_mac_get_default()
-    systemUniqueId[0] = 0x00E53200;
-    systemUniqueId[1] = 0x00000053;
-    systemUniqueId[2] = 0x00000001;
+    // Initialize systimer - should already be running from ROM bootloader,
+    // but enable clock and counter 0 to be safe
+    systimer_ll_enable_clock(&SYSTIMER, true);
+    systimer_ll_enable_counter(&SYSTIMER, 0, true);
+
+    // Read 6-byte MAC address from eFuse into systemUniqueId
+    // REG0 contains MAC bytes [0..3] (low 32 bits), REG1[15:0] contains MAC bytes [4..5]
+    uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SPI_SYS_0_REG);
+    uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SPI_SYS_1_REG);
+    systemUniqueId[0] = mac0;
+    systemUniqueId[1] = mac1 & 0xFFFF;
+    systemUniqueId[2] = 0;
 }
 
 void systemReset(void)
 {
-    // TODO: esp_restart()
-    while (1);
+    esp_rom_software_reset_system();
+    while (1);  // should not be reached
 }
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
@@ -85,16 +101,27 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
 STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 
-timeMs_t millis(void)
-{
-    // TODO: use esp_timer_get_time() / 1000
-    return sysTickUptime;
-}
-
 timeUs_t micros(void)
 {
-    // TODO: use esp_timer_get_time()
-    return sysTickUptime * 1000;
+    // Take a snapshot of counter unit 0
+    systimer_ll_counter_snapshot(&SYSTIMER, 0);
+
+    // Wait for snapshot to be valid
+    while (!systimer_ll_is_counter_value_valid(&SYSTIMER, 0)) {
+    }
+
+    // Read the 52-bit counter value
+    uint32_t lo = systimer_ll_get_counter_value_low(&SYSTIMER, 0);
+    uint32_t hi = systimer_ll_get_counter_value_high(&SYSTIMER, 0);
+    uint64_t ticks = ((uint64_t)hi << 32) | lo;
+
+    // Convert 16 MHz ticks to microseconds
+    return (timeUs_t)(ticks / SYSTIMER_TICKS_PER_US);
+}
+
+timeMs_t millis(void)
+{
+    return micros() / 1000;
 }
 
 timeUs_t microsISR(void)
@@ -104,20 +131,19 @@ timeUs_t microsISR(void)
 
 void delayMicroseconds(uint32_t us)
 {
-    // TODO: use esp_rom_delay_us()
-    UNUSED(us);
+    esp_rom_delay_us(us);
 }
 
 void delay(uint32_t ms)
 {
-    // TODO: use vTaskDelay() or busy loop
-    UNUSED(ms);
+    esp_rom_delay_us(ms * 1000);
 }
 
 uint32_t getCycleCounter(void)
 {
-    // TODO: use CCOUNT register via __asm__ __volatile__("rsr.ccount %0" : "=r"(val))
-    return 0;
+    uint32_t val;
+    __asm__ __volatile__("rsr.ccount %0" : "=r"(val));
+    return val;
 }
 
 int32_t clockCyclesToMicros(int32_t clockCycles)
@@ -195,6 +221,19 @@ static struct _reent s_reent;
 struct _reent *__getreent(void)
 {
     return &s_reent;
+}
+
+// Newlib POSIX signal stubs — suppress linker warnings from libnosys
+__attribute__((used, externally_visible)) int _kill(int pid, int sig)
+{
+    (void)pid;
+    (void)sig;
+    return -1;
+}
+
+__attribute__((used, externally_visible)) int _getpid(void)
+{
+    return 1;
 }
 
 const mcuTypeInfo_t *getMcuTypeInfo(void)
