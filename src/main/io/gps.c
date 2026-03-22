@@ -1381,19 +1381,20 @@ void gpsUpdate(timeUs_t currentTimeUs)
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
-    static uint8_t wait = 0;
-    static bool isFast = false;
     uint32_t rxBytesWaiting = 0;
     gpsData.now = millis();
 
     switch (gpsConfig()->provider) {
 #ifdef USE_GPS_UBLOX
     case GPS_UBLOX:
+    {
         if (!gpsPort) {
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        static uint8_t wait = 0;
+        static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
             wait = 0;
             if (!isFast) {
@@ -1416,15 +1417,19 @@ void gpsUpdate(timeUs_t currentTimeUs)
             rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
         }
         break;
+    }
 #endif
 
 #ifdef USE_GPS_NMEA
     case GPS_NMEA:
+    {
         if (!gpsPort) {
             break;
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        static uint8_t wait = 0;
+        static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
             wait = 0;
             if (!isFast) {
@@ -1447,6 +1452,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
             rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
         }
         break;
+    }
 #endif
 
     case GPS_MSP:
