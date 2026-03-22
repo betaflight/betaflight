@@ -1203,49 +1203,37 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     }
     switch (Channel) {
     case TIM_CHANNEL_1: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6) // N6 HAL made DMA callbacks static
         htim->hdma[TIM_DMA_ID_CC1]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t) pData, (uint32_t) & htim->Instance->CCR1, Length);
     }
         break;
 
     case TIM_CHANNEL_2: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC2]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC2]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t) pData, (uint32_t) & htim->Instance->CCR2, Length);
     }
         break;
 
     case TIM_CHANNEL_3: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC3]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC3]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t) pData, (uint32_t) & htim->Instance->CCR3, Length);
     }
         break;
 
     case TIM_CHANNEL_4: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC4]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t) pData, (uint32_t) & htim->Instance->CCR4, Length);
     }
         break;
