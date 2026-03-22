@@ -35,7 +35,7 @@ jobs:
           echo "key=${{ runner.os }}-sdks-v1-$(make platform-sdk-key-print | tr -s ' ' '-')" >> $GITHUB_OUTPUT
 
       - name: Cache platform SDKs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache-sdks
         with:
           path: ${{ steps.sdk-info.outputs.paths }}
@@ -46,7 +46,7 @@ jobs:
         run: make platform-sdks-hydrate
 
       - name: Cache build toolchain
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache-toolchain
         with:
           path: tools
@@ -90,7 +90,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Restore platform SDKs from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-sdks
         with:
           path: ${{ steps.sdk-info.outputs.paths }}
@@ -101,7 +101,7 @@ jobs:
         run: make platform-sdks-hydrate
 
       - name: Fetch toolchain from cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-toolchain
         with:
           path: tools
@@ -127,7 +127,7 @@ jobs:
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.target }}
           path: |
