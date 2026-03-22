@@ -8,7 +8,8 @@ ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
 endif
 
-ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print platform-% %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
+# Require config directory only when building a config target
+ifneq ($(CONFIG),)
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 $(error `$(CONFIG_DIR)` not found. Have you hydrated configuration using: 'make configs'?)
 endif
