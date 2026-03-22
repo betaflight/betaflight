@@ -1,4 +1,8 @@
 # STM32N6 vendor HAL (STM32CubeN6 submodule)
+# Register SDK for CI caching and hydration
+PLATFORM_SDK_PATHS += lib/main/STM32N6
+PLATFORM_SDK_HYDRATE_TARGETS += stm32n6_sdk
+
 STM32N6_LIB_PATH ?= $(ROOT_DIR)/lib/main/STM32N6
 
 # Stamp file: use the HAL driver submodule as proof the nested submodules are populated

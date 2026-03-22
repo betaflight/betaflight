@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
-      pico-sdk-key: ${{ steps.sdk-keys.outputs.pico-sdk }}
-      stm32n6-key: ${{ steps.sdk-keys.outputs.stm32n6 }}
+      sdk-cache-key: ${{ steps.sdk-info.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -27,41 +26,24 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Compute SDK cache keys
-        id: sdk-keys
+      - name: Get SDK cache info
+        id: sdk-info
         run: |
-          echo "pico-sdk=${{ runner.os }}-pico-sdk-$(git rev-parse HEAD:lib/main/pico-sdk)" >> $GITHUB_OUTPUT
-          echo "stm32n6=${{ runner.os }}-stm32n6-$(git rev-parse HEAD:lib/main/STM32N6)" >> $GITHUB_OUTPUT
+          echo "paths<<EOF" >> $GITHUB_OUTPUT
+          make platform-sdk-paths-print
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "key=${{ runner.os }}-sdks-v1-$(make platform-sdk-key-print | tr -s ' ' '-')" >> $GITHUB_OUTPUT
 
-      - name: Cache pico-sdk
+      - name: Cache platform SDKs
         uses: actions/cache@v4
-        id: cache-pico-sdk
+        id: cache-sdks
         with:
-          path: |
-            lib/main/pico-sdk
-            .git/modules/lib/main/pico-sdk
-          key: ${{ steps.sdk-keys.outputs.pico-sdk }}
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
 
-      - name: Hydrate pico-sdk
-        if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
-        run: git submodule update --init --checkout --recursive -- lib/main/pico-sdk
-
-      - name: Cache STM32CubeN6
-        uses: actions/cache@v4
-        id: cache-stm32n6
-        with:
-          path: |
-            lib/main/STM32N6
-            .git/modules/lib/main/STM32N6
-          key: ${{ steps.sdk-keys.outputs.stm32n6 }}
-
-      - name: Hydrate STM32CubeN6
-        if: steps.cache-stm32n6.outputs.cache-hit != 'true'
-        run: |
-          git submodule update --init --checkout -- lib/main/STM32N6
-          cd lib/main/STM32N6 && git submodule update --init --checkout -- \
-            Drivers/STM32N6xx_HAL_Driver \
-            Drivers/CMSIS/Device/ST/STM32N6xx
+      - name: Hydrate platform SDKs
+        if: steps.cache-sdks.outputs.cache-hit != 'true'
+        run: make platform-sdks-hydrate
 
       - name: Cache build toolchain
         uses: actions/cache@v4
@@ -74,9 +56,9 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
 
-      - name: Build pico tool and install
+      - name: Install platform tools
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make picotool_install
+        run: make platform-tools-install
 
       - name: Hydrate configuration
         id: get-config
@@ -100,39 +82,23 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Detect target platform
-        id: platform
+      - name: Get SDK cache paths
+        id: sdk-info
         run: |
-          if [ -d "src/platform/PICO/target/${{ matrix.target }}" ]; then
-            echo "sdk=pico" >> $GITHUB_OUTPUT
-          elif [ -d "src/platform/STM32/target/${{ matrix.target }}" ]; then
-            MCU_FAMILY=$(sed -n 's/^TARGET_MCU_FAMILY\s*:=\s*//p' "src/platform/STM32/target/${{ matrix.target }}/target.mk")
-            if [ "$MCU_FAMILY" = "STM32N6" ]; then
-              echo "sdk=stm32n6" >> $GITHUB_OUTPUT
-            else
-              echo "sdk=none" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "sdk=none" >> $GITHUB_OUTPUT
-          fi
+          echo "paths<<EOF" >> $GITHUB_OUTPUT
+          make platform-sdk-paths-print
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Restore pico-sdk from cache
-        if: steps.platform.outputs.sdk == 'pico'
+      - name: Restore platform SDKs from cache
         uses: actions/cache/restore@v4
+        id: cache-sdks
         with:
-          path: |
-            lib/main/pico-sdk
-            .git/modules/lib/main/pico-sdk
-          key: ${{ needs.setup.outputs.pico-sdk-key }}
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ needs.setup.outputs.sdk-cache-key }}
 
-      - name: Restore STM32CubeN6 from cache
-        if: steps.platform.outputs.sdk == 'stm32n6'
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            lib/main/STM32N6
-            .git/modules/lib/main/STM32N6
-          key: ${{ needs.setup.outputs.stm32n6-key }}
+      - name: Hydrate platform SDKs (fallback)
+        if: steps.cache-sdks.outputs.cache-hit != 'true'
+        run: make platform-sdks-hydrate
 
       - name: Fetch toolchain from cache
         uses: actions/cache/restore@v4
@@ -145,9 +111,8 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
 
-      - name: Install PICO toolchain
-        if: steps.platform.outputs.sdk == 'pico'
-        run: make picotool_install
+      - name: Install platform tools
+        run: make platform-tools-install
 
       - name: Hydrate configuration
         id: get-config

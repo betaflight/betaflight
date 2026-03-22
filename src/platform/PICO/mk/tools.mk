@@ -1,4 +1,9 @@
 # Raspberry Pi Pico tools
+# Register SDK for CI caching and hydration
+PLATFORM_SDK_PATHS += lib/main/pico-sdk
+PLATFORM_SDK_HYDRATE_TARGETS += pico_sdk
+PLATFORM_TOOLS_INSTALL_TARGETS += picotool_install
+
 PICOTOOL_REPO   := https://github.com/raspberrypi/picotool.git
 PICOTOOL_DL_DIR := $(DL_DIR)/picotool
 PICOTOOL_BUILD_DIR := $(PICOTOOL_DL_DIR)/build

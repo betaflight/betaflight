@@ -277,7 +277,7 @@ zip_clean:
 
 ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
   ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
-else ifeq (,$(filter %_sdk %_install test% clean% %-print checks help configs, $(MAKECMDGOALS)))
+else ifeq (,$(filter %_sdk %_install test% clean% %-print checks help configs platform-%, $(MAKECMDGOALS)))
   GCC_VERSION = $(shell arm-none-eabi-gcc -dumpversion)
   ifeq ($(GCC_VERSION),)
     $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
@@ -334,6 +334,28 @@ breakpad_clean:
 	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
 
-# Platform-specific tools
+# Platform-specific tools (each appends to PLATFORM_SDK_* and PLATFORM_TOOLS_* lists)
+PLATFORM_SDK_PATHS :=
+PLATFORM_SDK_HYDRATE_TARGETS :=
+PLATFORM_TOOLS_INSTALL_TARGETS :=
+
 include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
+
+## platform-sdk-paths-print : print SDK cache paths for CI
+.PHONY: platform-sdk-paths-print
+platform-sdk-paths-print:
+	@$(foreach p,$(PLATFORM_SDK_PATHS),echo "$(p)"; echo ".git/modules/$(p)";)
+
+## platform-sdk-key-print : print combined SDK cache key for CI
+.PHONY: platform-sdk-key-print
+platform-sdk-key-print:
+	@echo $(foreach p,$(PLATFORM_SDK_PATHS),$(shell git rev-parse HEAD:$(p) 2>/dev/null))
+
+## platform-sdks-hydrate : hydrate all platform SDK submodules
+.PHONY: platform-sdks-hydrate
+platform-sdks-hydrate: $(PLATFORM_SDK_HYDRATE_TARGETS)
+
+## platform-tools-install : install all platform-specific build tools
+.PHONY: platform-tools-install
+platform-tools-install: $(PLATFORM_TOOLS_INSTALL_TARGETS)
