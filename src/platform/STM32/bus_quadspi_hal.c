@@ -37,6 +37,12 @@
 
 #include "pg/bus_quadspi.h"
 #include "drivers/bus_quadspi_impl.h"
+
+#define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define QUADSPI_IO_AF_CLK_CFG             IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define QUADSPI_IO_AF_BK_CS_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define QUADSPI_IO_BK_CS_CFG              IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
+
 // Provide platform-specific hardware table for STM32
 const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
 #ifdef STM32H7
@@ -274,7 +280,6 @@ void quadSpiInitDevice(quadSpiDevice_e device)
     IOInit(IOGetByTag(quadSpi->bk2IO3), OWNER_QUADSPI_BK2IO3, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(quadSpi->bk2CS), OWNER_QUADSPI_BK2CS, RESOURCE_INDEX(device));
 
-#if defined(STM32H7) || defined(STM32G4)
     IOConfigGPIOAF(IOGetByTag(quadSpi->clk), QUADSPI_IO_AF_CLK_CFG, quadSpi->clkAF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO0), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO0AF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO1), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO1AF);
@@ -296,7 +301,6 @@ void quadSpiInitDevice(quadSpiDevice_e device)
     } else {
         IOConfigGPIO(IOGetByTag(quadSpi->bk2CS), QUADSPI_IO_BK_CS_CFG);
     }
-#endif
 
     quadSpi->hquadSpi.Instance = quadSpi->dev;
     // DeInit QUADSPI hardware

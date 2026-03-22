@@ -33,6 +33,7 @@ typedef struct octoSpiDevice_s {
     OCTOSPI_TypeDef *dev;
 } octoSpiDevice_t;
 
+extern const octoSpiHardware_t octoSpiHardware[];
 extern octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT];
 
 void octoSpiInitDevice(octoSpiDevice_e device);

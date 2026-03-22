@@ -40,15 +40,6 @@
 
 #ifdef USE_QUADSPI
 
-#if !(defined(STM32H7) || defined(STM32G4) || defined(PICO))
-#error Quad SPI unsupported on this MCU/platform
-#endif
-
-#define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define QUADSPI_IO_AF_CLK_CFG             IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
-#define QUADSPI_IO_AF_BK_CS_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#define QUADSPI_IO_BK_CS_CFG              IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
-
 typedef enum {
     QUADSPI_CLOCK_INITIALIZATION = 256,
     /* QSPI freq = CLK /(1 + ClockPrescaler) = 200 MHz/(1+x) */

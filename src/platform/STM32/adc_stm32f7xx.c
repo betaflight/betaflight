@@ -28,6 +28,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "platform/rcc.h"
