@@ -57,7 +57,11 @@ jobs:
 
       - name: Hydrate STM32CubeN6
         if: steps.cache-stm32n6.outputs.cache-hit != 'true'
-        run: git submodule update --init --checkout -- lib/main/STM32N6
+        run: |
+          git submodule update --init --checkout -- lib/main/STM32N6
+          cd lib/main/STM32N6 && git submodule update --init --checkout -- \
+            Drivers/STM32N6xx_HAL_Driver \
+            Drivers/CMSIS/Device/ST/STM32N6xx
 
       - name: Cache build toolchain
         uses: actions/cache@v4
