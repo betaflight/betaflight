@@ -417,7 +417,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     case TIM1_CC_IRQn:
 #if defined(STM32F7)
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
-#elif defined(STM32H7)
+#elif defined(STM32H7) || defined(STM32N6)
         timerNVICConfigure(TIM1_UP_IRQn);
 #elif defined(STM32G4)
         timerNVICConfigure(TIM1_UP_TIM16_IRQn);
@@ -426,7 +426,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 #endif
         break;
     case TIM8_CC_IRQn:
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32N6)
         timerNVICConfigure(TIM8_UP_IRQn);
 #else
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
@@ -882,7 +882,7 @@ static inline void timUpdateHandler(void *tim, timerConfig_t *timerConfig)
 
 #if USED_TIMERS & TIM_N(1)
 _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
-#  if defined(STM32H7)
+#  if defined(STM32H7) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM1_UP_IRQHandler, 1);
 #  elif defined(STM32G4)
 #    if USED_TIMERS & TIM_N(16)
@@ -1203,49 +1203,37 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     }
     switch (Channel) {
     case TIM_CHANNEL_1: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6) // N6 HAL made DMA callbacks static
         htim->hdma[TIM_DMA_ID_CC1]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t) pData, (uint32_t) & htim->Instance->CCR1, Length);
     }
         break;
 
     case TIM_CHANNEL_2: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC2]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC2]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC2], (uint32_t) pData, (uint32_t) & htim->Instance->CCR2, Length);
     }
         break;
 
     case TIM_CHANNEL_3: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC3]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC3]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC3], (uint32_t) pData, (uint32_t) & htim->Instance->CCR3, Length);
     }
         break;
 
     case TIM_CHANNEL_4: {
-        /* Set the DMA Period elapsed callback */
+#if !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
-
-        /* Set the DMA error callback */
         htim->hdma[TIM_DMA_ID_CC4]->XferErrorCallback = HAL_TIM_DMAError;
-
-        /* Enable the DMA Stream */
+#endif
         HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC4], (uint32_t) pData, (uint32_t) & htim->Instance->CCR4, Length);
     }
         break;

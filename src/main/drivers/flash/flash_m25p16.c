@@ -148,6 +148,9 @@ struct {
     // Zetta ZD25WQ32CEIGR
     // Datasheet: http://en.zettadevice.com/uploads/files/1009/WQ32C/1665301640977617c282766299.pdf
     { 0xBA6016, 104, 50, 64, 256 },
+    // GD25Q128
+    // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
+    { 0xC84018, 104, 80, 4096, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

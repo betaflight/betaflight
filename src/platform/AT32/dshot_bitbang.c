@@ -35,6 +35,7 @@
 #include "platform/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang.h"
 #include "dshot_bitbang_impl.h"

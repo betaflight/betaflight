@@ -22,7 +22,7 @@
 #pragma once
 
 #include "platform.h"
-#include "drivers/resource.h"
+#include "drivers/dma.h"
 
 #if defined(APM32F4)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
@@ -30,27 +30,23 @@
 
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 
-typedef enum {
-    DMA_NONE = 0,
-    DMA_FIRST_HANDLER = 1,
-    DMA1_ST0_HANDLER = DMA_FIRST_HANDLER,
-    DMA1_ST1_HANDLER,
-    DMA1_ST2_HANDLER,
-    DMA1_ST3_HANDLER,
-    DMA1_ST4_HANDLER,
-    DMA1_ST5_HANDLER,
-    DMA1_ST6_HANDLER,
-    DMA1_ST7_HANDLER,
-    DMA2_ST0_HANDLER,
-    DMA2_ST1_HANDLER,
-    DMA2_ST2_HANDLER,
-    DMA2_ST3_HANDLER,
-    DMA2_ST4_HANDLER,
-    DMA2_ST5_HANDLER,
-    DMA2_ST6_HANDLER,
-    DMA2_ST7_HANDLER,
-    DMA_LAST_HANDLER = DMA2_ST7_HANDLER
-} dmaIdentifier_e;
+#define DMA1_ST0_HANDLER    (DMA_FIRST_HANDLER + 0)
+#define DMA1_ST1_HANDLER    (DMA_FIRST_HANDLER + 1)
+#define DMA1_ST2_HANDLER    (DMA_FIRST_HANDLER + 2)
+#define DMA1_ST3_HANDLER    (DMA_FIRST_HANDLER + 3)
+#define DMA1_ST4_HANDLER    (DMA_FIRST_HANDLER + 4)
+#define DMA1_ST5_HANDLER    (DMA_FIRST_HANDLER + 5)
+#define DMA1_ST6_HANDLER    (DMA_FIRST_HANDLER + 6)
+#define DMA1_ST7_HANDLER    (DMA_FIRST_HANDLER + 7)
+#define DMA2_ST0_HANDLER    (DMA_FIRST_HANDLER + 8)
+#define DMA2_ST1_HANDLER    (DMA_FIRST_HANDLER + 9)
+#define DMA2_ST2_HANDLER    (DMA_FIRST_HANDLER + 10)
+#define DMA2_ST3_HANDLER    (DMA_FIRST_HANDLER + 11)
+#define DMA2_ST4_HANDLER    (DMA_FIRST_HANDLER + 12)
+#define DMA2_ST5_HANDLER    (DMA_FIRST_HANDLER + 13)
+#define DMA2_ST6_HANDLER    (DMA_FIRST_HANDLER + 14)
+#define DMA2_ST7_HANDLER    (DMA_FIRST_HANDLER + 15)
+#define DMA_LAST_HANDLER    DMA2_ST7_HANDLER
 
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
 #define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
@@ -76,8 +72,8 @@ typedef enum {
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) d->dma->HIFCLR = (flag << (d->flagsShift - 32)); else d->dma->LIFCLR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HINTSTS & (flag << (d->flagsShift - 32)): d->dma->LINTSTS & (flag << d->flagsShift))
+#define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) ((DMA_TypeDef*)(d)->dma)->HIFCLR = (flag << (d->flagsShift - 32)); else ((DMA_TypeDef*)(d)->dma)->LIFCLR = (flag << d->flagsShift)
+#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HINTSTS & (flag << (d->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LINTSTS & (flag << d->flagsShift))
 
 #define xDDL_EX_DMA_DeInit(dmaResource) DDL_EX_DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
 #define xDDL_EX_DMA_Init(dmaResource, initstruct) DDL_EX_DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initstruct)
@@ -92,8 +88,6 @@ typedef enum {
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
-
-void dmaMuxEnable(dmaIdentifier_e identifier, uint32_t dmaMuxId);
 
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->SCFG & DMA_SCFGx_EN)
 #define REG_NDTR NDATA

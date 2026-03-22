@@ -42,6 +42,7 @@
 #include "drivers/nvic.h"
 #include "drivers/inverter.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "platform/rcc.h"
 
 #include "drivers/serial.h"
@@ -92,7 +93,7 @@ void uartReconfigure(uartPort_t *uartPort)
     uartPort->Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     uartPort->Handle.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     uartPort->Handle.Init.Mode = 0;
-#if defined(STM32G4) || defined(STM32H7)
+#if defined(STM32G4) || defined(STM32H7) || defined(STM32N6)
     if (uartPort->Handle.Instance == LPUART1) {
         uartPort->Handle.Init.ClockPrescaler = UART_PRESCALER_DIV8;
     }
@@ -126,11 +127,22 @@ void uartReconfigure(uartPort_t *uartPort)
         if (uartPort->rxDMAResource)
         {
             uartPort->rxDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->rxDMAResource;
-#if !(defined(STM32H7) || defined(STM32G4))
+#if defined(STM32N6)
+            // TODO: STM32N6 GPDMA init for UART RX
+            uartPort->rxDMAHandle.Init.Request = uartPort->rxDMAChannel;
+            uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
+            uartPort->rxDMAHandle.Init.SrcInc = DMA_SINC_FIXED;
+            uartPort->rxDMAHandle.Init.DestInc = DMA_DINC_INCREMENTED;
+            uartPort->rxDMAHandle.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+            uartPort->rxDMAHandle.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+            uartPort->rxDMAHandle.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+            uartPort->rxDMAHandle.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#elif !(defined(STM32H7) || defined(STM32G4))
             uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
 #else
             uartPort->txDMAHandle.Init.Request = uartPort->rxDMAChannel;
 #endif
+#if !defined(STM32N6)
             uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
             uartPort->rxDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
             uartPort->rxDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
@@ -144,6 +156,7 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->rxDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
 #endif
             uartPort->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
+#endif
 
             HAL_DMA_DeInit(&uartPort->rxDMAHandle);
             HAL_DMA_Init(&uartPort->rxDMAHandle);
@@ -175,11 +188,22 @@ void uartReconfigure(uartPort_t *uartPort)
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
             uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
-#if !(defined(STM32H7) || defined(STM32G4))
+#if defined(STM32N6)
+            // TODO: STM32N6 GPDMA init for UART TX
+            uartPort->txDMAHandle.Init.Request = uartPort->txDMAChannel;
+            uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
+            uartPort->txDMAHandle.Init.SrcInc = DMA_SINC_INCREMENTED;
+            uartPort->txDMAHandle.Init.DestInc = DMA_DINC_FIXED;
+            uartPort->txDMAHandle.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
+            uartPort->txDMAHandle.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
+            uartPort->txDMAHandle.Init.Priority = DMA_LOW_PRIORITY_LOW_WEIGHT;
+            uartPort->txDMAHandle.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#elif !(defined(STM32H7) || defined(STM32G4))
             uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
 #else
             uartPort->txDMAHandle.Init.Request = uartPort->txDMAChannel;
 #endif
+#if !defined(STM32N6)
             uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
             uartPort->txDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
             uartPort->txDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
@@ -194,6 +218,7 @@ void uartReconfigure(uartPort_t *uartPort)
             uartPort->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
 #endif
             uartPort->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
+#endif
 
             HAL_DMA_DeInit(&uartPort->txDMAHandle);
             HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);

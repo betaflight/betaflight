@@ -57,6 +57,7 @@
 #include "platform/rcc.h"
 #include "drivers/resource.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 
 #include "drivers/sensor.h"
 

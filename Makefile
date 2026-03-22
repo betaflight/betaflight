@@ -505,9 +505,10 @@ $(TARGET_EXE): $(TARGET_ELF)
 # Compile
 
 ## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
+## SRC_CFLAGS_<filename> can override CFLAGS per source file (e.g. to suppress vendor warnings)
 define compile_file
 	echo "%% ($(1)) $<" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(SRC_CFLAGS_$(notdir $<)) $(2) $<
 endef
 
 ## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources

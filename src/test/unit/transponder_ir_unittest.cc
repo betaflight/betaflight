@@ -42,7 +42,7 @@ TEST(transponderTest, updateTransponderDMABufferArcitimer)
     //input
     uint8_t data[9] = {0x1F, 0xFC, 0x8F, 0x3, 0xF0, 0x1, 0xF8, 0x1F, 0x0};
     //excepted
-    uint8_t excepted[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER] = {
+    uint32_t excepted[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER] = {
         78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,78,78,78,78,
         78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,78,0,0,
         0,0,0,0,0,0,0,0,0,0,78,78,78,78,78,78,78,78,78,78,78,78,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -61,7 +61,7 @@ TEST(transponderTest, updateTransponderDMABufferArcitimer)
     transponder_t transponder;
     transponder.dma_buffer_size = TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER;
     transponder.bitToggleOne = 78;
-    memset(&(transponder.transponderIrDMABuffer.arcitimer), 0, TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER);
+    memset(&(transponder.transponderIrDMABuffer.arcitimer), 0, sizeof(transponder.transponderIrDMABuffer.arcitimer));
 
     updateTransponderDMABufferArcitimer(&transponder, transponderData);
     uint16_t i;
@@ -74,7 +74,7 @@ TEST(transponderTest, updateTransponderDMABufferIlap)
 {
     uint8_t data[9] = {0x1F, 0xFC, 0x8F, 0x3, 0xF0, 0x1, 0x0, 0x0, 0x0};
 
-    uint8_t excepted[TRANSPONDER_DMA_BUFFER_SIZE_ILAP] = {
+    uint32_t excepted[TRANSPONDER_DMA_BUFFER_SIZE_ILAP] = {
            78,78,78,78,78,78,78,78,78,78,78,0,78,78,78,78,78,78,78,78,78,78,78,0,78,78,78,78,78,78,78,78,78,78,78,0,78,
            78,78,78,78,78,78,78,78,78,78,0,78,78,78,78,78,78,78,78,78,78,78,0,78,78,78,78,78,78,78,78,78,78,78,0,0,0,0,
            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,78,78,78,78,78,78,

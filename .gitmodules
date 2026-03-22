@@ -8,3 +8,8 @@
 	url = https://github.com/raspberrypi/pico-sdk.git
 	branch = master
 	ignore = dirty
+[submodule "lib/main/STM32N6"]
+	path = lib/main/STM32N6
+	url = https://github.com/STMicroelectronics/STM32CubeN6
+	branch = main
+	ignore = dirty

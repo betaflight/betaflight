@@ -123,6 +123,9 @@
 #define USE_LATE_TASK_STATISTICS
 
 #define USE_OVERCLOCK
+#define ENABLE_OVERCLOCK_192_MHZ 1
+#define ENABLE_OVERCLOCK_216_MHZ 1
+#define ENABLE_OVERCLOCK_240_MHZ 1
 
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
@@ -232,3 +235,9 @@
 #define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
 #define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
 #endif // USE_FAST_DATA
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PRIORITYGROUP_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING))))

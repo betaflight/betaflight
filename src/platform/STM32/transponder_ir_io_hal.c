@@ -28,6 +28,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
@@ -47,11 +48,13 @@ static uint16_t timerChannel = 0;
 static uint8_t output;
 static uint8_t alternateFunction;
 
-#if !(defined(STM32F7) || defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6))
 #error "Transponder (via HAL) not supported on this MCU."
 #endif
 
 #if defined(STM32H7)
+DMA_RAM transponder_t transponder;
+#elif defined(STM32N6)
 DMA_RAM transponder_t transponder;
 #elif defined(STM32G4)
 DMA_RAM_W transponder_t transponder;
@@ -127,15 +130,32 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
+#if defined(STM32N6)
+    __HAL_RCC_GPDMA1_CLK_ENABLE();
+    __HAL_RCC_HPDMA1_CLK_ENABLE();
+#else
     __DMA1_CLK_ENABLE();
     __DMA2_CLK_ENABLE();
+#endif
 
     /* Set the parameters to be configured */
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32N6)
+    // N6 uses HPDMA/GPDMA with a different HAL DMA init structure
     hdma_tim.Init.Request = dmaChannel;
-#else
-    hdma_tim.Init.Channel = dmaChannel;
-#endif
+    hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim.Init.SrcInc = DMA_SINC_INCREMENTED;
+    hdma_tim.Init.DestInc = DMA_DINC_FIXED;
+    hdma_tim.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD;
+    hdma_tim.Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD;
+    hdma_tim.Init.Priority = DMA_HIGH_PRIORITY;
+    hdma_tim.Init.Mode = DMA_NORMAL;
+    hdma_tim.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+    hdma_tim.Init.SrcBurstLength = 1;
+    hdma_tim.Init.DestBurstLength = 1;
+    hdma_tim.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    hdma_tim.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#elif defined(STM32H7) || defined(STM32G4)
+    hdma_tim.Init.Request = dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
@@ -144,6 +164,20 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     hdma_tim.Init.Mode = DMA_NORMAL;
     hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
 #if !defined(STM32G4)
+    hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
+    hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
+#endif
+#else
+    hdma_tim.Init.Channel = dmaChannel;
+    hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_tim.Init.Mode = DMA_NORMAL;
+    hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
@@ -227,7 +261,7 @@ bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider
     return true;
 }
 
-bool isTransponderIrReady(void)
+bool transponderIrIsReady(void)
 {
     return !transponderIrDataTransferInProgress;
 }
