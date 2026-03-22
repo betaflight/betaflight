@@ -119,7 +119,12 @@ jobs:
       - name: Detect target SDK
         id: sdk
         run: |
-          SDK_NAME=$(make TARGET=${{ matrix.target }} target-sdk-print)
+          # Find which platform directory contains this target
+          TARGET_MK=$(find src/platform -path "*/target/${{ matrix.target }}/target.mk" 2>/dev/null | head -1)
+          SDK_NAME=""
+          if [ -n "$TARGET_MK" ]; then
+            SDK_NAME=$(make TARGET=${{ matrix.target }} target-sdk-print 2>/dev/null || echo "")
+          fi
           echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
           if [ -n "$SDK_NAME" ]; then
             echo "paths<<EOF" >> $GITHUB_OUTPUT
