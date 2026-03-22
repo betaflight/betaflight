@@ -8,14 +8,12 @@ ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
 endif
 
-# Require config directory only when building a config target
+# Config handling — only active when CONFIG= is set explicitly
 ifneq ($(CONFIG),)
+
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 $(error `$(CONFIG_DIR)` not found. Have you hydrated configuration using: 'make configs'?)
 endif
-endif
-
-ifneq ($(CONFIG),)
 
 ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
@@ -91,3 +89,4 @@ $(BASE_CONFIGS):
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
 	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes
+
