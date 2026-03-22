@@ -19,6 +19,7 @@ jobs:
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
       pico-sdk-key: ${{ steps.sdk-keys.outputs.pico-sdk }}
+      stm32n6-key: ${{ steps.sdk-keys.outputs.stm32n6 }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -30,6 +31,7 @@ jobs:
         id: sdk-keys
         run: |
           echo "pico-sdk=${{ runner.os }}-pico-sdk-$(git rev-parse HEAD:lib/main/pico-sdk)" >> $GITHUB_OUTPUT
+          echo "stm32n6=${{ runner.os }}-stm32n6-$(git rev-parse HEAD:lib/main/STM32N6)" >> $GITHUB_OUTPUT
 
       - name: Cache pico-sdk
         uses: actions/cache@v4
@@ -43,6 +45,19 @@ jobs:
       - name: Hydrate pico-sdk
         if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
         run: git submodule update --init --checkout --recursive -- lib/main/pico-sdk
+
+      - name: Cache STM32CubeN6
+        uses: actions/cache@v4
+        id: cache-stm32n6
+        with:
+          path: |
+            lib/main/STM32N6
+            .git/modules/lib/main/STM32N6
+          key: ${{ steps.sdk-keys.outputs.stm32n6 }}
+
+      - name: Hydrate STM32CubeN6
+        if: steps.cache-stm32n6.outputs.cache-hit != 'true'
+        run: git submodule update --init --checkout -- lib/main/STM32N6
 
       - name: Cache build toolchain
         uses: actions/cache@v4
@@ -86,6 +101,13 @@ jobs:
         run: |
           if [ -d "src/platform/PICO/target/${{ matrix.target }}" ]; then
             echo "sdk=pico" >> $GITHUB_OUTPUT
+          elif [ -d "src/platform/STM32/target/${{ matrix.target }}" ]; then
+            MCU_FAMILY=$(sed -n 's/^TARGET_MCU_FAMILY\s*:=\s*//p' "src/platform/STM32/target/${{ matrix.target }}/target.mk")
+            if [ "$MCU_FAMILY" = "STM32N6" ]; then
+              echo "sdk=stm32n6" >> $GITHUB_OUTPUT
+            else
+              echo "sdk=none" >> $GITHUB_OUTPUT
+            fi
           else
             echo "sdk=none" >> $GITHUB_OUTPUT
           fi
@@ -98,6 +120,15 @@ jobs:
             lib/main/pico-sdk
             .git/modules/lib/main/pico-sdk
           key: ${{ needs.setup.outputs.pico-sdk-key }}
+
+      - name: Restore STM32CubeN6 from cache
+        if: steps.platform.outputs.sdk == 'stm32n6'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            lib/main/STM32N6
+            .git/modules/lib/main/STM32N6
+          key: ${{ needs.setup.outputs.stm32n6-key }}
 
       - name: Fetch toolchain from cache
         uses: actions/cache/restore@v4

@@ -335,4 +335,5 @@ breakpad_clean:
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
 
 # Platform-specific tools
+include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
