@@ -31,17 +31,6 @@ jobs:
         id: tools-key
         run: echo "key=${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}" >> $GITHUB_OUTPUT
 
-      - name: Cache ARM toolchain
-        uses: actions/cache@v5
-        id: cache-toolchain
-        with:
-          path: tools
-          key: ${{ steps.tools-key.outputs.key }}
-
-      - name: Install ARM toolchain
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make arm_sdk_install
-
       - name: Get platform SDK list
         id: get-sdks
         run: echo "sdks=$(make platform-sdk-list-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
@@ -65,7 +54,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Cache tools for this SDK
+        uses: actions/cache@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ matrix.sdk }}
+
+      - name: Restore base tools
+        if: steps.cache-tools.outputs.cache-hit != 'true' && matrix.sdk != 'arm'
+        uses: actions/cache/restore@v5
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-arm
+
       - name: Get SDK cache info
+        if: matrix.sdk != 'arm'
         id: sdk-info
         run: |
           echo "paths<<EOF" >> $GITHUB_OUTPUT
@@ -74,6 +78,7 @@ jobs:
           echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
 
       - name: Cache platform SDK
+        if: matrix.sdk != 'arm'
         uses: actions/cache@v5
         id: cache-sdk
         with:
@@ -81,24 +86,10 @@ jobs:
           key: ${{ steps.sdk-info.outputs.key }}
 
       - name: Hydrate SDK
-        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        if: matrix.sdk != 'arm' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ matrix.sdk }} platform-sdk-hydrate
 
-      - name: Cache platform tools
-        uses: actions/cache@v5
-        id: cache-tools
-        with:
-          path: tools
-          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ matrix.sdk }}
-
-      - name: Restore ARM toolchain
-        if: steps.cache-tools.outputs.cache-hit != 'true'
-        uses: actions/cache/restore@v5
-        with:
-          path: tools
-          key: ${{ needs.setup.outputs.tools-cache-key }}
-
-      - name: Install platform tools
+      - name: Install tools
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: make SDK=${{ matrix.sdk }} platform-tools-install
 
@@ -121,18 +112,15 @@ jobs:
         run: |
           SDK_NAME=$(make BUILD=${{ matrix.target }} build-sdk-print)
           echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
-          if [ -n "$SDK_NAME" ]; then
+          if [ "$SDK_NAME" != "arm" ]; then
             echo "paths<<EOF" >> $GITHUB_OUTPUT
             make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "key=${{ runner.os }}-sdk-${SDK_NAME}-$(make SDK=$SDK_NAME platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
-            echo "tools-key=${{ needs.setup.outputs.tools-cache-key }}-${SDK_NAME}" >> $GITHUB_OUTPUT
-          else
-            echo "tools-key=${{ needs.setup.outputs.tools-cache-key }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Restore platform SDK from cache
-        if: steps.sdk.outputs.name != ''
+        if: steps.sdk.outputs.name != 'arm'
         uses: actions/cache/restore@v5
         id: cache-sdk
         with:
@@ -140,7 +128,7 @@ jobs:
           key: ${{ steps.sdk.outputs.key }}
 
       - name: Hydrate platform SDK (fallback)
-        if: steps.sdk.outputs.name != '' && steps.cache-sdk.outputs.cache-hit != 'true'
+        if: steps.sdk.outputs.name != 'arm' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ steps.sdk.outputs.name }} platform-sdk-hydrate
 
       - name: Restore toolchain from cache
@@ -148,16 +136,10 @@ jobs:
         id: cache-tools
         with:
           path: tools
-          key: ${{ steps.sdk.outputs.tools-key }}
-          restore-keys: ${{ needs.setup.outputs.tools-cache-key }}
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ steps.sdk.outputs.name }}
 
-      - name: Install ARM toolchain
+      - name: Install tools (fallback)
         if: steps.cache-tools.outputs.cache-hit != 'true'
-        run: make arm_sdk_install
-
-      - name: Install platform tools
-        if: steps.sdk.outputs.name != '' && steps.cache-tools.outputs.cache-hit != 'true'
-        # Idempotent — each tool install skips when the binary already exists
         run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
 
       - name: Hydrate configuration

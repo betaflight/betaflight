@@ -3,7 +3,7 @@
 PLATFORM_SDKS += pico_sdk
 PLATFORM_SDK_pico_sdk_SUBMODULE := lib/main/pico-sdk
 PLATFORM_SDK_pico_sdk_HYDRATE := pico_sdk
-PLATFORM_SDK_pico_sdk_TOOLS := picotool_install
+PLATFORM_SDK_pico_sdk_TOOLS := arm_sdk_install picotool_install
 
 PICOTOOL_REPO   := https://github.com/raspberrypi/picotool.git
 PICOTOOL_DL_DIR := $(DL_DIR)/picotool

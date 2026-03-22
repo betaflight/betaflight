@@ -3,6 +3,7 @@
 PLATFORM_SDKS += stm32n6
 PLATFORM_SDK_stm32n6_SUBMODULE := lib/main/STM32N6
 PLATFORM_SDK_stm32n6_HYDRATE := stm32n6_sdk
+PLATFORM_SDK_stm32n6_TOOLS := arm_sdk_install
 
 STM32N6_LIB_PATH ?= $(ROOT_DIR)/lib/main/STM32N6
 

@@ -338,32 +338,46 @@ breakpad_clean:
 # Each platform tools.mk appends to PLATFORM_SDKS and defines per-SDK properties:
 #   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/main/pico-sdk)
 #   PLATFORM_SDK_<name>_HYDRATE   - make target to hydrate the SDK
-#   PLATFORM_SDK_<name>_TOOLS     - make target to install platform tools (optional)
+#   PLATFORM_SDK_<name>_TOOLS     - make targets to install required toolchains and tools
+#
+# 'arm' is the base SDK for targets that don't need a platform-specific SDK.
+# Platform SDKs that need the ARM toolchain include arm_sdk_install in their _TOOLS list.
 PLATFORM_SDKS :=
+PLATFORM_SDK_arm_TOOLS := arm_sdk_install
 
 include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
 
-## platform-sdk-list-print : list registered SDK names (space-separated)
+## platform-sdk-list-print : list registered SDK names (space-separated), always includes 'arm'
 .PHONY: platform-sdk-list-print
 platform-sdk-list-print:
-	@echo $(PLATFORM_SDKS)
+	@echo arm $(PLATFORM_SDKS)
 
 ## platform-sdk-cache-paths-print : print cache paths for SDK specified by SDK= variable
 .PHONY: platform-sdk-cache-paths-print
 platform-sdk-cache-paths-print:
+ifeq ($(SDK),arm)
+	@echo "tools"
+else
 	@echo "$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
 	@echo ".git/modules/$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
+endif
 
 ## platform-sdk-cache-key-print : print cache key for SDK specified by SDK= variable
 .PHONY: platform-sdk-cache-key-print
 platform-sdk-cache-key-print:
+ifeq ($(SDK),arm)
+	@echo "base"
+else
 	@echo $(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
+endif
 
 ## platform-sdk-hydrate : hydrate SDK specified by SDK= variable, or all SDKs if SDK is unset
 .PHONY: platform-sdk-hydrate
 platform-sdk-hydrate:
-ifdef SDK
+ifeq ($(SDK),arm)
+	@true
+else ifdef SDK
 	$(V1) $(MAKE) $(PLATFORM_SDK_$(SDK)_HYDRATE)
 else
 	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_HYDRATE))
@@ -373,15 +387,15 @@ endif
 .PHONY: platform-tools-install
 platform-tools-install:
 ifdef SDK
-	$(V1) $(if $(PLATFORM_SDK_$(SDK)_TOOLS),$(MAKE) $(PLATFORM_SDK_$(SDK)_TOOLS),@true)
+	$(V1) $(MAKE) $(PLATFORM_SDK_$(SDK)_TOOLS)
 else
-	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_TOOLS))
+	$(V1) $(MAKE) $(sort $(PLATFORM_SDK_arm_TOOLS) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_TOOLS)))
 endif
 
-## target-sdk-print : print the SDK name for the current TARGET or CONFIG (empty if none)
+## target-sdk-print : print the SDK name for the current TARGET or CONFIG ('arm' if no platform SDK)
 .PHONY: target-sdk-print
 target-sdk-print:
-	@echo $(PLATFORM_SDK)
+	@echo $(or $(PLATFORM_SDK),arm)
 
 ## build-sdk-print : print the SDK name for BUILD= (auto-detects TARGET vs CONFIG)
 .PHONY: build-sdk-print
