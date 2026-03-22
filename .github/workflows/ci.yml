@@ -30,7 +30,7 @@ jobs:
         id: sdk-info
         run: |
           echo "paths<<EOF" >> $GITHUB_OUTPUT
-          make platform-sdk-paths-print
+          make platform-sdk-paths-print >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo "key=${{ runner.os }}-sdks-v1-$(make platform-sdk-key-print | tr -s ' ' '-')" >> $GITHUB_OUTPUT
 
