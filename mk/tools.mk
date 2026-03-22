@@ -278,15 +278,11 @@ zip_clean:
 ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
   ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
 else ifeq (,$(filter %_sdk %_install test% clean% %-print checks help configs platform-%, $(MAKECMDGOALS)))
-  GCC_VERSION = $(shell arm-none-eabi-gcc -dumpversion)
-  ifeq ($(GCC_VERSION),)
-    $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
-  else ifneq ($(GCC_VERSION), $(GCC_REQUIRED_VERSION))
-    $(error **ERROR** your arm-none-eabi-gcc is '$(GCC_VERSION)', but '$(GCC_REQUIRED_VERSION)' is expected. Override with 'GCC_REQUIRED_VERSION' in mk/local.mk or run 'make arm_sdk_install' to install the right version automatically in the tools folder of this repo)
+  # Try to find ARM toolchain in PATH (validated later after platform is known)
+  GCC_VERSION = $(shell arm-none-eabi-gcc -dumpversion 2>/dev/null)
+  ifneq ($(GCC_VERSION),)
+    ARM_SDK_PREFIX ?= arm-none-eabi-
   endif
-
-  # ARM toolchain is in the path, and the version is what's required.
-  ARM_SDK_PREFIX ?= arm-none-eabi-
 endif
 
 ifeq ($(shell [ -d "$(ZIP_DIR)" ] && echo "exists"), exists)
@@ -344,7 +340,10 @@ breakpad_clean:
 # 'arm' is for ARM-based targets without a platform-specific SDK submodule.
 # Platform SDKs declare their toolchain in _TOOLS (e.g. arm_sdk_install, esp_tools_install).
 PLATFORM_SDKS :=
-PLATFORM_SDK_arm_TOOLS := arm_sdk_install
+PLATFORM_SDK_arm_TOOLS      := arm_sdk_install
+PLATFORM_SDK_arm_CC         := $(if $(ARM_SDK_PREFIX),$(ARM_SDK_PREFIX)gcc,arm-none-eabi-gcc)
+PLATFORM_SDK_arm_CC_VERSION := $(GCC_REQUIRED_VERSION)
+PLATFORM_SDK_arm_CC_INSTALL := arm_sdk_install
 
 include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
