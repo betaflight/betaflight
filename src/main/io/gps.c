@@ -1382,7 +1382,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
-    static uint8_t wait = 0;
+    uint32_t rxBytesWaiting = 0;
     static bool isFast = false;
     int rxBytesWaiting = 0;
     gpsData.now = millis();
