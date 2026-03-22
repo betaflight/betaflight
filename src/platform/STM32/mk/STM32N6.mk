@@ -3,6 +3,7 @@
 #
 
 # Auto-hydrate STM32CubeN6 submodule when building N6 targets
+PLATFORM_SDK := stm32n6
 PLATFORM_SDK_STAMP := $(STM32N6_SDK_STAMP)
 
 ifeq ($(DEBUG_HARDFAULTS),N6)

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
-      sdk-cache-key: ${{ steps.sdk-info.outputs.key }}
+      sdks: ${{ steps.get-sdks.outputs.sdks }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -26,24 +26,9 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Get SDK cache info
-        id: sdk-info
-        run: |
-          echo "paths<<EOF" >> $GITHUB_OUTPUT
-          make platform-sdk-paths-print >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "key=${{ runner.os }}-sdks-v1-$(make platform-sdk-key-print | tr -s ' ' '-')" >> $GITHUB_OUTPUT
-
-      - name: Cache platform SDKs
-        uses: actions/cache@v5
-        id: cache-sdks
-        with:
-          path: ${{ steps.sdk-info.outputs.paths }}
-          key: ${{ steps.sdk-info.outputs.key }}
-
-      - name: Hydrate platform SDKs
-        if: steps.cache-sdks.outputs.cache-hit != 'true'
-        run: make platform-sdks-hydrate
+      - name: Get platform SDK list
+        id: get-sdks
+        run: echo "sdks=$(make platform-sdk-list-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
 
       - name: Cache build toolchain
         uses: actions/cache@v5
@@ -56,7 +41,11 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make arm_sdk_install
 
-      - name: Install platform tools
+      - name: Hydrate all platform SDKs
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: make platform-sdk-hydrate
+
+      - name: Install all platform tools
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: make platform-tools-install
 
@@ -68,9 +57,39 @@ jobs:
         id: get-targets
         run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
 
+  cache-sdks:
+    name: Cache SDK (${{ matrix.sdk }})
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk: ${{ fromJson(needs.setup.outputs.sdks) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Get SDK cache info
+        id: sdk-info
+        run: |
+          echo "paths<<EOF" >> $GITHUB_OUTPUT
+          make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+
+      - name: Cache platform SDK
+        uses: actions/cache@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
+
+      - name: Hydrate SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ matrix.sdk }} platform-sdk-hydrate
+
   build:
     name: Build
-    needs: setup
+    needs: [setup, cache-sdks]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -82,23 +101,29 @@ jobs:
       - name: Init config submodule
         run: git submodule update --init -- src/config
 
-      - name: Get SDK cache paths
-        id: sdk-info
+      - name: Detect target SDK
+        id: sdk
         run: |
-          echo "paths<<EOF" >> $GITHUB_OUTPUT
-          make platform-sdk-paths-print >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          SDK_NAME=$(make TARGET=${{ matrix.target }} target-sdk-print)
+          echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
+          if [ -n "$SDK_NAME" ]; then
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${SDK_NAME}-$(make SDK=$SDK_NAME platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Restore platform SDKs from cache
+      - name: Restore platform SDK from cache
+        if: steps.sdk.outputs.name != ''
         uses: actions/cache/restore@v5
-        id: cache-sdks
+        id: cache-sdk
         with:
-          path: ${{ steps.sdk-info.outputs.paths }}
-          key: ${{ needs.setup.outputs.sdk-cache-key }}
+          path: ${{ steps.sdk.outputs.paths }}
+          key: ${{ steps.sdk.outputs.key }}
 
-      - name: Hydrate platform SDKs (fallback)
-        if: steps.cache-sdks.outputs.cache-hit != 'true'
-        run: make platform-sdks-hydrate
+      - name: Hydrate platform SDK (fallback)
+        if: steps.sdk.outputs.name != '' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-sdk-hydrate
 
       - name: Fetch toolchain from cache
         uses: actions/cache/restore@v5
@@ -112,9 +137,9 @@ jobs:
         run: make arm_sdk_install
 
       - name: Install platform tools
-        # Runs unconditionally; each tool install (e.g. picotool_install) is
-        # idempotent and skips when the binary already exists in the tools cache.
-        run: make platform-tools-install
+        if: steps.sdk.outputs.name != ''
+        # Idempotent — picotool_install skips when the binary already exists
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
 
       - name: Hydrate configuration
         id: get-config

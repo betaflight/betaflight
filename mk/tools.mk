@@ -334,28 +334,51 @@ breakpad_clean:
 	@echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
 
-# Platform-specific tools (each appends to PLATFORM_SDK_* and PLATFORM_TOOLS_* lists)
-PLATFORM_SDK_PATHS :=
-PLATFORM_SDK_HYDRATE_TARGETS :=
-PLATFORM_TOOLS_INSTALL_TARGETS :=
+# Platform-specific tools
+# Each platform tools.mk appends to PLATFORM_SDKS and defines per-SDK properties:
+#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/main/pico-sdk)
+#   PLATFORM_SDK_<name>_HYDRATE   - make target to hydrate the SDK
+#   PLATFORM_SDK_<name>_TOOLS     - make target to install platform tools (optional)
+PLATFORM_SDKS :=
 
 include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
 
-## platform-sdk-paths-print : print SDK cache paths for CI
-.PHONY: platform-sdk-paths-print
-platform-sdk-paths-print:
-	@$(foreach p,$(PLATFORM_SDK_PATHS),echo "$(p)"; echo ".git/modules/$(p)";)
+## platform-sdk-list-print : list registered SDK names (space-separated)
+.PHONY: platform-sdk-list-print
+platform-sdk-list-print:
+	@echo $(PLATFORM_SDKS)
 
-## platform-sdk-key-print : print combined SDK cache key for CI
-.PHONY: platform-sdk-key-print
-platform-sdk-key-print:
-	@echo $(foreach p,$(PLATFORM_SDK_PATHS),$(shell git rev-parse HEAD:$(p) 2>/dev/null))
+## platform-sdk-cache-paths-print : print cache paths for SDK specified by SDK= variable
+.PHONY: platform-sdk-cache-paths-print
+platform-sdk-cache-paths-print:
+	@echo "$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
+	@echo ".git/modules/$(PLATFORM_SDK_$(SDK)_SUBMODULE)"
 
-## platform-sdks-hydrate : hydrate all platform SDK submodules
-.PHONY: platform-sdks-hydrate
-platform-sdks-hydrate: $(PLATFORM_SDK_HYDRATE_TARGETS)
+## platform-sdk-cache-key-print : print cache key for SDK specified by SDK= variable
+.PHONY: platform-sdk-cache-key-print
+platform-sdk-cache-key-print:
+	@echo $(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
 
-## platform-tools-install : install all platform-specific build tools
+## platform-sdk-hydrate : hydrate SDK specified by SDK= variable, or all SDKs if SDK is unset
+.PHONY: platform-sdk-hydrate
+platform-sdk-hydrate:
+ifdef SDK
+	$(V1) $(MAKE) $(PLATFORM_SDK_$(SDK)_HYDRATE)
+else
+	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_HYDRATE))
+endif
+
+## platform-tools-install : install tools for SDK specified by SDK= variable, or all if unset
 .PHONY: platform-tools-install
-platform-tools-install: $(PLATFORM_TOOLS_INSTALL_TARGETS)
+platform-tools-install:
+ifdef SDK
+	$(V1) $(if $(PLATFORM_SDK_$(SDK)_TOOLS),$(MAKE) $(PLATFORM_SDK_$(SDK)_TOOLS),@true)
+else
+	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_TOOLS))
+endif
+
+## target-sdk-print : print the SDK name for the current TARGET (empty if none)
+.PHONY: target-sdk-print
+target-sdk-print:
+	@echo $(PLATFORM_SDK)
