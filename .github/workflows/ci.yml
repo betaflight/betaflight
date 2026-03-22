@@ -112,6 +112,8 @@ jobs:
         run: make arm_sdk_install
 
       - name: Install platform tools
+        # Runs unconditionally; each tool install (e.g. picotool_install) is
+        # idempotent and skips when the binary already exists in the tools cache.
         run: make platform-tools-install
 
       - name: Hydrate configuration

@@ -19,6 +19,8 @@ ifneq ($(filter uf2,$(MAKECMDGOALS)),)
     ifeq (,$(wildcard $(PICOTOOL)))
         ifneq (,$(shell which picotool 2>/dev/null))
             PICOTOOL := picotool
+        else
+            $(error picotool not found. Run 'make picotool_install' to install it in the tools folder)
         endif
     endif
 endif
