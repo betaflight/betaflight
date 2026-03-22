@@ -126,6 +126,9 @@ jobs:
             make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
             echo "key=${{ runner.os }}-sdk-${SDK_NAME}-$(make SDK=$SDK_NAME platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+            echo "tools-key=${{ needs.setup.outputs.tools-cache-key }}-${SDK_NAME}" >> $GITHUB_OUTPUT
+          else
+            echo "tools-key=${{ needs.setup.outputs.tools-cache-key }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Restore platform SDK from cache
@@ -142,16 +145,18 @@ jobs:
 
       - name: Restore toolchain from cache
         uses: actions/cache/restore@v5
+        id: cache-tools
         with:
           path: tools
-          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ steps.sdk.outputs.name }}
+          key: ${{ steps.sdk.outputs.tools-key }}
           restore-keys: ${{ needs.setup.outputs.tools-cache-key }}
 
-      - name: Install ARM toolchain (fallback)
+      - name: Install ARM toolchain
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         run: make arm_sdk_install
 
       - name: Install platform tools
-        if: steps.sdk.outputs.name != ''
+        if: steps.sdk.outputs.name != '' && steps.cache-tools.outputs.cache-hit != 'true'
         # Idempotent — each tool install skips when the binary already exists
         run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
 
