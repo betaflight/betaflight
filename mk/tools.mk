@@ -378,7 +378,21 @@ else
 	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_TOOLS))
 endif
 
-## target-sdk-print : print the SDK name for the current TARGET (empty if none)
+## target-sdk-print : print the SDK name for the current TARGET or CONFIG (empty if none)
 .PHONY: target-sdk-print
 target-sdk-print:
 	@echo $(PLATFORM_SDK)
+
+## build-sdk-print : print the SDK name for BUILD= (auto-detects TARGET vs CONFIG)
+.PHONY: build-sdk-print
+build-sdk-print:
+ifdef BUILD
+	$(V1) if [ -d "$(PLATFORM_DIR)/*/target/$(BUILD)" ] 2>/dev/null || \
+	      ls $(PLATFORM_DIR)/*/target/$(BUILD)/target.mk >/dev/null 2>&1; then \
+		$(MAKE) -s TARGET=$(BUILD) target-sdk-print; \
+	else \
+		$(MAKE) -s CONFIG=$(BUILD) target-sdk-print; \
+	fi
+else
+	$(error BUILD= variable required)
+endif
