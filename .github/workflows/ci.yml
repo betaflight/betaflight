@@ -61,7 +61,7 @@ jobs:
           path: tools
           key: ${{ needs.setup.outputs.tools-cache-key }}-${{ matrix.sdk }}
 
-      - name: Restore base tools
+      - name: Restore ARM tools as base
         if: steps.cache-tools.outputs.cache-hit != 'true' && matrix.sdk != 'arm'
         uses: actions/cache/restore@v5
         with:
@@ -72,13 +72,17 @@ jobs:
         if: matrix.sdk != 'arm'
         id: sdk-info
         run: |
-          echo "paths<<EOF" >> $GITHUB_OUTPUT
-          make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          SUBMODULE=$(make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
 
       - name: Cache platform SDK
-        if: matrix.sdk != 'arm'
+        if: steps.sdk-info.outputs.has-submodule == 'true'
         uses: actions/cache@v5
         id: cache-sdk
         with:
@@ -86,7 +90,7 @@ jobs:
           key: ${{ steps.sdk-info.outputs.key }}
 
       - name: Hydrate SDK
-        if: matrix.sdk != 'arm' && steps.cache-sdk.outputs.cache-hit != 'true'
+        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ matrix.sdk }} platform-sdk-hydrate
 
       - name: Install tools
@@ -112,7 +116,10 @@ jobs:
         run: |
           SDK_NAME=$(make BUILD=${{ matrix.target }} build-sdk-print)
           echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
-          if [ "$SDK_NAME" != "arm" ]; then
+          # Get SDK submodule cache info for platform SDKs (not arm/none)
+          SUBMODULE=$(make SDK=$SDK_NAME platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
             echo "paths<<EOF" >> $GITHUB_OUTPUT
             make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
@@ -120,7 +127,7 @@ jobs:
           fi
 
       - name: Restore platform SDK from cache
-        if: steps.sdk.outputs.name != 'arm'
+        if: steps.sdk.outputs.has-submodule == 'true'
         uses: actions/cache/restore@v5
         id: cache-sdk
         with:
@@ -128,10 +135,11 @@ jobs:
           key: ${{ steps.sdk.outputs.key }}
 
       - name: Hydrate platform SDK (fallback)
-        if: steps.sdk.outputs.name != 'arm' && steps.cache-sdk.outputs.cache-hit != 'true'
+        if: steps.sdk.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ steps.sdk.outputs.name }} platform-sdk-hydrate
 
       - name: Restore toolchain from cache
+        if: steps.sdk.outputs.name != 'none'
         uses: actions/cache/restore@v5
         id: cache-tools
         with:
@@ -139,7 +147,7 @@ jobs:
           key: ${{ needs.setup.outputs.tools-cache-key }}-${{ steps.sdk.outputs.name }}
 
       - name: Install tools (fallback)
-        if: steps.cache-tools.outputs.cache-hit != 'true'
+        if: steps.sdk.outputs.name != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
         run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
 
       - name: Hydrate configuration

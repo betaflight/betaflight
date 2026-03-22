@@ -1,5 +1,7 @@
 # SITL Makefile for the simulator platform
 
+PLATFORM_SDK := none
+
 # Default output is an exe file
 DEFAULT_OUTPUT := exe
 

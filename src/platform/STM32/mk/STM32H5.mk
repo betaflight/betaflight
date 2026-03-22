@@ -2,6 +2,8 @@
 # H5 Make file include
 #
 
+PLATFORM_SDK := arm
+
 ifeq ($(DEBUG_HARDFAULTS),H5)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
