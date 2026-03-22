@@ -90,3 +90,14 @@ $(BASE_CONFIGS):
 $(addsuffix _rev,$(BASE_CONFIGS)):
 	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes
 
+# When configs are not hydrated, BASE_CONFIGS is empty so config targets
+# have no recipe. Override Make's default "No rule" error with a helpful message
+# but only for targets explicitly requested on the command line.
+ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
+.DEFAULT:
+	@if echo " $(MAKECMDGOALS) " | grep -q " $@ "; then \
+		echo "*** No rule to make target '$@'. If this is a configuration target, run 'make configs' first." >&2; \
+		exit 1; \
+	fi
+endif
+
