@@ -372,7 +372,7 @@ static void logErrorToPacketLog(void)
 }
 #endif  // USE_DASHBOARD
 
-static void gpsNewData(uint16_t c);
+static void gpsNewData(uint8_t c);
 static void gpsHandleFrameComplete(void);
 #ifdef USE_GPS_NMEA
 static bool gpsNewFrameNMEA(char c);
@@ -1571,7 +1571,7 @@ static void gpsHandleFrameComplete(void)
     onGpsNewData();
 }
 
-static void gpsNewData(uint16_t c)
+static void gpsNewData(uint8_t c)
 {
     if (!gpsNewFrame(c)) {
         // no new nav solution data
