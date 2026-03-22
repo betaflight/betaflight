@@ -86,7 +86,7 @@ jobs:
         id: sdk-info
         run: |
           echo "paths<<EOF" >> $GITHUB_OUTPUT
-          make platform-sdk-paths-print
+          make platform-sdk-paths-print >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Restore platform SDKs from cache
