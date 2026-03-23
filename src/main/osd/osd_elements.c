@@ -166,6 +166,9 @@
 #include "locales/localisation.h"
 
 #include "osd/osd.h"
+#if ENABLE_OSD_CUSTOM_TEXT
+#include "osd/osd_custom_text.h"
+#endif
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
 
@@ -707,6 +710,19 @@ static void osdElementLidarDist(osdElementParms_t *element)
     } else {
 
         tfp_sprintf(element->buff, "RF:---");
+    }
+}
+#endif
+
+#if ENABLE_OSD_CUSTOM_TEXT
+static void osdElementCustomSerialText(osdElementParms_t *element)
+{
+    const char* text = osdCustomTextGet();
+    if (text && text[0] != '\0') {
+        strncpy(element->buff, text, OSD_ELEMENT_BUFFER_LENGTH - 1);
+        element->buff[OSD_ELEMENT_BUFFER_LENGTH - 1] = '\0';
+    } else {
+        strcpy(element->buff, "---");
     }
 }
 #endif
@@ -1953,6 +1969,9 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_RANGEFINDER
     OSD_LIDAR_DIST,
 #endif
+#if ENABLE_OSD_CUSTOM_TEXT
+    OSD_CUSTOM_SERIAL_TEXT,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw it
@@ -2099,6 +2118,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #endif
 #ifdef USE_RANGEFINDER
     [OSD_LIDAR_DIST]              = osdElementLidarDist,
+#endif
+#if ENABLE_OSD_CUSTOM_TEXT
+    [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
 };
 

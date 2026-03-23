@@ -36,9 +36,17 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-#if !(defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx))
+// Provide platform-specific hardware table for STM32H7
+const octoSpiHardware_t octoSpiHardware[OCTOSPIDEV_COUNT] = {
+#if defined(STM32H730xx) || defined(STM32H723xx) || defined(STM32H735xx)
+    {
+        .device = OCTOSPIDEV_1,
+        .reg = OCTOSPI1,
+    }
+#else
 #error MCU not supported.
 #endif
+};
 
 #define OCTOSPI_INTERFACE_COUNT         1
 

@@ -28,6 +28,7 @@
 #include "timer_def.h"
 #include "drivers/bus_spi.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"

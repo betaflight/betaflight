@@ -33,6 +33,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "dshot_dpwm.h"
 #include "drivers/dshot_command.h"

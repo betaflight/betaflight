@@ -43,7 +43,11 @@
 #include "drivers/io.h"
 #include "drivers/io_def.h"
 #include "drivers/io_impl.h"
+#include "drivers/dma.h"
+#include "drivers/dma_impl.h"
 #include "drivers/nvic.h"
+
+#include "platform/dma.h"
 
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
@@ -269,7 +273,6 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     spiIrqHandler(dev);
 }
 
-extern dmaChannelDescriptor_t dmaDescriptors[];
 
 void spiInitBusDMA(void)
 {

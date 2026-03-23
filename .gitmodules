@@ -6,3 +6,8 @@
 [submodule "src/config"]
 	path = src/config
 	url = https://github.com/betaflight/config
+[submodule "lib/main/STM32N6"]
+	path = lib/main/STM32N6
+	url = https://github.com/STMicroelectronics/STM32CubeN6
+	branch = main
+	ignore = dirty
