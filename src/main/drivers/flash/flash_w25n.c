@@ -202,9 +202,11 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
 {
     if (io->mode == FLASHIO_SPI) {
         extDevice_t *dev = io->handle.dev;
-
+#if defined(USE_FLASH_MX35LF2G)
         uint8_t cmd[] = { command, (pageAddress >> 16) & 0xff, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
-
+#else
+        uint8_t cmd[] = { command, 0, (pageAddress >> 8) & 0xff, (pageAddress >> 0) & 0xff};
+#endif
         busSegment_t segments[] = {
                 {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
                 {.u.link = {NULL, NULL}, 0, true, NULL},
@@ -218,8 +220,11 @@ static void w25n_performCommandWithPageAddress(flashDeviceIO_t *io, uint8_t comm
 #ifdef USE_QUADSPI
     else if (io->mode == FLASHIO_QUADSPI) {
         extDevice_t *dev = io->handle.dev;
-
+#if defined(USE_FLASH_MX35LF2G)
         quadSpiInstructionWithAddress1LINE(dev, command, 0, pageAddress & 0xffffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
+#else
+        quadSpiInstructionWithAddress1LINE(dev, command, 0, pageAddress & 0xffff, W25N_STATUS_PAGE_ADDRESS_SIZE + 8);
+#endif
     }
 #endif
 }
@@ -360,7 +365,7 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
 
     for (index = 0; w25nFlashConfig[index].jedecID; index++) {
         if (w25nFlashConfig[index].jedecID == jedecID) {
-			maxReadClkSPIHz = w25nFlashConfig[index].maxReadClkSPIMHz * 1000000;
+            maxReadClkSPIHz = w25nFlashConfig[index].maxReadClkSPIMHz * 1000000;
             geometry->sectors = w25nFlashConfig[index].sectors;
             geometry->pagesPerSector = w25nFlashConfig[index].pagesPerSector;
             geometry->pageSize = w25nFlashConfig[index].pageSize;
@@ -417,7 +422,7 @@ static void w25n_configure(flashDevice_t *fdevice, uint32_t configurationFlags)
     // If it ever run out, the device becomes unusable.
 
     if (fdevice->io.mode == FLASHIO_SPI) {    // Need to set clock speed for 8kHz logging support with SPI
-		spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(maxReadClkSPIHz));
+        spiSetClkDivisor(fdevice->io.handle.dev, spiCalculateDivider(maxReadClkSPIHz));
     }
 
     w25n_deviceInit(fdevice);
