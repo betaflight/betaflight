@@ -56,8 +56,8 @@
 
 // Using optical flow PID scales as the unified set
 #define POSITION_P_SCALE       0.0033f
-#define POSITION_I_SCALE       0.0021f
-#define POSITION_II_SCALE      (0.25f * POSITION_I_SCALE)
+#define POSITION_I_SCALE       0.0007f
+#define POSITION_II_SCALE      (0.12f * POSITION_I_SCALE)
 #define POSITION_D_SCALE       0.00011f
 
 #define POSITION_IWINDUP_LIMIT 250.0f
@@ -271,12 +271,12 @@ bool positionControl(void)
 
         if (axis == 0) {
             DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(pidP * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf((pidI + pidII) * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidI * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidII * 100));
         } else {
             DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(pidP * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf((pidI + pidII) * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidD * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI * 100));
+            DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidII * 100));
         }
     }
 
