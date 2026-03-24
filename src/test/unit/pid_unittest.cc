@@ -899,9 +899,6 @@ TEST(pidControllerTest, testItermRotationHandling)
     pidData[FD_YAW].I = 1000;
 
     gyro.gyroADCf[FD_ROLL] = -1000;
-    // FIXME - axisError changes don't affect the system. This is a potential bug or intendend behaviour?
-    axisError[FD_PITCH] = 1000;
-    axisError[FD_YAW] = 1000;
     rotateItermAndAxisError();
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
     EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
