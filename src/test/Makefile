@@ -102,6 +102,13 @@ baro_ms5611_unittest_DEFINES := \
 #		$(USER_DIR)/sensors/battery.c \
 #		$(USER_DIR)/common/maths.c
 
+battery_profile_unittest_SRC := \
+		$(USER_DIR)/sensors/battery.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/pg/pg.c
 
 blackbox_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox.c \
