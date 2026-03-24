@@ -269,6 +269,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
         .angle_smoothing_cut = 100,
+        .angle_td_omega = 100,
+        .angle_td_zeta = 100,
         .qs_level_mode = 1,
     );
 }
@@ -1150,48 +1152,57 @@ void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error
     }
 }
 
-void calculateAttitudeFeedforward(float *attitude_setpoint, float *ff_output)
+void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel, const float *attitude_measured, float *ff_output)
 {
-    static float g_sp_prev[XYZ_AXIS_COUNT] = {0.0f, 0.0f, 1.0f}; // Initialize to upright
-
-    // Clear output array
-    ff_output[FD_ROLL] = 0.0f;
-    ff_output[FD_PITCH] = 0.0f;
-    ff_output[FD_YAW] = 0.0f;
-
-    if (pidRuntime.angleFeedforwardGain > 0) {
-        // Calculate the time derivative of the attitude vector
-        float attitude_dot[XYZ_AXIS_COUNT];
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            attitude_dot[i] = (attitude_setpoint[i] - g_sp_prev[i]) * pidRuntime.pidFrequency;
-        }
-
-        // For a unit vector g(t), the angular velocity ω satisfies: dg/dt = ω × g
-        // Therefore: ω = g × (dg/dt) / |g|² (since |g| = 1 for unit vectors)
-        // This gives us the angular velocity in the inertial frame
-
-        float omega_inertial[XYZ_AXIS_COUNT];
-        // Cross product: g × dg/dt
-        omega_inertial[FD_ROLL] = -attitude_setpoint[FD_PITCH] * attitude_dot[FD_YAW] + attitude_setpoint[FD_YAW] * attitude_dot[FD_PITCH];
-        omega_inertial[FD_PITCH] = -attitude_setpoint[FD_YAW] * attitude_dot[FD_ROLL] + attitude_setpoint[FD_ROLL] * attitude_dot[FD_YAW];
-        omega_inertial[FD_YAW] = -attitude_setpoint[FD_ROLL] * attitude_dot[FD_PITCH] + attitude_setpoint[FD_PITCH] * attitude_dot[FD_ROLL];
-
-        // Convert from inertial frame angular velocity to body frame
-        // For the current implementation, we can use the current gravity vector to transform
-        // This is an approximation, but much more accurate than the previous method
-
-        // The body frame angular velocity is approximately:
-        // ω_body ≈ R^T * ω_inertial, where R is the rotation matrix
-        // For small angles and our specific case, we can use a simplified transformation
-        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            ff_output[axis] = omega_inertial[axis] * pidRuntime.angleFeedforwardGain;
-            DEBUG_SET(DEBUG_ANGLE_MODE, 3 + axis, lrintf(ff_output[axis] * 1000.0f));
-        }
+    if (pidRuntime.angleFeedforwardGain <= 0.0f) {
+        ff_output[FD_ROLL]  = 0.0f;
+        ff_output[FD_PITCH] = 0.0f;
+        ff_output[FD_YAW]   = 0.0f;
+        return;
     }
 
-    g_sp_prev[FD_ROLL] = attitude_setpoint[FD_ROLL];
-    g_sp_prev[FD_PITCH] = attitude_setpoint[FD_PITCH];
-    g_sp_prev[FD_YAW] = attitude_setpoint[FD_YAW];
+    float ff[XYZ_AXIS_COUNT];
+    ff[0] = td_setpoint[1] * td_vel[2] - td_setpoint[2] * td_vel[1];
+    ff[1] = td_setpoint[2] * td_vel[0] - td_setpoint[0] * td_vel[2];
+    ff[2] = td_setpoint[0] * td_vel[1] - td_setpoint[1] * td_vel[0];
+
+    // magnitude of setpoint angular velocity from TD tangent velocity
+    float v_mag = sqrtf(ff[0]*ff[0] + ff[1]*ff[1] + ff[2]*ff[2]);
+
+    // error axis: cross product of current gravity vector and filtered setpoint
+    // direction the drone needs to rotate given its current attitude
+    float error_gravity[XYZ_AXIS_COUNT];
+    error_gravity[0] = -td_setpoint[1] * attitude_measured[2] + td_setpoint[2] * attitude_measured[1];
+    error_gravity[1] = -td_setpoint[2] * attitude_measured[0] + td_setpoint[0] * attitude_measured[2];
+    error_gravity[2] = -td_setpoint[0] * attitude_measured[1] + td_setpoint[1] * attitude_measured[0];
+
+    // error_mag = sin(θ) between drone attitude and filtered setpoint
+    float error_mag = sqrtf(error_gravity[0]*error_gravity[0] + error_gravity[1]*error_gravity[1] + error_gravity[2]*error_gravity[2]);
+
+    // blend factor: sin²(θ)
+    // small error → use td_vel directly (stable direction when tracking well)
+    // large error → use error axis direction (correct frame when lagging behind)
+    float blend = error_mag * error_mag;
+
+    float ff_from_axis[XYZ_AXIS_COUNT];
+    if (error_mag > 1e-6f) {
+        float scale = v_mag / error_mag;
+        ff_from_axis[0] = error_gravity[0] * scale;
+        ff_from_axis[1] = error_gravity[1] * scale;
+        ff_from_axis[2] = error_gravity[2] * scale;
+    } else {
+        ff_from_axis[0] = td_vel[0];
+        ff_from_axis[1] = td_vel[1];
+        ff_from_axis[2] = td_vel[2];
+    }
+
+    ff_output[FD_ROLL]  = ((1.0f - blend) * ff[FD_ROLL]  + blend * ff_from_axis[FD_ROLL])  * pidRuntime.angleFeedforwardGain;
+    ff_output[FD_PITCH] = ((1.0f - blend) * ff[FD_PITCH] + blend * ff_from_axis[FD_PITCH]) * pidRuntime.angleFeedforwardGain;
+    ff_output[FD_YAW]   = ((1.0f - blend) * ff[FD_YAW]   + blend * ff_from_axis[FD_YAW])   * pidRuntime.angleFeedforwardGain;
+
+    DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(ff_output[FD_ROLL]  * 1000.0f));
+    DEBUG_SET(DEBUG_ANGLE_MODE, 4, lrintf(ff_output[FD_PITCH] * 1000.0f));
+    DEBUG_SET(DEBUG_ANGLE_MODE, 5, lrintf(ff_output[FD_YAW]   * 1000.0f));
 }
 
 // attitude pid controller ported from QS and modified by QuickFlash
@@ -1233,35 +1244,43 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     roll_angle_rad = constrainf(roll_angle_rad, -angleLimit, angleLimit);
     pitch_angle_rad = constrainf(pitch_angle_rad, -angleLimit, angleLimit);
 
-    float vector_roll = sin_approx(roll_angle_rad);
-    float vector_pitch = sin_approx(pitch_angle_rad);
+    float sin_roll_angle, cos_roll_angle;
+    float sin_pitch_angle, cos_pitch_angle;
+    sincosf_approx(roll_angle_rad, &sin_roll_angle, &cos_roll_angle);
+    sincosf_approx(pitch_angle_rad, &sin_pitch_angle, &cos_pitch_angle);
 
-    float vector_z = cos_approx(roll_angle_rad) * cos_approx(pitch_angle_rad);
+    float vector_z = cos_roll_angle * cos_pitch_angle;
 
-    float magnitude = vector_roll * vector_roll + vector_pitch * vector_pitch;
+    float magnitude = sin_roll_angle * sin_roll_angle + sin_pitch_angle * sin_pitch_angle;
     float scaler = 1.0f;
     float vector_z2 = vector_z * vector_z;
-    if (magnitude > 0.0f && vector_z2 < 0.999f) {
+    if (magnitude > 0.0f && vector_z2 < 0.9999f) {
         scaler = 1.0f / sqrtf(magnitude / (1.0f - vector_z * vector_z));
     }
 
-    float vector_x = -vector_pitch * scaler;
-    float vector_y = vector_roll * scaler;
+    float vector_x = -sin_pitch_angle * scaler;
+    float vector_y = sin_roll_angle * scaler;
 
     float attitude_setpoint[XYZ_AXIS_COUNT];
     attitude_setpoint[FD_ROLL] = vector_x;
     attitude_setpoint[FD_PITCH] = vector_y;
     attitude_setpoint[FD_YAW] = vector_z;
 
+    float attitude_setpoint_flt[XYZ_AXIS_COUNT];
+    float attitude_vel_flt[XYZ_AXIS_COUNT];
+    // smooth the setpoint and create a smoothed derivative for feedforward
+    sphereTDUpdate(&pidRuntime.angleTD, attitude_setpoint, attitude_setpoint_flt, attitude_vel_flt, pidRuntime.dT);
+
     // Calculate feedforward
+    float *gravity_vector = getGravityVector();
     float ff_output[XYZ_AXIS_COUNT] = { 0.0f, 0.0f, 0.0f };
-    calculateAttitudeFeedforward(attitude_setpoint, ff_output);
+    calculateAttitudeFeedforward(attitude_setpoint_flt, attitude_vel_flt, gravity_vector, ff_output);
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         ff_output[axis] = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], ff_output[axis]);
     }
 
     float error_vector[XYZ_AXIS_COUNT];
-    float *gravity_vector = getGravityVector();
     attitudeError(attitude_setpoint, gravity_vector, error_vector);
 
     float newSetpoint[XYZ_AXIS_COUNT] = {0.0f, 0.0f, 0.0f};
@@ -1604,6 +1623,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // but for now let's see how we go without it (which was the case before 4.5 anyway)
 //            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
 //            pidSetpointDelta *= pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+            // TODO this should be looked into again :)
             pidSetpointDelta = 0.0f;
         } else {
             // the axis is operating as a normal acro axis, so use normal feedforard from rc.c

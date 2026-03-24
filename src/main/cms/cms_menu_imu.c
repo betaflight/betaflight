@@ -511,6 +511,8 @@ static uint8_t  cmsx_att_use_quicksilver;
 static uint8_t  csmx_qsLevelMode;
 static uint8_t  cmsx_angleP;
 static uint8_t  cmsx_angleFF;
+static uint8_t  cmsx_angleTDOmega;
+static uint8_t  cmsx_angleTDZeta;
 static uint8_t  cmsx_angleFeedforwardSmoothingMs;
 static uint8_t  cmsx_angleSmoothingCut;
 static uint8_t  cmsx_angleLimit;
@@ -528,6 +530,8 @@ static const void *cmsx_angleSettingsOnEnter(displayPort_t *pDisp)
 
     cmsx_angleP =                       pidProfile->pid[PID_LEVEL].P;
     cmsx_angleFF =                      pidProfile->pid[PID_LEVEL].F;
+    cmsx_angleTDOmega =                 pidProfile->angle_td_omega;
+    cmsx_angleTDZeta =                  pidProfile->angle_td_zeta;
     cmsx_angleFeedforwardSmoothingMs =  pidProfile->angle_feedforward_smoothing_ms;
     cmsx_angleSmoothingCut =            pidProfile->angle_smoothing_cut;
     cmsx_angleLimit =                   pidProfile->angle_limit;
@@ -552,6 +556,8 @@ static const void *cmsx_angleSettingsOnExit(displayPort_t *pDisp, const OSD_Entr
 
     pidProfile->pid[PID_LEVEL].P = cmsx_angleP;
     pidProfile->pid[PID_LEVEL].F = cmsx_angleFF;
+    pidProfile->angle_td_omega = cmsx_angleTDOmega;
+    pidProfile->angle_td_zeta = cmsx_angleTDZeta;
     pidProfile->angle_feedforward_smoothing_ms = cmsx_angleFeedforwardSmoothingMs;
     pidProfile->angle_smoothing_cut = cmsx_angleSmoothingCut;
     pidProfile->angle_limit = cmsx_angleLimit;
@@ -572,8 +578,10 @@ static const OSD_Entry cmsx_menuAngleSettingsEntries[] = {
 
     { "ATT USE QS",      OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_att_use_quicksilver,        1, lookupTableOffOn } },
     { "QS LEVEL MODE",   OME_TAB,    NULL, &(OSD_TAB_t)    { &csmx_qsLevelMode,                1, lookupTableOffOn } },
-    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     0,    200,   1  }    },
+    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     1,    200,   1  }    },
     { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },
+    { "ANGLE TD OMEGA",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDOmega,               10,   255,   1  }    },
+    { "ANGLE TD ZETA",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDZeta,                70,   150,   1  }    },
     { "FF SMOOTH MS",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFeedforwardSmoothingMs,0,    250,   1  }    },
     { "ANGL SMTH CUT",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleSmoothingCut,          0,    250,   1  }    },
 
