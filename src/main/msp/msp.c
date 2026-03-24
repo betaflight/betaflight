@@ -205,6 +205,7 @@ typedef enum {
 } mspPassthroughType_e;
 
 #define RATEPROFILE_MASK (1 << 7)
+#define BATTERYPROFILE_MASK (1 << 6)
 
 #define RTC_NOT_SUPPORTED 0xff
 
@@ -796,7 +797,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     case MSP_BATTERY_STATE: {
         // battery characteristics
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
-        sbufWriteU16(dst, batteryConfig()->batteryCapacity); // in mAh
+        sbufWriteU16(dst, currentBatteryProfile->batteryCapacity); // in mAh
 
         // battery state
         sbufWriteU8(dst, (uint8_t)constrain(getLegacyBatteryVoltage(), 0, 255)); // in 0.1V steps
@@ -902,15 +903,15 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     }
 
     case MSP_BATTERY_CONFIG:
-        sbufWriteU8(dst, (batteryConfig()->vbatmincellvoltage + 5) / 10);
-        sbufWriteU8(dst, (batteryConfig()->vbatmaxcellvoltage + 5) / 10);
-        sbufWriteU8(dst, (batteryConfig()->vbatwarningcellvoltage + 5) / 10);
-        sbufWriteU16(dst, batteryConfig()->batteryCapacity);
+        sbufWriteU8(dst, (currentBatteryProfile->vbatmincellvoltage + 5) / 10);
+        sbufWriteU8(dst, (currentBatteryProfile->vbatmaxcellvoltage + 5) / 10);
+        sbufWriteU8(dst, (currentBatteryProfile->vbatwarningcellvoltage + 5) / 10);
+        sbufWriteU16(dst, currentBatteryProfile->batteryCapacity);
         sbufWriteU8(dst, batteryConfig()->voltageMeterSource);
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
-        sbufWriteU16(dst, batteryConfig()->vbatmincellvoltage);
-        sbufWriteU16(dst, batteryConfig()->vbatmaxcellvoltage);
-        sbufWriteU16(dst, batteryConfig()->vbatwarningcellvoltage);
+        sbufWriteU16(dst, currentBatteryProfile->vbatmincellvoltage);
+        sbufWriteU16(dst, currentBatteryProfile->vbatmaxcellvoltage);
+        sbufWriteU16(dst, currentBatteryProfile->vbatwarningcellvoltage);
         break;
 
     case MSP_TRANSPONDER_CONFIG: {
@@ -1139,6 +1140,10 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         sbufWriteU16(dst, 0);
 #endif
         sbufWriteU8(dst, CONTROL_RATE_PROFILE_COUNT);
+
+        // Added in API version 1.48
+        sbufWriteU8(dst, BATTERY_PROFILE_COUNT);
+        sbufWriteU8(dst, getCurrentBatteryProfileIndex());
         break;
     }
 
@@ -2138,6 +2143,7 @@ case MSP_NAME:
         }
 #endif
         break;
+
 #if defined(USE_VTX_COMMON)
     case MSP_VTX_CONFIG: {
         const vtxDevice_t *vtxDevice = vtxCommonDevice();
@@ -2616,6 +2622,10 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = releaseName;
                     break;
 
+                case MSP2TEXT_BATTERY_PROFILE_NAME:
+                    textVar = currentBatteryProfile->profileName;
+                    break;
+
                 default:
                     return MSP_RESULT_ERROR;
             }
@@ -2634,6 +2644,23 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_freq);
         break;
 #endif
+
+    case MSP2_BATTERY_PROFILE: {
+        const uint8_t profileIndex = sbufBytesRemaining(src) ? sbufReadU8(src) : systemConfig()->activeBatteryProfile;
+        if (profileIndex >= BATTERY_PROFILE_COUNT) {
+            return MSP_RESULT_ERROR;
+        }
+        const batteryProfile_t *profile = batteryProfiles(profileIndex);
+        sbufWriteU8(dst, profileIndex);
+        sbufWriteU16(dst, profile->vbatmincellvoltage);
+        sbufWriteU16(dst, profile->vbatmaxcellvoltage);
+        sbufWriteU16(dst, profile->vbatwarningcellvoltage);
+        sbufWriteU16(dst, profile->vbatfullcellvoltage);
+        sbufWriteU16(dst, profile->batteryCapacity);
+        sbufWriteU8(dst, profile->forceBatteryCellCount);
+        sbufWriteU8(dst, profile->consumptionWarningPercentage);
+        break;
+    }
 
     default:
         return MSP_RESULT_CMD_UNKNOWN;
@@ -2672,7 +2699,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     switch (cmdMSP) {
     case MSP_SELECT_SETTING:
         value = sbufReadU8(src);
-        if ((value & RATEPROFILE_MASK) == 0) {
+        if (value & BATTERYPROFILE_MASK) {
+            value = value & ~BATTERYPROFILE_MASK;
+            if (value >= BATTERY_PROFILE_COUNT) {
+                value = 0;
+            }
+            changeBatteryProfile(value);
+        } else if ((value & RATEPROFILE_MASK) == 0) {
             if (!ARMING_FLAG(ARMED)) {
                 if (value >= PID_PROFILE_COUNT) {
                     value = 0;
@@ -4119,6 +4152,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     textSpace = sizeof(currentControlRateProfile->profileName) - 1;
                     break;
 
+                case MSP2TEXT_BATTERY_PROFILE_NAME:
+                    textVar = batteryProfilesMutable(systemConfig()->activeBatteryProfile)->profileName;
+                    textSpace = MAX_BATTERY_PROFILE_NAME_LENGTH;
+                    break;
+
                 case MSP2TEXT_CUSTOM_MSG_0:
                 case MSP2TEXT_CUSTOM_MSG_0 + 1:
                 case MSP2TEXT_CUSTOM_MSG_0 + 2:
@@ -4155,6 +4193,43 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
         break;
 #endif
+
+    case MSP2_SET_BATTERY_PROFILE: {
+        const unsigned expectedSize =
+            sizeof(uint8_t) +        // profileIndex
+            (sizeof(uint16_t) * 5) + // vbat min/max/warn/full + capacity
+            (sizeof(uint8_t) * 2);   // forceBatteryCellCount + consumptionWarningPercentage
+        if (sbufBytesRemaining(src) < (int)expectedSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        const uint8_t profileIndex = sbufReadU8(src);
+        if (profileIndex >= BATTERY_PROFILE_COUNT) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint16_t vbatMin = sbufReadU16(src);
+        const uint16_t vbatMax = sbufReadU16(src);
+        const uint16_t vbatWarn = sbufReadU16(src);
+        const uint16_t vbatFull = sbufReadU16(src);
+        const uint16_t capacity = sbufReadU16(src);
+        const uint8_t forceCellCount = sbufReadU8(src);
+        const uint8_t consumptionWarnPct = sbufReadU8(src);
+        if (vbatMin > vbatWarn || vbatWarn > vbatFull || vbatFull > vbatMax) {
+            return MSP_RESULT_ERROR;
+        }
+        if (forceCellCount > 24 || consumptionWarnPct > 100) {
+            return MSP_RESULT_ERROR;
+        }
+        batteryProfile_t *profile = batteryProfilesMutable(profileIndex);
+        profile->vbatmincellvoltage = vbatMin;
+        profile->vbatmaxcellvoltage = vbatMax;
+        profile->vbatwarningcellvoltage = vbatWarn;
+        profile->vbatfullcellvoltage = vbatFull;
+        profile->batteryCapacity = capacity;
+        profile->forceBatteryCellCount = forceCellCount;
+        profile->consumptionWarningPercentage = consumptionWarnPct;
+        break;
+    }
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
@@ -4256,19 +4331,31 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
         break;
     }
 
-    case MSP_SET_BATTERY_CONFIG:
-        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src) * 10;  // vbatlevel when buzzer starts to alert
-        batteryConfigMutable()->batteryCapacity = sbufReadU16(src);
+    case MSP_SET_BATTERY_CONFIG: {
+        if (sbufBytesRemaining(src) < 7) {
+            return MSP_RESULT_ERROR;
+        }
+        uint16_t vbatMin = sbufReadU8(src) * 10;      // vbatlevel_warn1 in MWC2.3 GUI
+        uint16_t vbatMax = sbufReadU8(src) * 10;      // vbatlevel_warn2 in MWC2.3 GUI
+        uint16_t vbatWarn = sbufReadU8(src) * 10;      // vbatlevel when buzzer starts to alert
+        const uint16_t capacity = sbufReadU16(src);
         batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         if (sbufBytesRemaining(src) >= 6) {
-            batteryConfigMutable()->vbatmincellvoltage = sbufReadU16(src);
-            batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU16(src);
-            batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU16(src);
+            vbatMin = sbufReadU16(src);
+            vbatMax = sbufReadU16(src);
+            vbatWarn = sbufReadU16(src);
         }
+        if (vbatMin > vbatWarn || vbatWarn > vbatMax) {
+            return MSP_RESULT_ERROR;
+        }
+        batteryProfile_t *profile = batteryProfilesMutable(systemConfig()->activeBatteryProfile);
+        profile->vbatmincellvoltage = vbatMin;
+        profile->vbatmaxcellvoltage = vbatMax;
+        profile->vbatwarningcellvoltage = vbatWarn;
+        profile->batteryCapacity = capacity;
         break;
+    }
 
 #if defined(USE_OSD)
     case MSP_SET_OSD_CONFIG:
