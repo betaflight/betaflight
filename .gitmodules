@@ -17,3 +17,4 @@
 	path = lib/main/GD32H7
 	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git
 	branch = master
+	ignore = dirty
