@@ -364,6 +364,12 @@ pico_sdk:
 	$(V1) git submodule update --init --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
 	@echo "pico-sdk updated"
 
+.PHONY: gd32h7_firmware
+gd32h7_firmware:
+	@echo "Updating GD32H7xx firmware"
+	$(V1) git submodule update --init --recursive -- lib/main/GD32H7 || { echo "Failed to update GD32H7xx firmware"; exit 1; }
+	@echo "GD32H7xx firmware updated"
+
 .PHONY: picotool_install
 picotool_install: | $(DL_DIR) $(TOOLS_DIR)
 picotool_install: picotool_clean
