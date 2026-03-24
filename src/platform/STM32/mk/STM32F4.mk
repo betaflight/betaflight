@@ -244,7 +244,8 @@ MSC_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
-            msc/usbd_storage_sdio.c
+            msc/usbd_storage_sdio.c \
+            common/stm32/msc_sdio_storage.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM4

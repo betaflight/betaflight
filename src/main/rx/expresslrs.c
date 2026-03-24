@@ -46,7 +46,6 @@
 #include "common/filter.h"
 
 #include "drivers/io.h"
-#include "drivers/nvic.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -1031,7 +1030,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 #endif
 
     // Timer IRQs must only be enabled after the receiver is configured otherwise race conditions occur.
-    expressLrsTimerEnableIRQs();
+    expressLrsTimerEnableIRQs(&elrsTimerHw);
 
     return true;
 }

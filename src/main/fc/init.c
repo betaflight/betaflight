@@ -137,6 +137,9 @@
 #include "msp/msp_serial.h"
 
 #include "osd/osd.h"
+#if ENABLE_OSD_CUSTOM_TEXT
+#include "osd/osd_custom_text.h"
+#endif
 
 #include "pg/adc.h"
 #include "pg/beeper.h"
@@ -487,7 +490,29 @@ void initPhase2(void)
 #endif
 
 #ifdef USE_OVERCLOCK
-    OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
+    {
+        static const uint16_t overclockMhzTable[] = {
+            0, // OFF (use default clock)
+#if ENABLE_OVERCLOCK_108_MHZ
+            108,
+#endif
+#if ENABLE_OVERCLOCK_120_MHZ
+            120,
+#endif
+#if ENABLE_OVERCLOCK_192_MHZ
+            192,
+#endif
+#if ENABLE_OVERCLOCK_216_MHZ
+            216,
+#endif
+#if ENABLE_OVERCLOCK_240_MHZ
+            240,
+#endif
+        };
+        const uint8_t idx = systemConfig()->cpu_overclock;
+        const uint16_t mhz = (idx < ARRAYLEN(overclockMhzTable)) ? overclockMhzTable[idx] : 0;
+        OverclockRebootIfNecessary(mhz);
+    }
 #endif
 
     // Configure MCO output after config is stable
@@ -560,9 +585,9 @@ void initPhase2(void)
         initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
-#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && PLATFORM_TRAIT_SDIO_INIT
+#if ENABLE_SDIO_INIT && defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD)
     sdioPinConfigure();
-    SDIO_GPIO_Init();
+    sdioInitialize();
 #endif
 }
 
@@ -748,6 +773,10 @@ void initPhase3(void)
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
     }
+#endif
+
+#if ENABLE_OSD_CUSTOM_TEXT
+    osdCustomTextInit();
 #endif
 
 #ifdef USE_LED_STRIP

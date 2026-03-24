@@ -44,6 +44,7 @@
 #include "platform/rcc.h"
 
 #include "drivers/dma.h"
+#include "platform/dma.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"

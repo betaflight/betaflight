@@ -24,6 +24,7 @@
 #include "drivers/bus.h"
 #include "drivers/dma.h"
 #include "drivers/dma_impl.h"
+#include "platform/dma.h"
 #include "drivers/nvic.h"
 
 #include "hardware/dma.h"

@@ -34,6 +34,7 @@
 #include "drivers/io_impl.h"
 #include "platform/rcc.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/sensor.h"
 #include "drivers/adc.h"
 #include "platform/adc_impl.h"

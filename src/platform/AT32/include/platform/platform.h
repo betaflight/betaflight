@@ -71,6 +71,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #define ADC_INTERNAL_VBAT4_ENABLED 0
 
+#define GPIO_PIN_RESET 0
+
 /* AT32F4 we need to specify the ADC device for each channel */
 #define PLATFORM_TRAIT_ADC_DEVICE 1
 #endif
@@ -170,3 +172,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #if defined(AT32F435)
 #define DMA_CHANREQ_STRING "Request"
 #endif
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PRIORITY_GROUP_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)&((0x0f>>(7-(NVIC_PRIORITY_GROUPING)))<<4))>>4)
