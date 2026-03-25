@@ -1153,7 +1153,7 @@ void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error
 }
 
 // TODO clean this up
-void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel, const float *attitude_measured, float *ff_output)
+void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel, float *ff_output)
 {
     if (pidRuntime.angleFeedforwardGain <= 0.0f) {
         ff_output[FD_ROLL]  = 0.0f;
@@ -1163,47 +1163,13 @@ void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel,
     }
 
     float ff[XYZ_AXIS_COUNT];
-    ff[0] = -td_setpoint[1] * td_vel[2] + td_setpoint[2] * td_vel[1];
-    ff[1] = -td_setpoint[2] * td_vel[0] + td_setpoint[0] * td_vel[2];
-    ff[2] = -td_setpoint[0] * td_vel[1] + td_setpoint[1] * td_vel[0];
+    ff[FD_ROLL] = -td_setpoint[1] * td_vel[2] + td_setpoint[2] * td_vel[1];
+    ff[FD_PITCH] = -td_setpoint[2] * td_vel[0] + td_setpoint[0] * td_vel[2];
+    ff[FD_YAW] = -td_setpoint[0] * td_vel[1] + td_setpoint[1] * td_vel[0];
 
-    // magnitude of setpoint angular velocity from TD tangent velocity
-    float v_mag = sqrtf(ff[0]*ff[0] + ff[1]*ff[1] + ff[2]*ff[2]);
-
-    // error axis: cross product of current gravity vector and filtered setpoint
-    // direction the drone needs to rotate given its current attitude
-    float error_gravity[XYZ_AXIS_COUNT];
-    error_gravity[0] = -td_setpoint[1] * attitude_measured[2] + td_setpoint[2] * attitude_measured[1];
-    error_gravity[1] = -td_setpoint[2] * attitude_measured[0] + td_setpoint[0] * attitude_measured[2];
-    error_gravity[2] = -td_setpoint[0] * attitude_measured[1] + td_setpoint[1] * attitude_measured[0];
-
-    // error_mag = sin(θ) between drone attitude and filtered setpoint
-    float error_mag = sqrtf(error_gravity[0]*error_gravity[0] + error_gravity[1]*error_gravity[1] + error_gravity[2]*error_gravity[2]);
-
-    // blend factor: sin²(θ)
-    // small error → use td_vel directly (stable direction when tracking well)
-    // large error → use error axis direction (correct frame when lagging behind)
-    float blend = error_mag * error_mag;
-
-    float ff_from_axis[XYZ_AXIS_COUNT];
-    if (error_mag > 1e-6f) {
-        float scale = v_mag / error_mag;
-        ff_from_axis[0] = error_gravity[0] * scale;
-        ff_from_axis[1] = error_gravity[1] * scale;
-        ff_from_axis[2] = error_gravity[2] * scale;
-    } else {
-        ff_from_axis[0] = -td_vel[0];
-        ff_from_axis[1] = -td_vel[1];
-        ff_from_axis[2] = -td_vel[2];
-    }
-
-    ff_from_axis[0] = ff[0];
-    ff_from_axis[1] = ff[1];
-    ff_from_axis[2] = ff[2];
-
-    ff_output[FD_ROLL]  = ((1.0f - blend) * ff[FD_ROLL]  + blend * ff_from_axis[FD_ROLL])  * pidRuntime.angleFeedforwardGain;
-    ff_output[FD_PITCH] = ((1.0f - blend) * ff[FD_PITCH] + blend * ff_from_axis[FD_PITCH]) * pidRuntime.angleFeedforwardGain;
-    ff_output[FD_YAW]   = ((1.0f - blend) * ff[FD_YAW]   + blend * ff_from_axis[FD_YAW])   * pidRuntime.angleFeedforwardGain;
+    ff[FD_ROLL]  *= pidRuntime.angleFeedforwardGain;
+    ff[FD_PITCH] *= pidRuntime.angleFeedforwardGain;
+    ff[FD_YAW]   *= pidRuntime.angleFeedforwardGain;
 
     DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(ff_output[FD_ROLL]  * 1000.0f));
     DEBUG_SET(DEBUG_ANGLE_MODE, 4, lrintf(ff_output[FD_PITCH] * 1000.0f));
@@ -1279,7 +1245,7 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     // Calculate feedforward
     float *gravity_vector = getGravityVector();
     float ff_output[XYZ_AXIS_COUNT] = { 0.0f, 0.0f, 0.0f };
-    calculateAttitudeFeedforward(attitude_setpoint_flt, attitude_vel_flt, gravity_vector, ff_output);
+    calculateAttitudeFeedforward(attitude_setpoint_flt, attitude_vel_flt, ff_output);
 
     float error_vector[XYZ_AXIS_COUNT];
     attitudeError(attitude_setpoint_flt, gravity_vector, error_vector);
