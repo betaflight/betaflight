@@ -149,5 +149,5 @@ void meanAccumulatorInit(meanAccumulator_t *filter);
 void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal);
 int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue);
 
-void sphereTDInit(sphericalTD_t *td, float omega_deg, float zeta);
+void sphereTDInit(sphericalTD_t *td, float omega_rad, float zeta);
 void sphereTDUpdate(sphericalTD_t *td, const float *g_des, float *g_filt, float *v_filt, float dt);

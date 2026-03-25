@@ -325,7 +325,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     pidRuntime.angleYawSetpoint = 0.0f;
 
-    sphereTDInit(&pidRuntime.angleTD, pidProfile->angle_td_omega, pidProfile->angle_td_zeta);
+    sphereTDInit(&pidRuntime.angleTD, pidProfile->angle_td_omega, pidProfile->angle_td_zeta / 100.0f);
 #endif
 
 #ifdef USE_CHIRP

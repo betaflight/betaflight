@@ -134,7 +134,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [PID_ROLL] =  PID_ROLL_DEFAULT,
             [PID_PITCH] = PID_PITCH_DEFAULT,
             [PID_YAW] =   PID_YAW_DEFAULT,
-            [PID_LEVEL] = { 50, 75, 75, 50, 0 },
+            [PID_LEVEL] = { 50, 75, 75, 75, 0 },
             [PID_MAG] =   { 40, 0, 0, 0, 0 },
         },
         .pidSumLimit = PIDSUM_LIMIT,
@@ -229,7 +229,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .tpa_mode = TPA_MODE_D,
         .tpa_rate = 65,
         .tpa_breakpoint = 1350,
-        .angle_feedforward_smoothing_ms = 25,
+        .angle_feedforward_smoothing_ms = 50,
         .angle_earth_ref = 100,
         .horizon_delay_ms = 500, // 500ms time constant on any increase in horizon strength
         .tpa_low_rate = 20,
@@ -268,8 +268,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
-        .angle_smoothing_cut = 100,
-        .angle_td_omega = 100,
+        .angle_smoothing_cut = 175,
+        .angle_td_omega = 50,
         .angle_td_zeta = 100,
         .qs_level_mode = 1,
     );
@@ -1152,6 +1152,7 @@ void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error
     }
 }
 
+// TODO clean this up
 void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel, const float *attitude_measured, float *ff_output)
 {
     if (pidRuntime.angleFeedforwardGain <= 0.0f) {
@@ -1162,9 +1163,9 @@ void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel,
     }
 
     float ff[XYZ_AXIS_COUNT];
-    ff[0] = td_setpoint[1] * td_vel[2] - td_setpoint[2] * td_vel[1];
-    ff[1] = td_setpoint[2] * td_vel[0] - td_setpoint[0] * td_vel[2];
-    ff[2] = td_setpoint[0] * td_vel[1] - td_setpoint[1] * td_vel[0];
+    ff[0] = -td_setpoint[1] * td_vel[2] + td_setpoint[2] * td_vel[1];
+    ff[1] = -td_setpoint[2] * td_vel[0] + td_setpoint[0] * td_vel[2];
+    ff[2] = -td_setpoint[0] * td_vel[1] + td_setpoint[1] * td_vel[0];
 
     // magnitude of setpoint angular velocity from TD tangent velocity
     float v_mag = sqrtf(ff[0]*ff[0] + ff[1]*ff[1] + ff[2]*ff[2]);
@@ -1191,10 +1192,14 @@ void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel,
         ff_from_axis[1] = error_gravity[1] * scale;
         ff_from_axis[2] = error_gravity[2] * scale;
     } else {
-        ff_from_axis[0] = td_vel[0];
-        ff_from_axis[1] = td_vel[1];
-        ff_from_axis[2] = td_vel[2];
+        ff_from_axis[0] = -td_vel[0];
+        ff_from_axis[1] = -td_vel[1];
+        ff_from_axis[2] = -td_vel[2];
     }
+
+    ff_from_axis[0] = ff[0];
+    ff_from_axis[1] = ff[1];
+    ff_from_axis[2] = ff[2];
 
     ff_output[FD_ROLL]  = ((1.0f - blend) * ff[FD_ROLL]  + blend * ff_from_axis[FD_ROLL])  * pidRuntime.angleFeedforwardGain;
     ff_output[FD_PITCH] = ((1.0f - blend) * ff[FD_PITCH] + blend * ff_from_axis[FD_PITCH]) * pidRuntime.angleFeedforwardGain;
@@ -1276,12 +1281,8 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
     float ff_output[XYZ_AXIS_COUNT] = { 0.0f, 0.0f, 0.0f };
     calculateAttitudeFeedforward(attitude_setpoint_flt, attitude_vel_flt, gravity_vector, ff_output);
 
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        ff_output[axis] = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], ff_output[axis]);
-    }
-
     float error_vector[XYZ_AXIS_COUNT];
-    attitudeError(attitude_setpoint, gravity_vector, error_vector);
+    attitudeError(attitude_setpoint_flt, gravity_vector, error_vector);
 
     float newSetpoint[XYZ_AXIS_COUNT] = {0.0f, 0.0f, 0.0f};
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -1612,20 +1613,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         float pidSetpointDelta = 0;
 
 #if defined(USE_FEEDFORWARD) && defined(USE_ACC)
-        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
-            // this axis is fully under self-levelling control
-            // it will already have stick based feedforward applied in the input to their angle setpoint
-            // a simple setpoint Delta can be used to for PID feedforward element for motor lag on these axes
-            // however RC steps come in, via angle setpoint
-            // and setpoint RC smoothing must have a cutoff half normal to remove those steps completely
-            // the RC stepping does not come in via the feedforward, which is very well smoothed already
-            // if uncommented, and the forcing to zero is removed, the two following lines will restore PID feedforward to angle mode axes
-            // but for now let's see how we go without it (which was the case before 4.5 anyway)
-//            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
-//            pidSetpointDelta *= pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
-            // TODO this should be looked into again :)
-            pidSetpointDelta = 0.0f;
-        } else {
+        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis] && levelMode == LEVEL_MODE_QS) {
+            // This axis is fully under self-leveling control
+            // Only apply this feedforward when in the QS style level mode            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+            pidSetpointDelta *= pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                pidSetpointDelta = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], pidSetpointDelta);
+            }
+
             // the axis is operating as a normal acro axis, so use normal feedforard from rc.c
             pidSetpointDelta = getFeedforward(axis);
         }

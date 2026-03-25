@@ -407,9 +407,8 @@ int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
     return defaultValue;
 }
 
-void sphereTDInit(sphericalTD_t *td, float omega_deg, float zeta)
+void sphereTDInit(sphericalTD_t *td, float omega_rad, float zeta)
 {
-    float omega_rad = DEGREES_TO_RADIANS(omega_deg);
     td->g[0] = 0.0f;
     td->g[1] = 0.0f;
     td->g[2] = 0.0f;
