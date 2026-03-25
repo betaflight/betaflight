@@ -570,6 +570,9 @@ static const void *cmsx_angleSettingsOnExit(displayPort_t *pDisp, const OSD_Entr
     imuConfigMutable()->att_use_quicksilver = cmsx_att_use_quicksilver;
     pidProfile->qs_level_mode = csmx_qsLevelMode;
 
+    pidInitConfig(pidProfile);
+    pidInitFilters(pidProfile);
+
     return NULL;
 }
 
@@ -580,10 +583,10 @@ static const OSD_Entry cmsx_menuAngleSettingsEntries[] = {
     { "QS LEVEL MODE",   OME_TAB,    NULL, &(OSD_TAB_t)    { &csmx_qsLevelMode,                1, lookupTableOffOn } },
     { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     1,    200,   1  }    },
     { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },
-    { "ANGLE TD OMEGA",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDOmega,               10,   255,   1  }    },
+    { "ANGLE TD OMEGA",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDOmega,               20,   255,   1  }    },
     { "ANGLE TD ZETA",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDZeta,                70,   150,   1  }    },
     { "FF SMOOTH MS",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFeedforwardSmoothingMs,0,    250,   1  }    },
-    { "ANGL SMTH CUT",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleSmoothingCut,          0,    250,   1  }    },
+    { "ANGL SMTH CUT",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleSmoothingCut,          10,   250,   1  }    },
 
     { "ANGLE LIMIT",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,                10,     90,   1  }    },
     { "ANGLE E_REF",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleEarthRef,              0,    100,   1  }    },

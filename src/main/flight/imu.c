@@ -216,6 +216,8 @@ void imuQuaternionFromRotationMatrix(void)
     q.x *= recipNorm;
     q.y *= recipNorm;
     q.z *= recipNorm;
+
+    imuQuaternionComputeProducts(&q, &qP);
 }
 
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)

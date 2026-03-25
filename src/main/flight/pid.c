@@ -1152,7 +1152,6 @@ void attitudeError(float *attitude_setpoint, float *gravity_vector, float *error
     }
 }
 
-// TODO clean this up
 void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel, float *ff_output)
 {
     if (pidRuntime.angleFeedforwardGain <= 0.0f) {
@@ -1167,9 +1166,9 @@ void calculateAttitudeFeedforward(const float *td_setpoint, const float *td_vel,
     ff[FD_PITCH] = -td_setpoint[2] * td_vel[0] + td_setpoint[0] * td_vel[2];
     ff[FD_YAW] = -td_setpoint[0] * td_vel[1] + td_setpoint[1] * td_vel[0];
 
-    ff[FD_ROLL]  *= pidRuntime.angleFeedforwardGain;
-    ff[FD_PITCH] *= pidRuntime.angleFeedforwardGain;
-    ff[FD_YAW]   *= pidRuntime.angleFeedforwardGain;
+    ff_output[FD_ROLL] = ff[FD_ROLL] * pidRuntime.angleFeedforwardGain;
+    ff_output[FD_PITCH] = ff[FD_PITCH] * pidRuntime.angleFeedforwardGain;
+    ff_output[FD_YAW] = ff[FD_YAW] * pidRuntime.angleFeedforwardGain;
 
     DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(ff_output[FD_ROLL]  * 1000.0f));
     DEBUG_SET(DEBUG_ANGLE_MODE, 4, lrintf(ff_output[FD_PITCH] * 1000.0f));
@@ -1204,7 +1203,7 @@ FAST_CODE_NOINLINE void pidQuickSilverAttitude(const pidProfile_t *pidProfile, f
                 angleLimit = DEGREES_TO_RADIANS(85.0f); // allow autopilot to use whatever angle it needs to stop
             } else {
                 // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-                angleLimit = DEGREES_TO_RADIANS(fminf(0.5f * autopilotConfig()->maxAngle, angleLimit));
+                angleLimit = fminf(DEGREES_TO_RADIANS(0.5f * autopilotConfig()->maxAngle), angleLimit);
             }
         }
     #endif
@@ -1578,16 +1577,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         float pidSetpointDelta = 0;
 
-#if defined(USE_FEEDFORWARD) && defined(USE_ACC)
+#ifdef USE_FEEDFORWARD
+#if defined(USE_ACC)
         if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis] && levelMode == LEVEL_MODE_QS) {
-            // This axis is fully under self-leveling control
-            // Only apply this feedforward when in the QS style level mode            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
+            // This axis is fully under self-leveling control.
+            // Only apply this feedforward when in the QS style level mode.
+            pidSetpointDelta = currentPidSetpoint - pidRuntime.previousPidSetpoint[axis];
             pidSetpointDelta *= pidRuntime.pidFrequency * pidRuntime.angleFeedforwardGain;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                pidSetpointDelta = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], pidSetpointDelta);
-            }
-
-            // the axis is operating as a normal acro axis, so use normal feedforard from rc.c
+            pidSetpointDelta = pt3FilterApply(&pidRuntime.angleFeedforwardPt3[axis], pidSetpointDelta);
+        } else
+#endif
+        {
+            // The axis is operating as a normal acro axis, so use normal feedforward from rc.c.
             pidSetpointDelta = getFeedforward(axis);
         }
 #endif
