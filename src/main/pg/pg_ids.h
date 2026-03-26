@@ -160,6 +160,7 @@
 #define PG_GIMBAL_TRACK_CONFIG      559
 #define PG_OPTICALFLOW_CONFIG       560
 #define PG_BATTERY_PROFILES         561
+#define PG_FLIGHT_PLAN_CONFIG       562
 
 
 // OSD configuration (subject to change)
