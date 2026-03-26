@@ -81,6 +81,12 @@ static bool sensorsOk(void)
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
+    // When AUTOPILOT_MODE is active, position holding is handled by the waypoint
+    // system (loitering at a waypoint). Don't run separate position control here.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        posHold.isEnabled = false;
+        return;
+    }
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHold.isEnabled) {
             resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location

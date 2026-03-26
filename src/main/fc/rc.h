@@ -59,3 +59,7 @@ float getFeedforward(int axis);
 void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal);
 float getCurrentRxRateHz(void);
 bool getRxRateValid(void);
+
+// Shadow array containing raw receiver data (bypasses autopilot)
+// Used by autopilot for pilot override detection
+extern float rcCommandFromReceiver[4];

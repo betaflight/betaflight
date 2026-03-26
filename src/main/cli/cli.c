@@ -109,6 +109,10 @@ bool cliMode = false;
 #include "flight/position.h"
 #include "flight/servos.h"
 
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+#include "flight/autopilot_waypoint.h"
+#endif
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
