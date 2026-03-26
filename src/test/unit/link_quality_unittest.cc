@@ -83,6 +83,8 @@ extern "C" {
     acc_t acc;
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARRAY(batteryProfile_t, BATTERY_PROFILE_COUNT, batteryProfiles, PG_BATTERY_PROFILES, 0);
+    const batteryProfile_t *currentBatteryProfile;
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
@@ -209,8 +211,9 @@ TEST(LQTest, TestInit)
 
     // and
     // this battery configuration (used for battery voltage elements)
-    batteryConfigMutable()->vbatmincellvoltage = 330;
-    batteryConfigMutable()->vbatmaxcellvoltage = 430;
+    batteryProfilesMutable(0)->vbatmincellvoltage = 330;
+    batteryProfilesMutable(0)->vbatmaxcellvoltage = 430;
+    currentBatteryProfile = batteryProfiles(0);
 
     // when
     // OSD is initialised
@@ -477,6 +480,7 @@ extern "C" {
     bool isBeeperOn() { return false; }
     uint8_t getCurrentPidProfileIndex() { return 0; }
     uint8_t getCurrentControlRateProfileIndex() { return 0; }
+    uint8_t getCurrentBatteryProfileIndex() { return 0; }
     batteryState_e getBatteryState() { return BATTERY_OK; }
     uint8_t getBatteryCellCount() { return 4; }
     uint16_t getBatteryVoltage() { return 1680; }
