@@ -80,6 +80,9 @@
 #include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 #include "pg/vtx_table.h"
+#if ENABLE_FLIGHT_PLAN
+#include "pg/flight_plan.h"
+#endif
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -678,6 +681,12 @@ void validateAndFixGyroConfig(void)
         systemConfigMutable()->activeBatteryProfile = 0;
     }
     loadBatteryProfile();
+
+#if ENABLE_FLIGHT_PLAN
+    if (flightPlanConfigMutable()->waypointCount > MAX_WAYPOINTS) {
+        flightPlanConfigMutable()->waypointCount = 0;
+    }
+#endif
 }
 
 #ifdef USE_BLACKBOX

@@ -19,18 +19,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#ifdef USE_WING
-
-#include <stdint.h>
+#include "platform.h"
 
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct autopilotConfig_s {
-    uint8_t dummy;
-} autopilotConfig_t;
+#include "pg/flight_plan.h"
 
-PG_DECLARE(autopilotConfig_t, autopilotConfig);
+#if ENABLE_FLIGHT_PLAN
 
-#endif // USE_WING
+PG_REGISTER_WITH_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig, PG_FLIGHT_PLAN_CONFIG, 0);
+
+PG_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig,
+    .waypointCount = 0,
+    .waypoints = { { 0 } }
+);
+
+#endif // ENABLE_FLIGHT_PLAN
