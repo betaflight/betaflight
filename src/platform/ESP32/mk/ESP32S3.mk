@@ -14,8 +14,7 @@ PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32-S3 toolchain
-# ESP-IDF v5.x uses unified xtensa-esp-elf toolchain (with per-target symlinks)
-ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
+# ESP_TOOLS_BIN is resolved in tools.mk; reuse it here
 ifneq ($(ESP_TOOLS_BIN),)
   ARM_SDK_PREFIX := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-
 else

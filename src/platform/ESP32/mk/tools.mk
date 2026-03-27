@@ -6,12 +6,19 @@ PLATFORM_SDKS += esp_idf
 PLATFORM_SDK_esp_idf_SUBMODULE := lib/main/esp-idf
 PLATFORM_SDK_esp_idf_HYDRATE   := esp_sdk
 PLATFORM_SDK_esp_idf_TOOLS     := esp_tools_install
-PLATFORM_SDK_esp_idf_CC        := xtensa-esp32s3-elf-gcc
 PLATFORM_SDK_esp_idf_CC_INSTALL := esp_tools_install
 
 ESP_IDF_PATH    ?= $(ROOT_DIR)/lib/main/esp-idf
 IDF_TOOLS_PATH  ?= $(TOOLS_DIR)/espressif
 export IDF_TOOLS_PATH
+
+# Resolve Xtensa compiler: prefer local install, fall back to PATH
+ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
+ifneq ($(ESP_TOOLS_BIN),)
+  PLATFORM_SDK_esp_idf_CC := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-gcc
+else
+  PLATFORM_SDK_esp_idf_CC := xtensa-esp32s3-elf-gcc
+endif
 
 # Stamp file indicating esp-idf has been hydrated
 ESP_IDF_STAMP := $(ESP_IDF_PATH)/.git
