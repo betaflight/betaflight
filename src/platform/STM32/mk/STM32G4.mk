@@ -2,6 +2,8 @@
 # G4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 ifeq ($(DEBUG_HARDFAULTS),G4)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif

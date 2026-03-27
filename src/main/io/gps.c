@@ -372,7 +372,8 @@ static void logErrorToPacketLog(void)
 }
 #endif  // USE_DASHBOARD
 
-static void gpsNewData(uint16_t c);
+static void gpsNewData(uint8_t c);
+static void gpsHandleFrameComplete(void);
 #ifdef USE_GPS_NMEA
 static bool gpsNewFrameNMEA(char c);
 #endif
@@ -1355,23 +1356,38 @@ static void updateVirtualGPS(void)
 }
 #endif
 
+void rescheduleWhenNecessary(uint8_t* wait, bool* isFast)
+{
+    if (*wait < 1) {
+        (*wait)++;
+    } else if (*wait == 1) {
+        (*wait)++;
+        // wait one iteration to be sure the buffer is empty, then reset to the slower task interval
+        *isFast = false;
+        rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
+    }
+}
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
     timeDelta_t executeTimeUs;
     gpsState_e gpsCurrentState = gpsData.state;
+    uint32_t rxBytesWaiting = 0;
     gpsData.now = millis();
 
     switch (gpsConfig()->provider) {
+#ifdef USE_GPS_UBLOX
     case GPS_UBLOX:
-    case GPS_NMEA:
+    {
         if (!gpsPort) {
             break;
         }
-        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, serialRxBytesWaiting(gpsPort));
+        rxBytesWaiting = serialRxBytesWaiting(gpsPort);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
         static uint8_t wait = 0;
         static bool isFast = false;
-        while (serialRxBytesWaiting(gpsPort)) {
+        while (rxBytesWaiting-- > 0) {
             wait = 0;
             if (!isFast) {
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
@@ -1380,18 +1396,42 @@ void gpsUpdate(timeUs_t currentTimeUs)
             if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
                 break;
             }
-            // Add every byte to _buffer, when enough bytes are received, convert data to values
-            gpsNewData(serialRead(gpsPort));
+            if (gpsNewFrameUBLOX(serialRead(gpsPort))) {
+                gpsHandleFrameComplete();
+            }
         }
-        if (wait < 1) {
-            wait++;
-        } else if (wait == 1) {
-            wait++;
-            // wait one iteration be sure the buffer is empty, then reset to the slower task interval
-            isFast = false;
-            rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE));
-        }
+        rescheduleWhenNecessary(&wait, &isFast);
         break;
+    }
+#endif
+
+#ifdef USE_GPS_NMEA
+    case GPS_NMEA:
+    {
+        if (!gpsPort) {
+            break;
+        }
+        rxBytesWaiting = serialRxBytesWaiting(gpsPort);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        static uint8_t wait = 0;
+        static bool isFast = false;
+        while (rxBytesWaiting-- > 0) {
+            wait = 0;
+            if (!isFast) {
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+                isFast = true;
+            }
+            if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+                break;
+            }
+            if (gpsNewFrameNMEA(serialRead(gpsPort))) {
+                gpsHandleFrameComplete();
+            }
+        }
+        rescheduleWhenNecessary(&wait, &isFast);
+        break;
+    }
+#endif
 
     case GPS_MSP:
         if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
@@ -1503,21 +1543,25 @@ void gpsUpdate(timeUs_t currentTimeUs)
 //    DEBUG_SET(DEBUG_GPS_CONNECTION, 6, (gpsStateDurationFractionUs[gpsCurrentState] >> GPS_TASK_DECAY_SHIFT));
 }
 
-static void gpsNewData(uint16_t c)
+static void gpsHandleFrameComplete(void)
 {
     DEBUG_SET(DEBUG_GPS_CONNECTION, 1, gpsSol.navIntervalMs);
-    if (!gpsNewFrame(c)) {
-        // no new nav solution data
-        return;
-    }
     if (gpsData.state == GPS_STATE_RECEIVING_DATA) {
         DEBUG_SET(DEBUG_GPS_CONNECTION, 3, gpsData.now - gpsData.lastNavMessage); // interval since last Nav data was received
         gpsData.lastNavMessage = gpsData.now;
         sensorsSet(SENSOR_GPS);
-        // use the baud rate debug once receiving data
     }
     GPS_update ^= GPS_DIRECT_TICK;
     onGpsNewData();
+}
+
+static void gpsNewData(uint8_t c)
+{
+    if (!gpsNewFrame(c)) {
+        // no new nav solution data
+        return;
+    }
+    gpsHandleFrameComplete();
 }
 
 #ifdef USE_GPS_UBLOX
