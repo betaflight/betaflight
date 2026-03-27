@@ -277,10 +277,10 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DDL_TMR_InitTypeDef init;
         DDL_TMR_StructInit(&init);
 
-        RCC_ClockCmd(timerRCC((const timerResource_t *)timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         DDL_TMR_DisableCounter(timer);
 
-        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance((const timerResource_t *)timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timerHardware->tim) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         init.Autoreload = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH) - 1;
         init.ClockDivision = DDL_TMR_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;

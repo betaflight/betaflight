@@ -94,7 +94,7 @@ typedef struct quadSpiDevice_s {
 #endif
     volatile uint16_t errorCount;
 #if QSPI_TRAIT_HANDLE
-    QSPI_HandleTypeDef hquadSpi;
+    qspiHalHandle_t *halHandle;
 #endif
 } quadSpiDevice_t;
 

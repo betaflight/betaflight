@@ -26,3 +26,6 @@
 // Code in src/main references I2C peripherals through i2cResource_t pointers;
 // platform code casts these to the native MCU type (e.g. I2C_TypeDef*).
 typedef struct i2cResource_s i2cResource_t;
+
+// Opaque HAL handle type for I2C.
+typedef struct i2cHalHandle_s i2cHalHandle_t;

@@ -188,25 +188,9 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-struct spiResource_s
-{
-    void* test;
-};
-
-struct quadSpiResource_s
-{
-    void* test;
-};
-
-struct octoSpiResource_s
-{
-    void* test;
-};
-
-typedef struct
-{
-    void* test;
-} usartSim_t;
+struct spiResource_s;
+struct quadSpiResource_s;
+struct octoSpiResource_s;
 
 #define USART1 ((usartResource_t *)0x0001)
 #define USART2 ((usartResource_t *)0x0002)
@@ -225,10 +209,7 @@ typedef struct
 #define SIMULATOR_MAX_RC_CHANNELS   16
 #define SIMULATOR_MAX_PWM_CHANNELS  16
 
-struct i2cResource_s
-{
-    void* test;
-};
+struct i2cResource_s;
 
 typedef struct {
     double timestamp;                   // in seconds

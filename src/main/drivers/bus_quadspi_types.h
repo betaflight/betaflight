@@ -34,3 +34,6 @@ typedef struct quadSpiResource_s quadSpiResource_t;
 // pointers; platform code casts these to the native MCU type
 // (e.g. OCTOSPI_TypeDef*).
 typedef struct octoSpiResource_s octoSpiResource_t;
+
+// Opaque HAL handle type for QSPI.
+typedef struct qspiHalHandle_s qspiHalHandle_t;

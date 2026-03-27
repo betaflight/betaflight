@@ -26,3 +26,8 @@
 // Code in src/main references USART peripherals through usartResource_t pointers;
 // platform code casts these to the native MCU type (e.g. USART_TypeDef*).
 typedef struct usartResource_s usartResource_t;
+
+// Opaque HAL handle types for UART and DMA.
+// Platform code defines the struct body wrapping the native HAL handle.
+typedef struct uartHalHandle_s uartHalHandle_t;
+typedef struct dmaHalHandle_s dmaHalHandle_t;

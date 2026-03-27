@@ -36,8 +36,11 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 #include "drivers/bus_i2c_utils.h"
+#include "platform/bus_i2c_hal.h"
 
 #include "pg/pinio.h"
+
+static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_UP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_NONE)
@@ -147,7 +150,9 @@ void i2cInit(i2cDevice_e device)
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 
     // Init I2C peripheral
-    i2c_handle_type  *pHandle = &pDev->handle;
+    pDev->halHandle = &i2cHalHandles[device];
+
+    i2c_handle_type  *pHandle = &pDev->halHandle->hal;
     memset(pHandle, 0, sizeof(*pHandle));
 
     i2c_type *i2cx = (i2c_type *)pDev->hardware->reg;

@@ -37,6 +37,9 @@
 #include "platform/dma.h"
 #include "drivers/io.h"
 #include "platform/rcc.h"
+#if SPI_TRAIT_HANDLE
+#include "platform/bus_spi_hal.h"
+#endif
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
@@ -66,6 +69,10 @@
 // N6 has no DTCM/CCM restrictions for DMA
 #define IS_DTCM(p) (0)
 #endif
+#if SPI_TRAIT_HANDLE
+static struct spiHalHandle_s spiHalHandles[SPIDEV_COUNT];
+#endif
+
 static LL_SPI_InitTypeDef defaultInit =
 {
     .TransferDirection = LL_SPI_FULL_DUPLEX,
@@ -122,6 +129,10 @@ void spiInitDevice(spiDevice_e device)
     if (!spi->dev) {
         return;
     }
+
+#if SPI_TRAIT_HANDLE
+    spi->halHandle = &spiHalHandles[device];
+#endif
 
     SPI_TypeDef *dev = (SPI_TypeDef *)spi->dev;
 

@@ -74,7 +74,7 @@ typedef struct spiDevice_s {
     uint8_t af;
 #endif
 #if SPI_TRAIT_HANDLE
-    SPI_HandleTypeDef hspi;
+    spiHalHandle_t *halHandle;
 #endif
 #if PLATFORM_TRAIT_RCC
     rccPeriphTag_t rcc;

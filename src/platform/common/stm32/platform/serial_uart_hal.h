@@ -21,11 +21,13 @@
 
 #pragma once
 
-// spiResource_t is an opaque data type which represents an SPI
-// peripheral, implemented differently across MCU families.
-// Code in src/main references SPI peripherals through spiResource_t pointers;
-// platform code casts these to the native MCU type (e.g. SPI_TypeDef*).
-typedef struct spiResource_s spiResource_t;
+#include "platform.h"
 
-// Opaque HAL handle type for SPI.
-typedef struct spiHalHandle_s spiHalHandle_t;
+#ifdef USE_HAL_DRIVER
+struct uartHalHandle_s {
+    UART_HandleTypeDef hal;
+};
+struct dmaHalHandle_s {
+    DMA_HandleTypeDef hal;
+};
+#endif

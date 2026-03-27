@@ -93,7 +93,7 @@ typedef struct i2cDevice_s {
     i2cState_t state;
 #endif
 #if I2C_TRAIT_HANDLE
-    I2C_HandleTypeDef handle;
+    i2cHalHandle_t *halHandle;
 #endif
 } i2cDevice_t;
 
