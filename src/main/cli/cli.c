@@ -2589,26 +2589,24 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
 
     // Determine if all waypoints equal their defaults
     bool equalsDefaultAll = false;
-    if (flightPlanConfig->waypointCount > 0) {
-        if (defaultFlightPlanConfig) {
-            // Check if counts match
-            if (flightPlanConfig->waypointCount == defaultFlightPlanConfig->waypointCount) {
-                equalsDefaultAll = true;
-                // Check if all waypoints match their defaults
-                for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
-                    const waypoint_t *wp = &flightPlanConfig->waypoints[i];
-                    const waypoint_t *defaultWp = &defaultFlightPlanConfig->waypoints[i];
-                    if (memcmp(wp, defaultWp, sizeof(*wp)) != 0) {
-                        equalsDefaultAll = false;
-                        break;
-                    }
+    if (defaultFlightPlanConfig) {
+        // Check if counts match
+        if (flightPlanConfig->waypointCount == defaultFlightPlanConfig->waypointCount) {
+            equalsDefaultAll = true;
+            // Check if all waypoints match their defaults
+            for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
+                const waypoint_t *wp = &flightPlanConfig->waypoints[i];
+                const waypoint_t *defaultWp = &defaultFlightPlanConfig->waypoints[i];
+                if (memcmp(wp, defaultWp, sizeof(*wp)) != 0) {
+                    equalsDefaultAll = false;
+                    break;
                 }
             }
         }
-
-        // Emit "waypoint clear" before inserts (suppressed in diff when equalsDefaultAll is true)
-        cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
     }
+
+    // Always emit "waypoint clear" before inserts so replaying clears persisted waypoints
+    cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
 
     for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
         const waypoint_t *wp = &flightPlanConfig->waypoints[i];
@@ -2689,6 +2687,13 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         if (*ptr) *ptr++ = '\0';
     }
 
+    // Reject commands with more tokens than MAX_ARGS
+    while (*ptr == ' ') ptr++;
+    if (*ptr != '\0') {
+        cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
     // Validate we have at least one argument
     if (argCount == 0) {
         return;
@@ -2696,6 +2701,10 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
 
     // Check for clear operation
     if (strcasecmp(args[OP], "clear") == 0) {
+        if (argCount != 1) {
+            cliShowInvalidArgumentCountError(cmdName);
+            return;
+        }
         config->waypointCount = 0;
         cliPrintLine("Waypoints cleared");
         return;
@@ -2703,12 +2712,20 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
 
     // Check for list operation
     if (strcasecmp(args[OP], "list") == 0) {
+        if (argCount != 1) {
+            cliShowInvalidArgumentCountError(cmdName);
+            return;
+        }
         printWaypoint(DUMP_MASTER, flightPlanConfig(), NULL, NULL);
         return;
     }
 
     // Check for status operation
     if (strcasecmp(args[OP], "status") == 0) {
+        if (argCount != 1) {
+            cliShowInvalidArgumentCountError(cmdName);
+            return;
+        }
         cliPrintLinef("Waypoint count: %u", config->waypointCount);
 
         // List configured waypoints
@@ -2720,8 +2737,9 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
                 char lonBuffer[16];
                 formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
                 formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
-                cliPrintLinef("  [%d] %s %s %dm %s",
-                    i, latBuffer, lonBuffer, wp->altitude, waypointTypeNames[wp->type]);
+                const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
+                cliPrintLinef("  [%d] %s %s %d.%02dm %s",
+                    i, latBuffer, lonBuffer, wp->altitude / 100, abs(wp->altitude) % 100, typeName);
             }
         }
 
@@ -2738,7 +2756,12 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
             return;
         }
 
-        int index = atoi(args[INDEX]);
+        char *endptr;
+        long index = strtol(args[INDEX], &endptr, 10);
+        if (*endptr != '\0') {
+            cliPrintErrorLinef(cmdName, "INVALID INDEX");
+            return;
+        }
         if (index < 0 || index >= config->waypointCount) {
             cliShowArgumentRangeError(cmdName, "index", 0, config->waypointCount - 1);
             return;
@@ -2769,7 +2792,12 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     }
 
     // Parse index
-    int index = atoi(args[INDEX]);
+    char *endptr;
+    long index = strtol(args[INDEX], &endptr, 10);
+    if (*endptr != '\0') {
+        cliPrintErrorLinef(cmdName, "INVALID INDEX");
+        return;
+    }
 
     if (isInsert) {
         // For insert, index can be 0 to waypointCount (inclusive, to append)
@@ -2801,11 +2829,23 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     }
 
     // Parse other values
-    int32_t altitude = atoi(args[ALT]);
+    long altitude = strtol(args[ALT], &endptr, 10);
+    if (*endptr != '\0') {
+        cliPrintErrorLinef(cmdName, "INVALID ALTITUDE");
+        return;
+    }
 
-    // Parse speed and duration as signed ints first to validate they're non-negative
-    int tmpSpeed = atoi(args[SPEED]);
-    int tmpDuration = atoi(args[DURATION]);
+    // Parse speed and duration with validation
+    long tmpSpeed = strtol(args[SPEED], &endptr, 10);
+    if (*endptr != '\0') {
+        cliPrintErrorLinef(cmdName, "INVALID SPEED");
+        return;
+    }
+    long tmpDuration = strtol(args[DURATION], &endptr, 10);
+    if (*endptr != '\0') {
+        cliPrintErrorLinef(cmdName, "INVALID DURATION");
+        return;
+    }
 
     if (tmpSpeed < 0 || tmpSpeed > UINT16_MAX) {
         cliShowArgumentRangeError(cmdName, "speed", 0, UINT16_MAX);
@@ -2855,7 +2895,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         cliPrintErrorLinef(cmdName, "LONGITUDE OUT OF RANGE. USE: -180.0 to 180.0");
         return;
     }
-    if (altitude < 0) {
+    if (altitude < 0 || altitude > INT32_MAX) {
         cliShowArgumentRangeError(cmdName, "altitude", 0, INT32_MAX);
         return;
     }
@@ -2884,12 +2924,12 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
     formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
 
-    cliPrintLinef("waypoint %s %u %s %s %d %u %s %u %s",
+    cliPrintLinef("waypoint %s %u %s %s %d.%02dm %u %s %u %s",
         isInsert ? "insert" : "update",
         index,
         latBuffer,
         lonBuffer,
-        wp->altitude,
+        wp->altitude / 100, abs(wp->altitude) % 100,
         wp->speed,
         waypointTypeNames[wp->type],
         wp->duration,
@@ -7301,7 +7341,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtxtable", "vtx frequency table", "<band> <bandname> <bandletter> [FACTORY|CUSTOM] <freq> ... <freq>\r\n", cliVtxTable),
 #endif
 #if ENABLE_FLIGHT_PLAN
-    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
+    CLI_COMMAND_DEF("waypoint", "configure waypoints", "list | status | insert <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | update <idx> <lat.ddddddd> <lon.ddddddd> <alt> <spd> <type> <dur> <pat> | remove <idx> | clear", cliWaypoint),
 #endif
 };
 
