@@ -41,5 +41,5 @@ void resetPPMDataReceivedState(void);
 
 bool isPWMDataBeingReceived(void);
 
-struct timerResource_s;
-void pwmICConfig(struct timerResource_s *tim, uint8_t channel, uint16_t polarity, uint8_t filter);
+#include "drivers/timer_types.h"
+void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8_t filter);
