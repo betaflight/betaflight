@@ -95,7 +95,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
 
     for (int motor = 0; motor < getMotorCount(); motor++) {
         for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-            rpmNotchInit(&rpmFilter.notch[motor][i], rpmFilter.minHz * i, rpmFilter.dt, rpmFilter.q, 0.0f);
+            rpmNotchInit(&rpmFilter.notch[motor][i], rpmFilter.minHz * (i + 1), rpmFilter.dt, rpmFilter.q, 0.0f);
         }
     }
 
