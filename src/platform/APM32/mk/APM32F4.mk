@@ -2,6 +2,8 @@
 # APM32F4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 #CMSIS
 CMSIS_DIR      := $(LIB_MAIN_DIR)/APM32F4/Libraries/Device
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
