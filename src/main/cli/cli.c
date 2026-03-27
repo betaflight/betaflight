@@ -3669,7 +3669,7 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
@@ -6759,7 +6759,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),

@@ -30,7 +30,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
-#define SIMULATOR_MULTITHREAD
+#define ENABLE_SIMULATOR_MULTITHREAD 1
 
 #define SYSTEM_HSE_MHZ 0
 #define DEFAULT_CPU_OVERCLOCK 1
@@ -48,10 +48,10 @@
 // disable this if wants to test AHRS algorithm
 #undef USE_IMU_CALC
 
-//#define SIMULATOR_ACC_SYNC
-//#define SIMULATOR_GYRO_SYNC
-//#define SIMULATOR_IMU_SYNC
-//#define SIMULATOR_GYROPID_SYNC
+//#define ENABLE_SIMULATOR_ACC_SYNC 1
+//#define ENABLE_SIMULATOR_GYRO_SYNC 1
+//#define ENABLE_SIMULATOR_IMU_SYNC 1
+//#define ENABLE_SIMULATOR_GYROPID_SYNC 1
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
