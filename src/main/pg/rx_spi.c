@@ -59,7 +59,7 @@ void pgResetFn_rxSpiConfig(rxSpiConfig_t *rxSpiConfig)
 
     // Basic SPI
     rxSpiConfig->csnTag = IO_TAG(RX_SPI_CS_PIN);
-    rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance(RX_SPI_INSTANCE));
+    rxSpiConfig->spibus = SPI_DEV_TO_CFG(spiDeviceByInstance((const spiResource_t *)RX_SPI_INSTANCE));
 
     rxSpiConfig->extiIoTag = IO_TAG(RX_SPI_EXTI_PIN);
 

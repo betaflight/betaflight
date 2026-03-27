@@ -81,7 +81,7 @@ const timerHardware_t *timerGetAllocatedByNumberAndChannel(int8_t timerNumber, u
 {
     for (unsigned i = 0; i < MAX_TIMER_PINMAP_COUNT; i++) {
         const timerHardware_t *timer = timerGetByTagAndIndex(timerIOConfig(i)->ioTag, timerIOConfig(i)->index);
-        if (timer && timerGetTIMNumber(timer->tim) == timerNumber && timer->channel == timerChannel && timerOwners[i].owner) {
+        if (timer && timerGetTIMNumber(timer) == timerNumber && timer->channel == timerChannel && timerOwners[i].owner) {
             return timer;
         }
     }

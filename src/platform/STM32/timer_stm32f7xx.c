@@ -203,7 +203,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     7                               TIM8_CH1    TIM8_CH2    TIM8_CH3                            TIM8_CH4
 */
 
-uint32_t timerClockFromInstance(const void *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
     UNUSED(tim);
     return SystemCoreClock;

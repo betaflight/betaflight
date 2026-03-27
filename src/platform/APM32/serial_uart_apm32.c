@@ -115,16 +115,16 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
 
             /* Enable the UART Parity Error Interrupt */
-            SET_BIT(uartPort->USARTx->CTRL1, USART_CTRL1_PEIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL1, USART_CTRL1_PEIEN);
 
             /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
-            SET_BIT(uartPort->USARTx->CTRL3, USART_CTRL3_ERRIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL3, USART_CTRL3_ERRIEN);
 
             /* Enable the UART Data Register not empty Interrupt */
-            SET_BIT(uartPort->USARTx->CTRL1, USART_CTRL1_RXBNEIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL1, USART_CTRL1_RXBNEIEN);
 
             /* Enable Idle Line detection */
-            SET_BIT(uartPort->USARTx->CTRL1, USART_CTRL1_IDLEIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL1, USART_CTRL1_IDLEIEN);
         } while(false);
     }
 
@@ -160,8 +160,8 @@ void uartReconfigure(uartPort_t *uartPort)
             }
 #endif
             /* Enable the UART Transmit Data Register Empty Interrupt */
-            SET_BIT(uartPort->USARTx->CTRL1, USART_CTRL1_TXBEIEN);
-            SET_BIT(uartPort->USARTx->CTRL1, USART_CTRL1_TXCIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL1, USART_CTRL1_TXBEIEN);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CTRL1, USART_CTRL1_TXCIEN);
         } while(false);
     }
 }

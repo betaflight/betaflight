@@ -170,16 +170,16 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
         {
             /* Enable the UART Parity Error Interrupt */
-            SET_BIT(uartPort->USARTx->CR1, USART_CR1_PEIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR1, USART_CR1_PEIE);
 
             /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
-            SET_BIT(uartPort->USARTx->CR3, USART_CR3_EIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR3, USART_CR3_EIE);
 
             /* Enable the UART Data Register not empty Interrupt */
-            SET_BIT(uartPort->USARTx->CR1, USART_CR1_RXNEIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR1, USART_CR1_RXNEIE);
 
             /* Enable Idle Line detection */
-            SET_BIT(uartPort->USARTx->CR1, USART_CR1_IDLEIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR1, USART_CR1_IDLEIE);
         }
     }
 
@@ -235,8 +235,8 @@ void uartReconfigure(uartPort_t *uartPort)
         {
 
             /* Enable the UART Transmit Data Register Empty Interrupt */
-            SET_BIT(uartPort->USARTx->CR1, USART_CR1_TXEIE);
-            SET_BIT(uartPort->USARTx->CR1, USART_CR1_TCIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR1, USART_CR1_TXEIE);
+            SET_BIT(((USART_TypeDef *)uartPort->USARTx)->CR1, USART_CR1_TCIE);
         }
     }
     return;

@@ -41,4 +41,5 @@ void resetPPMDataReceivedState(void);
 
 bool isPWMDataBeingReceived(void);
 
-void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter);
+struct timerResource_s;
+void pwmICConfig(struct timerResource_s *tim, uint8_t channel, uint16_t polarity, uint8_t filter);

@@ -46,6 +46,6 @@ void pgResetFn_vtxIOConfig(vtxIOConfig_t *vtxIOConfig)
     vtxIOConfig->dataTag = IO_TAG(RTC6705_SPI_SDO_PIN);
 
     // hardware spi
-    vtxIOConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(RTC6705_SPI_INSTANCE));
+    vtxIOConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance((const spiResource_t *)RTC6705_SPI_INSTANCE));
 }
 #endif

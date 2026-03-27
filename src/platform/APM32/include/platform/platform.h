@@ -218,8 +218,8 @@
 
 #define UARTHARDWARE_MAX_PINS 4
 
-#define UART_REG_RXD(base) ((base)->DATA)
-#define UART_REG_TXD(base) ((base)->DATA)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->DATA)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->DATA)
 
 #define DMA_TRAIT_CHANNEL 1
 

@@ -84,20 +84,20 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-typedef struct
+struct spiResource_s
 {
     void* test;
-} SPI_TypeDef;
+};
 
 typedef struct
 {
     void* test;
 } USART_TypeDef;
 
-typedef struct
+typedef struct i2cResource_s
 {
     void *test;
-} I2C_TypeDef;
+} i2cResource_t;
 
 typedef struct
 {

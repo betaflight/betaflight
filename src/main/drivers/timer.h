@@ -25,6 +25,7 @@
 
 #include "drivers/dma.h"
 #include "drivers/io_types.h"
+#include "drivers/timer_types.h"
 
 #if PLATFORM_TRAIT_RCC
 #include "platform/rcc_types.h"
@@ -70,7 +71,7 @@ typedef struct timerOvrHandlerRec_s {
 } timerOvrHandlerRec_t;
 
 typedef struct timerHardware_s {
-    void *tim;
+    timerResource_t *tim;
     ioTag_t tag;
     uint8_t channel;
     uint8_t output;
