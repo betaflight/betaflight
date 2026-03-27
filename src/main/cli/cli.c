@@ -2559,10 +2559,8 @@ static bool parseDecimalCoordinate(const char *str, int32_t *result)
 }
 
 // Format coordinate as decimal string with 7 decimal places
-static void formatDecimalCoordinate(int32_t value, char *buffer, size_t bufferSize)
+static void formatDecimalCoordinate(int32_t value, char *buffer)
 {
-    UNUSED(bufferSize);
-
     bool negative = value < 0;
     int32_t integerPart, fractionalPart;
 
@@ -2620,8 +2618,8 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             equalsDefault = !memcmp(wp, defaultWp, sizeof(*wp));
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
 
-            formatDecimalCoordinate(defaultWp->latitude, latBuffer, sizeof(latBuffer));
-            formatDecimalCoordinate(defaultWp->longitude, lonBuffer, sizeof(lonBuffer));
+            formatDecimalCoordinate(defaultWp->latitude, latBuffer);
+            formatDecimalCoordinate(defaultWp->longitude, lonBuffer);
 
             const char *defaultTypeName = (defaultWp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[defaultWp->type] : "UNKNOWN";
             const char *defaultPatternName = (defaultWp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[defaultWp->pattern] : "UNKNOWN";
@@ -2638,8 +2636,8 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
             );
         }
 
-        formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
-        formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+        formatDecimalCoordinate(wp->latitude, latBuffer);
+        formatDecimalCoordinate(wp->longitude, lonBuffer);
 
         const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
         const char *patternName = (wp->pattern < ARRAYLEN(waypointPatternNames)) ? waypointPatternNames[wp->pattern] : "UNKNOWN";
@@ -2735,8 +2733,8 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
                 const waypoint_t *wp = &config->waypoints[i];
                 char latBuffer[16];
                 char lonBuffer[16];
-                formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
-                formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+                formatDecimalCoordinate(wp->latitude, latBuffer);
+                formatDecimalCoordinate(wp->longitude, lonBuffer);
                 const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
                 cliPrintLinef("  [%d] %s %s %d.%02dm %s",
                     i, latBuffer, lonBuffer, wp->altitude / 100, abs(wp->altitude) % 100, typeName);
@@ -2753,6 +2751,11 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     if (strcasecmp(args[OP], "remove") == 0) {
         if (argCount != 2) {
             cliShowInvalidArgumentCountError(cmdName);
+            return;
+        }
+
+        if (config->waypointCount == 0) {
+            cliPrintErrorLinef(cmdName, "NO WAYPOINTS TO REMOVE");
             return;
         }
 
@@ -2811,6 +2814,10 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     } else {
         // For update, index must be within existing waypoints
+        if (config->waypointCount == 0) {
+            cliPrintErrorLinef(cmdName, "NO WAYPOINTS TO UPDATE");
+            return;
+        }
         if (index < 0 || index >= config->waypointCount) {
             cliShowArgumentRangeError(cmdName, "index", 0, config->waypointCount - 1);
             return;
@@ -2895,8 +2902,8 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         cliPrintErrorLinef(cmdName, "LONGITUDE OUT OF RANGE. USE: -180.0 to 180.0");
         return;
     }
-    if (altitude < 0 || altitude > INT32_MAX) {
-        cliShowArgumentRangeError(cmdName, "altitude", 0, INT32_MAX);
+    if (altitude < 0) {
+        cliPrintErrorLinef(cmdName, "ALTITUDE MUST BE >= 0");
         return;
     }
 
@@ -2921,8 +2928,8 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
 
     char latBuffer[16];
     char lonBuffer[16];
-    formatDecimalCoordinate(wp->latitude, latBuffer, sizeof(latBuffer));
-    formatDecimalCoordinate(wp->longitude, lonBuffer, sizeof(lonBuffer));
+    formatDecimalCoordinate(wp->latitude, latBuffer);
+    formatDecimalCoordinate(wp->longitude, lonBuffer);
 
     cliPrintLinef("waypoint %s %u %s %s %d.%02dm %u %s %u %s",
         isInsert ? "insert" : "update",
