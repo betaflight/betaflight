@@ -193,6 +193,16 @@ struct spiResource_s
     void* test;
 };
 
+struct quadSpiResource_s
+{
+    void* test;
+};
+
+struct octoSpiResource_s
+{
+    void* test;
+};
+
 typedef struct
 {
     void* test;

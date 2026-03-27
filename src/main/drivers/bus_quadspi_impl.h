@@ -42,7 +42,7 @@ typedef struct quadSpiPinDef_s {
 
 typedef struct quadSpiHardware_s {
     quadSpiDevice_e device;
-    QUADSPI_TypeDef *reg;
+    quadSpiResource_t *reg;
     quadSpiPinDef_t clkPins[MAX_QUADSPI_PIN_SEL];
     quadSpiPinDef_t bk1IO0Pins[MAX_QUADSPI_PIN_SEL];
     quadSpiPinDef_t bk1IO1Pins[MAX_QUADSPI_PIN_SEL];
@@ -63,7 +63,7 @@ typedef struct quadSpiHardware_s {
 extern const quadSpiHardware_t quadSpiHardware[];
 
 typedef struct quadSpiDevice_s {
-    QUADSPI_TypeDef *dev;
+    quadSpiResource_t *dev;
     ioTag_t clk;
     ioTag_t bk1IO0;
     ioTag_t bk1IO1;
@@ -101,4 +101,4 @@ typedef struct quadSpiDevice_s {
 extern quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT];
 
 void quadSpiInitDevice(quadSpiDevice_e device);
-uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance);
+uint32_t quadSpiTimeoutUserCallback(quadSpiResource_t *instance);

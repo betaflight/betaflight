@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "drivers/bus_quadspi_types.h"
+
 #ifdef USE_OCTOSPI
 
 typedef enum octoSpiDevice_e {
@@ -35,22 +37,22 @@ typedef enum octoSpiDevice_e {
 #define OCTOSPI_CFG_TO_DEV(x)   ((x) - 1)
 #define OCTOSPI_DEV_TO_CFG(x)   ((x) + 1)
 
-octoSpiDevice_e octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance);
-OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device);
+octoSpiDevice_e octoSpiDeviceByInstance(octoSpiResource_t *instance);
+octoSpiResource_t *octoSpiInstanceByDevice(octoSpiDevice_e device);
 
 bool octoSpiInit(octoSpiDevice_e device);
-bool octoSpiReceive1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
-bool octoSpiReceive4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
-bool octoSpiTransmit1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
+bool octoSpiReceive1LINE(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool octoSpiReceive4LINES(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length);
+bool octoSpiTransmit1LINE(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length);
 
-bool octoSpiReceiveWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool octoSpiReceiveWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
-bool octoSpiTransmitWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
-bool octoSpiTransmitWithAddress4LINES(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool octoSpiReceiveWithAddress1LINE(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool octoSpiReceiveWithAddress4LINES(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length);
+bool octoSpiTransmitWithAddress1LINE(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
+bool octoSpiTransmitWithAddress4LINES(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length);
 
-bool octoSpiInstructionWithAddress1LINE(OCTOSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
+bool octoSpiInstructionWithAddress1LINE(octoSpiResource_t *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize);
 
-void octoSpiDisableMemoryMappedMode(OCTOSPI_TypeDef *instance);
-void octoSpiEnableMemoryMappedMode(OCTOSPI_TypeDef *instance);
+void octoSpiDisableMemoryMappedMode(octoSpiResource_t *instance);
+void octoSpiEnableMemoryMappedMode(octoSpiResource_t *instance);
 
 #endif

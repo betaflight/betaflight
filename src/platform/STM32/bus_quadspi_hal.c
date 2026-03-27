@@ -48,7 +48,7 @@ const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
 #ifdef STM32H7
     {
         .device = QUADSPIDEV_1,
-        .reg = QUADSPI,
+        .reg = (quadSpiResource_t *)QUADSPI,
         .clkPins = {
             { DEFIO_TAG_E(PB2),  GPIO_AF9_QUADSPI },
         },
@@ -101,7 +101,7 @@ const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
 #ifdef STM32G4
     {
         .device = QUADSPIDEV_1,
-        .reg = QUADSPI,
+        .reg = (quadSpiResource_t *)QUADSPI,
         .clkPins = {
             { DEFIO_TAG_E(PA3), GPIO_AF10_QUADSPI },
             { DEFIO_TAG_E(PB10), GPIO_AF10_QUADSPI },
@@ -302,7 +302,7 @@ void quadSpiInitDevice(quadSpiDevice_e device)
         IOConfigGPIO(IOGetByTag(quadSpi->bk2CS), QUADSPI_IO_BK_CS_CFG);
     }
 
-    quadSpi->hquadSpi.Instance = quadSpi->dev;
+    quadSpi->hquadSpi.Instance = (QUADSPI_TypeDef *)quadSpi->dev;
     // DeInit QUADSPI hardware
     HAL_QSPI_DeInit(&quadSpi->hquadSpi);
 
@@ -356,7 +356,7 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
-LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
+LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
@@ -367,7 +367,7 @@ LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 #define QUADSPI_DEFAULT_TIMEOUT 10
 
-static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiSelectDevice(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
@@ -396,7 +396,7 @@ static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiDeselectDevice(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 

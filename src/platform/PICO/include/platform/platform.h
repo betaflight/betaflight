@@ -55,7 +55,13 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 // SPI_INST converts to the correct type for use in pico-sdk functions.
 #define SPI_INST(spi)        ((spi_inst_t *)(spi))
 
-#define QUADSPI_TypeDef      void
+// quadSpiResource_s: platform-specific definition of the opaque quadSpiResource_t.
+// PICO has no hardware QUADSPI peripheral; this is a placeholder struct.
+struct quadSpiResource_s
+{
+    void* test;
+};
+
 #define MAX_QUADSPI_PIN_SEL  1
 
 #define QUADSPI_TRAIT_CS_SOFTWARE       1
