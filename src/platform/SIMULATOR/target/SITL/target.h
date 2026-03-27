@@ -215,10 +215,10 @@ typedef struct
 #define SIMULATOR_MAX_RC_CHANNELS   16
 #define SIMULATOR_MAX_PWM_CHANNELS  16
 
-typedef struct i2cResource_s
+struct i2cResource_s
 {
     void* test;
-} i2cResource_t;
+};
 
 typedef struct {
     double timestamp;                   // in seconds

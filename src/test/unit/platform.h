@@ -94,10 +94,10 @@ typedef struct
     void* test;
 } USART_TypeDef;
 
-typedef struct i2cResource_s
+struct i2cResource_s
 {
     void *test;
-} i2cResource_t;
+};
 
 typedef struct
 {
