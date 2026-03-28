@@ -37,6 +37,7 @@
 #include "sensors/opticalflow.h"
 #include "sensors/sensors.h"
 
+// Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with gyroHardware_e
 const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_NONE] = "NONE",
@@ -147,13 +148,15 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
     [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
     [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
     [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
-    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
+    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI",
+    [RANGEFINDER_UPT1] = "UPT1"
 };
 
 // sync with opticalflowType_e
 const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
     [OPTICALFLOW_NONE] = "NONE",
-    [OPTICALFLOW_MT] = "MT"
+    [OPTICALFLOW_MT] = "MT",
+    [OPTICALFLOW_UPT1] = "UPT1"
 };
 
 static const char * const sensorTypeNames[] = {

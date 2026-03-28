@@ -42,10 +42,8 @@
 
 float autopilotAngle[RP_AXIS_COUNT];
 
-void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz)
+void resetPositionControl(unsigned taskRateHz)
 {
-    // from pos_hold.c (or other client) when initiating position hold at target location
-    UNUSED(initialTargetLocation);
     UNUSED(taskRateHz);
 }
 

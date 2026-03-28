@@ -33,6 +33,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+#include "flight/position_nav.h"
 
 #include "rx/rx.h"
 #include "pg/autopilot.h"
@@ -76,6 +77,9 @@ static void altHoldProcessTransitions(void) {
             altHold.isActive = true;
         }
     } else {
+        if (altHold.isActive) {
+            resetAltitudeControl();  // Reset throttle output when exiting altitude hold
+        }
         altHold.isActive = false;
     }
 
@@ -139,7 +143,19 @@ static void altHoldUpdate(void)
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
-    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);
+
+    float targetAltCm = altHold.targetAltitudeCm;
+    float targetVelForAlt = altHold.targetVelocity;
+
+    if (positionNavHasActiveTarget() && !positionNavTargetReached()) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        if (navCmd->includeAltitude) {
+            targetAltCm = navCmd->targetPosEfM.z * 100.0f;
+            targetVelForAlt = positionNavGetTargetVelocityCmS().z;
+        }
+    }
+
+    altitudeControl(targetAltCm, taskIntervalSeconds, targetVelForAlt);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
