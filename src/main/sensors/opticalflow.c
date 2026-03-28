@@ -188,7 +188,7 @@ void opticalflowProcess(void) {
         static float xRotation[MAX_GYRO_SAMPLE_DELAY];
         static float yRotation[MAX_GYRO_SAMPLE_DELAY];
 
-        const uint8_t sampleDelay = opticalflow.dev.gyroSampleDelay;
+        const uint8_t sampleDelay = (uint8_t)constrain((int)opticalflow.dev.gyroSampleDelay, 1, MAX_GYRO_SAMPLE_DELAY);
         gyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
         xRotation[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
         yRotation[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
