@@ -32,7 +32,8 @@ typedef struct positionNavCommand_s {
     bool completed;
     bool completionSignalled;
 
-    vector2_t targetPosEfM;         // target position, metres, ENU
+    vector3_t targetPosEfM;         // target position, metres, ENU (x=east, y=north, z=up)
+    bool includeAltitude;           // when false, z is ignored for nav, arrival, and alt coupling
 
     float cruiseSpeedMps;           // maximum cruise speed (m/s)
     float acceptanceRadiusM;        // arrival zone radius (metres)
@@ -50,11 +51,14 @@ typedef struct positionNavCommand_s {
 void positionNavInit(void);
 void positionNavReset(void);
 
+// includeAltitude: when true, z is used for 3D path, vertical arrival, target velocity Z, and
+// altitude hold coupling (see alt_hold). When false, only horizontal plane is used (legacy 2D nav).
 void positionNavSetTargetEf(
-    const vector2_t *targetPosEfM,
+    const vector3_t *targetPosEfM,
     float cruiseSpeedMps,
     float acceptanceRadiusM,
     float completionSpeedMps,
+    bool includeAltitude,
     positionNavReachedCallbackFn callback,
     void *userData
 );
@@ -74,4 +78,4 @@ void positionNavSetAutoClearOnReach(bool autoClear);
 void positionNavUpdate(float dt, const positionEstimate3d_t *est);
 
 // Returns the target velocity computed by the most recent update (cm/s, ENU).
-vector2_t positionNavGetTargetVelocityCmS(void);
+vector3_t positionNavGetTargetVelocityCmS(void);

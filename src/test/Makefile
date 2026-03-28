@@ -561,7 +561,7 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 18
+CC_VERSION_CHECK_MAX := 21
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator
