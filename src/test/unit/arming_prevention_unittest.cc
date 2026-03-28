@@ -1175,7 +1175,7 @@ void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, 
     void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
     bool positionNavHasActiveTarget(void) { return false; }
     bool positionNavTargetReached(void) { return false; }
-    vector2_t positionNavGetTargetVelocityCmS(void) { return (vector2_t){{0, 0}}; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
     const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
 
     bool canUseGPSHeading;

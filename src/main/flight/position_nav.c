@@ -38,9 +38,10 @@
 #define HYSTERESIS_FACTOR      1.5f
 
 static positionNavCommand_t cmd;
-static vector2_t previousTargetVelMps;
-static vector2_t currentTargetVelCmS;
+static vector3_t previousTargetVelMps;
+static vector3_t currentTargetVelCmS;
 static bool withinAcceptanceRadius;
+static bool withinAcceptanceAltitude;
 
 void positionNavInit(void)
 {
@@ -50,16 +51,18 @@ void positionNavInit(void)
 void positionNavReset(void)
 {
     memset(&cmd, 0, sizeof(cmd));
-    vector2Zero(&previousTargetVelMps);
-    vector2Zero(&currentTargetVelCmS);
+    vector3Zero(&previousTargetVelMps);
+    vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
+    withinAcceptanceAltitude = false;
 }
 
 void positionNavSetTargetEf(
-    const vector2_t *targetPosEfM,
+    const vector3_t *targetPosEfM,
     float cruiseSpeedMps,
     float acceptanceRadiusM,
     float completionSpeedMps,
+    bool includeAltitude,
     positionNavReachedCallbackFn callback,
     void *userData
 )
@@ -69,6 +72,7 @@ void positionNavSetTargetEf(
     cmd.completionSignalled = false;
 
     cmd.targetPosEfM = *targetPosEfM;
+    cmd.includeAltitude = includeAltitude;
     cmd.cruiseSpeedMps = cruiseSpeedMps;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
@@ -76,9 +80,10 @@ void positionNavSetTargetEf(
     cmd.callback = callback;
     cmd.callbackUserData = userData;
 
-    vector2Zero(&previousTargetVelMps);
-    vector2Zero(&currentTargetVelCmS);
+    vector3Zero(&previousTargetVelMps);
+    vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
+    withinAcceptanceAltitude = false;
 }
 
 void positionNavClearTarget(void)
@@ -86,9 +91,10 @@ void positionNavClearTarget(void)
     cmd.active = false;
     cmd.completed = false;
     cmd.completionSignalled = false;
-    vector2Zero(&currentTargetVelCmS);
-    vector2Zero(&previousTargetVelMps);
+    vector3Zero(&currentTargetVelCmS);
+    vector3Zero(&previousTargetVelMps);
     withinAcceptanceRadius = false;
+    withinAcceptanceAltitude = false;
 }
 
 bool positionNavHasActiveTarget(void)
@@ -120,84 +126,96 @@ void positionNavSetAutoClearOnReach(bool autoClear)
 void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 {
     if (!cmd.active || cmd.completed) {
-        vector2Zero(&currentTargetVelCmS);
+        vector3Zero(&currentTargetVelCmS);
         return;
     }
 
-    // Current position converted from cm to metres
     const float posEastM  = est->position.x * 0.01f;
     const float posNorthM = est->position.y * 0.01f;
+    const float posUpM    = est->position.z * 0.01f;
 
-    // Error: target minus current (metres, ENU)
-    const vector2_t errorEfM = {{
+    vector3_t errorEfM = {{
         cmd.targetPosEfM.x - posEastM,
-        cmd.targetPosEfM.y - posNorthM
+        cmd.targetPosEfM.y - posNorthM,
+        cmd.includeAltitude ? (cmd.targetPosEfM.z - posUpM) : 0.0f
     }};
 
-    const float distanceM = vector2Norm(&errorEfM);
+    const float horizDistM = sqrtf(sq(errorEfM.x) + sq(errorEfM.y));
+    const float distanceM = cmd.includeAltitude ? vector3Norm(&errorEfM) : horizDistM;
 
-    // Direction unit vector (safe against near-zero distance)
-    vector2_t dirEf;
+    vector3_t dirEf;
     if (distanceM > MIN_DISTANCE_M) {
-        vector2Scale(&dirEf, &errorEfM, 1.0f / distanceM);
+        vector3Scale(&dirEf, &errorEfM, 1.0f / distanceM);
     } else {
-        vector2Zero(&dirEf);
+        vector3Zero(&dirEf);
     }
 
-    // Speed profile: proportional ramp capped at cruise speed
     float desiredSpeedMps = fminf(cmd.cruiseSpeedMps, POS_TO_VEL_KP * distanceM);
 
-    // Braking curve: v = sqrt(2 * decel * distance)
     if (cmd.maxDecelMps2 > 0.0f) {
         const float brakingSpeed = sqrtf(2.0f * cmd.maxDecelMps2 * distanceM);
         desiredSpeedMps = fminf(desiredSpeedMps, brakingSpeed);
     }
 
-    // Target velocity = direction * desired speed
-    vector2_t targetVelMps;
-    vector2Scale(&targetVelMps, &dirEf, desiredSpeedMps);
+    vector3_t targetVelMps;
+    vector3Scale(&targetVelMps, &dirEf, desiredSpeedMps);
 
-    // Acceleration limiting (applied to the change in target velocity)
     if (cmd.maxAccelMps2 > 0.0f && dt > 0.0f) {
-        vector2_t delta;
-        vector2Sub(&delta, &targetVelMps, &previousTargetVelMps);
-        const float deltaMag = vector2Norm(&delta);
+        vector3_t delta;
+        vector3Sub(&delta, &targetVelMps, &previousTargetVelMps);
+        const float deltaMag = vector3Norm(&delta);
         const float maxDelta = cmd.maxAccelMps2 * dt;
         if (deltaMag > maxDelta && deltaMag > 0.0f) {
-            vector2Scale(&delta, &delta, maxDelta / deltaMag);
+            vector3Scale(&delta, &delta, maxDelta / deltaMag);
         }
-        vector2Add(&targetVelMps, &previousTargetVelMps, &delta);
+        vector3Add(&targetVelMps, &previousTargetVelMps, &delta);
     }
 
     previousTargetVelMps = targetVelMps;
 
-    // Convert m/s to cm/s for autopilot consumption
-    currentTargetVelCmS = (vector2_t){{
+    currentTargetVelCmS = (vector3_t){{
         targetVelMps.x * 100.0f,
-        targetVelMps.y * 100.0f
+        targetVelMps.y * 100.0f,
+        targetVelMps.z * 100.0f
     }};
 
-    // --- Arrival detection with hysteresis ---
-    const float currentSpeedMps = sqrtf(sq(est->velocity.x) + sq(est->velocity.y)) * 0.01f;
+    const float horizSpeedMps = sqrtf(sq(est->velocity.x) + sq(est->velocity.y)) * 0.01f;
+    const float absVzMps = fabsf(est->velocity.z * 0.01f);
+    const float absErrZM = fabsf(cmd.targetPosEfM.z - posUpM);
 
     if (!withinAcceptanceRadius) {
-        if (distanceM <= cmd.acceptanceRadiusM) {
+        if (horizDistM <= cmd.acceptanceRadiusM) {
             withinAcceptanceRadius = true;
         }
     } else {
-        if (distanceM > cmd.acceptanceRadiusM * HYSTERESIS_FACTOR) {
+        if (horizDistM > cmd.acceptanceRadiusM * HYSTERESIS_FACTOR) {
             withinAcceptanceRadius = false;
         }
     }
 
-    const bool reached = withinAcceptanceRadius &&
-                         (currentSpeedMps <= cmd.completionSpeedMps);
+    if (cmd.includeAltitude) {
+        if (!withinAcceptanceAltitude) {
+            if (absErrZM <= cmd.acceptanceRadiusM) {
+                withinAcceptanceAltitude = true;
+            }
+        } else {
+            if (absErrZM > cmd.acceptanceRadiusM * HYSTERESIS_FACTOR) {
+                withinAcceptanceAltitude = false;
+            }
+        }
+    } else {
+        withinAcceptanceAltitude = true;
+    }
+
+    const bool horizSpeedOk = (horizSpeedMps <= cmd.completionSpeedMps);
+    const bool vertSpeedOk = !cmd.includeAltitude || (absVzMps <= cmd.completionSpeedMps);
+    const bool reached = withinAcceptanceRadius && withinAcceptanceAltitude && horizSpeedOk && vertSpeedOk;
 
     if (reached && !cmd.completionSignalled) {
         cmd.completed = true;
         cmd.completionSignalled = true;
 
-        vector2Zero(&currentTargetVelCmS);
+        vector3Zero(&currentTargetVelCmS);
 
         if (cmd.callback) {
             cmd.callback(cmd.callbackUserData);
@@ -209,7 +227,7 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     }
 }
 
-vector2_t positionNavGetTargetVelocityCmS(void)
+vector3_t positionNavGetTargetVelocityCmS(void)
 {
     return currentTargetVelCmS;
 }
