@@ -297,7 +297,7 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     // Z altitude measurement
     if (gpsAltAllowed) {
         if (!gpsAltOffsetSet) {
-            gpsAltOffsetCm = gpsSol.llh.altCm;
+            gpsAltOffsetCm = gpsSol.llh.altCm - kalmanGetPosition(&kfZ);
             gpsAltOffsetSet = true;
         }
 
@@ -381,7 +381,7 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
     }
 
     if (!rangefinderOffsetSet) {
-        rangefinderAltOffsetCm = altCm;
+        rangefinderAltOffsetCm = altCm - kalmanGetPosition(&kfZ);
         rangefinderOffsetSet = true;
     }
 
