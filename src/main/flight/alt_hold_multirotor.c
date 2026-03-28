@@ -73,11 +73,13 @@ static void altHoldProcessTransitions(void) {
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHold.isActive) {
             altHoldReset();
+            autopilotCaptureHoverThrottleForAltHold();
             altHold.isActive = true;
         }
     } else {
         if (altHold.isActive) {
             resetAltitudeControl();  // Reset throttle output when exiting altitude hold
+            autopilotClearAltHoldHoverThrottle();
         }
         altHold.isActive = false;
     }
@@ -104,8 +106,9 @@ static void altHoldUpdateTargetAltitude(void)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadband * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
-        const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
+        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
+        const float lowThreshold = hoverPwm - altHold.deadband * (hoverPwm - PWM_RANGE_MIN);
+        const float highThreshold = hoverPwm + altHold.deadband * (PWM_RANGE_MAX - hoverPwm);
 
         if (rcThrottle < lowThreshold) {
             stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);

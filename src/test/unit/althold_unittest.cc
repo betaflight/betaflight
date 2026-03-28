@@ -33,6 +33,7 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/alt_hold.h"
+    #include "flight/autopilot_multirotor.h"
     #include "flight/failsafe.h"
     #include "flight/imu.h"
     #include "flight/pid.h"
@@ -99,6 +100,21 @@ TEST(AltholdUnittest, altHoldTransitionsTestUnfinishedExitEnter)
     millisRW = 42;
     updateAltHold(currentTimeUs);
     EXPECT_EQ(isAltHoldActive(), true);
+}
+
+TEST(AltholdUnittest, altHoldCapturesHoverThrottleWhenConfigZero)
+{
+    altHoldInit();
+    autopilotConfigMutable()->hoverThrottle = 0;
+    rcCommand[THROTTLE] = 1450.0f;
+
+    flightModeFlags |= ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);
+    EXPECT_EQ(autopilotGetEffectiveHoverThrottlePwm(), 1450);
+
+    flightModeFlags &= ~ALT_HOLD_MODE;
+    updateAltHold(currentTimeUs);
+    EXPECT_EQ(autopilotGetEffectiveHoverThrottlePwm(), AP_HOVER_THROTTLE_DEFAULT);
 }
 
 // STUBS

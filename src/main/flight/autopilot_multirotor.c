@@ -68,6 +68,11 @@
 static pidCoefficient_t altitudePidCoeffs;
 static pidCoefficient_t positionPidCoeffs;
 
+// When autopilot hoverThrottle PG is 0, altitude hold captures rcCommand[THROTTLE] on mode entry.
+#define AP_HOVER_THROTTLE_CAPTURE_MIN 1100U
+#define AP_HOVER_THROTTLE_CAPTURE_MAX 1700U
+static uint16_t altHoldCapturedHoverPwm;
+
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
@@ -166,6 +171,32 @@ void resetAltitudeControl(void)
     throttleOut = 0.0f;
 }
 
+uint16_t autopilotGetEffectiveHoverThrottlePwm(void)
+{
+    const uint16_t cfgHover = autopilotConfig()->hoverThrottle;
+    if (cfgHover != 0) {
+        return cfgHover;
+    }
+    if (altHoldCapturedHoverPwm != 0) {
+        return altHoldCapturedHoverPwm;
+    }
+    return AP_HOVER_THROTTLE_DEFAULT;
+}
+
+void autopilotCaptureHoverThrottleForAltHold(void)
+{
+    if (autopilotConfig()->hoverThrottle != 0) {
+        altHoldCapturedHoverPwm = 0;
+        return;
+    }
+    altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcCommand[THROTTLE], (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
+}
+
+void autopilotClearAltHoldHoverThrottle(void)
+{
+    altHoldCapturedHoverPwm = 0;
+}
+
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
 {
     const float verticalVelocityCmS = getAltitudeDerivative();
@@ -189,7 +220,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float altitudeD = verticalVelocityCmS * dBoost * altitudePidCoeffs.Kd;
     const float altitudeF = targetAltitudeStep * altitudePidCoeffs.Kf;
 
-    const float hoverOffset = autopilotConfig()->hoverThrottle - PWM_RANGE_MIN;
+    const float hoverOffset = (float)autopilotGetEffectiveHoverThrottlePwm() - PWM_RANGE_MIN;
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
 
     const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);

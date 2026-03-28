@@ -18,9 +18,13 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "common/axis.h"
 
 #ifndef USE_WING
+
+#define AP_HOVER_THROTTLE_DEFAULT 1275U
 
 extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
@@ -31,6 +35,10 @@ void resetPositionControl(unsigned taskRateHz);
 void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
+
+uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
+void autopilotCaptureHoverThrottleForAltHold(void);
+void autopilotClearAltHoldHoverThrottle(void);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
