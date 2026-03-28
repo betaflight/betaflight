@@ -190,6 +190,7 @@ void positionEstimatorEnableXY(bool enable)
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
+        gpsArmLocationSet = false;
         if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
             armLocationGps = gpsSol.llh;
             gpsArmLocationSet = true;
@@ -268,6 +269,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     const bool gpsAltAllowed = (altSource == ALTITUDE_SOURCE_DEFAULT ||
                                 altSource == ALTITUDE_SOURCE_GPS_ONLY ||
                                 altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER);
+
+    // Latch GPS origin on first valid fix after enable/reset
+    if (xyEnabled && !gpsArmLocationSet) {
+        armLocationGps = gpsSol.llh;
+        gpsArmLocationSet = true;
+    }
 
     // XY position + velocity measurements
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
@@ -619,6 +626,7 @@ void positionEstimatorResetXY(void)
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS
+    gpsArmLocationSet = false;
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         armLocationGps = gpsSol.llh;
         gpsArmLocationSet = true;
