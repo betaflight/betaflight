@@ -83,8 +83,6 @@ static float posSlowIntegral[EF_AXIS_COUNT];   // II term: slow drift correction
 static float previousVelocity[EF_AXIS_COUNT];
 static bool axisIsStopping[EF_AXIS_COUNT];
 static vector3_t targetPosition;
-
-static vector3_t targetPosition;
 static bool wasNavActive = false;
 
 typedef struct autopilotState_s {
