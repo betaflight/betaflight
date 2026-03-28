@@ -73,10 +73,6 @@ void positionNavSetTargetEf(
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
 
-    cmd.maxAccelMps2 = 0.0f;
-    cmd.maxDecelMps2 = 0.0f;
-    cmd.autoClearOnReach = false;
-
     cmd.callback = callback;
     cmd.callbackUserData = userData;
 
