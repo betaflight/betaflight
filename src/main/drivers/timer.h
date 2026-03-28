@@ -40,10 +40,7 @@
 #include "pg/timerio.h"
 
 #define CC_CHANNELS_PER_TIMER         4 // TIM_Channel_1..4
-#ifdef AT32F435
-#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
-#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
-#else
+#ifndef CC_CHANNEL_FROM_INDEX
 #define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) << 2)
 #define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)((x) >> 2))
 #endif
