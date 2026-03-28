@@ -316,7 +316,6 @@ void i2cInit(i2cDevice_e device)
     i2cInit.OwnAddrSize = LL_I2C_OWNADDRESS1_7BIT;
 
     LL_I2C_Init(I2Cx, &i2cInit);
-    LL_I2C_EnableAnalogFilter(I2Cx);
     LL_I2C_Enable(I2Cx);
 
     // Setup interrupt handlers

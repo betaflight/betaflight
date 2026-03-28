@@ -31,8 +31,6 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_fmac.c \
             stm32h7xx_hal_gfxmmu.c \
             stm32h7xx_hal_gpio.c \
-            stm32h7xx_hal_i2c.c \
-            stm32h7xx_hal_i2c_ex.c \
             stm32h7xx_hal_ospi.c \
             stm32h7xx_hal_otfdec.c \
             stm32h7xx_hal_pcd.c \

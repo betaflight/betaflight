@@ -381,6 +381,10 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
         // Wait for Transfer Complete (TC) - SOFTEND means no auto-stop
         while (!LL_I2C_IsActiveFlag_TC(I2Cx)) {
+            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+                LL_I2C_ClearFlag_NACK(I2Cx);
+                return i2cHandleHardwareFailure(device);
+            }
             if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
                 return i2cHandleHardwareFailure(device);
             }
@@ -395,6 +399,10 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
     // Read all bytes
     for (uint8_t i = 0; i < len; i++) {
         while (!LL_I2C_IsActiveFlag_RXNE(I2Cx)) {
+            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+                LL_I2C_ClearFlag_NACK(I2Cx);
+                return i2cHandleHardwareFailure(device);
+            }
             if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
                 return i2cHandleHardwareFailure(device);
             }
