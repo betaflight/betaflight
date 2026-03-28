@@ -57,6 +57,8 @@ STDPERIPH_SRC   = \
             stm32h7xx_ll_fmac.c \
             stm32h7xx_ll_sdmmc.c \
             stm32h7xx_ll_spi.c \
+            stm32h7xx_ll_usart.c \
+            stm32h7xx_ll_rcc.c \
             stm32h7xx_ll_tim.c \
             stm32h7xx_ll_usb.c
 
@@ -309,7 +311,7 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32h7xx.c \
             STM32/system_stm32h7xx.c \
             STM32/timer_hal.c \

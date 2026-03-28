@@ -34,6 +34,7 @@
 #include "apm32f4xx_ddl_tmr.h"
 #include "apm32f4xx_ddl_system.h"
 #include "apm32f4xx_ddl_adc.h"
+#include "apm32f4xx_ddl_usart.h"
 
 #include "apm32f4xx_ddl_ex.h"
 
@@ -73,6 +74,10 @@
 #define LL_EX_DMA_GetDataLength     DDL_EX_DMA_GetDataLength
 #define LL_EX_DMA_SetDataLength     DDL_EX_DMA_SetDataLength
 #define LL_EX_DMA_EnableIT_TC       DDL_EX_DMA_EnableIT_TC
+#define LL_EX_DMA_SetMemoryAddress  DDL_EX_DMA_SetMemoryAddress
+#define LL_EX_DMA_SetPeriphAddress  DDL_EX_DMA_SetPeriphAddress
+
+#define LL_USART_EnableIT_TXE       DDL_USART_EnableIT_TXE
 
 #define TIM_TypeDef                 TMR_TypeDef
 #define TIM_HandleTypeDef           TMR_HandleTypeDef

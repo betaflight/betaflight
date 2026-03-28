@@ -81,6 +81,61 @@ __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Channel_TypeDef *DMAx_Channely)
     SET_BIT(DMAx_Channely->CCR, DMA_CCR_TCIE);
 }
 
+__STATIC_INLINE void LL_EX_DMA_SetMemoryAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
+{
+    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
+    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
+    // For GPDMA, memory can be source or destination depending on direction.
+    // SetDestAddress is correct for periph-to-mem (RX), SetSrcAddress for mem-to-periph (TX).
+    // Caller must ensure correct usage based on transfer direction.
+    LL_DMA_SetDestAddress(DMA, Channel, addr);
+}
+
+__STATIC_INLINE void LL_EX_DMA_SetPeriphAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
+{
+    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
+    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
+    LL_DMA_SetSrcAddress(DMA, Channel, addr);
+}
+
+__STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *DMAx_Channely,
+    uint32_t request, uint32_t direction,
+    uint32_t periphAddr, uint32_t memAddr,
+    uint32_t dataLength, uint32_t mode)
+{
+    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
+    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
+    LL_DMA_InitTypeDef init = { 0 };
+
+    init.Request = request;
+    init.BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
+    init.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    init.SrcBurstLength = 1;
+    init.DestBurstLength = 1;
+    init.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
+    init.DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
+    init.Priority = LL_DMA_LOW_PRIORITY_LOW_WEIGHT;
+    init.BlkDataLength = dataLength;
+    init.Mode = mode;
+
+    if (direction == LL_DMA_DIRECTION_PERIPH_TO_MEMORY) {
+        init.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+        init.SrcAddress = periphAddr;
+        init.DestAddress = memAddr;
+        init.SrcIncMode = LL_DMA_SRC_FIXED;
+        init.DestIncMode = LL_DMA_DEST_INCREMENT;
+    } else {
+        init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+        init.SrcAddress = memAddr;
+        init.DestAddress = periphAddr;
+        init.SrcIncMode = LL_DMA_SRC_INCREMENT;
+        init.DestIncMode = LL_DMA_DEST_FIXED;
+    }
+
+    LL_DMA_DeInit(DMA, Channel);
+    LL_DMA_Init(DMA, Channel, &init);
+}
+
 __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Channel_TypeDef *DMAx_Channely, uint32_t NbData)
 {
     DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);

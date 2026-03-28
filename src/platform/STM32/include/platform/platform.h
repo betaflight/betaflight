@@ -26,6 +26,7 @@
 #include "system_stm32g4xx.h"
 
 #include "stm32g4xx_ll_spi.h"
+#include "stm32g4xx_ll_usart.h"
 #include "stm32g4xx_ll_gpio.h"
 #include "stm32g4xx_ll_dma.h"
 #include "stm32g4xx_ll_rcc.h"
@@ -52,6 +53,7 @@
 #include "system_stm32h7xx.h"
 
 #include "stm32h7xx_ll_spi.h"
+#include "stm32h7xx_ll_usart.h"
 #include "stm32h7xx_ll_gpio.h"
 #include "stm32h7xx_ll_dma.h"
 #include "stm32h7xx_ll_rcc.h"
@@ -78,6 +80,7 @@
 #include "system_stm32f7xx.h"
 
 #include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_usart.h"
 #include "stm32f7xx_ll_gpio.h"
 #include "stm32f7xx_ll_dma.h"
 #include "stm32f7xx_ll_rcc.h"
@@ -124,6 +127,7 @@
 #include "system_stm32n6xx.h"
 
 #include "stm32n6xx_ll_spi.h"
+#include "stm32n6xx_ll_usart.h"
 #include "stm32n6xx_ll_gpio.h"
 #include "stm32n6xx_ll_dma.h"
 #include "stm32n6xx_ll_rcc.h"
