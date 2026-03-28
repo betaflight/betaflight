@@ -39,14 +39,16 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-static positionEstimate3d_t makeEstimate(float eastCm, float northCm, float velEastCmS, float velNorthCmS)
+static positionEstimate3d_t makeEstimate(float eastCm, float northCm, float velEastCmS, float velNorthCmS, float upCm = 0.0f, float velUpCmS = 0.0f)
 {
     positionEstimate3d_t est;
     memset(&est, 0, sizeof(est));
     est.position.x = eastCm;
     est.position.y = northCm;
+    est.position.z = upCm;
     est.velocity.x = velEastCmS;
     est.velocity.y = velNorthCmS;
+    est.velocity.z = velUpCmS;
     est.isValidXY = true;
     est.trustXY = 1.0f;
     return est;
@@ -74,68 +76,95 @@ protected:
 
 TEST_F(PositionNavTest, EastTargetProducesEastwardVelocity)
 {
-    const vector2_t target = {{ 10.0f, 0.0f }};  // 10m east
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};  // 10m east
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_GT(vel.x, 0.0f);
     EXPECT_NEAR(vel.y, 0.0f, 0.01f);
 }
 
 TEST_F(PositionNavTest, NorthTargetProducesNorthwardVelocity)
 {
-    const vector2_t target = {{ 0.0f, 10.0f }};  // 10m north
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 0.0f, 10.0f, 0.0f }};  // 10m north
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_NEAR(vel.x, 0.0f, 0.01f);
     EXPECT_GT(vel.y, 0.0f);
 }
 
 TEST_F(PositionNavTest, DiagonalTargetProducesBothAxes)
 {
-    const vector2_t target = {{ 10.0f, 10.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 10.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_GT(vel.x, 0.0f);
     EXPECT_GT(vel.y, 0.0f);
     EXPECT_NEAR(fabsf(vel.x), fabsf(vel.y), 1.0f);
+}
+
+TEST_F(PositionNavTest, UpTargetProducesUpwardVelocityWhenIncludeAltitude)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 10.0f }};  // 10 m up
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, true, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_GT(vel.z, 0.0f);
+    EXPECT_NEAR(vel.x, 0.0f, 1.0f);
+    EXPECT_NEAR(vel.y, 0.0f, 1.0f);
+}
+
+TEST_F(PositionNavTest, UpComponentIgnoredWhenIncludeAltitudeFalse)
+{
+    const vector3_t target = {{ 0.0f, 0.0f, 10.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
+
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    positionNavUpdate(0.01f, &est);
+
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(vel.z, 0.0f, 0.01f);
 }
 
 // --- Speed limiting ---
 
 TEST_F(PositionNavTest, SpeedIsCappedAtCruiseSpeed)
 {
-    const vector2_t target = {{ 1000.0f, 0.0f }};  // 1km east
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1000.0f, 0.0f, 0.0f }};  // 1km east
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     const float speedCmS = sqrtf(vel.x * vel.x + vel.y * vel.y);
     EXPECT_LE(speedCmS, 5.0f * 100.0f + 1.0f);
 }
 
 TEST_F(PositionNavTest, SpeedRampsDownNearTarget)
 {
-    const vector2_t target = {{ 0.5f, 0.0f }};  // 0.5m east (close)
-    positionNavSetTargetEf(&target, 10.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 0.5f, 0.0f, 0.0f }};  // 0.5m east (close)
+    // acceptanceRadius must be < 0.5m or the first update marks arrived (error inside zone)
+    positionNavSetTargetEf(&target, 10.0f, 0.1f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     const float speedCmS = sqrtf(vel.x * vel.x + vel.y * vel.y);
     // At 0.5m with Kp=1.0, desired speed = 0.5 m/s = 50 cm/s (much less than cruise)
     EXPECT_LT(speedCmS, 10.0f * 100.0f);
@@ -146,14 +175,14 @@ TEST_F(PositionNavTest, SpeedRampsDownNearTarget)
 
 TEST_F(PositionNavTest, BrakingLimitsSpeedNearTarget)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};  // 1m east
-    positionNavSetTargetEf(&target, 10.0f, 0.5f, 0.3f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};  // 1m east
+    positionNavSetTargetEf(&target, 10.0f, 0.5f, 0.3f, false, NULL, NULL);
     positionNavSetAccelLimits(0.0f, 2.0f);  // decel = 2 m/s^2
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     const float speedCmS = sqrtf(vel.x * vel.x + vel.y * vel.y);
     // braking speed = sqrt(2 * 2.0 * 1.0) = 2.0 m/s = 200 cm/s
     // Kp speed = 1.0 * 1.0 = 1.0 m/s = 100 cm/s
@@ -163,14 +192,14 @@ TEST_F(PositionNavTest, BrakingLimitsSpeedNearTarget)
 
 TEST_F(PositionNavTest, BrakingDominatesWhenVeryClose)
 {
-    const vector2_t target = {{ 0.1f, 0.0f }};  // 0.1m east
-    positionNavSetTargetEf(&target, 10.0f, 0.05f, 0.3f, NULL, NULL);
+    const vector3_t target = {{ 0.1f, 0.0f, 0.0f }};  // 0.1m east
+    positionNavSetTargetEf(&target, 10.0f, 0.05f, 0.3f, false, NULL, NULL);
     positionNavSetAccelLimits(0.0f, 2.0f);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     const float speedCmS = sqrtf(vel.x * vel.x + vel.y * vel.y);
     // braking speed = sqrt(2 * 2.0 * 0.1) = 0.632 m/s = 63.2 cm/s
     // Kp speed = 1.0 * 0.1 = 0.1 m/s = 10 cm/s
@@ -182,8 +211,8 @@ TEST_F(PositionNavTest, BrakingDominatesWhenVeryClose)
 
 TEST_F(PositionNavTest, ArrivalDetectedWhenWithinRadiusAndSlow)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     EXPECT_FALSE(positionNavTargetReached());
 
@@ -196,8 +225,8 @@ TEST_F(PositionNavTest, ArrivalDetectedWhenWithinRadiusAndSlow)
 
 TEST_F(PositionNavTest, NoArrivalWhenFar)
 {
-    const vector2_t target = {{ 10.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
@@ -207,8 +236,8 @@ TEST_F(PositionNavTest, NoArrivalWhenFar)
 
 TEST_F(PositionNavTest, NoArrivalWhenCloseButFast)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     // At target position but moving 2 m/s (above completionSpeedMps)
     positionEstimate3d_t est = makeEstimate(100.0f, 0.0f, 200.0f, 0.0f);
@@ -222,8 +251,8 @@ TEST_F(PositionNavTest, NoArrivalWhenCloseButFast)
 TEST_F(PositionNavTest, CallbackFiresExactlyOnce)
 {
     int flag = 42;
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, testCallback, &flag);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, testCallback, &flag);
 
     EXPECT_EQ(callbackCount, 0);
 
@@ -241,8 +270,8 @@ TEST_F(PositionNavTest, CallbackFiresExactlyOnce)
 
 TEST_F(PositionNavTest, NoCallbackWhenNoneSet)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(100.0f, 0.0f, 10.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
@@ -254,13 +283,13 @@ TEST_F(PositionNavTest, NoCallbackWhenNoneSet)
 
 TEST_F(PositionNavTest, ZeroDistanceProducesZeroVelocity)
 {
-    const vector2_t target = {{ 0.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 0.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_NEAR(vel.x, 0.0f, 0.01f);
     EXPECT_NEAR(vel.y, 0.0f, 0.01f);
     EXPECT_FALSE(isnan(vel.x));
@@ -271,8 +300,8 @@ TEST_F(PositionNavTest, ZeroDistanceProducesZeroVelocity)
 
 TEST_F(PositionNavTest, HysteresisPreventsPrematureExit)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 5.0f, NULL, NULL);  // generous completionSpeed
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 5.0f, false, NULL, NULL);  // generous completionSpeed
 
     // Enter acceptance radius
     positionEstimate3d_t est = makeEstimate(100.0f, 0.0f, 10.0f, 0.0f);
@@ -280,8 +309,8 @@ TEST_F(PositionNavTest, HysteresisPreventsPrematureExit)
     EXPECT_TRUE(positionNavTargetReached());
 
     // Now set a new target and move slightly outside acceptance (within hysteresis band)
-    const vector2_t target2 = {{ 5.0f, 0.0f }};
-    positionNavSetTargetEf(&target2, 5.0f, 1.0f, 5.0f, NULL, NULL);
+    const vector3_t target2 = {{ 5.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target2, 5.0f, 1.0f, 5.0f, false, NULL, NULL);
 
     // 1.2m from target (within 1.5x acceptance radius)
     est = makeEstimate(380.0f, 0.0f, 10.0f, 0.0f);
@@ -299,8 +328,8 @@ TEST_F(PositionNavTest, HysteresisPreventsPrematureExit)
 
 TEST_F(PositionNavTest, AutoClearDeactivatesOnReach)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
     positionNavSetAutoClearOnReach(true);
 
     EXPECT_TRUE(positionNavHasActiveTarget());
@@ -315,8 +344,8 @@ TEST_F(PositionNavTest, AutoClearDeactivatesOnReach)
 
 TEST_F(PositionNavTest, ClearTargetDeactivates)
 {
-    const vector2_t target = {{ 10.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     EXPECT_TRUE(positionNavHasActiveTarget());
     positionNavClearTarget();
@@ -325,18 +354,18 @@ TEST_F(PositionNavTest, ClearTargetDeactivates)
 
 TEST_F(PositionNavTest, ClearTargetZerosVelocity)
 {
-    const vector2_t target = {{ 10.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t velBefore = positionNavGetTargetVelocityCmS();
+    const vector3_t velBefore = positionNavGetTargetVelocityCmS();
     EXPECT_GT(fabsf(velBefore.x), 0.0f);
 
     positionNavClearTarget();
 
-    const vector2_t velAfter = positionNavGetTargetVelocityCmS();
+    const vector3_t velAfter = positionNavGetTargetVelocityCmS();
     EXPECT_NEAR(velAfter.x, 0.0f, 0.01f);
     EXPECT_NEAR(velAfter.y, 0.0f, 0.01f);
 }
@@ -345,8 +374,8 @@ TEST_F(PositionNavTest, ClearTargetZerosVelocity)
 
 TEST_F(PositionNavTest, CompletedTargetOutputsZeroVelocity)
 {
-    const vector2_t target = {{ 1.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 1.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     // Arrive
     positionEstimate3d_t est = makeEstimate(100.0f, 0.0f, 10.0f, 0.0f);
@@ -355,7 +384,7 @@ TEST_F(PositionNavTest, CompletedTargetOutputsZeroVelocity)
 
     // Subsequent update should output zero velocity
     positionNavUpdate(0.01f, &est);
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_NEAR(vel.x, 0.0f, 0.01f);
     EXPECT_NEAR(vel.y, 0.0f, 0.01f);
 }
@@ -364,8 +393,8 @@ TEST_F(PositionNavTest, CompletedTargetOutputsZeroVelocity)
 
 TEST_F(PositionNavTest, AccelerationLimitingClampsVelocityChange)
 {
-    const vector2_t target = {{ 100.0f, 0.0f }};  // far target
-    positionNavSetTargetEf(&target, 10.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 100.0f, 0.0f, 0.0f }};  // far target
+    positionNavSetTargetEf(&target, 10.0f, 1.0f, 0.5f, false, NULL, NULL);
     positionNavSetAccelLimits(1.0f, 0.0f);  // 1 m/s^2 accel limit
 
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
@@ -373,12 +402,12 @@ TEST_F(PositionNavTest, AccelerationLimitingClampsVelocityChange)
 
     // First update: from 0 velocity, limited to maxAccel * dt = 1.0 * 0.01 = 0.01 m/s = 1 cm/s
     positionNavUpdate(dt, &est);
-    const vector2_t vel1 = positionNavGetTargetVelocityCmS();
+    const vector3_t vel1 = positionNavGetTargetVelocityCmS();
     EXPECT_LE(fabsf(vel1.x), 1.5f);
 
     // Second update: can increase by another 1 cm/s
     positionNavUpdate(dt, &est);
-    const vector2_t vel2 = positionNavGetTargetVelocityCmS();
+    const vector3_t vel2 = positionNavGetTargetVelocityCmS();
     EXPECT_LE(fabsf(vel2.x), 3.0f);
     EXPECT_GT(fabsf(vel2.x), fabsf(vel1.x) - 0.01f);
 }
@@ -390,7 +419,7 @@ TEST_F(PositionNavTest, NoActiveTargetProducesZeroVelocity)
     positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 50.0f, 50.0f);
     positionNavUpdate(0.01f, &est);
 
-    const vector2_t vel = positionNavGetTargetVelocityCmS();
+    const vector3_t vel = positionNavGetTargetVelocityCmS();
     EXPECT_NEAR(vel.x, 0.0f, 0.01f);
     EXPECT_NEAR(vel.y, 0.0f, 0.01f);
 }
@@ -402,8 +431,8 @@ TEST_F(PositionNavTest, ActiveAndReachedFlagsAreCorrect)
     EXPECT_FALSE(positionNavHasActiveTarget());
     EXPECT_FALSE(positionNavTargetReached());
 
-    const vector2_t target = {{ 10.0f, 0.0f }};
-    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, NULL, NULL);
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, NULL, NULL);
 
     EXPECT_TRUE(positionNavHasActiveTarget());
     EXPECT_FALSE(positionNavTargetReached());

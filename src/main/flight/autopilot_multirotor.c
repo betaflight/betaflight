@@ -315,7 +315,8 @@ bool positionControl(void)
     float errorEast = 0.0f;
 
     if (navActive) {
-        const vector2_t tgtVel = positionNavGetTargetVelocityCmS();
+        // --- Nav mode: inner velocity-tracking PID ---
+        const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
         const float velErrors[EF_AXIS_COUNT] = {
             velEast - tgtVel.x,
             velNorth - tgtVel.y
@@ -443,8 +444,11 @@ bool positionControl(void)
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         const float dxM = est->position.x * 0.01f - navCmd->targetPosEfM.x;
         const float dyM = est->position.y * 0.01f - navCmd->targetPosEfM.y;
-        const float navDistCm = sqrtf(dxM * dxM + dyM * dyM) * 100.0f;
-        const vector2_t tgtVel = positionNavGetTargetVelocityCmS();
+        const float dzM = est->position.z * 0.01f - navCmd->targetPosEfM.z;
+        const float navDistCm = (navCmd->includeAltitude
+            ? sqrtf(dxM * dxM + dyM * dyM + dzM * dzM)
+            : sqrtf(dxM * dxM + dyM * dyM)) * 100.0f;
+        const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
 
         DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(navDistCm));
         DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(tgtVel.x));
@@ -453,7 +457,7 @@ bool positionControl(void)
         DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(velNorth));
         DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(navCmd->targetPosEfM.x * 100.0f));
         DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(navCmd->targetPosEfM.y * 100.0f));
-        DEBUG_SET(DEBUG_POSITION_NAV, 7, positionNavTargetReached() ? 1 : 0);
+        DEBUG_SET(DEBUG_POSITION_NAV, 7, lrintf(tgtVel.z));
 
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 0, lrintf(navDistCm));
         DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 1, lrintf(tgtVel.x));
