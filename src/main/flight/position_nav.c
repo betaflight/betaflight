@@ -197,6 +197,8 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
         cmd.completed = true;
         cmd.completionSignalled = true;
 
+        vector2Zero(&currentTargetVelCmS);
+
         if (cmd.callback) {
             cmd.callback(cmd.callbackUserData);
         }
