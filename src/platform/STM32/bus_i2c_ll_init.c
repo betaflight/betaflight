@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -35,9 +36,6 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 #include "drivers/bus_i2c_utils.h"
-#include "platform/bus_i2c_hal.h"
-
-static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -274,15 +272,15 @@ void i2cInit(i2cDevice_e device)
     IOConfigGPIO(sda, IOCFG_AF_OD);
 #endif
 
-    // Init I2C peripheral
+    // Init I2C peripheral using LL
 
-    pDev->halHandle = &i2cHalHandles[device];
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)pDev->hardware->reg;
 
-    I2C_HandleTypeDef *pHandle = &pDev->halHandle->hal;
+    // Reset the I2C state
+    memset(&pDev->state, 0, sizeof(pDev->state));
 
-    memset(pHandle, 0, sizeof(*pHandle));
-
-    pHandle->Instance = (I2C_TypeDef *)pDev->hardware->reg;
+    LL_I2C_Disable(I2Cx);
+    LL_I2C_DeInit(I2Cx);
 
     // Compute TIMINGR value based on peripheral clock for this device instance
 
@@ -298,7 +296,7 @@ void i2cInit(i2cDevice_e device)
     // Clock sources configured in startup/stm32/system_stm32h7xx.c as:
     //   I2C123 : D2PCLK1 (rcc_pclk1 for APB1)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
-    i2cPclk = (pHandle->Instance == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
+    i2cPclk = (I2Cx == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32N6)
     // N6: All I2C peripherals on APB1
     i2cPclk = HAL_RCC_GetPCLK1Freq();
@@ -306,19 +304,20 @@ void i2cInit(i2cDevice_e device)
 #error Unknown MCU type
 #endif
 
-    pHandle->Init.Timing = i2cClockTIMINGR(i2cPclk, pDev->clockSpeed, 0);
+    LL_I2C_InitTypeDef i2cInit;
+    LL_I2C_StructInit(&i2cInit);
 
-    pHandle->Init.OwnAddress1 = 0x0;
-    pHandle->Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    pHandle->Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    pHandle->Init.OwnAddress2 = 0x0;
-    pHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    pHandle->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    i2cInit.PeripheralMode = LL_I2C_MODE_I2C;
+    i2cInit.Timing = i2cClockTIMINGR(i2cPclk, pDev->clockSpeed, 0);
+    i2cInit.AnalogFilter = LL_I2C_ANALOGFILTER_ENABLE;
+    i2cInit.DigitalFilter = 0;
+    i2cInit.OwnAddress1 = 0;
+    i2cInit.TypeAcknowledge = LL_I2C_ACK;
+    i2cInit.OwnAddrSize = LL_I2C_OWNADDRESS1_7BIT;
 
-    HAL_I2C_Init(pHandle);
-
-    // Enable the Analog I2C Filter
-    HAL_I2CEx_ConfigAnalogFilter(pHandle, I2C_ANALOGFILTER_ENABLE);
+    LL_I2C_Init(I2Cx, &i2cInit);
+    LL_I2C_EnableAnalogFilter(I2Cx);
+    LL_I2C_Enable(I2Cx);
 
     // Setup interrupt handlers
     HAL_NVIC_SetPriority(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
