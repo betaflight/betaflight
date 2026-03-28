@@ -68,7 +68,8 @@
 
 // Range specifications from device specification
 #define UPT1_RANGE_MIN         25          // Minimum range 2.5cm (25mm) in mm
-#define UPT1_RANGE_MAX         4000        // Maximum range 4m (4000mm) in mm
+// Range extended to 7m outdoors and 12m indoors with Rev. 12.4 of the sensor
+#define UPT1_RANGE_MAX         12000       // Maximum range 12m (12000mm) in mm
 #define UPT1_DETECTION_CONE_DECIDEGREES 900
 
 #define UPT1_OPTICAL_FLOW_SCALE 10000.0f  // Sensor reports radians * 10000
@@ -129,6 +130,8 @@ void rangefinderUPT1Update(rangefinderDev_t *dev)
     while (serialRxBytesWaiting(upt1SerialPort)) {
         uint8_t c = serialRead(upt1SerialPort);
         upt1_byte_count++;
+
+        DEBUG_SET(DEBUG_LIDAR_TF, 7, upt1FrameState);
 
         switch (upt1FrameState) {
         case UPT1_FRAME_WAIT_RESET:
@@ -277,7 +280,6 @@ int32_t rangefinderUPT1GetDistance(rangefinderDev_t *dev)
 
 bool rangefinderUPT1Detect(rangefinderDev_t *dev)
 {
-    // UP-T1-001-Plus typically uses UART communication
     // Check if serial port is configured for rangefinder/optical flow
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_TF);
 
