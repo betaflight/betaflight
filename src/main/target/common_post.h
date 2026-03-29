@@ -510,14 +510,12 @@
 #endif
 #endif
 
-#ifndef SIMULATOR_BUILD
 #ifndef USE_ACC
 #define USE_ACC
 #endif
 
 #ifndef USE_GYRO
 #define USE_GYRO
-#endif
 #endif
 
 // CX10 is a special case of SPI RX which requires XN297
@@ -569,7 +567,39 @@
 #define USE_WS2811_SINGLE_COLOUR
 #endif
 
-#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+#if !defined(ENABLE_SIMULATOR)
+#define ENABLE_SIMULATOR 0
+#endif
+
+#if ENABLE_SIMULATOR
+#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#else
+#if defined(ENABLE_SIMULATOR_MULTITHREAD)
+#warning ENABLE_SIMULATOR_MULTITHREAD defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if defined(ENABLE_SIMULATOR_IMU_SYNC)
+#warning ENABLE_SIMULATOR_IMU_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#warning ENABLE_SIMULATOR_GYROPID_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#endif
+
+#if ENABLE_SIMULATOR || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_DYN_NOTCH_FILTER
 #endif

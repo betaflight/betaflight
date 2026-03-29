@@ -248,7 +248,7 @@ void analyzeModeActivationConditions(void)
             activeMacArray[activeMacCount++] = i;
         }
     }
-#if defined(USE_PINIOBOX) && !defined(SIMULATOR_MULTITHREAD)
+#if defined(USE_PINIOBOX) && !ENABLE_SIMULATOR_MULTITHREAD
     pinioBoxTaskControl();
 #endif
 }

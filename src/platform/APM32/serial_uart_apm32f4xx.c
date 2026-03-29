@@ -42,12 +42,17 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+#include "platform/serial_uart_hal.h"
+
+extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_USART1,
-        .reg = USART1,
+        .reg = (usartResource_t *)USART1,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART1_RX_DMA
@@ -75,7 +80,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2
     {
         .identifier = SERIAL_PORT_USART2,
-        .reg = USART2,
+        .reg = (usartResource_t *)USART2,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART2_RX_DMA
@@ -101,7 +106,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3
     {
         .identifier = SERIAL_PORT_USART3,
-        .reg = USART3,
+        .reg = (usartResource_t *)USART3,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART3_RX_DMA
@@ -127,7 +132,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4
     {
         .identifier = SERIAL_PORT_UART4,
-        .reg = UART4,
+        .reg = (usartResource_t *)UART4,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART4_RX_DMA
@@ -153,7 +158,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5
     {
         .identifier = SERIAL_PORT_UART5,
-        .reg = UART5,
+        .reg = (usartResource_t *)UART5,
         .rxDMAChannel = DMA_CHANNEL_4,
         .txDMAChannel = DMA_CHANNEL_4,
 #ifdef USE_UART5_RX_DMA
@@ -179,7 +184,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6
     {
         .identifier = SERIAL_PORT_USART6,
-        .reg = USART6,
+        .reg = (usartResource_t *)USART6,
         .rxDMAChannel = DMA_CHANNEL_5,
         .txDMAChannel = DMA_CHANNEL_5,
 #ifdef USE_UART6_RX_DMA
@@ -217,7 +222,7 @@ bool checkUsartTxOutput(uartPort_t *s)
             IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
 
             // Enable the UART transmitter
-            SET_BIT(s->Handle.Instance->CTRL1, USART_CTRL1_TXEN);
+            SET_BIT(s->halHandle->hal.Instance->CTRL1, USART_CTRL1_TXEN);
 
             return true;
         } else {
@@ -237,7 +242,7 @@ void uartTxMonitor(uartPort_t *s)
         IO_t txIO = IOGetByTag(uart->tx.pin);
 
         // Disable the UART transmitter
-        CLEAR_BIT(s->Handle.Instance->CTRL1, USART_CTRL1_TXEN);
+        CLEAR_BIT(s->halHandle->hal.Instance->CTRL1, USART_CTRL1_TXEN);
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
@@ -284,7 +289,7 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
-    UART_HandleTypeDef *huart = &s->Handle;
+    UART_HandleTypeDef *huart = &s->halHandle->hal;
     uint32_t isrflags = READ_REG(huart->Instance->STS);
     uint32_t cr1its = READ_REG(huart->Instance->CTRL1);
     uint32_t cr3its = READ_REG(huart->Instance->CTRL3);

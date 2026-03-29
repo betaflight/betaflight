@@ -2,6 +2,8 @@
 # F7 Make file include
 #
 
+PLATFORM_SDK := arm
+
 ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif

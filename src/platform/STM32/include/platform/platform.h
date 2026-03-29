@@ -504,11 +504,11 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
-#define UART_REG_RXD(base) ((base)->RDR)
-#define UART_REG_TXD(base) ((base)->TDR)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->RDR)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->TDR)
 #elif defined(STM32F4)
-#define UART_REG_RXD(base) ((base)->DR)
-#define UART_REG_TXD(base) ((base)->DR)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->DR)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->DR)
 #endif
 
 

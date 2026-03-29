@@ -23,6 +23,8 @@
 #include "platform.h"
 
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_quadspi_types.h"
+#include "drivers/bus_spi_types.h"
 #include "drivers/io_types.h"
 #include "drivers/dma.h"
 
@@ -50,13 +52,13 @@ typedef struct busDevice_s {
     busType_e busType;
     union {
         struct busSpi_s {
-            SPI_TypeDef *instance;
+            spiResource_t *instance;
             uint16_t speed;
             bool leadingEdge;
         } spi;
 #ifdef USE_QUADSPI
         struct busQSpi_s {
-            QUADSPI_TypeDef *instance;
+            quadSpiResource_t *instance;
             uint16_t speed;
             bool leadingEdge;
         } qspi;

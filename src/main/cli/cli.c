@@ -3669,7 +3669,7 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
@@ -5935,7 +5935,7 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
             printValue(dumpMask, false,
                 "# pin %c%02d: TIM%d CH%d%s (AF%d)",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-                timerGetTIMNumber(timer->tim),
+                timerGetTIMNumber(timer),
                 CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                 timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
                 timer->alternateFunction
@@ -6152,7 +6152,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
                 cliPrintLinef("# AF%d: TIM%d CH%d%s",
                     timer->alternateFunction,
-                    timerGetTIMNumber(timer->tim),
+                    timerGetTIMNumber(timer),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                     timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : ""
                 );
@@ -6759,7 +6759,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
