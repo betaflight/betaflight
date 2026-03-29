@@ -35,54 +35,55 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
+#include "platform/bus_i2c_hal.h"
 
 #define I2C_TIMEOUT                      0x870 //about 7 us at 288 mhz
 
 #ifdef USE_I2C_DEVICE_1
 void I2C1_ERR_IRQHandler(void)
 {
-    i2c_err_irq_handler(&i2cDevice[I2CDEV_1].handle);
+    i2c_err_irq_handler(&i2cDevice[I2CDEV_1].halHandle->hal);
 }
 
 void I2C1_EVT_IRQHandler(void)
 {
-    i2c_evt_irq_handler(&i2cDevice[I2CDEV_1].handle);
+    i2c_evt_irq_handler(&i2cDevice[I2CDEV_1].halHandle->hal);
 }
 #endif
 
 #ifdef USE_I2C_DEVICE_2
 void I2C2_ERR_IRQHandler(void)
 {
-    i2c_err_irq_handler(&i2cDevice[I2CDEV_2].handle);
+    i2c_err_irq_handler(&i2cDevice[I2CDEV_2].halHandle->hal);
 }
 
 void I2C2_EVT_IRQHandler(void)
 {
-    i2c_evt_irq_handler(&i2cDevice[I2CDEV_2].handle);
+    i2c_evt_irq_handler(&i2cDevice[I2CDEV_2].halHandle->hal);
 }
 #endif
 
 #ifdef USE_I2C_DEVICE_3
 void I2C3_ERR_IRQHandler(void)
 {
-    i2c_err_irq_handler(&i2cDevice[I2CDEV_3].handle);
+    i2c_err_irq_handler(&i2cDevice[I2CDEV_3].halHandle->hal);
 }
 
 void I2C3_EVT_IRQHandler(void)
 {
-    i2c_evt_irq_handler(&i2cDevice[I2CDEV_3].handle);
+    i2c_evt_irq_handler(&i2cDevice[I2CDEV_3].halHandle->hal);
 }
 #endif
 
 #ifdef USE_I2C_DEVICE_4
 void I2C4_ERR_IRQHandler(void)
 {
-    i2c_err_irq_handler(&i2cDevice[I2CDEV_4].handle);
+    i2c_err_irq_handler(&i2cDevice[I2CDEV_4].halHandle->hal);
 }
 
 void I2C4_EVT_IRQHandler(void)
 {
-    i2c_evt_irq_handler(&i2cDevice[I2CDEV_4].handle);
+    i2c_evt_irq_handler(&i2cDevice[I2CDEV_4].halHandle->hal);
 }
 #endif
 
@@ -106,7 +107,7 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
         return false;
     }
 
-    i2c_handle_type *pHandle = &i2cDevice[device].handle;
+    i2c_handle_type *pHandle = &i2cDevice[device].halHandle->hal;
 
     if (!pHandle->i2cx) {
         return false;
@@ -143,7 +144,7 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         return false;
     }
 
-    i2c_handle_type *pHandle = &i2cDevice[device].handle;
+    i2c_handle_type *pHandle = &i2cDevice[device].halHandle->hal;
 
     if (!pHandle->i2cx) {
         return false;
@@ -174,7 +175,7 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
         return false;
     }
 
-    i2c_handle_type *pHandle = &i2cDevice[device].handle;
+    i2c_handle_type *pHandle = &i2cDevice[device].halHandle->hal;
 
     if (!pHandle->i2cx) {
         return false;
@@ -211,7 +212,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         return false;
     }
 
-    i2c_handle_type *pHandle = &i2cDevice[device].handle;
+    i2c_handle_type *pHandle = &i2cDevice[device].halHandle->hal;
 
     if (!pHandle->i2cx) {
         return false;
@@ -239,7 +240,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
 
 bool i2cBusy(i2cDevice_e device, bool *error)
 {
-    i2c_handle_type *pHandle = &i2cDevice[device].handle;
+    i2c_handle_type *pHandle = &i2cDevice[device].halHandle->hal;
 
     if (error) {
         *error = pHandle->error_code;

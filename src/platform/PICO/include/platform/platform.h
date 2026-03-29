@@ -39,27 +39,29 @@
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
-#define I2C_TypeDef          i2c_inst_t
-#define I2C_INST(i2c)        (i2c)
+#define I2C_INST(i2c)        ((i2c_inst_t *)(i2c))
 
 #define DMA_TypeDef          void*
 #define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
 
-#define USART_TypeDef        uart_inst_t
-#define UART_INST(uart)      (uart)
+#define UART_INST(uart)      ((uart_inst_t *)(uart))
 
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
 
-// We have to use SPI0_Type (or void) because config will pass in SPI0, SPI1,
-// which are defined in pico-sdk as SPI0_Type*.
+// SPI_TypeDef alias removed: use spiResource_t* in generic code, cast to SPI0_Type* in platform code.
 // SPI_INST converts to the correct type for use in pico-sdk functions.
-#define SPI_TypeDef          SPI0_Type
 #define SPI_INST(spi)        ((spi_inst_t *)(spi))
 
-#define QUADSPI_TypeDef      void
+// quadSpiResource_s: platform-specific definition of the opaque quadSpiResource_t.
+// PICO has no hardware QUADSPI peripheral; this is a placeholder struct.
+struct quadSpiResource_s
+{
+    void* test;
+};
+
 #define MAX_QUADSPI_PIN_SEL  1
 
 #define QUADSPI_TRAIT_CS_SOFTWARE       1

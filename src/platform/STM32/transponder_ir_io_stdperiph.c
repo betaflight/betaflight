@@ -113,10 +113,10 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
 
-    RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, transponder->timer_hz);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, transponder->timer_carrier_hz);
 
     transponder->bitToggleOne = period / 2;
     /* Time base configuration */
@@ -150,7 +150,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     xDMA_DeInit(dmaRef);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
 #if defined(STM32F4)
     DMA_InitStructure.DMA_Channel = dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&(transponder->transponderIrDMABuffer);
