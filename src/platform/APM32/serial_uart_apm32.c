@@ -51,11 +51,21 @@ struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
 struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
 struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
 
-// XXX uartReconfigure does not handle resource management properly.
-
 void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
+
+#ifdef USE_DMA
+    // Disable USART DMA requests and stop DMA streams before reconfiguring
+    if (uartPort->rxDMAResource) {
+        DDL_USART_DisableDMAReq_RX(USARTx);
+        xDDL_EX_DMA_DisableResource(uartPort->rxDMAResource);
+    }
+    if (uartPort->txDMAResource) {
+        DDL_USART_DisableDMAReq_TX(USARTx);
+        xDDL_EX_DMA_DisableResource(uartPort->txDMAResource);
+    }
+#endif
 
     DDL_USART_Disable(USARTx);
     DDL_USART_DeInit(USARTx);
@@ -168,6 +178,7 @@ void uartReconfigure(uartPort_t *uartPort)
             xDDL_EX_DMA_DeInit(uartPort->txDMAResource);
             xDDL_EX_DMA_Init(uartPort->txDMAResource, &dmaInit);
             xDDL_EX_DMA_EnableIT_TC(uartPort->txDMAResource);
+            SET_BIT(USARTx->CTRL1, USART_CTRL1_TXCIEN);
         } else
 #endif
         {
