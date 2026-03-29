@@ -109,7 +109,11 @@ __STATIC_INLINE void LL_EX_DMA_SetPeriphAddress(DMA_Channel_TypeDef *DMAx_Channe
 {
     DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    LL_DMA_SetSrcAddress(DMA, Channel, addr);
+    if (LL_DMA_GetDataTransferDirection(DMA, Channel) == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+        LL_DMA_SetDestAddress(DMA, Channel, addr);
+    } else {
+        LL_DMA_SetSrcAddress(DMA, Channel, addr);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *DMAx_Channely,

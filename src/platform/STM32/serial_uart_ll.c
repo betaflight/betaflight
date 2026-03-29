@@ -106,7 +106,7 @@ void uartReconfigure(uartPort_t *uartPort)
     LL_USART_Init(USARTx, &usartInit);
 
     usartConfigurePinInversion(uartPort);
-#if !(defined(STM32F1) || defined(STM32F4))
+#if UART_TRAIT_PINSWAP
     uartConfigurePinSwap(uartPort);
 #endif
 
@@ -166,6 +166,7 @@ void uartReconfigure(uartPort_t *uartPort)
                 LL_USART_DMA_GetRegAddr(USARTx, LL_USART_DMA_REG_DATA_TRANSMIT),
                 0, 0, LL_DMA_MODE_NORMAL);
             xLL_EX_DMA_EnableIT_TC(uartPort->txDMAResource);
+            SET_BIT(USARTx->CR1, USART_CR1_TCIE);
         } else
 #endif
         {
@@ -292,12 +293,6 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
             s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
-        CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE);
-
-        /* Disable the UART Error Interrupt: (Frame error, noise error, overrun error) */
-        CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
-
-        LL_USART_RequestRxDataFlush(USARTx);
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
