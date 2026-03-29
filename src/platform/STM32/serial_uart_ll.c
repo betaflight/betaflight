@@ -259,14 +259,7 @@ void uartTryStartTxDMA(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    uartDevice_t *uart = container_of(s, uartDevice_t, port);
-
     uartTryStartTxDMA(s);
-
-    if (s->txDMAEmpty && (uart->txPinState != TX_PIN_IGNORE)) {
-        // Switch TX to an input with pullup so it's state can be monitored
-        uartTxMonitor(s);
-    }
 }
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)

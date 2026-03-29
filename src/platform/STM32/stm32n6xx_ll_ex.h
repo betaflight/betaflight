@@ -97,10 +97,12 @@ __STATIC_INLINE void LL_EX_DMA_SetMemoryAddress(DMA_Channel_TypeDef *DMAx_Channe
 {
     DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    // For GPDMA, memory can be source or destination depending on direction.
-    // SetDestAddress is correct for periph-to-mem (RX), SetSrcAddress for mem-to-periph (TX).
-    // Caller must ensure correct usage based on transfer direction.
-    LL_DMA_SetDestAddress(DMA, Channel, addr);
+    // GPDMA has separate src/dest registers; select based on configured direction.
+    if (LL_DMA_GetDataTransferDirection(DMA, Channel) == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+        LL_DMA_SetSrcAddress(DMA, Channel, addr);
+    } else {
+        LL_DMA_SetDestAddress(DMA, Channel, addr);
+    }
 }
 
 __STATIC_INLINE void LL_EX_DMA_SetPeriphAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
