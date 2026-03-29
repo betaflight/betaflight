@@ -61,7 +61,8 @@
 #define POSITION_D_SCALE       0.00011f
 
 #define POSITION_IWINDUP_LIMIT 250.0f
-#define SETTLING_VELOCITY_THRESHOLD 5.0f  // cm/s
+// Horizontal speed below this (cm/s) ends braking and snaps hold point; fusion noise may need 5–20.
+#define SETTLING_VELOCITY_THRESHOLD 5.0f
 
 #define UPSAMPLING_CUTOFF_HZ   5.0f
 
@@ -85,7 +86,12 @@ typedef enum {
 static float posIntegral[EF_AXIS_COUNT];       // I term: integral of position error
 static float posSlowIntegral[EF_AXIS_COUNT];   // II term: slow drift correction
 static float previousVelocity[EF_AXIS_COUNT];
-static bool axisIsStopping[EF_AXIS_COUNT];
+// True when the horizontal hold point is active for full position I/II (captured, not braking, sticks centered).
+static bool isPositionHeld;
+
+// PT1 on finite-difference accel for horizontal D (KF velocity is noisy at POSHOLD_TASK_RATE_HZ).
+// Cutoff Hz = ap_position_cutoff × 0.01 (same scale as legacy GPS VA filters).
+static pt1Filter_t posAccelLpf[EF_AXIS_COUNT];
 
 static vector3_t targetPosition;
 
@@ -113,6 +119,16 @@ static void resetUpsampleFilters(void)
     }
 }
 
+static void initPositionAccelLpf(void)
+{
+    const autopilotConfig_t *cfg = autopilotConfig();
+    const float cutoffHz = fmaxf(cfg->positionCutoff * 0.01f, 0.1f);
+    const float k = pt1FilterGain(cutoffHz, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ));
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        pt1FilterInit(&posAccelLpf[i], k);
+    }
+}
+
 static inline float sanityCheckDistance(const float speedCmS)
 {
     return fmaxf(1000.0f, speedCmS * 2.0f);
@@ -127,22 +143,23 @@ void resetPositionControl(unsigned taskRateHz)
     const float speedXY = sqrtf(est->velocity.x * est->velocity.x + est->velocity.y * est->velocity.y);
     ap.sanityCheckDistance = sanityCheckDistance(speedXY);
 
-    // Reset PID state
+    // Reset PID state (velocity-only until capture)
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         posIntegral[i] = 0.0f;
         posSlowIntegral[i] = 0.0f;
         previousVelocity[i] = 0.0f;
-        axisIsStopping[i] = true;
     }
 
     const float taskInterval = 1.0f / taskRateHz;
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval);
     resetUpsampleFilters();
+    initPositionAccelLpf();
 
     // Enable XY estimation and set target to current position
     positionEstimatorEnableXY(true);
     targetPosition.x = est->position.x;
     targetPosition.y = est->position.y;
+    isPositionHeld = true;
 }
 
 void autopilotInit(void)
@@ -163,6 +180,7 @@ void autopilotInit(void)
 
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f);
     resetUpsampleFilters();
+    initPositionAccelLpf();
 }
 
 void resetAltitudeControl(void)
@@ -275,6 +293,7 @@ bool positionControl(void)
     // Velocity from KF (already filtered, earth frame, cm/s)
     const float velEast  = est->velocity.x;
     const float velNorth = est->velocity.y;
+    const float speedXY  = sqrtf(velEast * velEast + velNorth * velNorth);
 
     // Run PID for each earth-frame axis
     const float errors[EF_AXIS_COUNT]     = { errorEast, errorNorth };
@@ -282,40 +301,39 @@ bool positionControl(void)
     vector2_t pidSumEF = {{ 0, 0 }};
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-        const float error = errors[axis];
         const float velocity = velocities[axis];
 
         // P - acts on velocity (damping)
         const float pidP = velocity * positionPidCoeffs.Kp;
 
-        // I - acts on position error (spring to target)
-        const float pidI = error * positionPidCoeffs.Ki;
+        // I - position error spring (disabled during braking; enabled again after hold point capture)
+        float pidI = 0.0f;
+        // II - slow integral of position error (disabled during braking; enabled again after hold point capture)
+        float pidII = 0.0f;
 
-        // II - slow integral of position error (drift correction)
-        if (!axisIsStopping[axis]) {
+        if (isPositionHeld) {
+            const float error = errors[axis];
+            pidI = error * positionPidCoeffs.Ki;
             posSlowIntegral[axis] += error * dt;
             posSlowIntegral[axis] = constrainf(posSlowIntegral[axis],
                                                 -POSITION_IWINDUP_LIMIT,
                                                 POSITION_IWINDUP_LIMIT);
+            pidII = posSlowIntegral[axis] * positionPidCoeffs.Kii;
+        } else {
+            posSlowIntegral[axis] = 0.0f;
         }
-        const float pidII = posSlowIntegral[axis] * positionPidCoeffs.Kii;
 
-        // D - acts on acceleration (change in velocity)
-        const float accel = (velocity - previousVelocity[axis]) / dt;
+        // D - acts on acceleration (change in velocity), low-passed to avoid differentiator noise
+        const float accelRaw = (velocity - previousVelocity[axis]) / dt;
         previousVelocity[axis] = velocity;
+        const float accel = pt1FilterApply(&posAccelLpf[axis], accelRaw);
         const float pidD = -accel * positionPidCoeffs.Kd;
 
         pidSumEF.v[axis] = pidP + pidI + pidII + pidD;
 
-        if (axis == 0) {
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(pidP * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidI * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidII * 100));
-        } else {
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(pidP * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI * 100));
-            DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidII * 100));
-        }
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 0 + axis, lrintf(pidP * 100));
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 2 + axis, lrintf(pidI * 100));
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 4 + axis, lrintf(pidII * 100));
     }
 
     // Handle sticks and stopping logic
@@ -323,33 +341,19 @@ bool positionControl(void)
 
     if (ap.sticksActive) {
         anglesBF = (vector2_t){{0, 0}};
-        for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-            posSlowIntegral[axis] = 0.0f;
-            axisIsStopping[axis] = true;
-        }
-        // Keep target tracking current position while sticks are active
-        targetPosition.x = est->position.x;
-        targetPosition.y = est->position.y;
-        const float speedCmS = sqrtf(velEast * velEast + velNorth * velNorth);
-        ap.sanityCheckDistance = sanityCheckDistance(speedCmS);
+        isPositionHeld = false;
+        ap.sanityCheckDistance = sanityCheckDistance(speedXY);
     } else {
-        // Check if we're still stopping (decelerating after stick release)
-        for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-            if (axisIsStopping[axis]) {
-                const float speed = fabsf(velocities[axis]);
-                if (speed < SETTLING_VELOCITY_THRESHOLD) {
-                    axisIsStopping[axis] = false;
-                    ap.sanityCheckDistance = sanityCheckDistance(1000.0f);
-                } else {
-                    posSlowIntegral[axis] = 0.0f;
-                }
+        // Braking: hold target fixed until horizontal speed drops, then capture hold point.
+        if (!isPositionHeld) {
+            if (speedXY < SETTLING_VELOCITY_THRESHOLD) {
+                isPositionHeld = true;
+                targetPosition.x = est->position.x;
+                targetPosition.y = est->position.y;
+                ap.sanityCheckDistance = sanityCheckDistance(1000.0f);
             }
         }
-        // Lock target to current position while any axis is still settling
-        if (axisIsStopping[0] || axisIsStopping[1]) {
-            targetPosition.x = est->position.x;
-            targetPosition.y = est->position.y;
-        }
+        // Do not move targetPosition while braking: hold point stays at stick-release until capture.
 
         // Rotate ENU PID output to body frame
         // attitude.values.yaw increases clockwise from north (BF convention)
