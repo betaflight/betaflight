@@ -2841,6 +2841,10 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         cliPrintErrorLinef(cmdName, "INVALID ALTITUDE");
         return;
     }
+    if (altitude < INT32_MIN || altitude > INT32_MAX) {
+        cliPrintErrorLinef(cmdName, "ALTITUDE OUT OF RANGE");
+        return;
+    }
 
     // Parse speed and duration with validation
     long tmpSpeed = strtol(args[SPEED], &endptr, 10);
@@ -2900,10 +2904,6 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     }
     if (longitude < -1800000000 || longitude > 1800000000) {
         cliPrintErrorLinef(cmdName, "LONGITUDE OUT OF RANGE. USE: -180.0 to 180.0");
-        return;
-    }
-    if (altitude < 0) {
-        cliPrintErrorLinef(cmdName, "ALTITUDE MUST BE >= 0");
         return;
     }
 

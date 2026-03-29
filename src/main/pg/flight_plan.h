@@ -26,7 +26,9 @@
 
 #include "pg/pg.h"
 
+#ifndef MAX_WAYPOINTS
 #define MAX_WAYPOINTS 30
+#endif
 
 typedef enum {
     WAYPOINT_TYPE_FLYOVER = 0,
@@ -43,7 +45,7 @@ typedef enum {
 typedef struct {
     int32_t latitude;       // Latitude in degrees * 10^7 (7 decimal places, ±90.0000000)
     int32_t longitude;      // Longitude in degrees * 10^7 (7 decimal places, ±180.0000000)
-    int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level)
+    int32_t altitude;       // Altitude in centimeters AMSL (above mean sea level, negative values permitted)
     uint16_t speed;         // Speed in cm/s
     uint16_t duration;      // Duration in deciseconds (0.1s)
     uint8_t type;           // waypointType_e
