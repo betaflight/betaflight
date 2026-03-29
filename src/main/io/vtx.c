@@ -40,6 +40,7 @@
 #include "flight/failsafe.h"
 
 #include "io/vtx_control.h"
+#include "io/beeper.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -193,6 +194,10 @@ static bool vtxProcessPitMode(vtxDevice_t *vtxDevice)
 
         if (currPmSwitchState != prevPmSwitchState) {
             prevPmSwitchState = currPmSwitchState;
+
+#ifdef USE_BEEPER
+            beeper(BEEPER_VTX_PIT_MODE);
+#endif
 
             if (currPmSwitchState) {
 #if defined(VTX_SETTINGS_FREQCMD)
