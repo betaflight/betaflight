@@ -82,7 +82,7 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
     .altitude_source = ALTITUDE_SOURCE_DEFAULT,
     .altitude_prefer_baro = 100,
     .altitude_lpf = 300,
-    .altitude_d_lpf = 100,
+    .altitude_d_lpf = 300,
     .rangefinder_max_range_cm = 400,
 );
 
