@@ -667,7 +667,7 @@ void tasksInit(void)
     setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
 #endif
 
-#ifdef SIMULATOR_MULTITHREAD
+#if ENABLE_SIMULATOR_MULTITHREAD
     rescheduleTask(TASK_RX, 1);
 #endif
 

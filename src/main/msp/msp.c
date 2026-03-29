@@ -227,7 +227,7 @@ mspDescriptor_t mspDescriptorAlloc(void)
 
 static uint32_t mspArmingDisableFlags = 0;
 
-#ifndef SIMULATOR_BUILD
+#if !ENABLE_SIMULATOR
 static void mspArmingDisableByDescriptor(mspDescriptor_t desc)
 {
     mspArmingDisableFlags |= (1 << desc);
@@ -3706,7 +3706,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 disableRunawayTakeoff = sbufReadU8(src);
             }
             if (command) {
-#ifndef SIMULATOR_BUILD // In simulator mode we can safely arm with MSP link.
+#if !ENABLE_SIMULATOR // In simulator mode we can safely arm with MSP link.
                 mspArmingDisableByDescriptor(srcDesc);
                 setArmingDisabled(ARMING_DISABLED_MSP);
                 if (ARMING_FLAG(ARMED)) {

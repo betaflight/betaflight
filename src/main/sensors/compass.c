@@ -173,7 +173,7 @@ void compassPreInit(void)
 #endif
 }
 
-#if !defined(SIMULATOR_BUILD)
+#if !ENABLE_SIMULATOR
 static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
     *alignment = MAG_ALIGN;
@@ -378,7 +378,7 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 
     return false;
 }
-#endif // !SIMULATOR_BUILD
+#endif // !ENABLE_SIMULATOR
 
 bool compassInit(void)
 {

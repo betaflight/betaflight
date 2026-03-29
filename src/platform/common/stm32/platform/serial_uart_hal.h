@@ -21,15 +21,13 @@
 
 #pragma once
 
-#if defined(USE_BLACKBOX_VIRTUAL) && !ENABLE_SIMULATOR
-#error "USE_BLACKBOX_VIRTUAL valid for SITL build only"
-#endif
+#include "platform.h"
 
-bool blackboxVirtualOpen(void);
-void blackboxVirtualPutChar(uint8_t value);
-void blackboxVirtualWrite(const uint8_t *buffer, uint32_t len);
-bool blackboxVirtualFlush(void);
-bool blackboxVirtualBeginLog(void);
-bool blackboxVirtualEndLog(void);
-void blackboxVirtualClose(void);
-int32_t blackboxVirtualLogFileNumber(void);
+#ifdef USE_HAL_DRIVER
+struct uartHalHandle_s {
+    UART_HandleTypeDef hal;
+};
+struct dmaHalHandle_s {
+    DMA_HandleTypeDef hal;
+};
+#endif

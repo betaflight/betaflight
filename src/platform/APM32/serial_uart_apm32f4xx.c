@@ -42,6 +42,11 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
+#include "platform/serial_uart_hal.h"
+
+extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1

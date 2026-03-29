@@ -82,10 +82,10 @@ void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuInit(void);
 
-#ifdef SIMULATOR_BUILD
+#if ENABLE_SIMULATOR
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
 void imuSetAttitudeQuat(float w, float x, float y, float z);
-#if defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
 void imuSetHasNewData(uint32_t dt);
 #endif
 #endif

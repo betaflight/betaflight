@@ -42,8 +42,15 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
+#include "platform/serial_uart_hal.h"
 
 #include "pg/serial_uart.h"
+
+#ifdef USE_HAL_DRIVER
+extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
+#endif
 
 // TODO: split this function into mcu-specific UART files ?
 static void enableRxIrq(const uartHardware_t *hardware)

@@ -45,6 +45,11 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 #include "platform/dma.h"
+#include "platform/serial_uart_hal.h"
+
+struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
 
 // XXX uartReconfigure does not handle resource management properly.
 
