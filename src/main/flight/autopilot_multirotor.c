@@ -49,10 +49,10 @@
 #define POSHOLD_TASK_RATE_HZ 100
 #endif
 
-#define ALTITUDE_P_SCALE       0.01f
-#define ALTITUDE_I_SCALE       0.003f
-#define ALTITUDE_D_SCALE       0.01f
-#define ALTITUDE_F_SCALE       0.01f
+#define ALTITUDE_P_SCALE       0.0085f
+#define ALTITUDE_I_SCALE       0.00015f
+#define ALTITUDE_D_SCALE       0.005f
+#define ALTITUDE_F_SCALE       0.005f
 
 // Using optical flow PID scales as the unified set
 #define POSITION_P_SCALE       0.0033f
