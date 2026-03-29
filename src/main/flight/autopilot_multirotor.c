@@ -203,13 +203,17 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
+    // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
     altitudeI += altitudeErrorCm * altitudePidCoeffs.Ki * itermRelax * taskIntervalS;
+    // limit iTerm to not more than 200 throttle units
     altitudeI = constrainf(altitudeI, -200.0f, 200.0f);
 
+    // increase D when velocity is high, typically when initiating hold at high vertical speeds
+    // 1.0 when less than 5 m/s, 2x at 10m/s, 2.5 at 20 m/s, 2.8 at 50 m/s, asymptotes towards max 3.0.
     float dBoost = 1.0f;
     {
-        const float startValue = 500.0f;
+        const float startValue = 500.0f; // velocity at which D should start to increase
         const float altDeriv = fabsf(verticalVelocityCmS);
         if (altDeriv > startValue) {
             const float ratio = altDeriv / startValue;
@@ -224,11 +228,14 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     float throttleOffset = altitudeP + altitudeI - altitudeD + altitudeF + hoverOffset;
 
     const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);
+    // 1 = flat, 1.3 at 40 degrees, 1.56 at 50 deg, max 2.0 at 60 degrees or higher
+    // note: the default limit of Angle Mode is 60 degrees
+
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle)); // normal range 1000-2000 but is before constraint
 
     newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
     throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
