@@ -232,7 +232,8 @@ static const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_CRASHFLIP_MODE,        20, beep_2longerBeeps,    "CRASHFLIP") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   21, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
     { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  22, beep_camCloseBeep,    "CAM_CONNECTION_CLOSE") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   23, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_VTX_PIT_MODE,          23, beep_2shortBeeps,     "VTX_PIT_MODE") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   24, NULL,                 "ALL") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;

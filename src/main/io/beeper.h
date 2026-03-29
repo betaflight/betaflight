@@ -59,6 +59,7 @@ typedef enum {
     BEEPER_CAM_CONNECTION_OPEN,     // When the 5 key simulation stated
     BEEPER_CAM_CONNECTION_CLOSE,    // When the 5 key simulation stop
     BEEPER_ARMING_GPS_NO_FIX,       // Beep a special tone when arming the board and GPS has no fix
+    BEEPER_VTX_PIT_MODE,            // VTX pit mode state changed
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
     // BEEPER_ALL must remain at the bottom of this enum
 } beeperMode_e;
@@ -89,11 +90,13 @@ STATIC_ASSERT(BEEPER_ALL < sizeof(uint32_t) * 8, "BEEPER bits exhausted");
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_OPEN) \
     | BEEPER_GET_FLAG(BEEPER_CAM_CONNECTION_CLOSE) \
     | BEEPER_GET_FLAG(BEEPER_ARMING_GPS_NO_FIX) \
+    | BEEPER_GET_FLAG(BEEPER_VTX_PIT_MODE) \
     )
 
 #define DSHOT_BEACON_ALLOWED_MODES ( \
     BEEPER_GET_FLAG(BEEPER_RX_SET) \
     | BEEPER_GET_FLAG(BEEPER_RX_LOST) \
+    | BEEPER_GET_FLAG(BEEPER_VTX_PIT_MODE) \
     )
 
 // record these modes as arming beep (for DShot)
@@ -109,7 +112,7 @@ STATIC_ASSERT(BEEPER_ALL < sizeof(uint32_t) * 8, "BEEPER bits exhausted");
 #endif // USE_RACE_PRO
 
 #ifndef DEFAULT_BEEPER_OFF_FLAGS
-#define DEFAULT_BEEPER_OFF_FLAGS (0)
+#define DEFAULT_BEEPER_OFF_FLAGS (BEEPER_GET_FLAG(BEEPER_VTX_PIT_MODE))
 #endif
 
 void beeper(beeperMode_e mode);
