@@ -30,6 +30,8 @@
 #define MAX_WAYPOINTS 30
 #endif
 
+_Static_assert(MAX_WAYPOINTS <= 255, "MAX_WAYPOINTS exceeds uint8_t waypointCount range");
+
 typedef enum {
     WAYPOINT_TYPE_FLYOVER = 0,
     WAYPOINT_TYPE_FLYBY,

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "platform.h"
 
@@ -2604,7 +2605,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
     }
 
     // Always emit "waypoint clear" before inserts so replaying clears persisted waypoints
-    cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
+    cliDumpPrintLinef(dumpMask, false, "waypoint clear");
 
     for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
         const waypoint_t *wp = &flightPlanConfig->waypoints[i];
@@ -2736,8 +2737,9 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
                 formatDecimalCoordinate(wp->latitude, latBuffer);
                 formatDecimalCoordinate(wp->longitude, lonBuffer);
                 const char *typeName = (wp->type < ARRAYLEN(waypointTypeNames)) ? waypointTypeNames[wp->type] : "UNKNOWN";
-                cliPrintLinef("  [%d] %s %s %d.%02dm %s",
-                    i, latBuffer, lonBuffer, wp->altitude / 100, abs(wp->altitude) % 100, typeName);
+                const uint32_t altAbs = (wp->altitude < 0) ? -(uint32_t)wp->altitude : (uint32_t)wp->altitude;
+                cliPrintLinef("  [%d] %s %s %s%u.%02um %s",
+                    i, latBuffer, lonBuffer, (wp->altitude < 0) ? "-" : "", altAbs / 100, altAbs % 100, typeName);
             }
         }
 
@@ -2836,12 +2838,13 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     }
 
     // Parse other values
+    errno = 0;
     long altitude = strtol(args[ALT], &endptr, 10);
     if (*endptr != '\0') {
         cliPrintErrorLinef(cmdName, "INVALID ALTITUDE");
         return;
     }
-    if (altitude < INT32_MIN || altitude > INT32_MAX) {
+    if (errno == ERANGE || altitude < INT32_MIN || altitude > INT32_MAX) {
         cliPrintErrorLinef(cmdName, "ALTITUDE OUT OF RANGE");
         return;
     }
@@ -2931,12 +2934,13 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
     formatDecimalCoordinate(wp->latitude, latBuffer);
     formatDecimalCoordinate(wp->longitude, lonBuffer);
 
-    cliPrintLinef("waypoint %s %u %s %s %d.%02dm %u %s %u %s",
+    const uint32_t altAbs = (wp->altitude < 0) ? -(uint32_t)wp->altitude : (uint32_t)wp->altitude;
+    cliPrintLinef("waypoint %s %u %s %s %s%u.%02um %u %s %u %s",
         isInsert ? "insert" : "update",
         index,
         latBuffer,
         lonBuffer,
-        wp->altitude / 100, abs(wp->altitude) % 100,
+        (wp->altitude < 0) ? "-" : "", altAbs / 100, altAbs % 100,
         wp->speed,
         waypointTypeNames[wp->type],
         wp->duration,
