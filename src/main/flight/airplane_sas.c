@@ -90,9 +90,9 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
         pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
         deltaAccP = accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
 
-        DEBUG_SET(DEBUG_PSAS, 2, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelDelta * 10.0f));
-        DEBUG_SET(DEBUG_PSAS, 4, lrintf(deltaAccP * 10.0f));
+        DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f));
+        DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f));
+        DEBUG_SET(DEBUG_PSAS, 5, lrintf(deltaAccP * 10.0f));
     }
     return deltaAccP;
 }
@@ -142,8 +142,8 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
         }
 
-        DEBUG_SET(DEBUG_PSAS, 5, lrintf(liftCoefF * 100.0f));
-        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
+        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefF * 100.0f));
+        DEBUG_SET(DEBUG_PSAS, 7, lrintf(liftCoefDiff * 100.0f));
     }
 
     return isLimitAoA;
@@ -262,7 +262,8 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_YAW].S = 10.0f * yawStabilityCtrl;
     pidData[FD_YAW].P = 10.0f * rollToYawCrossControl;
 
-    DEBUG_SET(DEBUG_PSAS, 0, lrintf(liftCoef * 100.0f));
-    DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].Sum * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].I * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
 }
 #endif
