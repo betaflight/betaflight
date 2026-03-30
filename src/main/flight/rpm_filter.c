@@ -104,7 +104,7 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     rpmFilter.notchUpdatesPerIteration = ceilf(numNotchesPerAxis / loopIterationsPerUpdate); // round to ceiling
 }
 
-FAST_CODE_NOINLINE void rpmFilterUpdate(void)
+static inline void rpmFilterUpdate(void)
 {
     if (!useDshotTelemetry || !rpmFilter.numHarmonics) {
         return;
@@ -142,7 +142,7 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
     }
 }
 
-FAST_CODE void rpmFilterApply(float input[3])
+static inline void rpmFilterApply(float input[3])
 {
     // Iterate over all notches on axis and apply each one to value.
     // Order of application doesn't matter because biquads are linear time-invariant filters.
@@ -156,6 +156,12 @@ FAST_CODE void rpmFilterApply(float input[3])
             rpmNotchApply(&rpmFilter.notch[motor][i], input);
         }
     }
+}
+
+FAST_CODE void rpmFilterRun(float input[3])
+{
+    rpmFilterUpdate();
+    rpmFilterApply(input);
 }
 
 #endif // USE_RPM_FILTER
