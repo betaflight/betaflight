@@ -288,7 +288,11 @@ FAST_CODE void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, fl
     filter->a1 = filter->b1;
     filter->a2 = (1.0f - alpha) * a0inv;
 
-    filter->weight = weight;
+    float weightRecip = 1.0f - weight;
+
+    filter->b0 = weight * filter->b0 + weightRecip;
+    filter->b1 = weight * filter->b1 + weightRecip * filter->a1;
+    filter->b2 = weight * filter->b2 + weightRecip * filter->a2;
 }
 
 // Computes a biquad filter in df1 and crossfades input with output
@@ -307,8 +311,8 @@ FAST_CODE void rpmNotchApply(rpmNotch_t* filter, float input[3])
         filter->y2[i] = filter->y1[i];
         filter->y1[i] = output[i];
 
-        /* apply weight to result and crossfade with input */
-        input[i] = filter->weight * output[i] + (1.0f - filter->weight) * input[i];
+        /* update the input to be filtered */
+        input[i] = output[i];
     }
 }
 
