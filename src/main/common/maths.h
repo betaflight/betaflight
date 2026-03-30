@@ -119,7 +119,7 @@ float quickMedianFilter9f(const float * v);
 #if defined(FAST_MATH)
 float sin_approx(float x);
 float cos_approx(float x);
-void sincosf_approx(float x, float *restrict out_s, float *restrict out_c);
+void sincosf_approx(float x, float *out_s, float *out_c);
 float atan2_approx(float y, float x);
 float acos_approx(float x);
 float asin_approx(float x);
@@ -131,7 +131,7 @@ float pow_approx(float a, float b);
 #define sin_approx(x)       sinf(x)
 #define cos_approx(x)       cosf(x)
 // slower non fast math version
-static inline void sincosf_approx(float x, float *restrict out_s, float *restrict out_c)
+static inline void sincosf_approx(float x, float *out_s, float *out_c)
 {
     *out_s = sinf(x);
     *out_c = cosf(x);
