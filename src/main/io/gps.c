@@ -2350,6 +2350,7 @@ static bool UBLOX_parse_gps(void)
             applyNanoCorrection(&utcSeconds, &millis, ubxRcvMsgPayload.ubxNavPvt.nano);
             unixSecondsToDateTime(&gpsSol.dateTime, utcSeconds, millis);
         }
+        break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
 #ifdef USE_DASHBOARD
         *dashboardGpsPacketLogCurrentChar = DASHBOARD_LOG_UBLOX_SVINFO; // The display log only shows SVINFO for both SVINFO and SAT.
@@ -2454,7 +2455,6 @@ static bool UBLOX_parse_gps(void)
         gpsSol.velned.velE = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_east; // cm/s
         gpsSol.velned.velD = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_down; // cm/s
         ubxHaveNewSpeed = true;
-        break;
 #ifdef USE_RTC_TIME
         // Set system clock once when GPS time is available
         if (!rtcHasTime() && gpsSol.dateTime.valid) {
