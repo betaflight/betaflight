@@ -49,7 +49,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 #ifdef USE_RPM_FILTER
     }
     
-    rpmFilterApply(gyroADCfVec);
+    rpmFilterRun(gyroADCfVec);
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 #endif
