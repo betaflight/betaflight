@@ -1,0 +1,30 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0
+MaxEmptyLinesToKeep: 2
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterStruct: false
+  AfterEnum: true
+  AfterUnion: true
+  AfterClass: true
+  AfterNamespace: true
+  AfterControlStatement: false # if/for/while { on same line
+  BeforeElse: false            # } else { on same line
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+
+SortIncludes: false
+AllowShortFunctionsOnASingleLine: None
+AlignConsecutiveMacros: true
+AlignTrailingComments:
+  Kind: Leave
+...
