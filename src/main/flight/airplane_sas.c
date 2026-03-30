@@ -114,36 +114,36 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
         float liftCoefDiff = 0.0f,
               servoVelocity = 0.0f;
         if (liftCoefF > 0.0f) {
-            liftCoefDiff = liftCoefF - limitLiftC;
             if (liftCoefForecastChange > 0.0f) {
-                liftCoefDiff += liftCoefForecastChange;
+                liftCoefF += liftCoefForecastChange;
             }
+            liftCoefDiff = liftCoefF - limitLiftC;
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
             }
         } else {
-            liftCoefDiff = liftCoefF + limitLiftC;
             if (liftCoefForecastChange < 0.0f) {
-                liftCoefDiff += liftCoefForecastChange;
+                liftCoefF += liftCoefForecastChange;
             }
+            liftCoefDiff = liftCoefF + limitLiftC;
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
             }
         }
 
-        // Decay the AoA limiter I value when the limiter is off
-        if (!isLimitAoA && pidProfile->psas_pitch_accel_p_gain == 0 && pidProfile->psas_aoa_limiter_tau_return != 0) {
+        if (isLimitAoA) {
+            pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
+        } else if (pidProfile->psas_pitch_accel_p_gain == 0 && pidProfile->psas_aoa_limiter_tau_return != 0) {
+            // Decay the AoA limiter I value when the limiter is off
             pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
         }
 
-        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefF * 100.0f));
-        DEBUG_SET(DEBUG_PSAS, 7, lrintf(liftCoefDiff * 100.0f));
+        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
+        DEBUG_SET(DEBUG_PSAS, 7, lrintf(liftCoefF * 100.0f));
     }
 
     return isLimitAoA;
