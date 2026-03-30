@@ -204,10 +204,11 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
         isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef);
     }
 
+    float deltaAccP = 0.0f;
     if (isLimitAoA == false) {
-        pidData[FD_PITCH].Sum += updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
+        deltaAccP = updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
-
+    pidData[FD_PITCH].Sum += deltaAccP;
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
     // limit integrator output
@@ -217,6 +218,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     } else if (output < -100.0f) {
         pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
     }
+
     // Add integrator output to Sum value
     pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
     // Scale output to [-500, +500] range
@@ -227,6 +229,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
     pidData[FD_PITCH].S = 10.0f * pitchStabilityCtrl;
     pidData[FD_PITCH].I *= 10.0f;  // Store *10 value
+    pidData[FD_PITCH].P = 10.0f * deltaAccP;
 
     // Roll channel
     const float maxRcRateRoll = fmaxf(getMaxRcRate(FD_ROLL), 1.0f);
