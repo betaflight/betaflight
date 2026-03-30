@@ -280,6 +280,10 @@ uint32_t dmaGetChannel(const uint8_t channel);
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_SetMemoryAddress(dmaResource, addr) LL_EX_DMA_SetMemoryAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xLL_EX_DMA_SetPeriphAddress(dmaResource, addr) LL_EX_DMA_SetPeriphAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xLL_EX_DMA_ConfigStream(dmaResource, channel, dir, pAddr, mAddr, len, mode) \
+    LL_EX_DMA_ConfigStream((DMA_ARCH_TYPE *)(dmaResource), channel, dir, pAddr, mAddr, len, mode)
 
 #else
 
