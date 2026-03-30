@@ -67,7 +67,6 @@ typedef struct biquadFilter_s {
 typedef struct rpmNotch_s {
     float b0, b1, b2, a1, a2;
     float x1[3], x2[3], y1[3], y2[3];
-    float weight;
 } rpmNotch_t;
 
 typedef struct phaseComp_s {

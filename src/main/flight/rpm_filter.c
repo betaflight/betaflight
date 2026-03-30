@@ -124,7 +124,7 @@ static inline void rpmFilterUpdate(void)
 
             // fade out notch when approaching minHz (turn it off)
             if (marginHz < rpmFilter.fadeRangeHz) {
-                weight *= marginHz / rpmFilter.fadeRangeHz;
+                weight = marginHz / rpmFilter.fadeRangeHz;
             }
 
             // attenuate notches per harmonics group
