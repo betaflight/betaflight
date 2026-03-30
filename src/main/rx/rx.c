@@ -657,6 +657,7 @@ STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxC
         return PPM_RCVR_TIMEOUT;
     }
 
+    // TODO make a struct and function version of scaleRangef to handle this at lower cpu
     sample = scaleRangef(sample, range->min, range->max, PWM_RANGE_MIN, PWM_RANGE_MAX);
     // out of range channel values are now constrained after the validity check in detectAndApplySignalLossBehaviour()
     return sample;

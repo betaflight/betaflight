@@ -72,6 +72,19 @@
 #define HZ_TO_INTERVAL(x) (1.0f / (x))
 #define HZ_TO_INTERVAL_US(x) (1000000 / (x))
 
+#define SCALE_FACTOR(in_start, in_end, out_start, out_end) \
+    ((float)(out_end - out_start) / (float)(in_end - in_start))
+
+#define SCALE_OFFSET(in_start, in_end, out_start, out_end) \
+    ((float)(out_start) - (SCALE_FACTOR(in_start, in_end, out_start, out_end) * (float)(in_start)))
+
+#define DEFINE_SCALE_FN(name, in_start, in_end, out_start, out_end)              \
+    static inline float name(float input) {                                      \
+        return (input * SCALE_FACTOR(in_start, in_end, out_start, out_end))      \
+                      + SCALE_OFFSET(in_start, in_end, out_start, out_end);      \
+    }
+
+
 typedef int32_t fix12_t;
 
 typedef struct stdev_s
