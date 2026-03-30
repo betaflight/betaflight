@@ -31,92 +31,104 @@
 #include "maths.h"
 
 #if defined(FAST_MATH)
-static inline float sin_poly5_r(float r)
+static inline float sin_poly5_r(float r, float s)
 {
     // Pre-scaled for u = r*(π/2)
     const float c0 =  0x1.921f1cp0f; // 1.5707871913909912109375
     const float c1 = -0x1.4a974p-1f; // -0.6456851959228515625
     const float c2 =  0x1.3db294p-4f; // 7.756288349628448486328125e-2
-    float s = r * r;
     return r * ((c2 * s + c1) * s + c0);
 }
 
-static inline float cos_poly6_r(float r)
+static inline float cos_poly6_r(float s)
 {
     const float d1 = -0x1.3bd39cp0f; // -1.2336976528167724609375
     const float d2 =  0x1.03bp-2f; // 0.25360107421875
     const float d3 = -0x1.4e5eecp-6f; // -2.04083733260631561279296875e-2
-    float s = r * r;
     return ((d3 * s + d2) * s + d1) * s + 1.0f;
+}
+
+// ---- Range reduction ----
+// Converts x (radians) into quadrant index q and reduced argument r ∈ [-0.5, 0.5].
+// Uses float-add rounding trick — avoids roundf()/vrinta, works on FPv4-SP and FPv5.
+static inline void range_reduce(float x, float *restrict r_out, int *restrict q_out)
+{
+    float t  = x * INV_PIO2;
+    float qf = (t + 12582912.0f) - 12582912.0f;  // roundf(t), exact for |t| < 2^23
+    *q_out   = (int)qf;                            // VCVT — qf is already integer-valued
+    *r_out   = t - qf;
 }
 
 // ---- Quadrant mapping helpers ----
 // r ∈ [-0.5, 0.5], q is quadrant index (…,-1,0,1,2,3,4,…).
 static inline float sinf_quadrant_r(float r, int q)
 {
+    float s = r * r;
+
     q &= 3;
     if (q & 1) { // odd: use cos, sign handled below
-        float v = cos_poly6_r(r);
+        float v = cos_poly6_r(s);
         return (q & 2) ? -v : v;
     } else {     // even: use sin
-        float v = sin_poly5_r(r);
+        float v = sin_poly5_r(r, s);
         return (q & 2) ? -v : v;
     }
 }
 
 static inline float cosf_quadrant_r(float r, int q)
 {
+    float s = r * r;
+
     q &= 3;
     if (q & 1) { // odd: -sin, sign handled below
-        float v = -sin_poly5_r(r);
+        float v = -sin_poly5_r(r, s);
         return (q & 2) ? -v : v;   // q=1 -> -sin, q=3 -> +sin
     } else {     // even: cos
-        float v = cos_poly6_r(r);
+        float v = cos_poly6_r(s);
         return (q & 2) ? -v : v;   // q=2 -> -cos
     }
 }
 
 static inline void sincosf_quadrant_r(float r, int q, float *restrict out_s, float *restrict out_c)
 {
+    float s = r * r;
+
     q &= 3;
-    float sb = sin_poly5_r(r);
-    float cb = cos_poly6_r(r);
+    float sb = sin_poly5_r(r, s);
+    float cb = cos_poly6_r(s);
 
     // map to base values in registers
-    float s = (q & 1) ? cb  : sb;   // odd quadrants: use cos
-    float c = (q & 1) ? -sb : cb;   // odd quadrants: cos->sin mapping
+    float sv = (q & 1) ? cb  : sb;   // odd quadrants: use cos
+    float cv = (q & 1) ? -sb : cb;   // odd quadrants: cos->sin mapping
 
     // flip signs for quadrants 2 and 3
-    if (q & 2) { s = -s; c = -c; }
+    if (q & 2) { sv = -sv; cv = -cv; }
 
-    *out_s = s;
-    *out_c = c;
+    *out_s = sv;
+    *out_c = cv;
 }
 
 float sin_approx(float x)
 {
-    float t = x * INV_PIO2;     // in quadrant units
-    float qf = roundf(t);       // nearest quadrant as float
-    int   q  = (int)qf;
-    float r  = t - qf;          // remainder in [-0.5, 0.5]
+    int q; // quadrant index
+    float r; // remainder in [-0.5,]
+    range_reduce(x, &r, &q);
     return sinf_quadrant_r(r, q);
 }
 
 float cos_approx(float x)
 {
-    float t = x * INV_PIO2;
-    float qf = roundf(t);
-    int   q  = (int)qf;
-    float r  = t - qf;          // [-0.5, 0.5]
+    int q; // quadrant index
+    float r; // remainder in [-0.5,]
+    range_reduce(x, &r, &q);
     return cosf_quadrant_r(r, q);
 }
 
 void sincosf_approx(float x, float *restrict out_s, float *restrict out_c)
 {
-    float t = x * INV_PIO2;
-    float qf = roundf(t);
-    int   q  = (int)qf;
-    float r  = t - qf;          // [-0.5, 0.5]
+    int q; // quadrant index
+    float r; // remainder in [-0.5,]
+    range_reduce(x, &r, &q);
     sincosf_quadrant_r(r, q, out_s, out_c);
 }
 
