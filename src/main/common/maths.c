@@ -76,7 +76,7 @@ static inline float cosf_quadrant_r(float r, int q)
     }
 }
 
-static inline void sincosf_quadrant_r(float r, int q, float *out_s, float *out_c)
+static inline void sincosf_quadrant_r(float r, int q, float *restrict out_s, float *restrict out_c)
 {
     q &= 3;
     float sb = sin_poly5_r(r);
@@ -111,7 +111,7 @@ float cos_approx(float x)
     return cosf_quadrant_r(r, q);
 }
 
-void sincosf_approx(float x, float *out_s, float *out_c)
+void sincosf_approx(float x, float *restrict out_s, float *restrict out_c)
 {
     float t = x * INV_PIO2;
     float qf = roundf(t);
