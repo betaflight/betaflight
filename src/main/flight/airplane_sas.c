@@ -76,32 +76,25 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
 }
 
 //The astatic accel Z controller by stick position
-static void updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
+static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
 {
-    if (pidProfile->psas_pitch_accel_i_gain != 0) {
+    float deltaAccP = 0.0f;
+    if (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0) {
         const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
         float accelReq = pitchPilotCtrl < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchPilotCtrl * 0.01f + 1.0f
                                                : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchPilotCtrl * 0.01f + 1.0f;
         float accelDelta = accelZ - accelReq;
         float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+
         pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
-        pidData[FD_PITCH].Sum += accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
-        pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
+        deltaAccP = accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
 
-        // limit integrator output
-        float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
-        if ( output > 100.0f) {
-            pidData[FD_PITCH].I = 100.0f - pidData[FD_PITCH].Sum;
-        } else if (output < -100.0f) {
-            pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
-        }
-
-        DEBUG_SET(DEBUG_PSAS, 0, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_PSAS, 1, lrintf(accelDelta * 10.0f));
-    } else {
-        pidData[FD_PITCH].I = 0.0f;
+        DEBUG_SET(DEBUG_PSAS, 2, lrintf(accelReq * 10.0f));
+        DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelDelta * 10.0f));
+        DEBUG_SET(DEBUG_PSAS, 4, lrintf(deltaAccP * 10.0f));
     }
+    return deltaAccP;
 }
 
 // The angle of attack limiter. The aerodynamics lift force coefficient depends by angle of attack. Therefore it possible to use this coef instead of AoA value.
@@ -143,8 +136,9 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
                 pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
             }
         }
-        DEBUG_SET(DEBUG_PSAS, 3, lrintf(liftCoefF * 100.0f));
-        DEBUG_SET(DEBUG_PSAS, 4, lrintf(liftCoefDiff * 100.0f));
+
+        DEBUG_SET(DEBUG_PSAS, 5, lrintf(liftCoefF * 100.0f));
+        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
     }
 
     return isLimitAoA;
@@ -196,7 +190,6 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     float pitchStabilityCtrl = (accelZ - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.01f);
 
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
-    pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
     // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     float liftCoef = 0.0f;
@@ -207,13 +200,24 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     }
 
     if (isLimitAoA == false) {
-        updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
+        pidData[FD_PITCH].Sum += updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
     }
-    pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
 
+    pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
+
+    // limit integrator output
+    float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
+    if ( output > 100.0f) {
+        pidData[FD_PITCH].I = 100.0f - pidData[FD_PITCH].Sum;
+    } else if (output < -100.0f) {
+        pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
+    }
+    // Add integrator output to Sum value
+    pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
+    // Scale output to [-500, +500] range
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
-    // Save control components instead of PID to get logging without additional variables
+    // Save control components instead of PID fields values to get blackbox logging without additional variables
     pidData[FD_PITCH].F = 10.0f * pitchPilotCtrl;
     pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
     pidData[FD_PITCH].S = 10.0f * pitchStabilityCtrl;
@@ -253,8 +257,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_YAW].S = 10.0f * yawStabilityCtrl;
     pidData[FD_YAW].P = 10.0f * rollToYawCrossControl;
 
-    DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
-    DEBUG_SET(DEBUG_PSAS, 5, lrintf(pidData[FD_PITCH].I));
-    DEBUG_SET(DEBUG_PSAS, 6, lrintf(pidData[FD_YAW].P));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(liftCoef * 100.0f));
+    DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].Sum * 10.0f));
 }
 #endif
