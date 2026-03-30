@@ -1412,6 +1412,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_AOA_LIMITER_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_aoa_limiter_gain) },
     { PARAM_NAME_PSAS_AOA_LIMITER_FILTER_FREQ, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_aoa_limiter_filter_freq) },
     { PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_aoa_limiter_forecast_time) },
+    { PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 50 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_aoa_limiter_tau_return) },
     { PARAM_NAME_PSAS_SERVO_TIME, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_servo_time) },
     { PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_yaw_clift_start) },
     { PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_yaw_clift_stop) },

@@ -299,6 +299,7 @@
 #define PARAM_NAME_PSAS_AOA_LIMITER_GAIN "psas_aoa_limiter_gain"
 #define PARAM_NAME_PSAS_AOA_LIMITER_FILTER_FREQ "psas_aoa_limiter_filter_freq"
 #define PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME "psas_aoa_limiter_forecast_time"
+#define PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN "psas_aoa_limiter_tau_return"
 #define PARAM_NAME_PSAS_SERVO_TIME "psas_servo_time"
 #define PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START "psas_roll_yaw_clift_start"
 #define PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP "psas_roll_yaw_clift_stop"

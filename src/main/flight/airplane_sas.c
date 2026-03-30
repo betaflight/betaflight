@@ -137,6 +137,11 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             }
         }
 
+        // Decay the AoA limiter I value when the limiter is off
+        if (!isLimitAoA && pidProfile->psas_pitch_accel_p_gain == 0 && pidProfile->psas_aoa_limiter_tau_return != 0) {
+            pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
+        }
+
         DEBUG_SET(DEBUG_PSAS, 5, lrintf(liftCoefF * 100.0f));
         DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
     }
