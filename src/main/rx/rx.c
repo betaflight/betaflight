@@ -303,6 +303,10 @@ void rxInit(void)
     rxRuntimeState.lastRcFrameTimeUs = 0;              // zero when driver does not provide timing info
     rcSampleIndex = 0;
 
+    for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
+        scaleRangefInit(&rxRuntimeState.scaleRange[i], rxChannelRangeConfigs(i)->min, rxChannelRangeConfigs(i)->max, PWM_RANGE_MIN, PWM_RANGE_MAX);
+    }
+
     uint32_t now = millis();
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig()->midrc;
@@ -650,15 +654,14 @@ static uint16_t getRxfailValue(uint8_t channel)
     }
 }
 
-STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxChannelRangeConfig_t *range)
+STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, scaleRangef_t *scaler)
 {
     // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
     if (sample == PPM_RCVR_TIMEOUT) {
         return PPM_RCVR_TIMEOUT;
     }
 
-    // TODO make a struct and function version of scaleRangef to handle this at lower cpu
-    sample = scaleRangef(sample, range->min, range->max, PWM_RANGE_MIN, PWM_RANGE_MAX);
+    sample = scaleRangefApply(scaler, sample);
     // out of range channel values are now constrained after the validity check in detectAndApplySignalLossBehaviour()
     return sample;
 }
@@ -682,7 +685,7 @@ static void readRxChannelsApplyRanges(void)
 
         // apply the rx calibration
         if (channel < NON_AUX_CHANNEL_COUNT) {
-            sample = applyRxChannelRangeConfiguraton(sample, rxChannelRangeConfigs(channel));
+            sample = applyRxChannelRangeConfiguraton(sample, &rxRuntimeState.scaleRange[channel]);
         }
 
         rcRaw[channel] = sample;

@@ -243,6 +243,19 @@ float scaleRangef(float x, float srcFrom, float srcTo, float destFrom, float des
     return (a / b) + destFrom;
 }
 
+void scaleRangefInit(scaleRangef_t *scale, float srcFrom, float srcTo, float destFrom, float destTo)
+{
+    float range_src = srcTo - srcFrom;
+    float range_dest = destTo - destFrom;
+    scale->scale = range_dest / range_src;
+    scale->offset = destFrom - (srcFrom * scale->scale);
+}
+
+float scaleRangefApply(scaleRangef_t *scale, float x)
+{
+    return (x * scale->scale) + scale->offset;
+}
+
 // Quick median filter implementation
 // (c) N. Devillard - 1998
 // http://ndevilla.free.fr/median/median.pdf
