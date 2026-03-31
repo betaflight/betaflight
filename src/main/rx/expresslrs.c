@@ -194,13 +194,15 @@ static uint8_t mspBuffer[ELRS_MSP_BUFFER_SIZE];
 // Stick unpacking
 //
 
+DEFINE_SCALE_FN(scaleRangeLq, 0, 100, 988, 2011)
+
 static void setRssiChannelData(uint16_t *rcData)
 {
 #ifndef USE_ELRSV3
     // In ELRS V4, Arm (ch5) is copied to ch14 to mimic the behavior of the fullres modes which have it as an extra channel
     rcData[ELRS_ARM_V4_CHANNEL] = rcData[ELRS_ARM_V3_CHANNEL];
 #endif
-    rcData[ELRS_LQ_CHANNEL] = scaleRange(receiver.uplinkLQ, 0, 100, 988, 2011);
+    rcData[ELRS_LQ_CHANNEL] = scaleRangeLq(receiver.uplinkLQ);
     rcData[ELRS_RSSI_CHANNEL] = scaleRange(constrain(receiver.rssiFiltered, receiver.rfPerfParams->sensitivity, -50), receiver.rfPerfParams->sensitivity, -50, 988, 2011);
 }
 

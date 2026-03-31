@@ -225,13 +225,15 @@ typedef struct crsfPayloadLinkstatisticsTx_s {
 
 static timeUs_t lastLinkStatisticsFrameUs;
 
+DEFINE_SCALE_FN(scaleRangeCrsfRssi, CRSF_RSSI_MIN, CRSF_RSSI_MAX, 0, RSSI_MAX_VALUE)
+
 static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, timeUs_t currentTimeUs)
 {
     const crsfLinkStatistics_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
     int16_t rssiDbm = -1 * (stats.active_antenna ? stats.uplink_RSSI_2 : stats.uplink_RSSI_1);
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
-        const uint16_t rssiPercentScaled = scaleRange(rssiDbm, CRSF_RSSI_MIN, CRSF_RSSI_MAX, 0, RSSI_MAX_VALUE);
+        const uint16_t rssiPercentScaled = scaleRangeCrsfRssi(rssiDbm);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM
@@ -270,12 +272,14 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
 }
 
 #if defined(USE_CRSF_V3)
+DEFINE_SCALE_FN(scaleRangeCrsfRssiV3, 0, 100, 0, RSSI_MAX_VALUE)
+
 static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsPtr, timeUs_t currentTimeUs)
 {
     const crsfLinkStatisticsTx_t stats = *statsPtr;
     lastLinkStatisticsFrameUs = currentTimeUs;
     if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
-        const uint16_t rssiPercentScaled = scaleRange(stats.uplink_RSSI_percentage, 0, 100, 0, RSSI_MAX_VALUE);
+        const uint16_t rssiPercentScaled = scaleRangeCrsfRssiV3(stats.uplink_RSSI_percentage);
         setRssi(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM

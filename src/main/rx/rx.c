@@ -854,13 +854,15 @@ void setRssiMsp(uint8_t newMspRssi)
     }
 }
 
+DEFINE_SCALE_FN(scaleRangePwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, RSSI_MAX_VALUE)
+
 static void updateRSSIPWM(void)
 {
     // Read value of AUX channel as rssi
     int16_t pwmRssi = rcData[rxConfig()->rssi_channel - 1];
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiDirect(scaleRange(constrain(pwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
+    setRssiDirect(scaleRangePwmRssi(constrain(pwmRssi, PWM_RANGE_MIN, PWM_RANGE_MAX)), RSSI_SOURCE_RX_CHANNEL);
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -944,9 +946,11 @@ uint16_t getRssi(void)
     return rxConfig()->rssi_scale / 100.0f * rssiValue + rxConfig()->rssi_offset * RSSI_OFFSET_SCALING;
 }
 
+DEFINE_SCALE_FN(scaleRangeRssiPercent, 0, RSSI_MAX_VALUE, 0, 100)
+
 uint8_t getRssiPercent(void)
 {
-    return scaleRange(getRssi(), 0, RSSI_MAX_VALUE, 0, 100);
+    return scaleRangeRssiPercent(getRssi());
 }
 
 #ifdef USE_RX_RSSI_DBM
@@ -1015,9 +1019,11 @@ uint8_t rxGetRfMode(void)
     return rfMode;
 }
 
+DEFINE_SCALE_FN(scaleRangeLinkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100)
+
 uint16_t rxGetLinkQualityPercent(void)
 {
-    return (linkQualitySource == LQ_SOURCE_NONE) ? scaleRange(linkQuality, 0, LINK_QUALITY_MAX_VALUE, 0, 100) : linkQuality;
+    return (linkQualitySource == LQ_SOURCE_NONE) ? scaleRangeLinkQuality(linkQuality) : linkQuality;
 }
 #endif
 
