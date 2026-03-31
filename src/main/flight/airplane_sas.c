@@ -60,13 +60,14 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
             *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
             liftCoefLast = *liftCoef;
             // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
-            if (isLiftCoefValid == false) {
+            if (!isLiftCoefValid) {
                 if (*liftCoef < limitLiftC && *liftCoef > -limitLiftC) {
                     validLiftCoefTime += pidRuntime.dT;
                     if (validLiftCoefTime > timeForValid) {
-                        *liftCoefVelocity = 0.0f;   // Set the first liftCoefVelocity output to zero value, because liftCoefLast was not valid
                         isLiftCoefValid = true;
                     }
+                } else {
+                    validLiftCoefTime = 0.0f;
                 }
                 if (!isLiftCoefValid) {
                     *liftCoef = 0.0f;
