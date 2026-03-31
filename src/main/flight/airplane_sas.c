@@ -40,27 +40,37 @@ void psasInit(const pidProfile_t *pidProfile)
     pidRuntime.isReadyPSAS = false;
 }
 
-static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef)
+static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
 {
     static bool isLiftCoefValid = false;
+    static float liftCoefLast = 0.0f;
     static float validLiftCoefTime = 0.0f;
     const float timeForValid = 3.0f;
     *liftCoef = 0.0f;
+    *liftCoefVelocity = 0.0f;
+
     if (ARMING_FLAG(ARMED) && gpsSol.numSat > 5) {
         const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
         const float speedThreshold = 2.5f;    // GPS speed threshold (m/s)
         float speed = 0.01f * gpsSol.speed3d;
         if (speed > speedThreshold) {
             const float airSpeedPressure = (0.001f * pidProfile->psas_air_density) * sq(speed) / 2.0f;
-            *liftCoef = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
-
+            const float liftCoefRaw = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
+            *liftCoef = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, liftCoefRaw);
+            *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
+            liftCoefLast = *liftCoef;
             // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
             if (isLiftCoefValid == false) {
                 if (*liftCoef < limitLiftC && *liftCoef > -limitLiftC) {
                     validLiftCoefTime += pidRuntime.dT;
                     if (validLiftCoefTime > timeForValid) {
+                        *liftCoefVelocity = 0.0f;   // Set the first liftCoefVelocity output to zero value, because liftCoefLast was not valid
                         isLiftCoefValid = true;
                     }
+                }
+                if (!isLiftCoefValid) {
+                    *liftCoef = 0.0f;
+                    *liftCoefVelocity = 0.0f;
                 }
             }
         } else {
@@ -98,26 +108,21 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
 }
 
 // The angle of attack limiter. The aerodynamics lift force coefficient depends by angle of attack. Therefore it possible to use this coef instead of AoA value.
-static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef)
+static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef, float liftCoefVelocity)
 {
     bool isLimitAoA = false;
-    static float liftCoefLast = 0.0f;
-    float liftCoefF = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, liftCoef);
-    float liftCoefVelocity = (liftCoefF - liftCoefLast) / pidRuntime.dT;
-    liftCoefLast = liftCoefF;
-    float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
-
     if (pidProfile->psas_aoa_limiter_gain != 0) {
+        const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
         const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
 
         const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
         float liftCoefDiff = 0.0f,
               servoVelocity = 0.0f;
-        if (liftCoefF > 0.0f) {
+        if (liftCoef > 0.0f) {
             if (liftCoefForecastChange > 0.0f) {
-                liftCoefF += liftCoefForecastChange;
+                liftCoef += liftCoefForecastChange;
             }
-            liftCoefDiff = liftCoefF - limitLiftC;
+            liftCoefDiff = liftCoef - limitLiftC;
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
@@ -125,9 +130,9 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             }
         } else {
             if (liftCoefForecastChange < 0.0f) {
-                liftCoefF += liftCoefForecastChange;
+                liftCoef += liftCoefForecastChange;
             }
-            liftCoefDiff = liftCoefF + limitLiftC;
+            liftCoefDiff = liftCoef + limitLiftC;
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
                 servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
@@ -143,7 +148,6 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
         }
 
         DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
-        DEBUG_SET(DEBUG_PSAS, 7, lrintf(liftCoefF * 100.0f));
     }
 
     return isLimitAoA;
@@ -199,10 +203,11 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
 
     // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     float liftCoef = 0.0f;
-    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef);
+    float liftCoefVelocity = 0.0f;
+    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
     bool isLimitAoA = false;
     if (isValidLiftCoef) {
-        isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef);
+        isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
     }
 
     float deltaAccP = 0.0f;
