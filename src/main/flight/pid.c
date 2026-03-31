@@ -1278,6 +1278,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 pidData[axis].P = pidData[axis].I = pidData[axis].D = 0;
                 pidData[axis].F = pidData[axis].S = 0;
                 pidData[axis].Sum = 0;
+                previousGyroRateDterm[axis] = gyroRateDterm[axis];
             }
             pidRuntime.isReadyPSAS = false;
             return;
@@ -1292,6 +1293,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].F = 0;
             pidData[axis].S = 0;
             pidData[axis].Sum = 0;
+            previousGyroRateDterm[axis] = gyroRateDterm[axis];
         }
         pidRuntime.isReadyPSAS = false;
     }
