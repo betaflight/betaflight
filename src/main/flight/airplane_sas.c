@@ -168,7 +168,7 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
 
 void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
 {
-    // Clear all PID values by first PSAS run
+    // Clear all PID values and reset the all PSAS filters by first PSAS run
     if (!pidRuntime.isReadyPSAS) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
@@ -178,6 +178,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
             pidData[axis].S = 0;
             pidData[axis].Sum = 0;
         }
+        psasInit(pidProfile);
         pidRuntime.isReadyPSAS = true;
     }
 
