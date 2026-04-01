@@ -36,7 +36,7 @@ void psasInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&pidRuntime.psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_aoa_limiter_filter_freq * 0.1f, pidRuntime.dT));
+    pt1FilterInit(&pidRuntime.psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
     pidRuntime.isReadyPSAS = false;
 }
 
@@ -56,7 +56,7 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
         if (speed > speedThreshold) {
             const float airSpeedPressure = (0.001f * pidProfile->psas_air_density) * sq(speed) / 2.0f;
             *liftCoef = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
-            if (pidProfile->psas_aoa_limiter_filter_freq != 0) {
+            if (pidProfile->psas_lift_coef_filter_freq != 0) {
                 *liftCoef = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, *liftCoef);
             }
             *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
