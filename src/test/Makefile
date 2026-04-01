@@ -38,7 +38,7 @@ alignsensor_unittest_SRC := \
 
 althold_unittest_SRC := \
 		$(USER_DIR)/flight/alt_hold_multirotor.c \
-		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/autopilot_common.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c \
 		$(USER_DIR)/common/filter.c \
@@ -56,11 +56,62 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/flight/autopilot_common.c \
 		$(USER_DIR)/flight/gps_rescue_multirotor.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
+
+autopilot_multirotor_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_common.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+autopilot_multirotor_unittest_DEFINES :=
+
+autopilot_waypoint_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_waypoint.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/pg/rx.c
+
+autopilot_waypoint_unittest_DEFINES := \
+		ENABLE_FLIGHT_PLAN=1
+
+autopilot_guidance_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_guidance.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/pg/rx.c
+
+autopilot_guidance_unittest_DEFINES := \
+		ENABLE_FLIGHT_PLAN=1
+
+autopilot_core_unittest_SRC := \
+		$(USER_DIR)/fc/core.c \
+		$(USER_DIR)/fc/dispatch.c \
+		$(USER_DIR)/fc/rc_controls.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+autopilot_core_unittest_DEFINES := \
+		USE_GPS= \
+		ENABLE_FLIGHT_PLAN=1
+
+gps_nav_origin_unittest_SRC := \
+		$(USER_DIR)/io/gps.c \
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+gps_nav_origin_unittest_DEFINES := \
+		USE_GPS=
 
 atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \

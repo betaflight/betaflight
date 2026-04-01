@@ -55,6 +55,8 @@ bool blackboxVirtualOpen(void)
         }
     }
     closedir(dir);
+    printf("[BLACKBOX] Virtual blackbox ready, next log: %s%05u.%s\n",
+           LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
     return true;
 }
 
@@ -93,6 +95,7 @@ bool blackboxVirtualBeginLog(void)
     blackboxVirtualFile = fopen(filename, "w");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;
+        printf("[BLACKBOX] Logging to %s\n", filename);
     }
     return blackboxVirtualFile != NULL;
 }
