@@ -18,6 +18,5 @@
 [submodule "lib/main/STM32H5"]
 	path = lib/main/STM32H5
 	url = https://github.com/STMicroelectronics/STM32CubeH5
-	branch = main
 	ignore = dirty
 	update = none
