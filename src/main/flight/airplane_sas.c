@@ -55,8 +55,10 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
         float speed = 0.01f * gpsSol.speed3d;
         if (speed > speedThreshold) {
             const float airSpeedPressure = (0.001f * pidProfile->psas_air_density) * sq(speed) / 2.0f;
-            const float liftCoefRaw = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
-            *liftCoef = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, liftCoefRaw);
+            *liftCoef = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
+            if (pidProfile->psas_aoa_limiter_filter_freq != 0) {
+                *liftCoef = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, *liftCoef);
+            }
             *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
             liftCoefLast = *liftCoef;
             // Enable AoA limiter after ~3s of stable lift to avoid triggering during launch
