@@ -2604,8 +2604,8 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
         }
     }
 
-    // Always emit "waypoint clear" before inserts so replaying clears persisted waypoints
-    cliDumpPrintLinef(dumpMask, false, "waypoint clear");
+    // Emit "waypoint clear" before inserts so replaying clears persisted waypoints
+    cliDumpPrintLinef(dumpMask, equalsDefaultAll, "waypoint clear");
 
     for (uint32_t i = 0; i < flightPlanConfig->waypointCount; i++) {
         const waypoint_t *wp = &flightPlanConfig->waypoints[i];
