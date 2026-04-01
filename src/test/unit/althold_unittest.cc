@@ -132,6 +132,8 @@ extern "C" {
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
+    float getAltitudeCmControl(void) { return 0.0f; }
+    float getAltitudeDerivativeControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 0.0f; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
     float getGpsDataFrequencyHz(void) { return 10.0f; }

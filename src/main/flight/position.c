@@ -57,6 +57,9 @@ static pt2Filter_t altitudeDerivativeLpf;
 static float filteredAltitudeCm = 0.0f;
 static float filteredAltitudeDerivative = 0.0f;
 
+static float controlAltitudeCm = 0.0f;
+static float controlAltitudeDerivative = 0.0f;
+
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
@@ -99,13 +102,17 @@ void calculateEstimatedAltitude(void)
     if (!ARMING_FLAG(ARMED)) {
         filteredAltitudeCm = 0.0f;
         displayAltitudeCm = 0.0f;
+        controlAltitudeCm = 0.0f;
+        controlAltitudeDerivative = 0.0f;
     } else {
         // Apply PT2 display smoothing on top of KF output
         filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
         displayAltitudeCm = filteredAltitudeCm;
+        controlAltitudeCm = kfAltCm;
+        controlAltitudeDerivative = kfVelCm;
     }
 
-    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, kfVelCm);
+    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
 
 #ifdef USE_VARIO
     estimatedVario = lrintf(filteredAltitudeDerivative);
@@ -132,6 +139,16 @@ float getAltitudeCm(void)
 float getAltitudeDerivative(void)
 {
     return filteredAltitudeDerivative;
+}
+
+float getAltitudeCmControl(void)
+{
+    return controlAltitudeCm;
+}
+
+float getAltitudeDerivativeControl(void)
+{
+    return controlAltitudeDerivative;
 }
 
 bool isAltitudeAvailable(void)

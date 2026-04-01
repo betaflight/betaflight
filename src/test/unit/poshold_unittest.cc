@@ -61,6 +61,8 @@ extern "C" {
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
+    float getAltitudeCmControl(void) { return 0.0f; }
+    float getAltitudeDerivativeControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 1.0f; }
 
     uint8_t armingFlags = 0;

@@ -435,6 +435,9 @@ pid_unittest_DEFINES := \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 
+position_rescue_geometry_unittest_SRC := \
+		$(USER_DIR)/common/maths.c
+
 poshold_unittest_SRC := \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
 		$(USER_DIR)/common/maths.c \

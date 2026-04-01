@@ -217,8 +217,8 @@ void autopilotClearAltHoldHoverThrottle(void)
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep)
 {
-    const float verticalVelocityCmS = getAltitudeDerivative();
-    const float altitudeErrorCm = targetAltitudeCm - getAltitudeCm();
+    const float verticalVelocityCmS = getAltitudeDerivativeControl();
+    const float altitudeErrorCm = targetAltitudeCm - getAltitudeCmControl();
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
     // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much
@@ -390,7 +390,7 @@ bool positionControl(void)
 
 bool isBelowLandingAltitude(void)
 {
-    return getAltitudeCm() < 100.0f * autopilotConfig()->landingAltitudeM;
+    return getAltitudeCmControl() < 100.0f * autopilotConfig()->landingAltitudeM;
 }
 
 float getAutopilotThrottle(void)
