@@ -28,8 +28,6 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - 2nd order butterworth*/
-
 // PTn cutoff correction = 1 / sqrt(2^(1/n) - 1)
 #define CUTOFF_CORRECTION_PT2 1.553773974f
 #define CUTOFF_CORRECTION_PT3 1.961459177f
@@ -168,153 +166,276 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq)
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
-/* sets up a biquad filter as a 2nd order butterworth LPF */
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float dt)
 {
-    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
-}
+    butterworthFilterUpdate(filter, filterFreq, dt);
 
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
-{
-    biquadFilterUpdate(filter, filterFreq, refreshRate, Q, filterType);
-
+#ifndef SVF_ALTERNATIVE
     // zero initial samples
-    filter->x1 = filter->x2 = 0;
-    filter->y1 = filter->y2 = 0;
+    filter->x1 = filter->x2 = 0.0f;
+    filter->y1 = filter->y2 = 0.0f;
+#else
+    filter->low = 0.0f;
+    filter->band = 0.0f;
+#endif
 }
 
-FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+#define BUTTERWORTH_Q (1.0f / sqrtf(2.0f))     /* quality factor - 2nd order butterworth*/
+#define BUTTERWORTH_ALPHA_MULTIPLIER (1.0f / (2.0f * BUTTERWORTH_Q))
+
+FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt)
 {
+#ifndef SVF_ALTERNATIVE
     // setup variables
-    const float omega = 2.0f * M_PIf * filterFreq * refreshRate * 0.000001f;
+    const float omega = 2.0f * M_PIf * filterFreq * dt;
     float sn, cs;
     sincosf_approx(omega, &sn, &cs);
-    const float alpha = sn / (2.0f * Q);
+    const float alpha = sn * BUTTERWORTH_ALPHA_MULTIPLIER;
+    const float a0inv = 1.0f / (1.0f + alpha);
 
-    switch (filterType) {
-    case FILTER_LPF:
-        // 2nd order Butterworth (with Q=1/sqrt(2)) / Butterworth biquad section with Q
-        // described in http://www.ti.com/lit/an/slaa447/slaa447.pdf
-        filter->b1 = 1 - cs;
-        filter->b0 = filter->b1 * 0.5f;
-        filter->b2 = filter->b0;
-        filter->a1 = -2 * cs;
-        filter->a2 = 1 - alpha;
-        break;
-    case FILTER_NOTCH:
-        filter->b0 = 1;
-        filter->b1 = -2 * cs;
-        filter->b2 = 1;
-        filter->a1 = filter->b1;
-        filter->a2 = 1 - alpha;
-        break;
-    case FILTER_BPF:
-        filter->b0 = alpha;
-        filter->b1 = 0;
-        filter->b2 = -alpha;
-        filter->a1 = -2 * cs;
-        filter->a2 = 1 - alpha;
-        break;
-    }
-
-    const float a0 = 1 + alpha;
-
-    // precompute the coefficients
-    filter->b0 /= a0;
-    filter->b1 /= a0;
-    filter->b2 /= a0;
-    filter->a1 /= a0;
-    filter->a2 /= a0;
+    // 2nd order Butterworth (with Q=1/sqrt(2)) / Butterworth biquad section with Q
+    // described in http://www.ti.com/lit/an/slaa447/slaa447.pdf
+    filter->b1 = (1.0f - cs) * a0inv;
+//    filter->b0 = filter->b1 * 0.5f;
+//    filter->b2 = filter->b0;
+    filter->a1 = -2.0f * cs * a0inv;
+    filter->a2 = (1.0f - alpha) * a0inv;
+#else
+    filter->f = 2.0f * sin_approx(M_PIf * filterFreq * dt);
+    filter->q = 1.0f / BUTTERWORTH_Q;
+#endif
 }
 
-FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+// Computes a biquad filter in direct form 1 on a sample (slower but can handle changes in coefficients)
+FAST_CODE float butterworthFilterApplyMoving(butterworthFilter_t *filter, float input)
 {
-    biquadFilterUpdate(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
-}
-
-/* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
-{
-    /* compute result */
-    const float result = filter->b0 * input + filter->b1 * filter->x1 + filter->b2 * filter->x2 - filter->a1 * filter->y1 - filter->a2 * filter->y2;
-
-    /* shift x1 to x2, input to x1 */
+#ifndef SVF_ALTERNATIVE
+    // compute result
+    const float result = filter->b1 * (filter->x1 + 0.5f * (input + filter->x2)) - filter->a1 * filter->y1 - filter->a2 * filter->y2;
+    // shift x1 to x2, input to x1
     filter->x2 = filter->x1;
     filter->x1 = input;
 
-    /* shift y1 to y2, result to y1 */
+    // shift y1 to y2, result to y1
     filter->y2 = filter->y1;
     filter->y1 = result;
 
     return result;
+#else
+    const float low  = filter->low + filter->f * filter->band;
+    const float high = input - low - filter->q * filter->band;
+    filter->band = filter->f * high + filter->band;
+    filter->low  = low;
+    return low;
+#endif
 }
 
-/* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
+// Computes a biquad filter in direct form 2 on a sample (faster but can't handle changes in coefficients)
+FAST_CODE float butterworthFilterApplyStatic(butterworthFilter_t *filter, float input)
 {
-    const float result = filter->b0 * input + filter->x1;
+#ifndef SVF_ALTERNATIVE
+    // compute result
+    const float b1half_input = filter->b1 * 0.5f * input;  // b0*x[n], computed once
+    const float result = b1half_input + filter->x1;
 
-    filter->x1 = filter->b1 * input - filter->a1 * result + filter->x2;
-    filter->x2 = filter->b2 * input - filter->a2 * result;
+    filter->x1 = 2.0f * b1half_input - filter->a1 * result + filter->x2;  // b1*x[n] = 2 * b1half_input
+    filter->x2 = b1half_input - filter->a2 * result;
 
     return result;
+#else
+    const float low  = filter->low + filter->f * filter->band;
+    const float high = input - low - filter->q * filter->band;
+    filter->band = filter->f * high + filter->band;
+    filter->low  = low;
+    return low;
+#endif
+}
+
+void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q)
+{
+    notchUpdate(filter, filterFreq, dt, Q);
+
+#ifndef SVF_ALTERNATIVE
+    // zero initial samples
+    filter->x1 = filter->x2 = 0.0f;
+    filter->y1 = filter->y2 = 0.0f;
+#else
+    filter->low = 0.0f;
+    filter->band = 0.0f;
+#endif
+}
+
+FAST_CODE void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, float Q)
+{
+#ifndef SVF_ALTERNATIVE
+    const float omega = 2.0f * M_PIf * filterFreq * dt;
+    float sn, cs;
+    sincosf_approx(omega, &sn, &cs);
+    const float alpha = sn / (2.0f * Q);
+    const float a0inv = 1.0f / (1.0f + alpha);
+    filter->b0 = a0inv;                        // b0 == b2, drop b2
+    filter->a1 = -2.0f * cs * a0inv;           // b1 == a1, drop b1
+    filter->a2 = (1.0f - alpha) * a0inv;
+#else
+    float sn, cs;
+    sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
+    filter->f = sn / cs;
+    filter->q = 1.0f / Q;
+#endif
+}
+
+FAST_CODE float notchApplyMoving(notchFilter_t *filter, float input)
+{
+#ifndef SVF_ALTERNATIVE
+    const float b0 = filter->b0;
+    const float a1 = filter->a1;
+    const float a2 = filter->a2;
+
+    const float output = b0 * (input + filter->x2)   // b0 == b2
+                       + a1 * (filter->x1 - filter->y1)  // b1 == a1
+                       - a2 * filter->y2;
+    filter->x2 = filter->x1;
+    filter->x1 = input;
+    filter->y2 = filter->y1;
+    filter->y1 = output;
+
+    return output;
+#else
+    const float low  = filter->low + filter->f * filter->band;
+    const float high = input - low - filter->q * filter->band;
+    filter->band = filter->f * high + filter->band;
+    filter->low  = low;
+    return high + low;
+#endif
+}
+
+FAST_CODE float notchApplyStatic(notchFilter_t *filter, float input)
+{
+#ifndef SVF_ALTERNATIVE
+    const float b0input = filter->b0 * input;      // reused in w2
+    const float output = b0input + filter->x1;
+    const float a1term = filter->a1 * (input - output);  // a1*(x[n] - y[n]), b1==a1
+    filter->x1 = a1term + filter->x2;
+    filter->x2 = b0input - filter->a2 * output;
+    return output;
+#else
+    const float low  = filter->low + filter->f * filter->band;
+    const float high = input - low - filter->q * filter->band;
+    filter->band = filter->f * high + filter->band;
+    filter->low  = low;
+    return high + low;
+#endif
 }
 
 void rpmNotchInit(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight)
 {
     rpmNotchUpdate(filter, filterFreq, dt, Q, weight);
-
     // zero initial samples
     for (int i = 0; i < 3; i++) {
-        filter->x1[i] = 0;
-        filter->x2[i] = 0;
-        filter->y1[i] = 0;
-        filter->y2[i] = 0;
+#ifndef SVF_ALTERNATIVE
+        filter->x1[i] = 0.0f;
+        filter->x2[i] = 0.0f;
+        filter->y1[i] = 0.0f;
+        filter->y2[i] = 0.0f;
+#else
+        filter->low[i] = 0.0f;
+        filter->band[i] = 0.0f;
+#endif
     }
 }
 
 FAST_CODE void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight)
 {
-    // setup variables
+#ifndef SVF_ALTERNATIVE
     const float omega = 2.0f * M_PIf * filterFreq * dt;
     float sn, cs;
     sincosf_approx(omega, &sn, &cs);
     const float alpha = sn / (2.0f * Q);
-    const float a0inv = 1.0f / (1 + alpha);
+    const float a0inv = 1.0f / (1.0f + alpha);
+    const float weightRecip = 1.0f - weight;
 
-    filter->b0 = 1.0f * a0inv;
-    filter->b1 = -2.0f * cs * a0inv;
-    filter->b2 = filter->b0;
-    filter->a1 = filter->b1;
-    filter->a2 = (1.0f - alpha) * a0inv;
+    const float b0raw = a0inv;
+    const float a2raw = (1.0f - alpha) * a0inv;
 
-    float weightRecip = 1.0f - weight;
-
-    filter->b0 = weight * filter->b0 + weightRecip;
-    filter->b1 = weight * filter->b1 + weightRecip * filter->a1;
-    filter->b2 = weight * filter->b2 + weightRecip * filter->a2;
+    filter->a1 = -2.0f * cs * a0inv;           // b1 == a1, always, drop b1
+    filter->b0 = weight * b0raw + weightRecip;
+    filter->b2 = weight * b0raw + weightRecip * a2raw;  // b2_raw == b0_raw
+    filter->a2 = a2raw;                         // unweighted, no change needed
+#else
+    float sn, cs;
+    sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
+    filter->f = sn / cs;
+    filter->q = 1.0f / Q;
+    filter->weight = weight;
+#endif
 }
 
-// Computes a biquad filter in df1 and crossfades input with output
-FAST_CODE void rpmNotchApply(rpmNotch_t* filter, float input[3])
+FAST_CODE void rpmNotchApply(rpmNotch_t *filter, float input[3])
 {
-    float output[3];
-    for (int i = 0; i < 3; i++) {
-        /* compute result */
-        output[i] = filter->b0 * input[i] + filter->b1 * filter->x1[i] + filter->b2 * filter->x2[i] - filter->a1 * filter->y1[i] - filter->a2 * filter->y2[i];
+#ifndef SVF_ALTERNATIVE
+    const float b0 = filter->b0;
+    const float b2 = filter->b2;
+    const float a1 = filter->a1;   // also serves as b1
+    const float a2 = filter->a2;
 
-        /* shift x1 to x2, input to x1 */
+    for (int i = 0; i < 3; i++) {
+        const float output = b0 * input[i] + a1 * (filter->x1[i] - filter->y1[i])
+                           + b2 * filter->x2[i] - a2 * filter->y2[i];
         filter->x2[i] = filter->x1[i];
         filter->x1[i] = input[i];
-
-        /* shift y1 to y2, result to y1 */
         filter->y2[i] = filter->y1[i];
-        filter->y1[i] = output[i];
-
-        /* update the input to be filtered */
-        input[i] = output[i];
+        filter->y1[i] = output;
+        input[i] = output;
     }
+#else
+    const float f = filter->f;
+    const float q = filter->q;
+    const float weight = filter->weight;
+    const float weightRecip = 1.0f - weight;
+
+    for (int i = 0; i < 3; i++) {
+        const float low  = filter->low[i] + f * filter->band[i];
+        const float high = input[i] - low - q * filter->band[i];
+        filter->band[i] = f * high + filter->band[i];
+        filter->low[i]  = low;
+        input[i] = (high + low) * weight + input[i] * weightRecip;
+    }
+#endif
 }
+
+//FAST_CODE void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q)
+//{
+//    const float omega = 2.0f * M_PIf * filterFreq * dt;
+//    float sn, cs;
+//    sincosf_approx(omega, &sn, &cs);
+//    const float alpha = sn / (2.0f * Q);
+//    const float a0inv = 1.0f / (1.0f + alpha);
+//    filter->b0 = a0inv;
+//    filter->a1 = -2.0f * cs * a0inv;
+//    filter->a2 = (1.0f - alpha) * a0inv;
+//    // b1 == a1, b2 == b0, no longer need to store them
+//}
+
+// TODO test this for speed
+//FAST_CODE void rpmNotchApply(rpmNotch_t* filter, float input[3])
+//{
+//    const float b0 = filter->b0;
+//    const float a1 = filter->a1;   // == b1
+//    const float a2 = filter->a2;
+//    const float weight = filter->weight;
+//    const float weightRecip = 1.0f - weight;
+//
+//    for (int i = 0; i < 3; i++) {
+//        const float output = b0 * (input[i] + filter->x2[i])   // b0==b2, same trick as butterworth
+//                           + a1 * (filter->x1[i] - filter->y1[i])  // b1==a1
+//                           - a2 * filter->y2[i];
+//        filter->x2[i] = filter->x1[i];
+//        filter->x1[i] = input[i];
+//        filter->y2[i] = filter->y1[i];
+//        filter->y1[i] = output;
+//        input[i] = output * weight + input[i] * weightRecip;
+//    }
+//}
 
 // Phase Compensator (Lead-Lag-Compensator)
 
