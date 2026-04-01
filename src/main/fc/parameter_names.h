@@ -297,7 +297,7 @@
 #define PARAM_NAME_PSAS_AIR_DENSITY "psas_air_density"
 #define PARAM_NAME_PSAS_LIFT_C_LIMIT "psas_lift_c_limit"
 #define PARAM_NAME_PSAS_AOA_LIMITER_GAIN "psas_aoa_limiter_gain"
-#define PARAM_NAME_PSAS_AOA_LIMITER_FILTER_FREQ "psas_aoa_limiter_filter_freq"
+#define PARAM_NAME_PSAS_LIFT_COEF_FILTER_FREQ "psas_lift_coef_filter_freq"
 #define PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME "psas_aoa_limiter_forecast_time"
 #define PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN "psas_aoa_limiter_tau_return"
 #define PARAM_NAME_PSAS_SERVO_TIME "psas_servo_time"
