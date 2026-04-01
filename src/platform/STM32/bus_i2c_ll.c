@@ -36,6 +36,28 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
+static volatile uint16_t i2cErrorCount = 0;
+
+static void i2cRecoverFromISRError(I2C_TypeDef *I2Cx, i2cState_t *state)
+{
+    // Disable all transfer interrupts
+    LL_I2C_DisableIT_TX(I2Cx);
+    LL_I2C_DisableIT_RX(I2Cx);
+    LL_I2C_DisableIT_TC(I2Cx);
+    LL_I2C_DisableIT_STOP(I2Cx);
+    LL_I2C_DisableIT_NACK(I2Cx);
+    LL_I2C_DisableIT_ERR(I2Cx);
+
+    // Clear pending STOPF (AUTOEND generates STOP after NACK)
+    if (LL_I2C_IsActiveFlag_STOP(I2Cx)) {
+        LL_I2C_ClearFlag_STOP(I2Cx);
+    }
+
+    state->error = true;
+    state->busy = false;
+    i2cErrorCount++;
+}
+
 // I2C event IRQ handler
 static void i2cEVIRQHandler(i2cDevice_e device)
 {
@@ -45,15 +67,7 @@ static void i2cEVIRQHandler(i2cDevice_e device)
     // NACK received
     if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
         LL_I2C_ClearFlag_NACK(I2Cx);
-        state->error = true;
-        state->busy = false;
-        // Disable all transfer interrupts
-        LL_I2C_DisableIT_TX(I2Cx);
-        LL_I2C_DisableIT_RX(I2Cx);
-        LL_I2C_DisableIT_TC(I2Cx);
-        LL_I2C_DisableIT_STOP(I2Cx);
-        LL_I2C_DisableIT_NACK(I2Cx);
-        LL_I2C_DisableIT_ERR(I2Cx);
+        i2cRecoverFromISRError(I2Cx, state);
         return;
     }
 
@@ -126,14 +140,7 @@ static void i2cERIRQHandler(i2cDevice_e device)
     }
 
     if (state->error) {
-        // Disable all transfer interrupts
-        LL_I2C_DisableIT_TX(I2Cx);
-        LL_I2C_DisableIT_RX(I2Cx);
-        LL_I2C_DisableIT_TC(I2Cx);
-        LL_I2C_DisableIT_STOP(I2Cx);
-        LL_I2C_DisableIT_NACK(I2Cx);
-        LL_I2C_DisableIT_ERR(I2Cx);
-        state->busy = false;
+        i2cRecoverFromISRError(I2Cx, state);
     }
 }
 
@@ -184,8 +191,6 @@ void I2C4_EV_IRQHandler(void)
     i2cEVIRQHandler(I2CDEV_4);
 }
 #endif
-
-static volatile uint16_t i2cErrorCount = 0;
 
 static bool i2cHandleHardwareFailure(i2cDevice_e device)
 {
@@ -264,6 +269,10 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
     // Wait for STOP flag (AUTOEND generates stop automatically)
     while (!LL_I2C_IsActiveFlag_STOP(I2Cx)) {
+        if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+            LL_I2C_ClearFlag_NACK(I2Cx);
+            return i2cHandleHardwareFailure(device);
+        }
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cHandleHardwareFailure(device);
         }
@@ -412,6 +421,10 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
     // Wait for STOP flag (AUTOEND generates stop automatically)
     while (!LL_I2C_IsActiveFlag_STOP(I2Cx)) {
+        if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+            LL_I2C_ClearFlag_NACK(I2Cx);
+            return i2cHandleHardwareFailure(device);
+        }
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
             return i2cHandleHardwareFailure(device);
         }
@@ -493,6 +506,13 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
 
 bool i2cBusy(i2cDevice_e device, bool *error)
 {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
+        if (error) {
+            *error = true;
+        }
+        return false;
+    }
+
     i2cState_t *state = &i2cDevice[device].state;
 
     if (error) {

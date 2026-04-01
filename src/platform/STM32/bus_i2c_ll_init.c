@@ -298,8 +298,10 @@ void i2cInit(i2cDevice_e device)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (I2Cx == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32N6)
-    // N6: All I2C peripherals on APB1
-    i2cPclk = HAL_RCC_GetPCLK1Freq();
+    // N6 Clock sources:
+    //   I2C123 : PCLK1 (APB1)
+    //   I2C4   : PCLK4 (APB4)
+    i2cPclk = (I2Cx == I2C4) ? HAL_RCC_GetPCLK4Freq() : HAL_RCC_GetPCLK1Freq();
 #else
 #error Unknown MCU type
 #endif
