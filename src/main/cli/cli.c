@@ -191,6 +191,7 @@ static bool configIsInCopy = false;
 #define CURRENT_PROFILE_INDEX -1
 static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+static int8_t batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
 #ifdef USE_CLI_BATCH
 static bool commandBatchActive = false;
@@ -265,15 +266,10 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char *const sensorTypeNames[] = {
+static const char *const sensorTypeDisplayNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
 };
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
-
-static const char * const *sensorHardwareNames[] = {
-    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
-};
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeDisplayNames), sensorTypeDisplayNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
 
 static const char *configurationStates[] = {
@@ -816,6 +812,11 @@ static uint8_t getRateProfileIndexToUse(void)
     return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
 }
 
+static uint8_t getBatteryProfileIndexToUse(void)
+{
+    return batteryProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentBatteryProfileIndex() : batteryProfileIndexToUse;
+}
+
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
@@ -826,6 +827,8 @@ static uint16_t getValueOffset(const clivalue_t *value)
         return value->offset + sizeof(pidProfile_t) * getPidProfileIndexToUse();
     case PROFILE_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getRateProfileIndexToUse();
+    case PROFILE_BATTERY_VALUE:
+        return value->offset + sizeof(batteryProfile_t) * getBatteryProfileIndexToUse();
     }
     return 0;
 }
@@ -3104,6 +3107,7 @@ static void cliVtxTable(const char *cmdName, char *cmdline)
     } else if (strcasecmp(tok, "powerlabels") == 0) {
         // Power labels
         char label[VTX_TABLE_MAX_POWER_LEVELS][VTX_TABLE_POWER_LABEL_LENGTH + 1];
+        memset(label, 0, sizeof(label));
         int levels = vtxTableConfigMutable()->powerLevels;
         int count;
         for (count = 0; count < levels && (tok = strtok_r(NULL, " ", &saveptr)); count++) {
@@ -3735,7 +3739,7 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
 #if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
@@ -4301,6 +4305,42 @@ static void cliDumpRateProfile(const char *cmdName, uint8_t rateProfileIndex, du
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
+// Prints or switches the active battery profile.
+static void cliBatteryProfile(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        cliPrintLinef("battery_profile %d", getBatteryProfileIndexToUse());
+        return;
+    } else {
+        const int i = atoi(cmdline);
+        if (i >= 0 && i < BATTERY_PROFILE_COUNT) {
+            changeBatteryProfile(i);
+            cliBatteryProfile(cmdName, "");
+        } else {
+            cliPrintErrorLinef(cmdName, "BATTERY PROFILE OUTSIDE OF [0..%d]", BATTERY_PROFILE_COUNT - 1);
+        }
+    }
+}
+
+// Dumps all settings for a given battery profile index.
+static void cliDumpBatteryProfile(const char *cmdName, uint8_t profileIndex, dumpFlags_t dumpMask)
+{
+    if (profileIndex >= BATTERY_PROFILE_COUNT) {
+        return;
+    }
+
+    batteryProfileIndexToUse = profileIndex;
+
+    cliPrintLinefeed();
+    cliBatteryProfile(cmdName, "");
+
+    char profileStr[20];
+    tfp_sprintf(profileStr, "battery_profile %d", profileIndex);
+    dumpAllValues(cmdName, PROFILE_BATTERY_VALUE, dumpMask, profileStr);
+
+    batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
+}
+
 #ifdef USE_CLI_BATCH
 static void cliPrintCommandBatchWarning(const char *cmdName, const char *warning)
 {
@@ -4483,6 +4523,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
+    batteryProfileIndexToUse = getCurrentBatteryProfileIndex();
 
     backupAndResetConfigs();
 
@@ -4504,6 +4545,10 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
                 cliRateProfile(cmdName, "");
 
                 break;
+            case PROFILE_BATTERY_VALUE:
+                cliBatteryProfile(cmdName, "");
+
+                break;
             default:
 
                 break;
@@ -4519,6 +4564,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 
     pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+    batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
     if (!matchedCommands) {
         cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
@@ -4819,6 +4865,51 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
         cliGet(cmdName, cmdline);
     }
 }
+
+#if defined(USE_SENSOR_NAMES)
+static void cliSensorHardware(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        // List all sensor types and their supported hardware
+        for (unsigned i = 0; i < SENSOR_INDEX_COUNT; i++) {
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            const char *typeName = sensorTypeName(i);
+            if (names && typeName) {
+                cliPrintf("%s: ", typeName);
+                for (int j = 0; j < count; j++) {
+                    if (j > 0) {
+                        cliPrint(",");
+                    }
+                    cliPrint(names[j]);
+                }
+                cliPrintLinefeed();
+            }
+        }
+        return;
+    }
+
+    sensorIndex_e sensor = sensorIndexFromName(cmdline);
+    if (sensor >= SENSOR_INDEX_COUNT) {
+        cliPrintErrorLinef(cmdName, "INVALID SENSOR TYPE: %s", cmdline);
+        return;
+    }
+
+    int count;
+    const char * const *names = sensorHardwareNames(sensor, &count);
+    if (!names) {
+        cliPrintErrorLinef(cmdName, "SENSOR NOT AVAILABLE: %s", cmdline);
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            cliPrint(",");
+        }
+        cliPrint(names[i]);
+    }
+    cliPrintLinefeed();
+}
+#endif // USE_SENSOR_NAMES
 
 int cliGetSettingByName(const char *name, char *buf, int bufLen)
 {
@@ -5323,7 +5414,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Sensors
 #if defined(USE_SENSOR_NAMES)
-    cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
+    cliPrintf("%s: ", sensorTypeDisplayNames[SENSOR_INDEX_GYRO]);
 #else
     cliPrintf("GYRO: ");
 #endif
@@ -5363,14 +5454,19 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
-    for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
+    for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
         const uint32_t mask = (1U << i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
-            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            if (!names || sensorHardwareIndex >= count) {
+                continue;
+            }
+            const char *sensorHardware = names[sensorHardwareIndex];
 
-            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
+            cliPrintf("%s: %s", sensorTypeDisplayNames[i], sensorHardware);
 #if defined(USE_ACC)
             if (i == SENSOR_INDEX_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
@@ -5931,10 +6027,10 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
+        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
@@ -6417,7 +6513,7 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
             printValue(dumpMask, false,
                 "# pin %c%02d: TIM%d CH%d%s (AF%d)",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-                timerGetTIMNumber(timer->tim),
+                timerGetTIMNumber(timer),
                 CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                 timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
                 timer->alternateFunction
@@ -6634,7 +6730,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
                 cliPrintLinef("# AF%d: TIM%d CH%d%s",
                     timer->alternateFunction,
-                    timerGetTIMNumber(timer->tim),
+                    timerGetTIMNumber(timer),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                     timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : ""
                 );
@@ -7048,10 +7144,20 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
                 rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
 
+                for (uint32_t battIndex = 0; battIndex < BATTERY_PROFILE_COUNT; battIndex++) {
+                    cliDumpBatteryProfile(cmdName, battIndex, dumpMask);
+                }
+
+                batteryProfileIndexToUse = systemConfig_Copy.activeBatteryProfile;
+
                 if (!(dumpMask & BARE)) {
                     cliPrintHashLine("restore original rateprofile selection");
 
                     cliRateProfile(cmdName, "");
+
+                    cliPrintHashLine("restore original battery_profile selection");
+
+                    cliBatteryProfile(cmdName, "");
 
                     cliPrintHashLine("save configuration");
                     cliPrint("save");
@@ -7061,10 +7167,13 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
                 }
 
                 rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+                batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
             } else {
                 cliDumpPidProfile(cmdName, systemConfig_Copy.pidProfileIndex, dumpMask);
 
                 cliDumpRateProfile(cmdName, systemConfig_Copy.activeRateProfile, dumpMask);
+
+                cliDumpBatteryProfile(cmdName, systemConfig_Copy.activeBatteryProfile, dumpMask);
             }
         }
     } else if (dumpMask & DUMP_PROFILE) {
@@ -7228,7 +7337,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
@@ -7259,6 +7368,7 @@ const clicmd_t cmdTable[] = {
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
+    CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -7272,6 +7382,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("save", "save and reboot (default)", "[noreboot]", cliSave),
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
+#endif
+#if defined(USE_SENSOR_NAMES)
+    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)

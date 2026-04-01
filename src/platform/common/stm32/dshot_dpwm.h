@@ -70,7 +70,7 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 #define DSHOT_DMA_BUFFER_ATTRIBUTE /* Empty */
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(AT32F435) || defined(APM32F4)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t
@@ -91,7 +91,7 @@ extern DSHOT_DMA_BUFFER_UNIT dshotBurstDmaBuffer[MAX_DMA_TIMERS][DSHOT_DMA_BUFFE
 #endif
 
 typedef struct {
-    TIM_TypeDef *timer;
+    void *timer;
 #if defined(USE_DSHOT)
     uint16_t outputPeriod;
 #if defined(USE_DSHOT_DMAR)

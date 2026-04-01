@@ -34,6 +34,7 @@
 #include "drivers/system.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
+#include "platform/dma.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 
@@ -45,7 +46,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_USART1,
-        .reg = USART1,
+        .reg = (usartResource_t *)USART1,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
 #ifdef USE_UART1_RX_DMA
@@ -79,7 +80,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2
     {
         .identifier = SERIAL_PORT_USART2,
-        .reg = USART2,
+        .reg = (usartResource_t *)USART2,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
 #ifdef USE_UART2_RX_DMA
@@ -105,7 +106,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3
     {
         .identifier = SERIAL_PORT_USART3,
-        .reg = USART3,
+        .reg = (usartResource_t *)USART3,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
 #ifdef USE_UART3_RX_DMA
@@ -131,7 +132,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4
     {
         .identifier = SERIAL_PORT_UART4,
-        .reg = UART4,
+        .reg = (usartResource_t *)UART4,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
 #ifdef USE_UART4_RX_DMA
@@ -157,7 +158,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5
     {
         .identifier = SERIAL_PORT_UART5,
-        .reg = UART5,
+        .reg = (usartResource_t *)UART5,
         .rxDMAChannel = DMA_Channel_4,
         .txDMAChannel = DMA_Channel_4,
 #ifdef USE_UART5_RX_DMA
@@ -183,7 +184,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6
     {
         .identifier = SERIAL_PORT_USART6,
-        .reg = USART6,
+        .reg = (usartResource_t *)USART6,
         .rxDMAChannel = DMA_Channel_5,
         .txDMAChannel = DMA_Channel_5,
 #ifdef USE_UART6_RX_DMA
@@ -233,7 +234,7 @@ bool checkUsartTxOutput(uartPort_t *s)
             IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
 
             // Enable the UART transmitter
-            SET_BIT(s->USARTx->CR1, USART_CR1_TE);
+            SET_BIT(((USART_TypeDef *)s->USARTx)->CR1, USART_CR1_TE);
 
             return true;
         } else {
@@ -253,7 +254,7 @@ void uartTxMonitor(uartPort_t *s)
         IO_t txIO = IOGetByTag(uart->tx.pin);
 
         // Disable the UART transmitter
-        CLEAR_BIT(s->USARTx->CR1, USART_CR1_TE);
+        CLEAR_BIT(((USART_TypeDef *)s->USARTx)->CR1, USART_CR1_TE);
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
@@ -298,44 +299,46 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 void uartIrqHandler(uartPort_t *s)
 {
-    if (!s->rxDMAResource && (USART_GetITStatus(s->USARTx, USART_IT_RXNE) == SET)) {
+    USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
+
+    if (!s->rxDMAResource && (USART_GetITStatus(USARTx, USART_IT_RXNE) == SET)) {
         if (s->port.rxCallback) {
-            s->port.rxCallback(s->USARTx->DR, s->port.rxCallbackData);
+            s->port.rxCallback(USARTx->DR, s->port.rxCallbackData);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DR;
+            s->port.rxBuffer[s->port.rxBufferHead] = USARTx->DR;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
 
     // Detect completion of transmission
-    if (USART_GetITStatus(s->USARTx, USART_IT_TC) == SET) {
+    if (USART_GetITStatus(USARTx, USART_IT_TC) == SET) {
         // Switch TX to an input with pullup so it's state can be monitored
         uartTxMonitor(s);
 
-        USART_ClearITPendingBit(s->USARTx, USART_IT_TC);
+        USART_ClearITPendingBit(USARTx, USART_IT_TC);
     }
 
-    if (!s->txDMAResource && (USART_GetITStatus(s->USARTx, USART_IT_TXE) == SET)) {
+    if (!s->txDMAResource && (USART_GetITStatus(USARTx, USART_IT_TXE) == SET)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
+            USART_SendData(USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
-            USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
+            USART_ITConfig(USARTx, USART_IT_TXE, DISABLE);
         }
     }
 
-    if (USART_GetITStatus(s->USARTx, USART_IT_ORE) == SET) {
-        USART_ClearITPendingBit(s->USARTx, USART_IT_ORE);
+    if (USART_GetITStatus(USARTx, USART_IT_ORE) == SET) {
+        USART_ClearITPendingBit(USARTx, USART_IT_ORE);
     }
 
-    if (USART_GetITStatus(s->USARTx, USART_IT_IDLE) == SET) {
+    if (USART_GetITStatus(USARTx, USART_IT_IDLE) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
 
         // clear
-        (void) s->USARTx->SR;
-        (void) s->USARTx->DR;
+        (void) USARTx->SR;
+        (void) USARTx->DR;
     }
 }
 #endif // USE_UART

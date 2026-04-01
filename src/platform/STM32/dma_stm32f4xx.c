@@ -27,7 +27,8 @@
 #ifdef USE_DMA
 
 #include "drivers/nvic.h"
-#include "drivers/dma.h"
+#include "drivers/dma_impl.h"
+#include "platform/dma.h"
 #include "drivers/resource.h"
 
 /*
@@ -112,4 +113,30 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
+
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    return DMA_GetCurrDataCounter((DMA_ARCH_TYPE *)ref);
+}
+
 #endif

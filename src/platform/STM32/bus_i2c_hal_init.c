@@ -35,6 +35,9 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 #include "drivers/bus_i2c_utils.h"
+#include "platform/bus_i2c_hal.h"
+
+static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
@@ -46,7 +49,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = { I2CPINDEF(PB6), I2CPINDEF(PB8) },
         .sdaPins = { I2CPINDEF(PB7), I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
@@ -57,7 +60,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = { I2CPINDEF(PB10), I2CPINDEF(PF1) },
         .sdaPins = { I2CPINDEF(PB11), I2CPINDEF(PF0) },
         .rcc = RCC_APB1(I2C2),
@@ -68,7 +71,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA8) },
         .sdaPins = { I2CPINDEF(PC9) },
         .rcc = RCC_APB1(I2C3),
@@ -79,7 +82,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_4
     {
         .device = I2CDEV_4,
-        .reg = I2C4,
+        .reg = (i2cResource_t *)I2C4,
         .sclPins = { I2CPINDEF(PD12), I2CPINDEF(PF14) },
         .sdaPins = { I2CPINDEF(PD13), I2CPINDEF(PF15) },
         .rcc = RCC_APB1(I2C4),
@@ -91,7 +94,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
         .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
         .rcc = RCC_APB1L(I2C1),
@@ -102,7 +105,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
         .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
         .rcc = RCC_APB1L(I2C2),
@@ -113,7 +116,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
         .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
         .rcc = RCC_APB1L(I2C3),
@@ -124,7 +127,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_4
     {
         .device = I2CDEV_4,
-        .reg = I2C4,
+        .reg = (i2cResource_t *)I2C4,
         .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PF14, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF6_I2C4), I2CPINDEF(PB8, GPIO_AF6_I2C4) },
         .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PF15, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF6_I2C4), I2CPINDEF(PB9, GPIO_AF6_I2C4) },
         .rcc = RCC_APB4(I2C4),
@@ -136,7 +139,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
 
         // Some boards are overloading SWD pins with I2C1 for maximum pin utilization on 48-pin CE(U) packages.
         // Be carefull when using SWD on these boards if I2C1 pins are defined by default.
@@ -151,7 +154,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = { I2CPINDEF(PA9,  GPIO_AF4_I2C2) },
         .sdaPins = { I2CPINDEF(PA8, GPIO_AF4_I2C2), I2CPINDEF(PF6, GPIO_AF4_I2C2) },
         .rcc = RCC_APB11(I2C2),
@@ -162,7 +165,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = { I2CPINDEF(PA10, GPIO_AF2_I2C3), I2CPINDEF(PC8,  GPIO_AF8_I2C3), },
         .sdaPins = { I2CPINDEF(PB5,  GPIO_AF8_I2C3), I2CPINDEF(PC9,  GPIO_AF8_I2C3), I2CPINDEF(PC11, GPIO_AF8_I2C3), },
         .rcc = RCC_APB11(I2C3),
@@ -173,7 +176,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_4
     {
         .device = I2CDEV_4,
-        .reg = I2C4,
+        .reg = (i2cResource_t *)I2C4,
 
         // Here, SWDIO(PA13) is overloaded with I2C4_SCL, too.
         // See comment in the I2C1 section above.
@@ -181,6 +184,51 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
         .sclPins = { I2CPINDEF(PA13, GPIO_AF3_I2C4), I2CPINDEF(PB6,  GPIO_AF3_I2C4), I2CPINDEF(PC6,  GPIO_AF8_I2C4), },
         .sdaPins = { I2CPINDEF(PB7,  GPIO_AF4_I2C4), I2CPINDEF(PC7,  GPIO_AF8_I2C4), },
         .rcc = RCC_APB12(I2C4),
+        .ev_irq = I2C4_EV_IRQn,
+        .er_irq = I2C4_ER_IRQn,
+    },
+#endif
+#elif defined(STM32N6)
+#ifdef USE_I2C_DEVICE_1
+    {
+        .device = I2CDEV_1,
+        .reg = (i2cResource_t *)I2C1,
+        .sclPins = { I2CPINDEF(PB6, GPIO_AF4_I2C1), I2CPINDEF(PB8, GPIO_AF4_I2C1) },
+        .sdaPins = { I2CPINDEF(PB7, GPIO_AF4_I2C1), I2CPINDEF(PB9, GPIO_AF4_I2C1) },
+        .rcc = RCC_APB1(I2C1),
+        .ev_irq = I2C1_EV_IRQn,
+        .er_irq = I2C1_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_2
+    {
+        .device = I2CDEV_2,
+        .reg = (i2cResource_t *)I2C2,
+        .sclPins = { I2CPINDEF(PB10, GPIO_AF4_I2C2), I2CPINDEF(PF1, GPIO_AF4_I2C2) },
+        .sdaPins = { I2CPINDEF(PB11, GPIO_AF4_I2C2), I2CPINDEF(PF0, GPIO_AF4_I2C2) },
+        .rcc = RCC_APB1(I2C2),
+        .ev_irq = I2C2_EV_IRQn,
+        .er_irq = I2C2_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_3
+    {
+        .device = I2CDEV_3,
+        .reg = (i2cResource_t *)I2C3,
+        .sclPins = { I2CPINDEF(PA8, GPIO_AF4_I2C3) },
+        .sdaPins = { I2CPINDEF(PC9, GPIO_AF4_I2C3) },
+        .rcc = RCC_APB1(I2C3),
+        .ev_irq = I2C3_EV_IRQn,
+        .er_irq = I2C3_ER_IRQn,
+    },
+#endif
+#ifdef USE_I2C_DEVICE_4
+    {
+        .device = I2CDEV_4,
+        .reg = (i2cResource_t *)I2C4,
+        .sclPins = { I2CPINDEF(PD12, GPIO_AF4_I2C4), I2CPINDEF(PB6, GPIO_AF4_I2C4), I2CPINDEF(PB8, GPIO_AF4_I2C4) },
+        .sdaPins = { I2CPINDEF(PD13, GPIO_AF4_I2C4), I2CPINDEF(PB7, GPIO_AF4_I2C4), I2CPINDEF(PB9, GPIO_AF4_I2C4) },
+        .rcc = RCC_APB4(I2C4),
         .ev_irq = I2C4_EV_IRQn,
         .er_irq = I2C4_ER_IRQn,
     },
@@ -218,7 +266,7 @@ void i2cInit(i2cDevice_e device)
 #if defined(STM32F7)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
-#elif defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 #else
@@ -228,11 +276,13 @@ void i2cInit(i2cDevice_e device)
 
     // Init I2C peripheral
 
-    I2C_HandleTypeDef *pHandle = &pDev->handle;
+    pDev->halHandle = &i2cHalHandles[device];
+
+    I2C_HandleTypeDef *pHandle = &pDev->halHandle->hal;
 
     memset(pHandle, 0, sizeof(*pHandle));
 
-    pHandle->Instance = pDev->hardware->reg;
+    pHandle->Instance = (I2C_TypeDef *)pDev->hardware->reg;
 
     // Compute TIMINGR value based on peripheral clock for this device instance
 
@@ -249,6 +299,9 @@ void i2cInit(i2cDevice_e device)
     //   I2C123 : D2PCLK1 (rcc_pclk1 for APB1)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (pHandle->Instance == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
+#elif defined(STM32N6)
+    // N6: All I2C peripherals on APB1
+    i2cPclk = HAL_RCC_GetPCLK1Freq();
 #else
 #error Unknown MCU type
 #endif

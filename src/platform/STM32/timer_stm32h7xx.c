@@ -31,6 +31,7 @@
 #include "stm32h7xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),   .inputIrq = TIM1_CC_IRQn},
@@ -165,8 +166,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
+    const TIM_TypeDef *tim_ptr = (const TIM_TypeDef *)tim;
     int timpre;
     uint32_t pclk;
     uint32_t ppre;
@@ -185,7 +187,7 @@ uint32_t timerClock(const TIM_TypeDef *tim)
 #error Unknown MCU type
 #endif
 
-    if (tim == TIM1 || tim == TIM8 || tim == TIM15 || tim == TIM16 || tim == TIM17) {
+    if (tim_ptr == TIM1 || tim_ptr == TIM8 || tim_ptr == TIM15 || tim_ptr == TIM16 || tim_ptr == TIM17) {
         // Timers on APB2
         pclk = HAL_RCC_GetPCLK2Freq();
         ppre = PERIPH_PRESCALER(2);
@@ -207,5 +209,10 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     return pclk * periphToKernel[index];
 
 #undef PERIPH_PRESCALER
+}
+
+uint32_t timerClock(const timerHardware_t *timHw)
+{
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

@@ -49,7 +49,7 @@ void IOInitGlobal(void)
     for (unsigned port = 0; port < ARRAYLEN(ioDefUsedMask); port++) {
         for (unsigned pin = 0; pin < sizeof(ioDefUsedMask[0]) * 8; pin++) {
             if (ioDefUsedMask[port] & (1 << pin)) {
-                ioRec->gpio = (void *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
+                ioRec->gpio = (gpioResource_t *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
                 ioRec->pin = 1 << pin;
                 ioRec++;
             }

@@ -369,6 +369,8 @@ void systemReset(void) {}
 void writeUnmodifiedConfigToEEPROM(void) {}
 
 void changePidProfile(uint8_t) {}
+void changeBatteryProfile(uint8_t) {}
+uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
@@ -401,6 +403,10 @@ bool boardInformationIsSet(void) { return true; }
 bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
 bool persistBoardInformation(void) { return true; };
+
+const char * const *sensorHardwareNames(sensorIndex_e, int *count) { if (count) *count = 0; return NULL; }
+sensorIndex_e sensorIndexFromName(const char *) { return SENSOR_INDEX_COUNT; }
+const char *sensorTypeName(sensorIndex_e) { return NULL; }
 
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}

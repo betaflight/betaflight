@@ -28,6 +28,7 @@
 #include "platform/camera_control.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
+#include "platform/timer.h"
 
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #include "build/atomic.h"
@@ -36,7 +37,7 @@
 #ifdef CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 void cameraControlHardwarePwmInit(timerChannel_t *channel, const timerHardware_t *timerHardware, uint8_t inverted)
 {
-    pwmOutConfig(channel, timerHardware, timerClock(TMR6), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);
+    pwmOutputConfig(channel, timerHardware, timerClock(timerHardware), CAMERA_CONTROL_PWM_RESOLUTION, 0, inverted);
 }
 #endif
 

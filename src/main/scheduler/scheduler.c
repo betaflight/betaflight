@@ -214,7 +214,7 @@ void taskSystemLoad(timeUs_t currentTimeUs)
         schedulerIgnoreTaskExecTime();
     }
 
-#if defined(SIMULATOR_BUILD)
+#if ENABLE_SIMULATOR
     averageSystemLoadPercent = 0;
 #endif
 }

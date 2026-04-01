@@ -34,6 +34,7 @@
 #include "drivers/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "dshot_bitbang_impl.h"
 #include "drivers/dshot_command.h"
@@ -41,6 +42,8 @@
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 
@@ -86,9 +89,9 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     TIM_OCStruct.TIM_Pulse = 10; // Duty doesn't matter, but too value small would make monitor output invalid
 
-    TIM_Cmd(bbPort->timhw->tim, DISABLE);
+    TIM_Cmd((TIM_TypeDef *)bbPort->timhw->tim, DISABLE);
 
-    timerOCInit(timhw->tim, timhw->channel, &TIM_OCStruct);
+    timerOCInit((TIM_TypeDef *)timhw->tim, timhw->channel, &TIM_OCStruct);
     // timerOCPreloadConfig(timhw->tim, timhw->channel, TIM_OCPreload_Enable);
 
 #ifdef DEBUG_MONITOR_PACER
@@ -96,13 +99,13 @@ void bbTimerChannelInit(bbPort_t *bbPort)
         IO_t io = IOGetByTag(timhw->tag);
         IOConfigGPIOAF(io, IOCFG_AF_PP, timhw->alternateFunction);
         IOInit(io, OWNER_DSHOT_BITBANG, 0);
-        TIM_CtrlPWMOutputs(timhw->tim, ENABLE);
+        TIM_CtrlPWMOutputs((TIM_TypeDef *)timhw->tim, ENABLE);
     }
 #endif
 
     // Enable and keep it running
 
-    TIM_Cmd(bbPort->timhw->tim, ENABLE);
+    TIM_Cmd((TIM_TypeDef *)bbPort->timhw->tim, ENABLE);
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
@@ -155,7 +158,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     // Reinitialize pacer timer for output
 
-    bbPort->timhw->tim->ARR = bbPort->outputARR;
+    ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->outputARR;
 
     bbPort->direction = DSHOT_BITBANG_DIRECTION_OUTPUT;
 
@@ -187,8 +190,8 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     // Reinitialize pacer timer for input
 
-    bbPort->timhw->tim->CNT = 0;
-    bbPort->timhw->tim->ARR = bbPort->inputARR;
+    ((TIM_TypeDef *)bbPort->timhw->tim)->CNT = 0;
+    ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->inputARR;
 
     bbDMA_Cmd(bbPort, ENABLE);
 
@@ -252,13 +255,13 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     init->TIM_ClockDivision = TIM_CKD_DIV1;
     init->TIM_CounterMode = TIM_CounterMode_Up;
     init->TIM_Period = period;
-    TIM_TimeBaseInit(bbPort->timhw->tim, init);
-    TIM_ARRPreloadConfig(bbPort->timhw->tim, ENABLE);
+    TIM_TimeBaseInit((TIM_TypeDef *)bbPort->timhw->tim, init);
+    TIM_ARRPreloadConfig((TIM_TypeDef *)bbPort->timhw->tim, ENABLE);
 }
 
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
+void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState)
 {
-    TIM_DMACmd(TIMx, TIM_DMASource, NewState);
+    TIM_DMACmd((TIM_TypeDef *)TIMx, TIM_DMASource, NewState);
 }
 
 void bbDMA_ITConfig(bbPort_t *bbPort)

@@ -34,6 +34,7 @@
 #include "platform/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_bitbang.h"
 #include "dshot_bitbang_impl.h"
@@ -44,6 +45,7 @@
 #include "drivers/dshot_bitbang_decode.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 #include "pg/pinio.h"
@@ -77,6 +79,9 @@
 #elif defined(STM32G4)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
 #define BB_INPUT_BUFFER_ATTRIBUTE  FAST_DATA_ZERO_INIT
+#elif defined(STM32N6)
+#define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
+#define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
 #endif
 #endif // USE_DSHOT_CACHE_MGMT
 
@@ -100,8 +105,8 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH3, NONE,   0, 1),
     DEF_TIM(TIM1,  CH4, NONE,   0, 0),
 
-#elif defined(STM32G4) || defined(STM32H7)
-    // XXX TODO: STM32G4 and STM32H7 can use any timer for pacing
+#elif defined(STM32G4) || defined(STM32H7) || defined(STM32N6)
+    // XXX TODO: STM32G4, STM32H7, and STM32N6 can use any timer for pacing
 
     // DMA request numbers are duplicated for TIM1 and TIM8:
     //   - Any pacer can serve a GPIO port.
@@ -193,7 +198,7 @@ static void bbOutputDataClear(uint32_t *buffer)
 
 // bbPacer management
 
-static bbPacer_t *bbFindMotorPacer(TIM_TypeDef *tim)
+static bbPacer_t *bbFindMotorPacer(timerResource_t *tim)
 {
     for (int i = 0; i < MAX_MOTOR_PACERS; i++) {
 
@@ -253,7 +258,7 @@ const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t ti
 {
     for (int index = 0; index < usedMotorPorts; index++) {
         const timerHardware_t *bitbangTimer = bbPorts[index].timhw;
-        if (bitbangTimer && timerGetTIMNumber(bitbangTimer->tim) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
+        if (bitbangTimer && timerGetTIMNumber(bitbangTimer) == timerNumber && bitbangTimer->channel == timerChannel && bbPorts[index].resourceOwner.owner) {
             return bitbangTimer;
         }
     }
@@ -352,7 +357,7 @@ static void bbFindPacerTimer(void)
     for (int bbPortIndex = 0; bbPortIndex < MAX_SUPPORTED_MOTOR_PORTS; bbPortIndex++) {
         for (unsigned timerIndex = 0; timerIndex < ARRAYLEN(bbTimerHardware); timerIndex++) {
             const timerHardware_t *timer = &bbTimerHardware[timerIndex];
-            int timNumber = timerGetTIMNumber(timer->tim);
+            int timNumber = timerGetTIMNumber(timer);
             if ((motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM1 && timNumber != 1)
                 || (motorConfig()->dev.useDshotBitbangedTimer == DSHOT_BITBANGED_TIMER_TIM8 && timNumber != 8)) {
                 continue;
@@ -369,7 +374,7 @@ static void bbFindPacerTimer(void)
 
             for (int index = 0; index < bbPortIndex; index++) {
                 const timerHardware_t* t = bbPorts[index].timhw;
-                if (timerGetTIMNumber(t->tim) == timNumber && timer->channel == t->channel) {
+                if (timerGetTIMNumber(t) == timNumber && timer->channel == t->channel) {
                     timerConflict = true;
                     break;
                 }
@@ -398,7 +403,7 @@ static void bbFindPacerTimer(void)
 
 static void bbTimebaseSetup(bbPort_t *bbPort, motorProtocolTypes_e dshotProtocolType)
 {
-    uint32_t timerclock = timerClock(bbPort->timhw->tim);
+    uint32_t timerclock = timerClock(bbPort->timhw);
 
     uint32_t outputFreq = getDshotBaseFrequency(dshotProtocolType);
     dshotFrameUs = 1000000 * 17 * 3 / outputFreq;
@@ -775,7 +780,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].output = output;
 #if defined(STM32F4)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
-#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(STM32N6)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
 #endif
 

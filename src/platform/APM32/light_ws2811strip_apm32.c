@@ -30,11 +30,13 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "platform/light_ws2811strip_stm32.h"
@@ -63,7 +65,7 @@ bool ws2811LedStripHardwareInit(void)
         return false;
     }
 
-    TMR_TypeDef *timer = timerHardware->tim;
+    TMR_TypeDef *timer = (TMR_TypeDef *)timerHardware->tim;
     timerChannel = timerHardware->channel;
 
     dmaResource_t *dmaRef;
@@ -88,8 +90,8 @@ bool ws2811LedStripHardwareInit(void)
     TmrHandle.Instance = timer;
 
     /* Compute the prescaler value */
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, WS2811_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
