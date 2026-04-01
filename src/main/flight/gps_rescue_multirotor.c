@@ -80,7 +80,7 @@ typedef struct {
     float maxAltitudeCm;
     float returnAltitudeCm;
     float targetAltitudeCm;
-    float targetAltitudeStepCm;
+    float targetAltitudeVelCmS; // vertical velocity feedforward for cascaded alt controller (cm/s)
     float targetVelocityCmS;
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
@@ -223,7 +223,10 @@ static void rescueAttainPosition(bool newGpsData)
     /**
         Altitude (throttle) controller
     */
-    altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, rescueState.intent.targetAltitudeStepCm);
+    {
+        const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
+        altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
+    }
 
     /**
         Heading / yaw controller
@@ -712,7 +715,7 @@ static void descend(bool newGpsData)
     // at or below 10m: descend at 0.6x set value; above 10m, descend faster, to max 3.0x at 50m
     altitudeStepCm *= scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
 
-    rescueState.intent.targetAltitudeStepCm = -altitudeStepCm;
+    rescueState.intent.targetAltitudeVelCmS = (taskIntervalSeconds > 1e-6f) ? (-altitudeStepCm / taskIntervalSeconds) : 0.0f;
     rescueState.intent.targetAltitudeCm -= altitudeStepCm;
 }
 
@@ -726,7 +729,7 @@ static void initialiseRescueValues (void)
     rescueState.intent.pitchAngleLimitDeg = 0.0f; // force pitch adjustment to zero - level mode will level out
     rescueState.intent.velocityItermAttenuator = 1.0f; // allow iTerm to accumulate normally unless constrained by IMU error or descent phase
     rescueState.intent.velocityItermRelax = 0.0f; // but don't accumulate any at the start, not until fly home
-    rescueState.intent.targetAltitudeStepCm = 0.0f;
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
 }
 
 void gpsRescueUpdate(void)
@@ -792,13 +795,14 @@ void gpsRescueUpdate(void)
         // sanity check will abort if altitude gain is blocked for a cumulative period
         if (returnAltitudeLow == (getAltitudeCmControl() < rescueState.intent.returnAltitudeCm)) {
             // we started low, and still are low; also true if we started high, and still are too high
-            rescueState.intent.targetAltitudeStepCm = (returnAltitudeLow ? gpsRescueConfig()->ascendRate : -1.0f * gpsRescueConfig()->descendRate) * taskIntervalSeconds;
-            rescueState.intent.targetAltitudeCm += rescueState.intent.targetAltitudeStepCm;
+            const float rateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
+            rescueState.intent.targetAltitudeCm += rateCmS * taskIntervalSeconds;
+            rescueState.intent.targetAltitudeVelCmS = rateCmS;
 
         } else {
             // target altitude achieved - move on to ROTATE phase, returning at target altitude
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
-            rescueState.intent.targetAltitudeStepCm = 0.0f;
+            rescueState.intent.targetAltitudeVelCmS = 0.0f;
             // if initiated too close, do not rotate or do anything else until sufficiently far away that a 'normal' rescue can happen
             if (rescueState.sensor.distanceToHomeM > gpsRescueConfig()->minStartDistM) {
                 rescueState.phase = RESCUE_ROTATE;

@@ -145,7 +145,7 @@ static void altHoldUpdate(void)
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
-    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);
+    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity, altHold.maxVelocity);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {

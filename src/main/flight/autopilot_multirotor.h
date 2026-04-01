@@ -34,7 +34,9 @@ void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(unsigned taskRateHz);
 void posControlOutput(void);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
+// targetAltitudeVelCmS: climb-rate feedforward (cm/s) — stick in alt hold, rescue ascent/descent rates.
+// velLimitCmS: |vertical velocity command| cap (cm/s); use 0 for default (1500 cm/s).
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
 
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
