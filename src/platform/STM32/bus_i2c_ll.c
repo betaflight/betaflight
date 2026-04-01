@@ -194,8 +194,9 @@ void I2C4_EV_IRQHandler(void)
 
 static bool i2cHandleHardwareFailure(i2cDevice_e device)
 {
-    (void)device;
-    i2cErrorCount++;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
+    i2cState_t *state = &i2cDevice[device].state;
+    i2cRecoverFromISRError(I2Cx, state);
     return false;
 }
 
@@ -216,6 +217,15 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     if (!I2Cx) {
         return false;
     }
+
+    i2cState_t *state = &i2cDevice[device].state;
+
+    if (state->busy) {
+        return false;
+    }
+
+    state->busy = true;
+    state->error = false;
 
     timeUs_t timeoutStartUs = microsISR();
 
@@ -279,6 +289,8 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     }
     LL_I2C_ClearFlag_STOP(I2Cx);
 
+    state->busy = false;
+
     return true;
 }
 
@@ -329,12 +341,9 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
             if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
                 LL_I2C_ClearFlag_NACK(I2Cx);
-                state->error = true;
-                state->busy = false;
                 return i2cHandleHardwareFailure(device);
             }
             if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                state->busy = false;
                 return i2cHandleHardwareFailure(device);
             }
         }
@@ -362,6 +371,15 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
     if (!I2Cx) {
         return false;
     }
+
+    i2cState_t *state = &i2cDevice[device].state;
+
+    if (state->busy) {
+        return false;
+    }
+
+    state->busy = true;
+    state->error = false;
 
     timeUs_t timeoutStartUs = microsISR();
 
@@ -431,6 +449,8 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
     }
     LL_I2C_ClearFlag_STOP(I2Cx);
 
+    state->busy = false;
+
     return true;
 }
 
@@ -482,12 +502,9 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
             if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
                 LL_I2C_ClearFlag_NACK(I2Cx);
-                state->error = true;
-                state->busy = false;
                 return i2cHandleHardwareFailure(device);
             }
             if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                state->busy = false;
                 return i2cHandleHardwareFailure(device);
             }
         }
