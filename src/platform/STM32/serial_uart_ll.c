@@ -284,7 +284,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
 
     /* UART in mode Receiver ---------------------------------------------------*/
-    if (LL_USART_IsActiveFlag_RXNE(USARTx)) {
+    if (LL_USART_IsEnabledIT_RXNE(USARTx) && LL_USART_IsActiveFlag_RXNE(USARTx)) {
         uint8_t rbyte = (uint8_t)(USARTx->RDR & 0xFF);
 
         if (s->port.rxCallback) {
@@ -296,27 +296,27 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
-    if (LL_USART_IsActiveFlag_PE(USARTx)) {
+    if (LL_USART_IsEnabledIT_PE(USARTx) && LL_USART_IsActiveFlag_PE(USARTx)) {
         LL_USART_ClearFlag_PE(USARTx);
     }
 
-    /* UART frame error interrupt occurred --------------------------------------*/
-    if (LL_USART_IsActiveFlag_FE(USARTx)) {
-        LL_USART_ClearFlag_FE(USARTx);
-    }
+    /* UART frame error, noise error, overrun error ----------------------------*/
+    if (LL_USART_IsEnabledIT_ERROR(USARTx)) {
+        if (LL_USART_IsActiveFlag_FE(USARTx)) {
+            LL_USART_ClearFlag_FE(USARTx);
+        }
 
-    /* UART noise error interrupt occurred --------------------------------------*/
-    if (LL_USART_IsActiveFlag_NE(USARTx)) {
-        LL_USART_ClearFlag_NE(USARTx);
-    }
+        if (LL_USART_IsActiveFlag_NE(USARTx)) {
+            LL_USART_ClearFlag_NE(USARTx);
+        }
 
-    /* UART Over-Run interrupt occurred -----------------------------------------*/
-    if (LL_USART_IsActiveFlag_ORE(USARTx)) {
-        LL_USART_ClearFlag_ORE(USARTx);
+        if (LL_USART_IsActiveFlag_ORE(USARTx)) {
+            LL_USART_ClearFlag_ORE(USARTx);
+        }
     }
 
     // UART transmission completed
-    if (LL_USART_IsActiveFlag_TC(USARTx)) {
+    if (LL_USART_IsEnabledIT_TC(USARTx) && LL_USART_IsActiveFlag_TC(USARTx)) {
         LL_USART_ClearFlag_TC(USARTx);
 
         // Switch TX to an input with pull-up so it's state can be monitored
@@ -329,11 +329,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
     }
 
-    if (
-#ifdef USE_DMA
-        !s->txDMAResource &&
-#endif
-        LL_USART_IsActiveFlag_TXE(USARTx)) {
+    if (LL_USART_IsEnabledIT_TXE(USARTx) && LL_USART_IsActiveFlag_TXE(USARTx)) {
         /* Check that a Tx process is ongoing */
         if (s->port.txBufferTail == s->port.txBufferHead) {
             /* Disable the UART Transmit Data Register Empty Interrupt */
@@ -350,8 +346,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     // UART reception idle detected
-
-    if (LL_USART_IsActiveFlag_IDLE(USARTx)) {
+    if (LL_USART_IsEnabledIT_IDLE(USARTx) && LL_USART_IsActiveFlag_IDLE(USARTx)) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }

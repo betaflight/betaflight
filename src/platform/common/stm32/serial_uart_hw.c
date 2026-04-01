@@ -194,13 +194,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
-    if (true
-#ifdef USE_DMA
-        && !s->rxDMAResource  // do not enable IRW if using rxDMA
-#endif
-        ) {
-        enableRxIrq(hardware);
-    }
+    enableRxIrq(hardware);
     return s;
 }
 
