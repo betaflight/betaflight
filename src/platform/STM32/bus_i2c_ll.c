@@ -65,14 +65,14 @@ static void i2cEVIRQHandler(i2cDevice_e device)
     i2cState_t *state = &i2cDevice[device].state;
 
     // NACK received
-    if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+    if (LL_I2C_IsEnabledIT_NACK(I2Cx) && LL_I2C_IsActiveFlag_NACK(I2Cx)) {
         LL_I2C_ClearFlag_NACK(I2Cx);
         i2cRecoverFromISRError(I2Cx, state);
         return;
     }
 
     // Transmit data register empty
-    if (LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
+    if (LL_I2C_IsEnabledIT_TX(I2Cx) && LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
         if (state->writing && state->bytes > 0) {
             LL_I2C_TransmitData8(I2Cx, *state->write_p++);
             state->bytes--;
@@ -81,7 +81,7 @@ static void i2cEVIRQHandler(i2cDevice_e device)
     }
 
     // Receive data register not empty
-    if (LL_I2C_IsActiveFlag_RXNE(I2Cx)) {
+    if (LL_I2C_IsEnabledIT_RX(I2Cx) && LL_I2C_IsActiveFlag_RXNE(I2Cx)) {
         if (state->reading && state->bytes > 0) {
             *state->read_p++ = LL_I2C_ReceiveData8(I2Cx);
             state->bytes--;
@@ -90,7 +90,7 @@ static void i2cEVIRQHandler(i2cDevice_e device)
     }
 
     // Transfer complete (used for restart between write-reg-addr and read-data)
-    if (LL_I2C_IsActiveFlag_TC(I2Cx)) {
+    if (LL_I2C_IsEnabledIT_TC(I2Cx) && LL_I2C_IsActiveFlag_TC(I2Cx)) {
         if (state->reading) {
             // Register address phase complete, now start read phase
             LL_I2C_HandleTransfer(I2Cx, state->addr, LL_I2C_ADDRSLAVE_7BIT,
@@ -104,7 +104,7 @@ static void i2cEVIRQHandler(i2cDevice_e device)
     }
 
     // Stop condition detected
-    if (LL_I2C_IsActiveFlag_STOP(I2Cx)) {
+    if (LL_I2C_IsEnabledIT_STOP(I2Cx) && LL_I2C_IsActiveFlag_STOP(I2Cx)) {
         LL_I2C_ClearFlag_STOP(I2Cx);
         // Disable all transfer interrupts
         LL_I2C_DisableIT_TX(I2Cx);
@@ -123,6 +123,10 @@ static void i2cERIRQHandler(i2cDevice_e device)
 {
     I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].hardware->reg;
     i2cState_t *state = &i2cDevice[device].state;
+
+    if (!LL_I2C_IsEnabledIT_ERR(I2Cx)) {
+        return;
+    }
 
     if (LL_I2C_IsActiveFlag_BERR(I2Cx)) {
         LL_I2C_ClearFlag_BERR(I2Cx);
