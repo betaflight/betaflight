@@ -322,6 +322,7 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     state->bytes = len_;
     state->busy = true;
     state->error = false;
+    state->transactionStartUs = microsISR();
 
     if (reg_ == 0xFF) {
         // No register address, just send data bytes
@@ -482,6 +483,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     state->bytes = len;
     state->busy = true;
     state->error = false;
+    state->transactionStartUs = microsISR();
 
     if (reg_ == 0xFF) {
         // No register address, directly start read
@@ -531,6 +533,11 @@ bool i2cBusy(i2cDevice_e device, bool *error)
     }
 
     i2cState_t *state = &i2cDevice[device].state;
+
+    if (state->busy && cmpTimeUs(microsISR(), state->transactionStartUs) >= I2C_TIMEOUT_US) {
+        // Transfer has stalled — forcefully recover
+        i2cHandleHardwareFailure(device);
+    }
 
     if (error) {
         *error = state->error;
