@@ -180,6 +180,79 @@ void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float 
 #endif
 }
 
+typedef struct tptRpmNotch_s {
+    float f;
+    float a1;
+    float a2;
+    float wq;          // q * weight — fully precomputed notch+weight term
+    float ic1[3];
+    float ic2[3];
+} tptRpmNotch_t;
+FAST_CODE void tptRpmNotchUpdate(tptRpmNotch_t *filter, float filterFreq, float dt, float Q, float weight)
+{
+    const float f  = fast_tan(M_PIf * filterFreq * dt);
+    const float q  = 1.0f / Q;
+    const float a1 = 1.0f / (1.0f + f * (f + q));
+
+    filter->f  = f;
+    filter->a1 = a1;
+    filter->a2 = f * a1;
+    filter->wq = q * weight;
+}
+FAST_CODE void tptRpmNotchApply(tptRpmNotch_t *filter, float input[3])
+{
+    const float a1 = filter->a1;
+    const float a2 = filter->a2;
+    const float f  = filter->f;
+    const float wq = filter->wq;
+
+    for (int i = 0; i < 3; i++) {
+        const float v3 = input[i] - filter->ic2[i];
+        const float v1 = a1 * filter->ic1[i] + a2 * v3;
+        const float v2 = filter->ic2[i] + f * v1;
+        filter->ic1[i] = 2.0f * v1 - filter->ic1[i];
+        filter->ic2[i] = 2.0f * v2 - filter->ic2[i];
+        input[i] -= wq * v1;
+    }
+}
+
+
+// this version will have issues if you change Q on the fly
+typedef struct tptRpmNotch_s {
+    float a1;
+    float a2q;  // a2 * q
+    float fq;   // f / q
+    float ic1q[3]; // State 1 scaled by q
+    float ic2[3];  // State 2 (unscaled)
+} tptRpmNotch_t;
+FAST_CODE void tptRpmNotchUpdate(tptRpmNotch_t *filter, float filterFreq, float dt, float Q)
+{
+    const float f = fast_tan(M_PIf * filterFreq * dt);
+    const float q = 1.0f / Q; // Still need this for a1/a2
+    const float invDenom = 1.0f / (1.0f + f * (f + q));
+
+    filter->a1  = invDenom;
+    filter->a2q = (f * invDenom) * q; 
+    filter->fq  = f * Q; // Division replaced by multiplication
+}
+FAST_CODE void tptRpmNotchApply(tptRpmNotch_t *filter, float input[3])
+{
+    const float a1  = filter->a1;
+    const float a2q = filter->a2q;
+    const float fq  = filter->fq;
+
+    for (int i = 0; i < 3; i++) {
+        const float v3 = input[i] - filter->ic2[i];
+        const float v1q = a1 * filter->ic1q[i] + a2q * v3; // This is now (q * BP)
+        const float v2 = filter->ic2[i] + fq * v1q;       // Equivalent to ic2 + f * BP
+        // Update scaled states
+        filter->ic1q[i] = 2.0f * v1q - filter->ic1q[i];
+        filter->ic2[i] = 2.0f * v2 - filter->ic2[i];
+        // The notch subtraction is now "free" of a q multiplication
+        input[i] -= v1q; 
+    }
+}
+
 #define BUTTERWORTH_Q (1.0f / sqrtf(2.0f))     /* quality factor - 2nd order butterworth*/
 #define BUTTERWORTH_ALPHA_MULTIPLIER (1.0f / (2.0f * BUTTERWORTH_Q))
 
