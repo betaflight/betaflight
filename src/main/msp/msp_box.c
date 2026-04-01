@@ -372,7 +372,9 @@ void initActiveBoxIds(void)
 #endif
 
 #if defined(USE_AIRPLANE_SAS)
-    BME(BOXAIRPLANESAS);
+    if (isFixedWing()) {
+        BME(BOXAIRPLANESAS);
+    }
 #endif
 
 #undef BME
