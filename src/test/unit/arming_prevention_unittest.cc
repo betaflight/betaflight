@@ -42,6 +42,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
+    #include "flight/position_estimator.h"
     #include "flight/servos.h"
 
     #include "io/beeper.h"
@@ -1143,6 +1144,8 @@ extern "C" {
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
+    float getAltitudeCmControl(void) { return 0.0f; }
+    float getAltitudeDerivativeControl(void) { return 0.0f; }
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}
@@ -1160,6 +1163,11 @@ extern "C" {
     }
 
 void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
+
+    static positionEstimate3d_t stubEstimate = {};
+    const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
+    void positionEstimatorEnableXY(bool /*enable*/) { }
+    bool positionEstimatorIsValidXY(void) { return false; }
 
     bool canUseGPSHeading;
     bool compassIsHealthy;
