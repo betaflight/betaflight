@@ -55,7 +55,7 @@
 
 typedef union gyroLowpassFilter_u {
     pt1Filter_t pt1FilterState;
-    biquadFilter_t biquadFilterState;
+    butterworthFilter_t butterworthFilterState;
     pt2Filter_t pt2FilterState;
     pt3Filter_t pt3FilterState;
 } gyroLowpassFilter_t;
@@ -96,10 +96,10 @@ typedef struct gyro_s {
 
     // notch filters
     filterApplyFnPtr notchFilter1ApplyFn;
-    biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
+    notchFilter_t notchFilter1[XYZ_AXIS_COUNT];
 
     filterApplyFnPtr notchFilter2ApplyFn;
-    biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
+    notchFilter_t notchFilter2[XYZ_AXIS_COUNT];
 
     uint16_t accSampleRateHz;
     uint8_t gyroEnabledBitmask;
