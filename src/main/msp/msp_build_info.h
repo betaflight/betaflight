@@ -89,3 +89,4 @@
 #define BUILD_OPTION_PWM_OUTPUT                 8235
 
 void sbufWriteBuildInfoFlags(sbuf_t *dst);
+const uint16_t *getBuildOptions(unsigned *count);
