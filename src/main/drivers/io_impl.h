@@ -23,7 +23,7 @@
 #include "drivers/io.h"
 
 typedef struct ioRec_s {
-    void *gpio;
+    gpioResource_t *gpio;
     uint16_t pin;
     resourceOwner_e owner;
     uint8_t index;

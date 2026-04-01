@@ -140,7 +140,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 
 #if defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_SPI_QMP6988) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_DPS310) || defined(DEFAULT_BARO_SPI_2SMBP_02B)
     barometerConfig->baro_busType = BUS_TYPE_SPI;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(BARO_SPI_INSTANCE));
+    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance((const spiResource_t *)BARO_SPI_INSTANCE));
     barometerConfig->baro_spi_csn = IO_TAG(BARO_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;

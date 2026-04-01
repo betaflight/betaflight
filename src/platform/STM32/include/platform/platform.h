@@ -26,6 +26,7 @@
 #include "system_stm32g4xx.h"
 
 #include "stm32g4xx_ll_spi.h"
+#include "stm32g4xx_ll_usart.h"
 #include "stm32g4xx_ll_gpio.h"
 #include "stm32g4xx_ll_dma.h"
 #include "stm32g4xx_ll_rcc.h"
@@ -52,6 +53,7 @@
 #include "system_stm32h7xx.h"
 
 #include "stm32h7xx_ll_spi.h"
+#include "stm32h7xx_ll_usart.h"
 #include "stm32h7xx_ll_gpio.h"
 #include "stm32h7xx_ll_dma.h"
 #include "stm32h7xx_ll_rcc.h"
@@ -78,6 +80,7 @@
 #include "system_stm32f7xx.h"
 
 #include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_usart.h"
 #include "stm32f7xx_ll_gpio.h"
 #include "stm32f7xx_ll_dma.h"
 #include "stm32f7xx_ll_rcc.h"
@@ -124,6 +127,7 @@
 #include "system_stm32n6xx.h"
 
 #include "stm32n6xx_ll_spi.h"
+#include "stm32n6xx_ll_usart.h"
 #include "stm32n6xx_ll_gpio.h"
 #include "stm32n6xx_ll_dma.h"
 #include "stm32n6xx_ll_rcc.h"
@@ -504,11 +508,11 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
-#define UART_REG_RXD(base) ((base)->RDR)
-#define UART_REG_TXD(base) ((base)->TDR)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->RDR)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->TDR)
 #elif defined(STM32F4)
-#define UART_REG_RXD(base) ((base)->DR)
-#define UART_REG_TXD(base) ((base)->DR)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->DR)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->DR)
 #endif
 
 

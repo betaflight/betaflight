@@ -5935,7 +5935,7 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
             printValue(dumpMask, false,
                 "# pin %c%02d: TIM%d CH%d%s (AF%d)",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-                timerGetTIMNumber(timer->tim),
+                timerGetTIMNumber(timer),
                 CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                 timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
                 timer->alternateFunction
@@ -6152,7 +6152,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
                 cliPrintLinef("# AF%d: TIM%d CH%d%s",
                     timer->alternateFunction,
-                    timerGetTIMNumber(timer->tim),
+                    timerGetTIMNumber(timer),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                     timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : ""
                 );

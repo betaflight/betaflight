@@ -198,7 +198,7 @@ static void bbOutputDataClear(uint32_t *buffer)
 
 // bbPacer management
 
-static bbPacer_t *bbFindMotorPacer(void *tim)
+static bbPacer_t *bbFindMotorPacer(timerResource_t *tim)
 {
     for (int i = 0; i < MAX_MOTOR_PACERS; i++) {
 

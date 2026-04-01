@@ -35,7 +35,7 @@
 
 typedef struct {
     volatile uint32_t *ccr;
-    void              *tim;
+    timerResource_t   *tim;
 } timerChannel_t;
 
 typedef struct {

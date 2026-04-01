@@ -142,19 +142,19 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
                 xDDL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
                 /* configure the DMA Burst Mode */
-                DDL_TMR_ConfigDMABurst(dmaMotorTimers[i].timer, DDL_TMR_DMABURST_BASEADDR_CC1, DDL_TMR_DMABURST_LENGTH_4TRANSFERS);
+                DDL_TMR_ConfigDMABurst((TMR_TypeDef *)dmaMotorTimers[i].timer, DDL_TMR_DMABURST_BASEADDR_CC1, DDL_TMR_DMABURST_LENGTH_4TRANSFERS);
                 /* Enable the TIM DMA Request */
-                DDL_TMR_EnableDMAReq_UPDATE(dmaMotorTimers[i].timer);
+                DDL_TMR_EnableDMAReq_UPDATE((TMR_TypeDef *)dmaMotorTimers[i].timer);
                 break;
             }
 #endif
-            DDL_TMR_DisableARRPreload(dmaMotorTimers[i].timer);
+            DDL_TMR_DisableARRPreload((TMR_TypeDef *)dmaMotorTimers[i].timer);
             ((TMR_TypeDef *)dmaMotorTimers[i].timer)->AUTORLD = dmaMotorTimers[i].outputPeriod;
 
             /* Reset timer counter */
-            DDL_TMR_SetCounter(dmaMotorTimers[i].timer, 0);
+            DDL_TMR_SetCounter((TMR_TypeDef *)dmaMotorTimers[i].timer, 0);
             /* Enable channel DMA requests */
-            DDL_EX_TMR_EnableIT(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources);
+            DDL_EX_TMR_EnableIT((TMR_TypeDef *)dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources);
             dmaMotorTimers[i].timerDmaSources = 0;
         } while (false);
     }
@@ -277,10 +277,10 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DDL_TMR_InitTypeDef init;
         DDL_TMR_StructInit(&init);
 
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         DDL_TMR_DisableCounter(timer);
 
-        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timerHardware->tim) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         init.Autoreload = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH) - 1;
         init.ClockDivision = DDL_TMR_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;
