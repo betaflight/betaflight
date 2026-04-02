@@ -299,6 +299,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 
         CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE);
         CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
+        LL_USART_RequestRxDataFlush(USARTx);
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
