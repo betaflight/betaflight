@@ -118,38 +118,40 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
 {
     bool isLimitAoA = false;
     if (pidProfile->psas_aoa_limiter_gain != 0) {
-        const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
-        const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
-
-        const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
         float liftCoefDiff = 0.0f,
               servoVelocity = 0.0f;
-        if (liftCoef > 0.0f) {
-            if (liftCoefForecastChange > 0.0f) {
-                liftCoef += liftCoefForecastChange;
-            }
-            liftCoefDiff = liftCoef - limitLiftC;
-            if (liftCoefDiff > 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
-                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-            }
-        } else {
-            if (liftCoefForecastChange < 0.0f) {
-                liftCoef += liftCoefForecastChange;
-            }
-            liftCoefDiff = liftCoef + limitLiftC;
-            if (liftCoefDiff < 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
-                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+        if (isLiftCoefValid) {
+            const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
+            const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
+
+            const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
+            if (liftCoef > 0.0f) {
+                if (liftCoefForecastChange > 0.0f) {
+                    liftCoef += liftCoefForecastChange;
+                }
+                liftCoefDiff = liftCoef - limitLiftC;
+                if (liftCoefDiff > 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                }
+            } else {
+                if (liftCoefForecastChange < 0.0f) {
+                    liftCoef += liftCoefForecastChange;
+                }
+                liftCoefDiff = liftCoef + limitLiftC;
+                if (liftCoefDiff < 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+                }
             }
         }
 
         if (isLimitAoA) {
             pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
         } else if (pidProfile->psas_pitch_accel_i_gain == 0) {
-            // Decay the AoA limiter I value when the limiter is off
+            // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
             pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
         }
 
@@ -210,11 +212,8 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     float liftCoef = 0.0f;
     float liftCoefVelocity = 0.0f;
-    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
-    bool isLimitAoA = false;
-    if (isValidLiftCoef) {
-        isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
-    }
+    computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+    bool isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
 
     float deltaAccP = 0.0f;
     if (isLimitAoA == false) {
@@ -265,7 +264,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     float yawDampingCtrl = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
     float yawStabilityCtrl = acc.accADC.y * acc.dev.acc_1G_rec * (pidProfile->psas_yaw_stability_gain * 0.01f);
     float rollToYawCrossControl = 0.0f;
-    if (isValidLiftCoef) {
+    if (isLiftCoefValid) {
         rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
     }
     pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl + rollToYawCrossControl;
