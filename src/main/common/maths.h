@@ -80,8 +80,8 @@
 
 #define DEFINE_SCALE_FN(name, in_start, in_end, out_start, out_end)              \
     static inline float name(float input) {                                      \
-        return (input * SCALE_FACTOR(in_start, in_end, out_start, out_end))      \
-                      + SCALE_OFFSET(in_start, in_end, out_start, out_end);      \
+        return (input * (SCALE_FACTOR(in_start, in_end, out_start, out_end)))    \
+                      + (SCALE_OFFSET(in_start, in_end, out_start, out_end));    \
     }
 
 typedef struct scaleRangef_s {
