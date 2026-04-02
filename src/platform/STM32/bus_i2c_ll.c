@@ -53,6 +53,17 @@ static void i2cRecoverFromISRError(I2C_TypeDef *I2Cx, i2cState_t *state)
         LL_I2C_ClearFlag_STOP(I2Cx);
     }
 
+    // Flush TXDR to clear stale TXIS flag (matches HAL I2C_Flush_TXDR)
+    if (LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
+        LL_I2C_TransmitData8(I2Cx, 0x00);
+    }
+    if (!LL_I2C_IsActiveFlag_TXE(I2Cx)) {
+        LL_I2C_ClearFlag_TXE(I2Cx);
+    }
+
+    // Reset CR2 to clear stale transfer configuration
+    I2Cx->CR2 = 0;
+
     state->error = true;
     state->busy = false;
     i2cErrorCount++;
