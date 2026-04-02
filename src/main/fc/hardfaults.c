@@ -119,16 +119,27 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   // Bus Fault Address Register
   _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
 
-  // Dump fault info via UART3 (PB10/PB11) using direct register access.
-  // USART3 is on APB1 at 0x40004800. Assume clock already enabled.
+  // Dump fault info via UART3 TX on PC10 using direct register access.
+  // USART3 is on APB1 at 0x40004800.
   // Configure for 115200 baud at 54MHz APB1: BRR = 54000000/115200 = 469
   volatile uint32_t *const USART3_CR1 = (volatile uint32_t *)0x40004800;
   volatile uint32_t *const USART3_BRR = (volatile uint32_t *)0x4000480C;
   volatile uint32_t *const USART3_ISR = (volatile uint32_t *)0x4000481C;
   volatile uint32_t *const USART3_TDR = (volatile uint32_t *)0x40004828;
+  volatile uint32_t *const RCC_AHB1ENR = (volatile uint32_t *)0x40023830;
   volatile uint32_t *const RCC_APB1ENR = (volatile uint32_t *)0x40023840;
+  volatile uint32_t *const GPIOC_MODER = (volatile uint32_t *)0x40020800;
+  volatile uint32_t *const GPIOC_OSPEEDR = (volatile uint32_t *)0x40020808;
+  volatile uint32_t *const GPIOC_AFRH = (volatile uint32_t *)0x40020824;
 
+  *RCC_AHB1ENR |= (1 << 2);  // Enable GPIOC clock
   *RCC_APB1ENR |= (1 << 18); // Enable USART3 clock
+
+  // Configure PC10 as AF7 (USART3_TX), push-pull, high speed
+  *GPIOC_MODER = (*GPIOC_MODER & ~(3 << 20)) | (2 << 20);     // AF mode
+  *GPIOC_OSPEEDR = (*GPIOC_OSPEEDR & ~(3 << 20)) | (3 << 20); // High speed
+  *GPIOC_AFRH = (*GPIOC_AFRH & ~(0xF << 8)) | (7 << 8);       // AF7
+
   *USART3_CR1 = 0;           // Disable USART
   *USART3_BRR = 469;         // 115200 @ 54MHz APB1
   *USART3_CR1 = (1 << 0) | (1 << 3); // UE + TE
