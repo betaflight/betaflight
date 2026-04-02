@@ -105,7 +105,7 @@ static void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz)
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter1ApplyFn = (filterApplyFnPtr)notchApplyStatic;
+        gyro.notchFilter1ApplyFn = (filterApplyFnPtr)notchApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             notchInit(&gyro.notchFilter1[axis], notchHz, gyro.targetLooptime * 1e-6f, notchQ);
@@ -120,7 +120,7 @@ static void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz)
     notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
 
     if (notchHz != 0 && notchCutoffHz != 0) {
-        gyro.notchFilter2ApplyFn = (filterApplyFnPtr)notchApplyStatic;
+        gyro.notchFilter2ApplyFn = (filterApplyFnPtr)notchApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             notchInit(&gyro.notchFilter2[axis], notchHz, gyro.targetLooptime * 1e-6f, notchQ);
@@ -170,11 +170,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
             break;
         case FILTER_BIQUAD:
             if (lpfHz <= gyroFrequencyNyquist) {
-#ifdef USE_DYN_LPF
-                *lowpassFilterApplyFn = (filterApplyFnPtr) butterworthFilterApplyMoving;
-#else
-                *lowpassFilterApplyFn = (filterApplyFnPtr) butterworthFilterApplyStatic;
-#endif
+                *lowpassFilterApplyFn = (filterApplyFnPtr) butterworthFilterApply;
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                     butterworthFilterInit(&lowpassFilter[axis].butterworthFilterState, lpfHz, gyroDt);
                 }

@@ -58,44 +58,34 @@ typedef struct pt3Filter_s {
     float k;
 } pt3Filter_t;
 
-//#define SVF_ALTERNATIVE
-
+// SVF filter in Chamberlin form (less accurate cutoff but fine for lpf)
 typedef struct butterworthFilter_s {
-#ifndef SVF_ALTERNATIVE
-    float b1, a1, a2; // b0 is half of b1, b2 == b0
-    float x1, x2, y1, y2;
-#else
     float f;
     float q;
     float low;
     float band;
-#endif
 } butterworthFilter_t;
 
+// SVF filter in TPT form
+// this version will have issues if you change Q on the fly
+// heavily optimized to work as a notch filter
 typedef struct notchFilter_s {
-#ifndef SVF_ALTERNATIVE
-    float b0, a1, a2; // b1 == a1, b2 == b0
-    float x1, x2, y1, y2;
-#else
-    float f;
-    float q;
-    float low;
-    float band;
-#endif
+    float a1;
+    float a2q;  // a2 * q
+    float fq;   // f / q
+    float ic1q; // State 1 scaled by q
+    float ic2;  // State 2 (unscaled)
 } notchFilter_t;
 
+// SVF filter in TPT form
+// heavily optimized to work as a notch filter with a weight
 typedef struct rpmNotch_s {
-#ifndef SVF_ALTERNATIVE
-    float b0, b2, a1, a2; // b1 == a1
-//    float weight; // TODO test the speed of the other weight version
-    float x1[3], x2[3], y1[3], y2[3];
-#else
     float f;
-    float q;
-    float low[3];
-    float band[3];
-    float weight;
-#endif
+    float a1;
+    float a2;
+    float wq;          // q * weight — fully precomputed notch+weight term
+    float ic1[3];
+    float ic2[3];
 } rpmNotch_t;
 
 typedef struct phaseComp_s {
@@ -152,13 +142,11 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
 void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float dt);
 void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt);
-float butterworthFilterApplyMoving(butterworthFilter_t *filter, float input);
-float butterworthFilterApplyStatic(butterworthFilter_t *filter, float input);
+float butterworthFilterApply(butterworthFilter_t *filter, float input);
 
 void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q);
 void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, float Q);
-float notchApplyMoving(notchFilter_t *filter, float input);
-float notchApplyStatic(notchFilter_t *filter, float input);
+float notchApply(notchFilter_t *filter, float input);
 
 void rpmNotchInit(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);
 void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);
