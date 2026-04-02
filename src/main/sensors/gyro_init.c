@@ -164,7 +164,7 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
             }
             ret = true;
             break;
-        case FILTER_BIQUAD:
+        case FILTER_BUTTERWORTH:
             if (lpfHz <= gyroFrequencyNyquist) {
                 *lowpassFilterApplyFn = (filterApplyFnPtr) butterworthFilterApply;
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -200,8 +200,8 @@ static void dynLpfFilterInit(void)
         case FILTER_PT1:
             gyro.dynLpfFilter = DYN_LPF_PT1;
             break;
-        case FILTER_BIQUAD:
-            gyro.dynLpfFilter = DYN_LPF_BIQUAD;
+        case FILTER_BUTTERWORTH:
+            gyro.dynLpfFilter = DYN_LPF_BUTTERWORTH;
             break;
         case FILTER_PT2:
             gyro.dynLpfFilter = DYN_LPF_PT2;
