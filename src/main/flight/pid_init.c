@@ -155,7 +155,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)notchApplyStatic;
+        pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)notchApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             notchInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, pidRuntime.dT, notchQ);
@@ -183,11 +183,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             break;
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
-#ifdef USE_DYN_LPF
-                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApplyMoving;
-#else
-                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApplyStatic;
-#endif
+                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                     butterworthFilterInit(&pidRuntime.dtermLowpass[axis].butterworthFilter, dterm_lpf1_init_hz, pidRuntime.dT);
                 }
@@ -226,7 +222,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             break;
         case FILTER_BIQUAD:
             if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)butterworthFilterApplyStatic;
+                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)butterworthFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                     butterworthFilterInit(&pidRuntime.dtermLowpass2[axis].butterworthFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
                 }
