@@ -119,7 +119,50 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   // Bus Fault Address Register
   _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
 
-  __asm("BKPT #0\n") ; // Break into the debugger
+  // Dump fault info via UART3 (PB10/PB11) using direct register access.
+  // USART3 is on APB1 at 0x40004800. Assume clock already enabled.
+  // Configure for 115200 baud at 54MHz APB1: BRR = 54000000/115200 = 469
+  volatile uint32_t *const USART3_CR1 = (volatile uint32_t *)0x40004800;
+  volatile uint32_t *const USART3_BRR = (volatile uint32_t *)0x4000480C;
+  volatile uint32_t *const USART3_ISR = (volatile uint32_t *)0x4000481C;
+  volatile uint32_t *const USART3_TDR = (volatile uint32_t *)0x40004828;
+  volatile uint32_t *const RCC_APB1ENR = (volatile uint32_t *)0x40023840;
+
+  *RCC_APB1ENR |= (1 << 18); // Enable USART3 clock
+  *USART3_CR1 = 0;           // Disable USART
+  *USART3_BRR = 469;         // 115200 @ 54MHz APB1
+  *USART3_CR1 = (1 << 0) | (1 << 3); // UE + TE
+
+  // Simple polled hex output
+  const char hex[] = "0123456789ABCDEF";
+  #define FAULT_PUTC(c) do { while (!(*USART3_ISR & (1 << 7))); *USART3_TDR = (c); } while(0)
+  #define FAULT_PUTS(s) do { for (const char *_p = (s); *_p; _p++) FAULT_PUTC(*_p); } while(0)
+  #define FAULT_HEX32(v) do { \
+      unsigned long _v = (v); \
+      FAULT_PUTS("0x"); \
+      for (int _i = 28; _i >= 0; _i -= 4) FAULT_PUTC(hex[(_v >> _i) & 0xF]); \
+  } while(0)
+  #define FAULT_REG(name, val) do { FAULT_PUTS(name "="); FAULT_HEX32(val); FAULT_PUTS("\r\n"); } while(0)
+
+  FAULT_PUTS("\r\n\r\n*** HARD FAULT ***\r\n");
+  FAULT_REG("PC ", stacked_pc);
+  FAULT_REG("LR ", stacked_lr);
+  FAULT_REG("R0 ", stacked_r0);
+  FAULT_REG("R1 ", stacked_r1);
+  FAULT_REG("R2 ", stacked_r2);
+  FAULT_REG("R3 ", stacked_r3);
+  FAULT_REG("R12", stacked_r12);
+  FAULT_REG("PSR", stacked_psr);
+  FAULT_REG("CFSR", _CFSR);
+  FAULT_REG("HFSR", _HFSR);
+  FAULT_REG("BFAR", _BFAR);
+  FAULT_REG("MMAR", _MMAR);
+  FAULT_PUTS("*** END ***\r\n");
+
+  // Wait for last byte to finish transmitting
+  while (!(*USART3_ISR & (1 << 6)));
+
+  while (1);
 }
 
 #else
