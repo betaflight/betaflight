@@ -157,7 +157,7 @@ FAST_CODE float pt3FilterApply(pt3Filter_t *filter, float input)
     return filter->state;
 }
 
-// Biquad filter
+// SVF filters
 
 // get notch filter Q given center frequency (f0) and lower cutoff frequency (f1)
 // Q = f0 / (f2 - f1) ; f2 = f0^2 / f1
@@ -183,7 +183,7 @@ FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filter
     filter->q = 1.0f * BUTTERWORTH_Q_RECIP;
 }
 
-// Computes a biquad filter in direct form 1 on a sample (slower but can handle changes in coefficients)
+// Computes a SVF filter in Chamberlin form on a sample
 FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
 {
     const float low  = filter->low + filter->f * filter->band;

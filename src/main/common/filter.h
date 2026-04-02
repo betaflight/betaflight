@@ -29,16 +29,10 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 typedef enum {
     FILTER_PT1 = 0,
-    FILTER_BIQUAD,
+    FILTER_BUTTERWORTH,
     FILTER_PT2,
     FILTER_PT3,
 } lowpassFilterType_e;
-
-typedef enum {
-    FILTER_LPF,    // 2nd order Butterworth section
-    FILTER_NOTCH,
-    FILTER_BPF,
-} biquadFilterType_e;
 
 typedef struct pt1Filter_s {
     float state;

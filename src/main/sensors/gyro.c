@@ -128,7 +128,7 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
         // NOTE: dynamic lpf is enabled by default so this setting is actually
         // overridden and the static lowpass 1 is disabled. We can't set this
         // value to 0 otherwise Configurator versions 10.4 and earlier will also
-        // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+        // reset the lowpass filter type to PT1 overriding the desired Butterwroth setting.
     gyroConfig->gyro_lpf2_type = FILTER_PT1;
     gyroConfig->gyro_lpf2_static_hz = GYRO_LPF2_HZ_DEFAULT;
     gyroConfig->gyro_high_fsr = false;
@@ -689,7 +689,7 @@ void dynLpfGyroUpdate(float throttle)
                 pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_BUTTERWORTH:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 butterworthFilterUpdate(&gyro.lowpassFilter[axis].butterworthFilterState, cutoffFreq, gyroDt);
             }
