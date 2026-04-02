@@ -147,7 +147,7 @@ void setDefaultTestSettings(void)
     pidProfile->dterm_lpf2_static_hz = 0;
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->dterm_lpf1_type = FILTER_BIQUAD;
+    pidProfile->dterm_lpf1_type = FILTER_BUTTERWORTH;
     pidProfile->itermWindup = 80;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->angle_limit = 60;
