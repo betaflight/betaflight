@@ -227,7 +227,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                     butterworthFilterInit(&pidRuntime.dtermLowpass2[axis].butterworthFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
                 }
             } else {
-                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
+                pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
             }
             break;
         case FILTER_PT2:
