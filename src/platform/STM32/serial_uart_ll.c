@@ -103,7 +103,10 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 #endif
 
-    LL_USART_Init(USARTx, &usartInit);
+    if (LL_USART_Init(USARTx, &usartInit) != SUCCESS) {
+        // BRR not set — cannot operate this USART, leave it disabled
+        return;
+    }
 
     usartConfigurePinInversion(uartPort);
 #if UART_TRAIT_PINSWAP
