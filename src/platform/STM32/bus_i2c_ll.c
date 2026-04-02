@@ -230,6 +230,7 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
     state->busy = true;
     state->error = false;
+    state->transactionStartUs = microsISR();
 
     timeUs_t timeoutStartUs = microsISR();
 
@@ -385,6 +386,7 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
     state->busy = true;
     state->error = false;
+    state->transactionStartUs = microsISR();
 
     timeUs_t timeoutStartUs = microsISR();
 
@@ -539,8 +541,20 @@ bool i2cBusy(i2cDevice_e device, bool *error)
     i2cState_t *state = &i2cDevice[device].state;
 
     if (state->busy && cmpTimeUs(microsISR(), state->transactionStartUs) >= I2C_TIMEOUT_US) {
-        // Transfer has stalled — forcefully recover
+        // Transfer has stalled — forcefully recover.
+        // Disable I2C NVIC IRQs to prevent the ISR from racing with recovery.
+        const i2cHardware_t *hardware = i2cDevice[device].hardware;
+        if (hardware) {
+            HAL_NVIC_DisableIRQ(hardware->ev_irq);
+            HAL_NVIC_DisableIRQ(hardware->er_irq);
+        }
+
         i2cHandleHardwareFailure(device);
+
+        if (hardware) {
+            HAL_NVIC_EnableIRQ(hardware->ev_irq);
+            HAL_NVIC_EnableIRQ(hardware->er_irq);
+        }
     }
 
     if (error) {
