@@ -177,7 +177,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
             // NOTE: dynamic lpf is enabled by default so this setting is actually
             // overridden and the static lowpass 1 is disabled. We can't set this
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
-            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+            // reset the lowpass filter type to PT1 overriding the desired Butterworth setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -1568,7 +1568,7 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_BUTTERWORTH:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 butterworthFilterUpdate(&pidRuntime.dtermLowpass[axis].butterworthFilter, cutoffFreq, pidRuntime.dT);
             }

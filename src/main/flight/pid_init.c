@@ -181,7 +181,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 pt1FilterInit(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             }
             break;
-        case FILTER_BIQUAD:
+        case FILTER_BUTTERWORTH:
             if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
                 pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -220,7 +220,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 pt1FilterInit(&pidRuntime.dtermLowpass2[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             }
             break;
-        case FILTER_BIQUAD:
+        case FILTER_BUTTERWORTH:
             if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
                 pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)butterworthFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -474,8 +474,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         case FILTER_PT1:
             pidRuntime.dynLpfFilter = DYN_LPF_PT1;
             break;
-        case FILTER_BIQUAD:
-            pidRuntime.dynLpfFilter = DYN_LPF_BIQUAD;
+        case FILTER_BUTTERWORTH:
+            pidRuntime.dynLpfFilter = DYN_LPF_BUTTERWORTH;
             break;
         case FILTER_PT2:
             pidRuntime.dynLpfFilter = DYN_LPF_PT2;
