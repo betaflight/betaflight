@@ -145,7 +145,7 @@ static inline void rpmFilterUpdate(void)
 static inline void rpmFilterApply(float input[3])
 {
     // Iterate over all notches on axis and apply each one to value.
-    // Order of application doesn't matter because biquads are linear time-invariant filters.
+    // Order of application doesn't matter because SVF are linear time-invariant filters.
     for (int i = 0; i < rpmFilter.numHarmonics; i++) {
 
         if (rpmFilter.weights[i] <= 0.0f) {
