@@ -110,7 +110,6 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -304,6 +303,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
 #endif // TARGET_FLASH_SIZE >= 1024
@@ -532,8 +532,8 @@
 
 #endif // USE_WING
 
-#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
 
 // backwards compatibility for older config.h targets

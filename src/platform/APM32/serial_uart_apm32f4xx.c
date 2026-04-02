@@ -222,7 +222,7 @@ bool checkUsartTxOutput(uartPort_t *s)
             IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
 
             // Enable the UART transmitter
-            SET_BIT(s->halHandle->hal.Instance->CTRL1, USART_CTRL1_TXEN);
+            SET_BIT(((USART_TypeDef *)s->USARTx)->CTRL1, USART_CTRL1_TXEN);
 
             return true;
         } else {
@@ -242,7 +242,7 @@ void uartTxMonitor(uartPort_t *s)
         IO_t txIO = IOGetByTag(uart->tx.pin);
 
         // Disable the UART transmitter
-        CLEAR_BIT(s->halHandle->hal.Instance->CTRL1, USART_CTRL1_TXEN);
+        CLEAR_BIT(((USART_TypeDef *)s->USARTx)->CTRL1, USART_CTRL1_TXEN);
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
@@ -252,14 +252,7 @@ void uartTxMonitor(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    uartDevice_t *uart = container_of(s, uartDevice_t, port);
-
     uartTryStartTxDMA(s);
-
-    if (s->txDMAEmpty && (uart->txPinState != TX_PIN_IGNORE)) {
-        // Switch TX to an input with pullup so it's state can be monitored
-        uartTxMonitor(s);
-    }
 }
 
 void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
@@ -289,50 +282,58 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
-    UART_HandleTypeDef *huart = &s->halHandle->hal;
-    uint32_t isrflags = READ_REG(huart->Instance->STS);
-    uint32_t cr1its = READ_REG(huart->Instance->CTRL1);
-    uint32_t cr3its = READ_REG(huart->Instance->CTRL3);
+    USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
+
     /* UART in mode Receiver ---------------------------------------------------*/
-    if (!s->rxDMAResource && (((isrflags & USART_STS_RXBNEFLG) != RESET) && ((cr1its & USART_CTRL1_RXBNEIEN) != RESET))) {
+    if (!s->rxDMAResource && DDL_USART_IsActiveFlag_RXNE(USARTx)) {
+        uint8_t rbyte = DDL_USART_ReceiveData8(USARTx);
+
         if (s->port.rxCallback) {
-            s->port.rxCallback(huart->Instance->DATA, s->port.rxCallbackData);
+            s->port.rxCallback(rbyte, s->port.rxCallbackData);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = huart->Instance->DATA;
+            s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
 
     // Detect completion of transmission
-    if (((isrflags & USART_STS_TXCFLG) != RESET) && ((cr1its & USART_CTRL1_TXCIEN) != RESET)) {
+    if (DDL_USART_IsActiveFlag_TC(USARTx)) {
+        DDL_USART_ClearFlag_TC(USARTx);
+
         // Switch TX to an input with pullup so it's state can be monitored
         uartTxMonitor(s);
 
-        __DAL_UART_CLEAR_FLAG(huart, UART_IT_TC);
+#ifdef USE_DMA
+        if (s->txDMAResource) {
+            handleUsartTxDma(s);
+        }
+#endif
     }
 
-    if (!s->txDMAResource && (((isrflags & USART_STS_TXBEFLG) != RESET) && ((cr1its & USART_CTRL1_TXBEIEN) != RESET))) {
+    if (
+#ifdef USE_DMA
+        !s->txDMAResource &&
+#endif
+        DDL_USART_IsActiveFlag_TXE(USARTx)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            huart->Instance->DATA = (((uint16_t) s->port.txBuffer[s->port.txBufferTail]) & (uint16_t) 0x01FFU);
+            DDL_USART_TransmitData8(USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
-            __DAL_UART_DISABLE_IT(huart, UART_IT_TXE);
+            DDL_USART_DisableIT_TXE(USARTx);
         }
     }
 
-    if (((isrflags & USART_STS_OVREFLG) != RESET) && (((cr1its & USART_CTRL1_RXBNEIEN) != RESET)
-                                                 || ((cr3its & USART_CTRL3_ERRIEN) != RESET))) {
-        __DAL_UART_CLEAR_OREFLAG(huart);
+    /* UART Over-Run interrupt occurred -----------------------------------------*/
+    if (DDL_USART_IsActiveFlag_ORE(USARTx)) {
+        DDL_USART_ClearFlag_ORE(USARTx);
     }
 
-    if (((isrflags & USART_STS_IDLEFLG) != RESET) && ((cr1its & USART_STS_IDLEFLG) != RESET)) {
+    if (DDL_USART_IsActiveFlag_IDLE(USARTx)) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
 
-        // clear
-        (void) huart->Instance->STS;
-        (void) huart->Instance->DATA;
+        DDL_USART_ClearFlag_IDLE(USARTx);
     }
 }
 

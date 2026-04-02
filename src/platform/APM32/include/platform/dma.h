@@ -82,6 +82,8 @@
 #define xDDL_EX_DMA_GetDataLength(dmaResource) DDL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xDDL_EX_DMA_SetDataLength(dmaResource, length) DDL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xDDL_EX_DMA_EnableIT_TC(dmaResource) DDL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+#define xDDL_EX_DMA_SetMemoryAddress(dmaResource, addr) DDL_EX_DMA_SetMemoryAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xDDL_EX_DMA_SetPeriphAddress(dmaResource, addr) DDL_EX_DMA_SetPeriphAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
@@ -101,4 +103,6 @@
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_SetMemoryAddress(dmaResource, addr) LL_EX_DMA_SetMemoryAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xLL_EX_DMA_SetPeriphAddress(dmaResource, addr) LL_EX_DMA_SetPeriphAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
 #endif

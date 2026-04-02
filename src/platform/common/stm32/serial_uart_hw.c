@@ -92,16 +92,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     s->USARTx = hardware->reg;
 
-#ifdef USE_HAL_DRIVER
-    {
-        const uartDeviceIdx_e uartDevIdx = uartDeviceIdxFromIdentifier(hardware->identifier);
-        s->halHandle = &uartHalHandles[uartDevIdx];
-        s->rxDmaHalHandle = &uartRxDmaHalHandles[uartDevIdx];
-        s->txDmaHalHandle = &uartTxDmaHalHandles[uartDevIdx];
-        s->halHandle->hal.Instance = (USART_TypeDef *)hardware->reg;
-    }
-#endif
-
     s->checkUsartTxOutput = checkUsartTxOutput;
 
     if (hardware->rcc) {
@@ -319,7 +309,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
-    __HAL_UART_ENABLE_IT(&uartPort->halHandle->hal, UART_IT_TXE);
+    LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #else
