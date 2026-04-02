@@ -177,17 +177,16 @@ void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float 
 
 FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt)
 {
-    #define BUTTERWORTH_Q_RECIP sqrtf(2.0f) // quality factor - 2nd order butterworth
-
     filter->f = 2.0f * sin_approx(M_PIf * filterFreq * dt);
-    filter->q = 1.0f * BUTTERWORTH_Q_RECIP;
 }
 
 // Computes a SVF filter in Chamberlin form on a sample
 FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
 {
+    #define BUTTERWORTH_Q_RECIP 1.41421356237f // Q is always set to this value, we can remove Q
+
     const float low  = filter->low + filter->f * filter->band;
-    const float high = input - low - filter->q * filter->band;
+    const float high = input - low - BUTTERWORTH_Q_RECIP * filter->band;
     filter->band = filter->f * high + filter->band;
     filter->low  = low;
     return low;
