@@ -296,6 +296,9 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
             s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
+
+        CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE);
+        CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
