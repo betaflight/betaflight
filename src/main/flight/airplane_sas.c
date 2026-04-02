@@ -164,6 +164,10 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
 // Roll to yaw control cross link to improve roll rotation at high angle of attack
 static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rollPilotControl, float liftCoef)
 {
+    if (!isLiftCoefValid || pidProfile->psas_roll_to_yaw_link == 0) {
+        return 0.0f;
+    }
+
     float crossYawControl = 0.0f,
           roll_yaw_clift_start = 0.1f * pidProfile->psas_roll_yaw_clift_start,
           roll_yaw_clift_stop = 0.1f * pidProfile->psas_roll_yaw_clift_stop;
@@ -263,10 +267,8 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     }
     float yawDampingCtrl = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
     float yawStabilityCtrl = acc.accADC.y * acc.dev.acc_1G_rec * (pidProfile->psas_yaw_stability_gain * 0.01f);
-    float rollToYawCrossControl = 0.0f;
-    if (isLiftCoefValid) {
-        rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
-    }
+    float rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
+
     pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl + rollToYawCrossControl;
     pidData[FD_YAW].Sum = constrainf(pidData[FD_YAW].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
