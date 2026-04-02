@@ -94,7 +94,7 @@ static void setConfigCalibrationCompleted(void)
 
 bool accHasBeenCalibrated(void)
 {
-#ifdef SIMULATOR_BUILD
+#if ENABLE_SIMULATOR
     return true;
 #else
     return accelerometerConfig()->accZero.values.calibrationCompleted;
@@ -218,8 +218,10 @@ retry:
         FALLTHROUGH;
 #endif
 
-#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACC_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
+#if defined(USE_ACC_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_ACC_SPI_ICM42688P) || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653)
     case ACC_ICM42605:
+    case ACC_ICM42622P:
+    case ACC_ICM42686P:
     case ACC_ICM42688P:
     case ACC_IIM42652:
     case ACC_IIM42653:
@@ -227,6 +229,12 @@ retry:
             switch (dev->mpuDetectionResult.sensor) {
             case ICM_42605_SPI:
                 accHardware = ACC_ICM42605;
+                break;
+            case ICM_42622P_SPI:
+                accHardware = ACC_ICM42622P;
+                break;
+            case ICM_42686P_SPI:
+                accHardware = ACC_ICM42686P;
                 break;
             case ICM_42688P_SPI:
                 accHardware = ACC_ICM42688P;
@@ -306,6 +314,15 @@ retry:
     case ACC_ICM40609D:
         if (icm40609SpiAccDetect(dev)) {
             accHardware = ACC_ICM40609D;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_LSM6DSK320X
+    case ACC_LSM6DSK320X:
+        if (lsm6dsk320xSpiAccDetect(dev)) {
+            accHardware = ACC_LSM6DSK320X;
             break;
         }
         FALLTHROUGH;

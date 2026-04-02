@@ -31,6 +31,7 @@
 #include "drivers/flash/flash.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
+#include "drivers/flash/flash_mt29f.h"
 #include "drivers/flash/flash_w25n.h"
 #include "drivers/flash/flash_w25q128fv.h"
 #include "drivers/flash/flash_w25m.h"
@@ -102,7 +103,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
     }
 #endif
 
-    OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
+    octoSpiResource_t *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
 
     flashDevice.io.handle.octoSpi = instance;
     flashDevice.io.mode = FLASHIO_OCTOSPI;
@@ -173,6 +174,11 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
                         detected = true;
                     }
 #endif
+#if defined(USE_FLASH_MT29F)
+                    if (!detected && mt29f_identify(&flashDevice, jedecID)) {
+                        detected = true;
+                    }
+#endif
                 }
 #endif
             }
@@ -196,13 +202,36 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
     enum { TRY_1LINE = 0, TRY_4LINE, BAIL};
     int phase = TRY_1LINE;
 
-    QUADSPI_TypeDef *hqspi = quadSpiInstanceByDevice(QUADSPI_CFG_TO_DEV(flashConfig->quadSpiDevice));
+    dev = &devInstance;
 
-    flashDevice.io.handle.quadSpi = hqspi;
+    // Set up the QSPI bus device
+    if (!quadSpiSetBusInstance(dev, flashConfig->quadSpiDevice)) {
+        return false;
+    }
+
+    // Set the callback argument when calling back to this driver for DMA completion
+    dev->callbackArg = (uint32_t)&flashDevice;
+
+
+#if defined(QUADSPI_TRAIT_CS_SOFTWARE)
+    // Required for RP2350, but not for STM32 MCUs where the CS is controlled by hardware.
+
+    if (flashConfig->csTag) {
+        dev->busType_u.spi.csnPin = IOGetByTag(flashConfig->csTag);
+    } else {
+        return false;
+    }
+
+    IOInit(dev->busType_u.spi.csnPin, OWNER_FLASH_CS, 0);
+    IOConfigGPIO(dev->busType_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(dev->busType_u.spi.csnPin);
+#endif
+
     flashDevice.io.mode = FLASHIO_QUADSPI;
+    flashDevice.io.handle.dev = dev;
 
     do {
-        quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_INITIALISATION);
+        quadSpiSetDivisor(dev, QUADSPI_CLOCK_INITIALISATION);
 
         // 3 bytes for what we need, but some IC's need 8 dummy cycles after the instruction, so read 4 and make two attempts to
         // assemble the chip id from the response.
@@ -211,10 +240,10 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
         bool status = false;
         switch (phase) {
         case TRY_1LINE:
-            status = quadSpiReceive1LINE(hqspi, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
+            status = quadSpiReceive1LINE(dev, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
             break;
         case TRY_4LINE:
-            status = quadSpiReceive4LINES(hqspi, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
+            status = quadSpiReceive4LINES(dev, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
             break;
         default:
             break;
@@ -225,7 +254,7 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
             continue;
         }
 
-        quadSpiSetDivisor(hqspi, QUADSPI_CLOCK_ULTRAFAST);
+        quadSpiSetDivisor(dev, QUADSPI_CLOCK_ULTRAFAST);
 
         for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
 
@@ -253,6 +282,11 @@ static bool flashQuadSpiInit(const flashConfig_t *flashConfig)
 #endif
 #if defined(USE_FLASH_W25M02G)
                 if (!detected && w25m_identify(&flashDevice, jedecID)) {
+                    detected = true;
+                }
+#endif
+#if defined(USE_FLASH_MT29F)
+                if (!detected && mt29f_identify(&flashDevice, jedecID)) {
                     detected = true;
                 }
 #endif
@@ -345,6 +379,12 @@ static bool flashSpiInit(const flashConfig_t *flashConfig)
     }
 #endif
 
+#ifdef USE_FLASH_MT29F
+    if (!detected && mt29f_identify(&flashDevice, jedecID)) {
+        detected = true;
+    }
+#endif
+
     if (detected) {
         flashDevice.geometry.jedecId = jedecID;
         return detected;
@@ -415,16 +455,38 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
+static bool flashWaitForReadyOrFail(void)
+{
+    if (!flashDevice.vTable->waitForReady) {
+        return true;
+    }
+
+    if (!flashDevice.vTable->waitForReady(&flashDevice)) {
+        failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+        return false;
+    }
+
+    return true;
+}
+
 MMFLASH_CODE void flashEraseSector(uint32_t address)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseSector(&flashDevice, address);
+
+    if (!flashWaitForReadyOrFail()) {
+        return;
+    }
 }
 
 void flashEraseCompletely(void)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
+
+    if (!flashWaitForReadyOrFail()) {
+        return;
+    }
 }
 
 /* The callback, if provided, will receive the totoal number of bytes transfered
@@ -476,6 +538,8 @@ MMFLASH_CODE void flashFlush(void)
 {
     if (flashDevice.vTable->flush) {
         flashDevice.vTable->flush(&flashDevice);
+
+        flashWaitForReadyOrFail();
     }
 }
 

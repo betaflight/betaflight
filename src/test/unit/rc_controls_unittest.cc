@@ -575,7 +575,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     const timedAdjustmentState_t *adjustmentState4 = configureStepwiseAdjustment(AUX1 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_P_INDEX);
     const timedAdjustmentState_t *adjustmentState5 = configureStepwiseAdjustment(AUX2 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_I_INDEX);
     const timedAdjustmentState_t *adjustmentState6 = configureStepwiseAdjustment(AUX3 - NON_AUX_CHANNEL_COUNT, ADJUSTMENT_YAW_D_INDEX);
- 
+
     // and
     for (int index = AUX1; index < MAX_SUPPORTED_RC_CHANNEL_COUNT; index++) {
         rcData[index] = PWM_RANGE_MIDDLE;
@@ -621,7 +621,10 @@ void setConfigDirty(void) {}
 void saveConfigAndNotify(void) {}
 void initRcProcessing(void) {}
 void changePidProfile(uint8_t) {}
+void changeBatteryProfile(uint8_t) {}
+uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 void pidInitConfig(const pidProfile_t *) {}
+void applySimplifiedTuningPids(pidProfile_t *) {}
 void accStartCalibration(void) {}
 void gyroStartCalibration(bool isFirstArmingCalibration)
 {

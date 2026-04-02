@@ -76,14 +76,10 @@ void pgResetFn_sdcardConfig(sdcardConfig_t *config)
     config->mode = SDCARD_MODE_NONE;
 #endif
 
-#if defined(STM32H7) && defined(USE_SDCARD_SDIO) // H7 only for now, likely should be applied to F4/F7 too
-    config->mode = SDCARD_MODE_SDIO;
-#endif
-
 #ifdef USE_SDCARD_SPI
     // These settings do not work for Unified Targets
     // They are only left in place to support legacy targets
-    const spiDevice_e spidevice = spiDeviceByInstance(SDCARD_SPI_INSTANCE);
+    const spiDevice_e spidevice = spiDeviceByInstance((const spiResource_t *)SDCARD_SPI_INSTANCE);
     config->device = SPI_DEV_TO_CFG(spidevice);
     config->chipSelectTag = IO_TAG(SDCARD_SPI_CS_PIN);
 

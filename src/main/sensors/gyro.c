@@ -79,6 +79,22 @@ static FAST_DATA_ZERO_INIT timeUs_t yawSpinTimeUs;
 
 static FAST_DATA_ZERO_INIT float gyroFilteredDownsampled[XYZ_AXIS_COUNT];
 
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+// Two-counter seqlock pattern for lock-free synchronization:
+// - gyroSeq: only incremented by gyroUpdate (accumulator writes)
+// - resetSeq: only incremented by telemetry task (accumulator resets)
+// This ensures each seqlock has exactly one writer, avoiding dual-writer race conditions.
+// When resetSeq is odd (reset in progress), gyroUpdate skips accumulation to avoid corruption.
+// At most one sample per telemetry cycle may be skipped - negligible at 8kHz gyro rate.
+static volatile uint32_t gyroSeq;    // Sequence counter for gyro writes (odd = write in progress)
+static volatile uint32_t resetSeq;   // Sequence counter for resets (odd = reset in progress)
+static volatile FAST_DATA_ZERO_INIT uint32_t downSampleCount;
+static volatile FAST_DATA_ZERO_INIT float downSampleSum[XYZ_AXIS_COUNT];
+// Snapshot for telemetry to read from
+static FAST_DATA_ZERO_INIT uint32_t snapshotCount;
+static FAST_DATA_ZERO_INIT float snapshotSum[XYZ_AXIS_COUNT];
+#endif
+
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
 FAST_DATA uint8_t activePidLoopDenom = 1;
@@ -95,7 +111,7 @@ STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyro.gyroSensor[0].gyroDev;
 #define GYRO_OVERFLOW_TRIGGER_THRESHOLD 31980  // 97.5% full scale (1950dps for 2000dps gyro)
 #define GYRO_OVERFLOW_RESET_THRESHOLD 30340    // 92.5% full scale (1850dps for 2000dps gyro)
 
-PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 9);
+PG_REGISTER_WITH_RESET_FN(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 10);
 
 #ifndef DEFAULT_GYRO_ENABLED
 // enable the first gyro if none are enabled
@@ -305,7 +321,7 @@ static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
     if (overflowDetected) {
         handleOverflow(currentTimeUs);
     } else {
-#ifndef SIMULATOR_BUILD
+#if !ENABLE_SIMULATOR
         // check for overflow in the axes set in overflowAxisMask
         gyroOverflow_e overflowCheck = GYRO_OVERFLOW_NONE;
 
@@ -331,7 +347,7 @@ static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
             yawSpinDetected = false;
 #endif // USE_YAW_SPIN_RECOVERY
         }
-#endif // SIMULATOR_BUILD
+#endif // ENABLE_SIMULATOR
     }
 }
 #endif // USE_GYRO_OVERFLOW_CHECK
@@ -364,13 +380,13 @@ static FAST_CODE_NOINLINE void checkForYawSpin(timeUs_t currentTimeUs)
     if (yawSpinDetected) {
         handleYawSpin(currentTimeUs);
     } else {
-#ifndef SIMULATOR_BUILD
+#if !ENABLE_SIMULATOR
         // check for spin on yaw axis only
          if (abs((int)gyro.gyroADCf[Z]) > yawSpinRecoveryThreshold) {
             yawSpinDetected = true;
             yawSpinTimeUs = currentTimeUs;
         }
-#endif // SIMULATOR_BUILD
+#endif // ENABLE_SIMULATOR
     }
 }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -442,6 +458,23 @@ FAST_CODE void gyroUpdate(void)
         gyro.sampleSum[Z] += gyro.gyroADC[Z];
         gyro.sampleCount++;
     }
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+    // Skip accumulation if reset is in progress (resetSeq odd) to avoid corruption.
+    // At most one sample per telemetry cycle is skipped - negligible at 8kHz gyro rate.
+    if (!(resetSeq & 1)) {
+        // Seqlock write: increment before modifying (makes gyroSeq odd)
+        gyroSeq++;
+        __asm volatile ("" ::: "memory");  // Compiler barrier
+
+        downSampleSum[X] += gyro.gyroADC[X];
+        downSampleSum[Y] += gyro.gyroADC[Y];
+        downSampleSum[Z] += gyro.gyroADC[Z];
+        downSampleCount++;
+
+        __asm volatile ("" ::: "memory");  // Compiler barrier
+        gyroSeq++;  // Increment after modifying (makes gyroSeq even)
+    }
+#endif
 }
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyro
@@ -524,12 +557,73 @@ float gyroGetFilteredDownsampled(int axis)
     return gyroFilteredDownsampled[axis];
 }
 
-static int16_t gyroReadSensorTemperature(gyroSensor_t gyroSensor)
+#ifdef USE_CRSF_ACCGYRO_TELEMETRY
+bool gyroHasDownsampledData(void)
 {
-    if (gyroSensor.gyroDev.temperatureFn) {
-        gyroSensor.gyroDev.temperatureFn(&gyroSensor.gyroDev, &gyroSensor.gyroDev.temperature);
+    return snapshotCount > 0;
+}
+
+float gyroGetDownsampled(int axis)
+{
+    if (snapshotCount == 0) {
+        return 0;  // No valid data yet
     }
-    return gyroSensor.gyroDev.temperature;
+    return snapshotSum[axis] / snapshotCount;
+}
+
+bool gyroStartDownsampledCycle(void)
+{
+    // Phase 1: Read using gyroSeq (protects against gyroUpdate writes)
+    uint32_t seq1;
+    float sum[XYZ_AXIS_COUNT];
+    uint32_t count;
+
+    do {
+        seq1 = gyroSeq;
+        if (!(seq1 & 1)) {
+            // Even gyroSeq means no write in progress, safe to copy
+            sum[X] = downSampleSum[X];
+            sum[Y] = downSampleSum[Y];
+            sum[Z] = downSampleSum[Z];
+            count = downSampleCount;
+
+            __asm volatile ("" ::: "memory");  // Compiler barrier
+            if (seq1 == gyroSeq) {
+                break;
+            }
+        }
+    } while (true);
+
+    // Only update snapshot if we got valid data
+    if (count > 0) {
+        snapshotSum[X] = sum[X];
+        snapshotSum[Y] = sum[Y];
+        snapshotSum[Z] = sum[Z];
+        snapshotCount = count;
+    }
+
+    // Phase 2: Reset using resetSeq (signals gyroUpdate to skip accumulation)
+    resetSeq++;  // Makes resetSeq odd - gyroUpdate will skip
+    __asm volatile ("" ::: "memory");
+
+    downSampleSum[X] = 0;
+    downSampleSum[Y] = 0;
+    downSampleSum[Z] = 0;
+    downSampleCount = 0;
+
+    __asm volatile ("" ::: "memory");
+    resetSeq++;  // Makes resetSeq even - gyroUpdate resumes
+
+    return count > 0;
+}
+#endif
+
+int16_t gyroReadSensorTemperature(gyroSensor_t *gyroSensor)
+{
+    if (gyroSensor->gyroDev.temperatureFn) {
+        gyroSensor->gyroDev.temperatureFn(&gyroSensor->gyroDev, &gyroSensor->gyroDev.temperature);
+    }
+    return gyroSensor->gyroDev.temperature;
 }
 
 void gyroReadTemperature(void)
@@ -538,7 +632,7 @@ void gyroReadTemperature(void)
 
     for (int i = 0; i < GYRO_COUNT; i++) {
         if (gyro.gyroEnabledBitmask & GYRO_MASK(i)) {
-            max_temp = MAX(max_temp, gyroReadSensorTemperature(gyro.gyroSensor[i]));
+            max_temp = MAX(max_temp, gyroReadSensorTemperature(&gyro.gyroSensor[i]));
         }
     }
 

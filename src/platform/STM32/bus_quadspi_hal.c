@@ -34,15 +34,24 @@
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
+#include "platform/bus_quadspi_hal.h"
 
 #include "pg/bus_quadspi.h"
 #include "drivers/bus_quadspi_impl.h"
+
+static struct qspiHalHandle_s qspiHalHandles[QUADSPIDEV_COUNT];
+
+#define QUADSPI_IO_AF_BK_IO_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define QUADSPI_IO_AF_CLK_CFG             IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define QUADSPI_IO_AF_BK_CS_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define QUADSPI_IO_BK_CS_CFG              IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
+
 // Provide platform-specific hardware table for STM32
 const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
 #ifdef STM32H7
     {
         .device = QUADSPIDEV_1,
-        .reg = QUADSPI,
+        .reg = (quadSpiResource_t *)QUADSPI,
         .clkPins = {
             { DEFIO_TAG_E(PB2),  GPIO_AF9_QUADSPI },
         },
@@ -95,7 +104,7 @@ const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
 #ifdef STM32G4
     {
         .device = QUADSPIDEV_1,
-        .reg = QUADSPI,
+        .reg = (quadSpiResource_t *)QUADSPI,
         .clkPins = {
             { DEFIO_TAG_E(PA3), GPIO_AF10_QUADSPI },
             { DEFIO_TAG_E(PB10), GPIO_AF10_QUADSPI },
@@ -274,7 +283,6 @@ void quadSpiInitDevice(quadSpiDevice_e device)
     IOInit(IOGetByTag(quadSpi->bk2IO3), OWNER_QUADSPI_BK2IO3, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(quadSpi->bk2CS), OWNER_QUADSPI_BK2CS, RESOURCE_INDEX(device));
 
-#if defined(STM32H7) || defined(STM32G4)
     IOConfigGPIOAF(IOGetByTag(quadSpi->clk), QUADSPI_IO_AF_CLK_CFG, quadSpi->clkAF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO0), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO0AF);
     IOConfigGPIOAF(IOGetByTag(quadSpi->bk1IO1), QUADSPI_IO_AF_BK_IO_CFG, quadSpi->bk1IO1AF);
@@ -296,38 +304,45 @@ void quadSpiInitDevice(quadSpiDevice_e device)
     } else {
         IOConfigGPIO(IOGetByTag(quadSpi->bk2CS), QUADSPI_IO_BK_CS_CFG);
     }
-#endif
 
-    quadSpi->hquadSpi.Instance = quadSpi->dev;
+    quadSpi->halHandle = &qspiHalHandles[device];
+
+    quadSpi->halHandle->hal.Instance = (QUADSPI_TypeDef *)quadSpi->dev;
     // DeInit QUADSPI hardware
-    HAL_QSPI_DeInit(&quadSpi->hquadSpi);
+    HAL_QSPI_DeInit(&quadSpi->halHandle->hal);
 
-    quadSpi->hquadSpi.Init.ClockPrescaler = QUADSPI_CLOCK_INITIALISATION;
-    quadSpi->hquadSpi.Init.FifoThreshold = 1;
-    quadSpi->hquadSpi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-    quadSpi->hquadSpi.Init.FlashSize = 23; // address bits + 1
-    quadSpi->hquadSpi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
-    quadSpi->hquadSpi.Init.ClockMode = QSPI_CLOCK_MODE_0;
+    quadSpi->halHandle->hal.Init.ClockPrescaler = QUADSPI_CLOCK_INITIALISATION;
+    quadSpi->halHandle->hal.Init.FifoThreshold = 1;
+    quadSpi->halHandle->hal.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
+    quadSpi->halHandle->hal.Init.FlashSize = 23; // address bits + 1
+    quadSpi->halHandle->hal.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
+    quadSpi->halHandle->hal.Init.ClockMode = QSPI_CLOCK_MODE_0;
 
     switch (quadSpiConfig(device)->mode) {
     case QUADSPI_MODE_BK1_ONLY:
-        quadSpi->hquadSpi.Init.FlashID = QSPI_FLASH_ID_1;
-        quadSpi->hquadSpi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+        quadSpi->halHandle->hal.Init.FlashID = QSPI_FLASH_ID_1;
+        quadSpi->halHandle->hal.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
         break;
     case QUADSPI_MODE_BK2_ONLY:
-        quadSpi->hquadSpi.Init.FlashID = QSPI_FLASH_ID_2;
-        quadSpi->hquadSpi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
+        quadSpi->halHandle->hal.Init.FlashID = QSPI_FLASH_ID_2;
+        quadSpi->halHandle->hal.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
         break;
     case QUADSPI_MODE_DUAL_FLASH:
-        quadSpi->hquadSpi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
+        quadSpi->halHandle->hal.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
         break;
     }
 
     // Init QUADSPI hardware
-    if (HAL_QSPI_Init(&quadSpi->hquadSpi) != HAL_OK)
+    if (HAL_QSPI_Init(&quadSpi->halHandle->hal) != HAL_OK)
     {
       Error_Handler();
     }
+}
+
+// HAL doesn't support QSPI DMA
+void quadSpiInitBusDMA(busDevice_t *bus)
+{
+    bus->useDMA = false;
 }
 
 static const uint32_t quadSpi_addressSizeMap[] = {
@@ -346,10 +361,10 @@ static uint32_t quadSpi_addressSizeFromValue(uint8_t addressSize)
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
-LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
+LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    if(quadSpiDevice[device].hquadSpi.State == HAL_QSPI_STATE_BUSY)
+    if(quadSpiDevice[device].halHandle->hal.State == HAL_QSPI_STATE_BUSY)
         return true;
     else
         return false;
@@ -357,7 +372,7 @@ LOCAL_UNUSED_FUNCTION static bool quadSpiIsBusBusy(QUADSPI_TypeDef *instance)
 
 #define QUADSPI_DEFAULT_TIMEOUT 10
 
-static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiSelectDevice(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
@@ -386,7 +401,7 @@ static void quadSpiSelectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
+static void quadSpiDeselectDevice(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
 
@@ -415,9 +430,9 @@ static void quadSpiDeselectDevice(QUADSPI_TypeDef *instance)
     }
 }
 
-bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+bool quadSpiTransmit1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -437,30 +452,30 @@ bool quadSpiTransmit1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
         cmd.DataMode          = QSPI_DATA_1_LINE;
     }
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
         if (out && length > 0) {
-            status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
+            status = HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
             timeout = (status != HAL_OK);
         }
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -476,29 +491,29 @@ bool quadSpiReceive1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t
     cmd.Instruction       = instruction;
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, in, QUADSPI_DEFAULT_TIMEOUT);
 
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
+bool quadSpiReceive4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -514,29 +529,29 @@ bool quadSpiReceive4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_
     cmd.Instruction       = instruction;
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, in, QUADSPI_DEFAULT_TIMEOUT);
 
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiReceiveWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -554,28 +569,28 @@ bool quadSpiReceiveWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instructi
     cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, in, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
+bool quadSpiReceiveWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, uint8_t *in, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -593,27 +608,27 @@ bool quadSpiReceiveWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruct
     cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
     if (!timeout) {
-        status = HAL_QSPI_Receive(&quadSpiDevice[device].hquadSpi, in, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, in, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
-bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+bool quadSpiTransmitWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -631,29 +646,29 @@ bool quadSpiTransmitWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
     cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
 
     if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
+bool quadSpiTransmitWithAddress4LINES(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -671,29 +686,29 @@ bool quadSpiTransmitWithAddress4LINES(QUADSPI_TypeDef *instance, uint8_t instruc
     cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
 
     if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
+bool quadSpiInstructionWithAddress1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, uint32_t address, uint8_t addressSize)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -711,24 +726,24 @@ bool quadSpiInstructionWithAddress1LINE(QUADSPI_TypeDef *instance, uint8_t instr
     cmd.AddressSize       = quadSpi_addressSizeFromValue(addressSize);
     cmd.NbData            = 0;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout = (status != HAL_OK);
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
+bool quadSpiInstructionWithData1LINE(const extDevice_t *dev, uint8_t instruction, uint8_t dummyCycles, const uint8_t *out, int length)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
     HAL_StatusTypeDef status;
 
     QSPI_CommandTypeDef cmd;
@@ -744,38 +759,88 @@ bool quadSpiInstructionWithData1LINE(QUADSPI_TypeDef *instance, uint8_t instruct
     cmd.Instruction       = instruction;
     cmd.NbData            = length;
 
-    quadSpiSelectDevice(instance);
+    quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
 
-    status = HAL_QSPI_Command(&quadSpiDevice[device].hquadSpi, &cmd, QUADSPI_DEFAULT_TIMEOUT);
+    status = HAL_QSPI_Command(&quadSpiDevice[device].halHandle->hal, &cmd, QUADSPI_DEFAULT_TIMEOUT);
     bool timeout =(status != HAL_OK);
 
     if (!timeout) {
-        status = HAL_QSPI_Transmit(&quadSpiDevice[device].hquadSpi, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
+        status = HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)out, QUADSPI_DEFAULT_TIMEOUT);
         timeout = (status != HAL_OK);
     }
 
-    quadSpiDeselectDevice(instance);
+    quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
 
     if (timeout) {
-        quadSpiTimeoutUserCallback(instance);
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
         return false;
     }
 
     return true;
 }
 
-void quadSpiSetDivisor(QUADSPI_TypeDef *instance, uint16_t divisor)
+void quadSpiSetDivisor(const extDevice_t *dev, uint16_t divisor)
 {
-    quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
-    if (HAL_QSPI_DeInit(&quadSpiDevice[device].hquadSpi) != HAL_OK)
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
+    if (HAL_QSPI_DeInit(&quadSpiDevice[device].halHandle->hal) != HAL_OK)
     {
         Error_Handler();
     }
 
     quadSpiDevice_t *quadSpi = &(quadSpiDevice[device]);
 
-    quadSpi->hquadSpi.Init.ClockPrescaler = divisor;
+    quadSpi->halHandle->hal.Init.ClockPrescaler = divisor;
 
-    HAL_QSPI_Init(&quadSpi->hquadSpi);
+    HAL_QSPI_Init(&quadSpi->halHandle->hal);
+}
+
+void quadSpiWait(const extDevice_t *dev)
+{
+    UNUSED(dev);
+
+    // Return immediately as this implementation is blocking
+}
+
+void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
+{
+    if (!dev || !dev->bus) {
+        return;
+    }
+
+    quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
+
+    busSegment_t *curSegment = segments;
+
+    bool csNegated = true;
+
+    while (curSegment->len) {
+        if (csNegated) {
+            quadSpiSelectDevice(dev->bus->busType_u.qspi.instance);
+            csNegated = false;
+        }
+
+        if (curSegment->u.buffers.txData) {
+            /* Configure QSPI: DLR register with the number of data to write */
+            WRITE_REG(quadSpiDevice[device].halHandle->hal.Instance->DLR, curSegment->len - 1U);
+            HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.txData, QUADSPI_DEFAULT_TIMEOUT);
+        }
+        if (curSegment->u.buffers.rxData) {
+            /* Configure QSPI: DLR register with the number of data to read */
+            WRITE_REG(quadSpiDevice[device].halHandle->hal.Instance->DLR, curSegment->len - 1U);
+            HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.rxData, QUADSPI_DEFAULT_TIMEOUT);
+        }
+
+        if (curSegment->negateCS) {
+            quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
+            csNegated = true;
+        }
+
+        // Advance to the next segment
+        curSegment++;
+    }
+
+    if (!csNegated) {
+        quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
+    }
 }
 #endif

@@ -274,12 +274,30 @@ static void servoConfigureOutput(void)
     }
 }
 
+// check if any servo has individual channel forwarding configured
+static bool hasIndividualServoForwarding(void)
+{
+    for (int index = 0; index < MAX_SUPPORTED_SERVOS; index++) {
+        const uint8_t channelToForwardFrom = servoParams(index)->forwardFromChannel;
+        if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void servosInit(void)
 {
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[getMixerMode()].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
+        useServo = 1;
+    }
+
+    // enable servos if any individual channel forwarding is configured
+    if (hasIndividualServoForwarding()) {
         useServo = 1;
     }
 
@@ -314,7 +332,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     int channelOffset = servoConfig()->channelForwardingStartChannel;
     const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
     for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
-        pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
+        servoWrite(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
 
@@ -326,7 +344,7 @@ STATIC_ASSERT(sizeof(servoWritten) * 8 >= MAX_SUPPORTED_SERVOS, servoWritten_is_
 
 static void writeServoWithTracking(uint8_t index, servoIndex_e servoname)
 {
-    pwmWriteServo(index, servo[servoname]);
+    servoWrite(index, servo[servoname]);
     servoWritten |= (1 << servoname);
 }
 
@@ -406,7 +424,7 @@ void writeServos(void)
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const uint8_t channelToForwardFrom = servoParams(i)->forwardFromChannel;
         if ((channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) && !(servoWritten & (1 << i))) {
-            pwmWriteServo(servoIndex++, servo[i]);
+            servoWrite(servoIndex++, servo[i]);
         }
     }
 
@@ -525,6 +543,8 @@ static void servoTable(void)
     */
 
     default:
+        // run servo mixer for all other frame types (e.g. quads with individual servo forwarding)
+        servoMixer();
         break;
     }
 
@@ -567,6 +587,7 @@ void servosFilterInit(void)
     }
 
 }
+
 static void filterServos(void)
 {
 #if defined(MIXER_DEBUG)

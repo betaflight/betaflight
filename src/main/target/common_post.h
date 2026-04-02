@@ -110,11 +110,14 @@
     && !defined(USE_ACC_SPI_ICM20689) \
     && !defined(USE_ACC_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
+    && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_ACC_SPI_MPU6000) \
     && !defined(USE_ACC_SPI_MPU6500) \
     && !defined(USE_ACC_SPI_MPU9250) \
@@ -133,12 +136,15 @@
     && !defined(USE_GYRO_SPI_ICM20649) \
     && !defined(USE_GYRO_SPI_ICM20689) \
     && !defined(USE_GYRO_SPI_ICM42605) \
+    && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_LSM6DSO) \
     && !defined(USE_ACCGYRO_LSM6DSV16X) \
+    && !defined(USE_ACCGYRO_LSM6DSK320X) \
     && !defined(USE_GYRO_SPI_MPU6000) \
     && !defined(USE_GYRO_SPI_MPU6500) \
     && !defined(USE_GYRO_SPI_MPU9250) \
@@ -183,6 +189,9 @@
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
 #endif
+#ifndef USE_MAG_MMC560X
+#define USE_MAG_MMC560X
+#endif
 
 #endif // END MAG HW defines
 
@@ -210,7 +219,7 @@
 
 #endif // defined(USE_RX_CC2500)
 
-#if defined(CAMERA_CONTROL_PIN) && defined(USE_VTX) && !defined(USE_CAMERA_CONTROL)
+#if defined(CAMERA_CONTROL_PIN) && defined(USE_OSD_SD) && !defined(USE_CAMERA_CONTROL)
 #define USE_CAMERA_CONTROL
 #endif
 
@@ -315,6 +324,7 @@
 #undef USE_TELEMETRY_CRSF
 #undef USE_CRSF_LINK_STATISTICS
 #undef USE_CRSF_V3
+#undef USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
 #if !defined(USE_RX_EXPRESSLRS) && !defined(USE_SERIALRX_CRSF) && !defined(USE_SERIALRX_MAVLINK)
@@ -331,6 +341,11 @@
 
 #if !defined(USE_TELEMETRY_CRSF)
 #undef USE_CRSF_V3
+#undef USE_CRSF_ACCGYRO_TELEMETRY
+#endif
+
+#if !defined(USE_CRSF_V3)
+#undef USE_CRSF_ACCGYRO_TELEMETRY
 #endif
 
 #if !defined(USE_SERIALRX_JETIEXBUS)
@@ -427,7 +442,7 @@
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N) || defined(USE_FLASH_MT29F))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif
@@ -485,22 +500,22 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
-    || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_IIM42653) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
+    || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
 #endif
 
-#ifndef SIMULATOR_BUILD
 #ifndef USE_ACC
 #define USE_ACC
 #endif
 
 #ifndef USE_GYRO
 #define USE_GYRO
-#endif
 #endif
 
 // CX10 is a special case of SPI RX which requires XN297
@@ -552,7 +567,39 @@
 #define USE_WS2811_SINGLE_COLOUR
 #endif
 
-#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+#if !defined(ENABLE_SIMULATOR)
+#define ENABLE_SIMULATOR 0
+#endif
+
+#if ENABLE_SIMULATOR
+#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#else
+#if defined(ENABLE_SIMULATOR_MULTITHREAD)
+#warning ENABLE_SIMULATOR_MULTITHREAD defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if defined(ENABLE_SIMULATOR_IMU_SYNC)
+#warning ENABLE_SIMULATOR_IMU_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#warning ENABLE_SIMULATOR_GYROPID_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#endif
+
+#if ENABLE_SIMULATOR || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_DYN_NOTCH_FILTER
 #endif
@@ -609,7 +656,14 @@
 #endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT)
+#if defined(USE_RANGEFINDER_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_RANGEFINDER_UPT1
+
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
@@ -682,3 +736,26 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+/*****************************************************
+
+ Place any ENABLE_X_FEATURE=0 definitions here for those
+ yet to be defined, and also for any backward compatibility
+ with USE_ flags.
+
+ e.g.
+
+ #if !defined(ENABLE_X_FEATURE) && defined(USE_X_FEATURE)
+ #define ENABLE_X_FEATURE 1
+ #elif !defined(ENABLE_X_FEATURE)
+ #define ENABLE_X_FEATURE 0
+ #endif
+
+******************************************************/
+
+#if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 0
+#endif
+
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 0
+#endif

@@ -195,6 +195,8 @@ typedef enum {
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
     OSD_LIDAR_DIST,
+    OSD_CUSTOM_SERIAL_TEXT,
+    OSD_BATTERY_PROFILE_NAME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -378,7 +380,7 @@ typedef struct statistic_s {
     int16_t max_speed;
     int16_t min_voltage; // /100
     uint16_t end_voltage;
-    int16_t max_current; // /10
+    int16_t max_current; // /100
     uint8_t min_rssi;
     int32_t max_altitude;
     int16_t max_distance;

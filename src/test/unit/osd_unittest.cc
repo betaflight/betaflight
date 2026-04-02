@@ -90,6 +90,8 @@ extern "C" {
     acc_t acc;
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARRAY(batteryProfile_t, BATTERY_PROFILE_COUNT, batteryProfiles, PG_BATTERY_PROFILES, 0);
+    const batteryProfile_t *currentBatteryProfile;
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
@@ -329,6 +331,10 @@ protected:
 
     virtual void SetUp() {
         setDefaultSimulationState();
+        batteryProfilesMutable(0)->vbatmincellvoltage = 330;
+        batteryProfilesMutable(0)->vbatmaxcellvoltage = 430;
+        batteryProfilesMutable(0)->vbatfullcellvoltage = 410;
+        currentBatteryProfile = batteryProfiles(0);
     }
 
     virtual void TearDown() {
@@ -354,8 +360,9 @@ TEST_F(OsdTest, TestInit)
 
     // and
     // this battery configuration (used for battery voltage elements)
-    batteryConfigMutable()->vbatmincellvoltage = 330;
-    batteryConfigMutable()->vbatmaxcellvoltage = 430;
+    batteryProfilesMutable(0)->vbatmincellvoltage = 330;
+    batteryProfilesMutable(0)->vbatmaxcellvoltage = 430;
+    currentBatteryProfile = batteryProfiles(0);
 
     // when
     // OSD is initialised
@@ -1045,7 +1052,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
     osdAnalyzeActiveElements();
 
     // and
-    batteryConfigMutable()->vbatfullcellvoltage = 410;
+    batteryProfilesMutable(0)->vbatfullcellvoltage = 410;
 
     // and
     // 4S battery
@@ -1053,7 +1060,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
 
     // and
     // used battery
-    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 20) * simulationBatteryCellCount) - 1;
+    simulationBatteryVoltage = ((currentBatteryProfile->vbatmaxcellvoltage - 20) * simulationBatteryCellCount) - 1;
     simulationBatteryState = BATTERY_OK;
 
     // when
@@ -1112,7 +1119,7 @@ TEST_F(OsdTest, TestElementWarningsBattery)
 
     // given
     // full battery
-    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 20) * simulationBatteryCellCount);
+    simulationBatteryVoltage = ((currentBatteryProfile->vbatmaxcellvoltage - 20) * simulationBatteryCellCount);
     simulationBatteryState = BATTERY_OK;
 
     // when
@@ -1199,7 +1206,7 @@ TEST_F(OsdTest, TestGpsElements)
 
     sensorsSet(SENSOR_GPS);
     osdAnalyzeActiveElements();
-    
+
     // when
     simulationGpsHealthy = false;
     gpsSol.numSat = 0;
@@ -1324,6 +1331,10 @@ extern "C" {
     }
 
     uint8_t getCurrentControlRateProfileIndex() {
+        return 0;
+    }
+
+    uint8_t getCurrentBatteryProfileIndex() {
         return 0;
     }
 

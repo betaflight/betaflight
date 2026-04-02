@@ -105,7 +105,7 @@ pidProfile_t *currentPidProfile;
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 4);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
@@ -119,6 +119,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .hseMhz = SYSTEM_HSE_MHZ,  // Only used for F4 and G4 targets
     .configurationState = CONFIGURATION_STATE_UNCONFIGURED,
     .enableStickArming = false,
+    .activeBatteryProfile = 0,
 );
 
 bool isEepromWriteInProgress(void)
@@ -141,6 +142,12 @@ uint8_t getCurrentControlRateProfileIndex(void)
     return systemConfig()->activeRateProfile;
 }
 
+// Returns the active battery profile index.
+uint8_t getCurrentBatteryProfileIndex(void)
+{
+    return systemConfig()->activeBatteryProfile;
+}
+
 void resetConfig(void)
 {
     pgResetAll();
@@ -154,6 +161,7 @@ static void activateConfig(void)
 {
     loadPidProfile();
     loadControlRateProfile();
+    loadBatteryProfile();
 
     initRcProcessing();
 
@@ -222,17 +230,14 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if (gpsConfig()->provider == GPS_MSP && gpsSerial) {
+    if ((gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
-#endif
-    if (
-#if defined(USE_GPS)
-        gpsConfig()->provider != GPS_MSP && !gpsSerial &&
-#endif
-        true) {
+
+    if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial) {
         featureDisableImmediate(FEATURE_GPS);
     }
+#endif
 
     for (unsigned i = 0; i < PID_PROFILE_COUNT; i++) {
         // Fix filter settings to handle cases where an older configurator was used that
@@ -516,11 +521,25 @@ static void validateAndFixConfig(void)
 
     validateAndfixMotorOutputReordering(motorConfigMutable()->dev.motorOutputReordering, MAX_SUPPORTED_MOTORS);
 
-    // validate that the minimum battery cell voltage is less than the maximum cell voltage
-    // reset to defaults if not
-    if (batteryConfig()->vbatmincellvoltage >=  batteryConfig()->vbatmaxcellvoltage) {
-        batteryConfigMutable()->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
-        batteryConfigMutable()->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+    // validate battery profile voltages and field bounds, reset to defaults if invalid
+    for (unsigned i = 0; i < BATTERY_PROFILE_COUNT; i++) {
+        const batteryProfile_t *profile = batteryProfiles(i);
+        if (profile->vbatmincellvoltage >= profile->vbatmaxcellvoltage
+            || profile->vbatwarningcellvoltage < profile->vbatmincellvoltage
+            || profile->vbatwarningcellvoltage > profile->vbatmaxcellvoltage
+            || profile->vbatfullcellvoltage < profile->vbatwarningcellvoltage
+            || profile->vbatfullcellvoltage > profile->vbatmaxcellvoltage) {
+            batteryProfilesMutable(i)->vbatmincellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MIN;
+            batteryProfilesMutable(i)->vbatmaxcellvoltage = VBAT_CELL_VOLTAGE_DEFAULT_MAX;
+            batteryProfilesMutable(i)->vbatwarningcellvoltage = 350;
+            batteryProfilesMutable(i)->vbatfullcellvoltage = 410;
+        }
+        if (profile->forceBatteryCellCount > 24) {
+            batteryProfilesMutable(i)->forceBatteryCellCount = 0;
+        }
+        if (profile->consumptionWarningPercentage > 100) {
+            batteryProfilesMutable(i)->consumptionWarningPercentage = 10;
+        }
     }
 
 #ifdef USE_MSP_DISPLAYPORT
@@ -654,6 +673,11 @@ void validateAndFixGyroConfig(void)
         systemConfigMutable()->pidProfileIndex = 0;
     }
     loadPidProfile();
+
+    if (systemConfig()->activeBatteryProfile >= BATTERY_PROFILE_COUNT) {
+        systemConfigMutable()->activeBatteryProfile = 0;
+    }
+    loadBatteryProfile();
 }
 
 #ifdef USE_BLACKBOX

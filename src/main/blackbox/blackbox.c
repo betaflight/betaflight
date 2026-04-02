@@ -310,14 +310,19 @@ static const blackboxConditionalFieldDefinition_t blackboxGpsGFields[] = {
     {"GPS_coord",          1, SIGNED,   PREDICT(HOME_COORD), ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_altitude",      -1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
     {"GPS_speed",         -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
-    {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)}
+    {"GPS_ground_course", -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
+    {"GPS_velned",         0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_velned",         1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_velned",         2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB),   CONDITION(ALWAYS)},
+    {"GPS_time",          -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB), CONDITION(ALWAYS)},
 };
 
 // GPS home frame
 static const blackboxSimpleFieldDefinition_t blackboxGpsHFields[] = {
     {"GPS_home",           0, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
     {"GPS_home",           1, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
-    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)}
+    {"GPS_home",           2, SIGNED,   PREDICT(0),          ENCODING(SIGNED_VB)},
+    {"GPS_home_epoch",    -1, UNSIGNED, PREDICT(0),          ENCODING(UNSIGNED_VB)},
 };
 #endif
 
@@ -1193,7 +1198,7 @@ static void writeGPSHomeFrame(void)
     blackboxWriteSignedVB(GPS_home_llh.lat);
     blackboxWriteSignedVB(GPS_home_llh.lon);
     blackboxWriteSignedVB(GPS_home_llh.altCm / 10); //log homes altitude, in increments of 0.1m
-    //TODO it'd be great if we could grab the GPS current time and write that too
+    blackboxWriteUnsignedVB(gpsDateTimeToEpoch(&gpsSol.dateTime));
 
     gpsHistory.GPS_home = GPS_home_llh;
 }
@@ -1225,6 +1230,12 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
     }
 
     blackboxWriteUnsignedVB(gpsSol.groundCourse);
+
+    blackboxWriteSignedVB(gpsSol.velned.velN);
+    blackboxWriteSignedVB(gpsSol.velned.velE);
+    blackboxWriteSignedVB(gpsSol.velned.velD);
+
+    blackboxWriteUnsignedVB(gpsSol.time);
 
     gpsHistory.GPS_numSat = gpsSol.numSat;
     gpsHistory.GPS_coord = gpsSol.llh;
@@ -1514,9 +1525,9 @@ static bool blackboxWriteSysinfo(void)
             }
         );
 
-        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           batteryConfig()->vbatmincellvoltage,
-                                                                            batteryConfig()->vbatwarningcellvoltage,
-                                                                            batteryConfig()->vbatmaxcellvoltage);
+        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           currentBatteryProfile->vbatmincellvoltage,
+                                                                            currentBatteryProfile->vbatwarningcellvoltage,
+                                                                            currentBatteryProfile->vbatmaxcellvoltage);
         BLACKBOX_PRINT_HEADER_LINE("vbatref", "%u",                         vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1732,6 +1743,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_II, "%d",        autopilotConfig()->positionII);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);
@@ -1945,11 +1957,11 @@ static void blackboxCheckAndLogFlightMode(void)
 {
     // Use != so that we can still detect a change if the counter wraps
     if (memcmp(&rcModeActivationMask, &blackboxLastFlightModeFlags, sizeof(blackboxLastFlightModeFlags))) {
-        flightLogEvent_flightMode_t eventData; // Add new data for current flight mode flags
-        eventData.lastFlags = blackboxLastFlightModeFlags;
+        flightLogEventData_t eventData; // Add new data for current flight mode flags
+        eventData.flightMode.lastFlags = blackboxLastFlightModeFlags;
         memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags));
-        memcpy(&eventData.flags, &rcModeActivationMask, sizeof(eventData.flags));
-        blackboxLogEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, (flightLogEventData_t *)&eventData);
+        memcpy(&eventData.flightMode.flags, &rcModeActivationMask, sizeof(eventData.flightMode.flags));
+        blackboxLogEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, &eventData);
     }
 }
 

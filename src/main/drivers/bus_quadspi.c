@@ -41,7 +41,7 @@
 
 quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT] = { 0 };
 
-quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
+quadSpiDevice_e quadSpiDeviceByInstance(quadSpiResource_t *instance)
 {
     if (!instance) {
         return QUADSPIINVALID;
@@ -54,7 +54,7 @@ quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance)
     return QUADSPIINVALID;
 }
 
-QUADSPI_TypeDef *quadSpiInstanceByDevice(quadSpiDevice_e device)
+quadSpiResource_t *quadSpiInstanceByDevice(quadSpiDevice_e device)
 {
     if (device == QUADSPIINVALID || device >= QUADSPIDEV_COUNT) {
         return NULL;
@@ -79,7 +79,7 @@ bool quadSpiInit(quadSpiDevice_e device)
     return false;
 }
 
-uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance)
+uint32_t quadSpiTimeoutUserCallback(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device == QUADSPIINVALID) {
@@ -89,7 +89,7 @@ uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance)
     return quadSpiDevice[device].errorCount;
 }
 
-uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance)
+uint16_t quadSpiGetErrorCounter(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device == QUADSPIINVALID) {
@@ -98,11 +98,52 @@ uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance)
     return quadSpiDevice[device].errorCount;
 }
 
-void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance)
+void quadSpiResetErrorCounter(quadSpiResource_t *instance)
 {
     quadSpiDevice_e device = quadSpiDeviceByInstance(instance);
     if (device != QUADSPIINVALID) {
         quadSpiDevice[device].errorCount = 0;
     }
+}
+
+// QSPI bus device array - consistent with SPI bus device pattern
+busDevice_t quadSpiBusDevice[QUADSPIDEV_COUNT];
+
+// Mark this bus as being QSPI and record the first owner to use it
+bool quadSpiSetBusInstance(extDevice_t *dev, uint32_t device)
+{
+    if ((device == 0) || (device > QUADSPIDEV_COUNT)) {
+        return false;
+    }
+
+    dev->bus = &quadSpiBusDevice[QUADSPI_CFG_TO_DEV(device)];
+
+    // By default each device should use QSPI DMA if the bus supports it
+    dev->useDMA = true;
+
+    if (dev->bus->busType == BUS_TYPE_QSPI) {
+        // This bus has already been initialised
+        dev->bus->deviceCount++;
+        return true;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    bus->busType_u.qspi.instance = quadSpiDevice[QUADSPI_CFG_TO_DEV(device)].dev;
+
+    if (bus->busType_u.qspi.instance == NULL) {
+        return false;
+    }
+
+    bus->busType = BUS_TYPE_QSPI;
+    bus->deviceCount = 1;
+    bus->curSegment = (volatile busSegment_t *)BUS_QSPI_FREE;
+#ifdef USE_DMA
+    bus->dmaInitTx = &dev->dmaInitTx;
+    bus->dmaInitRx = &dev->dmaInitRx;
+#endif
+    quadSpiInitBusDMA(bus);
+
+    return true;
 }
 #endif

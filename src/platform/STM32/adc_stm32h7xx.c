@@ -29,6 +29,7 @@
 #include "build/debug.h"
 
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "platform/rcc.h"
@@ -214,7 +215,7 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
 
     // Enable circular DMA.
     // ADC3 of H72X and H73X has a special way of doing this (does not work on H735).
-#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) 
+#if defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx)
     if (adcdev->ADCx == ADC3) {
         hadc->Init.DMAContinuousRequests = ENABLE;
     } else

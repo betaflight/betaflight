@@ -31,13 +31,15 @@
 #include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/pwm_output.h"
+#include "drivers/servo_impl.h"
 #include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 
-static void pwmOCConfig(TMR_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
+static void pwmOCConfig(timerResource_t *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
     TMR_HandleTypeDef* Handle = timerFindTimerHandle(tim);
     if (Handle == NULL) {
@@ -57,14 +59,14 @@ static void pwmOCConfig(TMR_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     DAL_TMR_PWM_ConfigChannel(Handle, &TMR_OCInitStructure, channel);
 }
 
-void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
+void pwmOutputConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
     TMR_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
     if (Handle == NULL) {
         return;
     }
 
-    configTimeBase(timerHardware->tim, period, hz);
+    timerReconfigureTimeBase(timerHardware, period, hz);
     pwmOCConfig(timerHardware->tim,
         timerHardware->channel,
         value,
@@ -83,6 +85,11 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
     channel->tim = timerHardware->tim;
 
     *channel->ccr = 0;
+}
+
+void pwmWriteChannel(timerChannel_t *channel, uint32_t value)
+{
+    *channel->ccr = value;
 }
 
 static bool useContinuousUpdate = true;
@@ -215,7 +222,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         // margin of safety is 4 periods when unsynced
         const unsigned pwmRateHz = useContinuousUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
-        const uint32_t clock = timerClock(timerHardware->tim);
+        const uint32_t clock = timerClock(timerHardware);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;
@@ -229,7 +236,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
 
-        pwmOutConfig(&pwmMotors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
+        pwmOutputConfig(&pwmMotors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
 
         bool timerAlreadyUsed = false;
         for (int i = 0; i < motorIndex; i++) {
@@ -253,7 +260,7 @@ pwmOutputPort_t *pwmGetMotors(void)
 #ifdef USE_SERVOS
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
-void pwmWriteServo(uint8_t index, float value)
+void servoWrite(uint8_t index, float value)
 {
     if (index < MAX_SUPPORTED_SERVOS && servos[index].channel.ccr) {
         *servos[index].channel.ccr = lrintf(value);
@@ -282,7 +289,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
 
-        pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
+        pwmOutputConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }
 }

@@ -42,6 +42,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/position.h"
+    #include "flight/position_estimator.h"
     #include "flight/servos.h"
 
     #include "io/beeper.h"
@@ -1050,6 +1051,11 @@ TEST(ArmingPreventionTest, Paralyze)
 
 // STUBS
 extern "C" {
+    void sincosf_approx(float x, float *out_s, float *out_c) {
+        *out_s = sin_approx(x);
+        *out_c = cos_approx(x);
+    }
+
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
     bool isRxReceivingSignal(void) { return simulationHaveRx; }
@@ -1138,6 +1144,8 @@ extern "C" {
 
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
+    float getAltitudeCmControl(void) { return 0.0f; }
+    float getAltitudeDerivativeControl(void) { return 0.0f; }
 
     float sin_approx(float) {return 0.0f;}
     float cos_approx(float) {return 1.0f;}
@@ -1145,8 +1153,6 @@ extern "C" {
 
     void getRcDeflectionAbs(void) {}
     uint32_t getCpuPercentageLate(void) { return 0; }
-    bool crashFlipSuccessful(void) { return false; }
-
     void GPS_distance_cm_bearing(const gpsLocation_t *from, const gpsLocation_t *to, bool dist3d, uint32_t *dist, int32_t *bearing)
     {
        UNUSED(from);
@@ -1157,6 +1163,11 @@ extern "C" {
     }
 
 void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }
+
+    static positionEstimate3d_t stubEstimate = {};
+    const positionEstimate3d_t *positionEstimatorGetEstimate(void) { return &stubEstimate; }
+    void positionEstimatorEnableXY(bool /*enable*/) { }
+    bool positionEstimatorIsValidXY(void) { return false; }
 
     bool canUseGPSHeading;
     bool compassIsHealthy;

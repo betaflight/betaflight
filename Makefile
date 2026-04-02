@@ -89,6 +89,10 @@ endif
 # some targets use parallel build by default
 # MAKEFLAGS is valid only inside target, do not use this at parse phase
 DEFAULT_PARALLEL_JOBS 	:=    # all jobs in parallel (for backward compatibility)
+# MinGW's make requires a numeric argument for -j; detect CPU count via nproc
+ifeq ($(MINGW),1)
+  DEFAULT_PARALLEL_JOBS := $(shell nproc 2>/dev/null || echo 4)
+endif
 MAKE_PARALLEL 		     = $(if $(filter -j%, $(MAKEFLAGS)),$(EMPTY),-j$(DEFAULT_PARALLEL_JOBS))
 
 # pre-build sanity checks
@@ -99,7 +103,7 @@ PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
-TOOLS_DIR  ?= $(ROOT)/tools
+TOOLS_DIR  ?= $(ROOT_DIR)/tools
 DL_DIR     := $(ROOT)/downloads
 CONFIG_DIR ?= $(BETAFLIGHT_CONFIG)
 ifeq ($(CONFIG_DIR),)
@@ -166,8 +170,10 @@ include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
+ifneq ($(wildcard .git/),)
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git rev-parse --short=9 HEAD)
+endif
 endif
 
 LD_FLAGS        :=
@@ -225,6 +231,9 @@ SPEED_OPTIMISED_SRC :=
 SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
+
+# Validate the platform toolchain is available
+include $(MAKE_SCRIPT_DIR)/tools_check.mk
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(TARGET_FLASH_SIZE),)
@@ -380,6 +389,8 @@ ifneq ($(CONFIG),)
 TARGET_NAME := $(TARGET_NAME)_$(CONFIG)
 endif
 
+TARGET_NAME_CLEAN := $(TARGET_NAME)
+
 ifeq ($(REV),yes)
 TARGET_NAME := $(TARGET_NAME)_$(REVISION)
 endif
@@ -413,12 +424,8 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_BIN)
-CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
-CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
-CLEAN_ARTIFACTS += $(TARGET_LST)
-CLEAN_ARTIFACTS += $(TARGET_DFU)
-CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
@@ -443,8 +450,6 @@ $(TARGET_DFU): $(TARGET_HEX)
 	$(V1) $(PYTHON) $(DFUSE-PACK) -i $< $@
 
 else
-CLEAN_ARTIFACTS += $(TARGET_UNPATCHED_BIN) $(TARGET_EXST_HASH_SECTION_FILE) $(TARGET_EXST_ELF)
-
 $(TARGET_UNPATCHED_BIN): $(TARGET_ELF)
 	@echo "Creating BIN (without checksum) $(TARGET_UNPATCHED_BIN)" "$(STDOUT)"
 	$(V1) $(OBJCOPY) -O binary $< $@
@@ -505,9 +510,10 @@ $(TARGET_EXE): $(TARGET_ELF)
 # Compile
 
 ## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
+## SRC_CFLAGS_<filename> can override CFLAGS per source file (e.g. to suppress vendor warnings)
 define compile_file
 	echo "%% ($(1)) $<" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(SRC_CFLAGS_$(notdir $<)) $(2) $<
 endef
 
 ## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
@@ -565,10 +571,28 @@ CONFIGS_CLEAN = $(addsuffix _clean,$(BASE_CONFIGS))
 
 ## clean             : clean up temporary / machine-generated files
 clean:
+ifeq ($(strip $(TARGET_NAME)),)
+	@echo "No TARGET/CONFIG name specified. Performing full cleanup of $(BIN_DIR)"
+	@if [ -d "$(BIN_DIR)" ]; then \
+		echo "Removing directory: $(BIN_DIR)"; \
+		rm -rf "$(BIN_DIR)"; \
+	fi
+	@echo "Cleaning all succeeded."
+else
 	@echo "Cleaning $(TARGET_NAME)"
-	$(V0) rm -f $(CLEAN_ARTIFACTS)
-	$(V0) rm -rf $(TARGET_OBJ_DIR)
+	$(eval FILES_TO_REMOVE := $(wildcard $(CLEAN_ARTIFACTS)))
+	@if [ -n "$(FILES_TO_REMOVE)" ]; then \
+		echo "Removing artifacts:"; \
+		echo $(FILES_TO_REMOVE) | tr ' ' '\n'; \
+		rm -f $(FILES_TO_REMOVE); \
+	fi
+	@if [ -d "$(TARGET_OBJ_DIR)" ]; then \
+		echo "Removing object directory:"; \
+		echo $(TARGET_OBJ_DIR); \
+		rm -rf $(TARGET_OBJ_DIR); \
+	fi
 	@echo "Cleaning $(TARGET_NAME) succeeded."
+endif
 
 ## test_clean        : clean up temporary / machine-generated files (tests)
 test-%_clean:
@@ -665,6 +689,8 @@ ifeq ($(DEFAULT_OUTPUT),exe)
 	$(V1) $(MAKE) exe
 else ifeq ($(DEFAULT_OUTPUT),uf2)
 	$(V1) $(MAKE) uf2
+else ifeq ($(DEFAULT_OUTPUT),bin)
+	$(V1) $(MAKE) binary
 else
 	$(V1) $(MAKE) hex
 endif
@@ -784,7 +810,7 @@ $(TARGET_EF_HASH_FILE):
 	$(V1) touch $(TARGET_EF_HASH_FILE)
 
 # rebuild everything when makefile changes or the extra flags have changed
-$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE)
+$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE) | $(PLATFORM_SDK_STAMP)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

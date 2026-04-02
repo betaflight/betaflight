@@ -53,7 +53,7 @@
 static IO_t mscButton;
 static timeMs_t lastActiveTimeMs = 0;
 
-void mscInit(void)
+void mscButtonInit(void)
 {
     if (usbDevConfig()->mscButtonPin) {
         mscButton = IOGetByTag(usbDevConfig()->mscButtonPin);
@@ -150,7 +150,7 @@ void systemResetToMsc(int timezoneOffsetMinutes)
 #else
     UNUSED(timezoneOffsetMinutes);
 #endif
-    NVIC_SystemReset();
+    systemReset();
 }
 
 void systemResetFromMsc(void)

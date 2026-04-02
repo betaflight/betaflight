@@ -36,8 +36,11 @@
 #include "drivers/bus_i2c_impl.h"
 #include "drivers/bus_i2c_timing.h"
 #include "drivers/bus_i2c_utils.h"
+#include "platform/bus_i2c_hal.h"
 
 #include "pg/pinio.h"
+
+static struct i2cHalHandle_s i2cHalHandles[I2CDEV_COUNT];
 
 #define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_UP)
 #define IOCFG_I2C    IO_CONFIG(GPIO_MODE_MUX , GPIO_DRIVE_STRENGTH_STRONGER, GPIO_OUTPUT_OPEN_DRAIN , GPIO_PULL_NONE)
@@ -46,16 +49,18 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = {
-            I2CPINDEF(PB6, GPIO_MUX_4),
-            I2CPINDEF(PB8, GPIO_MUX_4),
-            I2CPINDEF(PC6, GPIO_MUX_4),
+            I2CPINDEF(PA9,  GPIO_MUX_8),
+            I2CPINDEF(PB6,  GPIO_MUX_4),
+            I2CPINDEF(PB8,  GPIO_MUX_4),
+            I2CPINDEF(PC6,  GPIO_MUX_4),
         },
         .sdaPins = {
-            I2CPINDEF(PB7, GPIO_MUX_4),
-            I2CPINDEF(PB9, GPIO_MUX_4),
-            I2CPINDEF(PC7, GPIO_MUX_4),
+            I2CPINDEF(PA10, GPIO_MUX_8),
+            I2CPINDEF(PB7,  GPIO_MUX_4),
+            I2CPINDEF(PB9,  GPIO_MUX_4),
+            I2CPINDEF(PC7,  GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EVT_IRQn,
@@ -65,17 +70,22 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = {
-            I2CPINDEF(PA0,  GPIO_MUX_4),
+            I2CPINDEF(PA0,  GPIO_MUX_4),			
+            I2CPINDEF(PA11, GPIO_MUX_4),
             I2CPINDEF(PB10, GPIO_MUX_4),
             I2CPINDEF(PD12, GPIO_MUX_4),
             I2CPINDEF(PH2,  GPIO_MUX_4),
         },
         .sdaPins = {
             I2CPINDEF(PA1,  GPIO_MUX_4),
+            I2CPINDEF(PA12, GPIO_MUX_4),
             I2CPINDEF(PB3,  GPIO_MUX_4),
+            I2CPINDEF(PB9,  GPIO_MUX_7),
             I2CPINDEF(PB11, GPIO_MUX_4),
+            I2CPINDEF(PC12, GPIO_MUX_4),
+            I2CPINDEF(PD13, GPIO_MUX_4),
             I2CPINDEF(PH3,  GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C2),
@@ -86,13 +96,20 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = {
-            I2CPINDEF(PC0, GPIO_MUX_4),
+            I2CPINDEF(PA8,  GPIO_MUX_4),
+            I2CPINDEF(PB13, GPIO_MUX_7),
+            I2CPINDEF(PB15, GPIO_MUX_4),
+            I2CPINDEF(PC0,  GPIO_MUX_4),
+            I2CPINDEF(PD14, GPIO_MUX_4),
         },
         .sdaPins = {
-            I2CPINDEF(PC1, GPIO_MUX_4),
-        I2CPINDEF(PB14, GPIO_MUX_4),
+            I2CPINDEF(PB4,  GPIO_MUX_4),
+            I2CPINDEF(PB14, GPIO_MUX_4),
+            I2CPINDEF(PC1,  GPIO_MUX_4),
+            I2CPINDEF(PC9,  GPIO_MUX_4),
+            I2CPINDEF(PD15, GPIO_MUX_4),
         },
         .rcc = RCC_APB1(I2C3),
         .ev_irq = I2C3_EVT_IRQn,
@@ -133,7 +150,9 @@ void i2cInit(i2cDevice_e device)
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 
     // Init I2C peripheral
-    i2c_handle_type  *pHandle = &pDev->handle;
+    pDev->halHandle = &i2cHalHandles[device];
+
+    i2c_handle_type  *pHandle = &pDev->halHandle->hal;
     memset(pHandle, 0, sizeof(*pHandle));
 
     i2c_type *i2cx = (i2c_type *)pDev->hardware->reg;

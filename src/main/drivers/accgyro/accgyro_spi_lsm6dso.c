@@ -30,7 +30,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 
 void lsm6dsoExtiHandler(extiCallbackRec_t *cb)
 {

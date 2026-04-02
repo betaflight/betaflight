@@ -29,7 +29,9 @@
 #include "drivers/dshot.h"
 #include "pg/motor.h"
 
+#if !defined(STM32N6)
 #define USE_DMA_REGISTER_CACHE
+#endif
 
 #define DEBUG_COUNT_INTERRUPT
 #define DEBUG_MONITOR_PACER
@@ -112,6 +114,9 @@ typedef struct dmaRegCache_s {
     uint32_t NDATA;
     uint32_t PADDR;
     uint32_t M0ADDR;
+#elif defined(STM32N6)
+    // TODO: N6 HPDMA/GPDMA register cache - placeholder for future implementation
+    uint32_t placeholder;
 #else
 #error No MCU dependent code here
 #endif
@@ -121,17 +126,17 @@ typedef struct dmaRegCache_s {
 // Per pacer timer
 
 typedef struct bbPacer_s {
-    TIM_TypeDef *tim;
+    timerResource_t *tim;
     uint16_t dmaSources;
 } bbPacer_t;
 
 #ifdef AT32F435
 
 typedef struct tmr_base_init_s {
-	uint32_t TIM_Prescaler;
-	uint32_t TIM_ClockDivision;
-	uint32_t TIM_CounterMode;
-	uint32_t TIM_Period;
+    uint32_t TIM_Prescaler;
+    uint32_t TIM_ClockDivision;
+    uint32_t TIM_CounterMode;
+    uint32_t TIM_Period;
 } tmr_base_init_type;
 
 #endif
@@ -271,9 +276,9 @@ void bbSwitchToInput(bbPort_t * bbPort);
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period);
 #ifdef AT32F435
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, confirm_state NewState);
+void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, confirm_state NewState);
 #else
-void bbTIM_DMACmd(TIM_TypeDef* TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
+void bbTIM_DMACmd(void *TIMx, uint16_t TIM_DMASource, FunctionalState NewState);
 #endif
 void bbDMA_ITConfig(bbPort_t *bbPort);
 #ifdef AT32F435

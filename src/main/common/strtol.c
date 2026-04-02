@@ -52,13 +52,13 @@ static unsigned long _strto_l(const char * str, char ** endptr, int base, int sf
     negative = 0;
     switch (*str) {
         case '-':
-            negative = 1;	/* Fall through to increment str. */
+            negative = 1; /* Fall through to increment str. */
             FALLTHROUGH;
         case '+':
             ++str;
     }
 
-    if (!base || base == 16 || base == 2) {		/* Either dynamic (base = 0) or base with 0[xb] prefix. */
+    if (!base || base == 16 || base == 2) {       /* Either dynamic (base = 0) or base with 0[xb] prefix. */
         if (*str == '0') {
             SET_FAIL(++str);
             if ((!base || base == 16) && tolower(*str) == 'x') {

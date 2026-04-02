@@ -129,6 +129,9 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro)
     mpu9250SpiWriteRegisterVerify(dev, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 
     mpu9250SpiWriteRegisterVerify(dev, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
+
+    gyro->tempScale = 1.0f / 333.87f;
+    gyro->tempZero = 21.0f;
 }
 
 uint8_t mpu9250SpiDetect(const extDevice_t *dev)

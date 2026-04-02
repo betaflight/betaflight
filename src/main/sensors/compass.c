@@ -45,8 +45,9 @@
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_lis2mdl.h"
 #include "drivers/compass/compass_lis3mdl.h"
+#include "drivers/compass/compass_mmc560x.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
-#include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_qmc5883.h"
 #include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
@@ -129,11 +130,11 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 
 #if defined(USE_SPI_MAG) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_busType = BUS_TYPE_SPI;
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MAG_SPI_INSTANCE));
+    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance((const spiResource_t *)MAG_SPI_INSTANCE));
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
-#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || defined(USE_MAG_IST8310) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
+#elif defined(USE_MAG_HMC5883) || defined(USE_MAG_QMC5883) || defined(USE_MAG_AK8975) || defined(USE_MAG_IST8310) || defined(USE_MAG_MMC560X) || (defined(USE_MAG_AK8963) && !(defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)))
     compassConfig->mag_busType = BUS_TYPE_I2C;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(MAG_I2C_INSTANCE);
     compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
@@ -172,7 +173,7 @@ void compassPreInit(void)
 #endif
 }
 
-#if !defined(SIMULATOR_BUILD)
+#if !ENABLE_SIMULATOR
 static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
     *alignment = MAG_ALIGN;
@@ -307,7 +308,7 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
-        if (qmc5883lDetect(magDev)) {
+        if (qmc5883Detect(magDev)) {
             magHardware = MAG_QMC5883;
             break;
         }
@@ -327,7 +328,24 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 #endif
         FALLTHROUGH;
 
+    case MAG_MMC560X:
+#ifdef USE_MAG_MMC560X
+        if (dev->bus->busType == BUS_TYPE_I2C) {
+            dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
+        }
+
+        if (mmc560xDetect(magDev)) {
+            magHardware = MAG_MMC560X;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
     case MAG_NONE:
+        magHardware = MAG_NONE;
+        break;
+
+    default:
         magHardware = MAG_NONE;
         break;
     }
@@ -360,7 +378,7 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 
     return false;
 }
-#endif // !SIMULATOR_BUILD
+#endif // !ENABLE_SIMULATOR
 
 bool compassInit(void)
 {
@@ -382,7 +400,15 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &compassConfig()->mag_customAlignment);
+    // Custom alignments are applied via a transposed rotation matrix (matrixTrnVectorMul),
+    // which reverses rotation direction. Negate angles for mag so the resulting rotation
+    // matches the user-entered convention and the standard CW alignments.
+    sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
+    magCustomAlignment.roll = -magCustomAlignment.roll;
+    magCustomAlignment.pitch = -magCustomAlignment.pitch;
+    magCustomAlignment.yaw = -magCustomAlignment.yaw;
+
+    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 

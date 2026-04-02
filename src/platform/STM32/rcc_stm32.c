@@ -62,7 +62,7 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_CLK(AHB2, NOSUFFIX, mask, NewState);
         break;
 
-#if !(defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32H7) || defined(STM32G4) || defined(STM32N6))
     case RCC_APB1:
         __HAL_RCC_CLK(APB1, NOSUFFIX, mask, NewState);
         break;
@@ -71,6 +71,41 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_APB2:
         __HAL_RCC_CLK(APB2, NOSUFFIX, mask, NewState);
         break;
+
+#ifdef STM32N6
+
+    case RCC_AHB3:
+        __HAL_RCC_CLK(AHB3, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_AHB4:
+        __HAL_RCC_CLK(AHB4, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_AHB5:
+        __HAL_RCC_CLK(AHB5, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_APB1:
+        __HAL_RCC_CLK(APB1, 1, mask, NewState);
+        break;
+
+    case RCC_APB12:
+        __HAL_RCC_CLK(APB1, 2, mask, NewState);
+        break;
+
+    case RCC_APB4:
+        __HAL_RCC_CLK(APB4, 1, mask, NewState);
+        break;
+
+    case RCC_APB42:
+        __HAL_RCC_CLK(APB4, 2, mask, NewState);
+        break;
+
+    case RCC_APB5:
+        __HAL_RCC_CLK(APB5, NOSUFFIX, mask, NewState);
+        break;
+#endif
 
 #ifdef STM32H7
 
@@ -197,7 +232,7 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_RESET(AHB2, NOSUFFIX, mask, NewState);
         break;
 
-#if !(defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32H7) || defined(STM32G4) || defined(STM32N6))
     case RCC_APB1:
         __HAL_RCC_RESET(APB1, NOSUFFIX, mask, NewState);
         break;
@@ -206,6 +241,41 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
     case RCC_APB2:
         __HAL_RCC_RESET(APB2, NOSUFFIX, mask, NewState);
         break;
+
+#ifdef STM32N6
+
+    case RCC_AHB3:
+        __HAL_RCC_RESET(AHB3, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_AHB4:
+        __HAL_RCC_RESET(AHB4, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_AHB5:
+        __HAL_RCC_RESET(AHB5, NOSUFFIX, mask, NewState);
+        break;
+
+    case RCC_APB1:
+        __HAL_RCC_RESET(APB1, 1, mask, NewState);
+        break;
+
+    case RCC_APB12:
+        __HAL_RCC_RESET(APB1, 2, mask, NewState);
+        break;
+
+    case RCC_APB4:
+        __HAL_RCC_RESET(APB4, 1, mask, NewState);
+        break;
+
+    case RCC_APB42:
+        __HAL_RCC_RESET(APB4, 2, mask, NewState);
+        break;
+
+    case RCC_APB5:
+        __HAL_RCC_RESET(APB5, NOSUFFIX, mask, NewState);
+        break;
+#endif
 
 #ifdef STM32H7
 

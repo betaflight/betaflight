@@ -68,7 +68,7 @@ bool cliMode = false;
 #include "drivers/dma_reqmap.h"
 #include "drivers/dshot.h"
 #include "drivers/dshot_command.h"
-#include "drivers/camera_control_impl.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
@@ -123,6 +123,7 @@ bool cliMode = false;
 
 #include "msp/msp.h"
 #include "msp/msp_box.h"
+#include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
 
 #include "osd/osd.h"
@@ -194,6 +195,7 @@ static bool configIsInCopy = false;
 #define CURRENT_PROFILE_INDEX -1
 static int8_t pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
 static int8_t rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+static int8_t batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
 #ifdef USE_CLI_BATCH
 static bool commandBatchActive = false;
@@ -244,6 +246,7 @@ static const char * const featureNames[] = {
     _R(FEATURE_TELEMETRY, "TELEMETRY"),
     _R(FEATURE_3D, "3D"),
     _R(FEATURE_RX_PARALLEL_PWM, "RX_PARALLEL_PWM"),
+    _R(FEATURE_RX_MSP, "RX_MSP"),
     _R(FEATURE_RSSI_ADC, "RSSI_ADC"),
     _R(FEATURE_LED_STRIP, "LED_STRIP"),
     _R(FEATURE_DASHBOARD, "DISPLAY"),
@@ -267,15 +270,10 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
-static const char *const sensorTypeNames[] = {
+static const char *const sensorTypeDisplayNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "OPTICAL-FLOW"
 };
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeNames), sensorTypeNames_array_length_mismatch);
-
-static const char * const *sensorHardwareNames[] = {
-    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware, lookupTableRangefinderHardware, lookupTableOpticalflowHardware
-};
-STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorHardwareNames), sensorHardwareNames_array_length_mismatch);
+STATIC_ASSERT(SENSOR_INDEX_COUNT == ARRAYLEN(sensorTypeDisplayNames), sensorTypeDisplayNames_array_length_mismatch);
 #endif // USE_SENSOR_NAMES
 
 static const char *configurationStates[] = {
@@ -744,6 +742,11 @@ static uint8_t getRateProfileIndexToUse(void)
     return rateProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentControlRateProfileIndex() : rateProfileIndexToUse;
 }
 
+static uint8_t getBatteryProfileIndexToUse(void)
+{
+    return batteryProfileIndexToUse == CURRENT_PROFILE_INDEX ? getCurrentBatteryProfileIndex() : batteryProfileIndexToUse;
+}
+
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
@@ -754,6 +757,8 @@ static uint16_t getValueOffset(const clivalue_t *value)
         return value->offset + sizeof(pidProfile_t) * getPidProfileIndexToUse();
     case PROFILE_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getRateProfileIndexToUse();
+    case PROFILE_BATTERY_VALUE:
+        return value->offset + sizeof(batteryProfile_t) * getBatteryProfileIndexToUse();
     }
     return 0;
 }
@@ -961,6 +966,15 @@ static void cliRepeat(char ch, uint8_t len)
     }
 }
 #endif
+
+static char *skipSpace(char *buffer)
+{
+    while (*(buffer) == ' ') {
+        buffer++;
+    }
+
+    return buffer;
+}
 
 static void cliPrompt(void)
 {
@@ -2570,7 +2584,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliWriterFlush();
     flashfsEraseCompletely();
 
-    while (!flashfsIsReady()) {
+    while (!flashfsIsReady() && !flashfsIsEraseInProgress()) {
 #ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {
@@ -2603,11 +2617,12 @@ static void cliFlashVerify(const char *cmdName, char *cmdline)
 static void cliFlashWrite(const char *cmdName, char *cmdline)
 {
     const uint32_t address = atoi(cmdline);
-    const char *text = strchr(cmdline, ' ');
+    char *text = strchr(cmdline, ' ');
 
     if (!text) {
         cliShowInvalidArgumentCountError(cmdName);
     } else {
+        text = skipSpace(text + 1);
         flashfsSeekAbs(address);
         flashfsWrite((uint8_t*)text, strlen(text), true);
         flashfsFlushSync();
@@ -3022,6 +3037,7 @@ static void cliVtxTable(const char *cmdName, char *cmdline)
     } else if (strcasecmp(tok, "powerlabels") == 0) {
         // Power labels
         char label[VTX_TABLE_MAX_POWER_LEVELS][VTX_TABLE_POWER_LABEL_LENGTH + 1];
+        memset(label, 0, sizeof(label));
         int levels = vtxTableConfigMutable()->powerLevels;
         int count;
         for (count = 0; count < levels && (tok = strtok_r(NULL, " ", &saveptr)); count++) {
@@ -3561,15 +3577,6 @@ static void cliMap(const char *cmdName, char *cmdline)
     cliPrintLinef("map %s", buf);
 }
 
-static char *skipSpace(char *buffer)
-{
-    while (*(buffer) == ' ') {
-        buffer++;
-    }
-
-    return buffer;
-}
-
 static char *checkCommand(char *cmdline, const char *command)
 {
     if (!strncasecmp(cmdline, command, strlen(command))   // command names match
@@ -3662,12 +3669,29 @@ static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 }
 #endif
 
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
 static void cliPrintGyroRegisters(uint8_t whichSensor)
 {
-    cliPrintLinef("# WHO_AM_I    0x%X", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
-    cliPrintLinef("# CONFIG      0x%X", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
-    cliPrintLinef("# GYRO_CONFIG 0x%X", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
+#if defined(USE_ACCGYRO_ICM45686) || defined(USE_ACCGYRO_ICM45605)
+    // ICM-456xx uses different register addresses than MPU/ICM-426xx sensors
+    // Register 0x75 (MPU_RA_WHO_AM_I) is RESERVED on ICM-456xx
+    const mpuDetectionResult_t *mpuDetection = gyroMpuDetectionResult();
+    
+    if (mpuDetection->sensor == ICM_45686_SPI || mpuDetection->sensor == ICM_45605_SPI) {
+        // ICM-456xx register addresses (from DS-000577 datasheet)
+        cliPrintLinef("# WHO_AM_I      0x%X (0x72)", gyroReadRegister(whichSensor, 0x72));  // Should be 0xE9 or 0xE5
+        cliPrintLinef("# PWR_MGMT0     0x%X (0x10)", gyroReadRegister(whichSensor, 0x10));
+        cliPrintLinef("# GYRO_CONFIG0  0x%X (0x1C)", gyroReadRegister(whichSensor, 0x1C));
+        cliPrintLinef("# ACCEL_CONFIG0 0x%X (0x1B)", gyroReadRegister(whichSensor, 0x1B));
+        cliPrintLinef("# INT1_STATUS0  0x%X (0x19)", gyroReadRegister(whichSensor, 0x19));
+    } else
+#endif
+    {
+        // Standard MPU/ICM-426xx register addresses
+        cliPrintLinef("# WHO_AM_I    0x%X", gyroReadRegister(whichSensor, MPU_RA_WHO_AM_I));
+        cliPrintLinef("# CONFIG      0x%X", gyroReadRegister(whichSensor, MPU_RA_CONFIG));
+        cliPrintLinef("# GYRO_CONFIG 0x%X", gyroReadRegister(whichSensor, MPU_RA_GYRO_CONFIG));
+    }
 }
 
 static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
@@ -4211,6 +4235,42 @@ static void cliDumpRateProfile(const char *cmdName, uint8_t rateProfileIndex, du
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
 }
 
+// Prints or switches the active battery profile.
+static void cliBatteryProfile(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        cliPrintLinef("battery_profile %d", getBatteryProfileIndexToUse());
+        return;
+    } else {
+        const int i = atoi(cmdline);
+        if (i >= 0 && i < BATTERY_PROFILE_COUNT) {
+            changeBatteryProfile(i);
+            cliBatteryProfile(cmdName, "");
+        } else {
+            cliPrintErrorLinef(cmdName, "BATTERY PROFILE OUTSIDE OF [0..%d]", BATTERY_PROFILE_COUNT - 1);
+        }
+    }
+}
+
+// Dumps all settings for a given battery profile index.
+static void cliDumpBatteryProfile(const char *cmdName, uint8_t profileIndex, dumpFlags_t dumpMask)
+{
+    if (profileIndex >= BATTERY_PROFILE_COUNT) {
+        return;
+    }
+
+    batteryProfileIndexToUse = profileIndex;
+
+    cliPrintLinefeed();
+    cliBatteryProfile(cmdName, "");
+
+    char profileStr[20];
+    tfp_sprintf(profileStr, "battery_profile %d", profileIndex);
+    dumpAllValues(cmdName, PROFILE_BATTERY_VALUE, dumpMask, profileStr);
+
+    batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
+}
+
 #ifdef USE_CLI_BATCH
 static void cliPrintCommandBatchWarning(const char *cmdName, const char *warning)
 {
@@ -4393,6 +4453,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 
     pidProfileIndexToUse = getCurrentPidProfileIndex();
     rateProfileIndexToUse = getCurrentControlRateProfileIndex();
+    batteryProfileIndexToUse = getCurrentBatteryProfileIndex();
 
     backupAndResetConfigs();
 
@@ -4414,6 +4475,10 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
                 cliRateProfile(cmdName, "");
 
                 break;
+            case PROFILE_BATTERY_VALUE:
+                cliBatteryProfile(cmdName, "");
+
+                break;
             default:
 
                 break;
@@ -4429,6 +4494,7 @@ STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 
     pidProfileIndexToUse = CURRENT_PROFILE_INDEX;
     rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+    batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
 
     if (!matchedCommands) {
         cliPrintErrorLinef(cmdName, ERROR_INVALID_NAME, cmdline);
@@ -4665,6 +4731,51 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
     }
 }
 
+#if defined(USE_SENSOR_NAMES)
+static void cliSensorHardware(const char *cmdName, char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        // List all sensor types and their supported hardware
+        for (unsigned i = 0; i < SENSOR_INDEX_COUNT; i++) {
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            const char *typeName = sensorTypeName(i);
+            if (names && typeName) {
+                cliPrintf("%s: ", typeName);
+                for (int j = 0; j < count; j++) {
+                    if (j > 0) {
+                        cliPrint(",");
+                    }
+                    cliPrint(names[j]);
+                }
+                cliPrintLinefeed();
+            }
+        }
+        return;
+    }
+
+    sensorIndex_e sensor = sensorIndexFromName(cmdline);
+    if (sensor >= SENSOR_INDEX_COUNT) {
+        cliPrintErrorLinef(cmdName, "INVALID SENSOR TYPE: %s", cmdline);
+        return;
+    }
+
+    int count;
+    const char * const *names = sensorHardwareNames(sensor, &count);
+    if (!names) {
+        cliPrintErrorLinef(cmdName, "SENSOR NOT AVAILABLE: %s", cmdline);
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            cliPrint(",");
+        }
+        cliPrint(names[i]);
+    }
+    cliPrintLinefeed();
+}
+#endif // USE_SENSOR_NAMES
+
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -4725,7 +4836,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
     // Sensors
 #if defined(USE_SENSOR_NAMES)
-    cliPrintf("%s: ", sensorTypeNames[SENSOR_INDEX_GYRO]);
+    cliPrintf("%s: ", sensorTypeDisplayNames[SENSOR_INDEX_GYRO]);
 #else
     cliPrintf("GYRO: ");
 #endif
@@ -4765,14 +4876,19 @@ static void cliStatus(const char *cmdName, char *cmdline)
 
 #if defined(USE_SENSOR_NAMES)
     const uint32_t detectedSensorsMask = sensorsMask();
-    for (unsigned i = SENSOR_INDEX_ACC; i < ARRAYLEN(sensorTypeNames); i++) {
+    for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
         const uint32_t mask = (1U << i);
         if ((detectedSensorsMask & mask)) {
 
             const uint8_t sensorHardwareIndex = detectedSensors[i];
-            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
+            int count;
+            const char * const *names = sensorHardwareNames(i, &count);
+            if (!names || sensorHardwareIndex >= count) {
+                continue;
+            }
+            const char *sensorHardware = names[sensorHardwareIndex];
 
-            cliPrintf("%s: %s", sensorTypeNames[i], sensorHardware);
+            cliPrintf("%s: %s", sensorTypeDisplayNames[i], sensorHardware);
 #if defined(USE_ACC)
             if (i == SENSOR_INDEX_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
@@ -4816,7 +4932,9 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrint("configured");
             }
         }
+#ifdef USE_GPS_UBLOX
         cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
     } else {
         cliPrint("NOT ENABLED");
     }
@@ -4981,6 +5099,18 @@ static void printVersion(bool printBoardInfo)
 #else
     UNUSED(printBoardInfo);
 #endif
+}
+
+static void cliOptions(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    unsigned count;
+    const uint16_t *options = getBuildOptions(&count);
+    for (unsigned i = 0; i < count; i++) {
+        cliPrintLinef("%u", options[i]);
+    }
 }
 
 static void cliVersion(const char *cmdName, char *cmdline)
@@ -5291,7 +5421,8 @@ static bool strToPin(char *ptr, ioTag_t *tag)
         return true;
     } else {
         const unsigned port = (*ptr >= 'a') ? *ptr - 'a' : *ptr - 'A';
-        if (port < 8) {
+        // Ports A through I
+        if (port < 9) {
             ptr++;
 
             char *end;
@@ -5318,10 +5449,10 @@ static void showDma(void)
     cliPrintLine("Currently active DMA:");
     cliRepeat('-', 20);
 #endif
-    for (int i = DMA_FIRST_HANDLER; i <= DMA_LAST_HANDLER; i++) {
+    for (int i = DMA_FIRST_HANDLER; i <= dmaGetHandlerCount(); i++) {
         const resourceOwner_t *owner = dmaGetOwner(i);
 
-        cliPrintf(DMA_OUTPUT_STRING, DMA_DEVICE_NO(i), DMA_DEVICE_INDEX(i));
+        cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
             cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
         } else {
@@ -5804,7 +5935,7 @@ static void printTimerDetails(const ioTag_t ioTag, const unsigned timerIndex, co
             printValue(dumpMask, false,
                 "# pin %c%02d: TIM%d CH%d%s (AF%d)",
                 IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag),
-                timerGetTIMNumber(timer->tim),
+                timerGetTIMNumber(timer),
                 CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                 timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : "",
                 timer->alternateFunction
@@ -6021,7 +6152,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
             for (unsigned index = 0; (timer = timerGetByTagAndIndex(ioTag, index + 1)); index++) {
                 cliPrintLinef("# AF%d: TIM%d CH%d%s",
                     timer->alternateFunction,
-                    timerGetTIMNumber(timer->tim),
+                    timerGetTIMNumber(timer),
                     CC_INDEX_FROM_CHANNEL(timer->channel) + 1,
                     timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : ""
                 );
@@ -6435,10 +6566,20 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
 
                 rateProfileIndexToUse = systemConfig_Copy.activeRateProfile;
 
+                for (uint32_t battIndex = 0; battIndex < BATTERY_PROFILE_COUNT; battIndex++) {
+                    cliDumpBatteryProfile(cmdName, battIndex, dumpMask);
+                }
+
+                batteryProfileIndexToUse = systemConfig_Copy.activeBatteryProfile;
+
                 if (!(dumpMask & BARE)) {
                     cliPrintHashLine("restore original rateprofile selection");
 
                     cliRateProfile(cmdName, "");
+
+                    cliPrintHashLine("restore original battery_profile selection");
+
+                    cliBatteryProfile(cmdName, "");
 
                     cliPrintHashLine("save configuration");
                     cliPrint("save");
@@ -6448,10 +6589,13 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
                 }
 
                 rateProfileIndexToUse = CURRENT_PROFILE_INDEX;
+                batteryProfileIndexToUse = CURRENT_PROFILE_INDEX;
             } else {
                 cliDumpPidProfile(cmdName, systemConfig_Copy.pidProfileIndex, dumpMask);
 
                 cliDumpRateProfile(cmdName, systemConfig_Copy.activeRateProfile, dumpMask);
+
+                cliDumpBatteryProfile(cmdName, systemConfig_Copy.activeBatteryProfile, dumpMask);
             }
         }
     } else if (dumpMask & DUMP_PROFILE) {
@@ -6538,7 +6682,10 @@ typedef struct {
 }
 #endif
 
-static void cliHelp(const char *cmdName, char *cmdline);
+// Prints CLI commands that match the optional search string in cmdline.
+// Searches both command names and descriptions; descriptions may be NULL for
+// some commands and are skipped safely. Prints all commands when cmdline is empty.
+STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
@@ -6612,7 +6759,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
-#if defined(USE_GYRO_REGISTER_DUMP) && !defined(SIMULATOR_BUILD)
+#if defined(USE_GYRO_REGISTER_DUMP) && !ENABLE_SIMULATOR
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
@@ -6639,9 +6786,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("msc", "switch into msc mode", NULL, cliMsc),
 #endif
 #endif
+    CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
+    CLI_COMMAND_DEF("battery_profile", "change battery profile", "[<index>]", cliBatteryProfile),
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -6655,6 +6804,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("save", "save and reboot (default)", "[noreboot]", cliSave),
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
+#endif
+#if defined(USE_SENSOR_NAMES)
+    CLI_COMMAND_DEF("sensor_hardware", "list supported sensor hardware", "[gyro|acc|baro|mag|rangefinder|opticalflow]", cliSensorHardware),
 #endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #if defined(USE_SERIAL_PASSTHROUGH)
@@ -6699,7 +6851,10 @@ const clicmd_t cmdTable[] = {
 #endif
 };
 
-static void cliHelp(const char *cmdName, char *cmdline)
+// Prints CLI commands that match the optional search string in cmdline.
+// Searches both command names and descriptions; descriptions may be NULL for
+// some commands and are skipped safely. Prints all commands when cmdline is empty.
+STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
 {
     bool anyMatches = false;
 
@@ -6710,7 +6865,7 @@ static void cliHelp(const char *cmdName, char *cmdline)
         } else {
             if (strcasestr(cmdTable[i].name, cmdline)
 #ifndef MINIMAL_CLI
-                || strcasestr(cmdTable[i].description, cmdline)
+                || (cmdTable[i].description && strcasestr(cmdTable[i].description, cmdline))
 #endif
                ) {
                 printEntry = true;
@@ -6932,5 +7087,165 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         cliWrite(0x2); // send start of text, initiating flow control
     }
 }
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
+}
+
+// Check if a line (after stripping comments/whitespace) matches a command name
+static bool lineIsCommand(const char *line, const char *command)
+{
+    // Skip leading whitespace
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    size_t cmdLen = strlen(command);
+    if (strncasecmp(line, command, cmdLen) != 0) {
+        return false;
+    }
+    // Must be end of string, whitespace, newline, or comment
+    char next = line[cmdLen];
+    return (next == '\0' || next == ' ' || next == '\t' ||
+            next == '\n' || next == '\r' || next == '#');
+}
+
+void cliProcessConfigFile(const char *filename)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "[CONFIG] Failed to open config file: %s\n", filename);
+        exit(1);
+    }
+
+    printf("[CONFIG] Processing config file: %s\n", filename);
+
+    // Enter CLI mode in interactive mode (output goes to stdout/terminal)
+    cliMode = true;
+    cliInteractive = true;
+
+    // Use a dummy serial port to satisfy cliPort != NULL requirements.
+    // The vTable is intentionally left NULL (via memset) as a canary: any reboot-class
+    // command that reaches waitForSerialPortToFinishTransmitting() will crash immediately
+    // here rather than proceeding silently into motorShutdown()/systemReset(). Reboot-class
+    // commands (defaults, bl, msc, exit) must be intercepted above before processCharacter().
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    // Set up writer to stdout
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)stdoutBufWrite, NULL);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+
+    char line[CLI_IN_BUFFER_SIZE];
+    line[0] = '\0';
+    while (fgets(line, sizeof(line), fp)) {
+        // Intercept 'save' - handle it ourselves to avoid the reboot/motorShutdown path
+        if (lineIsCommand(line, "save")) {
+            if (tryPrepareSave("save")) {
+                writeEEPROM();
+                printf("[CONFIG] Config file processed, EEPROM saved\n");
+                fclose(fp);
+                cliMode = false;
+                exit(0);
+            } else {
+                printf("[CONFIG] prepareSave failed\n");
+                fclose(fp);
+                exit(1);
+            }
+        }
+
+        // Skip 'exit' commands in config files
+        if (lineIsCommand(line, "exit")) {
+            continue;
+        }
+
+        // 'defaults' without 'nosave' triggers a reboot; convert to 'defaults nosave'
+        if (lineIsCommand(line, "defaults")) {
+            // Strip inline comments before checking for 'nosave' argument so that
+            // e.g. "defaults # nosave" is not mistaken for carrying the nosave flag.
+            char stripped[CLI_IN_BUFFER_SIZE];
+            strncpy(stripped, line, sizeof(stripped) - 1);
+            stripped[sizeof(stripped) - 1] = '\0';
+            char *cp = strchr(stripped, '#');
+            if (cp) {
+                *cp = '\0';
+            }
+            cp = strstr(stripped, "//");
+            if (cp) {
+                *cp = '\0';
+            }
+            // Tokenize the comment-stripped line and look for 'nosave' as a discrete token
+            bool hasNosave = false;
+            char *tok = strtok(stripped, " \t\r\n");
+            while (tok) {
+                if (strcasecmp(tok, "nosave") == 0) {
+                    hasNosave = true;
+                    break;
+                }
+                tok = strtok(NULL, " \t\r\n");
+            }
+            if (!hasNosave) {
+                // Append 'nosave' to the original line (minus any trailing comment/whitespace)
+                // so that arguments like 'group_id 5' are preserved, e.g.:
+                //   "defaults"            -> "defaults nosave"
+                //   "defaults group_id 5" -> "defaults group_id 5 nosave"
+                char nosaveLine[CLI_IN_BUFFER_SIZE + 16];
+                strncpy(nosaveLine, stripped, sizeof(nosaveLine) - 16);
+                nosaveLine[sizeof(nosaveLine) - 16] = '\0';
+                // Trim trailing whitespace from the stripped content
+                size_t len = strlen(nosaveLine);
+                while (len > 0 && (nosaveLine[len - 1] == ' ' || nosaveLine[len - 1] == '\t' || nosaveLine[len - 1] == '\r' || nosaveLine[len - 1] == '\n')) {
+                    nosaveLine[--len] = '\0';
+                }
+                strcat(nosaveLine, " nosave\n");
+                for (size_t i = 0; nosaveLine[i]; i++) {
+                    processCharacter(nosaveLine[i]);
+                }
+                cliWriterFlush();
+                continue;
+            }
+        }
+
+        // Skip 'bl' and 'msc' - these trigger reboots/mode switches not valid during config file processing
+        if (lineIsCommand(line, "bl") || lineIsCommand(line, "msc")) {
+            continue;
+        }
+
+        // Feed each character through the CLI processor
+        for (size_t i = 0; line[i]; i++) {
+            processCharacter(line[i]);
+        }
+        cliWriterFlush();
+    }
+
+    // If the last line had no trailing newline, the command is buffered but not yet executed;
+    // send a newline to trigger its execution
+    size_t lastLineLen = strlen(line);
+    if (lastLineLen > 0 && line[lastLineLen - 1] != '\n' && line[lastLineLen - 1] != '\r') {
+        processCharacter('\n');
+        cliWriterFlush();
+    }
+
+    fclose(fp);
+
+    // If save wasn't in the file, save and exit anyway
+    if (tryPrepareSave("save")) {
+        writeEEPROM();
+        printf("[CONFIG] Config file processed, EEPROM saved\n");
+        cliMode = false;
+        exit(0);
+    } else {
+        printf("[CONFIG] prepareSave failed\n");
+        exit(1);
+    }
+}
+#endif // CONFIG_IN_FILE
 
 #endif // USE_CLI

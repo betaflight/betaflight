@@ -40,7 +40,7 @@
 #include "usbd_hid_cdc_wrapper.h"
 #endif
 #include "drivers/usb_io.h"
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
 #include "vcp_hal/usbd_cdc_interface.h"
 #include "drivers/usb_io.h"
 #ifdef USE_USB_CDC_HID
@@ -215,7 +215,7 @@ static const struct serialPortVTable usbVTable[] = {
     }
 };
 
-serialPort_t *usbVcpOpen(void)
+void usbVcpInit(void)
 {
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
@@ -233,7 +233,7 @@ serialPort_t *usbVcpOpen(void)
         USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
         break;
     }
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
 
     usbGenerateDisconnectPulse();
 
@@ -270,7 +270,10 @@ serialPort_t *usbVcpOpen(void)
     USB_Init();
     USB_Interrupts_Config();
 #endif
+}
 
+serialPort_t *usbVcpOpen(void)
+{
     vcpPort_t *s = &vcpPort;
     s->port.vTable = usbVTable;
     return &s->port;

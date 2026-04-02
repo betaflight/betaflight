@@ -201,36 +201,33 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
     }
 
 #ifdef USE_DMA_SPEC
-#if !defined(STM32H7) // H7 uses IDMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
+    dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 
-    if (!dmaChannelSpec) {
+    if (!dmaRef) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
 
-    sdcard.dmaIdentifier = dmaGetIdentifier(dmaChannelSpec->ref);
+    sdcard.dmaIdentifier = dmaGetIdentifier(dmaRef);
 
     if (sdcard.dmaIdentifier == 0) {
         sdcard.state = SDCARD_STATE_NOT_PRESENT;
         return;
     }
-#endif
+#else
+    dmaResource_t *dmaRef = NULL;
 #endif
     if (sdioConfig()->useCache) {
         sdcard.useCache = 1;
     } else {
         sdcard.useCache = 0;
     }
-#ifdef USE_DMA_SPEC
-#if defined(STM32H7) // H7 uses IDMA
-    SD_Initialize_LL(0);
-#else
-    SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref);
-#endif
-#else
-    SD_Initialize_LL(SDCARD_SDIO_DMA_OPT);
-#endif
+
+    if (!SD_InitialiseHardware(dmaRef)) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
 
     if (sdcard_isInserted()) {
         if (SD_Init() != 0) {
@@ -548,7 +545,7 @@ static sdcardOperationStatus_e sdcardSdio_writeBlock(uint32_t blockIndex, uint8_
  * Returns:
  *     SDCARD_OPERATION_SUCCESS     - Multi-block write has been queued
  *     SDCARD_OPERATION_BUSY        - The card is already busy and cannot accept your write
- *     SDCARD_OPERATION_FAILURE     - A fatal error occured, card will be reset
+ *     SDCARD_OPERATION_FAILURE     - A fatal error occurred, card will be reset
  */
 static sdcardOperationStatus_e sdcardSdio_beginWriteBlocks(uint32_t blockIndex, uint32_t blockCount)
 {
@@ -586,13 +583,13 @@ static sdcardOperationStatus_e sdcardSdio_beginWriteBlocks(uint32_t blockIndex, 
 static bool sdcardSdio_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationCompleteCallback_c callback, uint32_t callbackData)
 {
     if (sdcard.state != SDCARD_STATE_READY) {
-		if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
-			if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
-				return false;
-			}
-		} else {
-			return false;
-		}
+        if (sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS) {
+            if (sdcard_endWriteBlocks() != SDCARD_OPERATION_SUCCESS) {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
 #ifdef SDCARD_PROFILING

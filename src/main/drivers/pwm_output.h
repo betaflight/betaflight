@@ -33,12 +33,9 @@
 
 #define PWM_TIMER_1MHZ        MHZ_TO_HZ(1)
 
-// TODO: move the implementation defintions to impl header (platform)
-struct timerHardware_s;
-
 typedef struct {
-    volatile timCCR_t *ccr;
-    TIM_TypeDef       *tim;
+    volatile uint32_t *ccr;
+    timerResource_t   *tim;
 } timerChannel_t;
 
 typedef struct {
@@ -55,18 +52,8 @@ extern FAST_DATA_ZERO_INIT uint8_t pwmMotorCount;
 
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConfig, uint16_t idlePulse);
 
-typedef struct servoDevConfig_s {
-    // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
-    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
-    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
-    ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
-} servoDevConfig_t;
-
-void servoDevInit(const servoDevConfig_t *servoDevConfig);
-
-void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion);
-
-void pwmWriteServo(uint8_t index, float value);
+void pwmOutputConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion);
+void pwmWriteChannel(timerChannel_t *channel, uint32_t value);
 
 pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);

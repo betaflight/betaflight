@@ -31,6 +31,8 @@
 #include "platform/rcc_types.h"
 #endif
 
+#define BUS_QSPI_FREE   0x0
+
 typedef struct quadSpiPinDef_s {
     ioTag_t pin;
 #if SPI_TRAIT_AF_PIN
@@ -40,7 +42,7 @@ typedef struct quadSpiPinDef_s {
 
 typedef struct quadSpiHardware_s {
     quadSpiDevice_e device;
-    QUADSPI_TypeDef *reg;
+    quadSpiResource_t *reg;
     quadSpiPinDef_t clkPins[MAX_QUADSPI_PIN_SEL];
     quadSpiPinDef_t bk1IO0Pins[MAX_QUADSPI_PIN_SEL];
     quadSpiPinDef_t bk1IO1Pins[MAX_QUADSPI_PIN_SEL];
@@ -61,7 +63,7 @@ typedef struct quadSpiHardware_s {
 extern const quadSpiHardware_t quadSpiHardware[];
 
 typedef struct quadSpiDevice_s {
-    QUADSPI_TypeDef *dev;
+    quadSpiResource_t *dev;
     ioTag_t clk;
     ioTag_t bk1IO0;
     ioTag_t bk1IO1;
@@ -92,11 +94,11 @@ typedef struct quadSpiDevice_s {
 #endif
     volatile uint16_t errorCount;
 #if QSPI_TRAIT_HANDLE
-    QSPI_HandleTypeDef hquadSpi;
+    qspiHalHandle_t *halHandle;
 #endif
 } quadSpiDevice_t;
 
 extern quadSpiDevice_t quadSpiDevice[QUADSPIDEV_COUNT];
 
 void quadSpiInitDevice(quadSpiDevice_e device);
-uint32_t quadSpiTimeoutUserCallback(QUADSPI_TypeDef *instance);
+uint32_t quadSpiTimeoutUserCallback(quadSpiResource_t *instance);

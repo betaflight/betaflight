@@ -39,41 +39,32 @@
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
-#define I2C_TypeDef          i2c_inst_t
-#define I2C_INST(i2c)        (i2c)
-
-#define GPIO_TypeDef         io_bank0_hw_t
-//#define GPIO_InitTypeDef
-#define TIM_TypeDef          void*
-//#define TIM_OCInitTypeDef
+#define I2C_INST(i2c)        ((i2c_inst_t *)(i2c))
 
 #define DMA_TypeDef          void*
 #define DMA_InitTypeDef      dma_channel_config
 
 #define ADC_TypeDef          void*
 
-#define USART_TypeDef        uart_inst_t
-#define UART_INST(uart)      (uart)
+#define UART_INST(uart)      ((uart_inst_t *)(uart))
 
 #define TIM_OCInitTypeDef    void*
 #define TIM_ICInitTypeDef    void*
-//#define TIM_OCStructInit
-//#define TIM_Cmd
-//#define TIM_CtrlPWMOutputs
-//#define TIM_TimeBaseInit
-//#define TIM_ARRPreloadConfig
-//#define SystemCoreClock
-//#define EXTI_TypeDef
-//#define EXTI_InitTypeDef
 
-// We have to use SPI0_Type (or void) because config will pass in SPI0, SPI1,
-// which are defined in pico-sdk as SPI0_Type*.
+// SPI_TypeDef alias removed: use spiResource_t* in generic code, cast to SPI0_Type* in platform code.
 // SPI_INST converts to the correct type for use in pico-sdk functions.
-#define SPI_TypeDef          SPI0_Type
 #define SPI_INST(spi)        ((spi_inst_t *)(spi))
 
-#define QUADSPI_TypeDef      void
+// quadSpiResource_s: platform-specific definition of the opaque quadSpiResource_t.
+// PICO has no hardware QUADSPI peripheral; this is a placeholder struct.
+struct quadSpiResource_s
+{
+    void* test;
+};
+
 #define MAX_QUADSPI_PIN_SEL  1
+
+#define QUADSPI_TRAIT_CS_SOFTWARE       1
 
 #endif
 
@@ -133,6 +124,7 @@ extern uint32_t systemUniqueId[3];
 #define UART_TX_BUFFER_ATTRIBUTE
 #define UART_RX_BUFFER_ATTRIBUTE
 
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
 
 #define xDMA_GetCurrDataCounter(dma_resource) (((dma_channel_hw_t *)(dma_resource))->transfer_count)
@@ -143,3 +135,13 @@ extern uint32_t systemUniqueId[3];
 // 100 = 1.00x (100%) scaling; override per target/board to match its VBAT divider
 #define DEFAULT_VOLTAGE_METER_SCALE   100
 #endif
+
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))

@@ -53,6 +53,8 @@ extern "C" {
     float rcCommand[4] = {0, 0, 0, 0};
     telemetryConfig_t telemetryConfig_System;
     batteryConfig_s batteryConfig_System;
+    static batteryProfile_t batteryProfile_System;
+    const batteryProfile_t *currentBatteryProfile = &batteryProfile_System;
     attitudeEulerAngles_t attitude = EULER_INITIALIZE;
     acc_t acc;
     baro_t baro;
@@ -276,7 +278,7 @@ uint8_t serialRead(serialPort_t *instance)
 
 void serialTestResetBuffers()
 {
-    serialReadStub = { {0} }; 
+    serialReadStub = { {0} };
     serialWriteStub = { {0} };
 }
 

@@ -56,15 +56,22 @@
 #include "usbd_desc.h"
 
 /* Definition for TIMx clock resources */
+#if defined(STM32N6)
+#define TIMusb                             TIM18
+#define TIMx_IRQn                        TIM18_IRQn
+#define TIMx_IRQHandler                  TIM18_IRQHandler
+#define TIMx_CLK_ENABLE                  __HAL_RCC_TIM18_CLK_ENABLE
+#elif defined(STM32G4)
 #define TIMusb                             TIM7
-#if defined(STM32G4)
 #define TIMx_IRQn                        TIM7_DAC_IRQn
 #define TIMx_IRQHandler                  TIM7_DAC_IRQHandler
+#define TIMx_CLK_ENABLE                  __HAL_RCC_TIM7_CLK_ENABLE
 #else
+#define TIMusb                             TIM7
 #define TIMx_IRQn                        TIM7_IRQn
 #define TIMx_IRQHandler                  TIM7_IRQHandler
-#endif
 #define TIMx_CLK_ENABLE                  __HAL_RCC_TIM7_CLK_ENABLE
+#endif
 
 /* Periodically, the state of the buffer "UserTxBuffer" is checked.
    The period depends on CDC_POLLING_INTERVAL */

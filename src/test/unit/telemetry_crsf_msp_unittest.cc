@@ -66,6 +66,7 @@ extern "C" {
     #include "telemetry/smartport.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
+    #include "sensors/compass.h"
 
     rssiSource_e rssiSource;
     bool handleMspFrame(uint8_t *frameStart, uint8_t frameLength, uint8_t *skipsBeforeResponse);
@@ -98,6 +99,7 @@ extern "C" {
 
     uint32_t dummyTimeUs;
     baro_t baro;
+    mag_t mag;
 }
 
 #include "unittest_macros.h"
@@ -150,7 +152,7 @@ TEST(CrossFireMSPTest, ResponsePacketTest)
     }
 }
 
-//                               |   crsf                     | msp    
+//                               |   crsf                     | msp
 //                               sync size type to   from stts size fn   0    1    2    3    4
 const uint8_t crsfPidWrite1[] = {0x00,0x0C,0x7A,0xC8,0xEA,0x31,0x1E,0xCA,0x29,0x28,0x1E,0x3A,0x32};
 const uint8_t crsfPidWrite2[] = {0x00,0x0C,0x7A,0xC8,0xEA,0x22,0x23,0x46,0x2D,0x14,0x32,0x00,0x00};
@@ -286,7 +288,7 @@ extern "C" {
     }
 
     int32_t getEstimatedAltitudeCm(void) {
-    	return 0;
+        return 0;
     }
 
     int16_t getEstimatedVario(void) { return 0; }

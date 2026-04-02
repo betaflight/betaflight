@@ -31,10 +31,12 @@
 
 #include "common/maths.h"
 #include "drivers/bus.h"
+#include "drivers/bus_spi_types.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
+#include "platform/dma.h"
 #include "platform/rcc.h"
 
 // Use DMA if possible if this many bytes are to be transferred
@@ -75,6 +77,8 @@ void spiInitDevice(spiDevice_e device)
         return;
     }
 
+    spi_type *dev = (spi_type *)spi->dev;
+
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
@@ -88,26 +92,27 @@ void spiInitDevice(spiDevice_e device)
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
 
     // Init SPI hardware
-    spi_i2s_reset(spi->dev);
+    spi_i2s_reset(dev);
 
-    spi_i2s_dma_transmitter_enable(spi->dev, TRUE);
-    spi_i2s_dma_receiver_enable(spi->dev, TRUE);
+    spi_i2s_dma_transmitter_enable(dev, TRUE);
+    spi_i2s_dma_receiver_enable(dev, TRUE);
 
-    spi_init(spi->dev, &defaultInit);
-    spi_crc_polynomial_set(spi->dev, 7);
+    spi_init(dev, &defaultInit);
+    spi_crc_polynomial_set(dev, 7);
 
-    spi_enable(spi->dev, TRUE);
+    spi_enable(dev, TRUE);
 }
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
+    spi_type *instance = (spi_type *)bus->busType_u.spi.instance;
     dma_init_type *dmaInitTx = bus->dmaInitTx;
 
     dma_default_para_init(dmaInitTx);
 
     dmaInitTx->direction=DMA_DIR_MEMORY_TO_PERIPHERAL;
     dmaInitTx->loop_mode_enable=FALSE;
-    dmaInitTx->peripheral_base_addr=(uint32_t)&bus->busType_u.spi.instance->dt ;
+    dmaInitTx->peripheral_base_addr=(uint32_t)&instance->dt ;
     dmaInitTx->priority =DMA_PRIORITY_LOW;
     dmaInitTx->peripheral_inc_enable =FALSE;
     dmaInitTx->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
@@ -120,7 +125,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 
         dmaInitRx->direction = DMA_DIR_PERIPHERAL_TO_MEMORY;
         dmaInitRx->loop_mode_enable = FALSE;
-        dmaInitRx->peripheral_base_addr = (uint32_t)&bus->busType_u.spi.instance->dt;
+        dmaInitRx->peripheral_base_addr = (uint32_t)&instance->dt;
         dmaInitRx->priority = DMA_PRIORITY_MEDIUM;
         dmaInitRx->peripheral_inc_enable = FALSE;
         dmaInitRx->peripheral_data_width = DMA_PERIPHERAL_DATA_WIDTH_BYTE;
@@ -135,8 +140,9 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
-bool spiInternalReadWriteBufPolled(spi_type *instance, const uint8_t *txData, uint8_t *rxData, int len)
+bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const uint8_t *txData, uint8_t *rxData, int len)
 {
+    spi_type *instance = (spi_type *)spiInstance;
     uint8_t b;
 
     while (len--) {
@@ -194,12 +200,13 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
+    spi_type *instance = (spi_type *)dev->bus->busType_u.spi.instance;
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
 
     // Wait for any ongoing transmission to complete
-    while (spi_i2s_flag_get(dev->bus->busType_u.spi.instance, SPI_I2S_BF_FLAG) == SET);
+    while (spi_i2s_flag_get(instance, SPI_I2S_BF_FLAG) == SET);
 
     if (dmaRx) {
         DMA_ARCH_TYPE *streamRegsRx = (DMA_ARCH_TYPE *)dmaRx->ref;
@@ -228,8 +235,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
         /* Enable the receiver before the transmitter to ensure that no bits are missed on reception. An interrupt between
          * the transmitter and receiver being enabled can otherwise cause a hang.
          */
-        spi_i2s_dma_receiver_enable(dev->bus->busType_u.spi.instance, TRUE);
-        spi_i2s_dma_transmitter_enable(dev->bus->busType_u.spi.instance, TRUE);
+        spi_i2s_dma_receiver_enable(instance, TRUE);
+        spi_i2s_dma_transmitter_enable(instance, TRUE);
 
     } else {
         // Use the correct callback argument
@@ -249,7 +256,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_ITConfig(streamRegsTx, DMA_IT_TCIF, TRUE);
 
         /* Enable the SPI DMA Tx request */
-        spi_i2s_dma_transmitter_enable(dev->bus->busType_u.spi.instance, TRUE);
+        spi_i2s_dma_transmitter_enable(instance, TRUE);
     }
 }
 
@@ -257,7 +264,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 {
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
-    spi_type *instance = dev->bus->busType_u.spi.instance;
+    spi_type *instance = (spi_type *)dev->bus->busType_u.spi.instance;
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
 
     if (dmaRx) {
@@ -293,7 +300,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    spi_type *instance = bus->busType_u.spi.instance;
+    spi_type *instance = (spi_type *)bus->busType_u.spi.instance;
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
@@ -304,7 +311,7 @@ void spiSequenceStart(const extDevice_t *dev)
 
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
-        spiSetDivisorBRreg(bus->busType_u.spi.instance, dev->busType_u.spi.speed);
+        spiSetDivisorBRreg(instance, dev->busType_u.spi.speed);
         bus->busType_u.spi.speed = dev->busType_u.spi.speed;
     }
 

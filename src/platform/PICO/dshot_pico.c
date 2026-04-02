@@ -31,15 +31,6 @@
 #include "dshot_pico.h"
 #include "common/maths.h"
 
-#ifdef DSHOT_DEBUG_PIO
-#include "drivers/io_impl.h"
-
-#define DSHOT_DEBUG_SIDE(index)               \
-            (index == 0 ? DSHOT_DEBUG_SIDE0 : \
-             index == 1 ? DSHOT_DEBUG_SIDE1 : \
-             index == 2 ? DSHOT_DEBUG_SIDE2 : \
-             DSHOT_DEBUG_SIDE3)
-#endif
 
 static int32_t outgoingPacket[MAX_SUPPORTED_MOTORS]; // 16-bit packet or -1 for none pending.
 const PIO dshotPio = PIO_INSTANCE(PIO_DSHOT_INDEX); // currently only single pio supported => 4 motors.
@@ -134,6 +125,13 @@ static void dshotWrite(uint8_t motorIndex, float value)
 
 static void dshotUpdateComplete(void)
 {
+#ifdef PICO_TRACE
+    static uint32_t cuc;
+    static uint32_t cucm;
+    static uint32_t cucrts;
+    static uint32_t cucwait;
+    static uint32_t cucother;
+#endif
     // If there is a dshot command loaded up, time it correctly with motor update
     if (!dshotCommandQueueEmpty()) {
         if (!dshotCommandOutputIsEnabled(dshotMotorCount)) { // Are we ok to proceed? (This function affects the dshot command queue)
@@ -148,32 +146,107 @@ static void dshotUpdateComplete(void)
         }
     }
 
-    // stop SMs before sending data to SM, for simultaneous restart
-    pio_set_sm_mask_enabled(dshotPio, motorMask, false);
-
     if (useDshotTelemetry) {
-        // protect against SM getting stuck waiting for telemetry.
-        // TODO we could be more sophisticated about detecting that we are not stuck,
-        // then skipping the restart, to avoid unnecessary delays in the PIO code.
-        pio_restart_sm_mask(dshotPio, motorMask);
+#ifdef PICO_TRACE
+        cuc++;
+#endif
+        // For bidir DShot, the PIO program blocks at instruction 0 (pull block)
+        // waiting for TX data. When the SM completes its cycle (transmit + receive),
+        // it wraps back to instruction 0 and waits.
+        //
+        // PIO program structure (integer divider version, 75 MHz):
+        //   0:     pull block (waiting for data) - SAFE
+        //   1-19:  transmit - NOT SAFE (would cause duplicate)
+        //   20-21: settling delay + switch to input - NOT SAFE
+        //   22:    wait 1 pin (wait for HIGH) - NOT SAFE
+        //   23:    set x (loop setup) - NOT SAFE
+        //   24:    wait 0 pin (wait for falling edge) - NOT SAFE
+        //   25-29: sampling telemetry - NOT SAFE (FIFO being filled)
+        //   30-31: post-receive (output mode) - SAFE
+        //
+        // Safe states: PC=0 (waiting) or PC=30-31 (receive done, wrapping)
+        // In safe states, RX FIFO has complete telemetry data ready to drain.
+        //
+        // Strategy:
+        // - If SM is in safe state: Drain RX FIFO, put TX data
+        // - If SM is mid-cycle (1-29): leave it alone
+        // Track consecutive calls where SM is at wait instructions (PC=22 or 24)
+        // to distinguish normal ESC turnaround from truly stuck state
+        static uint8_t waitCount[MAX_SUPPORTED_MOTORS] = {0};
+
+        for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
+#ifdef PICO_TRACE
+            cucm++;
+#endif
+            if (outgoingPacket[motorIndex] >= 0) {
+                const motorOutput_t *motor = &dshotMotors[motorIndex];
+                uint pc = pio_sm_get_pc(motor->pio, motor->pio_sm);
+                uint pcOffset = pc - motor->offset;
+
+                // Safe to send if at instruction 0 (waiting) or 30-31 (post-receive)
+                bool readyToSend = (pcOffset == dshot_600_bidir_offset_pull_data) || (pcOffset >= dshot_600_bidir_offset_complete);
+                bool atWaitInstr = (pcOffset == dshot_600_bidir_offset_wait_one) || (pcOffset == dshot_600_bidir_offset_wait_zero);
+
+                if (readyToSend) {
+#ifdef PICO_TRACE
+                    cucrts++;
+#endif
+                    // SM completed its cycle - drain RX FIFO and send
+                    while (!pio_sm_is_rx_fifo_empty(motor->pio, motor->pio_sm)) {
+                        (void)pio_sm_get(motor->pio, motor->pio_sm);
+                    }
+                    pio_sm_set_enabled(motor->pio, motor->pio_sm, false);
+                    pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+                    waitCount[motorIndex] = 0;
+                } else if (atWaitInstr) {
+#ifdef PICO_TRACE
+                    cucwait++;
+#endif
+                    // SM is at wait instructions (22 or 24)
+                    // Could be normal turnaround (~25µs) or truly stuck (ESC didn't respond)
+                    // Only restart if stuck for multiple consecutive calls (>125µs at 8kHz)
+                    waitCount[motorIndex]++;
+                    if (waitCount[motorIndex] >= 2) {
+                        // Stuck for >125µs - ESC definitely didn't respond, restart
+                        pio_sm_restart(motor->pio, motor->pio_sm);
+                        pio_sm_clear_fifos(motor->pio, motor->pio_sm);
+                        pio_sm_exec_wait_blocking(motor->pio, motor->pio_sm,
+                                                  pio_encode_jmp(motor->offset + dshot_600_bidir_BIDIR_START));
+                        pio_sm_set_enabled(motor->pio, motor->pio_sm, false);
+                        pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
+                        waitCount[motorIndex] = 0;
+                    }
+                    // else: First time at wait - might be normal turnaround, skip this update
+                } else {
+#ifdef PICO_TRACE
+                    cucother++;
+#endif
+                    // SM is mid-transmit or mid-receive (1-21, 23, 25-29) - skip
+                    waitCount[motorIndex] = 0;
+                }
+            }
+        }
+    } else {
+        // Non-bidir: just put TX data, SMs will pull when enabled
         for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
             if (outgoingPacket[motorIndex] >= 0) {
                 const motorOutput_t *motor = &dshotMotors[motorIndex];
-                pio_sm_clear_fifos(motor->pio, motor->pio_sm);
-                pio_sm_exec_wait_blocking(motor->pio, motor->pio_sm, pio_encode_jmp(motor->offset));
+                pio_sm_set_enabled(motor->pio, motor->pio_sm, false);
+                pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
             }
         }
     }
 
-    for (int motorIndex = 0; motorIndex < dshotMotorCount; ++motorIndex) {
-        if (outgoingPacket[motorIndex] >= 0) {
-            const motorOutput_t *motor = &dshotMotors[motorIndex];
-            pio_sm_put(motor->pio, motor->pio_sm, outgoingPacket[motorIndex]);
-        }
-    }
-
-    // Send simultaneously.
+    // Send, ensure all enabled.
     pio_set_sm_mask_enabled(dshotPio, motorMask, true);
+
+#ifdef PICO_TRACE
+    if (cuc % 65536 == 1) {
+        bprintf("update complete %d, per motor %d of which ready %d nr wait %d nr other %d",
+                cuc, cucm, cucrts, cucwait, cucother);
+        cucm = 0; cucrts = 0; cucwait = 0; cucother = 0;
+    }
+#endif
 }
 
 static bool dshotEnableMotors(void)
@@ -284,11 +357,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         int pinIndex = DEFIO_TAG_PIN(motorConfig->ioTags[motorIndex]);
         pinIndexMin = pinIndex < pinIndexMin ? pinIndex : pinIndexMin;
         pinIndexMax = pinIndex > pinIndexMax ? pinIndex : pinIndexMax;
-
-#ifdef DSHOT_DEBUG_PIO
-        pinIndexMin = MIN(pinIndexMin, DSHOT_DEBUG_SIDE(motorIndex));
-        pinIndexMax = MAX(pinIndexMax, DSHOT_DEBUG_SIDE(motorIndex));
-#endif
     }
 
     int pioBase = 0;
@@ -309,11 +377,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     // NB the PIO block is limited to 32 instructions (shared across 4 state machines)
     int offset;
     if (useDshotTelemetry) {
-#ifdef DSHOT_DEBUG_PIO
-        offset = pio_add_program(dshotPio, &dshot_600_bidir_debug_program);
-#else
         offset = pio_add_program(dshotPio, &dshot_600_bidir_program);
-#endif
     } else {
         offset = pio_add_program(dshotPio, &dshot_600_program);
     }
@@ -324,15 +388,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         bprintf("*** dshot pio failed to add program [useDshotTelemetry = %d]", useDshotTelemetry);
         return false;
     }
-
-#ifdef DSHOT_DEBUG_PIO
-    for (int index = 0; index < 4; ++index) {
-        unsigned int sidePin = DSHOT_DEBUG_SIDE(index);
-        ioRecs[sidePin].owner = OWNER_SYSTEM;
-        pio_gpio_init(dshotPio, sidePin);
-        bprintf("dshot init sideset pin %d", sidePin);
-    }
-#endif
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCountProvisional; motorIndex++) {
         outgoingPacket[motorIndex] = -1;
@@ -366,11 +421,6 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         bool dshotInit;
         if (useDshotTelemetry) {
             dshotInit = dshot_program_bidir_init(dshotPio, pio_sm, dshotMotors[motorIndex].offset, pinIndex);
-#ifdef DSHOT_DEBUG_PIO
-            int sidesetpin = DSHOT_DEBUG_SIDE(motorIndex);
-            pio_sm_set_consecutive_pindirs(dshotPio, pio_sm, sidesetpin, 1, true); // set pin to output
-            pio_sm_set_sideset_pins(dshotPio, pio_sm, sidesetpin);
-#endif
         } else {
             dshotInit = dshot_program_init(dshotPio, pio_sm, dshotMotors[motorIndex].offset, pinIndex);
         }

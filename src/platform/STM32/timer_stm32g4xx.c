@@ -31,6 +31,7 @@
 #include "stm32g4xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
@@ -168,7 +169,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
     /*
      * RM0440 Rev.1
@@ -178,9 +179,10 @@ uint32_t timerClock(const TIM_TypeDef *tim)
      * 2. Otherwise, they are set to twice (×2) the frequency of the APB domain.
      */
 
+    const TIM_TypeDef *tim_ptr = (const TIM_TypeDef *)tim;
     uint32_t pclk;
 
-    if (tim == TIM1 || tim == TIM8 || tim == TIM15 || tim == TIM16 || tim == TIM17 || tim == TIM20) {
+    if (tim_ptr == TIM1 || tim_ptr == TIM8 || tim_ptr == TIM15 || tim_ptr == TIM16 || tim_ptr == TIM17 || tim_ptr == TIM20) {
         // Timers on APB2; PCLK2
         pclk = HAL_RCC_GetPCLK2Freq();
         if (READ_BIT(RCC->CFGR, RCC_CFGR_PPRE2)) {
@@ -195,5 +197,10 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     }
 
     return pclk;
+}
+
+uint32_t timerClock(const timerHardware_t *timHw)
+{
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

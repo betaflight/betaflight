@@ -98,6 +98,9 @@ void mpu6500GyroInit(gyroDev_t *gyro)
 
     busWriteRegister(&gyro->dev, MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
     delay(15);
+
+    gyro->tempScale = 1.0f / 340.0f;
+    gyro->tempZero = 36.53f;
 }
 
 bool mpu6500GyroDetect(gyroDev_t *gyro)

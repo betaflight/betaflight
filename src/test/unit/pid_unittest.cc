@@ -66,7 +66,7 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/pid_init.h"
     #include "flight/position.h"
-    
+
     #include "io/gps.h"
 
     #include "pg/pg.h"
@@ -339,12 +339,12 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
     EXPECT_NEAR(-1.76, pidData[FD_YAW].I, calculateTolerance(-1.76));
-        EXPECT_NEAR(-24.2, pidData[FD_YAW].Sum, calculateTolerance(-24.2)); 
+        EXPECT_NEAR(-24.2, pidData[FD_YAW].Sum, calculateTolerance(-24.2));
 
     // Match the stick to gyro to stop error
     simulatedSetpointRate[FD_ROLL] = 100;
     simulatedSetpointRate[FD_PITCH] = -100;
-    simulatedSetpointRate[FD_YAW] = 10; // error 
+    simulatedSetpointRate[FD_YAW] = 10; // error
 
     pidController(pidProfile, currentTestTime());
     // Iterm is stalled as it is not accumulating anymore
@@ -353,7 +353,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-1.76, pidData[FD_YAW].I, calculateTolerance(-1.76)); 
+    EXPECT_NEAR(-1.76, pidData[FD_YAW].I, calculateTolerance(-1.76));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -368,7 +368,7 @@ TEST(pidControllerTest, testPidLoop)
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
     EXPECT_NEAR(-31.3, pidData[FD_ROLL].I, calculateTolerance(-31.3));
     EXPECT_NEAR(29.3, pidData[FD_PITCH].I, calculateTolerance(29.3));
-    EXPECT_NEAR(-1.76, pidData[FD_YAW].I, calculateTolerance(-1.76)); 
+    EXPECT_NEAR(-1.76, pidData[FD_YAW].I, calculateTolerance(-1.76));
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
@@ -566,7 +566,7 @@ TEST(pidControllerTest, testMixerSaturation)
     EXPECT_NEAR(21.1f, pidData[FD_YAW].I, calculateTolerance(21.1));
 
     // Expect iterm  roll + pitch to stop at limit of 400
-    // yaw is still growing, 
+    // yaw is still growing,
     pidController(pidProfile, currentTestTime());
     EXPECT_NEAR(400.0f, pidData[FD_ROLL].I, calculateTolerance(400.0f));
     EXPECT_NEAR(-400.0f, pidData[FD_PITCH].I, calculateTolerance(-400.0f));

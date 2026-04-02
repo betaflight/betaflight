@@ -41,8 +41,16 @@
 #include "drivers/serial_uart_impl.h"
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
+#include "platform/serial_uart_hal.h"
 
 #include "pg/serial_uart.h"
+
+#ifdef USE_HAL_DRIVER
+extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
+#endif
 
 // TODO: split this function into mcu-specific UART files ?
 static void enableRxIrq(const uartHardware_t *hardware)
@@ -84,10 +92,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     s->USARTx = hardware->reg;
 
-#ifdef USE_HAL_DRIVER
-    s->Handle.Instance = hardware->reg;
-#endif
-
     s->checkUsartTxOutput = checkUsartTxOutput;
 
     if (hardware->rcc) {
@@ -124,7 +128,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(APM32F4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(APM32F4)
         // Note: APM32F4 is different from STM32F4 here
         const ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
@@ -305,11 +309,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
-    __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+    LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
-    usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+    usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #else
-    USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
+    USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
 }
 

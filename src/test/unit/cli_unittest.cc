@@ -61,6 +61,7 @@ extern "C" {
     #include "sensors/gyro.h"
 
     void cliSet(const char *cmdName, char *cmdline);
+    void cliHelp(const char *cmdName, char *cmdline);
     int cliGetSettingIndex(char *name, uint8_t length);
     void *cliGetValuePointer(const clivalue_t *value);
 
@@ -107,6 +108,8 @@ extern "C" {
 
 const bool PRINT_TEST_DATA = false;
 
+// Verifies that cliSet correctly parses and stores an array-type setting
+// with mixed positive and negative integer values.
 TEST(CLIUnittest, TestCliSetArray)
 {
     char *str = (char *)"array_unit_test    =   123,  -3  , 1";
@@ -131,6 +134,8 @@ TEST(CLIUnittest, TestCliSetArray)
     EXPECT_EQ(  1, data[2]);
 }
 
+// Verifies that cliSet correctly writes a string value into a string-type setting
+// without any special flags (e.g. write-once protection).
 TEST(CLIUnittest, TestCliSetStringNoFlags)
 {
     char *str = (char *)"str_unit_test    =   SAMPLE";
@@ -159,6 +164,8 @@ TEST(CLIUnittest, TestCliSetStringNoFlags)
     EXPECT_EQ(0,   data[6]);
 }
 
+// Verifies that a write-once string setting ignores subsequent writes after
+// the initial value is set, preserving the original value on re-assignment.
 TEST(CLIUnittest, TestCliSetStringWriteOnce)
 {
     char *str1 = (char *)"wos_unit_test    =   SAMPLE";
@@ -362,6 +369,8 @@ void systemReset(void) {}
 void writeUnmodifiedConfigToEEPROM(void) {}
 
 void changePidProfile(uint8_t) {}
+void changeBatteryProfile(uint8_t) {}
+uint8_t getCurrentBatteryProfileIndex(void) { return 0; }
 bool serialIsPortAvailable(serialPortIdentifier_e) { return false; }
 void generateLedConfig(ledConfig_t *, char *, size_t) {}
 //bool isSerialTransmitBufferEmpty(const serialPort_t *) {return true; }
@@ -395,6 +404,10 @@ bool setBoardName(char *newBoardName) { UNUSED(newBoardName); return true; };
 bool setManufacturerId(char *newManufacturerId) { UNUSED(newManufacturerId); return true; };
 bool persistBoardInformation(void) { return true; };
 
+const char * const *sensorHardwareNames(sensorIndex_e, int *count) { if (count) *count = 0; return NULL; }
+sensorIndex_e sensorIndexFromName(const char *) { return SENSOR_INDEX_COUNT; }
+const char *sensorTypeName(sensorIndex_e) { return NULL; }
+
 void activeAdjustmentRangeReset(void) {}
 void analyzeModeActivationConditions(void) {}
 bool isModeActivationConditionConfigured(const modeActivationCondition_t *, const modeActivationCondition_t *) { return false; }
@@ -406,4 +419,19 @@ const char *getMcuTypeName(void) { return targetName; }
 float getCurrentRxRateHz(void) { return 0; }
 uint16_t getAverageSystemLoadPercent(void) { return 0; }
 bool getRxRateValid(void) { return false; }
+const uint16_t *getBuildOptions(unsigned *count) { *count = 0; return NULL; }
+}
+
+// Verifies that cliHelp does not dereference NULL when searching commands whose
+// description field is NULL (e.g. flash_read, flash_write, play_sound).
+// Prior to the fix, strcasestr(NULL, cmdline) was called for these entries,
+// which is undefined behaviour and causes a SIGSEGV on hosted targets.
+TEST(CLIUnittest, TestCliHelpNullDescription)
+{
+    // "address" appears in the *args* of flash_read/flash_write but not in their names,
+    // and their descriptions are NULL — this is the exact case that triggered the UB.
+    cliHelp("help", (char *)"address");
+
+    // If we reach here without a crash/SIGSEGV the null guard is working.
+    SUCCEED();
 }

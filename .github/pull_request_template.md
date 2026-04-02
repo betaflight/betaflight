@@ -4,7 +4,7 @@
 
 2. Pull requests will only be accepted if they are opened against the `master` branch of our repository. Pull requests opened against other branches without prior consent from the maintainers will be closed;
 
-3. Please follow the coding style guidelines: https://github.com/betaflight/betaflight/blob/master/docs/development/CodingStyle.md
+3. Please follow the coding style guidelines: https://www.betaflight.com/docs/development/CodingStyle
 
 4. Keep your pull requests as small and concise as possible. One pull request should only ever add / update one feature. If the change that you are proposing has a wider scope, consider splitting it over multiple pull requests. In particular, pull requests that combine changes to features and one or more new targets are not acceptable.
 

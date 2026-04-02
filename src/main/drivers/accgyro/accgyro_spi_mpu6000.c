@@ -200,6 +200,9 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 
     spiWriteReg(dev, MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
     delayMicroseconds(15);
+
+    gyro->tempScale = 1.0f / 340.0f;
+    gyro->tempZero = 36.53f;
 }
 
 bool mpu6000SpiAccDetect(accDev_t *acc)

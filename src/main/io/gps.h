@@ -236,18 +236,40 @@ typedef struct gpsAccuracy_s {
     uint32_t hAcc;                  // horizontal accuracy in mm
     uint32_t vAcc;                  // vertical accuracy in mm
     uint32_t sAcc;                  // speed accuracy in mm/s
+    uint32_t headAcc;               // heading accuracy in degrees * 1e-5
 } gpsAccuracy_t;
+
+/* Only available on U-blox protocol */
+typedef struct gpsVelned_s {
+    int16_t velN; // north velocity, cm/s
+    int16_t velE; // east velocity, cm/s
+    int16_t velD; // down velocity, cm/s
+} gpsVelned_t;
+
+/* GPS date/time from NAV-PVT message */
+typedef struct gpsDateTime_s {
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t min;
+    uint8_t sec;
+    uint16_t millis;
+    bool valid;                     // true when date/time are valid from GPS
+} gpsDateTime_t;
 
 typedef struct gpsSolutionData_s {
     gpsLocation_t llh;
     gpsDilution_t dop;
     gpsAccuracy_t acc;
+    gpsVelned_t velned;
     uint16_t speed3d;               // speed in cm/s
     uint16_t groundSpeed;           // speed in cm/s
     uint16_t groundCourse;          // degrees * 10
     uint8_t numSat;
     uint32_t time;                  // GPS msToW
     uint32_t navIntervalMs;         // interval between nav solutions in ms
+    gpsDateTime_t dateTime;         // GPS date/time from NAV-PVT
 } gpsSolutionData_t;
 
 /*
@@ -395,3 +417,4 @@ float getGpsDataIntervalSeconds(void);  // range 0.05 - 2.5s
 float getGpsDataFrequencyHz(void);      // range 20Hz - 0.4Hz
 
 baudRate_e getGpsPortActualBaudRateIndex(void);
+uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt);

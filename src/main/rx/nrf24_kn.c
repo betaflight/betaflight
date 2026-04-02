@@ -89,26 +89,26 @@ static void switch_channel(void)
 
 static void decode_bind_packet(uint8_t *packet)
 {
-	if (packet[0]==0x4b && packet[1]==0x4e && packet[2]==0x44 && packet[3]==0x5a) {
-		txid[0] = packet[4];
-		txid[1] = packet[5];
-		txid[2] = packet[6];
-		txid[3] = packet[7];
-		txid[4] = 0x4b;
+    if (packet[0]==0x4b && packet[1]==0x4e && packet[2]==0x44 && packet[3]==0x5a) {
+        txid[0] = packet[4];
+        txid[1] = packet[5];
+        txid[2] = packet[6];
+        txid[3] = packet[7];
+        txid[4] = 0x4b;
 
-		kn_freq_hopping[0] = packet[8];
-		kn_freq_hopping[1] = packet[9];
-		kn_freq_hopping[2] = packet[10];
-		kn_freq_hopping[3] = packet[11];
+        kn_freq_hopping[0] = packet[8];
+        kn_freq_hopping[1] = packet[9];
+        kn_freq_hopping[2] = packet[10];
+        kn_freq_hopping[3] = packet[11];
 
-		if (packet[15]==0x01) {
-			NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
-		} else {
-			NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
-		}
+        if (packet[15]==0x01) {
+            NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_1Mbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
+        } else {
+            NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
+        }
 
-		NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, txid, RX_TX_ADDR_LEN);
-		NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, txid, RX_TX_ADDR_LEN);
+        NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, txid, RX_TX_ADDR_LEN);
+        NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, txid, RX_TX_ADDR_LEN);
 
         bind_phase = PHASE_BOUND;
         rx_timeout = 1000L; // find the channel as fast as possible
@@ -151,11 +151,11 @@ static rx_spi_received_e readrx(uint8_t *packet)
     if (!(NRF24L01_ReadReg(NRF24L01_07_STATUS) & BIT(NRF24L01_07_STATUS_RX_DR))) {
         uint32_t t = micros() - packet_timer;
         if (t > rx_timeout) {
-			if (bind_phase == PHASE_RECEIVED) {
-				switch_channel();
-			}
+            if (bind_phase == PHASE_RECEIVED) {
+                switch_channel();
+            }
             packet_timer = micros();
-			rx_timeout = 10000L; // 10ms if data not received
+            rx_timeout = 10000L; // 10ms if data not received
         }
         return RX_SPI_RECEIVED_NONE;
     }

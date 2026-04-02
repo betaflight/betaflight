@@ -1,5 +1,7 @@
 # SITL Makefile for the simulator platform
 
+PLATFORM_SDK := none
+
 # Default output is an exe file
 DEFAULT_OUTPUT := exe
 
@@ -45,6 +47,7 @@ LD_FLAGS    := \
             -Wl,-gc-sections,-Map,$(TARGET_MAP) \
             -Wl,-L$(LINKER_DIR) \
             -Wl,--cref \
+            -Wl,-z,noexecstack \
             -T$(LD_SCRIPT)
 
 ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
@@ -61,7 +64,7 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
 
-ifneq ($(filter macosx-arm%,$(OSFAMILY)-$(ARCHFAMILY)),)
+ifneq ($(filter macosx-arm% macosx-x86_64%,$(OSFAMILY)-$(ARCHFAMILY)),)
 
     CFLAGS_DISABLED := -Werror -Wunsafe-loop-optimizations -fuse-linker-plugin
 

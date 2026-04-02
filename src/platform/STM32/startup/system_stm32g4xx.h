@@ -82,7 +82,7 @@ extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 
 extern void systemClockSetHSEValue(uint32_t frequency);
-extern void OverclockRebootIfNecessary(unsigned requestedOverclockLevel);
+extern void OverclockRebootIfNecessary(uint32_t targetMhz);
 extern int SystemSYSCLKSource(void);
 extern int SystemPLLSource(void);
 

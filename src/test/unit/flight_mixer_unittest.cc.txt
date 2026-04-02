@@ -30,7 +30,6 @@ extern "C" {
 
     #include "drivers/sensor.h"
     #include "drivers/accgyro.h"
-    #include "drivers/pwm_mapping.h"
 
     #include "sensors/sensors.h"
     #include "sensors/acceleration.h"
@@ -418,10 +417,10 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount) {
     lastOneShotUpdateMotorCount = motorCount;
 }
 
-void pwmWriteServo(uint8_t index, uint16_t value) {
+void servoWrite(uint8_t index, uint16_t value) {
     // FIXME logic in test, mimic's production code.
     // Perhaps the solution is to remove the logic from the production code version and assume that
-    // anything calling calling pwmWriteServo always uses a valid index?
+    // anything calling calling servoWrite always uses a valid index?
     // See MAX_SERVOS in pwm_output (driver) and MAX_SUPPORTED_SERVOS (flight)
     if (index < MAX_SERVOS) {
         servos[index].value = value;

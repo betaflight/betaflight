@@ -28,6 +28,14 @@
 #include "drivers/bus_spi.h"
 
 // Discovery functions
+#ifdef USE_ACCGYRO_LSM6DSV16X
 uint8_t lsm6dsv16xSpiDetect(const extDevice_t *dev);
 bool lsm6dsv16xSpiAccDetect(accDev_t *acc);
 bool lsm6dsv16xSpiGyroDetect(gyroDev_t *gyro);
+#endif // USE_ACCGYRO_LSM6DSV16X
+
+#ifdef USE_ACCGYRO_LSM6DSK320X
+uint8_t lsm6dsk320xSpiDetect(const extDevice_t *dev);
+bool lsm6dsk320xSpiAccDetect(accDev_t *acc);
+bool lsm6dsk320xSpiGyroDetect(gyroDev_t *gyro);
+#endif // USE_ACCGYRO_LSM6DSK320X

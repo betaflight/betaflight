@@ -32,6 +32,7 @@
 #include "apm32f4xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TMR1,  .rcc = RCC_APB2(TMR1),  .inputIrq = TMR1_CC_IRQn},
@@ -210,9 +211,10 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     7                   TMR8_CH1    TMR8_CH2    TMR8_CH3                                        TMR8_CH4
 */
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClock(const timerHardware_t *timHw)
 {
-    if (tim == TMR8 || tim == TMR1 || tim == TMR9 || tim == TMR10 || tim == TMR11) {
+    const TMR_TypeDef *tim_ptr = (const TMR_TypeDef *)timHw->tim;
+    if (tim_ptr == TMR8 || tim_ptr == TMR1 || tim_ptr == TMR9 || tim_ptr == TMR10 || tim_ptr == TMR11) {
         return SystemCoreClock;
     } else {
         return SystemCoreClock / 2;

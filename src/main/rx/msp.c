@@ -28,6 +28,7 @@
 #include "common/utils.h"
 
 #include "drivers/io.h"
+#include "drivers/time.h"
 #include "pg/rx.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -62,13 +63,12 @@ void rxMspFrameReceive(const uint16_t *frame, int channelCount)
 
 static uint8_t rxMspFrameStatus(rxRuntimeState_t *rxRuntimeState)
 {
-    UNUSED(rxRuntimeState);
-
     if (!rxMspFrameDone) {
         return RX_FRAME_PENDING;
     }
 
     rxMspFrameDone = false;
+    rxRuntimeState->lastRcFrameTimeUs = micros();
     return RX_FRAME_COMPLETE;
 }
 

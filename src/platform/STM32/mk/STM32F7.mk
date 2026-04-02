@@ -2,6 +2,8 @@
 # F7 Make file include
 #
 
+PLATFORM_SDK := arm
+
 ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
@@ -47,6 +49,7 @@ STDPERIPH_SRC   = \
             stm32f7xx_ll_rcc.c \
             stm32f7xx_ll_spi.c \
             stm32f7xx_ll_tim.c \
+            stm32f7xx_ll_usart.c \
             stm32f7xx_ll_usb.c \
             stm32f7xx_ll_utils.c
 
@@ -161,7 +164,7 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_f7xx.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32f7xx.c \
             STM32/system_stm32f7xx.c \
             STM32/timer_hal.c \
@@ -180,7 +183,8 @@ MSC_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sdio.c \
-            msc/usbd_storage_sd_spi.c
+            msc/usbd_storage_sd_spi.c \
+            common/stm32/msc_sdio_storage.c
 
 SPEED_OPTIMISED_SRC += \
             STM32/bus_i2c_hal.c \
