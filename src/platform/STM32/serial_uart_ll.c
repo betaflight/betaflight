@@ -75,6 +75,12 @@ void uartReconfigure(uartPort_t *uartPort)
 {
     USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
 
+    // Disable all UART interrupts before disabling the peripheral to prevent
+    // an interrupt storm. With UE=0, TC is always asserted (transmitter idle),
+    // so TCIE must be cleared before clearing UE.
+    CLEAR_BIT(USARTx->CR1, USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE);
+    CLEAR_BIT(USARTx->CR3, USART_CR3_EIE);
+
     LL_USART_Disable(USARTx);
     LL_USART_DeInit(USARTx);
 
