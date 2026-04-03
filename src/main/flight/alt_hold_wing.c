@@ -40,18 +40,18 @@
 #include "alt_hold.h"
 
 LOCAL_UNUSED_FUNCTION static void altHoldReset(void)
-{
-}
+{}
 
 void altHoldInit(void)
-{
-}
+{}
 
-void updateAltHold(timeUs_t currentTimeUs) {
+void updateAltHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
 }
 
-bool isAltHoldActive(void) {
+bool isAltHoldActive(void)
+{
     return false;
 }
 

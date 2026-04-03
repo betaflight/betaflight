@@ -24,7 +24,8 @@
 
 #define TASK_ALTITUDE_RATE_HZ 100
 
-typedef enum {
+typedef enum
+{
     ALTITUDE_SOURCE_DEFAULT = 0,
     ALTITUDE_SOURCE_BARO_ONLY,
     ALTITUDE_SOURCE_GPS_ONLY,
@@ -53,4 +54,3 @@ int32_t getEstimatedAltitudeCm(void);
 float getAltitudeAsl(void);
 int16_t getEstimatedVario(void);
 bool isAltitudeAvailable(void);
-

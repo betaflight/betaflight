@@ -59,7 +59,8 @@ static void posHoldCheckSticks(void)
         setSticksActiveStatus(false);
         return;
     }
-    const bool sticksDeflected = (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
+    const bool sticksDeflected =
+        (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
     setSticksActiveStatus(sticksDeflected);
 }
 
@@ -70,7 +71,8 @@ static bool sensorsOk(void)
     return positionEstimatorIsValidXY();
 }
 
-void updatePosHold(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHold.isEnabled) {
@@ -101,7 +103,8 @@ void updatePosHold(timeUs_t currentTimeUs) {
     }
 }
 
-bool posHoldFailure(void) {
+bool posHoldFailure(void)
+{
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
 

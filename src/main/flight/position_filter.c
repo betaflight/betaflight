@@ -23,8 +23,8 @@
 
 #include "position_filter.h"
 
-void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel,
-                float initialPosVar, float initialVelVar, float qAccel)
+void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel, float initialPosVar, float initialVelVar,
+                float qAccel)
 {
     kf->x[0] = initialPos;
     kf->x[1] = initialVel;

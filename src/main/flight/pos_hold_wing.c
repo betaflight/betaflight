@@ -40,14 +40,15 @@
 #include "pos_hold.h"
 
 void posHoldInit(void)
-{
-}
+{}
 
-void updatePosHold(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
 }
 
-bool posHoldFailure(void) {
+bool posHoldFailure(void)
+{
     // used only to display warning in OSD if requested but failing
     return true;
 }
