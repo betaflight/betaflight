@@ -22,6 +22,7 @@
 
 #include "platform.h"
 #include "common/utils.h"
+#include "drivers/timer_types.h"
 #include "platform/dma.h"
 
 // allow conditional definition of DMA related members
@@ -147,7 +148,7 @@
 #if defined(STM32F4)
 
 #define DEF_TIM(tim, chan, pin, out, dmaopt) {                  \
-    tim,                                                        \
+    (timerResource_t *)tim,                                     \
     TIMER_GET_IO_TAG(pin),                                      \
     DEF_TIM_CHANNEL(CH_ ## chan),                               \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                        \
@@ -250,7 +251,7 @@
 
 #elif defined(STM32F7)
 #define DEF_TIM(tim, chan, pin, out, dmaopt) {                          \
-    tim,                                                                \
+    (timerResource_t *)tim,                                             \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
@@ -475,7 +476,7 @@
 
 #elif defined(STM32H7)
 #define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
-    tim,                                                                \
+    (timerResource_t *)tim,                                             \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
@@ -829,7 +830,7 @@
 #elif defined(STM32N6)
 
 #define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
-    tim,                                                                \
+    (timerResource_t *)tim,                                             \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \
@@ -1126,7 +1127,7 @@
 #define GPIO_AF12_TIM1         ((uint8_t)0x0B)  /* TIM1 Alternate Function mapping    */
 
 #define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
-    tim,                                                                \
+    (timerResource_t *)tim,                                             \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \

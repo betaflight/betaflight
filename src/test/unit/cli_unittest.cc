@@ -422,6 +422,222 @@ bool getRxRateValid(void) { return false; }
 const uint16_t *getBuildOptions(unsigned *count) { *count = 0; return NULL; }
 }
 
+// Verifies cliGetSettingByName returns "name = value" for an array setting.
+TEST(CLIUnittest, TestGetSettingByNameArray)
+{
+    // First set the array to known values
+    char *str = (char *)"array_unit_test = 10,-20,30";
+    cliSet("", str);
+
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+    int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
+
+    EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
+    buf[written] = '\0';
+    EXPECT_STREQ("array_unit_test = 10,-20,30", buf);
+}
+
+// Verifies cliGetSettingByName returns "name = value" for a string setting.
+TEST(CLIUnittest, TestGetSettingByNameString)
+{
+    char *str = (char *)"str_unit_test = HELLO";
+    cliSet("", str);
+
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+    int written = cliGetSettingByName("str_unit_test", buf, sizeof(buf));
+
+    EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
+    buf[written] = '\0';
+    EXPECT_STREQ("str_unit_test = HELLO", buf);
+}
+
+// Verifies cliGetSettingByName returns -1 for a nonexistent setting.
+TEST(CLIUnittest, TestGetSettingByNameNotFound)
+{
+    char buf[128];
+    int written = cliGetSettingByName("nonexistent_setting", buf, sizeof(buf));
+    EXPECT_EQ(-1, written);
+}
+
+// Verifies cliGetSettingByName truncates output when buffer is small.
+TEST(CLIUnittest, TestGetSettingByNameSmallBuffer)
+{
+    char *str = (char *)"array_unit_test = 1,2,3";
+    cliSet("", str);
+
+    char buf[10];
+    memset(buf, 0, sizeof(buf));
+    int written = cliGetSettingByName("array_unit_test", buf, sizeof(buf));
+
+    EXPECT_LT(written, 0); // truncated output must return error
+}
+
+// Verifies cliGetSettingByName returns 0 when buffer length is zero.
+TEST(CLIUnittest, TestGetSettingByNameZeroBuffer)
+{
+    char buf[1];
+    int written = cliGetSettingByName("array_unit_test", buf, 0);
+    EXPECT_EQ(0, written);
+}
+
+// Verifies cliSetSettingByName sets an array value and round-trips via get.
+TEST(CLIUnittest, TestSetSettingByNameArray)
+{
+    bool result = cliSetSettingByName("array_unit_test = 50,-60,70");
+    EXPECT_TRUE(result);
+
+    // Verify the values were stored
+    const uint16_t index = cliGetSettingIndex((char *)"array_unit_test", 15);
+    EXPECT_LT(index, valueTableEntryCount);
+    int8_t *data = (int8_t *)cliGetValuePointer(&valueTable[index]);
+    EXPECT_EQ(50,  data[0]);
+    EXPECT_EQ(-60, data[1]);
+    EXPECT_EQ(70,  data[2]);
+}
+
+// Verifies cliSetSettingByName sets a string value.
+TEST(CLIUnittest, TestSetSettingByNameString)
+{
+    bool result = cliSetSettingByName("str_unit_test = WORLD");
+    EXPECT_TRUE(result);
+
+    char buf[128];
+    memset(buf, 0, sizeof(buf));
+    int written = cliGetSettingByName("str_unit_test", buf, sizeof(buf));
+    EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
+    buf[written] = '\0';
+    EXPECT_STREQ("str_unit_test = WORLD", buf);
+}
+
+// Verifies cliSetSettingByName returns false for missing equals sign.
+TEST(CLIUnittest, TestSetSettingByNameNoEquals)
+{
+    bool result = cliSetSettingByName("array_unit_test 1,2,3");
+    EXPECT_FALSE(result);
+}
+
+// Verifies cliSetSettingByName returns false for nonexistent setting.
+TEST(CLIUnittest, TestSetSettingByNameNotFound)
+{
+    bool result = cliSetSettingByName("nonexistent_setting = 42");
+    EXPECT_FALSE(result);
+}
+
+// Verifies cliSetSettingByName rejects a partial array (fewer elements than length).
+TEST(CLIUnittest, TestSetSettingByNamePartialArray)
+{
+    // First set to known values
+    cliSetSettingByName("array_unit_test = 10,20,30");
+
+    // Attempt partial update with only 1 of 3 elements
+    bool result = cliSetSettingByName("array_unit_test = 99");
+    EXPECT_FALSE(result);
+
+    // Original values should be unchanged
+    const uint16_t index = cliGetSettingIndex((char *)"array_unit_test", 15);
+    EXPECT_LT(index, valueTableEntryCount);
+    int8_t *data = (int8_t *)cliGetValuePointer(&valueTable[index]);
+    EXPECT_EQ(10, data[0]);
+    EXPECT_EQ(20, data[1]);
+    EXPECT_EQ(30, data[2]);
+}
+
+// Verifies cliSetSettingByName returns false when value is empty.
+TEST(CLIUnittest, TestSetSettingByNameEmptyValue)
+{
+    bool result = cliSetSettingByName("array_unit_test = ");
+    EXPECT_FALSE(result);
+}
+
+// Verifies cliSetSettingByName handles extra whitespace around '='.
+TEST(CLIUnittest, TestSetSettingByNameWhitespace)
+{
+    bool result = cliSetSettingByName("array_unit_test   =   7, -8 , 9");
+    EXPECT_TRUE(result);
+
+    const uint16_t index = cliGetSettingIndex((char *)"array_unit_test", 15);
+    EXPECT_LT(index, valueTableEntryCount);
+    int8_t *data = (int8_t *)cliGetValuePointer(&valueTable[index]);
+    EXPECT_EQ(7,  data[0]);
+    EXPECT_EQ(-8, data[1]);
+    EXPECT_EQ(9,  data[2]);
+}
+
+// Verifies cliGetSettingInfoByName returns metadata for an array setting.
+TEST(CLIUnittest, TestGetSettingInfoByNameArray)
+{
+    char buf[512];
+    memset(buf, 0, sizeof(buf));
+    int totalLen = 0;
+
+    int written = cliGetSettingInfoByName("array_unit_test", 0, buf, sizeof(buf), &totalLen);
+
+    EXPECT_GT(written, 0);
+    EXPECT_GT(totalLen, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
+    buf[written] = '\0';
+
+    // Should contain PGN, type, and length info
+    EXPECT_TRUE(strstr(buf, "pgn=") != NULL);
+    EXPECT_TRUE(strstr(buf, "type=int8[]") != NULL);
+    EXPECT_TRUE(strstr(buf, "length=3") != NULL);
+    EXPECT_TRUE(strstr(buf, "default=") != NULL);
+}
+
+// Verifies cliGetSettingInfoByName returns metadata for a string setting.
+TEST(CLIUnittest, TestGetSettingInfoByNameString)
+{
+    char buf[512];
+    memset(buf, 0, sizeof(buf));
+    int totalLen = 0;
+
+    int written = cliGetSettingInfoByName("str_unit_test", 0, buf, sizeof(buf), &totalLen);
+
+    EXPECT_GT(written, 0);
+    ASSERT_LT((size_t)written, sizeof(buf));
+    buf[written] = '\0';
+
+    EXPECT_TRUE(strstr(buf, "type=string") != NULL);
+    EXPECT_TRUE(strstr(buf, "maxlength=16") != NULL);
+}
+
+// Verifies cliGetSettingInfoByName returns -1 for nonexistent setting.
+TEST(CLIUnittest, TestGetSettingInfoByNameNotFound)
+{
+    char buf[128];
+    int totalLen = 0;
+    int written = cliGetSettingInfoByName("nonexistent_setting", 0, buf, sizeof(buf), &totalLen);
+    EXPECT_EQ(-1, written);
+}
+
+// Verifies the windowed offset feature of cliGetSettingInfoByName.
+TEST(CLIUnittest, TestGetSettingInfoByNameOffset)
+{
+    char fullBuf[512];
+    memset(fullBuf, 0, sizeof(fullBuf));
+    int totalLen = 0;
+    int fullWritten = cliGetSettingInfoByName("array_unit_test", 0, fullBuf, sizeof(fullBuf), &totalLen);
+    EXPECT_GT(fullWritten, 0);
+
+    // Read with an offset of 5 bytes
+    char offsetBuf[512];
+    memset(offsetBuf, 0, sizeof(offsetBuf));
+    int totalLen2 = 0;
+    int offsetWritten = cliGetSettingInfoByName("array_unit_test", 5, offsetBuf, sizeof(offsetBuf), &totalLen2);
+    EXPECT_GT(offsetWritten, 0);
+    EXPECT_EQ(totalLen, totalLen2); // total size should be the same regardless of offset
+
+    // The offset buffer should match the full buffer starting at position 5
+    ASSERT_GE(offsetWritten, 0);
+    ASSERT_LE(5 + offsetWritten, fullWritten);
+    EXPECT_EQ(0, memcmp(fullBuf + 5, offsetBuf, offsetWritten));
+}
+
 // Verifies that cliHelp does not dereference NULL when searching commands whose
 // description field is NULL (e.g. flash_read, flash_write, play_sound).
 // Prior to the fix, strcasestr(NULL, cmdline) was called for these entries,

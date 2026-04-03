@@ -130,7 +130,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 
 #if defined(USE_SPI_MAG) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_busType = BUS_TYPE_SPI;
-    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MAG_SPI_INSTANCE));
+    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance((const spiResource_t *)MAG_SPI_INSTANCE));
     compassConfig->mag_spi_csn = IO_TAG(MAG_CS_PIN);
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
@@ -173,7 +173,7 @@ void compassPreInit(void)
 #endif
 }
 
-#if !defined(SIMULATOR_BUILD)
+#if !ENABLE_SIMULATOR
 static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 {
     *alignment = MAG_ALIGN;
@@ -378,7 +378,7 @@ static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 
     return false;
 }
-#endif // !SIMULATOR_BUILD
+#endif // !ENABLE_SIMULATOR
 
 bool compassInit(void)
 {

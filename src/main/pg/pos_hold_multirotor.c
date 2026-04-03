@@ -32,11 +32,14 @@
 
 #include "pos_hold.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 1);
 
 PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
-    .posHoldWithoutMag = false,   // position hold within this percentage stick deflection
-    .deadband = 5,          // deadband in percent of stick travel for roll and pitch. Must be non-zero, and exceeded, for target location to be changed with sticks
+    .posHoldWithoutMag = false,
+    .deadband = 5,
+    .positionSource = POSHOLD_SOURCE_AUTO,
+    .opticalflowQualityMin = 30,
+    .opticalflowMaxRange = 400,
 );
 #endif
 

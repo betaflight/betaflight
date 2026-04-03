@@ -76,6 +76,42 @@ __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Channel_TypeDef *DMAx_Channely)
     SET_BIT(DMAx_Channely->CCR, DMA_CCR_TCIE);
 }
 
+__STATIC_INLINE void LL_EX_DMA_SetMemoryAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
+{
+    DMAx_Channely->CMAR = addr;
+}
+
+__STATIC_INLINE void LL_EX_DMA_SetPeriphAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
+{
+    DMAx_Channely->CPAR = addr;
+}
+
+__STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *DMAx_Channely,
+    uint32_t request, uint32_t direction,
+    uint32_t periphAddr, uint32_t memAddr,
+    uint32_t dataLength, uint32_t mode)
+{
+    LL_DMA_InitTypeDef init;
+    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
+    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
+
+    LL_DMA_StructInit(&init);
+    init.PeriphRequest = request;
+    init.Direction = direction;
+    init.PeriphOrM2MSrcAddress = periphAddr;
+    init.MemoryOrM2MDstAddress = memAddr;
+    init.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
+    init.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
+    init.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
+    init.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+    init.Mode = mode;
+    init.NbData = dataLength;
+    init.Priority = LL_DMA_PRIORITY_MEDIUM;
+
+    LL_DMA_DeInit(DMA, Channel);
+    LL_DMA_Init(DMA, Channel, &init);
+}
+
 __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Channel_TypeDef* DMAx_Channely, uint32_t NbData)
 {
     MODIFY_REG(DMAx_Channely->CNDTR, DMA_CNDTR_NDT, NbData);

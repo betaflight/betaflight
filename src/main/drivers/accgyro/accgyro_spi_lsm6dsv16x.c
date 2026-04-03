@@ -338,7 +338,7 @@
 #define LSM6DSV_CTRL6_FS_G_500DPS                       0x02
 #define LSM6DSV_CTRL6_FS_G_1000DPS                      0x03
 #define LSM6DSV_CTRL6_FS_G_2000DPS                      0x04
-#define LSM6DSV_CTRL6_FS_G_4000DPS                      0xc0
+#define LSM6DSV_CTRL6_FS_G_4000DPS                      0x0c
 
 // Control register 7 (R/W)
 #define LSM6DSV_CTRL7                       0x16
