@@ -131,7 +131,7 @@
 #define STM32F7
 #endif
 
-#elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx)
+#elif defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F446xx) || defined(STM32F427_437xx)
 
 #include "stm32f4xx.h"
 
@@ -232,7 +232,7 @@
 #endif // MCU family selection
 
 #ifdef STM32F4
-#if defined(STM32F40_41xxx)
+#if defined(STM32F40_41xxx) || defined(STM32F427_437xx)
 #define USE_FAST_DATA
 #endif
 
@@ -556,7 +556,7 @@ extern uint8_t _dmaram_end__;
 #endif
 
 #if defined(STM32F4) || defined(STM32G4)
-#define MAX_SPI_PIN_SEL 2
+#define MAX_SPI_PIN_SEL 3
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
 #elif defined(STM32H5) || defined(STM32C5)

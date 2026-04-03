@@ -38,7 +38,4 @@
 #define REQUIRE_PRINTF_LONG_SUPPORT
 #endif
 
-// Legacy MSP MCU-type byte value: the configurator reads the MCU name from the CLI "env" command instead.
-#define MCU_TYPE_ID_PROVIDED_BY_NAME 254
-
 const char *getMcuTypeName(void);
