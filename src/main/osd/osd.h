@@ -197,6 +197,19 @@ typedef enum {
     OSD_LIDAR_DIST,
     OSD_CUSTOM_SERIAL_TEXT,
     OSD_BATTERY_PROFILE_NAME,
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    // Waypoint elements
+    OSD_WP_NUMBER,              // "WP 3/12" - current/total
+    OSD_WP_CURRENT_LAT,         // Current waypoint latitude
+    OSD_WP_CURRENT_LON,         // Current waypoint longitude
+    OSD_WP_CURRENT_ALT,         // Current waypoint altitude
+    OSD_WP_DISTANCE,            // Distance to current waypoint
+    OSD_WP_DIRECTION,           // Direction arrow to current waypoint
+    OSD_WP_NEXT_NUMBER,         // "NEXT 4" - next waypoint number
+    OSD_WP_ETA,                 // Estimated time to waypoint
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

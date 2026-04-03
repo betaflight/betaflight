@@ -174,6 +174,9 @@ static const uint16_t buildOptions[] = {
 #ifdef USE_WING
         BUILD_OPTION_WING,
 #endif
+#if ENABLE_FLIGHT_PLAN
+        BUILD_OPTION_FLIGHT_PLAN,
+#endif
 #ifdef USE_BRUSHED
         BUILD_OPTION_BRUSHED,
 #endif
