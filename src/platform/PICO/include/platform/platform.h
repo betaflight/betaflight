@@ -140,6 +140,11 @@ extern uint32_t systemUniqueId[3];
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
 
+// ELRS tick/tock timer is implemented using the pico-sdk hardware_alarm API
+// (src/platform/PICO/expresslrs_timer_pico.c) instead of the generic
+// STM32-style timer driver (src/main/drivers/rx/expresslrs_driver.c).
+#define USE_EXPRESSLRS_TIMER_PICO
+
 // NVIC priority utility macros
 #define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)

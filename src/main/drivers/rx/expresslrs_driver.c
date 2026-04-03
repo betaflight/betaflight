@@ -30,7 +30,7 @@
 #include <string.h>
 #include "platform.h"
 
-#ifdef USE_RX_EXPRESSLRS
+#if defined(USE_RX_EXPRESSLRS) && !defined(USE_EXPRESSLRS_TIMER_PICO)
 
 #include "build/debug.h"
 #include "build/debug_pin.h"
@@ -192,4 +192,4 @@ void expressLrsInitialiseTimer(const timerHardware_t *timHw, timerOvrHandlerRec_
     timerConfigUpdateCallback(timer, timerUpdateCb);
 }
 
-#endif
+#endif // USE_RX_EXPRESSLRS && !USE_EXPRESSLRS_TIMER_PICO

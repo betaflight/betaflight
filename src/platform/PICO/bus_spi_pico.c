@@ -324,8 +324,15 @@ void spiInitBusDMA(void)
 
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
-    //TODO: implement
-    UNUSED(descriptor);
+    // Abort the channel and wait for it to stop.
+    // Equivalent to STM32's LL_DMA_DisableStream() + polling loop.
+    dma_channel_abort(descriptor->channel);
+
+    // Clear any pending completion interrupt for this channel on both IRQ lines.
+    // RP2350 uses two DMA IRQ lines (IRQ0/IRQ1); the acknowledge registers are
+    // write-1-to-clear, so writing a bit that is already clear is a no-op.
+    dma_channel_acknowledge_irq0(descriptor->channel);
+    dma_channel_acknowledge_irq1(descriptor->channel);
 }
 
 bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData, uint8_t *rxData, int len)
