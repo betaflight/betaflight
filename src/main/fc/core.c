@@ -550,7 +550,7 @@ void tryArm(void)
 
 
     updateArmingStatus();
-    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed, 
+    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed,
 
 
     if (!isArmingDisabled()) {

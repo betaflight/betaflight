@@ -194,13 +194,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
-    if (true
-#ifdef USE_DMA
-        && !s->rxDMAResource  // do not enable IRW if using rxDMA
-#endif
-        ) {
-        enableRxIrq(hardware);
-    }
+    enableRxIrq(hardware);
     return s;
 }
 
@@ -249,7 +243,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->rxDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if DMA_TRAIT_CHANNEL

@@ -62,6 +62,7 @@ STDPERIPH_SRC   = \
             stm32h5xx_ll_dlyb.c \
             stm32h5xx_ll_dma.c \
             stm32h5xx_ll_fmac.c \
+            stm32h5xx_ll_i2c.c \
             stm32h5xx_ll_i3c.c \
             stm32h5xx_ll_icache.c \
             stm32h5xx_ll_pka.c \
@@ -154,8 +155,8 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
             STM32/bus_quadspi_hal.c \
             STM32/debug.c \
@@ -201,7 +202,8 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP

@@ -73,6 +73,7 @@ typedef struct i2cState_s {
     volatile uint8_t reading;
     volatile uint8_t* write_p;
     volatile uint8_t* read_p;
+    volatile uint32_t transactionStartUs;
 } i2cState_t;
 #endif
 

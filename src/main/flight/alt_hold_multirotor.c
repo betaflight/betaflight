@@ -55,7 +55,7 @@ altHoldState_t altHold;
 static void altHoldReset(void)
 {
     resetAltitudeControl();
-    altHold.targetAltitudeCm = getAltitudeCm();
+    altHold.targetAltitudeCm = getAltitudeCmControl();
     altHold.targetVelocity = 0.0f;
 }
 
@@ -73,9 +73,14 @@ static void altHoldProcessTransitions(void) {
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHold.isActive) {
             altHoldReset();
+            autopilotCaptureHoverThrottleForAltHold();
             altHold.isActive = true;
         }
     } else {
+        if (altHold.isActive) {
+            resetAltitudeControl();  // Reset throttle output when exiting altitude hold
+            autopilotClearAltHoldHoverThrottle();
+        }
         altHold.isActive = false;
     }
 
@@ -101,8 +106,9 @@ static void altHoldUpdateTargetAltitude(void)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadband * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
-        const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
+        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
+        const float lowThreshold = hoverPwm - altHold.deadband * (hoverPwm - PWM_RANGE_MIN);
+        const float highThreshold = hoverPwm + altHold.deadband * (PWM_RANGE_MAX - hoverPwm);
 
         if (rcThrottle < lowThreshold) {
             stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
@@ -119,7 +125,7 @@ static void altHoldUpdateTargetAltitude(void)
         // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
         // the deceleration may be a bit rocky if it starts very high up
         // constant (set) deceleration target in the last 2m
-        stickFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
+        stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
     altHold.targetVelocity = stickFactor * altHold.maxVelocity;
 
@@ -128,7 +134,7 @@ static void altHoldUpdateTargetAltitude(void)
     // using maxVelocity means the stick can bring altitude target to current within 1s
     // this constrains the P and I response to user target changes, but not D of F responses
     // Range is compared to distance that might be traveled in one second
-    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
+    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
@@ -139,7 +145,7 @@ static void altHoldUpdate(void)
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
-    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);
+    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity, altHold.maxVelocity);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {

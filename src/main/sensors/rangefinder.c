@@ -43,6 +43,7 @@
 #include "drivers/rangefinder/rangefinder_lidartf.h"
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "drivers/rangefinder/rangefinder_nooploop.h"
+#include "drivers/rangefinder/rangefinder_upt1.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -94,7 +95,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
 
-#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF) && !defined(USE_RANGEFINDER_NOOPLOOP)
+#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF) && !defined(USE_RANGEFINDER_NOOPLOOP) && !defined(USE_RANGEFINDER_UPT1)
     UNUSED(dev);
 #endif
 
@@ -143,6 +144,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (mtRangefinderDetect(dev, rangefinderHardwareToUse)) {
                 rangefinderHardware = rangefinderHardwareToUse;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
+
+#if defined(USE_RANGEFINDER_UPT1)
+        case RANGEFINDER_UPT1:
+            if (rangefinderUPT1Detect(dev)) {
+                rangefinderHardware = RANGEFINDER_UPT1;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_UPT1_TASK_PERIOD_MS));
             }
             break;
 #endif
@@ -342,6 +352,8 @@ bool rangefinderProcess(float cosTiltAngle)
     *
     * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
     */
+    DEBUG_SET(DEBUG_RANGEFINDER, 4, cosTiltAngle);
+    DEBUG_SET(DEBUG_RANGEFINDER, 5, rangefinder.maxTiltCos);
     if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
