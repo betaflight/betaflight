@@ -99,7 +99,8 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
 static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
 {
     float deltaAccP = 0.0f;
-    if (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0) {
+    if (sensors(SENSOR_ACC) &&
+        (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0)) {
         const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
         float accelReq = pitchPilotCtrl < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchPilotCtrl * 0.01f + 1.0f
                                                : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchPilotCtrl * 0.01f + 1.0f;
@@ -212,7 +213,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
     float pitchDampingCtrl = -1.0f * gyroPitch * (pidProfile->psas_damping_gain[FD_PITCH] * 0.001f);
-    float accelZ = acc.accADC.z * acc.dev.acc_1G_rec;
+    float accelZ = sensors(SENSOR_ACC) ? acc.accADC.z * acc.dev.acc_1G_rec : 1.0f;
     float pitchStabilityCtrl = (accelZ - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.01f);
 
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
