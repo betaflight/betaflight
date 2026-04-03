@@ -31,11 +31,9 @@
 #pragma GCC diagnostic pop
 #include "soc/gpio_struct.h"
 #include "esp_rom_gpio.h"
-#include "esp_rom_sys.h"
 #include "soc/interrupts.h"
 
-// CPU interrupt line used for GPIO peripheral interrupts
-#define GPIO_CPU_INTR_NUM  19
+#include "platform/interrupt.h"
 
 typedef struct {
     extiCallbackRec_t* handler;
@@ -47,8 +45,10 @@ static uint32_t extiTriggerMask[DEFIO_USED_COUNT];
 // Shared GPIO ISR - reads interrupt status and dispatches to per-pin callbacks.
 // Handles pins 0-31 via the primary status register and pins 32-48 via the
 // high status register.
-static void __attribute__((used)) EXTI_IRQHandler(void)
+static void EXTI_IRQHandler(void *arg)
 {
+    UNUSED(arg);
+
     uint32_t status = 0;
 
     // Process pins 0-31
@@ -129,20 +129,10 @@ void EXTIInit(void)
     memset(extiChannelRecs, 0, sizeof(extiChannelRecs));
     memset(extiTriggerMask, 0, sizeof(extiTriggerMask));
 
-    // Route GPIO peripheral interrupt to CPU interrupt line
-    esp_rom_route_intr_matrix(0, ETS_GPIO_INTR_SOURCE, GPIO_CPU_INTR_NUM);
-
-    // Enable CPU interrupt via Xtensa INTENABLE special register (register 228)
-    uint32_t intenable;
-    __asm__ __volatile__("rsr.intenable %0" : "=r"(intenable));
-    intenable |= (1U << GPIO_CPU_INTR_NUM);
-    __asm__ __volatile__("wsr.intenable %0" :: "r"(intenable));
-
-    // TODO: Register EXTI_IRQHandler in the Xtensa interrupt vector table
-    // for CPU interrupt GPIO_CPU_INTR_NUM. The handler dispatch depends on
-    // the interrupt level and the vector table layout configured in the
-    // linker script. For level-1 interrupts, the entry is typically at
-    // _xt_interrupt_table[GPIO_CPU_INTR_NUM].
+    // Route GPIO peripheral interrupt to CPU interrupt line and register handler
+    esp32IntrRoute(ESP32_CPU_INTR_GPIO, ETS_GPIO_INTR_SOURCE);
+    esp32IntrRegister(ESP32_CPU_INTR_GPIO, EXTI_IRQHandler, NULL);
+    esp32IntrEnable(ESP32_CPU_INTR_GPIO);
 }
 
 void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
