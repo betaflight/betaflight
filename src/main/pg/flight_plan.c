@@ -21,33 +21,18 @@
 
 #include "platform.h"
 
-#ifndef USE_WING
-
-#include "flight/autopilot.h"
-
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
-#include "autopilot.h"
+#include "pg/flight_plan.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 3);
+#if ENABLE_FLIGHT_PLAN
 
-PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
-    .landingAltitudeM = 4,
-    .hoverThrottle = 1275,
-    .throttleMin = 1100,
-    .throttleMax = 1700,
-    .altitudeP = 30,
-    .altitudeI = 30,
-    .altitudeD = 30,
-    .altitudeF = 30,
-    .positionP = 30,
-    .positionI = 30,
-    .positionII = 30,
-    .positionD = 30,
-    .positionA = 30,
-    .positionCutoff = 80,
-    .maxAngle = 50,
+PG_REGISTER_WITH_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig, PG_FLIGHT_PLAN_CONFIG, 0);
+
+PG_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig,
+    .waypointCount = 0,
+    .waypoints = { { 0 } }
 );
 
-#endif // !USE_WING
+#endif // ENABLE_FLIGHT_PLAN

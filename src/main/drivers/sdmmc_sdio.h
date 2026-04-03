@@ -32,14 +32,6 @@
 #include "platform.h"
 #include "drivers/dma.h"
 
-#ifdef STM32F4
-#include "stm32f4xx.h"
-#endif
-
-#ifdef STM32F7
-#include "stm32f7xx.h"
-#endif
-
  /* SDCARD pinouts
  *
  * SD CARD PINS

@@ -19,18 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#ifdef USE_WING
-
-#include <stdint.h>
-
-#include "pg/pg.h"
-
-typedef struct autopilotConfig_s {
-    uint8_t dummy;
-} autopilotConfig_t;
-
-PG_DECLARE(autopilotConfig_t, autopilotConfig);
-
-#endif // USE_WING
+void debugInit(void)
+{
+    // NOOP
+}

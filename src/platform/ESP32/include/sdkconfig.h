@@ -19,20 +19,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+/*
+ * Minimal sdkconfig.h for bare-metal Betaflight ESP32-S3 build.
+ * ESP-IDF headers require this file but we run without FreeRTOS.
+ * Only defines needed to satisfy header-level #ifdef checks.
+ */
 
-#ifdef USE_WING
+#pragma once
 
-#include "flight/autopilot.h"
+/* No FreeRTOS - disable all RTOS features */
+/* #undef CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
+/* #undef CONFIG_FREERTOS_USE_TRACE_FACILITY */
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
+/* Disable compiler optimization assertion tweaks */
+/* #undef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT */
 
-#include "autopilot.h"
-
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 2);
-
-PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
-);
-
-#endif // USE_WING
+/* ESP32-S3 target */
+#define CONFIG_IDF_TARGET_ESP32S3  1

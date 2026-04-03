@@ -21,30 +21,13 @@
 
 #pragma once
 
-#ifndef USE_WING
-
 #include <stdint.h>
 
-#include "pg/pg.h"
+typedef struct {
+    int placeholder;
+} USBD_STORAGE_cb_TypeDef;
 
-typedef struct autopilotConfig_s {
-    uint8_t landingAltitudeM;   // altitude below which landing behaviours can change, metres
-    uint16_t hoverThrottle;      // value used at the start of a rescue or position hold
-    uint16_t throttleMin;
-    uint16_t throttleMax;
-    uint8_t altitudeP;
-    uint8_t altitudeI;
-    uint8_t altitudeD;
-    uint8_t altitudeF;
-    uint8_t positionP;
-    uint8_t positionI;
-    uint8_t positionII;
-    uint8_t positionD;
-    uint8_t positionA;
-    uint8_t positionCutoff;
-    uint8_t maxAngle;
-} autopilotConfig_t;
-
-PG_DECLARE(autopilotConfig_t, autopilotConfig);
-
-#endif // !USE_WING
+typedef USBD_STORAGE_cb_TypeDef USBD_MSC_StorageType;
+#define USBD_STD_INQUIRY_LENGTH 36
+#define USBD_MSC_INQUIRY_DATA_LEN USBD_STD_INQUIRY_LENGTH
+typedef uint32_t usbd_msc_block_size_t;
