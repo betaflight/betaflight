@@ -303,23 +303,21 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
-    if (LL_USART_IsEnabledIT_PE(USARTx) && LL_USART_IsActiveFlag_PE(USARTx)) {
+    if (LL_USART_IsActiveFlag_PE(USARTx)) {
         LL_USART_ClearFlag_PE(USARTx);
     }
 
     /* UART frame error, noise error, overrun error ----------------------------*/
-    if (LL_USART_IsEnabledIT_ERROR(USARTx)) {
-        if (LL_USART_IsActiveFlag_FE(USARTx)) {
-            LL_USART_ClearFlag_FE(USARTx);
-        }
+    if (LL_USART_IsActiveFlag_FE(USARTx)) {
+        LL_USART_ClearFlag_FE(USARTx);
+    }
 
-        if (LL_USART_IsActiveFlag_NE(USARTx)) {
-            LL_USART_ClearFlag_NE(USARTx);
-        }
+    if (LL_USART_IsActiveFlag_NE(USARTx)) {
+        LL_USART_ClearFlag_NE(USARTx);
+    }
 
-        if (LL_USART_IsActiveFlag_ORE(USARTx)) {
-            LL_USART_ClearFlag_ORE(USARTx);
-        }
+    if (LL_USART_IsActiveFlag_ORE(USARTx)) {
+        LL_USART_ClearFlag_ORE(USARTx);
     }
 
     // UART transmission completed
