@@ -2,14 +2,16 @@
 # H5 Make file include
 #
 
-PLATFORM_SDK := arm
+# Auto-hydrate STM32CubeH5 submodule when building H5 targets
+PLATFORM_SDK := stm32h5
+PLATFORM_SDK_STAMP := $(STM32H5_SDK_STAMP)
 
 ifeq ($(DEBUG_HARDFAULTS),H5)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
@@ -204,7 +206,7 @@ SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk
