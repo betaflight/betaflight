@@ -35,11 +35,10 @@
 
 PG_REGISTER_WITH_RESET_TEMPLATE(tricopterMixerConfig_t, tricopterMixerConfig, PG_TRICOPTER_CONFIG, 0);
 
-PG_RESET_TEMPLATE(tricopterMixerConfig_t, tricopterMixerConfig,
-    .dummy = 0
-);
+PG_RESET_TEMPLATE(tricopterMixerConfig_t, tricopterMixerConfig, .dummy = 0);
 
-#define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
+#define TRICOPTER_ERROR_RATE_YAW_SATURATED                                                                             \
+    75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
 
 bool mixerTricopterIsServoSaturated(float errorRate)
 {
@@ -53,8 +52,6 @@ float mixerTricopterMotorCorrection(int motor)
 }
 
 void mixerTricopterInit(void)
-{
-
-}
+{}
 
 #endif // USE_SERVOS

@@ -81,13 +81,9 @@ void positionInit(void)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(positionConfig_t, positionConfig, PG_POSITION, 7);
 
-PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
-    .altitude_source = ALTITUDE_SOURCE_DEFAULT,
-    .altitude_prefer_baro = 100,
-    .altitude_lpf = 300,
-    .altitude_d_lpf = 300,
-    .rangefinder_max_range_cm = 400,
-);
+PG_RESET_TEMPLATE(positionConfig_t, positionConfig, .altitude_source = ALTITUDE_SOURCE_DEFAULT,
+                  .altitude_prefer_baro = 100, .altitude_lpf = 300, .altitude_d_lpf = 300,
+                  .rangefinder_max_range_cm = 400, );
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(void)

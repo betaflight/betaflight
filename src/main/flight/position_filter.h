@@ -31,12 +31,25 @@ typedef struct positionKalman_s {
     float Q_accel;   // process noise: accelerometer variance (cm/s^2)^2
 } positionKalman_t;
 
-void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel, float initialPosVar, float initialVelVar, float qAccel);
+void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel, float initialPosVar, float initialVelVar,
+                float qAccel);
 void kalmanPredict(positionKalman_t *kf, float dt, float accel);
 void kalmanUpdatePosition(positionKalman_t *kf, float measuredPos, float R);
 void kalmanUpdateVelocity(positionKalman_t *kf, float measuredVel, float R);
 
-static inline float kalmanGetPosition(const positionKalman_t *kf) { return kf->x[0]; }
-static inline float kalmanGetVelocity(const positionKalman_t *kf) { return kf->x[1]; }
-static inline float kalmanGetPositionVariance(const positionKalman_t *kf) { return kf->P[0][0]; }
-static inline float kalmanGetVelocityVariance(const positionKalman_t *kf) { return kf->P[1][1]; }
+static inline float kalmanGetPosition(const positionKalman_t *kf)
+{
+    return kf->x[0];
+}
+static inline float kalmanGetVelocity(const positionKalman_t *kf)
+{
+    return kf->x[1];
+}
+static inline float kalmanGetPositionVariance(const positionKalman_t *kf)
+{
+    return kf->P[0][0];
+}
+static inline float kalmanGetVelocityVariance(const positionKalman_t *kf)
+{
+    return kf->P[1][1];
+}

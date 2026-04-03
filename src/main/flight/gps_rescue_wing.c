@@ -52,16 +52,14 @@
 
 #include "gps_rescue.h"
 
-float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
+float gpsRescueAngle[RP_AXIS_COUNT] = {0, 0};
 
 void gpsRescueInit(void)
-{
-}
+{}
 
 void gpsRescueUpdate(void)
 // runs at gpsRescueTaskIntervalSeconds, and runs whether or not rescue is active
-{
-}
+{}
 
 float gpsRescueGetYawRate(void)
 {

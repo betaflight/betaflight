@@ -42,7 +42,7 @@
 
 #include "rpm_filter.h"
 
-#define RPM_FILTER_DURATION_S    0.001f  // Maximum duration allowed to update all RPM notches once
+#define RPM_FILTER_DURATION_S 0.001f  // Maximum duration allowed to update all RPM notches once
 
 typedef struct rpmFilter_s {
 
@@ -97,7 +97,8 @@ void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int motor = 0; motor < getMotorCount(); motor++) {
             for (int i = 0; i < rpmFilter.numHarmonics; i++) {
-                biquadFilterInit(&rpmFilter.notch[axis][motor][i], rpmFilter.minHz * i, rpmFilter.looptimeUs, rpmFilter.q, FILTER_NOTCH, 0.0f);
+                biquadFilterInit(&rpmFilter.notch[axis][motor][i], rpmFilter.minHz * i, rpmFilter.looptimeUs,
+                                 rpmFilter.q, FILTER_NOTCH, 0.0f);
             }
         }
     }
@@ -133,7 +134,8 @@ FAST_CODE_NOINLINE void rpmFilterUpdate(void)
             // select current notch on ROLL
             biquadFilter_t *template = &rpmFilter.notch[0][motorIndex][harmonicIndex];
 
-            const float frequencyHz = constrainf((harmonicIndex + 1) * getMotorFrequencyHz(motorIndex), rpmFilter.minHz, rpmFilter.maxHz);
+            const float frequencyHz =
+                constrainf((harmonicIndex + 1) * getMotorFrequencyHz(motorIndex), rpmFilter.minHz, rpmFilter.maxHz);
             const float marginHz = frequencyHz - rpmFilter.minHz;
             float weight = 1.0f;
 
