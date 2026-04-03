@@ -127,6 +127,7 @@ bool cliMode = false;
 #include "msp/msp_build_info.h"
 #include "msp/msp_protocol.h"
 
+#include "locales/localisation.h"
 #include "osd/osd.h"
 
 #include "pg/adc.h"
@@ -6018,6 +6019,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif // USE_GPS
 
 #if defined(USE_OSD)
+    cliPrintLinef("%s: %s", STR_LANGUAGE, LOCALE);
+    
     osdDisplayPortDevice_e displayPortDeviceType;
     displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
 
