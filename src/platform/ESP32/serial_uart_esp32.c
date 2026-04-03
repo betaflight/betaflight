@@ -189,16 +189,20 @@ void uartConfigureExternalPinInversion(uartPort_t *uartPort)
     int portNum = uartGetPortNum(uartPort->USARTx);
     uart_dev_t *hw = uartGetHw(portNum);
 
-    // ESP32-S3 UART supports hardware signal inversion — no external inverter IC needed
-    if (uartPort->port.options & SERIAL_INVERTED) {
+    const bool inverted = (uartPort->port.options & SERIAL_INVERTED) != 0;
+
+#ifdef USE_INVERTER
+    // When an external inverter is available, use it and keep HW inversion disabled
+    // to avoid double-inverting the signal.
+    uart_ll_inverse_signal(hw, UART_SIGNAL_INV_DISABLE);
+    enableInverter(uartPort->port.identifier, inverted);
+#else
+    // No external inverter — use ESP32-S3 hardware signal inversion
+    if (inverted) {
         uart_ll_inverse_signal(hw, UART_SIGNAL_TXD_INV | UART_SIGNAL_RXD_INV);
     } else {
         uart_ll_inverse_signal(hw, UART_SIGNAL_INV_DISABLE);
     }
-
-#ifdef USE_INVERTER
-    // Also drive external inverter GPIO if configured
-    enableInverter(uartPort->port.identifier, uartPort->port.options & SERIAL_INVERTED);
 #endif
 }
 
@@ -221,11 +225,11 @@ void uartReconfigure(uartPort_t *uartPort)
     uart_ll_set_rxfifo_full_thr(hw, UART_RXFIFO_FULL_THRESHOLD);
     uart_ll_set_rx_tout(hw, UART_RX_TOUT_THRESHOLD);
 
-    // Disable all UART interrupts, then selectively enable
-    uart_ll_disable_intr_mask(hw, 0xFFFFFFFF);
-    uart_ll_clr_intsts_mask(hw, 0xFFFFFFFF);
+    // Reconfigure RX interrupts based on current mode.
+    // Only touch RX bits to avoid disrupting an in-progress TX transfer.
+    uart_ll_disable_intr_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+    uart_ll_clr_intsts_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
 
-    // Enable RX interrupts if in RX mode
     if (uartPort->port.mode & MODE_RX) {
         uart_ll_ena_intr_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
     }
@@ -262,7 +266,8 @@ void uartIrqHandler(uartPort_t *s)
     if (status & UART_INTR_TXFIFO_EMPTY) {
         uart_ll_clr_intsts_mask(hw, UART_INTR_TXFIFO_EMPTY);
 
-        // Fill TX FIFO up to available space
+        // Fill TX FIFO up to available space.
+        // Note: uart_ll_get_txfifo_len() returns FREE space (FIFO_DEF_LEN - txfifo_cnt).
         uint32_t txFree = uart_ll_get_txfifo_len(hw);
         while (txFree && s->port.txBufferTail != s->port.txBufferHead) {
             uart_ll_write_txfifo(hw, (const uint8_t *)&s->port.txBuffer[s->port.txBufferTail], 1);

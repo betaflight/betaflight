@@ -27,7 +27,8 @@
 #include "esp_rom_sys.h"
 
 // ROM functions for interrupt management.
-// Symbols resolved via esp32s3.rom.ld at link time.
+// Symbols provided by the ESP-IDF ROM linker scripts referenced in ESP32S3.mk
+// (components/esp_rom/esp32s3/ld/esp32s3.rom.ld).
 typedef void (*ets_isr_t)(void *);
 extern void ets_isr_attach(int i, ets_isr_t func, void *arg);
 extern void ets_isr_mask(uint32_t mask);
