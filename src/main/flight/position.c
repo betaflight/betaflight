@@ -164,7 +164,17 @@ int32_t getEstimatedAltitudeCm(void)
 #ifdef USE_GPS
 float getAltitudeAsl(void)
 {
-    return gpsSol.llh.altCm;
+    if (STATE(GPS_FIX)) {
+        return gpsSol.llh.altCm;
+    }
+
+    // Only use home AMSL if home is known
+    if (STATE(GPS_FIX_HOME)) {
+        return (float)GPS_home_llh.altCm + (float)getEstimatedAltitudeCm();
+    }
+
+    // Otherwise fall back to relative altitude
+    return getEstimatedAltitudeCm();
 }
 #endif
 
