@@ -34,6 +34,9 @@ typedef struct displayPortProfile_s {
 
     uint8_t fontSelection[DISPLAYPORT_SEVERITY_COUNT];
     uint8_t useDeviceBlink;    // Use device local blink capability
+#ifdef USE_MSP_DISPLAYPORT_DISARM_DELAY
+    uint8_t useDisarmDelay;
+#endif
 } displayPortProfile_t;
 
 PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
