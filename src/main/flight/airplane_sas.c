@@ -37,7 +37,7 @@ static float validLiftCoefTime = 0.0f;
 
 void psasInit(const pidProfile_t *pidProfile)
 {
-    pt1FilterInit(&pidRuntime.psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01, pidRuntime.dT));
+    pt1FilterInit(&pidRuntime.psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
     pidRuntime.isReadyPSAS = false;
