@@ -283,7 +283,7 @@ static void taskUpdateMag(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -412,7 +412,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_BARO] = DEFINE_TASK("BARO", NULL, NULL, taskUpdateBaro, TASK_PERIOD_HZ(TASK_BARO_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     [TASK_ALTITUDE] = DEFINE_TASK("ALTITUDE", NULL, NULL, taskCalculateAltitude, TASK_PERIOD_HZ(TASK_ALTITUDE_RATE_HZ), TASK_PRIORITY_LOW),
 #endif
 
@@ -575,11 +575,13 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_ALTITUDE_HOLD
-    setTaskEnabled(TASK_ALTHOLD, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS));
+    setTaskEnabled(TASK_ALTHOLD, sensors(SENSOR_BARO) ||
+                                 sensors(SENSOR_RANGEFINDER) ||
+                                 featureIsEnabled(FEATURE_GPS));
 #endif
 
 #ifdef USE_POSITION_HOLD
-    setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS));
+    setTaskEnabled(TASK_POSHOLD, featureIsEnabled(FEATURE_GPS) || sensors(SENSOR_OPTICALFLOW));
 #endif
 
 #ifdef USE_MAG
@@ -590,8 +592,8 @@ void tasksInit(void)
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
 #endif
 
-#if defined(USE_BARO) || defined(USE_GPS)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS));
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || featureIsEnabled(FEATURE_GPS) || sensors(SENSOR_RANGEFINDER));
 #endif
 
 #ifdef USE_DASHBOARD

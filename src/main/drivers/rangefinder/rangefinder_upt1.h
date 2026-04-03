@@ -19,28 +19,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#pragma once
 
-#ifndef USE_WING
+#include "drivers/rangefinder/rangefinder.h"
 
-#ifdef USE_POSITION_HOLD
+#define RANGEFINDER_UPT1_TASK_PERIOD_MS 20  // 50Hz frame rate
 
-#include "flight/pos_hold.h"
+bool rangefinderUPT1Detect(rangefinderDev_t *dev);
 
-#include "pg/pg.h"
-#include "pg/pg_ids.h"
-
-#include "pos_hold.h"
-
-PG_REGISTER_WITH_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig, PG_POSHOLD_CONFIG, 1);
-
-PG_RESET_TEMPLATE(posHoldConfig_t, posHoldConfig,
-    .posHoldWithoutMag = false,
-    .deadband = 5,
-    .positionSource = POSHOLD_SOURCE_AUTO,
-    .opticalflowQualityMin = 30,
-    .opticalflowMaxRange = 400,
-);
+#ifdef USE_OPTICALFLOW
+#include "drivers/opticalflow/opticalflow.h"
+bool upt1OpticalflowDetect(opticalflowDev_t *dev);
+void upt1OpticalflowReceiveNewData(const uint8_t *bufferPtr);
 #endif
-
-#endif // !USE_WING

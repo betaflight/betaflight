@@ -485,7 +485,7 @@ static MMFLASH_CODE_NOINLINE void octoSpiRestoreMemoryMappedModeConfiguration(OC
 MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiResource_t *instance_)
 {
     OCTOSPI_TypeDef *instance = (OCTOSPI_TypeDef *)instance_;
-    if (READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
+    if (READ_BIT(instance->CR, OCTOSPI_CR_FMODE) != OCTOSPI_CR_FMODE) {
         failureMode(FAILURE_DEVELOPER); // likely not booted with memory mapped mode enabled, or mismatched calls to enable/disable memory map mode.
     }
 

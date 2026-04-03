@@ -23,14 +23,14 @@
 
 #include <stdbool.h>
 
-#include "stm32n6xx.h"
+#include "stm32h5xx.h"
 #include "common/utils.h"
 
-// N6 uses HPDMA1/GPDMA1 with channel-based DMA (not stream-based like H7).
+// H5 uses GPDMA1/GPDMA2 with channel-based DMA (not stream-based like H7).
 // The LL_EX functions provide a simplified interface for Betaflight's DMA abstraction.
 
 // Compatibility defines: older STM32 families use LL_DMA_MODE_NORMAL / LL_DMA_MODE_CIRCULAR.
-// N6 GPDMA has no register-based circular mode; circular is achieved via linked-list self-linking.
+// H5 GPDMA has no register-based circular mode; circular is achieved via linked-list self-linking.
 #define LL_DMA_MODE_NORMAL   LL_DMA_NORMAL
 #define LL_DMA_MODE_CIRCULAR 0x80000000U  // sentinel value handled by LL_EX_DMA_ConfigStream
 
@@ -46,8 +46,8 @@ __STATIC_INLINE uint32_t LL_EX_DMA_Channel_to_Channel(DMA_Channel_TypeDef *DMAx_
     uint32_t addr = (uint32_t)DMAx_Channely;
     uint32_t base;
 
-    if (addr >= HPDMA1_BASE && addr < HPDMA1_BASE + 0x1000) {
-        base = HPDMA1_BASE;
+    if (addr >= GPDMA2_BASE && addr < GPDMA2_BASE + 0x1000) {
+        base = GPDMA2_BASE;
     } else {
         base = GPDMA1_BASE;
     }
@@ -58,8 +58,8 @@ __STATIC_INLINE uint32_t LL_EX_DMA_Channel_to_Channel(DMA_Channel_TypeDef *DMAx_
 __STATIC_INLINE DMA_TypeDef *LL_EX_DMA_Channel_to_DMA(DMA_Channel_TypeDef *DMAx_Channely)
 {
     uint32_t addr = (uint32_t)DMAx_Channely;
-    if (addr >= HPDMA1_BASE && addr < HPDMA1_BASE + 0x1000) {
-        return HPDMA1;
+    if (addr >= GPDMA2_BASE && addr < GPDMA2_BASE + 0x1000) {
+        return GPDMA2;
     }
     return GPDMA1;
 }
@@ -158,9 +158,10 @@ __STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *DMAx_Channely,
         // GPDMA circular mode via linked-list self-linking:
         // Create a node in SRAM that the DMA reloads after each block transfer,
         // with the node's CLLR pointing back to itself.
-        static dmaCircularNode_t circularNodes[32] __attribute__((aligned(32)));
-        const uint32_t isGPDMA = ((uint32_t)DMAx_Channely >= GPDMA1_BASE) ? 16U : 0U;
-        dmaCircularNode_t *node = &circularNodes[isGPDMA + Channel];
+        static dmaCircularNode_t circularNodes[16] __attribute__((aligned(32)));
+        // H5 has GPDMA1 (8 channels) + GPDMA2 (8 channels)
+        const uint32_t isGPDMA2 = ((uint32_t)DMAx_Channely >= GPDMA2_BASE) ? 8U : 0U;
+        dmaCircularNode_t *node = &circularNodes[isGPDMA2 + Channel];
 
         // Copy configured channel registers into the linked-list node
         node->reg[0] = DMAx_Channely->CTR1;
