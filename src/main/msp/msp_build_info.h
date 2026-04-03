@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/2025.12
- * Input hash   : 6a57c50d7938349a1e8363e85d6741dc
+ * Source       : https://build.betaflight.com/api/options/2026.6
+ * Input hash   : 7078aa17160739f81692eed6cf885e85
  */
 
 #pragma once
@@ -63,16 +63,19 @@
 #define BUILD_OPTION_DASHBOARD                  16408
 #define BUILD_OPTION_EMFAT_TOOLS                16409
 #define BUILD_OPTION_ESCSERIAL_SIMONK           16410
+#define BUILD_OPTION_FLIGHT_PLAN                16427
 #define BUILD_OPTION_GPS                        16412
 #define BUILD_OPTION_LED_STRIP                  16413
 #define BUILD_OPTION_LED_STRIP_64               16414
 #define BUILD_OPTION_MAG                        16415
+#define BUILD_OPTION_OPTICALFLOW                16428
 #define BUILD_OPTION_OSD_SD                     16416
 #define BUILD_OPTION_OSD_HD                     16417
 #define BUILD_OPTION_FRSKYOSD                   16411
 #define BUILD_OPTION_PINIO                      16418
 #define BUILD_OPTION_POSITION_HOLD              16425
 #define BUILD_OPTION_RACE_PRO                   16419
+#define BUILD_OPTION_RANGEFINDER                16429
 #define BUILD_OPTION_SOFTSERIAL                 16423
 #define BUILD_OPTION_SERVOS                     16420
 #define BUILD_OPTION_VTX                        16421

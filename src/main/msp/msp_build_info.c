@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/2025.12
- * Input hash   : 6a57c50d7938349a1e8363e85d6741dc
+ * Source       : https://build.betaflight.com/api/options/2026.6
+ * Input hash   : 7078aa17160739f81692eed6cf885e85
  */
 
 #include <stdint.h>
@@ -123,6 +123,9 @@ static const uint16_t buildOptions[] = {
 #ifdef USE_ESCSERIAL_SIMONK
         BUILD_OPTION_ESCSERIAL_SIMONK,
 #endif
+#ifdef USE_FLIGHT_PLAN
+        BUILD_OPTION_FLIGHT_PLAN,
+#endif
 #ifdef USE_GPS
         BUILD_OPTION_GPS,
 #endif
@@ -134,6 +137,9 @@ static const uint16_t buildOptions[] = {
 #endif
 #ifdef USE_MAG
         BUILD_OPTION_MAG,
+#endif
+#ifdef USE_OPTICALFLOW
+        BUILD_OPTION_OPTICALFLOW,
 #endif
 #ifdef USE_OSD_SD
         BUILD_OPTION_OSD_SD,
@@ -152,6 +158,9 @@ static const uint16_t buildOptions[] = {
 #endif
 #ifdef USE_RACE_PRO
         BUILD_OPTION_RACE_PRO,
+#endif
+#ifdef USE_RANGEFINDER
+        BUILD_OPTION_RANGEFINDER,
 #endif
 #ifdef USE_SOFTSERIAL
         BUILD_OPTION_SOFTSERIAL,
