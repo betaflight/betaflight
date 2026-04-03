@@ -555,7 +555,9 @@ endif
 SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC)
 
 #excludes
-SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
+SRC                := $(filter-out $(MCU_EXCLUDES), $(SRC))
+SPEED_OPTIMISED_SRC := $(filter-out $(MCU_EXCLUDES), $(SPEED_OPTIMISED_SRC))
+SIZE_OPTIMISED_SRC  := $(filter-out $(MCU_EXCLUDES), $(SIZE_OPTIMISED_SRC))
 
 SRC += $(VCP_SRC)
 

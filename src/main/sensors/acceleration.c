@@ -90,7 +90,7 @@ static inline void postProcessAccelerometer(void)
 {
     static vector3_t accAdcPrev;
 
-    for (unsigned axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
 
         // Apply anti-alias filter for attitude task (if enabled)
         if (axis == gyro.gyroDebugAxis) {
