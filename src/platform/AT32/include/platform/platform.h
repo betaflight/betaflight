@@ -42,6 +42,10 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define TIM_ICInitTypeDef   tmr_input_config_type
 #define TIM_OCStructInit    tmr_output_default_para_init
 #define TIM_Cmd             tmr_counter_enable
+
+// AT32 timer channels are 1-based sequential (not shifted by 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
 #define TIM_CtrlPWMOutputs  tmr_output_enable
 #define TIM_TimeBaseInit    tmr_base_init
 #define TIM_ARRPreloadConfig tmr_period_buffer_enable
