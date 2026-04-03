@@ -370,6 +370,8 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_APM32F407, .name = "APM32F407" },
 #elif defined(STM32N657xx)
         { .id = MCU_TYPE_N657, .name = "STM32N657" },
+#elif defined(GD32H757)
+        { .id = MCU_TYPE_GD32H757, .name = "GD32H757" },
 #else
 #error MCU Type info not defined for STM (or clone)
 #endif
