@@ -90,6 +90,7 @@ const spiHardware_t spiHardware[] = {
         },
         .mosiPins = {
             { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PD6) },
             { DEFIO_TAG_E(PC12) },
         },
         .af = GPIO_AF_SPI3,
