@@ -52,7 +52,11 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
     *liftCoef = 0.0f;
     *liftCoefVelocity = 0.0f;
 
-    if (ARMING_FLAG(ARMED) && gpsSol.numSat > 5) {
+    if (ARMING_FLAG(ARMED) &&
+        sensors(SENSOR_ACC) &&
+        sensors(SENSOR_GPS) &&
+        STATE(GPS_FIX) &&
+        gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
         const float speedThreshold = 2.5f;    // GPS speed threshold (m/s)
         float speed = 0.01f * gpsSol.speed3d;
