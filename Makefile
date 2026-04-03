@@ -720,6 +720,11 @@ cppcheck: $(CSOURCES)
 cppcheck-result.xml: $(CSOURCES)
 	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
+## format-all        : format all C source and header files in src/
+.PHONY: format-all
+format-all:
+	find src/ -type f \( -name '*.c' -o -name '*.h' \) -not -path '*/templates/*' -exec clang-format-18 -i {} \;
+
 # mkdirs
 $(DIRECTORIES):
 	mkdir -p $@

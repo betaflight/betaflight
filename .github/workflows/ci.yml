@@ -187,9 +187,21 @@ jobs:
       - name: Run all unit tests
         run: make EXTRA_FLAGS=-Werror test-all
 
+  format:
+    name: Check sourcecode formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: sudo apt-get install -y clang-format-18
+
+      - name: Format
+        run: make format-all && git diff --exit-code
+
   result:
     name: Complete
-    needs: [build, test]
+    needs: [build, test, format]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -199,4 +211,8 @@ jobs:
 
       - name: Check test result
         if: ${{ needs.test.result != 'success' }}
+        run: exit 1
+
+      - name: Check formatting result
+        if: ${{ needs.format.result != 'success' }}
         run: exit 1
