@@ -126,7 +126,13 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
+    .att_use_quicksilver = 1,
 );
+
+static float invSqrt(float x)
+{
+    return 1.0f / sqrtf(x);
+}
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
 {
@@ -164,6 +170,56 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 #endif
 }
 
+void imuQuaternionFromRotationMatrix(void)
+{
+    // The trace of the rotation matrix (sum of diagonal elements)
+    float trace = rMat.m[0][0] + rMat.m[1][1] + rMat.m[2][2];
+
+    // Check the trace to determine the best calculation path for numerical stability
+    if (trace > 0.0f) {
+        // Case 1: Trace is positive, most common and numerically stable
+        float S = sqrtf(trace + 1.0f) * 2.0f; // S = 4*qw
+        float invertS = 1.0f / S;
+        q.w = 0.25f * S;
+        q.x = (rMat.m[2][1] - rMat.m[1][2]) * invertS;
+        q.y = (rMat.m[0][2] - rMat.m[2][0]) * invertS;
+        q.z = (rMat.m[1][0] - rMat.m[0][1]) * invertS;
+    } else if ((rMat.m[0][0] > rMat.m[1][1]) && (rMat.m[0][0] > rMat.m[2][2])) {
+        // Case 2: m[0][0] is the largest diagonal element
+        float S = sqrtf(1.0f + rMat.m[0][0] - rMat.m[1][1] - rMat.m[2][2]) * 2.0f; // S = 4*qx
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[2][1] - rMat.m[1][2]) * invertS;
+        q.x = 0.25f * S;
+        q.y = (rMat.m[0][1] + rMat.m[1][0]) * invertS;
+        q.z = (rMat.m[0][2] + rMat.m[2][0]) * invertS;
+    } else if (rMat.m[1][1] > rMat.m[2][2]) {
+        // Case 3: m[1][1] is the largest diagonal element
+        float S = sqrtf(1.0f + rMat.m[1][1] - rMat.m[0][0] - rMat.m[2][2]) * 2.0f; // S = 4*qy
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[0][2] - rMat.m[2][0]) * invertS;
+        q.x = (rMat.m[0][1] + rMat.m[1][0]) * invertS;
+        q.y = 0.25f * S;
+        q.z = (rMat.m[1][2] + rMat.m[2][1]) * invertS;
+    } else {
+        // Case 4: m[2][2] is the largest diagonal element (or all are negative/equal)
+        float S = sqrtf(1.0f + rMat.m[2][2] - rMat.m[0][0] - rMat.m[1][1]) * 2.0f; // S = 4*qz
+        float invertS = 1.0f / S;
+        q.w = (rMat.m[1][0] - rMat.m[0][1]) * invertS;
+        q.x = (rMat.m[0][2] + rMat.m[2][0]) * invertS;
+        q.y = (rMat.m[1][2] + rMat.m[2][1]) * invertS;
+        q.z = 0.25f * S;
+    }
+
+    // Ensure the quaternion is normalized (this is good practice even if formulas usually produce unit quats)
+    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+    q.w *= recipNorm;
+    q.x *= recipNorm;
+    q.y *= recipNorm;
+    q.z *= recipNorm;
+
+    imuQuaternionComputeProducts(&q, &qP);
+}
+
 static float calculateThrottleAngleScale(uint16_t throttle_correction_angle)
 {
     return (1800.0f / M_PIf) * (900.0f / throttle_correction_angle);
@@ -199,11 +255,6 @@ void imuInit(void)
 }
 
 #if defined(USE_ACC)
-static float invSqrt(float x)
-{
-    return 1.0f / sqrtf(x);
-}
-
 // g[xyz] - gyro reading, in rad/s
 // useAcc, a[xyz] - accelerometer reading, direction only, normalized internally
 // headingErrMag - heading error (in earth frame) derived from magnetometter, rad/s around Z axis (* dcmKpGain)
@@ -215,8 +266,7 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
                                 float headingErrMag, float headingErrCog,
                                 const float dcmKpGain)
 {
-    static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
-
+    static float integralFBx = 0.0f, integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
     // Calculate general spin rate (rad/s)
     const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
 
@@ -231,16 +281,60 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     DEBUG_SET(DEBUG_ATTITUDE, 3, (headingErrCog * 100));
     DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
 
-    // Use measured acceleration vector
-    float recipAccNorm = sq(ax) + sq(ay) + sq(az);
-    if (useAcc && recipAccNorm > 0.01f) {
-        // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
-        recipAccNorm = invSqrt(recipAccNorm);
+    if (useAcc) {
+            float recipAccNorm = sq(ax) + sq(ay) + sq(az);
+            // Normalise accelerometer measurement; useAcc is true when all smoothed acc axes are within 20% of 1G
+            recipAccNorm = invSqrt(recipAccNorm);
 
-        ax *= recipAccNorm;
-        ay *= recipAccNorm;
-        az *= recipAccNorm;
+            ax *= recipAccNorm;
+            ay *= recipAccNorm;
+            az *= recipAccNorm;
+    }
 
+    if (imuConfig()->att_use_quicksilver) {
+        // rMat.m[Z] is the gravity vector, which is what the QS method is calculating.
+
+        // rotate the vector via the gyro
+        float gyroRot[XYZ_AXIS_COUNT] = {-gx * dt, -gy * dt, -gz * dt};
+
+        // grab just the heading portion of the gyro
+        // this will be used later
+        // the mahony filter will just handle the heading
+        // QS portion handles the pitch/roll attitudes
+        float gyro_dot_grav = gx * rMat.m[Z][X] + gy * rMat.m[Z][Y] + gz * rMat.m[Z][Z];
+        gx = -gx - gyro_dot_grav * rMat.m[Z][X];
+        gy = -gy - gyro_dot_grav * rMat.m[Z][Y];
+        gz = -gz - gyro_dot_grav * rMat.m[Z][Z];
+
+        // rotate the gravity vector by the gyro
+        rMat.m[Z][0] =  rMat.m[Z][X] - rMat.m[Z][Y] * gyroRot[Z] + rMat.m[Z][Z] * gyroRot[Y];
+        rMat.m[Z][1] =  rMat.m[Z][X] * gyroRot[Z] + rMat.m[Z][Y] - rMat.m[Z][Z] * gyroRot[X];
+        rMat.m[Z][2] = -rMat.m[Z][X] * gyroRot[Y] + rMat.m[Z][Y] * gyroRot[X] + rMat.m[Z][Z];
+
+        if (useAcc) {
+            float fusionK = 1.0f;
+            if (ARMING_FLAG(ARMED)) {
+                // special k value QuickSilver equation
+                float filterTime = 6.0f;
+                fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
+            } else {
+                // filter faster while disarmed
+                float filterTime = 0.15f;
+                fusionK = constrainf(1.0f - (6.0f * dt) / (3.0f * dt + filterTime), 0.0f, 1.0f);
+            }
+
+            rMat.m[Z][0] = rMat.m[Z][0] * fusionK + ax * (1 - fusionK);
+            rMat.m[Z][1] = rMat.m[Z][1] * fusionK + ay * (1 - fusionK);
+            rMat.m[Z][2] = rMat.m[Z][2] * fusionK + az * (1 - fusionK);
+        }
+
+        // heal the acc vector after this fusion
+        float recipGravNorm = invSqrt(sq(rMat.m[Z][0]) + sq(rMat.m[Z][1]) + sq(rMat.m[Z][2]));
+
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; ++axis) {
+            rMat.m[Z][axis] *= recipGravNorm;
+        }
+    } else if (useAcc) {
         // Error is sum of cross product between estimated direction and measured direction of gravity
         ex += (ay * rMat.m[2][2] - az * rMat.m[2][1]);
         ey += (az * rMat.m[2][0] - ax * rMat.m[2][2]);
@@ -267,31 +361,81 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     gy += dcmKpGain * ey + integralFBy;
     gz += dcmKpGain * ez + integralFBz;
 
-    // Integrate rate of change of quaternion
-    gx *= (0.5f * dt);
-    gy *= (0.5f * dt);
-    gz *= (0.5f * dt);
+    if (imuConfig()->att_use_quicksilver) {
+        gx *= 0.5f * dt;
+        gy *= 0.5f * dt;
+        gz *= 0.5f * dt;
 
-    quaternion_t buffer;
-    buffer.w = q.w;
-    buffer.x = q.x;
-    buffer.y = q.y;
-    buffer.z = q.z;
+        // Store the current rotation matrix (only need rows 0 and 1)
+        float rMat_temp[2][3];
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 3; j++) {
+                rMat_temp[i][j] = rMat.m[i][j];
+            }
+        }
 
-    q.w += (-buffer.x * gx - buffer.y * gy - buffer.z * gz);
-    q.x += (+buffer.w * gx + buffer.y * gz - buffer.z * gy);
-    q.y += (+buffer.w * gy - buffer.x * gz + buffer.z * gx);
-    q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
+        // Apply small-angle rotation to rows 0 and 1 only
+        // (Skip row 2 since QuickSilver already updated rMat.m[Z])
 
-    // Normalise quaternion
-    float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
-    q.w *= recipNorm;
-    q.x *= recipNorm;
-    q.y *= recipNorm;
-    q.z *= recipNorm;
+        rMat.m[X][0] = rMat_temp[0][0] - rMat_temp[0][1] * gz + rMat_temp[0][2] * gy;
+        rMat.m[X][1] = rMat_temp[0][0] * gz + rMat_temp[0][1] - rMat_temp[0][2] * gx;
+        rMat.m[X][2] = -rMat_temp[0][0] * gy + rMat_temp[0][1] * gx + rMat_temp[0][2];
 
-    // Pre-compute rotation matrix from quaternion
-    imuComputeRotationMatrix();
+        // After updating rMat.m[X]
+        // Ensure orthogonality and normalize
+        // Derive rMat.m[0] and rMat.m[1] from rMat.m[2] and each other
+
+        // Assuming rMat.m[Z] (row 2) is the most accurate after QuickSilver fusion
+        // Make rMat.m[X] (row 0) orthogonal to rMat.m[Z]
+        float dot_product_XZ = rMat.m[X][0] * rMat.m[Z][0] + rMat.m[X][1] * rMat.m[Z][1] + rMat.m[X][2] * rMat.m[Z][2];
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[X][i] -= dot_product_XZ * rMat.m[Z][i];
+        }
+        // Normalize rMat.m[X]
+        float recipNormX = invSqrt(sq(rMat.m[X][0]) + sq(rMat.m[X][1]) + sq(rMat.m[X][2]));
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[X][i] *= recipNormX;
+        }
+
+        // Re-derive rMat.m[Y] (row 1) as the cross product of rMat.m[Z] and rMat.m[X]
+        rMat.m[Y][0] = rMat.m[Z][1] * rMat.m[X][2] - rMat.m[Z][2] * rMat.m[X][1];
+        rMat.m[Y][1] = rMat.m[Z][2] * rMat.m[X][0] - rMat.m[Z][0] * rMat.m[X][2];
+        rMat.m[Y][2] = rMat.m[Z][0] * rMat.m[X][1] - rMat.m[Z][1] * rMat.m[X][0];
+
+        // Normalize rMat.m[Y] (though cross product of two orthonormal vectors should be orthonormal)
+        float recipNormY = invSqrt(sq(rMat.m[Y][0]) + sq(rMat.m[Y][1]) + sq(rMat.m[Y][2]));
+        for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
+            rMat.m[Y][i] *= recipNormY;
+        }
+
+        imuQuaternionFromRotationMatrix();
+    } else {
+        // Integrate rate of change of quaternion
+        gx *= (0.5f * dt);
+        gy *= (0.5f * dt);
+        gz *= (0.5f * dt);
+
+        quaternion_t buffer;
+        buffer.w = q.w;
+        buffer.x = q.x;
+        buffer.y = q.y;
+        buffer.z = q.z;
+
+        q.w += (-buffer.x * gx - buffer.y * gy - buffer.z * gz);
+        q.x += (+buffer.w * gx + buffer.y * gz - buffer.z * gy);
+        q.y += (+buffer.w * gy - buffer.x * gz + buffer.z * gx);
+        q.z += (+buffer.w * gz + buffer.x * gy - buffer.y * gx);
+
+        // Normalise quaternion
+        float recipNorm = invSqrt(sq(q.w) + sq(q.x) + sq(q.y) + sq(q.z));
+        q.w *= recipNorm;
+        q.x *= recipNorm;
+        q.y *= recipNorm;
+        q.z *= recipNorm;
+
+        // Pre-compute rotation matrix from quaternion
+        imuComputeRotationMatrix();
+    }
 
     attitudeIsEstablished = true;
 }
@@ -321,8 +465,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
 static bool imuIsAccelerometerHealthy(void)
 {
-    // Accept accel readings only in range 0.9g - 1.1g
-    return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    if (imuConfig()->att_use_quicksilver) {
+        return (0.9f < acc.accMagnitude) && (acc.accMagnitude < 1.1f);
+    } else {
+        return (0.7f < acc.accMagnitude) && (acc.accMagnitude < 1.3f);
+    }
 }
 
 // Calculate the dcmKpGain to use. When armed, the gain is imuRuntimeConfig.imuDcmKp, i.e., the default value
@@ -789,6 +936,11 @@ float getSinPitchAngle(void)
 float getCosTiltAngle(void)
 {
     return rMat.m[2][2];
+}
+
+float *getGravityVector(void)
+{
+    return rMat.m[2];
 }
 
 void getQuaternion(quaternion_t *quat)

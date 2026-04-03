@@ -56,8 +56,6 @@
 #define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f // same DMax gain with either rate of change source; not intended preserve legacy behaviour
 #endif
 
-#define ATTITUDE_CUTOFF_HZ 50
-
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
@@ -293,21 +291,34 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #endif
 
 #ifdef USE_ACC
-    const float k = pt3FilterGain(ATTITUDE_CUTOFF_HZ, pidRuntime.dT);
-    const float angleCutoffHz = 1000.0f / (2.0f * M_PIf * pidProfile->angle_feedforward_smoothing_ms); // default of 80ms -> 2.0Hz, 160ms -> 1.0Hz, approximately
-    const float k2 = pt3FilterGain(angleCutoffHz, pidRuntime.dT);
-    pidRuntime.horizonDelayMs = pidProfile->horizon_delay_ms;
-    if (pidRuntime.horizonDelayMs) {
+    if (pidProfile->horizon_delay_ms) {
         const float horizonSmoothingHz = 1e3f / (2.0f * M_PIf * pidProfile->horizon_delay_ms); // default of 500ms means 0.318Hz
         const float kHorizon = pt1FilterGain(horizonSmoothingHz, pidRuntime.dT);
         pt1FilterInit(&pidRuntime.horizonSmoothingPt1, kHorizon);
     }
 
-    for (int axis = 0; axis < 2; axis++) {  // ROLL and PITCH only
-        pt3FilterInit(&pidRuntime.attitudeFilter[axis], k);
-        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], k2);
+    const float attitudeK = pt3FilterGain(pidProfile->angle_smoothing_cut, pidRuntime.dT);
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        pt3FilterInit(&pidRuntime.attitudeFilter[axis], attitudeK);
     }
+
+    float angleFfK = 1.0f;
+    if (pidProfile->angle_feedforward_smoothing_ms > 0) {
+        if (pidProfile->qs_level_mode) {
+            // 10ths of a ms scaling
+            angleFfK = pt3FilterGainFromDelay(pidProfile->angle_feedforward_smoothing_ms / 10000.0f, pidRuntime.dT);
+        } else {
+            // ms scaling
+            angleFfK = pt3FilterGainFromDelay(pidProfile->angle_feedforward_smoothing_ms / 1000.0f, pidRuntime.dT);
+        }
+    }
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pt3FilterInit(&pidRuntime.angleFeedforwardPt3[axis], angleFfK);
+    }
+
     pidRuntime.angleYawSetpoint = 0.0f;
+
+    sphereTDInit(&pidRuntime.angleTD, pidProfile->angle_td_omega, pidProfile->angle_td_zeta / 100.0f);
 #endif
 
 #ifdef USE_CHIRP

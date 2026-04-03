@@ -95,6 +95,13 @@ typedef struct meanAccumulator_s {
     int32_t count;
 } meanAccumulator_t;
 
+typedef struct sphericalTD_s {
+    float g[3]; // gravity vector
+    float v[3]; // derivative of gravity vector
+    float two_zeta_omega;
+    float omega_squared;
+} sphericalTD_t;
+
 float nullFilterApply(filter_t *filter, float input);
 
 float pt1FilterGain(float f_cut, float dT);
@@ -141,3 +148,6 @@ int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal);
 void meanAccumulatorInit(meanAccumulator_t *filter);
 void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal);
 int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue);
+
+void sphereTDInit(sphericalTD_t *td, float omega_rad, float zeta);
+void sphereTDUpdate(sphericalTD_t *td, const float *g_des, float *g_filt, float *v_filt, float dt);

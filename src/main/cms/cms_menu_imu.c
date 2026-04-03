@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
+#include "flight/imu.h"
 
 #include "pg/pg.h"
 
@@ -506,14 +507,108 @@ static CMS_Menu cmsx_menuLaunchControl = {
 };
 #endif
 
+static uint8_t  cmsx_att_use_quicksilver;
+static uint8_t  csmx_qsLevelMode;
 static uint8_t  cmsx_angleP;
 static uint8_t  cmsx_angleFF;
+static uint8_t  cmsx_angleTDOmega;
+static uint8_t  cmsx_angleTDZeta;
+static uint8_t  cmsx_angleFeedforwardSmoothingMs;
+static uint8_t  cmsx_angleSmoothingCut;
 static uint8_t  cmsx_angleLimit;
 static uint8_t  cmsx_angleEarthRef;
 
 static uint8_t  cmsx_horizonStrength;
 static uint8_t  cmsx_horizonLimitSticks;
 static uint8_t  cmsx_horizonLimitDegrees;
+
+static const void *cmsx_angleSettingsOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+
+    cmsx_angleP =                       pidProfile->pid[PID_LEVEL].P;
+    cmsx_angleFF =                      pidProfile->pid[PID_LEVEL].F;
+    cmsx_angleTDOmega =                 pidProfile->angle_td_omega;
+    cmsx_angleTDZeta =                  pidProfile->angle_td_zeta;
+    cmsx_angleFeedforwardSmoothingMs =  pidProfile->angle_feedforward_smoothing_ms;
+    cmsx_angleSmoothingCut =            pidProfile->angle_smoothing_cut;
+    cmsx_angleLimit =                   pidProfile->angle_limit;
+    cmsx_angleEarthRef =                pidProfile->angle_earth_ref;
+
+    cmsx_horizonStrength =              pidProfile->pid[PID_LEVEL].I;
+    cmsx_horizonLimitSticks =           pidProfile->pid[PID_LEVEL].D;
+    cmsx_horizonLimitDegrees =          pidProfile->horizon_limit_degrees;
+
+    cmsx_att_use_quicksilver =          imuConfig()->att_use_quicksilver;
+    csmx_qsLevelMode =                  pidProfile->qs_level_mode;
+
+    return NULL;
+}
+
+static const void *cmsx_angleSettingsOnExit(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
+
+    pidProfile->pid[PID_LEVEL].P = cmsx_angleP;
+    pidProfile->pid[PID_LEVEL].F = cmsx_angleFF;
+    pidProfile->angle_td_omega = cmsx_angleTDOmega;
+    pidProfile->angle_td_zeta = cmsx_angleTDZeta;
+    pidProfile->angle_feedforward_smoothing_ms = cmsx_angleFeedforwardSmoothingMs;
+    pidProfile->angle_smoothing_cut = cmsx_angleSmoothingCut;
+    pidProfile->angle_limit = cmsx_angleLimit;
+    pidProfile->angle_earth_ref = cmsx_angleEarthRef;
+
+    pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
+    pidProfile->pid[PID_LEVEL].D = cmsx_horizonLimitSticks;
+    pidProfile->horizon_limit_degrees = cmsx_horizonLimitDegrees;
+
+    imuConfigMutable()->att_use_quicksilver = cmsx_att_use_quicksilver;
+    pidProfile->qs_level_mode = csmx_qsLevelMode;
+
+    pidInitConfig(pidProfile);
+    pidInitFilters(pidProfile);
+
+    return NULL;
+}
+
+static const OSD_Entry cmsx_menuAngleSettingsEntries[] = {
+    { "-- ANGLE SETTINGS --", OME_Label, NULL, pidProfileIndexString },
+
+    { "ATT USE QS",      OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_att_use_quicksilver,        1, lookupTableOffOn } },
+    { "QS LEVEL MODE",   OME_TAB,    NULL, &(OSD_TAB_t)    { &csmx_qsLevelMode,                1, lookupTableOffOn } },
+    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     1,    200,   1  }    },
+    { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },
+    { "ANGLE TD OMEGA",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDOmega,               20,   255,   1  }    },
+    { "ANGLE TD ZETA",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleTDZeta,                70,   150,   1  }    },
+    { "FF SMOOTH MS",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFeedforwardSmoothingMs,0,    250,   1  }    },
+    { "ANGL SMTH CUT",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleSmoothingCut,          10,   250,   1  }    },
+
+    { "ANGLE LIMIT",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,                10,     90,   1  }    },
+    { "ANGLE E_REF",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleEarthRef,              0,    100,   1  }    },
+
+    { "HORZN STR",       OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,            0,    100,   1  }    },
+    { "HORZN LIM_STK",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitSticks,        10,    200,   1  }    },
+    { "HORZN LIM_DEG",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitDegrees,       10,    250,   1  }    },
+
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
+};
+
+static CMS_Menu cmsx_menuAngleSettings = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "ANGLE",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_angleSettingsOnEnter,
+    .onExit = cmsx_angleSettingsOnExit,
+    .onDisplayUpdate = NULL,
+    .entries = cmsx_menuAngleSettingsEntries,
+};
 
 static uint8_t  cmsx_throttleBoost;
 static uint8_t  cmsx_thrustLinearization;
@@ -558,15 +653,6 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
 
-    cmsx_angleP =             pidProfile->pid[PID_LEVEL].P;
-    cmsx_angleFF =            pidProfile->pid[PID_LEVEL].F;
-    cmsx_angleLimit =         pidProfile->angle_limit;
-    cmsx_angleEarthRef =      pidProfile->angle_earth_ref;
-
-    cmsx_horizonStrength =    pidProfile->pid[PID_LEVEL].I;
-    cmsx_horizonLimitSticks = pidProfile->pid[PID_LEVEL].D;
-    cmsx_horizonLimitDegrees = pidProfile->horizon_limit_degrees;
-
     cmsx_antiGravityGain   = pidProfile->anti_gravity_gain;
 
     cmsx_throttleBoost = pidProfile->throttle_boost;
@@ -605,6 +691,7 @@ static const void *cmsx_profileOtherOnEnter(displayPort_t *pDisp)
     cmsx_tpa_low_breakpoint = pidProfile->tpa_low_breakpoint;
     cmsx_tpa_low_always = pidProfile->tpa_low_always;
     cmsx_landing_disarm_threshold = pidProfile->landing_disarm_threshold;
+
     return NULL;
 }
 
@@ -615,15 +702,6 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 
     pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidInitConfig(currentPidProfile);
-
-    pidProfile->pid[PID_LEVEL].P = cmsx_angleP;
-    pidProfile->pid[PID_LEVEL].F = cmsx_angleFF;
-    pidProfile->angle_limit = cmsx_angleLimit;
-    pidProfile->angle_earth_ref = cmsx_angleEarthRef;
-
-    pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
-    pidProfile->pid[PID_LEVEL].D = cmsx_horizonLimitSticks;
-    pidProfile->horizon_limit_degrees = cmsx_horizonLimitDegrees;
 
     pidProfile->anti_gravity_gain   = cmsx_antiGravityGain;
 
@@ -671,6 +749,8 @@ static const void *cmsx_profileOtherOnExit(displayPort_t *pDisp, const OSD_Entry
 static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString },
 
+    {"ANGLE SETTINGS", OME_Submenu, cmsMenuChange, &cmsx_menuAngleSettings },
+
 #ifdef USE_FEEDFORWARD
     { "FF TRANSITION", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &cmsx_feedforward_transition,        0,    100,   1, 10 } },
     { "FF AVERAGING",  OME_TAB,    NULL, &(OSD_TAB_t)    { &cmsx_feedforward_averaging,         4, lookupTableFeedforwardAveraging} },
@@ -678,14 +758,6 @@ static const OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "FF JITTER",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_jitter_factor,     0,     20,   1  }    },
     { "FF BOOST",      OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_feedforward_boost,             0,     50,   1  }    },
 #endif
-    { "ANGLE P",         OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleP,                     0,    200,   1  }    },
-    { "ANGLE FF",        OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleFF,                    0,    200,   1  }    },
-    { "ANGLE LIMIT",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleLimit,                10,     90,   1  }    },
-    { "ANGLE E_REF",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_angleEarthRef,              0,    100,   1  }    },
-
-    { "HORZN STR",       OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonStrength,            0,    100,   1  }    },
-    { "HORZN LIM_STK",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitSticks,        10,    200,   1  }    },
-    { "HORZN LIM_DEG",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &cmsx_horizonLimitDegrees,       10,    250,   1  }    },
 
     { "AG GAIN",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &cmsx_antiGravityGain,   ITERM_ACCELERATOR_GAIN_OFF, ITERM_ACCELERATOR_GAIN_MAX, 1, 100 }    },
 #ifdef USE_THROTTLE_BOOST

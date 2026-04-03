@@ -24,6 +24,7 @@
 #include "common/time.h"
 #include "common/maths.h"
 #include "common/vector.h"
+#include "common/filter.h"
 
 #include "pg/pg.h"
 
@@ -64,6 +65,7 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t imu_process_denom;
     int16_t mag_declination;      // Magnetic declination in degrees * 10
+    uint8_t att_use_quicksilver;
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);
@@ -77,6 +79,7 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
 
 float getSinPitchAngle(void);
 float getCosTiltAngle(void);
+float *getGravityVector(void);
 void getQuaternion(quaternion_t * q);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 

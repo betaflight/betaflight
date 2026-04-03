@@ -406,3 +406,69 @@ int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue)
     }
     return defaultValue;
 }
+
+void sphereTDInit(sphericalTD_t *td, float omega_rad, float zeta)
+{
+    td->g[0] = 0.0f;
+    td->g[1] = 0.0f;
+    td->g[2] = 0.0f;
+    td->v[0] = 0.0f;
+    td->v[1] = 0.0f;
+    td->v[2] = 0.0f;
+    td->omega_squared = omega_rad * omega_rad;
+    td->two_zeta_omega = 2.0f * zeta * omega_rad;
+}
+
+void sphereTDUpdate(sphericalTD_t *td, const float *g_des, float *g_filt, float *v_filt, float dt)
+{
+    // 1. Calculate tangent error
+    float error[3];
+    error[0] = g_des[0] - td->g[0];
+    error[1] = g_des[1] - td->g[1];
+    error[2] = g_des[2] - td->g[2];
+
+    float error_radial = error[0]*td->g[0] + error[1]*td->g[1] + error[2]*td->g[2];
+
+    float error_tangent[3];
+    error_tangent[0] = error[0] - error_radial * td->g[0];
+    error_tangent[1] = error[1] - error_radial * td->g[1];
+    error_tangent[2] = error[2] - error_radial * td->g[2];
+
+    // 2. Calculate acceleration: a = ω²·error_tangent - 2·ζ·ω·v
+    float accel[3];
+    accel[0] = td->omega_squared * error_tangent[0] - td->two_zeta_omega * td->v[0];
+    accel[1] = td->omega_squared * error_tangent[1] - td->two_zeta_omega * td->v[1];
+    accel[2] = td->omega_squared * error_tangent[2] - td->two_zeta_omega * td->v[2];
+
+    // 3. Integrate using semi-implicit Euler
+    td->v[0] += accel[0] * dt;
+    td->v[1] += accel[1] * dt;
+    td->v[2] += accel[2] * dt;
+
+    td->g[0] += td->v[0] * dt;
+    td->g[1] += td->v[1] * dt;
+    td->g[2] += td->v[2] * dt;
+
+    // 4. Renormalise g, then re-project v into tangent plane
+    float g_norm = sqrtf(td->g[0]*td->g[0] + td->g[1]*td->g[1] + td->g[2]*td->g[2]);
+    if (g_norm > 1e-6f) {
+        td->g[0] /= g_norm;
+        td->g[1] /= g_norm;
+        td->g[2] /= g_norm;
+    } else {
+        // should realistically never happen
+        td->g[0] = g_des[0];
+        td->g[1] = g_des[1];
+        td->g[2] = g_des[2];
+        td->v[0] = td->v[1] = td->v[2] = 0.0f;
+    }
+
+    float v_dot_g = td->v[0]*td->g[0] + td->v[1]*td->g[1] + td->v[2]*td->g[2];
+    td->v[0] -= v_dot_g * td->g[0];
+    td->v[1] -= v_dot_g * td->g[1];
+    td->v[2] -= v_dot_g * td->g[2];
+
+    // 5. return states
+    memcpy(g_filt, td->g, 3 * sizeof(float));
+    memcpy(v_filt, td->v, 3 * sizeof(float));
+}
