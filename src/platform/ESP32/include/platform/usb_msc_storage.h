@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 typedef struct {
     int placeholder;
 } USBD_STORAGE_cb_TypeDef;

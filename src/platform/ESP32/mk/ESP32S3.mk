@@ -78,13 +78,10 @@ LD_FLAGS = -lm \
 
 # Platform source files (stub implementations)
 MCU_COMMON_SRC = \
-            drivers/accgyro/accgyro_mpu.c \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
-            drivers/bus_i2c_utils.c \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \
-            drivers/dshot.c \
             drivers/adc.c \
             ESP32/adc_esp32.c \
             ESP32/bus_i2c_esp32.c \
