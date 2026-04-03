@@ -689,10 +689,6 @@ extern struct linker_symbol __config_start;   // configured via linker script wh
 extern struct linker_symbol __config_end;
 #endif
 
-#ifndef USE_ITERM_RELAX
-#undef USE_ABSOLUTE_CONTROL
-#endif
-
 #if defined(USE_RX_EXPRESSLRS)
 // ELRS depends on CRSF telemetry
 #if !defined(USE_TELEMETRY)
