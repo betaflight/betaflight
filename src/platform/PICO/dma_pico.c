@@ -28,6 +28,7 @@
 #ifdef USE_DMA
 
 #include "drivers/dma.h"
+#include "drivers/dma_impl.h"
 
 #include "platform/dma.h"
 #include "pico/multicore.h"
@@ -149,6 +150,38 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
     dmaDescriptors[index].irqHandlerCallback = callback;
     dmaDescriptors[index].userParam = userParam;
+}
+
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    UNUSED(identifier);
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    UNUSED(ref);
+    return 0;
+}
+
+void dmaEnable(dmaIdentifier_e identifier)
+{
+    UNUSED(identifier);
 }
 
 #endif

@@ -160,7 +160,7 @@ void confirmCurrentTelemetryPayload(const bool telemetryConfirmValue)
 
         currentOffset += bytesLastPayload;
         if (currentOffset >= length) {
-            // A 0th packet is always requred so the reciver can
+            // A 0th packet is always required so the receiver can
             // differentiate a new send from a resend, if this is
             // the first packet acked, send another, else IDLE
             if (currentPackage == 1) {

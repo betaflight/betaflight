@@ -330,13 +330,25 @@ void systemClockSetHSEValue(uint32_t frequency)
     }
 }
 
-void OverclockRebootIfNecessary(unsigned requestedOverclockLevel)
+void OverclockRebootIfNecessary(uint32_t targetMhz)
 {
-    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
-
-    if (requestedOverclockLevel >= OVERCLOCK_LEVELS ) {
-        requestedOverclockLevel = 0;
+    // Look up targetMhz in sysclkSeries8 to find the overclock level index.
+    // Always use sysclkSeries8 for level lookup regardless of HSE crystal frequency,
+    // because the CLI presents 8 MHz-series values (168/192/216/240) to the user.
+    // The resulting requestedOverclockLevel is stored in PERSISTENT_OBJECT_OVERCLOCK_LEVEL
+    // and systemClock_PLLConfig computes the actual SYSCLK from the appropriate
+    // HSE-specific series (sysclkSeries8/sysclkSeries26/sysclkSeries27).
+    unsigned requestedOverclockLevel = 0;
+    if (targetMhz != 0) {
+        for (unsigned i = 0; i < OVERCLOCK_LEVELS; i++) {
+            if (sysclkSeries8[i] == targetMhz) {
+                requestedOverclockLevel = i;
+                break;
+            }
+        }
     }
+
+    uint32_t currentOverclockLevel = persistentObjectRead(PERSISTENT_OBJECT_OVERCLOCK_LEVEL);
 
     // If we are not running at the requested speed or
     // we are running on PLL-HSI even HSE has been set,

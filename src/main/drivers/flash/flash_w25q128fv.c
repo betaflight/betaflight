@@ -117,7 +117,7 @@ MMFLASH_CODE static void w25q128fv_performOneByteCommand(flashDeviceIO_t *io, ui
 #if defined(USE_QUADSPI)
     quadSpiTransmit1LINE(io->handle.dev, command, 0, NULL, 0);
 #elif defined(USE_OCTOSPI)
-    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiResource_t *octoSpi = io->handle.octoSpi;
     octoSpiTransmit1LINE(octoSpi, command, 0, NULL, 0);
 #endif
 
@@ -128,7 +128,7 @@ MMFLASH_CODE static void w25q128fv_performCommandWithAddress(flashDeviceIO_t *io
 #if defined(USE_QUADSPI)
     quadSpiInstructionWithAddress1LINE(io->handle.dev, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
 #elif defined(USE_OCTOSPI)
-    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiResource_t *octoSpi = io->handle.octoSpi;
 
     octoSpiInstructionWithAddress1LINE(octoSpi, command, 0, address & 0xffffff, W25Q128FV_ADDRESS_BITS);
 #endif
@@ -145,7 +145,7 @@ MMFLASH_CODE static uint8_t w25q128fv_readRegister(flashDeviceIO_t *io, uint8_t 
 #if defined(USE_QUADSPI)
     quadSpiReceive1LINE(io->handle.dev, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
 #elif defined(USE_OCTOSPI)
-    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiResource_t *octoSpi = io->handle.octoSpi;
 
     octoSpiReceive1LINE(octoSpi, command, 0, in, W25Q128FV_STATUS_REGISTER_BITS / 8);
 #endif
@@ -158,7 +158,7 @@ static void w25q128fv_writeRegister(flashDeviceIO_t *io, uint8_t command, uint8_
 #if defined(USE_QUADSPI)
     quadSpiTransmit1LINE(io->handle.dev, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
 #elif defined(USE_OCTOSPI)
-    OCTOSPI_TypeDef *octoSpi = io->handle.octoSpi;
+    octoSpiResource_t *octoSpi = io->handle.octoSpi;
 
     octoSpiTransmit1LINE(octoSpi, command, 0, &data, W25Q128FV_STATUS_REGISTER_BITS / 8);
 #endif
@@ -340,7 +340,7 @@ MMFLASH_CODE static void w25q128fv_loadProgramData(flashDevice_t *fdevice, const
 {
     w25q128fv_waitForReady(fdevice);
 
-    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+    octoSpiResource_t *octoSpi = fdevice->io.handle.octoSpi;
 #ifdef USE_FLASH_WRITES_USING_4LINES
     octoSpiTransmitWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_QUAD_PAGE_PROGRAM, 0, fdevice->currentWriteAddress, W25Q128FV_ADDRESS_BITS, data, length);
 #else
@@ -534,7 +534,7 @@ MMFLASH_CODE static int w25q128fv_readBytes(flashDevice_t *fdevice, uint32_t add
     bool status = quadSpiReceiveWithAddress1LINE(dev, W25Q128FV_INSTRUCTION_READ_BYTES, 0, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #endif
 #elif defined(USE_OCTOSPI)
-    OCTOSPI_TypeDef *octoSpi = fdevice->io.handle.octoSpi;
+    octoSpiResource_t *octoSpi = fdevice->io.handle.octoSpi;
 #ifdef USE_FLASH_READS_USING_4LINES
     bool status = octoSpiReceiveWithAddress4LINES(octoSpi, W25Q128FV_INSTRUCTION_FAST_READ_QUAD_OUTPUT, 8, address, W25Q128FV_ADDRESS_BITS, buffer, length);
 #else

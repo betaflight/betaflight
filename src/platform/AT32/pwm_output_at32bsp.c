@@ -35,6 +35,7 @@
 #include "drivers/pwm_output_impl.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 #include "pg/motor.h"
 
@@ -58,23 +59,28 @@ static void pwmOCConfig(tmr_type *tim, uint8_t channel, uint16_t value, uint8_t 
     tmr_output_channel_buffer_enable(tim, ((channel-1)*2),TRUE);
 }
 
-void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
+void pwmOutputConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
-    configTimeBase(timerHardware->tim, period, hz);
-    pwmOCConfig(timerHardware->tim,
+    timerReconfigureTimeBase(timerHardware, period, hz);
+    pwmOCConfig((tmr_type *)timerHardware->tim,
         timerHardware->channel,
         value,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
         );
 
-    tmr_output_enable(timerHardware->tim, TRUE);
-    tmr_counter_enable(timerHardware->tim, TRUE);
+    tmr_output_enable((tmr_type *)timerHardware->tim, TRUE);
+    tmr_counter_enable((tmr_type *)timerHardware->tim, TRUE);
 
     channel->ccr = timerChCCR(timerHardware);
 
     channel->tim = timerHardware->tim;
 
     *channel->ccr = 0;
+}
+
+void pwmWriteChannel(timerChannel_t *channel, uint32_t value)
+{
+    *channel->ccr = value;
 }
 
 static FAST_DATA_ZERO_INIT motorDevice_t *pwmMotorDevice;
@@ -208,7 +214,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         // margin of safety is 4 periods when unsynced
         const unsigned pwmRateHz = useContinuousUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
-        const uint32_t clock = timerClock(timerHardware->tim);
+        const uint32_t clock = timerClock(timerHardware);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;
@@ -222,7 +228,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         pwmMotors[motorIndex].pulseScale = ((motorConfig->motorProtocol == MOTOR_PROTOCOL_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         pwmMotors[motorIndex].pulseOffset = (sMin * hz) - (pwmMotors[motorIndex].pulseScale * 1000);
 
-        pwmOutConfig(&pwmMotors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
+        pwmOutputConfig(&pwmMotors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorInversion);
 
         bool timerAlreadyUsed = false;
         for (int i = 0; i < motorIndex; i++) {
@@ -274,7 +280,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
 
-        pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
+        pwmOutputConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }
 }

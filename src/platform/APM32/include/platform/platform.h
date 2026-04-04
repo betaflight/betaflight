@@ -34,6 +34,7 @@
 #include "apm32f4xx_ddl_tmr.h"
 #include "apm32f4xx_ddl_system.h"
 #include "apm32f4xx_ddl_adc.h"
+#include "apm32f4xx_ddl_usart.h"
 
 #include "apm32f4xx_ddl_ex.h"
 
@@ -73,6 +74,10 @@
 #define LL_EX_DMA_GetDataLength     DDL_EX_DMA_GetDataLength
 #define LL_EX_DMA_SetDataLength     DDL_EX_DMA_SetDataLength
 #define LL_EX_DMA_EnableIT_TC       DDL_EX_DMA_EnableIT_TC
+#define LL_EX_DMA_SetMemoryAddress  DDL_EX_DMA_SetMemoryAddress
+#define LL_EX_DMA_SetPeriphAddress  DDL_EX_DMA_SetPeriphAddress
+
+#define LL_USART_EnableIT_TXE       DDL_USART_EnableIT_TXE
 
 #define TIM_TypeDef                 TMR_TypeDef
 #define TIM_HandleTypeDef           TMR_HandleTypeDef
@@ -123,6 +128,9 @@
 #define USE_LATE_TASK_STATISTICS
 
 #define USE_OVERCLOCK
+#define ENABLE_OVERCLOCK_192_MHZ 1
+#define ENABLE_OVERCLOCK_216_MHZ 1
+#define ENABLE_OVERCLOCK_240_MHZ 1
 
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
@@ -205,6 +213,7 @@
 #define PLATFORM_TRAIT_RCC 1
 #define PLATFORM_TRAIT_ADC_DEVICE 1
 #define UART_TRAIT_AF_PORT 1
+#define UART_TRAIT_BIDIR_PP_PREPEND 1
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define I2C_TRAIT_AF_PIN 1
 #define I2CDEV_COUNT 3
@@ -214,8 +223,8 @@
 
 #define UARTHARDWARE_MAX_PINS 4
 
-#define UART_REG_RXD(base) ((base)->DATA)
-#define UART_REG_TXD(base) ((base)->DATA)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->DATA)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->DATA)
 
 #define DMA_TRAIT_CHANNEL 1
 
@@ -231,3 +240,9 @@
 #define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
 #define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
 #endif // USE_FAST_DATA
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PRIORITYGROUP_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING))))

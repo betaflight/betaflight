@@ -34,7 +34,7 @@
 #include "drivers/sensor.h"
 
 #pragma GCC diagnostic push
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
 #include <pthread.h>
 #endif
 
@@ -68,6 +68,7 @@ typedef enum {
     GYRO_IIM42652,
     GYRO_LSM6DSK320X,
     GYRO_ICM42622P,
+    GYRO_ICM42686P,
     GYRO_VIRTUAL,
     GYRO_HARDWARE_COUNT
 } gyroHardware_e;
@@ -101,7 +102,7 @@ typedef enum {
 } gyroModeSPI_e;
 
 typedef struct gyroDev_s {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_t lock;
 #endif
     sensorGyroInitFuncPtr initFn;                             // initialize function
@@ -145,7 +146,7 @@ typedef struct gyroDev_s {
 } gyroDev_t;
 
 typedef struct accDev_s {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_t lock;
 #endif
     float acc_1G_rec;
@@ -165,7 +166,7 @@ typedef struct accDev_s {
 
 static inline void accDevLock(accDev_t *acc)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_lock(&acc->lock);
 #else
     (void)acc;
@@ -174,7 +175,7 @@ static inline void accDevLock(accDev_t *acc)
 
 static inline void accDevUnLock(accDev_t *acc)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_unlock(&acc->lock);
 #else
     (void)acc;
@@ -183,7 +184,7 @@ static inline void accDevUnLock(accDev_t *acc)
 
 static inline void gyroDevLock(gyroDev_t *gyro)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_lock(&gyro->lock);
 #else
     (void)gyro;
@@ -192,7 +193,7 @@ static inline void gyroDevLock(gyroDev_t *gyro)
 
 static inline void gyroDevUnLock(gyroDev_t *gyro)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     pthread_mutex_unlock(&gyro->lock);
 #else
     (void)gyro;

@@ -7,6 +7,10 @@
 # PICO_TRACE = 1
 DEFAULT_OUTPUT := uf2
 
+# Auto-hydrate pico-sdk submodule when building PICO targets
+PLATFORM_SDK := pico_sdk
+PLATFORM_SDK_STAMP := $(PICO_SDK_STAMP)
+
 # Run from SRAM. To disable, set environment variable RUN_FROM_RAM=0
 ifeq ($(RUN_FROM_RAM),)
 RUN_FROM_RAM = 1

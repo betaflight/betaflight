@@ -44,7 +44,7 @@
 #define TIMER_INTERVAL_US_DEFAULT 20000
 #define TICK_TOCK_COUNT 2
 
-TIM_TypeDef *timer;
+static const timerHardware_t *timer;
 
 typedef enum {
     TICK,
@@ -179,31 +179,17 @@ void expressLrsTimerResume(void)
     timerEnable(timer);
 }
 
-void expressLrsInitialiseTimer(TIM_TypeDef *t, timerOvrHandlerRec_t *timerUpdateCb)
+void expressLrsInitialiseTimer(const timerHardware_t *timHw, timerOvrHandlerRec_t *timerUpdateCb)
 {
-    timer = t;
+    timer = timHw;
 
-    configTimeBase(timer, expressLrsCalculateMaximumExpectedPeriod(timerState.intervalUs), MHZ_TO_HZ(1));
+    timerReconfigureTimeBase(timer, expressLrsCalculateMaximumExpectedPeriod(timerState.intervalUs), MHZ_TO_HZ(1));
 
     expressLrsUpdateTimerInterval(timerState.intervalUs);
 
-    timerChOvrHandlerInit(timerUpdateCb, expressLrsOnTimerUpdate);
+    timerChannelOverflowHandlerInit(timerUpdateCb, expressLrsOnTimerUpdate);
 
     timerConfigUpdateCallback(timer, timerUpdateCb);
-}
-
-void expressLrsTimerEnableIRQs(void)
-{
-    uint8_t irq = timerInputIrq(timer);
-
-    // Use the NVIC TIMER priority for now
-#ifdef USE_HAL_DRIVER
-    HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
-    HAL_NVIC_EnableIRQ(irq);
-#else
-    NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER));
-    NVIC_EnableIRQ(irq);
-#endif
 }
 
 #endif

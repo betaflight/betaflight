@@ -53,13 +53,13 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
 #include <stdio.h>
 #include <pthread.h>
 
 static pthread_mutex_t imuUpdateLock;
 
-#if defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
 static uint32_t imuDeltaT = 0;
 static bool imuUpdated = false;
 #endif
@@ -158,7 +158,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat.m[2][1] = 2.0f * (qP.yz - -qP.wx);
     rMat.m[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
-#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
+#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
     rMat.m[1][0] = -2.0f * (qP.xy - -qP.wz);
     rMat.m[2][0] = -2.0f * (qP.xz + -qP.wy);
 #endif
@@ -191,7 +191,7 @@ void imuInit(void)
     canUseGPSHeading = false;
     imuComputeRotationMatrix();
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#if ENABLE_SIMULATOR_MULTITHREAD
     if (pthread_mutex_init(&imuUpdateLock, NULL) != 0) {
         printf("Create imuUpdateLock error!\n");
     }
@@ -608,7 +608,7 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 }
 #endif
 
-#if defined(SIMULATOR_BUILD) && !defined(USE_IMU_CALC)
+#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC)
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
     // unused static functions
@@ -652,7 +652,7 @@ static void updateGpsHeadingUsable(float groundspeedGain, float imuCourseError, 
 
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
     // Simulator-based timing
     //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
     const timeDelta_t deltaT = imuDeltaT;
@@ -759,7 +759,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_ACC) && acc.isAccelUpdatedAtLeastOnce) {
         IMU_LOCK;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
         if (imuUpdated == false) {
             IMU_UNLOCK;
             return;
@@ -811,7 +811,7 @@ void getQuaternion(quaternion_t *quat)
    quat->z = q.z;
 }
 
-#ifdef SIMULATOR_BUILD
+#if ENABLE_SIMULATOR
 void imuSetAttitudeRPY(float roll, float pitch, float yaw)
 {
     IMU_LOCK;
@@ -841,7 +841,7 @@ void imuSetAttitudeQuat(float w, float x, float y, float z)
     IMU_UNLOCK;
 }
 #endif
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
 void imuSetHasNewData(uint32_t dt)
 {
     IMU_LOCK;

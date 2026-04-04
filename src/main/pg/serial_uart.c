@@ -36,7 +36,7 @@
 #include "drivers/serial_uart.h"
 #include "drivers/dma_reqmap.h"
 
-// TODO(hertz@): UARTDEV_CONFIG_MAX is measured to be exactly 8, which cannot accomodate even all the UARTs below
+// TODO(hertz@): UARTDEV_CONFIG_MAX is measured to be exactly 8, which cannot accommodate even all the UARTs below
 PG_REGISTER_ARRAY_WITH_RESET_FN(serialUartConfig_t, UARTDEV_CONFIG_MAX, serialUartConfig, PG_SERIAL_UART_CONFIG, 0);
 
 typedef struct uartDmaopt_s {

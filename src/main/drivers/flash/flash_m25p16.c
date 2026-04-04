@@ -142,6 +142,15 @@ struct {
     // XMC XM25QH256B
     // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
     { 0x206019, 166, 80, 8192, 16 },
+    // GigaDevice GD25Q16E
+    // Datasheet: https://download.gigadevice.com/Datasheet/DS-00473-GD25Q16E-Rev1.3.pdf
+    { 0xC84015, 104, 50, 32, 256 },
+    // Zetta ZD25WQ32CEIGR
+    // Datasheet: http://en.zettadevice.com/uploads/files/1009/WQ32C/1665301640977617c282766299.pdf
+    { 0xBA6016, 104, 50, 64, 256 },
+    // GD25Q128
+    // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
+    { 0xC84018, 104, 80, 4096, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

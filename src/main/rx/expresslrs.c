@@ -46,7 +46,6 @@
 #include "common/filter.h"
 
 #include "drivers/io.h"
-#include "drivers/nvic.h"
 #include "drivers/rx/rx_spi.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -73,6 +72,8 @@
 #include "rx/expresslrs_common.h"
 #include "rx/expresslrs_impl.h"
 #include "rx/expresslrs_telemetry.h"
+
+static const timerHardware_t elrsTimerHw = { .tim = (timerResource_t *)RX_EXPRESSLRS_TIMER_INSTANCE };
 
 UNIT_TESTED elrsReceiver_t receiver;
 static const uint8_t BindingUID[6] = {0,1,2,3,4,5}; // Special binding UID values
@@ -1017,7 +1018,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 
     expressLrsPhaseLockReset();
 
-    expressLrsInitialiseTimer(RX_EXPRESSLRS_TIMER_INSTANCE, &receiver.timerUpdateCb);
+    expressLrsInitialiseTimer(&elrsTimerHw, &receiver.timerUpdateCb);
     expressLrsTimerStop();
 
     generateCrc14Table();
@@ -1029,7 +1030,7 @@ bool expressLrsSpiInit(const struct rxSpiConfig_s *rxConfig, struct rxRuntimeSta
 #endif
 
     // Timer IRQs must only be enabled after the receiver is configured otherwise race conditions occur.
-    expressLrsTimerEnableIRQs();
+    expressLrsTimerEnableIRQs(&elrsTimerHw);
 
     return true;
 }

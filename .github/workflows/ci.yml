@@ -18,26 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.get-targets.outputs.targets }}
+      sdks: ${{ steps.get-sdks.outputs.sdks }}
+      tools-cache-key: ${{ steps.tools-key.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          submodules: recursive
 
-      - name: Cache build toolchain
-        uses: actions/cache@v4
-        id: cache-toolchain
-        with:
-          path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
 
-      - name: Download and install toolchain
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make arm_sdk_install
+      - name: Compute tools cache key
+        id: tools-key
+        run: echo "key=${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}" >> $GITHUB_OUTPUT
 
-      - name: Build pico tool and install
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make picotool_install
+      - name: Get platform SDK list
+        id: get-sdks
+        run: echo "sdks=$(make platform-sdk-list-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
 
       - name: Hydrate configuration
         id: get-config
@@ -47,9 +43,63 @@ jobs:
         id: get-targets
         run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
 
+  cache-sdks:
+    name: Cache SDK (${{ matrix.sdk }})
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk: ${{ fromJson(needs.setup.outputs.sdks) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Cache tools for this SDK
+        uses: actions/cache@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ matrix.sdk }}
+
+      - name: Restore ARM tools as base
+        if: steps.cache-tools.outputs.cache-hit != 'true' && matrix.sdk != 'arm'
+        uses: actions/cache/restore@v5
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-arm
+
+      - name: Get SDK cache info
+        if: matrix.sdk != 'arm'
+        id: sdk-info
+        run: |
+          SUBMODULE=$(make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache platform SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true'
+        uses: actions/cache@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
+
+      - name: Hydrate SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ matrix.sdk }} platform-sdk-hydrate
+
+      - name: Install tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ matrix.sdk }} platform-tools-install
+
   build:
     name: Build
-    needs: setup
+    needs: [setup, cache-sdks]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -57,15 +107,48 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          submodules: recursive
 
-      - name: Fetch toolchain from cache
-        uses: actions/cache@v4
-        id: cache-toolchain
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Detect target SDK
+        id: sdk
+        run: |
+          SDK_NAME=$(make BUILD=${{ matrix.target }} build-sdk-print)
+          echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
+          # Get SDK submodule cache info for platform SDKs (not arm/none)
+          SUBMODULE=$(make SDK=$SDK_NAME platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${SDK_NAME}-$(make SDK=$SDK_NAME platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore platform SDK from cache
+        if: steps.sdk.outputs.has-submodule == 'true'
+        uses: actions/cache/restore@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk.outputs.paths }}
+          key: ${{ steps.sdk.outputs.key }}
+
+      - name: Hydrate platform SDK (fallback)
+        if: steps.sdk.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-sdk-hydrate
+
+      - name: Restore toolchain from cache
+        if: steps.sdk.outputs.name != 'none'
+        uses: actions/cache/restore@v5
+        id: cache-tools
         with:
           path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ steps.sdk.outputs.name }}
+
+      - name: Install tools (fallback)
+        if: steps.sdk.outputs.name != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
 
       - name: Hydrate configuration
         id: get-config
@@ -80,7 +163,7 @@ jobs:
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.target }}
           path: |

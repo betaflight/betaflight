@@ -32,6 +32,7 @@
 
 #include "build/debug.h"
 
+#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor_impl.h"
@@ -91,6 +92,10 @@ static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
 static char simulator_ip[32] = "127.0.0.1";
 
+#ifdef CONFIG_IN_FILE
+static const char *configFilePath = NULL;
+#endif
+
 #define PORT_PWM_RAW    9001    // Out
 #define PORT_PWM        9002    // Out
 #define PORT_STATE      9003    // In
@@ -98,15 +103,53 @@ static char simulator_ip[32] = "127.0.0.1";
 
 int targetParseArgs(int argc, char * argv[])
 {
-    //The first argument should be target IP.
-    if (argc > 1) {
-        strcpy(simulator_ip, argv[1]);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            printf("Betaflight SITL\n");
+            printf("Usage: %s [options]\n", argv[0]);
+            printf("Options:\n");
+            printf("  --ip <address>     Simulator IP address (default: %s)\n", simulator_ip);
+#ifdef CONFIG_IN_FILE
+            printf("  --config <file>    Load CLI config file, save to EEPROM, and exit\n");
+#endif
+            printf("  --help, -h         Show this help message\n");
+            exit(0);
+#ifdef CONFIG_IN_FILE
+        } else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
+            configFilePath = argv[++i];
+#endif
+        } else if (strcmp(argv[i], "--ip") == 0 && i + 1 < argc) {
+            strncpy(simulator_ip, argv[++i], sizeof(simulator_ip) - 1);
+            simulator_ip[sizeof(simulator_ip) - 1] = '\0';
+        } else {
+            fprintf(stderr, "[SITL] Unknown argument: %s (use --help for usage)\n", argv[i]);
+            exit(1);
+        }
     }
+
+#ifdef CONFIG_IN_FILE
+    if (configFilePath) {
+        FILE *fp = fopen(configFilePath, "r");
+        if (!fp) {
+            fprintf(stderr, "[SITL] Config file not found: %s\n", configFilePath);
+            exit(1);
+        }
+        fclose(fp);
+        printf("[SITL] Config file: %s (will load, save to EEPROM, and exit)\n", configFilePath);
+    }
+#endif
 
     printf("[SITL] The SITL will output to IP %s:%d (Gazebo) and %s:%d (RealFlightBridge)\n",
            simulator_ip, PORT_PWM, simulator_ip, PORT_PWM_RAW);
     return 0;
 }
+
+#ifdef CONFIG_IN_FILE
+const char *targetGetConfigFile(void)
+{
+    return configFilePath;
+}
+#endif
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
@@ -205,7 +248,7 @@ static void updateState(const fdm_packet* pkt)
     setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
-#if defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
     imuSetHasNewData(deltaSim*1e6);
     imuUpdateAttitude(micros());
 #endif
@@ -226,7 +269,7 @@ static void updateState(const fdm_packet* pkt)
 
     pthread_mutex_unlock(&updateLock); // can send PWM output now
 
-#if defined(SIMULATOR_GYROPID_SYNC)
+#if ENABLE_SIMULATOR_GYROPID_SYNC
     pthread_mutex_unlock(&mainLoopLock); // can run main loop
 #endif
 }
@@ -788,4 +831,14 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
 {
     static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
     return &info;
+}
+
+void EXTIInit(void)
+{
+    // NOOP
+}
+
+void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
+{
+    UNUSED(pSerialPinConfig);
 }

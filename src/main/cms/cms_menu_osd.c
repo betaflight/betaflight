@@ -178,6 +178,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef USE_RANGEFINDER
     {"LIDAR DIST",         OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_LIDAR_DIST]},
 #endif
+#if ENABLE_OSD_CUSTOM_TEXT
+    {"SERIAL TEXT",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_CUSTOM_SERIAL_TEXT]},
+#endif
     {"BACK",               OME_Back,    NULL, NULL},
     {NULL,                 OME_END,     NULL, NULL}
 };
@@ -265,8 +268,8 @@ static CMS_Menu menuAlarms = {
     .entries = menuAlarmsEntries,
 };
 
-osd_timer_source_e timerSource[OSD_TIMER_COUNT];
-osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
+uint8_t timerSource[OSD_TIMER_COUNT];
+uint8_t timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
 static const void *menuTimersOnEnter(displayPort_t *pDisp)
@@ -332,7 +335,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static uint8_t osdConfig_osdProfileIndex;
 #endif
 
-static displayPortBackground_e osdMenuBackgroundType;
+static uint8_t osdMenuBackgroundType;
 
 static const void *cmsx_menuOsdOnEnter(displayPort_t *pDisp)
 {

@@ -652,11 +652,6 @@ static void applyMixerAdjustmentEzLand(float *motorMix, const float motorMixMin,
 
 static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const float motorMixMax, const bool airmodeEnabled)
 {
-#ifdef USE_AIRMODE_LPF
-    const float unadjustedThrottle = throttle;
-    throttle += pidGetAirmodeThrottleOffset();
-    float airmodeThrottleChange = 0.0f;
-#endif
     float airmodeTransitionPercent = 1.0f;
 
     if (!airmodeEnabled && throttle < 0.5f) {
@@ -674,11 +669,6 @@ static void applyMixerAdjustment(float *motorMix, const float motorMixMin, const
     const float normalizedMotorMixMin = motorMixMin * motorMixNormalizationFactor;
     const float normalizedMotorMixMax = motorMixMax * motorMixNormalizationFactor;
     throttle = constrainf(throttle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax);
-
-#ifdef USE_AIRMODE_LPF
-    airmodeThrottleChange = constrainf(unadjustedThrottle, -normalizedMotorMixMin, 1.0f - normalizedMotorMixMax) - unadjustedThrottle;
-    pidUpdateAirmodeLpf(airmodeThrottleChange);
-#endif
 }
 
 FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
@@ -692,8 +682,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (applyCrashFlipModeToMotors()) {
         return;
         // if crash flip modeis being applied to the motors, mixing is done
-        
-        
+
+
     }
 
     motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];

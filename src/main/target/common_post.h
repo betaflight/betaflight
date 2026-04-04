@@ -111,6 +111,7 @@
     && !defined(USE_ACC_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
@@ -136,6 +137,7 @@
     && !defined(USE_GYRO_SPI_ICM20689) \
     && !defined(USE_GYRO_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
@@ -498,23 +500,22 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
-    || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_IIM42653) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X) \
-    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
+    || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
 #endif
 
-#ifndef SIMULATOR_BUILD
 #ifndef USE_ACC
 #define USE_ACC
 #endif
 
 #ifndef USE_GYRO
 #define USE_GYRO
-#endif
 #endif
 
 // CX10 is a special case of SPI RX which requires XN297
@@ -566,7 +567,39 @@
 #define USE_WS2811_SINGLE_COLOUR
 #endif
 
-#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+#if !defined(ENABLE_SIMULATOR)
+#define ENABLE_SIMULATOR 0
+#endif
+
+#if ENABLE_SIMULATOR
+#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#else
+#if defined(ENABLE_SIMULATOR_MULTITHREAD)
+#warning ENABLE_SIMULATOR_MULTITHREAD defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if defined(ENABLE_SIMULATOR_IMU_SYNC)
+#warning ENABLE_SIMULATOR_IMU_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#warning ENABLE_SIMULATOR_GYROPID_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#endif
+
+#if ENABLE_SIMULATOR || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_DYN_NOTCH_FILTER
 #endif
@@ -623,7 +656,14 @@
 #endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP)
+#if defined(USE_RANGEFINDER_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_RANGEFINDER_UPT1
+
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
@@ -711,3 +751,17 @@ extern struct linker_symbol __config_end;
  #endif
 
 ******************************************************/
+
+#if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 0
+#endif
+
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 0
+#endif
+
+#if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 1
+#elif !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 0
+#endif

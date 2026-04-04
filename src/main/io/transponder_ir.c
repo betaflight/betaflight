@@ -80,7 +80,7 @@ void transponderUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t jitterIndex = 0;
 
-    if (!(transponderInitialised && transponderRepeat && isTransponderIrReady())) {
+    if (!(transponderInitialised && transponderRepeat && transponderIrIsReady())) {
         return;
     }
 

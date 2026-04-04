@@ -2,6 +2,8 @@
 # H7 Make file include
 #
 
+PLATFORM_SDK := arm
+
 ifeq ($(DEBUG_HARDFAULTS),H7)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
@@ -29,8 +31,6 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_fmac.c \
             stm32h7xx_hal_gfxmmu.c \
             stm32h7xx_hal_gpio.c \
-            stm32h7xx_hal_i2c.c \
-            stm32h7xx_hal_i2c_ex.c \
             stm32h7xx_hal_ospi.c \
             stm32h7xx_hal_otfdec.c \
             stm32h7xx_hal_pcd.c \
@@ -53,8 +53,11 @@ STDPERIPH_SRC   = \
             stm32h7xx_ll_crs.c \
             stm32h7xx_ll_dma.c \
             stm32h7xx_ll_fmac.c \
+            stm32h7xx_ll_i2c.c \
             stm32h7xx_ll_sdmmc.c \
             stm32h7xx_ll_spi.c \
+            stm32h7xx_ll_usart.c \
+            stm32h7xx_ll_rcc.c \
             stm32h7xx_ll_tim.c \
             stm32h7xx_ll_usb.c
 
@@ -288,8 +291,8 @@ MCU_COMMON_SRC = \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32h7xx.c \
             STM32/audio_stm32h7xx.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
             STM32/bus_quadspi_hal.c \
             STM32/bus_octospi_stm32h7xx.c \
@@ -307,7 +310,7 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32h7xx.c \
             STM32/system_stm32h7xx.c \
             STM32/timer_hal.c \
@@ -326,14 +329,15 @@ MSC_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
-            msc/usbd_storage_sdio.c
+            msc/usbd_storage_sdio.c \
+            common/stm32/msc_sdio_storage.c
 
 SPEED_OPTIMISED_SRC += \
             STM32/exti.c
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 

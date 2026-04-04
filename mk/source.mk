@@ -2,8 +2,7 @@ PG_SRC = \
             pg/adc.c \
             pg/alt_hold_multirotor.c \
             pg/alt_hold_wing.c \
-            pg/autopilot_multirotor.c \
-            pg/autopilot_wing.c \
+            pg/autopilot.c \
             pg/beeper.c \
             pg/beeper_dev.c \
             pg/board.c \
@@ -14,6 +13,7 @@ PG_SRC = \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
+            pg/flight_plan.c \
             pg/gimbal.c \
             pg/gps.c \
             pg/gps_lap_timer.c \
@@ -99,7 +99,7 @@ COMMON_SRC = \
             drivers/camera_control.c \
             drivers/display.c \
             drivers/display_canvas.c \
-            drivers/dma_common.c \
+            drivers/dma.c \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/light_led.c \
@@ -170,6 +170,8 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
+            flight/position_estimator.c \
+            flight/position_filter.c \
             flight/pos_hold_multirotor.c \
             flight/pos_hold_wing.c \
             flight/rpm_filter.c \
@@ -209,6 +211,7 @@ COMMON_SRC = \
             sensors/gyro.c \
             sensors/gyro_init.c \
             sensors/initialisation.c \
+            sensors/sensors.c \
             blackbox/blackbox.c \
             blackbox/blackbox_encoding.c \
             blackbox/blackbox_io.c \
@@ -239,6 +242,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/rangefinder/rangefinder_nooploop.c \
+            drivers/rangefinder/rangefinder_upt1.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
@@ -257,6 +261,7 @@ COMMON_SRC = \
             io/ledstrip.c \
             io/pidaudio.c \
             osd/osd.c \
+            osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
             sensors/barometer.c \
@@ -526,6 +531,7 @@ SIZE_OPTIMISED_SRC += \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
             osd/osd.c \
+            osd/osd_custom_text.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
             rx/rx_bind.c \
@@ -549,7 +555,9 @@ endif
 SRC += $(FLASH_SRC) $(MSC_SRC) $(SDCARD_SRC) $(COMMON_SRC)
 
 #excludes
-SRC   := $(filter-out $(MCU_EXCLUDES), $(SRC))
+SRC                := $(filter-out $(MCU_EXCLUDES), $(SRC))
+SPEED_OPTIMISED_SRC := $(filter-out $(MCU_EXCLUDES), $(SPEED_OPTIMISED_SRC))
+SIZE_OPTIMISED_SRC  := $(filter-out $(MCU_EXCLUDES), $(SIZE_OPTIMISED_SRC))
 
 SRC += $(VCP_SRC)
 
