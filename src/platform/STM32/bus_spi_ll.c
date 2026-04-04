@@ -154,13 +154,8 @@ void spiInitDevice(spiDevice_e device)
     LL_SPI_Disable(dev);
     LL_SPI_DeInit(dev);
 
-#if defined(STM32H7) || defined(STM32H5)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     // Prevent glitching when SPI is disabled
-    LL_SPI_EnableGPIOControl(dev);
-
-    LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_TH_01DATA);
-    LL_SPI_Init(dev, &defaultInit);
-#elif defined(STM32N6)
     LL_SPI_EnableGPIOControl(dev);
 
     LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_TH_01DATA);
