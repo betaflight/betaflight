@@ -271,7 +271,8 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
     float yawDampingCtrl = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
-    float yawStabilityCtrl = sensors(SENSOR_ACC) ? acc.accADC.y * acc.dev.acc_1G_rec * (pidProfile->psas_yaw_stability_gain * 0.01f) : 0.0f;
+    float accelY = sensors(SENSOR_ACC) ? acc.accADC.y * acc.dev.acc_1G_rec : 0.0f;
+    float yawStabilityCtrl = accelY * (pidProfile->psas_yaw_stability_gain * 0.01f);
     float rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
 
     pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl + rollToYawCrossControl;
