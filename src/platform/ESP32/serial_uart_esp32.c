@@ -134,8 +134,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_USART2,
         .reg = (usartResource_t *)UART2,
-        .rxPins = { { .pin = DEFIO_TAG_E(PA20) }, },
-        .txPins = { { .pin = DEFIO_TAG_E(PA19) }, },
+        .rxPins = { { .pin = DEFIO_TAG_E(PA21) }, },
+        .txPins = { { .pin = DEFIO_TAG_E(PA10) }, },
         .af = 0,
         .irqn = 0,
         .txPriority = 0,
