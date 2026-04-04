@@ -37,10 +37,12 @@
 #include "hal/gpio_ll.h"
 #pragma GCC diagnostic pop
 
+#include "hal/uart_types.h"
 #include "soc/uart_struct.h"
 #include "soc/gpio_sig_map.h"
 #include "esp_rom_gpio.h"
 #include "soc/gpio_struct.h"
+#include "soc/interrupts.h"
 
 // Cache the real uart_dev_t hardware register pointers before
 // restoring our platform macros (which would shadow them).
@@ -62,6 +64,7 @@ static uart_dev_t *uartGetHw(int portNum)
 }
 
 #include "common/utils.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/serial.h"
@@ -69,12 +72,27 @@ static uart_dev_t *uartGetHw(int portNum)
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+#include "platform/interrupt.h"
+
 // ESP32-S3 APB clock frequency (80 MHz)
 #define ESP32_APB_CLK_FREQ  80000000
+
+// RX FIFO threshold: trigger interrupt after this many bytes received
+#define UART_RXFIFO_FULL_THRESHOLD  1
+
+// RX timeout: trigger interrupt after this many bit-periods of idle
+// At 115200 baud, 10 bit-periods ~ 87us — good for low-latency response
+#define UART_RX_TOUT_THRESHOLD  10
 
 // ESP32-S3 UART GPIO matrix signal indices
 static const uint8_t uartTxSignal[] = { U0TXD_OUT_IDX, U1TXD_OUT_IDX, U2TXD_OUT_IDX };
 static const uint8_t uartRxSignal[] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX };
+
+// CPU interrupt numbers for each UART (from platform/interrupt.h)
+static const int uartCpuIntr[] = { ESP32_CPU_INTR_UART0, ESP32_CPU_INTR_UART1, ESP32_CPU_INTR_UART2 };
+
+// Peripheral interrupt sources for each UART
+static const int uartIntrSource[] = { ETS_UART0_INTR_SOURCE, ETS_UART1_INTR_SOURCE, ETS_UART2_INTR_SOURCE };
 
 // ESP32-S3 has 3 UART controllers (UART0, UART1, UART2)
 // UART buffers are defined in drivers/serial_uart.c
@@ -83,7 +101,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART0
     {
         .identifier = SERIAL_PORT_UART0,
-        .reg = UART0,
+        .reg = (usartResource_t *)UART0,
         .rxPins = { { .pin = DEFIO_TAG_E(PA44) }, },
         .txPins = { { .pin = DEFIO_TAG_E(PA43) }, },
         .af = 0,
@@ -99,7 +117,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_UART1,
-        .reg = UART1,
+        .reg = (usartResource_t *)UART1,
         .rxPins = { { .pin = DEFIO_TAG_E(PA18) }, },
         .txPins = { { .pin = DEFIO_TAG_E(PA17) }, },
         .af = 0,
@@ -112,11 +130,27 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxBufferSize = sizeof(uart1RxBuffer),
     },
 #endif
+#ifdef USE_UART2
+    {
+        .identifier = SERIAL_PORT_USART2,
+        .reg = (usartResource_t *)UART2,
+        .rxPins = { { .pin = DEFIO_TAG_E(PA21) }, },
+        .txPins = { { .pin = DEFIO_TAG_E(PA10) }, },
+        .af = 0,
+        .irqn = 0,
+        .txPriority = 0,
+        .rxPriority = 0,
+        .txBuffer = uart2TxBuffer,
+        .rxBuffer = uart2RxBuffer,
+        .txBufferSize = sizeof(uart2TxBuffer),
+        .rxBufferSize = sizeof(uart2RxBuffer),
+    },
+#endif
 };
 
-static int uartGetPortNum(const USART_TypeDef *reg)
+static int uartGetPortNum(const usartResource_t *reg)
 {
-    return UART_INST(reg);
+    return UART_INST((const USART_TypeDef *)reg);
 }
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
@@ -150,6 +184,28 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
     }
 }
 
+void uartConfigureExternalPinInversion(uartPort_t *uartPort)
+{
+    int portNum = uartGetPortNum(uartPort->USARTx);
+    uart_dev_t *hw = uartGetHw(portNum);
+
+    const bool inverted = (uartPort->port.options & SERIAL_INVERTED) != 0;
+
+#ifdef USE_INVERTER
+    // When an external inverter is available, use it and keep HW inversion disabled
+    // to avoid double-inverting the signal.
+    uart_ll_inverse_signal(hw, UART_SIGNAL_INV_DISABLE);
+    enableInverter(uartPort->port.identifier, inverted);
+#else
+    // No external inverter — use ESP32-S3 hardware signal inversion
+    if (inverted) {
+        uart_ll_inverse_signal(hw, UART_SIGNAL_TXD_INV | UART_SIGNAL_RXD_INV);
+    } else {
+        uart_ll_inverse_signal(hw, UART_SIGNAL_INV_DISABLE);
+    }
+#endif
+}
+
 void uartReconfigure(uartPort_t *uartPort)
 {
     int portNum = uartGetPortNum(uartPort->USARTx);
@@ -163,9 +219,18 @@ void uartReconfigure(uartPort_t *uartPort)
     uart_ll_set_stop_bits(hw, twoStop ? UART_STOP_BITS_2 : UART_STOP_BITS_1);
     uart_ll_set_parity(hw, evenParity ? UART_PARITY_EVEN : UART_PARITY_DISABLE);
 
-    // Enable RX interrupts if in RX mode
+    uartConfigureExternalPinInversion(uartPort);
+
+    // Configure RX FIFO thresholds for low-latency receive
+    uart_ll_set_rxfifo_full_thr(hw, UART_RXFIFO_FULL_THRESHOLD);
+    uart_ll_set_rx_tout(hw, UART_RX_TOUT_THRESHOLD);
+
+    // Reconfigure RX interrupts based on current mode.
+    // Only touch RX bits to avoid disrupting an in-progress TX transfer.
+    uart_ll_disable_intr_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+    uart_ll_clr_intsts_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+
     if (uartPort->port.mode & MODE_RX) {
-        uart_ll_clr_intsts_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
         uart_ll_ena_intr_mask(hw, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
     }
 }
@@ -200,12 +265,60 @@ void uartIrqHandler(uartPort_t *s)
     // TX handling
     if (status & UART_INTR_TXFIFO_EMPTY) {
         uart_ll_clr_intsts_mask(hw, UART_INTR_TXFIFO_EMPTY);
-        while (s->port.txBufferTail != s->port.txBufferHead) {
+
+        // Fill TX FIFO up to available space.
+        // Note: uart_ll_get_txfifo_len() returns FREE space (FIFO_DEF_LEN - txfifo_cnt).
+        uint32_t txFree = uart_ll_get_txfifo_len(hw);
+        while (txFree && s->port.txBufferTail != s->port.txBufferHead) {
             uart_ll_write_txfifo(hw, (const uint8_t *)&s->port.txBuffer[s->port.txBufferTail], 1);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
+            txFree--;
         }
+
         // Disable TX interrupt when buffer is empty
-        uart_ll_disable_intr_mask(hw, UART_INTR_TXFIFO_EMPTY);
+        if (s->port.txBufferTail == s->port.txBufferHead) {
+            uart_ll_disable_intr_mask(hw, UART_INTR_TXFIFO_EMPTY);
+        }
+    }
+}
+
+// Per-UART ISR wrappers for the ROM interrupt dispatch table.
+// ets_isr_attach requires a void(*)(void*) signature.
+
+static void uart0Isr(void *arg)
+{
+    UNUSED(arg);
+    uartIrqHandler(&uartDevice[UARTDEV_0].port);
+}
+
+#ifdef USE_UART1
+static void uart1Isr(void *arg)
+{
+    UNUSED(arg);
+    uartIrqHandler(&uartDevice[UARTDEV_1].port);
+}
+#endif
+
+#ifdef USE_UART2
+static void uart2Isr(void *arg)
+{
+    UNUSED(arg);
+    uartIrqHandler(&uartDevice[UARTDEV_2].port);
+}
+#endif
+
+// Map uartDeviceIdx_e to the ISR wrapper function
+static esp32IsrHandler_t uartIsrForDevice(uartDeviceIdx_e devIdx)
+{
+    switch (devIdx) {
+    case UARTDEV_0: return uart0Isr;
+#ifdef USE_UART1
+    case UARTDEV_1: return uart1Isr;
+#endif
+#ifdef USE_UART2
+    case UARTDEV_2: return uart2Isr;
+#endif
+    default: return NULL;
     }
 }
 
@@ -227,7 +340,6 @@ void uartTryStartTxDMA(uartPort_t *s)
 
 uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
-    UNUSED(mode);
     UNUSED(options);
 
     uartPort_t *s = &uartdev->port;
@@ -248,25 +360,29 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     const int ownerIndex = serialOwnerIndex(identifier);
     const resourceOwner_e ownerTxRx = serialOwnerTxRx(identifier);
 
-    // Configure TX pin via GPIO matrix
-    IO_t txIO = IOGetByTag(uartdev->tx.pin);
-    if (txIO) {
-        IOInit(txIO, ownerTxRx, ownerIndex);
-        uint32_t txPin = IO_Pin(txIO);
-        esp_rom_gpio_pad_select_gpio(txPin);
-        gpio_ll_output_enable(&GPIO, txPin);
-        esp_rom_gpio_connect_out_signal(txPin, uartTxSignal[portNum], false, false);
+    // Configure TX pin via GPIO matrix (only if TX mode requested)
+    if (mode & MODE_TX) {
+        IO_t txIO = IOGetByTag(uartdev->tx.pin);
+        if (txIO) {
+            IOInit(txIO, ownerTxRx, ownerIndex);
+            uint32_t txPin = IO_Pin(txIO);
+            esp_rom_gpio_pad_select_gpio(txPin);
+            gpio_ll_output_enable(&GPIO, txPin);
+            esp_rom_gpio_connect_out_signal(txPin, uartTxSignal[portNum], false, false);
+        }
     }
 
-    // Configure RX pin via GPIO matrix
-    IO_t rxIO = IOGetByTag(uartdev->rx.pin);
-    if (rxIO) {
-        IOInit(rxIO, ownerTxRx + 1, ownerIndex);
-        uint32_t rxPin = IO_Pin(rxIO);
-        esp_rom_gpio_pad_select_gpio(rxPin);
-        gpio_ll_input_enable(&GPIO, rxPin);
-        gpio_ll_pullup_en(&GPIO, rxPin);
-        esp_rom_gpio_connect_in_signal(rxPin, uartRxSignal[portNum], false);
+    // Configure RX pin via GPIO matrix (only if RX mode requested)
+    if (mode & MODE_RX) {
+        IO_t rxIO = IOGetByTag(uartdev->rx.pin);
+        if (rxIO) {
+            IOInit(rxIO, ownerTxRx + 1, ownerIndex);
+            uint32_t rxPin = IO_Pin(rxIO);
+            esp_rom_gpio_pad_select_gpio(rxPin);
+            gpio_ll_input_enable(&GPIO, rxPin);
+            gpio_ll_pullup_en(&GPIO, rxPin);
+            esp_rom_gpio_connect_in_signal(rxPin, uartRxSignal[portNum], false);
+        }
     }
 
     // Configure UART parameters
@@ -279,6 +395,19 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     uart_ll_rxfifo_rst(hw);
     uart_ll_txfifo_rst(hw);
 
+    // Disable all interrupts before registering ISR
+    uart_ll_disable_intr_mask(hw, 0xFFFFFFFF);
+    uart_ll_clr_intsts_mask(hw, 0xFFFFFFFF);
+
+    // Register ISR with ROM interrupt dispatch
+    uartDeviceIdx_e devIdx = uartDeviceIdxFromIdentifier(identifier);
+    esp32IsrHandler_t isrFn = uartIsrForDevice(devIdx);
+    if (isrFn) {
+        esp32IntrRoute(uartCpuIntr[portNum], uartIntrSource[portNum]);
+        esp32IntrRegister(uartCpuIntr[portNum], isrFn, NULL);
+        esp32IntrEnable(uartCpuIntr[portNum]);
+    }
+
     // Setup port buffers and hardware reference
     s->port.rxBuffer = hardware->rxBuffer;
     s->port.txBuffer = hardware->txBuffer;
@@ -288,5 +417,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
 
     s->port.vTable = uartVTable;
 
+    // RX interrupts are enabled later via uartReconfigure() called from uartOpen()
     return s;
 }

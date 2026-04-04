@@ -75,21 +75,21 @@ static i2c_dev_t *i2cGetHw(int portNum)
 }
 
 // Get the I2C port number (0 or 1) from our platform peripheral pointer
-static int i2cGetPortNum(I2C_TypeDef *reg)
+static int i2cGetPortNum(i2cResource_t *reg)
 {
-    return I2C_INST(reg);
+    return I2C_INST((I2C_TypeDef *)reg);
 }
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_0,
-        .reg = I2C0,
+        .reg = (i2cResource_t *)I2C0,
         .sclPins = { I2CPINDEF(PA9), I2CPINDEF(PA2), },
         .sdaPins = { I2CPINDEF(PA8), I2CPINDEF(PA1), },
     },
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = { I2CPINDEF(PA7), I2CPINDEF(PA4), },
         .sdaPins = { I2CPINDEF(PA6), I2CPINDEF(PA3), },
     },
