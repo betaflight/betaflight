@@ -93,6 +93,3 @@ void imuSetHasNewData(uint32_t dt);
 bool imuQuaternionHeadfreeOffsetSet(void);
 void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool isUpright(void);
-
-// Get Mahony integral feedback (I-term) for bias compensation
-void imuGetMahonyIntegralFB(float out[XYZ_AXIS_COUNT]);

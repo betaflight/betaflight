@@ -165,8 +165,4 @@ extern "C" {
     void schedulerResetTaskStatistics(taskId_e) {}
     int getArmingDisableFlags(void) {return 0;}
     void writeEEPROM(void) {}
-    // Stubs for RC deflection and throttle used by gyro drift estimator gating
-    float getRcDeflectionAbs(int) { return 0.0f; }
-    float mixerGetRcThrottle(void) { return 0.0f; }
-    float imuGetMahonyIntegralFB(void) { return 0.0f; }
 }
