@@ -97,6 +97,9 @@ static FAST_DATA_ZERO_INIT float snapshotSum[XYZ_AXIS_COUNT];
 
 static FAST_DATA_ZERO_INIT int16_t gyroSensorTemperature;
 
+// Disarmed auto-recalibration state
+static timeUs_t stationaryStartUs = 0;
+
 FAST_DATA uint8_t activePidLoopDenom = 1;
 
 static bool firstArmingCalibrationWasStarted = false;
@@ -147,6 +150,46 @@ void pgResetFn_gyroConfig(gyroConfig_t *gyroConfig)
     gyroConfig->simplified_gyro_filter = true;
     gyroConfig->simplified_gyro_filter_multiplier = SIMPLIFIED_TUNING_DEFAULT;
     gyroConfig->gyro_enabled_bitmask = DEFAULT_GYRO_ENABLED;
+}
+
+// Auto-recalibrate gyro when disarmed and stationary, to handle thermal drift
+#define STATIONARY_GYRO_LIMIT    0.5f    // deg/s — all axes must be below this
+#define STATIONARY_REQUIRED_US   3000000 // 3 seconds of continuous stillness
+
+static void checkStationaryAndRecalibrate(timeUs_t currentTimeUs)
+{
+    if (ARMING_FLAG(ARMED)) {
+        stationaryStartUs = 0;
+        return;
+    }
+
+    if (!gyroIsCalibrationComplete()) {
+        stationaryStartUs = 0;
+        return;
+    }
+
+    bool allQuiet = true;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (fabsf(gyro.gyroADC[axis]) > STATIONARY_GYRO_LIMIT) {
+            allQuiet = false;
+            break;
+        }
+    }
+
+    if (!allQuiet) {
+        stationaryStartUs = 0;
+        return;
+    }
+
+    if (stationaryStartUs == 0) {
+        stationaryStartUs = currentTimeUs;
+        return;
+    }
+
+    if (cmpTimeUs(currentTimeUs, stationaryStartUs) >= STATIONARY_REQUIRED_US) {
+        gyroStartCalibration(false);
+        stationaryStartUs = 0;
+    }
 }
 
 static bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -217,7 +260,7 @@ bool isFirstArmingGyroCalibrationRunning(void)
 
 STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t gyroMovementCalibrationThreshold)
 {
-    bool calFailed = false;
+    bool allAxesBelowThreshold = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // Reset g[axis] at start of calibration
@@ -244,23 +287,24 @@ STATIC_UNIT_TESTED NOINLINE void performGyroCalibration(gyroSensor_t *gyroSensor
 
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && stddev > gyroMovementCalibrationThreshold) {
-                calFailed = true;
-            } else {
-                // please take care with exotic boardalignment !!
-                gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
-                if (axis == Z) {
-                  gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
-                }
+                allAxesBelowThreshold = false;
             }
         }
     }
 
-    if (calFailed) {
+    if (!allAxesBelowThreshold) {
         gyroSetCalibrationCycles(gyroSensor);
         return;
     }
 
+    // Only set gyroZero if all axes are below threshold
     if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroSensor->gyroDev.gyroZero[axis] = gyroSensor->calibration.sum[axis] / gyroCalculateCalibratingCycles();
+            if (axis == Z) {
+                gyroSensor->gyroDev.gyroZero[axis] -= ((float)gyroConfig()->gyro_offset_yaw / 100);
+            }
+        }
         schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         if (!firstArmingCalibrationWasStarted || (getArmingDisableFlags() & ~ARMING_DISABLED_CALIBRATING) == 0) {
             beeper(BEEPER_GYRO_CALIBRATED);
@@ -547,9 +591,8 @@ FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
         }
     }
 
-#if !defined(USE_GYRO_OVERFLOW_CHECK) && !defined(USE_YAW_SPIN_RECOVERY)
-    UNUSED(currentTimeUs);
-#endif
+    // Auto-recalibrate when disarmed and stationary (handles thermal drift)
+    checkStationaryAndRecalibrate(currentTimeUs);
 }
 
 float gyroGetFilteredDownsampled(int axis)
