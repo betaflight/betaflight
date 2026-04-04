@@ -472,14 +472,14 @@ extern uint8_t _dmaram_end__;
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
-#elif defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 #define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 4
 #endif
 
 // Work around different check routines in the libraries for different MCU types
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 #define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
 #define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
 #else
@@ -492,7 +492,7 @@ extern uint8_t _dmaram_end__;
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
 #elif defined(STM32H5)
-#define MAX_SPI_PIN_SEL 4
+#define MAX_SPI_PIN_SEL 5
 #elif defined(STM32H7) || defined(STM32N6)
 #define MAX_SPI_PIN_SEL 5
 #else

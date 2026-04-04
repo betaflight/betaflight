@@ -173,6 +173,7 @@ MCU_COMMON_SRC = \
             STM32/timer_hal.c \
             STM32/transponder_ir_io_hal.c \
             STM32/camera_control_stm32.c \
+            STM32/dma_stm32h5xx.c \
             STM32/system_stm32h5xx.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
@@ -184,7 +185,6 @@ MCU_COMMON_SRC = \
 #            sdio_h5xx.c \
 #            timer_stm32h5xx.c \
 #            adc_stm32h5xx.c \
-#            dma_stm32h5xx.c \
 
 MSC_SRC =
 #MSC_SRC = \
@@ -203,7 +203,6 @@ SPEED_OPTIMISED_SRC += \
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
             STM32/bus_i2c_ll_init.c \
-            STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
