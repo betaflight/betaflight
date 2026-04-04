@@ -759,3 +759,9 @@ extern struct linker_symbol __config_end;
 #if !defined(ENABLE_SDIO_INIT)
 #define ENABLE_SDIO_INIT 0
 #endif
+
+#if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 1
+#elif !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 0
+#endif

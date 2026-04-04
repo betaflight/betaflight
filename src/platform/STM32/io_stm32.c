@@ -49,6 +49,7 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOD) },
     { RCC_AHB1(GPIOE) },
     { RCC_AHB1(GPIOF) },
+    { RCC_AHB1(GPIOG) },
 };
 #elif defined(STM32H7)
 const struct ioPortDef_s ioPortDefs[] = {
@@ -72,6 +73,18 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOD) },
     { RCC_AHB2(GPIOE) },
     { RCC_AHB2(GPIOF) },
+};
+#elif defined(STM32H5)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB2(GPIOA) },
+    { RCC_AHB2(GPIOB) },
+    { RCC_AHB2(GPIOC) },
+    { RCC_AHB2(GPIOD) },
+    { RCC_AHB2(GPIOE) },
+    { RCC_AHB2(GPIOF) },
+    { RCC_AHB2(GPIOG) },
+    { RCC_AHB2(GPIOH) },
+    { RCC_AHB2(GPIOI) },
 };
 #elif defined(STM32N6)
 const struct ioPortDef_s ioPortDefs[] = {
@@ -98,7 +111,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;

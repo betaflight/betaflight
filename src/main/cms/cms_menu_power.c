@@ -39,8 +39,8 @@
 
 #include "config/config.h"
 
-voltageMeterSource_e batteryConfig_voltageMeterSource;
-currentMeterSource_e batteryConfig_currentMeterSource;
+uint8_t batteryConfig_voltageMeterSource;
+uint8_t batteryConfig_currentMeterSource;
 
 static uint8_t cmsBatteryProfileIndex;
 uint16_t batteryConfig_vbatmincellvoltage;

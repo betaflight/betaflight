@@ -347,6 +347,7 @@ PLATFORM_SDK_arm_CC_INSTALL := arm_sdk_install
 
 include $(PLATFORM_DIR)/STM32/mk/tools.mk
 include $(PLATFORM_DIR)/PICO/mk/tools.mk
+include $(PLATFORM_DIR)/ESP32/mk/tools.mk
 
 ## platform-sdk-list-print : list registered SDK names (space-separated)
 .PHONY: platform-sdk-list-print
