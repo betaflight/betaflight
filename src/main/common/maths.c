@@ -49,13 +49,11 @@ static inline float cos_poly6_r(float s)
 }
 
 // ---- Range reduction ----
-// Converts x (radians) into quadrant index q and reduced argument r ∈ [-0.5, 0.5].
-// Uses float-add rounding trick — avoids roundf()/vrinta, works on FPv4-SP and FPv5.
 static inline void range_reduce(float x, float *restrict r_out, int *restrict q_out)
 {
     float t  = x * INV_PIO2;
-    float qf = (t + 12582912.0f) - 12582912.0f;  // roundf(t), exact for |t| < 2^23
-    *q_out   = (int)qf;                            // VCVT — qf is already integer-valued
+    float qf = roundf(t);
+    *q_out   = (int)qf;
     *r_out   = t - qf;
 }
 
