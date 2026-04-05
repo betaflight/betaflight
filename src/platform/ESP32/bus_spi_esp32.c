@@ -126,9 +126,13 @@ extern busDevice_t spiBusDevice[SPIDEV_COUNT];
 static lldesc_t dmaTxDesc[SPIDEV_COUNT];
 static lldesc_t dmaRxDesc[SPIDEV_COUNT];
 
-// Dummy bytes for DMA when no TX/RX buffer is provided
-static uint8_t dummyTxByte = 0xFF;
-static uint8_t dummyRxByte;
+// Dummy buffers for DMA when no TX/RX buffer is provided.
+// ESP32 GDMA walks through the buffer sequentially (no non-increment mode),
+// so the dummy buffers must be at least as large as any single DMA segment.
+// 64 bytes covers all typical sensor register reads/writes.
+#define SPI_DMA_DUMMY_BUFFER_SIZE  SPI_MAX_TRANSFER_SIZE
+static uint8_t dummyTxBuf[SPI_DMA_DUMMY_BUFFER_SIZE];
+static uint8_t dummyRxBuf[SPI_DMA_DUMMY_BUFFER_SIZE];
 
 // Map from Betaflight SPI device number (0/1) to ESP-IDF SPI host ID.
 // esp32SpiDev0 = 0 -> SPI2_HOST (1), esp32SpiDev1 = 1 -> SPI3_HOST (2)
@@ -379,7 +383,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     memset(txDesc, 0, sizeof(*txDesc));
     txDesc->size = xferLen;
     txDesc->length = xferLen;
-    txDesc->buf = hasTx ? txBuffer : &dummyTxByte;
+    txDesc->buf = hasTx ? txBuffer : dummyTxBuf;
     txDesc->eof = 1;
     txDesc->owner = 1;  // owned by DMA hardware
 
@@ -388,7 +392,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
     memset(rxDesc, 0, sizeof(*rxDesc));
     rxDesc->size = xferLen;
     rxDesc->length = 0;  // filled by hardware
-    rxDesc->buf = hasRx ? rxBuffer : &dummyRxByte;
+    rxDesc->buf = hasRx ? rxBuffer : dummyRxBuf;
     rxDesc->eof = 0;
     rxDesc->owner = 1;  // owned by DMA hardware
 
@@ -572,6 +576,9 @@ void spiInitBusDMA(void)
 #ifdef USE_DMA
     // Initialise the GDMA hardware
     esp32DmaInit();
+
+    // Fill TX dummy buffer with 0xFF (SPI idle byte convention)
+    memset(dummyTxBuf, 0xFF, sizeof(dummyTxBuf));
 
     for (uint32_t device = 0; device < SPIDEV_COUNT; device++) {
         busDevice_t *bus = &spiBusDevice[device];

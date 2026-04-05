@@ -62,14 +62,17 @@ static const int gdmaRxIntrSource[ESP32_GDMA_CHANNEL_COUNT] = {
     ETS_DMA_IN_CH4_INTR_SOURCE,
 };
 
-// CPU interrupt lines assigned to GDMA RX channels.
-// Only the channels actually used by SPI will be routed.
-static const int gdmaCpuIntr[] = {
+// Pool of CPU interrupt lines available for GDMA RX callbacks.
+// Lines are assigned dynamically to whichever channels register handlers
+// via dmaSetHandler, not tied to GDMA channel index.
+static const int gdmaCpuIntrPool[] = {
     ESP32_CPU_INTR_DMA_CH0,
     ESP32_CPU_INTR_DMA_CH1,
 };
 
-#define GDMA_CPU_INTR_COUNT (int)(sizeof(gdmaCpuIntr) / sizeof(gdmaCpuIntr[0]))
+#define GDMA_CPU_INTR_POOL_SIZE (int)(sizeof(gdmaCpuIntrPool) / sizeof(gdmaCpuIntrPool[0]))
+
+static int nextFreeCpuIntr = 0;
 
 // Map from CPU interrupt number back to GDMA channel index for ISR dispatch
 static int cpuIntrToChannel[32];
@@ -126,9 +129,9 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     dmaDescriptors[index].irqHandlerCallback = callback;
     dmaDescriptors[index].userParam = userParam;
 
-    // Only route interrupt if we have a CPU interrupt line allocated for this channel
-    if (index < GDMA_CPU_INTR_COUNT) {
-        int cpuIntr = gdmaCpuIntr[index];
+    // Dynamically assign a CPU interrupt line from the pool to this channel
+    if (nextFreeCpuIntr < GDMA_CPU_INTR_POOL_SIZE) {
+        int cpuIntr = gdmaCpuIntrPool[nextFreeCpuIntr++];
         cpuIntrToChannel[cpuIntr] = index;
 
         // Enable RX SUC_EOF interrupt for this GDMA channel
