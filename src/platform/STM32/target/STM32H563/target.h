@@ -54,7 +54,7 @@
 #undef USE_ESCSERIAL
 //#undef USE_SPI
 #undef USE_I2C
-#undef USE_UART
+//#undef USE_UART
 #undef USE_USB_DETECT
 #undef USE_BEEPER
 #undef USE_EXTI
@@ -70,7 +70,7 @@
 #undef USE_MAX7456
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
-#undef USE_CLI
+//#undef USE_CLI
 #undef USE_CAMERA_CONTROL
 #undef USE_RX_PWM
 #undef USE_LED_STRIP
