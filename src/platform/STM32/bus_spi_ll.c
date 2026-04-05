@@ -65,6 +65,9 @@
 #define IS_DTCM(p) (((uint32_t)p & 0xffff0000) == 0x20000000)
 #elif defined(STM32G4)
 #define IS_CCM(p) ((((uint32_t)p & 0xffff8000) == 0x10000000) || (((uint32_t)p & 0xffff8000) == 0x20018000))
+#elif defined(STM32H5)
+// H5 has no DTCM/CCM restrictions for DMA
+#define IS_DTCM(p) (0)
 #elif defined(STM32N6)
 // N6 has no DTCM/CCM restrictions for DMA
 #define IS_DTCM(p) (0)
@@ -103,7 +106,7 @@ static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor
 
     divisor = constrain(divisor, 2, 256);
 
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     const uint32_t baudRatePrescaler[8] = {
         LL_SPI_BAUDRATEPRESCALER_DIV2,
         LL_SPI_BAUDRATEPRESCALER_DIV4,
@@ -151,13 +154,8 @@ void spiInitDevice(spiDevice_e device)
     LL_SPI_Disable(dev);
     LL_SPI_DeInit(dev);
 
-#if defined(STM32H7)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     // Prevent glitching when SPI is disabled
-    LL_SPI_EnableGPIOControl(dev);
-
-    LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_TH_01DATA);
-    LL_SPI_Init(dev, &defaultInit);
-#elif defined(STM32N6)
     LL_SPI_EnableGPIOControl(dev);
 
     LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_TH_01DATA);
@@ -172,8 +170,8 @@ void spiInitDevice(spiDevice_e device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
+#if defined(STM32H5) || defined(STM32N6)
+    // TODO: GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
     UNUSED(bus);
 #else
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
@@ -223,7 +221,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
     // Disable the stream
-#if defined(STM32G4) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
     LL_DMA_DisableChannel(descriptor->dma, descriptor->stream);
     while (LL_DMA_IsEnabledChannel(descriptor->dma, descriptor->stream));
 #else
@@ -238,7 +236,7 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 FAST_CODE bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     SPI_TypeDef *instance = (SPI_TypeDef *)spiInstance;
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     LL_SPI_SetTransferSize(instance, len);
     LL_SPI_Enable(instance);
     LL_SPI_StartMasterTransfer(instance);
@@ -300,8 +298,8 @@ FAST_CODE bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const u
 
 void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
+#if defined(STM32H5) || defined(STM32N6)
+    // TODO: GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
     UNUSED(dev);
     UNUSED(segment);
 #else
@@ -374,8 +372,8 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different API; SPI DMA not yet supported
+#if defined(STM32H5) || defined(STM32N6)
+    // TODO: GPDMA uses a completely different API; SPI DMA not yet supported
     UNUSED(dev);
 #else
     busDevice_t *bus = dev->bus;
@@ -490,8 +488,8 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
 void spiInternalStopDMA (const extDevice_t *dev)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different API; SPI DMA not yet supported
+#if defined(STM32H5) || defined(STM32N6)
+    // TODO: GPDMA uses a completely different API; SPI DMA not yet supported
     UNUSED(dev);
 #else
     busDevice_t *bus = dev->bus;
@@ -558,7 +556,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
     bus->initSegment = true;
 
     // Switch bus speed
-#if !defined(STM32H7) && !defined(STM32N6)
+#if !defined(STM32H7) && !defined(STM32H5) && !defined(STM32N6)
     LL_SPI_Disable(instance);
 #endif
 
@@ -583,7 +581,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
         bus->busType_u.spi.leadingEdge = dev->busType_u.spi.leadingEdge;
     }
 
-#if !defined(STM32H7) && !defined(STM32N6)
+#if !defined(STM32H7) && !defined(STM32H5) && !defined(STM32N6)
     LL_SPI_Enable(instance);
 #endif
 

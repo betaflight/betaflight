@@ -33,7 +33,7 @@
 #undef USE_DSHOT
 #undef USE_ADC
 #undef USE_TIMER
-#undef USE_DMA
+//#undef USE_DMA
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
 #undef USE_FLASHFS
@@ -52,18 +52,18 @@
 #undef USE_SOFTSERIAL
 #undef USE_VCP
 #undef USE_ESCSERIAL
-#undef USE_SPI
+//#undef USE_SPI
 #undef USE_I2C
 #undef USE_UART
 #undef USE_USB_DETECT
 #undef USE_BEEPER
 #undef USE_EXTI
 #undef USE_TIMER_UP_CONFIG
-#undef USE_RX_SPI
+//#undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_BARO
 #undef USE_I2C_GYRO
-#undef USE_SPI_GYRO
+//#undef USE_SPI_GYRO
 #undef USE_GYRO
 #undef USE_ACC
 #undef USE_MAG
@@ -103,10 +103,10 @@
 //#define USE_UART7
 //#define USE_UART8
 
-//#define USE_SPI_DEVICE_1
-//#define USE_SPI_DEVICE_2
-//#define USE_SPI_DEVICE_3
-//#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
 //#define USE_SPI_DEVICE_5
 //#define USE_SPI_DEVICE_6
 
@@ -128,8 +128,8 @@
 #define USE_SDCARD_SDIO
 #endif
 
-//#define USE_SPI
-//#define SPI_FULL_RECONFIGURABILITY
+#define USE_SPI
+#define SPI_FULL_RECONFIGURABILITY
 //#define USE_SPI_DMA_ENABLE_LATE
 
 //#define USE_USB_DETECT
