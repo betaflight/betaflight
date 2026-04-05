@@ -69,7 +69,7 @@ static const struct {
 const spiHardware_t spiHardware[SPIDEV_COUNT] = {
     {
         .device = SPIDEV_0,
-        .reg = SPI0,  // Maps to SPI2 (FSPI)
+        .reg = (spiResource_t *)SPI0,  // Maps to SPI2 (FSPI)
         .sckPins = {
             { DEFIO_TAG_E(PA12) },
             { DEFIO_TAG_E(PA36) },
@@ -85,7 +85,7 @@ const spiHardware_t spiHardware[SPIDEV_COUNT] = {
     },
     {
         .device = SPIDEV_1,
-        .reg = SPI1,  // Maps to SPI3 (HSPI)
+        .reg = (spiResource_t *)SPI1,  // Maps to SPI3 (HSPI)
         .sckPins = {
             { DEFIO_TAG_E(PA14) },
             { DEFIO_TAG_E(PA38) },
@@ -174,7 +174,7 @@ void spiInitDevice(spiDevice_e device)
         return;
     }
 
-    int deviceNum = SPI_INST(spi->dev);
+    int deviceNum = SPI_INST((SPI_TypeDef *)spi->dev);
     spi_host_device_t hostId = spiGetHostId(deviceNum);
     spi_dev_t *hw = SPI_LL_GET_HW(hostId);
 
@@ -260,9 +260,9 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
     UNUSED(segment);
 }
 
-bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
-    int deviceNum = SPI_INST(instance);
+    int deviceNum = SPI_INST((SPI_TypeDef *)instance);
     spi_dev_t *hw = spiGetHw(deviceNum);
 
     int offset = 0;
@@ -314,14 +314,14 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
+    spiResource_t *instance = bus->busType_u.spi.instance;
     spiDevice_t *spi = &spiDevice[spiDeviceByInstance(instance)];
 
     bus->initSegment = true;
 
     // Switch bus speed if needed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
-        int deviceNum = SPI_INST(instance);
+        int deviceNum = SPI_INST((SPI_TypeDef *)instance);
         spi_dev_t *hw = spiGetHw(deviceNum);
         uint32_t freq = spiCalculateClock(dev->busType_u.spi.speed);
         spi_ll_master_set_clock(hw, ESP32_APB_CLK_FREQ, freq, 128);
@@ -331,7 +331,7 @@ void spiSequenceStart(const extDevice_t *dev)
 
     // Switch SPI clock polarity/phase if necessary
     if (dev->busType_u.spi.leadingEdge != bus->busType_u.spi.leadingEdge) {
-        int deviceNum = SPI_INST(instance);
+        int deviceNum = SPI_INST((SPI_TypeDef *)instance);
         spi_dev_t *hw = spiGetHw(deviceNum);
 
         if (dev->busType_u.spi.leadingEdge) {
