@@ -126,4 +126,5 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     [DEBUG_CHIRP] = "CHIRP",
     [DEBUG_FLASH_TEST_PRBS] = "FLASH_TEST_PRBS",
     [DEBUG_MAVLINK_TELEMETRY] = "MAVLINK_TELEMETRY",
+    [DEBUG_SVF_TEMP] = "SVF_TEMP",
 };

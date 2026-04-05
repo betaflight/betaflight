@@ -475,6 +475,58 @@ FAST_CODE void gyroUpdate(void)
         gyroSeq++;  // Increment after modifying (makes gyroSeq even)
     }
 #endif
+
+    static float increment_counter = 1.0f;
+    static float increment_amount = 5.0f / 1000.0f;
+    increment_counter += increment_amount;
+
+    if (increment_counter > 5.0f) {
+        increment_amount = -increment_amount;
+    } else if (increment_counter < 1.0f) {
+        increment_amount = -increment_amount;
+    }
+
+    float phase_increment = (2.0f * 3.14159265f * 200.0f / 8000.0f) * increment_counter;
+
+    static float counter = 0.0f;
+    counter += phase_increment;
+
+    if (counter > 2.0f * 3.14159265f) {
+        counter -= 2.0f * 3.14159265f;
+    }
+
+    float sin_out[XYZ_AXIS_COUNT];
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+        sin_out[i] = sinf(counter) * 2000.0f;
+    }
+
+    static float w_counter = 0.0f;
+    static float w_amount = 1.0f / (8000.0f / 3.5f);
+
+    w_counter += w_amount;
+
+    if (w_counter >= 1.0f) {
+        w_counter = 1.0f;
+        w_amount = -w_amount;
+    } else if (w_counter <= 0.0f) {
+        w_counter = 0.0f;
+        w_amount = -w_amount;
+    };
+
+    w_counter = constrainf(w_counter, 0.0f, 1.0f);
+
+    w_counter = 1.0f;
+
+    float current_sin_freq = (phase_increment / (2.0f * 3.14159265f)) * 8000.0f;
+    current_sin_freq = 200.0f * increment_counter;
+
+    biquadFilterUpdate(&gyro.test_biquad_notch, current_sin_freq, gyro.sampleLooptime, 5.0f, FILTER_NOTCH, w_counter);
+    rpmNotchUpdate(&gyro.test_svf_notch, current_sin_freq, gyro.sampleLooptime * 1e-6f, 5.0f, w_counter);
+
+    DEBUG_SET(DEBUG_SVF_TEMP, 0, lrintf(sin_out[0])); // raw
+    DEBUG_SET(DEBUG_SVF_TEMP, 1, lrintf(biquadFilterApplyDF1Weighted(&gyro.test_biquad_notch, sin_out[0]))); // biquad
+    rpmNotchApply(&gyro.test_svf_notch, sin_out);
+    DEBUG_SET(DEBUG_SVF_TEMP, 2, lrintf(sin_out[0])); // svf
 }
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyro
