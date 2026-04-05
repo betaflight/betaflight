@@ -31,6 +31,7 @@ MEMORY
     periph_i2c1_seg (RW) :    org = 0x60027000, len = 0x1000
     periph_uart2_seg (RW) :   org = 0x6002E000, len = 0x1000
     periph_usb_serial_seg (RW): org = 0x60038000, len = 0x1000
+    periph_gdma_seg (RW) :    org = 0x6003F000, len = 0x1000
     periph_system_seg (RW) :  org = 0x600C0000, len = 0x1000
 }
 
@@ -128,6 +129,7 @@ SECTIONS
     .peripheral_i2c1 (NOLOAD) :     { *(.peripheral_i2c1) }    > periph_i2c1_seg
     .peripheral_uart2 (NOLOAD) :    { *(.peripheral_uart2) }   > periph_uart2_seg
     .peripheral_usb_serial (NOLOAD): { *(.peripheral_usb_serial) } > periph_usb_serial_seg
+    .peripheral_gdma (NOLOAD) :     { *(.peripheral_gdma) }    > periph_gdma_seg
     .peripheral_system (NOLOAD) :   { *(.peripheral_system) }  > periph_system_seg
 
     /DISCARD/ :
