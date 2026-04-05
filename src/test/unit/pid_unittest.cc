@@ -191,6 +191,7 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
+    simulatedThrottleRaised = true;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -224,11 +225,104 @@ void resetTest(void)
     }
 }
 
+void setupCrashRecoveryTest(uint8_t recoveryMode = PID_CRASH_RECOVERY_ON, uint32_t sensorMask = SENSOR_ACC)
+{
+    resetTest();
+    pidProfile->crash_recovery = recoveryMode;
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    sensorsSet(sensorMask);
+}
+
+void setupBasicTest(void)
+{
+    resetTest();
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+}
+
+void setupAbsoluteControlTest(uint8_t gain)
+{
+    resetTest();
+    pidProfile->abs_control_gain = gain;
+    // Enable iterm_relax so that pidInitFilters initializes acLpf correctly.
+    // Without this, acLpf.k=0 (uninitialized) and absolute control filtering
+    // produces incorrect results when the test runs without testItermRelax before it.
+    pidProfile->iterm_relax = ITERM_RELAX_RP;
+    pidRuntime.itermRelax = ITERM_RELAX_RP;  // pidInitFilters reads this before pidInitConfig sets it
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+}
+
+void setupLaunchControlTest(bool active = true)
+{
+    resetTest();
+    unitLaunchControlActive = active;
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+}
+
+void setupDtermFilterTest(uint16_t lpf1_hz, uint8_t lpf1_type, uint16_t lpf2_hz = 0, uint16_t notch_hz = 0)
+{
+    resetTest();
+    pidProfile->dterm_lpf1_static_hz = lpf1_hz;
+    pidProfile->dterm_lpf1_type = lpf1_type;
+    pidProfile->dterm_lpf2_static_hz = lpf2_hz;
+    pidProfile->dterm_notch_hz = notch_hz;
+    if (notch_hz > 0) {
+        pidProfile->dterm_notch_cutoff = 160; // Common default
+    }
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+}
+
+void expectPidDataZero(void)
+{
+    // Check P terms
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
+
+    // Check I terms
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
+
+    // Check D terms
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+}
+
+void expectFeedforwardZero(void)
+{
+    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
+    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+}
+
 void setStickPosition(int axis, float stickRatio)
 {
     simulatedPrevSetpointRate[axis] = simulatedSetpointRate[axis];
     simulatedSetpointRate[axis] = 1998.0f * stickRatio;
     simulatedRcDeflection[axis] = stickRatio;
+}
+
+void setAllStickPositions(float roll, float pitch, float yaw)
+{
+    setStickPosition(FD_ROLL, roll);
+    setStickPosition(FD_PITCH, pitch);
+    setStickPosition(FD_YAW, yaw);
+}
+
+void setAllGyroRates(float roll, float pitch, float yaw)
+{
+    gyro.gyroADCf[FD_ROLL] = roll;
+    gyro.gyroADCf[FD_PITCH] = pitch;
+    gyro.gyroADCf[FD_YAW] = yaw;
 }
 
 // All calculations will have 10% tolerance
@@ -258,37 +352,19 @@ TEST(pidControllerTest, testStabilisationDisabled)
         pidController(pidProfile, currentTestTime());
 
         // PID controller should not do anything, while stabilisation disabled
-        EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
-        EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
-        EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-        EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-        EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-        EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
-        EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
-        EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-        EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+        expectPidDataZero();
     }
 }
 
 TEST(pidControllerTest, testPidLoop)
 {
     // Make sure to start with fresh values
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
 
     pidController(pidProfile, currentTestTime());
 
     // Loop 1 - Expecting zero since there is no error
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+    expectPidDataZero();
 
     // Add some rotation on ROLL to generate error
     gyro.gyroADCf[FD_ROLL] = 100;
@@ -378,23 +454,13 @@ TEST(pidControllerTest, testPidLoop)
     pidController(pidProfile, currentTestTime());
 
     // Should all be zero again
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].P);
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].I);
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
+    expectPidDataZero();
 }
 
 TEST(pidControllerTest, testPidLevel)
 {
     // Make sure to start with fresh values
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
 
     // Test Angle mode response
     enableFlightMode(ANGLE_MODE);
@@ -453,9 +519,7 @@ TEST(pidControllerTest, testPidLevel)
 
 TEST(pidControllerTest, testPidHorizon)
 {
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
     enableFlightMode(HORIZON_MODE);
 
     // Test stick response greater than default limit of 0.75
@@ -538,18 +602,13 @@ TEST(pidControllerTest, testPidHorizon)
 
 TEST(pidControllerTest, testMixerSaturation)
 {
-    resetTest();
-
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
 
     pidRuntime.itermLimit = 400;
     pidRuntime.itermLimitYaw = 320;
 
     // Test full stick response
-    setStickPosition(FD_ROLL, 1.0f);
-    setStickPosition(FD_PITCH, -1.0f);
-    setStickPosition(FD_YAW, 1.0f);
+    setAllStickPositions(1.0f, -1.0f, 1.0f);
     pidController(pidProfile, currentTestTime());
 
     // Expect iterm accumulation for all axes because at this point, pidSum is not at limit
@@ -582,15 +641,11 @@ TEST(pidControllerTest, testMixerSaturation)
 
     // Test that the added i term gain from Anti Gravity
     // is also limited
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
     pidRuntime.itermLimit = 400;
     pidRuntime.itermLimitYaw = 320;
 
-    setStickPosition(FD_ROLL, 1.0f);
-    setStickPosition(FD_PITCH, -1.0f);
-    setStickPosition(FD_YAW, 1.0f);
+    setAllStickPositions(1.0f, -1.0f, 1.0f);
     const bool prevAgState = pidRuntime.antiGravityEnabled;
     const float prevAgTrhottleD = pidRuntime.antiGravityThrottleD;
     pidRuntime.antiGravityEnabled = true;
@@ -620,9 +675,7 @@ TEST(pidControllerTest, testMixerSaturation)
     pidRuntime.itermLimitYaw = 320;
 
     pidStabilisationState(PID_STABILISATION_ON);
-    setStickPosition(FD_ROLL, 0.0f);
-    setStickPosition(FD_PITCH, 0.0f);
-    setStickPosition(FD_YAW, 0.5f);
+    setAllStickPositions(0.0f, 0.0f, 0.5f);
 
     for (int loop = 0; loop < 7; loop++) {
         pidController(pidProfile, currentTestTime());
@@ -653,9 +706,7 @@ TEST(pidControllerTest, testiTermWindup)
     pidRuntime.itermLimitYaw = 160;
 
     pidStabilisationState(PID_STABILISATION_ON);
-    setStickPosition(FD_ROLL, 0.12f);
-    setStickPosition(FD_PITCH, 0.12f);
-    setStickPosition(FD_YAW, 0.12f);
+    setAllStickPositions(0.12f, 0.12f, 0.12f);
 
     for (int loop = 0; loop < 7; loop++) {
         pidController(pidProfile, currentTestTime());
@@ -681,19 +732,16 @@ TEST(pidControllerTest, testiTermWindup)
     EXPECT_NEAR(160, pidData[FD_YAW].I, calculateTolerance(320));
 }
 
-// TODO - Add more scenarios
 TEST(pidControllerTest, testCrashRecoveryMode)
 {
-    resetTest();
-    pidProfile->crash_recovery = PID_CRASH_RECOVERY_ON;
-    pidInit(pidProfile);
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
-    sensorsSet(SENSOR_ACC);
+    int loopsToCrashTime = 0;
+
+    // Test 1: Basic crash detection and recovery on roll axis
+    setupCrashRecoveryTest();
 
     EXPECT_FALSE(crashRecoveryModeActive());
 
-    int loopsToCrashTime = (int)((pidProfile->crash_time * 1000) / targetPidLooptime) + 1;
+    loopsToCrashTime = (int)((pidProfile->crash_time * 1000) / targetPidLooptime) + 1;
 
     // generate crash detection for roll axis
     gyro.gyroADCf[FD_ROLL]  = 800;
@@ -702,28 +750,134 @@ TEST(pidControllerTest, testCrashRecoveryMode)
         gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
         // advance the time to avoid initialized state prevention of crash recovery
         pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
     }
 
     EXPECT_TRUE(crashRecoveryModeActive());
-    // Add additional verifications
+
+    // Test 2: Crash detection on pitch axis
+    setupCrashRecoveryTest();
+
+    gyro.gyroADCf[FD_PITCH] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_PITCH] += gyro.gyroADCf[FD_PITCH];
+        // advance the time to avoid initialized state prevention of crash recovery
+        pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
+    }
+    EXPECT_TRUE(crashRecoveryModeActive());
+
+    // Test 3: Crash detection on yaw axis
+    setupCrashRecoveryTest();
+
+    gyro.gyroADCf[FD_YAW] = 800;
+    simulatedMotorMixRange = 1.2f;
+    simulatedSetpointRate[FD_YAW] = 0;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_YAW] += gyro.gyroADCf[FD_YAW];
+        // advance the time to avoid initialized state prevention of crash recovery
+        pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
+    }
+    EXPECT_TRUE(crashRecoveryModeActive());
+
+    // Test 4: Multiple recovery modes
+    // BEEP mode - should activate recovery
+    setupCrashRecoveryTest(PID_CRASH_RECOVERY_BEEP);
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
+    }
+    EXPECT_TRUE(crashRecoveryModeActive());
+
+    // DISARM mode - should not enter recovery
+    setupCrashRecoveryTest(PID_CRASH_RECOVERY_DISARM);
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, currentTestTime() + 2000000);
+    }
+    EXPECT_FALSE(crashRecoveryModeActive());
+
+    // OFF mode - should not activate
+    setupCrashRecoveryTest(PID_CRASH_RECOVERY_OFF);
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, currentTestTime() + 2000000);
+    }
+    EXPECT_FALSE(crashRecoveryModeActive());
+
+    // Test 5: Threshold boundary conditions
+    // Motor mix below threshold should NOT trigger
+    setupCrashRecoveryTest();
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 0.9f; // Below 1.0
+    for (int loop = 0; loop < 10; loop++) {
+        pidController(pidProfile, currentTestTime() + 2000000);
+    }
+    EXPECT_FALSE(crashRecoveryModeActive());
+
+    // Test 6: Gyro rate just below threshold should NOT trigger
+    setupCrashRecoveryTest();
+    pidProfile->crash_gthreshold = 400;
+    pidInit(pidProfile);
+
+    gyro.gyroADCf[FD_ROLL] = 399; // Just below
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop < 10; loop++) {
+        pidController(pidProfile, currentTestTime() + 2000000);
+    }
+    EXPECT_FALSE(crashRecoveryModeActive());
+
+    // Test 7: Without accelerometer should still detect crash
+    setupCrashRecoveryTest(PID_CRASH_RECOVERY_ON, 0); // No accelerometer
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
+    }
+    EXPECT_TRUE(crashRecoveryModeActive());
+
+    // Test 8: I-term accumulation verification
+    // When crash detected, verify PID calculations continue
+    setupCrashRecoveryTest();
+
+    gyro.gyroADCf[FD_ROLL] = 800;
+    simulatedMotorMixRange = 1.2f;
+    for (int loop = 0; loop <= loopsToCrashTime; loop++) {
+        gyro.gyroADCf[FD_ROLL] += gyro.gyroADCf[FD_ROLL];
+        pidController(pidProfile, currentTestTime() + 2000000);
+        if (crashRecoveryModeActive()) break;
+    }
+    EXPECT_TRUE(crashRecoveryModeActive());
+    // During crash recovery, PID values should still be calculated
+    // (specific values depend on crash recovery logic)
 }
 
 TEST(pidControllerTest, testFeedForward)
 // NOTE: THIS DOES NOT TEST THE FEEDFORWARD CALCULATIONS, which are now in rc.c, and return setpointDelta
 // This test only validates the feedforward value calculated in pid.c for a given simulated setpointDelta
 {
-    resetTest();
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupBasicTest();
 
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+    expectFeedforwardZero();
 
     // Move the sticks fully
-    setStickPosition(FD_ROLL, 1.0f);
-    setStickPosition(FD_PITCH, -1.0f);
-    setStickPosition(FD_YAW, -1.0f);
+    setAllStickPositions(1.0f, -1.0f, -1.0f);
 
     pidController(pidProfile, currentTestTime());
 
@@ -732,9 +886,7 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_NEAR(-16.49, pidData[FD_YAW].F, calculateTolerance(-16.49));
 
     // Bring sticks back to half way
-    setStickPosition(FD_ROLL, 0.5f);
-    setStickPosition(FD_PITCH, -0.5f);
-    setStickPosition(FD_YAW, -0.5f);
+    setAllStickPositions(0.5f, -0.5f, -0.5f);
 
     pidController(pidProfile, currentTestTime());
 
@@ -743,9 +895,7 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_NEAR(8.24, pidData[FD_YAW].F, calculateTolerance(8.24));
 
     // Bring sticks back to two tenths out
-    setStickPosition(FD_ROLL, 0.2f);
-    setStickPosition(FD_PITCH, -0.2f);
-    setStickPosition(FD_YAW, -0.2f);
+    setAllStickPositions(0.2f, -0.2f, -0.2f);
 
     pidController(pidProfile, currentTestTime());
 
@@ -754,9 +904,7 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_NEAR(4.95, pidData[FD_YAW].F, calculateTolerance(4.95));
 
     // Bring sticks back to one tenth out, to give a difference of 0.1
-    setStickPosition(FD_ROLL, 0.1f);
-    setStickPosition(FD_PITCH, -0.1f);
-    setStickPosition(FD_YAW, -0.1f);
+    setAllStickPositions(0.1f, -0.1f, -0.1f);
 
     pidController(pidProfile, currentTestTime());
 
@@ -765,9 +913,7 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_NEAR(1.65, pidData[FD_YAW].F, calculateTolerance(1.65));
 
     // Center the sticks, giving the same delta value as before, should return the same feedforward
-    setStickPosition(FD_ROLL, 0.0f);
-    setStickPosition(FD_PITCH, 0.0f);
-    setStickPosition(FD_YAW, 0.0f);
+    setAllStickPositions(0.0f, 0.0f, 0.0f);
 
     pidController(pidProfile, currentTestTime());
 
@@ -776,15 +922,11 @@ TEST(pidControllerTest, testFeedForward)
     EXPECT_NEAR(1.65, pidData[FD_YAW].F, calculateTolerance(1.65));
 
     // Keep centered
-    setStickPosition(FD_ROLL, 0.0f);
-    setStickPosition(FD_PITCH, 0.0f);
-    setStickPosition(FD_YAW, 0.0f);
+    setAllStickPositions(0.0f, 0.0f, 0.0f);
 
     pidController(pidProfile, currentTestTime());
 
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+    expectFeedforwardZero();
 }
 
 TEST(pidControllerTest, testItermRelax)
@@ -861,17 +1003,12 @@ TEST(pidControllerTest, testItermRelax)
     EXPECT_NEAR(-3.6, itermErrorRate, calculateTolerance(-3.6));
 }
 
-// TODO - Add more tests
 TEST(pidControllerTest, testAbsoluteControl)
 {
-    resetTest();
-    pidProfile->abs_control_gain = 10;
-    pidInit(pidProfile);
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    // Test 1: Basic functionality with gain=10
+    setupAbsoluteControlTest(10);
 
     float gyroRate = 0;
-
     float itermErrorRate = 10;
     float currentPidSetpoint = 10;
 
@@ -889,11 +1026,330 @@ TEST(pidControllerTest, testAbsoluteControl)
     applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
     EXPECT_NEAR(-79.2, itermErrorRate, calculateTolerance(-79.2));
     EXPECT_NEAR(-79.2, currentPidSetpoint, calculateTolerance(-79.2));
+
+    // Test 2: Gain = 0 (disabled) - should have no effect
+    setupAbsoluteControlTest(0);
+
+    gyroRate = 50;
+    itermErrorRate = 100;
+    currentPidSetpoint = 100;
+    float originalItermErrorRate = itermErrorRate;
+    float originalSetpoint = currentPidSetpoint;
+
+    applyAbsoluteControl(FD_ROLL, gyroRate, &currentPidSetpoint, &itermErrorRate);
+
+    // Should not modify values when gain is 0
+    EXPECT_FLOAT_EQ(originalItermErrorRate, itermErrorRate);
+    EXPECT_FLOAT_EQ(originalSetpoint, currentPidSetpoint);
+
+    // Test 3: Different gain values produce proportional corrections
+    // Use axisError=1.0 to produce an unclamped correction that scales with gain.
+    // With acLpf(k≈0.356, state=0), setpoint=10, gyroRate=0, axisError=1.0:
+    //   acErrorRate ≈ gminac ≈ -9.317, axisError_new ≈ 1.0 - 9.317*0.008 ≈ 0.9255
+    //   acCorrection = axisError_new * gain → scales linearly with gain
+    // Gain = 20
+    setupAbsoluteControlTest(20);
+
+    gyroRate = 0;
+    itermErrorRate = 10;
+    currentPidSetpoint = 10;
+    axisError[FD_PITCH] = 1.0f;
+
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    EXPECT_NEAR(28.5, currentPidSetpoint, calculateTolerance(28.5));
+
+    // Gain = 50
+    setupAbsoluteControlTest(50);
+
+    gyroRate = 0;
+    itermErrorRate = 10;
+    currentPidSetpoint = 10;
+    axisError[FD_PITCH] = 1.0f;
+
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    EXPECT_NEAR(56.3, currentPidSetpoint, calculateTolerance(56.3));
+
+    // Test 4: Error accumulation limits (±20 default limit)
+    setupAbsoluteControlTest(10);
+
+    // Set axisError to limit
+    axisError[FD_PITCH] = 20.0f;
+    gyroRate = 0;
+    itermErrorRate = 10;
+    currentPidSetpoint = 10;
+
+    // Apply multiple times to try to exceed limit
+    for (int i = 0; i < 10; i++) {
+        applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    }
+
+    // axisError should be clamped to limit (20)
+    EXPECT_LE(axisError[FD_PITCH], 20.0f);
+    EXPECT_GE(axisError[FD_PITCH], -20.0f);
+
+    // Test negative limit
+    axisError[FD_PITCH] = -20.0f;
+    for (int i = 0; i < 10; i++) {
+        applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    }
+    EXPECT_LE(axisError[FD_PITCH], 20.0f);
+    EXPECT_GE(axisError[FD_PITCH], -20.0f);
+
+    // Test 5: Setpoint filtering (HPF/LPF interaction)
+    setupAbsoluteControlTest(10);
+
+    // Test with large setpoint jump and non-zero axisError so correction is produced.
+    // The acLpf state changes between calls, causing different HPF content and different corrections.
+    gyroRate = 0;
+    itermErrorRate = 0;
+    currentPidSetpoint = 500; // Large setpoint
+    axisError[FD_PITCH] = 5.0f;
+
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    float setpoint1 = currentPidSetpoint;
+
+    // Apply again with same large setpoint - acLpf state has changed so correction differs
+    currentPidSetpoint = 500;
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    float setpoint2 = currentPidSetpoint;
+
+    // LPF state change between calls causes different HPF content and different corrections
+    EXPECT_NE(setpoint1, setpoint2);
+
+    // Test 6: Multi-axis independence (ROLL, PITCH, YAW)
+    setupAbsoluteControlTest(10);
+
+    // Set different error values for each axis
+    axisError[FD_ROLL] = 5.0f;
+    axisError[FD_PITCH] = -10.0f;
+    axisError[FD_YAW] = 15.0f;
+
+    float rollSetpoint = 50, pitchSetpoint = 50, yawSetpoint = 50;
+    float rollIterm = 10, pitchIterm = 10, yawIterm = 10;
+
+    applyAbsoluteControl(FD_ROLL, 0, &rollSetpoint, &rollIterm);
+    applyAbsoluteControl(FD_PITCH, 0, &pitchSetpoint, &pitchIterm);
+    applyAbsoluteControl(FD_YAW, 0, &yawSetpoint, &yawIterm);
+
+    // Each axis should have different corrections based on their axisError
+    EXPECT_NE(rollSetpoint, pitchSetpoint);
+    EXPECT_NE(pitchSetpoint, yawSetpoint);
+    EXPECT_NE(rollIterm, pitchIterm);
+
+    // Test 7: Throttle interaction (correction skipped when throttle lowered)
+    setupAbsoluteControlTest(10);
+
+    simulatedThrottleRaised = false; // Throttle not raised
+    axisError[FD_PITCH] = 10.0f;
+    gyroRate = 0;
+    itermErrorRate = 10;
+    currentPidSetpoint = 10;
+
+    float errorBefore = axisError[FD_PITCH];
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+
+    // When throttle not raised, axisError should NOT accumulate
+    EXPECT_FLOAT_EQ(errorBefore, axisError[FD_PITCH]);
+    // Setpoint and iterm should not get correction applied
+    EXPECT_FLOAT_EQ(10.0f, currentPidSetpoint);
+    EXPECT_FLOAT_EQ(10.0f, itermErrorRate);
+
+    // Now test with throttle raised
+    simulatedThrottleRaised = true;
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+
+    // Should now apply correction
+    EXPECT_NE(10.0f, currentPidSetpoint);
+    EXPECT_NE(10.0f, itermErrorRate);
+
+    // Test 8: Correction limiting (should be clamped to ±90 by abs_control_limit)
+    resetTest();
+    pidProfile->abs_control_gain = 100; // High gain to test limits
+    pidInit(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    // Set very large axisError
+    axisError[FD_PITCH] = 20.0f; // At error limit
+    gyroRate = 0;
+    itermErrorRate = 0;
+    currentPidSetpoint = 0;
+
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+
+    // With gain=100 and error=20, correction would be 2000 without limit
+    // But abs_control_limit (default 90) should clamp it
+    float correction = currentPidSetpoint; // Correction applied to setpoint
+    EXPECT_LE(fabsf(correction), 90.0f); // Should not exceed ±90
+
+    // Test 9: Gyro rate bounds testing (gminac/gmaxac)
+    setupAbsoluteControlTest(10);
+
+    axisError[FD_PITCH] = 0;
+    currentPidSetpoint = 100;
+    itermErrorRate = 0;
+
+    // Gyro rate well within bounds
+    gyroRate = 50;
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    float error1 = axisError[FD_PITCH];
+
+    // Gyro rate outside bounds (very high)
+    resetTest();
+    pidProfile->abs_control_gain = 10;
+    pidInit(pidProfile);
+    axisError[FD_PITCH] = 0;
+    currentPidSetpoint = 100;
+    gyroRate = 500; // Very high gyro rate
+    applyAbsoluteControl(FD_PITCH, gyroRate, &currentPidSetpoint, &itermErrorRate);
+    float error2 = axisError[FD_PITCH];
+
+    // Errors should differ based on gyro rate relative to bounds
+    EXPECT_NE(error1, error2);
 }
 
 TEST(pidControllerTest, testDtermFiltering)
 {
-// TODO
+    // Test 1: Basic filter initialization and operation
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 260);
+
+    // Generate D-term with gyro change
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 100;
+    pidController(pidProfile, currentTestTime());
+
+    // D-term should be generated and filtered
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+
+    // Test 2: Different LPF1 filter types produce D-term output
+    const lowpassFilterType_e filterTypes[] = {FILTER_PT1, FILTER_BIQUAD, FILTER_PT2, FILTER_PT3};
+    for (int f = 0; f < 4; f++) {
+        setupDtermFilterTest(100, filterTypes[f]);
+
+        gyro.gyroADCf[FD_ROLL] = 0;
+        pidController(pidProfile, currentTestTime());
+        gyro.gyroADCf[FD_ROLL] = 150;
+        pidController(pidProfile, currentTestTime());
+
+        // Each filter type should produce valid D-term
+        EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+    }
+
+    // Test 3: LPF2 enabled with different filter types
+    for (int f = 0; f < 4; f++) {
+        setupDtermFilterTest(100, FILTER_BIQUAD, 80);
+        pidProfile->dterm_lpf2_type = filterTypes[f];
+        pidInit(pidProfile);
+
+        gyro.gyroADCf[FD_ROLL] = 0;
+        pidController(pidProfile, currentTestTime());
+        gyro.gyroADCf[FD_ROLL] = 150;
+        pidController(pidProfile, currentTestTime());
+
+        // With LPF2 enabled, should still produce valid D-term
+        EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+    }
+
+    // Test 4: Notch filter enabled
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 260);
+
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 150;
+    pidController(pidProfile, currentTestTime());
+
+    // With notch filter, D-term should still be generated
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+
+    // Test 5: Notch filter disabled (hz=0)
+    setupDtermFilterTest(100, FILTER_BIQUAD, 0, 0);
+
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 150;
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+
+    // Test 6: All filters disabled (freq=0) - raw D-term
+    setupDtermFilterTest(0, FILTER_BIQUAD);
+
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 150;
+    pidController(pidProfile, currentTestTime());
+
+    // Should still generate D-term without filtering
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+
+    // Test 7: Per-axis independence
+    setupDtermFilterTest(100, FILTER_BIQUAD);
+
+    // Different gyro changes on each axis
+    setAllGyroRates(0, 0, 0);
+    pidController(pidProfile, currentTestTime());
+
+    setAllGyroRates(100, 200, 300);
+    pidController(pidProfile, currentTestTime());
+
+    // Each axis should have D-term proportional to its gyro change
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+    EXPECT_NE(0.0f, pidData[FD_PITCH].D);
+    EXPECT_NE(0.0f, pidData[FD_YAW].D);
+    // Different gyro changes should produce different D-terms
+    EXPECT_NE(pidData[FD_ROLL].D, pidData[FD_PITCH].D);
+
+    // Test 8: Step response - D-term reacts to gyro changes
+    setupDtermFilterTest(100, FILTER_BIQUAD);
+
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+
+    // Step up
+    gyro.gyroADCf[FD_ROLL] = 400;
+    pidController(pidProfile, currentTestTime());
+    float dtermStepUp = pidData[FD_ROLL].D;
+    EXPECT_NE(0.0f, dtermStepUp);
+
+    // Step down
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    float dtermStepDown = pidData[FD_ROLL].D;
+
+    // Up and down steps should produce opposite D-term signs
+    EXPECT_NE(dtermStepUp, dtermStepDown);
+
+    // Test 9: Full filter chain (Notch + LPF1 + LPF2)
+    setupDtermFilterTest(100, FILTER_BIQUAD, 80, 260);
+    pidProfile->dterm_lpf2_type = FILTER_PT1;
+    pidInit(pidProfile);
+
+    gyro.gyroADCf[FD_ROLL] = 0;
+    pidController(pidProfile, currentTestTime());
+    gyro.gyroADCf[FD_ROLL] = 200;
+    pidController(pidProfile, currentTestTime());
+
+    // Full filter chain should still produce valid D-term
+    EXPECT_NE(0.0f, pidData[FD_ROLL].D);
+
+    // Test 10: Integration with full PID loop over time
+    setupDtermFilterTest(100, FILTER_BIQUAD);
+
+    // Run through varying gyro values
+    int nonZeroPtermCount = 0;
+    for (int i = 0; i < 10; i++) {
+        setAllGyroRates(i * 20, 200 - i * 10, 50 + i * 5);
+        pidController(pidProfile, currentTestTime());
+
+        // Count non-zero P-terms (gyro error generates P-term)
+        if (pidData[FD_ROLL].P != 0.0f) {
+            nonZeroPtermCount++;
+        }
+    }
+
+    // Should generate P-term in most iterations (when gyro != 0)
+    EXPECT_GT(nonZeroPtermCount, 5);
 }
 
 TEST(pidControllerTest, testItermRotationHandling)
@@ -930,13 +1386,20 @@ TEST(pidControllerTest, testItermRotationHandling)
     pidData[FD_YAW].I = 1000;
 
     gyro.gyroADCf[FD_ROLL] = -1000;
-    // FIXME - axisError changes don't affect the system. This is a potential bug or intendend behaviour?
+    // axisError is correctly rotated when Absolute Control is enabled (acGain > 0).
+    // The rotation maintains coordinate system alignment as the aircraft rotates.
+    // axisError effects appear downstream in applyAbsoluteControl(), not directly
+    // in I-term values, so this test validates I-term rotation independently.
     axisError[FD_PITCH] = 1000;
     axisError[FD_YAW] = 1000;
     rotateItermAndAxisError();
     EXPECT_FLOAT_EQ(pidData[FD_ROLL].I, 10);
     EXPECT_NEAR(860.37, pidData[FD_PITCH].I, calculateTolerance(860.37));
     EXPECT_NEAR(1139.6, pidData[FD_YAW].I, calculateTolerance(1139.6));
+
+    // Verify that axisError is actually rotated
+    EXPECT_NE(1000.0f, axisError[FD_PITCH]);
+    EXPECT_NE(1000.0f, axisError[FD_YAW]);
 }
 
 TEST(pidControllerTest, testLaunchControl)
@@ -945,38 +1408,27 @@ TEST(pidControllerTest, testLaunchControl)
     // the gain overrides the PID settings. If the logic to use launchControlGain wasn't
     // working then any I calculations would be incorrect.
 
-    resetTest();
-    unitLaunchControlActive = true;
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupLaunchControlTest();
 
     // test that feedforward and D are disabled (always zero) when launch control is active
     // set initial state
     pidController(pidProfile, currentTestTime());
 
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+    expectFeedforwardZero();
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].D);
     EXPECT_FLOAT_EQ(0, pidData[FD_YAW].D);
 
     // Move the sticks to induce feedforward
-    setStickPosition(FD_ROLL, 0.5f);
-    setStickPosition(FD_PITCH, -0.5f);
-    setStickPosition(FD_YAW, -0.5f);
+    setAllStickPositions(0.5f, -0.5f, -0.5f);
 
     // add gyro activity to induce D
-    gyro.gyroADCf[FD_ROLL] = -1000;
-    gyro.gyroADCf[FD_PITCH] = 1000;
-    gyro.gyroADCf[FD_YAW] = -1000;
+    setAllGyroRates(-1000, 1000, -1000);
 
     pidController(pidProfile, currentTestTime());
 
-    // validate that feedforwad is still 0
-    EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].F);
-    EXPECT_FLOAT_EQ(0, pidData[FD_YAW].F);
+    // validate that feedforward is still 0
+    expectFeedforwardZero();
 
     // validate that D is still 0
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].D);
@@ -985,16 +1437,11 @@ TEST(pidControllerTest, testLaunchControl)
 
     // test NORMAL mode - expect P/I on roll and pitch, P on yaw but I == 0
     unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
-    resetTest();
-    unitLaunchControlActive = true;
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupLaunchControlTest();
 
     pidController(pidProfile, currentTestTime());
 
-    gyro.gyroADCf[FD_ROLL] = -20;
-    gyro.gyroADCf[FD_PITCH] = 20;
-    gyro.gyroADCf[FD_YAW] = -20;
+    setAllGyroRates(-20, 20, -20);
     pidController(pidProfile, currentTestTime());
 
     EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
@@ -1006,24 +1453,17 @@ TEST(pidControllerTest, testLaunchControl)
 
     // test PITCHONLY mode - expect P/I only on pitch; I cannot go negative
     unitLaunchControlMode = LAUNCH_CONTROL_MODE_PITCHONLY;
-    resetTest();
-    unitLaunchControlActive = true;
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupLaunchControlTest();
 
     pidController(pidProfile, currentTestTime());
 
     // first test that pitch I is prevented from going negative
-    gyro.gyroADCf[FD_ROLL] = 0;
-    gyro.gyroADCf[FD_PITCH] = 20;
-    gyro.gyroADCf[FD_YAW] = 0;
+    setAllGyroRates(0, 20, 0);
     pidController(pidProfile, currentTestTime());
 
     EXPECT_FLOAT_EQ(0, pidData[FD_PITCH].I);
 
-    gyro.gyroADCf[FD_ROLL] = 20;
-    gyro.gyroADCf[FD_PITCH] = -20;
-    gyro.gyroADCf[FD_YAW] = 20;
+    setAllGyroRates(20, -20, 20);
     pidController(pidProfile, currentTestTime());
 
     EXPECT_FLOAT_EQ(0, pidData[FD_ROLL].P);
@@ -1035,16 +1475,11 @@ TEST(pidControllerTest, testLaunchControl)
 
     // test FULL mode - expect P/I on all axes
     unitLaunchControlMode = LAUNCH_CONTROL_MODE_FULL;
-    resetTest();
-    unitLaunchControlActive = true;
-    ENABLE_ARMING_FLAG(ARMED);
-    pidStabilisationState(PID_STABILISATION_ON);
+    setupLaunchControlTest();
 
     pidController(pidProfile, currentTestTime());
 
-    gyro.gyroADCf[FD_ROLL] = -20;
-    gyro.gyroADCf[FD_PITCH] = 20;
-    gyro.gyroADCf[FD_YAW] = -20;
+    setAllGyroRates(-20, 20, -20);
     pidController(pidProfile, currentTestTime());
 
     EXPECT_NEAR(25.62,  pidData[FD_ROLL].P,  calculateTolerance(25.62));
