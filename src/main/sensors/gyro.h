@@ -119,9 +119,6 @@ typedef struct gyro_s {
     uint8_t overflowAxisMask;
 #endif
     pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
-
-    biquadFilter_t test_biquad_notch;
-    rpmNotch_t test_svf_notch;
 } gyro_t;
 
 extern gyro_t gyro;
