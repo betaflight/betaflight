@@ -228,6 +228,10 @@ static void dynLpfFilterInit(void)
 
 void gyroInitFilters(void)
 {
+    float dt = gyro.sampleLooptime * 1e-6f;
+    biquadFilterInit(&gyro.test_biquad_notch, 100.0f, gyro.sampleLooptime, 5.0f, FILTER_NOTCH, 1.0f);
+    rpmNotchInit(&gyro.test_svf_notch, 100.0f, dt, 5.0f, 1.0f);
+
     uint16_t gyro_lpf1_init_hz = gyroConfig()->gyro_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF

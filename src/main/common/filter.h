@@ -34,6 +34,12 @@ typedef enum {
     FILTER_PT3,
 } lowpassFilterType_e;
 
+typedef enum {
+    FILTER_LPF,    // 2nd order Butterworth section
+    FILTER_NOTCH,
+    FILTER_BPF,
+} biquadFilterType_e;
+
 typedef struct pt1Filter_s {
     float state;
     float k;
@@ -51,6 +57,12 @@ typedef struct pt3Filter_s {
     float state2;
     float k;
 } pt3Filter_t;
+
+typedef struct biquadFilter_s {
+    float b0, b1, b2, a1, a2;
+    float x1, x2, y1, y2;
+    float weight;
+} biquadFilter_t;
 
 // SVF filter in Chamberlin form (less accurate cutoff but fine for lpf)
 typedef struct butterworthFilter_s {
@@ -161,3 +173,7 @@ int32_t simpleLPFilterUpdate(simpleLowpassFilter_t *filter, int32_t newVal);
 void meanAccumulatorInit(meanAccumulator_t *filter);
 void meanAccumulatorAdd(meanAccumulator_t *filter, const int8_t newVal);
 int8_t meanAccumulatorCalc(meanAccumulator_t *filter, const int8_t defaultValue);
+
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
+void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
+float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
