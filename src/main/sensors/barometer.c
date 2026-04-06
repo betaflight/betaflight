@@ -388,6 +388,10 @@ bool baroIsCalibrated(void)
 
 void baroStartCalibration(void)
 {
+    if (detectedSensors[SENSOR_INDEX_BARO] == BARO_VIRTUAL) {
+        baroCalibrated = true;
+        return;
+    }
     baroGroundAltitude = 0;
     baroCalibrated = false;
     calibrationCycles = NUM_CALIBRATION_CYCLES;
