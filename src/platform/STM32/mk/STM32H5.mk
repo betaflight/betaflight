@@ -75,13 +75,16 @@ STDPERIPH_SRC   = \
             stm32h5xx_ll_usb.c \
             stm32h5xx_util_i3c.c
 
-#USB  ##TODO - need to work through the USB drivers, new directory: USBX
-#USBCORE_DIR = $(LIB_MAIN_DIR)/STM32H5/Middlewares/ST/usbx/Common
-#USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
-#EXCLUDES    =
-#USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
+#USB - Use the HAL USB Device Library (shared, MCU-agnostic)
+USBCORE_DIR = STM32_USB_Device_Library_HAL/Core
+USBCORE_SRC = \
+            $(USBCORE_DIR)/Src/usbd_core.c \
+            $(USBCORE_DIR)/Src/usbd_ctlreq.c \
+            $(USBCORE_DIR)/Src/usbd_ioreq.c
 
-#VPATH := $(VPATH):$(USBCDC_DIR)/Src:$(USBCORE_DIR)/Src:$(USBHID_DIR)/Src:$(USBMSC_DIR)/Src:$(STDPERIPH_DIR)/src
+USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
+USBCDC_SRC = \
+            $(USBCDC_DIR)/Src/usbd_cdc.c
 
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCORE_SRC) \
@@ -142,13 +145,12 @@ endif
 
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
-VCP_SRC =
-#VCP_SRC = \
-            vcp_hal/usbd_desc.c \
-            vcp_hal/usbd_conf_stm32h5xx.c \
-            vcp_hal/usbd_cdc_hid.c \
-            vcp_hal/usbd_cdc_interface.c \
-            serial_usb_vcp.c \
+VCP_SRC = \
+            STM32/vcp_hal/usbd_desc.c \
+            STM32/vcp_hal/usbd_conf_stm32h5xx.c \
+            STM32/vcp_hal/usbd_cdc_hid.c \
+            STM32/vcp_hal/usbd_cdc_interface.c \
+            STM32/serial_usb_vcp.c \
             drivers/usb_io.c
 
 MCU_COMMON_SRC = \
