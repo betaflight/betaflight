@@ -100,15 +100,17 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 i2cDevice_t i2cDevice[I2CDEV_COUNT] = { 0 };
 
 // Attempt bus recovery by unsticking the I2C lines and re-initialising
-static void i2cRecover(i2cDevice_e device)
+static bool i2cRecover(i2cDevice_e device)
 {
     i2cDevice_t *dev = &i2cDevice[device];
 
     // Generate 9 clock pulses + STOP to free any stuck slave
-    i2cUnstick(dev->scl, dev->sda);
+    const bool unstuck = i2cUnstick(dev->scl, dev->sda);
 
     // Re-initialise the peripheral from scratch
     i2cInit(device);
+
+    return unstuck;
 }
 
 void i2cInit(i2cDevice_e device)
@@ -202,22 +204,32 @@ static bool i2cWaitBusFree(i2c_dev_t *hw)
     return true;
 }
 
-// Wait for a specific command to complete, returns true on success
-static bool i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
+typedef enum {
+    I2C_CMD_OK = 0,
+    I2C_CMD_ERR_NACK,
+    I2C_CMD_ERR_BUS,
+} i2cCmdResult_e;
+
+// Wait for a specific command to complete
+static i2cCmdResult_e i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
 {
     const timeUs_t startUs = micros();
     while (!i2c_ll_master_is_cmd_done(hw, cmdIdx)) {
-        // Check for NACK or timeout errors via raw status (not masked by interrupt enable)
+        // Check for errors via raw status (not masked by interrupt enable)
         uint32_t status = hw->int_raw.val;
-        if (status & (I2C_LL_INTR_NACK | I2C_LL_INTR_TIMEOUT | I2C_LL_INTR_ARBITRATION)) {
+        if (status & (I2C_LL_INTR_TIMEOUT | I2C_LL_INTR_ARBITRATION)) {
             hw->int_clr.val = status;
-            return false;
+            return I2C_CMD_ERR_BUS;
+        }
+        if (status & I2C_LL_INTR_NACK) {
+            hw->int_clr.val = status;
+            return I2C_CMD_ERR_NACK;
         }
         if (cmpTimeUs(micros(), startUs) >= I2C_TIMEOUT_US) {
-            return false;
+            return I2C_CMD_ERR_BUS;
         }
     }
-    return true;
+    return I2C_CMD_OK;
 }
 
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
@@ -280,9 +292,12 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     i2c_ll_start_trans(hw);
 
     // Wait for STOP command to complete
-    if (!i2cWaitCmdDone(hw, cmdIdx - 1)) {
+    const i2cCmdResult_e result = i2cWaitCmdDone(hw, cmdIdx - 1);
+    if (result != I2C_CMD_OK) {
         i2cErrorCount++;
-        i2cRecover(device);
+        if (result == I2C_CMD_ERR_BUS) {
+            i2cRecover(device);
+        }
         return false;
     }
 
@@ -384,9 +399,12 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     i2c_ll_start_trans(hw);
 
     // Wait for STOP command to complete
-    if (!i2cWaitCmdDone(hw, cmdIdx - 1)) {
+    const i2cCmdResult_e result = i2cWaitCmdDone(hw, cmdIdx - 1);
+    if (result != I2C_CMD_OK) {
         i2cErrorCount++;
-        i2cRecover(device);
+        if (result == I2C_CMD_ERR_BUS) {
+            i2cRecover(device);
+        }
         return false;
     }
 
