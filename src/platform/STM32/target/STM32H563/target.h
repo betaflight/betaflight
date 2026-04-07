@@ -31,7 +31,7 @@
 #undef USE_PWM
 #undef USE_PWM_OUTPUT
 #undef USE_DSHOT
-#undef USE_ADC
+//#undef USE_ADC
 #undef USE_TIMER
 //#undef USE_DMA
 #undef USE_FLASH
@@ -136,7 +136,7 @@
 
 //#define USE_ESCSERIAL
 
-//#define USE_ADC
+#define USE_ADC
 //#define USE_EXTI
 //#define USE_TIMER_UP_CONFIG
 

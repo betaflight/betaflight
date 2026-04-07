@@ -184,7 +184,7 @@ MCU_COMMON_SRC = \
 #            memprot_stm32h5xx.c \
 #            sdio_h5xx.c \
 #            timer_stm32h5xx.c \
-#            adc_stm32h5xx.c \
+            STM32/adc_stm32h5xx.c \
 
 MSC_SRC =
 #MSC_SRC = \
