@@ -50,12 +50,12 @@
 #undef USE_SDCARD
 #undef USE_LED_STRIP
 #undef USE_SOFTSERIAL
-#undef USE_VCP
+//#undef USE_VCP
 #undef USE_ESCSERIAL
 //#undef USE_SPI
 #undef USE_I2C
 //#undef USE_UART
-#undef USE_USB_DETECT
+//#undef USE_USB_DETECT
 #undef USE_BEEPER
 #undef USE_EXTI
 #undef USE_TIMER_UP_CONFIG
@@ -88,11 +88,11 @@
 //#define USE_I2C_DEVICE_3
 //#define USE_I2C_DEVICE_4
 
-//#define USE_VCP
+#define USE_VCP
 
 //#define USE_SOFTSERIAL
 
-#define UNIFIED_SERIAL_PORT_COUNT       0
+#define UNIFIED_SERIAL_PORT_COUNT       1
 
 #define USE_UART1
 //#define USE_UART2
