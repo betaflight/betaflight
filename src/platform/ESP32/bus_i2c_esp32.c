@@ -113,7 +113,7 @@ static void i2cRecover(i2cDevice_e device)
 
 void i2cInit(i2cDevice_e device)
 {
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return;
     }
 
@@ -207,11 +207,10 @@ static bool i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
 {
     const timeUs_t startUs = micros();
     while (!i2c_ll_master_is_cmd_done(hw, cmdIdx)) {
-        // Check for NACK or timeout errors
-        uint32_t status;
-        i2c_ll_get_intr_mask(hw, &status);
+        // Check for NACK or timeout errors via raw status (not masked by interrupt enable)
+        uint32_t status = hw->int_raw.val;
         if (status & (I2C_LL_INTR_NACK | I2C_LL_INTR_TIMEOUT | I2C_LL_INTR_ARBITRATION)) {
-            i2c_ll_clear_intr_mask(hw, status);
+            hw->int_clr.val = status;
             return false;
         }
         if (cmpTimeUs(micros(), startUs) >= I2C_TIMEOUT_US) {
@@ -223,7 +222,7 @@ static bool i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
 
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
@@ -297,7 +296,7 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
 {
-    if (device >= I2CDEV_COUNT || len == 0 || !buf) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT || len == 0 || !buf) {
         return false;
     }
 
@@ -408,7 +407,7 @@ bool i2cBusy(i2cDevice_e device, bool *error)
         *error = false;
     }
 
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
