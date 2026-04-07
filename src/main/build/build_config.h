@@ -45,7 +45,6 @@ typedef enum {
     MCU_TYPE_SIMULATOR = 0,
     MCU_TYPE_F40X,
     MCU_TYPE_F411,
-    MCU_TYPE_F427,
     MCU_TYPE_F446,
     MCU_TYPE_F722,
     MCU_TYPE_F745,
@@ -70,6 +69,7 @@ typedef enum {
     MCU_TYPE_N657,
     MCU_TYPE_H563,
     MCU_TYPE_COUNT,
+    MCU_TYPE_F427,
     MCU_TYPE_UNKNOWN = 255,
 } mcuTypeId_e;
 
