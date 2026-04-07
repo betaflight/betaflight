@@ -41,9 +41,6 @@ MEMORY
 REGION_ALIAS("STACKRAM", RAM)
 REGION_ALIAS("FASTRAM", RAM)
 
-/* Entry Point */
-ENTRY(Reset_Handler)
-
 /* Highest address of the user mode stack */
 _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* Reserve 2 x 4bytes for info across reset */
 

@@ -106,7 +106,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
@@ -215,6 +215,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
-DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM33
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk
