@@ -550,7 +550,7 @@ void tryArm(void)
 
 
     updateArmingStatus();
-    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed, 
+    // set or clear armingDisabled flags, while arming is requested, whether armed or disarmed,
 
 
     if (!isArmingDisabled()) {
@@ -1383,7 +1383,7 @@ FAST_CODE void taskFiltering(timeUs_t currentTimeUs)
 FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
 {
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
+#if ENABLE_SIMULATOR_GYROPID_SYNC
     if (lockMainPID() != 0) return;
 #endif
 

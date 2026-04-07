@@ -126,7 +126,7 @@ typedef struct dmaRegCache_s {
 // Per pacer timer
 
 typedef struct bbPacer_s {
-    void *tim;
+    timerResource_t *tim;
     uint16_t dmaSources;
 } bbPacer_t;
 

@@ -2,14 +2,16 @@
 # H5 Make file include
 #
 
-PLATFORM_SDK := arm
+# Auto-hydrate STM32CubeH5 submodule when building H5 targets
+PLATFORM_SDK := stm32h5
+PLATFORM_SDK_STAMP := $(STM32H5_SDK_STAMP)
 
 ifeq ($(DEBUG_HARDFAULTS),H5)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32H5/Drivers/STM32H5xx_HAL_Driver
@@ -60,11 +62,14 @@ STDPERIPH_SRC   = \
             stm32h5xx_ll_dlyb.c \
             stm32h5xx_ll_dma.c \
             stm32h5xx_ll_fmac.c \
+            stm32h5xx_ll_i2c.c \
             stm32h5xx_ll_i3c.c \
             stm32h5xx_ll_icache.c \
             stm32h5xx_ll_pka.c \
             stm32h5xx_ll_sdmmc.c \
             stm32h5xx_ll_spi.c \
+            stm32h5xx_ll_usart.c \
+            stm32h5xx_ll_rcc.c \
             stm32h5xx_ll_tim.c \
             stm32h5xx_ll_ucpd.c \
             stm32h5xx_ll_usb.c \
@@ -150,8 +155,8 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
             STM32/bus_quadspi_hal.c \
             STM32/debug.c \
@@ -164,10 +169,11 @@ MCU_COMMON_SRC = \
             STM32/persistent.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
             STM32/timer_hal.c \
             STM32/transponder_ir_io_hal.c \
             STM32/camera_control_stm32.c \
+            STM32/dma_stm32h5xx.c \
             STM32/system_stm32h5xx.c \
             drivers/adc.c \
             drivers/serial_escserial.c \
@@ -179,7 +185,6 @@ MCU_COMMON_SRC = \
 #            sdio_h5xx.c \
 #            timer_stm32h5xx.c \
 #            adc_stm32h5xx.c \
-#            dma_stm32h5xx.c \
 
 MSC_SRC =
 #MSC_SRC = \
@@ -197,11 +202,10 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/serial_usb_vcp.c \
+            STM32/bus_i2c_ll_init.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

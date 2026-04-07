@@ -108,8 +108,8 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     TimHandle.Instance = timer;
 
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, transponder->timer_hz);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, transponder->timer_carrier_hz);
 
     transponder->bitToggleOne = period / 2;
 
@@ -201,7 +201,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return false;
     }
 
-    RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OC_InitTypeDef  TIM_OCInitStructure;

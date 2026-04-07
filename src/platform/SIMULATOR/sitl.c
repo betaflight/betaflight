@@ -32,6 +32,7 @@
 
 #include "build/debug.h"
 
+#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/motor_impl.h"
@@ -247,7 +248,7 @@ static void updateState(const fdm_packet* pkt)
     setVirtualGPS(latitude, longitude, altitude, speed, speed3D, course);
 #endif
 
-#if defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
     imuSetHasNewData(deltaSim*1e6);
     imuUpdateAttitude(micros());
 #endif
@@ -268,7 +269,7 @@ static void updateState(const fdm_packet* pkt)
 
     pthread_mutex_unlock(&updateLock); // can send PWM output now
 
-#if defined(SIMULATOR_GYROPID_SYNC)
+#if ENABLE_SIMULATOR_GYROPID_SYNC
     pthread_mutex_unlock(&mainLoopLock); // can run main loop
 #endif
 }
@@ -830,4 +831,14 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
 {
     static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
     return &info;
+}
+
+void EXTIInit(void)
+{
+    // NOOP
+}
+
+void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
+{
+    UNUSED(pSerialPinConfig);
 }

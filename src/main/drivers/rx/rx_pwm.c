@@ -55,7 +55,7 @@
 
 static inputFilteringMode_e inputFilteringMode;
 
-void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter);
+void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8_t filter);
 
 typedef enum {
     INPUT_MODE_PPM,

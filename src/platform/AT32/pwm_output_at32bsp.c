@@ -62,14 +62,14 @@ static void pwmOCConfig(tmr_type *tim, uint8_t channel, uint16_t value, uint8_t 
 void pwmOutputConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
     timerReconfigureTimeBase(timerHardware, period, hz);
-    pwmOCConfig(timerHardware->tim,
+    pwmOCConfig((tmr_type *)timerHardware->tim,
         timerHardware->channel,
         value,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
         );
 
-    tmr_output_enable(timerHardware->tim, TRUE);
-    tmr_counter_enable(timerHardware->tim, TRUE);
+    tmr_output_enable((tmr_type *)timerHardware->tim, TRUE);
+    tmr_counter_enable((tmr_type *)timerHardware->tim, TRUE);
 
     channel->ccr = timerChCCR(timerHardware);
 

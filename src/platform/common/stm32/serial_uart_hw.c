@@ -42,8 +42,15 @@
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "platform/dma.h"
+#include "platform/serial_uart_hal.h"
 
 #include "pg/serial_uart.h"
+
+#ifdef USE_HAL_DRIVER
+extern struct uartHalHandle_s uartHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartRxDmaHalHandles[UARTDEV_COUNT];
+extern struct dmaHalHandle_s uartTxDmaHalHandles[UARTDEV_COUNT];
+#endif
 
 // TODO: split this function into mcu-specific UART files ?
 static void enableRxIrq(const uartHardware_t *hardware)
@@ -84,10 +91,6 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     s->port.txBufferSize = hardware->txBufferSize;
 
     s->USARTx = hardware->reg;
-
-#ifdef USE_HAL_DRIVER
-    s->Handle.Instance = hardware->reg;
-#endif
 
     s->checkUsartTxOutput = checkUsartTxOutput;
 
@@ -191,13 +194,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
-    if (true
-#ifdef USE_DMA
-        && !s->rxDMAResource  // do not enable IRW if using rxDMA
-#endif
-        ) {
-        enableRxIrq(hardware);
-    }
+    enableRxIrq(hardware);
     return s;
 }
 
@@ -246,7 +243,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->rxDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if DMA_TRAIT_CHANNEL
@@ -306,11 +303,11 @@ void uartConfigureDma(uartDevice_t *uartdev)
 void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
-    __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+    LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
-    usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+    usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #else
-    USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
+    USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
 }
 
