@@ -189,12 +189,12 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/serial_escserial.c \
             STM32/serial_uart_stm32h5xx.c \
+            STM32/timer_stm32h5xx.c \
             STM32/startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
 #            memprot_stm32h5xx.c \
 #            sdio_h5xx.c \
-#            timer_stm32h5xx.c \
             STM32/adc_stm32h5xx.c \
 
 MSC_SRC =
