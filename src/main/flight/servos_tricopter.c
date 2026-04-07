@@ -40,8 +40,6 @@ void servosTricopterMixer(void)
 }
 
 void servosTricopterInit(void)
-{
-
-}
+{}
 
 #endif // USE_SERVOS

@@ -30,17 +30,17 @@
 
 #include "pg/pg.h"
 
-#define MAX_PID_PROCESS_DENOM       16
-#define PID_CONTROLLER_BETAFLIGHT   1
-#define PID_MIXER_SCALING           1000.0f
-#define PID_SERVO_MIXER_SCALING     0.7f
-#define PIDSUM_LIMIT                500
-#define PIDSUM_LIMIT_YAW            400
-#define PIDSUM_LIMIT_MIN            100
-#define PIDSUM_LIMIT_MAX            1000
+#define MAX_PID_PROCESS_DENOM     16
+#define PID_CONTROLLER_BETAFLIGHT 1
+#define PID_MIXER_SCALING         1000.0f
+#define PID_SERVO_MIXER_SCALING   0.7f
+#define PIDSUM_LIMIT              500
+#define PIDSUM_LIMIT_YAW          400
+#define PIDSUM_LIMIT_MIN          100
+#define PIDSUM_LIMIT_MAX          1000
 
 #define PID_GAIN_MAX 250
-#define F_GAIN_MAX 1000
+#define F_GAIN_MAX   1000
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -53,37 +53,37 @@
 
 // Full iterm suppression in setpoint mode at high-passed setpoint rate > 40deg/sec
 #define ITERM_RELAX_SETPOINT_THRESHOLD 40.0f
-#define ITERM_RELAX_CUTOFF_DEFAULT 15
+#define ITERM_RELAX_CUTOFF_DEFAULT     15
 
 // Anti gravity I constant
-#define ANTIGRAVITY_KI 0.34f; // if AG gain is 6, about 6 times iTerm will be added
-#define ANTIGRAVITY_KP 0.0034f; // one fifth of the I gain on P by default
+#define ANTIGRAVITY_KI             0.34f; // if AG gain is 6, about 6 times iTerm will be added
+#define ANTIGRAVITY_KP             0.0034f; // one fifth of the I gain on P by default
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-#define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
-#define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
-#define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
-#define D_MAX_DEFAULT     { 40, 46, 0 }
+#define PID_ROLL_DEFAULT  {45, 80, 30, 120, 0}
+#define PID_PITCH_DEFAULT {47, 84, 34, 125, 0}
+#define PID_YAW_DEFAULT   {45, 80, 0, 120, 0}
+#define D_MAX_DEFAULT     {40, 46, 0}
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
-#define DTERM_LPF2_HZ_DEFAULT 150
+#define DTERM_LPF2_HZ_DEFAULT         150
 
 #define TPA_MAX 100
 
 #ifdef USE_WING
-#define ANGLE_PITCH_OFFSET_MAX 450
-#define S_TERM_SCALE 0.01f
-#define TPA_LOW_RATE_MIN INT8_MIN
-#define TPA_GRAVITY_MAX 5000
+#define ANGLE_PITCH_OFFSET_MAX       450
+#define S_TERM_SCALE                 0.01f
+#define TPA_LOW_RATE_MIN             INT8_MIN
+#define TPA_GRAVITY_MAX              5000
 #define TPA_CURVE_STALL_THROTTLE_MAX 100
 #else
 #define TPA_LOW_RATE_MIN 0
 #endif
 
 #ifdef USE_ADVANCED_TPA
-#define TPA_CURVE_PID_MAX 1000
+#define TPA_CURVE_PID_MAX  1000
 #define TPA_CURVE_EXPO_MIN -100
 #define TPA_CURVE_EXPO_MAX 100
 #define TPA_CURVE_PWL_SIZE 17
@@ -91,7 +91,8 @@
 
 #define G_ACCELERATION 9.80665f // gravitational acceleration in m/s^2
 
-typedef enum {
+typedef enum
+{
     TPA_MODE_PD,
     TPA_MODE_D,
 #ifdef USE_WING
@@ -99,7 +100,8 @@ typedef enum {
 #endif
 } tpaMode_e;
 
-typedef enum {
+typedef enum
+{
     TERM_P,
     TERM_I,
     TERM_D,
@@ -107,7 +109,8 @@ typedef enum {
     TERM_S,
 } term_e;
 
-typedef enum {
+typedef enum
+{
     SPA_MODE_OFF,
     SPA_MODE_I_FREEZE,
     SPA_MODE_I,
@@ -115,7 +118,8 @@ typedef enum {
     SPA_MODE_PD_I_FREEZE,
 } spaMode_e;
 
-typedef enum {
+typedef enum
+{
     PID_ROLL,
     PID_PITCH,
     PID_YAW,
@@ -124,18 +128,21 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
-typedef enum {
+typedef enum
+{
     SUPEREXPO_YAW_OFF = 0,
     SUPEREXPO_YAW_ON,
     SUPEREXPO_YAW_ALWAYS
 } pidSuperExpoYaw_e;
 
-typedef enum {
+typedef enum
+{
     PID_STABILISATION_OFF = 0,
     PID_STABILISATION_ON
 } pidStabilisationState_e;
 
-typedef enum {
+typedef enum
+{
     PID_CRASH_RECOVERY_OFF = 0,
     PID_CRASH_RECOVERY_ON,
     PID_CRASH_RECOVERY_BEEP,
@@ -150,7 +157,8 @@ typedef struct pidf_s {
     uint8_t S;
 } pidf_t;
 
-typedef enum {
+typedef enum
+{
     ITERM_RELAX_OFF,
     ITERM_RELAX_RP,
     ITERM_RELAX_RPY,
@@ -159,30 +167,35 @@ typedef enum {
     ITERM_RELAX_COUNT,
 } itermRelax_e;
 
-typedef enum {
+typedef enum
+{
     ITERM_RELAX_GYRO,
     ITERM_RELAX_SETPOINT,
     ITERM_RELAX_TYPE_COUNT,
 } itermRelaxType_e;
 
-typedef enum feedforwardAveraging_e {
+typedef enum feedforwardAveraging_e
+{
     FEEDFORWARD_AVERAGING_OFF,
     FEEDFORWARD_AVERAGING_2_POINT,
     FEEDFORWARD_AVERAGING_3_POINT,
     FEEDFORWARD_AVERAGING_4_POINT,
 } feedforwardAveraging_t;
 
-typedef enum tpaCurveType_e {
+typedef enum tpaCurveType_e
+{
     TPA_CURVE_CLASSIC,
     TPA_CURVE_HYPERBOLIC,
 } tpaCurveType_t;
 
-typedef enum tpaSpeedType_e {
+typedef enum tpaSpeedType_e
+{
     TPA_SPEED_BASIC,
     TPA_SPEED_ADVANCED,
 } tpaSpeedType_t;
 
-typedef enum {
+typedef enum
+{
     YAW_TYPE_RUDDER,
     YAW_TYPE_DIFF_THRUST,
 } yawType_e;
@@ -195,7 +208,7 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 
-    pidf_t  pid[PID_ITEM_COUNT];
+    pidf_t pid[PID_ITEM_COUNT];
 
     uint8_t dterm_lpf1_type;                // Filter type for dterm lowpass 1
     uint8_t itermWindup;                    // iterm windup threshold, percentage of pidSumLimit within which to limit iTerm
@@ -267,7 +280,7 @@ typedef struct pidProfile_s {
     uint8_t feedforward_boost;              // amount of setpoint acceleration to add to feedforward, 10 means 100% added
     uint8_t feedforward_max_rate_limit;     // Maximum setpoint rate percentage for feedforward
     uint8_t feedforward_yaw_hold_gain;          // Amount of sustained high-pass yaw setpoint to add to feedforward, zero disables
-    uint8_t feedforward_yaw_hold_time ;     // Time constant of the sustained yaw hold element in ms to add to feed forward, higher values decay slower
+    uint8_t feedforward_yaw_hold_time;     // Time constant of the sustained yaw hold element in ms to add to feed forward, higher values decay slower
 
     uint8_t dterm_lpf1_dyn_expo;            // set the curve for dynamic dterm lowpass filter
     uint8_t level_race_mode;                // NFE race mode - when true pitch setpoint calculation is gyro based in level mode
@@ -312,33 +325,34 @@ typedef struct pidProfile_s {
     uint16_t tpa_curve_pid_thr100;          // For wings: PIDs multiplier at full speed
     int8_t tpa_curve_expo;                  // For wings: how fast PIDs do transition as speed grows
     uint8_t tpa_speed_type;             // For wings: relative air speed estimation model type
-    uint16_t tpa_speed_basic_delay;     // For wings when tpa_speed_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in horizontal flight at full throttle)
-    uint16_t tpa_speed_basic_gravity;   // For wings when tpa_speed_type = BASIC: gravity effect on air speed estimation in percents
-    uint16_t tpa_speed_adv_prop_pitch;  // For wings when tpa_speed_type = ADVANCED: prop pitch in inches * 100
-    uint16_t tpa_speed_adv_mass;        // For wings when tpa_speed_type = ADVANCED: craft mass in grams
-    uint16_t tpa_speed_adv_drag_k;      // For wings when tpa_speed_type = ADVANCED: craft drag coefficient
-    uint16_t tpa_speed_adv_thrust;      // For wings when tpa_speed_type = ADVANCED: stationary thrust in grams
-    uint16_t tpa_speed_max_voltage;     // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
-    int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
-    uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
-    int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
+    uint16_t tpa_speed_basic_delay; // For wings when tpa_speed_type = BASIC: delay of air speed estimation from throttle in milliseconds (time of reaching 50% of terminal speed in
+                                    // horizontal flight at full throttle)
+    uint16_t tpa_speed_basic_gravity; // For wings when tpa_speed_type = BASIC: gravity effect on air speed estimation in percents
+    uint16_t tpa_speed_adv_prop_pitch; // For wings when tpa_speed_type = ADVANCED: prop pitch in inches * 100
+    uint16_t tpa_speed_adv_mass; // For wings when tpa_speed_type = ADVANCED: craft mass in grams
+    uint16_t tpa_speed_adv_drag_k; // For wings when tpa_speed_type = ADVANCED: craft drag coefficient
+    uint16_t tpa_speed_adv_thrust; // For wings when tpa_speed_type = ADVANCED: stationary thrust in grams
+    uint16_t tpa_speed_max_voltage; // For wings: theoretical max voltage; used for throttle scailing with voltage for air speed estimation
+    int16_t tpa_speed_pitch_offset; // For wings: pitch offset in degrees*10 for craft speed estimation
+    uint8_t yaw_type; // For wings: type of yaw (rudder or differential thrust)
+    int16_t angle_pitch_offset; // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
 
-    uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
-    uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero
-    uint16_t chirp_amplitude_roll;          // amplitude roll in degree/second
-    uint16_t chirp_amplitude_pitch;         // amplitude pitch in degree/second
-    uint16_t chirp_amplitude_yaw;           // amplitude yaw in degree/second
+    uint8_t chirp_lag_freq_hz; // leadlag1Filter cutoff/pole to shape the excitation signal
+    uint8_t chirp_lead_freq_hz; // leadlag1Filter cutoff/zero
+    uint16_t chirp_amplitude_roll; // amplitude roll in degree/second
+    uint16_t chirp_amplitude_pitch; // amplitude pitch in degree/second
+    uint16_t chirp_amplitude_yaw; // amplitude yaw in degree/second
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
-    uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
-    uint8_t chirp_time_seconds;             // excitation time
+    uint16_t chirp_frequency_end_deci_hz; // end frequency in units of 0.1 hz
+    uint8_t chirp_time_seconds; // excitation time
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
-    uint8_t pid_process_denom;                   // Processing denominator for PID controller vs gyro sampling rate
-    uint8_t runaway_takeoff_prevention;          // off, on - enables pidsum runaway disarm logic
-    uint16_t runaway_takeoff_deactivate_delay;   // delay in ms for "in-flight" conditions before deactivation (successful flight)
+    uint8_t pid_process_denom; // Processing denominator for PID controller vs gyro sampling rate
+    uint8_t runaway_takeoff_prevention; // off, on - enables pidsum runaway disarm logic
+    uint16_t runaway_takeoff_deactivate_delay; // delay in ms for "in-flight" conditions before deactivation (successful flight)
     uint8_t runaway_takeoff_deactivate_throttle; // minimum throttle percent required during deactivation phase
 } pidConfig_t;
 
@@ -357,7 +371,8 @@ typedef struct pidAxisData_s {
     float Sum;
 } pidAxisData_t;
 
-typedef union dtermLowpass_u {
+typedef union dtermLowpass_u
+{
     pt1Filter_t pt1Filter;
     biquadFilter_t biquadFilter;
     pt2Filter_t pt2Filter;
@@ -467,7 +482,7 @@ typedef struct pidRuntime_s {
     uint8_t acroTrainerDebugAxis;
     float acroTrainerGain;
     bool acroTrainerActive;
-    int acroTrainerAxisState[RP_AXIS_COUNT];  // only need roll and pitch
+    int acroTrainerAxisState[RP_AXIS_COUNT]; // only need roll and pitch
 #endif
 
 #ifdef USE_DYN_LPF
@@ -509,7 +524,7 @@ typedef struct pidRuntime_s {
 #endif
 
 #ifdef USE_ACC
-    pt3Filter_t attitudeFilter[RP_AXIS_COUNT];  // Only for ROLL and PITCH
+    pt3Filter_t attitudeFilter[RP_AXIS_COUNT]; // Only for ROLL and PITCH
     pt1Filter_t horizonSmoothingPt1;
     uint16_t horizonDelayMs;
     float angleYawSetpoint;
@@ -576,12 +591,10 @@ float pidCompensateThrustLinearization(float throttle);
 #ifdef UNIT_TEST
 #include "sensors/acceleration.h"
 extern float axisError[XYZ_AXIS_COUNT];
-void applyItermRelax(const int axis, const float iterm,
-    const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
+void applyItermRelax(const int axis, const float iterm, const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
 void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
-float pidLevel(int axis, const pidProfile_t *pidProfile,
-    const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength);
+float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength);
 float calcHorizonLevelStrength(void);
 #endif
 
@@ -593,5 +606,5 @@ float pidGetPidFrequency(void);
 
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP
-bool  pidChirpIsFinished();
+bool pidChirpIsFinished();
 #endif

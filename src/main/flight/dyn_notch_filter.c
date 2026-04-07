@@ -88,7 +88,8 @@
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
 #define DYN_NOTCH_UPDATE_MIN_HZ    2000
 
-typedef enum {
+typedef enum
+{
 
     STEP_WINDOW,
     STEP_DETECT_PEAKS,
@@ -133,8 +134,8 @@ typedef struct dynNotch_s {
 static FAST_DATA_ZERO_INIT dynNotch_t dynNotch;
 
 // accumulator for oversampled data => less aliasing and noise
-static FAST_DATA_ZERO_INIT int   sampleIndex;
-static FAST_DATA_ZERO_INIT int   sampleCount;
+static FAST_DATA_ZERO_INIT int sampleIndex;
+static FAST_DATA_ZERO_INIT int sampleCount;
 static FAST_DATA_ZERO_INIT float sampleCountRcp;
 static FAST_DATA_ZERO_INIT float sampleAccumulator[XYZ_AXIS_COUNT];
 
@@ -143,15 +144,15 @@ static FAST_DATA_ZERO_INIT float sampleAvg[XYZ_AXIS_COUNT];
 
 // parameters for peak detection and frequency analysis
 static FAST_DATA_ZERO_INIT state_t state;
-static FAST_DATA_ZERO_INIT sdft_t  sdft[XYZ_AXIS_COUNT];
-static FAST_DATA_ZERO_INIT peak_t  peaks[DYN_NOTCH_COUNT_MAX];
-static FAST_DATA_ZERO_INIT float   sdftData[SDFT_BIN_COUNT];
-static FAST_DATA_ZERO_INIT float   sdftSampleRateHz;
-static FAST_DATA_ZERO_INIT float   sdftResolutionHz;
-static FAST_DATA_ZERO_INIT int     sdftStartBin;
-static FAST_DATA_ZERO_INIT int     sdftEndBin;
-static FAST_DATA_ZERO_INIT float   sdftNoiseThreshold;
-static FAST_DATA_ZERO_INIT float   pt1LooptimeS;
+static FAST_DATA_ZERO_INIT sdft_t sdft[XYZ_AXIS_COUNT];
+static FAST_DATA_ZERO_INIT peak_t peaks[DYN_NOTCH_COUNT_MAX];
+static FAST_DATA_ZERO_INIT float sdftData[SDFT_BIN_COUNT];
+static FAST_DATA_ZERO_INIT float sdftSampleRateHz;
+static FAST_DATA_ZERO_INIT float sdftResolutionHz;
+static FAST_DATA_ZERO_INIT int sdftStartBin;
+static FAST_DATA_ZERO_INIT int sdftEndBin;
+static FAST_DATA_ZERO_INIT float sdftNoiseThreshold;
+static FAST_DATA_ZERO_INIT float pt1LooptimeS;
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs)
 {
@@ -261,143 +262,143 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 
     switch (state.step) {
 
-        case STEP_WINDOW: // 4.1us (3-6us) @ F722
-        {
-            sdftWinSq(&sdft[state.axis], sdftData);
+    case STEP_WINDOW: // 4.1us (3-6us) @ F722
+    {
+        sdftWinSq(&sdft[state.axis], sdftData);
 
             // Get total vibrational power in dyn notch range for noise floor estimate in STEP_CALC_FREQUENCIES
-            sdftNoiseThreshold = 0.0f;
-            for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
-                sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
-            }
-
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-
-            break;
+        sdftNoiseThreshold = 0.0f;
+        for (int bin = sdftStartBin; bin <= sdftEndBin; bin++) {
+            sdftNoiseThreshold += sdftData[bin];  // sdftData contains power spectral density
         }
-        case STEP_DETECT_PEAKS: // 5.5us (4-7us) @ F722
-        {
+
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
+        break;
+    }
+    case STEP_DETECT_PEAKS: // 5.5us (4-7us) @ F722
+    {
             // Get memory ready for new peak data on current axis
-            for (int p = 0; p < dynNotch.count; p++) {
-                peaks[p].bin = 0;
-                peaks[p].value = 0.0f;
-            }
+        for (int p = 0; p < dynNotch.count; p++) {
+            peaks[p].bin = 0;
+            peaks[p].value = 0.0f;
+        }
 
             // Search for N biggest peaks in frequency spectrum
-            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
+        for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
                 // Check if bin is peak
-                if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
+            if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
                     // Check if peak is big enough to be one of N biggest peaks.
                     // If so, insert peak and sort peaks in descending height order
-                    for (int p = 0; p < dynNotch.count; p++) {
-                        if (sdftData[bin] > peaks[p].value) {
-                            for (int k = dynNotch.count - 1; k > p; k--) {
-                                peaks[k] = peaks[k - 1];
-                            }
-                            peaks[p].bin = bin;
-                            peaks[p].value = sdftData[bin];
-                            break;
+                for (int p = 0; p < dynNotch.count; p++) {
+                    if (sdftData[bin] > peaks[p].value) {
+                        for (int k = dynNotch.count - 1; k > p; k--) {
+                            peaks[k] = peaks[k - 1];
                         }
+                        peaks[p].bin = bin;
+                        peaks[p].value = sdftData[bin];
+                        break;
                     }
-                    bin++; // If bin is peak, next bin can't be peak => skip it
                 }
+                bin++; // If bin is peak, next bin can't be peak => skip it
             }
+        }
 
             // Sort N biggest peaks in ascending bin order (example: 3, 8, 25, 0, 0, ..., 0)
-            for (int p = dynNotch.count - 1; p > 0; p--) {
-                for (int k = 0; k < p; k++) {
+        for (int p = dynNotch.count - 1; p > 0; p--) {
+            for (int k = 0; k < p; k++) {
                     // Swap peaks but ignore swapping void peaks (bin = 0). This leaves
                     // void peaks at the end of peaks array without moving them
-                    if (peaks[k].bin > peaks[k + 1].bin && peaks[k + 1].bin != 0) {
-                        peak_t temp = peaks[k];
-                        peaks[k] = peaks[k + 1];
-                        peaks[k + 1] = temp;
-                    }
+                if (peaks[k].bin > peaks[k + 1].bin && peaks[k + 1].bin != 0) {
+                    peak_t temp = peaks[k];
+                    peaks[k] = peaks[k + 1];
+                    peaks[k + 1] = temp;
                 }
             }
-
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-
-            break;
         }
-        case STEP_CALC_FREQUENCIES: // 4.0us (2-7us) @ F722
-        {
+
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
+        break;
+    }
+    case STEP_CALC_FREQUENCIES: // 4.0us (2-7us) @ F722
+    {
             // Approximate noise floor (= average power spectral density in dyn notch range, excluding peaks)
-            int peakCount = 0;
-            for (int p = 0; p < dynNotch.count; p++) {
-                if (peaks[p].bin != 0) {
-                    sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
-                    sdftNoiseThreshold -= sdftData[peaks[p].bin];
-                    sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];
-                    peakCount++;
-                }
+        int peakCount = 0;
+        for (int p = 0; p < dynNotch.count; p++) {
+            if (peaks[p].bin != 0) {
+                sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin - 1];
+                sdftNoiseThreshold -= sdftData[peaks[p].bin];
+                sdftNoiseThreshold -= 0.75f * sdftData[peaks[p].bin + 1];
+                peakCount++;
             }
-            sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount + 1;
+        }
+        sdftNoiseThreshold /= sdftEndBin - sdftStartBin - peakCount + 1;
 
             // A noise threshold 2 times the noise floor prevents peak tracking being too sensitive to noise
-            sdftNoiseThreshold *= 2.0f;
+        sdftNoiseThreshold *= 2.0f;
 
-            for (int p = 0; p < dynNotch.count; p++) {
+        for (int p = 0; p < dynNotch.count; p++) {
 
                 // Only update dynNotch.centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
-                if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
+            if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
 
-                    float meanBin = peaks[p].bin;
+                float meanBin = peaks[p].bin;
 
                     // Height of peak bin (y1) and shoulder bins (y0, y2)
-                    const float y0 = sdftData[peaks[p].bin - 1];
-                    const float y1 = sdftData[peaks[p].bin];
-                    const float y2 = sdftData[peaks[p].bin + 1];
+                const float y0 = sdftData[peaks[p].bin - 1];
+                const float y1 = sdftData[peaks[p].bin];
+                const float y2 = sdftData[peaks[p].bin + 1];
 
                     // Estimate true peak position aka. meanBin (fit parabola y(x) over y0, y1 and y2, solve dy/dx=0 for x)
-                    const float denom = 2.0f * (y0 - 2 * y1 + y2);
-                    if (denom != 0.0f) {
-                        meanBin += (y0 - y2) / denom;
-                    }
+                const float denom = 2.0f * (y0 - 2 * y1 + y2);
+                if (denom != 0.0f) {
+                    meanBin += (y0 - y2) / denom;
+                }
 
                     // Convert bin to frequency: freq = bin * binResoultion (bin 0 is 0Hz)
-                    const float centerFreq = constrainf(meanBin * sdftResolutionHz, dynNotch.minHz, dynNotch.maxHz);
+                const float centerFreq = constrainf(meanBin * sdftResolutionHz, dynNotch.minHz, dynNotch.maxHz);
 
                     // PT1 style smoothing moves notch center freqs rapidly towards big peaks and slowly away, up to 10x faster
-                    const float cutoffMult = constrainf(peaks[p].value / sdftNoiseThreshold, 1.0f, 10.0f);
-                    const float gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ * cutoffMult, pt1LooptimeS); // dynamic PT1 k value
+                const float cutoffMult = constrainf(peaks[p].value / sdftNoiseThreshold, 1.0f, 10.0f);
+                const float gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ * cutoffMult, pt1LooptimeS); // dynamic PT1 k value
 
                     // Finally update notch center frequency p on current axis
-                    dynNotch.centerFreq[state.axis][p] += gain * (centerFreq - dynNotch.centerFreq[state.axis][p]);
-                }
+                dynNotch.centerFreq[state.axis][p] += gain * (centerFreq - dynNotch.centerFreq[state.axis][p]);
             }
-
-            if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
-                for (int p = 0; p < dynNotch.count; p++) {
-                    dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
-                }
-            }
-
-            if (state.axis == gyro.gyroDebugAxis) {
-                for (int p = 0; p < dynNotch.count && p < DYN_NOTCH_COUNT_MAX; p++) {
-                    // debug channel 0 is reserved for pre DN gyro
-                    DEBUG_SET(DEBUG_FFT_FREQ, p + 1, lrintf(dynNotch.centerFreq[state.axis][p]));
-                }
-                DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(dynNotch.centerFreq[state.axis][0]));
-            }
-
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-
-            break;
         }
-        case STEP_UPDATE_FILTERS: // 5.4us (2-9us) @ F722
-        {
+
+        if (calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
             for (int p = 0; p < dynNotch.count; p++) {
-                // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
-                if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
-                    biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
-                }
+                dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
             }
-
-            DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
-
-            state.axis = (state.axis + 1) % XYZ_AXIS_COUNT;
         }
+
+        if (state.axis == gyro.gyroDebugAxis) {
+            for (int p = 0; p < dynNotch.count && p < DYN_NOTCH_COUNT_MAX; p++) {
+                    // debug channel 0 is reserved for pre DN gyro
+                DEBUG_SET(DEBUG_FFT_FREQ, p + 1, lrintf(dynNotch.centerFreq[state.axis][p]));
+            }
+            DEBUG_SET(DEBUG_DYN_LPF, 1, lrintf(dynNotch.centerFreq[state.axis][0]));
+        }
+
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
+        break;
+    }
+    case STEP_UPDATE_FILTERS: // 5.4us (2-9us) @ F722
+    {
+        for (int p = 0; p < dynNotch.count; p++) {
+                // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
+            if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
+                biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+            }
+        }
+
+        DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
+
+        state.axis = (state.axis + 1) % XYZ_AXIS_COUNT;
+    }
     }
 
     state.step = (state.step + 1) % STEP_COUNT;

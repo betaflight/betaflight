@@ -53,7 +53,8 @@
 
 #include "gps_rescue.h"
 
-typedef enum {
+typedef enum
+{
     RESCUE_IDLE,
     RESCUE_INITIALIZE,
     RESCUE_ATTAIN_ALT,
@@ -65,7 +66,8 @@ typedef enum {
     RESCUE_ABORT
 } rescuePhase_e;
 
-typedef enum {
+typedef enum
+{
     RESCUE_HEALTHY,
     RESCUE_FLYAWAY,
     RESCUE_GPSLOST,
@@ -118,13 +120,13 @@ typedef struct {
     bool isAvailable;
 } rescueState_s;
 
-#define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
-#define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
-#define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
+#define GPS_RESCUE_MAX_YAW_RATE       180    // deg/sec max yaw rate
+#define GPS_RESCUE_MAX_THROTTLE_ITERM 200    // max iterm value for throttle in degrees * 100
+#define GPS_RESCUE_ALLOWED_YAW_RANGE  30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
 
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ); // i.e. 0.01 s
 static float rescueYaw;
-float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
+float gpsRescueAngle[RP_AXIS_COUNT] = {0, 0};
 bool magForceDisable = false;
 static pt1Filter_t velocityDLpf;
 static pt3Filter_t velocityUpsampleLpf;
@@ -177,17 +179,17 @@ static void setReturnAltitude(bool newGpsData)
 
         const float initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
         switch (gpsRescueConfig()->altitudeMode) {
-            case GPS_RESCUE_ALT_MODE_FIXED:
-                rescueState.intent.returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
-                break;
-            case GPS_RESCUE_ALT_MODE_CURRENT:
+        case GPS_RESCUE_ALT_MODE_FIXED:
+            rescueState.intent.returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
+            break;
+        case GPS_RESCUE_ALT_MODE_CURRENT:
                 // climb above current altitude, but always return at least initial height above takeoff point, in case current altitude was negative
-                rescueState.intent.returnAltitudeCm = fmaxf(initialClimbCm, getAltitudeCmControl() + initialClimbCm);
-                break;
-            case GPS_RESCUE_ALT_MODE_MAX:
-            default:
-                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
-                break;
+            rescueState.intent.returnAltitudeCm = fmaxf(initialClimbCm, getAltitudeCmControl() + initialClimbCm);
+            break;
+        case GPS_RESCUE_ALT_MODE_MAX:
+        default:
+            rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
+            break;
         }
     }
 }
@@ -216,7 +218,7 @@ static void rescueAttainPosition(bool newGpsData)
         gpsRescueAngle[AI_PITCH] = 0.0f;
         gpsRescueAngle[AI_ROLL] = 0.0f;
         return;
-     default:
+    default:
         break;
     }
 
@@ -367,7 +369,7 @@ static void performSanityChecks(void)
         // Default to 20s semi-controlled descent with impact detection, then abort
         rescueState.phase = RESCUE_DO_NOTHING;
 
-        switch(gpsRescueConfig()->sanityChecks) {
+        switch (gpsRescueConfig()->sanityChecks) {
         case RESCUE_SANITY_ON:
             rescueState.phase = RESCUE_ABORT;
             break;
@@ -400,7 +402,7 @@ static void performSanityChecks(void)
 
     //  Things that should run at a low refresh rate (such as flyaway detection, etc) will be checked at 1Hz
     const timeDelta_t dTime = cmpTimeUs(currentTimeUs, previousTimeUs);
-    if (dTime < 1000000) { //1hz
+    if (dTime < 1000000) { // 1hz
         return;
     }
     previousTimeUs = currentTimeUs;
@@ -415,9 +417,9 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 30);
         if (rescueState.intent.secondsFailing >= 30) {
 #ifdef USE_MAG
-            //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
+            // If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
             if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
-                //Try again with mag disabled
+                // Try again with mag disabled
                 magForceDisable = true;
                 rescueState.intent.secondsFailing = 0;
             } else
@@ -637,7 +639,7 @@ static bool checkGPSRescueIsAvailable(void)
 
     //  Things that should run at a low refresh rate >> ~1hz
     const timeDelta_t dTime = cmpTimeUs(currentTimeUs, previousTimeUs);
-    if (dTime < 1000000) { //1hz
+    if (dTime < 1000000) { // 1hz
         if (noGPSfix || lowsats) {
             result = false;
         }
@@ -719,7 +721,7 @@ static void descend(bool newGpsData)
     rescueState.intent.targetAltitudeCm -= altitudeStepCm;
 }
 
-static void initialiseRescueValues (void)
+static void initialiseRescueValues(void)
 {
     rescueState.intent.secondsFailing = 0; // reset the sanity check timer
     rescueState.intent.yawAttenuator = 0.0f; // no yaw in the climb
@@ -782,7 +784,7 @@ void gpsRescueUpdate(void)
                     rescueState.intent.descentDistanceM = 0.5f * gpsRescueConfig()->minStartDistM;
                 }
                 // otherwise behave as for a normal rescue
-                initialiseRescueValues ();
+                initialiseRescueValues();
                 returnAltitudeLow = getAltitudeCmControl() < rescueState.intent.returnAltitudeCm;
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }

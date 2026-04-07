@@ -49,30 +49,30 @@
 #define POSHOLD_TASK_RATE_HZ 100
 #endif
 
-#define ALTITUDE_D_SCALE       0.005f
-#define ALTITUDE_F_SCALE       0.005f
+#define ALTITUDE_D_SCALE 0.005f
+#define ALTITUDE_F_SCALE 0.005f
 
 // Cascaded alt hold: outer loop altitude (P+I) -> vz cmd; inner loop velocity (P+I) -> throttle.
 // CLI altitudeP/I/D/F map to outer P, outer+inner I split, inner P (velocity), and feedforward gain on vz pilot input.
-#define ALTITUDE_OUTER_P_SCALE       0.04f     // (cm/s) / (cm) per altitudeP unit
-#define ALTITUDE_OUTER_I_SCALE       0.0008f // scale on altitudeI for outer integral (cm/s bias / accumulated from pos err)
-#define ALTITUDE_INNER_I_SCALE       0.00012f // scale on altitudeI for inner integral (throttle, similar order to legacy ALTITUDE_I_SCALE)
-#define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
-#define ALTITUDE_OUTER_IWINDUP_CM_S      150.0f
-#define ALTITUDE_INNER_IWINDUP_THROTTLE  200.0f
-#define ALTITUDE_FF_KF_REF               (30.0f * ALTITUDE_F_SCALE) // "100%" feedforward when altitudeF CLI = 30
+#define ALTITUDE_OUTER_P_SCALE            0.04f     // (cm/s) / (cm) per altitudeP unit
+#define ALTITUDE_OUTER_I_SCALE            0.0008f // scale on altitudeI for outer integral (cm/s bias / accumulated from pos err)
+#define ALTITUDE_INNER_I_SCALE            0.00012f // scale on altitudeI for inner integral (throttle, similar order to legacy ALTITUDE_I_SCALE)
+#define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S 1500.0f
+#define ALTITUDE_OUTER_IWINDUP_CM_S       150.0f
+#define ALTITUDE_INNER_IWINDUP_THROTTLE   200.0f
+#define ALTITUDE_FF_KF_REF                (30.0f * ALTITUDE_F_SCALE) // "100%" feedforward when altitudeF CLI = 30
 
 // Using optical flow PID scales as the unified set
-#define POSITION_P_SCALE       0.0033f
-#define POSITION_I_SCALE       0.0007f
-#define POSITION_II_SCALE      (0.12f * POSITION_I_SCALE)
-#define POSITION_D_SCALE       0.00011f
+#define POSITION_P_SCALE  0.0033f
+#define POSITION_I_SCALE  0.0007f
+#define POSITION_II_SCALE (0.12f * POSITION_I_SCALE)
+#define POSITION_D_SCALE  0.00011f
 
 #define POSITION_IWINDUP_LIMIT 250.0f
 // Horizontal speed below this (cm/s) ends braking and snaps hold point; fusion noise may need 5–20.
 #define SETTLING_VELOCITY_THRESHOLD 5.0f
 
-#define UPSAMPLING_CUTOFF_HZ   5.0f
+#define UPSAMPLING_CUTOFF_HZ 5.0f
 
 static pidCoefficient_t positionPidCoeffs;
 
@@ -92,7 +92,8 @@ static float altitudeVelIntegral = 0.0f; // inner I: integral of velocity error 
 static float throttleOut = 0.0f;
 
 // Per-axis position PID state (earth frame)
-typedef enum {
+typedef enum
+{
     EF_EAST = 0,
     EF_NORTH
 } efAxis_e;
@@ -192,10 +193,10 @@ void autopilotInit(void)
         altitudeFfKfNorm = (cfg->altitudeF * ALTITUDE_F_SCALE) / ALTITUDE_FF_KF_REF;
     }
 
-    positionPidCoeffs.Kp  = cfg->positionP  * POSITION_P_SCALE;
-    positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
+    positionPidCoeffs.Kp = cfg->positionP * POSITION_P_SCALE;
+    positionPidCoeffs.Ki = cfg->positionI * POSITION_I_SCALE;
     positionPidCoeffs.Kii = cfg->positionII * POSITION_II_SCALE;
-    positionPidCoeffs.Kd  = cfg->positionD  * POSITION_D_SCALE;
+    positionPidCoeffs.Kd = cfg->positionD * POSITION_D_SCALE;
 
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, 0.01f);
     resetUpsampleFilters();
@@ -304,7 +305,7 @@ bool positionControl(void)
     }
 
     // Position error in ENU earth frame (cm)
-    const float errorEast  = est->position.x - targetPosition.x;
+    const float errorEast = est->position.x - targetPosition.x;
     const float errorNorth = est->position.y - targetPosition.y;
     const float distanceCm = sqrtf(errorEast * errorEast + errorNorth * errorNorth);
 
@@ -314,14 +315,14 @@ bool positionControl(void)
     }
 
     // Velocity from KF (already filtered, earth frame, cm/s)
-    const float velEast  = est->velocity.x;
+    const float velEast = est->velocity.x;
     const float velNorth = est->velocity.y;
-    const float speedXY  = sqrtf(velEast * velEast + velNorth * velNorth);
+    const float speedXY = sqrtf(velEast * velEast + velNorth * velNorth);
 
     // Run PID for each earth-frame axis
-    const float errors[EF_AXIS_COUNT]     = { errorEast, errorNorth };
-    const float velocities[EF_AXIS_COUNT] = { velEast,   velNorth };
-    vector2_t pidSumEF = {{ 0, 0 }};
+    const float errors[EF_AXIS_COUNT] = {errorEast, errorNorth};
+    const float velocities[EF_AXIS_COUNT] = {velEast, velNorth};
+    vector2_t pidSumEF = {{0, 0}};
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         const float velocity = velocities[axis];
@@ -338,9 +339,7 @@ bool positionControl(void)
             const float error = errors[axis];
             pidI = error * positionPidCoeffs.Ki;
             posSlowIntegral[axis] += error * dt;
-            posSlowIntegral[axis] = constrainf(posSlowIntegral[axis],
-                                                -POSITION_IWINDUP_LIMIT,
-                                                POSITION_IWINDUP_LIMIT);
+            posSlowIntegral[axis] = constrainf(posSlowIntegral[axis], -POSITION_IWINDUP_LIMIT, POSITION_IWINDUP_LIMIT);
             pidII = posSlowIntegral[axis] * positionPidCoeffs.Kii;
         } else {
             posSlowIntegral[axis] = 0.0f;
@@ -384,8 +383,8 @@ bool positionControl(void)
         const float angle = DECIDEGREES_TO_RADIANS(attitude.values.yaw - 900);
         vector2_t pidBodyFrame;
         vector2Rotate(&pidBodyFrame, &pidSumEF, angle);
-            anglesBF.v[AI_ROLL]  = -pidBodyFrame.y;
-            anglesBF.v[AI_PITCH] = -pidBodyFrame.x;
+        anglesBF.v[AI_ROLL] = -pidBodyFrame.y;
+        anglesBF.v[AI_PITCH] = -pidBodyFrame.x;
 
         // Limit angle vector
         const float mag = vector2Norm(&anglesBF);

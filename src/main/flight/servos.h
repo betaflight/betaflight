@@ -25,7 +25,8 @@
 #include "drivers/servo_impl.h"
 
 // These must be consecutive, see 'reversedSources'
-enum {
+enum
+{
     INPUT_STABILIZED_ROLL = 0,
     INPUT_STABILIZED_PITCH,
     INPUT_STABILIZED_YAW,
@@ -44,7 +45,8 @@ enum {
 };
 
 // target servo channels
-typedef enum {
+typedef enum
+{
     SERVO_GIMBAL_PITCH = 0,
     SERVO_GIMBAL_ROLL = 1,
     SERVO_FLAPS = 2,

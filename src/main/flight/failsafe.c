@@ -72,17 +72,17 @@ PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CO
 #endif
 
 PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
-    .failsafe_throttle = 1000,                           // default throttle off.
-    .failsafe_throttle_low_delay = 100,                  // default throttle low delay for "just disarm" on failsafe condition
-    .failsafe_delay = 15,                                // 1.5 sec stage 1 period, can regain control on signal recovery, at idle in drop mode
-    .failsafe_landing_time = 60,                         // 60 sec allowed in landing phase, if enabled, before disarm
-    .failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1, // default failsafe switch action is identical to rc link loss
-    .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,    // default full failsafe procedure is 0: auto-landing
-    .failsafe_recovery_delay = DEFAULT_FAILSAFE_RECOVERY_DELAY,
-    .failsafe_stick_threshold = 30                       // 30 percent of stick deflection to exit GPS Rescue procedure
+                  .failsafe_throttle = 1000,                           // default throttle off.
+                  .failsafe_throttle_low_delay = 100,                  // default throttle low delay for "just disarm" on failsafe condition
+                  .failsafe_delay = 15,                                // 1.5 sec stage 1 period, can regain control on signal recovery, at idle in drop mode
+                  .failsafe_landing_time = 60,                         // 60 sec allowed in landing phase, if enabled, before disarm
+                  .failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1, // default failsafe switch action is identical to rc link loss
+                  .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT,    // default full failsafe procedure is 0: auto-landing
+                  .failsafe_recovery_delay = DEFAULT_FAILSAFE_RECOVERY_DELAY,
+                  .failsafe_stick_threshold = 30                       // 30 percent of stick deflection to exit GPS Rescue procedure
 );
 
-const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
+const char *const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
     "AUTO-LAND",
     "DROP",
 #ifdef USE_GPS_RESCUE
@@ -96,7 +96,7 @@ const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT] = {
 void failsafeReset(void)
 {
     failsafeState.rxDataFailurePeriod = failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
-    if (failsafeState.rxDataFailurePeriod < PERIOD_RXDATA_RECOVERY){
+    if (failsafeState.rxDataFailurePeriod < PERIOD_RXDATA_RECOVERY) {
         // avoid transients and ensure reliable arming for minimum of PERIOD_RXDATA_RECOVERY (100ms)
         failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_RECOVERY;
     }
@@ -261,171 +261,171 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
         reprocessState = false;
 
         switch (failsafeState.phase) {
-            case FAILSAFE_IDLE:
-                failsafeState.boxFailsafeSwitchWasOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+        case FAILSAFE_IDLE:
+            failsafeState.boxFailsafeSwitchWasOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
                 // store and use the switch state as it was at the start of the failsafe
-                if (armed) {
+            if (armed) {
                     // Track throttle command below minimum time
-                    if (calculateThrottleStatus() != THROTTLE_LOW) {
-                        failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
-                    }
-                    if (failsafeState.boxFailsafeSwitchWasOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
+                if (calculateThrottleStatus() != THROTTLE_LOW) {
+                    failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+                }
+                if (failsafeState.boxFailsafeSwitchWasOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
                         // Failsafe switch is configured as KILL switch and is switched ON
+                    failsafeState.active = true;
+                    failsafeState.events++;
+                    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                    failsafeState.phase = FAILSAFE_LANDED;
+                        //  go to landed immediately
+                    failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
+                        //  allow re-arming 1 second after Rx recovery, customisable
+                    reprocessState = true;
+                } else if (!receivingRxData) {
+                    if (millis() > failsafeState.throttleLowPeriod
+#ifdef USE_GPS_RESCUE
+                        && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
+#endif
+                    ) {
+                            //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
+                            //  protects against false arming when the Tx is powered up after the quad
                         failsafeState.active = true;
                         failsafeState.events++;
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                         failsafeState.phase = FAILSAFE_LANDED;
-                        //  go to landed immediately
-                        failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                        //  allow re-arming 1 second after Rx recovery, customisable
-                        reprocessState = true;
-                    } else if (!receivingRxData) {
-                        if (millis() > failsafeState.throttleLowPeriod
-#ifdef USE_GPS_RESCUE
-                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
-#endif
-                            ) {
-                            //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
-                            //  protects against false arming when the Tx is powered up after the quad
-                            failsafeState.active = true;
-                            failsafeState.events++;
-                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                            failsafeState.phase = FAILSAFE_LANDED;
                             //  go directly to FAILSAFE_LANDED
-                            failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
+                        failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
                             //  allow re-arming 1 second after Rx recovery, customisable
-                        } else {
-                            failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
-                        }
-                        reprocessState = true;
-                    }
-                } else {
-                    // When NOT armed, enable failsafe mode to show warnings in OSD
-                    if (failsafeState.boxFailsafeSwitchWasOn) {
-                        ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                     } else {
-                        DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                        failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
                     }
-                    // Throttle low period expired (= low long enough for JustDisarm)
-                    failsafeState.throttleLowPeriod = 0;
-                }
-                break;
-
-            case FAILSAFE_RX_LOSS_DETECTED:
-                if (receivingRxData) {
-                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                } else {
-                    failsafeState.active = true;
-                    failsafeState.events++;
-                    switch (failsafeConfig()->failsafe_procedure) {
-                        case FAILSAFE_PROCEDURE_AUTO_LANDING:
-                            //  Enter Stage 2 with settings for landing mode
-                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                            failsafeState.phase = FAILSAFE_LANDING;
-                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
-                            break;
-
-                        case FAILSAFE_PROCEDURE_DROP_IT:
-                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                            failsafeState.phase = FAILSAFE_LANDED;
-                            //  go directly to FAILSAFE_LANDED
-                            break;
-#ifdef USE_GPS_RESCUE
-                        case FAILSAFE_PROCEDURE_GPS_RESCUE:
-                            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-                            failsafeState.phase = FAILSAFE_GPS_RESCUE;
-                            break;
-#endif
-                    }
-                    if (failsafeState.boxFailsafeSwitchWasOn) {
-                        failsafeState.receivingRxDataPeriodPreset = 0;
-                        // recover immediately if failsafe was triggered by a switch
-                    } else {
-                        failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
-                        // recover from true link loss failsafe 1 second after RC Link recovers
-                    }
-                }
-                reprocessState = true;
-                break;
-
-            case FAILSAFE_LANDING:
-                if (receivingRxData) {
-                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
+                }
+            } else {
+                    // When NOT armed, enable failsafe mode to show warnings in OSD
+                if (failsafeState.boxFailsafeSwitchWasOn) {
+                    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                 } else {
-                    if (armed) {
-                        beeperMode = BEEPER_RX_LOST_LANDING;
-                    }
-                    if (failsafeShouldHaveCausedLandingByNow() || crashRecoveryModeActive() || !armed) {
+                    DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                }
+                    // Throttle low period expired (= low long enough for JustDisarm)
+                failsafeState.throttleLowPeriod = 0;
+            }
+            break;
+
+        case FAILSAFE_RX_LOSS_DETECTED:
+            if (receivingRxData) {
+                failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+            } else {
+                failsafeState.active = true;
+                failsafeState.events++;
+                switch (failsafeConfig()->failsafe_procedure) {
+                case FAILSAFE_PROCEDURE_AUTO_LANDING:
+                            //  Enter Stage 2 with settings for landing mode
+                    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                    failsafeState.phase = FAILSAFE_LANDING;
+                    failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
+                    break;
+
+                case FAILSAFE_PROCEDURE_DROP_IT:
+                    ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                    failsafeState.phase = FAILSAFE_LANDED;
+                            //  go directly to FAILSAFE_LANDED
+                    break;
+#ifdef USE_GPS_RESCUE
+                case FAILSAFE_PROCEDURE_GPS_RESCUE:
+                    ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+                    failsafeState.phase = FAILSAFE_GPS_RESCUE;
+                    break;
+#endif
+                }
+                if (failsafeState.boxFailsafeSwitchWasOn) {
+                    failsafeState.receivingRxDataPeriodPreset = 0;
+                        // recover immediately if failsafe was triggered by a switch
+                } else {
+                    failsafeState.receivingRxDataPeriodPreset = failsafeState.rxDataRecoveryPeriod;
+                        // recover from true link loss failsafe 1 second after RC Link recovers
+                }
+            }
+            reprocessState = true;
+            break;
+
+        case FAILSAFE_LANDING:
+            if (receivingRxData) {
+                failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                reprocessState = true;
+            } else {
+                if (armed) {
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                }
+                if (failsafeShouldHaveCausedLandingByNow() || crashRecoveryModeActive() || !armed) {
                         // to manually disarm while Landing, aux channels must be enabled
                         // note also that disarming via arm box must be possible during failsafe in rc_controls.c
                         // this should be blocked during signal not received periods, to avoid false disarms
                         // but should be allowed otherwise, eg after signal recovers, or during switch initiated failsafe
-                        failsafeState.phase = FAILSAFE_LANDED;
-                        reprocessState = true;
-                    }
+                    failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
                 }
-                break;
+            }
+            break;
 #ifdef USE_GPS_RESCUE
-            case FAILSAFE_GPS_RESCUE:
-                if (receivingRxData) {
-                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
+        case FAILSAFE_GPS_RESCUE:
+            if (receivingRxData) {
+                if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
                         // exits the rescue immediately if failsafe was initiated by switch, otherwise
                         // requires stick input to exit the rescue after a true Rx loss failsafe
                         // NB this test requires stick inputs to be received during GPS Rescue see PR #7936 for rationale
-                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                        reprocessState = true;
-                    }
-                } else {
-                    if (armed) {
-                        beeperMode = BEEPER_RX_LOST_LANDING;
-                    } else {
-                        // to manually disarm while in GPS Rescue, aux channels must be enabled
-                        failsafeState.phase = FAILSAFE_LANDED;
-                        reprocessState = true;
-                    }
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
                 }
-                break;
+            } else {
+                if (armed) {
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                } else {
+                        // to manually disarm while in GPS Rescue, aux channels must be enabled
+                    failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
+                }
+            }
+            break;
 #endif
-            case FAILSAFE_LANDED:
-                disarm(DISARM_REASON_FAILSAFE);
-                setArmingDisabled(ARMING_DISABLED_FAILSAFE);
+        case FAILSAFE_LANDED:
+            disarm(DISARM_REASON_FAILSAFE);
+            setArmingDisabled(ARMING_DISABLED_FAILSAFE);
                 //  prevent accidently rearming by an intermittent rx link
-                failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset;
+            failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset;
                 //  customise receivingRxDataPeriod according to type of failsafe
-                failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
-                reprocessState = true;
-                break;
+            failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
+            reprocessState = true;
+            break;
 
-            case FAILSAFE_RX_LOSS_MONITORING:
+        case FAILSAFE_RX_LOSS_MONITORING:
                 // receivingRxData is true when we get valid Rx Data and the recovery period has expired
                 // for switch initiated failsafes, the recovery period is zero
-                if (receivingRxData) {
-                    if (millis() > failsafeState.receivingRxDataPeriod) {
+            if (receivingRxData) {
+                if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now
-                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
-                        reprocessState = true;
-                    }
-                } else {
-                    failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset;
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
                 }
-                break;
+            } else {
+                failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset;
+            }
+            break;
 
-            case FAILSAFE_RX_LOSS_RECOVERED:
+        case FAILSAFE_RX_LOSS_RECOVERED:
                 // Entering IDLE, terminating failsafe, reset throttle low timer
-                failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
-                failsafeState.phase = FAILSAFE_IDLE;
-                failsafeState.active = false;
+            failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+            failsafeState.phase = FAILSAFE_IDLE;
+            failsafeState.active = false;
 #ifdef USE_GPS_RESCUE
-                DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+            DISABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
 #endif
-                DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);
-                reprocessState = true;
-                break;
+            DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
+            unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);
+            reprocessState = true;
+            break;
 
-            default:
-                break;
+        default:
+            break;
         }
 
         DEBUG_SET(DEBUG_FAILSAFE, 0, failsafeState.boxFailsafeSwitchWasOn);
