@@ -952,17 +952,17 @@ _TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
 #  endif
 #if USED_TIMERS & TIM_N(12)
-#  if defined(STM32H5)
+#  if defined(STM32H5) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM12_IRQHandler, 12);
 #  else
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #  endif
 #endif
-#if defined(STM32H5) && (USED_TIMERS & TIM_N(13))
+#if (defined(STM32H5) || defined(STM32N6)) && (USED_TIMERS & TIM_N(13))
 _TIM_IRQ_HANDLER(TIM13_IRQHandler, 13);
 #endif
-#if (defined(STM32H5) || defined(STM32H7)) && (USED_TIMERS & TIM_N(14))
-#  if defined(STM32H5)
+#if (defined(STM32H5) || defined(STM32H7) || defined(STM32N6)) && (USED_TIMERS & TIM_N(14))
+#  if defined(STM32H5) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM14_IRQHandler, 14);
 #  else
 _TIM_IRQ_HANDLER(TIM8_TRG_COM_TIM14_IRQHandler, 14);
