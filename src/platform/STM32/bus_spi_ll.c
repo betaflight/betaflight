@@ -185,6 +185,8 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     dmaInitTx->SrcBurstLength = 1;
     dmaInitTx->DestBurstLength = 1;
     dmaInitTx->Priority = LL_DMA_LOW_PRIORITY_LOW_WEIGHT;
+    dmaInitTx->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    dmaInitTx->Mode = LL_DMA_NORMAL;
     dmaInitTx->DestAddress = (uint32_t)&instance->TXDR;
 
     if (bus->dmaRx) {
@@ -201,6 +203,8 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->SrcBurstLength = 1;
         dmaInitRx->DestBurstLength = 1;
         dmaInitRx->Priority = LL_DMA_LOW_PRIORITY_MID_WEIGHT;
+        dmaInitRx->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+        dmaInitRx->Mode = LL_DMA_NORMAL;
         dmaInitRx->SrcAddress = (uint32_t)&instance->RXDR;
     }
 #elif defined(STM32N6)
