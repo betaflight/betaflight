@@ -1,10 +1,10 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_h5x3_2m.ld
+**  File        : stm32_flash_h5xx_1m.ld
 **
-**              : Linker script for STM32H563ZITx Device from STM32H5 series
-**                      2048Kbytes FLASH
+**              : Linker script for STM32H5xx devices from STM32H5 series
+**                      1024Kbytes FLASH
 **                      640Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
@@ -21,10 +21,10 @@ ENTRY(Reset_Handler)
 /*
 0x20000000 to 0x3001FFFF  640K SRAM
 
-0x08000000 to 0x081FFFFF 2048K full flash,
+0x08000000 to 0x080FFFFF 1024K full flash,
 0x08000000 to 0x0801FFFF  128K isr vector, startup code,
 0x08020000 to 0x0803FFFF  128K config, // FLASH_Sector_1
-0x08040000 to 0x081FFFFF 1792K firmware,
+0x08040000 to 0x080FFFFF  768K firmware,
 */
 
 /* Specify the memory areas */
@@ -32,7 +32,7 @@ MEMORY
 {
     FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
     FLASH_CONFIG (r)  : ORIGIN = 0x08020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = 1792K
+    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = 768K
 
     RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 640K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
@@ -40,9 +40,6 @@ MEMORY
 
 REGION_ALIAS("STACKRAM", RAM)
 REGION_ALIAS("FASTRAM", RAM)
-
-/* Entry Point */
-ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* Reserve 2 x 4bytes for info across reset */

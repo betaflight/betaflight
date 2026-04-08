@@ -109,21 +109,30 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
 #
+# H562xx : 2M FLASH, 640KB SRAM (no Ethernet)
+#
+ifeq ($(TARGET_MCU),STM32H562xx)
+DEVICE_FLAGS       += -DSTM32H562xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h5xx_2m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h562xx.s
+MCU_FLASH_SIZE     := 2048
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+#
 # H563xx : 2M FLASH, 640KB SRAM
 #
-ifeq ($(TARGET_MCU),STM32H563xx)
+else ifeq ($(TARGET_MCU),STM32H563xx)
 DEVICE_FLAGS       += -DSTM32H563xx
-DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h563_2m.ld
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h5xx_2m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32h563xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
-# end H563xx
+# end H5xx
 else
 $(error Unknown MCU for STM32H5 target)
 endif
@@ -208,6 +217,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/STM32H5/Drivers/CMSIS/DSP
-DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM33
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk
