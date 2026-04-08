@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -48,10 +44,12 @@
 #include "apm32f4xx_ddl_rcm.h"
 
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
-#endif /* USE_FULL_ASSERT */
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
+#endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
   * @{
@@ -59,7 +57,7 @@
 
 #if defined (SPI1) || defined (SPI2) || defined (SPI3) || defined (SPI4) || defined (SPI5) || defined(SPI6)
 
-/** @addtogroup SPI_DDL
+/** @defgroup SPI_DDL
   * @{
   */
 
@@ -67,21 +65,21 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* Private constants ---------------------------------------------------------*/
-/** @defgroup SPI_DDL_Private_Constants SPI Private Constants
+/** @addtogroup SPI_DDL_Private_Constants SPI Private Constants
   * @{
   */
 /* SPI registers Masks */
-#define SPI_CTRL1_CLEAR_MASK                 (SPI_CTRL1_CPHA    | SPI_CTRL1_CPOL     | SPI_CTRL1_MSMCFG   | \
-                                            SPI_CTRL1_BRSEL      | SPI_CTRL1_LSBSEL | SPI_CTRL1_ISSEL    | \
-                                            SPI_CTRL1_SSEN     | SPI_CTRL1_RXOMEN   | SPI_CTRL1_DFLSEL    | \
-                                            SPI_CTRL1_CRCNXT | SPI_CTRL1_CRCEN    | SPI_CTRL1_BMOEN | \
+#define SPI_CTRL1_CLEAR_MASK               (SPI_CTRL1_CPHA   | SPI_CTRL1_CPOL   | SPI_CTRL1_MSMCFG  | \
+                                            SPI_CTRL1_BRSEL  | SPI_CTRL1_LSBSEL | SPI_CTRL1_ISSEL   | \
+                                            SPI_CTRL1_SSEN   | SPI_CTRL1_RXOMEN | SPI_CTRL1_DFLSEL  | \
+                                            SPI_CTRL1_CRCNXT | SPI_CTRL1_CRCEN  | SPI_CTRL1_BMOEN   | \
                                             SPI_CTRL1_BMEN)
 /**
   * @}
   */
 
 /* Private macros ------------------------------------------------------------*/
-/** @defgroup SPI_DDL_Private_Macros SPI Private Macros
+/** @addtogroup SPI_DDL_Private_Macros SPI Private Macros
   * @{
   */
 #define IS_DDL_SPI_TRANSFER_DIRECTION(__VALUE__) (((__VALUE__) == DDL_SPI_FULL_DUPLEX)       \
@@ -330,6 +328,8 @@ void DDL_SPI_StructInit(DDL_SPI_InitTypeDef *SPI_InitStruct)
   * @}
   */
 
+#if defined(APM32F402xx) || defined(APM32F403xx) || defined(APM32F405xx) || defined(APM32F407xx) || \
+    defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
 /** @addtogroup I2S_DDL
   * @{
   */
@@ -337,20 +337,20 @@ void DDL_SPI_StructInit(DDL_SPI_InitTypeDef *SPI_InitStruct)
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
-/** @defgroup I2S_DDL_Private_Constants I2S Private Constants
+/** @addtogroup I2S_DDL_Private_Constants I2S Private Constants
   * @{
   */
 /* I2S registers Masks */
-#define I2S_I2SCFG_CLEAR_MASK             (SPI_I2SCFG_CHLEN   | SPI_I2SCFG_DATALEN | \
+#define I2S_I2SCFG_CLEAR_MASK              (SPI_I2SCFG_CHLEN  | SPI_I2SCFG_DATALEN | \
                                             SPI_I2SCFG_CPOL   | SPI_I2SCFG_I2SSSEL | \
-                                            SPI_I2SCFG_I2SMOD  | SPI_I2SCFG_MODESEL )
+                                            SPI_I2SCFG_I2SMOD | SPI_I2SCFG_MODESEL )
 
 #define I2S_I2SPSC_CLEAR_MASK               0x0002U
 /**
   * @}
   */
 /* Private macros ------------------------------------------------------------*/
-/** @defgroup I2S_DDL_Private_Macros I2S Private Macros
+/** @addtogroup I2S_DDL_Private_Macros I2S Private Macros
   * @{
   */
 
@@ -427,6 +427,9 @@ ErrorStatus DDL_I2S_Init(SPI_TypeDef *SPIx, DDL_I2S_InitTypeDef *I2S_InitStruct)
   uint32_t i2sodd = 0U;
   uint32_t packetlength = 1U;
   uint32_t tmp;
+#if !defined(RCM_PLLI2S_SUPPORT)
+  DDL_RCM_ClocksTypeDef rcm_clocks;
+#endif /* RCM_PLLI2S_SUPPORT */
   uint32_t sourceclock;
   ErrorStatus status = ERROR;
 
@@ -476,10 +479,16 @@ ErrorStatus DDL_I2S_Init(SPI_TypeDef *SPIx, DDL_I2S_InitTypeDef *I2S_InitStruct)
         packetlength = 2U;
       }
 
+#if defined(RCM_PLLI2S_SUPPORT)
       /* If an external I2S clock has to be used, the specific define should be set
-      in the project configuration or in the apm32f4xx_ll_rcc.h file */
+      in the project configuration or in the apm32f4xx_ddl_rcm.h file */
       /* Get the I2S source clock value */
       sourceclock = DDL_RCM_GetI2SClockFreq(DDL_RCM_I2S1_CLKSOURCE);
+#else
+      /* I2S Clock source is System clock: Get System Clock frequency */
+      DDL_RCM_GetSystemClocksFreq(&rcm_clocks);
+      sourceclock = rcm_clocks.SYSCLK_Frequency;
+#endif /* RCM_PLLI2S_SUPPORT */
 
       /* Compute the Real divider depending on the MCLK output state with a floating point */
       if (I2S_InitStruct->MCLKOutput == DDL_I2S_MCLK_OUTPUT_ENABLE)
@@ -582,7 +591,9 @@ ErrorStatus  DDL_I2S_InitFullDuplex(SPI_TypeDef *I2Sxext, DDL_I2S_InitTypeDef *I
   ErrorStatus status = ERROR;
 
   /* Check the I2S parameters */
+#if defined(I2S2ext) || defined(I2S3ext)
   ASSERT_PARAM(IS_I2S_EXT_ALL_INSTANCE(I2Sxext));
+#endif /* I2S2ext || I2S3ext */
   ASSERT_PARAM(IS_DDL_I2S_MODE(I2S_InitStruct->Mode));
   ASSERT_PARAM(IS_DDL_I2S_STANDARD(I2S_InitStruct->Standard));
   ASSERT_PARAM(IS_DDL_I2S_DATAFORMAT(I2S_InitStruct->DataFormat));
@@ -638,6 +649,8 @@ ErrorStatus  DDL_I2S_InitFullDuplex(SPI_TypeDef *I2Sxext, DDL_I2S_InitTypeDef *I
 /**
   * @}
   */
+
+#endif /* APM32F402xx || APM32F403xx || APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 
 #endif /* defined (SPI1) || defined (SPI2) || defined (SPI3) || defined (SPI4) || defined (SPI5) || defined(SPI6) */
 

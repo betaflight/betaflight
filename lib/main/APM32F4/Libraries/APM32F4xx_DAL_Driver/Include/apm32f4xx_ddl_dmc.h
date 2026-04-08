@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,18 +27,14 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef APM32F4xx_DDL_DMC_H
@@ -87,7 +83,12 @@ extern "C" {
                                               ((__ROW__) == DMC_SDRAM_ROW_BITS_NUM_14) || \
                                               ((__ROW__) == DMC_SDRAM_ROW_BITS_NUM_15) || \
                                               ((__ROW__) == DMC_SDRAM_ROW_BITS_NUM_16))
+#if defined (APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define IS_DMC_MEMORY_WIDTH(__WIDTH__)        (((__WIDTH__) == DMC_SDRAM_MEM_BUS_WIDTH_8)  || \
+                                               ((__WIDTH__) == DMC_SDRAM_MEM_BUS_WIDTH_16))
+#else
 #define IS_DMC_MEMORY_WIDTH(__WIDTH__)        (((__WIDTH__) == DMC_SDRAM_MEM_BUS_WIDTH_16))
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 
 #define IS_DMC_CLK_PHASE(__PHASE__)          (((__PHASE__) == DMC_SDRAM_CLK_PHASE_NORMAL)  || \
                                               ((__PHASE__) == DMC_SDRAM_CLK_PHASE_REVERSE))
@@ -95,7 +96,11 @@ extern "C" {
 #define IS_DMC_RD_DELAY(__STATUS__)          (((__STATUS__) == DMC_SDRAM_RD_DELAY_ENABLE)  || \
                                               ((__STATUS__) == DMC_SDRAM_RD_DELAY_DISABLE))
 
+#if defined (APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define IS_DMC_RD_DELAY_CLK(__VALUE__)       (((__VALUE__) >= 1U) && ((__VALUE__) <= 32U))
+#else
 #define IS_DMC_RD_DELAY_CLK(__VALUE__)         ((__VALUE__) <= 7U)
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 
 #define IS_DMC_WRITE_PIPE(__STATUS__)         (((__STATUS__) == DMC_SDRAM_WRITE_PIPE_ENABLE)  || \
                                               ((__STATUS__) == DMC_SDRAM_WRITE_PIPE_DISABLE))
@@ -186,7 +191,8 @@ typedef struct
                                              This parameter can be a value of @ref DMC_SDRAM_RD_Delay_Enable.   */
 
   uint32_t RDDelayClk;                  /*!< Defines the RD delay clock.
-                                             This parameter can be a value between Min_Data = 0 and Max_Data = 7  */
+                                             This parameter can be a value between Min_Data = 0 and Max_Data = 7
+                                             This parameter can be a value between Min_Data = 1 and Max_Data = 32, only for APM32F423xx, APM32F425xx and APM32F427xx devices. */
 
   uint32_t WritePipe;                   /*!< Defines the Write pipe enable status.
                                              This parameter can be a value of @ref DMC_SDRAM_Write_Pipe_Enable.   */
@@ -313,7 +319,12 @@ typedef struct
 /** @defgroup DMC_SDRAM_Memory_Bus_Width DMC SDRAM Memory Bus Width
   * @{
   */
+#if defined (APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define DMC_SDRAM_MEM_BUS_WIDTH_8               (0x00UL << DMC_CFG_DWCFG_Pos)
+#define DMC_SDRAM_MEM_BUS_WIDTH_16              (0x01UL << DMC_CFG_DWCFG_Pos)
+#else
 #define DMC_SDRAM_MEM_BUS_WIDTH_16              (0x00UL << DMC_CFG_DWCFG_Pos)
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -542,7 +553,7 @@ typedef struct
   *            @arg DMC_SDRAM_FLAG_SELF_REFRESH: Self-refresh mode flag.
   * @retval The state of FLAG (SET or RESET).
   */
-#define __FMC_SDRAM_GET_FLAG(__INSTANCE__, __FLAG__)  (((__INSTANCE__)->CTRL1 & (__FLAG__)) == (__FLAG__))
+#define __DMC_SDRAM_GET_FLAG(__INSTANCE__, __FLAG__)  (((__INSTANCE__)->CTRL1 & (__FLAG__)) == (__FLAG__))
 
 
 /**

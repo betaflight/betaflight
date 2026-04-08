@@ -32,13 +32,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -150,6 +146,17 @@
   */
 
 #define GPIO_NUMBER           16U
+
+/* Definitions for bit manipulation of CFGLOW and CFGHIG register */
+#define  GPIO_CFG_MODE_INPUT         0x00000000u /*!< 00: Input mode (reset state)  */
+#define  GPIO_CFG_CFG_ANALOG         0x00000000u /*!< 00: Analog mode  */
+#define  GPIO_CFG_CFG_INPUT_FLOATING 0x00000004u /*!< 01: Floating input (reset state)  */
+#define  GPIO_CFG_CFG_INPUT_PU_PD    0x00000008u /*!< 10: Input with pull-up / pull-down  */
+#define  GPIO_CFG_CFG_GP_OUTPUT_PP   0x00000000u /*!< 00: General purpose output push-pull  */
+#define  GPIO_CFG_CFG_GP_OUTPUT_OD   0x00000004u /*!< 01: General purpose output Open-drain  */
+#define  GPIO_CFG_CFG_AF_OUTPUT_PP   0x00000008u /*!< 10: Alternate function output Push-pull  */
+#define  GPIO_CFG_CFG_AF_OUTPUT_OD   0x0000000Cu /*!< 11: Alternate function output Open-drain  */
+
 /**
   * @}
   */
@@ -191,6 +198,10 @@ void DAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
   uint32_t ioposition = 0x00U;
   uint32_t iocurrent = 0x00U;
   uint32_t temp = 0x00U;
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  __IO uint32_t *configregister; /* Store the address of CRL or CRH register based on pin number */
+  uint32_t registeroffset;       /* offset used during computation of CNF and MODE bits placement inside CRL or CRH register */
+#endif /* APM32F403xx || APM32F402xx */
 
   /* Check the parameters */
   ASSERT_PARAM(IS_GPIO_ALL_INSTANCE(GPIOx));
@@ -208,6 +219,77 @@ void DAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
     if(iocurrent == ioposition)
     {
       /*--------------------- GPIO Mode Configuration ------------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+      /* Based on the required mode, filling config variable with MODEy[1:0] and CNFy[3:2] corresponding bits */
+      switch (GPIO_Init->Mode)
+      {
+        case GPIO_MODE_OUTPUT_PP:
+          /* Check the Speed parameter */
+          ASSERT_PARAM(IS_GPIO_SPEED(GPIO_Init->Speed));
+          temp = GPIO_Init->Speed + GPIO_CFG_CFG_GP_OUTPUT_PP;
+          break;
+
+        case GPIO_MODE_OUTPUT_OD:
+          /* Check the Speed parameter */
+          ASSERT_PARAM(IS_GPIO_SPEED(GPIO_Init->Speed));
+          temp = GPIO_Init->Speed + GPIO_CFG_CFG_GP_OUTPUT_OD;
+          break;
+
+        case GPIO_MODE_AF_PP:
+          /* Check the Speed parameter */
+          ASSERT_PARAM(IS_GPIO_SPEED(GPIO_Init->Speed));
+          temp = GPIO_Init->Speed + GPIO_CFG_CFG_AF_OUTPUT_PP;
+          break;
+
+        case GPIO_MODE_AF_OD:
+          /* Check the Speed parameter */
+          ASSERT_PARAM(IS_GPIO_SPEED(GPIO_Init->Speed));
+          temp = GPIO_Init->Speed + GPIO_CFG_CFG_AF_OUTPUT_OD;
+          break;
+
+        case GPIO_MODE_ANALOG:
+          temp = GPIO_CFG_MODE_INPUT + GPIO_CFG_CFG_ANALOG;
+          break;
+
+        case GPIO_MODE_INPUT:
+        case GPIO_MODE_IT_RISING:
+        case GPIO_MODE_IT_FALLING:
+        case GPIO_MODE_IT_RISING_FALLING:
+        case GPIO_MODE_EVT_RISING:
+        case GPIO_MODE_EVT_FALLING:
+        case GPIO_MODE_EVT_RISING_FALLING:
+          /* Check the Pull parameter */
+          ASSERT_PARAM(IS_GPIO_PULL(GPIO_Init->Pull));
+          if (GPIO_Init->Pull == GPIO_NOPULL)
+          {
+            temp = GPIO_CFG_MODE_INPUT + GPIO_CFG_CFG_INPUT_FLOATING;
+          }
+          else if (GPIO_Init->Pull == GPIO_PULLUP)
+          {
+            temp = GPIO_CFG_MODE_INPUT + GPIO_CFG_CFG_INPUT_PU_PD;
+            /* Set the corresponding ODATA bit */
+            GPIOx->BSC = ioposition;
+          }
+          else /* GPIO_PULLDOWN */
+          {
+            temp = GPIO_CFG_MODE_INPUT + GPIO_CFG_CFG_INPUT_PU_PD;
+            /* Reset the corresponding ODATA bit */
+            GPIOx->BC = ioposition;
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      /* Check if the current bit belongs to first half or last half of the pin count number
+       in order to address CRH or CRL register*/
+      configregister = (iocurrent < GPIO_PIN_8) ? &GPIOx->CFGLOW     : &GPIOx->CFGHIG;
+      registeroffset = (iocurrent < GPIO_PIN_8) ? (position << 2u) : ((position - 8u) << 2u);
+
+      /* Apply the new configuration of the pin to the register */
+      MODIFY_REG((*configregister), ((GPIO_CFGLOW_MODE0 | GPIO_CFGLOW_CFG0) << registeroffset), (temp << registeroffset));
+#else
       /* In case of Output or Alternate function mode selection */
       if(((GPIO_Init->Mode & GPIO_MODE) == MODE_OUTPUT) || \
           (GPIO_Init->Mode & GPIO_MODE) == MODE_AF)
@@ -256,11 +338,20 @@ void DAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
       temp &= ~(GPIO_MODE_MODE0 << (position * 2U));
       temp |= ((GPIO_Init->Mode & GPIO_MODE) << (position * 2U));
       GPIOx->MODE = temp;
+#endif /* APM32F403xx || APM32F402xx */
 
       /*--------------------- EINT Mode Configuration ------------------------*/
       /* Configure the External Interrupt or event for the current IO */
       if((GPIO_Init->Mode & EINT_MODE) != 0x00U)
       {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+        /* Enable AFIO Clock */
+        __DAL_RCM_AFIO_CLK_ENABLE();
+        temp = AFIO->EINTSEL[position >> 2U];
+        temp &= ~(0x0FU << (4U * (position & 0x03U)));
+        temp |= ((uint32_t)(GPIO_GET_INDEX(GPIOx)) << (4U * (position & 0x03U)));
+        AFIO->EINTSEL[position >> 2U] = temp;
+#else
         /* Enable SYSCFG Clock */
         __DAL_RCM_SYSCFG_CLK_ENABLE();
 
@@ -268,6 +359,7 @@ void DAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
         temp &= ~(0x0FU << (4U * (position & 0x03U)));
         temp |= ((uint32_t)(GPIO_GET_INDEX(GPIOx)) << (4U * (position & 0x03U)));
         SYSCFG->EINTCFG[position >> 2U] = temp;
+#endif /* APM32F403xx || APM32F402xx */
 
         /* Clear Rising Falling edge configuration */
         temp = EINT->RTEN;
@@ -320,6 +412,10 @@ void DAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
   uint32_t ioposition = 0x00U;
   uint32_t iocurrent = 0x00U;
   uint32_t tmp = 0x00U;
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  __IO uint32_t *configregister; /* Store the address of CRL or CRH register based on pin number */
+  uint32_t registeroffset;
+#endif /* APM32F403xx || APM32F402xx */
 
   /* Check the parameters */
   ASSERT_PARAM(IS_GPIO_ALL_INSTANCE(GPIOx));
@@ -335,7 +431,11 @@ void DAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
     if(iocurrent == ioposition)
     {
       /*------------------------- EINT Mode Configuration --------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+      tmp = AFIO->EINTSEL[position >> 2U];
+#else
       tmp = SYSCFG->EINTCFG[position >> 2U];
+#endif /* APM32F403xx || APM32F402xx */
       tmp &= (0x0FU << (4U * (position & 0x03U)));
       if(tmp == ((uint32_t)(GPIO_GET_INDEX(GPIOx)) << (4U * (position & 0x03U))))
       {
@@ -349,10 +449,26 @@ void DAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
 
         /* Configure the External Interrupt or event for the current IO */
         tmp = 0x0FU << (4U * (position & 0x03U));
+#if defined(APM32F403xx) || defined(APM32F402xx)
+        AFIO->EINTSEL[position >> 2U] &= ~tmp;
+#else
         SYSCFG->EINTCFG[position >> 2U] &= ~tmp;
+#endif /* APM32F403xx || APM32F402xx */
       }
 
       /*------------------------- GPIO Mode Configuration --------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+      /* Check if the current bit belongs to first half or last half of the pin count number
+       in order to address CFGHIG or CFGLOW register */
+      configregister = (iocurrent < GPIO_PIN_8) ? &GPIOx->CFGLOW     : &GPIOx->CFGHIG;
+      registeroffset = (iocurrent < GPIO_PIN_8) ? (position << 2u) : ((position - 8u) << 2u);
+
+      /* CFGLOW/CFGHIG default value is floating input(0x04) shifted to correct position */
+      MODIFY_REG(*configregister, ((GPIO_CFGLOW_MODE0 | GPIO_CFGLOW_CFG0) << registeroffset), GPIO_CFGLOW_CFG0_0 << registeroffset);
+
+      /* ODATA default value is 0 */
+      CLEAR_BIT(GPIOx->ODATA, iocurrent);
+#else
       /* Configure IO Direction in Input Floating Mode */
       GPIOx->MODE &= ~(GPIO_MODE_MODE0 << (position * 2U));
 
@@ -367,6 +483,7 @@ void DAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
 
       /* Configure the default value for IO Speed */
       GPIOx->OSSEL &= ~(GPIO_OSPEEDER_OSPEEDR0 << (position * 2U));
+#endif /* APM32F403xx || APM32F402xx */
     }
   }
 }

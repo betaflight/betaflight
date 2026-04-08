@@ -11,7 +11,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -33,13 +33,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -359,6 +355,14 @@
   */
 
 /* Private macro -------------------------------------------------------------*/
+/** @addtogroup I2C_Private_Macros
+  * @{
+  */
+/* Macro to get remaining data to transfer on DMA side */
+#define I2C_GET_DMA_REMAIN_DATA(__HANDLE__)     __DAL_DMA_GET_COUNTER(__HANDLE__)
+/**
+  * @}
+  */
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 
@@ -408,6 +412,9 @@ static void I2C_MemoryTransmit_TXE_BTF(I2C_HandleTypeDef *hi2c);
 
 /* Private function to Convert Specific options */
 static void I2C_ConvertOtherXferOptions(I2C_HandleTypeDef *hi2c);
+
+/* Private function to flush DR register */
+static void I2C_Flush_DATA(I2C_HandleTypeDef *hi2c);
 /**
   * @}
   */
@@ -966,6 +973,20 @@ DAL_StatusTypeDef DAL_I2C_UnRegisterAddrCallback(I2C_HandleTypeDef *hi2c)
 #endif /* USE_DAL_I2C_REGISTER_CALLBACKS */
 
 /**
+  * @brief  I2C data register flush process.
+  * @param  hi2c I2C handle.
+  * @retval None
+  */
+static void I2C_Flush_DATA(I2C_HandleTypeDef *hi2c)
+{
+  /* Write a dummy data in DR to clear TXE flag */
+  if (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_TXE) != RESET)
+  {
+    hi2c->Instance->DATA = 0x00U;
+  }
+}
+
+/**
   * @}
   */
 
@@ -1382,6 +1403,12 @@ DAL_StatusTypeDef DAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAd
 
         if (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BTF) == SET)
         {
+          if (hi2c->XferSize == 3U)
+          {
+            /* Disable Acknowledge */
+            CLEAR_BIT(hi2c->Instance->CTRL1, I2C_CTRL1_ACKEN);
+          }
+
           /* Read data from DATA */
           *hi2c->pBuffPtr = (uint8_t)hi2c->Instance->DATA;
 
@@ -1687,10 +1714,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t D
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -1767,10 +1791,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Receive_IT(I2C_HandleTypeDef *hi2c, uint16_t De
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -1977,10 +1998,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint16_t 
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -2021,8 +2039,11 @@ DAL_StatusTypeDef DAL_I2C_Master_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint16_t 
 
         /* Set the unused DMA callbacks to NULL */
         hi2c->hdmatx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
         hi2c->hdmatx->XferM1CpltCallback = NULL;
         hi2c->hdmatx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
         hi2c->hdmatx->XferAbortCallback = NULL;
 
         /* Enable the DMA stream */
@@ -2135,10 +2156,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Receive_DMA(I2C_HandleTypeDef *hi2c, uint16_t D
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -2179,8 +2197,11 @@ DAL_StatusTypeDef DAL_I2C_Master_Receive_DMA(I2C_HandleTypeDef *hi2c, uint16_t D
 
         /* Set the unused DMA callbacks to NULL */
         hi2c->hdmarx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
         hi2c->hdmarx->XferM1CpltCallback = NULL;
         hi2c->hdmarx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
         hi2c->hdmarx->XferAbortCallback = NULL;
 
         /* Enable the DMA stream */
@@ -2316,8 +2337,11 @@ DAL_StatusTypeDef DAL_I2C_Slave_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint8_t *p
 
       /* Set the unused DMA callbacks to NULL */
       hi2c->hdmatx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
       hi2c->hdmatx->XferM1CpltCallback = NULL;
       hi2c->hdmatx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
       hi2c->hdmatx->XferAbortCallback = NULL;
 
       /* Enable the DMA stream */
@@ -2430,8 +2454,11 @@ DAL_StatusTypeDef DAL_I2C_Slave_Receive_DMA(I2C_HandleTypeDef *hi2c, uint8_t *pD
 
       /* Set the unused DMA callbacks to NULL */
       hi2c->hdmarx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
       hi2c->hdmarx->XferM1CpltCallback = NULL;
       hi2c->hdmarx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
       hi2c->hdmarx->XferAbortCallback = NULL;
 
       /* Enable the DMA stream */
@@ -2836,6 +2863,11 @@ DAL_StatusTypeDef DAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 
         if (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BTF) == SET)
         {
+          if (hi2c->XferSize == 3U)
+          {
+            /* Disable Acknowledge */
+            CLEAR_BIT(hi2c->Instance->CTRL1, I2C_CTRL1_ACKEN);
+          }
           /* Read data from DATA */
           *hi2c->pBuffPtr = (uint8_t)hi2c->Instance->DATA;
 
@@ -2896,10 +2928,7 @@ DAL_StatusTypeDef DAL_I2C_Mem_Write_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -2984,10 +3013,7 @@ DAL_StatusTypeDef DAL_I2C_Mem_Read_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddre
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -3023,7 +3049,7 @@ DAL_StatusTypeDef DAL_I2C_Mem_Read_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddre
     SET_BIT(hi2c->Instance->CTRL1, I2C_CTRL1_ACKEN);
 
     /* Generate Start */
-    SET_BIT(hi2c->Instance->CTRL1, I2C_CTRL1_START);
+    SET_BIT(hi2c    ->Instance->CTRL1, I2C_CTRL1_START);
 
     /* Process Unlocked */
     __DAL_UNLOCK(hi2c);
@@ -3082,10 +3108,7 @@ DAL_StatusTypeDef DAL_I2C_Mem_Write_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAdd
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -3129,8 +3152,11 @@ DAL_StatusTypeDef DAL_I2C_Mem_Write_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAdd
 
         /* Set the unused DMA callbacks to NULL */
         hi2c->hdmatx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
         hi2c->hdmatx->XferM1CpltCallback = NULL;
         hi2c->hdmatx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
         hi2c->hdmatx->XferAbortCallback = NULL;
 
         /* Enable the DMA stream */
@@ -3266,10 +3292,7 @@ DAL_StatusTypeDef DAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
         hi2c->Mode                = DAL_I2C_MODE_NONE;
         hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
-
-        return DAL_ERROR;
+        return DAL_BUSY;
       }
     }
     while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -3313,8 +3336,11 @@ DAL_StatusTypeDef DAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
 
         /* Set the unused DMA callbacks to NULL */
         hi2c->hdmarx->XferHalfCpltCallback = NULL;
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
         hi2c->hdmarx->XferM1CpltCallback = NULL;
         hi2c->hdmarx->XferM1HalfCpltCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
         hi2c->hdmarx->XferAbortCallback = NULL;
 
         /* Enable the DMA stream */
@@ -3602,10 +3628,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Seq_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16
           hi2c->Mode                = DAL_I2C_MODE_NONE;
           hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-          /* Process Unlocked */
-          __DAL_UNLOCK(hi2c);
-
-          return DAL_ERROR;
+          return DAL_BUSY;
         }
       }
       while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -3701,10 +3724,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Seq_Transmit_DMA(I2C_HandleTypeDef *hi2c, uint1
           hi2c->Mode                = DAL_I2C_MODE_NONE;
           hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-          /* Process Unlocked */
-          __DAL_UNLOCK(hi2c);
-
-          return DAL_ERROR;
+          return DAL_BUSY;
         }
       }
       while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -3884,10 +3904,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Seq_Receive_IT(I2C_HandleTypeDef *hi2c, uint16_
           hi2c->Mode                = DAL_I2C_MODE_NONE;
           hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-          /* Process Unlocked */
-          __DAL_UNLOCK(hi2c);
-
-          return DAL_ERROR;
+          return DAL_BUSY;
         }
       }
       while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -4009,10 +4026,7 @@ DAL_StatusTypeDef DAL_I2C_Master_Seq_Receive_DMA(I2C_HandleTypeDef *hi2c, uint16
           hi2c->Mode                = DAL_I2C_MODE_NONE;
           hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-          /* Process Unlocked */
-          __DAL_UNLOCK(hi2c);
-
-          return DAL_ERROR;
+          return DAL_BUSY;
         }
       }
       while (__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET);
@@ -4753,7 +4767,8 @@ DAL_StatusTypeDef DAL_I2C_Master_Abort_IT(I2C_HandleTypeDef *hi2c, uint16_t DevA
   UNUSED(DevAddress);
 
   /* Abort Master transfer during Receive or Transmit process    */
-  if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET) && (CurrentMode == DAL_I2C_MODE_MASTER))
+  if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET) && ((CurrentMode == DAL_I2C_MODE_MASTER) ||
+                                                             (CurrentMode == DAL_I2C_MODE_MEM)))
   {
     /* Process Locked */
     __DAL_LOCK(hi2c);
@@ -5529,7 +5544,8 @@ static void I2C_MemoryTransmit_TXE_BTF(I2C_HandleTypeDef *hi2c)
   }
   else
   {
-    /* Do nothing */
+    /* Clear TXE and BTF flags */
+    I2C_Flush_DATA(hi2c);
   }
 }
 
@@ -5544,7 +5560,9 @@ static void I2C_MasterReceive_RXNE(I2C_HandleTypeDef *hi2c)
   if (hi2c->State == DAL_I2C_STATE_BUSY_RX)
   {
     uint32_t tmp;
+    uint32_t CurrentXferOptions;
 
+    CurrentXferOptions = hi2c->XferOptions;
     tmp = hi2c->XferCount;
     if (tmp > 3U)
     {
@@ -5600,7 +5618,14 @@ static void I2C_MasterReceive_RXNE(I2C_HandleTypeDef *hi2c)
         else
         {
           hi2c->Mode = DAL_I2C_MODE_NONE;
-          hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+          if ((CurrentXferOptions == I2C_FIRST_AND_LAST_FRAME) || (CurrentXferOptions == I2C_LAST_FRAME))
+          {
+            hi2c->PreviousState = I2C_STATE_NONE;
+          }
+          else
+          {
+            hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+          }
 
 #if (USE_DAL_I2C_REGISTER_CALLBACKS == 1)
           hi2c->MasterRxCpltCallback(hi2c);
@@ -5748,7 +5773,14 @@ static void I2C_MasterReceive_BTF(I2C_HandleTypeDef *hi2c)
     else
     {
       hi2c->Mode = DAL_I2C_MODE_NONE;
-      hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+      if ((CurrentXferOptions == I2C_FIRST_AND_LAST_FRAME) || (CurrentXferOptions == I2C_LAST_FRAME))
+      {
+        hi2c->PreviousState = I2C_STATE_NONE;
+      }
+      else
+      {
+        hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+      }
 #if (USE_DAL_I2C_REGISTER_CALLBACKS == 1)
       hi2c->MasterRxCpltCallback(hi2c);
 #else
@@ -6195,7 +6227,7 @@ static void I2C_Slave_STOPF(I2C_HandleTypeDef *hi2c)
   {
     if ((CurrentState == DAL_I2C_STATE_BUSY_RX) || (CurrentState == DAL_I2C_STATE_BUSY_RX_LISTEN))
     {
-      hi2c->XferCount = (uint16_t)(__DAL_DMA_GET_COUNTER(hi2c->hdmarx));
+      hi2c->XferCount = (uint16_t)(I2C_GET_DMA_REMAIN_DATA(hi2c->hdmarx));
 
       if (hi2c->XferCount != 0U)
       {
@@ -6223,7 +6255,7 @@ static void I2C_Slave_STOPF(I2C_HandleTypeDef *hi2c)
     }
     else
     {
-      hi2c->XferCount = (uint16_t)(__DAL_DMA_GET_COUNTER(hi2c->hdmatx));
+      hi2c->XferCount = (uint16_t)(I2C_GET_DMA_REMAIN_DATA(hi2c->hdmatx));
 
       if (hi2c->XferCount != 0U)
       {
@@ -6391,6 +6423,9 @@ static void I2C_Slave_AF(I2C_HandleTypeDef *hi2c)
 
     /* Disable Acknowledge */
     CLEAR_BIT(hi2c->Instance->CTRL1, I2C_CTRL1_ACKEN);
+
+    /* Clear TXE flag */
+    I2C_Flush_DATA(hi2c);
 
 #if (USE_DAL_I2C_REGISTER_CALLBACKS == 1)
     hi2c->SlaveTxCpltCallback(hi2c);
@@ -7053,7 +7088,14 @@ static void I2C_DMAXferCplt(DMA_HandleTypeDef *hdma)
       else
       {
         hi2c->Mode = DAL_I2C_MODE_NONE;
-        hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+        if ((CurrentXferOptions == I2C_FIRST_AND_LAST_FRAME) || (CurrentXferOptions == I2C_LAST_FRAME))
+        {
+          hi2c->PreviousState = I2C_STATE_NONE;
+        }
+        else
+        {
+          hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+        }
 
 #if (USE_DAL_I2C_REGISTER_CALLBACKS == 1)
         hi2c->MasterRxCpltCallback(hi2c);
@@ -7228,15 +7270,18 @@ static DAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_HandleTypeDef *hi2c, uin
     {
       if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
       {
-        hi2c->PreviousState     = I2C_STATE_NONE;
-        hi2c->State             = DAL_I2C_STATE_READY;
-        hi2c->Mode              = DAL_I2C_MODE_NONE;
-        hi2c->ErrorCode         |= DAL_I2C_ERROR_TIMEOUT;
+        if ((__DAL_I2C_GET_FLAG(hi2c, Flag) == Status))
+        {
+          hi2c->PreviousState     = I2C_STATE_NONE;
+          hi2c->State             = DAL_I2C_STATE_READY;
+          hi2c->Mode              = DAL_I2C_MODE_NONE;
+          hi2c->ErrorCode         |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
+          /* Process Unlocked */
+          __DAL_UNLOCK(hi2c);
 
-        return DAL_ERROR;
+          return DAL_ERROR;
+        }
       }
     }
   }
@@ -7280,15 +7325,18 @@ static DAL_StatusTypeDef I2C_WaitOnMasterAddressFlagUntilTimeout(I2C_HandleTypeD
     {
       if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
       {
-        hi2c->PreviousState       = I2C_STATE_NONE;
-        hi2c->State               = DAL_I2C_STATE_READY;
-        hi2c->Mode                = DAL_I2C_MODE_NONE;
-        hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
+        if ((__DAL_I2C_GET_FLAG(hi2c, Flag) == RESET))
+        {
+          hi2c->PreviousState       = I2C_STATE_NONE;
+          hi2c->State               = DAL_I2C_STATE_READY;
+          hi2c->Mode                = DAL_I2C_MODE_NONE;
+          hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
+          /* Process Unlocked */
+          __DAL_UNLOCK(hi2c);
 
-        return DAL_ERROR;
+          return DAL_ERROR;
+        }
       }
     }
   }
@@ -7318,15 +7366,18 @@ static DAL_StatusTypeDef I2C_WaitOnTXEFlagUntilTimeout(I2C_HandleTypeDef *hi2c, 
     {
       if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
       {
-        hi2c->PreviousState       = I2C_STATE_NONE;
-        hi2c->State               = DAL_I2C_STATE_READY;
-        hi2c->Mode                = DAL_I2C_MODE_NONE;
-        hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
+        if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_TXE) == RESET))
+        {
+          hi2c->PreviousState       = I2C_STATE_NONE;
+          hi2c->State               = DAL_I2C_STATE_READY;
+          hi2c->Mode                = DAL_I2C_MODE_NONE;
+          hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
+          /* Process Unlocked */
+          __DAL_UNLOCK(hi2c);
 
-        return DAL_ERROR;
+          return DAL_ERROR;
+        }
       }
     }
   }
@@ -7356,15 +7407,18 @@ static DAL_StatusTypeDef I2C_WaitOnBTFFlagUntilTimeout(I2C_HandleTypeDef *hi2c, 
     {
       if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
       {
-        hi2c->PreviousState       = I2C_STATE_NONE;
-        hi2c->State               = DAL_I2C_STATE_READY;
-        hi2c->Mode                = DAL_I2C_MODE_NONE;
-        hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
+        if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BTF) == RESET))
+        {
+          hi2c->PreviousState       = I2C_STATE_NONE;
+          hi2c->State               = DAL_I2C_STATE_READY;
+          hi2c->Mode                = DAL_I2C_MODE_NONE;
+          hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-        /* Process Unlocked */
-        __DAL_UNLOCK(hi2c);
+          /* Process Unlocked */
+          __DAL_UNLOCK(hi2c);
 
-        return DAL_ERROR;
+          return DAL_ERROR;
+        }
       }
     }
   }
@@ -7392,15 +7446,18 @@ static DAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
     /* Check for the Timeout */
     if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
     {
-      hi2c->PreviousState       = I2C_STATE_NONE;
-      hi2c->State               = DAL_I2C_STATE_READY;
-      hi2c->Mode                = DAL_I2C_MODE_NONE;
-      hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
+      if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_STOPF) == RESET))
+      {
+        hi2c->PreviousState       = I2C_STATE_NONE;
+        hi2c->State               = DAL_I2C_STATE_READY;
+        hi2c->Mode                = DAL_I2C_MODE_NONE;
+        hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-      /* Process Unlocked */
-      __DAL_UNLOCK(hi2c);
+        /* Process Unlocked */
+        __DAL_UNLOCK(hi2c);
 
-      return DAL_ERROR;
+        return DAL_ERROR;
+      }
     }
   }
   return DAL_OK;
@@ -7466,15 +7523,18 @@ static DAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
     /* Check for the Timeout */
     if (((DAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
     {
-      hi2c->PreviousState       = I2C_STATE_NONE;
-      hi2c->State               = DAL_I2C_STATE_READY;
-      hi2c->Mode                = DAL_I2C_MODE_NONE;
-      hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
+      if ((__DAL_I2C_GET_FLAG(hi2c, I2C_FLAG_RXNE) == RESET))
+      {
+        hi2c->PreviousState       = I2C_STATE_NONE;
+        hi2c->State               = DAL_I2C_STATE_READY;
+        hi2c->Mode                = DAL_I2C_MODE_NONE;
+        hi2c->ErrorCode           |= DAL_I2C_ERROR_TIMEOUT;
 
-      /* Process Unlocked */
-      __DAL_UNLOCK(hi2c);
+        /* Process Unlocked */
+        __DAL_UNLOCK(hi2c);
 
-      return DAL_ERROR;
+        return DAL_ERROR;
+      }
     }
   }
   return DAL_OK;

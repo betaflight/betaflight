@@ -11,7 +11,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -33,13 +33,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -349,6 +345,7 @@ DAL_StatusTypeDef DAL_SPI_Init(SPI_HandleTypeDef *hspi)
   ASSERT_PARAM(IS_SPI_NSS(hspi->Init.NSS));
   ASSERT_PARAM(IS_SPI_BAUDRATE_PRESCALER(hspi->Init.BaudRatePrescaler));
   ASSERT_PARAM(IS_SPI_FIRST_BIT(hspi->Init.FirstBit));
+  /* TI mode is not supported on APM32F402/403xx device. */
   ASSERT_PARAM(IS_SPI_TIMODE(hspi->Init.TIMode));
   if (hspi->Init.TIMode == SPI_TIMODE_DISABLE)
   {
@@ -430,8 +427,14 @@ DAL_StatusTypeDef DAL_SPI_Init(SPI_HandleTypeDef *hspi)
                                   (hspi->Init.FirstBit  & SPI_CTRL1_LSBSEL) |
                                   (hspi->Init.CRCCalculation & SPI_CTRL1_CRCEN)));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Configure : NSS management, TI Mode */
   WRITE_REG(hspi->Instance->CTRL2, (((hspi->Init.NSS >> 16U) & SPI_CTRL2_SSOEN) | (hspi->Init.TIMode & SPI_CTRL2_FRFCFG)));
+#else
+  /* Configure : NSS management, TI Mode */
+  WRITE_REG(hspi->Instance->CTRL2, ((hspi->Init.NSS >> 16U) & SPI_CTRL2_SSOEN));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if (USE_SPI_CRC != 0U)
   /*---------------------------- SPIx CRCPOLY Configuration ------------------*/
@@ -443,7 +446,7 @@ DAL_StatusTypeDef DAL_SPI_Init(SPI_HandleTypeDef *hspi)
 #endif /* USE_SPI_CRC */
 
 #if defined(SPI_I2SCFG_MODESEL)
-  /* Activate the SPI mode (Make sure that I2SMOD bit in I2SCFGR register is reset) */
+  /* Activate the SPI mode (Make sure that MODESEL bit in I2SCFG register is reset) */
   CLEAR_BIT(hspi->Instance->I2SCFG, SPI_I2SCFG_MODESEL);
 #endif /* SPI_I2SCFG_MODESEL */
 
@@ -1008,7 +1011,7 @@ DAL_StatusTypeDef DAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
   if (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
-    /* this is done to handle the CRCNEXT before the latest data */
+    /* this is done to handle the CRCNXT before the latest data */
     hspi->RxXferCount--;
   }
 #endif /* USE_SPI_CRC */
@@ -1084,6 +1087,14 @@ DAL_StatusTypeDef DAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
     /* freeze the CRC before the latest data */
     SET_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    /* Check if CRCNXT is well reseted by hardware */
+    if (READ_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT))
+    {
+      /* Workaround to force CRCNXT bit to zero in case of CRCNXT is not reset automatically by hardware */
+      CLEAR_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
+    }
+#endif /* APM32F403xx || APM32F402xx */
     /* Read the latest data */
     if (SPI_WaitFlagStateUntilTimeout(hspi, SPI_FLAG_RXNE, SET, Timeout, tickstart) != DAL_OK)
     {
@@ -2136,7 +2147,11 @@ DAL_StatusTypeDef DAL_SPI_Abort(SPI_HandleTypeDef *hspi)
 
   /* Clear the Error flags in the SR register */
   __DAL_SPI_CLEAR_OVRFLAG(hspi);
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   __DAL_SPI_CLEAR_FREFLAG(hspi);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Restore hspi->state to ready */
   hspi->State = DAL_SPI_STATE_READY;
@@ -2298,7 +2313,10 @@ DAL_StatusTypeDef DAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
 
     /* Clear the Error flags in the SR register */
     __DAL_SPI_CLEAR_OVRFLAG(hspi);
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
     __DAL_SPI_CLEAR_FREFLAG(hspi);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
     /* Restore hspi->State to Ready */
     hspi->State = DAL_SPI_STATE_READY;
@@ -2421,8 +2439,14 @@ void DAL_SPI_IRQHandler(SPI_HandleTypeDef *hspi)
   }
 
   /* SPI in Error Treatment --------------------------------------------------*/
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if (((SPI_CHECK_FLAG(itflag, SPI_FLAG_MODF) != RESET) || (SPI_CHECK_FLAG(itflag, SPI_FLAG_OVR) != RESET)
        || (SPI_CHECK_FLAG(itflag, SPI_FLAG_FRE) != RESET)) && (SPI_CHECK_IT_SOURCE(itsource, SPI_IT_ERR) != RESET))
+#else
+  if (((SPI_CHECK_FLAG(itflag, SPI_FLAG_MODF) != RESET) || (SPI_CHECK_FLAG(itflag, SPI_FLAG_OVR) != RESET))
+       && (SPI_CHECK_IT_SOURCE(itsource, SPI_IT_ERR) != RESET))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   {
     /* SPI Overrun error interrupt occurred ----------------------------------*/
     if (SPI_CHECK_FLAG(itflag, SPI_FLAG_OVR) != RESET)
@@ -2446,12 +2470,15 @@ void DAL_SPI_IRQHandler(SPI_HandleTypeDef *hspi)
       __DAL_SPI_CLEAR_MODFFLAG(hspi);
     }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
     /* SPI Frame error interrupt occurred ------------------------------------*/
     if (SPI_CHECK_FLAG(itflag, SPI_FLAG_FRE) != RESET)
     {
       SET_BIT(hspi->ErrorCode, DAL_SPI_ERROR_FRE);
       __DAL_SPI_CLEAR_FREFLAG(hspi);
     }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
     if (hspi->ErrorCode != DAL_SPI_ERROR_NONE)
     {
@@ -2702,7 +2729,12 @@ static void SPI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
   tickstart = DAL_GetTick();
 
   /* DMA Normal Mode */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) != DMA_SCFGx_CIRCMEN)
+#else
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) != DMA_CHCFG_CIRMODE)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   {
     /* Disable ERR interrupt */
     __DAL_SPI_DISABLE_IT(hspi, SPI_IT_ERR);
@@ -2762,7 +2794,12 @@ static void SPI_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
   tickstart = DAL_GetTick();
 
   /* DMA Normal Mode */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) != DMA_SCFGx_CIRCMEN)
+#else
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) != DMA_CHCFG_CIRMODE)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   {
     /* Disable ERR interrupt */
     __DAL_SPI_DISABLE_IT(hspi, SPI_IT_ERR);
@@ -2851,7 +2888,12 @@ static void SPI_DMATransmitReceiveCplt(DMA_HandleTypeDef *hdma)
   tickstart = DAL_GetTick();
 
   /* DMA Normal Mode */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) != DMA_SCFGx_CIRCMEN)
+#else
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) != DMA_CHCFG_CIRMODE)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   {
     /* Disable ERR interrupt */
     __DAL_SPI_DISABLE_IT(hspi, SPI_IT_ERR);
@@ -3062,7 +3104,10 @@ static void SPI_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 
   /* Clear the Error flags in the STS register */
   __DAL_SPI_CLEAR_OVRFLAG(hspi);
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   __DAL_SPI_CLEAR_FREFLAG(hspi);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Restore hspi->State to Ready */
   hspi->State  = DAL_SPI_STATE_READY;
@@ -3123,7 +3168,10 @@ static void SPI_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 
   /* Clear the Error flags in the STS register */
   __DAL_SPI_CLEAR_OVRFLAG(hspi);
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   __DAL_SPI_CLEAR_FREFLAG(hspi);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Restore hspi->State to Ready */
   hspi->State  = DAL_SPI_STATE_READY;
@@ -3369,6 +3417,15 @@ static void SPI_RxISR_8BIT(struct __SPI_HandleTypeDef *hspi)
   {
     SET_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
   }
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  /* Check if CRCNXT is well reseted by hardware */
+  if (READ_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT))
+  {
+    /* Workaround to force CRCNXT bit to zero in case of CRCNXT is not reset automatically by hardware */
+    CLEAR_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
+  }
+#endif /* APM32F403xx || APM32F402xx */
+
 #endif /* USE_SPI_CRC */
 
   if (hspi->RxXferCount == 0U)
@@ -3425,6 +3482,15 @@ static void SPI_RxISR_16BIT(struct __SPI_HandleTypeDef *hspi)
   {
     SET_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
   }
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  /* Check if CRCNXT is well reseted by hardware */
+  if (READ_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT))
+  {
+    /* Workaround to force CRCNXT bit to zero in case of CRCNXT is not reset automatically by hardware */
+    CLEAR_BIT(hspi->Instance->CTRL1, SPI_CTRL1_CRCNXT);
+  }
+#endif /* APM32F403xx || APM32F402xx */
+
 #endif /* USE_SPI_CRC */
 
   if (hspi->RxXferCount == 0U)
@@ -3620,7 +3686,7 @@ static DAL_StatusTypeDef SPI_EndRxTransaction(SPI_HandleTypeDef *hspi,  uint32_t
   */
 static DAL_StatusTypeDef SPI_EndRxTxTransaction(SPI_HandleTypeDef *hspi, uint32_t Timeout, uint32_t Tickstart)
 {
-  /* Timeout in ��s */
+  /* Timeout in µs */
   __IO uint32_t count = SPI_BSY_FLAG_WORKAROUND_TIMEOUT * (SystemCoreClock / 24U / 1000000U);
   /* Erratasheet: BSY bit may stay high at the end of a data transfer in Slave mode */
   if (hspi->Init.Mode == SPI_MODE_MASTER)

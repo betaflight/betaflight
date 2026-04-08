@@ -12,7 +12,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -92,9 +88,16 @@
                                       DMC_CTRL1_RDNUMMCFG | DMC_CTRL1_BANKNUMCFG))
 
 /* CTRL2 register clear mask */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define CTRL2_CLEAR_MASK    ((uint32_t)(DMC_CTRL2_CPHACFG | DMC_CTRL2_RDDEN | \
+                                      DMC_CTRL2_RDDCFG | DMC_CTRL2_RDDCFG2 | \
+                                      DMC_CTRL2_WPEN | DMC_CTRL2_BUFFEN | \
+                                      DMC_CTRL2_WRPBSEL))
+#else
 #define CTRL2_CLEAR_MASK    ((uint32_t)(DMC_CTRL2_CPHACFG | DMC_CTRL2_RDDEN | \
                                       DMC_CTRL2_RDDCFG | DMC_CTRL2_WPEN | \
                                       DMC_CTRL2_BUFFEN | DMC_CTRL2_WRPBSEL))
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 
 /* TIM0 register clear mask */
 #define TIM0_CLEAR_MASK    ((uint32_t)(DMC_TIM0_CASLSEL0 | DMC_TIM0_RASMINTSEL | \
@@ -171,6 +174,9 @@
 DAL_StatusTypeDef DMC_SDRAM_Init(DMC_SDRAM_TypeDef *Device, DMC_SDRAM_InitTypeDef *Init)
 {
     uint32_t tickstart;
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+    uint32_t tmpr;
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 
     /* Check the parameters */
     ASSERT_PARAM(IS_DMC_SDRAM_DEVICE(Device));
@@ -223,6 +229,17 @@ DAL_StatusTypeDef DMC_SDRAM_Init(DMC_SDRAM_TypeDef *Device, DMC_SDRAM_InitTypeDe
                 (((Init->OpenBankNumber) - 1U) << DMC_CTRL1_BANKNUMCFG_Pos)));
 
     /* Set SDRAM CTRL2 parameters */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+    tmpr = (((Init->RDDelayClk - 1U) >> 3U) & 0x3U) << DMC_CTRL2_RDDCFG_Pos;
+    MODIFY_REG(Device->CTRL2, CTRL2_CLEAR_MASK, \
+               (Init->ClockPhase | \
+                Init->RDDelay | \
+                (((Init->RDDelayClk - 1U) & 0x07U) << DMC_CTRL2_RDDCFG_Pos) | \
+                tmpr | \
+                Init->WritePipe | \
+                Init->AccelerateMode | \
+                Init->WRAPBurstType));
+#else
     MODIFY_REG(Device->CTRL2, CTRL2_CLEAR_MASK, \
                (Init->ClockPhase | \
                 Init->RDDelay | \
@@ -230,6 +247,7 @@ DAL_StatusTypeDef DMC_SDRAM_Init(DMC_SDRAM_TypeDef *Device, DMC_SDRAM_InitTypeDe
                 Init->WritePipe | \
                 Init->AccelerateMode | \
                 Init->WRAPBurstType));
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 
     /* Update mode setup */
     __DMC_SDRAM_UPDATE_MODE_SETUP(Device);
@@ -375,7 +393,7 @@ DAL_StatusTypeDef DMC_SDRAM_SetOpenBankNumber(DMC_SDRAM_TypeDef *Device, uint32_
 uint32_t DMC_SDRAM_GetModeStatus(DMC_SDRAM_TypeDef *Device)
 {
     uint32_t status = DMC_SDRAM_NORMAL_MODE;
-    
+
     /* Check the parameters */
     ASSERT_PARAM(IS_DMC_SDRAM_DEVICE(Device));
 

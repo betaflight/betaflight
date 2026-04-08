@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -133,7 +129,7 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
 /** @defgroup WWDT_Interrupt_definition WWDT Interrupt definition
   * @{
   */
-#define WWDT_IT_EWI                         WWDT_CFR_EWIEN  /*!< Early wakeup interrupt */
+#define WWDT_IT_EWI                         WWDT_CFG_EWIEN  /*!< Early wakeup interrupt */
 /**
   * @}
   */
@@ -151,9 +147,9 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
   * @{
   */
 #define WWDT_PRESCALER_1                    0x00000000u                              /*!< WWDT counter clock = (PCLK1/4096)/1 */
-#define WWDT_PRESCALER_2                    WWDT_CFR_TBPSC_0                         /*!< WWDT counter clock = (PCLK1/4096)/2 */
-#define WWDT_PRESCALER_4                    WWDT_CFR_TBPSC_1                         /*!< WWDT counter clock = (PCLK1/4096)/4 */
-#define WWDT_PRESCALER_8                    (WWDT_CFR_TBPSC_1 | WWDT_CFR_TBPSC_0)    /*!< WWDT counter clock = (PCLK1/4096)/8 */
+#define WWDT_PRESCALER_2                    WWDT_CFG_TBPSC_0                         /*!< WWDT counter clock = (PCLK1/4096)/2 */
+#define WWDT_PRESCALER_4                    WWDT_CFG_TBPSC_1                         /*!< WWDT counter clock = (PCLK1/4096)/4 */
+#define WWDT_PRESCALER_8                    (WWDT_CFG_TBPSC_1 | WWDT_CFG_TBPSC_0)    /*!< WWDT counter clock = (PCLK1/4096)/8 */
 /**
   * @}
   */
@@ -162,7 +158,7 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
   * @{
   */
 #define WWDT_EWI_DISABLE                    0x00000000u       /*!< EWI Disable */
-#define WWDT_EWI_ENABLE                     WWDT_CFR_EWIEN      /*!< EWI Enable */
+#define WWDT_EWI_ENABLE                     WWDT_CFG_EWIEN      /*!< EWI Enable */
 /**
   * @}
   */
@@ -181,7 +177,7 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
                                              ((__PRESCALER__) == WWDT_PRESCALER_4)  || \
                                              ((__PRESCALER__) == WWDT_PRESCALER_8))
 
-#define IS_WWDT_WINDOW(__WINDOW__)          (((__WINDOW__) >= WWDT_CFR_WIN_6) && ((__WINDOW__) <= WWDT_CFR_WIN))
+#define IS_WWDT_WINDOW(__WINDOW__)          (((__WINDOW__) >= WWDT_CFG_WIN_6) && ((__WINDOW__) <= WWDT_CFG_WIN))
 
 #define IS_WWDT_COUNTER(__COUNTER__)        (((__COUNTER__) >= WWDT_CTRL_CNT_6) && ((__COUNTER__) <= WWDT_CTRL_CNT))
 
@@ -214,7 +210,7 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
   * @note   Once enabled this interrupt cannot be disabled except by a system reset.
   * @retval None
   */
-#define __DAL_WWDT_ENABLE_IT(__HANDLE__, __INTERRUPT__)       SET_BIT((__HANDLE__)->Instance->CFR, (__INTERRUPT__))
+#define __DAL_WWDT_ENABLE_IT(__HANDLE__, __INTERRUPT__)       SET_BIT((__HANDLE__)->Instance->CFG, (__INTERRUPT__))
 
 /**
   * @brief  Check whether the selected WWDT interrupt has occurred or not.
@@ -262,7 +258,7 @@ typedef void (*pWWDT_CallbackTypeDef)(WWDT_HandleTypeDef *hppp);  /*!< pointer t
   *            @arg WWDT_IT_EWI: Early Wakeup Interrupt
   * @retval state of __INTERRUPT__ (TRUE or FALSE).
   */
-#define __DAL_WWDT_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CFR\
+#define __DAL_WWDT_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CFG\
                                                               & (__INTERRUPT__)) == (__INTERRUPT__))
 
 /**

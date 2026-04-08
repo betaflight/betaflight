@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -45,10 +41,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_ddl_rtc.h"
 #include "apm32f4xx_ddl_cortex.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -68,7 +67,11 @@
   * @{
   */
 /* Default values used for prescaler */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define RTC_ASYNCH_PRESC_DEFAULT     0x00007FFFU
+#else
 #define RTC_ASYNCH_PRESC_DEFAULT     0x0000007FU
+#endif /* APM32F403xx || APM32F402xx */
 #define RTC_SYNCH_PRESC_DEFAULT      0x000000FFU
 
 /* Values used for timeout */
@@ -86,7 +89,11 @@
 #define IS_DDL_RTC_HOURFORMAT(__VALUE__) (((__VALUE__) == DDL_RTC_HOURFORMAT_24HOUR) \
                                       || ((__VALUE__) == DDL_RTC_HOURFORMAT_AMPM))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_DDL_RTC_ASYNCH_PREDIV(__VALUE__)   ((__VALUE__) <= 0xFFFFFU)
+#else
 #define IS_DDL_RTC_ASYNCH_PREDIV(__VALUE__)   ((__VALUE__) <= 0x7FU)
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_DDL_RTC_SYNCH_PREDIV(__VALUE__)    ((__VALUE__) <= 0x7FFFU)
 
@@ -135,6 +142,10 @@
 #define IS_DDL_RTC_ALMB_DATE_WEEKDAY_SEL(__SEL__) (((__SEL__) == DDL_RTC_ALMB_DATEWEEKDAYSEL_DATE) || \
                                                   ((__SEL__) == DDL_RTC_ALMB_DATEWEEKDAYSEL_WEEKDAY))
 
+#define IS_DDL_RTC_CALIB_OUTPUT(__OUTPUT__) (((__OUTPUT__) == DDL_RTC_CALIB_OUTPUT_NONE) || \
+                                             ((__OUTPUT__) == DDL_RTC_CALIB_OUTPUT_RTCCLOCK) || \
+                                             ((__OUTPUT__) == DDL_RTC_CALIB_OUTPUT_ALARM) || \
+                                             ((__OUTPUT__) == DDL_RTC_CALIB_OUTPUT_SECOND))
 /**
   * @}
   */
@@ -170,6 +181,32 @@ ErrorStatus DDL_RTC_DeInit(RTC_TypeDef *RTCx)
   /* Set Initialization mode */
   if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
   {
+#if defined (BAKPR)
+    DDL_RTC_WriteReg(RTCx, CNTL,    0x0000);
+    DDL_RTC_WriteReg(RTCx, CNTH,    0x0000);
+    DDL_RTC_WriteReg(RTCx, PSCRLDH, 0x0000);
+    DDL_RTC_WriteReg(RTCx, PSCRLDL, 0x8000);
+    DDL_RTC_WriteReg(RTCx, CTRL,    0x0000);
+    DDL_RTC_WriteReg(RTCx, CSTS,    0x0020);
+
+    /* Reset Tamper and alternate functions configuration register */
+    DDL_RTC_WriteReg(BAKPR, CLKCAL, 0x00000000U);
+    DDL_RTC_WriteReg(BAKPR, CTRL,   0x00000000U);
+    DDL_RTC_WriteReg(BAKPR, CSTS,   0x00000000U);
+
+    /* Exit Initialization Mode */
+    if (DDL_RTC_ExitInitMode(RTCx) != ERROR)
+    {
+      /* Wait till the RTC RSF flag is set */
+      status = DDL_RTC_WaitForSynchro(RTCx);
+
+      /* Clear RSF Flag */
+      DDL_RTC_ClearFlag_RS(RTCx);
+
+      /* Enable the write protection for RTC registers */
+      DDL_RTC_EnableWriteProtection(RTCx);
+    }
+#else
     /* Reset TIME, DATE and CTRL registers */
     DDL_RTC_WriteReg(RTCx, TIME,       0x00000000U);
     DDL_RTC_WriteReg(RTCx, AUTORLD,     RTC_AUTORLD_WUAUTORE);
@@ -194,6 +231,7 @@ ErrorStatus DDL_RTC_DeInit(RTC_TypeDef *RTCx)
 
     /* Wait till the RTC RSF flag is set */
     status = DDL_RTC_WaitForSynchro(RTCx);
+#endif /* BAKPR */
   }
 
   /* Enable the write protection for RTC registers */
@@ -220,10 +258,18 @@ ErrorStatus DDL_RTC_Init(RTC_TypeDef *RTCx, DDL_RTC_InitTypeDef *RTC_InitStruct)
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
+#if defined (RTC_CTRL_TIMEFCFG)
   ASSERT_PARAM(IS_DDL_RTC_HOURFORMAT(RTC_InitStruct->HourFormat));
+#endif /* RTC_CTRL_TIMEFCFG */
   ASSERT_PARAM(IS_DDL_RTC_ASYNCH_PREDIV(RTC_InitStruct->AsynchPrescaler));
+#if defined (RTC_PSC_SPSC)
   ASSERT_PARAM(IS_DDL_RTC_SYNCH_PREDIV(RTC_InitStruct->SynchPrescaler));
+#endif /* RTC_PSC_SPSC */
+#if defined (BAKPR)
+  ASSERT_PARAM(IS_DDL_RTC_CALIB_OUTPUT(RTC_InitStruct->OutPutSource));
+#endif /* BAKPR */
 
+#if defined (RTC_WRPROT_KEY)
   /* Disable the write protection for RTC registers */
   DDL_RTC_DisableWriteProtection(RTCx);
 
@@ -244,6 +290,36 @@ ErrorStatus DDL_RTC_Init(RTC_TypeDef *RTCx, DDL_RTC_InitTypeDef *RTC_InitStruct)
   }
   /* Enable the write protection for RTC registers */
   DDL_RTC_EnableWriteProtection(RTCx);
+#else
+  /* Waiting for synchro */
+  if (DDL_RTC_WaitForSynchro(RTCx) != ERROR)
+  {
+    /* Set Initialization mode */
+    if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
+    {
+      /* Clear Flag Bits */
+      DDL_RTC_ClearFlag_ALR(RTCx);
+      DDL_RTC_ClearFlag_OW(RTCx);
+      DDL_RTC_ClearFlag_SEC(RTCx);
+
+      if (RTC_InitStruct->OutPutSource != DDL_RTC_CALIB_OUTPUT_NONE)
+      {
+        /* Disable the selected Tamper Pin */
+        DDL_RTC_TAMPER_Disable(BAKPR);
+      }
+      /* Set the signal which will be routed to RTC Tamper Pin */
+      DDL_RTC_SetOutputSource(BAKPR, RTC_InitStruct->OutPutSource);
+
+      /* Configure Synchronous and Asynchronous prescaler factor */
+      DDL_RTC_SetAsynchPrescaler(RTCx, RTC_InitStruct->AsynchPrescaler);
+
+      /* Exit Initialization Mode */
+      DDL_RTC_ExitInitMode(RTCx);
+
+      status = SUCCESS;
+    }
+  }
+#endif /* RTC_WRPROT_KEY */
 
   return status;
 }
@@ -256,9 +332,16 @@ ErrorStatus DDL_RTC_Init(RTC_TypeDef *RTCx, DDL_RTC_InitTypeDef *RTC_InitStruct)
 void DDL_RTC_StructInit(DDL_RTC_InitTypeDef *RTC_InitStruct)
 {
   /* Set RTC_InitStruct fields to default values */
+#if defined (RTC_CTRL_TIMEFCFG)
   RTC_InitStruct->HourFormat      = DDL_RTC_HOURFORMAT_24HOUR;
+#endif /* RTC_CTRL_TIMEFCFG */
   RTC_InitStruct->AsynchPrescaler = RTC_ASYNCH_PRESC_DEFAULT;
+#if defined (RTC_PSC_SPSC)
   RTC_InitStruct->SynchPrescaler  = RTC_SYNCH_PRESC_DEFAULT;
+#endif /* RTC_PSC_SPSC */
+#if defined (BAKPR)
+  RTC_InitStruct->OutPutSource    = DDL_RTC_CALIB_OUTPUT_NONE;
+#endif /* BAKPR */
 }
 
 /**
@@ -283,6 +366,7 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
 
   if (RTC_Format == DDL_RTC_FORMAT_BIN)
   {
+#if defined (RTC_CTRL_TIMEFCFG)
     if (DDL_RTC_GetHourFormat(RTCx) != DDL_RTC_HOURFORMAT_24HOUR)
     {
       ASSERT_PARAM(IS_DDL_RTC_HOUR12(RTC_TimeStruct->Hours));
@@ -293,11 +377,15 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
       RTC_TimeStruct->TimeFormat = 0x00U;
       ASSERT_PARAM(IS_DDL_RTC_HOUR24(RTC_TimeStruct->Hours));
     }
+#else
+    ASSERT_PARAM(IS_DDL_RTC_HOUR24(RTC_TimeStruct->Hours));
+#endif /* RTC_CTRL_TIMEFCFG */
     ASSERT_PARAM(IS_DDL_RTC_MINUTES(RTC_TimeStruct->Minutes));
     ASSERT_PARAM(IS_DDL_RTC_SECONDS(RTC_TimeStruct->Seconds));
   }
   else
   {
+#if defined (RTC_CTRL_TIMEFCFG)
     if (DDL_RTC_GetHourFormat(RTCx) != DDL_RTC_HOURFORMAT_24HOUR)
     {
       ASSERT_PARAM(IS_DDL_RTC_HOUR12(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Hours)));
@@ -308,12 +396,17 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
       RTC_TimeStruct->TimeFormat = 0x00U;
       ASSERT_PARAM(IS_DDL_RTC_HOUR24(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Hours)));
     }
+#else
+    ASSERT_PARAM(IS_DDL_RTC_HOUR24(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Hours)));
+#endif /* RTC_CTRL_TIMEFCFG */
     ASSERT_PARAM(IS_DDL_RTC_MINUTES(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Minutes)));
     ASSERT_PARAM(IS_DDL_RTC_SECONDS(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Seconds)));
   }
 
+#if defined (RTC_WRPROT_KEY)
   /* Disable the write protection for RTC registers */
   DDL_RTC_DisableWriteProtection(RTCx);
+#endif /* RTC_WRPROT_KEY */
 
   /* Set Initialization mode */
   if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
@@ -321,16 +414,28 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
     /* Check the input parameters format */
     if (RTC_Format != DDL_RTC_FORMAT_BIN)
     {
+#if defined (RTC_COUNT_SUPPORT)
+      DDL_RTC_TIME_Set(RTCx, (((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Hours)) * 3600U) + \
+                              ((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Minutes)) * 60U) + \
+                              ((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_TimeStruct->Seconds)))));
+#else
       DDL_RTC_TIME_Config(RTCx, RTC_TimeStruct->TimeFormat, RTC_TimeStruct->Hours,
                          RTC_TimeStruct->Minutes, RTC_TimeStruct->Seconds);
+#endif /* RTC_COUNT_SUPPORT */
     }
     else
     {
+#if defined (RTC_COUNT_SUPPORT)
+      DDL_RTC_TIME_Set(RTCx, (uint32_t)(((uint32_t)RTC_TimeStruct->Hours * 3600U) + \
+                                        ((uint32_t)RTC_TimeStruct->Minutes * 60U) + \
+                                        ((uint32_t)RTC_TimeStruct->Seconds)));
+#else
       DDL_RTC_TIME_Config(RTCx, RTC_TimeStruct->TimeFormat, __DDL_RTC_CONVERT_BIN2BCD(RTC_TimeStruct->Hours),
                          __DDL_RTC_CONVERT_BIN2BCD(RTC_TimeStruct->Minutes),
                          __DDL_RTC_CONVERT_BIN2BCD(RTC_TimeStruct->Seconds));
+#endif /* RTC_COUNT_SUPPORT */
     }
-
+#if defined (RTC_STS_INITEN)
     /* Exit Initialization mode */
     DDL_RTC_DisableInitMode(RTCx);
 
@@ -340,12 +445,18 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
       status = DDL_RTC_WaitForSynchro(RTCx);
     }
     else
+#endif /* RTC_STS_INITEN */
     {
       status = SUCCESS;
     }
   }
+#if defined (RTC_WRPROT_KEY)
   /* Enable the write protection for RTC registers */
   DDL_RTC_EnableWriteProtection(RTCx);
+#else
+  /* Exit Initialization mode */
+  DDL_RTC_ExitInitMode(RTCx);
+#endif /* RTC_WRPROT_KEY */
 
   return status;
 }
@@ -358,12 +469,15 @@ ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Ti
 void DDL_RTC_TIME_StructInit(DDL_RTC_TimeTypeDef *RTC_TimeStruct)
 {
   /* Time = 00h:00min:00sec */
+#if defined (RTC_TIME_TIMEFCFG)
   RTC_TimeStruct->TimeFormat = DDL_RTC_TIME_FORMAT_AM_OR_24;
+#endif /* RTC_TIME_TIMEFCFG */
   RTC_TimeStruct->Hours      = 0U;
   RTC_TimeStruct->Minutes    = 0U;
   RTC_TimeStruct->Seconds    = 0U;
 }
 
+#if defined (RTC_CALENDAR_SUPPORT)
 /**
   * @brief  Set the RTC current date.
   * @param  RTCx RTC Instance
@@ -451,7 +565,9 @@ void DDL_RTC_DATE_StructInit(DDL_RTC_DateTypeDef *RTC_DateStruct)
   RTC_DateStruct->Month   = DDL_RTC_MONTH_JANUARY;
   RTC_DateStruct->Year    = 0U;
 }
+#endif /* RTC_CALENDAR_SUPPORT */
 
+#if defined (RTC_ALARMA_SUPPORT)
 /**
   * @brief  Set the RTC Alarm A.
   * @note   The Alarm register can only be written when the corresponding Alarm
@@ -570,6 +686,30 @@ ErrorStatus DDL_RTC_ALMA_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Al
   return SUCCESS;
 }
 
+/**
+  * @brief  Set each @ref DDL_RTC_AlarmTypeDef of ALARMA field to default value (Time = 00h:00mn:00sec /
+  *         Day = 1st day of the month/Mask = all fields are masked).
+  * @param  RTC_AlarmStruct pointer to a @ref DDL_RTC_AlarmTypeDef structure which will be initialized.
+  * @retval None
+  */
+void DDL_RTC_ALMA_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
+{
+  /* Alarm Time Settings : Time = 00h:00mn:00sec */
+  RTC_AlarmStruct->AlarmTime.TimeFormat = DDL_RTC_ALMA_TIME_FORMAT_AM;
+  RTC_AlarmStruct->AlarmTime.Hours      = 0U;
+  RTC_AlarmStruct->AlarmTime.Minutes    = 0U;
+  RTC_AlarmStruct->AlarmTime.Seconds    = 0U;
+
+  /* Alarm Day Settings : Day = 1st day of the month */
+  RTC_AlarmStruct->AlarmDateWeekDaySel = DDL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
+  RTC_AlarmStruct->AlarmDateWeekDay    = 1U;
+
+  /* Alarm Masks Settings : Mask =  all fields are not masked */
+  RTC_AlarmStruct->AlarmMask           = DDL_RTC_ALMA_MASK_NONE;
+}
+#endif /* RTC_ALARMA_SUPPORT */
+
+#if defined (RTC_ALARMB_SUPPORT)
 /**
   * @brief  Set the RTC Alarm B.
   * @note   The Alarm register can only be written when the corresponding Alarm
@@ -694,28 +834,6 @@ ErrorStatus DDL_RTC_ALMB_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_Al
   * @param  RTC_AlarmStruct pointer to a @ref DDL_RTC_AlarmTypeDef structure which will be initialized.
   * @retval None
   */
-void DDL_RTC_ALMA_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
-{
-  /* Alarm Time Settings : Time = 00h:00mn:00sec */
-  RTC_AlarmStruct->AlarmTime.TimeFormat = DDL_RTC_ALMA_TIME_FORMAT_AM;
-  RTC_AlarmStruct->AlarmTime.Hours      = 0U;
-  RTC_AlarmStruct->AlarmTime.Minutes    = 0U;
-  RTC_AlarmStruct->AlarmTime.Seconds    = 0U;
-
-  /* Alarm Day Settings : Day = 1st day of the month */
-  RTC_AlarmStruct->AlarmDateWeekDaySel = DDL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
-  RTC_AlarmStruct->AlarmDateWeekDay    = 1U;
-
-  /* Alarm Masks Settings : Mask =  all fields are not masked */
-  RTC_AlarmStruct->AlarmMask           = DDL_RTC_ALMA_MASK_NONE;
-}
-
-/**
-  * @brief  Set each @ref DDL_RTC_AlarmTypeDef of ALARMA field to default value (Time = 00h:00mn:00sec /
-  *         Day = 1st day of the month/Mask = all fields are masked).
-  * @param  RTC_AlarmStruct pointer to a @ref DDL_RTC_AlarmTypeDef structure which will be initialized.
-  * @retval None
-  */
 void DDL_RTC_ALMB_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
 {
   /* Alarm Time Settings : Time = 00h:00mn:00sec */
@@ -731,6 +849,86 @@ void DDL_RTC_ALMB_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
   /* Alarm Masks Settings : Mask =  all fields are not masked */
   RTC_AlarmStruct->AlarmMask           = DDL_RTC_ALMB_MASK_NONE;
 }
+#endif /* RTC_ALARMB_SUPPORT */
+
+#if defined (RTC_ALARM_SUPPORT)
+
+/**
+  * @brief  Set the RTC Alarm.
+  * @param  RTCx RTC Instance
+  * @param  RTC_Format This parameter can be one of the following values:
+  *         @arg @ref DDL_RTC_FORMAT_BIN
+  *         @arg @ref DDL_RTC_FORMAT_BCD
+  * @param  RTC_AlarmStruct pointer to a @ref DDL_RTC_AlarmTypeDef structure that
+  *                         contains the alarm configuration parameters.
+  * @note   the user should call DDL_RTC_ALARM_StructInit()  or the structure
+  *         of Alarm need to be initialized  before Alarm init()
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: ALARM registers are configured
+  *          - ERROR: ALARM registers are not configured
+  */
+ErrorStatus DDL_RTC_ALARM_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
+{
+  ErrorStatus status = ERROR;
+  uint32_t counter_alarm = 0U;
+  /* Check the parameters */
+  ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
+  ASSERT_PARAM(IS_DDL_RTC_FORMAT(RTC_Format));
+
+  if (RTC_Format == DDL_RTC_FORMAT_BIN)
+  {
+    ASSERT_PARAM(IS_DDL_RTC_HOUR24(RTC_AlarmStruct->AlarmTime.Hours));
+    ASSERT_PARAM(IS_DDL_RTC_MINUTES(RTC_AlarmStruct->AlarmTime.Minutes));
+    ASSERT_PARAM(IS_DDL_RTC_SECONDS(RTC_AlarmStruct->AlarmTime.Seconds));
+  }
+  else
+  {
+    ASSERT_PARAM(IS_DDL_RTC_HOUR24(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Hours)));
+    ASSERT_PARAM(IS_DDL_RTC_MINUTES(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Minutes)));
+    ASSERT_PARAM(IS_DDL_RTC_SECONDS(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Seconds)));
+  }
+
+  /* Enter Initialization mode */
+  if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
+  {
+    /* Check the input parameters format */
+    if (RTC_Format != DDL_RTC_FORMAT_BIN)
+    {
+      counter_alarm = (((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Hours)) * 3600U) + \
+                       ((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Minutes)) * 60U) + \
+                       ((uint32_t)(__DDL_RTC_CONVERT_BCD2BIN(RTC_AlarmStruct->AlarmTime.Seconds))));
+      DDL_RTC_ALARM_Set(RTCx, counter_alarm);
+    }
+    else
+    {
+      counter_alarm = (uint32_t)(((uint32_t)RTC_AlarmStruct->AlarmTime.Hours * 3600U) + \
+                                 ((uint32_t)RTC_AlarmStruct->AlarmTime.Minutes * 60U) + \
+                                 ((uint32_t)RTC_AlarmStruct->AlarmTime.Seconds));
+      DDL_RTC_ALARM_Set(RTCx, counter_alarm);
+    }
+    status = SUCCESS;
+  }
+  /* Exit Initialization mode */
+  DDL_RTC_ExitInitMode(RTCx);
+
+  return status;
+}
+
+/**
+  * @brief  Set each @ref DDL_RTC_AlarmTypeDef of ALARM field to default value (Time = 00h:00mn:00sec /
+  *         Day = 1st day of the month/Mask = all fields are masked).
+  * @param  RTC_AlarmStruct pointer to a @ref DDL_RTC_AlarmTypeDef structure which will be initialized.
+  * @retval None
+  */
+void DDL_RTC_ALARM_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct)
+{
+  /* Alarm Time Settings : Time = 00h:00mn:00sec */
+  RTC_AlarmStruct->AlarmTime.Hours      = 0U;
+  RTC_AlarmStruct->AlarmTime.Minutes    = 0U;
+  RTC_AlarmStruct->AlarmTime.Seconds    = 0U;
+}
+
+#endif /* RTC_ALARM_SUPPORT */
 
 /**
   * @brief  Enters the RTC Initialization mode.
@@ -750,6 +948,7 @@ ErrorStatus DDL_RTC_EnterInitMode(RTC_TypeDef *RTCx)
   /* Check the parameter */
   ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
 
+#if defined (RTC_STS_RINITFLG)
   /* Check if the Initialization mode is set */
   if (DDL_RTC_IsActiveFlag_INIT(RTCx) == 0U)
   {
@@ -771,6 +970,25 @@ ErrorStatus DDL_RTC_EnterInitMode(RTC_TypeDef *RTCx)
       }
     }
   }
+#else
+  /* Wait till RTC is in INIT state and if Time out is reached exit */
+  tmp = DDL_RTC_IsActiveFlag_RTOF(RTCx);
+  while ((timeout != 0U) && (tmp != 1U))
+  {
+    if (DDL_SYSTICK_IsActiveCounterFlag() == 1U)
+    {
+      timeout --;
+    }
+    tmp = DDL_RTC_IsActiveFlag_RTOF(RTCx);
+    if (timeout == 0U)
+    {
+      status = ERROR;
+    }
+  }
+
+  /* Disable the write protection for RTC registers */
+  DDL_RTC_DisableWriteProtection(RTCx);
+#endif /* RTC_STS_RINITFLG */
   return status;
 }
 
@@ -787,13 +1005,36 @@ ErrorStatus DDL_RTC_EnterInitMode(RTC_TypeDef *RTCx)
   */
 ErrorStatus DDL_RTC_ExitInitMode(RTC_TypeDef *RTCx)
 {
+  ErrorStatus status = SUCCESS;
   /* Check the parameter */
   ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
 
+#if defined (RTC_STS_INITEN)
   /* Disable initialization mode */
   DDL_RTC_DisableInitMode(RTCx);
+#else
+  __IO uint32_t timeout = RTC_INITMODE_TIMEOUT;
+  uint32_t tmp = 0U;
 
-  return SUCCESS;
+  /* Disable initialization mode */
+  DDL_RTC_EnableWriteProtection(RTCx);
+
+  /* Wait till RTC is in INIT state and if Time out is reached exit */
+  tmp = DDL_RTC_IsActiveFlag_RTOF(RTCx);
+  while ((timeout != 0U) && (tmp != 1U))
+  {
+    if (DDL_SYSTICK_IsActiveCounterFlag() == 1U)
+    {
+      timeout --;
+    }
+    tmp = DDL_RTC_IsActiveFlag_RTOF(RTCx);
+    if (timeout == 0U)
+    {
+      status = ERROR;
+    }
+  }
+#endif /* RTC_STS_INITEN */
+  return status;
 }
 
 /**
@@ -842,6 +1083,59 @@ ErrorStatus DDL_RTC_WaitForSynchro(RTC_TypeDef *RTCx)
   return (status);
 }
 
+#if defined (RTC_COUNT_SUPPORT)
+/**
+  * @brief  Set the Time Counter
+  * @param  RTCx RTC Instance
+  * @param  TimeCounter this value can be from 0 to 0xFFFFFFFF
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: RTC Counter register configured
+  *          - ERROR: Not applicable
+  */
+ErrorStatus DDL_RTC_TIME_SetCounter(RTC_TypeDef *RTCx, uint32_t TimeCounter)
+{
+  ErrorStatus status = ERROR;
+  /* Check the parameter */
+  ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
+
+  /* Enter Initialization mode */
+  if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
+  {
+    DDL_RTC_TIME_Set(RTCx, TimeCounter);
+    status = SUCCESS;
+  }
+  /* Exit Initialization mode */
+  DDL_RTC_ExitInitMode(RTCx);
+
+  return status;
+}
+
+/**
+  * @brief  Set Alarm Counter.
+  * @param  RTCx RTC Instance
+  * @param  AlarmCounter this value can be from 0 to 0xFFFFFFFF
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: RTC exited from in Init mode
+  *          - ERROR: Not applicable
+  */
+ErrorStatus DDL_RTC_ALARM_SetCounter(RTC_TypeDef *RTCx, uint32_t AlarmCounter)
+{
+  ErrorStatus status = ERROR;
+  /* Check the parameter */
+  ASSERT_PARAM(IS_RTC_ALL_INSTANCE(RTCx));
+
+  /* Enter Initialization mode */
+  if (DDL_RTC_EnterInitMode(RTCx) != ERROR)
+  {
+    DDL_RTC_ALARM_Set(RTCx, AlarmCounter);
+    status = SUCCESS;
+  }
+  /* Exit Initialization mode */
+  DDL_RTC_ExitInitMode(RTCx);
+
+  return status;
+}
+#endif /* RTC_COUNT_SUPPORT */
 /**
   * @}
   */

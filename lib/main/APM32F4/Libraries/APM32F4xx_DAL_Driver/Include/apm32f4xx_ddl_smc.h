@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -701,7 +697,6 @@ typedef struct
 #define __FMC_NORSRAM_ENABLE                  __SMC_NORSRAM_ENABLE
 #define __FMC_NORSRAM_DISABLE                 __SMC_NORSRAM_DISABLE
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
 #define FMC_NAND_InitTypeDef                  SMC_NAND_InitTypeDef
 #define FMC_PCCARD_InitTypeDef                SMC_PCCARD_InitTypeDef
 #define FMC_NAND_PCC_TimingTypeDef            SMC_NAND_PCC_TimingTypeDef
@@ -731,23 +726,18 @@ typedef struct
 #define __FMC_PCCARD_DISABLE_IT               __SMC_PCCARD_DISABLE_IT
 #define __FMC_PCCARD_GET_FLAG                 __SMC_PCCARD_GET_FLAG
 #define __FMC_PCCARD_CLEAR_FLAG               __SMC_PCCARD_CLEAR_FLAG
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
 #define FMC_NORSRAM_TypeDef                   SMC_NORSRAM_TypeDef
 #define FMC_NORSRAM_EXTENDED_TypeDef          SMC_NORSRAM_EXTENDED_TypeDef
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
 #define FMC_NAND_TypeDef                      SMC_NAND_TypeDef
 #define FMC_PCCARD_TypeDef                    SMC_PCCARD_TypeDef
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
 #define FMC_NORSRAM_DEVICE                    SMC_NORSRAM_DEVICE
 #define FMC_NORSRAM_EXTENDED_DEVICE           SMC_NORSRAM_EXTENDED_DEVICE
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
 #define FMC_NAND_DEVICE                       SMC_NAND_DEVICE
 #define FMC_PCCARD_DEVICE                     SMC_PCCARD_DEVICE
 
 #define FMC_NAND_BANK2                        SMC_NAND_BANK2
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
 #define FMC_NORSRAM_BANK1                     SMC_NORSRAM_BANK1
 #define FMC_NORSRAM_BANK2                     SMC_NORSRAM_BANK2
@@ -790,7 +780,7 @@ typedef struct
   * @param  __BANK__ SMC_NORSRAM Bank
   * @retval None
   */
-#define __SMC_NORSRAM_ENABLE(__INSTANCE__, __BANK__)  ((__INSTANCE__)->CSTR[(__BANK__)]\
+#define __SMC_NORSRAM_ENABLE(__INSTANCE__, __BANK__)  ((__INSTANCE__)->CSCTRL[(__BANK__)]\
                                                        |= SMC_CSCTRL1_MBKEN)
 
 /**
@@ -799,7 +789,7 @@ typedef struct
   * @param  __BANK__ SMC_NORSRAM Bank
   * @retval None
   */
-#define __SMC_NORSRAM_DISABLE(__INSTANCE__, __BANK__) ((__INSTANCE__)->CSTR[(__BANK__)]\
+#define __SMC_NORSRAM_DISABLE(__INSTANCE__, __BANK__) ((__INSTANCE__)->CSCTRL[(__BANK__)]\
                                                        &= ~SMC_CSCTRL1_MBKEN)
 
 /**

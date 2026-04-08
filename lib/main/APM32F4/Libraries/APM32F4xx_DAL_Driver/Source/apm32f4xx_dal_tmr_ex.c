@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -176,6 +172,7 @@ DAL_StatusTypeDef DAL_TMREx_HallSensor_Init(TMR_HandleTypeDef *htmr, TMR_HallSen
   ASSERT_PARAM(IS_TMR_CLOCKDIVISION_DIV(htmr->Init.ClockDivision));
   ASSERT_PARAM(IS_TMR_AUTORELOAD_PRELOAD(htmr->Init.AutoReloadPreload));
   ASSERT_PARAM(IS_TMR_IC_POLARITY(sConfig->IC1Polarity));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
   ASSERT_PARAM(IS_TMR_IC_PRESCALER(sConfig->IC1Prescaler));
   ASSERT_PARAM(IS_TMR_IC_FILTER(sConfig->IC1Filter));
 
@@ -526,7 +523,7 @@ DAL_StatusTypeDef DAL_TMREx_HallSensor_Start_DMA(TMR_HandleTypeDef *htmr, uint32
   else if ((channel_1_state == DAL_TMR_CHANNEL_STATE_READY)
            && (complementary_channel_1_state == DAL_TMR_CHANNEL_STATE_READY))
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -906,7 +903,7 @@ DAL_StatusTypeDef DAL_TMREx_OCN_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Chan
   }
   else if (TMR_CHANNEL_N_STATE_GET(htmr, Channel) == DAL_TMR_CHANNEL_STATE_READY)
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -1104,17 +1101,6 @@ DAL_StatusTypeDef DAL_TMREx_OCN_Stop_DMA(TMR_HandleTypeDef *htmr, uint32_t Chann
     (+) Stop the Complementary PWM and disable interrupts.
     (+) Start the Complementary PWM and enable DMA transfers.
     (+) Stop the Complementary PWM and disable DMA transfers.
-    (+) Start the Complementary Input Capture measurement.
-    (+) Stop the Complementary Input Capture.
-    (+) Start the Complementary Input Capture and enable interrupts.
-    (+) Stop the Complementary Input Capture and disable interrupts.
-    (+) Start the Complementary Input Capture and enable DMA transfers.
-    (+) Stop the Complementary Input Capture and disable DMA transfers.
-    (+) Start the Complementary One Pulse generation.
-    (+) Stop the Complementary One Pulse.
-    (+) Start the Complementary One Pulse and enable interrupts.
-    (+) Stop the Complementary One Pulse and disable interrupts.
-
 @endverbatim
   * @{
   */
@@ -1387,7 +1373,7 @@ DAL_StatusTypeDef DAL_TMREx_PWMN_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Cha
   }
   else if (TMR_CHANNEL_N_STATE_GET(htmr, Channel) == DAL_TMR_CHANNEL_STATE_READY)
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -2089,9 +2075,6 @@ DAL_StatusTypeDef DAL_TMREx_ConfigBreakDeadTime(TMR_HandleTypeDef *htmr,
   * @brief  Configures the TMRx Remapping input capabilities.
   * @param  htmr TMR handle.
   * @param  Remap specifies the TMR remapping source.
-  *         For TMR1, the parameter can have the following values:                   (**)
-  *           @arg TMR_TMR1_TMR3_TRGO:  TMR1 ITR2 is connected to TMR3 TRGO
-  *           @arg TMR_TMR1_LPTMR:      TMR1 ITR2 is connected to LPTMR1 output
   *
   *         For TMR2, the parameter can have the following values:                   (**)
   *           @arg TMR_TMR2_TMR8_TRGO:  TMR2 ITR1 is connected to TMR8 TRGO          (*)
@@ -2104,18 +2087,16 @@ DAL_StatusTypeDef DAL_TMREx_ConfigBreakDeadTime(TMR_HandleTypeDef *htmr,
   *           @arg TMR_TMR5_LSI:        TMR5 TI4 is connected to LSI
   *           @arg TMR_TMR5_LSE:        TMR5 TI4 is connected to LSE
   *           @arg TMR_TMR5_RTC:        TMR5 TI4 is connected to the RTC wakeup interrupt
-  *           @arg TMR_TMR5_TMR3_TRGO:  TMR5 ITR1 is connected to TMR3 TRGO          (*)
-  *           @arg TMR_TMR5_LPTMR:      TMR5 ITR1 is connected to LPTMR1 output      (*)
-  *
-  *         For TMR9, the parameter can have the following values:                   (**)
-  *           @arg TMR_TMR9_TMR3_TRGO:  TMR9 ITR1 is connected to TMR3 TRGO
-  *           @arg TMR_TMR9_LPTMR:      TMR9 ITR1 is connected to LPTMR1 output
   *
   *         For TMR11, the parameter can have the following values:
   *           @arg TMR_TMR11_GPIO:     TMR11 TI1 is connected to GPIO
   *           @arg TMR_TMR11_HSE:      TMR11 TI1 is connected to HSE_RTC clock
-  *           @arg TMR_TMR11_SPDIFRX:  TMR11 TI1 is connected to SPDIFRX_FRAME_SYNC  (*)
   *
+  * @param  Remap specifies the TMR remapping source(Only for APM32F402/403xx device).
+  *         For TMR2, the parameter can have the following values:                   (**)
+  *           @arg TMR_TMR2_TMR8_TRGO:  TMR2 ITR1 is connected to TMR8 TRGO
+  *           @arg TMR_TMR2_USBFS_SOF:  TMR2 ITR1 is connected to OTG FS SOF
+  * 
   *         (*)  Value not defined in all devices. \n
   *         (**) Register not available in all devices.
   *
@@ -2129,24 +2110,8 @@ DAL_StatusTypeDef DAL_TMREx_RemapConfig(TMR_HandleTypeDef *htmr, uint32_t Remap)
 
   __DAL_LOCK(htmr);
 
-#if defined(LPTMR_OR_TMR1_ITR2_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP) && defined(LPTMR_OR_TMR9_ITR1_RMP)
-  if ((Remap & LPTMR_REMAP_MASK) == LPTMR_REMAP_MASK)
-  {
-    /* Connect TMRx internal trigger to LPTMR1 output */
-    __DAL_RCM_LPTMR1_CLK_ENABLE();
-    MODIFY_REG(LPTMR1->OR,
-               (LPTMR_OR_TMR1_ITR2_RMP | LPTMR_OR_TMR5_ITR1_RMP | LPTMR_OR_TMR9_ITR1_RMP),
-               Remap & ~(LPTMR_REMAP_MASK));
-  }
-  else
-  {
-    /* Set the Timer remapping configuration */
-    WRITE_REG(htmr->Instance->OR, Remap);
-  }
-#else
   /* Set the Timer remapping configuration */
-  WRITE_REG(htmr->Instance->OR, Remap);
-#endif /* LPTMR_OR_TMR1_ITR2_RMP &&  LPTMR_OR_TMR5_ITR1_RMP && LPTMR_OR_TMR9_ITR1_RMP */
+  WRITE_REG(htmr->Instance->OPT, Remap);
 
   __DAL_UNLOCK(htmr);
 

@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023-2024 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -49,6 +45,8 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_dal_def.h"
+
+#if defined(APM32F411xx)
 
 /** @addtogroup APM32F4xx_DAL_Driver
   * @{
@@ -433,7 +431,7 @@ uint32_t              DAL_COMP_GetError(COMP_HandleTypeDef * hcomp);
 /**
   * @}
   */
-
+#endif /* APM32F411xx */
 #ifdef __cplusplus
 }
 #endif

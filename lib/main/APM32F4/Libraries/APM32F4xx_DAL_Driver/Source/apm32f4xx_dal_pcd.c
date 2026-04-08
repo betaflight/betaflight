@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -196,11 +192,19 @@ DAL_StatusTypeDef DAL_PCD_Init(PCD_HandleTypeDef *hpcd)
 
   hpcd->State = DAL_PCD_STATE_BUSY;
 
+#if defined (USB_OTG_FS)
   /* Disable DMA mode for FS instance */
-  if ((USBx->GCID & (0x1U << 8)) == 0U)
+  if (USBx == USB_OTG_FS)
   {
     hpcd->Init.dma_enable = 0U;
   }
+#endif /* defined (USB_OTG_FS) */
+#if defined (USB_OTG_FS2)
+  else if (USBx == USB_OTG_FS2)
+  {
+    hpcd->Init.dma_enable = 0U;
+  }
+#endif /* defined (USB_OTG_FS2) */
 
   /* Disable the Interrupts */
   __DAL_PCD_DISABLE(hpcd);
@@ -213,7 +217,11 @@ DAL_StatusTypeDef DAL_PCD_Init(PCD_HandleTypeDef *hpcd)
   }
 
   /* Force Device Mode*/
-  (void)USB_SetCurrentMode(hpcd->Instance, USB_DEVICE_MODE);
+  if (USB_SetCurrentMode(hpcd->Instance, USB_DEVICE_MODE) != DAL_OK)
+  {
+    hpcd->State = DAL_PCD_STATE_ERROR;
+    return DAL_ERROR;
+  }
 
   /* Init endpoints structures */
   for (i = 0U; i < hpcd->Init.dev_endpoints; i++)
@@ -1506,20 +1514,31 @@ void DAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
   */
 void DAL_PCD_WKUP_IRQHandler(PCD_HandleTypeDef *hpcd)
 {
+#if defined (USB_OTG_FS)
   USB_OTG_GlobalTypeDef *USBx;
 
   USBx = hpcd->Instance;
 
-  if ((USBx->GCID & (0x1U << 8)) == 0U)
+  if (USBx == USB_OTG_FS)
   {
     /* Clear EINT pending Bit */
     __DAL_USB_OTG_FS_WAKEUP_EINT_CLEAR_FLAG();
   }
-  else
+#endif /* USB_OTG_FS */
+#if defined (USB_OTG_FS2)
+  else if (USBx == USB_OTG_FS2)
+  {
+    /* Clear EINT pending Bit */
+    __DAL_USB_OTG_FS2_WAKEUP_EINT_CLEAR_FLAG();
+  }
+#endif /* USB_OTG_FS2 */
+#if defined (USB_OTG_HS)
+  else if (USBx == USB_OTG_HS)
   {
     /* Clear EINT pending Bit */
     __DAL_USB_OTG_HS_WAKEUP_EINT_CLEAR_FLAG();
   }
+#endif /* USB_OTG_HS */
 }
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
 

@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -88,7 +84,9 @@ extern "C" {
 #define DDL_PMU_CSTS_WUEFLG                     PMU_CSTS_WUEFLG             /*!< Wakeup flag */
 #define DDL_PMU_CSTS_SBFLG                      PMU_CSTS_SBFLG              /*!< Standby flag */
 #define DDL_PMU_CSTS_PVDOFLG                    PMU_CSTS_PVDOFLG            /*!< Power voltage detector output flag */
+#if defined(PMU_CSTS_VOSRFLG)
 #define DDL_PMU_CSTS_VOS                        PMU_CSTS_VOSRFLG            /*!< Voltage scaling select flag */
+#endif /* PMU_CSTS_VOSRFLG */
 #if defined(PMU_CSTS_WKUPCFG)
 #define DDL_PMU_CSTS_WKUPCFG1                   PMU_CSTS_WKUPCFG            /*!< Enable WKUP pin */
 #elif defined(PMU_CSTS_WKUPCFG1)
@@ -124,10 +122,6 @@ extern "C" {
   */
 #define DDL_PMU_MODE_STOP_MAINREGU              0x00000000U                                             /*!< Enter Stop mode when the CPU enters deepsleep */
 #define DDL_PMU_MODE_STOP_LPREGU                (PMU_CTRL_LPDSCFG)                                      /*!< Enter Stop mode (with low power Regulator ON) when the CPU enters deepsleep */
-#if defined(PMU_CTRL_MRUDS) && defined(PMU_CTRL_LPUDS) && defined(PMU_CTRL_FPDSM)
-#define DDL_PMU_MODE_STOP_MAINREGU_UNDERDRIVE   (PMU_CTRL_MRUDS | PMU_CTRL_FPDSM)                       /*!< Enter Stop mode (with main Regulator in under-drive mode) when the CPU enters deepsleep */
-#define DDL_PMU_MODE_STOP_LPREGU_UNDERDRIVE     (PMU_CTRL_LPDSCFG | PMU_CTRL_LPUDS | PMU_CTRL_FPDSM)    /*!< Enter Stop mode (with low power Regulator in under-drive mode) when the CPU enters deepsleep */
-#endif /* PMU_CTRL_MRUDS && PMU_CTRL_LPUDS && PMU_CTRL_FPDSM */
 #if defined(PMU_CTRL_MRLV) && defined(PMU_CTRL_LPRLV) && defined(PMU_CTRL_FPDSM)
 #define DDL_PMU_MODE_STOP_MAINREGU_DEEPSLEEP    (PMU_CTRL_MRLV | PMU_CTRL_FPDSM)                        /*!< Enter Stop mode (with main Regulator in Deep Sleep mode) when the CPU enters deepsleep */
 #define DDL_PMU_MODE_STOP_LPREGU_DEEPSLEEP      (PMU_CTRL_LPDSCFG | PMU_CTRL_LPRLV | PMU_CTRL_FPDSM)    /*!< Enter Stop mode (with low power Regulator in Deep Sleep mode) when the CPU enters deepsleep */
@@ -282,156 +276,6 @@ __STATIC_INLINE uint32_t DDL_PMU_IsEnabledFLASHMemorySTOP(void)
   return (READ_BIT(PMU->CTRL, PMU_CTRL_FSMODE) == (PMU_CTRL_FSMODE));
 }
 #endif /* PMU_CTRL_FSMODE */
-#if defined(PMU_CTRL_UDEN)
-/**
-  * @brief  Enable Under Drive Mode
-  * @note  This mode is enabled only with STOP low power mode.
-  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This 
-  *        mode is only available when the main Regulator or the low power Regulator 
-  *        is in low voltage mode.      
-  * @note  If the Under-drive mode was enabled, it is automatically disabled after 
-  *        exiting Stop mode. 
-  *        When the voltage Regulator operates in Under-drive mode, an additional  
-  *        startup delay is induced when waking up from Stop mode.
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_EnableUnderDriveMode(void)
-{
-  SET_BIT(PMU->CTRL, PMU_CTRL_UDEN);
-}
-
-/**
-  * @brief  Disable Under Drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_DisableUnderDriveMode(void)
-{
-  CLEAR_BIT(PMU->CTRL, PMU_CTRL_UDEN);
-}
-
-/**
-  * @brief  Check if Under Drive Mode is enabled
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsEnabledUnderDriveMode(void)
-{
-  return (READ_BIT(PMU->CTRL, PMU_CTRL_UDEN) == (PMU_CTRL_UDEN));
-}
-#endif /* PMU_CTRL_UDEN */
-
-#if defined(PMU_CTRL_ODSWEN)
-/**
-  * @brief  Enable Over drive switching
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_EnableOverDriveSwitching(void)
-{
-  SET_BIT(PMU->CTRL, PMU_CTRL_ODSWEN);
-}
-
-/**
-  * @brief  Disable Over drive switching
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_DisableOverDriveSwitching(void)
-{
-  CLEAR_BIT(PMU->CTRL, PMU_CTRL_ODSWEN);
-}
-
-/**
-  * @brief  Check if Over drive switching is enabled
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsEnabledOverDriveSwitching(void)
-{
-  return (READ_BIT(PMU->CTRL, PMU_CTRL_ODSWEN) == (PMU_CTRL_ODSWEN));
-}
-#endif /* PMU_CTRL_ODSWEN */
-#if defined(PMU_CTRL_ODEN)
-/**
-  * @brief  Enable Over drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_EnableOverDriveMode(void)
-{
-  SET_BIT(PMU->CTRL, PMU_CTRL_ODEN);
-}
-
-/**
-  * @brief  Disable Over drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_DisableOverDriveMode(void)
-{
-  CLEAR_BIT(PMU->CTRL, PMU_CTRL_ODEN);
-}
-
-/**
-  * @brief  Check if Over drive switching is enabled
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsEnabledOverDriveMode(void)
-{
-  return (READ_BIT(PMU->CTRL, PMU_CTRL_ODEN) == (PMU_CTRL_ODEN));
-}
-#endif /* PMU_CTRL_ODEN */
-#if defined(PMU_CTRL_MRUDS)
-/**
-  * @brief  Enable Main Regulator in deepsleep under-drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_EnableMainRegulatorDeepSleepUDMode(void)
-{
-  SET_BIT(PMU->CTRL, PMU_CTRL_MRUDS);
-}
-
-/**
-  * @brief  Disable Main Regulator in deepsleep under-drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_DisableMainRegulatorDeepSleepUDMode(void)
-{
-  CLEAR_BIT(PMU->CTRL, PMU_CTRL_MRUDS);
-}
-
-/**
-  * @brief  Check if Main Regulator in deepsleep under-drive Mode is enabled
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsEnabledMainRegulatorDeepSleepUDMode(void)
-{
-  return (READ_BIT(PMU->CTRL, PMU_CTRL_MRUDS) == (PMU_CTRL_MRUDS));
-}
-#endif /* PMU_CTRL_MRUDS */
-
-#if defined(PMU_CTRL_LPUDS)
-/**
-  * @brief  Enable Low Power Regulator in deepsleep under-drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_EnableLowPowerRegulatorDeepSleepUDMode(void)
-{
-  SET_BIT(PMU->CTRL, PMU_CTRL_LPUDS);
-}
-
-/**
-  * @brief  Disable Low Power Regulator in deepsleep under-drive Mode
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_DisableLowPowerRegulatorDeepSleepUDMode(void)
-{
-  CLEAR_BIT(PMU->CTRL, PMU_CTRL_LPUDS);
-}
-
-/**
-  * @brief  Check if Low Power Regulator in deepsleep under-drive Mode is enabled
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsEnabledLowPowerRegulatorDeepSleepUDMode(void)
-{
-  return (READ_BIT(PMU->CTRL, PMU_CTRL_LPUDS) == (PMU_CTRL_LPUDS));
-}
-#endif /* PMU_CTRL_LPUDS */
 
 #if defined(PMU_CTRL_MRLV)
 /**
@@ -490,6 +334,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsEnabledLowPowerRegulatorLowVoltageMode(void)
   return (READ_BIT(PMU->CTRL, PMU_CTRL_LPRLV) == (PMU_CTRL_LPRLV));
 }
 #endif /* PMU_CTRL_LPRLV */
+#if defined(PMU_CTRL_VOSSEL)
 /**
   * @brief  Set the main internal Regulator output voltage
   * @param  VoltageScaling This parameter can be one of the following values:
@@ -514,6 +359,8 @@ __STATIC_INLINE uint32_t DDL_PMU_GetRegulVoltageScaling(void)
 {
   return (uint32_t)(READ_BIT(PMU->CTRL, PMU_CTRL_VOSSEL));
 }
+#endif /* PMU_CTRL_VOSSEL */
+#if defined(PMU_CTRL_FPDSM)
 /**
   * @brief  Enable the Flash Power Down in Stop Mode
   * @retval None
@@ -540,7 +387,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsEnabledFlashPowerDown(void)
 {
   return (READ_BIT(PMU->CTRL, PMU_CTRL_FPDSM) == (PMU_CTRL_FPDSM));
 }
-
+#endif /* PMU_CTRL_FPDSM */
 /**
   * @brief  Enable access to the backup domain
   * @retval None
@@ -567,6 +414,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsEnabledBkUpAccess(void)
 {
   return (READ_BIT(PMU->CTRL, PMU_CTRL_BPWEN) == (PMU_CTRL_BPWEN));
 }
+#if defined(PMU_CSTS_BKPREN)
 /**
   * @brief  Enable the backup Regulator
   * @note The BRE bit of the PMU_CSTS register is protected against parasitic write access.
@@ -597,6 +445,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsEnabledBkUpRegulator(void)
 {
   return (READ_BIT(PMU->CSTS, PMU_CSTS_BKPREN) == (PMU_CSTS_BKPREN));
 }
+#endif /* PMU_CSTS_BKPREN */
 
 /**
   * @brief  Set voltage Regulator mode during deep sleep mode
@@ -626,8 +475,6 @@ __STATIC_INLINE uint32_t DDL_PMU_GetRegulModeDS(void)
   * @param  PDMode This parameter can be one of the following values:
   *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU
   *         @arg @ref DDL_PMU_MODE_STOP_LPREGU
-  *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU_UNDERDRIVE (*)
-  *         @arg @ref DDL_PMU_MODE_STOP_LPREGU_UNDERDRIVE (*)
   *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU_DEEPSLEEP (*)
   *         @arg @ref DDL_PMU_MODE_STOP_LPREGU_DEEPSLEEP (*)
   *
@@ -637,13 +484,11 @@ __STATIC_INLINE uint32_t DDL_PMU_GetRegulModeDS(void)
   */
 __STATIC_INLINE void DDL_PMU_SetPowerMode(uint32_t PDMode)
 {
-#if defined(PMU_CTRL_MRUDS) && defined(PMU_CTRL_LPUDS) && defined(PMU_CTRL_FPDSM)
-  MODIFY_REG(PMU->CTRL, (PMU_CTRL_PDDSCFG | PMU_CTRL_LPDSCFG | PMU_CTRL_FPDSM | PMU_CTRL_LPUDS | PMU_CTRL_MRUDS), PDMode);
-#elif defined(PMU_CTRL_MRLV) && defined(PMU_CTRL_LPRLV) && defined(PMU_CTRL_FPDSM)
+#if defined(PMU_CTRL_MRLV) && defined(PMU_CTRL_LPRLV) && defined(PMU_CTRL_FPDSM)
   MODIFY_REG(PMU->CTRL, (PMU_CTRL_PDDSCFG | PMU_CTRL_LPDSCFG | PMU_CTRL_FPDSM | PMU_CTRL_LPRLV | PMU_CTRL_MRLV), PDMode);
 #else
   MODIFY_REG(PMU->CTRL, (PMU_CTRL_PDDSCFG| PMU_CTRL_LPDSCFG), PDMode);
-#endif /* PMU_CTRL_MRUDS && PMU_CTRL_LPUDS && PMU_CTRL_FPDSM */
+#endif /* PMU_CTRL_MRLV && PMU_CTRL_LPRLV && PMU_CTRL_FPDSM */
 }
 
 /**
@@ -651,8 +496,6 @@ __STATIC_INLINE void DDL_PMU_SetPowerMode(uint32_t PDMode)
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU
   *         @arg @ref DDL_PMU_MODE_STOP_LPREGU
-  *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU_UNDERDRIVE (*)
-  *         @arg @ref DDL_PMU_MODE_STOP_LPREGU_UNDERDRIVE (*)
   *         @arg @ref DDL_PMU_MODE_STOP_MAINREGU_DEEPSLEEP (*)
   *         @arg @ref DDL_PMU_MODE_STOP_LPREGU_DEEPSLEEP (*)
   *
@@ -661,13 +504,11 @@ __STATIC_INLINE void DDL_PMU_SetPowerMode(uint32_t PDMode)
   */
 __STATIC_INLINE uint32_t DDL_PMU_GetPowerMode(void)
 {
-#if defined(PMU_CTRL_MRUDS) && defined(PMU_CTRL_LPUDS) && defined(PMU_CTRL_FPDSM)
-  return (uint32_t)(READ_BIT(PMU->CTRL, (PMU_CTRL_PDDSCFG | PMU_CTRL_LPDSCFG | PMU_CTRL_FPDSM | PMU_CTRL_LPUDS | PMU_CTRL_MRUDS)));
-#elif defined(PMU_CTRL_MRLV) && defined(PMU_CTRL_LPRLV) && defined(PMU_CTRL_FPDSM)
+#if defined(PMU_CTRL_MRLV) && defined(PMU_CTRL_LPRLV) && defined(PMU_CTRL_FPDSM)
   return (uint32_t)(READ_BIT(PMU->CTRL, (PMU_CTRL_PDDSCFG | PMU_CTRL_LPDSCFG | PMU_CTRL_FPDSM | PMU_CTRL_LPRLV | PMU_CTRL_MRLV)));
 #else
   return (uint32_t)(READ_BIT(PMU->CTRL, (PMU_CTRL_PDDSCFG| PMU_CTRL_LPDSCFG)));
-#endif /* PMU_CTRL_MRUDS && PMU_CTRL_LPUDS && PMU_CTRL_FPDSM */
+#endif /* PMU_CTRL_MRLV && PMU_CTRL_LPRLV && PMU_CTRL_FPDSM */
 }
 
 /**
@@ -804,6 +645,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_SB(void)
   return (READ_BIT(PMU->CSTS, PMU_CSTS_SBFLG) == (PMU_CSTS_SBFLG));
 }
 
+#if defined(PMU_CSTS_BKPRFLG)
 /**
   * @brief  Get Backup Regulator ready Flag
   * @retval State of bit (1 or 0).
@@ -812,6 +654,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_BRR(void)
 {
   return (READ_BIT(PMU->CSTS, PMU_CSTS_BKPRFLG) == (PMU_CSTS_BKPRFLG));
 }
+#endif /* PMU_CSTS_BKPRFLG */
 /**
   * @brief  Indicate whether VDD voltage is below the selected PVD threshold
   * @retval State of bit (1 or 0).
@@ -821,6 +664,7 @@ __STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_PVDO(void)
   return (READ_BIT(PMU->CSTS, PMU_CSTS_PVDOFLG) == (PMU_CSTS_PVDOFLG));
 }
 
+#if defined(PMU_CSTS_VOSRFLG)
 /**
   * @brief  Indicate whether the Regulator is ready in the selected voltage range or if its output voltage is still changing to the required voltage level
   * @retval State of bit (1 or 0).
@@ -829,38 +673,8 @@ __STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_VOS(void)
 {
   return (READ_BIT(PMU->CSTS, DDL_PMU_CSTS_VOS) == (DDL_PMU_CSTS_VOS));
 }
-#if defined(PMU_CTRL_ODEN)
-/**
-  * @brief  Indicate whether the Over-Drive mode is ready or not
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_OD(void)
-{
-  return (READ_BIT(PMU->CSTS, PMU_CSTS_ODRDY) == (PMU_CSTS_ODRDY));
-}
-#endif /* PMU_CTRL_ODEN */
+#endif /* PMU_CSTS_VOSRFLG */
 
-#if defined(PMU_CTRL_ODSWEN)
-/**
-  * @brief  Indicate whether the Over-Drive mode switching is ready or not
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_ODSW(void)
-{
-  return (READ_BIT(PMU->CSTS, PMU_CSTS_ODSWRDY) == (PMU_CSTS_ODSWRDY));
-}
-#endif /* PMU_CTRL_ODSWEN */
-
-#if defined(PMU_CTRL_UDEN)
-/**
-  * @brief  Indicate whether the Under-Drive mode is ready or not
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_PMU_IsActiveFlag_UD(void)
-{
-  return (READ_BIT(PMU->CSTS, PMU_CSTS_UDRDY) == (PMU_CSTS_UDRDY));
-}
-#endif /* PMU_CTRL_UDEN */
 /**
   * @brief  Clear Standby Flag
   * @retval None
@@ -878,16 +692,6 @@ __STATIC_INLINE void DDL_PMU_ClearFlag_WU(void)
 {
   SET_BIT(PMU->CTRL, PMU_CTRL_WUFLGCLR);
 }
-#if defined(PMU_CSTS_UDRDY)
-/**
-  * @brief  Clear Under-Drive ready Flag
-  * @retval None
-  */
-__STATIC_INLINE void DDL_PMU_ClearFlag_UD(void)
-{
-  WRITE_REG(PMU->CSTS, PMU_CSTS_UDRDY);
-}
-#endif /* PMU_CSTS_UDRDY */
 
 /**
   * @}

@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -47,10 +43,12 @@
 #include "apm32f4xx_ddl_bus.h"
 
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
-#endif /* USE_FULL_ASSERT */
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
+#endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
   * @{
@@ -93,11 +91,19 @@ ErrorStatus DDL_CRC_DeInit(CRC_TypeDef *CRCx)
 
   if (CRCx == CRC)
   {
+#if defined (RCM_AHB1RST_CRCRST)
     /* Force CRC reset */
     DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_CRC);
 
     /* Release CRC reset */
     DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_CRC);
+#else
+    /* Reset the CRC calculation unit */
+    DDL_CRC_ResetCRCCalculationUnit(CRCx);
+
+    /* Reset IDR register */
+    DDL_CRC_Write_IDR(CRCx, 0x00U);
+#endif /* RCM_AHB1RST_CRCRST */
   }
   else
   {

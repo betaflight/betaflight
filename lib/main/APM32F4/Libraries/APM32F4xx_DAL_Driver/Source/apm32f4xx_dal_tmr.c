@@ -53,13 +53,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -560,7 +556,7 @@ DAL_StatusTypeDef DAL_TMR_Base_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t *pDat
   }
   else if (htmr->State == DAL_TMR_STATE_READY)
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -682,6 +678,7 @@ DAL_StatusTypeDef DAL_TMR_OC_Init(TMR_HandleTypeDef *htmr)
   ASSERT_PARAM(IS_TMR_INSTANCE(htmr->Instance));
   ASSERT_PARAM(IS_TMR_COUNTER_MODE(htmr->Init.CounterMode));
   ASSERT_PARAM(IS_TMR_CLOCKDIVISION_DIV(htmr->Init.ClockDivision));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
   ASSERT_PARAM(IS_TMR_AUTORELOAD_PRELOAD(htmr->Init.AutoReloadPreload));
 
   if (htmr->State == DAL_TMR_STATE_RESET)
@@ -1082,7 +1079,7 @@ DAL_StatusTypeDef DAL_TMR_OC_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Channel
   }
   else if (TMR_CHANNEL_STATE_GET(htmr, Channel) == DAL_TMR_CHANNEL_STATE_READY)
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -1345,6 +1342,7 @@ DAL_StatusTypeDef DAL_TMR_PWM_Init(TMR_HandleTypeDef *htmr)
   ASSERT_PARAM(IS_TMR_INSTANCE(htmr->Instance));
   ASSERT_PARAM(IS_TMR_COUNTER_MODE(htmr->Init.CounterMode));
   ASSERT_PARAM(IS_TMR_CLOCKDIVISION_DIV(htmr->Init.ClockDivision));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
   ASSERT_PARAM(IS_TMR_AUTORELOAD_PRELOAD(htmr->Init.AutoReloadPreload));
 
   if (htmr->State == DAL_TMR_STATE_RESET)
@@ -1745,7 +1743,7 @@ DAL_StatusTypeDef DAL_TMR_PWM_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Channe
   }
   else if (TMR_CHANNEL_STATE_GET(htmr, Channel) == DAL_TMR_CHANNEL_STATE_READY)
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -2007,6 +2005,7 @@ DAL_StatusTypeDef DAL_TMR_IC_Init(TMR_HandleTypeDef *htmr)
   ASSERT_PARAM(IS_TMR_INSTANCE(htmr->Instance));
   ASSERT_PARAM(IS_TMR_COUNTER_MODE(htmr->Init.CounterMode));
   ASSERT_PARAM(IS_TMR_CLOCKDIVISION_DIV(htmr->Init.ClockDivision));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
   ASSERT_PARAM(IS_TMR_AUTORELOAD_PRELOAD(htmr->Init.AutoReloadPreload));
 
   if (htmr->State == DAL_TMR_STATE_RESET)
@@ -2400,7 +2399,7 @@ DAL_StatusTypeDef DAL_TMR_IC_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Channel
   else if ((channel_state == DAL_TMR_CHANNEL_STATE_READY)
            && (complementary_channel_state == DAL_TMR_CHANNEL_STATE_READY))
   {
-    if ((pData == NULL) && (Length > 0U))
+    if ((pData == NULL) || (Length == 0U))
     {
       return DAL_ERROR;
     }
@@ -2656,6 +2655,7 @@ DAL_StatusTypeDef DAL_TMR_OnePulse_Init(TMR_HandleTypeDef *htmr, uint32_t OnePul
   ASSERT_PARAM(IS_TMR_COUNTER_MODE(htmr->Init.CounterMode));
   ASSERT_PARAM(IS_TMR_CLOCKDIVISION_DIV(htmr->Init.ClockDivision));
   ASSERT_PARAM(IS_TMR_OPM_MODE(OnePulseMode));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
   ASSERT_PARAM(IS_TMR_AUTORELOAD_PRELOAD(htmr->Init.AutoReloadPreload));
 
   if (htmr->State == DAL_TMR_STATE_RESET)
@@ -3059,6 +3059,7 @@ DAL_StatusTypeDef DAL_TMR_Encoder_Init(TMR_HandleTypeDef *htmr,  TMR_Encoder_Ini
   ASSERT_PARAM(IS_TMR_IC_PRESCALER(sConfig->IC2Prescaler));
   ASSERT_PARAM(IS_TMR_IC_FILTER(sConfig->IC1Filter));
   ASSERT_PARAM(IS_TMR_IC_FILTER(sConfig->IC2Filter));
+  ASSERT_PARAM(IS_TMR_PERIOD(htmr, htmr->Init.Period));
 
   if (htmr->State == DAL_TMR_STATE_RESET)
   {
@@ -3568,7 +3569,7 @@ DAL_StatusTypeDef DAL_TMR_Encoder_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Ch
     else if ((channel_1_state == DAL_TMR_CHANNEL_STATE_READY)
              && (complementary_channel_1_state == DAL_TMR_CHANNEL_STATE_READY))
     {
-      if ((pData1 == NULL) && (Length > 0U))
+      if ((pData1 == NULL) || (Length == 0U))
       {
         return DAL_ERROR;
       }
@@ -3593,7 +3594,7 @@ DAL_StatusTypeDef DAL_TMR_Encoder_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Ch
     else if ((channel_2_state == DAL_TMR_CHANNEL_STATE_READY)
              && (complementary_channel_2_state == DAL_TMR_CHANNEL_STATE_READY))
     {
-      if ((pData2 == NULL) && (Length > 0U))
+      if ((pData2 == NULL) || (Length == 0U))
       {
         return DAL_ERROR;
       }
@@ -3622,7 +3623,7 @@ DAL_StatusTypeDef DAL_TMR_Encoder_Start_DMA(TMR_HandleTypeDef *htmr, uint32_t Ch
              && (complementary_channel_1_state == DAL_TMR_CHANNEL_STATE_READY)
              && (complementary_channel_2_state == DAL_TMR_CHANNEL_STATE_READY))
     {
-      if ((((pData1 == NULL) || (pData2 == NULL))) && (Length > 0U))
+      if ((((pData1 == NULL) || (pData2 == NULL))) || (Length == 0U))
       {
         return DAL_ERROR;
       }
@@ -4589,7 +4590,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_UPDATE], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4607,7 +4608,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC1], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4625,7 +4626,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC2], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4643,7 +4644,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC3], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4661,7 +4662,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC4], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4679,7 +4680,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_COMMUTATION], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4697,7 +4698,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiWriteStart(TMR_HandleTypeDef *htmr, uint
 
       /* Enable the DMA stream */
       if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_TRIGGER], (uint32_t)BurstBuffer,
-                           (uint32_t)&htmr->Instance->DMAR, DataLength) != DAL_OK)
+                           (uint32_t)&htmr->Instance->DMADDR, DataLength) != DAL_OK)
       {
         /* Return error status */
         return DAL_ERROR;
@@ -4923,7 +4924,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_UPDATE]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_UPDATE], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_UPDATE], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -4941,7 +4942,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_CC1]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC1], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC1], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -4959,7 +4960,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_CC2]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC2], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC2], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -4977,7 +4978,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_CC3]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC3], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC3], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -4995,7 +4996,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_CC4]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC4], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_CC4], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -5013,7 +5014,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_COMMUTATION]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_COMMUTATION], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_COMMUTATION], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -5031,7 +5032,7 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_MultiReadStart(TMR_HandleTypeDef *htmr, uint3
       htmr->hdma[TMR_DMA_ID_TRIGGER]->XferErrorCallback = TMR_DMAError ;
 
       /* Enable the DMA stream */
-      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_TRIGGER], (uint32_t)&htmr->Instance->DMAR, (uint32_t)BurstBuffer,
+      if (DAL_DMA_Start_IT(htmr->hdma[TMR_DMA_ID_TRIGGER], (uint32_t)&htmr->Instance->DMADDR, (uint32_t)BurstBuffer,
                            DataLength) != DAL_OK)
       {
         /* Return error status */
@@ -5143,6 +5144,9 @@ DAL_StatusTypeDef DAL_TMR_DMABurst_ReadStop(TMR_HandleTypeDef *htmr, uint32_t Bu
   * @note   TMR_EVENTSOURCE_COM is relevant only with advanced timer instances.
   * @note   TMR_EVENTSOURCE_BREAK are relevant only for timer instances
   *         supporting a break input.
+  * @note   Ensure that this function is executed completely, so it is not interrupted
+  *         by the signals set by the function, which could result in the tmr handler 
+  *         being locked and unable to execute the interrupt code properly.
   * @retval DAL status
   */
 
@@ -5856,8 +5860,6 @@ DAL_StatusTypeDef DAL_TMR_RegisterCallback(TMR_HandleTypeDef *htmr, DAL_TMR_Call
   {
     return DAL_ERROR;
   }
-  /* Process locked */
-  __DAL_LOCK(htmr);
 
   if (htmr->State == DAL_TMR_STATE_READY)
   {
@@ -6049,9 +6051,6 @@ DAL_StatusTypeDef DAL_TMR_RegisterCallback(TMR_HandleTypeDef *htmr, DAL_TMR_Call
     status = DAL_ERROR;
   }
 
-  /* Release Lock */
-  __DAL_UNLOCK(htmr);
-
   return status;
 }
 
@@ -6093,9 +6092,6 @@ DAL_StatusTypeDef DAL_TMR_RegisterCallback(TMR_HandleTypeDef *htmr, DAL_TMR_Call
 DAL_StatusTypeDef DAL_TMR_UnRegisterCallback(TMR_HandleTypeDef *htmr, DAL_TMR_CallbackIDTypeDef CallbackID)
 {
   DAL_StatusTypeDef status = DAL_OK;
-
-  /* Process locked */
-  __DAL_LOCK(htmr);
 
   if (htmr->State == DAL_TMR_STATE_READY)
   {
@@ -6328,9 +6324,6 @@ DAL_StatusTypeDef DAL_TMR_UnRegisterCallback(TMR_HandleTypeDef *htmr, DAL_TMR_Ca
     status = DAL_ERROR;
   }
 
-  /* Release Lock */
-  __DAL_UNLOCK(htmr);
-
   return status;
 }
 #endif /* USE_DAL_TMR_REGISTER_CALLBACKS */
@@ -6415,7 +6408,7 @@ DAL_TMR_StateTypeDef DAL_TMR_Encoder_GetState(TMR_HandleTypeDef *htmr)
 }
 
 /**
-  * @brief  Return the TMR Encoder Mode handle state.
+  * @brief  Return the TMR active channel.
   * @param  htmr TMR handle
   * @retval Active channel
   */
@@ -6837,6 +6830,13 @@ void TMR_Base_SetConfig(TMR_TypeDef *TMRx, TMR_Base_InitTypeDef *Structure)
   /* Generate an update event to reload the Prescaler
      and the repetition counter (only for advanced timer) value immediately */
   TMRx->CEG = TMR_CEG_UEG;
+
+  /* Check if the update flag is set after the Update Generation, if so clear the UIF flag */
+  if (DAL_IS_BIT_SET(TMRx->STS, TMR_FLAG_UPDATE))
+  {
+    /* Clear the update flag */
+    CLEAR_BIT(TMRx->STS, TMR_FLAG_UPDATE);
+  }
 }
 
 /**
@@ -6851,11 +6851,12 @@ static void TMR_OC1_SetConfig(TMR_TypeDef *TMRx, TMR_OC_InitTypeDef *OC_Config)
   uint32_t tmpccer;
   uint32_t tmpcr2;
 
+  /* Get the TMRx CCEN register value */
+  tmpccer = TMRx->CCEN;
+
   /* Disable the Channel 1: Reset the CC1EN Bit */
   TMRx->CCEN &= ~TMR_CCEN_CC1EN;
 
-  /* Get the TMRx CCEN register value */
-  tmpccer = TMRx->CCEN;
   /* Get the TMRx CTRL2 register value */
   tmpcr2 =  TMRx->CTRL2;
 
@@ -6926,11 +6927,12 @@ void TMR_OC2_SetConfig(TMR_TypeDef *TMRx, TMR_OC_InitTypeDef *OC_Config)
   uint32_t tmpccer;
   uint32_t tmpcr2;
 
+  /* Get the TMRx CCEN register value */
+  tmpccer = TMRx->CCEN;
+
   /* Disable the Channel 2: Reset the CC2EN Bit */
   TMRx->CCEN &= ~TMR_CCEN_CC2EN;
 
-  /* Get the TMRx CCEN register value */
-  tmpccer = TMRx->CCEN;
   /* Get the TMRx CTRL2 register value */
   tmpcr2 =  TMRx->CTRL2;
 
@@ -7002,11 +7004,12 @@ static void TMR_OC3_SetConfig(TMR_TypeDef *TMRx, TMR_OC_InitTypeDef *OC_Config)
   uint32_t tmpccer;
   uint32_t tmpcr2;
 
+  /* Get the TMRx CCEN register value */
+  tmpccer = TMRx->CCEN;
+
   /* Disable the Channel 3: Reset the CC3EN Bit */
   TMRx->CCEN &= ~TMR_CCEN_CC3EN;
 
-  /* Get the TMRx CCEN register value */
-  tmpccer = TMRx->CCEN;
   /* Get the TMRx CTRL2 register value */
   tmpcr2 =  TMRx->CTRL2;
 
@@ -7076,11 +7079,12 @@ static void TMR_OC4_SetConfig(TMR_TypeDef *TMRx, TMR_OC_InitTypeDef *OC_Config)
   uint32_t tmpccer;
   uint32_t tmpcr2;
 
+  /* Get the TMRx CCEN register value */
+  tmpccer = TMRx->CCEN;
+
   /* Disable the Channel 4: Reset the CC4EN Bit */
   TMRx->CCEN &= ~TMR_CCEN_CC4EN;
 
-  /* Get the TMRx CCEN register value */
-  tmpccer = TMRx->CCEN;
   /* Get the TMRx CTRL2 register value */
   tmpcr2 =  TMRx->CTRL2;
 
@@ -7271,9 +7275,9 @@ void TMR_TI1_SetConfig(TMR_TypeDef *TMRx, uint32_t TMR_ICPolarity, uint32_t TMR_
   uint32_t tmpccer;
 
   /* Disable the Channel 1: Reset the CC1EN Bit */
+  tmpccer = TMRx->CCEN;
   TMRx->CCEN &= ~TMR_CCEN_CC1EN;
   tmpccmr1 = TMRx->CCM1;
-  tmpccer = TMRx->CCEN;
 
   /* Select the Input */
   if (IS_TMR_CC2_INSTANCE(TMRx) != RESET)
@@ -7361,9 +7365,9 @@ static void TMR_TI2_SetConfig(TMR_TypeDef *TMRx, uint32_t TMR_ICPolarity, uint32
   uint32_t tmpccer;
 
   /* Disable the Channel 2: Reset the CC2EN Bit */
+  tmpccer = TMRx->CCEN;
   TMRx->CCEN &= ~TMR_CCEN_CC2EN;
   tmpccmr1 = TMRx->CCM1;
-  tmpccer = TMRx->CCEN;
 
   /* Select the Input */
   tmpccmr1 &= ~TMR_CCM1_CC2SEL;
@@ -7400,9 +7404,9 @@ static void TMR_TI2_ConfigInputStage(TMR_TypeDef *TMRx, uint32_t TMR_ICPolarity,
   uint32_t tmpccer;
 
   /* Disable the Channel 2: Reset the CC2EN Bit */
+  tmpccer = TMRx->CCEN;
   TMRx->CCEN &= ~TMR_CCEN_CC2EN;
   tmpccmr1 = TMRx->CCM1;
-  tmpccer = TMRx->CCEN;
 
   /* Set the filter */
   tmpccmr1 &= ~TMR_CCM1_IC2F;
@@ -7444,9 +7448,9 @@ static void TMR_TI3_SetConfig(TMR_TypeDef *TMRx, uint32_t TMR_ICPolarity, uint32
   uint32_t tmpccer;
 
   /* Disable the Channel 3: Reset the CC3EN Bit */
+  tmpccer = TMRx->CCEN;
   TMRx->CCEN &= ~TMR_CCEN_CC3EN;
   tmpccmr2 = TMRx->CCM2;
-  tmpccer = TMRx->CCEN;
 
   /* Select the Input */
   tmpccmr2 &= ~TMR_CCM2_CC3SEL;
@@ -7492,9 +7496,9 @@ static void TMR_TI4_SetConfig(TMR_TypeDef *TMRx, uint32_t TMR_ICPolarity, uint32
   uint32_t tmpccer;
 
   /* Disable the Channel 4: Reset the CC4EN Bit */
+  tmpccer = TMRx->CCEN;
   TMRx->CCEN &= ~TMR_CCEN_CC4EN;
   tmpccmr2 = TMRx->CCM2;
-  tmpccer = TMRx->CCEN;
 
   /* Select the Input */
   tmpccmr2 &= ~TMR_CCM2_CC4SEL;

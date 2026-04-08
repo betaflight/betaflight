@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -47,10 +43,13 @@
 #include "apm32f4xx_ddl_usart.h"
 #include "apm32f4xx_ddl_rcm.h"
 #include "apm32f4xx_ddl_bus.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -274,7 +273,7 @@ ErrorStatus DDL_USART_Init(USART_TypeDef *USARTx, DDL_USART_InitTypeDef *USART_I
 {
   ErrorStatus status = ERROR;
   uint32_t periphclk = DDL_RCM_PERIPH_FREQUENCY_NO;
-  DDL_RCM_ClocksTypeDef rcc_clocks;
+  DDL_RCM_ClocksTypeDef rcm_clocks;
 
   /* Check the parameters */
   ASSERT_PARAM(IS_UART_INSTANCE(USARTx));
@@ -284,7 +283,9 @@ ErrorStatus DDL_USART_Init(USART_TypeDef *USARTx, DDL_USART_InitTypeDef *USART_I
   ASSERT_PARAM(IS_DDL_USART_PARITY(USART_InitStruct->Parity));
   ASSERT_PARAM(IS_DDL_USART_DIRECTION(USART_InitStruct->TransferDirection));
   ASSERT_PARAM(IS_DDL_USART_HWCONTROL(USART_InitStruct->HardwareFlowControl));
+#if defined (USART_CTRL1_OSMCFG)
   ASSERT_PARAM(IS_DDL_USART_OVERSAMPLING(USART_InitStruct->OverSampling));
+#endif /* USART_CTRL1_OSMCFG */
 
   /* USART needs to be in disabled state, in order to be able to configure some bits in
      CTRLx registers */
@@ -297,11 +298,19 @@ ErrorStatus DDL_USART_Init(USART_TypeDef *USARTx, DDL_USART_InitTypeDef *USART_I
      * - TransferDirection:  USART_CTRL1_TXEN, USART_CTRL1_RXEN bits according to USART_InitStruct->TransferDirection value
      * - Oversampling:       USART_CTRL1_OSMCFG bit according to USART_InitStruct->OverSampling value.
      */
+#if defined (USART_CTRL1_OSMCFG)
     MODIFY_REG(USARTx->CTRL1,
                (USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG |
                 USART_CTRL1_TXEN | USART_CTRL1_RXEN | USART_CTRL1_OSMCFG),
                (USART_InitStruct->DataWidth | USART_InitStruct->Parity |
                 USART_InitStruct->TransferDirection | USART_InitStruct->OverSampling));
+#else
+    MODIFY_REG(USARTx->CTRL1,
+               (USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG |
+                USART_CTRL1_TXEN | USART_CTRL1_RXEN),
+               (USART_InitStruct->DataWidth | USART_InitStruct->Parity |
+                USART_InitStruct->TransferDirection));
+#endif /* USART_CTRL1_OSMCFG */
 
     /*---------------------------- USART CTRL2 Configuration -----------------------
      * Configure USARTx CTRL2 (Stop bits) with parameters:
@@ -319,61 +328,61 @@ ErrorStatus DDL_USART_Init(USART_TypeDef *USARTx, DDL_USART_InitTypeDef *USART_I
     /*---------------------------- USART BRR Configuration -----------------------
      * Retrieve Clock frequency used for USART Peripheral
      */
-    DDL_RCM_GetSystemClocksFreq(&rcc_clocks);
+    DDL_RCM_GetSystemClocksFreq(&rcm_clocks);
     if (USARTx == USART1)
     {
-      periphclk = rcc_clocks.PCLK2_Frequency;
+      periphclk = rcm_clocks.PCLK2_Frequency;
     }
     else if (USARTx == USART2)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #if defined(USART3)
     else if (USARTx == USART3)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #endif /* USART3 */
 #if defined(USART6)
     else if (USARTx == USART6)
     {
-      periphclk = rcc_clocks.PCLK2_Frequency;
+      periphclk = rcm_clocks.PCLK2_Frequency;
     }
 #endif /* USART6 */
 #if defined(UART4)
     else if (USARTx == UART4)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #endif /* UART4 */
 #if defined(UART5)
     else if (USARTx == UART5)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #endif /* UART5 */
 #if defined(UART7)
     else if (USARTx == UART7)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #endif /* UART7 */
 #if defined(UART8)
     else if (USARTx == UART8)
     {
-      periphclk = rcc_clocks.PCLK1_Frequency;
+      periphclk = rcm_clocks.PCLK1_Frequency;
     }
 #endif /* UART8 */
 #if defined(UART9)
     else if (USARTx == UART9)
     {
-      periphclk = rcc_clocks.PCLK2_Frequency;
+      periphclk = rcm_clocks.PCLK2_Frequency;
     }
 #endif /* UART9 */
 #if defined(UART10)
     else if (USARTx == UART10)
     {
-      periphclk = rcc_clocks.PCLK2_Frequency;
+      periphclk = rcm_clocks.PCLK2_Frequency;
     }
 #endif /* UART10 */
     else
@@ -389,10 +398,16 @@ ErrorStatus DDL_USART_Init(USART_TypeDef *USARTx, DDL_USART_InitTypeDef *USART_I
         && (USART_InitStruct->BaudRate != 0U))
     {
       status = SUCCESS;
+#if defined (USART_CTRL1_OSMCFG)
       DDL_USART_SetBaudRate(USARTx,
                            periphclk,
                            USART_InitStruct->OverSampling,
                            USART_InitStruct->BaudRate);
+#else
+      DDL_USART_SetBaudRate(USARTx,
+                           periphclk,
+                           USART_InitStruct->BaudRate);
+#endif /* USART_CTRL1_OSMCFG */
 
       /* Check BR is greater than or equal to 16d */
       ASSERT_PARAM(IS_DDL_USART_BR_MIN(USARTx->BR));
@@ -419,7 +434,9 @@ void DDL_USART_StructInit(DDL_USART_InitTypeDef *USART_InitStruct)
   USART_InitStruct->Parity              = DDL_USART_PARITY_NONE ;
   USART_InitStruct->TransferDirection   = DDL_USART_DIRECTION_TX_RX;
   USART_InitStruct->HardwareFlowControl = DDL_USART_HWCONTROL_NONE;
+#if defined (USART_CTRL1_OSMCFG)
   USART_InitStruct->OverSampling        = DDL_USART_OVERSAMPLING_16;
+#endif /* USART_CTRL1_OSMCFG */
 }
 
 /**

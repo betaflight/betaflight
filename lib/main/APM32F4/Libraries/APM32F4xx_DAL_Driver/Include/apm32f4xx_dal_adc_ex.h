@@ -4,7 +4,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -26,13 +26,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -56,14 +52,14 @@
 
 /** @addtogroup ADCEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup ADCEx_Exported_Types ADC Exported Types
   * @{
   */
-   
-/** 
+
+/**
   * @brief  ADC Configuration injected Channel structure definition
   * @note   Parameters of this structure are shared within 2 scopes:
   *          - Scope channel: InjectedChannel, InjectedRank, InjectedSamplingTime, InjectedOffset
@@ -75,7 +71,7 @@
   *          - For all except parameters 'InjectedDiscontinuousConvMode' and 'AutoInjectedConv': ADC enabled without conversion on going on injected group.
   *          - For parameters 'ExternalTrigInjecConv' and 'ExternalTrigInjecConvEdge': ADC enabled, even with conversion on going on injected group.
   */
-typedef struct 
+typedef struct
 {
   uint32_t InjectedChannel;                      /*!< Selection of ADC channel to configure
                                                       This parameter can be a value of @ref ADC_channels
@@ -99,17 +95,17 @@ typedef struct
   uint32_t InjectedNbrOfConversion;              /*!< Specifies the number of ranks that will be converted within the injected group sequencer.
                                                       To use the injected group sequencer and convert several ranks, parameter 'ScanConvMode' must be enabled.
                                                       This parameter must be a number between Min_Data = 1 and Max_Data = 4.
-                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to 
+                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to
                                                                configure a channel on injected group can impact the configuration of other channels previously set. */
   FunctionalState InjectedDiscontinuousConvMode; /*!< Specifies whether the conversions sequence of injected group is performed in Complete-sequence/Discontinuous-sequence (main sequence subdivided in successive parts).
                                                       Discontinuous mode is used only if sequencer is enabled (parameter 'ScanConvMode'). If sequencer is disabled, this parameter is discarded.
                                                       Discontinuous mode can be enabled only if continuous mode is disabled. If continuous mode is enabled, this parameter setting is discarded.
                                                       This parameter can be set to ENABLE or DISABLE.
                                                       Note: For injected group, number of discontinuous ranks increment is fixed to one-by-one.
-                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to 
+                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to
                                                                configure a channel on injected group can impact the configuration of other channels previously set. */
   FunctionalState AutoInjectedConv;              /*!< Enables or disables the selected ADC automatic injected group conversion after regular one
-                                                      This parameter can be set to ENABLE or DISABLE.      
+                                                      This parameter can be set to ENABLE or DISABLE.
                                                       Note: To use Automatic injected conversion, discontinuous mode must be disabled ('DiscontinuousConvMode' and 'InjectedDiscontinuousConvMode' set to DISABLE)
                                                       Note: To use Automatic injected conversion, injected group external triggers must be disabled ('ExternalTrigInjecConv' set to ADC_SOFTWARE_START)
                                                       Note: In case of DMA used with regular group: if DMA configured in normal mode (single shot) JAUTO will be stopped upon DMA transfer complete.
@@ -124,24 +120,30 @@ typedef struct
                                                             If ADC is enabled, this parameter setting is bypassed without error reporting (as it can be the expected behaviour in case of another parameter update on the fly)
                                                       Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to
                                                                configure a channel on injected group can impact the configuration of other channels previously set. */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t ExternalTrigInjecConvEdge;            /*!< Selects the external trigger edge of injected group.
                                                       This parameter can be a value of @ref ADCEx_External_trigger_edge_Injected.
                                                       If trigger is set to ADC_INJECTED_SOFTWARE_START, this parameter is discarded.
-                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to 
+                                                      Caution: this setting impacts the entire injected group. Therefore, call of DAL_ADCEx_InjectedConfigChannel() to
                                                                configure a channel on injected group can impact the configuration of other channels previously set. */
-}ADC_InjectionConfTypeDef; 
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+}ADC_InjectionConfTypeDef;
 
-/** 
-  * @brief ADC Configuration multi-mode structure definition  
-  */ 
+/**
+  * @brief ADC Configuration multi-mode structure definition
+  */
 typedef struct
 {
-  uint32_t Mode;              /*!< Configures the ADC to operate in independent or multi mode. 
+  uint32_t Mode;              /*!< Configures the ADC to operate in independent or multi mode.
                                    This parameter can be a value of @ref ADCEx_Common_mode */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t DMAAccessMode;     /*!< Configures the Direct memory access mode for multi ADC mode.
                                    This parameter can be a value of @ref ADCEx_Direct_memory_access_mode_for_multi_mode */
   uint32_t TwoSamplingDelay;  /*!< Configures the Delay between 2 sampling phases.
                                    This parameter can be a value of @ref ADC_delay_between_2_sampling_phases */
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 }ADC_MultiModeTypeDef;
 
 /**
@@ -153,9 +155,31 @@ typedef struct
   * @{
   */
 
+/** @defgroup ADCEx_injected_rank ADCEx rank into injected group
+  * @{
+  */
+#define ADC_INJECTED_RANK_1                           0x00000001U
+#define ADC_INJECTED_RANK_2                           0x00000002U
+#define ADC_INJECTED_RANK_3                           0x00000003U
+#define ADC_INJECTED_RANK_4                           0x00000004U
+/**
+  * @}
+  */
+
 /** @defgroup ADCEx_Common_mode ADC Common Mode
   * @{
-  */ 
+  */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define ADC_MODE_INDEPENDENT                  0x00000000U
+#define ADC_DUALMODE_REGSIMULT_INJECSIMULT    ((uint32_t)ADC_CTRL1_DUALMCFG_0)
+#define ADC_DUALMODE_INJECSIMULT_INTERLFAST   ((uint32_t)(ADC_CTRL1_DUALMCFG_1 | ADC_CTRL1_DUALMCFG_0))
+#define ADC_DUALMODE_INJECSIMULT_INTERLSLOW   ((uint32_t)ADC_CTRL1_DUALMCFG_2)
+#define ADC_DUALMODE_INJECSIMULT              ((uint32_t)(ADC_CTRL1_DUALMCFG_2 | ADC_CTRL1_DUALMCFG_0))
+#define ADC_DUALMODE_REGSIMULT                ((uint32_t)(ADC_CTRL1_DUALMCFG_2 | ADC_CTRL1_DUALMCFG_1))
+#define ADC_DUALMODE_INTERLFAST               ((uint32_t)(ADC_CTRL1_DUALMCFG_2 | ADC_CTRL1_DUALMCFG_1 | ADC_CTRL1_DUALMCFG_0))
+#define ADC_DUALMODE_INTERLSLOW               ((uint32_t)(ADC_CTRL1_DUALMCFG_3))
+#define ADC_DUALMODE_ALTERTRIG                ((uint32_t)(ADC_CTRL1_DUALMCFG_3 | ADC_CTRL1_DUALMCFG_0))
+#else
 #define ADC_MODE_INDEPENDENT                  0x00000000U
 #define ADC_DUALMODE_REGSIMULT_INJECSIMULT    ((uint32_t)ADC_CCTRL_ADCMSEL_0)
 #define ADC_DUALMODE_REGSIMULT_ALTERTRIG      ((uint32_t)ADC_CCTRL_ADCMSEL_1)
@@ -169,59 +193,106 @@ typedef struct
 #define ADC_TRIPLEMODE_REGSIMULT              ((uint32_t)(ADC_CCTRL_ADCMSEL_4 | ADC_CCTRL_ADCMSEL_2 | ADC_CCTRL_ADCMSEL_1))
 #define ADC_TRIPLEMODE_INTERL                 ((uint32_t)(ADC_CCTRL_ADCMSEL_4 | ADC_CCTRL_ADCMSEL_2 | ADC_CCTRL_ADCMSEL_1 | ADC_CCTRL_ADCMSEL_0))
 #define ADC_TRIPLEMODE_ALTERTRIG              ((uint32_t)(ADC_CCTRL_ADCMSEL_4 | ADC_CCTRL_ADCMSEL_3 | ADC_CCTRL_ADCMSEL_0))
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
-  */ 
+  */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup ADCEx_Direct_memory_access_mode_for_multi_mode ADC Direct Memory Access Mode For Multi Mode
   * @{
-  */ 
+  */
 #define ADC_DMAACCESSMODE_DISABLED  0x00000000U                /*!< DMA mode disabled */
 #define ADC_DMAACCESSMODE_1         ((uint32_t)ADC_CCTRL_DMAMODE_0)  /*!< DMA mode 1 enabled (2 / 3 half-words one by one - 1 then 2 then 3)*/
 #define ADC_DMAACCESSMODE_2         ((uint32_t)ADC_CCTRL_DMAMODE_1)  /*!< DMA mode 2 enabled (2 / 3 half-words by pairs - 2&1 then 1&3 then 3&2)*/
 #define ADC_DMAACCESSMODE_3         ((uint32_t)ADC_CCTRL_DMAMODE)    /*!< DMA mode 3 enabled (2 / 3 bytes by pairs - 2&1 then 1&3 then 3&2) */
 /**
   * @}
-  */ 
+  */
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup ADCEx_External_trigger_edge_Injected ADC External Trigger Edge Injected
   * @{
-  */ 
+  */
 #define ADC_EXTERNALTRIGINJECCONVEDGE_NONE           0x00000000U
 #define ADC_EXTERNALTRIGINJECCONVEDGE_RISING         ((uint32_t)ADC_CTRL2_INJEXTTRGEN_0)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define ADC_EXTERNALTRIGINJECCONVEDGE_FALLING        ((uint32_t)ADC_CTRL2_INJEXTTRGEN_1)
 #define ADC_EXTERNALTRIGINJECCONVEDGE_RISINGFALLING  ((uint32_t)ADC_CTRL2_INJEXTTRGEN)
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_External_trigger_Source_Injected ADC External Trigger Source Injected
   * @{
-  */ 
-#define ADC_EXTERNALTRIGINJECCONV_T1_CC4           0x00000000U
-#define ADC_EXTERNALTRIGINJECCONV_T1_TRGO          ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_0)
-#define ADC_EXTERNALTRIGINJECCONV_T2_CC1           ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_1)
-#define ADC_EXTERNALTRIGINJECCONV_T2_TRGO          ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T3_CC2           ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_2)
-#define ADC_EXTERNALTRIGINJECCONV_T3_CC4           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T4_CC1           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1))
-#define ADC_EXTERNALTRIGINJECCONV_T4_CC2           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T4_CC3           ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_3)
-#define ADC_EXTERNALTRIGINJECCONV_T4_TRGO          ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T5_CC4           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_1))
-#define ADC_EXTERNALTRIGINJECCONV_T5_TRGO          ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T8_CC2           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2))
-#define ADC_EXTERNALTRIGINJECCONV_T8_CC3           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_0))
-#define ADC_EXTERNALTRIGINJECCONV_T8_CC4           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1))
-#define ADC_EXTERNALTRIGINJECCONV_EXT_IT15         ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL)
-#define ADC_INJECTED_SOFTWARE_START                ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL + 1U)
+  */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/*!< External triggers of injected group for ADC1&ADC2 only */
+#define ADC1_2_EXTERNALTRIGINJEC_T2_TRGO            ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_1)
+#define ADC1_2_EXTERNALTRIGINJEC_T2_CC1             ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC1_2_EXTERNALTRIGINJEC_T3_CC4             ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_2)
+#define ADC1_2_EXTERNALTRIGINJEC_T4_TRGO            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC1_2_EXTERNALTRIGINJEC_EXT_IT15           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1))
+
+/* External triggers of injected group for ADC3 */
+#define ADC3_EXTERNALTRIGINJEC_T4_CC3               ADC1_2_EXTERNALTRIGINJEC_T2_TRGO
+#define ADC3_EXTERNALTRIGINJEC_T8_CC2               ADC1_2_EXTERNALTRIGINJEC_T2_CC1
+#define ADC3_EXTERNALTRIGINJEC_T8_CC4               ADC1_2_EXTERNALTRIGINJEC_T3_CC4
+#define ADC3_EXTERNALTRIGINJEC_T5_TRGO              ADC1_2_EXTERNALTRIGINJEC_T4_TRGO
+#define ADC3_EXTERNALTRIGINJEC_T5_CC4               ADC1_2_EXTERNALTRIGINJEC_EXT_IT15
+
+/* External triggers of injected group for ADC1&ADC2&ADC3 (if ADCx available) */
+#define ADC1_2_3_EXTERNALTRIGINJEC_T1_TRGO          0x00000000U
+#define ADC1_2_3_EXTERNALTRIGINJEC_T1_CC4           ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_0)
+#define ADC1_2_3_JSWSTART                           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
+
+/*!< External triggers of injected group for ADC1&ADC2 only */
+#define ADC_EXTERNALTRIGINJECCONV_T2_TRGO           ADC1_2_EXTERNALTRIGINJEC_T2_TRGO
+#define ADC_EXTERNALTRIGINJECCONV_T2_CC1            ADC1_2_EXTERNALTRIGINJEC_T2_CC1
+#define ADC_EXTERNALTRIGINJECCONV_T3_CC4            ADC1_2_EXTERNALTRIGINJEC_T3_CC4
+#define ADC_EXTERNALTRIGINJECCONV_T4_TRGO           ADC1_2_EXTERNALTRIGINJEC_T4_TRGO
+#define ADC_EXTERNALTRIGINJECCONV_EXT_IT15          ADC1_2_EXTERNALTRIGINJEC_EXT_IT15
+
+/* External triggers of injected group for ADC3 */
+#define ADC_EXTERNALTRIGINJECCONV_T4_CC3            ADC3_EXTERNALTRIGINJEC_T4_CC3
+#define ADC_EXTERNALTRIGINJECCONV_T8_CC2            ADC3_EXTERNALTRIGINJEC_T8_CC2
+#define ADC_EXTERNALTRIGINJECCONV_T8_CC4            ADC3_EXTERNALTRIGINJEC_T8_CC4
+#define ADC_EXTERNALTRIGINJECCONV_T5_TRGO           ADC3_EXTERNALTRIGINJEC_T5_TRGO
+#define ADC_EXTERNALTRIGINJECCONV_T5_CC4            ADC3_EXTERNALTRIGINJEC_T5_CC4
+
+/* External triggers of injected group for ADC1&ADC2&ADC3 (if ADCx available) */
+#define ADC_EXTERNALTRIGINJECCONV_T1_TRGO           ADC1_2_3_EXTERNALTRIGINJEC_T1_TRGO
+#define ADC_EXTERNALTRIGINJECCONV_T1_CC4            ADC1_2_3_EXTERNALTRIGINJEC_T1_CC4
+#define ADC_INJECTED_SOFTWARE_START                 ADC1_2_3_JSWSTART
+#else
+#define ADC_EXTERNALTRIGINJECCONV_T1_CC4            0x00000000U
+#define ADC_EXTERNALTRIGINJECCONV_T1_TRGO           ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_0)
+#define ADC_EXTERNALTRIGINJECCONV_T2_CC1            ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_1)
+#define ADC_EXTERNALTRIGINJECCONV_T2_TRGO           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T3_CC2            ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_2)
+#define ADC_EXTERNALTRIGINJECCONV_T3_CC4            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T4_CC1            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1))
+#define ADC_EXTERNALTRIGINJECCONV_T4_CC2            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T4_CC3            ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL_3)
+#define ADC_EXTERNALTRIGINJECCONV_T4_TRGO           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T5_CC4            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_1))
+#define ADC_EXTERNALTRIGINJECCONV_T5_TRGO           ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_1 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T8_CC2            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2))
+#define ADC_EXTERNALTRIGINJECCONV_T8_CC3            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_0))
+#define ADC_EXTERNALTRIGINJECCONV_T8_CC4            ((uint32_t)(ADC_CTRL2_INJGEXTTRGSEL_3 | ADC_CTRL2_INJGEXTTRGSEL_2 | ADC_CTRL2_INJGEXTTRGSEL_1))
+#define ADC_EXTERNALTRIGINJECCONV_EXT_IT15          ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL)
+#define ADC_INJECTED_SOFTWARE_START                 ((uint32_t)ADC_CTRL2_INJGEXTTRGSEL + 1U)
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_injected_rank ADC Injected Rank
   * @{
-  */ 
+  */
 #define ADC_INJECTED_RANK_1    0x00000001U
 #define ADC_INJECTED_RANK_2    0x00000002U
 #define ADC_INJECTED_RANK_3    0x00000003U
@@ -233,9 +304,10 @@ typedef struct
 /** @defgroup ADCEx_channels  ADC Specific Channels
   * @{
   */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define ADC_CHANNEL_TEMPSENSOR  ((uint32_t)ADC_CHANNEL_16)
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if defined(APM32F411xx)
 #define ADC_CHANNEL_DIFFERENCIATION_TEMPSENSOR_VBAT 0x10000000U /* Dummy bit for driver internal usage, not used in ADC channel setting registers CTRL1 or REGSEQx */
@@ -243,12 +315,12 @@ typedef struct
 #endif /* APM32F411xx */
 /**
   * @}
-  */ 
+  */
 
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup ADC_Exported_Macros ADC Exported Macros
@@ -257,7 +329,7 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup ADCEx_Exported_Functions
@@ -269,6 +341,9 @@ typedef struct
   */
 
 /* I/O operation functions ******************************************************/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+DAL_StatusTypeDef DAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc);
+#endif /* APM32F403xx || APM32F402xx */
 DAL_StatusTypeDef DAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc);
 DAL_StatusTypeDef DAL_ADCEx_InjectedStop(ADC_HandleTypeDef* hadc);
 DAL_StatusTypeDef DAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, uint32_t Timeout);
@@ -290,7 +365,7 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 #endif /* ADC_MULTIMODE_SUPPORT */
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -310,15 +385,31 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 /** @defgroup ADCEx_Private_Macros ADC Private Macros
   * @{
   */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define IS_ADC_CHANNEL(CHANNEL) ((CHANNEL) <= ADC_CHANNEL_18)
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */
-      
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 #if defined(APM32F411xx)
 #define IS_ADC_CHANNEL(CHANNEL) (((CHANNEL) <= ADC_CHANNEL_18)  || \
                                  ((CHANNEL) == ADC_CHANNEL_TEMPSENSOR))
 #endif /* APM32F411xx */
 
+#if defined(APM32F402xx) || defined(APM32F403xx)
+#define IS_ADC_CHANNEL(CHANNEL) ((CHANNEL) <= ADC_CHANNEL_17)
+#endif /* APM32F402xx || APM32F403xx */
+
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_ADC_MODE(MODE) (((MODE) == ADC_MODE_INDEPENDENT)                 || \
+                           ((MODE) == ADC_DUALMODE_REGSIMULT_INJECSIMULT)   || \
+                           ((MODE) == ADC_DUALMODE_INJECSIMULT_INTERLFAST)  || \
+                           ((MODE) == ADC_DUALMODE_INJECSIMULT_INTERLSLOW)  || \
+                           ((MODE) == ADC_DUALMODE_INJECSIMULT)             || \
+                           ((MODE) == ADC_DUALMODE_REGSIMULT)               || \
+                           ((MODE) == ADC_DUALMODE_INTERLFAST)              || \
+                           ((MODE) == ADC_DUALMODE_INTERLSLOW)              || \
+                           ((MODE) == ADC_DUALMODE_ALTERTRIG))
+#else
 #define IS_ADC_MODE(MODE) (((MODE) == ADC_MODE_INDEPENDENT)                 || \
                            ((MODE) == ADC_DUALMODE_REGSIMULT_INJECSIMULT)   || \
                            ((MODE) == ADC_DUALMODE_REGSIMULT_ALTERTRIG)     || \
@@ -332,14 +423,39 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
                            ((MODE) == ADC_TRIPLEMODE_REGSIMULT)             || \
                            ((MODE) == ADC_TRIPLEMODE_INTERL)                || \
                            ((MODE) == ADC_TRIPLEMODE_ALTERTRIG))
+#endif /* APM32F403xx || APM32F402xx */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define IS_ADC_DMA_ACCESS_MODE(MODE) (((MODE) == ADC_DMAACCESSMODE_DISABLED) || \
                                       ((MODE) == ADC_DMAACCESSMODE_1)        || \
                                       ((MODE) == ADC_DMAACCESSMODE_2)        || \
                                       ((MODE) == ADC_DMAACCESSMODE_3))
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_ADC_EXT_INJEC_TRIG_EDGE(EDGE) (((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_NONE)    || \
+                                          ((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_RISING))
+#else
 #define IS_ADC_EXT_INJEC_TRIG_EDGE(EDGE) (((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_NONE)    || \
                                           ((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_RISING)  || \
                                           ((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_FALLING) || \
                                           ((EDGE) == ADC_EXTERNALTRIGINJECCONVEDGE_RISINGFALLING))
+#endif /* APM32F403xx || APM32F402xx */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_ADC_EXT_INJEC_TRIG(INJTRIG) (((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T2_TRGO ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T2_CC1  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T3_CC4  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T4_TRGO ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T4_CC3  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T8_CC2  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T8_CC4  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T5_TRGO ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T5_CC4  ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_EXT_IT15) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T1_TRGO ) || \
+                                        ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T1_CC4  ) || \
+                                        ((INJTRIG) == ADC_INJECTED_SOFTWARE_START))
+
+#else
 #define IS_ADC_EXT_INJEC_TRIG(INJTRIG) (((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T1_CC4)  || \
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T1_TRGO) || \
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T2_CC1)  || \
@@ -357,17 +473,43 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T8_CC4)  || \
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_EXT_IT15)|| \
                                         ((INJTRIG) == ADC_INJECTED_SOFTWARE_START))
+#endif /* APM32F403xx || APM32F402xx */
 #define IS_ADC_INJECTED_LENGTH(LENGTH) (((LENGTH) >= 1U) && ((LENGTH) <= 4U))
 #define IS_ADC_INJECTED_RANK(RANK) (((RANK) >= 1U) && ((RANK) <= 4U))
 
 /**
   * @brief  Set the selected injected Channel rank.
   * @param  _CHANNELNB_ Channel number.
-  * @param  _RANKNB_ Rank number. 
+  * @param  _RANKNB_ Rank number.
   * @param  _JSQR_JL_ Sequence length.
   * @retval None
   */
 #define   ADC_INJSEQ(_CHANNELNB_, _RANKNB_, _JSQR_JL_)  (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5U * (uint8_t)(((_RANKNB_) + 3U) - (_JSQR_JL_))))
+
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/**
+  * @brief Verification of condition for ADC start conversion: ADC must be in non-multimode, or multimode with handle of ADC master (applicable for devices with several ADCs)
+  * @param __HANDLE__: ADC handle
+  * @retval None
+  */
+#define ADC_NONMULTIMODE_OR_MULTIMODEMASTER(__HANDLE__)                        \
+  (( (((__HANDLE__)->Instance) == ADC2)                                        \
+   )?                                                                          \
+    ((ADC1->CTRL1 & ADC_CTRL1_DUALMCFG) == RESET)                                   \
+    :                                                                          \
+    (!RESET)                                                                   \
+  )
+
+/**
+  * @brief Set handle of the ADC slave associated to the ADC master
+  * On APM32F402/403xx devices, ADC slave is always ADC2
+  * @param __HANDLE_MASTER__: ADC master handle
+  * @param __HANDLE_SLAVE__: ADC slave handle
+  * @retval None
+  */
+#define ADC_MULTI_SLAVE(__HANDLE_MASTER__, __HANDLE_SLAVE__)                   \
+  ((__HANDLE_SLAVE__)->Instance = ADC2)
+#endif /* APM32F403xx || APM32F402xx */
 
 /**
   * @brief Defines if the selected ADC is within ADC common register ADC123 or ADC1 or ADC2
@@ -375,13 +517,16 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   * @param __HANDLE__ ADC handle
   * @retval Common control register ADC123 or ADC12 or ADC1
   */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define ADC_COMMON_REGISTER(__HANDLE__)                ADC123_COMMON
 #elif defined(APM32F411xx)
 #define ADC_COMMON_REGISTER(__HANDLE__)                ((__HANDLE__)->Instance == ADC1 ? ADC1_COMMON : ADC2_COMMON)
+#elif defined(APM32F403xx) || defined(APM32F402xx)
+#define ADC_COMMON_REGISTER(__HANDLE__)                ADC12_COMMON
 #else
 #define ADC_COMMON_REGISTER(__HANDLE__)                ADC1_COMMON
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -397,7 +542,7 @@ DAL_StatusTypeDef DAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

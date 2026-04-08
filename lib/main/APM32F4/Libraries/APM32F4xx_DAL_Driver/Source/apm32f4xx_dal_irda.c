@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -2118,7 +2114,11 @@ static void IRDA_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 {
   IRDA_HandleTypeDef *hirda = (IRDA_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   /* DMA Normal mode */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     hirda->TxXferCount = 0U;
 
@@ -2172,7 +2172,11 @@ static void IRDA_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
   IRDA_HandleTypeDef *hirda = (IRDA_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
 
   /* DMA Normal mode */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     hirda->RxXferCount = 0U;
 

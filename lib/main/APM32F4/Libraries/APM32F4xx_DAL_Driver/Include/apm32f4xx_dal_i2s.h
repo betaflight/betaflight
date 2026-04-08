@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -87,10 +83,14 @@ typedef struct
   uint32_t CPOL;                /*!< Specifies the idle state of the I2S clock.
                                      This parameter can be a value of @ref I2S_Clock_Polarity */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
   uint32_t ClockSource;     /*!< Specifies the I2S Clock Source.
                                  This parameter can be a value of @ref I2S_Clock_Source */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F411xx */
+#if defined(SPI_I2S_FULLDUPLEX_SUPPORT)
   uint32_t FullDuplexMode;  /*!< Specifies the I2S FullDuplex mode.
                                  This parameter can be a value of @ref I2S_FullDuplex_Mode */
+#endif /* SPI_I2S_FULLDUPLEX_SUPPORT */
 } I2S_InitTypeDef;
 
 /**
@@ -319,10 +319,10 @@ typedef  void (*pI2S_CallbackTypeDef)(I2S_HandleTypeDef *hi2s); /*!< pointer to 
 /** @defgroup I2S_Clock_Source I2S Clock Source Definition
   * @{
   */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx) 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx) 
 #define I2S_CLOCK_PLL                    (0x00000000U)
 #define I2S_CLOCK_EXTERNAL               (0x00000001U)
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
 /**
   * @}
@@ -591,10 +591,10 @@ uint32_t DAL_I2S_GetError(I2S_HandleTypeDef *hi2s);
 #define IS_I2S_CPOL(__CPOL__) (((__CPOL__) == I2S_CPOL_LOW) || \
                                ((__CPOL__) == I2S_CPOL_HIGH))
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
 #define IS_I2S_CLOCKSOURCE(CLOCK) (((CLOCK) == I2S_CLOCK_EXTERNAL) ||\
                                    ((CLOCK) == I2S_CLOCK_PLL))
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
 /**
   * @}

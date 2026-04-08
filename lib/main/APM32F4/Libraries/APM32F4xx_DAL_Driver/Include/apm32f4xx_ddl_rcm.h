@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -117,16 +113,24 @@ typedef struct
 
 /** @defgroup RCM_DDL_EC_OSC_VALUES Oscillator Values adaptation
   * @brief    Defines used to adapt values of different oscillators
-  * @note     These values could be modified in the user environment according to 
+  * @note     These values could be modified in the user environment according to
   *           HW set-up.
   * @{
   */
 #if !defined  (HSE_VALUE)
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define HSE_VALUE    8000000U   /*!< Value of the HSE oscillator in Hz */
+#else
 #define HSE_VALUE    25000000U  /*!< Value of the HSE oscillator in Hz */
+#endif /* APM32F403xx || APM32F402xx */
 #endif /* HSE_VALUE */
 
 #if !defined  (HSI_VALUE)
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define HSI_VALUE    8000000U   /*!< Value of the HSI oscillator in Hz */
+#else
 #define HSI_VALUE    16000000U  /*!< Value of the HSI oscillator in Hz */
+#endif /* APM32F403xx || APM32F402xx */
 #endif /* HSI_VALUE */
 
 #if !defined  (LSE_VALUE)
@@ -134,7 +138,11 @@ typedef struct
 #endif /* LSE_VALUE */
 
 #if !defined  (LSI_VALUE)
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define LSI_VALUE    35000U     /*!< Value of the LSI oscillator in Hz */
+#else
 #define LSI_VALUE    32000U     /*!< Value of the LSI oscillator in Hz */
+#endif /* APM32F403xx || APM32F402xx */
 #endif /* LSI_VALUE */
 
 #if !defined  (EXTERNAL_CLOCK_VALUE)
@@ -216,9 +224,9 @@ typedef struct
 /** @defgroup RCM_DDL_EC_SYS_CLKSOURCE_STATUS  System clock switch status
   * @{
   */
-#define DDL_RCM_SYS_CLKSOURCE_STATUS_HSI    RCM_CFG_SCLKSWSTS_HSI   /*!< HSI used as system clock */
-#define DDL_RCM_SYS_CLKSOURCE_STATUS_HSE    RCM_CFG_SCLKSWSTS_HSE   /*!< HSE used as system clock */
-#define DDL_RCM_SYS_CLKSOURCE_STATUS_PLL    RCM_CFG_SCLKSWSTS_PLL   /*!< PLL used as system clock */
+#define DDL_RCM_SYS_CLKSOURCE_STATUS_HSI    RCM_CFG_SCLKSELSTS_HSI   /*!< HSI used as system clock */
+#define DDL_RCM_SYS_CLKSOURCE_STATUS_HSE    RCM_CFG_SCLKSELSTS_HSE   /*!< HSE used as system clock */
+#define DDL_RCM_SYS_CLKSOURCE_STATUS_PLL    RCM_CFG_SCLKSELSTS_PLL   /*!< PLL used as system clock */
 /**
   * @}
   */
@@ -266,13 +274,24 @@ typedef struct
 /** @defgroup RCM_DDL_EC_MCOxSOURCE  MCO source selection
   * @{
   */
-#define DDL_RCM_MCO1SOURCE_HSI              (uint32_t)(RCM_CFG_MCO1SEL|0x00000000U)                    /*!< HSI selection as MCO1 source */
+#if defined(RCM_CFG_MCOSEL)
+#define DDL_RCM_MCO1SOURCE_NOCLOCK          RCM_CFG_MCOSEL_NOCLOCK                                       /*!< MCO output disabled, no clock on MCO */
+#define DDL_RCM_MCO1SOURCE_SYSCLK           RCM_CFG_MCOSEL_SYSCLK                                        /*!< SYSCLK selection as MCO source */
+#define DDL_RCM_MCO1SOURCE_HSI              RCM_CFG_MCOSEL_HSI                                           /*!< HSI selection as MCO source */
+#define DDL_RCM_MCO1SOURCE_HSE              RCM_CFG_MCOSEL_HSE                                           /*!< HSE selection as MCO source */
+#define DDL_RCM_MCO1SOURCE_PLLCLK_DIV_2     RCM_CFG_MCOSEL_PLLCLK_DIV2                                   /*!< PLLCLK divided by 2 selection as MCO source */
+#endif /* RCM_CFG_MCOSEL */
+#if defined(RCM_CFG_MCO1SEL)
+#define DDL_RCM_MCO1SOURCE_HSI              (uint32_t)(RCM_CFG_MCO1SEL|0x00000000U)                      /*!< HSI selection as MCO1 source */
 #define DDL_RCM_MCO1SOURCE_LSE              (uint32_t)(RCM_CFG_MCO1SEL|(RCM_CFG_MCO1SEL_0 >> 16U))       /*!< LSE selection as MCO1 source */
 #define DDL_RCM_MCO1SOURCE_HSE              (uint32_t)(RCM_CFG_MCO1SEL|(RCM_CFG_MCO1SEL_1 >> 16U))       /*!< HSE selection as MCO1 source */
 #define DDL_RCM_MCO1SOURCE_PLLCLK           (uint32_t)(RCM_CFG_MCO1SEL|((RCM_CFG_MCO1SEL_1|RCM_CFG_MCO1SEL_0) >> 16U))       /*!< PLLCLK selection as MCO1 source */
+#endif /* RCM_CFG_MCO1SEL */
 #if defined(RCM_CFG_MCO2SEL)
-#define DDL_RCM_MCO2SOURCE_SYSCLK           (uint32_t)(RCM_CFG_MCO2SEL|0x00000000U)                    /*!< SYSCLK selection as MCO2 source */
+#define DDL_RCM_MCO2SOURCE_SYSCLK           (uint32_t)(RCM_CFG_MCO2SEL|0x00000000U)                      /*!< SYSCLK selection as MCO2 source */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
 #define DDL_RCM_MCO2SOURCE_PLLI2S           (uint32_t)(RCM_CFG_MCO2SEL|(RCM_CFG_MCO2SEL_0 >> 16U))       /*!< PLLI2S selection as MCO2 source */
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx */
 #define DDL_RCM_MCO2SOURCE_HSE              (uint32_t)(RCM_CFG_MCO2SEL|(RCM_CFG_MCO2SEL_1 >> 16U))       /*!< HSE selection as MCO2 source */
 #define DDL_RCM_MCO2SOURCE_PLLCLK           (uint32_t)(RCM_CFG_MCO2SEL|((RCM_CFG_MCO2SEL_1|RCM_CFG_MCO2SEL_0) >> 16U))       /*!< PLLCLK selection as MCO2 source */
 #endif /* RCM_CFG_MCO2SEL */
@@ -283,26 +302,29 @@ typedef struct
 /** @defgroup RCM_DDL_EC_MCOx_DIV  MCO prescaler
   * @{
   */
+#if defined(RCM_CFG_MCO1PSC)
 #define DDL_RCM_MCO1_DIV_1                  (uint32_t)(RCM_CFG_MCO1PSC|0x00000000U)                       /*!< MCO1 not divided */
-#define DDL_RCM_MCO1_DIV_2                  (uint32_t)(RCM_CFG_MCO1PSC|(RCM_CFG_MCO1PSC_2 >> 16U))       /*!< MCO1 divided by 2 */
+#define DDL_RCM_MCO1_DIV_2                  (uint32_t)(RCM_CFG_MCO1PSC|(RCM_CFG_MCO1PSC_2 >> 16U))        /*!< MCO1 divided by 2 */
 #define DDL_RCM_MCO1_DIV_3                  (uint32_t)(RCM_CFG_MCO1PSC|((RCM_CFG_MCO1PSC_2|RCM_CFG_MCO1PSC_0) >> 16U))       /*!< MCO1 divided by 3 */
 #define DDL_RCM_MCO1_DIV_4                  (uint32_t)(RCM_CFG_MCO1PSC|((RCM_CFG_MCO1PSC_2|RCM_CFG_MCO1PSC_1) >> 16U))       /*!< MCO1 divided by 4 */
-#define DDL_RCM_MCO1_DIV_5                  (uint32_t)(RCM_CFG_MCO1PSC|(RCM_CFG_MCO1PSC >> 16U))         /*!< MCO1 divided by 5 */
+#define DDL_RCM_MCO1_DIV_5                  (uint32_t)(RCM_CFG_MCO1PSC|(RCM_CFG_MCO1PSC >> 16U))          /*!< MCO1 divided by 5 */
+#endif /* RCM_CFG_MCO1PSC */
 #if defined(RCM_CFG_MCO2PSC)
 #define DDL_RCM_MCO2_DIV_1                  (uint32_t)(RCM_CFG_MCO2PSC|0x00000000U)                       /*!< MCO2 not divided */
-#define DDL_RCM_MCO2_DIV_2                  (uint32_t)(RCM_CFG_MCO2PSC|(RCM_CFG_MCO2PSC_2 >> 16U))       /*!< MCO2 divided by 2 */
+#define DDL_RCM_MCO2_DIV_2                  (uint32_t)(RCM_CFG_MCO2PSC|(RCM_CFG_MCO2PSC_2 >> 16U))        /*!< MCO2 divided by 2 */
 #define DDL_RCM_MCO2_DIV_3                  (uint32_t)(RCM_CFG_MCO2PSC|((RCM_CFG_MCO2PSC_2|RCM_CFG_MCO2PSC_0) >> 16U))       /*!< MCO2 divided by 3 */
 #define DDL_RCM_MCO2_DIV_4                  (uint32_t)(RCM_CFG_MCO2PSC|((RCM_CFG_MCO2PSC_2|RCM_CFG_MCO2PSC_1) >> 16U))       /*!< MCO2 divided by 4 */
-#define DDL_RCM_MCO2_DIV_5                  (uint32_t)(RCM_CFG_MCO2PSC|(RCM_CFG_MCO2PSC >> 16U))         /*!< MCO2 divided by 5 */
+#define DDL_RCM_MCO2_DIV_5                  (uint32_t)(RCM_CFG_MCO2PSC|(RCM_CFG_MCO2PSC >> 16U))          /*!< MCO2 divided by 5 */
 #endif /* RCM_CFG_MCO2PSC */
 /**
   * @}
   */
 
+#if defined(RCM_CFG_RTCPSC)
 /** @defgroup RCM_DDL_EC_RTC_HSEDIV  HSE prescaler for RTC clock
   * @{
   */
-#define DDL_RCM_RTC_NOCLOCK                  0x00000000U             /*!< HSE not divided */
+#define DDL_RCM_RTC_NOCLOCK                  0x00000000U            /*!< HSE not divided */
 #define DDL_RCM_RTC_HSE_DIV_2                RCM_CFG_RTCPSC_1       /*!< HSE clock divided by 2 */
 #define DDL_RCM_RTC_HSE_DIV_3                (RCM_CFG_RTCPSC_1|RCM_CFG_RTCPSC_0)       /*!< HSE clock divided by 3 */
 #define DDL_RCM_RTC_HSE_DIV_4                RCM_CFG_RTCPSC_2       /*!< HSE clock divided by 4 */
@@ -336,6 +358,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* RCM_CFG_RTCPSC */
 
 #if defined(USE_FULL_DDL_DRIVER)
 /** @defgroup RCM_DDL_EC_PERIPH_FREQUENCY Peripheral clock frequency
@@ -352,7 +375,7 @@ typedef struct
   * @{
   */
 #if defined(RCM_CFG_I2SSEL)
-#define DDL_RCM_I2S1_CLKSOURCE_PLLI2S     0x00000000U                /*!< I2S oscillator clock used as I2S1 clock */
+#define DDL_RCM_I2S1_CLKSOURCE_PLLI2S     0x00000000U               /*!< I2S oscillator clock used as I2S1 clock */
 #define DDL_RCM_I2S1_CLKSOURCE_PIN        RCM_CFG_I2SSEL            /*!< External pin clock used as I2S1 clock */
 #endif /* RCM_CFG_I2SSEL */
 /**
@@ -363,13 +386,7 @@ typedef struct
 /** @defgroup RCM_DDL_EC_SDIOx  Peripheral SDIO get clock source
   * @{
   */
-#if defined(RCM_DCKCFGR_SDIOSEL)
-#define DDL_RCM_SDIO_CLKSOURCE            RCM_DCKCFGR_SDIOSEL   /*!< SDIO Clock source selection */
-#elif defined(RCM_DCKCFGR2_SDIOSEL)
-#define DDL_RCM_SDIO_CLKSOURCE            RCM_DCKCFGR2_SDIOSEL  /*!< SDIO Clock source selection */
-#else
 #define DDL_RCM_SDIO_CLKSOURCE            RCM_PLL1CFG_PLLD      /*!< SDIO Clock source selection */
-#endif
 /**
   * @}
   */
@@ -379,29 +396,59 @@ typedef struct
 /** @defgroup RCM_DDL_EC_RNG  Peripheral RNG get clock source
   * @{
   */
-#if defined(RCM_DCKCFGR_CK48MSEL) || defined(RCM_DCKCFGR2_CK48MSEL)
-#define DDL_RCM_RNG_CLKSOURCE               DDL_RCM_CK48M_CLKSOURCE /*!< RNG Clock source selection */
-#else
 #define DDL_RCM_RNG_CLKSOURCE               RCM_PLL1CFG_PLLD       /*!< RNG Clock source selection */
-#endif /* RCM_DCKCFGR_CK48MSEL || RCM_DCKCFGR2_CK48MSEL */
 /**
   * @}
   */
 #endif /* RNG */
 
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
-/** @defgroup RCM_DDL_EC_USB  Peripheral USB get clock source
+#if defined(RCM_CFG_ADCPSC)
+/** @defgroup RCM_DDL_EC_ADC_CLKSOURCE_PCLK2 Peripheral ADC clock source selection
   * @{
   */
-#if defined(RCM_DCKCFGR_CK48MSEL) || defined(RCM_DCKCFGR2_CK48MSEL)
-#define DDL_RCM_USB_CLKSOURCE               DDL_RCM_CK48M_CLKSOURCE /*!< USB Clock source selection */
-#else
-#define DDL_RCM_USB_CLKSOURCE               RCM_PLL1CFG_PLLD       /*!< USB Clock source selection */
-#endif /* RCM_DCKCFGR_CK48MSEL || RCM_DCKCFGR2_CK48MSEL */
+#define DDL_RCM_ADC_CLKSRC_PCLK2_DIV_2      RCM_CFG_ADCPSC_DIV2    /*!< PCLK2 divided by 2 selected as ADC Clock source */
+#define DDL_RCM_ADC_CLKSRC_PCLK2_DIV_4      RCM_CFG_ADCPSC_DIV4    /*!< PCLK2 divided by 4 selected as ADC Clock source */
+#define DDL_RCM_ADC_CLKSRC_PCLK2_DIV_6      RCM_CFG_ADCPSC_DIV6    /*!< PCLK2 divided by 6 selected as ADC Clock source */
+#define DDL_RCM_ADC_CLKSRC_PCLK2_DIV_8      RCM_CFG_ADCPSC_DIV8    /*!< PCLK2 divided by 8 selected as ADC Clock source */
 /**
   * @}
   */
-#endif /* USB_OTG_FS || USB_OTG_HS */
+
+ /** @defgroup RCM_DDL_EC_ADC Peripheral ADC get clock source
+  * @{
+  */
+#define DDL_RCM_ADC_CLKSOURCE               RCM_CFG_ADCPSC         /*!< ADC Clock source selection */
+/**
+  * @}
+  */
+#endif /* RCM_CFG_ADCPSC */
+
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS) || defined(USB_OTG_FS2)
+/** @defgroup RCM_DDL_EC_USB_CLKSOURCE Peripheral USB clock source selection
+  * @{
+  */
+#if defined(RCM_CFG_OTGFSPSC)
+#define DDL_RCM_USB_CLKSOURCE_PLL_DIV_1_5     RCM_CFG_OTGFSPSC_DIV_1_5  /*!< PLL clock divided by 1.5 selected as USB Clock source */
+#define DDL_RCM_USB_CLKSOURCE_PLL             RCM_CFG_OTGFSPSC_0        /*!< PLL clock selected as USB Clock source */
+#define DDL_RCM_USB_CLKSOURCE_PLL_DIV_2       RCM_CFG_OTGFSPSC_1        /*!< PLL clock divided by 2 selected as USB Clock source */
+#define DDL_RCM_USB_CLKSOURCE_PLL_DIV_2_5     RCM_CFG_OTGFSPSC          /*!< PLL clock divided by 2.5 selected as USB Clock source */
+#endif /* RCM_CFG_OTGFSPSC */
+/**
+  * @}
+  */
+
+/** @defgroup RCM_DDL_EC_USB  Peripheral USB get clock source
+  * @{
+  */
+#if defined(RCM_CFG_OTGFSPSC)
+#define DDL_RCM_USB_CLKSOURCE               RCM_CFG_OTGFSPSC       /*!< USB Clock source selection */
+#else
+#define DDL_RCM_USB_CLKSOURCE               RCM_PLL1CFG_PLLD       /*!< USB Clock source selection */
+#endif /* RCM_CFG_OTGFSPSC */
+/**
+  * @}
+  */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 
 /** @defgroup RCM_DDL_EC_I2S1  Peripheral I2S get clock source
@@ -440,12 +487,54 @@ typedef struct
 /** @defgroup RCM_DDL_EC_PLLSOURCE  PLL, PLLI2S and PLLSAI entry clock source
   * @{
   */
+#if defined(RCM_PLL1CFG_PLL1CLKS_HSI)
 #define DDL_RCM_PLLSOURCE_HSI               RCM_PLL1CFG_PLL1CLKS_HSI  /*!< HSI16 clock selected as PLL entry clock source */
+#endif /* RCM_PLL1CFG_PLL1CLKS_HSI */
+#if defined(RCM_CFG_PLLSRCSEL)
+#define DDL_RCM_PLLSOURCE_HSI_DIV_2         0x00000000U               /*!< HSI divided by 2 clock selected as PLL entry clock source */
+#endif /* RCM_CFG_PLLSRCSEL */
+#if defined(RCM_PLL1CFG_PLL1CLKS_HSE)
 #define DDL_RCM_PLLSOURCE_HSE               RCM_PLL1CFG_PLL1CLKS_HSE  /*!< HSE clock selected as PLL entry clock source */
+#else
+#define DDL_RCM_PLLSOURCE_HSE               RCM_CFG_PLLSRCSEL         /*!< HSE clock selected as PLL entry clock source */
+#define DDL_RCM_PLLSOURCE_HSE_DIV_2         (RCM_CFG_PLLSRCSEL | RCM_CFG_PLLHSEPSC_HSE_DIV2)         /*!< HSE clock selected as PLL entry clock source */
+#endif /* RCM_PLL1CFG_PLL1CLKS_HSE */
 /**
   * @}
   */
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/** @defgroup RCM_DDL_EC_PREDIV_DIV PREDIV Division factor
+  * @{
+  */
+#define DDL_RCM_PREDIV_DIV_1                0x00000000U               /*!< HSE divider clock not divided */
+#define DDL_RCM_PREDIV_DIV_2                RCM_CFG_PLLHSEPSC         /*!< HSE divider clock divided by 2 */
+/**
+  * @}
+  */
+
+/** @defgroup RCM_DDL_EC_PLL_MUL PLL Multiplicator factor
+  * @{
+  */
+#define DDL_RCM_PLL_MUL_2                   RCM_CFG_PLLMULCFG2   /*!< PLL input clock*2 */
+#define DDL_RCM_PLL_MUL_3                   RCM_CFG_PLLMULCFG3   /*!< PLL input clock*3 */
+#define DDL_RCM_PLL_MUL_4                   RCM_CFG_PLLMULCFG4   /*!< PLL input clock*4 */
+#define DDL_RCM_PLL_MUL_5                   RCM_CFG_PLLMULCFG5   /*!< PLL input clock*5 */
+#define DDL_RCM_PLL_MUL_6                   RCM_CFG_PLLMULCFG6   /*!< PLL input clock*6 */
+#define DDL_RCM_PLL_MUL_7                   RCM_CFG_PLLMULCFG7   /*!< PLL input clock*7 */
+#define DDL_RCM_PLL_MUL_8                   RCM_CFG_PLLMULCFG8   /*!< PLL input clock*8 */
+#define DDL_RCM_PLL_MUL_9                   RCM_CFG_PLLMULCFG9   /*!< PLL input clock*9 */
+#define DDL_RCM_PLL_MUL_10                  RCM_CFG_PLLMULCFG10  /*!< PLL input clock*10 */
+#define DDL_RCM_PLL_MUL_11                  RCM_CFG_PLLMULCFG11  /*!< PLL input clock*11 */
+#define DDL_RCM_PLL_MUL_12                  RCM_CFG_PLLMULCFG12  /*!< PLL input clock*12 */
+#define DDL_RCM_PLL_MUL_13                  RCM_CFG_PLLMULCFG13  /*!< PLL input clock*13 */
+#define DDL_RCM_PLL_MUL_14                  RCM_CFG_PLLMULCFG14  /*!< PLL input clock*14 */
+#define DDL_RCM_PLL_MUL_15                  RCM_CFG_PLLMULCFG15  /*!< PLL input clock*15 */
+#define DDL_RCM_PLL_MUL_16                  RCM_CFG_PLLMULCFG16  /*!< PLL input clock*16 */
+/**
+  * @}
+  */
+#else
 /** @defgroup RCM_DDL_EC_PLLB_DIV  PLL, PLLI2S and PLLSAI division factor
   * @{
   */
@@ -518,7 +607,7 @@ typedef struct
 /** @defgroup RCM_DDL_EC_PLL1C_DIV  PLL division factor (PLL1C)
   * @{
   */
-#define DDL_RCM_PLL1C_DIV_2                  0x00000000U            /*!< Main PLL division factor for PLL1C output by 2 */
+#define DDL_RCM_PLL1C_DIV_2                  0x00000000U             /*!< Main PLL division factor for PLL1C output by 2 */
 #define DDL_RCM_PLL1C_DIV_4                  RCM_PLL1CFG_PLL1C_0     /*!< Main PLL division factor for PLL1C output by 4 */
 #define DDL_RCM_PLL1C_DIV_6                  RCM_PLL1CFG_PLL1C_1     /*!< Main PLL division factor for PLL1C output by 6 */
 #define DDL_RCM_PLL1C_DIV_8                  (RCM_PLL1CFG_PLL1C_1 | RCM_PLL1CFG_PLL1C_0)   /*!< Main PLL division factor for PLL1C output by 8 */
@@ -546,15 +635,18 @@ typedef struct
 /**
   * @}
   */
+#endif /* APM32F403xx || APM32F402xx */
 
+#if defined(RCM_SSCCFG_SSSEL)
 /** @defgroup RCM_DDL_EC_PLL_SPRE_SEL  PLL Spread Spectrum Selection
   * @{
   */
-#define DDL_RCM_SPREAD_SELECT_CENTER        0x00000000U                   /*!< PLL center spread spectrum selection */
+#define DDL_RCM_SPREAD_SELECT_CENTER        0x00000000U                /*!< PLL center spread spectrum selection */
 #define DDL_RCM_SPREAD_SELECT_DOWN          RCM_SSCCFG_SSSEL           /*!< PLL down spread spectrum selection */
 /**
   * @}
   */
+#endif /* RCM_SSCCFG_SSSEL */
 
 #if defined(RCM_PLLI2S_SUPPORT)
 /** @defgroup RCM_DDL_EC_PLL2B  PLL2B division factor (PLL2B)
@@ -694,9 +786,9 @@ typedef struct
 /** @defgroup RCM_DDL_EC_PLL2C  PLL2C division factor (PLL2C)
   * @{
   */
-#define DDL_RCM_PLL2C_DIV_2              RCM_PLL2CFG_PLL2C_1                                     /*!< PLLI2S division factor for PLL2C output by 2 */
+#define DDL_RCM_PLL2C_DIV_2              RCM_PLL2CFG_PLL2C_1                                /*!< PLLI2S division factor for PLL2C output by 2 */
 #define DDL_RCM_PLL2C_DIV_3              (RCM_PLL2CFG_PLL2C_1 | RCM_PLL2CFG_PLL2C_0)        /*!< PLLI2S division factor for PLL2C output by 3 */
-#define DDL_RCM_PLL2C_DIV_4              RCM_PLL2CFG_PLL2C_2                                     /*!< PLLI2S division factor for PLL2C output by 4 */
+#define DDL_RCM_PLL2C_DIV_4              RCM_PLL2CFG_PLL2C_2                                /*!< PLLI2S division factor for PLL2C output by 4 */
 #define DDL_RCM_PLL2C_DIV_5              (RCM_PLL2CFG_PLL2C_2 | RCM_PLL2CFG_PLL2C_0)        /*!< PLLI2S division factor for PLL2C output by 5 */
 #define DDL_RCM_PLL2C_DIV_6              (RCM_PLL2CFG_PLL2C_2 | RCM_PLL2CFG_PLL2C_1)        /*!< PLLI2S division factor for PLL2C output by 6 */
 #define DDL_RCM_PLL2C_DIV_7              (RCM_PLL2CFG_PLL2C_2 | RCM_PLL2CFG_PLL2C_1 | RCM_PLL2CFG_PLL2C_0)        /*!< PLLI2S division factor for PLL2C output by 7 */
@@ -741,6 +833,31 @@ typedef struct
   * @{
   */
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/**
+  * @brief  Helper macro to calculate the PLLCLK frequency
+  * @note ex: @ref __DDL_RCM_CALC_PLLCLK_FREQ (HSE_VALUE / (@ref DDL_RCM_PLL_GetPrediv () + 1), @ref DDL_RCM_PLL_GetMultiplicator ());
+  * @param  __INPUTFREQ__ PLL Input frequency (based on HSE div Prediv1 or div 2 / HSI div 2)
+  * @param  __PLLMUL__: This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_PLL_MUL_2
+  *         @arg @ref DDL_RCM_PLL_MUL_3
+  *         @arg @ref DDL_RCM_PLL_MUL_4
+  *         @arg @ref DDL_RCM_PLL_MUL_5
+  *         @arg @ref DDL_RCM_PLL_MUL_6
+  *         @arg @ref DDL_RCM_PLL_MUL_7
+  *         @arg @ref DDL_RCM_PLL_MUL_8
+  *         @arg @ref DDL_RCM_PLL_MUL_9
+  *         @arg @ref DDL_RCM_PLL_MUL_10
+  *         @arg @ref DDL_RCM_PLL_MUL_11
+  *         @arg @ref DDL_RCM_PLL_MUL_12
+  *         @arg @ref DDL_RCM_PLL_MUL_13
+  *         @arg @ref DDL_RCM_PLL_MUL_14
+  *         @arg @ref DDL_RCM_PLL_MUL_15
+  *         @arg @ref DDL_RCM_PLL_MUL_16
+  * @retval PLL clock frequency (in Hz)
+  */
+#define __DDL_RCM_CALC_PLLCLK_FREQ(__INPUTFREQ__, __PLLMUL__) ((__INPUTFREQ__) * (((__PLLMUL__) >> RCM_CFG_PLLMULCFG_Pos) + 2U))
+#else
 /**
   * @brief  Helper macro to calculate the PLLCLK frequency on system domain
   * @note ex: @ref __DDL_RCM_CALC_PLLCLK_FREQ (HSE_VALUE,@ref DDL_RCM_PLL_GetDivider (),
@@ -912,7 +1029,7 @@ typedef struct
   */
 #define __DDL_RCM_CALC_PLLCLK_48M_FREQ(__INPUTFREQ__, __PLLB__, __PLL1A__, __PLLD__) ((__INPUTFREQ__) / (__PLLB__) * (__PLL1A__) / \
                    ((__PLLD__) >> RCM_PLL1CFG_PLLD_Pos ))
-
+#endif /* APM32F403xx || APM32F402xx */
 
 #if defined(RCM_PLLI2S_SUPPORT)
 /**
@@ -1234,28 +1351,6 @@ __STATIC_INLINE uint32_t DDL_RCM_LSE_IsReady(void)
   return (READ_BIT(RCM->BDCTRL, RCM_BDCTRL_LSERDYFLG) == (RCM_BDCTRL_LSERDYFLG));
 }
 
-#if defined(RCM_BDCTRL_LSEMOD)
-/**
-  * @brief  Enable LSE high drive mode.
-  * @note LSE high drive mode can be enabled only when the LSE clock is disabled
-  * @retval None
-  */
-__STATIC_INLINE void DDL_RCM_LSE_EnableHighDriveMode(void)
-{
-  SET_BIT(RCM->BDCTRL, RCM_BDCTRL_LSEMOD);
-}
-
-/**
-  * @brief  Disable LSE high drive mode.
-  * @note LSE high drive mode can be disabled only when the LSE clock is disabled
-  * @retval None
-  */
-__STATIC_INLINE void DDL_RCM_LSE_DisableHighDriveMode(void)
-{
-  CLEAR_BIT(RCM->BDCTRL, RCM_BDCTRL_LSEMOD);
-}
-#endif /* RCM_BDCTRL_LSEMOD */
-
 /**
   * @}
   */
@@ -1327,7 +1422,7 @@ __STATIC_INLINE void DDL_RCM_SetSysClkSource(uint32_t Source)
   */
 __STATIC_INLINE uint32_t DDL_RCM_GetSysClkSource(void)
 {
-  return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_SCLKSWSTS));
+  return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_SCLKSELSTS));
 }
 
 /**
@@ -1433,46 +1528,22 @@ __STATIC_INLINE uint32_t DDL_RCM_GetAPB2Prescaler(void)
   * @{
   */
 
-#if defined(RCM_CFG_MCO1EN)
+#if defined(APM32F403xx) || defined(APM32F402xx)
 /**
-  * @brief  Enable MCO1 output
+  * @brief  Configure MCOx
+  * @param  MCOxSource This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_MCO1SOURCE_NOCLOCK
+  *         @arg @ref DDL_RCM_MCO1SOURCE_SYSCLK
+  *         @arg @ref DDL_RCM_MCO1SOURCE_HSI
+  *         @arg @ref DDL_RCM_MCO1SOURCE_HSE
+  *         @arg @ref DDL_RCM_MCO1SOURCE_PLLCLK_DIV_2
   * @retval None
   */
-__STATIC_INLINE void DDL_RCM_MCO1_Enable(void)
+__STATIC_INLINE void DDL_RCM_ConfigMCO(uint32_t MCOxSource)
 {
-  SET_BIT(RCM->CFG, RCM_CFG_MCO1EN);
+  MODIFY_REG(RCM->CFG, RCM_CFG_MCOSEL, MCOxSource);
 }
-
-/**
-  * @brief  Disable MCO1 output
-  * @retval None
-  */
-__STATIC_INLINE void DDL_RCM_MCO1_Disable(void)
-{
-  CLEAR_BIT(RCM->CFG, RCM_CFG_MCO1EN);
-}
-#endif /* RCM_CFG_MCO1EN */
-
-#if defined(RCM_CFG_MCO2EN)
-/**
-  * @brief  Enable MCO2 output
-  * @retval None
-  */
-__STATIC_INLINE void DDL_RCM_MCO2_Enable(void)
-{
-  SET_BIT(RCM->CFG, RCM_CFG_MCO2EN);
-}
-
-/**
-  * @brief  Disable MCO2 output
-  * @retval None
-  */
-__STATIC_INLINE void DDL_RCM_MCO2_Disable(void)
-{
-  CLEAR_BIT(RCM->CFG, RCM_CFG_MCO2EN);
-}
-#endif /* RCM_CFG_MCO2EN */
-
+#else
 /**
   * @brief  Configure MCOx
   * @param  MCOxSource This parameter can be one of the following values:
@@ -1481,7 +1552,7 @@ __STATIC_INLINE void DDL_RCM_MCO2_Disable(void)
   *         @arg @ref DDL_RCM_MCO1SOURCE_HSE
   *         @arg @ref DDL_RCM_MCO1SOURCE_PLLCLK
   *         @arg @ref DDL_RCM_MCO2SOURCE_SYSCLK
-  *         @arg @ref DDL_RCM_MCO2SOURCE_PLLI2S
+  *         @arg @ref DDL_RCM_MCO2SOURCE_PLLI2S (*)
   *         @arg @ref DDL_RCM_MCO2SOURCE_HSE
   *         @arg @ref DDL_RCM_MCO2SOURCE_PLLCLK
   * @param  MCOxPrescaler This parameter can be one of the following values:
@@ -1501,6 +1572,7 @@ __STATIC_INLINE void DDL_RCM_ConfigMCO(uint32_t MCOxSource, uint32_t MCOxPrescal
 {
   MODIFY_REG(RCM->CFG, (MCOxSource & 0xFFFF0000U) | (MCOxPrescaler & 0xFFFF0000U),  (MCOxSource << 16U) | (MCOxPrescaler << 16U));
 }
+#endif /* APM32F403xx || APM32F402xx */
 
 /**
   * @}
@@ -1510,55 +1582,98 @@ __STATIC_INLINE void DDL_RCM_ConfigMCO(uint32_t MCOxSource, uint32_t MCOxPrescal
   * @{
   */
 
+#if defined(RCM_CFG_I2SSEL)
 /**
   * @brief  Configure I2S clock source
   * @param  Source This parameter can be one of the following values:
   *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLLI2S (*)
   *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PIN
-  *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLL (*)
-  *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLLSRC (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLLI2S (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PIN (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLL (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLLSRC (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void DDL_RCM_SetI2SClockSource(uint32_t Source)
 {
-#if defined(RCM_CFG_I2SSEL)
   MODIFY_REG(RCM->CFG, RCM_CFG_I2SSEL, Source);
-#else
-  MODIFY_REG(RCM->DCKCFGR, (Source & 0xFFFF0000U), (Source << 16U));
-#endif /* RCM_CFG_I2SSEL */
 }
 
 /**
   * @brief  Get I2S Clock Source
   * @param  I2Sx This parameter can be one of the following values:
   *         @arg @ref DDL_RCM_I2S1_CLKSOURCE
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE (*)
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLLI2S (*)
   *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PIN
-  *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLL (*)
-  *         @arg @ref DDL_RCM_I2S1_CLKSOURCE_PLLSRC (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLLI2S (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PIN (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLL (*)
-  *         @arg @ref DDL_RCM_I2S2_CLKSOURCE_PLLSRC (*)
   *
   *         (*) value not defined in all devices.
   */
 __STATIC_INLINE uint32_t DDL_RCM_GetI2SClockSource(uint32_t I2Sx)
 {
-#if defined(RCM_CFG_I2SSEL)
   return (uint32_t)(READ_BIT(RCM->CFG, I2Sx));
-#else
-  return (uint32_t)(READ_BIT(RCM->DCKCFGR, I2Sx) >> 16U | I2Sx);
-#endif /* RCM_CFG_I2SSEL */
 }
+#endif /* RCM_CFG_I2SSEL */
+
+#if defined(RCM_CFG_OTGFSPSC)
+/**
+  * @brief  Configure USB clock source
+  * @param  USBxSource This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_1_5
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_2
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_2_5
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RCM_SetUSBClockSource(uint32_t USBxSource)
+{
+  MODIFY_REG(RCM->CFG, RCM_CFG_OTGFSPSC, USBxSource);
+}
+
+/**
+  * @brief  Get USB Clock Source
+  * @param  USBx This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_1_5
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_2
+  *         @arg @ref DDL_RCM_USB_CLKSOURCE_PLL_DIV_2_5
+  */
+__STATIC_INLINE uint32_t DDL_RCM_GetUSBClockSource(uint32_t USBx)
+{
+  return (uint32_t)(READ_BIT(RCM->CFG, USBx));
+}
+#endif /* RCM_CFG_OTGFSPSC */
+
+#if defined(RCM_CFG_ADCPSC)
+/**
+  * @brief  Configure ADC clock source
+  * @param  ADCxSource This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_2
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_4
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_6
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_8
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RCM_SetADCClockSource(uint32_t ADCxSource)
+{
+  MODIFY_REG(RCM->CFG, RCM_CFG_ADCPSC, ADCxSource);
+}
+
+/**
+  * @brief  Get ADC Clock Source
+  * @param  ADCx This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_ADC_CLKSOURCE
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_2
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_4
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_6
+  *         @arg @ref DDL_RCM_ADC_CLKSRC_PCLK2_DIV_8
+  */
+__STATIC_INLINE uint32_t DDL_RCM_GetADCClockSource(uint32_t ADCx)
+{
+  return (uint32_t)(READ_BIT(RCM->CFG, ADCx));
+}
+#endif /* RCM_CFG_ADCPSC */
 
 /**
   * @}
@@ -1643,6 +1758,7 @@ __STATIC_INLINE void DDL_RCM_ReleaseBackupDomainReset(void)
   CLEAR_BIT(RCM->BDCTRL, RCM_BDCTRL_BDRST);
 }
 
+#if defined(RCM_CFG_RTCPSC)
 /**
   * @brief  Set HSE Prescalers for RTC Clock
   * @param  Prescaler This parameter can be one of the following values:
@@ -1723,6 +1839,7 @@ __STATIC_INLINE uint32_t DDL_RCM_GetRTC_HSEPrescaler(void)
 {
   return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_RTCPSC));
 }
+#endif /* RCM_CFG_RTCPSC */
 
 /**
   * @}
@@ -1793,6 +1910,37 @@ __STATIC_INLINE uint32_t DDL_RCM_PLL_IsReady(void)
   return (READ_BIT(RCM->CTRL, RCM_CTRL_PLL1RDYFLG) == (RCM_CTRL_PLL1RDYFLG));
 }
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/**
+  * @brief  Configure PLL used for SYSCLK Domain
+  * @param  Source This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSI_DIV_2
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSE
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSE_DIV_2
+  * @param  PLLMul This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_PLL_MUL_2
+  *         @arg @ref DDL_RCM_PLL_MUL_3
+  *         @arg @ref DDL_RCM_PLL_MUL_4
+  *         @arg @ref DDL_RCM_PLL_MUL_5
+  *         @arg @ref DDL_RCM_PLL_MUL_6
+  *         @arg @ref DDL_RCM_PLL_MUL_7
+  *         @arg @ref DDL_RCM_PLL_MUL_8
+  *         @arg @ref DDL_RCM_PLL_MUL_9
+  *         @arg @ref DDL_RCM_PLL_MUL_10
+  *         @arg @ref DDL_RCM_PLL_MUL_11
+  *         @arg @ref DDL_RCM_PLL_MUL_12
+  *         @arg @ref DDL_RCM_PLL_MUL_13
+  *         @arg @ref DDL_RCM_PLL_MUL_14
+  *         @arg @ref DDL_RCM_PLL_MUL_15
+  *         @arg @ref DDL_RCM_PLL_MUL_16
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RCM_PLL_ConfigDomain_SYS(uint32_t Source, uint32_t PLLMul)
+{
+  MODIFY_REG(RCM->CFG, RCM_CFG_PLLSRCSEL | RCM_CFG_PLLHSEPSC | RCM_CFG_PLLMULCFG,
+             (Source & (RCM_CFG_PLLSRCSEL | RCM_CFG_PLLHSEPSC)) | PLLMul);
+}
+#else
 /**
   * @brief  Configure PLL used for SYSCLK Domain
   * @note PLL Source and PLLB Divider can be written only when PLL,
@@ -1887,9 +2035,6 @@ __STATIC_INLINE void DDL_RCM_PLL_ConfigDomain_SYS(uint32_t Source, uint32_t PLLB
   MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS | RCM_PLL1CFG_PLLB | RCM_PLL1CFG_PLL1A,
              Source | PLLB | PLL1A << RCM_PLL1CFG_PLL1A_Pos);
   MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLL1C, PLL1C_R);
-#if defined(RCM_PLLR_SYSCLK_SUPPORT)
-  MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLLR, PLL1C_R);
-#endif /* RCM_PLLR_SYSCLK_SUPPORT */
 }
 
 /**
@@ -1989,17 +2134,26 @@ __STATIC_INLINE void DDL_RCM_PLL_ConfigDomain_48M(uint32_t Source, uint32_t PLLB
   MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS | RCM_PLL1CFG_PLLB | RCM_PLL1CFG_PLL1A | RCM_PLL1CFG_PLLD,
              Source | PLLB | PLL1A << RCM_PLL1CFG_PLL1A_Pos | PLLD);
 }
+#endif /* APM32F403xx || APM32F402xx */
 
 /**
   * @brief  Configure PLL clock source
   * @param PLLSource This parameter can be one of the following values:
   *         @arg @ref DDL_RCM_PLLSOURCE_HSI
   *         @arg @ref DDL_RCM_PLLSOURCE_HSE
+  *
+  * @param PLLSource This parameter can be one of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSI_DIV_2
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSE
   * @retval None
   */
 __STATIC_INLINE void DDL_RCM_PLL_SetMainSource(uint32_t PLLSource)
 {
+#if defined(RCM_CFG_PLLSRCSEL)
+  MODIFY_REG(RCM->CFG, RCM_CFG_PLLSRCSEL, PLLSource);
+#else
   MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS, PLLSource);
+#endif /* RCM_CFG_PLLSRCSEL */
 }
 
 /**
@@ -2007,12 +2161,57 @@ __STATIC_INLINE void DDL_RCM_PLL_SetMainSource(uint32_t PLLSource)
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_RCM_PLLSOURCE_HSI
   *         @arg @ref DDL_RCM_PLLSOURCE_HSE
+  *
+  * @retval Returned value can be one of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSI_DIV_2
+  *         @arg @ref DDL_RCM_PLLSOURCE_HSE
   */
 __STATIC_INLINE uint32_t DDL_RCM_PLL_GetMainSource(void)
 {
+#if defined(RCM_CFG_PLLSRCSEL)
+  return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_PLLSRCSEL));
+#else
   return (uint32_t)(READ_BIT(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS));
+#endif /* RCM_CFG_PLLSRCSEL */
 }
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/**
+  * @brief  Get PLL multiplication Factor
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_RCM_PLL_MUL_2
+  *         @arg @ref DDL_RCM_PLL_MUL_3
+  *         @arg @ref DDL_RCM_PLL_MUL_4
+  *         @arg @ref DDL_RCM_PLL_MUL_5
+  *         @arg @ref DDL_RCM_PLL_MUL_6
+  *         @arg @ref DDL_RCM_PLL_MUL_7
+  *         @arg @ref DDL_RCM_PLL_MUL_8
+  *         @arg @ref DDL_RCM_PLL_MUL_9
+  *         @arg @ref DDL_RCM_PLL_MUL_10
+  *         @arg @ref DDL_RCM_PLL_MUL_11
+  *         @arg @ref DDL_RCM_PLL_MUL_12
+  *         @arg @ref DDL_RCM_PLL_MUL_13
+  *         @arg @ref DDL_RCM_PLL_MUL_14
+  *         @arg @ref DDL_RCM_PLL_MUL_15
+  *         @arg @ref DDL_RCM_PLL_MUL_16
+  */
+__STATIC_INLINE uint32_t DDL_RCM_PLL_GetMultiplicator(void)
+{
+  return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_PLLMULCFG));
+}
+
+/**
+  * @brief  Get PREDIV1 division factor for the main PLL
+  * @note They can be written only when the PLL is disabled
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_RCM_PREDIV_DIV_1
+  *         @arg @ref DDL_RCM_PREDIV_DIV_2
+  */
+__STATIC_INLINE uint32_t DDL_RCM_PLL_GetPrediv(void)
+{
+  return (uint32_t)(READ_BIT(RCM->CFG, RCM_CFG_PLLHSEPSC) >> RCM_CFG_PLLHSEPSC_Pos);
+}
+#else
 /**
   * @brief  Get Main PLL multiplication factor for VCO
   * @retval Between 50/192(*) and 432
@@ -2025,7 +2224,7 @@ __STATIC_INLINE uint32_t DDL_RCM_PLL_GetN(void)
 }
 
 /**
-  * @brief  Get Main PLL division factor for PLL1C 
+  * @brief  Get Main PLL division factor for PLL1C
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_RCM_PLL1C_DIV_2
   *         @arg @ref DDL_RCM_PLL1C_DIV_4
@@ -2195,7 +2394,7 @@ __STATIC_INLINE void DDL_RCM_PLL_SpreadSpectrum_Disable(void)
 {
   CLEAR_BIT(RCM->SSCCFG, RCM_SSCCFG_SSEN);
 }
-
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -2241,7 +2440,6 @@ __STATIC_INLINE uint32_t DDL_RCM_PLLI2S_IsReady(void)
   * @param  Source This parameter can be one of the following values:
   *         @arg @ref DDL_RCM_PLLSOURCE_HSI
   *         @arg @ref DDL_RCM_PLLSOURCE_HSE
-  *         @arg @ref DDL_RCM_PLLI2SSOURCE_PIN (*)
   *
   *         (*) value not defined in all devices.
   * @param  PLLB This parameter can be one of the following values:
@@ -2438,20 +2636,12 @@ __STATIC_INLINE uint32_t DDL_RCM_PLLI2S_GetDivider(void)
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_RCM_PLLSOURCE_HSI
   *         @arg @ref DDL_RCM_PLLSOURCE_HSE
-  *         @arg @ref DDL_RCM_PLLI2SSOURCE_PIN (*)
   *
   *         (*) value not defined in all devices.
   */
 __STATIC_INLINE uint32_t DDL_RCM_PLLI2S_GetMainSource(void)
 {
-#if defined(RCM_PLL2CFG_PLLI2SSRC)
-  uint32_t pllsrc = READ_BIT(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS);
-  uint32_t plli2sssrc0 = READ_BIT(RCM->PLL2CFG, RCM_PLL2CFG_PLLI2SSRC);
-  uint32_t plli2sssrc1 = READ_BIT(RCM->PLL2CFG, RCM_PLL2CFG_PLLI2SSRC) >> 15U;
-  return (uint32_t)(pllsrc | plli2sssrc0 | plli2sssrc1);
-#else
   return (uint32_t)(READ_BIT(RCM->PLL1CFG, RCM_PLL1CFG_PLL1CLKS));
-#endif /* RCM_PLL2CFG_PLLI2SSRC */
 }
 
 /**
@@ -2869,10 +3059,13 @@ uint32_t    DDL_RCM_GetSDIOClockFreq(uint32_t SDIOxSource);
 #if defined(RNG)
 uint32_t    DDL_RCM_GetRNGClockFreq(uint32_t RNGxSource);
 #endif /* RNG */
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS) || defined(USB_OTG_FS2)
 uint32_t    DDL_RCM_GetUSBClockFreq(uint32_t USBxSource);
-#endif /* USB_OTG_FS || USB_OTG_HS */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 uint32_t    DDL_RCM_GetI2SClockFreq(uint32_t I2SxSource);
+#if defined(RCM_CFG_ADCPSC)
+uint32_t DDL_RCM_GetADCClockFreq(uint32_t ADCxSource);
+#endif /* RCM_CFG_ADCPSC */
 /**
   * @}
   */

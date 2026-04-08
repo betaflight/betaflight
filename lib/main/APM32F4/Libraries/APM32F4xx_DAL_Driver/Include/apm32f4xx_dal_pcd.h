@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -233,6 +229,7 @@ typedef struct
 #define __DAL_PCD_IS_PHY_SUSPENDED(__HANDLE__) \
   ((*(__IO uint32_t *)((uint32_t)((__HANDLE__)->Instance) + USB_OTG_PCGCCTL_BASE)) & 0x10U)
 
+#if defined (USB_OTG_HS)
 #define __DAL_USB_OTG_HS_WAKEUP_EINT_ENABLE_IT()    EINT->IMASK |= (USB_OTG_HS_WAKEUP_EINT_LINE)
 #define __DAL_USB_OTG_HS_WAKEUP_EINT_DISABLE_IT()   EINT->IMASK &= ~(USB_OTG_HS_WAKEUP_EINT_LINE)
 #define __DAL_USB_OTG_HS_WAKEUP_EINT_GET_FLAG()     EINT->IPEND & (USB_OTG_HS_WAKEUP_EINT_LINE)
@@ -243,6 +240,21 @@ typedef struct
     EINT->FTEN &= ~(USB_OTG_HS_WAKEUP_EINT_LINE); \
     EINT->RTEN |= USB_OTG_HS_WAKEUP_EINT_LINE; \
   } while(0U)
+#endif /* USB_OTG_HS */
+
+#if defined (USB_OTG_FS2)
+#define __DAL_USB_OTG_FS2_WAKEUP_EINT_ENABLE_IT()    EINT->IMASK |= (USB_OTG_FS2_WAKEUP_EINT_LINE)
+#define __DAL_USB_OTG_FS2_WAKEUP_EINT_DISABLE_IT()   EINT->IMASK &= ~(USB_OTG_FS2_WAKEUP_EINT_LINE)
+#define __DAL_USB_OTG_FS2_WAKEUP_EINT_GET_FLAG()     EINT->IPEND & (USB_OTG_FS2_WAKEUP_EINT_LINE)
+#define __DAL_USB_OTG_FS2_WAKEUP_EINT_CLEAR_FLAG()   EINT->IPEND = (USB_OTG_FS2_WAKEUP_EINT_LINE)
+
+#define __DAL_USB_OTG_FS2_WAKEUP_EINT_ENABLE_RISING_EDGE() \
+  do { \
+    EINT->FTEN &= ~(USB_OTG_FS2_WAKEUP_EINT_LINE); \
+    EINT->RTEN |= USB_OTG_FS2_WAKEUP_EINT_LINE; \
+  } while(0U)
+#endif /* USB_OTG_FS2 */
+
 #define __DAL_USB_OTG_FS_WAKEUP_EINT_ENABLE_IT()    EINT->IMASK |= USB_OTG_FS_WAKEUP_EINT_LINE
 #define __DAL_USB_OTG_FS_WAKEUP_EINT_DISABLE_IT()   EINT->IMASK &= ~(USB_OTG_FS_WAKEUP_EINT_LINE)
 #define __DAL_USB_OTG_FS_WAKEUP_EINT_GET_FLAG()     EINT->IPEND & (USB_OTG_FS_WAKEUP_EINT_LINE)
@@ -422,7 +434,12 @@ PCD_StateTypeDef DAL_PCD_GetState(PCD_HandleTypeDef *hpcd);
   */
 #if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 #define USB_OTG_FS_WAKEUP_EINT_LINE                                   (0x1U << 18)  /*!< USB FS EINT Line WakeUp Interrupt */
+#if defined (USB_OTG_FS2)
+#define USB_OTG_FS2_WAKEUP_EINT_LINE                                  (0x1U << 20)  /*!< USB FS2 EINT Line WakeUp Interrupt */
+#endif /* USB_OTG_FS2 */
+#if defined (USB_OTG_HS)
 #define USB_OTG_HS_WAKEUP_EINT_LINE                                   (0x1U << 20)  /*!< USB HS EINT Line WakeUp Interrupt */
+#endif /* USB_OTG_HS */
 #endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
 
 

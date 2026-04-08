@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -387,7 +383,7 @@ DAL_StatusTypeDef DAL_UART_Init(UART_HandleTypeDef *huart)
   if (huart->Init.HwFlowCtl != UART_HWCONTROL_NONE)
   {
     /* The hardware flow control is available only for USART1, USART2, USART3 and USART6.
-       Except for APM32F446xx devices, that is available for USART1, USART2, USART3, USART6, UART4 and UART5.
+       Except for APM32F402/403xx devices, that is available for USART1, USART2 and USART3.
     */
     ASSERT_PARAM(IS_UART_HWFLOW_INSTANCE(huart->Instance));
     ASSERT_PARAM(IS_UART_HARDWARE_FLOW_CONTROL(huart->Init.HwFlowCtl));
@@ -397,7 +393,9 @@ DAL_StatusTypeDef DAL_UART_Init(UART_HandleTypeDef *huart)
     ASSERT_PARAM(IS_UART_INSTANCE(huart->Instance));
   }
   ASSERT_PARAM(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CTRL1_OSMCFG)
   ASSERT_PARAM(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CTRL1_OSMCFG */
 
   if (huart->gState == DAL_UART_STATE_RESET)
   {
@@ -441,6 +439,7 @@ DAL_StatusTypeDef DAL_UART_Init(UART_HandleTypeDef *huart)
   huart->ErrorCode = DAL_UART_ERROR_NONE;
   huart->gState = DAL_UART_STATE_READY;
   huart->RxState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   return DAL_OK;
 }
@@ -463,7 +462,9 @@ DAL_StatusTypeDef DAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
   /* Check the parameters */
   ASSERT_PARAM(IS_UART_HALFDUPLEX_INSTANCE(huart->Instance));
   ASSERT_PARAM(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CTRL1_OSMCFG)
   ASSERT_PARAM(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CTRL1_OSMCFG */
 
   if (huart->gState == DAL_UART_STATE_RESET)
   {
@@ -510,6 +511,7 @@ DAL_StatusTypeDef DAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
   huart->ErrorCode = DAL_UART_ERROR_NONE;
   huart->gState = DAL_UART_STATE_READY;
   huart->RxState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   return DAL_OK;
 }
@@ -539,7 +541,9 @@ DAL_StatusTypeDef DAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
   /* Check the Break detection length parameter */
   ASSERT_PARAM(IS_UART_LIN_BREAK_DETECT_LENGTH(BreakDetectLength));
   ASSERT_PARAM(IS_UART_LIN_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CTRL1_OSMCFG)
   ASSERT_PARAM(IS_UART_LIN_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CTRL1_OSMCFG */
 
   if (huart->gState == DAL_UART_STATE_RESET)
   {
@@ -590,6 +594,7 @@ DAL_StatusTypeDef DAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
   huart->ErrorCode = DAL_UART_ERROR_NONE;
   huart->gState = DAL_UART_STATE_READY;
   huart->RxState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   return DAL_OK;
 }
@@ -621,7 +626,9 @@ DAL_StatusTypeDef DAL_MultiProcessor_Init(UART_HandleTypeDef *huart, uint8_t Add
   ASSERT_PARAM(IS_UART_WAKEUPMETHOD(WakeUpMethod));
   ASSERT_PARAM(IS_UART_ADDRESS(Address));
   ASSERT_PARAM(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CTRL1_OSMCFG)
   ASSERT_PARAM(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CTRL1_OSMCFG */
 
   if (huart->gState == DAL_UART_STATE_RESET)
   {
@@ -673,6 +680,7 @@ DAL_StatusTypeDef DAL_MultiProcessor_Init(UART_HandleTypeDef *huart, uint8_t Add
   huart->ErrorCode = DAL_UART_ERROR_NONE;
   huart->gState = DAL_UART_STATE_READY;
   huart->RxState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   return DAL_OK;
 }
@@ -715,6 +723,7 @@ DAL_StatusTypeDef DAL_UART_DeInit(UART_HandleTypeDef *huart)
   huart->gState = DAL_UART_STATE_RESET;
   huart->RxState = DAL_UART_STATE_RESET;
   huart->ReceptionType = DAL_UART_RECEPTION_STANDARD;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   /* Process Unlock */
   __DAL_UNLOCK(huart);
@@ -1199,6 +1208,8 @@ DAL_StatusTypeDef DAL_UART_Transmit(UART_HandleTypeDef *huart, const uint8_t *pD
     {
       if (UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, tickstart, Timeout) != DAL_OK)
       {
+        huart->gState = DAL_UART_STATE_READY;
+
         return DAL_TIMEOUT;
       }
       if (pdata8bits == NULL)
@@ -1216,6 +1227,8 @@ DAL_StatusTypeDef DAL_UART_Transmit(UART_HandleTypeDef *huart, const uint8_t *pD
 
     if (UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TC, RESET, tickstart, Timeout) != DAL_OK)
     {
+      huart->gState = DAL_UART_STATE_READY;
+
       return DAL_TIMEOUT;
     }
 
@@ -1289,6 +1302,8 @@ DAL_StatusTypeDef DAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
     {
       if (UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_RXNE, RESET, tickstart, Timeout) != DAL_OK)
       {
+        huart->RxState = DAL_UART_STATE_READY;
+
         return DAL_TIMEOUT;
       }
       if (pdata8bits == NULL)
@@ -1662,6 +1677,7 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle(UART_HandleTypeDef *huart, uint8_t *p
     huart->ErrorCode = DAL_UART_ERROR_NONE;
     huart->RxState = DAL_UART_STATE_BUSY_RX;
     huart->ReceptionType = DAL_UART_RECEPTION_TOIDLE;
+    huart->RxEventType = DAL_UART_RXEVENT_TC;
 
     /* Init tickstart for timeout management */
     tickstart = DAL_GetTick();
@@ -1699,6 +1715,7 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle(UART_HandleTypeDef *huart, uint8_t *p
         /* If Set, and data has already been received, this means Idle Event is valid : End reception */
         if (*RxLen > 0U)
         {
+          huart->RxEventType = DAL_UART_RXEVENT_IDLE;
           huart->RxState = DAL_UART_STATE_READY;
 
           return DAL_OK;
@@ -1785,6 +1802,7 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle_IT(UART_HandleTypeDef *huart, uint8_t
 
     /* Set Reception type to reception till IDLE Event*/
     huart->ReceptionType = DAL_UART_RECEPTION_TOIDLE;
+    huart->RxEventType = DAL_UART_RXEVENT_TC;
 
     status =  UART_Start_Receive_IT(huart, pData, Size);
 
@@ -1846,6 +1864,7 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_
 
     /* Set Reception type to reception till IDLE Event*/
     huart->ReceptionType = DAL_UART_RECEPTION_TOIDLE;
+    huart->RxEventType = DAL_UART_RXEVENT_TC;
 
     status =  UART_Start_Receive_DMA(huart, pData, Size);
 
@@ -1873,6 +1892,36 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_
   {
     return DAL_BUSY;
   }
+}
+
+/**
+  * @brief Provide Rx Event type that has lead to RxEvent callback execution.
+  * @note  When DAL_UARTEx_ReceiveToIdle_IT() or DAL_UARTEx_ReceiveToIdle_DMA() API are called, progress
+  *        of reception process is provided to application through calls of Rx Event callback (either default one
+  *        DAL_UARTEx_RxEventCallback() or user registered one). As several types of events could occur (IDLE event,
+  *        Half Transfer, or Transfer Complete), this function allows to retrieve the Rx Event type that has lead
+  *        to Rx Event callback execution.
+  * @note  This function is expected to be called within the user implementation of Rx Event Callback,
+  *        in order to provide the accurate value :
+  *        In Interrupt Mode :
+  *           - DAL_UART_RXEVENT_TC : when Reception has been completed (expected nb of data has been received)
+  *           - DAL_UART_RXEVENT_IDLE : when Idle event occurred prior reception has been completed (nb of
+  *             received data is lower than expected one)
+  *        In DMA Mode :
+  *           - DAL_UART_RXEVENT_TC : when Reception has been completed (expected nb of data has been received)
+  *           - DAL_UART_RXEVENT_HT : when half of expected nb of data has been received
+  *           - DAL_UART_RXEVENT_IDLE : when Idle event occurred prior reception has been completed (nb of
+  *             received data is lower than expected one).
+  *        In DMA mode, RxEvent callback could be called several times;
+  *        When DMA is configured in Normal Mode, HT event does not stop Reception process;
+  *        When DMA is configured in Circular Mode, HT, TC or IDLE events don't stop Reception process;
+  * @param  huart UART handle.
+  * @retval Rx Event Type (returned value will be a value of @ref UART_RxEvent_Type_Values)
+  */
+DAL_UART_RxEventTypeTypeDef DAL_UARTEx_GetRxEventType(UART_HandleTypeDef *huart)
+{
+  /* Return Rx Event type value, as stored in UART handle */
+  return(huart->RxEventType);
 }
 
 /**
@@ -2547,6 +2596,11 @@ void DAL_UART_IRQHandler(UART_HandleTypeDef *huart)
           /* Last bytes received, so no need as the abort is immediate */
           (void)DAL_DMA_Abort(huart->hdmarx);
         }
+
+        /* Initialize type of RxEvent that correspond to RxEvent callback execution;
+        In this case, Rx Event type is Idle Event */
+        huart->RxEventType = DAL_UART_RXEVENT_IDLE;
+
 #if (USE_DAL_UART_REGISTER_CALLBACKS == 1)
         /*Call registered Rx Event callback*/
         huart->RxEventCallback(huart, (huart->RxXferSize - huart->RxXferCount));
@@ -2577,6 +2631,11 @@ void DAL_UART_IRQHandler(UART_HandleTypeDef *huart)
         huart->ReceptionType = DAL_UART_RECEPTION_STANDARD;
 
         ATOMIC_CLEAR_BIT(huart->Instance->CTRL1, USART_CTRL1_IDLEIEN);
+
+        /* Initialize type of RxEvent that correspond to RxEvent callback execution;
+           In this case, Rx Event type is Idle Event */
+        huart->RxEventType = DAL_UART_RXEVENT_IDLE;
+
 #if (USE_DAL_UART_REGISTER_CALLBACKS == 1)
         /*Call registered Rx complete callback*/
         huart->RxEventCallback(huart, nb_rx_data);
@@ -2812,6 +2871,7 @@ DAL_StatusTypeDef DAL_MultiProcessor_EnterMuteMode(UART_HandleTypeDef *huart)
   ATOMIC_SET_BIT(huart->Instance->CTRL1, USART_CTRL1_RXMUTEEN);
 
   huart->gState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   /* Process Unlocked */
   __DAL_UNLOCK(huart);
@@ -2839,6 +2899,7 @@ DAL_StatusTypeDef DAL_MultiProcessor_ExitMuteMode(UART_HandleTypeDef *huart)
   ATOMIC_CLEAR_BIT(huart->Instance->CTRL1, USART_CTRL1_RXMUTEEN);
 
   huart->gState = DAL_UART_STATE_READY;
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   /* Process Unlocked */
   __DAL_UNLOCK(huart);
@@ -3008,7 +3069,11 @@ static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef *huart = (UART_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   /* DMA Normal mode*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     huart->TxXferCount = 0x00U;
 
@@ -3062,7 +3127,11 @@ static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef *huart = (UART_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   /* DMA Normal mode*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     huart->RxXferCount = 0U;
 
@@ -3083,6 +3152,10 @@ static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
       ATOMIC_CLEAR_BIT(huart->Instance->CTRL1, USART_CTRL1_IDLEIEN);
     }
   }
+
+  /* Initialize type of RxEvent that correspond to RxEvent callback execution;
+   In this case, Rx Event type is Transfer Complete */
+  huart->RxEventType = DAL_UART_RXEVENT_TC;
 
   /* Check current reception Mode :
      If Reception till IDLE event has been selected : use Rx Event callback */
@@ -3118,6 +3191,10 @@ static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 static void UART_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef *huart = (UART_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
+
+  /* Initialize type of RxEvent that correspond to RxEvent callback execution;
+     In this case, Rx Event type is Half Transfer */
+  huart->RxEventType = DAL_UART_RXEVENT_HT;
 
   /* Check current reception Mode :
      If Reception till IDLE event has been selected : use Rx Event callback */
@@ -3640,6 +3717,9 @@ static DAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
       /* Rx process is completed, restore huart->RxState to Ready */
       huart->RxState = DAL_UART_STATE_READY;
 
+      /* Initialize type of RxEvent to Transfer Complete */
+      huart->RxEventType = DAL_UART_RXEVENT_TC;
+
       /* Check current reception Mode :
          If Reception till IDLE event has been selected : */
       if (huart->ReceptionType == DAL_UART_RECEPTION_TOIDLE)
@@ -3716,10 +3796,17 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
      Set TE and RE bits according to huart->Init.Mode value
      Set OVER8 bit according to huart->Init.OverSampling value */
 
+#if defined(USART_CTRL1_OSMCFG)
   tmpreg = (uint32_t)huart->Init.WordLength | huart->Init.Parity | huart->Init.Mode | huart->Init.OverSampling;
   MODIFY_REG(huart->Instance->CTRL1,
              (uint32_t)(USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG | USART_CTRL1_TXEN | USART_CTRL1_RXEN | USART_CTRL1_OSMCFG),
              tmpreg);
+#else
+  tmpreg = (uint32_t)huart->Init.WordLength | huart->Init.Parity | huart->Init.Mode;
+  MODIFY_REG(huart->Instance->CTRL1,
+             (uint32_t)(USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG | USART_CTRL1_TXEN | USART_CTRL1_RXEN),
+             tmpreg);
+#endif /* USART_CTRL1_OSMCFG */
 
   /*-------------------------- USART CTRL3 Configuration -----------------------*/
   /* Configure the UART HFC: Set CTSE and RTSE bits according to huart->Init.HwFlowCtl value */
@@ -3747,6 +3834,7 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
       pclk = DAL_RCM_GetPCLK1Freq();
     }
   /*-------------------------- USART BR Configuration ---------------------*/
+#if defined(USART_CTRL1_OSMCFG)
   if (huart->Init.OverSampling == UART_OVERSAMPLING_8)
   {
     huart->Instance->BR = UART_BR_SAMPLING8(pclk, huart->Init.BaudRate);
@@ -3755,6 +3843,9 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
   {
     huart->Instance->BR = UART_BR_SAMPLING16(pclk, huart->Init.BaudRate);
   }
+#else
+  huart->Instance->BR = UART_BR_SAMPLING16(pclk, huart->Init.BaudRate);
+#endif /* USART_CTRL1_OSMCFG */
 }
 
 /**

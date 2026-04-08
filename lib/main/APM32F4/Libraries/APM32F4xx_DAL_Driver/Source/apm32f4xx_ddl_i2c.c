@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -46,10 +42,13 @@
 #include "apm32f4xx_ddl_i2c.h"
 #include "apm32f4xx_ddl_bus.h"
 #include "apm32f4xx_ddl_rcm.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -131,6 +130,7 @@ uint32_t DDL_I2C_DeInit(I2C_TypeDef *I2Cx)
     /* Release reset of I2C clock */
     DDL_APB1_GRP1_ReleaseReset(DDL_APB1_GRP1_PERIPH_I2C1);
   }
+#if defined(I2C2)
   else if (I2Cx == I2C2)
   {
     /* Force reset of I2C clock */
@@ -140,6 +140,7 @@ uint32_t DDL_I2C_DeInit(I2C_TypeDef *I2Cx)
     DDL_APB1_GRP1_ReleaseReset(DDL_APB1_GRP1_PERIPH_I2C2);
 
   }
+#endif
 #if defined(I2C3)
   else if (I2Cx == I2C3)
   {

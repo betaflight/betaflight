@@ -7,7 +7,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -29,13 +29,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -47,15 +43,15 @@
   ==============================================================================
     [..]
     The common DAL driver contains a set of generic and common APIs that can be
-    used by the PPP peripheral drivers and the user to start using the DAL. 
+    used by the PPP peripheral drivers and the user to start using the DAL.
     [..]
-    The DAL contains two APIs' categories: 
+    The DAL contains two APIs' categories:
          (+) Common DAL APIs
          (+) Services DAL APIs
 
   @endverbatim
   *
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_dal.h"
@@ -75,38 +71,30 @@
   * @{
   */
 /**
-  * @brief APM32F4xx DAL Driver version number V1.1.2
+  * @brief APM32F4xx DAL Driver version number V1.1.4
   */
 #define __APM32F4xx_DAL_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
 #define __APM32F4xx_DAL_VERSION_SUB1   (0x01U) /*!< [23:16] sub1 version */
-#define __APM32F4xx_DAL_VERSION_SUB2   (0x02U) /*!< [15:8]  sub2 version */
-#define __APM32F4xx_DAL_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */ 
+#define __APM32F4xx_DAL_VERSION_SUB2   (0x04U) /*!< [15:8]  sub2 version */
+#define __APM32F4xx_DAL_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
 #define __APM32F4xx_DAL_VERSION         ((__APM32F4xx_DAL_VERSION_MAIN << 24U)\
                                         |(__APM32F4xx_DAL_VERSION_SUB1 << 16U)\
                                         |(__APM32F4xx_DAL_VERSION_SUB2 << 8U )\
                                         |(__APM32F4xx_DAL_VERSION_RC))
-                                        
+
 #define IDCODE_DEVID_MASK    0x00000FFFU
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /* ------------ RCM registers bit address in the alias region ----------- */
 #define SYSCFG_OFFSET             (SYSCFG_BASE - PERIPH_BASE)
-/* ---  MEMRMP Register ---*/ 
-/* Alias word address of UFB_MODE bit */ 
-#define MEMRMP_OFFSET             SYSCFG_OFFSET 
-#define UFB_MODE_BIT_NUMBER       SYSCFG_MMSEL_UFB_MODE_Pos
-#define UFB_MODE_BB               (uint32_t)(PERIPH_BB_BASE + (MEMRMP_OFFSET * 32U) + (UFB_MODE_BIT_NUMBER * 4U)) 
-
-/* ---  CMPCR Register ---*/ 
-/* Alias word address of CMP_PD bit */ 
-#define CMPCR_OFFSET              (SYSCFG_OFFSET + 0x20U) 
+/* ---  CCCTRL Register ---*/
+/* Alias word address of CCPD bit */
+#define CMPCR_OFFSET              (SYSCFG_OFFSET + 0x20U)
 #define CMP_PD_BIT_NUMBER         SYSCFG_CCCTRL_CCPD_Pos
 #define CMPCR_CMP_PD_BB           (uint32_t)(PERIPH_BB_BASE + (CMPCR_OFFSET * 32U) + (CMP_PD_BIT_NUMBER * 4U))
 
-/* ---  MCHDLYCR Register ---*/ 
-/* Alias word address of BSCKSEL bit */ 
-#define MCHDLYCR_OFFSET            (SYSCFG_OFFSET + 0x30U) 
-#define BSCKSEL_BIT_NUMBER         SYSCFG_MCHDLYCR_BSCKSEL_Pos
-#define MCHDLYCR_BSCKSEL_BB        (uint32_t)(PERIPH_BB_BASE + (MCHDLYCR_OFFSET * 32U) + (BSCKSEL_BIT_NUMBER * 4U))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -129,41 +117,41 @@ DAL_TickFreqTypeDef uwTickFreq = DAL_TICK_FREQ_DEFAULT;  /* 1KHz */
   * @{
   */
 
-/** @defgroup DAL_Exported_Functions_Group1 Initialization and de-initialization Functions 
+/** @defgroup DAL_Exported_Functions_Group1 Initialization and de-initialization Functions
  *  @brief    Initialization and de-initialization functions
  *
-@verbatim    
+@verbatim
  ===============================================================================
               ##### Initialization and Configuration functions #####
  ===============================================================================
     [..]  This section provides functions allowing to:
-      (+) Initializes the Flash interface the NVIC allocation and initial clock 
-          configuration. It initializes the systick also when timeout is needed 
+      (+) Initializes the Flash interface the NVIC allocation and initial clock
+          configuration. It initializes the systick also when timeout is needed
           and the backup domain when enabled.
       (+) De-Initializes common part of the DAL.
-      (+) Configure the time base source to have 1ms time base with a dedicated 
-          Tick interrupt priority. 
+      (+) Configure the time base source to have 1ms time base with a dedicated
+          Tick interrupt priority.
         (++) SysTick timer is used by default as source of time base, but user
-             can eventually implement his proper time base source (a general purpose 
-             timer for example or other time source), keeping in mind that Time base 
-             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+             can eventually implement his proper time base source (a general purpose
+             timer for example or other time source), keeping in mind that Time base
+             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
              handled in milliseconds basis.
-        (++) Time base configuration function (DAL_InitTick ()) is called automatically 
-             at the beginning of the program after reset by DAL_Init() or at any time 
-             when clock is configured, by DAL_RCM_ClockConfig(). 
-        (++) Source of time base is configured  to generate interrupts at regular 
-             time intervals. Care must be taken if DAL_Delay() is called from a 
-             peripheral ISR process, the Tick interrupt line must have higher priority 
-            (numerically lower) than the peripheral interrupt. Otherwise the caller 
-            ISR process will be blocked. 
-       (++) functions affecting time base configurations are declared as __weak  
+        (++) Time base configuration function (DAL_InitTick ()) is called automatically
+             at the beginning of the program after reset by DAL_Init() or at any time
+             when clock is configured, by DAL_RCM_ClockConfig().
+        (++) Source of time base is configured  to generate interrupts at regular
+             time intervals. Care must be taken if DAL_Delay() is called from a
+             peripheral ISR process, the Tick interrupt line must have higher priority
+            (numerically lower) than the peripheral interrupt. Otherwise the caller
+            ISR process will be blocked.
+       (++) functions affecting time base configurations are declared as __weak
              to make  override possible  in case of other  implementations in user file.
 @endverbatim
   * @{
   */
 
 /**
-  * @brief  This function is used to initialize the DAL Library; it must be the first 
+  * @brief  This function is used to initialize the DAL Library; it must be the first
   *         instruction to be executed in the main program (before to call any other
   *         DAL function), it performs the following:
   *           Configure the Flash prefetch, instruction and Data caches.
@@ -171,9 +159,9 @@ DAL_TickFreqTypeDef uwTickFreq = DAL_TICK_FREQ_DEFAULT;  /* 1KHz */
   *           which is clocked by the HSI (at this stage, the clock is not yet
   *           configured and thus the system is running from the internal HSI at 16 MHz).
   *           Set NVIC Group Priority to 4.
-  *           Calls the DAL_MspInit() callback function defined in user file 
-  *           "apm32f4xx_dal_msp.c" to do the global low level hardware initialization 
-  *            
+  *           Calls the DAL_MspInit() callback function defined in user file
+  *           "apm32f4xx_dal_msp.c" to do the global low level hardware initialization
+  *
   * @note   SysTick is used as time base for the DAL_Delay() function, the application
   *         need to ensure that the SysTick time base is always set to 1 millisecond
   *         to have correct DAL operation.
@@ -181,7 +169,7 @@ DAL_TickFreqTypeDef uwTickFreq = DAL_TICK_FREQ_DEFAULT;  /* 1KHz */
   */
 DAL_StatusTypeDef DAL_Init(void)
 {
-  /* Configure Flash prefetch, Instruction cache, Data cache */ 
+  /* Configure Flash prefetch, Instruction cache, Data cache */
 #if (INSTRUCTION_CACHE_ENABLE != 0U)
   __DAL_FLASH_INSTRUCTION_CACHE_ENABLE();
 #endif /* INSTRUCTION_CACHE_ENABLE */
@@ -209,7 +197,7 @@ DAL_StatusTypeDef DAL_Init(void)
 
 /**
   * @brief  This function de-Initializes common part of the DAL and stops the systick.
-  *         This function is optional.   
+  *         This function is optional.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DeInit(void)
@@ -224,15 +212,19 @@ DAL_StatusTypeDef DAL_DeInit(void)
   __DAL_RCM_AHB1_FORCE_RESET();
   __DAL_RCM_AHB1_RELEASE_RESET();
 
+#if defined(RCM_AHB2_SUPPORT)
   __DAL_RCM_AHB2_FORCE_RESET();
   __DAL_RCM_AHB2_RELEASE_RESET();
+#endif /* RCM_AHB2_SUPPORT */
 
+#if defined(RCM_AHB3_SUPPORT)
   __DAL_RCM_AHB3_FORCE_RESET();
   __DAL_RCM_AHB3_RELEASE_RESET();
+#endif /* RCM_AHB3_SUPPORT */
 
   /* De-Init the low level hardware */
   DAL_MspDeInit();
-    
+
   /* Return function status */
   return DAL_OK;
 }
@@ -256,18 +248,18 @@ __weak void DAL_MspDeInit(void)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
             the DAL_MspDeInit could be implemented in the user file
-   */ 
+   */
 }
 
 /**
   * @brief This function configures the source of the time base.
-  *        The time source is configured  to have 1ms time base with a dedicated 
+  *        The time source is configured  to have 1ms time base with a dedicated
   *        Tick interrupt priority.
   * @note This function is called  automatically at the beginning of program after
   *       reset by DAL_Init() or at any time when clock is reconfigured  by DAL_RCM_ClockConfig().
-  * @note In the default implementation, SysTick timer is the source of time base. 
-  *       It is used to generate interrupts at regular time intervals. 
-  *       Care must be taken if DAL_Delay() is called from a peripheral ISR process, 
+  * @note In the default implementation, SysTick timer is the source of time base.
+  *       It is used to generate interrupts at regular time intervals.
+  *       Care must be taken if DAL_Delay() is called from a peripheral ISR process,
   *       The SysTick interrupt must have higher priority (numerically lower)
   *       than the peripheral interrupt. Otherwise the caller ISR process will be blocked.
   *       The function is declared as __weak  to be overwritten  in case of other
@@ -302,7 +294,7 @@ __weak DAL_StatusTypeDef DAL_InitTick(uint32_t TickPriority)
   * @}
   */
 
-/** @defgroup DAL_Exported_Functions_Group2 DAL Control functions 
+/** @defgroup DAL_Exported_Functions_Group2 DAL Control functions
  *  @brief    DAL Control functions
  *
 @verbatim
@@ -330,7 +322,7 @@ __weak DAL_StatusTypeDef DAL_InitTick(uint32_t TickPriority)
   *        used as application time base.
   * @note In the default implementation, this variable is incremented each 1ms
   *       in SysTick ISR.
- * @note This function is declared as __weak to be overwritten in case of other 
+ * @note This function is declared as __weak to be overwritten in case of other
   *      implementations in user file.
   * @retval None
   */
@@ -341,7 +333,7 @@ __weak void DAL_IncTick(void)
 
 /**
   * @brief Provides a tick value in millisecond.
-  * @note This function is declared as __weak to be overwritten in case of other 
+  * @note This function is declared as __weak to be overwritten in case of other
   *       implementations in user file.
   * @retval tick value
   */
@@ -393,7 +385,8 @@ DAL_StatusTypeDef DAL_SetTickFreq(DAL_TickFreqTypeDef Freq)
 
 /**
   * @brief Return tick frequency.
-  * @retval tick period in Hz
+  * @retval Tick frequency.
+  *         Value of @ref DAL_TickFreqTypeDef.
   */
 DAL_TickFreqTypeDef DAL_GetTickFreq(void)
 {
@@ -401,7 +394,7 @@ DAL_TickFreqTypeDef DAL_GetTickFreq(void)
 }
 
 /**
-  * @brief This function provides minimum delay (in milliseconds) based 
+  * @brief This function provides minimum delay (in milliseconds) based
   *        on variable incremented.
   * @note In the default implementation , SysTick timer is the source of time base.
   *       It is used to generate interrupts at regular time intervals where uwTick
@@ -431,7 +424,7 @@ __weak void DAL_Delay(uint32_t Delay)
   * @brief Suspend Tick increment.
   * @note In the default implementation , SysTick timer is the source of time base. It is
   *       used to generate interrupts at regular time intervals. Once DAL_SuspendTick()
-  *       is called, the SysTick interrupt will be disabled and so Tick increment 
+  *       is called, the SysTick interrupt will be disabled and so Tick increment
   *       is suspended.
   * @note This function is declared as __weak to be overwritten in case of other
   *       implementations in user file.
@@ -447,7 +440,7 @@ __weak void DAL_SuspendTick(void)
   * @brief Resume Tick increment.
   * @note In the default implementation , SysTick timer is the source of time base. It is
   *       used to generate interrupts at regular time intervals. Once DAL_ResumeTick()
-  *       is called, the SysTick interrupt will be enabled and so Tick increment 
+  *       is called, the SysTick interrupt will be enabled and so Tick increment
   *       is resumed.
   * @note This function is declared as __weak to be overwritten in case of other
   *       implementations in user file.
@@ -463,7 +456,7 @@ __weak void DAL_ResumeTick(void)
   * @brief  Returns the DAL revision
   * @retval version : 0xXYZR (8bits for each decimal, R for RC)
   */
-uint32_t DAL_GetHalVersion(void)
+uint32_t DAL_GetDalVersion(void)
 {
   return __APM32F4xx_DAL_VERSION;
 }
@@ -540,10 +533,12 @@ void DAL_DBGMCU_DisableDBGStandbyMode(void)
   CLEAR_BIT(DBGMCU->CFG, DBGMCU_CFG_STANDBY_CLK_STS);
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Enables the I/O Compensation Cell.
   * @note   The I/O compensation cell can be used only when the device supply
-  *         voltage ranges from 2.4 to 3.6 V.  
+  *         voltage ranges from 2.4 to 3.6 V.
   * @retval None
   */
 void DAL_EnableCompensationCell(void)
@@ -554,13 +549,14 @@ void DAL_EnableCompensationCell(void)
 /**
   * @brief  Power-down the I/O Compensation Cell.
   * @note   The I/O compensation cell can be used only when the device supply
-  *         voltage ranges from 2.4 to 3.6 V.  
+  *         voltage ranges from 2.4 to 3.6 V.
   * @retval None
   */
 void DAL_DisableCompensationCell(void)
 {
   *(__IO uint32_t *)CMPCR_CMP_PD_BB = (uint32_t)DISABLE;
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @brief  Returns first word of the unique device identifier (UID based on 96 bits)

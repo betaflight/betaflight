@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -180,7 +176,7 @@ typedef struct
   * @brief    IT defines which can be used with DDL_I2C_ReadReg and  DDL_I2C_WriteReg functions
   * @{
   */
-#define DDL_I2C_CTRL2_EVIEN                   I2C_CTRL2_EVIEN         /*!< Events interrupts enable */
+#define DDL_I2C_CTRL2_EVIEN                   I2C_CTRL2_EVIEN          /*!< Events interrupts enable */
 #define DDL_I2C_CTRL2_BUFIEN                  I2C_CTRL2_BUFIEN         /*!< Buffer interrupts enable */
 #define DDL_I2C_CTRL2_ERRIEN                  I2C_CTRL2_ERRIEN         /*!< Error interrupts enable  */
 /**
@@ -192,7 +188,7 @@ typedef struct
   * @{
   */
 #define DDL_I2C_ANALOGFILTER_ENABLE          0x00000000U             /*!< Analog filter is enabled. */
-#define DDL_I2C_ANALOGFILTER_DISABLE         I2C_FILTER_ANFDIS          /*!< Analog filter is disabled.*/
+#define DDL_I2C_ANALOGFILTER_DISABLE         I2C_FILTER_ANFDIS       /*!< Analog filter is disabled.*/
 /**
   * @}
   */
@@ -201,7 +197,7 @@ typedef struct
 /** @defgroup I2C_DDL_EC_OWNADDRESS1 Own Address 1 Length
   * @{
   */
-#define DDL_I2C_OWNADDRESS1_7BIT             0x00004000U                                /*!< Own address 1 is a 7-bit address.   */
+#define DDL_I2C_OWNADDRESS1_7BIT             0x00004000U                                  /*!< Own address 1 is a 7-bit address.   */
 #define DDL_I2C_OWNADDRESS1_10BIT            (uint32_t)(I2C_SADDR1_ADDRLEN | 0x00004000U) /*!< Own address 1 is a 10-bit address.  */
 /**
   * @}
@@ -211,7 +207,7 @@ typedef struct
   * @{
   */
 #define DDL_I2C_DUTYCYCLE_2                  0x00000000U             /*!< I2C fast mode Tlow/Thigh = 2        */
-#define DDL_I2C_DUTYCYCLE_16_9               I2C_CLKCTRL_FDUTYCFG            /*!< I2C fast mode Tlow/Thigh = 16/9     */
+#define DDL_I2C_DUTYCYCLE_16_9               I2C_CLKCTRL_FDUTYCFG    /*!< I2C fast mode Tlow/Thigh = 16/9     */
 /**
   * @}
   */
@@ -220,7 +216,7 @@ typedef struct
   * @{
   */
 #define DDL_I2C_CLOCK_SPEED_STANDARD_MODE    0x00000000U             /*!< Master clock speed range is standard mode */
-#define DDL_I2C_CLOCK_SPEED_FAST_MODE        I2C_CLKCTRL_SPEEDCFG              /*!< Master clock speed range is fast mode     */
+#define DDL_I2C_CLOCK_SPEED_FAST_MODE        I2C_CLKCTRL_SPEEDCFG    /*!< Master clock speed range is fast mode     */
 /**
   * @}
   */
@@ -228,10 +224,10 @@ typedef struct
 /** @defgroup I2C_DDL_EC_PERIPHERAL_MODE Peripheral Mode
   * @{
   */
-#define DDL_I2C_MODE_I2C                     0x00000000U                                                 /*!< I2C Master or Slave mode                                    */
+#define DDL_I2C_MODE_I2C                     0x00000000U                                                       /*!< I2C Master or Slave mode                                    */
 #define DDL_I2C_MODE_SMBUS_HOST              (uint32_t)(I2C_CTRL1_SMBEN | I2C_CTRL1_SMBTCFG | I2C_CTRL1_ARPEN) /*!< SMBus Host address acknowledge                              */
-#define DDL_I2C_MODE_SMBUS_DEVICE            I2C_CTRL1_SMBEN                                               /*!< SMBus Device default mode (Default address not acknowledge) */
-#define DDL_I2C_MODE_SMBUS_DEVICE_ARP        (uint32_t)(I2C_CTRL1_SMBEN | I2C_CTRL1_ARPEN)                   /*!< SMBus Device Default address acknowledge                    */
+#define DDL_I2C_MODE_SMBUS_DEVICE            I2C_CTRL1_SMBEN                                                   /*!< SMBus Device default mode (Default address not acknowledge) */
+#define DDL_I2C_MODE_SMBUS_DEVICE_ARP        (uint32_t)(I2C_CTRL1_SMBEN | I2C_CTRL1_ARPEN)                     /*!< SMBus Device Default address acknowledge                    */
 /**
   * @}
   */
@@ -239,8 +235,8 @@ typedef struct
 /** @defgroup I2C_DDL_EC_I2C_ACKNOWLEDGE Acknowledge Generation
   * @{
   */
-#define DDL_I2C_ACK                          I2C_CTRL1_ACKEN             /*!< ACK is sent after current received byte. */
-#define DDL_I2C_NACK                         0x00000000U             /*!< NACK is sent after current received byte.*/
+#define DDL_I2C_ACK                          I2C_CTRL1_ACKEN      /*!< ACK is sent after current received byte. */
+#define DDL_I2C_NACK                         0x00000000U          /*!< NACK is sent after current received byte.*/
 /**
   * @}
   */
@@ -248,8 +244,8 @@ typedef struct
 /** @defgroup I2C_DDL_EC_DIRECTION Read Write Direction
   * @{
   */
-#define DDL_I2C_DIRECTION_WRITE              I2C_STS2_TRFLG             /*!< Bus is in write transfer */
-#define DDL_I2C_DIRECTION_READ               0x00000000U             /*!< Bus is in read transfer  */
+#define DDL_I2C_DIRECTION_WRITE              I2C_STS2_TRFLG       /*!< Bus is in write transfer */
+#define DDL_I2C_DIRECTION_READ               0x00000000U          /*!< Bus is in read transfer  */
 /**
   * @}
   */

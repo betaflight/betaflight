@@ -13,7 +13,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -35,13 +35,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -222,9 +218,42 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/** @defgroup RTC_Private_Constants RTC Private Constants
+  * @{
+  */
+#define RTC_ALARM_RESETVALUE_REGISTER    (uint16_t)0xFFFF
+#define RTC_ALARM_RESETVALUE             0xFFFFFFFFU
+
+/**
+  * @}
+  */
+#endif /* APM32F403xx || APM32F402xx */
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+
+/** @defgroup RTC_Private_Functions RTC Private Functions
+  * @{
+  */
+static uint32_t           RTC_ReadTimeCounter(RTC_HandleTypeDef *hrtc);
+static DAL_StatusTypeDef  RTC_WriteTimeCounter(RTC_HandleTypeDef *hrtc, uint32_t TimeCounter);
+static uint32_t           RTC_ReadAlarmCounter(RTC_HandleTypeDef *hrtc);
+static DAL_StatusTypeDef  RTC_WriteAlarmCounter(RTC_HandleTypeDef *hrtc, uint32_t AlarmCounter);
+static DAL_StatusTypeDef  RTC_EnterInitMode(RTC_HandleTypeDef *hrtc);
+static DAL_StatusTypeDef  RTC_ExitInitMode(RTC_HandleTypeDef *hrtc);
+static uint8_t            RTC_ByteToBcd2(uint8_t Value);
+static uint8_t            RTC_Bcd2ToByte(uint8_t Value);
+static uint8_t            RTC_IsLeapYear(uint16_t nYear);
+static void               RTC_DateUpdate(RTC_HandleTypeDef *hrtc, uint32_t DayElapsed);
+static uint8_t            RTC_WeekDayNum(uint32_t nYear, uint8_t nMonth, uint8_t nDay);
+
+/**
+  * @}
+  */
+
+#endif /* APM32F403xx || APM32F402xx */
 /* Exported functions --------------------------------------------------------*/
 
 /** @defgroup RTC_Exported_Functions RTC Exported Functions
@@ -274,6 +303,9 @@
 DAL_StatusTypeDef DAL_RTC_Init(RTC_HandleTypeDef *hrtc)
 {
   DAL_StatusTypeDef status = DAL_ERROR;
+  uint32_t prescaler = 0U;
+
+  UNUSED(prescaler);
 
   /* Check RTC handler validity */
   if (hrtc == NULL)
@@ -283,12 +315,16 @@ DAL_StatusTypeDef DAL_RTC_Init(RTC_HandleTypeDef *hrtc)
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_ALL_INSTANCE(hrtc->Instance));
-  ASSERT_PARAM(IS_RTC_HOUR_FORMAT(hrtc->Init.HourFormat));
+  ASSERT_PARAM(IS_RTC_CALIB_OUTPUT(hrtc->Init.OutPut));
   ASSERT_PARAM(IS_RTC_ASYNCH_PREDIV(hrtc->Init.AsynchPrediv));
-  ASSERT_PARAM(IS_RTC_SYNCH_PREDIV(hrtc->Init.SynchPrediv));
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   ASSERT_PARAM(IS_RTC_OUTPUT(hrtc->Init.OutPut));
+  ASSERT_PARAM(IS_RTC_HOUR_FORMAT(hrtc->Init.HourFormat));
+  ASSERT_PARAM(IS_RTC_SYNCH_PREDIV(hrtc->Init.SynchPrediv));
   ASSERT_PARAM(IS_RTC_OUTPUT_POL(hrtc->Init.OutPutPolarity));
   ASSERT_PARAM(IS_RTC_OUTPUT_TYPE(hrtc->Init.OutPutType));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if (USE_DAL_RTC_REGISTER_CALLBACKS == 1)
   if (hrtc->State == DAL_RTC_STATE_RESET)
@@ -297,13 +333,16 @@ DAL_StatusTypeDef DAL_RTC_Init(RTC_HandleTypeDef *hrtc)
     hrtc->Lock = DAL_UNLOCKED;
 
     hrtc->AlarmAEventCallback          =  DAL_RTC_AlarmAEventCallback;        /* Legacy weak AlarmAEventCallback      */
+    hrtc->Tamper1EventCallback         =  DAL_RTCEx_Tamper1EventCallback;     /* Legacy weak Tamper1EventCallback     */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
     hrtc->AlarmBEventCallback          =  DAL_RTCEx_AlarmBEventCallback;      /* Legacy weak AlarmBEventCallback      */
     hrtc->TimeStampEventCallback       =  DAL_RTCEx_TimeStampEventCallback;   /* Legacy weak TimeStampEventCallback   */
     hrtc->WakeUpTimerEventCallback     =  DAL_RTCEx_WakeUpTimerEventCallback; /* Legacy weak WakeUpTimerEventCallback */
-    hrtc->Tamper1EventCallback         =  DAL_RTCEx_Tamper1EventCallback;     /* Legacy weak Tamper1EventCallback     */
 #if defined(RTC_TAMPER2_SUPPORT)
     hrtc->Tamper2EventCallback         =  DAL_RTCEx_Tamper2EventCallback;     /* Legacy weak Tamper2EventCallback     */
 #endif /* RTC_TAMPER2_SUPPORT */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
     if (hrtc->MspInitCallback == NULL)
     {
@@ -331,6 +370,8 @@ DAL_StatusTypeDef DAL_RTC_Init(RTC_HandleTypeDef *hrtc)
   /* Set RTC state */
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Disable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
 
@@ -363,6 +404,88 @@ DAL_StatusTypeDef DAL_RTC_Init(RTC_HandleTypeDef *hrtc)
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+  /* Waiting for synchro */
+  status = DAL_RTC_WaitForSynchro(hrtc);
+  if (status != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    return DAL_ERROR;
+  }
+
+  /* Set Initialization mode */
+  status = RTC_EnterInitMode(hrtc);
+  if (status != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    return DAL_ERROR;
+  }
+  else
+  {
+    /* Clear Flags Bits */
+    CLEAR_BIT(hrtc->Instance->CTRL, (RTC_FLAG_OW | RTC_FLAG_ALRAF | RTC_FLAG_SEC));
+
+    if (hrtc->Init.OutPut != RTC_OUTPUTSOURCE_NONE)
+    {
+      /* Disable the selected Tamper pin */
+      CLEAR_BIT(BAKPR->CTRL, BAKPR_CTRL_TPFCFG);
+    }
+
+    /* Set the signal which will be routed to RTC Tamper pin*/
+    MODIFY_REG(BAKPR->CLKCAL, (BAKPR_CLKCAL_CALCOEN | BAKPR_CLKCAL_ASPOEN | BAKPR_CLKCAL_ASPOSEL), hrtc->Init.OutPut);
+
+    if (hrtc->Init.AsynchPrediv != RTC_AUTO_1_SECOND)
+    {
+      /* RTC Prescaler provided directly by end-user*/
+      prescaler = hrtc->Init.AsynchPrediv;
+    }
+    else
+    {
+      /* RTC Prescaler will be automatically calculated to get 1 second timebase */
+      /* Get the RTCCLK frequency */
+      prescaler = DAL_RCMEx_GetPeriphCLKFreq(RCM_PERIPHCLK_RTC);
+
+      /* Check that RTC clock is enabled*/
+      if (prescaler == 0U)
+      {
+        /* Should not happen. Frequency is not available*/
+        hrtc->State = DAL_RTC_STATE_ERROR;
+        return DAL_ERROR;
+      }
+      else
+      {
+        /* RTC period = RTCCLK/(RTC_PSCRLD + 1) */
+        prescaler = prescaler - 1U;
+      }
+    }
+
+    /* Configure the RTC_PRLH / RTC_PRLL */
+    MODIFY_REG(hrtc->Instance->PSCRLDH, RTC_PSCRLDH_PSCRLDH, (prescaler >> 16U));
+    MODIFY_REG(hrtc->Instance->PSCRLDL, RTC_PSCRLDL_PSCRLDL, (prescaler & RTC_PSCRLDL_PSCRLDL));
+
+    /* Wait for synchro */
+    status = RTC_ExitInitMode(hrtc);
+    if (status != DAL_OK)
+    {
+      hrtc->State = DAL_RTC_STATE_ERROR;
+
+      return DAL_ERROR;
+    }
+
+    /* Initialize date to 1st of January 2000 */
+    hrtc->DateToUpdate.Year = 0x00U;
+    hrtc->DateToUpdate.Month = RTC_MONTH_JANUARY;
+    hrtc->DateToUpdate.Date = 0x01U;
+
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_READY;
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   return status;
 }
 
@@ -383,6 +506,8 @@ DAL_StatusTypeDef DAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
   /* Set RTC state */
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Disable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
 
@@ -412,10 +537,58 @@ DAL_StatusTypeDef DAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+  /* Set Initialization mode */
+  status = RTC_EnterInitMode(hrtc);
+  if (status != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Release Lock */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+  else
+  {
+    CLEAR_REG(hrtc->Instance->CNTL);
+    CLEAR_REG(hrtc->Instance->CNTH);
+    WRITE_REG(hrtc->Instance->PSCRLDL, 0x00008000U);
+    CLEAR_REG(hrtc->Instance->PSCRLDH);
+
+    /* Reset All CRH/CRL bits */
+    CLEAR_REG(hrtc->Instance->CTRL);
+    CLEAR_REG(hrtc->Instance->CSTS);
+
+    /* Exit Initialization mode */
+    status = RTC_ExitInitMode(hrtc);
+    if (status != DAL_OK)
+    {
+      hrtc->State = DAL_RTC_STATE_ERROR;
+
+      /* Process Unlocked */
+      __DAL_UNLOCK(hrtc);
+
+      return DAL_ERROR;
+    }
+  }
+
+  /* Wait for synchro*/
+  DAL_RTC_WaitForSynchro(hrtc);
+
+  /* Clear RSF flag */
+  CLEAR_BIT(hrtc->Instance->CSTS, RTC_FLAG_RSF);
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   if (status == DAL_OK)
   {
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
     /* Reset Tamper and alternate functions configuration register */
     hrtc->Instance->TACFG = 0x00000000U;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if (USE_DAL_RTC_REGISTER_CALLBACKS == 1)
     if (hrtc->MspDeInitCallback == NULL)
@@ -448,13 +621,14 @@ DAL_StatusTypeDef DAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
   * @param  CallbackID ID of the callback to be registered
   *         This parameter can be one of the following values:
   *          @arg @ref DAL_RTC_ALARM_A_EVENT_CB_ID          Alarm A Event Callback ID
-  *          @arg @ref DAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID
-  *          @arg @ref DAL_RTC_TIMESTAMP_EVENT_CB_ID        Timestamp Event Callback ID
-  *          @arg @ref DAL_RTC_WAKEUPTIMER_EVENT_CB_ID      Wakeup Timer Event Callback ID
+  *          @arg @ref DAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID  (*)
+  *          @arg @ref DAL_RTC_TIMESTAMP_EVENT_CB_ID        Timestamp Event Callback ID  (*)
+  *          @arg @ref DAL_RTC_WAKEUPTIMER_EVENT_CB_ID      Wakeup Timer Event Callback ID  (*)
   *          @arg @ref DAL_RTC_TAMPER1_EVENT_CB_ID          Tamper 1 Callback ID
-  *          @arg @ref DAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID
+  *          @arg @ref DAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID  (*)
   *          @arg @ref DAL_RTC_MSPINIT_CB_ID                Msp Init callback ID
   *          @arg @ref DAL_RTC_MSPDEINIT_CB_ID              Msp DeInit callback ID
+  *          (*) This parameter is not available for APM32F402/403xx.
   * @note   DAL_RTC_TAMPER2_EVENT_CB_ID is not applicable to all devices.
   * @param  pCallback pointer to the Callback function
   * @retval DAL status
@@ -479,6 +653,12 @@ DAL_StatusTypeDef DAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, DAL_RTC_Call
         hrtc->AlarmAEventCallback = pCallback;
         break;
 
+      case DAL_RTC_TAMPER1_EVENT_CB_ID :
+        hrtc->Tamper1EventCallback = pCallback;
+        break;
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
       case DAL_RTC_ALARM_B_EVENT_CB_ID :
         hrtc->AlarmBEventCallback = pCallback;
         break;
@@ -491,15 +671,12 @@ DAL_StatusTypeDef DAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, DAL_RTC_Call
         hrtc->WakeUpTimerEventCallback = pCallback;
         break;
 
-      case DAL_RTC_TAMPER1_EVENT_CB_ID :
-        hrtc->Tamper1EventCallback = pCallback;
-        break;
-
 #if defined(RTC_TAMPER2_SUPPORT)
       case DAL_RTC_TAMPER2_EVENT_CB_ID :
         hrtc->Tamper2EventCallback = pCallback;
         break;
 #endif /* RTC_TAMPER2_SUPPORT */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
       case DAL_RTC_MSPINIT_CB_ID :
         hrtc->MspInitCallback = pCallback;
@@ -553,13 +730,14 @@ DAL_StatusTypeDef DAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, DAL_RTC_Call
   * @param  CallbackID ID of the callback to be unregistered
   *         This parameter can be one of the following values:
   *          @arg @ref DAL_RTC_ALARM_A_EVENT_CB_ID          Alarm A Event Callback ID
-  *          @arg @ref DAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID
-  *          @arg @ref DAL_RTC_TIMESTAMP_EVENT_CB_ID        Timestamp Event Callback ID
-  *          @arg @ref DAL_RTC_WAKEUPTIMER_EVENT_CB_ID      Wakeup Timer Event Callback ID
+  *          @arg @ref DAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID  (*)
+  *          @arg @ref DAL_RTC_TIMESTAMP_EVENT_CB_ID        Timestamp Event Callback ID  (*)
+  *          @arg @ref DAL_RTC_WAKEUPTIMER_EVENT_CB_ID      Wakeup Timer Event Callback ID  (*)
   *          @arg @ref DAL_RTC_TAMPER1_EVENT_CB_ID          Tamper 1 Callback ID
-  *          @arg @ref DAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID
+  *          @arg @ref DAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID  (*)
   *          @arg @ref DAL_RTC_MSPINIT_CB_ID Msp Init callback ID
   *          @arg @ref DAL_RTC_MSPDEINIT_CB_ID Msp DeInit callback ID
+  *          (*) This parameter is not available for APM32F402/403xx.
   * @note   DAL_RTC_TAMPER2_EVENT_CB_ID is not applicable to all devices.
   * @retval DAL status
   */
@@ -578,6 +756,12 @@ DAL_StatusTypeDef DAL_RTC_UnRegisterCallback(RTC_HandleTypeDef *hrtc, DAL_RTC_Ca
         hrtc->AlarmAEventCallback = DAL_RTC_AlarmAEventCallback;             /* Legacy weak AlarmAEventCallback    */
         break;
 
+      case DAL_RTC_TAMPER1_EVENT_CB_ID :
+        hrtc->Tamper1EventCallback = DAL_RTCEx_Tamper1EventCallback;         /* Legacy weak Tamper1EventCallback   */
+        break;
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
       case DAL_RTC_ALARM_B_EVENT_CB_ID :
         hrtc->AlarmBEventCallback = DAL_RTCEx_AlarmBEventCallback;           /* Legacy weak AlarmBEventCallback */
         break;
@@ -590,15 +774,12 @@ DAL_StatusTypeDef DAL_RTC_UnRegisterCallback(RTC_HandleTypeDef *hrtc, DAL_RTC_Ca
         hrtc->WakeUpTimerEventCallback = DAL_RTCEx_WakeUpTimerEventCallback; /* Legacy weak WakeUpTimerEventCallback */
         break;
 
-      case DAL_RTC_TAMPER1_EVENT_CB_ID :
-        hrtc->Tamper1EventCallback = DAL_RTCEx_Tamper1EventCallback;         /* Legacy weak Tamper1EventCallback   */
-        break;
-
 #if defined(RTC_TAMPER2_SUPPORT)
       case DAL_RTC_TAMPER2_EVENT_CB_ID :
         hrtc->Tamper2EventCallback = DAL_RTCEx_Tamper2EventCallback;         /* Legacy weak Tamper2EventCallback         */
         break;
 #endif /* RTC_TAMPER2_SUPPORT */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
       case DAL_RTC_MSPINIT_CB_ID :
         hrtc->MspInitCallback = DAL_RTC_MspInit;
@@ -710,19 +891,29 @@ __weak void DAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
   */
 DAL_StatusTypeDef DAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format)
 {
+  uint32_t counter_time = 0U, counter_alarm = 0U;
   uint32_t tmpreg = 0U;
   DAL_StatusTypeDef status;
 
+  UNUSED(counter_time);
+  UNUSED(counter_alarm);
+  UNUSED(tmpreg);
+
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   ASSERT_PARAM(IS_RTC_DAYLIGHT_SAVING(sTime->DayLightSaving));
   ASSERT_PARAM(IS_RTC_STORE_OPERATION(sTime->StoreOperation));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Locked */
   __DAL_LOCK(hrtc);
 
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if (Format == RTC_FORMAT_BIN)
   {
     if ((hrtc->Instance->CTRL & RTC_CTRL_TIMEFCFG) != 0U)
@@ -791,6 +982,73 @@ DAL_StatusTypeDef DAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
 
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
+#else
+  if (Format == RTC_FORMAT_BIN)
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(sTime->Hours));
+    ASSERT_PARAM(IS_RTC_MINUTES(sTime->Minutes));
+    ASSERT_PARAM(IS_RTC_SECONDS(sTime->Seconds));
+
+    counter_time = (uint32_t)(((uint32_t)sTime->Hours * 3600U) + \
+                              ((uint32_t)sTime->Minutes * 60U) + \
+                              ((uint32_t)sTime->Seconds));
+  }
+  else
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(RTC_Bcd2ToByte(sTime->Hours)));
+    ASSERT_PARAM(IS_RTC_MINUTES(RTC_Bcd2ToByte(sTime->Minutes)));
+    ASSERT_PARAM(IS_RTC_SECONDS(RTC_Bcd2ToByte(sTime->Seconds)));
+
+    counter_time = (((uint32_t)(RTC_Bcd2ToByte(sTime->Hours)) * 3600U) + \
+                    ((uint32_t)(RTC_Bcd2ToByte(sTime->Minutes)) * 60U) + \
+                    ((uint32_t)(RTC_Bcd2ToByte(sTime->Seconds))));
+  }
+
+  /* Write time counter in RTC registers */
+  status = RTC_WriteTimeCounter(hrtc, counter_time);
+  if (status != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+  else
+  {
+    /* Clear Second and overflow flags */
+    CLEAR_BIT(hrtc->Instance->CSTS, (RTC_FLAG_SEC | RTC_FLAG_OW));
+
+    /* Read current Alarm counter in RTC registers */
+    counter_alarm = RTC_ReadAlarmCounter(hrtc);
+
+    /* Set again alarm to match with new time if enabled */
+    if (counter_alarm != RTC_ALARM_RESETVALUE)
+    {
+      if (counter_alarm < counter_time)
+      {
+        /* Add 1 day to alarm counter*/
+        counter_alarm += (uint32_t)(24U * 3600U);
+
+        /* Write new Alarm counter in RTC registers */
+        if (RTC_WriteAlarmCounter(hrtc, counter_alarm) != DAL_OK)
+        {
+          /* Set RTC state */
+          hrtc->State = DAL_RTC_STATE_ERROR;
+
+          /* Process Unlocked */
+          __DAL_UNLOCK(hrtc);
+
+          return DAL_ERROR;
+        }
+      }
+    }
+  }
+
+    hrtc->State = DAL_RTC_STATE_READY;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Unlocked */
   __DAL_UNLOCK(hrtc);
@@ -807,6 +1065,7 @@ DAL_StatusTypeDef DAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
   *          This parameter can be one of the following values:
   *            @arg RTC_FORMAT_BIN: Binary data format
   *            @arg RTC_FORMAT_BCD: BCD data format
+  @if APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx
   * @note  You can use SubSeconds and SecondFraction (sTime structure fields
   *        returned) to convert SubSeconds value in second fraction ratio with
   *        time unit following generic formula:
@@ -820,15 +1079,28 @@ DAL_StatusTypeDef DAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
   *        Reading RTC current time locks the values in calendar shadow registers
   *        until current date is read to ensure consistency between the time and
   *        date values.
+  @endif
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format)
 {
   uint32_t tmpreg = 0U;
+  uint32_t counter_time = 0U;
+  uint32_t counter_alarm = 0U;
+  uint32_t days_elapsed = 0U;
+  uint32_t hours = 0U;
+
+  UNUSED(tmpreg);
+  UNUSED(counter_time);
+  UNUSED(counter_alarm);
+  UNUSED(days_elapsed);
+  UNUSED(hours);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Get subseconds value from the corresponding register */
   sTime->SubSeconds = (uint32_t)(hrtc->Instance->SUBSEC);
 
@@ -852,6 +1124,92 @@ DAL_StatusTypeDef DAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
     sTime->Minutes = (uint8_t)RTC_Bcd2ToByte(sTime->Minutes);
     sTime->Seconds = (uint8_t)RTC_Bcd2ToByte(sTime->Seconds);
   }
+#else
+
+  /* Check if counter overflow occurred */
+  if (__DAL_RTC_OVERFLOW_GET_FLAG(hrtc, RTC_FLAG_OW))
+  {
+    return DAL_ERROR;
+  }
+
+  /* Read the time counter*/
+  counter_time = RTC_ReadTimeCounter(hrtc);
+
+  /* Fill the structure fields with the read parameters */
+  hours = counter_time / 3600U;
+  sTime->Minutes  = (uint8_t)((counter_time % 3600U) / 60U);
+  sTime->Seconds  = (uint8_t)((counter_time % 3600U) % 60U);
+
+  if (hours >= 24U)
+  {
+    /* Get number of days elapsed from last calculation */
+    days_elapsed = (hours / 24U);
+
+    /* Set Hours in RTC_TimeTypeDef structure*/
+    sTime->Hours = (hours % 24U);
+
+    /* Read Alarm counter in RTC registers */
+    counter_alarm = RTC_ReadAlarmCounter(hrtc);
+
+    /* Calculate remaining time to reach alarm (only if set and not yet expired)*/
+    if ((counter_alarm != RTC_ALARM_RESETVALUE) && (counter_alarm > counter_time))
+    {
+      counter_alarm -= counter_time;
+    }
+    else
+    {
+      /* In case of counter_alarm < counter_time */
+      /* Alarm expiration already occurred but alarm not deactivated */
+      counter_alarm = RTC_ALARM_RESETVALUE;
+    }
+
+    /* Set updated time in decreasing counter by number of days elapsed */
+    counter_time -= (days_elapsed * 24U * 3600U);
+
+    /* Write time counter in RTC registers */
+    if (RTC_WriteTimeCounter(hrtc, counter_time) != DAL_OK)
+    {
+      return DAL_ERROR;
+    }
+
+    /* Set updated alarm to be set */
+    if (counter_alarm != RTC_ALARM_RESETVALUE)
+    {
+      counter_alarm += counter_time;
+
+      /* Write time counter in RTC registers */
+      if (RTC_WriteAlarmCounter(hrtc, counter_alarm) != DAL_OK)
+      {
+        return DAL_ERROR;
+      }
+    }
+    else
+    {
+      /* Alarm already occurred. Set it to reset values to avoid unexpected expiration */
+      if (RTC_WriteAlarmCounter(hrtc, counter_alarm) != DAL_OK)
+      {
+        return DAL_ERROR;
+      }
+    }
+
+    /* Update date */
+    RTC_DateUpdate(hrtc, days_elapsed);
+  }
+  else
+  {
+    sTime->Hours = hours;
+  }
+
+  /* Check the input parameters format */
+  if (Format != RTC_FORMAT_BIN)
+  {
+    /* Convert the time structure parameters to BCD format */
+    sTime->Hours    = (uint8_t)RTC_ByteToBcd2(sTime->Hours);
+    sTime->Minutes  = (uint8_t)RTC_ByteToBcd2(sTime->Minutes);
+    sTime->Seconds  = (uint8_t)RTC_ByteToBcd2(sTime->Seconds);
+  }
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   return DAL_OK;
 }
@@ -870,7 +1228,13 @@ DAL_StatusTypeDef DAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
 DAL_StatusTypeDef DAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format)
 {
   uint32_t datetmpreg = 0U;
+  uint32_t counter_time = 0U, counter_alarm = 0U, hours = 0U;
   DAL_StatusTypeDef status;
+
+  UNUSED(datetmpreg);
+  UNUSED(counter_time);
+  UNUSED(counter_alarm);
+  UNUSED(hours);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
@@ -880,6 +1244,8 @@ DAL_StatusTypeDef DAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
 
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if ((Format == RTC_FORMAT_BIN) && ((sDate->Month & 0x10U) == 0x10U))
   {
     sDate->Month = (uint8_t)((sDate->Month & (uint8_t)~(0x10U)) + (uint8_t)0x0AU);
@@ -933,6 +1299,87 @@ DAL_StatusTypeDef DAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+
+  if (Format == RTC_FORMAT_BIN)
+  {
+    ASSERT_PARAM(IS_RTC_YEAR(sDate->Year));
+    ASSERT_PARAM(IS_RTC_MONTH(sDate->Month));
+    ASSERT_PARAM(IS_RTC_DATE(sDate->Date));
+
+    /* Change the current date */
+    hrtc->DateToUpdate.Year  = sDate->Year;
+    hrtc->DateToUpdate.Month = sDate->Month;
+    hrtc->DateToUpdate.Date  = sDate->Date;
+  }
+  else
+  {
+    ASSERT_PARAM(IS_RTC_YEAR(RTC_Bcd2ToByte(sDate->Year)));
+    ASSERT_PARAM(IS_RTC_MONTH(RTC_Bcd2ToByte(sDate->Month)));
+    ASSERT_PARAM(IS_RTC_DATE(RTC_Bcd2ToByte(sDate->Date)));
+
+    /* Change the current date */
+    hrtc->DateToUpdate.Year  = RTC_Bcd2ToByte(sDate->Year);
+    hrtc->DateToUpdate.Month = RTC_Bcd2ToByte(sDate->Month);
+    hrtc->DateToUpdate.Date  = RTC_Bcd2ToByte(sDate->Date);
+  }
+
+  /* WeekDay set by user can be ignored because automatically calculated */
+  hrtc->DateToUpdate.WeekDay = RTC_WeekDayNum(hrtc->DateToUpdate.Year, hrtc->DateToUpdate.Month, hrtc->DateToUpdate.Date);
+  sDate->WeekDay = hrtc->DateToUpdate.WeekDay;
+
+  /* Reset time to be aligned on the same day */
+  /* Read the time counter*/
+  counter_time = RTC_ReadTimeCounter(hrtc);
+
+  /* Fill the structure fields with the read parameters */
+  hours = counter_time / 3600U;
+  if (hours > 24U)
+  {
+    /* Set updated time in decreasing counter by number of days elapsed */
+    counter_time -= ((hours / 24U) * 24U * 3600U);
+    /* Write time counter in RTC registers */
+    status = RTC_WriteTimeCounter(hrtc, counter_time);
+    if (status != DAL_OK)
+    {
+      /* Set RTC state */
+      hrtc->State = DAL_RTC_STATE_ERROR;
+
+      /* Process Unlocked */
+      __DAL_UNLOCK(hrtc);
+
+      return DAL_ERROR;
+    }
+
+    /* Read current Alarm counter in RTC registers */
+    counter_alarm = RTC_ReadAlarmCounter(hrtc);
+
+    /* Set again alarm to match with new time if enabled */
+    if (counter_alarm != RTC_ALARM_RESETVALUE)
+    {
+      if (counter_alarm < counter_time)
+      {
+        /* Add 1 day to alarm counter*/
+        counter_alarm += (uint32_t)(24U * 3600U);
+
+        /* Write new Alarm counter in RTC registers */
+        status = RTC_WriteAlarmCounter(hrtc, counter_alarm);
+        if (status != DAL_OK)
+        {
+          /* Set RTC state */
+          hrtc->State = DAL_RTC_STATE_ERROR;
+
+          /* Process Unlocked */
+          __DAL_UNLOCK(hrtc);
+
+          return DAL_ERROR;
+        }
+      }
+    }
+  }
+  hrtc->State = DAL_RTC_STATE_READY ;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   /* Process Unlocked */
   __DAL_UNLOCK(hrtc);
 
@@ -959,10 +1406,16 @@ DAL_StatusTypeDef DAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
 DAL_StatusTypeDef DAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format)
 {
   uint32_t datetmpreg = 0U;
+  RTC_TimeTypeDef stime = {0U};
+
+  UNUSED(datetmpreg);
+  UNUSED(stime);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Get the DATE register */
   datetmpreg = (uint32_t)(hrtc->Instance->DATE & RTC_DATE_RESERVED_MASK);
 
@@ -980,6 +1433,29 @@ DAL_StatusTypeDef DAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
     sDate->Month = (uint8_t)RTC_Bcd2ToByte(sDate->Month);
     sDate->Date  = (uint8_t)RTC_Bcd2ToByte(sDate->Date);
   }
+#else
+  /* Call DAL_RTC_GetTime function to update date if counter higher than 24 hours */
+  if (DAL_RTC_GetTime(hrtc, &stime, RTC_FORMAT_BIN) != DAL_OK)
+  {
+    return DAL_ERROR;
+  }
+
+  /* Fill the structure fields with the read parameters */
+  sDate->WeekDay  = hrtc->DateToUpdate.WeekDay;
+  sDate->Year     = hrtc->DateToUpdate.Year;
+  sDate->Month    = hrtc->DateToUpdate.Month;
+  sDate->Date     = hrtc->DateToUpdate.Date;
+
+  /* Check the input parameters format */
+  if (Format != RTC_FORMAT_BIN)
+  {
+    /* Convert the date structure parameters to BCD format */
+    sDate->Year   = (uint8_t)RTC_ByteToBcd2(sDate->Year);
+    sDate->Month  = (uint8_t)RTC_ByteToBcd2(sDate->Month);
+    sDate->Date   = (uint8_t)RTC_ByteToBcd2(sDate->Date);
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   return DAL_OK;
 }
 
@@ -1019,14 +1495,26 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
   uint32_t tickstart = 0U;
   uint32_t tmpreg = 0U;
   uint32_t subsecondtmpreg = 0U;
+  uint32_t counter_alarm = 0U, counter_time = 0U;
+  RTC_TimeTypeDef stime = {0U};
+
+  UNUSED(tickstart);
+  UNUSED(tmpreg);
+  UNUSED(subsecondtmpreg);
+  UNUSED(counter_alarm);
+  UNUSED(counter_time);
+  UNUSED(stime);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
   ASSERT_PARAM(IS_RTC_ALARM(sAlarm->Alarm));
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   ASSERT_PARAM(IS_RTC_ALARM_MASK(sAlarm->AlarmMask));
   ASSERT_PARAM(IS_RTC_ALARM_DATE_WEEKDAY_SEL(sAlarm->AlarmDateWeekDaySel));
   ASSERT_PARAM(IS_RTC_ALARM_SUB_SECOND_VALUE(sAlarm->AlarmTime.SubSeconds));
   ASSERT_PARAM(IS_RTC_ALARM_SUB_SECOND_MASK(sAlarm->AlarmSubSecondMask));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Locked */
   __DAL_LOCK(hrtc);
@@ -1034,6 +1522,8 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
   /* Change RTC state to BUSY */
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Check the data format (binary or BCD) and store the Alarm time and date
      configuration accordingly */
   if (Format == RTC_FORMAT_BIN)
@@ -1188,6 +1678,59 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+  /* Call DAL_RTC_GetTime function to update date if counter higher than 24 hours */
+  if (DAL_RTC_GetTime(hrtc, &stime, RTC_FORMAT_BIN) != DAL_OK)
+  {
+    return DAL_ERROR;
+  }
+
+  /* Convert time in seconds */
+  counter_time = (uint32_t)(((uint32_t)stime.Hours * 3600U) + \
+                            ((uint32_t)stime.Minutes * 60U) + \
+                            ((uint32_t)stime.Seconds));
+
+  if (Format == RTC_FORMAT_BIN)
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(sAlarm->AlarmTime.Hours));
+    ASSERT_PARAM(IS_RTC_MINUTES(sAlarm->AlarmTime.Minutes));
+    ASSERT_PARAM(IS_RTC_SECONDS(sAlarm->AlarmTime.Seconds));
+
+    counter_alarm = (uint32_t)(((uint32_t)sAlarm->AlarmTime.Hours * 3600U) + \
+                               ((uint32_t)sAlarm->AlarmTime.Minutes * 60U) + \
+                               ((uint32_t)sAlarm->AlarmTime.Seconds));
+  }
+  else
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(RTC_Bcd2ToByte(sAlarm->AlarmTime.Hours)));
+    ASSERT_PARAM(IS_RTC_MINUTES(RTC_Bcd2ToByte(sAlarm->AlarmTime.Minutes)));
+    ASSERT_PARAM(IS_RTC_SECONDS(RTC_Bcd2ToByte(sAlarm->AlarmTime.Seconds)));
+
+    counter_alarm = (((uint32_t)(RTC_Bcd2ToByte(sAlarm->AlarmTime.Hours)) * 3600U) + \
+                     ((uint32_t)(RTC_Bcd2ToByte(sAlarm->AlarmTime.Minutes)) * 60U) + \
+                     ((uint32_t)RTC_Bcd2ToByte(sAlarm->AlarmTime.Seconds)));
+  }
+
+  /* Check that requested alarm should expire in the same day (otherwise add 1 day) */
+  if (counter_alarm < counter_time)
+  {
+    /* Add 1 day to alarm counter*/
+    counter_alarm += (uint32_t)(24U * 3600U);
+  }
+
+  /* Write Alarm counter in RTC registers */
+  if (RTC_WriteAlarmCounter(hrtc, counter_alarm) != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   /* Change RTC state back to READY */
   hrtc->State = DAL_RTC_STATE_READY;
 
@@ -1214,16 +1757,28 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
 DAL_StatusTypeDef DAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sAlarm, uint32_t Format)
 {
   __IO uint32_t count  = RTC_TIMEOUT_VALUE * (SystemCoreClock / 32U / 1000U);
-       uint32_t tmpreg = 0U;
-       uint32_t subsecondtmpreg = 0U;
+  uint32_t tmpreg = 0U;
+  uint32_t subsecondtmpreg = 0U;
+  uint32_t counter_alarm = 0U, counter_time = 0;
+  RTC_TimeTypeDef stime = {0U};
+
+  UNUSED(count);
+  UNUSED(tmpreg);
+  UNUSED(subsecondtmpreg);
+  UNUSED(counter_alarm);
+  UNUSED(counter_time);
+  UNUSED(stime);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
   ASSERT_PARAM(IS_RTC_ALARM(sAlarm->Alarm));
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   ASSERT_PARAM(IS_RTC_ALARM_MASK(sAlarm->AlarmMask));
   ASSERT_PARAM(IS_RTC_ALARM_DATE_WEEKDAY_SEL(sAlarm->AlarmDateWeekDaySel));
   ASSERT_PARAM(IS_RTC_ALARM_SUB_SECOND_VALUE(sAlarm->AlarmTime.SubSeconds));
   ASSERT_PARAM(IS_RTC_ALARM_SUB_SECOND_MASK(sAlarm->AlarmSubSecondMask));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Locked */
   __DAL_LOCK(hrtc);
@@ -1231,6 +1786,8 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
   /* Change RTC state to BUSY */
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Check the data format (binary or BCD) and store the Alarm time and date
      configuration accordingly */
   if (Format == RTC_FORMAT_BIN)
@@ -1384,6 +1941,71 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+
+  /* Call DAL_RTC_GetTime function to update date if counter higher than 24 hours */
+  if (DAL_RTC_GetTime(hrtc, &stime, RTC_FORMAT_BIN) != DAL_OK)
+  {
+    return DAL_ERROR;
+  }
+
+  /* Convert time in seconds */
+  counter_time = (uint32_t)(((uint32_t)stime.Hours * 3600U) + \
+                            ((uint32_t)stime.Minutes * 60U) + \
+                            ((uint32_t)stime.Seconds));
+
+  if (Format == RTC_FORMAT_BIN)
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(sAlarm->AlarmTime.Hours));
+    ASSERT_PARAM(IS_RTC_MINUTES(sAlarm->AlarmTime.Minutes));
+    ASSERT_PARAM(IS_RTC_SECONDS(sAlarm->AlarmTime.Seconds));
+
+    counter_alarm = (uint32_t)(((uint32_t)sAlarm->AlarmTime.Hours * 3600U) + \
+                               ((uint32_t)sAlarm->AlarmTime.Minutes * 60U) + \
+                               ((uint32_t)sAlarm->AlarmTime.Seconds));
+  }
+  else
+  {
+    ASSERT_PARAM(IS_RTC_HOUR24(RTC_Bcd2ToByte(sAlarm->AlarmTime.Hours)));
+    ASSERT_PARAM(IS_RTC_MINUTES(RTC_Bcd2ToByte(sAlarm->AlarmTime.Minutes)));
+    ASSERT_PARAM(IS_RTC_SECONDS(RTC_Bcd2ToByte(sAlarm->AlarmTime.Seconds)));
+
+    counter_alarm = (((uint32_t)(RTC_Bcd2ToByte(sAlarm->AlarmTime.Hours)) * 3600U) + \
+                     ((uint32_t)(RTC_Bcd2ToByte(sAlarm->AlarmTime.Minutes)) * 60U) + \
+                     ((uint32_t)RTC_Bcd2ToByte(sAlarm->AlarmTime.Seconds)));
+  }
+
+  /* Check that requested alarm should expire in the same day (otherwise add 1 day) */
+  if (counter_alarm < counter_time)
+  {
+    /* Add 1 day to alarm counter*/
+    counter_alarm += (uint32_t)(24U * 3600U);
+  }
+
+  /* Write alarm counter in RTC registers */
+  if (RTC_WriteAlarmCounter(hrtc, counter_alarm) != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+  /* Clear flag alarm A */
+  __DAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
+
+  /* Configure the Alarm interrupt */
+  __DAL_RTC_ALARM_ENABLE_IT(hrtc, RTC_IT_ALRA);
+
+  /* RTC Alarm Interrupt Configuration: EINT configuration */
+  __DAL_RTC_ALARM_EINT_ENABLE_IT();
+
+  __DAL_RTC_ALARM_EINT_ENABLE_RISING_EDGE();
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   /* Change RTC state back to READY */
   hrtc->State = DAL_RTC_STATE_READY;
 
@@ -1400,12 +2022,15 @@ DAL_StatusTypeDef DAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
   * @param  Alarm Specifies the Alarm.
   *          This parameter can be one of the following values:
   *            @arg RTC_ALARM_A: Alarm A
-  *            @arg RTC_ALARM_B: Alarm B
+  *            @arg RTC_ALARM_B: Alarm B (*)
+  *            (*) This parameter is not available for APM32F402/403xx.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alarm)
 {
   uint32_t tickstart = 0U;
+
+  UNUSED(tickstart);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_ALARM(Alarm));
@@ -1415,6 +2040,8 @@ DAL_StatusTypeDef DAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alar
 
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Disable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
 
@@ -1477,6 +2104,46 @@ DAL_StatusTypeDef DAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alar
 
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
+#else
+
+  /* In case of interrupt mode is used, the interrupt source must disabled */
+  __DAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
+
+  /* Set Initialization mode */
+  if (RTC_EnterInitMode(hrtc) != DAL_OK)
+  {
+    /* Set RTC state */
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+  else
+  {
+    /* Clear flag alarm A */
+    __DAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
+
+    /* Set to default values ALRH & ALRL registers */
+    WRITE_REG(hrtc->Instance->ALRH, RTC_ALARM_RESETVALUE_REGISTER);
+    WRITE_REG(hrtc->Instance->ALRL, RTC_ALARM_RESETVALUE_REGISTER);
+
+    /* RTC Alarm Interrupt Configuration: Disable EINT configuration */
+    __DAL_RTC_ALARM_EINT_DISABLE_IT();
+
+    /* Wait for synchro */
+    if (RTC_ExitInitMode(hrtc) != DAL_OK)
+    {
+      hrtc->State = DAL_RTC_STATE_ERROR;
+
+      /* Process Unlocked */
+      __DAL_UNLOCK(hrtc);
+
+      return DAL_ERROR;
+    }
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   hrtc->State = DAL_RTC_STATE_READY;
 
@@ -1494,7 +2161,8 @@ DAL_StatusTypeDef DAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alar
   * @param  Alarm Specifies the Alarm.
   *          This parameter can be one of the following values:
   *            @arg RTC_ALARM_A: Alarm A
-  *            @arg RTC_ALARM_B: Alarm B
+  *            @arg RTC_ALARM_B: Alarm B (*)
+  *            (*) This parameter is not available for APM32F402/403xx.
   * @param  Format Specifies the format of the entered parameters.
   *          This parameter can be one of the following values:
   *             @arg RTC_FORMAT_BIN: Binary data format
@@ -1505,11 +2173,18 @@ DAL_StatusTypeDef DAL_RTC_GetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
 {
   uint32_t tmpreg = 0U;
   uint32_t subsecondtmpreg = 0U;
+  uint32_t counter_alarm = 0U;
+
+  UNUSED(tmpreg);
+  UNUSED(subsecondtmpreg);
+  UNUSED(counter_alarm);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_FORMAT(Format));
   ASSERT_PARAM(IS_RTC_ALARM(Alarm));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   if (Alarm == RTC_ALARM_A)
   {
     sAlarm->Alarm = RTC_ALARM_A;
@@ -1542,6 +2217,23 @@ DAL_StatusTypeDef DAL_RTC_GetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sA
     sAlarm->AlarmTime.Seconds = RTC_Bcd2ToByte(sAlarm->AlarmTime.Seconds);
     sAlarm->AlarmDateWeekDay  = RTC_Bcd2ToByte(sAlarm->AlarmDateWeekDay);
   }
+#else
+  /* Read Alarm counter in RTC registers */
+  counter_alarm = RTC_ReadAlarmCounter(hrtc);
+
+  /* Fill the structure with the read parameters */
+  /* Set hours in a day range (between 0 to 24)*/
+  sAlarm->AlarmTime.Hours   = (uint32_t)((counter_alarm / 3600U) % 24U);
+  sAlarm->AlarmTime.Minutes = (uint32_t)((counter_alarm % 3600U) / 60U);
+  sAlarm->AlarmTime.Seconds = (uint32_t)((counter_alarm % 3600U) % 60U);
+
+  if (Format != RTC_FORMAT_BIN)
+  {
+    sAlarm->AlarmTime.Hours   = RTC_ByteToBcd2(sAlarm->AlarmTime.Hours);
+    sAlarm->AlarmTime.Minutes = RTC_ByteToBcd2(sAlarm->AlarmTime.Minutes);
+    sAlarm->AlarmTime.Seconds = RTC_ByteToBcd2(sAlarm->AlarmTime.Seconds);
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   return DAL_OK;
 }
@@ -1572,6 +2264,8 @@ void DAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef *hrtc)
     }
   }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Get the Alarm B interrupt source enable status */
   if (__DAL_RTC_ALARM_GET_IT_SOURCE(hrtc, RTC_IT_ALRB) != 0U)
   {
@@ -1589,6 +2283,7 @@ void DAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef *hrtc)
       __DAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRBF);
     }
   }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Clear the EINT's line Flag for RTC Alarm */
   __DAL_RTC_ALARM_EINT_CLEAR_FLAG();
@@ -1670,8 +2365,9 @@ DAL_StatusTypeDef DAL_RTC_PollForAlarmAEvent(RTC_HandleTypeDef *hrtc, uint32_t T
   */
 
 /**
-  * @brief  Waits until the RTC Time and Date registers (RTC_TIME and RTC_DATE) are
+  * @brief  Waits until the RTC registers are
   *         synchronized with RTC APB clock.
+  @if APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx ||APM32F411xx || APM32F465xx
   * @note   The RTC Resynchronization mode is write protected, use the
   *         __DAL_RTC_WRITEPROTECTION_DISABLE() before calling this function.
   * @note   To read the calendar through the shadow registers after Calendar
@@ -1680,6 +2376,11 @@ DAL_StatusTypeDef DAL_RTC_PollForAlarmAEvent(RTC_HandleTypeDef *hrtc, uint32_t T
   *         The software must then wait until it is set again before reading
   *         the calendar, which means that the calendar registers have been
   *         correctly copied into the RTC_TIME and RTC_DATE shadow registers.
+  @endif
+  @if APM32F402/403xx
+  * @note   This function must be called before any read operation after an APB reset
+  *   or an APB clock stop.
+  @endif
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
   *                the configuration information for RTC.
   * @retval DAL status
@@ -1688,6 +2389,8 @@ DAL_StatusTypeDef DAL_RTC_WaitForSynchro(RTC_HandleTypeDef *hrtc)
 {
   uint32_t tickstart = 0U;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Clear RSF flag */
   hrtc->Instance->STS &= (uint32_t)RTC_RSF_MASK;
 
@@ -1702,10 +2405,27 @@ DAL_StatusTypeDef DAL_RTC_WaitForSynchro(RTC_HandleTypeDef *hrtc)
       return DAL_TIMEOUT;
     }
   }
+#else
+  /* Clear RSF flag */
+  CLEAR_BIT(hrtc->Instance->CSTS, RTC_FLAG_RSF);
+
+  tickstart = DAL_GetTick();
+
+  /* Wait the registers to be synchronised */
+  while ((hrtc->Instance->CSTS & RTC_FLAG_RSF) == (uint32_t)RESET)
+  {
+    if ((DAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
+    {
+      return DAL_TIMEOUT;
+    }
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   return DAL_OK;
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Daylight Saving Time, adds one hour to the calendar in one
   *         single operation without going through the initialization procedure.
@@ -1771,6 +2491,8 @@ uint32_t DAL_RTC_DST_ReadStoreOperation(RTC_HandleTypeDef *hrtc)
   return READ_BIT(hrtc->Instance->CTRL, RTC_CTRL_BAKP);
 }
 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /**
   * @}
   */
@@ -1813,6 +2535,8 @@ DAL_RTCStateTypeDef DAL_RTC_GetState(RTC_HandleTypeDef *hrtc)
   * @{
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Enters the RTC Initialization mode.
   * @note   The RTC Initialization mode is write protected, use the
@@ -1906,6 +2630,364 @@ uint8_t RTC_Bcd2ToByte(uint8_t number)
   tmp = ((uint8_t)(number & (uint8_t)0xF0) >> (uint8_t)0x4) * 10;
   return (tmp + (number & (uint8_t)0x0F));
 }
+
+#else
+
+/**
+  * @brief  Read the time counter available in RTC_CNT registers.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval Time counter
+  */
+static uint32_t RTC_ReadTimeCounter(RTC_HandleTypeDef *hrtc)
+{
+  uint16_t high1 = 0U, high2 = 0U, low = 0U;
+  uint32_t timecounter = 0U;
+
+  high1 = READ_REG(hrtc->Instance->CNTH & RTC_CNTH_CNTH);
+  low   = READ_REG(hrtc->Instance->CNTL & RTC_CNTL_CNTL);
+  high2 = READ_REG(hrtc->Instance->CNTH & RTC_CNTH_CNTH);
+
+  if (high1 != high2)
+  {
+    /* In this case the counter roll over during reading of CNTL and CNTH registers,
+       read again CNTL register then return the counter value */
+    timecounter = (((uint32_t) high2 << 16U) | READ_REG(hrtc->Instance->CNTL & RTC_CNTL_CNTL));
+  }
+  else
+  {
+    /* No counter roll over during reading of CNTL and CNTH registers, counter
+       value is equal to first value of CNTL and CNTH */
+    timecounter = (((uint32_t) high1 << 16U) | low);
+  }
+
+  return timecounter;
+}
+
+/**
+  * @brief  Write the time counter in RTC_CNT registers.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @param  TimeCounter: Counter to write in RTC_CNT registers
+  * @retval DAL status
+  */
+static DAL_StatusTypeDef RTC_WriteTimeCounter(RTC_HandleTypeDef *hrtc, uint32_t TimeCounter)
+{
+  DAL_StatusTypeDef status = DAL_OK;
+
+  /* Set Initialization mode */
+  if (RTC_EnterInitMode(hrtc) != DAL_OK)
+  {
+    status = DAL_ERROR;
+  }
+  else
+  {
+    /* Set RTC COUNTER MSB word */
+    WRITE_REG(hrtc->Instance->CNTH, (TimeCounter >> 16U));
+    /* Set RTC COUNTER LSB word */
+    WRITE_REG(hrtc->Instance->CNTL, (TimeCounter & RTC_CNTL_CNTL));
+
+    /* Wait for synchro */
+    if (RTC_ExitInitMode(hrtc) != DAL_OK)
+    {
+      status = DAL_ERROR;
+    }
+  }
+
+  return status;
+}
+
+/**
+  * @brief  Read the time counter available in RTC_ALR registers.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval Time counter
+  */
+static uint32_t RTC_ReadAlarmCounter(RTC_HandleTypeDef *hrtc)
+{
+  uint16_t high1 = 0U, low = 0U;
+
+  high1 = READ_REG(hrtc->Instance->ALRH & RTC_CNTH_CNTH);
+  low   = READ_REG(hrtc->Instance->ALRL & RTC_CNTL_CNTL);
+
+  return (((uint32_t) high1 << 16U) | low);
+}
+
+/**
+  * @brief  Write the time counter in RTC_ALR registers.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @param  AlarmCounter: Counter to write in RTC_ALR registers
+  * @retval DAL status
+  */
+static DAL_StatusTypeDef RTC_WriteAlarmCounter(RTC_HandleTypeDef *hrtc, uint32_t AlarmCounter)
+{
+  DAL_StatusTypeDef status = DAL_OK;
+
+  /* Set Initialization mode */
+  if (RTC_EnterInitMode(hrtc) != DAL_OK)
+  {
+    status = DAL_ERROR;
+  }
+  else
+  {
+    /* Set RTC COUNTER MSB word */
+    WRITE_REG(hrtc->Instance->ALRH, (AlarmCounter >> 16U));
+    /* Set RTC COUNTER LSB word */
+    WRITE_REG(hrtc->Instance->ALRL, (AlarmCounter & RTC_ALRL_ALRL));
+
+    /* Wait for synchro */
+    if (RTC_ExitInitMode(hrtc) != DAL_OK)
+    {
+      status = DAL_ERROR;
+    }
+  }
+
+  return status;
+}
+
+/**
+  * @brief  Enters the RTC Initialization mode.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval DAL status
+  */
+static DAL_StatusTypeDef RTC_EnterInitMode(RTC_HandleTypeDef *hrtc)
+{
+  uint32_t tickstart = 0U;
+
+  tickstart = DAL_GetTick();
+  /* Wait till RTC is in INIT state and if Time out is reached exit */
+  while ((hrtc->Instance->CSTS & RTC_CSTS_OCFLG) == (uint32_t)RESET)
+  {
+    if ((DAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
+    {
+      return DAL_TIMEOUT;
+    }
+  }
+
+  /* Disable the write protection for RTC registers */
+  __DAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
+
+  return DAL_OK;
+}
+
+/**
+  * @brief  Exit the RTC Initialization mode.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval DAL status
+  */
+static DAL_StatusTypeDef RTC_ExitInitMode(RTC_HandleTypeDef *hrtc)
+{
+  uint32_t tickstart = 0U;
+
+  /* Disable the write protection for RTC registers */
+  __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
+
+  tickstart = DAL_GetTick();
+  /* Wait till RTC is in INIT state and if Time out is reached exit */
+  while ((hrtc->Instance->CSTS & RTC_CSTS_OCFLG) == (uint32_t)RESET)
+  {
+    if ((DAL_GetTick() - tickstart) >  RTC_TIMEOUT_VALUE)
+    {
+      return DAL_TIMEOUT;
+    }
+  }
+
+  return DAL_OK;
+}
+
+/**
+  * @brief  Converts a 2 digit decimal to BCD format.
+  * @param  Value: Byte to be converted
+  * @retval Converted byte
+  */
+static uint8_t RTC_ByteToBcd2(uint8_t Value)
+{
+  uint32_t bcdhigh = 0U;
+
+  while (Value >= 10U)
+  {
+    bcdhigh++;
+    Value -= 10U;
+  }
+
+  return ((uint8_t)(bcdhigh << 4U) | Value);
+}
+
+/**
+  * @brief  Converts from 2 digit BCD to Binary.
+  * @param  Value: BCD value to be converted
+  * @retval Converted word
+  */
+static uint8_t RTC_Bcd2ToByte(uint8_t Value)
+{
+  uint32_t tmp = 0U;
+  tmp = ((uint8_t)(Value & (uint8_t)0xF0) >> (uint8_t)0x4) * 10U;
+  return (tmp + (Value & (uint8_t)0x0F));
+}
+
+/**
+  * @brief  Updates date when time is 23:59:59.
+  * @param  hrtc   pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @param  DayElapsed: Number of days elapsed from last date update
+  * @retval None
+  */
+static void RTC_DateUpdate(RTC_HandleTypeDef *hrtc, uint32_t DayElapsed)
+{
+  uint32_t year = 0U, month = 0U, day = 0U;
+  uint32_t loop = 0U;
+
+  /* Get the current year*/
+  year = hrtc->DateToUpdate.Year;
+
+  /* Get the current month and day */
+  month = hrtc->DateToUpdate.Month;
+  day = hrtc->DateToUpdate.Date;
+
+  for (loop = 0U; loop < DayElapsed; loop++)
+  {
+    if ((month == 1U) || (month == 3U) || (month == 5U) || (month == 7U) || \
+        (month == 8U) || (month == 10U) || (month == 12U))
+    {
+      if (day < 31U)
+      {
+        day++;
+      }
+      /* Date structure member: day = 31 */
+      else
+      {
+        if (month != 12U)
+        {
+          month++;
+          day = 1U;
+        }
+        /* Date structure member: day = 31 & month =12 */
+        else
+        {
+          month = 1U;
+          day = 1U;
+          year++;
+        }
+      }
+    }
+    else if ((month == 4U) || (month == 6U) || (month == 9U) || (month == 11U))
+    {
+      if (day < 30U)
+      {
+        day++;
+      }
+      /* Date structure member: day = 30 */
+      else
+      {
+        month++;
+        day = 1U;
+      }
+    }
+    else if (month == 2U)
+    {
+      if (day < 28U)
+      {
+        day++;
+      }
+      else if (day == 28U)
+      {
+        /* Leap year */
+        if (RTC_IsLeapYear(year))
+        {
+          day++;
+        }
+        else
+        {
+          month++;
+          day = 1U;
+        }
+      }
+      else if (day == 29U)
+      {
+        month++;
+        day = 1U;
+      }
+    }
+  }
+
+  /* Update year */
+  hrtc->DateToUpdate.Year = year;
+
+  /* Update day and month */
+  hrtc->DateToUpdate.Month = month;
+  hrtc->DateToUpdate.Date = day;
+
+  /* Update day of the week */
+  hrtc->DateToUpdate.WeekDay = RTC_WeekDayNum(year, month, day);
+}
+
+/**
+  * @brief  Check whether the passed year is Leap or not.
+  * @param  nYear  year to check
+  * @retval 1: leap year
+  *         0: not leap year
+  */
+static uint8_t RTC_IsLeapYear(uint16_t nYear)
+{
+  if ((nYear % 4U) != 0U)
+  {
+    return 0U;
+  }
+
+  if ((nYear % 100U) != 0U)
+  {
+    return 1U;
+  }
+
+  if ((nYear % 400U) == 0U)
+  {
+    return 1U;
+  }
+  else
+  {
+    return 0U;
+  }
+}
+
+/**
+  * @brief  Determines the week number, the day number and the week day number.
+  * @param  nYear   year to check
+  * @param  nMonth  Month to check
+  * @param  nDay    Day to check
+  * @note   Day is calculated with hypothesis that year > 2000
+  * @retval Value which can take one of the following parameters:
+  *         @arg RTC_WEEKDAY_MONDAY
+  *         @arg RTC_WEEKDAY_TUESDAY
+  *         @arg RTC_WEEKDAY_WEDNESDAY
+  *         @arg RTC_WEEKDAY_THURSDAY
+  *         @arg RTC_WEEKDAY_FRIDAY
+  *         @arg RTC_WEEKDAY_SATURDAY
+  *         @arg RTC_WEEKDAY_SUNDAY
+  */
+static uint8_t RTC_WeekDayNum(uint32_t nYear, uint8_t nMonth, uint8_t nDay)
+{
+  uint32_t year = 0U, weekday = 0U;
+
+  year = 2000U + nYear;
+
+  if (nMonth < 3U)
+  {
+    /*D = { [(23 x month)/9] + day + 4 + year + [(year-1)/4] - [(year-1)/100] + [(year-1)/400] } mod 7*/
+    weekday = (((23U * nMonth) / 9U) + nDay + 4U + year + ((year - 1U) / 4U) - ((year - 1U) / 100U) + ((year - 1U) / 400U)) % 7U;
+  }
+  else
+  {
+    /*D = { [(23 x month)/9] + day + 4 + year + [year/4] - [year/100] + [year/400] - 2 } mod 7*/
+    weekday = (((23U * nMonth) / 9U) + nDay + 4U + year + (year / 4U) - (year / 100U) + (year / 400U) - 2U) % 7U;
+  }
+
+  return (uint8_t)weekday;
+}
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}

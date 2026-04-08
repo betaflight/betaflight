@@ -13,7 +13,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -35,13 +35,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -182,6 +178,8 @@
   * @{
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Sets Timestamp.
   * @note   This API must be called before enabling the Timestamp feature.
@@ -419,6 +417,7 @@ DAL_StatusTypeDef DAL_RTCEx_GetTimeStamp(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDe
 
   return DAL_OK;
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @brief  Sets Tamper.
@@ -434,18 +433,24 @@ DAL_StatusTypeDef DAL_RTCEx_SetTamper(RTC_HandleTypeDef *hrtc, RTC_TamperTypeDef
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_TAMPER(sTamper->Tamper));
-  ASSERT_PARAM(IS_RTC_TAMPER_PIN(sTamper->PinSelection));
   ASSERT_PARAM(IS_RTC_TAMPER_TRIGGER(sTamper->Trigger));
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+  ASSERT_PARAM(IS_RTC_TAMPER_PIN(sTamper->PinSelection));
   ASSERT_PARAM(IS_RTC_TAMPER_FILTER(sTamper->Filter));
   ASSERT_PARAM(IS_RTC_TAMPER_FILTER_CONFIG_CORRECT(sTamper->Filter, sTamper->Trigger));
   ASSERT_PARAM(IS_RTC_TAMPER_SAMPLING_FREQ(sTamper->SamplingFrequency));
   ASSERT_PARAM(IS_RTC_TAMPER_PRECHARGE_DURATION(sTamper->PrechargeDuration));
   ASSERT_PARAM(IS_RTC_TAMPER_PULLUP_STATE(sTamper->TamperPullUp));
   ASSERT_PARAM(IS_RTC_TAMPER_TIMESTAMPONTAMPER_DETECTION(sTamper->TimeStampOnTamperDetection));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Locked */
   __DAL_LOCK(hrtc);
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   hrtc->State = DAL_RTC_STATE_BUSY;
 
   /* Copy control register into temporary variable */
@@ -489,6 +494,23 @@ DAL_StatusTypeDef DAL_RTCEx_SetTamper(RTC_HandleTypeDef *hrtc, RTC_TamperTypeDef
   /* Copy desired configuration into configuration register */
   hrtc->Instance->TACFG = tmpreg;
 
+#else
+  UNUSED(tmpreg);
+
+  if (DAL_IS_BIT_SET(BAKPR->CLKCAL, (BAKPR_CLKCAL_CALCOEN | BAKPR_CLKCAL_ASPOEN)))
+  {
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+
+  MODIFY_REG(BAKPR->CTRL, (BAKPR_CTRL_TPFCFG | BAKPR_CTRL_TPALCFG), (sTamper->Tamper | (sTamper->Trigger)));
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   hrtc->State = DAL_RTC_STATE_READY;
 
   /* Process Unlocked */
@@ -511,20 +533,26 @@ DAL_StatusTypeDef DAL_RTCEx_SetTamper_IT(RTC_HandleTypeDef *hrtc, RTC_TamperType
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_TAMPER(sTamper->Tamper));
-  ASSERT_PARAM(IS_RTC_TAMPER_PIN(sTamper->PinSelection));
   ASSERT_PARAM(IS_RTC_TAMPER_TRIGGER(sTamper->Trigger));
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+  ASSERT_PARAM(IS_RTC_TAMPER_PIN(sTamper->PinSelection));
   ASSERT_PARAM(IS_RTC_TAMPER_FILTER(sTamper->Filter));
   ASSERT_PARAM(IS_RTC_TAMPER_FILTER_CONFIG_CORRECT(sTamper->Filter, sTamper->Trigger));
   ASSERT_PARAM(IS_RTC_TAMPER_SAMPLING_FREQ(sTamper->SamplingFrequency));
   ASSERT_PARAM(IS_RTC_TAMPER_PRECHARGE_DURATION(sTamper->PrechargeDuration));
   ASSERT_PARAM(IS_RTC_TAMPER_PULLUP_STATE(sTamper->TamperPullUp));
   ASSERT_PARAM(IS_RTC_TAMPER_TIMESTAMPONTAMPER_DETECTION(sTamper->TimeStampOnTamperDetection));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Process Locked */
   __DAL_LOCK(hrtc);
 
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Copy control register into temporary variable */
   tmpreg = hrtc->Instance->TACFG;
 
@@ -570,6 +598,26 @@ DAL_StatusTypeDef DAL_RTCEx_SetTamper_IT(RTC_HandleTypeDef *hrtc, RTC_TamperType
   __DAL_RTC_TAMPER_TIMESTAMP_EINT_ENABLE_IT();
   __DAL_RTC_TAMPER_TIMESTAMP_EINT_ENABLE_RISING_EDGE();
 
+#else
+  UNUSED(tmpreg);
+
+  if (DAL_IS_BIT_SET(BAKPR->CLKCAL, (BAKPR_CLKCAL_CALCOEN | BAKPR_CLKCAL_ASPOEN)))
+  {
+    hrtc->State = DAL_RTC_STATE_ERROR;
+
+    /* Process Unlocked */
+    __DAL_UNLOCK(hrtc);
+
+    return DAL_ERROR;
+  }
+
+  MODIFY_REG(BAKPR->CTRL, (BAKPR_CTRL_TPFCFG | BAKPR_CTRL_TPALCFG), (sTamper->Tamper | (sTamper->Trigger)));
+
+  /* Configure the Tamper Interrupt in the BKP->CSR */
+  __DAL_RTC_TAMPER_ENABLE_IT(hrtc, RTC_IT_TAMP1);
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   hrtc->State = DAL_RTC_STATE_READY;
 
   /* Process Unlocked */
@@ -599,8 +647,22 @@ DAL_StatusTypeDef DAL_RTCEx_DeactivateTamper(RTC_HandleTypeDef *hrtc, uint32_t T
 
   hrtc->State = DAL_RTC_STATE_BUSY;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Disable the selected Tamper pin */
   hrtc->Instance->TACFG &= (uint32_t)~Tamper;
+#else
+  /* Disable the selected Tamper pin */
+  CLEAR_BIT(BAKPR->CTRL, BAKPR_CTRL_TPFCFG);
+
+  /* Disable the Tamper Interrupt in the BAKPR->CSTS */
+  /* Configure the Tamper Interrupt in the BAKPR->CSTS */
+  __DAL_RTC_TAMPER_DISABLE_IT(hrtc, RTC_IT_TAMP1);
+
+  /* Clear the Tamper interrupt pending bit */
+  __DAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
+  SET_BIT(BAKPR->CSTS, BAKPR_CSTS_TECLR);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   hrtc->State = DAL_RTC_STATE_READY;
 
@@ -610,6 +672,8 @@ DAL_StatusTypeDef DAL_RTCEx_DeactivateTamper(RTC_HandleTypeDef *hrtc, uint32_t T
   return DAL_OK;
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Handles Timestamp and Tamper interrupt request.
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
@@ -696,6 +760,39 @@ __weak void DAL_RTCEx_TimeStampEventCallback(RTC_HandleTypeDef *hrtc)
            the DAL_RTCEx_TimeStampEventCallback could be implemented in the user file
   */
 }
+#else
+
+/**
+  * @brief  This function handles Tamper interrupt request.
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval None
+  */
+void DAL_RTCEx_TamperIRQHandler(RTC_HandleTypeDef *hrtc)
+{
+  /* Get the status of the Interrupt */
+  if (__DAL_RTC_TAMPER_GET_IT_SOURCE(hrtc, RTC_IT_TAMP1))
+  {
+    /* Get the TAMPER Interrupt enable bit and pending bit */
+    if (__DAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP1F) != (uint32_t)RESET)
+    {
+      /* Tamper callback */
+#if (USE_DAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->Tamper1EventCallback(hrtc);
+#else
+      DAL_RTCEx_Tamper1EventCallback(hrtc);
+#endif /* USE_DAL_RTC_REGISTER_CALLBACKS */
+
+      /* Clear the Tamper interrupt pending bit */
+      __DAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
+    }
+  }
+
+  /* Change RTC state */
+  hrtc->State = DAL_RTC_STATE_READY;
+}
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @brief  Tamper 1 callback.
@@ -745,6 +842,8 @@ DAL_StatusTypeDef DAL_RTCEx_PollForTimeStampEvent(RTC_HandleTypeDef *hrtc, uint3
   /* Get tick */
   tickstart = DAL_GetTick();
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   while (__DAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) == 0U)
   {
     if (Timeout != DAL_MAX_DELAY)
@@ -767,6 +866,23 @@ DAL_StatusTypeDef DAL_RTCEx_PollForTimeStampEvent(RTC_HandleTypeDef *hrtc, uint3
       return DAL_ERROR;
     }
   }
+#else
+  /* Get the status of the Interrupt */
+  while (__DAL_RTC_TAMPER_GET_FLAG(hrtc, RTC_FLAG_TAMP1F) == RESET)
+  {
+    if (Timeout != DAL_MAX_DELAY)
+    {
+      if ((Timeout == 0U) || ((DAL_GetTick() - tickstart) > Timeout))
+      {
+        hrtc->State = DAL_RTC_STATE_TIMEOUT;
+        return DAL_TIMEOUT;
+      }
+    }
+  }
+
+  /* Clear the Tamper Flag */
+  __DAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Change RTC state */
   hrtc->State = DAL_RTC_STATE_READY;
@@ -774,6 +890,8 @@ DAL_StatusTypeDef DAL_RTCEx_PollForTimeStampEvent(RTC_HandleTypeDef *hrtc, uint3
   return DAL_OK;
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Handles Tamper 1 Polling.
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
@@ -848,10 +966,13 @@ DAL_StatusTypeDef DAL_RTCEx_PollForTamper2Event(RTC_HandleTypeDef *hrtc, uint32_
 }
 #endif /* RTC_TAMPER2_SUPPORT */
 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RTCEx_Exported_Functions_Group2 RTC Wakeup functions
   * @brief    RTC Wakeup functions
   *
@@ -1219,6 +1340,146 @@ DAL_StatusTypeDef DAL_RTCEx_PollForWakeUpTimerEvent(RTC_HandleTypeDef *hrtc, uin
   * @}
   */
 
+#else
+
+/** @defgroup RTCEx_Exported_Functions_Group2 RTC Second functions
+  * @brief    RTC Second functions
+  *
+@verbatim
+ ===============================================================================
+                 ##### RTC Second functions #####
+ ===============================================================================
+
+ [..] This section provides functions implementing second interupt handlers
+
+@endverbatim
+  * @{
+  */
+
+/**
+  * @brief  Sets Interrupt for second
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval DAL status
+  */
+DAL_StatusTypeDef DAL_RTCEx_SetSecond_IT(RTC_HandleTypeDef *hrtc)
+{
+  /* Process Locked */
+  __DAL_LOCK(hrtc);
+
+  hrtc->State = DAL_RTC_STATE_BUSY;
+
+  /* Enable Second interuption */
+  __DAL_RTC_SECOND_ENABLE_IT(hrtc, RTC_IT_SEC);
+
+  hrtc->State = DAL_RTC_STATE_READY;
+
+  /* Process Unlocked */
+  __DAL_UNLOCK(hrtc);
+
+  return DAL_OK;
+}
+
+/**
+  * @brief  Deactivates Second.
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval DAL status
+  */
+DAL_StatusTypeDef DAL_RTCEx_DeactivateSecond(RTC_HandleTypeDef *hrtc)
+{
+  /* Process Locked */
+  __DAL_LOCK(hrtc);
+
+  hrtc->State = DAL_RTC_STATE_BUSY;
+
+  /* Deactivate Second interuption*/
+  __DAL_RTC_SECOND_DISABLE_IT(hrtc, RTC_IT_SEC);
+
+  hrtc->State = DAL_RTC_STATE_READY;
+
+  /* Process Unlocked */
+  __DAL_UNLOCK(hrtc);
+
+  return DAL_OK;
+}
+
+/**
+  * @brief  This function handles second interrupt request.
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval None
+  */
+void DAL_RTCEx_RTCIRQHandler(RTC_HandleTypeDef *hrtc)
+{
+  if (__DAL_RTC_SECOND_GET_IT_SOURCE(hrtc, RTC_IT_SEC))
+  {
+    /* Get the status of the Interrupt */
+    if (__DAL_RTC_SECOND_GET_FLAG(hrtc, RTC_FLAG_SEC))
+    {
+      /* Check if Overrun occurred */
+      if (__DAL_RTC_SECOND_GET_FLAG(hrtc, RTC_FLAG_OW))
+      {
+        /* Second error callback */
+        DAL_RTCEx_RTCEventErrorCallback(hrtc);
+
+        /* Clear flag Second */
+        __DAL_RTC_OVERFLOW_CLEAR_FLAG(hrtc, RTC_FLAG_OW);
+
+        /* Change RTC state */
+        hrtc->State = DAL_RTC_STATE_ERROR;
+      }
+      else
+      {
+        /* Second callback */
+        DAL_RTCEx_RTCEventCallback(hrtc);
+
+        /* Change RTC state */
+        hrtc->State = DAL_RTC_STATE_READY;
+      }
+
+      /* Clear flag Second */
+      __DAL_RTC_SECOND_CLEAR_FLAG(hrtc, RTC_FLAG_SEC);
+    }
+  }
+}
+
+/**
+  * @brief  Second event callback.
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval None
+  */
+__weak void DAL_RTCEx_RTCEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hrtc);
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the DAL_RTCEx_RTCEventCallback could be implemented in the user file
+   */
+}
+
+/**
+  * @brief  Second event error callback.
+  * @param  hrtc: pointer to a RTC_HandleTypeDef structure that contains
+  *                the configuration information for RTC.
+  * @retval None
+  */
+__weak void DAL_RTCEx_RTCEventErrorCallback(RTC_HandleTypeDef *hrtc)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hrtc);
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the DAL_RTCEx_RTCEventErrorCallback could be implemented in the user file
+   */
+}
+
+/**
+  * @}
+  */
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /** @defgroup RTCEx_Exported_Functions_Group3 Extended Peripheral Control functions
   * @brief    Extended Peripheral Control functions
   *
@@ -1231,6 +1492,7 @@ DAL_StatusTypeDef DAL_RTCEx_PollForWakeUpTimerEvent(RTC_HandleTypeDef *hrtc, uin
       (+) Write a data in a specified RTC Backup data register
       (+) Read a data in a specified RTC Backup data register
       (+) Set the Coarse calibration parameters.
+@if APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx
       (+) Deactivate the Coarse calibration parameters
       (+) Set the Smooth calibration parameters.
       (+) Configure the Synchronization Shift Control Settings.
@@ -1240,6 +1502,7 @@ DAL_StatusTypeDef DAL_RTCEx_PollForWakeUpTimerEvent(RTC_HandleTypeDef *hrtc, uin
       (+) Disable the RTC reference clock detection.
       (+) Enable the Bypass Shadow feature.
       (+) Disable the Bypass Shadow feature.
+@endif
 
 @endverbatim
   * @{
@@ -1250,7 +1513,7 @@ DAL_StatusTypeDef DAL_RTCEx_PollForWakeUpTimerEvent(RTC_HandleTypeDef *hrtc, uin
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
   *                the configuration information for RTC.
   * @param  BackupRegister RTC Backup data Register number.
-  *          This parameter can be: RTC_BKP_DRx (where x can be from 0 to 19)
+  *          This parameter can be: RTC_BKP_DRx (where x can be from 0 to 19(or 42))
   *                                 to specify the register.
   * @param  Data Data to be written in the specified RTC Backup data register.
   * @retval None
@@ -1262,11 +1525,19 @@ void DAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister, uint3
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_BKP(BackupRegister));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   tmp = (uint32_t) & (hrtc->Instance->BAKP0);
   tmp += (BackupRegister * 4U);
 
   /* Write the specified register */
   *(__IO uint32_t *)tmp = (uint32_t)Data;
+#else
+  tmp = (uint32_t)BAKPR_BASE;
+  tmp += (BackupRegister * 4U);
+
+  *(__IO uint32_t *) tmp = (Data & BAKPR_DATA1_DATA);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 }
 
 /**
@@ -1274,24 +1545,39 @@ void DAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister, uint3
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
   *                the configuration information for RTC.
   * @param  BackupRegister RTC Backup data Register number.
-  *          This parameter can be: RTC_BKP_DRx (where x can be from 0 to 19)
+  *          This parameter can be: RTC_BKP_DRx (where x can be from 0 to 19(or 42))
   *                                 to specify the register.
   * @retval Read value
   */
 uint32_t DAL_RTCEx_BKUPRead(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister)
 {
   uint32_t tmp = 0U;
+  uint32_t backupregister = 0U;
+
+  UNUSED(tmp);
+  UNUSED(backupregister);
 
   /* Check the parameters */
   ASSERT_PARAM(IS_RTC_BKP(BackupRegister));
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   tmp = (uint32_t) & (hrtc->Instance->BAKP0);
   tmp += (BackupRegister * 4U);
 
   /* Read the specified register */
   return (*(__IO uint32_t *)tmp);
+#else
+  backupregister = (uint32_t)BAKPR_BASE;
+  backupregister += (BackupRegister * 4U);
+
+  /* Read the specified register */
+  return ((*(__IO uint32_t *)(backupregister)) & BAKPR_DATA1_DATA);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Sets the Coarse calibration parameters.
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
@@ -1397,11 +1683,13 @@ DAL_StatusTypeDef DAL_RTCEx_DeactivateCoarseCalib(RTC_HandleTypeDef *hrtc)
 
   return status;
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @brief  Sets the Smooth calibration parameters.
   * @param  hrtc pointer to a RTC_HandleTypeDef structure that contains
   *                the configuration information for RTC.
+  @if APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx
   * @param  SmoothCalibPeriod Select the Smooth Calibration Period.
   *          This parameter can be can be one of the following values:
   *             @arg RTC_SMOOTHCALIB_PERIOD_32SEC: The smooth calibration period is 32s.
@@ -1413,6 +1701,12 @@ DAL_StatusTypeDef DAL_RTCEx_DeactivateCoarseCalib(RTC_HandleTypeDef *hrtc)
   *             @arg RTC_SMOOTHCALIB_PLUSPULSES_RESET: No RTCCLK pulses are added.
   * @param  SmoothCalibMinusPulsesValue Select the value of CALM[8:0] bits.
   *          This parameter can be one any value from 0 to 0x000001FF.
+  @endif
+  @if APM32F402/403xx
+  * @param  SmoothCalibPeriod: Not used (only present for compatibility with another families)
+  * @param  SmoothCalibPlusPulses: Not used (only present for compatibility with another families)
+  * @param  SmoothCalibMinusPulsesValue: specifies the RTC Clock Calibration value.
+  @endif
   * @note   To deactivate the smooth calibration, the field SmoothCalibPlusPulses
   *         must be equal to SMOOTHCALIB_PLUSPULSES_RESET and the field
   *         SmoothCalibMinusPulsesValue must be equal to 0.
@@ -1420,6 +1714,8 @@ DAL_StatusTypeDef DAL_RTCEx_DeactivateCoarseCalib(RTC_HandleTypeDef *hrtc)
   */
 DAL_StatusTypeDef DAL_RTCEx_SetSmoothCalib(RTC_HandleTypeDef *hrtc, uint32_t SmoothCalibPeriod, uint32_t SmoothCalibPlusPulses, uint32_t SmoothCalibMinusPulsesValue)
 {
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t tickstart = 0U;
 
   /* Check the parameters */
@@ -1468,6 +1764,24 @@ DAL_StatusTypeDef DAL_RTCEx_SetSmoothCalib(RTC_HandleTypeDef *hrtc, uint32_t Smo
   /* Enable the write protection for RTC registers */
   __DAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#else
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(SmoothCalibPeriod);
+  UNUSED(SmoothCalibPlusPulses);
+
+  /* Check the parameters */
+  ASSERT_PARAM(IS_RTC_SMOOTH_CALIB_MINUS(SmoothCalibMinusPulsesValue));
+
+  /* Process Locked */
+  __DAL_LOCK(hrtc);
+
+  hrtc->State = DAL_RTC_STATE_BUSY;
+
+  /* Sets RTC Clock Calibration value.*/
+  MODIFY_REG(BAKPR->CLKCAL, BAKPR_CLKCAL_CALVALUE, SmoothCalibMinusPulsesValue);
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   /* Change RTC state */
   hrtc->State = DAL_RTC_STATE_READY;
 
@@ -1477,6 +1791,8 @@ DAL_StatusTypeDef DAL_RTCEx_SetSmoothCalib(RTC_HandleTypeDef *hrtc, uint32_t Smo
   return DAL_OK;
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Configures the Synchronization Shift Control Settings.
   * @note   When REFCKON is set, firmware must not write to Shift control register.
@@ -1801,10 +2117,14 @@ DAL_StatusTypeDef DAL_RTCEx_DisableBypassShadow(RTC_HandleTypeDef *hrtc)
 
   return DAL_OK;
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}
   */
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 
 /** @defgroup RTCEx_Exported_Functions_Group4 Extended features functions
   * @brief    Extended features functions
@@ -1876,6 +2196,7 @@ DAL_StatusTypeDef DAL_RTCEx_PollForAlarmBEvent(RTC_HandleTypeDef *hrtc, uint32_t
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}

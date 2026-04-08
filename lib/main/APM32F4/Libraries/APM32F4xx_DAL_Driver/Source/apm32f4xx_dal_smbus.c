@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -238,6 +234,7 @@
 
 static DAL_StatusTypeDef SMBUS_WaitOnFlagUntilTimeout(SMBUS_HandleTypeDef *hsmbus, uint32_t Flag, FlagStatus Status, uint32_t Timeout, uint32_t Tickstart);
 static void SMBUS_ITError(SMBUS_HandleTypeDef *hsmbus);
+static void SMBUS_Flush_DATA(SMBUS_HandleTypeDef *hsmbus);
 
 /* Private functions for SMBUS transfer IRQ handler */
 static DAL_StatusTypeDef SMBUS_MasterTransmit_TXE(SMBUS_HandleTypeDef *hsmbus);
@@ -869,6 +866,17 @@ DAL_StatusTypeDef DAL_SMBUS_UnRegisterAddrCallback(SMBUS_HandleTypeDef *hsmbus)
 }
 
 #endif /* USE_DAL_SMBUS_REGISTER_CALLBACKS */
+
+/**
+  * @brief  SMBUS data register flush process.
+  * @param  hsmbus SMBUS handle.
+  * @retval None
+  */
+static void SMBUS_Flush_DATA(SMBUS_HandleTypeDef *hsmbus)
+{
+  /* Write a dummy data in DATA to clear it */
+  hsmbus->Instance->DATA = 0x00U;
+}
 
 /**
   * @}
@@ -1705,6 +1713,12 @@ void DAL_SMBUS_ER_IRQHandler(SMBUS_HandleTypeDef *hsmbus)
 
       /* Clear AF flag */
       __DAL_SMBUS_CLEAR_FLAG(hsmbus, SMBUS_FLAG_AF);
+
+      /* Disable EVT, BUF and ERR interrupts */
+      __DAL_SMBUS_DISABLE_IT(hsmbus, SMBUS_IT_EVT | SMBUS_IT_BUF | SMBUS_IT_ERR);
+
+      /* Flush data register */
+      SMBUS_Flush_DATA(hsmbus);
     }
   }
 
@@ -2061,7 +2075,7 @@ static DAL_StatusTypeDef SMBUS_MasterTransmit_BTF(SMBUS_HandleTypeDef *hsmbus)
         /* Generate Stop */
         SET_BIT(hsmbus->Instance->CTRL1, I2C_CTRL1_STOP);
 
-        hsmbus->PreviousState = DAL_SMBUS_STATE_READY;
+        hsmbus->PreviousState = SMBUS_STATE_NONE;
         hsmbus->State = DAL_SMBUS_STATE_READY;
         hsmbus->Mode = DAL_SMBUS_MODE_NONE;
 #if (USE_DAL_SMBUS_REGISTER_CALLBACKS == 1)

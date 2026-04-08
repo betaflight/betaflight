@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -589,6 +585,8 @@ typedef  void (*pSMARTCARD_CallbackTypeDef)(SMARTCARD_HandleTypeDef *hsc);  /*!<
   */
 #define __DAL_SMARTCARD_GET_IT_SOURCE(__HANDLE__, __IT__) (((((__IT__) >> 28U) == SMARTCARD_CTRL1_REG_INDEX)? (__HANDLE__)->Instance->CTRL1: (__HANDLE__)->Instance->CTRL3) & (((uint32_t)(__IT__)) & SMARTCARD_IT_MASK))
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macro to enable the SMARTCARD's one bit sample method
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
@@ -600,6 +598,7 @@ typedef  void (*pSMARTCARD_CallbackTypeDef)(SMARTCARD_HandleTypeDef *hsc);  /*!<
   * @retval None
   */
 #define __DAL_SMARTCARD_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CTRL3 &= (uint16_t)~((uint16_t)USART_CTRL3_SAMCFG))
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @brief  Enable the USART associated to the SMARTCARD Handle
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
@@ -739,9 +738,15 @@ uint32_t DAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsc);
                                              ((LASTBIT) == SMARTCARD_LASTBIT_ENABLE))
 #define IS_SMARTCARD_NACK_STATE(NACK)       (((NACK) == SMARTCARD_NACK_ENABLE) || \
                                              ((NACK) == SMARTCARD_NACK_DISABLE))
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_SMARTCARD_BAUDRATE(BAUDRATE)     ((BAUDRATE) < 4500001U)
+
+#define SMARTCARD_DIV(__PCLK__, __BAUD__)                (((__PCLK__)*25U)/(4U*(__BAUD__)))
+#else
 #define IS_SMARTCARD_BAUDRATE(BAUDRATE)     ((BAUDRATE) < 10500001U)
 
 #define SMARTCARD_DIV(__PCLK__, __BAUD__)                ((uint32_t)((((uint64_t)(__PCLK__))*25U)/(4U*((uint64_t)(__BAUD__)))))
+#endif /* APM32F403xx || APM32F402xx */
 #define SMARTCARD_DIVMANT(__PCLK__, __BAUD__)            (SMARTCARD_DIV((__PCLK__), (__BAUD__))/100U)
 #define SMARTCARD_DIVFRAQ(__PCLK__, __BAUD__)            ((((SMARTCARD_DIV((__PCLK__), (__BAUD__)) - (SMARTCARD_DIVMANT((__PCLK__), (__BAUD__)) * 100U)) * 16U) + 50U) / 100U)
 /* SMARTCARD BR = mantissa + overflow + fraction

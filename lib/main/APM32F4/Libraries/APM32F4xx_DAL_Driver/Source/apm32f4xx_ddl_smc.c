@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -118,24 +114,6 @@
                                       SMC_WRTTIM1_ASYNCACCCFG))
 #endif /* SMC_Bank1 */
 #if defined(SMC_Bank2_3)
-
-#if defined (SMC_PCR_PWAITEN)
-/* --- PCR Register ---*/
-/* PCR register clear mask */
-#define PCR_CLEAR_MASK    ((uint32_t)(SMC_PCR_PWAITEN | SMC_PCR_PBKEN  | \
-                                      SMC_PCR_PTYP    | SMC_PCR_PWID   | \
-                                      SMC_PCR_ECCEN   | SMC_PCR_TCLR   | \
-                                      SMC_PCR_TAR     | SMC_PCR_ECCPS))
-/* --- PMEM Register ---*/
-/* PMEM register clear mask */
-#define PMEM_CLEAR_MASK   ((uint32_t)(SMC_PMEM_MEMSET2  | SMC_PMEM_MEMWAIT2 |\
-                                      SMC_PMEM_MEMHOLD2 | SMC_PMEM_MEMHIZ2))
-
-/* --- PATT Register ---*/
-/* PATT register clear mask */
-#define PATT_CLEAR_MASK   ((uint32_t)(SMC_PATT_ATTSET2  | SMC_PATT_ATTWAIT2 |\
-                                      SMC_PATT_ATTHOLD2 | SMC_PATT_ATTHIZ2))
-#else
 /* --- PCR Register ---*/
 /* PCR register clear mask */
 #define PCR_CLEAR_MASK    ((uint32_t)(SMC_CTRL2_WAITFEN | SMC_CTRL2_MBKEN  | \
@@ -152,7 +130,6 @@
 #define PATT_CLEAR_MASK   ((uint32_t)(SMC_AMSTIM2_SET2  | SMC_AMSTIM2_WAIT2 |\
                                       SMC_AMSTIM2_HLD2 | SMC_AMSTIM2_HIZ2))
 
-#endif /* SMC_PCR_PWAITEN */
 #endif /* SMC_Bank2_3 */
 #if defined(SMC_Bank4)
 /* --- PCR Register ---*/
@@ -265,12 +242,6 @@ DAL_StatusTypeDef  SMC_NORSRAM_Init(SMC_NORSRAM_TypeDef *Device,
   ASSERT_PARAM(IS_SMC_EXTENDED_MODE(Init->ExtendedMode));
   ASSERT_PARAM(IS_SMC_ASYNWAIT(Init->AsynchronousWait));
   ASSERT_PARAM(IS_SMC_WRITE_BURST(Init->WriteBurst));
-#if defined(SMC_CSCTRL1_CCLKEN)
-  ASSERT_PARAM(IS_SMC_CONTINOUS_CLOCK(Init->ContinuousClock));
-#endif
-#if defined(SMC_CSCTRL1_WFDIS)
-  ASSERT_PARAM(IS_SMC_WRITE_FIFO(Init->WriteFifo));
-#endif /* SMC_CSCTRL1_WFDIS */
   ASSERT_PARAM(IS_SMC_PAGESIZE(Init->PageSize));
 
   /* Disable NORSRAM Device */
@@ -302,12 +273,7 @@ DAL_StatusTypeDef  SMC_NORSRAM_Init(SMC_NORSRAM_TypeDef *Device,
 #if defined(SMC_CSCTRL1_WRAPBEN)
   btcr_reg |= Init->WrapMode;
 #endif /* SMC_CSCTRL1_WRAPBEN */
-#if defined(SMC_CSCTRL1_CCLKEN)
-  btcr_reg |= Init->ContinuousClock;
-#endif /* SMC_CSCTRL1_CCLKEN */
-#if defined(SMC_CSCTRL1_WFDIS)
-  btcr_reg |= Init->WriteFifo;
-#endif /* SMC_CSCTRL1_WFDIS */
+
   btcr_reg |= Init->PageSize;
 
   mask = (SMC_CSCTRL1_MBKEN                |
@@ -327,31 +293,10 @@ DAL_StatusTypeDef  SMC_NORSRAM_Init(SMC_NORSRAM_TypeDef *Device,
 #if defined(SMC_CSCTRL1_WRAPBEN)
   mask |= SMC_CSCTRL1_WRAPBEN;
 #endif /* SMC_CSCTRL1_WRAPBEN */
-#if defined(SMC_CSCTRL1_CCLKEN)
-  mask |= SMC_CSCTRL1_CCLKEN;
-#endif
-#if defined(SMC_CSCTRL1_WFDIS)
-  mask |= SMC_CSCTRL1_WFDIS;
-#endif /* SMC_CSCTRL1_WFDIS */
+
   mask |= SMC_CSCTRL1_CRAMPSIZECFG;
 
-  MODIFY_REG(Device->CSTR[Init->NSBank], mask, btcr_reg);
-
-#if defined(SMC_CSCTRL1_CCLKEN)
-  /* Configure synchronous mode when Continuous clock is enabled for bank2..4 */
-  if ((Init->ContinuousClock == SMC_CONTINUOUS_CLOCK_SYNC_ASYNC) && (Init->NSBank != SMC_NORSRAM_BANK1))
-  {
-    MODIFY_REG(Device->CSTR[SMC_NORSRAM_BANK1], SMC_CSCTRL1_CCLKEN, Init->ContinuousClock);
-  }
-#endif
-#if defined(SMC_CSCTRL1_WFDIS)
-
-  if (Init->NSBank != SMC_NORSRAM_BANK1)
-  {
-    /* Configure Write FIFO mode when Write Fifo is enabled for bank2..4 */
-    SET_BIT(Device->CSTR[SMC_NORSRAM_BANK1], (uint32_t)(Init->WriteFifo));
-  }
-#endif /* SMC_CSCTRL1_WFDIS */
+  MODIFY_REG(Device->CSCTRL[Init->NSBank], mask, btcr_reg);
 
   return DAL_OK;
 }
@@ -378,15 +323,15 @@ DAL_StatusTypeDef SMC_NORSRAM_DeInit(SMC_NORSRAM_TypeDef *Device,
   /* SMC_NORSRAM_BANK1 */
   if (Bank == SMC_NORSRAM_BANK1)
   {
-    Device->CSTR[Bank] = 0x000030DBU;
+    Device->CSCTRL[Bank] = 0x000030DBU;
   }
   /* SMC_NORSRAM_BANK2, SMC_NORSRAM_BANK3 or SMC_NORSRAM_BANK4 */
   else
   {
-    Device->CSTR[Bank] = 0x000030D2U;
+    Device->CSCTRL[Bank] = 0x000030D2U;
   }
 
-  Device->CSTR[Bank + 1U] = 0x0FFFFFFFU;
+  Device->CSCTRL[Bank + 1U] = 0x0FFFFFFFU;
   ExDevice->WRTTIM[Bank]   = 0x0FFFFFFFU;
 
   return DAL_OK;
@@ -403,10 +348,6 @@ DAL_StatusTypeDef SMC_NORSRAM_DeInit(SMC_NORSRAM_TypeDef *Device,
 DAL_StatusTypeDef SMC_NORSRAM_Timing_Init(SMC_NORSRAM_TypeDef *Device,
                                           SMC_NORSRAM_TimingTypeDef *Timing, uint32_t Bank)
 {
-#if defined(SMC_CSCTRL1_CCLKEN)
-  uint32_t tmpr;
-#endif
-
   /* Check the parameters */
   ASSERT_PARAM(IS_SMC_NORSRAM_DEVICE(Device));
   ASSERT_PARAM(IS_SMC_ADDRESS_SETUP_TIME(Timing->AddressSetupTime));
@@ -419,7 +360,7 @@ DAL_StatusTypeDef SMC_NORSRAM_Timing_Init(SMC_NORSRAM_TypeDef *Device,
   ASSERT_PARAM(IS_SMC_NORSRAM_BANK(Bank));
 
   /* Set SMC_NORSRAM device timing parameters */
-  MODIFY_REG(Device->CSTR[Bank + 1U], BTR_CLEAR_MASK, (Timing->AddressSetupTime                                  |
+  MODIFY_REG(Device->CSCTRL[Bank + 1U], BTR_CLEAR_MASK, (Timing->AddressSetupTime                                  |
                                                        ((Timing->AddressHoldTime)        << SMC_CSTIM1_ADDRHLDCFG_Pos)  |
                                                        ((Timing->DataSetupTime)          << SMC_CSTIM1_DATASETCFG_Pos)  |
                                                        ((Timing->BusTurnAroundDuration)  << SMC_CSTIM1_BUSTURNCFG_Pos) |
@@ -427,16 +368,6 @@ DAL_StatusTypeDef SMC_NORSRAM_Timing_Init(SMC_NORSRAM_TypeDef *Device,
                                                        (((Timing->DataLatency) - 2U)     << SMC_CSTIM1_DATALATCFG_Pos)  |
                                                        (Timing->AccessMode)));
 
-#if defined(SMC_CSCTRL1_CCLKEN)
-  /* Configure Clock division value (in NORSRAM bank 1) when continuous clock is enabled */
-  if (DAL_IS_BIT_SET(Device->CSTR[SMC_NORSRAM_BANK1], SMC_CSCTRL1_CCLKEN))
-  {
-    tmpr = (uint32_t)(Device->CSTR[SMC_NORSRAM_BANK1 + 1U] & ~((0x0FU) << SMC_CSTIM1_CLKDIVCFG_Pos));
-    tmpr |= (uint32_t)(((Timing->CLKDivision) - 1U) << SMC_CSTIM1_CLKDIVCFG_Pos);
-    MODIFY_REG(Device->CSTR[SMC_NORSRAM_BANK1 + 1U], SMC_CSTIM1_CLKDIVCFG, tmpr);
-  }
-
-#endif
   return DAL_OK;
 }
 
@@ -517,7 +448,7 @@ DAL_StatusTypeDef SMC_NORSRAM_WriteOperation_Enable(SMC_NORSRAM_TypeDef *Device,
   ASSERT_PARAM(IS_SMC_NORSRAM_BANK(Bank));
 
   /* Enable write operation */
-  SET_BIT(Device->CSTR[Bank], SMC_WRITE_OPERATION_ENABLE);
+  SET_BIT(Device->CSCTRL[Bank], SMC_WRITE_OPERATION_ENABLE);
 
   return DAL_OK;
 }
@@ -535,7 +466,7 @@ DAL_StatusTypeDef SMC_NORSRAM_WriteOperation_Disable(SMC_NORSRAM_TypeDef *Device
   ASSERT_PARAM(IS_SMC_NORSRAM_BANK(Bank));
 
   /* Disable write operation */
-  CLEAR_BIT(Device->CSTR[Bank], SMC_WRITE_OPERATION_ENABLE);
+  CLEAR_BIT(Device->CSCTRL[Bank], SMC_WRITE_OPERATION_ENABLE);
 
   return DAL_OK;
 }
@@ -1055,11 +986,11 @@ DAL_StatusTypeDef SMC_PCCARD_DeInit(SMC_PCCARD_TypeDef *Device)
   __SMC_PCCARD_DISABLE(Device);
 
   /* De-initialize the SMC_PCCARD device */
-  Device->CTRL4    = 0x00000018U;
-  Device->STSINT4     = 0x00000040U;
+  Device->CTRL4     = 0x00000018U;
+  Device->STSINT4   = 0x00000040U;
   Device->CMSTIM4   = 0xFCFCFCFCU;
   Device->AMSTIM4   = 0xFCFCFCFCU;
-  Device->IOSTIM4    = 0xFCFCFCFCU;
+  Device->IOSTIM4   = 0xFCFCFCFCU;
 
   return DAL_OK;
 }

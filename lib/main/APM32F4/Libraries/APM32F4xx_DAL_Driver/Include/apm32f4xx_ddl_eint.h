@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.Clause
@@ -281,8 +277,8 @@ typedef struct
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -321,8 +317,8 @@ __STATIC_INLINE void DDL_EINT_EnableIT_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -362,8 +358,8 @@ __STATIC_INLINE void DDL_EINT_DisableIT_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -408,8 +404,8 @@ __STATIC_INLINE uint32_t DDL_EINT_IsEnabledIT_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -447,8 +443,8 @@ __STATIC_INLINE void DDL_EINT_EnableEvent_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -485,8 +481,8 @@ __STATIC_INLINE void DDL_EINT_DisableEvent_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   *         @arg @ref DDL_EINT_LINE_23(*)
   *         @arg @ref DDL_EINT_LINE_ALL_0_31
   * @note   (*): Available in some devices
@@ -538,8 +534,8 @@ __STATIC_INLINE uint32_t DDL_EINT_IsEnabledEvent_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None
@@ -581,8 +577,8 @@ __STATIC_INLINE void DDL_EINT_EnableRisingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None
@@ -617,8 +613,8 @@ __STATIC_INLINE void DDL_EINT_DisableRisingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval State of bit (1 or 0).
@@ -667,8 +663,8 @@ __STATIC_INLINE uint32_t DDL_EINT_IsEnabledRisingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None
@@ -708,8 +704,8 @@ __STATIC_INLINE void DDL_EINT_EnableFallingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None
@@ -743,8 +739,8 @@ __STATIC_INLINE void DDL_EINT_DisableFallingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval State of bit (1 or 0).
@@ -791,8 +787,8 @@ __STATIC_INLINE uint32_t DDL_EINT_IsEnabledFallingTrig_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None
@@ -836,8 +832,8 @@ __STATIC_INLINE void DDL_EINT_GenerateSWI_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval State of bit (1 or 0).
@@ -873,8 +869,8 @@ __STATIC_INLINE uint32_t DDL_EINT_IsActiveFlag_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval @note This bit is set when the selected edge event arrives on the interrupt
@@ -910,8 +906,8 @@ __STATIC_INLINE uint32_t DDL_EINT_ReadFlag_0_31(uint32_t EintLine)
   *         @arg @ref DDL_EINT_LINE_18
   *         @arg @ref DDL_EINT_LINE_19(*)
   *         @arg @ref DDL_EINT_LINE_20(*)
-  *         @arg @ref DDL_EINT_LINE_21
-  *         @arg @ref DDL_EINT_LINE_22
+  *         @arg @ref DDL_EINT_LINE_21(*)
+  *         @arg @ref DDL_EINT_LINE_22(*)
   * @note   (*): Available in some devices
   * @note   Please check each device line mapping for EINT Line availability
   * @retval None

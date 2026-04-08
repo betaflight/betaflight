@@ -27,11 +27,8 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023-2024 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -53,7 +50,7 @@
   * @{
   */
 
- #if defined (COMP1) || defined (COMP2)
+#if defined (COMP1) || defined (COMP2)
 
 /** @addtogroup COMP_DDL COMP
   * @{

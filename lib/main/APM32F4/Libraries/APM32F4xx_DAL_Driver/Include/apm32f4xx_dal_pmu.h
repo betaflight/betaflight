@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,18 +27,14 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef APM32F4xx_DAL_PMU_H
@@ -57,14 +53,14 @@
 
 /** @addtogroup PMU
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 
 /** @defgroup PMU_Exported_Types PMU Exported Types
   * @{
   */
-   
+
 /**
   * @brief  PMU PVD configuration structure definition
   */
@@ -85,7 +81,7 @@ typedef struct
 /** @defgroup PMU_Exported_Constants PMU Exported Constants
   * @{
   */
-  
+
 /** @defgroup PMU_WakeUp_Pins PMU WakeUp Pins
   * @{
   */
@@ -96,7 +92,7 @@ typedef struct
 
 /** @defgroup PMU_PVD_detection_level PMU PVD detection level
   * @{
-  */ 
+  */
 #define PMU_PVDLEVEL_0                  PMU_CTRL_PLSEL_LEV0
 #define PMU_PVDLEVEL_1                  PMU_CTRL_PLSEL_LEV1
 #define PMU_PVDLEVEL_2                  PMU_CTRL_PLSEL_LEV2
@@ -104,12 +100,12 @@ typedef struct
 #define PMU_PVDLEVEL_4                  PMU_CTRL_PLSEL_LEV4
 #define PMU_PVDLEVEL_5                  PMU_CTRL_PLSEL_LEV5
 #define PMU_PVDLEVEL_6                  PMU_CTRL_PLSEL_LEV6
-#define PMU_PVDLEVEL_7                  PMU_CTRL_PLSEL_LEV7/* External input analog voltage 
+#define PMU_PVDLEVEL_7                  PMU_CTRL_PLSEL_LEV7/* External input analog voltage
                                                           (Compare internally to VREFINT) */
 /**
   * @}
-  */   
- 
+  */
+
 /** @defgroup PMU_PVD_Mode PMU PVD Mode
   * @{
   */
@@ -133,7 +129,7 @@ typedef struct
 /**
   * @}
   */
-    
+
 /** @defgroup PMU_SLEEP_mode_entry PMU SLEEP mode entry
   * @{
   */
@@ -158,16 +154,20 @@ typedef struct
 #define PMU_FLAG_WU                     PMU_CSTS_WUEFLG
 #define PMU_FLAG_SB                     PMU_CSTS_SBFLG
 #define PMU_FLAG_PVDO                   PMU_CSTS_PVDOFLG
+#if defined(PMU_CSTS_BKPRFLG)
 #define PMU_FLAG_BRR                    PMU_CSTS_BKPRFLG
+#endif /* PMU_CSTS_BKPRFLG */
+#if defined(PMU_CSTS_VOSRFLG)
 #define PMU_FLAG_VOSRDY                 PMU_CSTS_VOSRFLG
+#endif /* PMU_CSTS_VOSRFLG */
 /**
   * @}
   */
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup PMU_Exported_Macro PMU Exported Macro
   * @{
@@ -176,22 +176,23 @@ typedef struct
 /** @brief  Check PMU flag is set or not.
   * @param  __FLAG__ specifies the flag to check.
   *           This parameter can be one of the following values:
-  *            @arg PMU_FLAG_WU: Wake Up flag. This flag indicates that a wakeup event 
-  *                  was received from the WKUP pin or from the RTC alarm (Alarm A 
+  *            @arg PMU_FLAG_WU: Wake Up flag. This flag indicates that a wakeup event
+  *                  was received from the WKUP pin or from the RTC alarm (Alarm A
   *                  or Alarm B), RTC Tamper event, RTC TimeStamp event or RTC Wakeup.
-  *                  An additional wakeup event is detected if the WKUP pin is enabled 
-  *                  (by setting the EWUP bit) when the WKUP pin level is already high.  
+  *                  An additional wakeup event is detected if the WKUP pin is enabled
+  *                  (by setting the EWUP bit) when the WKUP pin level is already high.
   *            @arg PMU_FLAG_SB: StandBy flag. This flag indicates that the system was
-  *                  resumed from StandBy mode.    
-  *            @arg PMU_FLAG_PVDO: PVD Output. This flag is valid only if PVD is enabled 
-  *                  by the DAL_PMU_EnablePVD() function. The PVD is stopped by Standby mode 
+  *                  resumed from StandBy mode.
+  *            @arg PMU_FLAG_PVDO: PVD Output. This flag is valid only if PVD is enabled
+  *                  by the DAL_PMU_EnablePVD() function. The PVD is stopped by Standby mode
   *                  For this reason, this bit is equal to 0 after Standby or reset
   *                  until the PVDE bit is set.
-  *            @arg PMU_FLAG_BRR: Backup regulator ready flag. This bit is not reset 
-  *                  when the device wakes up from Standby mode or by a system reset 
-  *                  or power reset.  
-  *            @arg PMU_FLAG_VOSRDY: This flag indicates that the Regulator voltage 
-  *                 scaling output selection is ready.
+  *            @arg PMU_FLAG_BRR: Backup regulator ready flag. This bit is not reset
+  *                  when the device wakes up from Standby mode or by a system reset
+  *                  or power reset.                                          (*)
+  *            @arg PMU_FLAG_VOSRDY: This flag indicates that the Regulator voltage
+  *                 scaling output selection is ready.                        (*)
+  *           (*) This parameter is not available for APM32F402/403xx devices
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
 #define __DAL_PMU_GET_FLAG(__FLAG__) ((PMU->CSTS & (__FLAG__)) == (__FLAG__))
@@ -269,7 +270,7 @@ typedef struct
   */
 #define __DAL_PMU_PVD_EINT_DISABLE_RISING_FALLING_EDGE()  do{__DAL_PMU_PVD_EINT_DISABLE_RISING_EDGE();\
                                                              __DAL_PMU_PVD_EINT_DISABLE_FALLING_EDGE();\
-                                                            }while(0U) 
+                                                            }while(0U)
 
 /**
   * @brief checks whether the specified PVD Exti interrupt flag is set or not.
@@ -300,8 +301,8 @@ typedef struct
 /** @addtogroup PMU_Exported_Functions PMU Exported Functions
   * @{
   */
-  
-/** @addtogroup PMU_Exported_Functions_Group1 Initialization and de-initialization functions 
+
+/** @addtogroup PMU_Exported_Functions_Group1 Initialization and de-initialization functions
   * @{
   */
 /* Initialization and de-initialization functions *****************************/
@@ -312,7 +313,7 @@ void DAL_PMU_DisableBkUpAccess(void);
   * @}
   */
 
-/** @addtogroup PMU_Exported_Functions_Group2 Peripheral Control functions 
+/** @addtogroup PMU_Exported_Functions_Group2 Peripheral Control functions
   * @{
   */
 /* Peripheral Control functions  **********************************************/
@@ -438,12 +439,12 @@ void DAL_PMU_DisableSEVOnPend(void);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

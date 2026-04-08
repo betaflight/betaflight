@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -168,6 +164,17 @@ typedef enum
 typedef uint32_t DAL_UART_RxTypeTypeDef;
 
 /**
+  * @brief DAL UART Rx Event type definition
+  * @note  DAL UART Rx Event type value aims to identify which type of Event has occurred
+  *        leading to call of the RxEvent callback.
+  *        This parameter can be a value of @ref UART_RxEvent_Type_Values :
+  *           DAL_UART_RXEVENT_TC                 = 0x00U,
+  *           DAL_UART_RXEVENT_HT                 = 0x01U,
+  *           DAL_UART_RXEVENT_IDLE               = 0x02U,
+  */
+typedef uint32_t DAL_UART_RxEventTypeTypeDef;
+
+/**
   * @brief  UART handle Structure definition
   */
 typedef struct __UART_HandleTypeDef
@@ -189,6 +196,8 @@ typedef struct __UART_HandleTypeDef
   __IO uint16_t                 RxXferCount;      /*!< UART Rx Transfer Counter           */
 
   __IO DAL_UART_RxTypeTypeDef ReceptionType;      /*!< Type of ongoing reception          */
+
+  __IO DAL_UART_RxEventTypeTypeDef RxEventType;   /*!< Type of Rx Event                   */
 
   DMA_HandleTypeDef             *hdmatx;          /*!< UART Tx DMA Handle parameters      */
 
@@ -410,6 +419,16 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   */
 #define DAL_UART_RECEPTION_STANDARD          (0x00000000U)             /*!< Standard reception                       */
 #define DAL_UART_RECEPTION_TOIDLE            (0x00000001U)             /*!< Reception till completion or IDLE event  */
+/**
+  * @}
+  */
+
+/** @defgroup UART_RxEvent_Type_Values  UART RxEvent type values
+  * @{
+  */
+#define DAL_UART_RXEVENT_TC                  (0x00000000U)             /*!< RxEvent linked to Transfer Complete event */
+#define DAL_UART_RXEVENT_HT                  (0x00000001U)             /*!< RxEvent linked to Half Transfer event     */
+#define DAL_UART_RXEVENT_IDLE                (0x00000002U)
 /**
   * @}
   */
@@ -757,6 +776,8 @@ DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle(UART_HandleTypeDef *huart, uint8_t *p
                                            uint32_t Timeout);
 DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 DAL_StatusTypeDef DAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+
+DAL_UART_RxEventTypeTypeDef DAL_UARTEx_GetRxEventType(UART_HandleTypeDef *huart);
 
 /* Transfer Abort functions */
 DAL_StatusTypeDef DAL_UART_Abort(UART_HandleTypeDef *huart);

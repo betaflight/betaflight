@@ -2,26 +2,26 @@
   *
   * @file    apm32f4xx_dal_dma.c
   * @brief   DMA DAL module driver.
-  *    
-  *          This file provides firmware functions to manage the following 
+  *
+  *          This file provides firmware functions to manage the following
   *          functionalities of the Direct Memory Access (DMA) peripheral:
   *           + Initialization and de-initialization functions
   *           + IO operation functions
   *           + Peripheral State and errors functions
-  @verbatim     
+  @verbatim
   ==============================================================================
                         ##### How to use this driver #####
   ==============================================================================
   [..]
    (#) Enable and configure the peripheral to be connected to the DMA Stream
-       (except for internal SRAM/FLASH memories: no initialization is 
+       (except for internal SRAM/FLASH memories: no initialization is
        necessary) please refer to Reference manual for connection between peripherals
        and DMA requests.
 
    (#) For a given Stream, program the required configuration through the following parameters:
-       Transfer Direction, Source and Destination data formats, 
-       Circular, Normal or peripheral flow control mode, Stream Priority level, 
-       Source and Destination Increment mode, FIFO mode and its Threshold (if needed), 
+       Transfer Direction, Source and Destination data formats,
+       Circular, Normal or peripheral flow control mode, Stream Priority level,
+       Source and Destination Increment mode, FIFO mode and its Threshold (if needed),
        Burst mode for Source and/or Destination (if needed) using DAL_DMA_Init() function.
 
    -@-   Prior to DAL_DMA_Init() the clock must be enabled for DMA through the following macros:
@@ -30,9 +30,9 @@
      *** Polling mode IO operation ***
      =================================
     [..]
-          (+) Use DAL_DMA_Start() to start DMA transfer after the configuration of Source 
+          (+) Use DAL_DMA_Start() to start DMA transfer after the configuration of Source
               address and destination address and the Length of data to be transferred.
-          (+) Use DAL_DMA_PollForTransfer() to poll for the end of current transfer, in this  
+          (+) Use DAL_DMA_PollForTransfer() to poll for the end of current transfer, in this
               case a fixed Timeout can be configured by User depending from his application.
           (+) Use DAL_DMA_Abort() function to abort the current transfer.
 
@@ -40,16 +40,16 @@
      ===================================
     [..]
           (+) Configure the DMA interrupt priority using DAL_NVIC_SetPriority()
-          (+) Enable the DMA IRQ handler using DAL_NVIC_EnableIRQ() 
-          (+) Use DAL_DMA_Start_IT() to start DMA transfer after the configuration of  
-              Source address and destination address and the Length of data to be transferred. In this 
-              case the DMA interrupt is configured 
+          (+) Enable the DMA IRQ handler using DAL_NVIC_EnableIRQ()
+          (+) Use DAL_DMA_Start_IT() to start DMA transfer after the configuration of
+              Source address and destination address and the Length of data to be transferred. In this
+              case the DMA interrupt is configured
           (+) Use DAL_DMA_IRQHandler() called under DMA_IRQHandler() Interrupt subroutine
-          (+) At the end of data transfer DAL_DMA_IRQHandler() function is executed and user can 
-              add his own function by customization of function pointer XferCpltCallback and 
+          (+) At the end of data transfer DAL_DMA_IRQHandler() function is executed and user can
+              add his own function by customization of function pointer XferCpltCallback and
               XferErrorCallback (i.e a member of DMA handle structure).
     [..]
-     (#) Use DAL_DMA_GetState() function to return the DMA state and DAL_DMA_GetError() in case of error 
+     (#) Use DAL_DMA_GetState() function to return the DMA state and DAL_DMA_GetError() in case of error
          detection.
 
      (#) Use DAL_DMA_Abort_IT() function to abort the current transfer
@@ -70,10 +70,10 @@
      =============================================
      [..]
        Below the list of most used macros in DMA DAL driver.
-       
+
       (+) __DAL_DMA_ENABLE: Enable the specified DMA Stream.
       (+) __DAL_DMA_DISABLE: Disable the specified DMA Stream.
-      (+) __DAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Stream interrupt has occurred or not. 
+      (+) __DAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Stream interrupt has occurred or not.
 
      [..]
       (@) You can refer to the DMA DAL driver header file for more useful macros
@@ -82,7 +82,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -104,19 +104,15 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   *
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_dal.h"
@@ -155,12 +151,15 @@ typedef struct
   * @{
   */
 static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 static uint32_t DMA_CalcBaseAndBitshift(DMA_HandleTypeDef *hdma);
 static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}
-  */  
+  */
 
 /* Exported functions ---------------------------------------------------------*/
 /** @addtogroup DMA_Exported_Functions
@@ -175,7 +174,7 @@ static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma);
  ===============================================================================
     [..]
     This section provides functions allowing to initialize the DMA Stream source
-    and destination addresses, incrementation and data sizes, transfer direction, 
+    and destination addresses, incrementation and data sizes, transfer direction,
     circular/normal mode selection, memory-to-memory mode selection and Stream priority value.
     [..]
     The DAL_DMA_Init() function follows the DMA configuration procedures as described in
@@ -184,19 +183,19 @@ static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma);
 @endverbatim
   * @{
   */
-  
+
 /**
   * @brief  Initialize the DMA according to the specified
   *         parameters in the DMA_InitTypeDef and create the associated handle.
   * @param  hdma Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA Stream.  
+  *               the configuration information for the specified DMA Stream.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
 {
   uint32_t tmp = 0U;
   uint32_t tickstart = DAL_GetTick();
-  DMA_Base_Registers *regs;
+  DMA_Base_Registers *regs = NULL;
 
   /* Check the DMA peripheral state */
   if(hdma == NULL)
@@ -205,8 +204,12 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
   }
 
   /* Check the parameters */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   ASSERT_PARAM(IS_DMA_STREAM_ALL_INSTANCE(hdma->Instance));
-  ASSERT_PARAM(IS_DMA_CHANNEL(hdma->Init.Channel));
+#else
+  ASSERT_PARAM(IS_DMA_ALL_INSTANCE(hdma->Instance));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   ASSERT_PARAM(IS_DMA_DIRECTION(hdma->Init.Direction));
   ASSERT_PARAM(IS_DMA_PERIPHERAL_INC_STATE(hdma->Init.PeriphInc));
   ASSERT_PARAM(IS_DMA_MEMORY_INC_STATE(hdma->Init.MemInc));
@@ -214,6 +217,9 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
   ASSERT_PARAM(IS_DMA_MEMORY_DATA_SIZE(hdma->Init.MemDataAlignment));
   ASSERT_PARAM(IS_DMA_MODE(hdma->Init.Mode));
   ASSERT_PARAM(IS_DMA_PRIORITY(hdma->Init.Priority));
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
+  ASSERT_PARAM(IS_DMA_CHANNEL(hdma->Init.Channel));
   ASSERT_PARAM(IS_DMA_FIFO_MODE_STATE(hdma->Init.FIFOMode));
   /* Check the memory burst, peripheral burst and FIFO threshold parameters only
      when FIFO mode is enabled */
@@ -229,10 +235,10 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
 
   /* Allocate lock resource */
   __DAL_UNLOCK(hdma);
-  
+
   /* Disable the peripheral */
   __DAL_DMA_DISABLE(hdma);
-  
+
   /* Check if the DMA Stream is effectively disabled */
   while((hdma->Instance->SCFG & DMA_SCFGx_EN) != RESET)
   {
@@ -241,14 +247,14 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
     {
       /* Update error code */
       hdma->ErrorCode = DAL_DMA_ERROR_TIMEOUT;
-      
+
       /* Change the DMA state */
       hdma->State = DAL_DMA_STATE_TIMEOUT;
-      
+
       return DAL_TIMEOUT;
     }
   }
-  
+
   /* Get the SCFG register value */
   tmp = hdma->Instance->SCFG;
 
@@ -270,9 +276,9 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
     /* Get memory burst and peripheral burst */
     tmp |=  hdma->Init.MemBurst | hdma->Init.PeriphBurst;
   }
-  
+
   /* Write to DMA Stream SCFG register */
-  hdma->Instance->SCFG = tmp;  
+  hdma->Instance->SCFG = tmp;
 
   /* Get the FCTRL register value */
   tmp = hdma->Instance->FCTRL;
@@ -288,7 +294,7 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
   {
     /* Get the FIFO threshold */
     tmp |= hdma->Init.FIFOThreshold;
-    
+
     /* Check compatibility between FIFO threshold level and size of the memory burst */
     /* for INCR4, INCR8, INCR16 bursts */
     if (hdma->Init.MemBurst != DMA_MBURST_SINGLE)
@@ -297,28 +303,69 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
       {
         /* Update error code */
         hdma->ErrorCode = DAL_DMA_ERROR_PARAM;
-        
+
         /* Change the DMA state */
         hdma->State = DAL_DMA_STATE_READY;
-        
-        return DAL_ERROR; 
+
+        return DAL_ERROR;
       }
     }
   }
-  
+
   /* Write to DMA Stream FCTRL */
   hdma->Instance->FCTRL = tmp;
 
   /* Initialize StreamBaseAddress and StreamIndex parameters to be used to calculate
      DMA steam Base Address needed by DAL_DMA_IRQHandler() and DAL_DMA_PollForTransfer() */
   regs = (DMA_Base_Registers *)DMA_CalcBaseAndBitshift(hdma);
-  
+
   /* Clear all interrupt flags */
   regs->IFCR = 0x3FU << hdma->StreamIndex;
+#else
+  UNUSED(regs);
+  UNUSED(tickstart);
+
+  /* calculation of the channel index */
+  if ((uint32_t)(hdma->Instance) < (uint32_t)(DMA2_Channel1))
+  {
+    /* DMA1 */
+    hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA1_Channel1) / ((uint32_t)DMA1_Channel2 - (uint32_t)DMA1_Channel1)) << 2;
+    hdma->DmaBaseAddress = DMA1;
+  }
+  else
+  {
+    /* DMA2 */
+    hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA2_Channel1) / ((uint32_t)DMA2_Channel2 - (uint32_t)DMA2_Channel1)) << 2;
+    hdma->DmaBaseAddress = DMA2;
+  }
+
+  /* Change DMA peripheral state */
+  hdma->State = DAL_DMA_STATE_BUSY;
+
+  /* Get the CHCFG register value */
+  tmp = hdma->Instance->CHCFG;
+
+  /* Clear CHPL, MEMSIZE, PERSIZE, MIMODE, PERIMODE, CIRMODE and DIRCFG bits */
+  tmp &= ((uint32_t)~(DMA_CHCFG_CHPL    | DMA_CHCFG_MEMSIZE    | DMA_CHCFG_PERSIZE   | \
+                      DMA_CHCFG_MIMODE  | DMA_CHCFG_PERIMODE   | DMA_CHCFG_CIRMODE   | \
+                      DMA_CHCFG_DIRCFG));
+
+  /* Prepare the DMA Channel configuration */
+  tmp |=  hdma->Init.Direction           |
+          hdma->Init.PeriphInc           | hdma->Init.MemInc           |
+          hdma->Init.PeriphDataAlignment | hdma->Init.MemDataAlignment |
+          hdma->Init.Mode                | hdma->Init.Priority;
+
+  /* Write to DMA Channel CHCFG register */
+  hdma->Instance->CHCFG = tmp;
+
+  /* Allocate lock resource */
+  __DAL_UNLOCK(hdma);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx ||APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Initialize the error code */
   hdma->ErrorCode = DAL_DMA_ERROR_NONE;
-                                                                                     
+
   /* Initialize the DMA state */
   hdma->State = DAL_DMA_STATE_READY;
 
@@ -326,21 +373,21 @@ DAL_StatusTypeDef DAL_DMA_Init(DMA_HandleTypeDef *hdma)
 }
 
 /**
-  * @brief  DeInitializes the DMA peripheral 
+  * @brief  DeInitializes the DMA peripheral
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA Stream.  
+  *               the configuration information for the specified DMA Stream.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
 {
-  DMA_Base_Registers *regs;
+  DMA_Base_Registers *regs = NULL;
 
   /* Check the DMA peripheral state */
   if(hdma == NULL)
   {
     return DAL_ERROR;
   }
-  
+
   /* Check the DMA peripheral state */
   if(hdma->State == DAL_DMA_STATE_BUSY)
   {
@@ -349,11 +396,18 @@ DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
   }
 
   /* Check the parameters */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   ASSERT_PARAM(IS_DMA_STREAM_ALL_INSTANCE(hdma->Instance));
+#else
+  ASSERT_PARAM(IS_DMA_ALL_INSTANCE(hdma->Instance));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Disable the selected DMA Streamx */
   __DAL_DMA_DISABLE(hdma);
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   /* Reset DMA Streamx control register */
   hdma->Instance->SCFG   = 0U;
 
@@ -365,16 +419,16 @@ DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
 
   /* Reset DMA Streamx memory 0 address register */
   hdma->Instance->M0ADDR = 0U;
-  
+
   /* Reset DMA Streamx memory 1 address register */
   hdma->Instance->M1ADDR = 0U;
-  
+
   /* Reset DMA Streamx FIFO control register */
   hdma->Instance->FCTRL  = 0x00000021U;
-  
-  /* Get DMA steam Base Address */  
+
+  /* Get DMA steam Base Address */
   regs = (DMA_Base_Registers *)DMA_CalcBaseAndBitshift(hdma);
-  
+
   /* Clean all callbacks */
   hdma->XferCpltCallback = NULL;
   hdma->XferHalfCpltCallback = NULL;
@@ -385,7 +439,44 @@ DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
 
   /* Clear all interrupt flags at correct offset within the register */
   regs->IFCR = 0x3FU << hdma->StreamIndex;
+#else
+  (void)regs;
 
+  /* Reset DMA Channel control register */
+  hdma->Instance->CHCFG  = 0U;
+
+  /* Reset DMA Channel Number of Data to Transfer register */
+  hdma->Instance->CHNDATA = 0U;
+
+  /* Reset DMA Channel peripheral address register */
+  hdma->Instance->CHPADDR  = 0U;
+
+  /* Reset DMA Channel memory address register */
+  hdma->Instance->CHMADDR = 0U;
+
+  /* calculation of the channel index */
+  if ((uint32_t)(hdma->Instance) < (uint32_t)(DMA2_Channel1))
+  {
+    /* DMA1 */
+    hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA1_Channel1) / ((uint32_t)DMA1_Channel2 - (uint32_t)DMA1_Channel1)) << 2;
+    hdma->DmaBaseAddress = DMA1;
+  }
+  else
+  {
+    /* DMA2 */
+    hdma->ChannelIndex = (((uint32_t)hdma->Instance - (uint32_t)DMA2_Channel1) / ((uint32_t)DMA2_Channel2 - (uint32_t)DMA2_Channel1)) << 2;
+    hdma->DmaBaseAddress = DMA2;
+  }
+
+  /* Clear all flags */
+  hdma->DmaBaseAddress->INTFCLR = (DMA_INTFCLR_GINTCLR1 << (hdma->ChannelIndex));
+
+  /* Clean all callbacks */
+  hdma->XferCpltCallback = NULL;
+  hdma->XferHalfCpltCallback = NULL;
+  hdma->XferErrorCallback = NULL;
+  hdma->XferAbortCallback = NULL;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx ||APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   /* Reset the error code */
   hdma->ErrorCode = DAL_DMA_ERROR_NONE;
 
@@ -404,17 +495,17 @@ DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
 
 /** @addtogroup DMA_Exported_Functions_Group2
   *
-@verbatim   
+@verbatim
  ===============================================================================
                       #####  IO operation functions  #####
  ===============================================================================
     [..]  This section provides functions allowing to:
       (+) Configure the source, destination address and data length and Start DMA transfer
-      (+) Configure the source, destination address and data length and 
+      (+) Configure the source, destination address and data length and
           Start DMA transfer with interrupt
       (+) Abort DMA transfer
       (+) Poll for transfer complete
-      (+) Handle DMA interrupt request  
+      (+) Handle DMA interrupt request
 
 @endverbatim
   * @{
@@ -432,7 +523,7 @@ DAL_StatusTypeDef DAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
 DAL_StatusTypeDef DAL_DMA_Start(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
 {
   DAL_StatusTypeDef status = DAL_OK;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_DMA_BUFFER_SIZE(DataLength));
 
@@ -443,10 +534,10 @@ DAL_StatusTypeDef DAL_DMA_Start(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, ui
   {
     /* Change DMA peripheral state */
     hdma->State = DAL_DMA_STATE_BUSY;
-    
+
     /* Initialize the error code */
     hdma->ErrorCode = DAL_DMA_ERROR_NONE;
-    
+
     /* Configure the source, destination address and the data length */
     DMA_SetConfig(hdma, SrcAddress, DstAddress, DataLength);
 
@@ -457,17 +548,17 @@ DAL_StatusTypeDef DAL_DMA_Start(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, ui
   {
     /* Process unlocked */
     __DAL_UNLOCK(hdma);
-    
+
     /* Return error status */
     status = DAL_BUSY;
-  } 
-  return status; 
+  }
+  return status;
 }
 
 /**
   * @brief  Start the DMA Transfer with interrupt enabled.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
   * @param  DataLength The length of data to be transferred from source to destination
@@ -475,51 +566,66 @@ DAL_StatusTypeDef DAL_DMA_Start(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, ui
   */
 DAL_StatusTypeDef DAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
 {
+  DMA_Base_Registers *regs = NULL;
+
   DAL_StatusTypeDef status = DAL_OK;
 
-  /* calculate DMA base and stream number */
-  DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-  
   /* Check the parameters */
   ASSERT_PARAM(IS_DMA_BUFFER_SIZE(DataLength));
- 
+
   /* Process locked */
   __DAL_LOCK(hdma);
-  
+
   if(DAL_DMA_STATE_READY == hdma->State)
   {
     /* Change DMA peripheral state */
     hdma->State = DAL_DMA_STATE_BUSY;
-    
+
     /* Initialize the error code */
     hdma->ErrorCode = DAL_DMA_ERROR_NONE;
-    
+
     /* Configure the source, destination address and the data length */
     DMA_SetConfig(hdma, SrcAddress, DstAddress, DataLength);
-    
+
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
+    regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
     /* Clear all interrupt flags at correct offset within the register */
     regs->IFCR = 0x3FU << hdma->StreamIndex;
-    
+
     /* Enable Common interrupts*/
     hdma->Instance->SCFG  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
-    
+
     if(hdma->XferHalfCpltCallback != NULL)
     {
       hdma->Instance->SCFG  |= DMA_IT_HT;
     }
-    
+#else
+    (void)regs;
+
+    hdma->DmaBaseAddress->INTFCLR = DMA_INTFCLR_GINTCLR1 << (hdma->ChannelIndex);
+
+    /* Enable Common interrupts*/
+    hdma->Instance->CHCFG  |= DMA_IT_TC | DMA_IT_TE;
+
+    if(hdma->XferHalfCpltCallback != NULL)
+    {
+      hdma->Instance->CHCFG  |= DMA_IT_HT;
+    }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
     /* Enable the Peripheral */
     __DAL_DMA_ENABLE(hdma);
   }
   else
   {
     /* Process unlocked */
-    __DAL_UNLOCK(hdma);	  
-    
+    __DAL_UNLOCK(hdma);
+
     /* Return error status */
     status = DAL_BUSY;
   }
-  
+
   return status;
 }
 
@@ -527,44 +633,45 @@ DAL_StatusTypeDef DAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress,
   * @brief  Aborts the DMA Transfer.
   * @param  hdma   pointer to a DMA_HandleTypeDef structure that contains
   *                 the configuration information for the specified DMA Stream.
-  *                   
-  * @note  After disabling a DMA Stream, a check for wait until the DMA Stream is 
-  *        effectively disabled is added. If a Stream is disabled 
+  *
+  * @note  After disabling a DMA Stream, a check for wait until the DMA Stream is
+  *        effectively disabled is added. If a Stream is disabled
   *        while a data transfer is ongoing, the current data will be transferred
   *        and the Stream will be effectively disabled only after the transfer of
-  *        this single data is finished.  
+  *        this single data is finished.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 {
-  /* calculate DMA base and stream number */
-  DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
-  
+  DMA_Base_Registers *regs = NULL;
+
   uint32_t tickstart = DAL_GetTick();
-  
+
   if(hdma->State != DAL_DMA_STATE_BUSY)
   {
     hdma->ErrorCode = DAL_DMA_ERROR_NO_XFER;
-    
+
     /* Process Unlocked */
     __DAL_UNLOCK(hdma);
-    
+
     return DAL_ERROR;
   }
   else
   {
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     /* Disable all the transfer interrupts */
     hdma->Instance->SCFG  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
     hdma->Instance->FCTRL &= ~(DMA_IT_FE);
-    
+
     if((hdma->XferHalfCpltCallback != NULL) || (hdma->XferM1HalfCpltCallback != NULL))
     {
       hdma->Instance->SCFG  &= ~(DMA_IT_HT);
     }
-    
+
     /* Disable the stream */
     __DAL_DMA_DISABLE(hdma);
-    
+
     /* Check if the DMA Stream is effectively disabled */
     while((hdma->Instance->SCFG & DMA_SCFGx_EN) != RESET)
     {
@@ -573,23 +680,38 @@ DAL_StatusTypeDef DAL_DMA_Abort(DMA_HandleTypeDef *hdma)
       {
         /* Update error code */
         hdma->ErrorCode = DAL_DMA_ERROR_TIMEOUT;
-        
+
         /* Change the DMA state */
         hdma->State = DAL_DMA_STATE_TIMEOUT;
-        
+
         /* Process Unlocked */
         __DAL_UNLOCK(hdma);
-        
+
         return DAL_TIMEOUT;
       }
     }
-    
+    /* calculate DMA base and stream number */
+    regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
+
     /* Clear all interrupt flags at correct offset within the register */
     regs->IFCR = 0x3FU << hdma->StreamIndex;
-    
+#else
+    (void)regs;
+    UNUSED(tickstart);
+
+    /* Disable DMA IT */
+    __DAL_DMA_DISABLE_IT(hdma, (DMA_IT_TC | DMA_IT_HT | DMA_IT_TE));
+
+    /* Disable the channel */
+    __DAL_DMA_DISABLE(hdma);
+
+    /* Clear all flags */
+    hdma->DmaBaseAddress->INTFCLR = DMA_INTFCLR_GINTCLR1 << (hdma->ChannelIndex);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
     /* Change the DMA state*/
     hdma->State = DAL_DMA_STATE_READY;
-    
+
     /* Process Unlocked */
     __DAL_UNLOCK(hdma);
   }
@@ -613,7 +735,7 @@ DAL_StatusTypeDef DAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
   {
     /* Set Abort State  */
     hdma->State = DAL_DMA_STATE_ABORT;
-    
+
     /* Disable the stream */
     __DAL_DMA_DISABLE(hdma);
   }
@@ -628,19 +750,19 @@ DAL_StatusTypeDef DAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
   * @param  CompleteLevel Specifies the DMA level complete.
   * @note   The polling mode is kept in this version for legacy. it is recommended to use the IT model instead.
   *         This model could be used for debug purpose.
-  * @note   The DAL_DMA_PollForTransfer API cannot be used in circular and double buffering mode (automatic circular mode). 
+  * @note   The DAL_DMA_PollForTransfer API cannot be used in circular and double buffering mode (automatic circular mode).
   * @param  Timeout       Timeout duration.
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_LevelCompleteTypeDef CompleteLevel, uint32_t Timeout)
 {
-  DAL_StatusTypeDef status = DAL_OK; 
+  DAL_StatusTypeDef status = DAL_OK;
   uint32_t mask_cpltlevel;
-  uint32_t tickstart = DAL_GetTick(); 
+  uint32_t tickstart = DAL_GetTick();
   uint32_t tmpisr;
-  
+
   /* calculate DMA base and stream number */
-  DMA_Base_Registers *regs;
+  DMA_Base_Registers *regs = NULL;
 
   if(DAL_DMA_STATE_BUSY != hdma->State)
   {
@@ -650,13 +772,15 @@ DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_Level
     return DAL_ERROR;
   }
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   /* Polling mode not supported in circular mode and double buffering mode */
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) != RESET)
   {
     hdma->ErrorCode = DAL_DMA_ERROR_NOT_SUPPORTED;
     return DAL_ERROR;
   }
-  
+
   /* Get the level transfer complete flag */
   if(CompleteLevel == DAL_DMA_FULL_TRANSFER)
   {
@@ -668,10 +792,34 @@ DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_Level
     /* Half Transfer Complete flag */
     mask_cpltlevel = DMA_FLAG_HTIF0_4 << hdma->StreamIndex;
   }
-  
+
   regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
   tmpisr = regs->ISR;
-  
+#else
+  (void)regs;
+  UNUSED(tickstart);
+
+  /* Polling mode not supported in circular mode */
+  if (RESET != (hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE))
+  {
+    hdma->ErrorCode = DAL_DMA_ERROR_NOT_SUPPORTED;
+    return DAL_ERROR;
+  }
+
+  /* Get the level transfer complete flag */
+  if(CompleteLevel == DAL_DMA_FULL_TRANSFER)
+  {
+    /* Transfer Complete flag */
+    mask_cpltlevel = __DAL_DMA_GET_TC_FLAG_INDEX(hdma);
+  }
+  else
+  {
+    /* Half Transfer Complete flag */
+    mask_cpltlevel = __DAL_DMA_GET_HT_FLAG_INDEX(hdma);
+  }
+  tmpisr = hdma->DmaBaseAddress->INTSTS;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   while(((tmpisr & mask_cpltlevel) == RESET) && ((hdma->ErrorCode & DAL_DMA_ERROR_TE) == RESET))
   {
     /* Check for the Timeout (Not applicable in circular mode)*/
@@ -681,17 +829,19 @@ DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_Level
       {
         /* Update error code */
         hdma->ErrorCode = DAL_DMA_ERROR_TIMEOUT;
-        
+
         /* Change the DMA state */
         hdma->State = DAL_DMA_STATE_READY;
-        
+
         /* Process Unlocked */
         __DAL_UNLOCK(hdma);
-        
+
         return DAL_TIMEOUT;
       }
     }
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     /* Get the ISR register value */
     tmpisr = regs->ISR;
 
@@ -699,39 +849,53 @@ DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_Level
     {
       /* Update error code */
       hdma->ErrorCode |= DAL_DMA_ERROR_TE;
-      
+
       /* Clear the transfer error flag */
       regs->IFCR = DMA_FLAG_TEIF0_4 << hdma->StreamIndex;
     }
-    
+
     if((tmpisr & (DMA_FLAG_FEIF0_4 << hdma->StreamIndex)) != RESET)
     {
       /* Update error code */
       hdma->ErrorCode |= DAL_DMA_ERROR_FE;
-      
+
       /* Clear the FIFO error flag */
       regs->IFCR = DMA_FLAG_FEIF0_4 << hdma->StreamIndex;
     }
-    
+
     if((tmpisr & (DMA_FLAG_DMEIF0_4 << hdma->StreamIndex)) != RESET)
     {
       /* Update error code */
       hdma->ErrorCode |= DAL_DMA_ERROR_DME;
-      
+
       /* Clear the Direct Mode error flag */
       regs->IFCR = DMA_FLAG_DMEIF0_4 << hdma->StreamIndex;
     }
+#else
+    tmpisr = hdma->DmaBaseAddress->INTSTS;
+    if((tmpisr & (DMA_INTFCLR_TERRCLR1 << hdma->ChannelIndex)) != RESET)
+    {
+      /* Update error code */
+      hdma->ErrorCode |= DAL_DMA_ERROR_TE;
+
+      /* Clear the transfer error flag */
+      hdma->DmaBaseAddress->INTFCLR = DMA_INTFCLR_TERRCLR1 << hdma->ChannelIndex;
+    }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   }
-  
+
   if(hdma->ErrorCode != DAL_DMA_ERROR_NONE)
   {
     if((hdma->ErrorCode & DAL_DMA_ERROR_TE) != RESET)
     {
       DAL_DMA_Abort(hdma);
-    
+
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
       /* Clear the half transfer and transfer complete flags */
       regs->IFCR = (DMA_FLAG_HTIF0_4 | DMA_FLAG_TCIF0_4) << hdma->StreamIndex;
-    
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
       /* Change the DMA state */
       hdma->State= DAL_DMA_STATE_READY;
 
@@ -741,31 +905,43 @@ DAL_StatusTypeDef DAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, DAL_DMA_Level
       return DAL_ERROR;
    }
   }
-  
+
   /* Get the level transfer complete flag */
   if(CompleteLevel == DAL_DMA_FULL_TRANSFER)
   {
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     /* Clear the half transfer and transfer complete flags */
     regs->IFCR = (DMA_FLAG_HTIF0_4 | DMA_FLAG_TCIF0_4) << hdma->StreamIndex;
-    
+#else
+    /* Clear the transfer complete flag */
+    __DAL_DMA_CLEAR_FLAG(hdma, __DAL_DMA_GET_TC_FLAG_INDEX(hdma));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
     hdma->State = DAL_DMA_STATE_READY;
-    
+
     /* Process Unlocked */
     __DAL_UNLOCK(hdma);
   }
   else
   {
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     /* Clear the half transfer and transfer complete flags */
     regs->IFCR = (DMA_FLAG_HTIF0_4) << hdma->StreamIndex;
+#else
+    /* Clear the transfer complete flag */
+    __DAL_DMA_CLEAR_FLAG(hdma, __DAL_DMA_GET_HT_FLAG_INDEX(hdma));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   }
-  
+
   return status;
 }
 
 /**
   * @brief  Handles DMA interrupt request.
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA Stream.  
+  *               the configuration information for the specified DMA Stream.
   * @retval None
   */
 void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
@@ -774,6 +950,8 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
   __IO uint32_t count = 0U;
   uint32_t timeout = SystemCoreClock / 9600U;
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   /* calculate DMA base and stream number */
   DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
 
@@ -786,10 +964,10 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
     {
       /* Disable the transfer error interrupt */
       hdma->Instance->SCFG  &= ~(DMA_IT_TE);
-      
+
       /* Clear the transfer error flag */
       regs->IFCR = DMA_FLAG_TEIF0_4 << hdma->StreamIndex;
-      
+
       /* Update error code */
       hdma->ErrorCode |= DAL_DMA_ERROR_TE;
     }
@@ -825,7 +1003,7 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
     {
       /* Clear the half transfer complete flag */
       regs->IFCR = DMA_FLAG_HTIF0_4 << hdma->StreamIndex;
-      
+
       /* Multi_Buffering mode enabled */
       if(((hdma->Instance->SCFG) & (uint32_t)(DMA_SCFGx_DBM)) != RESET)
       {
@@ -856,7 +1034,7 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
           /* Disable the half transfer interrupt */
           hdma->Instance->SCFG  &= ~(DMA_IT_HT);
         }
-        
+
         if(hdma->XferHalfCpltCallback != NULL)
         {
           /* Half transfer callback */
@@ -872,13 +1050,13 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
     {
       /* Clear the transfer complete flag */
       regs->IFCR = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
-      
+
       if(DAL_DMA_STATE_ABORT == hdma->State)
       {
         /* Disable all the transfer interrupts */
         hdma->Instance->SCFG  &= ~(DMA_IT_TC | DMA_IT_TE | DMA_IT_DME);
         hdma->Instance->FCTRL &= ~(DMA_IT_FE);
-        
+
         if((hdma->XferHalfCpltCallback != NULL) || (hdma->XferM1HalfCpltCallback != NULL))
         {
           hdma->Instance->SCFG  &= ~(DMA_IT_HT);
@@ -944,7 +1122,97 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
       }
     }
   }
-  
+#else
+  tmpisr = hdma->DmaBaseAddress->INTSTS;
+
+  /* Transfer Error Interrupt management ***************************************/
+  if ((tmpisr & (DMA_FLAG_TE1 << hdma->ChannelIndex)) != RESET)
+  {
+    if(__DAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET)
+    {
+      /* Disable the transfer error interrupt */
+      hdma->Instance->CHCFG  &= ~(DMA_IT_TE);
+
+      /* Clear the transfer error flag */
+      hdma->DmaBaseAddress->INTFCLR = DMA_FLAG_TE1 << hdma->ChannelIndex;
+
+      /* Update error code */
+      hdma->ErrorCode |= DAL_DMA_ERROR_TE;
+    }
+  }
+  /* Half Transfer Complete Interrupt management ******************************/
+  if ((tmpisr & (DMA_FLAG_HT1 << hdma->ChannelIndex)) != RESET)
+  {
+    if(__DAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_HT) != RESET)
+    {
+      /* Clear the half transfer complete flag */
+      hdma->DmaBaseAddress->INTFCLR = DMA_FLAG_HT1 << hdma->ChannelIndex;
+
+      /* Disable the half transfer interrupt if the DMA mode is not CIRCULAR */
+      if((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == RESET)
+      {
+        /* Disable the half transfer interrupt */
+        hdma->Instance->CHCFG  &= ~(DMA_IT_HT);
+      }
+      if(hdma->XferHalfCpltCallback != NULL)
+      {
+        /* Half transfer callback */
+        hdma->XferHalfCpltCallback(hdma);
+      }
+    }
+  }
+  /* Transfer Complete Interrupt management ***********************************/
+  if ((tmpisr & (DMA_FLAG_TC1 << hdma->ChannelIndex)) != RESET)
+  {
+    if(__DAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TC) != RESET)
+    {
+      /* Clear the transfer complete flag */
+      hdma->DmaBaseAddress->INTFCLR = DMA_FLAG_TC1 << hdma->ChannelIndex;
+
+      if(DAL_DMA_STATE_ABORT == hdma->State)
+      {
+        /* Disable all the transfer interrupts */
+        hdma->Instance->CHCFG  &= ~(DMA_IT_TC | DMA_IT_TE);
+
+        if((hdma->XferHalfCpltCallback != NULL))
+        {
+          hdma->Instance->CHCFG  &= ~(DMA_IT_HT);
+        }
+
+        /* Clear all interrupt flags at correct offset within the register */
+        hdma->DmaBaseAddress->INTFCLR = DMA_FLAG_GL1 << hdma->ChannelIndex;
+
+        /* Change the DMA state */
+        hdma->State = DAL_DMA_STATE_READY;
+
+        /* Process Unlocked */
+        __DAL_UNLOCK(hdma);
+
+        if(hdma->XferAbortCallback != NULL)
+        {
+          hdma->XferAbortCallback(hdma);
+        }
+        return;
+      }
+
+      if((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == RESET)
+      {
+        /* Disable the transfer complete interrupt */
+        hdma->Instance->CHCFG  &= ~(DMA_IT_TC);
+        /* Change the DMA state */
+        hdma->State = DAL_DMA_STATE_READY;
+        /* Process Unlocked */
+        __DAL_UNLOCK(hdma);
+      }
+      if(hdma->XferCpltCallback != NULL)
+      {
+        /* Transfer complete callback */
+        hdma->XferCpltCallback(hdma);
+      }
+    }
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
   /* manage error case */
   if(hdma->ErrorCode != DAL_DMA_ERROR_NONE)
   {
@@ -962,7 +1230,12 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
           break;
         }
       }
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
       while((hdma->Instance->SCFG & DMA_SCFGx_EN) != RESET);
+#else
+      while((hdma->Instance->CHCFG & DMA_CHCFG_CHEN) != RESET);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
       /* Change the DMA state */
       hdma->State = DAL_DMA_STATE_READY;
@@ -985,10 +1258,10 @@ void DAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
   *                               the configuration information for the specified DMA Stream.
   * @param  CallbackID           User Callback identifier
   *                               a DMA_HandleTypeDef structure as parameter.
-  * @param  pCallback            pointer to private callback function which has pointer to 
+  * @param  pCallback            pointer to private callback function which has pointer to
   *                               a DMA_HandleTypeDef structure as parameter.
   * @retval DAL status
-  */                      
+  */
 DAL_StatusTypeDef DAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_CallbackIDTypeDef CallbackID, void (* pCallback)(DMA_HandleTypeDef *_hdma))
 {
 
@@ -1009,6 +1282,8 @@ DAL_StatusTypeDef DAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Call
       hdma->XferHalfCpltCallback = pCallback;
       break;
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     case  DAL_DMA_XFER_M1CPLT_CB_ID:
       hdma->XferM1CpltCallback = pCallback;
       break;
@@ -1016,6 +1291,7 @@ DAL_StatusTypeDef DAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Call
     case  DAL_DMA_XFER_M1HALFCPLT_CB_ID:
       hdma->XferM1HalfCpltCallback = pCallback;
       break;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
     case  DAL_DMA_XFER_ERROR_CB_ID:
       hdma->XferErrorCallback = pCallback;
@@ -1039,7 +1315,7 @@ DAL_StatusTypeDef DAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Call
 
   /* Release Lock */
   __DAL_UNLOCK(hdma);
-  
+
   return status;
 }
 
@@ -1050,14 +1326,14 @@ DAL_StatusTypeDef DAL_DMA_RegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Call
   * @param  CallbackID           User Callback identifier
   *                               a DAL_DMA_CallbackIDTypeDef ENUM as parameter.
   * @retval DAL status
-  */              
+  */
 DAL_StatusTypeDef DAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_CallbackIDTypeDef CallbackID)
 {
   DAL_StatusTypeDef status = DAL_OK;
-  
+
   /* Process locked */
   __DAL_LOCK(hdma);
-  
+
   if(DAL_DMA_STATE_READY == hdma->State)
   {
     switch (CallbackID)
@@ -1065,27 +1341,38 @@ DAL_StatusTypeDef DAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Ca
     case  DAL_DMA_XFER_CPLT_CB_ID:
       hdma->XferCpltCallback = NULL;
       break;
-      
+
     case  DAL_DMA_XFER_HALFCPLT_CB_ID:
       hdma->XferHalfCpltCallback = NULL;
       break;
-      
+
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     case  DAL_DMA_XFER_M1CPLT_CB_ID:
       hdma->XferM1CpltCallback = NULL;
       break;
-      
+
     case  DAL_DMA_XFER_M1HALFCPLT_CB_ID:
       hdma->XferM1HalfCpltCallback = NULL;
       break;
-      
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
     case  DAL_DMA_XFER_ERROR_CB_ID:
       hdma->XferErrorCallback = NULL;
       break;
-      
+
     case  DAL_DMA_XFER_ABORT_CB_ID:
       hdma->XferAbortCallback = NULL;
-      break; 
-      
+      break;
+
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    case   DAL_DMA_XFER_ALL_CB_ID:
+      hdma->XferCpltCallback = NULL;
+      hdma->XferHalfCpltCallback = NULL;
+      hdma->XferErrorCallback = NULL;
+      hdma->XferAbortCallback = NULL;
+      break;
+#else
     case   DAL_DMA_XFER_ALL_CB_ID:
       hdma->XferCpltCallback = NULL;
       hdma->XferHalfCpltCallback = NULL;
@@ -1093,8 +1380,9 @@ DAL_StatusTypeDef DAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Ca
       hdma->XferM1HalfCpltCallback = NULL;
       hdma->XferErrorCallback = NULL;
       hdma->XferAbortCallback = NULL;
-      break; 
-      
+      break;
+#endif /* APM32F403xx || APM32F402xx */
+
     default:
       status = DAL_ERROR;
       break;
@@ -1104,10 +1392,10 @@ DAL_StatusTypeDef DAL_DMA_UnRegisterCallback(DMA_HandleTypeDef *hdma, DAL_DMA_Ca
   {
     status = DAL_ERROR;
   }
-  
+
   /* Release Lock */
   __DAL_UNLOCK(hdma);
-  
+
   return status;
 }
 
@@ -1175,6 +1463,8 @@ uint32_t DAL_DMA_GetError(DMA_HandleTypeDef *hdma)
   */
 static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
 {
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   /* Clear DBM bit */
   hdma->Instance->SCFG &= (uint32_t)(~DMA_SCFGx_DBM);
 
@@ -1199,22 +1489,50 @@ static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t
     /* Configure DMA Stream destination address */
     hdma->Instance->M0ADDR = DstAddress;
   }
+#else
+  /* Clear all flags */
+  hdma->DmaBaseAddress->INTFCLR = (DMA_FLAG_GL1 << hdma->ChannelIndex);
+
+  /* Configure DMA Channel data length */
+  hdma->Instance->CHNDATA = DataLength;
+
+  /* Memory to Peripheral */
+  if((hdma->Init.Direction) == DMA_MEMORY_TO_PERIPH)
+  {
+    /* Configure DMA Channel destination address */
+    hdma->Instance->CHPADDR = DstAddress;
+
+    /* Configure DMA Channel source address */
+    hdma->Instance->CHMADDR = SrcAddress;
+  }
+  /* Peripheral to Memory */
+  else
+  {
+    /* Configure DMA Channel source address */
+    hdma->Instance->CHPADDR = SrcAddress;
+
+    /* Configure DMA Channel destination address */
+    hdma->Instance->CHMADDR = DstAddress;
+  }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 }
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 /**
   * @brief  Returns the DMA Stream base address depending on stream number
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream. 
+  *                     the configuration information for the specified DMA Stream.
   * @retval Stream base address
   */
 static uint32_t DMA_CalcBaseAndBitshift(DMA_HandleTypeDef *hdma)
 {
   uint32_t stream_number = (((uint32_t)hdma->Instance & 0xFFU) - 16U) / 24U;
-  
+
   /* lookup table for necessary bitshift of flags within status registers */
   static const uint8_t flagBitshiftOffset[8U] = {0U, 6U, 16U, 22U, 0U, 6U, 16U, 22U};
   hdma->StreamIndex = flagBitshiftOffset[stream_number];
-  
+
   if (stream_number > 3U)
   {
     /* return pointer to HINTSTS and HIFCLR */
@@ -1225,21 +1543,21 @@ static uint32_t DMA_CalcBaseAndBitshift(DMA_HandleTypeDef *hdma)
     /* return pointer to LINTSTS and LIFCLR */
     hdma->StreamBaseAddress = ((uint32_t)hdma->Instance & (uint32_t)(~0x3FFU));
   }
-  
+
   return hdma->StreamBaseAddress;
 }
 
 /**
   * @brief  Check compatibility between FIFO threshold level and size of the memory burst
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream. 
+  *                     the configuration information for the specified DMA Stream.
   * @retval DAL status
   */
 static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma)
 {
   DAL_StatusTypeDef status = DAL_OK;
   uint32_t tmp = hdma->Init.FIFOThreshold;
-  
+
   /* Memory Data size equal to Byte */
   if(hdma->Init.MemDataAlignment == DMA_MDATAALIGN_BYTE)
   {
@@ -1264,7 +1582,7 @@ static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma)
       break;
     }
   }
-  
+
   /* Memory Data size equal to Half-Word */
   else if (hdma->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD)
   {
@@ -1285,12 +1603,12 @@ static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma)
       {
         status = DAL_ERROR;
       }
-      break;   
+      break;
     default:
       break;
     }
   }
-  
+
   /* Memory Data size equal to Word */
   else
   {
@@ -1310,10 +1628,11 @@ static DAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma)
     default:
       break;
     }
-  } 
-  
-  return status; 
+  }
+
+  return status;
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}

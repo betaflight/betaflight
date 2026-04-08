@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -97,13 +93,13 @@ extern "C" {
 /** @defgroup IWDT_DDL_EC_PRESCALER  Prescaler Divider
   * @{
   */
-#define DDL_IWDT_PSC_4                0x00000000U                           /*!< Divider by 4   */
-#define DDL_IWDT_PSC_8                (IWDT_PSC_PSC_0)                        /*!< Divider by 8   */
-#define DDL_IWDT_PSC_16               (IWDT_PSC_PSC_1)                        /*!< Divider by 16  */
-#define DDL_IWDT_PSC_32               (IWDT_PSC_PSC_1 | IWDT_PSC_PSC_0)         /*!< Divider by 32  */
-#define DDL_IWDT_PSC_64               (IWDT_PSC_PSC_2)                        /*!< Divider by 64  */
-#define DDL_IWDT_PSC_128              (IWDT_PSC_PSC_2 | IWDT_PSC_PSC_0)         /*!< Divider by 128 */
-#define DDL_IWDT_PSC_256              (IWDT_PSC_PSC_2 | IWDT_PSC_PSC_1)         /*!< Divider by 256 */
+#define DDL_IWDT_PSC_4                  0x00000000U                       /*!< Divider by 4   */
+#define DDL_IWDT_PSC_8                  (IWDT_PSC_PSC_0)                  /*!< Divider by 8   */
+#define DDL_IWDT_PSC_16                 (IWDT_PSC_PSC_1)                  /*!< Divider by 16  */
+#define DDL_IWDT_PSC_32                 (IWDT_PSC_PSC_1 | IWDT_PSC_PSC_0) /*!< Divider by 32  */
+#define DDL_IWDT_PSC_64                 (IWDT_PSC_PSC_2)                  /*!< Divider by 64  */
+#define DDL_IWDT_PSC_128                (IWDT_PSC_PSC_2 | IWDT_PSC_PSC_0) /*!< Divider by 128 */
+#define DDL_IWDT_PSC_256                (IWDT_PSC_PSC_2 | IWDT_PSC_PSC_1) /*!< Divider by 256 */
 /**
   * @}
   */

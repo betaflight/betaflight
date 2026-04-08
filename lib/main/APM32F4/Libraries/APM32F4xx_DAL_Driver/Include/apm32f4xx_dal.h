@@ -28,13 +28,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -92,6 +88,37 @@ typedef enum
 
 /** @brief  Freeze/Unfreeze Peripherals in Debug mode 
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/* Peripherals on APB1 */
+#define __DAL_DBGMCU_FREEZE_TMR2()           (DBGMCU->CFG, DBGMCU_CFG_TMR2_STS)
+#define __DAL_DBGMCU_FREEZE_TMR3()           (DBGMCU->CFG, DBGMCU_CFG_TMR3_STS)
+#define __DAL_DBGMCU_FREEZE_TMR4()           (DBGMCU->CFG, DBGMCU_CFG_TMR4_STS)
+#define __DAL_DBGMCU_FREEZE_TMR5()           (DBGMCU->CFG, DBGMCU_CFG_TMR5_STS)
+#define __DAL_DBGMCU_FREEZE_WWDT()           (DBGMCU->CFG, DBGMCU_CFG_WWDT_STS)
+#define __DAL_DBGMCU_FREEZE_IWDT()           (DBGMCU->CFG, DBGMCU_CFG_IWDT_STS)
+#define __DAL_DBGMCU_FREEZE_I2C1_TIMEOUT()   (DBGMCU->CFG, DBGMCU_CFG_I2C1_SMBUS_TIMEOUT_STS)
+#define __DAL_DBGMCU_FREEZE_CAN1()           (DBGMCU->CFG, DBGMCU_CFG_CAN1_STS)
+#define __DAL_DBGMCU_FREEZE_CAN2()           (DBGMCU->CFG, DBGMCU_CFG_CAN2_STS)
+
+/* Peripherals on APB2 */
+#define __DAL_DBGMCU_FREEZE_TMR1()           (DBGMCU->CFG, DBGMCU_CFG_TMR1_STS)
+#define __DAL_DBGMCU_FREEZE_TMR8()           (DBGMCU->CFG, DBGMCU_CFG_TMR8_STS)
+
+/* Peripherals on APB1 */
+#define __DAL_DBGMCU_UNFREEZE_TMR2()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR2_STS)
+#define __DAL_DBGMCU_UNFREEZE_TMR3()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR3_STS)
+#define __DAL_DBGMCU_UNFREEZE_TMR4()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR4_STS)
+#define __DAL_DBGMCU_UNFREEZE_TMR5()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR5_STS)
+#define __DAL_DBGMCU_UNFREEZE_WWDT()         (DBGMCU->CFG, ~DBGMCU_CFG_WWDT_STS)
+#define __DAL_DBGMCU_UNFREEZE_IWDT()         (DBGMCU->CFG, ~DBGMCU_CFG_IWDT_STS)
+#define __DAL_DBGMCU_UNFREEZE_I2C1_TIMEOUT() (DBGMCU->CFG, ~DBGMCU_CFG_I2C1_SMBUS_TIMEOUT_STS)
+#define __DAL_DBGMCU_UNFREEZE_CAN1()         (DBGMCU->CFG, ~DBGMCU_CFG_CAN1_STS)
+#define __DAL_DBGMCU_UNFREEZE_CAN2()         (DBGMCU->CFG, ~DBGMCU_CFG_CAN2_STS)
+
+/* Peripherals on APB2 */
+#define __DAL_DBGMCU_UNFREEZE_TMR1()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR1_STS)
+#define __DAL_DBGMCU_UNFREEZE_TMR8()         (DBGMCU->CFG, ~DBGMCU_CFG_TMR8_STS)
+#else
 #define __DAL_DBGMCU_FREEZE_TMR2()           (DBGMCU->APB1F |= (DBGMCU_APB1F_TMR2_STS))
 #define __DAL_DBGMCU_FREEZE_TMR3()           (DBGMCU->APB1F |= (DBGMCU_APB1F_TMR3_STS))
 #define __DAL_DBGMCU_FREEZE_TMR4()           (DBGMCU->APB1F |= (DBGMCU_APB1F_TMR4_STS))
@@ -154,13 +181,12 @@ typedef enum
                                                   SYSCFG->MMSEL |= (SYSCFG_MMSEL_MMSEL_0 | SYSCFG_MMSEL_MMSEL_1);\
                                                  }while(0);
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
 /** @brief  SMC Bank1 (NOR/PSRAM 1 and 2) mapped at 0x00000000
   */
 #define __DAL_SYSCFG_REMAPMEMORY_SMC()        do {SYSCFG->MMSEL &= ~(SYSCFG_MMSEL_MMSEL);\
                                                   SYSCFG->MMSEL |= (SYSCFG_MMSEL_MMSEL_1);\
                                                  }while(0);
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx || APM32F411xx */
+#endif /* APM32F403xx || APM32F402xx */
 
 /**
   * @}
@@ -200,7 +226,7 @@ DAL_StatusTypeDef DAL_Init(void);
 DAL_StatusTypeDef DAL_DeInit(void);
 void DAL_MspInit(void);
 void DAL_MspDeInit(void);
-DAL_StatusTypeDef DAL_InitTick (uint32_t TickPriority);
+DAL_StatusTypeDef DAL_InitTick(uint32_t TickPriority);
 /**
   * @}
   */
@@ -217,7 +243,7 @@ DAL_StatusTypeDef DAL_SetTickFreq(DAL_TickFreqTypeDef Freq);
 DAL_TickFreqTypeDef DAL_GetTickFreq(void);
 void DAL_SuspendTick(void);
 void DAL_ResumeTick(void);
-uint32_t DAL_GetHalVersion(void);
+uint32_t DAL_GetDalVersion(void);
 uint32_t DAL_GetREVID(void);
 uint32_t DAL_GetDEVID(void);
 void DAL_DBGMCU_EnableDBGSleepMode(void);

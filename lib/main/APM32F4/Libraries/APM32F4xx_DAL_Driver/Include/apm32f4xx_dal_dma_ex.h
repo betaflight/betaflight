@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -57,17 +53,17 @@
 
 /** @addtogroup DMAEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup DMAEx_Exported_Types DMAEx Exported Types
   * @brief DMAEx Exported types
   * @{
   */
-   
-/** 
-  * @brief  DAL DMA Memory definition  
-  */ 
+
+/**
+  * @brief  DAL DMA Memory definition
+  */
 typedef enum
 {
   MEMORY0      = 0x00U,    /*!< Memory 0     */
@@ -100,7 +96,7 @@ DAL_StatusTypeDef DAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
 /**
   * @}
   */
-         
+
 /* Private functions ---------------------------------------------------------*/
 /** @defgroup DMAEx_Private_Functions DMAEx Private Functions
   * @brief DMAEx Private functions

@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -75,7 +71,7 @@ extern "C" {
   * @brief    IT defines which can be used with DDL_WWDT_ReadReg and  DDL_WWDT_WriteReg functions
   * @{
   */
-#define DDL_WWDT_CFR_EWIEN                     WWDT_CFR_EWIEN
+#define DDL_WWDT_CFG_EWIEN                     WWDT_CFG_EWIEN
 /**
   * @}
   */
@@ -84,9 +80,9 @@ extern "C" {
   * @{
   */
 #define DDL_WWDT_PRESCALER_1                 0x00000000u                                               /*!< WWDT counter clock = (PCLK1/4096)/1 */
-#define DDL_WWDT_PRESCALER_2                 WWDT_CFR_TBPSC_0                                          /*!< WWDT counter clock = (PCLK1/4096)/2 */
-#define DDL_WWDT_PRESCALER_4                 WWDT_CFR_TBPSC_1                                          /*!< WWDT counter clock = (PCLK1/4096)/4 */
-#define DDL_WWDT_PRESCALER_8                 (WWDT_CFR_TBPSC_0 | WWDT_CFR_TBPSC_1)                     /*!< WWDT counter clock = (PCLK1/4096)/8 */
+#define DDL_WWDT_PRESCALER_2                 WWDT_CFG_TBPSC_0                                          /*!< WWDT counter clock = (PCLK1/4096)/2 */
+#define DDL_WWDT_PRESCALER_4                 WWDT_CFG_TBPSC_1                                          /*!< WWDT counter clock = (PCLK1/4096)/4 */
+#define DDL_WWDT_PRESCALER_8                 (WWDT_CFG_TBPSC_0 | WWDT_CFG_TBPSC_1)                     /*!< WWDT counter clock = (PCLK1/4096)/8 */
 /**
   * @}
   */
@@ -197,7 +193,7 @@ __STATIC_INLINE uint32_t DDL_WWDT_GetCounter(WWDT_TypeDef *WWDTx)
   */
 __STATIC_INLINE void DDL_WWDT_SetPrescaler(WWDT_TypeDef *WWDTx, uint32_t Prescaler)
 {
-  MODIFY_REG(WWDTx->CFR, WWDT_CFR_TBPSC, Prescaler);
+  MODIFY_REG(WWDTx->CFG, WWDT_CFG_TBPSC, Prescaler);
 }
 
 /**
@@ -211,7 +207,7 @@ __STATIC_INLINE void DDL_WWDT_SetPrescaler(WWDT_TypeDef *WWDTx, uint32_t Prescal
   */
 __STATIC_INLINE uint32_t DDL_WWDT_GetPrescaler(WWDT_TypeDef *WWDTx)
 {
-  return (READ_BIT(WWDTx->CFR, WWDT_CFR_TBPSC));
+  return (READ_BIT(WWDTx->CFG, WWDT_CFG_TBPSC));
 }
 
 /**
@@ -231,7 +227,7 @@ __STATIC_INLINE uint32_t DDL_WWDT_GetPrescaler(WWDT_TypeDef *WWDTx)
   */
 __STATIC_INLINE void DDL_WWDT_SetWindow(WWDT_TypeDef *WWDTx, uint32_t Window)
 {
-  MODIFY_REG(WWDTx->CFR, WWDT_CFR_WIN, Window);
+  MODIFY_REG(WWDTx->CFG, WWDT_CFG_WIN, Window);
 }
 
 /**
@@ -241,7 +237,7 @@ __STATIC_INLINE void DDL_WWDT_SetWindow(WWDT_TypeDef *WWDTx, uint32_t Window)
   */
 __STATIC_INLINE uint32_t DDL_WWDT_GetWindow(WWDT_TypeDef *WWDTx)
 {
-  return (READ_BIT(WWDTx->CFR, WWDT_CFR_WIN));
+  return (READ_BIT(WWDTx->CFG, WWDT_CFG_WIN));
 }
 
 /**
@@ -290,7 +286,7 @@ __STATIC_INLINE void DDL_WWDT_ClearFlag_EWKUP(WWDT_TypeDef *WWDTx)
   */
 __STATIC_INLINE void DDL_WWDT_EnableIT_EWKUP(WWDT_TypeDef *WWDTx)
 {
-  SET_BIT(WWDTx->CFR, WWDT_CFR_EWIEN);
+  SET_BIT(WWDTx->CFG, WWDT_CFG_EWIEN);
 }
 
 /**
@@ -300,7 +296,7 @@ __STATIC_INLINE void DDL_WWDT_EnableIT_EWKUP(WWDT_TypeDef *WWDTx)
   */
 __STATIC_INLINE uint32_t DDL_WWDT_IsEnabledIT_EWKUP(WWDT_TypeDef *WWDTx)
 {
-  return ((READ_BIT(WWDTx->CFR, WWDT_CFR_EWIEN) == (WWDT_CFR_EWIEN)) ? 1UL : 0UL);
+  return ((READ_BIT(WWDTx->CFG, WWDT_CFG_EWIEN) == (WWDT_CFG_EWIEN)) ? 1UL : 0UL);
 }
 
 /**

@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,18 +27,14 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef APM32F4xx_DAL_GPIO_H
@@ -57,16 +53,16 @@
 
 /** @addtogroup GPIO
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup GPIO_Exported_Types GPIO Exported Types
   * @{
   */
 
-/** 
-  * @brief GPIO Init structure definition  
-  */ 
+/**
+  * @brief GPIO Init structure definition
+  */
 typedef struct
 {
   uint32_t Pin;       /*!< Specifies the GPIO pins to be configured.
@@ -80,13 +76,14 @@ typedef struct
 
   uint32_t Speed;     /*!< Specifies the speed for the selected pins.
                            This parameter can be a value of @ref GPIO_speed_define */
-
-  uint32_t Alternate;  /*!< Peripheral to be connected to the selected pins. 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F427xx) || defined(APM32F425xx)|| defined(APM32F423xx)
+  uint32_t Alternate;  /*!< Peripheral to be connected to the selected pins.
                             This parameter can be a value of @ref GPIO_Alternate_function_selection */
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F427xx || APM32F425xx || APM32F423xx */
 }GPIO_InitTypeDef;
 
-/** 
-  * @brief  GPIO Bit SET and Bit RESET enumeration 
+/**
+  * @brief  GPIO Bit SET and Bit RESET enumeration
   */
 typedef enum
 {
@@ -101,7 +98,7 @@ typedef enum
 
 /** @defgroup GPIO_Exported_Constants GPIO Exported Constants
   * @{
-  */ 
+  */
 
 /** @defgroup GPIO_pins_define GPIO pins define
   * @{
@@ -137,22 +134,22 @@ typedef enum
   *           - Y  : Output type (Push Pull or Open Drain) on 1 bit
   *           - Z  : GPIO mode (Input, Output, Alternate or Analog) on 2 bits
   * @{
-  */ 
-#define  GPIO_MODE_INPUT                        MODE_INPUT                                                  /*!< Input Floating Mode                   */
-#define  GPIO_MODE_OUTPUT_PP                    (MODE_OUTPUT | OUTPUT_PP)                                   /*!< Output Push Pull Mode                 */
-#define  GPIO_MODE_OUTPUT_OD                    (MODE_OUTPUT | OUTPUT_OD)                                   /*!< Output Open Drain Mode                */
-#define  GPIO_MODE_AF_PP                        (MODE_AF | OUTPUT_PP)                                       /*!< Alternate Function Push Pull Mode     */
-#define  GPIO_MODE_AF_OD                        (MODE_AF | OUTPUT_OD)                                       /*!< Alternate Function Open Drain Mode    */
+  */
+#define  GPIO_MODE_INPUT                        MODE_INPUT                                                  /*!< Input Floating Mode           0x00000000 */
+#define  GPIO_MODE_OUTPUT_PP                    (MODE_OUTPUT | OUTPUT_PP)                                   /*!< Output Push Pull Mode         0x00000001 */
+#define  GPIO_MODE_OUTPUT_OD                    (MODE_OUTPUT | OUTPUT_OD)                                   /*!< Output Open Drain Mode        0x00000011 */
+#define  GPIO_MODE_AF_PP                        (MODE_AF | OUTPUT_PP)                                       /*!< Alternate Function Push Pull Mode     0x00000002 */
+#define  GPIO_MODE_AF_OD                        (MODE_AF | OUTPUT_OD)                                       /*!< Alternate Function Open Drain Mode    0x00000012 */
 
-#define  GPIO_MODE_ANALOG                       MODE_ANALOG                                                 /*!< Analog Mode  */
-    
-#define  GPIO_MODE_IT_RISING                    (MODE_INPUT | EINT_IT | TRIGGER_RISING)                     /*!< External Interrupt Mode with Rising edge trigger detection          */
-#define  GPIO_MODE_IT_FALLING                   (MODE_INPUT | EINT_IT | TRIGGER_FALLING)                    /*!< External Interrupt Mode with Falling edge trigger detection         */
-#define  GPIO_MODE_IT_RISING_FALLING            (MODE_INPUT | EINT_IT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection  */
- 
-#define  GPIO_MODE_EVT_RISING                   (MODE_INPUT | EINT_EVT | TRIGGER_RISING)                     /*!< External Event Mode with Rising edge trigger detection             */
-#define  GPIO_MODE_EVT_FALLING                  (MODE_INPUT | EINT_EVT | TRIGGER_FALLING)                    /*!< External Event Mode with Falling edge trigger detection            */
-#define  GPIO_MODE_EVT_RISING_FALLING           (MODE_INPUT | EINT_EVT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Event Mode with Rising/Falling edge trigger detection     */
+#define  GPIO_MODE_ANALOG                       MODE_ANALOG                                                 /*!< Analog Mode                 0x00000003 */
+
+#define  GPIO_MODE_IT_RISING                    (MODE_INPUT | EINT_IT | TRIGGER_RISING)                     /*!< External Interrupt Mode with Rising edge trigger detection          0x00110000 */
+#define  GPIO_MODE_IT_FALLING                   (MODE_INPUT | EINT_IT | TRIGGER_FALLING)                    /*!< External Interrupt Mode with Falling edge trigger detection         0x00210000 */
+#define  GPIO_MODE_IT_RISING_FALLING            (MODE_INPUT | EINT_IT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection  0x00310000 */
+
+#define  GPIO_MODE_EVT_RISING                   (MODE_INPUT | EINT_EVT | TRIGGER_RISING)                     /*!< External Event Mode with Rising edge trigger detection             0x00120000 */
+#define  GPIO_MODE_EVT_FALLING                  (MODE_INPUT | EINT_EVT | TRIGGER_FALLING)                    /*!< External Event Mode with Falling edge trigger detection            0x00220000 */
+#define  GPIO_MODE_EVT_RISING_FALLING           (MODE_INPUT | EINT_EVT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Event Mode with Rising/Falling edge trigger detection     0x00320000 */
 
 /**
   * @}
@@ -162,10 +159,16 @@ typedef enum
   * @brief GPIO Output Maximum frequency
   * @{
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define  GPIO_SPEED_FREQ_LOW         (GPIO_CFGLOW_MODE0_1)  /*!< Low speed, please refer to the product datasheet */
+#define  GPIO_SPEED_FREQ_MEDIUM      (GPIO_CFGLOW_MODE0_0)  /*!< Medium speed, please refer to the product datasheet */
+#define  GPIO_SPEED_FREQ_HIGH        (GPIO_CFGLOW_MODE0)    /*!< High speed, please refer to the product datasheet */
+#else
 #define  GPIO_SPEED_FREQ_LOW         0x00000000U  /*!< IO works at 2 MHz, please refer to the product datasheet */
 #define  GPIO_SPEED_FREQ_MEDIUM      0x00000001U  /*!< range 12,5 MHz to 50 MHz, please refer to the product datasheet */
 #define  GPIO_SPEED_FREQ_HIGH        0x00000002U  /*!< range 25 MHz to 100 MHz, please refer to the product datasheet  */
 #define  GPIO_SPEED_FREQ_VERY_HIGH   0x00000003U  /*!< range 50 MHz to 200 MHz, please refer to the product datasheet  */
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -173,14 +176,14 @@ typedef enum
  /** @defgroup GPIO_pull_define GPIO pull define
    * @brief GPIO Pull-Up or Pull-Down Activation
    * @{
-   */  
+   */
 #define  GPIO_NOPULL        0x00000000U   /*!< No Pull-up or Pull-down activation  */
 #define  GPIO_PULLUP        0x00000001U   /*!< Pull-up activation                  */
 #define  GPIO_PULLDOWN      0x00000002U   /*!< Pull-down activation                */
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
@@ -264,11 +267,11 @@ void DAL_GPIO_EINT_Callback(uint16_t GPIO_Pin);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
@@ -276,23 +279,23 @@ void DAL_GPIO_EINT_Callback(uint16_t GPIO_Pin);
   * @{
   */
 #define GPIO_MODE_Pos                           0U
-#define GPIO_MODE                               (0x3UL << GPIO_MODE_Pos)
-#define MODE_INPUT                              (0x0UL << GPIO_MODE_Pos)
-#define MODE_OUTPUT                             (0x1UL << GPIO_MODE_Pos)
-#define MODE_AF                                 (0x2UL << GPIO_MODE_Pos)
-#define MODE_ANALOG                             (0x3UL << GPIO_MODE_Pos)
+#define GPIO_MODE                               (0x3UL << GPIO_MODE_Pos)      /*!< 0x00000003 */
+#define MODE_INPUT                              (0x0UL << GPIO_MODE_Pos)      /*!< 0x00000000 */
+#define MODE_OUTPUT                             (0x1UL << GPIO_MODE_Pos)      /*!< 0x00000001 */
+#define MODE_AF                                 (0x2UL << GPIO_MODE_Pos)      /*!< 0x00000002 */
+#define MODE_ANALOG                             (0x3UL << GPIO_MODE_Pos)      /*!< 0x00000003 */
 #define OUTPUT_TYPE_Pos                         4U
-#define OUTPUT_TYPE                             (0x1UL << OUTPUT_TYPE_Pos)
-#define OUTPUT_PP                               (0x0UL << OUTPUT_TYPE_Pos)
-#define OUTPUT_OD                               (0x1UL << OUTPUT_TYPE_Pos)
+#define OUTPUT_TYPE                             (0x1UL << OUTPUT_TYPE_Pos)    /*!< 0x00000010 */
+#define OUTPUT_PP                               (0x0UL << OUTPUT_TYPE_Pos)    /*!< 0x00000000 */
+#define OUTPUT_OD                               (0x1UL << OUTPUT_TYPE_Pos)    /*!< 0x00000010 */
 #define EINT_MODE_Pos                           16U
-#define EINT_MODE                               (0x3UL << EINT_MODE_Pos)
-#define EINT_IT                                 (0x1UL << EINT_MODE_Pos)
-#define EINT_EVT                                (0x2UL << EINT_MODE_Pos)
+#define EINT_MODE                               (0x3UL << EINT_MODE_Pos)      /*!< 0x00030000 */
+#define EINT_IT                                 (0x1UL << EINT_MODE_Pos)      /*!< 0x00010000 */
+#define EINT_EVT                                (0x2UL << EINT_MODE_Pos)      /*!< 0x00020000 */
 #define TRIGGER_MODE_Pos                         20U
-#define TRIGGER_MODE                            (0x7UL << TRIGGER_MODE_Pos)
-#define TRIGGER_RISING                          (0x1UL << TRIGGER_MODE_Pos)
-#define TRIGGER_FALLING                         (0x2UL << TRIGGER_MODE_Pos)
+#define TRIGGER_MODE                            (0x7UL << TRIGGER_MODE_Pos)   /*!< 0x00700000 */
+#define TRIGGER_RISING                          (0x1UL << TRIGGER_MODE_Pos)   /*!< 0x00100000 */
+#define TRIGGER_FALLING                         (0x2UL << TRIGGER_MODE_Pos)   /*!< 0x00200000 */
 
 /**
   * @}
@@ -316,8 +319,13 @@ void DAL_GPIO_EINT_Callback(uint16_t GPIO_Pin);
                             ((MODE) == GPIO_MODE_EVT_FALLING)        ||\
                             ((MODE) == GPIO_MODE_EVT_RISING_FALLING) ||\
                             ((MODE) == GPIO_MODE_ANALOG))
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_GPIO_SPEED(SPEED) (((SPEED) == GPIO_SPEED_FREQ_LOW)  || ((SPEED) == GPIO_SPEED_FREQ_MEDIUM) || \
+                              ((SPEED) == GPIO_SPEED_FREQ_HIGH))
+#else
 #define IS_GPIO_SPEED(SPEED) (((SPEED) == GPIO_SPEED_FREQ_LOW)  || ((SPEED) == GPIO_SPEED_FREQ_MEDIUM) || \
                               ((SPEED) == GPIO_SPEED_FREQ_HIGH) || ((SPEED) == GPIO_SPEED_FREQ_VERY_HIGH))
+#endif /* APM32F403xx || APM32F402xx */
 #define IS_GPIO_PULL(PULL) (((PULL) == GPIO_NOPULL) || ((PULL) == GPIO_PULLUP) || \
                             ((PULL) == GPIO_PULLDOWN))
 /**
@@ -335,7 +343,7 @@ void DAL_GPIO_EINT_Callback(uint16_t GPIO_Pin);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

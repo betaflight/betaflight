@@ -28,13 +28,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -54,13 +50,14 @@
 /* Includes ------------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 #ifdef USE_FULL_ASSERT
-
-    #define ASSERT_PARAM(_PARAM_) ((_PARAM_) ? (void)0U : AssertFailedHandler((uint8_t *)__FILE__, __LINE__))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((_PARAM_) ? (void)(0U) : AssertFailedHandler((uint8_t *)__FILE__, __LINE__))
+#endif
     /* Declaration */
     void AssertFailedHandler(uint8_t *file, uint32_t line);
 
 #else
-    #define ASSERT_PARAM(_PARAM_)                         ((void)0U)
+    #define ASSERT_PARAM(_PARAM_)                         ((void)(0U))
 #endif /* USE_FULL_ASSERT */
 
 #ifdef __cplusplus

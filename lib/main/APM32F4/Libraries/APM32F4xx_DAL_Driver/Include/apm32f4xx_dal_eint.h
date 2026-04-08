@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,16 +27,12 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2018 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2018 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.Clause
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   */
 
@@ -254,9 +250,11 @@ typedef struct
   */
 #if defined(EINT_IMASK_IM23)
 #define EINT_LINE_NB                        24UL
-#else
+#elif defined(EINT_IMASK_IM22)
 #define EINT_LINE_NB                        23UL
-#endif /* EINT_IMASK_IM23 */
+#elif defined(EINT_IMASK_IM18)
+#define EINT_LINE_NB                        19UL
+#endif /* EINT_IMASK_IM18 */
 
 /**
   * @}
@@ -280,6 +278,12 @@ typedef struct
 
 #define IS_EINT_CONFIG_LINE(__EINT_LINE__)   (((__EINT_LINE__) & EINT_CONFIG) != 0x00u)
 
+#if defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_EINT_GPIO_PORT(__PORT__)     (((__PORT__) == EINT_GPIOA) || \
+                                         ((__PORT__) == EINT_GPIOB) || \
+                                         ((__PORT__) == EINT_GPIOC) || \
+                                         ((__PORT__) == EINT_GPIOD))
+#else
 #if !defined (GPIOD)
 #define IS_EINT_GPIO_PORT(__PORT__)     (((__PORT__) == EINT_GPIOA) || \
                                          ((__PORT__) == EINT_GPIOB) || \
@@ -330,6 +334,7 @@ typedef struct
                                          ((__PORT__) == EINT_GPIOJ) || \
                                          ((__PORT__) == EINT_GPIOK))
 #endif /* GPIOD */
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_EINT_GPIO_PIN(__PIN__)       ((__PIN__) < 16U)
 /**

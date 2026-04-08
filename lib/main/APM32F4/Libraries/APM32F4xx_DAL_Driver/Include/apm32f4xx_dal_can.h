@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -98,9 +94,6 @@ typedef struct
 
   uint32_t TimeSeg2;                   /*!< Specifies the number of time quanta in Bit Segment 2.
                                             This parameter can be a value of @ref CAN_time_quantum_in_bit_segment_2 */
-
-  FunctionalState TimeTriggeredMode;   /*!< Enable or disable the time triggered communication mode.
-                                            This parameter can be set to ENABLE or DISABLE. */
 
   FunctionalState AutoBusOff;          /*!< Enable or disable the automatic bus-off management.
                                             This parameter can be set to ENABLE or DISABLE. */
@@ -278,7 +271,7 @@ typedef enum
   DAL_CAN_RX_FIFO1_MSG_PENDING_CB_ID       = 0x08U,    /*!< CAN Rx FIFO 1 message pending callback ID     */
   DAL_CAN_RX_FIFO1_FULL_CB_ID              = 0x09U,    /*!< CAN Rx FIFO 1 full callback ID                */
   DAL_CAN_SLEEP_CB_ID                      = 0x0AU,    /*!< CAN Sleep callback ID                         */
-  DAL_CAN_WAKEUP_FROM_RX_MSG_CB_ID         = 0x0BU,    /*!< CAN Wake Up from Rx msg callback ID          */
+  DAL_CAN_WAKEUP_FROM_RX_MSG_CB_ID         = 0x0BU,    /*!< CAN Wake Up from Rx msg callback ID           */
   DAL_CAN_ERROR_CB_ID                      = 0x0CU,    /*!< CAN Error callback ID                         */
 
   DAL_CAN_MSPINIT_CB_ID                    = 0x0DU,    /*!< CAN MspInit callback ID                       */
@@ -318,11 +311,11 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 #define DAL_CAN_ERROR_RX_FOV0         (0x00000200U)  /*!< Rx FIFO0 overrun error                               */
 #define DAL_CAN_ERROR_RX_FOV1         (0x00000400U)  /*!< Rx FIFO1 overrun error                               */
 #define DAL_CAN_ERROR_TX_ALST0        (0x00000800U)  /*!< TxMailbox 0 transmit failure due to arbitration lost */
-#define DAL_CAN_ERROR_TX_TERR0        (0x00001000U)  /*!< TxMailbox 0 transmit failure due to transmit error    */
+#define DAL_CAN_ERROR_TX_TERR0        (0x00001000U)  /*!< TxMailbox 0 transmit failure due to transmit error   */
 #define DAL_CAN_ERROR_TX_ALST1        (0x00002000U)  /*!< TxMailbox 1 transmit failure due to arbitration lost */
-#define DAL_CAN_ERROR_TX_TERR1        (0x00004000U)  /*!< TxMailbox 1 transmit failure due to transmit error    */
+#define DAL_CAN_ERROR_TX_TERR1        (0x00004000U)  /*!< TxMailbox 1 transmit failure due to transmit error   */
 #define DAL_CAN_ERROR_TX_ALST2        (0x00008000U)  /*!< TxMailbox 2 transmit failure due to arbitration lost */
-#define DAL_CAN_ERROR_TX_TERR2        (0x00010000U)  /*!< TxMailbox 2 transmit failure due to transmit error    */
+#define DAL_CAN_ERROR_TX_TERR2        (0x00010000U)  /*!< TxMailbox 2 transmit failure due to transmit error   */
 #define DAL_CAN_ERROR_TIMEOUT         (0x00020000U)  /*!< Timeout error                                        */
 #define DAL_CAN_ERROR_NOT_INITIALIZED (0x00040000U)  /*!< Peripheral not initialized                           */
 #define DAL_CAN_ERROR_NOT_READY       (0x00080000U)  /*!< Peripheral not ready                                 */
@@ -350,9 +343,9 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 /** @defgroup CAN_operating_mode CAN Operating Mode
   * @{
   */
-#define CAN_MODE_NORMAL             (0x00000000U)                                   /*!< Normal mode   */
-#define CAN_MODE_LOOPBACK           ((uint32_t)CAN_BITTIM_LBKMEN)                     /*!< Loopback mode */
-#define CAN_MODE_SILENT             ((uint32_t)CAN_BITTIM_SILMEN)                     /*!< Silent mode   */
+#define CAN_MODE_NORMAL             (0x00000000U)                                       /*!< Normal mode   */
+#define CAN_MODE_LOOPBACK           ((uint32_t)CAN_BITTIM_LBKMEN)                       /*!< Loopback mode */
+#define CAN_MODE_SILENT             ((uint32_t)CAN_BITTIM_SILMEN)                       /*!< Silent mode   */
 #define CAN_MODE_SILENT_LOOPBACK    ((uint32_t)(CAN_BITTIM_LBKMEN | CAN_BITTIM_SILMEN)) /*!< Loopback combined with silent mode */
 /**
   * @}
@@ -362,7 +355,7 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 /** @defgroup CAN_synchronisation_jump_width CAN Synchronization Jump Width
   * @{
   */
-#define CAN_SJW_1TQ                 (0x00000000U)                   /*!< 1 time quantum */
+#define CAN_SJW_1TQ                 (0x00000000U)                      /*!< 1 time quantum */
 #define CAN_SJW_2TQ                 ((uint32_t)CAN_BITTIM_RSYNJW_0)    /*!< 2 time quantum */
 #define CAN_SJW_3TQ                 ((uint32_t)CAN_BITTIM_RSYNJW_1)    /*!< 3 time quantum */
 #define CAN_SJW_4TQ                 ((uint32_t)CAN_BITTIM_RSYNJW)      /*!< 4 time quantum */
@@ -373,22 +366,22 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 /** @defgroup CAN_time_quantum_in_bit_segment_1 CAN Time Quantum in Bit Segment 1
   * @{
   */
-#define CAN_BS1_1TQ                 (0x00000000U)                                                           /*!< 1 time quantum  */
-#define CAN_BS1_2TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_0)                                            /*!< 2 time quantum  */
-#define CAN_BS1_3TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_1)                                            /*!< 3 time quantum  */
-#define CAN_BS1_4TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0))                       /*!< 4 time quantum  */
-#define CAN_BS1_5TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_2)                                            /*!< 5 time quantum  */
-#define CAN_BS1_6TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_0))                       /*!< 6 time quantum  */
-#define CAN_BS1_7TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1))                       /*!< 7 time quantum  */
-#define CAN_BS1_8TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0))    /*!< 8 time quantum  */
-#define CAN_BS1_9TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_3)                                            /*!< 9 time quantum  */
-#define CAN_BS1_10TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_0))                       /*!< 10 time quantum */
-#define CAN_BS1_11TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_1))                       /*!< 11 time quantum */
-#define CAN_BS1_12TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0))    /*!< 12 time quantum */
-#define CAN_BS1_13TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2))                       /*!< 13 time quantum */
-#define CAN_BS1_14TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_0))    /*!< 14 time quantum */
-#define CAN_BS1_15TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1))    /*!< 15 time quantum */
-#define CAN_BS1_16TQ                ((uint32_t)CAN_BITTIM_TIMSEG1) /*!< 16 time quantum */
+#define CAN_BS1_1TQ                 (0x00000000U)                                                                    /*!< 1 time quantum  */
+#define CAN_BS1_2TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_0)                                                 /*!< 2 time quantum  */
+#define CAN_BS1_3TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_1)                                                 /*!< 3 time quantum  */
+#define CAN_BS1_4TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0))                        /*!< 4 time quantum  */
+#define CAN_BS1_5TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_2)                                                 /*!< 5 time quantum  */
+#define CAN_BS1_6TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_0))                        /*!< 6 time quantum  */
+#define CAN_BS1_7TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1))                        /*!< 7 time quantum  */
+#define CAN_BS1_8TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0)) /*!< 8 time quantum  */
+#define CAN_BS1_9TQ                 ((uint32_t)CAN_BITTIM_TIMSEG1_3)                                                 /*!< 9 time quantum  */
+#define CAN_BS1_10TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_0))                        /*!< 10 time quantum */
+#define CAN_BS1_11TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_1))                        /*!< 11 time quantum */
+#define CAN_BS1_12TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_1 | CAN_BITTIM_TIMSEG1_0)) /*!< 12 time quantum */
+#define CAN_BS1_13TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2))                        /*!< 13 time quantum */
+#define CAN_BS1_14TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_0)) /*!< 14 time quantum */
+#define CAN_BS1_15TQ                ((uint32_t)(CAN_BITTIM_TIMSEG1_3 | CAN_BITTIM_TIMSEG1_2 | CAN_BITTIM_TIMSEG1_1)) /*!< 15 time quantum */
+#define CAN_BS1_16TQ                ((uint32_t)CAN_BITTIM_TIMSEG1)                                                   /*!< 16 time quantum */
 /**
   * @}
   */
@@ -396,14 +389,14 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 /** @defgroup CAN_time_quantum_in_bit_segment_2 CAN Time Quantum in Bit Segment 2
   * @{
   */
-#define CAN_BS2_1TQ                 (0x00000000U)                                       /*!< 1 time quantum */
-#define CAN_BS2_2TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_0)                        /*!< 2 time quantum */
-#define CAN_BS2_3TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_1)                        /*!< 3 time quantum */
-#define CAN_BS2_4TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_1 | CAN_BITTIM_TIMSEG2_0))   /*!< 4 time quantum */
-#define CAN_BS2_5TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_2)                        /*!< 5 time quantum */
-#define CAN_BS2_6TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_2 | CAN_BITTIM_TIMSEG2_0))   /*!< 6 time quantum */
-#define CAN_BS2_7TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_2 | CAN_BITTIM_TIMSEG2_1))   /*!< 7 time quantum */
-#define CAN_BS2_8TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2)                          /*!< 8 time quantum */
+#define CAN_BS2_1TQ                 (0x00000000U)                                             /*!< 1 time quantum */
+#define CAN_BS2_2TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_0)                          /*!< 2 time quantum */
+#define CAN_BS2_3TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_1)                          /*!< 3 time quantum */
+#define CAN_BS2_4TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_1 | CAN_BITTIM_TIMSEG2_0)) /*!< 4 time quantum */
+#define CAN_BS2_5TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2_2)                          /*!< 5 time quantum */
+#define CAN_BS2_6TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_2 | CAN_BITTIM_TIMSEG2_0)) /*!< 6 time quantum */
+#define CAN_BS2_7TQ                 ((uint32_t)(CAN_BITTIM_TIMSEG2_2 | CAN_BITTIM_TIMSEG2_1)) /*!< 7 time quantum */
+#define CAN_BS2_8TQ                 ((uint32_t)CAN_BITTIM_TIMSEG2)                            /*!< 8 time quantum */
 /**
   * @}
   */
@@ -533,23 +526,23 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
 #define CAN_IT_TX_MAILBOX_EMPTY     ((uint32_t)CAN_INTEN_TXMEIEN)   /*!< Transmit mailbox empty interrupt */
 
 /* Receive Interrupts */
-#define CAN_IT_RX_FIFO0_MSG_PENDING ((uint32_t)CAN_INTEN_FMIEN0)  /*!< FIFO 0 message pending interrupt */
-#define CAN_IT_RX_FIFO0_FULL        ((uint32_t)CAN_INTEN_FFULLIEN0)   /*!< FIFO 0 full interrupt            */
+#define CAN_IT_RX_FIFO0_MSG_PENDING ((uint32_t)CAN_INTEN_FMIEN0)    /*!< FIFO 0 message pending interrupt */
+#define CAN_IT_RX_FIFO0_FULL        ((uint32_t)CAN_INTEN_FFULLIEN0) /*!< FIFO 0 full interrupt            */
 #define CAN_IT_RX_FIFO0_OVERRUN     ((uint32_t)CAN_INTEN_FOVRIEN0)  /*!< FIFO 0 overrun interrupt         */
-#define CAN_IT_RX_FIFO1_MSG_PENDING ((uint32_t)CAN_INTEN_FMIEN1)  /*!< FIFO 1 message pending interrupt */
-#define CAN_IT_RX_FIFO1_FULL        ((uint32_t)CAN_INTEN_FFULLIEN1)   /*!< FIFO 1 full interrupt            */
+#define CAN_IT_RX_FIFO1_MSG_PENDING ((uint32_t)CAN_INTEN_FMIEN1)    /*!< FIFO 1 message pending interrupt */
+#define CAN_IT_RX_FIFO1_FULL        ((uint32_t)CAN_INTEN_FFULLIEN1) /*!< FIFO 1 full interrupt            */
 #define CAN_IT_RX_FIFO1_OVERRUN     ((uint32_t)CAN_INTEN_FOVRIEN1)  /*!< FIFO 1 overrun interrupt         */
 
 /* Operating Mode Interrupts */
-#define CAN_IT_WAKEUP               ((uint32_t)CAN_INTEN_WUPIEN)   /*!< Wake-up interrupt                */
-#define CAN_IT_SLEEP_ACK            ((uint32_t)CAN_INTEN_SLEEPIEN)   /*!< Sleep acknowledge interrupt      */
+#define CAN_IT_WAKEUP               ((uint32_t)CAN_INTEN_WUPIEN)    /*!< Wake-up interrupt                */
+#define CAN_IT_SLEEP_ACK            ((uint32_t)CAN_INTEN_SLEEPIEN)  /*!< Sleep acknowledge interrupt      */
 
 /* Error Interrupts */
 #define CAN_IT_ERROR_WARNING        ((uint32_t)CAN_INTEN_ERRWIEN)   /*!< Error warning interrupt          */
 #define CAN_IT_ERROR_PASSIVE        ((uint32_t)CAN_INTEN_ERRPIEN)   /*!< Error passive interrupt          */
 #define CAN_IT_BUSOFF               ((uint32_t)CAN_INTEN_BOFFIEN)   /*!< Bus-off interrupt                */
-#define CAN_IT_LAST_ERROR_CODE      ((uint32_t)CAN_INTEN_LECIEN)   /*!< Last error code interrupt        */
-#define CAN_IT_ERROR                ((uint32_t)CAN_INTEN_ERRIEN)   /*!< Error Interrupt                  */
+#define CAN_IT_LAST_ERROR_CODE      ((uint32_t)CAN_INTEN_LECIEN)    /*!< Last error code interrupt        */
+#define CAN_IT_ERROR                ((uint32_t)CAN_INTEN_ERRIEN)    /*!< Error Interrupt                  */
 /**
   * @}
   */

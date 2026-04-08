@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -77,12 +73,15 @@ typedef struct
 
   uint32_t Period;            /*!< Specifies the period value to be loaded into the active
                                    Auto-Reload Register at the next update event.
-                                   This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF.  */
+                                   This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF.
+                                   Some timer instances may support 32 bits counters. In that case this parameter must
+                                   be a number between 0x0000 and 0xFFFFFFFF.
+                                   */
 
   uint32_t ClockDivision;     /*!< Specifies the clock division.
                                    This parameter can be a value of @ref TMR_ClockDivision */
 
-  uint32_t RepetitionCounter;  /*!< Specifies the repetition counter value. Each time the REPCNT downcounter
+  uint32_t RepetitionCounter; /*!< Specifies the repetition counter value. Each time the REPCNT downcounter
                                     reaches zero, an update event is generated and counting restarts
                                     from the REPCNT value (N).
                                     This means in PWM mode that (N+1) corresponds to:
@@ -93,7 +92,7 @@ typedef struct
                                      Advanced timers: this parameter must be a number between Min_Data = 0x0000 and
                                      Max_Data = 0xFFFF. */
 
-  uint32_t AutoReloadPreload;  /*!< Specifies the auto-reload preload.
+  uint32_t AutoReloadPreload; /*!< Specifies the auto-reload preload.
                                    This parameter can be a value of @ref TMR_AutoReloadPreload */
 } TMR_Base_InitTypeDef;
 
@@ -106,7 +105,10 @@ typedef struct
                                This parameter can be a value of @ref TMR_Output_Compare_and_PWM_modes */
 
   uint32_t Pulse;         /*!< Specifies the pulse value to be loaded into the Capture Compare Register.
-                               This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF */
+                               This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF 
+                               Some timer instances may support 32 bits capture compare value. In that case 
+                               this parameter must be a number between 0x0000 and 0xFFFFFFFF.
+                               */
 
   uint32_t OCPolarity;    /*!< Specifies the output polarity.
                                This parameter can be a value of @ref TMR_Output_Compare_Polarity */
@@ -138,7 +140,10 @@ typedef struct
                                This parameter can be a value of @ref TMR_Output_Compare_and_PWM_modes */
 
   uint32_t Pulse;         /*!< Specifies the pulse value to be loaded into the Capture Compare Register.
-                               This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF */
+                               This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF
+                               Some timer instances may support 32 bits capture compare value. In that case 
+                               this parameter must be a number between 0x0000 and 0xFFFFFFFF.
+                               */
 
   uint32_t OCPolarity;    /*!< Specifies the output polarity.
                                This parameter can be a value of @ref TMR_Output_Compare_Polarity */
@@ -500,7 +505,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 #define TMR_EVENTSOURCE_CC2                 TMR_CEG_CC2EG   /*!< A capture/compare event is generated on channel 2 */
 #define TMR_EVENTSOURCE_CC3                 TMR_CEG_CC3EG   /*!< A capture/compare event is generated on channel 3 */
 #define TMR_EVENTSOURCE_CC4                 TMR_CEG_CC4EG   /*!< A capture/compare event is generated on channel 4 */
-#define TMR_EVENTSOURCE_COM                 TMR_CEG_COMG   /*!< A commutation event is generated */
+#define TMR_EVENTSOURCE_COM                 TMR_CEG_COMG    /*!< A commutation event is generated */
 #define TMR_EVENTSOURCE_TRIGGER             TMR_CEG_TEG     /*!< A trigger event is generated */
 #define TMR_EVENTSOURCE_BREAK               TMR_CEG_BEG     /*!< A break event is generated */
 /**
@@ -510,8 +515,8 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Input_Channel_Polarity TMR Input Channel polarity
   * @{
   */
-#define  TMR_INPUTCHANNELPOLARITY_RISING      0x00000000U                       /*!< Polarity for TIx source */
-#define  TMR_INPUTCHANNELPOLARITY_FALLING     TMR_CCEN_CC1POL                     /*!< Polarity for TIx source */
+#define  TMR_INPUTCHANNELPOLARITY_RISING      0x00000000U                           /*!< Polarity for TIx source */
+#define  TMR_INPUTCHANNELPOLARITY_FALLING     TMR_CCEN_CC1POL                       /*!< Polarity for TIx source */
 #define  TMR_INPUTCHANNELPOLARITY_BOTHEDGE    (TMR_CCEN_CC1POL | TMR_CCEN_CC1NPOL)  /*!< Polarity for TIx source */
 /**
   * @}
@@ -520,7 +525,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_ETR_Polarity TMR ETR Polarity
   * @{
   */
-#define TMR_ETRPOLARITY_INVERTED              TMR_SMCTRL_ETPOL                      /*!< Polarity for ETR source */
+#define TMR_ETRPOLARITY_INVERTED              TMR_SMCTRL_ETPOL                  /*!< Polarity for ETR source */
 #define TMR_ETRPOLARITY_NONINVERTED           0x00000000U                       /*!< Polarity for ETR source */
 /**
   * @}
@@ -529,7 +534,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_ETR_Prescaler TMR ETR Prescaler
   * @{
   */
-#define TMR_ETRPRESCALER_DIV1                 0x00000000U                       /*!< No prescaler is used */
+#define TMR_ETRPRESCALER_DIV1                 0x00000000U                           /*!< No prescaler is used */
 #define TMR_ETRPRESCALER_DIV2                 TMR_SMCTRL_ETPCFG_0                   /*!< ETR input source is divided by 2 */
 #define TMR_ETRPRESCALER_DIV4                 TMR_SMCTRL_ETPCFG_1                   /*!< ETR input source is divided by 4 */
 #define TMR_ETRPRESCALER_DIV8                 TMR_SMCTRL_ETPCFG                     /*!< ETR input source is divided by 8 */
@@ -540,11 +545,11 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Counter_Mode TMR Counter Mode
   * @{
   */
-#define TMR_COUNTERMODE_UP                 0x00000000U                          /*!< Counter used as up-counter   */
-#define TMR_COUNTERMODE_DOWN               TMR_CTRL1_CNTDIR                          /*!< Counter used as down-counter */
-#define TMR_COUNTERMODE_CENTERALIGNED1     TMR_CTRL1_CAMSEL_0                        /*!< Center-aligned mode 1        */
-#define TMR_COUNTERMODE_CENTERALIGNED2     TMR_CTRL1_CAMSEL_1                        /*!< Center-aligned mode 2        */
-#define TMR_COUNTERMODE_CENTERALIGNED3     TMR_CTRL1_CAMSEL                          /*!< Center-aligned mode 3        */
+#define TMR_COUNTERMODE_UP                 0x00000000U                              /*!< Counter used as up-counter   */
+#define TMR_COUNTERMODE_DOWN               TMR_CTRL1_CNTDIR                         /*!< Counter used as down-counter */
+#define TMR_COUNTERMODE_CENTERALIGNED1     TMR_CTRL1_CAMSEL_0                       /*!< Center-aligned mode 1        */
+#define TMR_COUNTERMODE_CENTERALIGNED2     TMR_CTRL1_CAMSEL_1                       /*!< Center-aligned mode 2        */
+#define TMR_COUNTERMODE_CENTERALIGNED3     TMR_CTRL1_CAMSEL                         /*!< Center-aligned mode 3        */
 /**
   * @}
   */
@@ -552,9 +557,9 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_ClockDivision TMR Clock Division
   * @{
   */
-#define TMR_CLOCKDIVISION_DIV1             0x00000000U                          /*!< Clock division: tDTS=tCK_INT   */
-#define TMR_CLOCKDIVISION_DIV2             TMR_CTRL1_CLKDIV_0                        /*!< Clock division: tDTS=2*tCK_INT */
-#define TMR_CLOCKDIVISION_DIV4             TMR_CTRL1_CLKDIV_1                        /*!< Clock division: tDTS=4*tCK_INT */
+#define TMR_CLOCKDIVISION_DIV1             0x00000000U                              /*!< Clock division: tDTS=tCK_INT   */
+#define TMR_CLOCKDIVISION_DIV2             TMR_CTRL1_CLKDIV_0                       /*!< Clock division: tDTS=2*tCK_INT */
+#define TMR_CLOCKDIVISION_DIV4             TMR_CTRL1_CLKDIV_1                       /*!< Clock division: tDTS=4*tCK_INT */
 /**
   * @}
   */
@@ -562,8 +567,8 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Output_Compare_State TMR Output Compare State
   * @{
   */
-#define TMR_OUTPUTSTATE_DISABLE            0x00000000U                          /*!< Capture/Compare 1 output disabled */
-#define TMR_OUTPUTSTATE_ENABLE             TMR_CCEN_CC1EN                        /*!< Capture/Compare 1 output enabled */
+#define TMR_OUTPUTSTATE_DISABLE            0x00000000U                            /*!< Capture/Compare 1 output disabled */
+#define TMR_OUTPUTSTATE_ENABLE             TMR_CCEN_CC1EN                         /*!< Capture/Compare 1 output enabled */
 /**
   * @}
   */
@@ -571,8 +576,8 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_AutoReloadPreload TMR Auto-Reload Preload
   * @{
   */
-#define TMR_AUTORELOAD_PRELOAD_DISABLE                0x00000000U               /*!< TMRx_ARR register is not buffered */
-#define TMR_AUTORELOAD_PRELOAD_ENABLE                 TMR_CTRL1_ARPEN              /*!< TMRx_ARR register is buffered */
+#define TMR_AUTORELOAD_PRELOAD_DISABLE                0x00000000U                 /*!< TMRx_ARR register is not buffered */
+#define TMR_AUTORELOAD_PRELOAD_ENABLE                 TMR_CTRL1_ARPEN             /*!< TMRx_ARR register is buffered */
 
 /**
   * @}
@@ -590,8 +595,8 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Output_Compare_N_State TMR Complementary Output Compare State
   * @{
   */
-#define TMR_OUTPUTNSTATE_DISABLE           0x00000000U                          /*!< OCxN is disabled  */
-#define TMR_OUTPUTNSTATE_ENABLE            TMR_CCEN_CC1NEN                       /*!< OCxN is enabled   */
+#define TMR_OUTPUTNSTATE_DISABLE           0x00000000U                            /*!< OCxN is disabled  */
+#define TMR_OUTPUTNSTATE_ENABLE            TMR_CCEN_CC1NEN                        /*!< OCxN is enabled   */
 /**
   * @}
   */
@@ -600,7 +605,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
   * @{
   */
 #define TMR_OCPOLARITY_HIGH                0x00000000U                          /*!< Capture/Compare output polarity  */
-#define TMR_OCPOLARITY_LOW                 TMR_CCEN_CC1POL                        /*!< Capture/Compare output polarity  */
+#define TMR_OCPOLARITY_LOW                 TMR_CCEN_CC1POL                      /*!< Capture/Compare output polarity  */
 /**
   * @}
   */
@@ -609,7 +614,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
   * @{
   */
 #define TMR_OCNPOLARITY_HIGH               0x00000000U                          /*!< Capture/Compare complementary output polarity */
-#define TMR_OCNPOLARITY_LOW                TMR_CCEN_CC1NPOL                       /*!< Capture/Compare complementary output polarity */
+#define TMR_OCNPOLARITY_LOW                TMR_CCEN_CC1NPOL                     /*!< Capture/Compare complementary output polarity */
 /**
   * @}
   */
@@ -617,7 +622,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Output_Compare_Idle_State TMR Output Compare Idle State
   * @{
   */
-#define TMR_OCIDLESTATE_SET                TMR_CTRL2_OC1OIS                         /*!< Output Idle state: OCx=1 when MOE=0 */
+#define TMR_OCIDLESTATE_SET                TMR_CTRL2_OC1OIS                     /*!< Output Idle state: OCx=1 when MOE=0 */
 #define TMR_OCIDLESTATE_RESET              0x00000000U                          /*!< Output Idle state: OCx=0 when MOE=0 */
 /**
   * @}
@@ -626,7 +631,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Output_Compare_N_Idle_State TMR Complementary Output Compare Idle State
   * @{
   */
-#define TMR_OCNIDLESTATE_SET               TMR_CTRL2_OC1NOIS                        /*!< Complementary output Idle state: OCxN=1 when MOE=0 */
+#define TMR_OCNIDLESTATE_SET               TMR_CTRL2_OC1NOIS                    /*!< Complementary output Idle state: OCxN=1 when MOE=0 */
 #define TMR_OCNIDLESTATE_RESET             0x00000000U                          /*!< Complementary output Idle state: OCxN=0 when MOE=0 */
 /**
   * @}
@@ -665,9 +670,9 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
   * @{
   */
 #define TMR_ICPSC_DIV1                     0x00000000U                          /*!< Capture performed each time an edge is detected on the capture input */
-#define TMR_ICPSC_DIV2                     TMR_CCM1_IC1PSC_0                   /*!< Capture performed once every 2 events                                */
-#define TMR_ICPSC_DIV4                     TMR_CCM1_IC1PSC_1                   /*!< Capture performed once every 4 events                                */
-#define TMR_ICPSC_DIV8                     TMR_CCM1_IC1PSC                     /*!< Capture performed once every 8 events                                */
+#define TMR_ICPSC_DIV2                     TMR_CCM1_IC1PSC_0                    /*!< Capture performed once every 2 events                                */
+#define TMR_ICPSC_DIV4                     TMR_CCM1_IC1PSC_1                    /*!< Capture performed once every 4 events                                */
+#define TMR_ICPSC_DIV8                     TMR_CCM1_IC1PSC                      /*!< Capture performed once every 8 events                                */
 /**
   * @}
   */
@@ -675,7 +680,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_One_Pulse_Mode TMR One Pulse Mode
   * @{
   */
-#define TMR_OPMODE_SINGLE                  TMR_CTRL1_SPMEN                          /*!< Counter stops counting at the next update event */
+#define TMR_OPMODE_SINGLE                  TMR_CTRL1_SPMEN                      /*!< Counter stops counting at the next update event */
 #define TMR_OPMODE_REPETITIVE              0x00000000U                          /*!< Counter is not stopped at update event          */
 /**
   * @}
@@ -694,14 +699,14 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Interrupt_definition TMR interrupt Definition
   * @{
   */
-#define TMR_IT_UPDATE                      TMR_DIEN_UIEN                         /*!< Update interrupt            */
-#define TMR_IT_CC1                         TMR_DIEN_CC1IEN                       /*!< Capture/Compare 1 interrupt */
-#define TMR_IT_CC2                         TMR_DIEN_CC2IEN                       /*!< Capture/Compare 2 interrupt */
-#define TMR_IT_CC3                         TMR_DIEN_CC3IEN                       /*!< Capture/Compare 3 interrupt */
-#define TMR_IT_CC4                         TMR_DIEN_CC4IEN                       /*!< Capture/Compare 4 interrupt */
-#define TMR_IT_COM                         TMR_DIEN_COMIEN                       /*!< Commutation interrupt       */
-#define TMR_IT_TRIGGER                     TMR_DIEN_TRGIEN                         /*!< Trigger interrupt           */
-#define TMR_IT_BREAK                       TMR_DIEN_BRKIEN                         /*!< Break interrupt             */
+#define TMR_IT_UPDATE                      TMR_DIEN_UIEN                        /*!< Update interrupt            */
+#define TMR_IT_CC1                         TMR_DIEN_CC1IEN                      /*!< Capture/Compare 1 interrupt */
+#define TMR_IT_CC2                         TMR_DIEN_CC2IEN                      /*!< Capture/Compare 2 interrupt */
+#define TMR_IT_CC3                         TMR_DIEN_CC3IEN                      /*!< Capture/Compare 3 interrupt */
+#define TMR_IT_CC4                         TMR_DIEN_CC4IEN                      /*!< Capture/Compare 4 interrupt */
+#define TMR_IT_COM                         TMR_DIEN_COMIEN                      /*!< Commutation interrupt       */
+#define TMR_IT_TRIGGER                     TMR_DIEN_TRGIEN                      /*!< Trigger interrupt           */
+#define TMR_IT_BREAK                       TMR_DIEN_BRKIEN                      /*!< Break interrupt             */
 /**
   * @}
   */
@@ -709,7 +714,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Commutation_Source  TMR Commutation Source
   * @{
   */
-#define TMR_COMMUTATION_TRGI              TMR_CTRL2_CCUSEL                          /*!< When Capture/compare control bits are preloaded, they are updated by setting the COMG bit or when an rising edge occurs on trigger input */
+#define TMR_COMMUTATION_TRGI              TMR_CTRL2_CCUSEL                      /*!< When Capture/compare control bits are preloaded, they are updated by setting the COMG bit or when an rising edge occurs on trigger input */
 #define TMR_COMMUTATION_SOFTWARE          0x00000000U                           /*!< When Capture/compare control bits are preloaded, they are updated by setting the COMG bit */
 /**
   * @}
@@ -718,13 +723,13 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_DMA_sources TMR DMA Sources
   * @{
   */
-#define TMR_DMA_UPDATE                     TMR_DIEN_UDIEN                         /*!< DMA request is triggered by the update event */
-#define TMR_DMA_CC1                        TMR_DIEN_CC1DEN                       /*!< DMA request is triggered by the capture/compare macth 1 event */
-#define TMR_DMA_CC2                        TMR_DIEN_CC2DEN                       /*!< DMA request is triggered by the capture/compare macth 2 event event */
-#define TMR_DMA_CC3                        TMR_DIEN_CC3DEN                       /*!< DMA request is triggered by the capture/compare macth 3 event event */
-#define TMR_DMA_CC4                        TMR_DIEN_CC4DEN                       /*!< DMA request is triggered by the capture/compare macth 4 event event */
-#define TMR_DMA_COM                        TMR_DIEN_COMDEN                       /*!< DMA request is triggered by the commutation event */
-#define TMR_DMA_TRIGGER                    TMR_DIEN_TRGDEN                         /*!< DMA request is triggered by the trigger event */
+#define TMR_DMA_UPDATE                     TMR_DIEN_UDIEN                       /*!< DMA request is triggered by the update event */
+#define TMR_DMA_CC1                        TMR_DIEN_CC1DEN                      /*!< DMA request is triggered by the capture/compare macth 1 event */
+#define TMR_DMA_CC2                        TMR_DIEN_CC2DEN                      /*!< DMA request is triggered by the capture/compare macth 2 event event */
+#define TMR_DMA_CC3                        TMR_DIEN_CC3DEN                      /*!< DMA request is triggered by the capture/compare macth 3 event event */
+#define TMR_DMA_CC4                        TMR_DIEN_CC4DEN                      /*!< DMA request is triggered by the capture/compare macth 4 event event */
+#define TMR_DMA_COM                        TMR_DIEN_COMDEN                      /*!< DMA request is triggered by the commutation event */
+#define TMR_DMA_TRIGGER                    TMR_DIEN_TRGDEN                      /*!< DMA request is triggered by the trigger event */
 /**
   * @}
   */
@@ -733,7 +738,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
   * @{
   */
 #define TMR_CCDMAREQUEST_CC                 0x00000000U                         /*!< CCx DMA request sent when capture or compare match event occurs */
-#define TMR_CCDMAREQUEST_UPDATE             TMR_CTRL2_CCDSEL                        /*!< CCx DMA requests sent when update event occurs */
+#define TMR_CCDMAREQUEST_UPDATE             TMR_CTRL2_CCDSEL                    /*!< CCx DMA requests sent when update event occurs */
 /**
   * @}
   */
@@ -741,18 +746,18 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Flag_definition TMR Flag Definition
   * @{
   */
-#define TMR_FLAG_UPDATE                    TMR_STS_UIFLG                           /*!< Update interrupt flag         */
-#define TMR_FLAG_CC1                       TMR_STS_CC1IFLG                         /*!< Capture/Compare 1 interrupt flag */
-#define TMR_FLAG_CC2                       TMR_STS_CC2IFLG                         /*!< Capture/Compare 2 interrupt flag */
-#define TMR_FLAG_CC3                       TMR_STS_CC3IFLG                         /*!< Capture/Compare 3 interrupt flag */
-#define TMR_FLAG_CC4                       TMR_STS_CC4IFLG                         /*!< Capture/Compare 4 interrupt flag */
-#define TMR_FLAG_COM                       TMR_STS_COMIFLG                         /*!< Commutation interrupt flag    */
-#define TMR_FLAG_TRIGGER                   TMR_STS_TRGIFLG                           /*!< Trigger interrupt flag        */
-#define TMR_FLAG_BREAK                     TMR_STS_BRKIFLG                           /*!< Break interrupt flag          */
-#define TMR_FLAG_CC1OF                     TMR_STS_CC1RCFLG                         /*!< Capture 1 overcapture flag    */
-#define TMR_FLAG_CC2OF                     TMR_STS_CC2RCFLG                         /*!< Capture 2 overcapture flag    */
-#define TMR_FLAG_CC3OF                     TMR_STS_CC3RCFLG                         /*!< Capture 3 overcapture flag    */
-#define TMR_FLAG_CC4OF                     TMR_STS_CC4RCFLG                         /*!< Capture 4 overcapture flag    */
+#define TMR_FLAG_UPDATE                    TMR_STS_UIFLG                          /*!< Update interrupt flag         */
+#define TMR_FLAG_CC1                       TMR_STS_CC1IFLG                        /*!< Capture/Compare 1 interrupt flag */
+#define TMR_FLAG_CC2                       TMR_STS_CC2IFLG                        /*!< Capture/Compare 2 interrupt flag */
+#define TMR_FLAG_CC3                       TMR_STS_CC3IFLG                        /*!< Capture/Compare 3 interrupt flag */
+#define TMR_FLAG_CC4                       TMR_STS_CC4IFLG                        /*!< Capture/Compare 4 interrupt flag */
+#define TMR_FLAG_COM                       TMR_STS_COMIFLG                        /*!< Commutation interrupt flag    */
+#define TMR_FLAG_TRIGGER                   TMR_STS_TRGIFLG                        /*!< Trigger interrupt flag        */
+#define TMR_FLAG_BREAK                     TMR_STS_BRKIFLG                        /*!< Break interrupt flag          */
+#define TMR_FLAG_CC1OF                     TMR_STS_CC1RCFLG                       /*!< Capture 1 overcapture flag    */
+#define TMR_FLAG_CC2OF                     TMR_STS_CC2RCFLG                       /*!< Capture 2 overcapture flag    */
+#define TMR_FLAG_CC3OF                     TMR_STS_CC3RCFLG                       /*!< Capture 3 overcapture flag    */
+#define TMR_FLAG_CC4OF                     TMR_STS_CC4RCFLG                       /*!< Capture 4 overcapture flag    */
 /**
   * @}
   */
@@ -772,16 +777,16 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Clock_Source TMR Clock Source
   * @{
   */
-#define TMR_CLOCKSOURCE_INTERNAL    TMR_SMCTRL_ETPCFG_0      /*!< Internal clock source                                 */
-#define TMR_CLOCKSOURCE_ETRMODE1    TMR_TS_ETRF          /*!< External clock source mode 1 (ETRF)                   */
-#define TMR_CLOCKSOURCE_ETRMODE2    TMR_SMCTRL_ETPCFG_1      /*!< External clock source mode 2                          */
-#define TMR_CLOCKSOURCE_TI1ED       TMR_TS_TI1F_ED       /*!< External clock source mode 1 (TTI1FP1 + edge detect.) */
-#define TMR_CLOCKSOURCE_TI1         TMR_TS_TI1FP1        /*!< External clock source mode 1 (TTI1FP1)                */
-#define TMR_CLOCKSOURCE_TI2         TMR_TS_TI2FP2        /*!< External clock source mode 1 (TTI2FP2)                */
-#define TMR_CLOCKSOURCE_ITR0        TMR_TS_ITR0          /*!< External clock source mode 1 (ITR0)                   */
-#define TMR_CLOCKSOURCE_ITR1        TMR_TS_ITR1          /*!< External clock source mode 1 (ITR1)                   */
-#define TMR_CLOCKSOURCE_ITR2        TMR_TS_ITR2          /*!< External clock source mode 1 (ITR2)                   */
-#define TMR_CLOCKSOURCE_ITR3        TMR_TS_ITR3          /*!< External clock source mode 1 (ITR3)                   */
+#define TMR_CLOCKSOURCE_INTERNAL    TMR_SMCTRL_ETPCFG_0   /*!< Internal clock source                                 */
+#define TMR_CLOCKSOURCE_ETRMODE1    TMR_TS_ETRF           /*!< External clock source mode 1 (ETRF)                   */
+#define TMR_CLOCKSOURCE_ETRMODE2    TMR_SMCTRL_ETPCFG_1   /*!< External clock source mode 2                          */
+#define TMR_CLOCKSOURCE_TI1ED       TMR_TS_TI1F_ED        /*!< External clock source mode 1 (TTI1FP1 + edge detect.) */
+#define TMR_CLOCKSOURCE_TI1         TMR_TS_TI1FP1         /*!< External clock source mode 1 (TTI1FP1)                */
+#define TMR_CLOCKSOURCE_TI2         TMR_TS_TI2FP2         /*!< External clock source mode 1 (TTI2FP2)                */
+#define TMR_CLOCKSOURCE_ITR0        TMR_TS_ITR0           /*!< External clock source mode 1 (ITR0)                   */
+#define TMR_CLOCKSOURCE_ITR1        TMR_TS_ITR1           /*!< External clock source mode 1 (ITR1)                   */
+#define TMR_CLOCKSOURCE_ITR2        TMR_TS_ITR2           /*!< External clock source mode 1 (ITR2)                   */
+#define TMR_CLOCKSOURCE_ITR3        TMR_TS_ITR3           /*!< External clock source mode 1 (ITR3)                   */
 /**
   * @}
   */
@@ -832,7 +837,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_OSSR_Off_State_Selection_for_Run_mode_state TMR OSSR OffState Selection for Run mode state
   * @{
   */
-#define TMR_OSSR_ENABLE                          TMR_BDT_RMOS                  /*!< When inactive, OC/OCN outputs are enabled (still controlled by the timer)           */
+#define TMR_OSSR_ENABLE                          TMR_BDT_RMOS                   /*!< When inactive, OC/OCN outputs are enabled (still controlled by the timer)           */
 #define TMR_OSSR_DISABLE                         0x00000000U                    /*!< When inactive, OC/OCN outputs are disabled (not controlled any longer by the timer) */
 /**
   * @}
@@ -841,7 +846,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_OSSI_Off_State_Selection_for_Idle_mode_state TMR OSSI OffState Selection for Idle mode state
   * @{
   */
-#define TMR_OSSI_ENABLE                          TMR_BDT_IMOS                  /*!< When inactive, OC/OCN outputs are enabled (still controlled by the timer)           */
+#define TMR_OSSI_ENABLE                          TMR_BDT_IMOS                   /*!< When inactive, OC/OCN outputs are enabled (still controlled by the timer)           */
 #define TMR_OSSI_DISABLE                         0x00000000U                    /*!< When inactive, OC/OCN outputs are disabled (not controlled any longer by the timer) */
 /**
   * @}
@@ -849,7 +854,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Lock_level  TMR Lock level
   * @{
   */
-#define TMR_LOCKLEVEL_OFF                  0x00000000U                          /*!< LOCK OFF     */
+#define TMR_LOCKLEVEL_OFF                  0x00000000U                            /*!< LOCK OFF     */
 #define TMR_LOCKLEVEL_1                    TMR_BDT_LOCKCFG_0                      /*!< LOCK Level 1 */
 #define TMR_LOCKLEVEL_2                    TMR_BDT_LOCKCFG_1                      /*!< LOCK Level 2 */
 #define TMR_LOCKLEVEL_3                    TMR_BDT_LOCKCFG                        /*!< LOCK Level 3 */
@@ -860,8 +865,8 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Break_Input_enable_disable TMR Break Input Enable
   * @{
   */
-#define TMR_BREAK_ENABLE                   TMR_BDT_BRKEN                         /*!< Break input BRK is enabled  */
-#define TMR_BREAK_DISABLE                  0x00000000U                          /*!< Break input BRK is disabled */
+#define TMR_BREAK_ENABLE                   TMR_BDT_BRKEN                          /*!< Break input BRK is enabled  */
+#define TMR_BREAK_DISABLE                  0x00000000U                            /*!< Break input BRK is disabled */
 /**
   * @}
   */
@@ -869,7 +874,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Break_Polarity TMR Break Input Polarity
   * @{
   */
-#define TMR_BREAKPOLARITY_LOW              0x00000000U                          /*!< Break input BRK is active low  */
+#define TMR_BREAKPOLARITY_LOW              0x00000000U                            /*!< Break input BRK is active low  */
 #define TMR_BREAKPOLARITY_HIGH             TMR_BDT_BRKPOL                         /*!< Break input BRK is active high */
 /**
   * @}
@@ -887,14 +892,14 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Master_Mode_Selection TMR Master Mode Selection
   * @{
   */
-#define TMR_TRGO_RESET            0x00000000U                                      /*!< TMRx_EGR.UG bit is used as trigger output (TRGO)              */
-#define TMR_TRGO_ENABLE           TMR_CTRL2_MMSEL_0                                    /*!< TMRx_CR1.CEN bit is used as trigger output (TRGO)             */
-#define TMR_TRGO_UPDATE           TMR_CTRL2_MMSEL_1                                    /*!< Update event is used as trigger output (TRGO)                 */
-#define TMR_TRGO_OC1              (TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0)                  /*!< Capture or a compare match 1 is used as trigger output (TRGO) */
-#define TMR_TRGO_OC1REF           TMR_CTRL2_MMSEL_2                                    /*!< OC1REF signal is used as trigger output (TRGO)                */
-#define TMR_TRGO_OC2REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_0)                  /*!< OC2REF signal is used as trigger output(TRGO)                 */
-#define TMR_TRGO_OC3REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1)                  /*!< OC3REF signal is used as trigger output(TRGO)                 */
-#define TMR_TRGO_OC4REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0)  /*!< OC4REF signal is used as trigger output(TRGO)                 */
+#define TMR_TRGO_RESET            0x00000000U                                                 /*!< TMRx_EGR.UG bit is used as trigger output (TRGO)              */
+#define TMR_TRGO_ENABLE           TMR_CTRL2_MMSEL_0                                           /*!< TMRx_CR1.CEN bit is used as trigger output (TRGO)             */
+#define TMR_TRGO_UPDATE           TMR_CTRL2_MMSEL_1                                           /*!< Update event is used as trigger output (TRGO)                 */
+#define TMR_TRGO_OC1              (TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0)                     /*!< Capture or a compare match 1 is used as trigger output (TRGO) */
+#define TMR_TRGO_OC1REF           TMR_CTRL2_MMSEL_2                                           /*!< OC1REF signal is used as trigger output (TRGO)                */
+#define TMR_TRGO_OC2REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_0)                     /*!< OC2REF signal is used as trigger output(TRGO)                 */
+#define TMR_TRGO_OC3REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1)                     /*!< OC3REF signal is used as trigger output(TRGO)                 */
+#define TMR_TRGO_OC4REF           (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0) /*!< OC4REF signal is used as trigger output(TRGO)                 */
 /**
   * @}
   */
@@ -902,7 +907,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Master_Slave_Mode TMR Master/Slave Mode
   * @{
   */
-#define TMR_MASTERSLAVEMODE_ENABLE         TMR_SMCTRL_MSMEN                         /*!< No action */
+#define TMR_MASTERSLAVEMODE_ENABLE         TMR_SMCTRL_MSMEN                     /*!< No action */
 #define TMR_MASTERSLAVEMODE_DISABLE        0x00000000U                          /*!< Master/slave mode is selected */
 /**
   * @}
@@ -911,11 +916,11 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Slave_Mode TMR Slave mode
   * @{
   */
-#define TMR_SLAVEMODE_DISABLE                0x00000000U                                        /*!< Slave mode disabled           */
-#define TMR_SLAVEMODE_RESET                  TMR_SMCTRL_SMFSEL_2                                     /*!< Reset Mode                    */
-#define TMR_SLAVEMODE_GATED                  (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_0)                  /*!< Gated Mode                    */
-#define TMR_SLAVEMODE_TRIGGER                (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1)                  /*!< Trigger Mode                  */
-#define TMR_SLAVEMODE_EXTERNAL1              (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1 | TMR_SMCTRL_SMFSEL_0) /*!< External Clock Mode 1         */
+#define TMR_SLAVEMODE_DISABLE                0x00000000U                                                        /*!< Slave mode disabled           */
+#define TMR_SLAVEMODE_RESET                  TMR_SMCTRL_SMFSEL_2                                                /*!< Reset Mode                    */
+#define TMR_SLAVEMODE_GATED                  (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_0)                        /*!< Gated Mode                    */
+#define TMR_SLAVEMODE_TRIGGER                (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1)                        /*!< Trigger Mode                  */
+#define TMR_SLAVEMODE_EXTERNAL1              (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1 | TMR_SMCTRL_SMFSEL_0)  /*!< External Clock Mode 1         */
 /**
   * @}
   */
@@ -923,14 +928,14 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Output_Compare_and_PWM_modes TMR Output Compare and PWM Modes
   * @{
   */
-#define TMR_OCMODE_TIMING                   0x00000000U                                              /*!< Frozen                                 */
-#define TMR_OCMODE_ACTIVE                   TMR_CCM1_OC1MOD_0                                         /*!< Set channel to active level on match   */
-#define TMR_OCMODE_INACTIVE                 TMR_CCM1_OC1MOD_1                                         /*!< Set channel to inactive level on match */
-#define TMR_OCMODE_TOGGLE                   (TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0)                    /*!< Toggle                                 */
-#define TMR_OCMODE_PWM1                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1)                    /*!< PWM mode 1                             */
-#define TMR_OCMODE_PWM2                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0) /*!< PWM mode 2                             */
-#define TMR_OCMODE_FORCED_ACTIVE            (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_0)                    /*!< Force active level                     */
-#define TMR_OCMODE_FORCED_INACTIVE          TMR_CCM1_OC1MOD_2                                         /*!< Force inactive level                   */
+#define TMR_OCMODE_TIMING                   0x00000000U                                                   /*!< Frozen                                 */
+#define TMR_OCMODE_ACTIVE                   TMR_CCM1_OC1MOD_0                                             /*!< Set channel to active level on match   */
+#define TMR_OCMODE_INACTIVE                 TMR_CCM1_OC1MOD_1                                             /*!< Set channel to inactive level on match */
+#define TMR_OCMODE_TOGGLE                   (TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0)                       /*!< Toggle                                 */
+#define TMR_OCMODE_PWM1                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1)                       /*!< PWM mode 1                             */
+#define TMR_OCMODE_PWM2                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0)   /*!< PWM mode 2                             */
+#define TMR_OCMODE_FORCED_ACTIVE            (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_0)                       /*!< Force active level                     */
+#define TMR_OCMODE_FORCED_INACTIVE          TMR_CCM1_OC1MOD_2                                             /*!< Force inactive level                   */
 /**
   * @}
   */
@@ -938,15 +943,15 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 /** @defgroup TMR_Trigger_Selection TMR Trigger Selection
   * @{
   */
-#define TMR_TS_ITR0          0x00000000U                                                       /*!< Internal Trigger 0 (ITR0)              */
-#define TMR_TS_ITR1          TMR_SMCTRL_TRGSEL_0                                                     /*!< Internal Trigger 1 (ITR1)              */
-#define TMR_TS_ITR2          TMR_SMCTRL_TRGSEL_1                                                     /*!< Internal Trigger 2 (ITR2)              */
-#define TMR_TS_ITR3          (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1)                                   /*!< Internal Trigger 3 (ITR3)              */
-#define TMR_TS_TI1F_ED       TMR_SMCTRL_TRGSEL_2                                                     /*!< TI1 Edge Detector (TI1F_ED)            */
-#define TMR_TS_TI1FP1        (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_2)                                   /*!< Filtered Timer Input 1 (TI1FP1)        */
-#define TMR_TS_TI2FP2        (TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_2)                                   /*!< Filtered Timer Input 2 (TI2FP2)        */
-#define TMR_TS_ETRF          (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_2)                   /*!< Filtered External Trigger input (ETRF) */
-#define TMR_TS_NONE          0x0000FFFFU                                                       /*!< No trigger selected                    */
+#define TMR_TS_ITR0          0x00000000U                                                              /*!< Internal Trigger 0 (ITR0)              */
+#define TMR_TS_ITR1          TMR_SMCTRL_TRGSEL_0                                                      /*!< Internal Trigger 1 (ITR1)              */
+#define TMR_TS_ITR2          TMR_SMCTRL_TRGSEL_1                                                      /*!< Internal Trigger 2 (ITR2)              */
+#define TMR_TS_ITR3          (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1)                              /*!< Internal Trigger 3 (ITR3)              */
+#define TMR_TS_TI1F_ED       TMR_SMCTRL_TRGSEL_2                                                      /*!< TI1 Edge Detector (TI1F_ED)            */
+#define TMR_TS_TI1FP1        (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_2)                              /*!< Filtered Timer Input 1 (TI1FP1)        */
+#define TMR_TS_TI2FP2        (TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_2)                              /*!< Filtered Timer Input 2 (TI2FP2)        */
+#define TMR_TS_ETRF          (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_2)        /*!< Filtered External Trigger input (ETRF) */
+#define TMR_TS_NONE          0x0000FFFFU                                                              /*!< No trigger selected                    */
 /**
   * @}
   */
@@ -978,7 +983,7 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
   * @{
   */
 #define TMR_TI1SELECTION_CH1               0x00000000U                          /*!< The TMRx_CH1 pin is connected to TI1 input */
-#define TMR_TI1SELECTION_XORCOMBINATION    TMR_CTRL2_TI1SEL                         /*!< The TMRx_CH1, CH2 and CH3 pins are connected to the TI1 input (XOR combination) */
+#define TMR_TI1SELECTION_XORCOMBINATION    TMR_CTRL2_TI1SEL                     /*!< The TMRx_CH1, CH2 and CH3 pins are connected to the TI1 input (XOR combination) */
 /**
   * @}
   */
@@ -1677,6 +1682,10 @@ typedef  void (*pTMR_CallbackTypeDef)(TMR_HandleTypeDef *htmr);  /*!< pointer to
 
 #define IS_TMR_OPM_CHANNELS(__CHANNEL__)   (((__CHANNEL__) == TMR_CHANNEL_1) || \
                                             ((__CHANNEL__) == TMR_CHANNEL_2))
+
+#define IS_TMR_PERIOD(__HANDLE__, __PERIOD__) ((IS_TMR_32B_COUNTER_INSTANCE(((__HANDLE__)->Instance)) == 0U) ? \
+                                               (((__PERIOD__) > 0U) && ((__PERIOD__) <= 0x0000FFFFU)) :        \
+                                               ((__PERIOD__) > 0U))
 
 #define IS_TMR_COMPLEMENTARY_CHANNELS(__CHANNEL__) (((__CHANNEL__) == TMR_CHANNEL_1) || \
                                                     ((__CHANNEL__) == TMR_CHANNEL_2) || \

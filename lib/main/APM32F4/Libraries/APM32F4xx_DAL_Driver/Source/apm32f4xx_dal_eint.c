@@ -11,7 +11,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -33,13 +33,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2018 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2018 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -222,10 +218,18 @@ DAL_StatusTypeDef DAL_EINT_SetConfigLine(EINT_HandleTypeDef *heint, EINT_ConfigT
       ASSERT_PARAM(IS_EINT_GPIO_PORT(pEintConfig->GPIOSel));
       ASSERT_PARAM(IS_EINT_GPIO_PIN(linepos));
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
       regval = SYSCFG->EINTCFG[linepos >> 2u];
       regval &= ~(SYSCFG_EINTCFG1_EINT0 << (SYSCFG_EINTCFG1_EINT1_Pos * (linepos & 0x03u)));
       regval |= (pEintConfig->GPIOSel << (SYSCFG_EINTCFG1_EINT1_Pos * (linepos & 0x03u)));
       SYSCFG->EINTCFG[linepos >> 2u] = regval;
+#else
+      regval = AFIO->EINTSEL[linepos >> 2u];
+      regval &= ~(AFIO_EINTSEL1_EINT0 << (AFIO_EINTSEL1_EINT1_Pos * (linepos & 0x03u)));
+      regval |= (pEintConfig->GPIOSel << (AFIO_EINTSEL1_EINT1_Pos * (linepos & 0x03u)));
+      AFIO->EINTSEL[linepos >> 2u] = regval;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
     }
   }
 
@@ -326,8 +330,14 @@ DAL_StatusTypeDef DAL_EINT_GetConfigLine(EINT_HandleTypeDef *heint, EINT_ConfigT
     {
       ASSERT_PARAM(IS_EINT_GPIO_PIN(linepos));
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
       regval = (SYSCFG->EINTCFG[linepos >> 2u] << 16u );
       pEintConfig->GPIOSel = ((regval << (SYSCFG_EINTCFG1_EINT1_Pos * (3uL - (linepos & 0x03u)))) >> 28u);
+#else
+      regval = AFIO->EINTSEL[linepos >> 2u];
+      pEintConfig->GPIOSel = ((regval << (AFIO_EINTSEL1_EINT1_Pos * (3uL - (linepos & 0x03u)))) >> 24);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
     }
   }
 
@@ -375,9 +385,16 @@ DAL_StatusTypeDef DAL_EINT_ClearConfigLine(EINT_HandleTypeDef *heint)
     {
       ASSERT_PARAM(IS_EINT_GPIO_PIN(linepos));
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
       regval = SYSCFG->EINTCFG[linepos >> 2u];
       regval &= ~(SYSCFG_EINTCFG1_EINT0 << (SYSCFG_EINTCFG1_EINT1_Pos * (linepos & 0x03u)));
       SYSCFG->EINTCFG[linepos >> 2u] = regval;
+#else
+      regval = AFIO->EINTSEL[linepos >> 2u];
+      regval &= ~(AFIO_EINTSEL1_EINT0 << (AFIO_EINTSEL1_EINT1_Pos * (linepos & 0x03u)));
+      AFIO->EINTSEL[linepos >> 2u] = regval;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
     }
   }
 
@@ -500,6 +517,8 @@ uint32_t DAL_EINT_GetPending(EINT_HandleTypeDef *heint, uint32_t Edge)
   ASSERT_PARAM(IS_EINT_CONFIG_LINE(heint->Line));
   ASSERT_PARAM(IS_EINT_PENDING_EDGE(Edge));
 
+  UNUSED(Edge);
+
   /* Compute line mask */
   linepos = (heint->Line & EINT_PIN_MASK);
   maskline = (1uL << linepos);
@@ -526,6 +545,8 @@ void DAL_EINT_ClearPending(EINT_HandleTypeDef *heint, uint32_t Edge)
   ASSERT_PARAM(IS_EINT_LINE(heint->Line));
   ASSERT_PARAM(IS_EINT_CONFIG_LINE(heint->Line));
   ASSERT_PARAM(IS_EINT_PENDING_EDGE(Edge));
+
+  UNUSED(Edge);
 
   /* Compute line mask */
   maskline = (1uL << (heint->Line & EINT_PIN_MASK));

@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -83,23 +79,34 @@ typedef enum
   */
 typedef struct
 {
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t HourFormat;      /*!< Specifies the RTC Hour Format.
                                  This parameter can be a value of @ref RTC_Hour_Formats */
 
-  uint32_t AsynchPrediv;    /*!< Specifies the RTC Asynchronous Predivider value.
-                                 This parameter must be a number between Min_Data = 0x00 and Max_Data = 0x7F */
-
   uint32_t SynchPrediv;     /*!< Specifies the RTC Synchronous Predivider value.
                                  This parameter must be a number between Min_Data = 0x0000 and Max_Data = 0x7FFF */
-
-  uint32_t OutPut;          /*!< Specifies which signal will be routed to the RTC output.
-                                 This parameter can be a value of @ref RTC_Output_selection_Definitions */
 
   uint32_t OutPutPolarity;  /*!< Specifies the polarity of the output signal.
                                  This parameter can be a value of @ref RTC_Output_Polarity_Definitions */
 
   uint32_t OutPutType;      /*!< Specifies the RTC Output Pin mode.
                                  This parameter can be a value of @ref RTC_Output_Type_ALARM_OUT */
+
+  uint32_t OutPut;          /*!< Specifies which signal will be routed to the RTC output.
+                                 This parameter can be a value of @ref RTC_Output_selection_Definitions */
+
+  uint32_t AsynchPrediv;    /*!< Specifies the RTC Asynchronous Predivider value.
+                                 This parameter must be a number between Min_Data = 0x00 and Max_Data = 0x7F */
+#else
+
+  uint32_t OutPut;          /*!< Specifies which signal will be routed to the RTC output.
+                                 This parameter can be a value of @ref RTC_output_source_to_output_on_the_Tamper_pin */
+
+  uint32_t AsynchPrediv;    /*!< Specifies the RTC Asynchronous Predivider value.
+                                 This parameter must be a number between Min_Data = 0x00 and Max_Data = 0xFFFFF  or RTC_AUTO_1_SECOND
+                                 If RTC_AUTO_1_SECOND is selected, AsynchPrediv will be set automatically to get 1sec timebase */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 } RTC_InitTypeDef;
 
 /**
@@ -117,6 +124,8 @@ typedef struct
   uint8_t Seconds;          /*!< Specifies the RTC Time Seconds.
                                  This parameter must be a number between Min_Data = 0 and Max_Data = 59 */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint8_t TimeFormat;       /*!< Specifies the RTC AM/PM Time.
                                  This parameter can be a value of @ref RTC_AM_PM_Definitions */
 
@@ -135,6 +144,7 @@ typedef struct
 
   uint32_t StoreOperation;  /*!< This interface is deprecated. To manage Daylight
                                  Saving Time, please use DAL_RTC_DST_xxx functions */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 } RTC_TimeTypeDef;
 
 /**
@@ -163,6 +173,8 @@ typedef struct
 {
   RTC_TimeTypeDef AlarmTime;     /*!< Specifies the RTC Alarm Time members */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t AlarmMask;            /*!< Specifies the RTC Alarm Masks.
                                       This parameter can be a value of @ref RTC_AlarmMask_Definitions */
 
@@ -175,6 +187,8 @@ typedef struct
   uint8_t AlarmDateWeekDay;      /*!< Specifies the RTC Alarm Date/WeekDay.
                                       If the Alarm Date is selected, this parameter must be set to a value in the 1-31 range.
                                       If the Alarm WeekDay is selected, this parameter can be a value of @ref RTC_WeekDay_Definitions */
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   uint32_t Alarm;                /*!< Specifies the alarm .
                                       This parameter can be a value of @ref RTC_Alarms_Definitions */
@@ -189,22 +203,29 @@ typedef struct __RTC_HandleTypeDef
 typedef struct
 #endif /* USE_DAL_RTC_REGISTER_CALLBACKS */
 {
-  RTC_TypeDef                 *Instance;  /*!< Register base address    */
+  RTC_TypeDef                 *Instance;        /*!< Register base address    */
 
-  RTC_InitTypeDef             Init;       /*!< RTC required parameters  */
+  RTC_InitTypeDef             Init;             /*!< RTC required parameters  */
 
-  DAL_LockTypeDef             Lock;       /*!< RTC locking object       */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  RTC_DateTypeDef             DateToUpdate;     /*!< Current date set by user and updated automatically  */
+#endif /* APM32F403xx || APM32F402xx */
 
-  __IO DAL_RTCStateTypeDef    State;      /*!< Time communication state */
+  DAL_LockTypeDef             Lock;             /*!< RTC locking object       */
+
+  __IO DAL_RTCStateTypeDef    State;            /*!< Time communication state */
 
 #if (USE_DAL_RTC_REGISTER_CALLBACKS == 1)
   void (* AlarmAEventCallback)      (struct __RTC_HandleTypeDef *hrtc);  /*!< RTC Alarm A Event callback         */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   void (* AlarmBEventCallback)      (struct __RTC_HandleTypeDef *hrtc);  /*!< RTC Alarm B Event callback         */
 
   void (* TimeStampEventCallback)   (struct __RTC_HandleTypeDef *hrtc);  /*!< RTC Timestamp Event callback       */
 
   void (* WakeUpTimerEventCallback) (struct __RTC_HandleTypeDef *hrtc);  /*!< RTC WakeUpTimer Event callback     */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   void (* Tamper1EventCallback)     (struct __RTC_HandleTypeDef *hrtc);  /*!< RTC Tamper 1 Event callback        */
 
@@ -227,9 +248,12 @@ typedef struct
 typedef enum
 {
   DAL_RTC_ALARM_A_EVENT_CB_ID           = 0x00U,    /*!< RTC Alarm A Event Callback ID       */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   DAL_RTC_ALARM_B_EVENT_CB_ID           = 0x01U,    /*!< RTC Alarm B Event Callback ID       */
   DAL_RTC_TIMESTAMP_EVENT_CB_ID         = 0x02U,    /*!< RTC Timestamp Event Callback ID     */
   DAL_RTC_WAKEUPTIMER_EVENT_CB_ID       = 0x03U,    /*!< RTC Wakeup Timer Event Callback ID  */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
   DAL_RTC_TAMPER1_EVENT_CB_ID           = 0x04U,    /*!< RTC Tamper 1 Callback ID            */
 #if defined(RTC_TAMPER2_SUPPORT)
   DAL_RTC_TAMPER2_EVENT_CB_ID           = 0x05U,    /*!< RTC Tamper 2 Callback ID            */
@@ -254,6 +278,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   * @{
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RTC_Hour_Formats RTC Hour Formats
   * @{
   */
@@ -319,6 +345,7 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RTC_Input_parameter_format_definitions RTC Input Parameter Format Definitions
   * @{
@@ -362,6 +389,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   * @}
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RTC_AlarmDateWeekDay_Definitions RTC Alarm Date WeekDay Definitions
   * @{
   */
@@ -386,16 +415,24 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RTC_Alarms_Definitions RTC Alarms Definitions
   * @{
   */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define RTC_ALARM_A                       RTC_CTRL_ALRAEN
 #define RTC_ALARM_B                       RTC_CTRL_ALRBEN
+#else
+#define RTC_ALARM_A                       0U                                 /*!< Specify alarm ID (mainly for legacy purposes) */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RTC_Alarm_Sub_Seconds_Masks_Definitions RTC Alarm Sub Seconds Masks Definitions
   * @{
   */
@@ -434,38 +471,83 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RTC_Interrupts_Definitions RTC Interrupts Definitions
   * @{
   */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define RTC_IT_TS                         RTC_CTRL_TSIEN         /*!< Enable Timestamp Interrupt               */
 #define RTC_IT_WUT                        RTC_CTRL_WUTIEN        /*!< Enable Wakeup timer Interrupt            */
 #define RTC_IT_ALRB                       RTC_CTRL_ALRBIEN       /*!< Enable Alarm B Interrupt                 */
 #define RTC_IT_ALRA                       RTC_CTRL_ALRAIEN       /*!< Enable Alarm A Interrupt                 */
+#else
+#define RTC_IT_OW                         RTC_CTRL_OVRIEN        /*!< Overflow interrupt                       */
+#define RTC_IT_ALRA                       RTC_CTRL_ALRIEN        /*!< Alarm interrupt                          */
+#define RTC_IT_SEC                        RTC_CTRL_SECIEN        /*!< Second interrupt                         */
+#define RTC_IT_TAMP1                      BAKPR_CSTS_TPIEN       /*!< TAMPER Pin interrupt enable              */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+
+/** @defgroup RTC_output_source_to_output_on_the_Tamper_pin Output source to output on the Tamper pin
+  * @{
+  */
+
+#define RTC_OUTPUTSOURCE_NONE               0x00000000U                                  /*!< No output on the TAMPER pin  */
+#define RTC_OUTPUTSOURCE_CALIBCLOCK         BAKPR_CLKCAL_CALCOEN                         /*!< RTC clock with a frequency divided by 64 on the TAMPER pin  */
+#define RTC_OUTPUTSOURCE_ALARM              BAKPR_CLKCAL_ASPOEN                          /*!< Alarm pulse signal on the TAMPER pin  */
+#define RTC_OUTPUTSOURCE_SECOND             (BAKPR_CLKCAL_ASPOSEL | BAKPR_CLKCAL_ASPOEN) /*!< Second pulse signal on the TAMPER pin  */
+
+/**
+  * @}
+  */
+
+/** @defgroup RTC_Automatic_Prediv_1_Second Automatic calculation of prediv for 1sec timebase
+  * @{
+  */
+#define RTC_AUTO_1_SECOND                      0xFFFFFFFFU
+
+/**
+  * @}
+  */
+
+#endif /* APM32F403xx || APM32F402xx */
+
 /** @defgroup RTC_Flags_Definitions RTC Flags Definitions
   * @{
   */
-#define RTC_FLAG_RECALPF                  RTC_STS_RCALPFLG     /*!< Recalibration pending flag               */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define RTC_FLAG_RECALPF                  RTC_STS_RCALPFLG      /*!< Recalibration pending flag               */
 #if defined(RTC_TAMPER2_SUPPORT)
-#define RTC_FLAG_TAMP2F                   RTC_STS_TP2FLG      /*!< Tamper 2 event flag                      */
+#define RTC_FLAG_TAMP2F                   RTC_STS_TP2FLG        /*!< Tamper 2 event flag                      */
 #endif /* RTC_TAMPER2_SUPPORT */
-#define RTC_FLAG_TAMP1F                   RTC_STS_TP1FLG      /*!< Tamper 1 event flag                      */
-#define RTC_FLAG_TSOVF                    RTC_STS_TSOVRFLG       /*!< Timestamp overflow flag                  */
+#define RTC_FLAG_TAMP1F                   RTC_STS_TP1FLG        /*!< Tamper 1 event flag                      */
+#define RTC_FLAG_TSOVF                    RTC_STS_TSOVRFLG      /*!< Timestamp overflow flag                  */
 #define RTC_FLAG_TSF                      RTC_STS_TSFLG         /*!< Timestamp event flag                     */
 #define RTC_FLAG_WUTF                     RTC_STS_WUTFLG        /*!< Wakeup timer event flag                  */
 #define RTC_FLAG_ALRBF                    RTC_STS_ALRBFLG       /*!< Alarm B event flag                       */
 #define RTC_FLAG_ALRAF                    RTC_STS_ALRAFLG       /*!< Alarm A event flag                       */
-#define RTC_FLAG_INITF                    RTC_STS_RINITFLG       /*!< RTC in initialization mode flag          */
+#define RTC_FLAG_INITF                    RTC_STS_RINITFLG      /*!< RTC in initialization mode flag          */
 #define RTC_FLAG_RSF                      RTC_STS_RSFLG         /*!< Register synchronization flag            */
-#define RTC_FLAG_INITS                    RTC_STS_INITSFLG       /*!< RTC initialization status flag           */
+#define RTC_FLAG_INITS                    RTC_STS_INITSFLG      /*!< RTC initialization status flag           */
 #define RTC_FLAG_SHPF                     RTC_STS_SOPFLG        /*!< Shift operation pending flag             */
 #define RTC_FLAG_WUTWF                    RTC_STS_WUTWFLG       /*!< WUTR register write allowance flag       */
 #define RTC_FLAG_ALRBWF                   RTC_STS_ALRBWFLG      /*!< ALRMBR register write allowance flag     */
 #define RTC_FLAG_ALRAWF                   RTC_STS_ALRAWFLG      /*!< ALRMAR register write allowance flag     */
+#else
+#define RTC_FLAG_RTOFF                    RTC_CSTS_OCFLG        /*!< RTC Operation OFF flag                   */
+#define RTC_FLAG_RSF                      RTC_CSTS_RSYNCFLG     /*!< Registers Synchronized flag              */
+#define RTC_FLAG_OW                       RTC_CSTS_OVRFLG       /*!< Overflow flag                            */
+#define RTC_FLAG_ALRAF                    RTC_CSTS_ALRFLG       /*!< Alarm flag                               */
+#define RTC_FLAG_SEC                      RTC_CSTS_SECFLG       /*!< Second flag                              */
+#define RTC_FLAG_TAMP1F                   BAKPR_CSTS_TEFLG      /*!< Tamper Interrupt Flag                    */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -499,21 +581,32 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define __DAL_RTC_WRITEPROTECTION_DISABLE(__HANDLE__) do {                                       \
                                                            (__HANDLE__)->Instance->WRPROT = 0xCAU;  \
                                                            (__HANDLE__)->Instance->WRPROT = 0x53U;  \
                                                          } while(0U)
+#else
+#define __DAL_RTC_WRITEPROTECTION_DISABLE(__HANDLE__)         SET_BIT((__HANDLE__)->Instance->CSTS, RTC_CSTS_CFGMFLG)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @brief  Enable the write protection for RTC registers.
   * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define __DAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__) do {                                       \
                                                           (__HANDLE__)->Instance->WRPROT = 0xFFU;  \
                                                         } while(0U)
+#else
+#define __DAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__)          CLEAR_BIT((__HANDLE__)->Instance->CSTS, RTC_CSTS_CFGMFLG)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
-
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Enable the RTC ALARMA peripheral.
   * @param  __HANDLE__ specifies the RTC handle.
@@ -542,13 +635,15 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   */
 #define __DAL_RTC_ALARMB_DISABLE(__HANDLE__)                          ((__HANDLE__)->Instance->CTRL &= ~(RTC_CTRL_ALRBEN))
 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /**
   * @brief  Enable the RTC Alarm interrupt.
   * @param  __HANDLE__ specifies the RTC handle.
   * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to be enabled or disabled.
   *          This parameter can be any combination of the following values:
   *             @arg RTC_IT_ALRA: Alarm A interrupt
-  *             @arg RTC_IT_ALRB: Alarm B interrupt
+  *             @arg RTC_IT_ALRB: Alarm B interrupt (*)
   * @retval None
   */
 #define __DAL_RTC_ALARM_ENABLE_IT(__HANDLE__, __INTERRUPT__)          ((__HANDLE__)->Instance->CTRL |= (__INTERRUPT__))
@@ -559,10 +654,13 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to be enabled or disabled.
   *          This parameter can be any combination of the following values:
   *             @arg RTC_IT_ALRA: Alarm A interrupt
-  *             @arg RTC_IT_ALRB: Alarm B interrupt
+  *             @arg RTC_IT_ALRB: Alarm B interrupt (*)
   * @retval None
   */
 #define __DAL_RTC_ALARM_DISABLE_IT(__HANDLE__, __INTERRUPT__)         ((__HANDLE__)->Instance->CTRL &= ~(__INTERRUPT__))
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 
 /**
   * @brief  Check whether the specified RTC Alarm interrupt has occurred or not.
@@ -599,13 +697,47 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef *hrtc);  /*!< pointer to
   */
 #define __DAL_RTC_ALARM_CLEAR_FLAG(__HANDLE__, __FLAG__)                  ((__HANDLE__)->Instance->STS) = (~((__FLAG__) | RTC_STS_INITEN)|((__HANDLE__)->Instance->STS & RTC_STS_INITEN))
 
+#else
+
+/**
+  * @brief  Get the selected RTC Alarm's flag status.
+  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __FLAG__: specifies the RTC Alarm Flag sources to be enabled or disabled.
+  *          This parameter can be:
+  *            @arg RTC_FLAG_ALRAF
+  * @retval None
+  */
+#define __DAL_RTC_ALARM_GET_FLAG(__HANDLE__, __FLAG__)        (((((__HANDLE__)->Instance->CSTS) & (__FLAG__)) != RESET)? SET : RESET)
+
+/**
+  * @brief  Check whether the specified RTC Alarm interrupt has occurred or not.
+  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __INTERRUPT__: specifies the RTC Alarm interrupt sources to check.
+  *         This parameter can be:
+  *            @arg RTC_IT_ALRA: Alarm A interrupt
+  * @retval None
+  */
+#define __DAL_RTC_ALARM_GET_IT(__HANDLE__, __INTERRUPT__)        (((((__HANDLE__)->Instance->CSTS) & (__INTERRUPT__)) != RESET)? SET : RESET)
+
+/**
+  * @brief  Clear the RTC Alarm's pending flags.
+  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __FLAG__: specifies the RTC Alarm Flag sources to be enabled or disabled.
+  *         This parameter can be:
+  *            @arg RTC_FLAG_ALRAF
+  * @retval None
+  */
+#define __DAL_RTC_ALARM_CLEAR_FLAG(__HANDLE__, __FLAG__)      ((__HANDLE__)->Instance->CSTS) = ~(__FLAG__)
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /**
   * @brief  Check whether the specified RTC Alarm interrupt has been enabled or not.
   * @param  __HANDLE__ specifies the RTC handle.
   * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to check.
   *         This parameter can be:
   *            @arg RTC_IT_ALRA: Alarm A interrupt
-  *            @arg RTC_IT_ALRB: Alarm B interrupt
+  *            @arg RTC_IT_ALRB: Alarm B interrupt (*)
   * @retval None
   */
 #define __DAL_RTC_ALARM_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)     (((((__HANDLE__)->Instance->CTRL) & (__INTERRUPT__)) != 0U) ? 1U : 0U)
@@ -754,15 +886,19 @@ void              DAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc);
 /** @addtogroup RTC_Exported_Functions_Group4
   * @{
   */
+
 /* Peripheral Control functions ***********************************************/
 DAL_StatusTypeDef   DAL_RTC_WaitForSynchro(RTC_HandleTypeDef *hrtc);
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /* RTC Daylight Saving Time functions *****************************************/
 void              DAL_RTC_DST_Add1Hour(RTC_HandleTypeDef *hrtc);
 void              DAL_RTC_DST_Sub1Hour(RTC_HandleTypeDef *hrtc);
 void              DAL_RTC_DST_SetStoreOperation(RTC_HandleTypeDef *hrtc);
 void              DAL_RTC_DST_ClearStoreOperation(RTC_HandleTypeDef *hrtc);
 uint32_t          DAL_RTC_DST_ReadStoreOperation(RTC_HandleTypeDef *hrtc);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -836,7 +972,11 @@ DAL_RTCStateTypeDef DAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 #define IS_RTC_OUTPUT_TYPE(TYPE) (((TYPE) == RTC_OUTPUT_TYPE_OPENDRAIN) || \
                                   ((TYPE) == RTC_OUTPUT_TYPE_PUSHPULL))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_RTC_ASYNCH_PREDIV(PREDIV)   (((PREDIV) <= 0xFFFFFU) || ((PREDIV) == RTC_AUTO_1_SECOND))
+#else
 #define IS_RTC_ASYNCH_PREDIV(PREDIV)   ((PREDIV) <= 0x7FU)
+#endif /* APM32F403xx || APM32F402xx */
 #define IS_RTC_SYNCH_PREDIV(PREDIV)    ((PREDIV) <= 0x7FFFU)
 
 #define IS_RTC_HOUR12(HOUR)            (((HOUR) > 0U) && ((HOUR) <= 12U))
@@ -883,7 +1023,11 @@ DAL_RTCStateTypeDef DAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 
 #define IS_RTC_ALARM_MASK(MASK)  (((MASK) & ((uint32_t)~RTC_ALARMMASK_ALL)) == 0U)
 
+#if defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_RTC_ALARM(ALARM)      ((ALARM) == RTC_ALARM_A)
+#else
 #define IS_RTC_ALARM(ALARM)      (((ALARM) == RTC_ALARM_A) || ((ALARM) == RTC_ALARM_B))
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_RTC_ALARM_SUB_SECOND_VALUE(VALUE) ((VALUE) <= RTC_ALRMASS_SUBSEC)
 
@@ -913,6 +1057,8 @@ DAL_RTCStateTypeDef DAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 
 /* Private functions ---------------------------------------------------------*/
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RTC_Private_Functions RTC Private Functions
   * @{
   */
@@ -923,6 +1069,7 @@ uint8_t            RTC_Bcd2ToByte(uint8_t number);
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}

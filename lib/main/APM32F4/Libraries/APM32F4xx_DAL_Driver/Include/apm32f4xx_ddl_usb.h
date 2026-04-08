@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -51,7 +47,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_dal_def.h"
 
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 /** @addtogroup APM32F4xx_DAL_Driver
   * @{
   */
@@ -65,7 +61,7 @@ extern "C" {
 /**
   * @brief  USB Mode definition
   */
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 
 typedef enum
 {
@@ -305,7 +301,7 @@ typedef struct
   USB_OTG_HCStateTypeDef state;       /*!< Host Channel state.
                                             This parameter can be any value of @ref USB_OTG_HCStateTypeDef  */
 } USB_OTG_HCTypeDef;
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -314,7 +310,7 @@ typedef struct
   * @{
   */
 
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 /** @defgroup USB_OTG_CORE VERSION ID
   * @{
   */
@@ -513,7 +509,7 @@ typedef struct
                                                         + USB_OTG_HOST_CHANNEL_BASE\
                                                         + ((i) * USB_OTG_HOST_CHANNEL_SIZE)))
 
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 #define EP_ADDR_MSK                            0xFU
 
@@ -528,18 +524,18 @@ typedef struct
 /** @defgroup USB_DDL_Exported_Macros USB Low Layer Exported Macros
   * @{
   */
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 #define USB_MASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)     ((__INSTANCE__)->GINTMASK &= ~(__INTERRUPT__))
 #define USB_UNMASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)   ((__INSTANCE__)->GINTMASK |= (__INTERRUPT__))
 
 #define CLEAR_IN_EP_INTR(__EPNUM__, __INTERRUPT__)          (USBx_INEP(__EPNUM__)->DIEPINT = (__INTERRUPT__))
 #define CLEAR_OUT_EP_INTR(__EPNUM__, __INTERRUPT__)         (USBx_OUTEP(__EPNUM__)->DOEPINT = (__INTERRUPT__))
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
 #define USB_HS2_POWER_CORE_ENABLE()                         (USB_OTG_HS2->POWERON_CORE |= USB_OTG_HS2_POWERON_CORE)
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
 
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 /**
   * @}
   */
@@ -548,7 +544,7 @@ typedef struct
 /** @addtogroup USB_DDL_Exported_Functions USB Low Layer Exported Functions
   * @{
   */
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 DAL_StatusTypeDef USB_CoreInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef cfg);
 DAL_StatusTypeDef USB_DevInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef cfg);
 DAL_StatusTypeDef USB_EnableGlobalInt(USB_OTG_GlobalTypeDef *USBx);
@@ -580,6 +576,7 @@ DAL_StatusTypeDef USB_EP0_OutStart(USB_OTG_GlobalTypeDef *USBx, uint8_t dma, uin
 uint8_t           USB_GetDevSpeed(USB_OTG_GlobalTypeDef *USBx);
 uint32_t          USB_GetMode(USB_OTG_GlobalTypeDef *USBx);
 uint32_t          USB_ReadInterrupts(USB_OTG_GlobalTypeDef *USBx);
+uint32_t          USB_ReadChInterrupts(USB_OTG_GlobalTypeDef *USBx, uint8_t chnum);
 uint32_t          USB_ReadDevAllOutEpInterrupt(USB_OTG_GlobalTypeDef *USBx);
 uint32_t          USB_ReadDevOutEPInterrupt(USB_OTG_GlobalTypeDef *USBx, uint8_t epnum);
 uint32_t          USB_ReadDevAllInEpInterrupt(USB_OTG_GlobalTypeDef *USBx);
@@ -604,7 +601,7 @@ DAL_StatusTypeDef USB_DoPing(USB_OTG_GlobalTypeDef *USBx, uint8_t ch_num);
 DAL_StatusTypeDef USB_StopHost(USB_OTG_GlobalTypeDef *USBx);
 DAL_StatusTypeDef USB_ActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx);
 DAL_StatusTypeDef USB_DeActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx);
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 /**
   * @}
@@ -621,7 +618,7 @@ DAL_StatusTypeDef USB_DeActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx);
 /**
   * @}
   */
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 #ifdef __cplusplus
 }

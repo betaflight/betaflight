@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -2149,7 +2145,11 @@ static void USART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef *husart = (USART_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   /* DMA Normal mode */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     husart->TxXferCount = 0U;
     if (husart->State == DAL_USART_STATE_BUSY_TX)
@@ -2207,7 +2207,11 @@ static void USART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef *husart = (USART_HandleTypeDef *)((DMA_HandleTypeDef *)hdma)->Parent;
   /* DMA Normal mode */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  if ((hdma->Instance->CHCFG & DMA_CHCFG_CIRMODE) == 0U)
+#else
   if ((hdma->Instance->SCFG & DMA_SCFGx_CIRCMEN) == 0U)
+#endif /* APM32F403xx || APM32F402xx */
   {
     husart->RxXferCount = 0x00U;
 
@@ -2795,16 +2799,30 @@ static void USART_SetConfig(USART_HandleTypeDef *husart)
   /*-------------------------- USART CTRL1 Configuration -----------------------*/
   tmpreg = husart->Instance->CTRL1;
 
+#if defined(USART_CTRL1_OSMCFG)
   /* Clear M, PCE, PS, TE, RE and OVER8 bits */
   tmpreg &= (uint32_t)~((uint32_t)(USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG | USART_CTRL1_TXEN | \
                                    USART_CTRL1_RXEN | USART_CTRL1_OSMCFG));
+#else
+  /* Clear M, PCE, PS, TE and RE bits */
+  tmpreg &= (uint32_t)~((uint32_t)(USART_CTRL1_DBLCFG | USART_CTRL1_PCEN | USART_CTRL1_PCFG | USART_CTRL1_TXEN | \
+                                   USART_CTRL1_RXEN));
+#endif /* USART_CTRL1_OSMCFG */
 
+#if defined(USART_CTRL1_OSMCFG)
   /* Configure the USART Word Length, Parity and mode:
      Set the M bits according to husart->Init.WordLength value
      Set PCE and PS bits according to husart->Init.Parity value
      Set TE and RE bits according to husart->Init.Mode value
      Force OVER8 bit to 1 in order to reach the max USART frequencies */
   tmpreg |= (uint32_t)husart->Init.WordLength | husart->Init.Parity | husart->Init.Mode | USART_CTRL1_OSMCFG;
+#else
+  /* Configure the USART Word Length, Parity and mode:
+     Set the M bits according to husart->Init.WordLength value
+     Set PCE and PS bits according to husart->Init.Parity value
+     Set TE and RE bits according to husart->Init.Mode value */
+  tmpreg |= (uint32_t)husart->Init.WordLength | husart->Init.Parity | husart->Init.Mode;
+#endif /* USART_CTRL1_OSMCFG */
 
   /* Write to USART CTRL1 */
   WRITE_REG(husart->Instance->CTRL1, (uint32_t)tmpreg);

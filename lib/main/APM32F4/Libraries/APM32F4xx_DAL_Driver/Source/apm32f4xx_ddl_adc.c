@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -49,7 +45,9 @@
 #ifdef  USE_FULL_ASSERT
   #include "apm32_assert.h"
 #else
-  #define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -106,6 +104,8 @@
 
 /* Check of parameters for configuration of ADC hierarchical scope:           */
 /* ADC group regular                                                          */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 #define IS_DDL_ADC_REG_TRIG_SOURCE(__REG_TRIG_SOURCE__)                         \
   (   ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_SOFTWARE)                      \
    || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR1_CH1)                  \
@@ -125,16 +125,42 @@
    || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR8_TRGO)                 \
    || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_EINT_LINE11)               \
   )
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_DDL_ADC_REG_TRIG_SOURCE(__REG_TRIG_SOURCE__)                         \
+  (   ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_SOFTWARE)                      \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR1_CH1)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR1_CH2)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR1_CH3)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR2_CH2)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR2_CH3)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR3_CH1)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR3_TRGO)                 \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR4_CH4)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR5_CH1)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR5_CH3)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR8_CH1)                  \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_TMR8_TRGO)                 \
+   || ((__REG_TRIG_SOURCE__) == DDL_ADC_REG_TRIG_EXT_EINT_LINE11)               \
+  )
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 #define IS_DDL_ADC_REG_CONTINUOUS_MODE(__REG_CONTINUOUS_MODE__)                 \
   (   ((__REG_CONTINUOUS_MODE__) == DDL_ADC_REG_CONV_SINGLE)                    \
    || ((__REG_CONTINUOUS_MODE__) == DDL_ADC_REG_CONV_CONTINUOUS)                \
   )
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 #define IS_DDL_ADC_REG_DMA_TRANSFER(__REG_DMA_TRANSFER__)                       \
   (   ((__REG_DMA_TRANSFER__) == DDL_ADC_REG_DMA_TRANSFER_NONE)                 \
    || ((__REG_DMA_TRANSFER__) == DDL_ADC_REG_DMA_TRANSFER_LIMITED)              \
    || ((__REG_DMA_TRANSFER__) == DDL_ADC_REG_DMA_TRANSFER_UNLIMITED)            \
   )
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_DDL_ADC_REG_DMA_TRANSFER(__REG_DMA_TRANSFER__)                       \
+  (   ((__REG_DMA_TRANSFER__) == DDL_ADC_REG_DMA_TRANSFER_NONE)                 \
+   || ((__REG_DMA_TRANSFER__) == DDL_ADC_REG_DMA_TRANSFER_UNLIMITED)            \
+  )
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #define IS_DDL_ADC_REG_FLAG_EOC_SELECTION(__REG_FLAG_EOC_SELECTION__)           \
   (   ((__REG_FLAG_EOC_SELECTION__) == DDL_ADC_REG_FLAG_EOC_SEQUENCE_CONV)      \
@@ -174,6 +200,8 @@
 
 /* Check of parameters for configuration of ADC hierarchical scope:           */
 /* ADC group injected                                                         */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 #define IS_DDL_ADC_INJ_TRIG_SOURCE(__INJ_TRIG_SOURCE__)                         \
   (   ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_SOFTWARE)                      \
    || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR1_CH4)                  \
@@ -199,6 +227,27 @@
    || ((__INJ_TRIG_EXT_EDGE__) == DDL_ADC_INJ_TRIG_EXT_FALLING)                 \
    || ((__INJ_TRIG_EXT_EDGE__) == DDL_ADC_INJ_TRIG_EXT_RISINGFALLING)           \
   )
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_DDL_ADC_INJ_TRIG_SOURCE(__INJ_TRIG_SOURCE__)                         \
+  (   ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_SOFTWARE)                      \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR1_CH4)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR1_TRGO)                 \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR2_CH1)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR2_TRGO)                 \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR3_CH4)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR4_CH3)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR4_TRGO)                 \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR5_CH4)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR5_TRGO)                 \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR8_CH2)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_TMR8_CH4)                  \
+   || ((__INJ_TRIG_SOURCE__) == DDL_ADC_INJ_TRIG_EXT_EXTI_LINE15)               \
+  )
+
+#define IS_DDL_ADC_INJ_TRIG_EXT_EDGE(__INJ_TRIG_EXT_EDGE__)                     \
+  (   ((__INJ_TRIG_EXT_EDGE__) == DDL_ADC_INJ_TRIG_EXT_RISING)                  \
+  )
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #define IS_DDL_ADC_INJ_TRIG_AUTO(__INJ_TRIG_AUTO__)                             \
   (   ((__INJ_TRIG_AUTO__) == DDL_ADC_INJ_TRIG_INDEPENDENT)                     \
@@ -220,6 +269,8 @@
 #if defined(ADC_MULTIMODE_SUPPORT)
 /* Check of parameters for configuration of ADC hierarchical scope:           */
 /* multimode.                                                                 */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 #if defined(ADC3)
 #define IS_DDL_ADC_MULTI_MODE(__MULTI_MODE__)                                   \
   (   ((__MULTI_MODE__) == DDL_ADC_MULTI_INDEPENDENT)                           \
@@ -248,8 +299,21 @@
    || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_SIM_INJ_ALT)                  \
    || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_INT_INJ_SIM)                  \
   )
-#endif
-
+#endif /* ADC3 */
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_DDL_ADC_MULTI_MODE(__MULTI_MODE__)                                   \
+  (   ((__MULTI_MODE__) == DDL_ADC_MULTI_INDEPENDENT)                           \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_SIMULT)                       \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_INTERL_FAST)                  \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_INTERL_SLOW)                  \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_INJ_SIMULT)                       \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_INJ_ALTERN)                       \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_SIM_INJ_SIM)                  \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_SIM_INJ_ALT)                  \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_INTFAST_INJ_SIM)              \
+   || ((__MULTI_MODE__) == DDL_ADC_MULTI_DUAL_REG_INTSLOW_INJ_SIM)              \
+  )
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 #define IS_DDL_ADC_MULTI_DMA_TRANSFER(__MULTI_DMA_TRANSFER__)                   \
   (   ((__MULTI_DMA_TRANSFER__) == DDL_ADC_MULTI_REG_DMA_EACH_ADC)              \
    || ((__MULTI_DMA_TRANSFER__) == DDL_ADC_MULTI_REG_DMA_LIMIT_1)               \
@@ -315,14 +379,15 @@ ErrorStatus DDL_ADC_CommonDeInit(ADC_Common_TypeDef *ADCxy_COMMON)
 {
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_COMMON_INSTANCE(ADCxy_COMMON));
-  
+
+  UNUSED(ADCxy_COMMON);
 
   /* Force reset of ADC clock (core clock) */
-  DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_ADC);
-  
+  DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_ADC1);
+
   /* Release reset of ADC clock (core clock) */
-  DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_ADC);
-  
+  DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_ADC1);
+
   return SUCCESS;
 }
 
@@ -344,18 +409,22 @@ ErrorStatus DDL_ADC_CommonDeInit(ADC_Common_TypeDef *ADCxy_COMMON)
 ErrorStatus DDL_ADC_CommonInit(ADC_Common_TypeDef *ADCxy_COMMON, DDL_ADC_CommonInitTypeDef *ADC_CommonInitStruct)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_COMMON_INSTANCE(ADCxy_COMMON));
+#if defined (ADC_CCTRL_ADCPRE)
   ASSERT_PARAM(IS_DDL_ADC_COMMON_CLOCK(ADC_CommonInitStruct->CommonClock));
-  
+#endif /* ADC_CCTRL_ADCPRE */
+
 #if defined(ADC_MULTIMODE_SUPPORT)
   ASSERT_PARAM(IS_DDL_ADC_MULTI_MODE(ADC_CommonInitStruct->Multimode));
+#if defined (ADC_CCTRL_DMAMODE) && defined (ADC_CCTRL_SMPDEL2)
   if(ADC_CommonInitStruct->Multimode != DDL_ADC_MULTI_INDEPENDENT)
   {
     ASSERT_PARAM(IS_DDL_ADC_MULTI_DMA_TRANSFER(ADC_CommonInitStruct->MultiDMATransfer));
     ASSERT_PARAM(IS_DDL_ADC_MULTI_TWOSMP_DELAY(ADC_CommonInitStruct->MultiTwoSamplingDelay));
   }
+#endif /* ADC_CCTRL_DMAMODE && ADC_CCTRL_SMPDEL2 */
 #endif /* ADC_MULTIMODE_SUPPORT */
 
   /* Note: Hardware constraint (refer to description of functions             */
@@ -374,6 +443,7 @@ ErrorStatus DDL_ADC_CommonInit(ADC_Common_TypeDef *ADCxy_COMMON, DDL_ADC_CommonI
     /*    - Set ADC multimode configuration                                   */
     /*    - Set ADC multimode DMA transfer                                    */
     /*    - Set ADC multimode: delay between 2 sampling phases                */
+#if defined (ADC_CCTRL_ADCPRE)
 #if defined(ADC_MULTIMODE_SUPPORT)
     if(ADC_CommonInitStruct->Multimode != DDL_ADC_MULTI_INDEPENDENT)
     {
@@ -405,7 +475,25 @@ ErrorStatus DDL_ADC_CommonInit(ADC_Common_TypeDef *ADCxy_COMMON, DDL_ADC_CommonI
     }
 #else
     DDL_ADC_SetCommonClock(ADCxy_COMMON, ADC_CommonInitStruct->CommonClock);
-#endif
+#endif /* ADC_MULTIMODE_SUPPORT */
+#else
+#if defined(ADC_MULTIMODE_SUPPORT)
+    if(ADC_CommonInitStruct->Multimode != DDL_ADC_MULTI_INDEPENDENT)
+    {
+      MODIFY_REG(ADCxy_COMMON->CTRL1,
+                 ADC_CTRL1_DUALMCFG,
+                 ADC_CommonInitStruct->Multimode
+                );
+    }
+    else
+    {
+      MODIFY_REG(ADCxy_COMMON->CTRL1,
+                 ADC_CTRL1_DUALMCFG,
+                 DDL_ADC_MULTI_INDEPENDENT
+                );
+    }
+#endif /* ADC_MULTIMODE_SUPPORT */
+#endif /* ADC_CCTRL_ADCPRE */
   }
   else
   {
@@ -413,7 +501,7 @@ ErrorStatus DDL_ADC_CommonInit(ADC_Common_TypeDef *ADCxy_COMMON, DDL_ADC_CommonI
     /* the same ADC common instance are not disabled.                         */
     status = ERROR;
   }
-  
+
   return status;
 }
 
@@ -428,14 +516,24 @@ void DDL_ADC_CommonStructInit(DDL_ADC_CommonInitTypeDef *ADC_CommonInitStruct)
   /* Set ADC_CommonInitStruct fields to default values */
   /* Set fields of ADC common */
   /* (all ADC instances belonging to the same ADC common instance) */
+#if defined (ADC_CCTRL_ADCPRE)
   ADC_CommonInitStruct->CommonClock = DDL_ADC_CLOCK_SYNC_PCLK_DIV2;
-  
+
 #if defined(ADC_MULTIMODE_SUPPORT)
   /* Set fields of ADC multimode */
   ADC_CommonInitStruct->Multimode             = DDL_ADC_MULTI_INDEPENDENT;
-    ADC_CommonInitStruct->MultiDMATransfer      = DDL_ADC_MULTI_REG_DMA_EACH_ADC;
+  ADC_CommonInitStruct->MultiDMATransfer      = DDL_ADC_MULTI_REG_DMA_EACH_ADC;
   ADC_CommonInitStruct->MultiTwoSamplingDelay = DDL_ADC_MULTI_TWOSMP_DELAY_5CYCLES;
 #endif /* ADC_MULTIMODE_SUPPORT */
+
+#else
+
+#if defined(ADC_MULTIMODE_SUPPORT)
+  /* Set fields of ADC multimode */
+  ADC_CommonInitStruct->Multimode             = DDL_ADC_MULTI_INDEPENDENT;
+#endif /* ADC_MULTIMODE_SUPPORT */
+
+#endif /* ADC_CCTRL_ADCPRE */
 }
 
 /**
@@ -451,10 +549,10 @@ void DDL_ADC_CommonStructInit(DDL_ADC_CommonInitTypeDef *ADC_CommonInitStruct)
 ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_ALL_INSTANCE(ADCx));
-  
+
   /* Disable ADC instance if not already disabled.                            */
   if(DDL_ADC_IsEnabled(ADCx) == 1UL)
   {
@@ -462,21 +560,22 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
     /* have an external trigger event occurring during the conversion stop    */
     /* ADC disable process.                                                   */
     DDL_ADC_REG_SetTriggerSource(ADCx, DDL_ADC_REG_TRIG_SOFTWARE);
-    
+
     /* Set ADC group injected trigger source to SW start to ensure to not     */
     /* have an external trigger event occurring during the conversion stop    */
     /* ADC disable process.                                                   */
     DDL_ADC_INJ_SetTriggerSource(ADCx, DDL_ADC_INJ_TRIG_SOFTWARE);
-    
+
     /* Disable the ADC instance */
     DDL_ADC_Disable(ADCx);
   }
-  
+
   /* Check whether ADC state is compliant with expected state */
   /* (hardware requirements of bits state to reset registers below) */
   if(READ_BIT(ADCx->CTRL2, ADC_CTRL2_ADCEN) == 0UL)
   {
     /* ========== Reset ADC registers ========== */
+#if defined (ADC_STS_OVRFLG) && defined (ADC_CTRL1_OVRIEN) && defined (ADC_SMPTIM1_SMPCYCCFG18)
     /* Reset register STS */
     CLEAR_BIT(ADCx->STS,
               (  DDL_ADC_FLAG_STRT
@@ -486,7 +585,7 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
                | DDL_ADC_FLAG_JEOS
                | DDL_ADC_FLAG_AWD1 )
              );
-    
+
     /* Reset register CTRL1 */
     CLEAR_BIT(ADCx->CTRL1,
               (  ADC_CTRL1_OVRIEN   | ADC_CTRL1_RESSEL     | ADC_CTRL1_REGAWDEN
@@ -496,23 +595,66 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
                | ADC_CTRL1_INJEOCIEN  | ADC_CTRL1_AWDIEN   | ADC_CTRL1_EOCIEN
                | ADC_CTRL1_AWDCHSEL                                     )
              );
-    
+
     /* Reset register CTRL2 */
     CLEAR_BIT(ADCx->CTRL2,
-              (  ADC_CTRL2_REGCHSC  | ADC_CTRL2_REGEXTTRGEN  | ADC_CTRL2_REGEXTTRGSEL
+              (  ADC_CTRL2_REGSWSC  | ADC_CTRL2_REGEXTTRGEN  | ADC_CTRL2_REGEXTTRGSEL
                | ADC_CTRL2_INJSWSC | ADC_CTRL2_INJEXTTRGEN | ADC_CTRL2_INJGEXTTRGSEL
                | ADC_CTRL2_DALIGNCFG    | ADC_CTRL2_EOCSEL
                | ADC_CTRL2_DMADISSEL      | ADC_CTRL2_DMAEN
                | ADC_CTRL2_CONTCEN     | ADC_CTRL2_ADCEN                    )
              );
-    
+
+#if defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
+    /* Reset register OSAMPCTRL */
+    CLEAR_BIT(ADCx->OSAMPCTRL,
+              (  ADC_OSAMPCTRL_OSEN | ADC_OSAMPCTRL_OSR | ADC_OSAMPCTRL_OSS
+               | ADC_OSAMPCTRL_TOS)
+              );
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
+
     /* Reset register SMPTIM1 */
     CLEAR_BIT(ADCx->SMPTIM1,
               (  ADC_SMPTIM1_SMPCYCCFG18 | ADC_SMPTIM1_SMPCYCCFG17 | ADC_SMPTIM1_SMPCYCCFG16
                | ADC_SMPTIM1_SMPCYCCFG15 | ADC_SMPTIM1_SMPCYCCFG14 | ADC_SMPTIM1_SMPCYCCFG13
                | ADC_SMPTIM1_SMPCYCCFG12 | ADC_SMPTIM1_SMPCYCCFG11 | ADC_SMPTIM1_SMPCYCCFG10)
              );
-    
+#else
+    /* Reset register STS */
+    CLEAR_BIT(ADCx->STS,
+              (  DDL_ADC_FLAG_STRT
+               | DDL_ADC_FLAG_JSTRT
+               | DDL_ADC_FLAG_EOCS
+               | DDL_ADC_FLAG_JEOS
+               | DDL_ADC_FLAG_AWD1 )
+             );
+
+    /* Reset register CTRL1 */
+    CLEAR_BIT(ADCx->CTRL1,
+              (  ADC_CTRL1_REGAWDEN   | ADC_CTRL1_INJAWDEN  | ADC_CTRL1_DUALMCFG
+               | ADC_CTRL1_DISCNUMCFG | ADC_CTRL1_INJDISCEN | ADC_CTRL1_REGDISCEN
+               | ADC_CTRL1_INJGACEN   | ADC_CTRL1_AWDSGLEN  | ADC_CTRL1_SCANEN
+               | ADC_CTRL1_INJEOCIEN  | ADC_CTRL1_AWDIEN   | ADC_CTRL1_EOCIEN
+               | ADC_CTRL1_AWDCHSEL                                     )
+             );
+
+    /* Reset register CTRL2 */
+    CLEAR_BIT(ADCx->CTRL2,
+              (  ADC_CTRL2_TSVREFEN    | ADC_CTRL2_REGSWSC      | ADC_CTRL2_INJSWSC
+               | ADC_CTRL2_REGEXTTRGEN | ADC_CTRL2_REGEXTTRGSEL | ADC_CTRL2_INJEXTTRGEN
+               | ADC_CTRL2_INJGEXTTRGSEL    | ADC_CTRL2_DALIGNCFG | ADC_CTRL2_DMAEN
+               | ADC_CTRL2_CALRST       | ADC_CTRL2_CAL     | ADC_CTRL2_CONTCEN
+               | ADC_CTRL2_ADCEN )
+             );
+
+    /* Reset register SMPTIM1 */
+    CLEAR_BIT(ADCx->SMPTIM1,
+              (  ADC_SMPTIM1_SMPCYCCFG17 | ADC_SMPTIM1_SMPCYCCFG16
+               | ADC_SMPTIM1_SMPCYCCFG15 | ADC_SMPTIM1_SMPCYCCFG14 | ADC_SMPTIM1_SMPCYCCFG13
+               | ADC_SMPTIM1_SMPCYCCFG12 | ADC_SMPTIM1_SMPCYCCFG11 | ADC_SMPTIM1_SMPCYCCFG10)
+             );
+#endif /* ADC_STS_OVRFLG && ADC_CTRL1_OVRIEN && ADC_SMPTIM1_SMPCYCCFG18 */
+
     /* Reset register SMPTIM2 */
     CLEAR_BIT(ADCx->SMPTIM2,
               (  ADC_SMPTIM2_SMPCYCCFG9
@@ -520,7 +662,7 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
                | ADC_SMPTIM2_SMPCYCCFG5 | ADC_SMPTIM2_SMPCYCCFG4 | ADC_SMPTIM2_SMPCYCCFG3
                | ADC_SMPTIM2_SMPCYCCFG2 | ADC_SMPTIM2_SMPCYCCFG1 | ADC_SMPTIM2_SMPCYCCFG0)
              );
-    
+
     /* Reset register INJDOF1 */
     CLEAR_BIT(ADCx->INJDOF1, ADC_INJDOF1_INJDOF1);
     /* Reset register INJDOF2 */
@@ -529,19 +671,19 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
     CLEAR_BIT(ADCx->INJDOF3, ADC_INJDOF3_INJDOF3);
     /* Reset register INJDOF4 */
     CLEAR_BIT(ADCx->INJDOF4, ADC_INJDOF4_INJDOF4);
-    
+
     /* Reset register AWDHT */
     SET_BIT(ADCx->AWDHT, ADC_AWDHT_AWDHT);
     /* Reset register AWDLT */
     CLEAR_BIT(ADCx->AWDLT, ADC_AWDLT_AWDLT);
-    
+
     /* Reset register REGSEQ1 */
     CLEAR_BIT(ADCx->REGSEQ1,
               (  ADC_REGSEQ1_REGSEQLEN
                | ADC_REGSEQ1_REGSEQC16
                | ADC_REGSEQ1_REGSEQC15 | ADC_REGSEQ1_REGSEQC14 | ADC_REGSEQ1_REGSEQC13)
              );
-             
+
     /* Reset register REGSEQ2 */
     CLEAR_BIT(ADCx->REGSEQ2,
               (  ADC_REGSEQ2_REGSEQC12 | ADC_REGSEQ2_REGSEQC11 | ADC_REGSEQ2_REGSEQC10
@@ -560,13 +702,13 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
                | ADC_INJSEQ_INJSEQC4 | ADC_INJSEQ_INJSEQC3
                | ADC_INJSEQ_INJSEQC2 | ADC_INJSEQ_INJSEQC1  )
              );
-    
+
     /* Reset register REGDATA */
     /* bits in access mode read only, no direct reset applicable */
-    
+
     /* Reset registers INJDATA1, INJDATA2, INJDATA3, INJDATA4 */
     /* bits in access mode read only, no direct reset applicable */
-    
+#if defined (ADC_CCTRL_TSVREFEN)
     /* Reset register CCTRL */
 #if defined(ADC1) && defined(ADC2) && defined(ADC3)
     CLEAR_BIT(ADC->CCTRL, ADC_CCTRL_TSVREFEN | ADC_CCTRL_ADCPRE);
@@ -574,8 +716,9 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
     CLEAR_BIT(ADC1_C->CCTRL, ADC_CCTRL_TSVREFEN | ADC_CCTRL_ADCPRE);
     CLEAR_BIT(ADC2_C->CCTRL, ADC_CCTRL_TSVREFEN | ADC_CCTRL_ADCPRE);
 #endif /* ADC2 || ADC3 */
+#endif /* ADC_CCTRL_TSVREFEN */
   }
-  
+
   return status;
 }
 
@@ -615,14 +758,16 @@ ErrorStatus DDL_ADC_DeInit(ADC_TypeDef *ADCx)
 ErrorStatus DDL_ADC_Init(ADC_TypeDef *ADCx, DDL_ADC_InitTypeDef *ADC_InitStruct)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_ALL_INSTANCE(ADCx));
-  
+
+#if defined (ADC_CTRL1_RESSEL)
   ASSERT_PARAM(IS_DDL_ADC_RESOLUTION(ADC_InitStruct->Resolution));
+#endif /* ADC_CTRL1_RESSEL */
   ASSERT_PARAM(IS_DDL_ADC_DATA_ALIGN(ADC_InitStruct->DataAlignment));
   ASSERT_PARAM(IS_DDL_ADC_SCAN_SELECTION(ADC_InitStruct->SequencersScanMode));
-  
+
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
   if(DDL_ADC_IsEnabled(ADCx) == 0UL)
@@ -631,6 +776,7 @@ ErrorStatus DDL_ADC_Init(ADC_TypeDef *ADCx, DDL_ADC_InitTypeDef *ADC_InitStruct)
     /*  - ADC instance                                                        */
     /*    - Set ADC data resolution                                           */
     /*    - Set ADC conversion data alignment                                 */
+#if defined (ADC_CTRL1_RESSEL)
     MODIFY_REG(ADCx->CTRL1,
                  ADC_CTRL1_RESSEL
                | ADC_CTRL1_SCANEN
@@ -638,7 +784,14 @@ ErrorStatus DDL_ADC_Init(ADC_TypeDef *ADCx, DDL_ADC_InitTypeDef *ADC_InitStruct)
                  ADC_InitStruct->Resolution
                | ADC_InitStruct->SequencersScanMode
               );
-    
+#else
+    MODIFY_REG(ADCx->CTRL1,
+                 ADC_CTRL1_SCANEN
+              ,
+                 ADC_InitStruct->SequencersScanMode
+              );
+#endif  /* ADC_CTRL1_RESSEL */
+
     MODIFY_REG(ADCx->CTRL2,
                  ADC_CTRL2_DALIGNCFG
               ,
@@ -664,15 +817,17 @@ void DDL_ADC_StructInit(DDL_ADC_InitTypeDef *ADC_InitStruct)
 {
   /* Set ADC_InitStruct fields to default values */
   /* Set fields of ADC instance */
+#if defined (ADC_CTRL1_RESSEL)
   ADC_InitStruct->Resolution    = DDL_ADC_RESOLUTION_12B;
+#endif /* ADC_CTRL1_RESSEL */
   ADC_InitStruct->DataAlignment = DDL_ADC_DATA_ALIGN_RIGHT;
-  
+
   /* Enable scan mode to have a generic behavior with ADC of other            */
   /* APM32 families, without this setting available:                          */
   /* ADC group regular sequencer and ADC group injected sequencer depend      */
   /* only of their own configuration.                                         */
   ADC_InitStruct->SequencersScanMode      = DDL_ADC_SEQ_SCAN_ENABLE;
-  
+
 }
 
 /**
@@ -710,7 +865,7 @@ void DDL_ADC_StructInit(DDL_ADC_InitTypeDef *ADC_InitStruct)
 ErrorStatus DDL_ADC_REG_Init(ADC_TypeDef *ADCx, DDL_ADC_REG_InitTypeDef *ADC_REG_InitStruct)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_ALL_INSTANCE(ADCx));
   ASSERT_PARAM(IS_DDL_ADC_REG_TRIG_SOURCE(ADC_REG_InitStruct->TriggerSource));
@@ -721,12 +876,12 @@ ErrorStatus DDL_ADC_REG_Init(ADC_TypeDef *ADCx, DDL_ADC_REG_InitTypeDef *ADC_REG
   }
   ASSERT_PARAM(IS_DDL_ADC_REG_CONTINUOUS_MODE(ADC_REG_InitStruct->ContinuousMode));
   ASSERT_PARAM(IS_DDL_ADC_REG_DMA_TRANSFER(ADC_REG_InitStruct->DMATransfer));
-  
+
   /* ADC group regular continuous mode and discontinuous mode                 */
   /* can not be enabled simultenaeously                                       */
   ASSERT_PARAM((ADC_REG_InitStruct->ContinuousMode == DDL_ADC_REG_CONV_SINGLE)
                || (ADC_REG_InitStruct->SequencerDiscont == DDL_ADC_REG_SEQ_DISCONT_DISABLE));
-  
+
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
   if(DDL_ADC_IsEnabled(ADCx) == 0UL)
@@ -760,7 +915,7 @@ ErrorStatus DDL_ADC_REG_Init(ADC_TypeDef *ADCx, DDL_ADC_REG_InitTypeDef *ADC_REG
                    DDL_ADC_REG_SEQ_DISCONT_DISABLE
                 );
     }
-    
+#if defined (ADC_CTRL2_REGEXTTRGEN) && defined (ADC_CTRL2_DMADISSEL)
     MODIFY_REG(ADCx->CTRL2,
                  ADC_CTRL2_REGEXTTRGSEL
                | ADC_CTRL2_REGEXTTRGEN
@@ -772,6 +927,17 @@ ErrorStatus DDL_ADC_REG_Init(ADC_TypeDef *ADCx, DDL_ADC_REG_InitTypeDef *ADC_REG
                | ADC_REG_InitStruct->ContinuousMode
                | ADC_REG_InitStruct->DMATransfer
               );
+#else
+    MODIFY_REG(ADCx->CTRL2,
+                 ADC_CTRL2_REGEXTTRGSEL
+               | ADC_CTRL2_CONTCEN
+               | ADC_CTRL2_DMAEN
+              ,
+                (ADC_REG_InitStruct->TriggerSource & ADC_CTRL2_REGEXTTRGSEL)
+               | ADC_REG_InitStruct->ContinuousMode
+               | ADC_REG_InitStruct->DMATransfer
+              );
+#endif /* ADC_CTRL2_REGEXTTRGEN && ADC_CTRL2_DMADISSEL */
 
     /* Set ADC group regular sequencer length and scan direction */
     /* Note: Hardware constraint (refer to description of this function):     */
@@ -845,7 +1011,7 @@ void DDL_ADC_REG_StructInit(DDL_ADC_REG_InitTypeDef *ADC_REG_InitStruct)
 ErrorStatus DDL_ADC_INJ_Init(ADC_TypeDef *ADCx, DDL_ADC_INJ_InitTypeDef *ADC_INJ_InitStruct)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_ADC_ALL_INSTANCE(ADCx));
   ASSERT_PARAM(IS_DDL_ADC_INJ_TRIG_SOURCE(ADC_INJ_InitStruct->TriggerSource));
@@ -855,7 +1021,7 @@ ErrorStatus DDL_ADC_INJ_Init(ADC_TypeDef *ADCx, DDL_ADC_INJ_InitTypeDef *ADC_INJ
     ASSERT_PARAM(IS_DDL_ADC_INJ_SEQ_SCAN_DISCONT_MODE(ADC_INJ_InitStruct->SequencerDiscont));
   }
   ASSERT_PARAM(IS_DDL_ADC_INJ_TRIG_AUTO(ADC_INJ_InitStruct->TrigAuto));
-  
+
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
   if(DDL_ADC_IsEnabled(ADCx) == 0UL)
@@ -890,14 +1056,22 @@ ErrorStatus DDL_ADC_INJ_Init(ADC_TypeDef *ADCx, DDL_ADC_INJ_InitTypeDef *ADC_INJ
                  | ADC_INJ_InitStruct->TrigAuto
                 );
     }
-    
+
+#if defined (ADC_CTRL2_INJEXTTRGEN)
     MODIFY_REG(ADCx->CTRL2,
                  ADC_CTRL2_INJGEXTTRGSEL
                | ADC_CTRL2_INJEXTTRGEN
               ,
                 (ADC_INJ_InitStruct->TriggerSource & ADC_CTRL2_INJGEXTTRGSEL)
               );
-    
+#else
+    MODIFY_REG(ADCx->CTRL2,
+                 ADC_CTRL2_INJGEXTTRGSEL
+              ,
+                (ADC_INJ_InitStruct->TriggerSource & ADC_CTRL2_INJGEXTTRGSEL)
+              );
+#endif /* ADC_CTRL2_INJEXTTRGEN */
+
     /* Note: Hardware constraint (refer to description of this function):     */
     /* Note: If ADC instance feature scan mode is disabled                    */
     /*       (refer to  ADC instance initialization structure                 */

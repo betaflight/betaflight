@@ -17,7 +17,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -39,13 +39,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -92,10 +88,12 @@ extern "C" {
  */
 #define FLASHSIZE_BASE_ADDRESS        FLASHSIZE_BASE
 
+#if defined(PACKAGE_BASE)
 /**
  * @brief Package data register base address
  */
 #define PACKAGE_BASE_ADDRESS          PACKAGE_BASE
+#endif /* PACKAGE_BASE */
 
 /**
   * @}
@@ -117,6 +115,8 @@ extern "C" {
   */
 typedef struct
 {
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   uint32_t PLLB;   /*!< Division factor for PLL VCO input clock.
                         This parameter can be a value of @ref RCM_DDL_EC_PLLB_DIV
 
@@ -135,6 +135,19 @@ typedef struct
 
                         This feature can be modified afterwards using unitary function
                         @ref DDL_RCM_PLL_ConfigDomain_SYS(). */
+#else
+  uint32_t PLLMul;   /*!< Multiplication factor for PLL VCO input clock.
+                          This parameter can be a value of @ref RCM_DDL_EC_PLL_MUL
+
+                          This feature can be modified afterwards using unitary function
+                          @ref DDL_RCM_PLL_ConfigDomain_SYS(). */
+
+  uint32_t Prediv;   /*!< Division factor for HSE used as PLL clock source.
+                          This parameter can be a value of @ref RCM_DDL_EC_PREDIV_DIV
+
+                          This feature can be modified afterwards using unitary function
+                          @ref DDL_RCM_PLL_ConfigDomain_SYS(). */
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 } DDL_UTILS_PLLInitTypeDef;
 
 /**
@@ -176,20 +189,6 @@ typedef struct
   */
 #define DDL_UTILS_HSEBYPASS_OFF        0x00000000U       /*!< HSE Bypass is not enabled                */
 #define DDL_UTILS_HSEBYPASS_ON         0x00000001U       /*!< HSE Bypass is enabled                    */
-/**
-  * @}
-  */
-
-/** @defgroup UTILS_EC_PACKAGETYPE PACKAGE TYPE
-  * @{
-  */
-#define DDL_UTILS_PACKAGETYPE_WLCSP36_UFQFPN48_LQFP64                        0x00000000U /*!< WLCSP36 or UFQFPN48 or LQFP64 package type                         */
-#define DDL_UTILS_PACKAGETYPE_WLCSP168_FBGA169_LQFP100_LQFP64_UFQFPN48       0x00000100U /*!< WLCSP168 or FBGA169 or LQFP100 or LQFP64 or UFQFPN48 package type  */
-#define DDL_UTILS_PACKAGETYPE_WLCSP64_WLCSP81_LQFP176_UFBGA176               0x00000200U /*!< WLCSP64 or WLCSP81 or LQFP176 or UFBGA176 package type             */
-#define DDL_UTILS_PACKAGETYPE_LQFP144_UFBGA144_UFBGA144_UFBGA100             0x00000300U /*!< LQFP144 or UFBGA144 or UFBGA144 or UFBGA100 package type           */
-#define DDL_UTILS_PACKAGETYPE_LQFP100_LQFP208_TFBGA216                       0x00000400U /*!< LQFP100 or LQFP208 or TFBGA216 package type                        */
-#define DDL_UTILS_PACKAGETYPE_LQFP208_TFBGA216                               0x00000500U /*!< LQFP208 or TFBGA216 package type                                   */
-#define DDL_UTILS_PACKAGETYPE_TQFP64_UFBGA144_LQFP144                        0x00000700U /*!< TQFP64 or UFBGA144 or LQFP144 package type                         */
 /**
   * @}
   */
@@ -245,24 +244,6 @@ __STATIC_INLINE uint32_t DDL_GetUID_Word2(void)
 __STATIC_INLINE uint32_t DDL_GetFlashSize(void)
 {
   return (uint32_t)(READ_REG(*((uint32_t *)FLASHSIZE_BASE_ADDRESS)) & 0xFFFF);
-}
-
-/**
-  * @brief  Get Package type
-  * @retval Returned value can be one of the following values:
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_WLCSP36_UFQFPN48_LQFP64 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_WLCSP168_FBGA169_LQFP100_LQFP64_UFQFPN48 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_WLCSP64_WLCSP81_LQFP176_UFBGA176 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_LQFP144_UFBGA144_UFBGA144_UFBGA100 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_LQFP100_LQFP208_TFBGA216 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_LQFP208_TFBGA216 (*)
-  *         @arg @ref DDL_UTILS_PACKAGETYPE_TQFP64_UFBGA144_LQFP144 (*)
-  * 
-  *         (*) value not defined in all devices.
-  */
-__STATIC_INLINE uint32_t DDL_GetPackageType(void)
-{
-  return (uint32_t)(READ_REG(*((uint32_t *)PACKAGE_BASE_ADDRESS)) & 0x0700U);
 }
 
 /**

@@ -32,13 +32,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -312,7 +308,9 @@ DAL_StatusTypeDef DAL_I2S_Init(I2S_HandleTypeDef *hi2s)
   ASSERT_PARAM(IS_I2S_MCLK_OUTPUT(hi2s->Init.MCLKOutput));
   ASSERT_PARAM(IS_I2S_AUDIO_FREQ(hi2s->Init.AudioFreq));
   ASSERT_PARAM(IS_I2S_CPOL(hi2s->Init.CPOL));
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx)
   ASSERT_PARAM(IS_I2S_CLOCKSOURCE(hi2s->Init.ClockSource));
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F411xx */
 
   if (hi2s->State == DAL_I2S_STATE_RESET)
   {
@@ -382,18 +380,11 @@ DAL_StatusTypeDef DAL_I2S_Init(I2S_HandleTypeDef *hi2s)
     }
 
     /* Get the source clock value **********************************************/
-#if defined(I2S_APB1_APB2_FEATURE)
-    if (IS_I2S_APB1_INSTANCE(hi2s->Instance))
-    {
-      i2sclk = DAL_RCMEx_GetPeriphCLKFreq(RCM_PERIPHCLK_I2S_APB1);
-    }
-    else
-    {
-      i2sclk = DAL_RCMEx_GetPeriphCLKFreq(RCM_PERIPHCLK_I2S_APB2);
-    }
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    i2sclk = DAL_RCMEx_GetPeriphCLKFreq(RCM_PERIPHCLK_I2S2);
 #else
     i2sclk = DAL_RCMEx_GetPeriphCLKFreq(RCM_PERIPHCLK_I2S);
-#endif /* I2S_APB1_APB2_FEATURE */
+#endif /* APM32F403xx || APM32F402xx */
 
     /* Compute the Real divider depending on the MCLK output state, with a floating point */
     if (hi2s->Init.MCLKOutput == I2S_MCLKOUTPUT_ENABLE)
@@ -455,14 +446,6 @@ DAL_StatusTypeDef DAL_I2S_Init(I2S_HandleTypeDef *hi2s)
              (SPI_I2SCFG_MODESEL | hi2s->Init.Mode | \
               hi2s->Init.Standard | hi2s->Init.DataFormat | \
               hi2s->Init.CPOL));
-
-#if defined(SPI_I2SCFG_ASTRTEN)
-  if ((hi2s->Init.Standard == I2S_STANDARD_PCM_SHORT) || ((hi2s->Init.Standard == I2S_STANDARD_PCM_LONG)))
-  {
-    /* Write to SPIx I2SCFG */
-    SET_BIT(hi2s->Instance->I2SCFG, SPI_I2SCFG_ASTRTEN);
-  }
-#endif /* SPI_I2SCFG_ASTRTEN */
 
 #if defined (SPI_I2S_FULLDUPLEX_SUPPORT)
 
@@ -2116,4 +2099,3 @@ static DAL_StatusTypeDef I2S_WaitFlagStateUntilTimeout(I2S_HandleTypeDef *hi2s, 
   */
 
 #endif /* DAL_I2S_MODULE_ENABLED */
-

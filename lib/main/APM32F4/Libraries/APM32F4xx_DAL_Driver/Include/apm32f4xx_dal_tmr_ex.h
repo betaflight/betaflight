@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -95,39 +91,32 @@ typedef struct
 /** @defgroup TMREx_Remap TMR Extended Remapping
   * @{
   */
-#if defined (TMR2)
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define TMR_TMR2_TMR8_TRGO                     0x00000000U                              /*!< TMR2 ITR1 is connected to TMR8 TRGO */
+#define TMR_TMR2_USBFS_SOF                     TMR_OPT_RMPSEL                           /*!< TMR2 ITR1 is connected to OTG FS SOF */
+#else
+#if defined(TMR2)
 #if defined(TMR8)
 #define TMR_TMR2_TMR8_TRGO                     0x00000000U                              /*!< TMR2 ITR1 is connected to TMR8 TRGO */
-#else
-#define TMR_TMR2_ETH_PTP                       TMR_OR_RMPSEL_0                        /*!< TMR2 ITR1 is connected to PTP trigger output */
-#endif /*  TMR8 */
-#define TMR_TMR2_USBFS_SOF                     TMR_OR_RMPSEL_1                        /*!< TMR2 ITR1 is connected to OTG FS SOF */
-#define TMR_TMR2_USBHS_SOF                     (TMR_OR_RMPSEL_1 | TMR_OR_RMPSEL_0)  /*!< TMR2 ITR1 is connected to OTG HS SOF */
+#endif /* TMR8 */
+#define TMR_TMR2_ETH_PTP                       TMR_OPT_RMPSEL_0                         /*!< TMR2 ITR1 is connected to PTP trigger output */
+#define TMR_TMR2_USBFS_SOF                     TMR_OPT_RMPSEL_1                         /*!< TMR2 ITR1 is connected to OTG FS SOF */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#define TMR_TMR2_USBHS_SOF                     (TMR_OPT_RMPSEL_1 | TMR_OPT_RMPSEL_0)    /*!< TMR2 ITR1 is connected to OTG HS SOF */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define TMR_TMR2_USBFS2_SOF                    (TMR_OPT_RMPSEL_1 | TMR_OPT_RMPSEL_0)    /*!< TMR2 ITR1 is connected to OTG FS2 SOF */
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
 #endif /* TMR2 */
 
-#define TMR_TMR5_GPIO                          0x00000000U                              /*!< TMR5 TI4 is connected to GPIO */
-#define TMR_TMR5_LSI                           TMR_OR_TI4_RMPSEL_0                         /*!< TMR5 TI4 is connected to LSI */
-#define TMR_TMR5_LSE                           TMR_OR_TI4_RMPSEL_1                         /*!< TMR5 TI4 is connected to LSE */
-#define TMR_TMR5_RTC                           (TMR_OR_TI4_RMPSEL_1 | TMR_OR_TI4_RMPSEL_0)    /*!< TMR5 TI4 is connected to the RTC wakeup interrupt */
+#define TMR_TMR5_GPIO                          0x00000000U                                    /*!< TMR5 TI4 is connected to GPIO */
+#define TMR_TMR5_LSI                           TMR_OPT_TI4_RMPSEL_0                           /*!< TMR5 TI4 is connected to LSI */
+#define TMR_TMR5_LSE                           TMR_OPT_TI4_RMPSEL_1                           /*!< TMR5 TI4 is connected to LSE */
+#define TMR_TMR5_RTC                           (TMR_OPT_TI4_RMPSEL_1 | TMR_OPT_TI4_RMPSEL_0)  /*!< TMR5 TI4 is connected to the RTC wakeup interrupt */
 
-#define TMR_TMR11_GPIO                         0x00000000U                              /*!< TMR11 TI1 is connected to GPIO */
-#define TMR_TMR11_HSE                          TMR_OR_TI1_RMPSEL_1                         /*!< TMR11 TI1 is connected to HSE_RTC clock */
-#if defined(SPDIFRX)
-#define TMR_TMR11_SPDIFRX                      TMR_OR_TI1_RMPSEL_0                         /*!< TMR11 TI1 is connected to SPDIFRX_FRAME_SYNC */
-#endif /* SPDIFRX*/
-
-#if defined(LPTMR_OR_TMR1_ITR2_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP)
-#define LPTMR_REMAP_MASK                       0x10000000U
-
-#define TMR_TMR9_TMR3_TRGO                     LPTMR_REMAP_MASK                             /*!< TMR9 ITR1 is connected to TMR3 TRGO */
-#define TMR_TMR9_LPTMR                         (LPTMR_REMAP_MASK | LPTMR_OR_TMR9_ITR1_RMP)  /*!< TMR9 ITR1 is connected to LPTMR1 output */
-
-#define TMR_TMR5_TMR3_TRGO                     LPTMR_REMAP_MASK                             /*!< TMR5 ITR1 is connected to TMR3 TRGO */
-#define TMR_TMR5_LPTMR                         (LPTMR_REMAP_MASK | LPTMR_OR_TMR5_ITR1_RMP)  /*!< TMR5 ITR1 is connected to LPTMR1 output */
-
-#define TMR_TMR1_TMR3_TRGO                     LPTMR_REMAP_MASK                             /*!< TMR1 ITR2 is connected to TMR3 TRGO */
-#define TMR_TMR1_LPTMR                         (LPTMR_REMAP_MASK | LPTMR_OR_TMR1_ITR2_RMP)  /*!< TMR1 ITR2 is connected to LPTMR1 output */
-#endif /* LPTMR_OR_TMR1_ITR2_RMP &&  LPTMR_OR_TMR5_ITR1_RMP && LPTMR_OR_TMR5_ITR1_RMP */
+#define TMR_TMR11_GPIO                         0x00000000U                                    /*!< TMR11 TI1 is connected to GPIO */
+#define TMR_TMR11_HSE                          TMR_OPT_TI1_RMPSEL_1                           /*!< TMR11 TI1 is connected to HSE_RTC clock */
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -151,48 +140,49 @@ typedef struct
 /** @defgroup TMREx_Private_Macros TMR Extended Private Macros
   * @{
   */
-#if defined(SPDIFRX)
+#if defined(APM32F403xx) || defined(APM32F402xx)
 #define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
-  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBHS_SOF)))    || \
-   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
-                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
-                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
-                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
-   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
-                              ((TMR_REMAP) == TMR_TMR11_SPDIFRX)       || \
-                              ((TMR_REMAP) == TMR_TMR11_HSE))))
-#elif defined(TMR2)
-#if defined(LPTMR_OR_TMR1_ITR2_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP)
-#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
-  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBHS_SOF)))    || \
-   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
-                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
-                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
-                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
-   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
-                              ((TMR_REMAP) == TMR_TMR11_HSE)))         || \
-   (((INSTANCE) == TMR1)  && (((TMR_REMAP) == TMR_TMR1_TMR3_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR1_LPTMR)))        || \
-   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_TMR3_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR5_LPTMR)))        || \
-   (((INSTANCE) == TMR9)  && (((TMR_REMAP) == TMR_TMR9_TMR3_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR9_LPTMR))))
-#elif defined(TMR8)
-#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
-  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
-                              ((TMR_REMAP) == TMR_TMR2_USBHS_SOF)))    || \
-   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
-                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
-                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
-                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
-   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
-                              ((TMR_REMAP) == TMR_TMR11_HSE))))
+  (((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_USBFS_SOF)))
 #else
+#if defined(TMR2)
+#if defined(TMR8)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
+  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBHS_SOF)))    || \
+   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
+                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
+                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
+                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
+   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
+                              ((TMR_REMAP) == TMR_TMR11_HSE))))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
+#if defined(APM32F411xx)
+#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
+  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)))    || \
+   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
+                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
+                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
+                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
+   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
+                              ((TMR_REMAP) == TMR_TMR11_HSE))))
+#endif /* APM32F411xx */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
+  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_TMR8_TRGO)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS2_SOF)))   || \
+   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
+                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
+                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
+                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
+   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
+                              ((TMR_REMAP) == TMR_TMR11_HSE))))
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
+#else
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
 #define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
   ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_ETH_PTP)        || \
                               ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
@@ -203,7 +193,20 @@ typedef struct
                               ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
    (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
                               ((TMR_REMAP) == TMR_TMR11_HSE))))
-#endif /* LPTMR_OR_TMR1_ITR2_RMP &&  LPTMR_OR_TMR5_ITR1_RMP && LPTMR_OR_TMR5_ITR1_RMP */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
+  ((((INSTANCE) == TMR2)  && (((TMR_REMAP) == TMR_TMR2_ETH_PTP)        || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS_SOF)      || \
+                              ((TMR_REMAP) == TMR_TMR2_USBFS2_SOF)))   || \
+   (((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
+                              ((TMR_REMAP) == TMR_TMR5_LSI)            || \
+                              ((TMR_REMAP) == TMR_TMR5_LSE)            || \
+                              ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
+   (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
+                              ((TMR_REMAP) == TMR_TMR11_HSE))))
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
+#endif /* TMR8 */
 #else
 #define IS_TMR_REMAP(INSTANCE, TMR_REMAP)                                 \
   ((((INSTANCE) == TMR5)  && (((TMR_REMAP) == TMR_TMR5_GPIO)           || \
@@ -212,7 +215,8 @@ typedef struct
                               ((TMR_REMAP) == TMR_TMR5_RTC)))          || \
    (((INSTANCE) == TMR11) && (((TMR_REMAP) == TMR_TMR11_GPIO)          || \
                               ((TMR_REMAP) == TMR_TMR11_HSE))))
-#endif /* SPDIFRX */
+#endif /* TMR2 */
+#endif /* APM32F403xx || APM32F402xx */
 
 /**
   * @}

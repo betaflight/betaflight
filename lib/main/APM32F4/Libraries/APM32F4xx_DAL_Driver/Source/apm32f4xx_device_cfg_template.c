@@ -9,7 +9,7 @@
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -152,12 +152,13 @@ void DAL_NVIC_Config(void)
  *
  * @retval    None
  */
-void DAL_ErrorHandler(void)
+void Error_Handler(void)
 {
     /* When the function is needed, this function 
        could be implemented in the user file
     */
-    while(1)
+   __disable_irq();
+    while (1)
     {
     }
 }

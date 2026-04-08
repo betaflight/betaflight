@@ -53,7 +53,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -75,13 +75,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -185,7 +181,7 @@
              the peripherals mapped on these busses. You can use
              "DAL_RCM_GetSysClockFreq()" function to retrieve the frequencies of these clocks.
 
-         (#) For the APM32F405xx/07xx and APM32F417xx devices, the maximum
+         (#) For the APM32F405xx/07xx and APM32F415/417xx devices, the maximum
              frequency of the SYSCLK and HCLK is 168 MHz, PCLK2 84 MHz and PCLK1 42 MHz.
              Depending on the device voltage range, the maximum frequency should
              be adapted accordingly (refer to the product datasheets for more details).
@@ -249,8 +245,13 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
     /* Check the parameters */
     ASSERT_PARAM(IS_RCM_HSE(RCM_OscInitStruct->HSEState));
     /* When the HSE is used as system clock or clock source for PLL in these cases HSE will not disabled */
-    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSWSTS_HSE) ||\
-      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSWSTS_PLL) && ((RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) == RCM_PLL1CFG_PLL1CLKS_HSE)))
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_HSE) ||\
+      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_PLL) && (__DAL_RCM_GET_PLL_OSCSOURCE() == RCM_PLLSOURCE_HSE)))
+#else
+    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_HSE) ||\
+      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_PLL) && ((RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) == RCM_PLL1CFG_PLL1CLKS_HSE)))
+#endif /* APM32F403xx || APM32F402xx */
     {
       if((__DAL_RCM_GET_FLAG(RCM_FLAG_HSERDY) != RESET) && (RCM_OscInitStruct->HSEState == RCM_HSE_OFF))
       {
@@ -301,8 +302,13 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
     ASSERT_PARAM(IS_RCM_CALIBRATION_VALUE(RCM_OscInitStruct->HSICalibrationValue));
 
     /* Check if HSI is used as system clock or as PLL source when PLL is selected as system clock */
-    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSWSTS_HSI) ||\
-      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSWSTS_PLL) && ((RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) == RCM_PLL1CFG_PLL1CLKS_HSI)))
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_HSI) ||\
+      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_PLL) && (__DAL_RCM_GET_PLL_OSCSOURCE() == RCM_PLLSOURCE_HSI_DIV2)))
+#else
+    if((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_HSI) ||\
+      ((__DAL_RCM_GET_SYSCLK_SOURCE() == RCM_CFG_SCLKSELSTS_PLL) && ((RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) == RCM_PLL1CFG_PLL1CLKS_HSI)))
+#endif /* APM32F403xx || APM32F402xx */
     {
       /* When HSI is used as system clock it will not disabled */
       if((__DAL_RCM_GET_FLAG(RCM_FLAG_HSIRDY) != RESET) && (RCM_OscInitStruct->HSIState != RCM_HSI_ON))
@@ -477,16 +483,20 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
   if ((RCM_OscInitStruct->PLL.PLLState) != RCM_PLL_NONE)
   {
     /* Check if the PLL is used as system clock or not */
-    if(__DAL_RCM_GET_SYSCLK_SOURCE() != RCM_CFG_SCLKSWSTS_PLL)
+    if(__DAL_RCM_GET_SYSCLK_SOURCE() != RCM_CFG_SCLKSELSTS_PLL)
     {
       if((RCM_OscInitStruct->PLL.PLLState) == RCM_PLL_ON)
       {
         /* Check the parameters */
         ASSERT_PARAM(IS_RCM_PLLSOURCE(RCM_OscInitStruct->PLL.PLLSource));
+#if defined(APM32F403xx) || defined(APM32F402xx)
+        ASSERT_PARAM(IS_RCM_PLL_MUL(RCM_OscInitStruct->PLL.PLLMUL));
+#else
         ASSERT_PARAM(IS_RCM_PLLB_VALUE(RCM_OscInitStruct->PLL.PLLB));
         ASSERT_PARAM(IS_RCM_PLL1A_VALUE(RCM_OscInitStruct->PLL.PLL1A));
         ASSERT_PARAM(IS_RCM_PLL1C_VALUE(RCM_OscInitStruct->PLL.PLL1C));
         ASSERT_PARAM(IS_RCM_PLLD_VALUE(RCM_OscInitStruct->PLL.PLLD));
+#endif /* APM32F403xx || APM32F402xx */
 
         /* Disable the main PLL. */
         __DAL_RCM_PLL_DISABLE();
@@ -503,12 +513,29 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
           }
         }
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+        /* Configure the HSE prediv factor --------------------------------*/
+        /* It can be written only when the PLL is disabled. Not used in PLL source is different than HSE */
+        if (RCM_OscInitStruct->PLL.PLLSource == RCM_PLLSOURCE_HSE)
+        {
+          /* Check the parameter */
+          ASSERT_PARAM(IS_RCM_HSE_PREDIV(RCM_OscInitStruct->HSEPredivValue));
+          /* Set PREDIV1 Value */
+          __DAL_RCM_HSE_PREDIV_CONFIG(RCM_OscInitStruct->HSEPredivValue);
+        }
+
+        /* Configure the main PLL clock source and multiplication factors. */
+        __DAL_RCM_PLL_CONFIG(RCM_OscInitStruct->PLL.PLLSource,
+                             RCM_OscInitStruct->PLL.PLLMUL);
+#else
         /* Configure the main PLL clock source, multiplication and division factors. */
         WRITE_REG(RCM->PLL1CFG, (RCM_OscInitStruct->PLL.PLLSource                                            | \
                                  RCM_OscInitStruct->PLL.PLLB                                                 | \
                                  (RCM_OscInitStruct->PLL.PLL1A << RCM_PLL1CFG_PLL1A_Pos)             | \
                                  (((RCM_OscInitStruct->PLL.PLL1C >> 1U) - 1U) << RCM_PLL1CFG_PLL1C_Pos) | \
                                  (RCM_OscInitStruct->PLL.PLLD << RCM_PLL1CFG_PLLD_Pos)));
+#endif /* APM32F403xx || APM32F402xx */
+
         /* Enable the main PLL. */
         __DAL_RCM_PLL_ENABLE();
 
@@ -551,6 +578,12 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
       }
       else
       {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+        /* Do not return DAL_ERROR if request repeats the current configuration */
+        pll_config = RCM->CFG;
+        if ((READ_BIT(pll_config, RCM_CFG_PLLSRCSEL) != RCM_OscInitStruct->PLL.PLLSource) ||
+            (READ_BIT(pll_config, RCM_CFG_PLLMULCFG) != RCM_OscInitStruct->PLL.PLLMUL))
+#else
         /* Do not return DAL_ERROR if request repeats the current configuration */
         pll_config = RCM->PLL1CFG;
 #if defined (RCM_PLL1CFG_PLLR)
@@ -569,6 +602,7 @@ __weak DAL_StatusTypeDef DAL_RCM_OscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruc
             (READ_BIT(pll_config, RCM_PLL1CFG_PLL1C) != (((RCM_OscInitStruct->PLL.PLL1C >> 1U) - 1U)) << RCM_PLL1CFG_PLL1C_Pos) ||
             (READ_BIT(pll_config, RCM_PLL1CFG_PLLD) != (RCM_OscInitStruct->PLL.PLLD << RCM_PLL1CFG_PLLD_Pos)))
 #endif
+#endif /* APM32F403xx || APM32F402xx */
         {
           return DAL_ERROR;
         }
@@ -669,8 +703,7 @@ DAL_StatusTypeDef DAL_RCM_ClockConfig(RCM_ClkInitTypeDef  *RCM_ClkInitStruct, ui
       }
     }
     /* PLL is selected as System Clock Source */
-    else if((RCM_ClkInitStruct->SYSCLKSource == RCM_SYSCLKSOURCE_PLLCLK)   ||
-            (RCM_ClkInitStruct->SYSCLKSource == RCM_SYSCLKSOURCE_PLLRCLK))
+    else if(RCM_ClkInitStruct->SYSCLKSource == RCM_SYSCLKSOURCE_PLLCLK)
     {
       /* Check the PLL ready flag */
       if(__DAL_RCM_GET_FLAG(RCM_FLAG_PLLRDY) == RESET)
@@ -693,7 +726,7 @@ DAL_StatusTypeDef DAL_RCM_ClockConfig(RCM_ClkInitTypeDef  *RCM_ClkInitStruct, ui
     /* Get Start Tick */
     tickstart = DAL_GetTick();
 
-    while (__DAL_RCM_GET_SYSCLK_SOURCE() != (RCM_ClkInitStruct->SYSCLKSource << RCM_CFG_SCLKSWSTS_Pos))
+    while (__DAL_RCM_GET_SYSCLK_SOURCE() != (RCM_ClkInitStruct->SYSCLKSource << RCM_CFG_SCLKSELSTS_Pos))
     {
       if ((DAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
       {
@@ -761,6 +794,7 @@ DAL_StatusTypeDef DAL_RCM_ClockConfig(RCM_ClkInitTypeDef  *RCM_ClkInitStruct, ui
 /**
   * @brief  Selects the clock source to output on MCO1 pin(PA8) or on MCO2 pin(PC9).
   * @note   PA8/PC9 should be configured in alternate function mode.
+  @if APM32F405xx || APM32F407xx || APM32F417xx || APM32F411xx || APM32F465xx
   * @param  RCM_MCOx specifies the output direction for the clock source.
   *          This parameter can be one of the following values:
   *            @arg RCM_MCO1: Clock source to output on MCO1 pin(PA8).
@@ -783,6 +817,22 @@ DAL_StatusTypeDef DAL_RCM_ClockConfig(RCM_ClkInitTypeDef  *RCM_ClkInitStruct, ui
   *            @arg RCM_MCODIV_3: division by 3 applied to MCOx clock
   *            @arg RCM_MCODIV_4: division by 4 applied to MCOx clock
   *            @arg RCM_MCODIV_5: division by 5 applied to MCOx clock
+  @endif
+  @if APM32F402/403xx
+  * @param  RCM_MCOx specifies the output direction for the clock source.
+  *          This parameter can be one of the following values:
+  *            @arg RCM_MCO1: Clock source to output on MCO1 pin(PA8).
+  * @param  RCM_MCOSource specifies the clock source to output.
+  *          This parameter can be one of the following values:
+  *            @arg @ref RCM_MCO1SOURCE_NOCLOCK     No clock selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_SYSCLK      System clock selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_HSI         HSI selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_HSE         HSE selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_PLLCLK      PLL clock divided by 2 selected as MCO clock
+  * @param  RCM_MCODiv specifies the MCOx prescaler.
+  *          This parameter can be one of the following values:
+  *            @arg RCM_MCODIV_1: no division applied to MCOx clock
+  @endif
   * @note  For APM32F410Rx devices to output I2SCLK clock on MCO2 you should have
   *        at last one of the SPI clocks enabled (SPI1, SPI2 or SPI5).
   * @retval None
@@ -801,6 +851,17 @@ void DAL_RCM_MCOConfig(uint32_t RCM_MCOx, uint32_t RCM_MCOSource, uint32_t RCM_M
     /* MCO1 Clock Enable */
     __MCO1_CLK_ENABLE();
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    /* Configure the MCO1 pin in alternate function mode */
+    GPIO_InitStruct.Pin = MCO1_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    DAL_GPIO_Init(MCO1_GPIO_PORT, &GPIO_InitStruct);
+
+    /* Configure the MCO clock source */
+    __DAL_RCM_MCO1_CONFIG(RCM_MCOSource, RCM_MCODiv);
+#else
     /* Configure the MCO1 pin in alternate function mode */
     GPIO_InitStruct.Pin = MCO1_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -811,6 +872,7 @@ void DAL_RCM_MCOConfig(uint32_t RCM_MCOx, uint32_t RCM_MCOSource, uint32_t RCM_M
 
     /* Mask MCO1 and MCO1PRE[2:0] bits then Select MCO1 clock source and prescaler */
     MODIFY_REG(RCM->CFG, (RCM_CFG_MCO1SEL | RCM_CFG_MCO1PSC), (RCM_MCOSource | RCM_MCODiv));
+#endif /* APM32F403xx || APM32F402xx */
 
    /* This RCM MCO1 enable feature is available only on APM32F410xx devices */
 #if defined(RCM_CFG_MCO1EN)
@@ -899,24 +961,45 @@ void DAL_RCM_DisableCSS(void)
   */
 __weak uint32_t DAL_RCM_GetSysClockFreq(void)
 {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  uint32_t pllmul = 0U, prediv = 0U;
+#else
   uint32_t pllm = 0U, pllvco = 0U, pllp = 0U;
+#endif /* APM32F403xx || APM32F402xx */
   uint32_t sysclockfreq = 0U;
 
   /* Get SYSCLK source -------------------------------------------------------*/
-  switch (RCM->CFG & RCM_CFG_SCLKSWSTS)
+  switch (RCM->CFG & RCM_CFG_SCLKSELSTS)
   {
-    case RCM_CFG_SCLKSWSTS_HSI:  /* HSI used as system clock source */
+    case RCM_CFG_SCLKSELSTS_HSI:  /* HSI used as system clock source */
     {
       sysclockfreq = HSI_VALUE;
        break;
     }
-    case RCM_CFG_SCLKSWSTS_HSE:  /* HSE used as system clock  source */
+    case RCM_CFG_SCLKSELSTS_HSE:  /* HSE used as system clock  source */
     {
       sysclockfreq = HSE_VALUE;
       break;
     }
-    case RCM_CFG_SCLKSWSTS_PLL:  /* PLL used as system clock  source */
+    case RCM_CFG_SCLKSELSTS_PLL:  /* PLL used as system clock  source */
     {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+      pllmul = (((RCM->CFG & RCM_CFG_PLLMULCFG) >> RCM_CFG_PLLMULCFG_Pos) + 2U) > 16U? 16U:\
+                           (((RCM->CFG & RCM_CFG_PLLMULCFG) >> RCM_CFG_PLLMULCFG_Pos) + 2U);
+      if((RCM->CFG & RCM_CFG_PLLSRCSEL) != RCM_PLLSOURCE_HSI_DIV2)
+      {
+        prediv = ((RCM->CFG & RCM_CFG_PLLHSEPSC) >> RCM_CFG_PLLHSEPSC_Pos) + 1;
+
+        /* HSE used as PLL clock source : PLLCLK = HSE/PREDIV1 * PLLMUL */
+        sysclockfreq = (uint32_t)((HSE_VALUE  * pllmul) / prediv);
+      }
+      else
+      {
+        /* HSI used as PLL clock source : PLLCLK = HSI/2 * PLLMUL */
+        sysclockfreq = (uint32_t)((HSI_VALUE >> 1) * pllmul);
+      }
+
+#else
       /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLLB) * PLL1A
       SYSCLK = PLL_VCO / PLL1C */
       pllm = RCM->PLL1CFG & RCM_PLL1CFG_PLLB;
@@ -933,6 +1016,7 @@ __weak uint32_t DAL_RCM_GetSysClockFreq(void)
       pllp = ((((RCM->PLL1CFG & RCM_PLL1CFG_PLL1C) >> RCM_PLL1CFG_PLL1C_Pos) + 1U) *2U);
 
       sysclockfreq = pllvco/pllp;
+#endif /* APM32F403xx || APM32F402xx */
       break;
     }
     default:
@@ -995,11 +1079,11 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   RCM_OscInitStruct->OscillatorType = RCM_OSCILLATORTYPE_HSE | RCM_OSCILLATORTYPE_HSI | RCM_OSCILLATORTYPE_LSE | RCM_OSCILLATORTYPE_LSI;
 
   /* Get the HSE configuration -----------------------------------------------*/
-  if((RCM->CTRL &RCM_CTRL_HSEBCFG) == RCM_CTRL_HSEBCFG)
+  if((RCM->CTRL & RCM_CTRL_HSEBCFG) == RCM_CTRL_HSEBCFG)
   {
     RCM_OscInitStruct->HSEState = RCM_HSE_BYPASS;
   }
-  else if((RCM->CTRL &RCM_CTRL_HSEEN) == RCM_CTRL_HSEEN)
+  else if((RCM->CTRL & RCM_CTRL_HSEEN) == RCM_CTRL_HSEEN)
   {
     RCM_OscInitStruct->HSEState = RCM_HSE_ON;
   }
@@ -1009,7 +1093,7 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   }
 
   /* Get the HSI configuration -----------------------------------------------*/
-  if((RCM->CTRL &RCM_CTRL_HSIEN) == RCM_CTRL_HSIEN)
+  if((RCM->CTRL & RCM_CTRL_HSIEN) == RCM_CTRL_HSIEN)
   {
     RCM_OscInitStruct->HSIState = RCM_HSI_ON;
   }
@@ -1021,11 +1105,11 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   RCM_OscInitStruct->HSICalibrationValue = (uint32_t)((RCM->CTRL &RCM_CTRL_HSITRM) >> RCM_CTRL_HSITRM_Pos);
 
   /* Get the LSE configuration -----------------------------------------------*/
-  if((RCM->BDCTRL &RCM_BDCTRL_LSEBCFG) == RCM_BDCTRL_LSEBCFG)
+  if((RCM->BDCTRL & RCM_BDCTRL_LSEBCFG) == RCM_BDCTRL_LSEBCFG)
   {
     RCM_OscInitStruct->LSEState = RCM_LSE_BYPASS;
   }
-  else if((RCM->BDCTRL &RCM_BDCTRL_LSEEN) == RCM_BDCTRL_LSEEN)
+  else if((RCM->BDCTRL & RCM_BDCTRL_LSEEN) == RCM_BDCTRL_LSEEN)
   {
     RCM_OscInitStruct->LSEState = RCM_LSE_ON;
   }
@@ -1035,7 +1119,7 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   }
 
   /* Get the LSI configuration -----------------------------------------------*/
-  if((RCM->CSTS &RCM_CSTS_LSIEN) == RCM_CSTS_LSIEN)
+  if((RCM->CSTS & RCM_CSTS_LSIEN) == RCM_CSTS_LSIEN)
   {
     RCM_OscInitStruct->LSIState = RCM_LSI_ON;
   }
@@ -1045,7 +1129,7 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   }
 
   /* Get the PLL configuration -----------------------------------------------*/
-  if((RCM->CTRL &RCM_CTRL_PLL1EN) == RCM_CTRL_PLL1EN)
+  if((RCM->CTRL & RCM_CTRL_PLL1EN) == RCM_CTRL_PLL1EN)
   {
     RCM_OscInitStruct->PLL.PLLState = RCM_PLL_ON;
   }
@@ -1053,11 +1137,16 @@ __weak void DAL_RCM_GetOscConfig(RCM_OscInitTypeDef  *RCM_OscInitStruct)
   {
     RCM_OscInitStruct->PLL.PLLState = RCM_PLL_OFF;
   }
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  RCM_OscInitStruct->PLL.PLLSource = (uint32_t)(RCM->CFG & RCM_CFG_PLLSRCSEL);
+  RCM_OscInitStruct->PLL.PLLMUL = (uint32_t)(RCM->CFG & RCM_CFG_PLLMULCFG);
+#else
   RCM_OscInitStruct->PLL.PLLSource = (uint32_t)(RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS);
   RCM_OscInitStruct->PLL.PLLB = (uint32_t)(RCM->PLL1CFG & RCM_PLL1CFG_PLLB);
   RCM_OscInitStruct->PLL.PLL1A = (uint32_t)((RCM->PLL1CFG & RCM_PLL1CFG_PLL1A) >> RCM_PLL1CFG_PLL1A_Pos);
   RCM_OscInitStruct->PLL.PLL1C = (uint32_t)((((RCM->PLL1CFG & RCM_PLL1CFG_PLL1C) + RCM_PLL1CFG_PLL1C_0) << 1U) >> RCM_PLL1CFG_PLL1C_Pos);
   RCM_OscInitStruct->PLL.PLLD = (uint32_t)((RCM->PLL1CFG & RCM_PLL1CFG_PLLD) >> RCM_PLL1CFG_PLLD_Pos);
+#endif /* APM32F403xx || APM32F402xx */
 }
 
 /**
@@ -1086,7 +1175,11 @@ void DAL_RCM_GetClockConfig(RCM_ClkInitTypeDef  *RCM_ClkInitStruct, uint32_t *pF
   RCM_ClkInitStruct->APB2CLKDivider = (uint32_t)((RCM->CFG & RCM_CFG_APB2PSC) >> 3U);
 
   /* Get the Flash Wait State (Latency) configuration ------------------------*/
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  *pFLatency = (uint32_t)(FLASH->CTRL1 & (FLASH_CTRL1_WS02 | FLASH_CTRL1_WS34));
+#else
   *pFLatency = (uint32_t)(FLASH->ACCTRL & FLASH_ACCTRL_WAITP);
+#endif /* APM32F403xx || APM32F402xx */
 }
 
 /**

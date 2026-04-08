@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -45,10 +41,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_ddl_gpio.h"
 #include "apm32f4xx_ddl_bus.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -70,24 +69,44 @@
   */
 #define IS_DDL_GPIO_PIN(__VALUE__)          (((0x00000000U) < (__VALUE__)) && ((__VALUE__) <= (DDL_GPIO_PIN_ALL)))
 
-#define IS_DDL_GPIO_MODE(__VALUE__)         (((__VALUE__) == DDL_GPIO_MODE_INPUT)     ||\
+#if defined (GPIO_CFGLOW_MODE) && defined (GPIO_CFGHIG_MODE)
+#define IS_DDL_GPIO_MODE(__VALUE__)        (((__VALUE__) == DDL_GPIO_MODE_ANALOG)       ||\
+                                            ((__VALUE__) == DDL_GPIO_MODE_FLOATING)     ||\
+                                            ((__VALUE__) == DDL_GPIO_MODE_INPUT)        ||\
+                                            ((__VALUE__) == DDL_GPIO_MODE_OUTPUT)       ||\
+                                            ((__VALUE__) == DDL_GPIO_MODE_ALTERNATE))
+#else
+#define IS_DDL_GPIO_MODE(__VALUE__)        (((__VALUE__) == DDL_GPIO_MODE_INPUT)     ||\
                                             ((__VALUE__) == DDL_GPIO_MODE_OUTPUT)    ||\
                                             ((__VALUE__) == DDL_GPIO_MODE_ALTERNATE) ||\
                                             ((__VALUE__) == DDL_GPIO_MODE_ANALOG))
+#endif
 
 #define IS_DDL_GPIO_OUTPUT_TYPE(__VALUE__)  (((__VALUE__) == DDL_GPIO_OUTPUT_PUSHPULL)  ||\
-                                            ((__VALUE__) == DDL_GPIO_OUTPUT_OPENDRAIN))
+                                             ((__VALUE__) == DDL_GPIO_OUTPUT_OPENDRAIN))
 
-#define IS_DDL_GPIO_SPEED(__VALUE__)        (((__VALUE__) == DDL_GPIO_SPEED_FREQ_LOW)       ||\
+#if defined (GPIO_OSSEL_OSSEL0)
+#define IS_DDL_GPIO_SPEED(__VALUE__)       (((__VALUE__) == DDL_GPIO_SPEED_FREQ_LOW)       ||\
                                             ((__VALUE__) == DDL_GPIO_SPEED_FREQ_MEDIUM)    ||\
                                             ((__VALUE__) == DDL_GPIO_SPEED_FREQ_HIGH)      ||\
                                             ((__VALUE__) == DDL_GPIO_SPEED_FREQ_VERY_HIGH))
+#else
+#define IS_DDL_GPIO_SPEED(__VALUE__)       (((__VALUE__) == DDL_GPIO_SPEED_FREQ_LOW)       ||\
+                                            ((__VALUE__) == DDL_GPIO_SPEED_FREQ_MEDIUM)    ||\
+                                            ((__VALUE__) == DDL_GPIO_SPEED_FREQ_HIGH))
+#endif
 
-#define IS_DDL_GPIO_PULL(__VALUE__)         (((__VALUE__) == DDL_GPIO_PULL_NO)   ||\
+#if defined (GPIO_PUPD_PUPD0)
+#define IS_DDL_GPIO_PULL(__VALUE__)        (((__VALUE__) == DDL_GPIO_PULL_NO)   ||\
                                             ((__VALUE__) == DDL_GPIO_PULL_UP)   ||\
                                             ((__VALUE__) == DDL_GPIO_PULL_DOWN))
+#else
+#define IS_DDL_GPIO_PULL(__VALUE__)        (((__VALUE__) == DDL_GPIO_PULL_DOWN)   ||\
+                                            ((__VALUE__) == DDL_GPIO_PULL_UP))
+#endif
 
-#define IS_DDL_GPIO_ALTERNATE(__VALUE__)    (((__VALUE__) == DDL_GPIO_AF_0  )   ||\
+#if defined (GPIO_ALFL_ALFSEL0)
+#define IS_DDL_GPIO_ALTERNATE(__VALUE__)   (((__VALUE__) == DDL_GPIO_AF_0  )   ||\
                                             ((__VALUE__) == DDL_GPIO_AF_1  )   ||\
                                             ((__VALUE__) == DDL_GPIO_AF_2  )   ||\
                                             ((__VALUE__) == DDL_GPIO_AF_3  )   ||\
@@ -103,6 +122,7 @@
                                             ((__VALUE__) == DDL_GPIO_AF_13 )   ||\
                                             ((__VALUE__) == DDL_GPIO_AF_14 )   ||\
                                             ((__VALUE__) == DDL_GPIO_AF_15 ))
+#endif
 /**
   * @}
   */
@@ -135,24 +155,44 @@ ErrorStatus DDL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
   /* Force and Release reset on clock of GPIOx Port */
   if (GPIOx == GPIOA)
   {
+  #if defined (DDL_AHB1_GRP1_PERIPH_GPIOA)
     DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_GPIOA);
     DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_GPIOA);
+  #else
+    DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_GPIOA);
+    DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_GPIOA);
+  #endif /* DDL_AHB1_GRP1_PERIPH_GPIOA */
   }
   else if (GPIOx == GPIOB)
   {
+#if defined (DDL_AHB1_GRP1_PERIPH_GPIOB)
     DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_GPIOB);
     DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_GPIOB);
+#else
+    DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_GPIOB);
+    DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_GPIOB);
+#endif /* DDL_AHB1_GRP1_PERIPH_GPIOB */
   }
   else if (GPIOx == GPIOC)
   {
+#if defined (DDL_AHB1_GRP1_PERIPH_GPIOC)
     DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_GPIOC);
     DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_GPIOC);
+#else
+    DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_GPIOC);
+    DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_GPIOC);
+#endif /* DDL_AHB1_GRP1_PERIPH_GPIOC */
   }
 #if defined(GPIOD)
   else if (GPIOx == GPIOD)
   {
+#if defined (DDL_AHB1_GRP1_PERIPH_GPIOD)
     DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_GPIOD);
     DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_GPIOD);
+#else
+    DDL_APB2_GRP1_ForceReset(DDL_APB2_GRP1_PERIPH_GPIOD);
+    DDL_APB2_GRP1_ReleaseReset(DDL_APB2_GRP1_PERIPH_GPIOD);
+#endif /* DDL_AHB1_GRP1_PERIPH_GPIOD */
   }
 #endif /* GPIOD */
 #if defined(GPIOE)
@@ -223,6 +263,7 @@ ErrorStatus DDL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
   */
 ErrorStatus DDL_GPIO_Init(GPIO_TypeDef *GPIOx, DDL_GPIO_InitTypeDef *GPIO_InitStruct)
 {
+  uint32_t pinmask    = 0x00000000U;
   uint32_t pinpos     = 0x00000000U;
   uint32_t currentpin = 0x00000000U;
 
@@ -234,40 +275,69 @@ ErrorStatus DDL_GPIO_Init(GPIO_TypeDef *GPIOx, DDL_GPIO_InitTypeDef *GPIO_InitSt
 
   /* ------------------------- Configure the port pins ---------------- */
   /* Initialize  pinpos on first pin set */
-  pinpos = POSITION_VAL(GPIO_InitStruct->Pin);
-  
+#if defined (GPIO_PIN_MASK_POS)
+  pinmask = ((GPIO_InitStruct->Pin) << GPIO_PIN_MASK_POS) >> GPIO_PIN_NB;
+#else
+  pinmask = GPIO_InitStruct->Pin;
+#endif /* GPIO_PIN_MASK_POS */
+  pinpos = POSITION_VAL(pinmask);
+
   /* Configure the port pins */
-  while (((GPIO_InitStruct->Pin) >> pinpos) != 0x00000000U)
+  while ((pinmask >> pinpos) != 0x00000000U)
   {
-    /* Get current io position */
-    currentpin = (GPIO_InitStruct->Pin) & (0x00000001U << pinpos);
-    
-    if (currentpin)
+    /* skip if bit is not set */
+    if ((pinmask & (0x00000001U << pinpos)) != 0u)
     {
-      
+#if defined  (GPIO_PIN_MASK_POS)
+      /* Get current io position */
+      if (pinpos < GPIO_PIN_MASK_POS)
+      {
+        currentpin = (0x00000101uL << pinpos);
+      }
+      else
+      {
+        currentpin = ((0x00010001u << (pinpos - GPIO_PIN_MASK_POS)) | 0x04000000u);
+      }
+#else
+      /* Get current io position */
+      currentpin = (pinmask) & (0x00000001U << pinpos);
+#endif /* GPIO_PIN_MASK_POS */
+
+#if defined(GPIO_CFGLOW_CFG)
+      if (GPIO_InitStruct->Mode == DDL_GPIO_MODE_INPUT)
+      {
+        /* Pull-up Pull down resistor configuration*/
+        DDL_GPIO_SetPinPull(GPIOx, currentpin, GPIO_InitStruct->Pull);
+      }
+#else
+      /* Pull-up Pull down resistor configuration*/
+      DDL_GPIO_SetPinPull(GPIOx, currentpin, GPIO_InitStruct->Pull);
+#endif /* GPIO_CFGLOW_CFG */
+
+      /* Pin Mode configuration */
+      DDL_GPIO_SetPinMode(GPIOx, currentpin, GPIO_InitStruct->Mode);
+
       if ((GPIO_InitStruct->Mode == DDL_GPIO_MODE_OUTPUT) || (GPIO_InitStruct->Mode == DDL_GPIO_MODE_ALTERNATE))
       {
         /* Check Speed mode parameters */
         ASSERT_PARAM(IS_DDL_GPIO_SPEED(GPIO_InitStruct->Speed));
-        
+
         /* Speed mode configuration */
         DDL_GPIO_SetPinSpeed(GPIOx, currentpin, GPIO_InitStruct->Speed);
-        
+
         /* Check Output mode parameters */
         ASSERT_PARAM(IS_DDL_GPIO_OUTPUT_TYPE(GPIO_InitStruct->OutputType));
-        
+
         /* Output mode configuration*/
         DDL_GPIO_SetPinOutputType(GPIOx, currentpin, GPIO_InitStruct->OutputType);
       }
-      
-      /* Pull-up Pull down resistor configuration*/
-      DDL_GPIO_SetPinPull(GPIOx, currentpin, GPIO_InitStruct->Pull);
-      
+
+#if defined (GPIO_ALFL_ALFSEL0)
       if (GPIO_InitStruct->Mode == DDL_GPIO_MODE_ALTERNATE)
       {
         /* Check Alternate parameter */
         ASSERT_PARAM(IS_DDL_GPIO_ALTERNATE(GPIO_InitStruct->Alternate));
-        
+
         /* Speed mode configuration */
         if (POSITION_VAL(currentpin) < 0x00000008U)
         {
@@ -278,9 +348,7 @@ ErrorStatus DDL_GPIO_Init(GPIO_TypeDef *GPIOx, DDL_GPIO_InitTypeDef *GPIO_InitSt
           DDL_GPIO_SetAFPin_8_15(GPIOx, currentpin, GPIO_InitStruct->Alternate);
         }
       }
-      
-      /* Pin Mode configuration */
-      DDL_GPIO_SetPinMode(GPIOx, currentpin, GPIO_InitStruct->Mode);
+#endif
     }
     pinpos++;
   }
@@ -302,8 +370,13 @@ void DDL_GPIO_StructInit(DDL_GPIO_InitTypeDef *GPIO_InitStruct)
   GPIO_InitStruct->Mode       = DDL_GPIO_MODE_ANALOG;
   GPIO_InitStruct->Speed      = DDL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct->OutputType = DDL_GPIO_OUTPUT_PUSHPULL;
+#if defined (DDL_GPIO_PULL_NO)
   GPIO_InitStruct->Pull       = DDL_GPIO_PULL_NO;
+#endif /* DDL_GPIO_PULL_NO */
+  GPIO_InitStruct->Pull       = DDL_GPIO_PULL_DOWN;
+#if defined (GPIO_ALFL_ALFSEL0)
   GPIO_InitStruct->Alternate  = DDL_GPIO_AF_0;
+#endif /* GPIO_ALFL_ALFSEL0 */
 }
 
 /**

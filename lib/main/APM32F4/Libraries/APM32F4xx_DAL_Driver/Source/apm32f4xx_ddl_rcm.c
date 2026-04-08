@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -43,11 +39,15 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_ddl_rcm.h"
+
 #ifdef  USE_FULL_ASSERT
   #include "apm32_assert.h"
 #else
-  #define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
 #endif
+#endif
+
 /** @addtogroup APM32F4xx_DDL_Driver
   * @{
   */
@@ -74,16 +74,17 @@
 #define IS_DDL_RCM_RNG_CLKSOURCE(__VALUE__)    (((__VALUE__) == DDL_RCM_RNG_CLKSOURCE))
 #endif /* RNG */
 
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS) || defined(USB_OTG_FS2)
 #define IS_DDL_RCM_USB_CLKSOURCE(__VALUE__)    (((__VALUE__) == DDL_RCM_USB_CLKSOURCE))
 #endif /* USB_OTG_FS || USB_OTG_HS */
 
-#if defined(RCM_DCKCFGR_I2S2SRC)
-#define IS_DDL_RCM_I2S_CLKSOURCE(__VALUE__)    (((__VALUE__) == DDL_RCM_I2S1_CLKSOURCE) \
-                                            || ((__VALUE__) == DDL_RCM_I2S2_CLKSOURCE))
-#else
+#if defined(RCM_PLLI2S_SUPPORT)
 #define IS_DDL_RCM_I2S_CLKSOURCE(__VALUE__)    (((__VALUE__) == DDL_RCM_I2S1_CLKSOURCE))
-#endif /* RCM_DCKCFGR_I2S2SRC */
+#endif /* RCM_CFG_I2SSEL */
+
+#if defined(RCM_CFG_ADCPSC)
+#define IS_DDL_RCM_ADC_CLKSOURCE(__VALUE__)    (((__VALUE__) == DDL_RCM_ADC_CLKSOURCE))
+#endif /* RCM_CFG_ADCPSC */
 
 /**
   * @}
@@ -98,7 +99,10 @@ uint32_t RCM_GetHCLKClockFreq(uint32_t SYSCLK_Frequency);
 uint32_t RCM_GetPCLK1ClockFreq(uint32_t HCLK_Frequency);
 uint32_t RCM_GetPCLK2ClockFreq(uint32_t HCLK_Frequency);
 uint32_t RCM_PLL_GetFreqDomain_SYS(uint32_t SYSCLK_Source);
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || \
+    defined(APM32F465xx) || defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 uint32_t RCM_PLL_GetFreqDomain_48M(void);
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if defined(RCM_PLLI2S_SUPPORT)
 uint32_t RCM_PLLI2S_GetFreqDomain_I2S(void);
@@ -168,8 +172,11 @@ ErrorStatus DDL_RCM_DeInit(void)
   while(DDL_RCM_PLL_IsReady() != 0U)
   {}
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Reset PLL1CFG register */
   DDL_RCM_WriteReg(PLL1CFG, RCM_PLL1CFG_RST_VALUE);
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if defined(RCM_PLLI2S_SUPPORT)
   /* Reset PLL2CFG register */
@@ -247,6 +254,7 @@ void DDL_RCM_GetSystemClocksFreq(DDL_RCM_ClocksTypeDef *RCM_Clocks)
   RCM_Clocks->PCLK2_Frequency  = RCM_GetPCLK2ClockFreq(RCM_Clocks->HCLK_Frequency);
 }
 
+#if defined(RCM_PLLI2S_SUPPORT)
 /**
   * @brief  Return I2Sx clock frequency
   * @param  I2SxSource This parameter can be one of the following values:
@@ -287,6 +295,7 @@ uint32_t DDL_RCM_GetI2SClockFreq(uint32_t I2SxSource)
 
   return i2s_frequency;
 }
+#endif /* RCM_PLLI2S_SUPPORT */
 
 #if defined(SDIO)
 /**
@@ -305,54 +314,11 @@ uint32_t DDL_RCM_GetSDIOClockFreq(uint32_t SDIOxSource)
 
   if (SDIOxSource == DDL_RCM_SDIO_CLKSOURCE)
   {
-#if defined(RCM_DCKCFGR_SDIOSEL) || defined(RCM_DCKCFGR2_SDIOSEL)
-    /* SDIOCLK clock frequency */
-    switch (DDL_RCM_GetSDIOClockSource(SDIOxSource))
-    {
-      case DDL_RCM_SDIO_CLKSOURCE_PLL48CLK:         /* PLL48M clock used as SDIO clock source */
-        switch (DDL_RCM_GetCK48MClockSource(DDL_RCM_CK48M_CLKSOURCE))
-        {
-          case DDL_RCM_CK48M_CLKSOURCE_PLL:         /* PLL clock used as 48Mhz domain clock */
-            if (DDL_RCM_PLL_IsReady())
-            {
-              SDIO_frequency = RCM_PLL_GetFreqDomain_48M();
-            }
-          break;
-
-#if defined(RCM_PLLSAI_SUPPORT)
-          case DDL_RCM_CK48M_CLKSOURCE_PLLSAI:      /* PLLSAI clock used as 48Mhz domain clock */
-          default:
-            if (DDL_RCM_PLLSAI_IsReady())
-            {
-              SDIO_frequency = RCM_PLLSAI_GetFreqDomain_48M();
-            }
-            break;
-#endif /* RCM_PLLSAI_SUPPORT */
-
-#if defined(RCM_PLL2CFG_PLLI2SQ) && !defined(RCM_DCKCFGR_PLLI2SDIVQ)
-          case DDL_RCM_CK48M_CLKSOURCE_PLLI2S:      /* PLLI2S clock used as 48Mhz domain clock */
-          default:
-            if (DDL_RCM_PLLI2S_IsReady())
-            {
-              SDIO_frequency = RCM_PLLI2S_GetFreqDomain_48M();
-            }
-            break;
-#endif /* RCM_PLL2CFG_PLLI2SQ && !RCM_DCKCFGR_PLLI2SDIVQ */
-        }
-        break;
-
-      case DDL_RCM_SDIO_CLKSOURCE_SYSCLK:           /* PLL clock used as SDIO clock source */
-      default:
-      SDIO_frequency = RCM_GetSystemClockFreq();
-      break;
-    }
-#else
     /* PLL clock used as 48Mhz domain clock */
     if (DDL_RCM_PLL_IsReady())
     {
       SDIO_frequency = RCM_PLL_GetFreqDomain_48M();
     }
-#endif /* RCM_DCKCFGR_SDIOSEL || RCM_DCKCFGR2_SDIOSEL */
   }
 
   return SDIO_frequency;
@@ -374,49 +340,19 @@ uint32_t DDL_RCM_GetRNGClockFreq(uint32_t RNGxSource)
   /* Check parameter */
   ASSERT_PARAM(IS_DDL_RCM_RNG_CLKSOURCE(RNGxSource));
 
-#if defined(RCM_DCKCFGR_CK48MSEL) || defined(RCM_DCKCFGR2_CK48MSEL)
-  /* RNGCLK clock frequency */
-  switch (DDL_RCM_GetRNGClockSource(RNGxSource))
-  {
-#if defined(RCM_PLL2CFG_PLLI2SQ) && !defined(RCM_DCKCFGR_PLLI2SDIVQ)
-    case DDL_RCM_RNG_CLKSOURCE_PLLI2S:        /* PLLI2S clock used as RNG clock source */
-      if (DDL_RCM_PLLI2S_IsReady())
-      {
-        rng_frequency = RCM_PLLI2S_GetFreqDomain_48M();
-      }
-      break;
-#endif /* RCM_PLL2CFG_PLLI2SQ && !RCM_DCKCFGR_PLLI2SDIVQ */
+  UNUSED(RNGxSource);
 
-#if defined(RCM_PLLSAI_SUPPORT)
-    case DDL_RCM_RNG_CLKSOURCE_PLLSAI:        /* PLLSAI clock used as RNG clock source */
-      if (DDL_RCM_PLLSAI_IsReady())
-      {
-        rng_frequency = RCM_PLLSAI_GetFreqDomain_48M();
-      }
-      break;
-#endif /* RCM_PLLSAI_SUPPORT */
-
-    case DDL_RCM_RNG_CLKSOURCE_PLL:           /* PLL clock used as RNG clock source */
-    default:
-      if (DDL_RCM_PLL_IsReady())
-      {
-        rng_frequency = RCM_PLL_GetFreqDomain_48M();
-      }
-      break;
-  }
-#else
   /* PLL clock used as RNG clock source */
   if (DDL_RCM_PLL_IsReady())
   {
     rng_frequency = RCM_PLL_GetFreqDomain_48M();
   }
-#endif /* RCM_DCKCFGR_CK48MSEL || RCM_DCKCFGR2_CK48MSEL */
 
   return rng_frequency;
 }
 #endif /* RNG */
 
-#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS) || defined(USB_OTG_FS2)
 /**
   * @brief  Return USBx clock frequency
   * @param  USBxSource This parameter can be one of the following values:
@@ -431,48 +367,78 @@ uint32_t DDL_RCM_GetUSBClockFreq(uint32_t USBxSource)
   /* Check parameter */
   ASSERT_PARAM(IS_DDL_RCM_USB_CLKSOURCE(USBxSource));
 
-#if defined(RCM_DCKCFGR_CK48MSEL) || defined(RCM_DCKCFGR2_CK48MSEL)
+#if defined(RCM_CFG_OTGFSPSC)
   /* USBCLK clock frequency */
   switch (DDL_RCM_GetUSBClockSource(USBxSource))
   {
-#if defined(RCM_PLL2CFG_PLLI2SQ) && !defined(RCM_DCKCFGR_PLLI2SDIVQ)
-    case DDL_RCM_USB_CLKSOURCE_PLLI2S:       /* PLLI2S clock used as USB clock source */
-      if (DDL_RCM_PLLI2S_IsReady())
-      {
-        usb_frequency = RCM_PLLI2S_GetFreqDomain_48M();
-      }
-      break;
-
-#endif /* RCM_PLL2CFG_PLLI2SQ && !RCM_DCKCFGR_PLLI2SDIVQ */
-
-#if defined(RCM_PLLSAI_SUPPORT)
-    case DDL_RCM_USB_CLKSOURCE_PLLSAI:       /* PLLSAI clock used as USB clock source */
-      if (DDL_RCM_PLLSAI_IsReady())
-      {
-        usb_frequency = RCM_PLLSAI_GetFreqDomain_48M();
-      }
-      break;
-#endif /* RCM_PLLSAI_SUPPORT */
-
-    case DDL_RCM_USB_CLKSOURCE_PLL:          /* PLL clock used as USB clock source */
-    default:
+    case DDL_RCM_USB_CLKSOURCE_PLL_DIV_1_5:
       if (DDL_RCM_PLL_IsReady())
       {
-        usb_frequency = RCM_PLL_GetFreqDomain_48M();
+        usb_frequency = (RCM_PLL_GetFreqDomain_SYS(DDL_RCM_SYS_CLKSOURCE_STATUS_PLL) * 2U / 3U);
       }
       break;
+
+    case DDL_RCM_USB_CLKSOURCE_PLL_DIV_2:
+      if (DDL_RCM_PLL_IsReady())
+      {
+        usb_frequency = (RCM_PLL_GetFreqDomain_SYS(DDL_RCM_SYS_CLKSOURCE_STATUS_PLL) / 2U);
+      }
+      break;
+
+    case DDL_RCM_USB_CLKSOURCE_PLL_DIV_2_5:
+      if (DDL_RCM_PLL_IsReady())
+      {
+        usb_frequency = (RCM_PLL_GetFreqDomain_SYS(DDL_RCM_SYS_CLKSOURCE_STATUS_PLL) * 10U / 4U);
+      }
+      break;
+
+    case DDL_RCM_USB_CLKSOURCE_PLL:
+      default:
+        if (DDL_RCM_PLL_IsReady())
+        {
+          usb_frequency = RCM_PLL_GetFreqDomain_SYS(DDL_RCM_SYS_CLKSOURCE_STATUS_PLL);
+        }
+        break;
   }
 #else
+  UNUSED(USBxSource);
+
   /* PLL clock used as USB clock source */
   if (DDL_RCM_PLL_IsReady())
   {
     usb_frequency = RCM_PLL_GetFreqDomain_48M();
   }
-#endif /* RCM_DCKCFGR_CK48MSEL || RCM_DCKCFGR2_CK48MSEL */
+#endif /* RCM_CFG_OTGFSPSC */
 
   return usb_frequency;
 }
 #endif /* USB_OTG_FS || USB_OTG_HS */
+
+#if defined(RCM_CFG_ADCPSC)
+/**
+  * @brief  Return ADCx clock frequency
+  * @param  ADCxSource This parameter can be one of the following values:
+  *         @arg @ref DDL_RCM_ADC_CLKSOURCE
+  * @retval ADC clock frequency (in Hz)
+  */
+uint32_t DDL_RCM_GetADCClockFreq(uint32_t ADCxSource)
+{
+  uint32_t adc_prescaler = 0U;
+  uint32_t adc_frequency = 0U;
+
+  /* Check parameter */
+  ASSERT_PARAM(IS_DDL_RCM_ADC_CLKSOURCE(ADCxSource));
+
+  /* Get ADC prescaler */
+  adc_prescaler = DDL_RCM_GetADCClockSource(ADCxSource);
+
+  /* ADC frequency = PCLK2 frequency / ADC prescaler (2, 4, 6 or 8) */
+  adc_frequency = RCM_GetPCLK2ClockFreq(RCM_GetHCLKClockFreq(RCM_GetSystemClockFreq()))
+                  / (((adc_prescaler >> POSITION_VAL(ADCxSource)) + 1U) * 2U);
+
+  return adc_frequency;
+}
+#endif /* RCM_CFG_ADCPSC */
 
 /**
   * @}
@@ -558,7 +524,30 @@ uint32_t RCM_GetPCLK2ClockFreq(uint32_t HCLK_Frequency)
 uint32_t RCM_PLL_GetFreqDomain_SYS(uint32_t SYSCLK_Source)
 {
   uint32_t pllinputfreq = 0U, pllsource = 0U, plloutputfreq = 0U;
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL Predivider) * PLL Multiplicator */
+  pllsource = DDL_RCM_PLL_GetMainSource();
 
+  switch (pllsource)
+  {
+    case DDL_RCM_PLLSOURCE_HSI_DIV_2:  /* HSI used as PLL clock source */
+      pllinputfreq = HSI_VALUE / 2U;
+      break;
+
+    case DDL_RCM_PLLSOURCE_HSE:  /* HSE used as PLL clock source */
+      pllinputfreq = HSE_VALUE / (DDL_RCM_PLL_GetPrediv() + 1U);
+      break;
+
+    default:
+      pllinputfreq = HSI_VALUE / 2U;
+      break;
+  }
+
+  if (SYSCLK_Source == DDL_RCM_SYS_CLKSOURCE_STATUS_PLL)
+  {
+    plloutputfreq = __DDL_RCM_CALC_PLLCLK_FREQ(pllinputfreq, DDL_RCM_PLL_GetMultiplicator());
+  }
+#else
   /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLLB) * PLL1A
      SYSCLK = PLL_VCO / (PLL1C or PLLR)
   */
@@ -584,10 +573,13 @@ uint32_t RCM_PLL_GetFreqDomain_SYS(uint32_t SYSCLK_Source)
     plloutputfreq = __DDL_RCM_CALC_PLLCLK_FREQ(pllinputfreq, DDL_RCM_PLL_GetDivider(),
                                         DDL_RCM_PLL_GetN(), DDL_RCM_PLL_GetP());
   }
+#endif /* APM32F403xx || APM32F402xx */
 
   return plloutputfreq;
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /**
   * @brief  Return PLL clock frequency used for 48 MHz domain
   * @retval PLL clock frequency (in Hz)
@@ -618,6 +610,7 @@ uint32_t RCM_PLL_GetFreqDomain_48M(void)
   return __DDL_RCM_CALC_PLLCLK_48M_FREQ(pllinputfreq, DDL_RCM_PLL_GetDivider(),
                                         DDL_RCM_PLL_GetN(), DDL_RCM_PLL_GetQ());
 }
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if defined(RCM_PLLI2S_SUPPORT)
 

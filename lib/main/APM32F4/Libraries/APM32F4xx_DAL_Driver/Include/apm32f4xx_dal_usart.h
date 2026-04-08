@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -474,6 +470,8 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
 #define __DAL_USART_GET_IT_SOURCE(__HANDLE__, __IT__) (((((__IT__) >> 28U) == USART_CTRL1_RXENG_INDEX)? (__HANDLE__)->Instance->CTRL1:(((((uint32_t)(__IT__)) >> 28U) == USART_CTRL2_REG_INDEX)? \
                                                         (__HANDLE__)->Instance->CTRL2 : (__HANDLE__)->Instance->CTRL3)) & (((uint32_t)(__IT__)) & USART_IT_MASK))
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F411xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macro to enable the USART's one bit sample method
   * @param  __HANDLE__ specifies the USART Handle.
   * @retval None
@@ -486,6 +484,7 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   */
 #define __DAL_USART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CTRL3\
                                                         &= (uint16_t)~((uint16_t)USART_CTRL3_SAMCFG))
+#endif /* APM32F405xx || APM32F407xx || APM32F411xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @brief  Enable USART
   * @param  __HANDLE__ specifies the USART Handle.
@@ -629,6 +628,22 @@ uint32_t               DAL_USART_GetError(USART_HandleTypeDef *husart);
 
 #define IS_USART_MODE(MODE)          ((((MODE) & (~((uint32_t)USART_MODE_TX_RX))) == 0x00U) && ((MODE) != 0x00U))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_USART_BAUDRATE(BAUDRATE)  ((BAUDRATE) <= 4500000U)
+
+#define USART_DIV(_PCLK_, _BAUD_)      (((_PCLK_)*25U)/(4U*(_BAUD_)))
+
+#define USART_DIVMANT(_PCLK_, _BAUD_)  (USART_DIV((_PCLK_), (_BAUD_))/100U)
+
+#define USART_DIVFRAQ(_PCLK_, _BAUD_)  ((((USART_DIV((_PCLK_), (_BAUD_)) - (USART_DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
+
+  /* UART BR = mantissa + overflow + fraction
+              = (UART DIVMANT << 4) + ((UART DIVFRAQ & 0xF0) << 1) + (UART DIVFRAQ & 0x0FU) */
+
+#define USART_BR(_PCLK_, _BAUD_)       (((USART_DIVMANT((_PCLK_), (_BAUD_)) << 4U) + \
+                                         ((USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0xF0U) << 1U)) + \
+                                        (USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0FU))
+#else
 #define IS_USART_BAUDRATE(BAUDRATE)  ((BAUDRATE) <= 12500000U)
 
 #define USART_DIV(_PCLK_, _BAUD_)      ((uint32_t)((((uint64_t)(_PCLK_))*25U)/(2U*((uint64_t)(_BAUD_)))))
@@ -637,12 +652,13 @@ uint32_t               DAL_USART_GetError(USART_HandleTypeDef *husart);
 
 #define USART_DIVFRAQ(_PCLK_, _BAUD_)  ((((USART_DIV((_PCLK_), (_BAUD_)) - (USART_DIVMANT((_PCLK_), (_BAUD_)) * 100U)) * 8U) + 50U) / 100U)
 
-  /* UART BRR = mantissa + overflow + fraction
+  /* UART BR = mantissa + overflow + fraction
               = (UART DIVMANT << 4) + ((UART DIVFRAQ & 0xF8) << 1) + (UART DIVFRAQ & 0x07U) */
-              
-#define USART_BR(_PCLK_, _BAUD_)      (((USART_DIVMANT((_PCLK_), (_BAUD_)) << 4U) + \
+
+#define USART_BR(_PCLK_, _BAUD_)       (((USART_DIVMANT((_PCLK_), (_BAUD_)) << 4U) + \
                                          ((USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0xF8U) << 1U)) + \
                                         (USART_DIVFRAQ((_PCLK_), (_BAUD_)) & 0x07U))
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */

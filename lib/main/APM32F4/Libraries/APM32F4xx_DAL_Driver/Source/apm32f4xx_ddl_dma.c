@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -45,10 +41,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "apm32f4xx_ddl_dma.h"
 #include "apm32f4xx_ddl_bus.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
 #endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
@@ -72,9 +71,14 @@
                                                  ((__VALUE__) == DDL_DMA_DIRECTION_MEMORY_TO_PERIPH) || \
                                                  ((__VALUE__) == DDL_DMA_DIRECTION_MEMORY_TO_MEMORY))
 
+#if defined (DMA_SCFGx_PERFC)
 #define IS_DDL_DMA_MODE(__VALUE__)               (((__VALUE__) == DDL_DMA_MODE_NORMAL)    || \
                                                  ((__VALUE__) == DDL_DMA_MODE_CIRCULAR)  || \
                                                  ((__VALUE__) == DDL_DMA_MODE_PFCTRL))
+#else
+#define IS_DDL_DMA_MODE(__VALUE__)               (((__VALUE__) == DDL_DMA_MODE_NORMAL)    || \
+                                                 ((__VALUE__) == DDL_DMA_MODE_CIRCULAR))
+#endif /* DMA_SCFGx_PERFC */
 
 #define IS_DDL_DMA_PERIPHINCMODE(__VALUE__)      (((__VALUE__) == DDL_DMA_PERIPH_INCREMENT) || \
                                                  ((__VALUE__) == DDL_DMA_PERIPH_NOINCREMENT))
@@ -127,6 +131,21 @@
                                                            ((STREAM) == DDL_DMA_STREAM_7) || \
                                                            ((STREAM) == DDL_DMA_STREAM_ALL))))
 
+#define IS_DDL_DMA_ALL_CHANNEL_INSTANCE(INSTANCE, CHANNEL)  ((((INSTANCE) == DMA1) && \
+                                                            (((CHANNEL) == DDL_DMA_CHANNEL_1) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_2) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_3) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_4) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_5) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_6) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_7))) || \
+                                                            (((INSTANCE) == DMA2) && \
+                                                            (((CHANNEL) == DDL_DMA_CHANNEL_1) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_2) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_3) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_4) || \
+                                                             ((CHANNEL) == DDL_DMA_CHANNEL_5))))
+
 #define IS_DDL_DMA_FIFO_MODE_STATE(STATE) (((STATE) == DDL_DMA_FIFOMODE_DISABLE ) || \
                                           ((STATE) == DDL_DMA_FIFOMODE_ENABLE))
 
@@ -155,6 +174,10 @@
 /** @addtogroup DMA_DDL_Exported_Functions
   * @{
   */
+
+#if defined (DMA1_Stream0) || defined (DMA1_Stream1) || defined (DMA1_Stream2) || defined (DMA1_Stream3) || defined (DMA1_Stream4) ||\
+    defined (DMA1_Stream5) || defined (DMA1_Stream6) || defined (DMA1_Stream7) || defined (DMA2_Stream0) || defined (DMA2_Stream1) ||\
+    defined (DMA2_Stream2) || defined (DMA2_Stream3) || defined (DMA2_Stream4) || defined (DMA2_Stream5) || defined (DMA2_Stream6) ||  defined (DMA2_Stream7)
 
 /** @addtogroup DMA_DDL_EF_Init
   * @{
@@ -359,13 +382,13 @@ uint32_t DDL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Stream, DDL_DMA_InitTypeDef *D
      * - FIFOMode:                DMA_FCTRLx_DMDEN bit
      * - FIFOThreshold:           DMA_FCTRLx_FTHSEL[1:0] bits
      */
-    DDL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);   
+    DDL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);
 
     /*---------------------------- DMAx SCFGx Configuration --------------------------
      * Configure DMAx_Streamy:  memory burst transfer with parameters :
      * - MemBurst:                DMA_SCFGx_MBCFG[1:0] bits
      */
-    DDL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst); 
+    DDL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst);
 
     /*---------------------------- DMAx SCFGx Configuration --------------------------
      * Configure DMAx_Streamy:  peripheral burst transfer with parameters :
@@ -401,6 +424,200 @@ uint32_t DDL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Stream, DDL_DMA_InitTypeDef *D
   return SUCCESS;
 }
 
+#else
+
+/** @addtogroup DMA_DDL_EF_Init
+  * @{
+  */
+
+/**
+  * @brief  De-initialize the DMA registers to their default reset values.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: DMA registers are de-initialized
+  *          - ERROR: DMA registers are not de-initialized
+  */
+uint32_t DDL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  DMA_Channel_TypeDef *tmp = (DMA_Channel_TypeDef *)DMA1_Channel1;
+  ErrorStatus status = SUCCESS;
+
+  /* Check the DMA Instance DMAx and Stream parameters*/
+  ASSERT_PARAM(IS_DDL_DMA_ALL_CHANNEL_INSTANCE(DMAx, Channel));
+
+  if (Channel == DDL_DMA_CHANNEL_ALL)
+  {
+    if (DMAx == DMA1)
+    {
+      /* Force reset of DMA clock */
+      DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_DMA1);
+
+      /* Release reset of DMA clock */
+      DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_DMA1);
+    }
+    else if (DMAx == DMA2)
+    {
+      /* Force reset of DMA clock */
+      DDL_AHB1_GRP1_ForceReset(DDL_AHB1_GRP1_PERIPH_DMA2);
+
+      /* Release reset of DMA clock */
+      DDL_AHB1_GRP1_ReleaseReset(DDL_AHB1_GRP1_PERIPH_DMA2);
+    }
+    else
+    {
+      status = ERROR;
+    }
+  }
+  else
+  {
+    /* Disable the selected Channel */
+    DDL_DMA_DisableChannel(DMAx,Channel);
+
+    /* Get the DMA Channel Instance */
+    tmp = (DMA_Channel_TypeDef *)(__DDL_DMA_GET_CHANNEL_INSTANCE(DMAx, Channel));
+
+    /* Reset DMAx_Channely configuration register */
+    DDL_DMA_WriteReg(tmp, CHCFG, 0U);
+
+    /* Reset DMAx_Channely remaining bytes register */
+    DDL_DMA_WriteReg(tmp, CHNDATA, 0U);
+
+    /* Reset DMAx_Channely peripheral address register */
+    DDL_DMA_WriteReg(tmp, CHPADDR, 0U);
+
+    /* Reset DMAx_Channely memory address register */
+    DDL_DMA_WriteReg(tmp, CHMADDR, 0U);
+
+    if(Channel == DDL_DMA_CHANNEL_1)
+    {
+       /* Reset the DMAx Channel1 pending flags */
+       DDL_DMA_ClearFlag_GI1(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_2)
+    {
+       /* Reset the DMAx Channel2 pending flags */
+       DDL_DMA_ClearFlag_GI2(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_3)
+    {
+       /* Reset the DMAx Channel3 pending flags */
+       DDL_DMA_ClearFlag_GI3(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_4)
+    {
+       /* Reset the DMAx Channel4 pending flags */
+       DDL_DMA_ClearFlag_GI4(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_5)
+    {
+       /* Reset the DMAx Channel5 pending flags */
+       DDL_DMA_ClearFlag_GI5(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_6)
+    {
+       /* Reset the DMAx Channel6 pending flags */
+       DDL_DMA_ClearFlag_GI6(DMAx);
+    }
+    else if(Channel == DDL_DMA_CHANNEL_7)
+    {
+       /* Reset the DMAx Channel7 pending flags */
+       DDL_DMA_ClearFlag_GI7(DMAx);
+    }
+    else
+    {
+      status = ERROR;
+    }
+  }
+
+  return status;
+}
+
+/**
+  * @brief  Initialize the DMA registers according to the specified parameters in DMA_InitStruct.
+  * @note   To convert DMAx_Streamy Instance to DMAx Instance and Streamy, use helper macros :
+  *         @arg @ref __DDL_DMA_GET_INSTANCE
+  *         @arg @ref __DDL_DMA_GET_STREAM
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  DMA_InitStruct pointer to a @ref DDL_DMA_InitTypeDef structure.
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: DMA registers are initialized
+  *          - ERROR: Not applicable
+  */
+uint32_t DDL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Channel, DDL_DMA_InitTypeDef *DMA_InitStruct)
+{
+  /* Check the DMA Instance DMAx and Channel parameters*/
+  ASSERT_PARAM(IS_DDL_DMA_ALL_CHANNEL_INSTANCE(DMAx, Channel));
+
+  /* Check the DMA parameters from DMA_InitStruct */
+  ASSERT_PARAM(IS_DDL_DMA_DIRECTION(DMA_InitStruct->Direction));
+  ASSERT_PARAM(IS_DDL_DMA_MODE(DMA_InitStruct->Mode));
+  ASSERT_PARAM(IS_DDL_DMA_PERIPHINCMODE(DMA_InitStruct->PeriphOrM2MSrcIncMode));
+  ASSERT_PARAM(IS_DDL_DMA_MEMORYINCMODE(DMA_InitStruct->MemoryOrM2MDstIncMode));
+  ASSERT_PARAM(IS_DDL_DMA_PERIPHDATASIZE(DMA_InitStruct->PeriphOrM2MSrcDataSize));
+  ASSERT_PARAM(IS_DDL_DMA_MEMORYDATASIZE(DMA_InitStruct->MemoryOrM2MDstDataSize));
+  ASSERT_PARAM(IS_DDL_DMA_NBDATA(DMA_InitStruct->NbData));
+  ASSERT_PARAM(IS_DDL_DMA_PRIORITY(DMA_InitStruct->Priority));
+
+  /*---------------------------- DMAx CHCFGx Configuration ------------------------
+   * Configure DMAx_Channely: data transfer direction, data transfer mode,
+   *                          peripheral and memory increment mode,
+   *                          data size alignment and  priority level with parameters :
+   * - Direction:      DMA_CHCFGx_DIRCFG and DMA_CHCFGx_M2MMODE bits
+   * - Mode:           DMA_CHCFGx_CIRMODE bit
+   * - PeriphOrM2MSrcIncMode:  DMA_CHCFGx_PERIMODE bit
+   * - MemoryOrM2MDstIncMode:  DMA_CHCFGx_MIMODE bit
+   * - PeriphOrM2MSrcDataSize: DMA_CHCFGx_PERSIZE[1:0] bits
+   * - MemoryOrM2MDstDataSize: DMA_CHCFGx_MEMSIZE[1:0] bits
+   * - Priority:               DMA_CHCFGx_CHPL[1:0] bits
+   */
+  DDL_DMA_ConfigTransfer(DMAx, Channel, DMA_InitStruct->Direction | \
+                        DMA_InitStruct->Mode                    | \
+                        DMA_InitStruct->PeriphOrM2MSrcIncMode   | \
+                        DMA_InitStruct->MemoryOrM2MDstIncMode   | \
+                        DMA_InitStruct->PeriphOrM2MSrcDataSize  | \
+                        DMA_InitStruct->MemoryOrM2MDstDataSize  | \
+                        DMA_InitStruct->Priority);
+
+  /*-------------------------- DMAx CHMADDRx Configuration --------------------------
+   * Configure the memory or destination base address with parameter :
+   * - MemoryOrM2MDstAddress:     DMA_CHMADDRx_MEMADDR[31:0] bits
+   */
+  DDL_DMA_SetMemoryAddress(DMAx, Channel, DMA_InitStruct->MemoryOrM2MDstAddress);
+
+  /*-------------------------- DMAx CHPADDRx Configuration ---------------------------
+   * Configure the peripheral or source base address with parameter :
+   * - PeriphOrM2MSrcAddress:     DMA_CHPADDRx_PERADDR[31:0] bits
+   */
+  DDL_DMA_SetPeriphAddress(DMAx, Channel, DMA_InitStruct->PeriphOrM2MSrcAddress);
+
+  /*--------------------------- DMAx CHNDATAx Configuration -------------------------
+   * Configure the peripheral base address with parameter :
+   * - NbData:                    DMA_CHNDATA_NDATAx[15:0] bits
+   */
+  DDL_DMA_SetDataLength(DMAx, Channel, DMA_InitStruct->NbData);
+
+  return SUCCESS;
+}
+
+#endif /* DMA1_Stream0 || DMA1_Stream1 || DMA1_Stream2 || DMA1_Stream3 || DMA1_Stream4 || DMA1_Stream5 || DMA1_Stream6 || DMA1_Stream7 */
+       /* DMA2_Stream0 || DMA2_Stream1 || DMA2_Stream2 || DMA2_Stream3 || DMA2_Stream4 || DMA2_Stream5 || DMA2_Stream6 || DMA2_Stream7 */
+
 /**
   * @brief  Set each @ref DDL_DMA_InitTypeDef field to default value.
   * @param  DMA_InitStruct Pointer to a @ref DDL_DMA_InitTypeDef structure.
@@ -418,12 +635,14 @@ void DDL_DMA_StructInit(DDL_DMA_InitTypeDef *DMA_InitStruct)
   DMA_InitStruct->PeriphOrM2MSrcDataSize = DDL_DMA_PDATAALIGN_BYTE;
   DMA_InitStruct->MemoryOrM2MDstDataSize = DDL_DMA_MDATAALIGN_BYTE;
   DMA_InitStruct->NbData                 = 0x00000000U;
-  DMA_InitStruct->Channel                = DDL_DMA_CHANNEL_0;
   DMA_InitStruct->Priority               = DDL_DMA_PRIORITY_LOW;
+#if defined (DMA_SCFGx_CHSEL)
+  DMA_InitStruct->Channel                = DDL_DMA_CHANNEL_0;
   DMA_InitStruct->FIFOMode               = DDL_DMA_FIFOMODE_DISABLE;
   DMA_InitStruct->FIFOThreshold          = DDL_DMA_FIFOTHRESHOLD_1_4;
   DMA_InitStruct->MemBurst               = DDL_DMA_MBURST_SINGLE;
   DMA_InitStruct->PeriphBurst            = DDL_DMA_PBURST_SINGLE;
+#endif /* DMA_SCFGx_CHSEL */
 }
 
 /**

@@ -2,7 +2,7 @@
   *
   * @file    apm32f4xx_dal_dma_ex.c
   * @brief   DMA Extension DAL module driver
-  *         This file provides firmware functions to manage the following 
+  *         This file provides firmware functions to manage the following
   *         functionalities of the DMA Extension peripheral:
   *           + Extended features functions
   *
@@ -14,17 +14,17 @@
   The DMA Extension DAL driver can be used as follows:
    (#) Start a multi buffer transfer using the DAL_DMA_MultiBufferStart() function
        for polling mode or DAL_DMA_MultiBufferStart_IT() for interrupt mode.
-                   
+
      -@-  In Memory-to-Memory transfer mode, Multi (Double) Buffer mode is not allowed.
      -@-  When Multi (Double) Buffer mode is enabled the, transfer is circular by default.
-     -@-  In Multi (Double) buffer mode, it is possible to update the base address for 
-          the AHB memory port on the fly (DMA_SxM0AR or DMA_SxM1AR) when the stream is enabled. 
-  
+     -@-  In Multi (Double) buffer mode, it is possible to update the base address for
+          the AHB memory port on the fly (DMA_SxM0AR or DMA_SxM1AR) when the stream is enabled.
+
   @endverbatim
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -46,13 +46,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -82,7 +78,10 @@
 /** @addtogroup DMAEx_Private_Functions
   * @{
   */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -96,39 +95,41 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
 
 /** @addtogroup DMAEx_Exported_Functions_Group1
   *
-@verbatim   
+@verbatim
  ===============================================================================
                 #####  Extended features functions  #####
- ===============================================================================  
+ ===============================================================================
     [..]  This section provides functions allowing to:
-      (+) Configure the source, destination address and data length and 
+      (+) Configure the source, destination address and data length and
           Start MultiBuffer DMA transfer
-      (+) Configure the source, destination address and data length and 
+      (+) Configure the source, destination address and data length and
           Start MultiBuffer DMA transfer with interrupt
       (+) Change on the fly the memory0 or memory1 address.
-      
+
 @endverbatim
   * @{
   */
 
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 /**
   * @brief  Starts the multi_buffer DMA Transfer.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
-  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer  
+  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t SecondMemAddress, uint32_t DataLength)
 {
   DAL_StatusTypeDef status = DAL_OK;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_DMA_BUFFER_SIZE(DataLength));
-  
+
   /* Memory-to-memory transfer not supported in double buffering mode */
   if (hdma->Init.Direction == DMA_MEMORY_TO_MEMORY)
   {
@@ -139,21 +140,21 @@ DAL_StatusTypeDef DAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t S
   {
     /* Process Locked */
     __DAL_LOCK(hdma);
-    
+
     if(DAL_DMA_STATE_READY == hdma->State)
     {
       /* Change DMA peripheral state */
-      hdma->State = DAL_DMA_STATE_BUSY; 
-      
+      hdma->State = DAL_DMA_STATE_BUSY;
+
       /* Enable the double buffer mode */
       hdma->Instance->SCFG |= (uint32_t)DMA_SCFGx_DBM;
-      
+
       /* Configure DMA Stream destination address */
       hdma->Instance->M1ADDR = SecondMemAddress;
-      
+
       /* Configure the source, destination address and the data length */
       DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength);
-      
+
       /* Enable the peripheral */
       __DAL_DMA_ENABLE(hdma);
     }
@@ -169,54 +170,54 @@ DAL_StatusTypeDef DAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t S
 /**
   * @brief  Starts the multi_buffer DMA Transfer with interrupt enabled.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
-  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer  
+  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval DAL status
   */
 DAL_StatusTypeDef DAL_DMAEx_MultiBufferStart_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t SecondMemAddress, uint32_t DataLength)
 {
   DAL_StatusTypeDef status = DAL_OK;
-  
+
   /* Check the parameters */
   ASSERT_PARAM(IS_DMA_BUFFER_SIZE(DataLength));
-  
+
   /* Memory-to-memory transfer not supported in double buffering mode */
   if (hdma->Init.Direction == DMA_MEMORY_TO_MEMORY)
   {
     hdma->ErrorCode = DAL_DMA_ERROR_NOT_SUPPORTED;
     return DAL_ERROR;
   }
-  
+
   /* Check callback functions */
   if ((NULL == hdma->XferCpltCallback) || (NULL == hdma->XferM1CpltCallback) || (NULL == hdma->XferErrorCallback))
   {
     hdma->ErrorCode = DAL_DMA_ERROR_PARAM;
     return DAL_ERROR;
   }
-  
+
   /* Process locked */
   __DAL_LOCK(hdma);
-  
+
   if(DAL_DMA_STATE_READY == hdma->State)
   {
     /* Change DMA peripheral state */
     hdma->State = DAL_DMA_STATE_BUSY;
-    
+
     /* Initialize the error code */
     hdma->ErrorCode = DAL_DMA_ERROR_NONE;
-    
+
     /* Enable the Double buffer mode */
     hdma->Instance->SCFG |= (uint32_t)DMA_SCFGx_DBM;
-    
+
     /* Configure DMA Stream destination address */
     hdma->Instance->M1ADDR = SecondMemAddress;
-    
+
     /* Configure the source, destination address and the data length */
-    DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength); 
-    
+    DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength);
+
     /* Clear all flags */
     __DAL_DMA_CLEAR_FLAG (hdma, __DAL_DMA_GET_TC_FLAG_INDEX(hdma));
     __DAL_DMA_CLEAR_FLAG (hdma, __DAL_DMA_GET_HT_FLAG_INDEX(hdma));
@@ -227,37 +228,37 @@ DAL_StatusTypeDef DAL_DMAEx_MultiBufferStart_IT(DMA_HandleTypeDef *hdma, uint32_
     /* Enable Common interrupts*/
     hdma->Instance->SCFG  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
     hdma->Instance->FCTRL |= DMA_IT_FE;
-    
+
     if((hdma->XferHalfCpltCallback != NULL) || (hdma->XferM1HalfCpltCallback != NULL))
     {
       hdma->Instance->SCFG  |= DMA_IT_HT;
     }
-    
+
     /* Enable the peripheral */
-    __DAL_DMA_ENABLE(hdma); 
+    __DAL_DMA_ENABLE(hdma);
   }
   else
-  {     
+  {
     /* Process unlocked */
-    __DAL_UNLOCK(hdma);	  
-    
+    __DAL_UNLOCK(hdma);
+
     /* Return error status */
     status = DAL_BUSY;
-  }  
-  return status; 
+  }
+  return status;
 }
 
 /**
   * @brief  Change the memory0 or memory1 address on the fly.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  Address    The new address
-  * @param  memory     the memory to be changed, This parameter can be one of 
+  * @param  memory     the memory to be changed, This parameter can be one of
   *                     the following values:
   *                      MEMORY0 /
   *                      MEMORY1
   * @note   The MEMORY0 address can be changed only when the current transfer use
-  *         MEMORY1 and the MEMORY1 address can be changed only when the current 
+  *         MEMORY1 and the MEMORY1 address can be changed only when the current
   *         transfer use MEMORY0.
   * @retval DAL status
   */
@@ -276,7 +277,7 @@ DAL_StatusTypeDef DAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
 
   return DAL_OK;
 }
-
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -289,26 +290,28 @@ DAL_StatusTypeDef DAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
   * @{
   */
 
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
 /**
   * @brief  Set the DMA Transfer parameter.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval DAL status
   */
 static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
-{  
+{
   /* Configure DMA Stream data length */
   hdma->Instance->NDATA = DataLength;
-  
+
   /* Peripheral to Memory */
   if((hdma->Init.Direction) == DMA_MEMORY_TO_PERIPH)
-  {   
+  {
     /* Configure DMA Stream destination address */
     hdma->Instance->PADDR = DstAddress;
-    
+
     /* Configure DMA Stream source address */
     hdma->Instance->M0ADDR = SrcAddress;
   }
@@ -317,12 +320,12 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
   {
     /* Configure DMA Stream source address */
     hdma->Instance->PADDR = SrcAddress;
-    
+
     /* Configure DMA Stream destination address */
     hdma->Instance->M0ADDR = DstAddress;
   }
 }
-
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */

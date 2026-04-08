@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -94,17 +90,20 @@ extern "C" {
 /** @defgroup SYSTEM_DDL_Exported_Constants SYSTEM Exported Constants
   * @{
   */
-
+#if defined(SYSCFG)
 /** @defgroup SYSTEM_DDL_EC_REMAP SYSCFG REMAP
 * @{
 */
 #define DDL_SYSCFG_REMAP_FLASH              (uint32_t)0x00000000                            /*!< Main Flash memory mapped at 0x00000000              */
 #define DDL_SYSCFG_REMAP_SYSTEMFLASH        SYSCFG_MMSEL_MMSEL_0                            /*!< System Flash memory mapped at 0x00000000            */
 #if defined(SMC_Bank1)
-#define DDL_SYSCFG_REMAP_SMC               SYSCFG_MMSEL_MMSEL_1                             /*!< SMC(NOR/PSRAM 1 and 2) mapped at 0x00000000        */
+#define DDL_SYSCFG_REMAP_SMC                SYSCFG_MMSEL_MMSEL_1                            /*!< SMC(NOR/PSRAM 1 and 2) mapped at 0x00000000        */
 #endif /* SMC_Bank1 */
+#if defined(DMC)
+#define DDL_SYSCFG_REMAP_DMC                SYSCFG_MMSEL_MMSEL_1                            /*!< DMC(SDRAM bank 1) mapped at 0x00000000        */
+#endif /* DMC */
 
-#define DDL_SYSCFG_REMAP_SRAM               (SYSCFG_MMSEL_MMSEL_1 | SYSCFG_MMSEL_MMSEL_0) /*!< SRAM1 mapped at 0x00000000                          */
+#define DDL_SYSCFG_REMAP_SRAM               (SYSCFG_MMSEL_MMSEL_1 | SYSCFG_MMSEL_MMSEL_0)   /*!< SRAM1 mapped at 0x00000000                          */
 
 /**
   * @}
@@ -114,38 +113,13 @@ extern "C" {
  /** @defgroup SYSTEM_DDL_EC_PMC SYSCFG PMC
 * @{
 */
-#define DDL_SYSCFG_PMCFG_ETHMII               (uint32_t)0x00000000                                /*!< ETH Media MII interface */
+#define DDL_SYSCFG_PMCFG_ETHMII               (uint32_t)0x00000000                             /*!< ETH Media MII interface */
 #define DDL_SYSCFG_PMCFG_ETHRMII              (uint32_t)SYSCFG_PMCFG_ENETSEL                   /*!< ETH Media RMII interface */
 
 /**
   * @}
   */
 #endif /* SYSCFG_PMCFG_ENETSEL */
-
-
-
-#if defined(SYSCFG_MMSEL_UFB_MODE)
-/** @defgroup SYSTEM_DDL_EC_BANKMODE SYSCFG BANK MODE
-  * @{
-  */
-#define DDL_SYSCFG_BANKMODE_BANK1          (uint32_t)0x00000000       /*!< Flash Bank 1 base address mapped at 0x0800 0000 (AXI) and 0x0020 0000 (TCM)
-                                                                      and Flash Bank 2 base address mapped at 0x0810 0000 (AXI) and 0x0030 0000 (TCM)*/
-#define DDL_SYSCFG_BANKMODE_BANK2          SYSCFG_MMSEL_UFB_MODE     /*!< Flash Bank 2 base address mapped at 0x0800 0000 (AXI) and 0x0020 0000(TCM)
-                                                                      and Flash Bank 1 base address mapped at 0x0810 0000 (AXI) and 0x0030 0000(TCM) */
-/**
-  * @}
-  */
-#endif /* SYSCFG_MMSEL_UFB_MODE */
-/** @defgroup SYSTEM_DDL_EC_I2C_FASTMODEPLUS SYSCFG I2C FASTMODEPLUS
-  * @{
-  */ 
-#if defined(SYSCFG_CFGR_FMPI2C1_SCL)
-#define DDL_SYSCFG_I2C_FASTMODEPLUS_SCL         SYSCFG_CFGR_FMPI2C1_SCL   /*!< Enable Fast Mode Plus on FMPI2C_SCL pin */
-#define DDL_SYSCFG_I2C_FASTMODEPLUS_SDA         SYSCFG_CFGR_FMPI2C1_SDA   /*!< Enable Fast Mode Plus on FMPI2C_SDA pin*/
-#endif /* SYSCFG_CFGR_FMPI2C1_SCL */
-/**
-  * @}
-  */
 
 /** @defgroup SYSTEM_DDL_EC_EINT_PORT SYSCFG EINT PORT
   * @{
@@ -197,12 +171,13 @@ extern "C" {
 /**
   * @}
   */
+#endif /* SYSCFG */
 
 /** @defgroup SYSTEM_DDL_EC_TRACE DBGMCU TRACE Pin Assignment
   * @{
   */
-#define DDL_DBGMCU_TRACE_NONE               0x00000000U                                     /*!< TRACE pins not assigned (default state) */
-#define DDL_DBGMCU_TRACE_ASYNCH             DBGMCU_CFG_TRACE_IOEN                            /*!< TRACE pin assignment for Asynchronous Mode */
+#define DDL_DBGMCU_TRACE_NONE               0x00000000U                                       /*!< TRACE pins not assigned (default state) */
+#define DDL_DBGMCU_TRACE_ASYNCH             DBGMCU_CFG_TRACE_IOEN                             /*!< TRACE pin assignment for Asynchronous Mode */
 #define DDL_DBGMCU_TRACE_SYNCH_SIZE1        (DBGMCU_CFG_TRACE_IOEN | DBGMCU_CFG_TRACE_MODE_0) /*!< TRACE pin assignment for Synchronous Mode with a TRACEDATA size of 1 */
 #define DDL_DBGMCU_TRACE_SYNCH_SIZE2        (DBGMCU_CFG_TRACE_IOEN | DBGMCU_CFG_TRACE_MODE_1) /*!< TRACE pin assignment for Synchronous Mode with a TRACEDATA size of 2 */
 #define DDL_DBGMCU_TRACE_SYNCH_SIZE4        (DBGMCU_CFG_TRACE_IOEN | DBGMCU_CFG_TRACE_MODE)   /*!< TRACE pin assignment for Synchronous Mode with a TRACEDATA size of 4 */
@@ -213,6 +188,17 @@ extern "C" {
 /** @defgroup SYSTEM_DDL_EC_APB1_GRP1_STOP_IP DBGMCU APB1 GRP1 STOP IP
   * @{
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define DDL_DBGMCU_APB1_GRP1_TMR2_STOP      DBGMCU_CFG_TMR2_STS            /*!< TMR2 counter stopped when core is halted */
+#define DDL_DBGMCU_APB1_GRP1_TMR3_STOP      DBGMCU_CFG_TMR3_STS            /*!< TMR3 counter stopped when core is halted */
+#define DDL_DBGMCU_APB1_GRP1_TMR4_STOP      DBGMCU_CFG_TMR4_STS            /*!< TMR4 counter stopped when core is halted */
+#define DDL_DBGMCU_APB1_GRP1_TMR5_STOP      DBGMCU_CFG_TMR5_STS            /*!< TMR5 counter stopped when core is halted */
+#define DDL_DBGMCU_APB1_GRP1_WWDT_STOP      DBGMCU_CFG_WWDT_STS            /*!< Debug Window Watchdog stopped when Core is halted */
+#define DDL_DBGMCU_APB1_GRP1_IWDT_STOP      DBGMCU_CFG_IWDT_STS            /*!< Debug Independent Watchdog stopped when Core is halted */
+#define DDL_DBGMCU_APB1_GRP1_I2C1_STOP      DBGMCU_CFG_I2C1_SMBUS_TIMEOUT_STS /*!< I2C1 SMBUS timeout mode stopped when Core is halted */
+#define DDL_DBGMCU_APB1_GRP1_CAN1_STOP      DBGMCU_CFG_CAN1_STS            /*!< CAN1 debug stopped when Core is halted  */
+#define DDL_DBGMCU_APB1_GRP1_CAN2_STOP      DBGMCU_CFG_CAN2_STS            /*!< CAN2 debug stopped when Core is halted  */
+#else
 #if defined(DBGMCU_APB1F_TMR2_STS)
 #define DDL_DBGMCU_APB1_GRP1_TMR2_STOP      DBGMCU_APB1F_TMR2_STS          /*!< TMR2 counter stopped when core is halted */
 #endif /* DBGMCU_APB1F_TMR2_STS */
@@ -238,9 +224,6 @@ extern "C" {
 #if defined(DBGMCU_APB1F_TMR14_STS)
 #define DDL_DBGMCU_APB1_GRP1_TMR14_STOP     DBGMCU_APB1F_TMR14_STS         /*!< TMR14 counter stopped when core is halted */
 #endif /* DBGMCU_APB1F_TMR14_STS */
-#if defined(DBGMCU_APB1F_LPTIM_STOP)
-#define DDL_DBGMCU_APB1_GRP1_LPTIM_STOP     DBGMCU_APB1F_LPTIM_STOP         /*!< LPTIM counter stopped when core is halted */
-#endif /* DBGMCU_APB1F_LPTIM_STOP */
 #define DDL_DBGMCU_APB1_GRP1_RTC_STOP       DBGMCU_APB1F_RTC_STS           /*!< RTC counter stopped when core is halted */
 #define DDL_DBGMCU_APB1_GRP1_WWDT_STOP      DBGMCU_APB1F_WWDT_STS          /*!< Debug Window Watchdog stopped when Core is halted */
 #define DDL_DBGMCU_APB1_GRP1_IWDT_STOP      DBGMCU_APB1F_IWDT_STS          /*!< Debug Independent Watchdog stopped when Core is halted */
@@ -249,18 +232,13 @@ extern "C" {
 #if defined(DBGMCU_APB1F_I2C3_SMBUS_TIMEOUT_STS)
 #define DDL_DBGMCU_APB1_GRP1_I2C3_STOP      DBGMCU_APB1F_I2C3_SMBUS_TIMEOUT_STS /*!< I2C3 SMBUS timeout mode stopped when Core is halted */
 #endif /* DBGMCU_APB1F_I2C3_SMBUS_TIMEOUT_STS */
-#if defined(DBGMCU_APB1F_I2C4_SMBUS_TIMEOUT)
-#define DDL_DBGMCU_APB1_GRP1_I2C4_STOP      DBGMCU_APB1F_I2C4_SMBUS_TIMEOUT /*!< I2C4 SMBUS timeout mode stopped when Core is halted */
-#endif /* DBGMCU_APB1F_I2C4_SMBUS_TIMEOUT */
 #if defined(DBGMCU_APB1F_CAN1_STS)
 #define DDL_DBGMCU_APB1_GRP1_CAN1_STOP      DBGMCU_APB1F_CAN1_STS          /*!< CAN1 debug stopped when Core is halted  */
 #endif /* DBGMCU_APB1F_CAN1_STS */
 #if defined(DBGMCU_APB1F_CAN2_STS)
 #define DDL_DBGMCU_APB1_GRP1_CAN2_STOP      DBGMCU_APB1F_CAN2_STS          /*!< CAN2 debug stopped when Core is halted  */
 #endif /* DBGMCU_APB1F_CAN2_STS */
-#if defined(DBGMCU_APB1F_CAN3_STOP)
-#define DDL_DBGMCU_APB1_GRP1_CAN3_STOP      DBGMCU_APB1F_CAN3_STOP          /*!< CAN3 debug stopped when Core is halted  */
-#endif /* DBGMCU_APB1F_CAN3_STOP */
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -268,15 +246,20 @@ extern "C" {
 /** @defgroup SYSTEM_DDL_EC_APB2_GRP1_STOP_IP DBGMCU APB2 GRP1 STOP IP
   * @{
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define DDL_DBGMCU_APB2_GRP1_TMR1_STOP      DBGMCU_CFG_TMR1_STS     /*!< TMR1 counter stopped when core is halted */
+#define DDL_DBGMCU_APB2_GRP1_TMR8_STOP      DBGMCU_CFG_TMR8_STS     /*!< TMR8 counter stopped when core is halted */
+#else
 #define DDL_DBGMCU_APB2_GRP1_TMR1_STOP      DBGMCU_APB2F_TMR1_STS   /*!< TMR1 counter stopped when core is halted */
 #if defined(DBGMCU_APB2F_TMR8_STS)
 #define DDL_DBGMCU_APB2_GRP1_TMR8_STOP      DBGMCU_APB2F_TMR8_STS   /*!< TMR8 counter stopped when core is halted */
 #endif /* DBGMCU_APB2F_TMR8_STS */
 #define DDL_DBGMCU_APB2_GRP1_TMR9_STOP      DBGMCU_APB2F_TMR9_STS   /*!< TMR9 counter stopped when core is halted */
 #if defined(DBGMCU_APB2F_TMR10_STS)
-#define DDL_DBGMCU_APB2_GRP1_TMR10_STOP     DBGMCU_APB2F_TMR10_STS   /*!< TMR10 counter stopped when core is halted */
+#define DDL_DBGMCU_APB2_GRP1_TMR10_STOP     DBGMCU_APB2F_TMR10_STS  /*!< TMR10 counter stopped when core is halted */
 #endif /* DBGMCU_APB2F_TMR10_STS */
-#define DDL_DBGMCU_APB2_GRP1_TMR11_STOP     DBGMCU_APB2F_TMR11_STS   /*!< TMR11 counter stopped when core is halted */
+#define DDL_DBGMCU_APB2_GRP1_TMR11_STOP     DBGMCU_APB2F_TMR11_STS  /*!< TMR11 counter stopped when core is halted */
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -284,6 +267,40 @@ extern "C" {
 /** @defgroup SYSTEM_DDL_EC_LATENCY FLASH LATENCY
   * @{
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define DDL_FLASH_LATENCY_0                 FLASH_CTRL_WS_0WS   /*!< FLASH Zero wait state */
+#define DDL_FLASH_LATENCY_1                 FLASH_CTRL_WS_1WS   /*!< FLASH One wait state */
+#define DDL_FLASH_LATENCY_2                 FLASH_CTRL_WS_2WS   /*!< FLASH Two wait states */
+#define DDL_FLASH_LATENCY_3                 FLASH_CTRL_WS_3WS   /*!< FLASH Three wait states */
+#define DDL_FLASH_LATENCY_4                 FLASH_CTRL_WS_4WS   /*!< FLASH Four wait states */
+#define DDL_FLASH_LATENCY_5                 FLASH_CTRL_WS_5WS   /*!< FLASH five wait state */
+#define DDL_FLASH_LATENCY_6                 FLASH_CTRL_WS_6WS   /*!< FLASH six wait state */
+#define DDL_FLASH_LATENCY_7                 FLASH_CTRL_WS_7WS   /*!< FLASH seven wait states */
+#define DDL_FLASH_LATENCY_8                 FLASH_CTRL_WS_8WS   /*!< FLASH eight wait states */
+#define DDL_FLASH_LATENCY_9                 FLASH_CTRL_WS_9WS   /*!< FLASH nine wait states */
+#define DDL_FLASH_LATENCY_10                FLASH_CTRL_WS_10WS  /*!< FLASH ten wait states */
+#define DDL_FLASH_LATENCY_11                FLASH_CTRL_WS_11WS  /*!< FLASH eleven wait states */
+#define DDL_FLASH_LATENCY_12                FLASH_CTRL_WS_12WS  /*!< FLASH twelve wait states */
+#define DDL_FLASH_LATENCY_13                FLASH_CTRL_WS_13WS  /*!< FLASH thirteen wait states */
+#define DDL_FLASH_LATENCY_14                FLASH_CTRL_WS_14WS  /*!< FLASH fourteen wait states */
+#define DDL_FLASH_LATENCY_15                FLASH_CTRL_WS_15WS  /*!< FLASH fifteen wait states */
+#define DDL_FLASH_LATENCY_16                FLASH_CTRL_WS_16WS  /*!< FLASH sixteen wait states */
+#define DDL_FLASH_LATENCY_17                FLASH_CTRL_WS_17WS  /*!< FLASH seventeen wait states */
+#define DDL_FLASH_LATENCY_18                FLASH_CTRL_WS_18WS  /*!< FLASH eighteen wait states */
+#define DDL_FLASH_LATENCY_19                FLASH_CTRL_WS_19WS  /*!< FLASH nineteen wait states */
+#define DDL_FLASH_LATENCY_20                FLASH_CTRL_WS_20WS  /*!< FLASH twenty wait states */
+#define DDL_FLASH_LATENCY_21                FLASH_CTRL_WS_21WS  /*!< FLASH twenty one wait states */
+#define DDL_FLASH_LATENCY_22                FLASH_CTRL_WS_22WS  /*!< FLASH twenty two wait states */
+#define DDL_FLASH_LATENCY_23                FLASH_CTRL_WS_23WS  /*!< FLASH twenty three wait states */
+#define DDL_FLASH_LATENCY_24                FLASH_CTRL_WS_24WS  /*!< FLASH twenty four wait states */
+#define DDL_FLASH_LATENCY_25                FLASH_CTRL_WS_25WS  /*!< FLASH twenty five wait states */
+#define DDL_FLASH_LATENCY_26                FLASH_CTRL_WS_26WS  /*!< FLASH twenty six wait states */
+#define DDL_FLASH_LATENCY_27                FLASH_CTRL_WS_27WS  /*!< FLASH twenty seven wait states */
+#define DDL_FLASH_LATENCY_28                FLASH_CTRL_WS_28WS  /*!< FLASH twenty eight wait states */
+#define DDL_FLASH_LATENCY_29                FLASH_CTRL_WS_29WS  /*!< FLASH twenty nine wait states */
+#define DDL_FLASH_LATENCY_30                FLASH_CTRL_WS_30WS  /*!< FLASH thirty wait states */
+#define DDL_FLASH_LATENCY_31                FLASH_CTRL_WS_31WS  /*!< FLASH thirty one wait states */
+#else
 #define DDL_FLASH_LATENCY_0                 FLASH_ACCTRL_WAITP_0WS   /*!< FLASH Zero wait state */
 #define DDL_FLASH_LATENCY_1                 FLASH_ACCTRL_WAITP_1WS   /*!< FLASH One wait state */
 #define DDL_FLASH_LATENCY_2                 FLASH_ACCTRL_WAITP_2WS   /*!< FLASH Two wait states */
@@ -292,14 +309,140 @@ extern "C" {
 #define DDL_FLASH_LATENCY_5                 FLASH_ACCTRL_WAITP_5WS   /*!< FLASH five wait state */
 #define DDL_FLASH_LATENCY_6                 FLASH_ACCTRL_WAITP_6WS   /*!< FLASH six wait state */
 #define DDL_FLASH_LATENCY_7                 FLASH_ACCTRL_WAITP_7WS   /*!< FLASH seven wait states */
-#define DDL_FLASH_LATENCY_8                 FLASH_ACCTRL_WAITP_8WS   /*!< FLASH eight wait states */
-#define DDL_FLASH_LATENCY_9                 FLASH_ACCTRL_WAITP_9WS   /*!< FLASH nine wait states */
-#define DDL_FLASH_LATENCY_10                FLASH_ACCTRL_WAITP_10WS   /*!< FLASH ten wait states */
-#define DDL_FLASH_LATENCY_11                FLASH_ACCTRL_WAITP_11WS   /*!< FLASH eleven wait states */
-#define DDL_FLASH_LATENCY_12                FLASH_ACCTRL_WAITP_12WS   /*!< FLASH twelve wait states */
-#define DDL_FLASH_LATENCY_13                FLASH_ACCTRL_WAITP_13WS   /*!< FLASH thirteen wait states */
-#define DDL_FLASH_LATENCY_14                FLASH_ACCTRL_WAITP_14WS   /*!< FLASH fourteen wait states */
-#define DDL_FLASH_LATENCY_15                FLASH_ACCTRL_WAITP_15WS   /*!< FLASH fifteen wait states */
+#if defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define DDL_FLASH_LATENCY_8                 FLASH_ACCTRL_WAITP_8WS
+#define DDL_FLASH_LATENCY_9                 FLASH_ACCTRL_WAITP_9WS
+#define DDL_FLASH_LATENCY_10                FLASH_ACCTRL_WAITP_10WS
+#define DDL_FLASH_LATENCY_11                FLASH_ACCTRL_WAITP_11WS
+#define DDL_FLASH_LATENCY_12                FLASH_ACCTRL_WAITP_12WS
+#define DDL_FLASH_LATENCY_13                FLASH_ACCTRL_WAITP_13WS
+#define DDL_FLASH_LATENCY_14                FLASH_ACCTRL_WAITP_14WS
+#define DDL_FLASH_LATENCY_15                FLASH_ACCTRL_WAITP_15WS
+#define DDL_FLASH_LATENCY_16                FLASH_ACCTRL_WAITP_16WS
+#define DDL_FLASH_LATENCY_17                FLASH_ACCTRL_WAITP_17WS
+#define DDL_FLASH_LATENCY_18                FLASH_ACCTRL_WAITP_18WS
+#define DDL_FLASH_LATENCY_19                FLASH_ACCTRL_WAITP_19WS
+#define DDL_FLASH_LATENCY_20                FLASH_ACCTRL_WAITP_20WS
+#define DDL_FLASH_LATENCY_21                FLASH_ACCTRL_WAITP_21WS
+#define DDL_FLASH_LATENCY_22                FLASH_ACCTRL_WAITP_22WS
+#define DDL_FLASH_LATENCY_23                FLASH_ACCTRL_WAITP_23WS
+#define DDL_FLASH_LATENCY_24                FLASH_ACCTRL_WAITP_24WS
+#define DDL_FLASH_LATENCY_25                FLASH_ACCTRL_WAITP_25WS
+#define DDL_FLASH_LATENCY_26                FLASH_ACCTRL_WAITP_26WS
+#define DDL_FLASH_LATENCY_27                FLASH_ACCTRL_WAITP_27WS
+#define DDL_FLASH_LATENCY_28                FLASH_ACCTRL_WAITP_28WS
+#define DDL_FLASH_LATENCY_29                FLASH_ACCTRL_WAITP_29WS
+#define DDL_FLASH_LATENCY_30                FLASH_ACCTRL_WAITP_30WS
+#define DDL_FLASH_LATENCY_31                FLASH_ACCTRL_WAITP_31WS
+#define DDL_FLASH_LATENCY_32                FLASH_ACCTRL_WAITP_32WS
+#define DDL_FLASH_LATENCY_33                FLASH_ACCTRL_WAITP_33WS
+#define DDL_FLASH_LATENCY_34                FLASH_ACCTRL_WAITP_34WS
+#define DDL_FLASH_LATENCY_35                FLASH_ACCTRL_WAITP_35WS
+#define DDL_FLASH_LATENCY_36                FLASH_ACCTRL_WAITP_36WS
+#define DDL_FLASH_LATENCY_37                FLASH_ACCTRL_WAITP_37WS
+#define DDL_FLASH_LATENCY_38                FLASH_ACCTRL_WAITP_38WS
+#define DDL_FLASH_LATENCY_39                FLASH_ACCTRL_WAITP_39WS
+#define DDL_FLASH_LATENCY_40                FLASH_ACCTRL_WAITP_40WS
+#define DDL_FLASH_LATENCY_41                FLASH_ACCTRL_WAITP_41WS
+#define DDL_FLASH_LATENCY_42                FLASH_ACCTRL_WAITP_42WS
+#define DDL_FLASH_LATENCY_43                FLASH_ACCTRL_WAITP_43WS
+#define DDL_FLASH_LATENCY_44                FLASH_ACCTRL_WAITP_44WS
+#define DDL_FLASH_LATENCY_45                FLASH_ACCTRL_WAITP_45WS
+#define DDL_FLASH_LATENCY_46                FLASH_ACCTRL_WAITP_46WS
+#define DDL_FLASH_LATENCY_47                FLASH_ACCTRL_WAITP_47WS
+#define DDL_FLASH_LATENCY_48                FLASH_ACCTRL_WAITP_48WS
+#define DDL_FLASH_LATENCY_49                FLASH_ACCTRL_WAITP_49WS
+#define DDL_FLASH_LATENCY_50                FLASH_ACCTRL_WAITP_50WS
+#define DDL_FLASH_LATENCY_51                FLASH_ACCTRL_WAITP_51WS
+#define DDL_FLASH_LATENCY_52                FLASH_ACCTRL_WAITP_52WS
+#define DDL_FLASH_LATENCY_53                FLASH_ACCTRL_WAITP_53WS
+#define DDL_FLASH_LATENCY_54                FLASH_ACCTRL_WAITP_54WS
+#define DDL_FLASH_LATENCY_55                FLASH_ACCTRL_WAITP_55WS
+#define DDL_FLASH_LATENCY_56                FLASH_ACCTRL_WAITP_56WS
+#define DDL_FLASH_LATENCY_57                FLASH_ACCTRL_WAITP_57WS
+#define DDL_FLASH_LATENCY_58                FLASH_ACCTRL_WAITP_58WS
+#define DDL_FLASH_LATENCY_59                FLASH_ACCTRL_WAITP_59WS
+#define DDL_FLASH_LATENCY_60                FLASH_ACCTRL_WAITP_60WS
+#define DDL_FLASH_LATENCY_61                FLASH_ACCTRL_WAITP_61WS
+#define DDL_FLASH_LATENCY_62                FLASH_ACCTRL_WAITP_62WS
+#define DDL_FLASH_LATENCY_63                FLASH_ACCTRL_WAITP_63WS
+#define DDL_FLASH_LATENCY_64                FLASH_ACCTRL_WAITP_64WS
+#define DDL_FLASH_LATENCY_65                FLASH_ACCTRL_WAITP_65WS
+#define DDL_FLASH_LATENCY_66                FLASH_ACCTRL_WAITP_66WS
+#define DDL_FLASH_LATENCY_67                FLASH_ACCTRL_WAITP_67WS
+#define DDL_FLASH_LATENCY_68                FLASH_ACCTRL_WAITP_68WS
+#define DDL_FLASH_LATENCY_69                FLASH_ACCTRL_WAITP_69WS
+#define DDL_FLASH_LATENCY_70                FLASH_ACCTRL_WAITP_70WS
+#define DDL_FLASH_LATENCY_71                FLASH_ACCTRL_WAITP_71WS
+#define DDL_FLASH_LATENCY_72                FLASH_ACCTRL_WAITP_72WS
+#define DDL_FLASH_LATENCY_73                FLASH_ACCTRL_WAITP_73WS
+#define DDL_FLASH_LATENCY_74                FLASH_ACCTRL_WAITP_74WS
+#define DDL_FLASH_LATENCY_75                FLASH_ACCTRL_WAITP_75WS
+#define DDL_FLASH_LATENCY_76                FLASH_ACCTRL_WAITP_76WS
+#define DDL_FLASH_LATENCY_77                FLASH_ACCTRL_WAITP_77WS
+#define DDL_FLASH_LATENCY_78                FLASH_ACCTRL_WAITP_78WS
+#define DDL_FLASH_LATENCY_79                FLASH_ACCTRL_WAITP_79WS
+#define DDL_FLASH_LATENCY_80                FLASH_ACCTRL_WAITP_80WS
+#define DDL_FLASH_LATENCY_81                FLASH_ACCTRL_WAITP_81WS
+#define DDL_FLASH_LATENCY_82                FLASH_ACCTRL_WAITP_82WS
+#define DDL_FLASH_LATENCY_83                FLASH_ACCTRL_WAITP_83WS
+#define DDL_FLASH_LATENCY_84                FLASH_ACCTRL_WAITP_84WS
+#define DDL_FLASH_LATENCY_85                FLASH_ACCTRL_WAITP_85WS
+#define DDL_FLASH_LATENCY_86                FLASH_ACCTRL_WAITP_86WS
+#define DDL_FLASH_LATENCY_87                FLASH_ACCTRL_WAITP_87WS
+#define DDL_FLASH_LATENCY_88                FLASH_ACCTRL_WAITP_88WS
+#define DDL_FLASH_LATENCY_89                FLASH_ACCTRL_WAITP_89WS
+#define DDL_FLASH_LATENCY_90                FLASH_ACCTRL_WAITP_90WS
+#define DDL_FLASH_LATENCY_91                FLASH_ACCTRL_WAITP_91WS
+#define DDL_FLASH_LATENCY_92                FLASH_ACCTRL_WAITP_92WS
+#define DDL_FLASH_LATENCY_93                FLASH_ACCTRL_WAITP_93WS
+#define DDL_FLASH_LATENCY_94                FLASH_ACCTRL_WAITP_94WS
+#define DDL_FLASH_LATENCY_95                FLASH_ACCTRL_WAITP_95WS
+#define DDL_FLASH_LATENCY_96                FLASH_ACCTRL_WAITP_96WS
+#define DDL_FLASH_LATENCY_97                FLASH_ACCTRL_WAITP_97WS
+#define DDL_FLASH_LATENCY_98                FLASH_ACCTRL_WAITP_98WS
+#define DDL_FLASH_LATENCY_99                FLASH_ACCTRL_WAITP_99WS
+#define DDL_FLASH_LATENCY_100               FLASH_ACCTRL_WAITP_100WS
+#define DDL_FLASH_LATENCY_101               FLASH_ACCTRL_WAITP_101WS
+#define DDL_FLASH_LATENCY_102               FLASH_ACCTRL_WAITP_102WS
+#define DDL_FLASH_LATENCY_103               FLASH_ACCTRL_WAITP_103WS
+#define DDL_FLASH_LATENCY_104               FLASH_ACCTRL_WAITP_104WS
+#define DDL_FLASH_LATENCY_105               FLASH_ACCTRL_WAITP_105WS
+#define DDL_FLASH_LATENCY_106               FLASH_ACCTRL_WAITP_106WS
+#define DDL_FLASH_LATENCY_107               FLASH_ACCTRL_WAITP_107WS
+#define DDL_FLASH_LATENCY_108               FLASH_ACCTRL_WAITP_108WS
+#define DDL_FLASH_LATENCY_109               FLASH_ACCTRL_WAITP_109WS
+#define DDL_FLASH_LATENCY_110               FLASH_ACCTRL_WAITP_110WS
+#define DDL_FLASH_LATENCY_111               FLASH_ACCTRL_WAITP_111WS
+#define DDL_FLASH_LATENCY_112               FLASH_ACCTRL_WAITP_112WS
+#define DDL_FLASH_LATENCY_113               FLASH_ACCTRL_WAITP_113WS
+#define DDL_FLASH_LATENCY_114               FLASH_ACCTRL_WAITP_114WS
+#define DDL_FLASH_LATENCY_115               FLASH_ACCTRL_WAITP_115WS
+#define DDL_FLASH_LATENCY_116               FLASH_ACCTRL_WAITP_116WS
+#define DDL_FLASH_LATENCY_117               FLASH_ACCTRL_WAITP_117WS
+#define DDL_FLASH_LATENCY_118               FLASH_ACCTRL_WAITP_118WS
+#define DDL_FLASH_LATENCY_119               FLASH_ACCTRL_WAITP_119WS
+#define DDL_FLASH_LATENCY_120               FLASH_ACCTRL_WAITP_120WS
+#define DDL_FLASH_LATENCY_121               FLASH_ACCTRL_WAITP_121WS
+#define DDL_FLASH_LATENCY_122               FLASH_ACCTRL_WAITP_122WS
+#define DDL_FLASH_LATENCY_123               FLASH_ACCTRL_WAITP_123WS
+#define DDL_FLASH_LATENCY_124               FLASH_ACCTRL_WAITP_124WS
+#define DDL_FLASH_LATENCY_125               FLASH_ACCTRL_WAITP_125WS
+#define DDL_FLASH_LATENCY_126               FLASH_ACCTRL_WAITP_126WS
+#define DDL_FLASH_LATENCY_127               FLASH_ACCTRL_WAITP_127WS
+#endif /* APM32F423xx || APM32F425xx || APM32F427xx */
+#endif /* APM32F403xx || APM32F402xx */
+/**
+  * @}
+  */
+
+/** @defgroup SYSTEM_DDL_EC_READ_INT_TIME FLASH Read Interrupt Time
+  * @{
+  */
+#if defined(FLASH_ACCTRL_RD_INT_TIMING)
+#define DDL_FLASH_TRC_FAST              0x00000000U                 /*!< FLASH Read Interrupt Timing Fast */
+#define DDL_FLASH_TRC_SLOW              FLASH_ACCTRL_RD_INT_TIMING  /*!< FLASH Read Interrupt Timing Slow */
+#endif /* FLASH_ACCTRL_RD_INT_TIMING */
 /**
   * @}
   */
@@ -314,7 +457,7 @@ extern "C" {
 /** @defgroup SYSTEM_DDL_Exported_Functions SYSTEM Exported Functions
   * @{
   */
-
+#if defined(SYSCFG)
 /** @defgroup SYSTEM_DDL_EF_SYSCFG SYSCFG
   * @{
   */
@@ -325,7 +468,7 @@ extern "C" {
   *         @arg @ref DDL_SYSCFG_REMAP_SYSTEMFLASH
   *         @arg @ref DDL_SYSCFG_REMAP_SRAM
   *         @arg @ref DDL_SYSCFG_REMAP_SMC (*)
-  *         @arg @ref DDL_SYSCFG_REMAP_FMC (*)
+  *         @arg @ref DDL_SYSCFG_REMAP_DMC (*)
   * @retval None
   */
 __STATIC_INLINE void DDL_SYSCFG_SetRemapMemory(uint32_t Memory)
@@ -340,7 +483,7 @@ __STATIC_INLINE void DDL_SYSCFG_SetRemapMemory(uint32_t Memory)
   *         @arg @ref DDL_SYSCFG_REMAP_SYSTEMFLASH
   *         @arg @ref DDL_SYSCFG_REMAP_SRAM
   *         @arg @ref DDL_SYSCFG_REMAP_SMC (*)
-  *         @arg @ref DDL_SYSCFG_REMAP_FMC (*)
+  *         @arg @ref DDL_SYSCFG_REMAP_DMC (*)
   */
 __STATIC_INLINE uint32_t DDL_SYSCFG_GetRemapMemory(void)
 {
@@ -375,12 +518,12 @@ __STATIC_INLINE void DDL_SYSCFG_DisableCompensationCell(void)
   */
 __STATIC_INLINE uint32_t DDL_SYSCFG_IsActiveFlag_CMPCR(void)
 {
-  return (READ_BIT(SYSCFG->CCCTRL, SYSCFG_CCCTRL_EDYFLG) == (SYSCFG_CCCTRL_EDYFLG));
+  return (READ_BIT(SYSCFG->CCCTRL, SYSCFG_CCCTRL_RDYFLG) == (SYSCFG_CCCTRL_RDYFLG));
 }
 
 #if defined(SYSCFG_PMCFG_ENETSEL)
 /**
-  * @brief  Select Ethernet PHY interface 
+  * @brief  Select Ethernet PHY interface
   * @param  Interface This parameter can be one of the following values:
   *         @arg @ref DDL_SYSCFG_PMCFG_ETHMII
   *         @arg @ref DDL_SYSCFG_PMCFG_ETHRMII
@@ -392,7 +535,7 @@ __STATIC_INLINE void DDL_SYSCFG_SetPHYInterface(uint32_t Interface)
 }
 
 /**
-  * @brief  Get Ethernet PHY interface 
+  * @brief  Get Ethernet PHY interface
   * @retval Returned value can be one of the following values:
   *         @arg @ref DDL_SYSCFG_PMCFG_ETHMII
   *         @arg @ref DDL_SYSCFG_PMCFG_ETHRMII
@@ -403,61 +546,7 @@ __STATIC_INLINE uint32_t DDL_SYSCFG_GetPHYInterface(void)
   return (uint32_t)(READ_BIT(SYSCFG->PMCFG, SYSCFG_PMCFG_ENETSEL));
 }
 #endif /* SYSCFG_PMCFG_ENETSEL */
- 
 
-
-#if defined(SYSCFG_MMSEL_UFB_MODE)
-/**
-  * @brief  Select Flash bank mode (Bank flashed at 0x08000000)
-  * @param  Bank This parameter can be one of the following values:
-  *         @arg @ref DDL_SYSCFG_BANKMODE_BANK1
-  *         @arg @ref DDL_SYSCFG_BANKMODE_BANK2
-  * @retval None
-  */
-__STATIC_INLINE void DDL_SYSCFG_SetFlashBankMode(uint32_t Bank)
-{ 
-  MODIFY_REG(SYSCFG->MMSEL, SYSCFG_MMSEL_UFB_MODE, Bank);
-}
-
-/**
-  * @brief  Get Flash bank mode (Bank flashed at 0x08000000)
-  * @retval Returned value can be one of the following values:
-  *         @arg @ref DDL_SYSCFG_BANKMODE_BANK1
-  *         @arg @ref DDL_SYSCFG_BANKMODE_BANK2
-  */
-__STATIC_INLINE uint32_t DDL_SYSCFG_GetFlashBankMode(void)
-{
-  return (uint32_t)(READ_BIT(SYSCFG->MMSEL, SYSCFG_MMSEL_UFB_MODE));
-}
-#endif /* SYSCFG_MMSEL_UFB_MODE */
-
-#if defined(SYSCFG_CFGR_FMPI2C1_SCL)
-/**
-  * @brief  Enable the I2C fast mode plus driving capability.
-  * @param  ConfigFastModePlus This parameter can be a combination of the following values:
-  *         @arg @ref DDL_SYSCFG_I2C_FASTMODEPLUS_SCL
-  *         @arg @ref DDL_SYSCFG_I2C_FASTMODEPLUS_SDA
-  *         (*) value not defined in all devices
-  * @retval None
-  */
-__STATIC_INLINE void DDL_SYSCFG_EnableFastModePlus(uint32_t ConfigFastModePlus)
-{
-  SET_BIT(SYSCFG->CFGR, ConfigFastModePlus);
-}
-
-/**
-  * @brief  Disable the I2C fast mode plus driving capability.
-  * @param  ConfigFastModePlus This parameter can be a combination of the following values:
-  *         @arg @ref DDL_SYSCFG_I2C_FASTMODEPLUS_SCL
-  *         @arg @ref DDL_SYSCFG_I2C_FASTMODEPLUS_SDA
-  *         (*) value not defined in all devices
-  * @retval None
-  */
-__STATIC_INLINE void DDL_SYSCFG_DisableFastModePlus(uint32_t ConfigFastModePlus)
-{
-  CLEAR_BIT(SYSCFG->CFGR, ConfigFastModePlus);
-}
-#endif /* SYSCFG_CFGR_FMPI2C1_SCL */
 
 /**
   * @brief  Configure source input for the EINT external interrupt.
@@ -534,6 +623,7 @@ __STATIC_INLINE uint32_t DDL_SYSCFG_GetEINTSource(uint32_t Line)
 /**
   * @}
   */
+#endif /* SYSCFG */
 
 
 /** @defgroup SYSTEM_DDL_EF_DBGMCU DBGMCU
@@ -542,8 +632,9 @@ __STATIC_INLINE uint32_t DDL_SYSCFG_GetEINTSource(uint32_t Line)
 
 /**
   * @brief  Return the device identifier
-  * @note For APM32F405/407xx and APM32F417xx devices, the device ID is 0x413
+  * @note For APM32F405/407xx and APM32F415/417xx devices, the device ID is 0x413
   * @note For APM32F411xx devices, the device ID is 0x431
+  * @note For APM32F423/425/427xx devices, the device ID is 0x419
   * @retval Values between Min_Data=0x00 and Max_Data=0xFFF
   */
 __STATIC_INLINE uint32_t DDL_DBGMCU_GetDeviceID(void)
@@ -556,6 +647,7 @@ __STATIC_INLINE uint32_t DDL_DBGMCU_GetDeviceID(void)
   * @note This field indicates the revision of the device.
           For example, it is read as RevA -> 0x1000, Cat 2 revZ -> 0x1001, rev1 -> 0x1003, rev2 ->0x1007, revY -> 0x100F for APM32F405/407xx and APM32F417xx devices
           For example, it is read as RevA -> 0x0015 for APM32F411xx devices
+          For example, it is read as RevA -> 0x1000 for APM32F423/425/427xx devices
   * @retval Values between Min_Data=0x00 and Max_Data=0xFFFF
   */
 __STATIC_INLINE uint32_t DDL_DBGMCU_GetRevisionID(void)
@@ -652,30 +744,42 @@ __STATIC_INLINE uint32_t DDL_DBGMCU_GetTracePinAssignment(void)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR2_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR3_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR4_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP 
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR6_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR7_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR12_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR13_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR14_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_LPTIM_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_RTC_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_WWDT_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_IWDT_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C1_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C2_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C3_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C4_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN1_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN3_STOP (*)
-  *         
+  *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR2_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR3_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR4_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_WWDT_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_IWDT_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C1_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN1_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN2_STOP
+  *
   *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void DDL_DBGMCU_APB1_GRP1_FreezePeriph(uint32_t Periphs)
 {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  SET_BIT(DBGMCU->CFG, Periphs);
+#else
   SET_BIT(DBGMCU->APB1F, Periphs);
+#endif /* APM32F403xx || APM32F402xx */
 }
 
 /**
@@ -684,30 +788,42 @@ __STATIC_INLINE void DDL_DBGMCU_APB1_GRP1_FreezePeriph(uint32_t Periphs)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR2_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR3_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR4_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP 
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR6_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR7_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR12_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR13_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR14_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_LPTIM_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_RTC_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_WWDT_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_IWDT_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C1_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C2_STOP
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C3_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C4_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN1_STOP (*)
   *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
-  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN3_STOP (*)
-  *         
+  *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR2_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR3_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR4_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_TMR5_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_WWDT_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_IWDT_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_I2C1_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN1_STOP
+  *         @arg @ref DDL_DBGMCU_APB1_GRP1_CAN2_STOP
+  *
   *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void DDL_DBGMCU_APB1_GRP1_UnFreezePeriph(uint32_t Periphs)
 {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  CLEAR_BIT(DBGMCU->CFG, Periphs);
+#else
   CLEAR_BIT(DBGMCU->APB1F, Periphs);
+#endif /* APM32F403xx || APM32F402xx */
 }
 
 /**
@@ -724,7 +840,11 @@ __STATIC_INLINE void DDL_DBGMCU_APB1_GRP1_UnFreezePeriph(uint32_t Periphs)
   */
 __STATIC_INLINE void DDL_DBGMCU_APB2_GRP1_FreezePeriph(uint32_t Periphs)
 {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  SET_BIT(DBGMCU->CFG, Periphs);
+#else
   SET_BIT(DBGMCU->APB2F, Periphs);
+#endif /* APM32F403xx || APM32F402xx */
 }
 
 /**
@@ -741,7 +861,11 @@ __STATIC_INLINE void DDL_DBGMCU_APB2_GRP1_FreezePeriph(uint32_t Periphs)
   */
 __STATIC_INLINE void DDL_DBGMCU_APB2_GRP1_UnFreezePeriph(uint32_t Periphs)
 {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  CLEAR_BIT(DBGMCU->CFG, Periphs);
+#else
   CLEAR_BIT(DBGMCU->APB2F, Periphs);
+#endif /* APM32F403xx || APM32F402xx */
 }
 /**
   * @}
@@ -761,20 +885,17 @@ __STATIC_INLINE void DDL_DBGMCU_APB2_GRP1_UnFreezePeriph(uint32_t Periphs)
   *         @arg @ref DDL_FLASH_LATENCY_4
   *         @arg @ref DDL_FLASH_LATENCY_5
   *         @arg @ref DDL_FLASH_LATENCY_6
-  *         @arg @ref DDL_FLASH_LATENCY_7
-  *         @arg @ref DDL_FLASH_LATENCY_8
-  *         @arg @ref DDL_FLASH_LATENCY_9
-  *         @arg @ref DDL_FLASH_LATENCY_10
-  *         @arg @ref DDL_FLASH_LATENCY_11
-  *         @arg @ref DDL_FLASH_LATENCY_12
-  *         @arg @ref DDL_FLASH_LATENCY_13
-  *         @arg @ref DDL_FLASH_LATENCY_14
-  *         @arg @ref DDL_FLASH_LATENCY_15
+  *         @arg @ref DDL_FLASH_LATENCY_7 - DDL_FLASH_LATENCY_127 (*)
+  *
   * @retval None
   */
 __STATIC_INLINE void DDL_FLASH_SetLatency(uint32_t Latency)
 {
+#if defined(FLASH_ACCTRL_WAITP)
   MODIFY_REG(FLASH->ACCTRL, FLASH_ACCTRL_WAITP, Latency);
+#else
+  MODIFY_REG(FLASH->CTRL1, FLASH_CTRL1_WS02 | FLASH_CTRL1_WS34, Latency);
+#endif /* FLASH_ACCTRL_WAITP */
 }
 
 /**
@@ -787,19 +908,16 @@ __STATIC_INLINE void DDL_FLASH_SetLatency(uint32_t Latency)
   *         @arg @ref DDL_FLASH_LATENCY_4
   *         @arg @ref DDL_FLASH_LATENCY_5
   *         @arg @ref DDL_FLASH_LATENCY_6
-  *         @arg @ref DDL_FLASH_LATENCY_7
-  *         @arg @ref DDL_FLASH_LATENCY_8
-  *         @arg @ref DDL_FLASH_LATENCY_9
-  *         @arg @ref DDL_FLASH_LATENCY_10
-  *         @arg @ref DDL_FLASH_LATENCY_11
-  *         @arg @ref DDL_FLASH_LATENCY_12
-  *         @arg @ref DDL_FLASH_LATENCY_13
-  *         @arg @ref DDL_FLASH_LATENCY_14
-  *         @arg @ref DDL_FLASH_LATENCY_15
+  *         @arg @ref DDL_FLASH_LATENCY_7 - DDL_FLASH_LATENCY_127 (*)
   */
 __STATIC_INLINE uint32_t DDL_FLASH_GetLatency(void)
 {
+#if defined(FLASH_ACCTRL_WAITP)
   return (uint32_t)(READ_BIT(FLASH->ACCTRL, FLASH_ACCTRL_WAITP));
+#else
+  uint32_t temp = READ_BIT(FLASH->CTRL1, FLASH_CTRL1_WS34);
+  return (uint32_t)(READ_BIT(FLASH->CTRL1, FLASH_CTRL1_WS02) | temp);
+#endif /* FLASH_ACCTRL_WAITP */
 }
 
 /**
@@ -808,7 +926,11 @@ __STATIC_INLINE uint32_t DDL_FLASH_GetLatency(void)
   */
 __STATIC_INLINE void DDL_FLASH_EnablePrefetch(void)
 {
+#if defined(FLASH_ACCTRL_PREFEN)
   SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_PREFEN);
+#else
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_PBEN);
+#endif /* FLASH_ACCTRL_PREFEN */
 }
 
 /**
@@ -817,7 +939,11 @@ __STATIC_INLINE void DDL_FLASH_EnablePrefetch(void)
   */
 __STATIC_INLINE void DDL_FLASH_DisablePrefetch(void)
 {
+#if defined(FLASH_ACCTRL_PREFEN)
   CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_PREFEN);
+#else
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_PBEN);
+#endif /* FLASH_ACCTRL_PREFEN */
 }
 
 /**
@@ -826,8 +952,41 @@ __STATIC_INLINE void DDL_FLASH_DisablePrefetch(void)
   */
 __STATIC_INLINE uint32_t DDL_FLASH_IsPrefetchEnabled(void)
 {
+#if defined(FLASH_ACCTRL_PREFEN)
   return (READ_BIT(FLASH->ACCTRL, FLASH_ACCTRL_PREFEN) == (FLASH_ACCTRL_PREFEN));
+#else
+  return (READ_BIT(FLASH->CTRL1, FLASH_CTRL1_PBEN) == (FLASH_CTRL1_PBEN));
+#endif /* FLASH_ACCTRL_PREFEN */
 }
+
+#if defined(FLASH_CTRL1_HCAEN)
+/**
+  * @brief  Enable Flash Half Cycle Access
+  * @retval None
+  */
+__STATIC_INLINE void DDL_FLASH_EnableHalfCycleAccess(void)
+{
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_HCAEN);
+}
+
+/**
+  * @brief  Disable Flash Half Cycle Access
+  * @retval None
+  */
+__STATIC_INLINE void DDL_FLASH_DisableHalfCycleAccess(void)
+{
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_HCAEN);
+}
+
+/**
+  * @brief  Check if Flash Half Cycle Access is enabled or not
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_FLASH_IsHalfCycleAccessEnabled(void)
+{
+  return (READ_BIT(FLASH->CTRL1, FLASH_CTRL1_HCAEN) == (FLASH_CTRL1_HCAEN));
+}
+#endif /* FLASH_CTRL1_HCAEN */
 
 /**
   * @brief  Enable Instruction cache
@@ -835,7 +994,11 @@ __STATIC_INLINE uint32_t DDL_FLASH_IsPrefetchEnabled(void)
   */
 __STATIC_INLINE void DDL_FLASH_EnableInstCache(void)
 {
+#if defined(FLASH_ACCTRL_ICACHEEN)
   SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_ICACHEEN);
+#else
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_ICACHEEN);
+#endif /* FLASH_ACCTRL_ICACHEEN */
 }
 
 /**
@@ -844,7 +1007,11 @@ __STATIC_INLINE void DDL_FLASH_EnableInstCache(void)
   */
 __STATIC_INLINE void DDL_FLASH_DisableInstCache(void)
 {
+#if defined(FLASH_ACCTRL_ICACHEEN)
   CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_ICACHEEN);
+#else
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_ICACHEEN);
+#endif /* FLASH_ACCTRL_ICACHEEN */
 }
 
 /**
@@ -853,7 +1020,11 @@ __STATIC_INLINE void DDL_FLASH_DisableInstCache(void)
   */
 __STATIC_INLINE void DDL_FLASH_EnableDataCache(void)
 {
+#if defined(FLASH_ACCTRL_DCACHEEN)
   SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_DCACHEEN);
+#else
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_DCACHEEN);
+#endif /* FLASH_ACCTRL_DCACHEEN */
 }
 
 /**
@@ -862,7 +1033,11 @@ __STATIC_INLINE void DDL_FLASH_EnableDataCache(void)
   */
 __STATIC_INLINE void DDL_FLASH_DisableDataCache(void)
 {
+#if defined(FLASH_ACCTRL_DCACHEEN)
   CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_DCACHEEN);
+#else
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_DCACHEEN);
+#endif /* FLASH_ACCTRL_DCACHEEN */
 }
 
 /**
@@ -872,7 +1047,11 @@ __STATIC_INLINE void DDL_FLASH_DisableDataCache(void)
   */
 __STATIC_INLINE void DDL_FLASH_EnableInstCacheReset(void)
 {
+#if defined(FLASH_ACCTRL_ICACHERST)
   SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_ICACHERST);
+#else
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_ICACHERST);
+#endif /* FLASH_ACCTRL_ICACHERST */
 }
 
 /**
@@ -881,7 +1060,11 @@ __STATIC_INLINE void DDL_FLASH_EnableInstCacheReset(void)
   */
 __STATIC_INLINE void DDL_FLASH_DisableInstCacheReset(void)
 {
+#if defined(FLASH_ACCTRL_ICACHERST)
   CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_ICACHERST);
+#else
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_ICACHERST);
+#endif /* FLASH_ACCTRL_ICACHERST */
 }
 
 /**
@@ -891,7 +1074,11 @@ __STATIC_INLINE void DDL_FLASH_DisableInstCacheReset(void)
   */
 __STATIC_INLINE void DDL_FLASH_EnableDataCacheReset(void)
 {
+#if defined(FLASH_ACCTRL_DCACHERST)
   SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_DCACHERST);
+#else
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_DCACHERST);
+#endif /* FLASH_ACCTRL_DCACHERST */
 }
 
 /**
@@ -900,9 +1087,77 @@ __STATIC_INLINE void DDL_FLASH_EnableDataCacheReset(void)
   */
 __STATIC_INLINE void DDL_FLASH_DisableDataCacheReset(void)
 {
+#if defined(FLASH_ACCTRL_DCACHERST)
   CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_DCACHERST);
+#else
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_DCACHERST);
+#endif /* FLASH_ACCTRL_DCACHERST */
 }
 
+#if defined(FLASH_CTRL1_PRFTB) || defined(FLASH_ACCTRL_PREF_TIMING)
+/**
+  * @brief  Enable Prefetch policy control
+  * @retval None
+  * @note   Prefetch buffer/cache line initiates the next prefetch after being accessed.
+  */
+__STATIC_INLINE void DDL_FLASH_EnablePrefetchPolicyCtrl(void)
+{
+#if defined(FLASH_CTRL1_PRFTB)
+  SET_BIT(FLASH->CTRL1, FLASH_CTRL1_PRFTB);
+#else
+  SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_PREF_TIMING);
+#endif /* FLASH_CTRL1_PRFTB */
+}
+
+/**
+  * @brief  Disable Prefetch policy control
+  * @retval None
+  * @note   Prefetch buffer / the same cache line initiates the next prefetch only after being accessed twice.
+  */
+__STATIC_INLINE void DDL_FLASH_DisablePrefetchPolicyCtrl(void)
+{
+#if defined(FLASH_CTRL1_PRFTB)
+  CLEAR_BIT(FLASH->CTRL1, FLASH_CTRL1_PRFTB);
+#else
+  CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_PREF_TIMING);
+#endif /* FLASH_CTRL1_PRFTB */
+}
+
+#endif /* FLASH_CTRL1_PRFTB || FLASH_ACCTRL_PREF_TIMING */
+
+#if defined(FLASH_ACCTRL_RD_INT_EN)
+/**
+  * @brief  Enable Flash read interrupt
+  * @retval None
+  */
+__STATIC_INLINE void DDL_FLASH_EnableReadInt(void)
+{
+  SET_BIT(FLASH->ACCTRL, FLASH_ACCTRL_RD_INT_EN);
+}
+
+/**
+  * @brief  Disable Flash read interrupt
+  * @retval None
+  */
+__STATIC_INLINE void DDL_FLASH_DisableReadInt(void)
+{
+  CLEAR_BIT(FLASH->ACCTRL, FLASH_ACCTRL_RD_INT_EN);
+}
+#endif /* FLASH_ACCTRL_RD_INT_EN */
+
+#if defined(FLASH_ACCTRL_RD_INT_TIMING)
+/**
+  * @brief  Set Flash read interrupt timing
+  * @param  Timing This parameter can be one of the following values:
+  *         @arg @ref DDL_FLASH_TRC_FAST
+  *         @arg @ref DDL_FLASH_TRC_SLOW
+  * @retval None
+  */
+__STATIC_INLINE void DDL_FLASH_SetReadIntTiming(uint32_t Timing)
+{
+  MODIFY_REG(FLASH->ACCTRL, FLASH_ACCTRL_RD_INT_TIMING, Timing);
+}
+#endif /* FLASH_ACCTRL_RD_INT_TIMING */
 
 /**
   * @}

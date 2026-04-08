@@ -14,7 +14,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -36,13 +36,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -308,7 +304,6 @@ DAL_StatusTypeDef DAL_CAN_Init(CAN_HandleTypeDef *hcan)
 
   /* Check the parameters */
   ASSERT_PARAM(IS_CAN_ALL_INSTANCE(hcan->Instance));
-  ASSERT_PARAM(IS_FUNCTIONAL_STATE(hcan->Init.TimeTriggeredMode));
   ASSERT_PARAM(IS_FUNCTIONAL_STATE(hcan->Init.AutoBusOff));
   ASSERT_PARAM(IS_FUNCTIONAL_STATE(hcan->Init.AutoWakeUp));
   ASSERT_PARAM(IS_FUNCTIONAL_STATE(hcan->Init.AutoRetransmission));
@@ -395,16 +390,6 @@ DAL_StatusTypeDef DAL_CAN_Init(CAN_HandleTypeDef *hcan)
 
       return DAL_ERROR;
     }
-  }
-
-  /* Set the time triggered communication mode */
-  if (hcan->Init.TimeTriggeredMode == ENABLE)
-  {
-    SET_BIT(hcan->Instance->MCTRL, CAN_MCTRL_TTCM);
-  }
-  else
-  {
-    CLEAR_BIT(hcan->Instance->MCTRL, CAN_MCTRL_TTCM);
   }
 
   /* Set the automatic bus-off management */
@@ -914,7 +899,7 @@ DAL_StatusTypeDef DAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, CAN_FilterTypeDe
 #endif
 
     /* Initialisation mode for the filter */
-    SET_BIT(can_ip->FCTRL, CAN_FCTRL_FINIT);
+    SET_BIT(can_ip->FCTRL, CAN_FCTRL_FINITEN);
 
 #if defined(CAN3)
     /* Check the CAN instance */
@@ -1003,7 +988,7 @@ DAL_StatusTypeDef DAL_CAN_ConfigFilter(CAN_HandleTypeDef *hcan, CAN_FilterTypeDe
     }
 
     /* Leave the initialisation mode for the filter */
-    CLEAR_BIT(can_ip->FCTRL, CAN_FCTRL_FINIT);
+    CLEAR_BIT(can_ip->FCTRL, CAN_FCTRL_FINITEN);
 
     /* Return function status */
     return DAL_OK;

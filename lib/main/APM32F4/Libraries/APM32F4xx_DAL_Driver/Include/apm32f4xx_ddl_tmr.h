@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -133,9 +129,9 @@ static const uint8_t SHIFT_TAB_OISx[] =
 /* Remap mask definitions */
 #define TMRx_OR_RMP_SHIFT  16U
 #define TMRx_OR_RMP_MASK   0x0000FFFFU
-#define TMR2_OR_RMP_MASK   (TMR_OR_RMPSEL << TMRx_OR_RMP_SHIFT)
-#define TMR5_OR_RMP_MASK   (TMR_OR_TI4_RMPSEL << TMRx_OR_RMP_SHIFT)
-#define TMR11_OR_RMP_MASK  (TMR_OR_TI1_RMPSEL << TMRx_OR_RMP_SHIFT)
+#define TMR2_OR_RMP_MASK   (TMR_OPT_RMPSEL << TMRx_OR_RMP_SHIFT)
+#define TMR5_OR_RMP_MASK   (TMR_OPT_TI4_RMPSEL << TMRx_OR_RMP_SHIFT)
+#define TMR11_OR_RMP_MASK  (TMR_OPT_TI1_RMPSEL << TMRx_OR_RMP_SHIFT)
 
 /* Mask used to set the TDG[x:0] of the DTG bits of the TMRx_BDTR register */
 #define DT_DELAY_1 ((uint8_t)0x7F)
@@ -559,8 +555,8 @@ typedef struct
 #define DDL_TMR_DIEN_CC3IEN                      TMR_DIEN_CC3IEN       /*!< Capture/compare 3 interrupt enable */
 #define DDL_TMR_DIEN_CC4IEN                      TMR_DIEN_CC4IEN       /*!< Capture/compare 4 interrupt enable */
 #define DDL_TMR_DIEN_COMIEN                      TMR_DIEN_COMIEN       /*!< COM interrupt enable */
-#define DDL_TMR_DIEN_TRGIEN                        TMR_DIEN_TRGIEN         /*!< Trigger interrupt enable */
-#define DDL_TMR_DIEN_BRKIEN                        TMR_DIEN_BRKIEN         /*!< Break interrupt enable */
+#define DDL_TMR_DIEN_TRGIEN                      TMR_DIEN_TRGIEN       /*!< Trigger interrupt enable */
+#define DDL_TMR_DIEN_BRKIEN                      TMR_DIEN_BRKIEN       /*!< Break interrupt enable */
 /**
   * @}
   */
@@ -586,7 +582,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_COUNTERMODE Counter Mode
   * @{
   */
-#define DDL_TMR_COUNTERMODE_UP                  0x00000000U          /*!<Counter used as upcounter */
+#define DDL_TMR_COUNTERMODE_UP                  0x00000000U               /*!<Counter used as upcounter */
 #define DDL_TMR_COUNTERMODE_DOWN                TMR_CTRL1_CNTDIR          /*!< Counter used as downcounter */
 #define DDL_TMR_COUNTERMODE_CENTER_DOWN         TMR_CTRL1_CAMSEL_0        /*!< The counter counts up and down alternatively. Output compare interrupt flags of output channels  are set only when the counter is counting down. */
 #define DDL_TMR_COUNTERMODE_CENTER_UP           TMR_CTRL1_CAMSEL_1        /*!<The counter counts up and down alternatively. Output compare interrupt flags of output channels  are set only when the counter is counting up */
@@ -598,7 +594,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_CLOCKDIVISION Clock Division
   * @{
   */
-#define DDL_TMR_CLOCKDIVISION_DIV1              0x00000000U          /*!< tDTS=tCK_INT */
+#define DDL_TMR_CLOCKDIVISION_DIV1              0x00000000U               /*!< tDTS=tCK_INT */
 #define DDL_TMR_CLOCKDIVISION_DIV2              TMR_CTRL1_CLKDIV_0        /*!< tDTS=2*tCK_INT */
 #define DDL_TMR_CLOCKDIVISION_DIV4              TMR_CTRL1_CLKDIV_1        /*!< tDTS=4*tCK_INT */
 /**
@@ -608,7 +604,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_COUNTERDIRECTION Counter Direction
   * @{
   */
-#define DDL_TMR_COUNTERDIRECTION_UP             0x00000000U          /*!< Timer counter counts up */
+#define DDL_TMR_COUNTERDIRECTION_UP             0x00000000U               /*!< Timer counter counts up */
 #define DDL_TMR_COUNTERDIRECTION_DOWN           TMR_CTRL1_CNTDIR          /*!< Timer counter counts down */
 /**
   * @}
@@ -617,7 +613,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_CCUPDATESOURCE Capture Compare  Update Source
   * @{
   */
-#define DDL_TMR_CCUPDATESOURCE_COMG_ONLY        0x00000000U          /*!< Capture/compare control bits are updated by setting the COMG bit only */
+#define DDL_TMR_CCUPDATESOURCE_COMG_ONLY        0x00000000U              /*!< Capture/compare control bits are updated by setting the COMG bit only */
 #define DDL_TMR_CCUPDATESOURCE_COMG_AND_TRGI    TMR_CTRL2_CCUSEL         /*!< Capture/compare control bits are updated by setting the COMG bit or when a rising edge occurs on trigger input (TRGI) */
 /**
   * @}
@@ -626,7 +622,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_CCDMAREQUEST Capture Compare DMA Request
   * @{
   */
-#define DDL_TMR_CCDMAREQUEST_CC                 0x00000000U          /*!< CCx DMA request sent when CCx event occurs */
+#define DDL_TMR_CCDMAREQUEST_CC                 0x00000000U              /*!< CCx DMA request sent when CCx event occurs */
 #define DDL_TMR_CCDMAREQUEST_UPDATE             TMR_CTRL2_CCDSEL         /*!< CCx DMA requests sent when update event occurs */
 /**
   * @}
@@ -635,7 +631,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_LOCKLEVEL Lock Level
   * @{
   */
-#define DDL_TMR_LOCKLEVEL_OFF                   0x00000000U          /*!< LOCK OFF - No bit is write protected */
+#define DDL_TMR_LOCKLEVEL_OFF                   0x00000000U            /*!< LOCK OFF - No bit is write protected */
 #define DDL_TMR_LOCKLEVEL_1                     TMR_BDT_LOCKCFG_0      /*!< LOCK Level 1 */
 #define DDL_TMR_LOCKLEVEL_2                     TMR_BDT_LOCKCFG_1      /*!< LOCK Level 2 */
 #define DDL_TMR_LOCKLEVEL_3                     TMR_BDT_LOCKCFG        /*!< LOCK Level 3 */
@@ -661,7 +657,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_OCSTATE Output Configuration State
   * @{
   */
-#define DDL_TMR_OCSTATE_DISABLE                 0x00000000U             /*!< OCx is not active */
+#define DDL_TMR_OCSTATE_DISABLE                 0x00000000U              /*!< OCx is not active */
 #define DDL_TMR_OCSTATE_ENABLE                  TMR_CCEN_CC1EN           /*!< OCx signal is output on the corresponding output pin */
 /**
   * @}
@@ -671,13 +667,13 @@ typedef struct
 /** @defgroup TMR_DDL_EC_OCMODE Output Configuration Mode
   * @{
   */
-#define DDL_TMR_OCMODE_FROZEN                   0x00000000U                                              /*!<The comparison between the output compare register TMRx_CCRy and the counter TMRx_CNT has no effect on the output channel level */
-#define DDL_TMR_OCMODE_ACTIVE                   TMR_CCM1_OC1MOD_0                                         /*!<OCyREF is forced high on compare match*/
-#define DDL_TMR_OCMODE_INACTIVE                 TMR_CCM1_OC1MOD_1                                         /*!<OCyREF is forced low on compare match*/
-#define DDL_TMR_OCMODE_TOGGLE                   (TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0)                    /*!<OCyREF toggles on compare match*/
-#define DDL_TMR_OCMODE_FORCED_INACTIVE          TMR_CCM1_OC1MOD_2                                         /*!<OCyREF is forced low*/
-#define DDL_TMR_OCMODE_FORCED_ACTIVE            (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_0)                    /*!<OCyREF is forced high*/
-#define DDL_TMR_OCMODE_PWM1                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1)                    /*!<In upcounting, channel y is active as long as TMRx_CNT<TMRx_CCRy else inactive.  In downcounting, channel y is inactive as long as TMRx_CNT>TMRx_CCRy else active.*/
+#define DDL_TMR_OCMODE_FROZEN                   0x00000000U                                                 /*!<The comparison between the output compare register TMRx_CCRy and the counter TMRx_CNT has no effect on the output channel level */
+#define DDL_TMR_OCMODE_ACTIVE                   TMR_CCM1_OC1MOD_0                                           /*!<OCyREF is forced high on compare match*/
+#define DDL_TMR_OCMODE_INACTIVE                 TMR_CCM1_OC1MOD_1                                           /*!<OCyREF is forced low on compare match*/
+#define DDL_TMR_OCMODE_TOGGLE                   (TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0)                     /*!<OCyREF toggles on compare match*/
+#define DDL_TMR_OCMODE_FORCED_INACTIVE          TMR_CCM1_OC1MOD_2                                           /*!<OCyREF is forced low*/
+#define DDL_TMR_OCMODE_FORCED_ACTIVE            (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_0)                     /*!<OCyREF is forced high*/
+#define DDL_TMR_OCMODE_PWM1                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1)                     /*!<In upcounting, channel y is active as long as TMRx_CNT<TMRx_CCRy else inactive.  In downcounting, channel y is inactive as long as TMRx_CNT>TMRx_CCRy else active.*/
 #define DDL_TMR_OCMODE_PWM2                     (TMR_CCM1_OC1MOD_2 | TMR_CCM1_OC1MOD_1 | TMR_CCM1_OC1MOD_0) /*!<In upcounting, channel y is inactive as long as TMRx_CNT<TMRx_CCRy else active.  In downcounting, channel y is active as long as TMRx_CNT>TMRx_CCRy else inactive*/
 /**
   * @}
@@ -686,7 +682,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_OCPOLARITY Output Configuration Polarity
   * @{
   */
-#define DDL_TMR_OCPOLARITY_HIGH                 0x00000000U                 /*!< OCxactive high*/
+#define DDL_TMR_OCPOLARITY_HIGH                 0x00000000U                   /*!< OCxactive high*/
 #define DDL_TMR_OCPOLARITY_LOW                  TMR_CCEN_CC1POL               /*!< OCxactive low*/
 /**
   * @}
@@ -695,7 +691,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_OCIDLESTATE Output Configuration Idle State
   * @{
   */
-#define DDL_TMR_OCIDLESTATE_LOW                 0x00000000U             /*!<OCx=0 (after a dead-time if OC is implemented) when MOE=0*/
+#define DDL_TMR_OCIDLESTATE_LOW                 0x00000000U                 /*!<OCx=0 (after a dead-time if OC is implemented) when MOE=0*/
 #define DDL_TMR_OCIDLESTATE_HIGH                TMR_CTRL2_OC1OIS            /*!<OCx=1 (after a dead-time if OC is implemented) when MOE=0*/
 /**
   * @}
@@ -715,7 +711,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_ICPSC Input Configuration Prescaler
   * @{
   */
-#define DDL_TMR_ICPSC_DIV1                      0x00000000U                    /*!< No prescaler, capture is done each time an edge is detected on the capture input */
+#define DDL_TMR_ICPSC_DIV1                      0x00000000U                   /*!< No prescaler, capture is done each time an edge is detected on the capture input */
 #define DDL_TMR_ICPSC_DIV2                      (TMR_CCM1_IC1PSC_0 << 16U)    /*!< Capture is done once every 2 events */
 #define DDL_TMR_ICPSC_DIV4                      (TMR_CCM1_IC1PSC_1 << 16U)    /*!< Capture is done once every 4 events */
 #define DDL_TMR_ICPSC_DIV8                      (TMR_CCM1_IC1PSC << 16U)      /*!< Capture is done once every 8 events */
@@ -726,21 +722,21 @@ typedef struct
 /** @defgroup TMR_DDL_EC_IC_FILTER Input Configuration Filter
   * @{
   */
-#define DDL_TMR_IC_FILTER_FDIV1                 0x00000000U                                                        /*!< No filter, sampling is done at fDTS */
+#define DDL_TMR_IC_FILTER_FDIV1                 0x00000000U                                                       /*!< No filter, sampling is done at fDTS */
 #define DDL_TMR_IC_FILTER_FDIV1_N2              (TMR_CCM1_IC1F_0 << 16U)                                          /*!< fSAMPLING=fCK_INT, N=2 */
 #define DDL_TMR_IC_FILTER_FDIV1_N4              (TMR_CCM1_IC1F_1 << 16U)                                          /*!< fSAMPLING=fCK_INT, N=4 */
-#define DDL_TMR_IC_FILTER_FDIV1_N8              ((TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)                     /*!< fSAMPLING=fCK_INT, N=8 */
+#define DDL_TMR_IC_FILTER_FDIV1_N8              ((TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)                      /*!< fSAMPLING=fCK_INT, N=8 */
 #define DDL_TMR_IC_FILTER_FDIV2_N6              (TMR_CCM1_IC1F_2 << 16U)                                          /*!< fSAMPLING=fDTS/2, N=6 */
-#define DDL_TMR_IC_FILTER_FDIV2_N8              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_0) << 16U)                     /*!< fSAMPLING=fDTS/2, N=8 */
-#define DDL_TMR_IC_FILTER_FDIV4_N6              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1) << 16U)                     /*!< fSAMPLING=fDTS/4, N=6 */
-#define DDL_TMR_IC_FILTER_FDIV4_N8              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/4, N=8 */
+#define DDL_TMR_IC_FILTER_FDIV2_N8              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_0) << 16U)                      /*!< fSAMPLING=fDTS/2, N=8 */
+#define DDL_TMR_IC_FILTER_FDIV4_N6              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1) << 16U)                      /*!< fSAMPLING=fDTS/4, N=6 */
+#define DDL_TMR_IC_FILTER_FDIV4_N8              ((TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)    /*!< fSAMPLING=fDTS/4, N=8 */
 #define DDL_TMR_IC_FILTER_FDIV8_N6              (TMR_CCM1_IC1F_3 << 16U)                                          /*!< fSAMPLING=fDTS/8, N=6 */
-#define DDL_TMR_IC_FILTER_FDIV8_N8              ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_0) << 16U)                     /*!< fSAMPLING=fDTS/8, N=8 */
-#define DDL_TMR_IC_FILTER_FDIV16_N5             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_1) << 16U)                     /*!< fSAMPLING=fDTS/16, N=5 */
-#define DDL_TMR_IC_FILTER_FDIV16_N6             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/16, N=6 */
-#define DDL_TMR_IC_FILTER_FDIV16_N8             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2) << 16U)                     /*!< fSAMPLING=fDTS/16, N=8 */
-#define DDL_TMR_IC_FILTER_FDIV32_N5             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/32, N=5 */
-#define DDL_TMR_IC_FILTER_FDIV32_N6             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1) << 16U)  /*!< fSAMPLING=fDTS/32, N=6 */
+#define DDL_TMR_IC_FILTER_FDIV8_N8              ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_0) << 16U)                      /*!< fSAMPLING=fDTS/8, N=8 */
+#define DDL_TMR_IC_FILTER_FDIV16_N5             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_1) << 16U)                      /*!< fSAMPLING=fDTS/16, N=5 */
+#define DDL_TMR_IC_FILTER_FDIV16_N6             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_1 | TMR_CCM1_IC1F_0) << 16U)    /*!< fSAMPLING=fDTS/16, N=6 */
+#define DDL_TMR_IC_FILTER_FDIV16_N8             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2) << 16U)                      /*!< fSAMPLING=fDTS/16, N=8 */
+#define DDL_TMR_IC_FILTER_FDIV32_N5             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_0) << 16U)    /*!< fSAMPLING=fDTS/32, N=5 */
+#define DDL_TMR_IC_FILTER_FDIV32_N6             ((TMR_CCM1_IC1F_3 | TMR_CCM1_IC1F_2 | TMR_CCM1_IC1F_1) << 16U)    /*!< fSAMPLING=fDTS/32, N=6 */
 #define DDL_TMR_IC_FILTER_FDIV32_N8             (TMR_CCM1_IC1F << 16U)                                            /*!< fSAMPLING=fDTS/32, N=8 */
 /**
   * @}
@@ -749,8 +745,8 @@ typedef struct
 /** @defgroup TMR_DDL_EC_IC_POLARITY Input Configuration Polarity
   * @{
   */
-#define DDL_TMR_IC_POLARITY_RISING              0x00000000U                      /*!< The circuit is sensitive to TIxFP1 rising edge, TIxFP1 is not inverted */
-#define DDL_TMR_IC_POLARITY_FALLING             TMR_CCEN_CC1POL                    /*!< The circuit is sensitive to TIxFP1 falling edge, TIxFP1 is inverted */
+#define DDL_TMR_IC_POLARITY_RISING              0x00000000U                          /*!< The circuit is sensitive to TIxFP1 rising edge, TIxFP1 is not inverted */
+#define DDL_TMR_IC_POLARITY_FALLING             TMR_CCEN_CC1POL                      /*!< The circuit is sensitive to TIxFP1 falling edge, TIxFP1 is inverted */
 #define DDL_TMR_IC_POLARITY_BOTHEDGE            (TMR_CCEN_CC1POL | TMR_CCEN_CC1NPOL) /*!< The circuit is sensitive to both TIxFP1 rising and falling edges, TIxFP1 is not inverted */
 /**
   * @}
@@ -759,9 +755,9 @@ typedef struct
 /** @defgroup TMR_DDL_EC_CLOCKSOURCE Clock Source
   * @{
   */
-#define DDL_TMR_CLOCKSOURCE_INTERNAL            0x00000000U                                          /*!< The timer is clocked by the internal clock provided from the RCC */
+#define DDL_TMR_CLOCKSOURCE_INTERNAL            0x00000000U                                                         /*!< The timer is clocked by the internal clock provided from the RCC */
 #define DDL_TMR_CLOCKSOURCE_EXT_MODE1           (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1 | TMR_SMCTRL_SMFSEL_0)   /*!< Counter counts at each rising or falling edge on a selected input*/
-#define DDL_TMR_CLOCKSOURCE_EXT_MODE2           TMR_SMCTRL_ECEN                                         /*!< Counter counts at each rising or falling edge on the external trigger input ETR */
+#define DDL_TMR_CLOCKSOURCE_EXT_MODE2           TMR_SMCTRL_ECEN                                                     /*!< Counter counts at each rising or falling edge on the external trigger input ETR */
 /**
   * @}
   */
@@ -771,7 +767,7 @@ typedef struct
   */
 #define DDL_TMR_ENCODERMODE_X2_TI1                     TMR_SMCTRL_SMFSEL_0                                                     /*!< Quadrature encoder mode 1, x2 mode - Counter counts up/down on TI1FP1 edge depending on TI2FP2 level */
 #define DDL_TMR_ENCODERMODE_X2_TI2                     TMR_SMCTRL_SMFSEL_1                                                     /*!< Quadrature encoder mode 2, x2 mode - Counter counts up/down on TI2FP2 edge depending on TI1FP1 level */
-#define DDL_TMR_ENCODERMODE_X4_TI12                   (TMR_SMCTRL_SMFSEL_1 | TMR_SMCTRL_SMFSEL_0)                                   /*!< Quadrature encoder mode 3, x4 mode - Counter counts up/down on both TI1FP1 and TI2FP2 edges depending on the level of the other input */
+#define DDL_TMR_ENCODERMODE_X4_TI12                   (TMR_SMCTRL_SMFSEL_1 | TMR_SMCTRL_SMFSEL_0)                              /*!< Quadrature encoder mode 3, x4 mode - Counter counts up/down on both TI1FP1 and TI2FP2 edges depending on the level of the other input */
 /**
   * @}
   */
@@ -779,13 +775,13 @@ typedef struct
 /** @defgroup TMR_DDL_EC_TRGO Trigger Output
   * @{
   */
-#define DDL_TMR_TRGO_RESET                      0x00000000U                                     /*!< UG bit from the TMRx_EGR register is used as trigger output */
-#define DDL_TMR_TRGO_ENABLE                     TMR_CTRL2_MMSEL_0                                   /*!< Counter Enable signal (CNT_EN) is used as trigger output */
-#define DDL_TMR_TRGO_UPDATE                     TMR_CTRL2_MMSEL_1                                   /*!< Update event is used as trigger output */
-#define DDL_TMR_TRGO_CC1IF                      (TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0)                 /*!< CC1 capture or a compare match is used as trigger output */
-#define DDL_TMR_TRGO_OC1REF                     TMR_CTRL2_MMSEL_2                                   /*!< OC1REF signal is used as trigger output */
-#define DDL_TMR_TRGO_OC2REF                     (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_0)                 /*!< OC2REF signal is used as trigger output */
-#define DDL_TMR_TRGO_OC3REF                     (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1)                 /*!< OC3REF signal is used as trigger output */
+#define DDL_TMR_TRGO_RESET                      0x00000000U                                                 /*!< UG bit from the TMRx_EGR register is used as trigger output */
+#define DDL_TMR_TRGO_ENABLE                     TMR_CTRL2_MMSEL_0                                           /*!< Counter Enable signal (CNT_EN) is used as trigger output */
+#define DDL_TMR_TRGO_UPDATE                     TMR_CTRL2_MMSEL_1                                           /*!< Update event is used as trigger output */
+#define DDL_TMR_TRGO_CC1IF                      (TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0)                     /*!< CC1 capture or a compare match is used as trigger output */
+#define DDL_TMR_TRGO_OC1REF                     TMR_CTRL2_MMSEL_2                                           /*!< OC1REF signal is used as trigger output */
+#define DDL_TMR_TRGO_OC2REF                     (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_0)                     /*!< OC2REF signal is used as trigger output */
+#define DDL_TMR_TRGO_OC3REF                     (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1)                     /*!< OC3REF signal is used as trigger output */
 #define DDL_TMR_TRGO_OC4REF                     (TMR_CTRL2_MMSEL_2 | TMR_CTRL2_MMSEL_1 | TMR_CTRL2_MMSEL_0) /*!< OC4REF signal is used as trigger output */
 /**
   * @}
@@ -795,8 +791,8 @@ typedef struct
 /** @defgroup TMR_DDL_EC_SLAVEMODE Slave Mode
   * @{
   */
-#define DDL_TMR_SLAVEMODE_DISABLED              0x00000000U                         /*!< Slave mode disabled */
-#define DDL_TMR_SLAVEMODE_RESET                 TMR_SMCTRL_SMFSEL_2                      /*!< Reset Mode - Rising edge of the selected trigger input (TRGI) reinitializes the counter */
+#define DDL_TMR_SLAVEMODE_DISABLED              0x00000000U                                   /*!< Slave mode disabled */
+#define DDL_TMR_SLAVEMODE_RESET                 TMR_SMCTRL_SMFSEL_2                           /*!< Reset Mode - Rising edge of the selected trigger input (TRGI) reinitializes the counter */
 #define DDL_TMR_SLAVEMODE_GATED                 (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_0)   /*!< Gated Mode - The counter clock is enabled when the trigger input (TRGI) is high */
 #define DDL_TMR_SLAVEMODE_TRIGGER               (TMR_SMCTRL_SMFSEL_2 | TMR_SMCTRL_SMFSEL_1)   /*!< Trigger Mode - The counter starts at a rising edge of the trigger TRGI */
 /**
@@ -806,14 +802,14 @@ typedef struct
 /** @defgroup TMR_DDL_EC_TS Trigger Selection
   * @{
   */
-#define DDL_TMR_TS_ITR0                         0x00000000U                                                     /*!< Internal Trigger 0 (ITR0) is used as trigger input */
+#define DDL_TMR_TS_ITR0                         0x00000000U                                                           /*!< Internal Trigger 0 (ITR0) is used as trigger input */
 #define DDL_TMR_TS_ITR1                         TMR_SMCTRL_TRGSEL_0                                                   /*!< Internal Trigger 1 (ITR1) is used as trigger input */
 #define DDL_TMR_TS_ITR2                         TMR_SMCTRL_TRGSEL_1                                                   /*!< Internal Trigger 2 (ITR2) is used as trigger input */
-#define DDL_TMR_TS_ITR3                         (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1)                                 /*!< Internal Trigger 3 (ITR3) is used as trigger input */
+#define DDL_TMR_TS_ITR3                         (TMR_SMCTRL_TRGSEL_0 | TMR_SMCTRL_TRGSEL_1)                           /*!< Internal Trigger 3 (ITR3) is used as trigger input */
 #define DDL_TMR_TS_TI1F_ED                      TMR_SMCTRL_TRGSEL_2                                                   /*!< TI1 Edge Detector (TI1F_ED) is used as trigger input */
-#define DDL_TMR_TS_TI1FP1                       (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_0)                                 /*!< Filtered Timer Input 1 (TI1FP1) is used as trigger input */
-#define DDL_TMR_TS_TI2FP2                       (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_1)                                 /*!< Filtered Timer Input 2 (TI12P2) is used as trigger input */
-#define DDL_TMR_TS_ETRF                         (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_0)                 /*!< Filtered external Trigger (ETRF) is used as trigger input */
+#define DDL_TMR_TS_TI1FP1                       (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_0)                           /*!< Filtered Timer Input 1 (TI1FP1) is used as trigger input */
+#define DDL_TMR_TS_TI2FP2                       (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_1)                           /*!< Filtered Timer Input 2 (TI12P2) is used as trigger input */
+#define DDL_TMR_TS_ETRF                         (TMR_SMCTRL_TRGSEL_2 | TMR_SMCTRL_TRGSEL_1 | TMR_SMCTRL_TRGSEL_0)     /*!< Filtered external Trigger (ETRF) is used as trigger input */
 /**
   * @}
   */
@@ -822,7 +818,7 @@ typedef struct
   * @{
   */
 #define DDL_TMR_ETR_POLARITY_NONINVERTED        0x00000000U             /*!< ETR is non-inverted, active at high level or rising edge */
-#define DDL_TMR_ETR_POLARITY_INVERTED           TMR_SMCTRL_ETPOL            /*!< ETR is inverted, active at low level or falling edge */
+#define DDL_TMR_ETR_POLARITY_INVERTED           TMR_SMCTRL_ETPOL        /*!< ETR is inverted, active at low level or falling edge */
 /**
   * @}
   */
@@ -830,7 +826,7 @@ typedef struct
 /** @defgroup TMR_DDL_EC_ETR_PRESCALER External Trigger Prescaler
   * @{
   */
-#define DDL_TMR_ETR_PRESCALER_DIV1              0x00000000U             /*!< ETR prescaler OFF */
+#define DDL_TMR_ETR_PRESCALER_DIV1              0x00000000U                 /*!< ETR prescaler OFF */
 #define DDL_TMR_ETR_PRESCALER_DIV2              TMR_SMCTRL_ETPCFG_0         /*!< ETR frequency is divided by 2 */
 #define DDL_TMR_ETR_PRESCALER_DIV4              TMR_SMCTRL_ETPCFG_1         /*!< ETR frequency is divided by 4 */
 #define DDL_TMR_ETR_PRESCALER_DIV8              TMR_SMCTRL_ETPCFG           /*!< ETR frequency is divided by 8 */
@@ -841,22 +837,22 @@ typedef struct
 /** @defgroup TMR_DDL_EC_ETR_FILTER External Trigger Filter
   * @{
   */
-#define DDL_TMR_ETR_FILTER_FDIV1                0x00000000U                                          /*!< No filter, sampling is done at fDTS */
-#define DDL_TMR_ETR_FILTER_FDIV1_N2             TMR_SMCTRL_ETFCFG_0                                       /*!< fSAMPLING=fCK_INT, N=2 */
-#define DDL_TMR_ETR_FILTER_FDIV1_N4             TMR_SMCTRL_ETFCFG_1                                       /*!< fSAMPLING=fCK_INT, N=4 */
-#define DDL_TMR_ETR_FILTER_FDIV1_N8             (TMR_SMCTRL_ETFCFG_1 | TMR_SMCTRL_ETFCFG_0)                    /*!< fSAMPLING=fCK_INT, N=8 */
-#define DDL_TMR_ETR_FILTER_FDIV2_N6             TMR_SMCTRL_ETFCFG_2                                       /*!< fSAMPLING=fDTS/2, N=6 */
-#define DDL_TMR_ETR_FILTER_FDIV2_N8             (TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_0)                    /*!< fSAMPLING=fDTS/2, N=8 */
-#define DDL_TMR_ETR_FILTER_FDIV4_N6             (TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_1)                    /*!< fSAMPLING=fDTS/4, N=6 */
+#define DDL_TMR_ETR_FILTER_FDIV1                0x00000000U                                                         /*!< No filter, sampling is done at fDTS */
+#define DDL_TMR_ETR_FILTER_FDIV1_N2             TMR_SMCTRL_ETFCFG_0                                                 /*!< fSAMPLING=fCK_INT, N=2 */
+#define DDL_TMR_ETR_FILTER_FDIV1_N4             TMR_SMCTRL_ETFCFG_1                                                 /*!< fSAMPLING=fCK_INT, N=4 */
+#define DDL_TMR_ETR_FILTER_FDIV1_N8             (TMR_SMCTRL_ETFCFG_1 | TMR_SMCTRL_ETFCFG_0)                         /*!< fSAMPLING=fCK_INT, N=8 */
+#define DDL_TMR_ETR_FILTER_FDIV2_N6             TMR_SMCTRL_ETFCFG_2                                                 /*!< fSAMPLING=fDTS/2, N=6 */
+#define DDL_TMR_ETR_FILTER_FDIV2_N8             (TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_0)                         /*!< fSAMPLING=fDTS/2, N=8 */
+#define DDL_TMR_ETR_FILTER_FDIV4_N6             (TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_1)                         /*!< fSAMPLING=fDTS/4, N=6 */
 #define DDL_TMR_ETR_FILTER_FDIV4_N8             (TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_1 | TMR_SMCTRL_ETFCFG_0)   /*!< fSAMPLING=fDTS/4, N=8 */
-#define DDL_TMR_ETR_FILTER_FDIV8_N6             TMR_SMCTRL_ETFCFG_3                                       /*!< fSAMPLING=fDTS/8, N=8 */
-#define DDL_TMR_ETR_FILTER_FDIV8_N8             (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_0)                    /*!< fSAMPLING=fDTS/16, N=5 */
-#define DDL_TMR_ETR_FILTER_FDIV16_N5            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_1)                    /*!< fSAMPLING=fDTS/16, N=6 */
+#define DDL_TMR_ETR_FILTER_FDIV8_N6             TMR_SMCTRL_ETFCFG_3                                                 /*!< fSAMPLING=fDTS/8, N=8 */
+#define DDL_TMR_ETR_FILTER_FDIV8_N8             (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_0)                         /*!< fSAMPLING=fDTS/16, N=5 */
+#define DDL_TMR_ETR_FILTER_FDIV16_N5            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_1)                         /*!< fSAMPLING=fDTS/16, N=6 */
 #define DDL_TMR_ETR_FILTER_FDIV16_N6            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_1 | TMR_SMCTRL_ETFCFG_0)   /*!< fSAMPLING=fDTS/16, N=8 */
-#define DDL_TMR_ETR_FILTER_FDIV16_N8            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_2)                    /*!< fSAMPLING=fDTS/16, N=5 */
+#define DDL_TMR_ETR_FILTER_FDIV16_N8            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_2)                         /*!< fSAMPLING=fDTS/16, N=5 */
 #define DDL_TMR_ETR_FILTER_FDIV32_N5            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_0)   /*!< fSAMPLING=fDTS/32, N=5 */
 #define DDL_TMR_ETR_FILTER_FDIV32_N6            (TMR_SMCTRL_ETFCFG_3 | TMR_SMCTRL_ETFCFG_2 | TMR_SMCTRL_ETFCFG_1)   /*!< fSAMPLING=fDTS/32, N=6 */
-#define DDL_TMR_ETR_FILTER_FDIV32_N8            TMR_SMCTRL_ETFCFG                                         /*!< fSAMPLING=fDTS/32, N=8 */
+#define DDL_TMR_ETR_FILTER_FDIV32_N8            TMR_SMCTRL_ETFCFG                                                   /*!< fSAMPLING=fDTS/32, N=8 */
 /**
   * @}
   */
@@ -866,7 +862,7 @@ typedef struct
   * @{
   */
 #define DDL_TMR_BREAK_POLARITY_LOW              0x00000000U               /*!< Break input BRK is active low */
-#define DDL_TMR_BREAK_POLARITY_HIGH             TMR_BDT_BRKPOL              /*!< Break input BRK is active high */
+#define DDL_TMR_BREAK_POLARITY_HIGH             TMR_BDT_BRKPOL            /*!< Break input BRK is active high */
 /**
   * @}
   */
@@ -878,7 +874,7 @@ typedef struct
   * @{
   */
 #define DDL_TMR_OSSI_DISABLE                    0x00000000U             /*!< When inactive, OCx/OCxN outputs are disabled */
-#define DDL_TMR_OSSI_ENABLE                     TMR_BDT_IMOS           /*!< When inactive, OxC/OCxN outputs are first forced with their inactive level then forced to their idle level after the deadtime */
+#define DDL_TMR_OSSI_ENABLE                     TMR_BDT_IMOS            /*!< When inactive, OxC/OCxN outputs are first forced with their inactive level then forced to their idle level after the deadtime */
 /**
   * @}
   */
@@ -895,7 +891,7 @@ typedef struct
 
 /** @defgroup TMR_DDL_EC_DMABURST_BASEADDR DMA Burst Base Address
   * @{
-  */                    
+  */
 #define DDL_TMR_DMABURST_BASEADDR_CTRL1         0x00000000U                                                                             /*!< TMRx_CTRL1 register is the DMA base address for DMA burst */
 #define DDL_TMR_DMABURST_BASEADDR_CTRL2         TMR_DCTRL_DBADDR_0                                                                      /*!< TMRx_CTRL2 register is the DMA base address for DMA burst */
 #define DDL_TMR_DMABURST_BASEADDR_SMCTRL        TMR_DCTRL_DBADDR_1                                                                      /*!< TMRx_SMCTRL register is the DMA base address for DMA burst */
@@ -921,24 +917,24 @@ typedef struct
 /** @defgroup TMR_DDL_EC_DMABURST_LENGTH DMA Burst Length
   * @{
   */
-#define DDL_TMR_DMABURST_LENGTH_1TRANSFER       0x00000000U                                                     /*!< Transfer is done to 1 register starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_2TRANSFERS      TMR_DCTRL_DBLEN_0                                                   /*!< Transfer is done to 2 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_3TRANSFERS      TMR_DCTRL_DBLEN_1                                                   /*!< Transfer is done to 3 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_4TRANSFERS      (TMR_DCTRL_DBLEN_1 |  TMR_DCTRL_DBLEN_0)                                /*!< Transfer is done to 4 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_5TRANSFERS      TMR_DCTRL_DBLEN_2                                                   /*!< Transfer is done to 5 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_6TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_0)                                 /*!< Transfer is done to 6 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_7TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1)                                 /*!< Transfer is done to 7 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_8TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1 | TMR_DCTRL_DBLEN_0)                 /*!< Transfer is done to 1 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_9TRANSFERS      TMR_DCTRL_DBLEN_3                                                   /*!< Transfer is done to 9 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_10TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_0)                                 /*!< Transfer is done to 10 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_11TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_1)                                 /*!< Transfer is done to 11 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_12TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_1 | TMR_DCTRL_DBLEN_0)                 /*!< Transfer is done to 12 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_13TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2)                                 /*!< Transfer is done to 13 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_14TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_0)                 /*!< Transfer is done to 14 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_15TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1)                 /*!< Transfer is done to 15 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_1TRANSFER       0x00000000U                                                                     /*!< Transfer is done to 1 register starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_2TRANSFERS      TMR_DCTRL_DBLEN_0                                                               /*!< Transfer is done to 2 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_3TRANSFERS      TMR_DCTRL_DBLEN_1                                                               /*!< Transfer is done to 3 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_4TRANSFERS      (TMR_DCTRL_DBLEN_1 |  TMR_DCTRL_DBLEN_0)                                        /*!< Transfer is done to 4 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_5TRANSFERS      TMR_DCTRL_DBLEN_2                                                               /*!< Transfer is done to 5 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_6TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_0)                                         /*!< Transfer is done to 6 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_7TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1)                                         /*!< Transfer is done to 7 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_8TRANSFERS      (TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1 | TMR_DCTRL_DBLEN_0)                     /*!< Transfer is done to 1 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_9TRANSFERS      TMR_DCTRL_DBLEN_3                                                               /*!< Transfer is done to 9 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_10TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_0)                                         /*!< Transfer is done to 10 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_11TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_1)                                         /*!< Transfer is done to 11 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_12TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_1 | TMR_DCTRL_DBLEN_0)                     /*!< Transfer is done to 12 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_13TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2)                                         /*!< Transfer is done to 13 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_14TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_0)                     /*!< Transfer is done to 14 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_15TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1)                     /*!< Transfer is done to 15 registers starting from the DMA burst base address */
 #define DDL_TMR_DMABURST_LENGTH_16TRANSFERS     (TMR_DCTRL_DBLEN_3 | TMR_DCTRL_DBLEN_2 | TMR_DCTRL_DBLEN_1 | TMR_DCTRL_DBLEN_0) /*!< Transfer is done to 16 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_17TRANSFERS     TMR_DCTRL_DBLEN_4                                                   /*!< Transfer is done to 17 registers starting from the DMA burst base address */
-#define DDL_TMR_DMABURST_LENGTH_18TRANSFERS     (TMR_DCTRL_DBLEN_4 |  TMR_DCTRL_DBLEN_0)                                /*!< Transfer is done to 18 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_17TRANSFERS     TMR_DCTRL_DBLEN_4                                                               /*!< Transfer is done to 17 registers starting from the DMA burst base address */
+#define DDL_TMR_DMABURST_LENGTH_18TRANSFERS     (TMR_DCTRL_DBLEN_4 |  TMR_DCTRL_DBLEN_0)                                        /*!< Transfer is done to 18 registers starting from the DMA burst base address */
 /**
   * @}
   */
@@ -947,10 +943,15 @@ typedef struct
 /** @defgroup TMR_DDL_EC_TMR2_ITR1_RMP_TMR8  TMR2 Internal Trigger1 Remap TMR8
   * @{
   */
-#define DDL_TMR_TMR2_ITR1_RMP_TMR8_TRGO    TMR2_OR_RMP_MASK                        /*!< TMR2_ITR1 is connected to TMR8_TRGO */
-#define DDL_TMR_TMR2_ITR1_RMP_ETH_PTP      (TMR_OR_RMPSEL_0 | TMR2_OR_RMP_MASK)  /*!< TMR2_ITR1 is connected to ETH_PTP */
-#define DDL_TMR_TMR2_ITR1_RMP_OTG_FS_SOF   (TMR_OR_RMPSEL_1 | TMR2_OR_RMP_MASK)  /*!< TMR2_ITR1 is connected to OTG_FS SOF */
-#define DDL_TMR_TMR2_ITR1_RMP_OTG_HS_SOF   (TMR_OR_RMPSEL | TMR2_OR_RMP_MASK)    /*!< TMR2_ITR1 is connected to OTG_HS SOF */
+#define DDL_TMR_TMR2_ITR1_RMP_TMR8_TRGO    TMR2_OR_RMP_MASK                       /*!< TMR2_ITR1 is connected to TMR8_TRGO */
+#define DDL_TMR_TMR2_ITR1_RMP_ETH_PTP      (TMR_OPT_RMPSEL_0 | TMR2_OR_RMP_MASK)  /*!< TMR2_ITR1 is connected to ETH_PTP */
+#define DDL_TMR_TMR2_ITR1_RMP_OTG_FS_SOF   (TMR_OPT_RMPSEL_1 | TMR2_OR_RMP_MASK)  /*!< TMR2_ITR1 is connected to OTG_FS SOF */
+#if defined(USB_OTG_HS)
+#define DDL_TMR_TMR2_ITR1_RMP_OTG_HS_SOF   (TMR_OPT_RMPSEL | TMR2_OR_RMP_MASK)    /*!< TMR2_ITR1 is connected to OTG_HS SOF */
+#endif /* USB_OTG_HS */
+#if defined(USB_OTG_FS2)
+#define DDL_TMR_TMR2_ITR1_RMP_OTG_FS2_SOF  (TMR_OPT_RMPSEL | TMR2_OR_RMP_MASK)    /*!< TMR2_ITR1 is connected to OTG_FS2 SOF */
+#endif /* USB_OTG_FS2 */
 /**
   * @}
   */
@@ -958,10 +959,10 @@ typedef struct
 /** @defgroup TMR_DDL_EC_TMR5_TI4_RMP  TMR5 External Input Ch4 Remap
   * @{
   */
-#define DDL_TMR_TMR5_TI4_RMP_GPIO        TMR5_OR_RMP_MASK                         /*!< TMR5 channel 4 is connected to GPIO */
-#define DDL_TMR_TMR5_TI4_RMP_LSI         (TMR_OR_TI4_RMPSEL_0 | TMR5_OR_RMP_MASK)    /*!< TMR5 channel 4 is connected to LSI internal clock */
-#define DDL_TMR_TMR5_TI4_RMP_LSE         (TMR_OR_TI4_RMPSEL_1 | TMR5_OR_RMP_MASK)    /*!< TMR5 channel 4 is connected to LSE */
-#define DDL_TMR_TMR5_TI4_RMP_RTC         (TMR_OR_TI4_RMPSEL | TMR5_OR_RMP_MASK)      /*!< TMR5 channel 4 is connected to RTC wakeup interrupt */
+#define DDL_TMR_TMR5_TI4_RMP_GPIO        TMR5_OR_RMP_MASK                             /*!< TMR5 channel 4 is connected to GPIO */
+#define DDL_TMR_TMR5_TI4_RMP_LSI         (TMR_OPT_TI4_RMPSEL_0 | TMR5_OR_RMP_MASK)    /*!< TMR5 channel 4 is connected to LSI internal clock */
+#define DDL_TMR_TMR5_TI4_RMP_LSE         (TMR_OPT_TI4_RMPSEL_1 | TMR5_OR_RMP_MASK)    /*!< TMR5 channel 4 is connected to LSE */
+#define DDL_TMR_TMR5_TI4_RMP_RTC         (TMR_OPT_TI4_RMPSEL | TMR5_OR_RMP_MASK)      /*!< TMR5 channel 4 is connected to RTC wakeup interrupt */
 /**
   * @}
   */
@@ -969,35 +970,13 @@ typedef struct
 /** @defgroup TMR_DDL_EC_TMR11_TI1_RMP  TMR11 External Input Capture 1 Remap
   * @{
   */
-#define DDL_TMR_TMR11_TI1_RMP_GPIO        TMR11_OR_RMP_MASK                          /*!< TMR11 channel 1 is connected to GPIO */
-#if defined(SPDIFRX)
-#define DDL_TMR_TMR11_TI1_RMP_SPDIFRX     (TMR_OR_TI1_RMPSEL_0 | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to SPDIFRX */
-
-/* Legacy define */
-#define  DDL_TMR_TMR11_TI1_RMP_GPIO1      DDL_TMR_TMR11_TI1_RMP_SPDIFRX               /*!< Legacy define for DDL_TMR_TMR11_TI1_RMP_SPDIFRX */
-
-#else
-#define DDL_TMR_TMR11_TI1_RMP_GPIO1       (TMR_OR_TI1_RMPSEL_0 | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to GPIO */
-#endif /* SPDIFRX */
-#define DDL_TMR_TMR11_TI1_RMP_GPIO2       (TMR_OR_TI1_RMPSEL   | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to GPIO */
-#define DDL_TMR_TMR11_TI1_RMP_HSE_RTC     (TMR_OR_TI1_RMPSEL_1 | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to HSE_RTC */
+#define DDL_TMR_TMR11_TI1_RMP_GPIO        TMR11_OR_RMP_MASK                              /*!< TMR11 channel 1 is connected to GPIO */
+#define DDL_TMR_TMR11_TI1_RMP_GPIO1       (TMR_OPT_TI1_RMPSEL_0 | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to GPIO */
+#define DDL_TMR_TMR11_TI1_RMP_GPIO2       (TMR_OPT_TI1_RMPSEL   | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to GPIO */
+#define DDL_TMR_TMR11_TI1_RMP_HSE_RTC     (TMR_OPT_TI1_RMPSEL_1 | TMR11_OR_RMP_MASK)     /*!< TMR11 channel 1 is connected to HSE_RTC */
 /**
   * @}
   */
-#if defined(LPTMR_OR_TMR1_ITR2_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP) && defined(LPTMR_OR_TMR9_ITR1_RMP)
-
-#define DDL_TMR_LPTMR_REMAP_MASK           0x10000000U
-
-#define DDL_TMR_TMR9_ITR1_RMP_TMR3_TRGO    DDL_TMR_LPTMR_REMAP_MASK                              /*!< TMR9_ITR1 is connected to TMR3 TRGO */
-#define DDL_TMR_TMR9_ITR1_RMP_LPTMR       (DDL_TMR_LPTMR_REMAP_MASK | LPTMR_OR_TMR9_ITR1_RMP)    /*!< TMR9_ITR1 is connected to LPTMR1 output */
-
-#define DDL_TMR_TMR5_ITR1_RMP_TMR3_TRGO    DDL_TMR_LPTMR_REMAP_MASK                              /*!< TMR5_ITR1 is connected to TMR3 TRGO */
-#define DDL_TMR_TMR5_ITR1_RMP_LPTMR       (DDL_TMR_LPTMR_REMAP_MASK | LPTMR_OR_TMR5_ITR1_RMP)    /*!< TMR5_ITR1 is connected to LPTMR1 output */
-
-#define DDL_TMR_TMR1_ITR2_RMP_TMR3_TRGO    DDL_TMR_LPTMR_REMAP_MASK                              /*!< TMR1_ITR2 is connected to TMR3 TRGO */
-#define DDL_TMR_TMR1_ITR2_RMP_LPTMR       (DDL_TMR_LPTMR_REMAP_MASK | LPTMR_OR_TMR1_ITR2_RMP)    /*!< TMR1_ITR2 is connected to LPTMR1 output */
-
-#endif /* LPTMR_OR_TMR1_ITR2_RMP &&  LPTMR_OR_TMR5_ITR1_RMP && LPTMR_OR_TMR9_ITR1_RMP */
 
 /**
   * @}
@@ -2880,18 +2859,14 @@ __STATIC_INLINE void DDL_TMR_ConfigDMABurst(TMR_TypeDef *TMRx, uint32_t DMABurst
   *
   *         Below description summarizes "Timer Instance" and "Remap" param combinations:
   *
-  *         TMR1: one of the following values
-  *
-  *            ITR2_RMP can be one of the following values
-  *            @arg @ref DDL_TMR_TMR1_ITR2_RMP_TMR3_TRGO (*)
-  *            @arg @ref DDL_TMR_TMR1_ITR2_RMP_LPTMR (*)
-  *
   *         TMR2: one of the following values
   *
   *            ITR1_RMP can be one of the following values
-  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_TMR8_TRGO
-  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_OTG_FS_SOF
-  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_OTG_HS_SOF
+  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_TMR8_TRGO  (*)
+  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_ETH_PTP
+  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_OTG_FS_SOF (*)
+  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_OTG_HS_SOF (*)
+  *            @arg @ref DDL_TMR_TMR2_ITR1_RMP_OTG_FS2_SOF (*)
   *
   *         TMR5: one of the following values
   *
@@ -2899,14 +2874,6 @@ __STATIC_INLINE void DDL_TMR_ConfigDMABurst(TMR_TypeDef *TMRx, uint32_t DMABurst
   *            @arg @ref DDL_TMR_TMR5_TI4_RMP_LSI
   *            @arg @ref DDL_TMR_TMR5_TI4_RMP_LSE
   *            @arg @ref DDL_TMR_TMR5_TI4_RMP_RTC
-  *            @arg @ref DDL_TMR_TMR5_ITR1_RMP_TMR3_TRGO (*)
-  *            @arg @ref DDL_TMR_TMR5_ITR1_RMP_LPTMR (*)
-  *
-  *         TMR9: one of the following values
-  *
-  *            ITR1_RMP can be one of the following values
-  *            @arg @ref DDL_TMR_TMR9_ITR1_RMP_TMR3_TRGO (*)
-  *            @arg @ref DDL_TMR_TMR9_ITR1_RMP_LPTMR (*)
   *
   *         TMR11: one of the following values
   *
@@ -2914,7 +2881,6 @@ __STATIC_INLINE void DDL_TMR_ConfigDMABurst(TMR_TypeDef *TMRx, uint32_t DMABurst
   *            @arg @ref DDL_TMR_TMR11_TI1_RMP_GPIO1 (*)
   *            @arg @ref DDL_TMR_TMR11_TI1_RMP_HSE_RTC
   *            @arg @ref DDL_TMR_TMR11_TI1_RMP_GPIO2
-  *            @arg @ref DDL_TMR_TMR11_TI1_RMP_SPDIFRX (*)
   *
   *         (*)  Value not defined in all devices. \n
   *
@@ -2922,22 +2888,7 @@ __STATIC_INLINE void DDL_TMR_ConfigDMABurst(TMR_TypeDef *TMRx, uint32_t DMABurst
   */
 __STATIC_INLINE void DDL_TMR_SetRemap(TMR_TypeDef *TMRx, uint32_t Remap)
 {
-#if defined(LPTMR_OR_TMR1_ITR2_RMP) && defined(LPTMR_OR_TMR5_ITR1_RMP) && defined(LPTMR_OR_TMR9_ITR1_RMP)
-  if ((Remap & DDL_TMR_LPTMR_REMAP_MASK) == DDL_TMR_LPTMR_REMAP_MASK)
-  {
-    /* Connect TMRx internal trigger to LPTMR1 output */
-    SET_BIT(RCC->APB1ENR, RCM_APB1ENR_LPTMR1EN);
-    MODIFY_REG(LPTMR1->OR,
-               (LPTMR_OR_TMR1_ITR2_RMP | LPTMR_OR_TMR5_ITR1_RMP | LPTMR_OR_TMR9_ITR1_RMP),
-               Remap & ~(DDL_TMR_LPTMR_REMAP_MASK));
-  }
-  else
-  {
-    MODIFY_REG(TMRx->OR, (Remap >> TMRx_OR_RMP_SHIFT), (Remap & TMRx_OR_RMP_MASK));
-  }
-#else
-  MODIFY_REG(TMRx->OR, (Remap >> TMRx_OR_RMP_SHIFT), (Remap & TMRx_OR_RMP_MASK));
-#endif /* LPTMR_OR_TMR1_ITR2_RMP &&  LPTMR_OR_TMR5_ITR1_RMP && LPTMR_OR_TMR9_ITR1_RMP */
+  MODIFY_REG(TMRx->OPT, (Remap >> TMRx_OR_RMP_SHIFT), (Remap & TMRx_OR_RMP_MASK));
 }
 
 /**

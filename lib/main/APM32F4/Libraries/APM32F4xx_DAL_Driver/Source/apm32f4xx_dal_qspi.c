@@ -33,13 +33,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023-2024 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -86,8 +82,20 @@
     [..]
       (#) DAL_QSPI_GetState() function gives the current state of the DAL QSPI driver.
       (#) DAL_QSPI_SetTimeout() function configures the timeout value used in the driver.
-      (#) DAL_QSPI_SetFifoThreshold() function configures the threshold on the FIFO of the QSPI IP.
-      (#) DAL_QSPI_GetFifoThreshold() function gives the current of the Fifo's threshold.
+      (#) DAL_QSPI_SetTxFifoThreshold() function configures the threshold on the TX FIFO of the QSPI IP.
+      (#) DAL_QSPI_SetRxFifoThreshold() function configures the threshold on the RX FIFO of the QSPI IP.
+      (#) DAL_QSPI_SetTxFifoLevel() function configures the level on the TX FIFO of the QSPI IP.
+      (#) DAL_QSPI_GetTxFifoThreshold() function returns the threshold on the TX FIFO of the QSPI IP.
+      (#) DAL_QSPI_GetRxFifoThreshold() function returns the threshold on the RX FIFO of the QSPI IP.
+      (#) DAL_QSPI_GetTxFifoLevel() function returns the level on the TX FIFO of the QSPI IP.
+      (#) DAL_QSPI_SetFrameFormat() function configures the frame format of the QSPI IP.
+      (#) DAL_QSPI_GetFrameFormat() function returns the frame format of the QSPI IP.
+      (#) DAL_QSPI_SetDataFrameSize() function configures the data frame size of the QSPI IP.
+      (#) DAL_QSPI_GetDataFrameSize() function returns the data frame size of the QSPI IP.
+      (#) DAL_QSPI_SetTransferMode() function configures the transfer mode of the QSPI IP.
+      (#) DAL_QSPI_GetTransferMode() function returns the transfer mode of the QSPI IP.
+      (#) DAL_QSPI_SetFrameNbData() function configures the number of data frames to be sent/received.
+      (#) DAL_QSPI_GetFrameNbData() function returns the number of data frames to be sent/received.
 
     *** Callback registration ***
     =============================
@@ -224,8 +232,12 @@ DAL_StatusTypeDef DAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
     /* Check the parameters */
     ASSERT_PARAM(IS_QSPI_ALL_INSTANCE(hqspi->Instance));
     ASSERT_PARAM(IS_QSPI_CLOCK_PRESCALER(hqspi->Init.ClockPrescaler));
+#if defined(QSPI_CTRL1_CPHA)
     ASSERT_PARAM(IS_QSPI_CLOCK_PHASE(hqspi->Init.ClockPhase));
+#endif /* QSPI_CTRL1_CPHA */
+#if defined(QSPI_CTRL1_CPOL)
     ASSERT_PARAM(IS_QSPI_CLOCK_POLARITY(hqspi->Init.ClockPolarity));
+#endif /* QSPI_CTRL1_CPOL */
     ASSERT_PARAM(IS_QSPI_CLOCK_STRETCH(hqspi->Init.ClockStretch));
     ASSERT_PARAM(IS_QSPI_TX_FIFO_THRESHOLD(hqspi->Init.TxFifoThreshold));
     ASSERT_PARAM(IS_QSPI_TX_FIFO_LEVEL(hqspi->Init.TxFifoLevel));
@@ -279,9 +291,15 @@ DAL_StatusTypeDef DAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
         __DAL_QSPI_DISABLE_SS(hqspi);
 
         /* Configure QSPI Parameters */
-        MODIFY_REG(hqspi->Instance->CTRL1, \
-                    (QSPI_CTRL1_CPHA | QSPI_CTRL1_CPOL | QSPI_CTRL1_SSTEN), \
-                    (hqspi->Init.ClockPhase | hqspi->Init.ClockPolarity | hqspi->Init.ChipSelectToggle));
+#if defined(QSPI_CTRL1_CPHA)
+        MODIFY_REG(hqspi->Instance->CTRL1, QSPI_CTRL1_CPHA, hqspi->Init.ClockPhase);
+#endif /* QSPI_CTRL1_CPHA */
+
+#if defined(QSPI_CTRL1_CPOL)
+        MODIFY_REG(hqspi->Instance->CTRL1, QSPI_CTRL1_CPOL, hqspi->Init.ClockPolarity);
+#endif /* QSPI_CTRL1_CPOL */
+
+        MODIFY_REG(hqspi->Instance->CTRL1, QSPI_CTRL1_SSTEN, hqspi->Init.ChipSelectToggle);
 
         /* Configure QSPI Clock Prescaler */
         MODIFY_REG(hqspi->Instance->BR, QSPI_BR_CLKDIV, hqspi->Init.ClockPrescaler << QSPI_BR_CLKDIV_Pos);
@@ -410,7 +428,11 @@ void DAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
     uint32_t itsource = READ_REG(hqspi->Instance->INTEN);
     uint32_t errorFlags = 0x00U;
 
+#if defined(QSPI_ISTS_MSTIF)
     errorFlags = (isrflags & (uint32_t)(QSPI_ISTS_TFOIF | QSPI_ISTS_RFUIF | QSPI_ISTS_RFOIF | QSPI_ISTS_MSTIF));
+#else
+    errorFlags = (isrflags & (uint32_t)(QSPI_ISTS_TFOIF | QSPI_ISTS_RFUIF | QSPI_ISTS_RFOIF));
+#endif /* QSPI_ISTS_MSTIF */
 
     /* If some errors occur */
     if (errorFlags != RESET)
@@ -445,6 +467,7 @@ void DAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
             hqspi->ErrorCode |= DAL_QSPI_ERROR_RX_OVR;
         }
 
+#if defined(QSPI_INTEN_MSTIE)
         /* Master complete interrupt occurred ---------------------------------*/
         if (((isrflags & QSPI_IT_MST) != RESET) && ((itsource & QSPI_IT_MST) != RESET))
         {
@@ -454,6 +477,7 @@ void DAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
             /* Set QSPI error code to Master error */
             hqspi->ErrorCode |= DAL_QSPI_ERROR_MST;
         }
+#endif /* QSPI_INTEN_MSTIE */
 
         /* Call QSPI Error call back function if need be ----------------------*/
         if (hqspi->ErrorCode != DAL_QSPI_ERROR_NONE)
@@ -622,10 +646,10 @@ DAL_StatusTypeDef DAL_QSPI_Command(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDe
     ASSERT_PARAM(IS_QSPI_INSTRUCTION_SIZE(cmd->InstructionSize));
     ASSERT_PARAM(IS_QSPI_INSTRUCTION(cmd->Instruction));
     ASSERT_PARAM(IS_QSPI_ADDRESS_SIZE(cmd->AddressSize));
-    ASSERT_PARAM(IS_QSPI_ADDRESS(cmd->Address));
     ASSERT_PARAM(IS_QSPI_TRANSFER_MODE(cmd->TransferMode));
     ASSERT_PARAM(IS_QSPI_FRAME_FORMAT(cmd->FrameFormat));
     ASSERT_PARAM(IS_QSPI_DATA_FRAME_SIZE(cmd->DataFrameSize));
+    ASSERT_PARAM(IS_QSPI_DUMMY_CYCLES(cmd->DummyCycles));
 
     /* Process locked */
     __DAL_LOCK(hqspi);
@@ -704,6 +728,14 @@ DAL_StatusTypeDef DAL_QSPI_Command_IT(QSPI_HandleTypeDef *hqspi, QSPI_CommandTyp
     uint32_t tickstart = DAL_GetTick();
 
     /* Check the parameters */
+    ASSERT_PARAM(IS_QSPI_INSTRUCTION_MODE(cmd->InstructionMode));
+    ASSERT_PARAM(IS_QSPI_INSTRUCTION_SIZE(cmd->InstructionSize));
+    ASSERT_PARAM(IS_QSPI_INSTRUCTION(cmd->Instruction));
+    ASSERT_PARAM(IS_QSPI_ADDRESS_SIZE(cmd->AddressSize));
+    ASSERT_PARAM(IS_QSPI_TRANSFER_MODE(cmd->TransferMode));
+    ASSERT_PARAM(IS_QSPI_FRAME_FORMAT(cmd->FrameFormat));
+    ASSERT_PARAM(IS_QSPI_DATA_FRAME_SIZE(cmd->DataFrameSize));
+    ASSERT_PARAM(IS_QSPI_DUMMY_CYCLES(cmd->DummyCycles));
 
     /* Process locked */
     __DAL_LOCK(hqspi);
@@ -1820,12 +1852,20 @@ DAL_StatusTypeDef DAL_QSPI_Abort_IT(QSPI_HandleTypeDef *hqspi)
         hqspi->State = DAL_QSPI_STATE_ABORT;
 
         /* Disable QSPI interrupts */
+#if defined(QSPI_INTEN_MSTIE)
         __DAL_QSPI_DISABLE_IT(hqspi, QSPI_IT_TFE \
                                      | QSPI_IT_TFO \
                                      | QSPI_IT_RFU \
                                      | QSPI_IT_RFO \
                                      | QSPI_IT_RFF \
                                      | QSPI_IT_MST);
+#else
+        __DAL_QSPI_DISABLE_IT(hqspi, QSPI_IT_TFE \
+                                     | QSPI_IT_TFO \
+                                     | QSPI_IT_RFU \
+                                     | QSPI_IT_RFO \
+                                     | QSPI_IT_RFF);
+#endif /* QSPI_INTEN_MSTIE */
         if (hqspi->hdmatx != NULL)
         {
             if ((hqspi->Instance->DMACTRL & QSPI_DMACTRL_TDMAEN) != 0U)

@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023-2024 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -74,11 +70,15 @@ typedef struct
     uint32_t ClockPrescaler;        /*!< Specifies the prescaler factor for generating clock based on the AHB clock.
                                          This parameter can be a even number between 2 and 65534. */
 
+#if defined(QSPI_CTRL1_CPHA)
     uint32_t ClockPhase;            /*!< Specifies the clock data sample edge.
                                          This parameter can be a value of @ref QSPI_ClockPhase */
+#endif /* QSPI_CTRL1_CPHA */
 
+#if defined(QSPI_CTRL1_CPOL)
     uint32_t ClockPolarity;         /*!< Specifies the clock valid level in the idle state.
                                          This parameter can be a value of @ref QSPI_ClockPolarity */
+#endif /* QSPI_CTRL1_CPOL */
 
     uint32_t ClockStretch;          /*!< Specifies the clock stretch enable/disable.
                                          This parameter can be a value of ENABLE or DISABLE */
@@ -294,6 +294,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
   * @}
   */
 
+#if defined(QSPI_CTRL1_CPHA)
 /** @defgroup QSPI_ClockPhase QSPI Clock Phase
  * @{
  */
@@ -302,7 +303,9 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
 /**
   * @}
   */
+#endif /* QSPI_CTRL1_CPHA */
 
+#if defined(QSPI_CTRL1_CPOL)
 /** @defgroup QSPI_ClockPolarity QSPI Clock Polarity
  * @{
  */
@@ -311,6 +314,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
 /**
   * @}
   */
+#endif /* QSPI_CTRL1_CPOL */
 
 /** @defgroup QSPI_ChipSelectToggle QSPI Chip Select ChipSelectToggle
  * @{
@@ -399,7 +403,9 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
 #define QSPI_FLAG_TFE                   QSPI_STS_TFEF       /*!< QSPI transmit FIFO empty flag      */
 #define QSPI_FLAG_RFNE                  QSPI_STS_RFNEF      /*!< QSPI receive FIFO not empty flag   */
 #define QSPI_FLAG_RFF                   QSPI_STS_RFFF       /*!< QSPI receive FIFO full flag        */
+#if defined(QSPI_STS_DCEF)
 #define QSPI_FLAG_DCE                   QSPI_STS_DCEF       /*!< QSPI data collision error flag     */
+#endif /* QSPI_STS_DCEF */
 /**
   * @}
   */
@@ -412,7 +418,9 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
 #define QSPI_IT_RFU                     QSPI_INTEN_RFUIE    /*!< QSPI receive FIFO underflow interrupt              */
 #define QSPI_IT_RFO                     QSPI_INTEN_RFOIE    /*!< QSPI receive FIFO overflow interrupt               */
 #define QSPI_IT_RFF                     QSPI_INTEN_RFFIE    /*!< QSPI receive FIFO full interrupt                   */
+#if defined(QSPI_INTEN_MSTIE)
 #define QSPI_IT_MST                     QSPI_INTEN_MSTIE    /*!< QSPI master operation complete interrupt           */
+#endif /* QSPI_INTEN_MSTIE */
 #define QSPI_IT_ICF                     0xFFFFFFFFU         /*!< QSPI FIFO status and master operation interrupt    */
 /**
   * @}
@@ -494,7 +502,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
  *          @arg QSPI_IT_RFU: QSPI receive FIFO underflow interrupt
  *          @arg QSPI_IT_RFO: QSPI receive FIFO overflow interrupt
  *          @arg QSPI_IT_RFF: QSPI receive FIFO full interrupt
- *          @arg QSPI_IT_MST: QSPI master operation complete interrupt
+ *          @arg QSPI_IT_MST: QSPI master operation complete interrupt (*)
  * @retval None
  */
 #define __DAL_QSPI_ENABLE_IT(__HANDLE__, __INTERRUPT__)   ((__HANDLE__)->Instance->INTEN |= (__INTERRUPT__))
@@ -509,7 +517,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
  *         @arg QSPI_IT_RFU: QSPI receive FIFO underflow interrupt
  *         @arg QSPI_IT_RFO: QSPI receive FIFO overflow interrupt
  *         @arg QSPI_IT_RFF: QSPI receive FIFO full interrupt
- *         @arg QSPI_IT_MST: QSPI master operation complete interrupt
+ *         @arg QSPI_IT_MST: QSPI master operation complete interrupt (*)
  * @retval None
  */
 #define __DAL_QSPI_DISABLE_IT(__HANDLE__, __INTERRUPT__)  ((__HANDLE__)->Instance->INTEN &= ~(__INTERRUPT__))
@@ -524,7 +532,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
  *         @arg QSPI_IT_RFU: QSPI receive FIFO underflow interrupt
  *         @arg QSPI_IT_RFO: QSPI receive FIFO overflow interrupt
  *         @arg QSPI_IT_RFF: QSPI receive FIFO full interrupt
- *         @arg QSPI_IT_MST: QSPI master operation complete interrupt
+ *         @arg QSPI_IT_MST: QSPI master operation complete interrupt (*)
  * @retval The new state of __INTERRUPT__ (TRUE or FALSE).
  */
 #define __DAL_QSPI_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)  ((((__HANDLE__)->Instance->ISTS & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
@@ -539,7 +547,7 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
  *        @arg QSPI_FLAG_TFE: QSPI transmit FIFO empty flag
  *        @arg QSPI_FLAG_RFNE: QSPI receive FIFO not empty flag
  *        @arg QSPI_FLAG_RFF: QSPI receive FIFO full flag
- *        @arg QSPI_FLAG_DCE: QSPI data collision error flag
+ *        @arg QSPI_FLAG_DCE: QSPI data collision error flag (*)
  * @retval The new state of __FLAG__ (TRUE or FALSE).
  */
 #define __DAL_QSPI_GET_FLAG(__HANDLE__, __FLAG__)  ((((__HANDLE__)->Instance->STS & (__FLAG__)) != 0U) ? SET : RESET)
@@ -552,10 +560,11 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
  *        @arg QSPI_IT_TFO: QSPI transmit FIFO overflow interrupt
  *        @arg QSPI_IT_RFU: QSPI receive FIFO underflow interrupt
  *        @arg QSPI_IT_RFO: QSPI receive FIFO overflow interrupt
- *        @arg QSPI_IT_MST: QSPI master operation complete interrupt
+ *        @arg QSPI_IT_MST: QSPI master operation complete interrupt (*)
  *        @arg QSPI_IT_ICF: QSPI FIFO status and master operation interrupt
  * @retval None
  */
+#if defined(QSPI_INTEN_MSTIE)
 #define __DAL_QSPI_CLEAR_FLAG(__HANDLE__, __FLAG__)   do {                                                          \
                                                             __IO uint32_t tmpreg = 0x00U;                           \
                                                             if ((__FLAG__) == QSPI_IT_TFO)                          \
@@ -584,10 +593,39 @@ typedef  void (*pQSPI_CallbackTypeDef)(QSPI_HandleTypeDef *hqspi); /*!< pointer 
                                                             }                                                       \
                                                             UNUSED(tmpreg);                                         \
                                                         } while(0)
+#else
+#define __DAL_QSPI_CLEAR_FLAG(__HANDLE__, __FLAG__)   do {                                                          \
+                                                            __IO uint32_t tmpreg = 0x00U;                           \
+                                                            if ((__FLAG__) == QSPI_IT_TFO)                          \
+                                                            {                                                       \
+                                                                tmpreg = (__HANDLE__)->Instance->TFOIC;             \
+                                                            }                                                       \
+                                                            else if ((__FLAG__) == QSPI_IT_RFU)                     \
+                                                            {                                                       \
+                                                                tmpreg = (__HANDLE__)->Instance->RFUIC;             \
+                                                            }                                                       \
+                                                            else if ((__FLAG__) == QSPI_IT_RFO)                     \
+                                                            {                                                       \
+                                                                tmpreg = (__HANDLE__)->Instance->RFOIC;             \
+                                                            }                                                       \
+                                                            else if ((__FLAG__) == QSPI_IT_ICF)                     \
+                                                            {                                                       \
+                                                                tmpreg = (__HANDLE__)->Instance->ICF;               \
+                                                            }                                                       \
+                                                            else                                                    \
+                                                            {                                                       \
+                                                                /* Do nothing */                                    \
+                                                            }                                                       \
+                                                            UNUSED(tmpreg);                                         \
+                                                        } while(0)
+#endif /* QSPI_INTEN_MSTIE */
 
  /**
   * @}
   */
+
+/* Include GPIO DAL Extension module */
+#include "apm32f4xx_dal_qspi_ex.h"
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup QSPI_Exported_Functions
@@ -701,11 +739,11 @@ uint32_t                DAL_QSPI_GetFrameNbData(QSPI_HandleTypeDef *hqspi);
 #define IS_QSPI_CLOCK_STRETCH(__STRETCH__)      (((__STRETCH__) == ENABLE) || \
                                                  ((__STRETCH__) == DISABLE))
 
-#define IS_QSPI_TX_FIFO_THRESHOLD(__THRESHOLD__)  (((__THRESHOLD__) >= 0U) && ((__THRESHOLD__) <= 7U))
+#define IS_QSPI_TX_FIFO_THRESHOLD(__THRESHOLD__)  ((__THRESHOLD__) <= 7U)
 
-#define IS_QSPI_TX_FIFO_LEVEL(__LEVEL__)        (((__LEVEL__) >= 0U) && ((__LEVEL__) <= 7U))
+#define IS_QSPI_TX_FIFO_LEVEL(__LEVEL__)          ((__LEVEL__) <= 7U)
 
-#define IS_QSPI_RX_FIFO_THRESHOLD(__THRESHOLD__)  (((__THRESHOLD__) >= 0U) && ((__THRESHOLD__) <= 7U))
+#define IS_QSPI_RX_FIFO_THRESHOLD(__THRESHOLD__)  ((__THRESHOLD__) <= 7U)
 
 #define IS_QSPI_CHIP_SELECT_TOGGLE(__TOGGLE__)  (((__TOGGLE__) == QSPI_CS_TOGGLE_DISABLE) || \
                                                  ((__TOGGLE__) == QSPI_CS_TOGGLE_ENABLE))
@@ -729,9 +767,11 @@ uint32_t                DAL_QSPI_GetFrameNbData(QSPI_HandleTypeDef *hqspi);
 
 #define IS_QSPI_INSTRUCTION(__INSTRUCTION__)    ((__INSTRUCTION__) <= 0xFFU)
 
-#define IS_QSPI_ADDRESS_SIZE(__SIZE__)     ((__SIZE__) >= QSPI_ADDRESS_SIZE_NONE && (__SIZE__) <= QSPI_ADDRESS_SIZE_60_BITS)
+#define IS_QSPI_ADDRESS_SIZE(__SIZE__)          ((__SIZE__) <= QSPI_ADDRESS_SIZE_60_BITS)
 
-#define IS_QSPI_ADDRESS(__ADDRESS__)            ((__ADDRESS__) <= 0xFFFFFFFFU)
+#define IS_QSPI_DUMMY_CYCLES(__CYCLES__)          ((__CYCLES__) <= 31U)
+
+#define IS_QSPI_NB_DATA(__NUM__)          ((__NUM__) <= 0x10000U)
 
 /**
   * @}

@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -67,6 +63,7 @@ extern "C" {
 /** @defgroup DMA_DDL_Private_Variables DMA Private Variables
   * @{
   */
+#if defined (DMA1_Stream0_BASE)
 /* Array used to get the DMA stream register offset versus stream index DDL_DMA_STREAM_x */
 static const uint8_t STREAM_OFFSET_TAB[] =
 {
@@ -79,6 +76,19 @@ static const uint8_t STREAM_OFFSET_TAB[] =
   (uint8_t)(DMA1_Stream6_BASE - DMA1_BASE),
   (uint8_t)(DMA1_Stream7_BASE - DMA1_BASE)
 };
+#else
+/* Array used to get the DMA channel register offset versus channel index DDL_DMA_CHANNEL_x */
+static const uint8_t CHANNEL_OFFSET_TAB[] =
+{
+  (uint8_t)(DMA1_Channel1_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel2_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel3_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel4_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel5_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel6_BASE - DMA1_BASE),
+  (uint8_t)(DMA1_Channel7_BASE - DMA1_BASE)
+};
+#endif /* DMA1_Stream0_BASE */
 
 /**
   * @}
@@ -155,19 +165,21 @@ typedef struct
 
                                         This feature can be modified afterwards using unitary function @ref DDL_DMA_SetDataLength(). */
 
+  uint32_t Priority;               /*!< Specifies the channel priority level.
+                                        This parameter can be a value of @ref DMA_DDL_EC_PRIORITY
+
+                                        This feature can be modified afterwards using unitary function @ref DDL_DMA_SetStreamPriorityLevel(). */
+
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
   uint32_t Channel;                /*!< Specifies the peripheral channel.
                                         This parameter can be a value of @ref DMA_DDL_EC_CHANNEL
 
                                         This feature can be modified afterwards using unitary function @ref DDL_DMA_SetChannelSelection(). */
 
-  uint32_t Priority;               /*!< Specifies the channel priority level.
-                                        This parameter can be a value of @ref DMA_DDL_EC_PRIORITY
-
-                                        This feature can be modified afterwards using unitary function @ref DDL_DMA_SetStreamPriorityLevel(). */
-                                        
   uint32_t FIFOMode;               /*!< Specifies if the FIFO mode or Direct mode will be used for the specified stream.
                                         This parameter can be a value of @ref DMA_DDL_FIFOMODE
-                                        @note The Direct mode (FIFO mode disabled) cannot be used if the 
+                                        @note The Direct mode (FIFO mode disabled) cannot be used if the
                                         memory-to-memory data transfer is configured on the selected stream
 
                                         This feature can be modified afterwards using unitary functions @ref DDL_DMA_EnableFifoMode() or @ref DDL_DMA_EnableFifoMode() . */
@@ -177,22 +189,22 @@ typedef struct
 
                                         This feature can be modified afterwards using unitary function @ref DDL_DMA_SetFIFOThreshold(). */
 
-  uint32_t MemBurst;               /*!< Specifies the Burst transfer configuration for the memory transfers. 
+  uint32_t MemBurst;               /*!< Specifies the Burst transfer configuration for the memory transfers.
                                         It specifies the amount of data to be transferred in a single non interruptible
                                         transaction.
-                                        This parameter can be a value of @ref DMA_DDL_EC_MBURST 
-                                        @note The burst mode is possible only if the address Increment mode is enabled. 
+                                        This parameter can be a value of @ref DMA_DDL_EC_MBURST
+                                        @note The burst mode is possible only if the address Increment mode is enabled.
 
                                         This feature can be modified afterwards using unitary function @ref DDL_DMA_SetMemoryBurstxfer(). */
 
-  uint32_t PeriphBurst;            /*!< Specifies the Burst transfer configuration for the peripheral transfers. 
-                                        It specifies the amount of data to be transferred in a single non interruptible 
-                                        transaction. 
+  uint32_t PeriphBurst;            /*!< Specifies the Burst transfer configuration for the peripheral transfers.
+                                        It specifies the amount of data to be transferred in a single non interruptible
+                                        transaction.
                                         This parameter can be a value of @ref DMA_DDL_EC_PBURST
-                                        @note The burst mode is possible only if the address Increment mode is enabled. 
+                                        @note The burst mode is possible only if the address Increment mode is enabled.
 
                                         This feature can be modified afterwards using unitary function @ref DDL_DMA_SetPeriphBurstxfer(). */
-
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 } DDL_DMA_InitTypeDef;
 /**
   * @}
@@ -206,6 +218,7 @@ typedef struct
 /** @defgroup DMA_DDL_EC_STREAM STREAM
   * @{
   */
+#if defined (DMA1_Stream0)
 #define DDL_DMA_STREAM_0                   0x00000000U
 #define DDL_DMA_STREAM_1                   0x00000001U
 #define DDL_DMA_STREAM_2                   0x00000002U
@@ -215,6 +228,17 @@ typedef struct
 #define DDL_DMA_STREAM_6                   0x00000006U
 #define DDL_DMA_STREAM_7                   0x00000007U
 #define DDL_DMA_STREAM_ALL                 0xFFFF0000U
+#else
+#define DDL_DMA_CHANNEL_1                  0x00000001U
+#define DDL_DMA_CHANNEL_2                  0x00000002U
+#define DDL_DMA_CHANNEL_3                  0x00000003U
+#define DDL_DMA_CHANNEL_4                  0x00000004U
+#define DDL_DMA_CHANNEL_5                  0x00000005U
+#define DDL_DMA_CHANNEL_6                  0x00000006U
+#define DDL_DMA_CHANNEL_7                  0x00000007U
+#define DDL_DMA_CHANNEL_ALL                0xFFFF0000U
+#endif /* DMA1_Stream0 */
+
 /**
   * @}
   */
@@ -222,9 +246,14 @@ typedef struct
 /** @defgroup DMA_DDL_EC_DIRECTION DIRECTION
   * @{
   */
-#define DDL_DMA_DIRECTION_PERIPH_TO_MEMORY 0x00000000U               /*!< Peripheral to memory direction */
+#define DDL_DMA_DIRECTION_PERIPH_TO_MEMORY 0x00000000U                   /*!< Peripheral to memory direction */
+#if defined (DMA_SCFGx_DIRCFG)
 #define DDL_DMA_DIRECTION_MEMORY_TO_PERIPH DMA_SCFGx_DIRCFG_0            /*!< Memory to peripheral direction */
 #define DDL_DMA_DIRECTION_MEMORY_TO_MEMORY DMA_SCFGx_DIRCFG_1            /*!< Memory to memory direction     */
+#else
+#define DDL_DMA_DIRECTION_MEMORY_TO_PERIPH DMA_CHCFG_DIRCFG              /*!< Memory to peripheral direction */
+#define DDL_DMA_DIRECTION_MEMORY_TO_MEMORY DMA_CHCFG_M2MMODE             /*!< Memory to memory direction     */
+#endif /* DMA_SCFGx_DIRCFG */
 /**
   * @}
   */
@@ -233,8 +262,12 @@ typedef struct
   * @{
   */
 #define DDL_DMA_MODE_NORMAL                0x00000000U               /*!< Normal Mode                  */
-#define DDL_DMA_MODE_CIRCULAR              DMA_SCFGx_CIRCMEN             /*!< Circular Mode                */
+#if defined (DMA_SCFGx_PERFC)
+#define DDL_DMA_MODE_CIRCULAR              DMA_SCFGx_CIRCMEN         /*!< Circular Mode                */
 #define DDL_DMA_MODE_PFCTRL                DMA_SCFGx_PERFC           /*!< Peripheral flow control mode */
+#else
+#define DDL_DMA_MODE_CIRCULAR              DMA_CHCFG_CIRMODE         /*!< Circular Mode                */
+#endif /* DMA_SCFGx_PERFC */
 /**
   * @}
   */
@@ -242,7 +275,7 @@ typedef struct
 /** @defgroup DMA_DDL_EC_DOUBLEBUFFER_MODE DOUBLEBUFFER MODE
   * @{
   */
-#define DDL_DMA_DOUBLEBUFFER_MODE_DISABLE  0x00000000U               /*!< Disable double buffering mode */
+#define DDL_DMA_DOUBLEBUFFER_MODE_DISABLE  0x00000000U                /*!< Disable double buffering mode */
 #define DDL_DMA_DOUBLEBUFFER_MODE_ENABLE   DMA_SCFGx_DBM              /*!< Enable double buffering mode  */
 /**
   * @}
@@ -251,8 +284,12 @@ typedef struct
 /** @defgroup DMA_DDL_EC_PERIPH PERIPH
   * @{
   */
-#define DDL_DMA_PERIPH_NOINCREMENT         0x00000000U               /*!< Peripheral increment mode Disable */
+#define DDL_DMA_PERIPH_NOINCREMENT         0x00000000U                 /*!< Peripheral increment mode Disable */
+#if defined (DMA_SCFGx_PERIM)
 #define DDL_DMA_PERIPH_INCREMENT           DMA_SCFGx_PERIM             /*!< Peripheral increment mode Enable  */
+#else
+#define DDL_DMA_PERIPH_INCREMENT           DMA_CHCFG_PERIMODE          /*!< Peripheral increment mode Enable  */
+#endif /* DMA_SCFGx_PERIM */
 /**
   * @}
   */
@@ -260,8 +297,12 @@ typedef struct
 /** @defgroup DMA_DDL_EC_MEMORY MEMORY
   * @{
   */
-#define DDL_DMA_MEMORY_NOINCREMENT         0x00000000U               /*!< Memory increment mode Disable */
+#define DDL_DMA_MEMORY_NOINCREMENT         0x00000000U                 /*!< Memory increment mode Disable */
+#if defined (DMA_SCFGx_MEMIM)
 #define DDL_DMA_MEMORY_INCREMENT           DMA_SCFGx_MEMIM             /*!< Memory increment mode Enable  */
+#else
+#define DDL_DMA_MEMORY_INCREMENT           DMA_CHCFG_MIMODE            /*!< Memory increment mode Enable  */
+#endif /* DMA_SCFGx_MEMIM */
 /**
   * @}
   */
@@ -269,9 +310,14 @@ typedef struct
 /** @defgroup DMA_DDL_EC_PDATAALIGN PDATAALIGN
   * @{
   */
-#define DDL_DMA_PDATAALIGN_BYTE            0x00000000U               /*!< Peripheral data alignment : Byte     */
+#define DDL_DMA_PDATAALIGN_BYTE            0x00000000U                     /*!< Peripheral data alignment : Byte     */
+#if defined (DMA_SCFGx_PERSIZECFG)
 #define DDL_DMA_PDATAALIGN_HALFWORD        DMA_SCFGx_PERSIZECFG_0          /*!< Peripheral data alignment : HalfWord */
 #define DDL_DMA_PDATAALIGN_WORD            DMA_SCFGx_PERSIZECFG_1          /*!< Peripheral data alignment : Word     */
+#else
+#define DDL_DMA_PDATAALIGN_HALFWORD        DMA_CHCFG_PERSIZE_0             /*!< Peripheral data alignment : HalfWord */
+#define DDL_DMA_PDATAALIGN_WORD            DMA_CHCFG_PERSIZE_1             /*!< Peripheral data alignment : Word     */
+#endif /* DMA_SCFGx_PERSIZECFG */
 /**
   * @}
   */
@@ -279,9 +325,14 @@ typedef struct
 /** @defgroup DMA_DDL_EC_MDATAALIGN MDATAALIGN
   * @{
   */
-#define DDL_DMA_MDATAALIGN_BYTE            0x00000000U               /*!< Memory data alignment : Byte     */
+#define DDL_DMA_MDATAALIGN_BYTE            0x00000000U                     /*!< Memory data alignment : Byte     */
+#if defined (DMA_SCFGx_MEMSIZECFG)
 #define DDL_DMA_MDATAALIGN_HALFWORD        DMA_SCFGx_MEMSIZECFG_0          /*!< Memory data alignment : HalfWord */
 #define DDL_DMA_MDATAALIGN_WORD            DMA_SCFGx_MEMSIZECFG_1          /*!< Memory data alignment : Word     */
+#else
+#define DDL_DMA_MDATAALIGN_HALFWORD        DMA_CHCFG_MEMSIZE_0             /*!< Memory data alignment : HalfWord */
+#define DDL_DMA_MDATAALIGN_WORD            DMA_CHCFG_MEMSIZE_1             /*!< Memory data alignment : Word     */
+#endif /* DMA_SCFGx_MEMSIZECFG */
 /**
   * @}
   */
@@ -289,8 +340,10 @@ typedef struct
 /** @defgroup DMA_DDL_EC_OFFSETSIZE OFFSETSIZE
   * @{
   */
-#define DDL_DMA_OFFSETSIZE_PSIZE           0x00000000U               /*!< Peripheral increment offset size is linked to the PSIZE */
+#if defined (DMA_SCFGx_PERIOSIZE)
+#define DDL_DMA_OFFSETSIZE_PSIZE           0x00000000U                   /*!< Peripheral increment offset size is linked to the PSIZE */
 #define DDL_DMA_OFFSETSIZE_FIXEDTO4        DMA_SCFGx_PERIOSIZE           /*!< Peripheral increment offset size is fixed to 4 (32-bit alignment) */
+#endif /* DMA_SCFGx_PERIOSIZE */
 /**
   * @}
   */
@@ -298,10 +351,16 @@ typedef struct
 /** @defgroup DMA_DDL_EC_PRIORITY PRIORITY
   * @{
   */
-#define DDL_DMA_PRIORITY_LOW               0x00000000U               /*!< Priority level : Low       */
+#define DDL_DMA_PRIORITY_LOW               0x00000000U                     /*!< Priority level : Low       */
+#if defined (DMA_SCFGx_PRILCFG)
 #define DDL_DMA_PRIORITY_MEDIUM            DMA_SCFGx_PRILCFG_0             /*!< Priority level : Medium    */
 #define DDL_DMA_PRIORITY_HIGH              DMA_SCFGx_PRILCFG_1             /*!< Priority level : High      */
 #define DDL_DMA_PRIORITY_VERYHIGH          DMA_SCFGx_PRILCFG               /*!< Priority level : Very_High */
+#else
+#define DDL_DMA_PRIORITY_MEDIUM            DMA_CHCFG_CHPL_0                /*!< Priority level : Medium    */
+#define DDL_DMA_PRIORITY_HIGH              DMA_CHCFG_CHPL_1                /*!< Priority level : High      */
+#define DDL_DMA_PRIORITY_VERYHIGH          DMA_CHCFG_CHPL                  /*!< Priority level : Very_High */
+#endif /* DMA_SCFGx_PRILCFG */
 /**
   * @}
   */
@@ -309,24 +368,26 @@ typedef struct
 /** @defgroup DMA_DDL_EC_CHANNEL CHANNEL
   * @{
   */
-#define DDL_DMA_CHANNEL_0                  0x00000000U                                                                   /* Select Channel0 of DMA Instance */
-#define DDL_DMA_CHANNEL_1                  DMA_SCFGx_CHSEL_0                                                              /* Select Channel1 of DMA Instance */
-#define DDL_DMA_CHANNEL_2                  DMA_SCFGx_CHSEL_1                                                              /* Select Channel2 of DMA Instance */
-#define DDL_DMA_CHANNEL_3                  (DMA_SCFGx_CHSEL_0 | DMA_SCFGx_CHSEL_1)                                         /* Select Channel3 of DMA Instance */
-#define DDL_DMA_CHANNEL_4                  DMA_SCFGx_CHSEL_2                                                              /* Select Channel4 of DMA Instance */
-#define DDL_DMA_CHANNEL_5                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_0)                                         /* Select Channel5 of DMA Instance */
-#define DDL_DMA_CHANNEL_6                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1)                                         /* Select Channel6 of DMA Instance */
-#define DDL_DMA_CHANNEL_7                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1 | DMA_SCFGx_CHSEL_0)                      /* Select Channel7 of DMA Instance */
+#if defined (DMA_SCFGx_CHSEL)
+#define DDL_DMA_CHANNEL_0                  0x00000000U                                                                       /* Select Channel0 of DMA Instance */
+#define DDL_DMA_CHANNEL_1                  DMA_SCFGx_CHSEL_0                                                                 /* Select Channel1 of DMA Instance */
+#define DDL_DMA_CHANNEL_2                  DMA_SCFGx_CHSEL_1                                                                 /* Select Channel2 of DMA Instance */
+#define DDL_DMA_CHANNEL_3                  (DMA_SCFGx_CHSEL_0 | DMA_SCFGx_CHSEL_1)                                           /* Select Channel3 of DMA Instance */
+#define DDL_DMA_CHANNEL_4                  DMA_SCFGx_CHSEL_2                                                                 /* Select Channel4 of DMA Instance */
+#define DDL_DMA_CHANNEL_5                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_0)                                           /* Select Channel5 of DMA Instance */
+#define DDL_DMA_CHANNEL_6                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1)                                           /* Select Channel6 of DMA Instance */
+#define DDL_DMA_CHANNEL_7                  (DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1 | DMA_SCFGx_CHSEL_0)                       /* Select Channel7 of DMA Instance */
 #if defined (DMA_SCFGx_CHSEL_3)
-#define DDL_DMA_CHANNEL_8                  DMA_SCFGx_CHSEL_3                                                              /* Select Channel8 of DMA Instance */
-#define DDL_DMA_CHANNEL_9                  (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_0)                                         /* Select Channel9 of DMA Instance */
-#define DDL_DMA_CHANNEL_10                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_1)                                         /* Select Channel10 of DMA Instance */
-#define DDL_DMA_CHANNEL_11                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_1 | DMA_SCFGx_CHSEL_0)                      /* Select Channel11 of DMA Instance */
-#define DDL_DMA_CHANNEL_12                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2)                                         /* Select Channel12 of DMA Instance */
-#define DDL_DMA_CHANNEL_13                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_0)                      /* Select Channel13 of DMA Instance */
-#define DDL_DMA_CHANNEL_14                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1)                      /* Select Channel14 of DMA Instance */
+#define DDL_DMA_CHANNEL_8                  DMA_SCFGx_CHSEL_3                                                                 /* Select Channel8 of DMA Instance */
+#define DDL_DMA_CHANNEL_9                  (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_0)                                           /* Select Channel9 of DMA Instance */
+#define DDL_DMA_CHANNEL_10                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_1)                                           /* Select Channel10 of DMA Instance */
+#define DDL_DMA_CHANNEL_11                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_1 | DMA_SCFGx_CHSEL_0)                       /* Select Channel11 of DMA Instance */
+#define DDL_DMA_CHANNEL_12                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2)                                           /* Select Channel12 of DMA Instance */
+#define DDL_DMA_CHANNEL_13                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_0)                       /* Select Channel13 of DMA Instance */
+#define DDL_DMA_CHANNEL_14                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1)                       /* Select Channel14 of DMA Instance */
 #define DDL_DMA_CHANNEL_15                 (DMA_SCFGx_CHSEL_3 | DMA_SCFGx_CHSEL_2 | DMA_SCFGx_CHSEL_1 | DMA_SCFGx_CHSEL_0)   /* Select Channel15 of DMA Instance */
 #endif /* DMA_SCFGx_CHSEL_3 */
+#endif /* DMA_SCFGx_CHSEL */
 /**
   * @}
   */
@@ -334,10 +395,12 @@ typedef struct
 /** @defgroup DMA_DDL_EC_MBURST MBURST
   * @{
   */
+#if defined (DMA_SCFGx_MBCFG)
 #define DDL_DMA_MBURST_SINGLE              0x00000000U                             /*!< Memory burst single transfer configuration */
 #define DDL_DMA_MBURST_INC4                DMA_SCFGx_MBCFG_0                       /*!< Memory burst of 4 beats transfer configuration */
 #define DDL_DMA_MBURST_INC8                DMA_SCFGx_MBCFG_1                       /*!< Memory burst of 8 beats transfer configuration */
 #define DDL_DMA_MBURST_INC16               (DMA_SCFGx_MBCFG_0 | DMA_SCFGx_MBCFG_1) /*!< Memory burst of 16 beats transfer configuration */
+#endif /* DMA_SCFGx_MBCFG */
 /**
   * @}
   */
@@ -345,32 +408,38 @@ typedef struct
 /** @defgroup DMA_DDL_EC_PBURST PBURST
   * @{
   */
+#if defined (DMA_SCFGx_PBCFG)
 #define DDL_DMA_PBURST_SINGLE              0x00000000U                             /*!< Peripheral burst single transfer configuration */
 #define DDL_DMA_PBURST_INC4                DMA_SCFGx_PBCFG_0                       /*!< Peripheral burst of 4 beats transfer configuration */
 #define DDL_DMA_PBURST_INC8                DMA_SCFGx_PBCFG_1                       /*!< Peripheral burst of 8 beats transfer configuration */
 #define DDL_DMA_PBURST_INC16               (DMA_SCFGx_PBCFG_0 | DMA_SCFGx_PBCFG_1) /*!< Peripheral burst of 16 beats transfer configuration */
+#endif /* DMA_SCFGx_PBCFG */
 /**
   * @}
   */
-  
+
 /** @defgroup DMA_DDL_FIFOMODE DMA_DDL_FIFOMODE
   * @{
   */
+#if defined (DMA_FCTRLx_DMDEN)
 #define DDL_DMA_FIFOMODE_DISABLE           0x00000000U                             /*!< FIFO mode disable (direct mode is enabled) */
-#define DDL_DMA_FIFOMODE_ENABLE            DMA_FCTRLx_DMDEN                         /*!< FIFO mode enable  */
+#define DDL_DMA_FIFOMODE_ENABLE            DMA_FCTRLx_DMDEN                        /*!< FIFO mode enable  */
+#endif /* DMA_FCTRLx_DMDEN */
 /**
   * @}
-  */  
+  */
 
 /** @defgroup DMA_DDL_EC_FIFOSTATUS_0 FIFOSTATUS 0
   * @{
   */
-#define DDL_DMA_FIFOSTATUS_0_25            0x00000000U                             /*!< 0 < fifo_level < 1/4    */
+#if defined (DMA_FCTRLx_FSTS)
+#define DDL_DMA_FIFOSTATUS_0_25            0x00000000U                                /*!< 0 < fifo_level < 1/4    */
 #define DDL_DMA_FIFOSTATUS_25_50           DMA_FCTRLx_FSTS_0                          /*!< 1/4 < fifo_level < 1/2  */
 #define DDL_DMA_FIFOSTATUS_50_75           DMA_FCTRLx_FSTS_1                          /*!< 1/2 < fifo_level < 3/4  */
-#define DDL_DMA_FIFOSTATUS_75_100          (DMA_FCTRLx_FSTS_1 | DMA_FCTRLx_FSTS_0)       /*!< 3/4 < fifo_level < full */
+#define DDL_DMA_FIFOSTATUS_75_100          (DMA_FCTRLx_FSTS_1 | DMA_FCTRLx_FSTS_0)    /*!< 3/4 < fifo_level < full */
 #define DDL_DMA_FIFOSTATUS_EMPTY           DMA_FCTRLx_FSTS_2                          /*!< FIFO is empty           */
-#define DDL_DMA_FIFOSTATUS_FULL            (DMA_FCTRLx_FSTS_2 | DMA_FCTRLx_FSTS_0)       /*!< FIFO is full            */
+#define DDL_DMA_FIFOSTATUS_FULL            (DMA_FCTRLx_FSTS_2 | DMA_FCTRLx_FSTS_0)    /*!< FIFO is full            */
+#endif /* DMA_FCTRLx_FSTS */
 /**
   * @}
   */
@@ -378,19 +447,23 @@ typedef struct
 /** @defgroup DMA_DDL_EC_FIFOTHRESHOLD FIFOTHRESHOLD
   * @{
   */
+#if defined (DMA_FCTRLx_FTHSEL)
 #define DDL_DMA_FIFOTHRESHOLD_1_4          0x00000000U                             /*!< FIFO threshold 1 quart full configuration  */
-#define DDL_DMA_FIFOTHRESHOLD_1_2          DMA_FCTRLx_FTHSEL_0                         /*!< FIFO threshold half full configuration     */
-#define DDL_DMA_FIFOTHRESHOLD_3_4          DMA_FCTRLx_FTHSEL_1                         /*!< FIFO threshold 3 quarts full configuration */
-#define DDL_DMA_FIFOTHRESHOLD_FULL         DMA_FCTRLx_FTHSEL                           /*!< FIFO threshold full configuration          */
+#define DDL_DMA_FIFOTHRESHOLD_1_2          DMA_FCTRLx_FTHSEL_0                     /*!< FIFO threshold half full configuration     */
+#define DDL_DMA_FIFOTHRESHOLD_3_4          DMA_FCTRLx_FTHSEL_1                     /*!< FIFO threshold 3 quarts full configuration */
+#define DDL_DMA_FIFOTHRESHOLD_FULL         DMA_FCTRLx_FTHSEL                       /*!< FIFO threshold full configuration          */
+#endif /* DMA_FCTRLx_FTHSEL */
 /**
   * @}
   */
-    
+
 /** @defgroup DMA_DDL_EC_CURRENTTARGETMEM CURRENTTARGETMEM
   * @{
   */
+#if defined (DMA_SCFGx_CTARG)
 #define DDL_DMA_CURRENTTARGETMEM0          0x00000000U                             /*!< Set CurrentTarget Memory to Memory 0  */
 #define DDL_DMA_CURRENTTARGETMEM1          DMA_SCFGx_CTARG                             /*!< Set CurrentTarget Memory to Memory 1  */
+#endif /* DMA_SCFGx_CTARG */
 /**
   * @}
   */
@@ -430,6 +503,7 @@ typedef struct
 /** @defgroup DMA_DDL_EM_CONVERT_DMAxCHANNELy Convert DMAxStreamy
   * @{
   */
+#if defined (DMA1_Stream0)
 /**
   * @brief  Convert DMAx_Streamy into DMAx
   * @param  __STREAM_INSTANCE__ DMAx_Streamy
@@ -437,7 +511,17 @@ typedef struct
   */
 #define __DDL_DMA_GET_INSTANCE(__STREAM_INSTANCE__)   \
 (((uint32_t)(__STREAM_INSTANCE__) > ((uint32_t)DMA1_Stream7)) ?  DMA2 : DMA1)
+#else
+/**
+  * @brief  Convert DMAx_Channely into DMAx
+  * @param  __CHANNEL_INSTANCE__ DMAx_Channely
+  * @retval DMAx
+  */
+#define __DDL_DMA_GET_INSTANCE(__CHANNEL_INSTANCE__)   \
+(((uint32_t)(__CHANNEL_INSTANCE__) > ((uint32_t)DMA1_Channel7)) ?  DMA2 : DMA1)
+#endif /* DMA1_Stream0 */
 
+#if defined (DMA1_Stream0)
 /**
   * @brief  Convert DMAx_Streamy into DDL_DMA_STREAM_y
   * @param  __STREAM_INSTANCE__ DMAx_Streamy
@@ -459,7 +543,27 @@ typedef struct
  ((uint32_t)(__STREAM_INSTANCE__) == ((uint32_t)DMA1_Stream6)) ? DDL_DMA_STREAM_6 : \
  ((uint32_t)(__STREAM_INSTANCE__) == ((uint32_t)DMA2_Stream6)) ? DDL_DMA_STREAM_6 : \
  DDL_DMA_STREAM_7)
-
+#else
+/**
+  * @brief  Convert DMAx_Channely into DDL_DMA_CHANNEL_y
+  * @param  __CHANEEL_INSTANCE__ DMAx_Channely
+  * @retval DDL_DMA_CHANNEL_y
+  */
+#define __DDL_DMA_GET_STREAM(__CHANNEL_INSTANCE__)   \
+(((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel1)) ? DDL_DMA_CHANNEL_1 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA2_Channel1)) ? DDL_DMA_CHANNEL_1 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel2)) ? DDL_DMA_CHANNEL_2 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA2_Channel2)) ? DDL_DMA_CHANNEL_2 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel3)) ? DDL_DMA_CHANNEL_3 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA2_Channel3)) ? DDL_DMA_CHANNEL_3 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel4)) ? DDL_DMA_CHANNEL_4 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA2_Channel4)) ? DDL_DMA_CHANNEL_4 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel5)) ? DDL_DMA_CHANNEL_5 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA2_Channel5)) ? DDL_DMA_CHANNEL_5 : \
+ ((uint32_t)(__CHANNEL_INSTANCE__) == ((uint32_t)DMA1_Channel6)) ? DDL_DMA_CHANNEL_6 : \
+ DDL_DMA_CHANNEL_7)
+#endif /* DMA1_Stream0 */
+#if defined (DMA1_Stream0)
 /**
   * @brief  Convert DMA Instance DMAx and DDL_DMA_STREAM_y into DMAx_Streamy
   * @param  __DMA_INSTANCE__ DMAx
@@ -483,6 +587,27 @@ typedef struct
  (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__STREAM__) == ((uint32_t)DDL_DMA_STREAM_6))) ? DMA2_Stream6 : \
  (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__STREAM__) == ((uint32_t)DDL_DMA_STREAM_7))) ? DMA1_Stream7 : \
  DMA2_Stream7)
+#else
+/**
+  * @brief  Convert DMA Instance DMAx and DDL_DMA_CHANNEL_y into DMAx_Channely
+  * @param  __DMA_INSTANCE__ DMAx
+  * @param  __CHANNEL__ DDL_DMA_CHANNEL_y
+  * @retval DMAx_Channely
+  */
+#define __DDL_DMA_GET_CHANNEL_INSTANCE(__DMA_INSTANCE__, __CHANNEL__)   \
+((((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_1))) ? DMA1_Channel1 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_1))) ? DMA2_Channel1 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_2))) ? DMA1_Channel2 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_2))) ? DMA2_Channel2 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_3))) ? DMA1_Channel3 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_3))) ? DMA2_Channel3 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_4))) ? DMA1_Channel4 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_4))) ? DMA2_Channel4 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_5))) ? DMA1_Channel5 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA2)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_5))) ? DMA2_Channel5 : \
+ (((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) && ((uint32_t)(__CHANNEL__) == ((uint32_t)DDL_DMA_CHANNEL_6))) ? DMA1_Channel6 : \
+ DMA1_Channel7)
+#endif /* DMA1_Stream0 */
 
 /**
   * @}
@@ -491,12 +616,15 @@ typedef struct
 /**
   * @}
   */
-
 
 /* Exported functions --------------------------------------------------------*/
  /** @defgroup DMA_DDL_Exported_Functions DMA Exported Functions
   * @{
   */
+
+#if defined (DMA1_Stream0) || defined (DMA1_Stream1) || defined (DMA1_Stream2) || defined (DMA1_Stream3) || defined (DMA1_Stream4) ||\
+    defined (DMA1_Stream5) || defined (DMA1_Stream6) || defined (DMA1_Stream7) || defined (DMA2_Stream0) || defined (DMA2_Stream1) ||\
+    defined (DMA2_Stream2) || defined (DMA2_Stream3) || defined (DMA2_Stream4) || defined (DMA2_Stream5) || defined (DMA2_Stream6) ||  defined (DMA2_Stream7)
 
 /** @defgroup DMA_DDL_EF_Configuration Configuration
   * @{
@@ -1683,7 +1811,7 @@ __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HINTSTS ,DMA_HINTSTS_HTXIFLG7)==(DMA_HINTSTS_HTXIFLG7));
-} 
+}
 
 /**
   * @brief Get Stream 0 transfer complete flag.
@@ -1763,7 +1891,7 @@ __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HINTSTS ,DMA_HINTSTS_TXCIFLG7)==(DMA_HINTSTS_TXCIFLG7));
-} 
+}
 
 /**
   * @brief Get Stream 0 transfer error flag.
@@ -1843,7 +1971,7 @@ __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HINTSTS ,DMA_HINTSTS_TXEIFLG7)==(DMA_HINTSTS_TXEIFLG7));
-} 
+}
 
 /**
   * @brief Get Stream 0 direct mode error flag.
@@ -2701,6 +2829,1393 @@ __STATIC_INLINE uint32_t DDL_DMA_IsEnabledIT_FE(DMA_TypeDef *DMAx, uint32_t Stre
 /**
   * @}
   */
+
+#elif defined (DMA1_Channel1) || defined (DMA1_Channel2) || defined (DMA1_Channel3) || defined (DMA1_Channel4) || defined (DMA1_Channel5) ||\
+      defined (DMA1_Channel6) || defined (DMA1_Channel7) || defined (DMA2_Channel1) || defined (DMA2_Channel2) || defined (DMA2_Channel3) ||\
+      defined (DMA2_Channel4) || defined (DMA2_Channel5)
+
+/** @defgroup DMA_DDL_EF_Configuration Configuration
+  * @{
+  */
+/**
+  * @brief  Enable DMA channel.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_EnableChannel(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  SET_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_CHEN);
+}
+
+/**
+  * @brief  Disable DMA channel.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_DisableChannel(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  CLEAR_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_CHEN);
+}
+
+/**
+  * @brief  Check if DMA channel is enabled or disabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsEnabledChannel(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_CHEN) == (DMA_CHCFG_CHEN));
+}
+
+/**
+  * @brief  Configure all parameters linked to DMA transfer.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  Configuration This parameter must be a combination of all the following values:
+  *         @arg @ref DDL_DMA_DIRECTION_PERIPH_TO_MEMORY or @ref DDL_DMA_DIRECTION_MEMORY_TO_PERIPH or @ref DDL_DMA_DIRECTION_MEMORY_TO_MEMORY
+  *         @arg @ref DDL_DMA_MODE_NORMAL or @ref DDL_DMA_MODE_CIRCULAR
+  *         @arg @ref DDL_DMA_PERIPH_INCREMENT or @ref DDL_DMA_PERIPH_NOINCREMENT
+  *         @arg @ref DDL_DMA_MEMORY_INCREMENT or @ref DDL_DMA_MEMORY_NOINCREMENT
+  *         @arg @ref DDL_DMA_PDATAALIGN_BYTE or @ref DDL_DMA_PDATAALIGN_HALFWORD or @ref DDL_DMA_PDATAALIGN_WORD
+  *         @arg @ref DDL_DMA_MDATAALIGN_BYTE or @ref DDL_DMA_MDATAALIGN_HALFWORD or @ref DDL_DMA_MDATAALIGN_WORD
+  *         @arg @ref DDL_DMA_PRIORITY_LOW or @ref DDL_DMA_PRIORITY_MEDIUM or @ref DDL_DMA_PRIORITY_HIGH or @ref DDL_DMA_PRIORITY_VERYHIGH
+  *@retval None
+  */
+__STATIC_INLINE void DDL_DMA_ConfigTransfer(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t Configuration)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_DIRCFG | DMA_CHCFG_CIRMODE | DMA_CHCFG_PERIMODE | DMA_CHCFG_MIMODE | DMA_CHCFG_PERSIZE |
+             DMA_CHCFG_MEMSIZE | DMA_CHCFG_CHPL | DMA_CHCFG_M2MMODE,
+             Configuration);
+}
+
+/**
+  * @brief  Set Data transfer direction (read from peripheral or from memory).
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  Direction This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_DIRECTION_PERIPH_TO_MEMORY
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_PERIPH
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_MEMORY
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetDataTransferDirection(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t  Direction)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_DIRCFG | DMA_CHCFG_M2MMODE, Direction);
+}
+
+/**
+  * @brief  Get Data transfer direction (read from peripheral or from memory).
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_DIRECTION_PERIPH_TO_MEMORY
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_PERIPH
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_MEMORY
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetDataTransferDirection(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_DIRCFG | DMA_CHCFG_M2MMODE));
+}
+
+/**
+  * @brief  Set DMA mode normal or circular.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  Mode This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_MODE_NORMAL
+  *         @arg @ref DDL_DMA_MODE_CIRCULAR
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetMode(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t Mode)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_CIRMODE, Mode);
+}
+
+/**
+  * @brief  Get DMA mode normal or circular.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_MODE_NORMAL
+  *         @arg @ref DDL_DMA_MODE_CIRCULAR
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetMode(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_CIRMODE));
+}
+
+/**
+  * @brief  Set Peripheral increment mode.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  PeriphOrM2MSrcIncMode This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_PERIPH_NOINCREMENT
+  *         @arg @ref DDL_DMA_PERIPH_INCREMENT
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetPeriphIncMode(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t PeriphOrM2MSrcIncMode)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_PERIMODE, PeriphOrM2MSrcIncMode);
+}
+
+/**
+  * @brief  Get Peripheral increment mode.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_PERIPH_NOINCREMENT
+  *         @arg @ref DDL_DMA_PERIPH_INCREMENT
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetPeriphIncMode(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_PERIMODE));
+}
+
+/**
+  * @brief  Set Memory increment mode.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  MemoryOrM2MDstIncMode This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_MEMORY_NOINCREMENT
+  *         @arg @ref DDL_DMA_MEMORY_INCREMENT
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetMemoryIncMode(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t MemoryOrM2MDstIncMode)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_MIMODE, MemoryOrM2MDstIncMode);
+}
+
+/**
+  * @brief  Get Memory increment mode.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_MEMORY_NOINCREMENT
+  *         @arg @ref DDL_DMA_MEMORY_INCREMENT
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetMemoryIncMode(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_MIMODE));
+}
+
+/**
+  * @brief  Set Peripheral size.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  PeriphOrM2MSrcDataSize This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_PDATAALIGN_BYTE
+  *         @arg @ref DDL_DMA_PDATAALIGN_HALFWORD
+  *         @arg @ref DDL_DMA_PDATAALIGN_WORD
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetPeriphSize(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t  PeriphOrM2MSrcDataSize)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_PERSIZE, PeriphOrM2MSrcDataSize);
+}
+
+/**
+  * @brief  Get Peripheral size.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_PDATAALIGN_BYTE
+  *         @arg @ref DDL_DMA_PDATAALIGN_HALFWORD
+  *         @arg @ref DDL_DMA_PDATAALIGN_WORD
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetPeriphSize(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_PERSIZE));
+}
+
+/**
+  * @brief  Set Memory size.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  MemoryOrM2MDstDataSize This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_MDATAALIGN_BYTE
+  *         @arg @ref DDL_DMA_MDATAALIGN_HALFWORD
+  *         @arg @ref DDL_DMA_MDATAALIGN_WORD
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetMemorySize(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t  MemoryOrM2MDstDataSize)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_MEMSIZE, MemoryOrM2MDstDataSize);
+}
+
+/**
+  * @brief  Get Memory size.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_MDATAALIGN_BYTE
+  *         @arg @ref DDL_DMA_MDATAALIGN_HALFWORD
+  *         @arg @ref DDL_DMA_MDATAALIGN_WORD
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetMemorySize(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_MEMSIZE));
+}
+
+/**
+  * @brief  Set Channel priority level.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  Priority This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_PRIORITY_LOW
+  *         @arg @ref DDL_DMA_PRIORITY_MEDIUM
+  *         @arg @ref DDL_DMA_PRIORITY_HIGH
+  *         @arg @ref DDL_DMA_PRIORITY_VERYHIGH
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetChannelPriorityLevel(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t  Priority)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+             DMA_CHCFG_CHPL, Priority);
+}
+
+/**
+  * @brief  Get Channel priority level.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_DMA_PRIORITY_LOW
+  *         @arg @ref DDL_DMA_PRIORITY_MEDIUM
+  *         @arg @ref DDL_DMA_PRIORITY_HIGH
+  *         @arg @ref DDL_DMA_PRIORITY_VERYHIGH
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetChannelPriorityLevel(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG,
+                   DMA_CHCFG_CHPL));
+}
+
+/**
+  * @brief  Set Number of data to transfer.
+  * @note   This action has no effect if
+  *         channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  NbData Between 0 to 0x0000FFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetDataLength(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t NbData)
+{
+  MODIFY_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHNDATA,
+             DMA_CHNDATAR_NDATAT, NbData);
+}
+
+/**
+  * @brief  Get Number of data to transfer.
+  * @note   Once the channel is enabled, the return value indicate the
+  *         remaining bytes to be transmitted.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Between 0 to 0x0000FFFF
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetDataLength(DMA_TypeDef* DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHNDATA,
+                   DMA_CHNDATAR_NDATAT));
+}
+
+/**
+  * @brief  Configure the Source and Destination addresses.
+  * @note   This API must not be called when the DMA Channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  SrcAddress Between 0 to 0xFFFFFFFF
+  * @param  DstAddress Between 0 to 0xFFFFFFFF
+  * @param  Direction This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_DIRECTION_PERIPH_TO_MEMORY
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_PERIPH
+  *         @arg @ref DDL_DMA_DIRECTION_MEMORY_TO_MEMORY
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ConfigAddresses(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t SrcAddress,
+                                             uint32_t DstAddress, uint32_t Direction)
+{
+  /* Direction Memory to Periph */
+  if (Direction == DDL_DMA_DIRECTION_MEMORY_TO_PERIPH)
+  {
+    WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR, SrcAddress);
+    WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR, DstAddress);
+  }
+  /* Direction Periph to Memory and Memory to Memory */
+  else
+  {
+    WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR, SrcAddress);
+    WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR, DstAddress);
+  }
+}
+
+/**
+  * @brief  Set the Memory address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_PERIPH_TO_MEMORY or DDL_DMA_DIRECTION_MEMORY_TO_PERIPH only.
+  * @note   This API must not be called when the DMA channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  MemoryAddress Between 0 to 0xFFFFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetMemoryAddress(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t MemoryAddress)
+{
+  WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR, MemoryAddress);
+}
+
+/**
+  * @brief  Set the Peripheral address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_PERIPH_TO_MEMORY or DDL_DMA_DIRECTION_MEMORY_TO_PERIPH only.
+  * @note   This API must not be called when the DMA channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  PeriphAddress Between 0 to 0xFFFFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetPeriphAddress(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t PeriphAddress)
+{
+  WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR, PeriphAddress);
+}
+
+/**
+  * @brief  Get the Memory address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_PERIPH_TO_MEMORY or DDL_DMA_DIRECTION_MEMORY_TO_PERIPH only.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Between 0 to 0xFFFFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetMemoryAddress(DMA_TypeDef* DMAx, uint32_t Channel)
+{
+  return (READ_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR));
+}
+
+/**
+  * @brief  Get the Peripheral address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_PERIPH_TO_MEMORY or DDL_DMA_DIRECTION_MEMORY_TO_PERIPH only.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Between 0 to 0xFFFFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetPeriphAddress(DMA_TypeDef* DMAx, uint32_t Channel)
+{
+  return (READ_REG(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR));
+}
+
+/**
+  * @brief  Set the Memory to Memory Source address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_MEMORY_TO_MEMORY only.
+  * @note   This API must not be called when the DMA channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  MemoryAddress Between 0 to 0xFFFFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetM2MSrcAddress(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t MemoryAddress)
+{
+  WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR, MemoryAddress);
+}
+
+/**
+  * @brief  Set the Memory to Memory Destination address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_MEMORY_TO_MEMORY only.
+  * @note   This API must not be called when the DMA channel is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @param  MemoryAddress Between 0 to 0xFFFFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_SetM2MDstAddress(DMA_TypeDef* DMAx, uint32_t Channel, uint32_t MemoryAddress)
+  {
+    WRITE_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR, MemoryAddress);
+  }
+
+/**
+  * @brief  Get the Memory to Memory Source address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_MEMORY_TO_MEMORY only.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Between 0 to 0xFFFFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetM2MSrcAddress(DMA_TypeDef* DMAx, uint32_t Channel)
+  {
+   return (READ_REG(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHPADDR));
+  }
+
+/**
+  * @brief  Get the Memory to Memory Destination address.
+  * @note   Interface used for direction DDL_DMA_DIRECTION_MEMORY_TO_MEMORY only.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval Between 0 to 0xFFFFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_DMA_GetM2MDstAddress(DMA_TypeDef* DMAx, uint32_t Channel)
+{
+ return (READ_REG(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHMADDR));
+}
+
+/**
+  * @}
+  */
+
+/** @defgroup DMA_DDL_EF_FLAG_Management FLAG_Management
+  * @{
+  */
+
+/**
+  * @brief  Get Channel 1 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI1(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG1) == (DMA_INTSTS_GINTFLG1));
+}
+
+/**
+  * @brief  Get Channel 2 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI2(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG2) == (DMA_INTSTS_GINTFLG2));
+}
+
+/**
+  * @brief  Get Channel 3 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI3(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG3) == (DMA_INTSTS_GINTFLG3));
+}
+
+/**
+  * @brief  Get Channel 4 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI4(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG4) == (DMA_INTSTS_GINTFLG4));
+}
+
+/**
+  * @brief  Get Channel 5 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI5(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG5) == (DMA_INTSTS_GINTFLG5));
+}
+
+/**
+  * @brief  Get Channel 6 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI6(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG6) == (DMA_INTSTS_GINTFLG6));
+}
+
+/**
+  * @brief  Get Channel 7 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_GI7(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS, DMA_INTSTS_GINTFLG7) == (DMA_INTSTS_GINTFLG7));
+}
+
+/**
+  * @brief  Get Channel 1 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC1(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG1) == (DMA_INTSTS_TCFLG1));
+}
+
+/**
+  * @brief  Get Channel 2 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC2(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG2) == (DMA_INTSTS_TCFLG2));
+}
+
+/**
+  * @brief  Get Channel 3 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC3(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG3) == (DMA_INTSTS_TCFLG3));
+}
+
+/**
+  * @brief  Get Channel 4 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC4(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG4)==(DMA_INTSTS_TCFLG4));
+}
+
+/**
+  * @brief  Get Channel 5 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC5(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG5)==(DMA_INTSTS_TCFLG5));
+}
+
+/**
+  * @brief  Get Channel 6 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC6(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG6)==(DMA_INTSTS_TCFLG6));
+}
+
+/**
+  * @brief  Get Channel 7 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TC7(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TCFLG7)==(DMA_INTSTS_TCFLG7));
+}
+
+/**
+  * @brief  Get Channel 1 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT1(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG1)==(DMA_INTSTS_HTFLG1));
+}
+
+/**
+  * @brief  Get Channel 2 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT2(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG2)==(DMA_INTSTS_HTFLG2));
+}
+
+/**
+  * @brief  Get Channel 3 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT3(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG3)==(DMA_INTSTS_HTFLG3));
+}
+
+/**
+  * @brief  Get Channel 4 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT4(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG4)==(DMA_INTSTS_HTFLG4));
+}
+
+/**
+  * @brief  Get Channel 5 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT5(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG5)==(DMA_INTSTS_HTFLG5));
+}
+
+/**
+  * @brief  Get Channel 6 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT6(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG6)==(DMA_INTSTS_HTFLG6));
+}
+
+/**
+  * @brief  Get Channel 7 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_HT7(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_HTFLG7)==(DMA_INTSTS_HTFLG7));
+}
+
+/**
+  * @brief  Get Channel 1 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE1(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG1)==(DMA_INTSTS_TERRFLG1));
+}
+
+/**
+  * @brief  Get Channel 2 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE2(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG2)==(DMA_INTSTS_TERRFLG2));
+}
+
+/**
+  * @brief  Get Channel 3 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE3(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG3)==(DMA_INTSTS_TERRFLG3));
+}
+
+/**
+  * @brief  Get Channel 4 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE4(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG4)==(DMA_INTSTS_TERRFLG4));
+}
+
+/**
+  * @brief  Get Channel 5 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE5(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG5)==(DMA_INTSTS_TERRFLG5));
+}
+
+/**
+  * @brief  Get Channel 6 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE6(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG6)==(DMA_INTSTS_TERRFLG6));
+}
+
+/**
+  * @brief  Get Channel 7 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsActiveFlag_TE7(DMA_TypeDef *DMAx)
+{
+  return (READ_BIT(DMAx->INTSTS ,DMA_INTSTS_TERRFLG7)==(DMA_INTSTS_TERRFLG7));
+}
+
+/**
+  * @brief  Clear Channel 1 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI1(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR1);
+}
+
+/**
+  * @brief  Clear Channel 2 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI2(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR2);
+}
+
+/**
+  * @brief  Clear Channel 3 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI3(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR3);
+}
+
+/**
+  * @brief  Clear Channel 4 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI4(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR4);
+}
+
+/**
+  * @brief  Clear Channel 5 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI5(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR5);
+}
+
+/**
+  * @brief  Clear Channel 6 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI6(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR6);
+}
+
+/**
+  * @brief  Clear Channel 7 global interrupt flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_GI7(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR, DMA_INTFCLR_GINTCLR7);
+}
+
+/**
+  * @brief  Clear Channel 1 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC1(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR1);
+}
+
+/**
+  * @brief  Clear Channel 2 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC2(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR2);
+}
+
+/**
+  * @brief  Clear Channel 3 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC3(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR3);
+}
+
+/**
+  * @brief  Clear Channel 4 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC4(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR4);
+}
+
+/**
+  * @brief  Clear Channel 5 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC5(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR5);
+}
+
+/**
+  * @brief  Clear Channel 6 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC6(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR6);
+}
+
+/**
+  * @brief  Clear Channel 7 transfer complete flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TC7(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TCCLR7);
+}
+
+/**
+  * @brief  Clear Channel 1 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT1(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR1);
+}
+
+/**
+  * @brief  Clear Channel 2 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT2(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR2);
+}
+
+/**
+  * @brief  Clear Channel 3 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT3(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR3);
+}
+
+/**
+  * @brief  Clear Channel 4 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT4(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR4);
+}
+
+/**
+  * @brief  Clear Channel 5 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT5(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR5);
+}
+
+/**
+  * @brief  Clear Channel 6 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT6(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR6);
+}
+
+/**
+  * @brief  Clear Channel 7 half transfer flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_HT7(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_HTCLR7);
+}
+
+/**
+  * @brief  Clear Channel 1 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE1(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR1);
+}
+
+/**
+  * @brief  Clear Channel 2 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE2(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR2);
+}
+
+/**
+  * @brief  Clear Channel 3 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE3(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR3);
+}
+
+/**
+  * @brief  Clear Channel 4 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE4(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR4);
+}
+
+/**
+  * @brief  Clear Channel 5 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE5(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR5);
+}
+
+/**
+  * @brief  Clear Channel 6 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE6(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR6);
+}
+
+/**
+  * @brief  Clear Channel 7 transfer error flag.
+  * @param  DMAx DMAx Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_ClearFlag_TE7(DMA_TypeDef *DMAx)
+{
+  WRITE_REG(DMAx->INTFCLR , DMA_INTFCLR_TERRCLR7);
+}
+
+/**
+  * @}
+  */
+
+/** @defgroup DMA_DDL_EF_IT_Management IT_Management
+  * @{
+  */
+
+/**
+  * @brief  Enable Transfer complete interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_EnableIT_TC(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  SET_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TCINTEN);
+}
+
+/**
+  * @brief  Enable Half transfer interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_EnableIT_HT(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  SET_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_HTINTEN);
+}
+
+/**
+  * @brief  Enable Transfer error interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_EnableIT_TE(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  SET_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TERRINTEN);
+}
+
+/**
+  * @brief  Disable Transfer complete interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_DisableIT_TC(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  CLEAR_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TCINTEN);
+}
+
+/**
+  * @brief  Disable Half transfer interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_DisableIT_HT(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  CLEAR_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_HTINTEN);
+}
+
+/**
+  * @brief  Disable Transfer error interrupt.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval None
+  */
+__STATIC_INLINE void DDL_DMA_DisableIT_TE(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  CLEAR_BIT(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TERRINTEN);
+}
+
+/**
+  * @brief  Check if Transfer complete interrupt is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsEnabledIT_TC(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TCINTEN) == DMA_CHCFG_TCINTEN);
+}
+
+/**
+  * @brief  Check if Half transfer interrupt is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsEnabledIT_HT(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_HTINTEN) == DMA_CHCFG_HTINTEN);
+}
+
+/**
+  * @brief  Check if Transfer error nterrup is enabled.
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref DDL_DMA_CHANNEL_1
+  *         @arg @ref DDL_DMA_CHANNEL_2
+  *         @arg @ref DDL_DMA_CHANNEL_3
+  *         @arg @ref DDL_DMA_CHANNEL_4
+  *         @arg @ref DDL_DMA_CHANNEL_5
+  *         @arg @ref DDL_DMA_CHANNEL_6
+  *         @arg @ref DDL_DMA_CHANNEL_7
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_DMA_IsEnabledIT_TE(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMA_Channel_TypeDef*)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1])))->CHCFG, DMA_CHCFG_TERRINTEN) == DMA_CHCFG_TERRINTEN);
+}
+
+/**
+  * @}
+  */
+
+#endif /* DMA1_Stream0 || DMA1_Stream1 || DMA1_Stream2 || DMA1_Stream3 || DMA1_Stream4 || DMA1_Stream5 || DMA1_Stream6 || DMA1_Stream7 */
+       /* DMA2_Stream0 || DMA2_Stream1 || DMA2_Stream2 || DMA2_Stream3 || DMA2_Stream4 || DMA2_Stream5 || DMA2_Stream6 || DMA2_Stream7 */
 
 #if defined(USE_FULL_DDL_DRIVER)
 /** @defgroup DMA_DDL_EF_Init Initialization and de-initialization functions

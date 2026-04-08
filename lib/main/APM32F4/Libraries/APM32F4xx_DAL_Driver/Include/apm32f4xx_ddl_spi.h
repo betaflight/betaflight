@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -143,13 +139,13 @@ typedef struct
   * @brief    Flags defines which can be used with DDL_SPI_ReadReg function
   * @{
   */
-#define DDL_SPI_STS_RXBNEFLG                     SPI_STS_RXBNEFLG               /*!< Rx buffer not empty flag         */
-#define DDL_SPI_STS_TXBEFLG                      SPI_STS_TXBEFLG                /*!< Tx buffer empty flag             */
-#define DDL_SPI_STS_BSYFLG                      SPI_STS_BSYFLG                /*!< Busy flag                        */
-#define DDL_SPI_STS_CRCEFLG                   SPI_STS_CRCEFLG             /*!< CRC error flag                   */
-#define DDL_SPI_STS_MEFLG                     SPI_STS_MEFLG               /*!< Mode fault flag                  */
-#define DDL_SPI_STS_OVRFLG                      SPI_STS_OVRFLG                /*!< Overrun flag                     */
-#define DDL_SPI_STS_FFERR                      SPI_STS_FFERR                /*!< TI mode frame format error flag  */
+#define DDL_SPI_STS_RXBNEFLG                SPI_STS_RXBNEFLG /*!< Rx buffer not empty flag         */
+#define DDL_SPI_STS_TXBEFLG                 SPI_STS_TXBEFLG  /*!< Tx buffer empty flag             */
+#define DDL_SPI_STS_BSYFLG                  SPI_STS_BSYFLG   /*!< Busy flag                        */
+#define DDL_SPI_STS_CRCEFLG                 SPI_STS_CRCEFLG  /*!< CRC error flag                   */
+#define DDL_SPI_STS_MEFLG                   SPI_STS_MEFLG    /*!< Mode fault flag                  */
+#define DDL_SPI_STS_OVRFLG                  SPI_STS_OVRFLG   /*!< Overrun flag                     */
+#define DDL_SPI_STS_FFERR                   SPI_STS_FFERR    /*!< TI mode frame format error flag  */
 /**
   * @}
   */
@@ -158,9 +154,9 @@ typedef struct
   * @brief    IT defines which can be used with DDL_SPI_ReadReg and  DDL_SPI_WriteReg functions
   * @{
   */
-#define DDL_SPI_CTRL2_RXBNEIEN                  SPI_CTRL2_RXBNEIEN            /*!< Rx buffer not empty interrupt enable */
-#define DDL_SPI_CTRL2_TXBEIEN                   SPI_CTRL2_TXBEIEN             /*!< Tx buffer empty interrupt enable     */
-#define DDL_SPI_CTRL2_ERRIEN                   SPI_CTRL2_ERRIEN             /*!< Error interrupt enable               */
+#define DDL_SPI_CTRL2_RXBNEIEN              SPI_CTRL2_RXBNEIEN /*!< Rx buffer not empty interrupt enable */
+#define DDL_SPI_CTRL2_TXBEIEN               SPI_CTRL2_TXBEIEN  /*!< Tx buffer empty interrupt enable     */
+#define DDL_SPI_CTRL2_ERRIEN                SPI_CTRL2_ERRIEN   /*!< Error interrupt enable               */
 /**
   * @}
   */
@@ -169,24 +165,26 @@ typedef struct
   * @{
   */
 #define DDL_SPI_MODE_MASTER                 (SPI_CTRL1_MSMCFG | SPI_CTRL1_ISSEL)    /*!< Master configuration  */
-#define DDL_SPI_MODE_SLAVE                  0x00000000U                     /*!< Slave configuration   */
+#define DDL_SPI_MODE_SLAVE                  0x00000000U                             /*!< Slave configuration   */
 /**
   * @}
   */
 
+#if defined(SPI_CTRL2_FRFCFG)
 /** @defgroup SPI_DDL_EC_PROTOCOL Serial Protocol
   * @{
   */
-#define DDL_SPI_PROTOCOL_MOTOROLA           0x00000000U               /*!< Motorola mode. Used as default value */
-#define DDL_SPI_PROTOCOL_TI                 (SPI_CTRL2_FRFCFG)             /*!< TI mode                              */
+#define DDL_SPI_PROTOCOL_MOTOROLA           0x00000000U             /*!< Motorola mode. Used as default value */
+#define DDL_SPI_PROTOCOL_TI                 (SPI_CTRL2_FRFCFG)      /*!< TI mode                              */
 /**
   * @}
   */
+#endif /* SPI_CTRL2_FRFCFG */
 
 /** @defgroup SPI_DDL_EC_PHASE Clock Phase
   * @{
   */
-#define DDL_SPI_PHASE_1EDGE                 0x00000000U               /*!< First clock transition is the first data capture edge  */
+#define DDL_SPI_PHASE_1EDGE                 0x00000000U                 /*!< First clock transition is the first data capture edge  */
 #define DDL_SPI_PHASE_2EDGE                 (SPI_CTRL1_CPHA)            /*!< Second clock transition is the first data capture edge */
 /**
   * @}
@@ -195,7 +193,7 @@ typedef struct
 /** @defgroup SPI_DDL_EC_POLARITY Clock Polarity
   * @{
   */
-#define DDL_SPI_POLARITY_LOW                0x00000000U               /*!< Clock to 0 when idle */
+#define DDL_SPI_POLARITY_LOW                0x00000000U                 /*!< Clock to 0 when idle */
 #define DDL_SPI_POLARITY_HIGH               (SPI_CTRL1_CPOL)            /*!< Clock to 1 when idle */
 /**
   * @}
@@ -204,14 +202,14 @@ typedef struct
 /** @defgroup SPI_DDL_EC_BAUDRATEPRESCALER Baud Rate Prescaler
   * @{
   */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV2      0x00000000U                                    /*!< BaudRate control equal to fPCLK/2   */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV4      (SPI_CTRL1_BRSEL_0)                                 /*!< BaudRate control equal to fPCLK/4   */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV8      (SPI_CTRL1_BRSEL_1)                                 /*!< BaudRate control equal to fPCLK/8   */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV16     (SPI_CTRL1_BRSEL_1 | SPI_CTRL1_BRSEL_0)                  /*!< BaudRate control equal to fPCLK/16  */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV32     (SPI_CTRL1_BRSEL_2)                                 /*!< BaudRate control equal to fPCLK/32  */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV64     (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_0)                  /*!< BaudRate control equal to fPCLK/64  */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV128    (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_1)                  /*!< BaudRate control equal to fPCLK/128 */
-#define DDL_SPI_BAUDRATEPRESCALER_DIV256    (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_1 | SPI_CTRL1_BRSEL_0)   /*!< BaudRate control equal to fPCLK/256 */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV2      0x00000000U                                                 /*!< BaudRate control equal to fPCLK/2   */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV4      (SPI_CTRL1_BRSEL_0)                                         /*!< BaudRate control equal to fPCLK/4   */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV8      (SPI_CTRL1_BRSEL_1)                                         /*!< BaudRate control equal to fPCLK/8   */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV16     (SPI_CTRL1_BRSEL_1 | SPI_CTRL1_BRSEL_0)                     /*!< BaudRate control equal to fPCLK/16  */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV32     (SPI_CTRL1_BRSEL_2)                                         /*!< BaudRate control equal to fPCLK/32  */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV64     (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_0)                     /*!< BaudRate control equal to fPCLK/64  */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV128    (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_1)                     /*!< BaudRate control equal to fPCLK/128 */
+#define DDL_SPI_BAUDRATEPRESCALER_DIV256    (SPI_CTRL1_BRSEL_2 | SPI_CTRL1_BRSEL_1 | SPI_CTRL1_BRSEL_0) /*!< BaudRate control equal to fPCLK/256 */
 /**
   * @}
   */
@@ -228,10 +226,10 @@ typedef struct
 /** @defgroup SPI_DDL_EC_TRANSFER_MODE Transfer Mode
   * @{
   */
-#define DDL_SPI_FULL_DUPLEX                 0x00000000U                          /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
-#define DDL_SPI_SIMPLEX_RX                  (SPI_CTRL1_RXOMEN)                     /*!< Simplex Rx mode.  Rx transfer only on 1 line    */
+#define DDL_SPI_FULL_DUPLEX                 0x00000000U                        /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
+#define DDL_SPI_SIMPLEX_RX                  (SPI_CTRL1_RXOMEN)                 /*!< Simplex Rx mode.  Rx transfer only on 1 line    */
 #define DDL_SPI_HALF_DUPLEX_RX              (SPI_CTRL1_BMEN)                   /*!< Half-Duplex Rx mode. Rx transfer on 1 line      */
-#define DDL_SPI_HALF_DUPLEX_TX              (SPI_CTRL1_BMEN | SPI_CTRL1_BMOEN)  /*!< Half-Duplex Tx mode. Tx transfer on 1 line      */
+#define DDL_SPI_HALF_DUPLEX_TX              (SPI_CTRL1_BMEN | SPI_CTRL1_BMOEN) /*!< Half-Duplex Tx mode. Tx transfer on 1 line      */
 /**
   * @}
   */
@@ -240,7 +238,7 @@ typedef struct
   * @{
   */
 #define DDL_SPI_NSS_SOFT                    (SPI_CTRL1_SSEN)                     /*!< NSS managed internally. NSS pin not used and free              */
-#define DDL_SPI_NSS_HARD_INPUT              0x00000000U                       /*!< NSS pin used in Input. Only used in Master mode                */
+#define DDL_SPI_NSS_HARD_INPUT              0x00000000U                          /*!< NSS pin used in Input. Only used in Master mode                */
 #define DDL_SPI_NSS_HARD_OUTPUT             (((uint32_t)SPI_CTRL2_SSOEN << 16U)) /*!< NSS pin used in Output. Only used in Slave mode as chip select */
 /**
   * @}
@@ -249,8 +247,8 @@ typedef struct
 /** @defgroup SPI_DDL_EC_DATAWIDTH Datawidth
   * @{
   */
-#define DDL_SPI_DATAWIDTH_8BIT              0x00000000U                       /*!< Data length for SPI transfer:  8 bits */
-#define DDL_SPI_DATAWIDTH_16BIT             (SPI_CTRL1_DFLSEL)                     /*!< Data length for SPI transfer:  16 bits */
+#define DDL_SPI_DATAWIDTH_8BIT              0x00000000U                     /*!< Data length for SPI transfer:  8 bits */
+#define DDL_SPI_DATAWIDTH_16BIT             (SPI_CTRL1_DFLSEL)              /*!< Data length for SPI transfer:  16 bits */
 /**
   * @}
   */
@@ -259,7 +257,7 @@ typedef struct
 /** @defgroup SPI_DDL_EC_CRC_CALCULATION CRC Calculation
   * @{
   */
-#define DDL_SPI_CRCCALCULATION_DISABLE      0x00000000U               /*!< CRC calculation disabled */
+#define DDL_SPI_CRCCALCULATION_DISABLE      0x00000000U                 /*!< CRC calculation disabled */
 #define DDL_SPI_CRCCALCULATION_ENABLE       (SPI_CTRL1_CRCEN)           /*!< CRC calculation enabled  */
 /**
   * @}
@@ -369,6 +367,7 @@ __STATIC_INLINE uint32_t DDL_SPI_GetMode(SPI_TypeDef *SPIx)
   return (uint32_t)(READ_BIT(SPIx->CTRL1, SPI_CTRL1_MSMCFG | SPI_CTRL1_ISSEL));
 }
 
+#if defined(SPI_CTRL2_FRFCFG)
 /**
   * @brief  Set serial protocol used
   * @note   This bit should be written only when SPI is disabled (SPE = 0) for correct operation.
@@ -394,6 +393,7 @@ __STATIC_INLINE uint32_t DDL_SPI_GetStandard(SPI_TypeDef *SPIx)
 {
   return (uint32_t)(READ_BIT(SPIx->CTRL2, SPI_CTRL2_FRFCFG));
 }
+#endif /* SPI_CTRL2_FRFCFG */
 
 /**
   * @brief  Set clock phase
@@ -776,6 +776,7 @@ __STATIC_INLINE uint32_t DDL_SPI_IsActiveFlag_BSY(SPI_TypeDef *SPIx)
   return ((READ_BIT(SPIx->STS, SPI_STS_BSYFLG) == (SPI_STS_BSYFLG)) ? 1UL : 0UL);
 }
 
+#if defined(SPI_STS_FFERR)
 /**
   * @brief  Get frame format error flag
   * @param  SPIx SPI Instance
@@ -785,6 +786,7 @@ __STATIC_INLINE uint32_t DDL_SPI_IsActiveFlag_FRE(SPI_TypeDef *SPIx)
 {
   return ((READ_BIT(SPIx->STS, SPI_STS_FFERR) == (SPI_STS_FFERR)) ? 1UL : 0UL);
 }
+#endif /* SPI_STS_FFERR */
 
 /**
   * @brief  Clear CRC error flag
@@ -827,6 +829,7 @@ __STATIC_INLINE void DDL_SPI_ClearFlag_OVR(SPI_TypeDef *SPIx)
   (void) tmpreg;
 }
 
+#if defined(SPI_STS_FFERR)
 /**
   * @brief  Clear frame format error flag
   * @note   Clearing this flag is done by reading SPIx_STS register
@@ -839,6 +842,7 @@ __STATIC_INLINE void DDL_SPI_ClearFlag_FRE(SPI_TypeDef *SPIx)
   tmpreg = SPIx->STS;
   (void) tmpreg;
 }
+#endif /* SPI_STS_FFERR */
 
 /**
   * @}
@@ -1101,7 +1105,8 @@ void        DDL_SPI_StructInit(DDL_SPI_InitTypeDef *SPI_InitStruct);
 /**
   * @}
   */
-
+#if defined(APM32F402xx) || defined(APM32F403xx) || defined(APM32F405xx) || defined(APM32F407xx) || \
+    defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
 /** @defgroup I2S_DDL I2S
   * @{
   */
@@ -1544,38 +1549,6 @@ __STATIC_INLINE uint32_t DDL_I2S_IsEnabledMasterClock(SPI_TypeDef *SPIx)
   return ((READ_BIT(SPIx->I2SPSC, SPI_I2SPSC_MCOEN) == (SPI_I2SPSC_MCOEN)) ? 1UL : 0UL);
 }
 
-#if defined(SPI_I2SCFG_ASTRTEN)
-/**
-  * @brief  Enable asynchronous start
-  * @param  SPIx SPI Instance
-  * @retval None
-  */
-__STATIC_INLINE void DDL_I2S_EnableAsyncStart(SPI_TypeDef *SPIx)
-{
-  SET_BIT(SPIx->I2SCFG, SPI_I2SCFG_ASTRTEN);
-}
-
-/**
-  * @brief  Disable  asynchronous start
-  * @param  SPIx SPI Instance
-  * @retval None
-  */
-__STATIC_INLINE void DDL_I2S_DisableAsyncStart(SPI_TypeDef *SPIx)
-{
-  CLEAR_BIT(SPIx->I2SCFG, SPI_I2SCFG_ASTRTEN);
-}
-
-/**
-  * @brief  Check if asynchronous start is enabled
-  * @param  SPIx SPI Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_I2S_IsEnabledAsyncStart(SPI_TypeDef *SPIx)
-{
-  return ((READ_BIT(SPIx->I2SCFG, SPI_I2SCFG_ASTRTEN) == (SPI_I2SCFG_ASTRTEN)) ? 1UL : 0UL);
-}
-#endif /* SPI_I2SCFG_ASTRTEN */
-
 /**
   * @}
   */
@@ -1634,6 +1607,7 @@ __STATIC_INLINE uint32_t DDL_I2S_IsActiveFlag_UDR(SPI_TypeDef *SPIx)
   return ((READ_BIT(SPIx->STS, SPI_STS_UDRFLG) == (SPI_STS_UDRFLG)) ? 1UL : 0UL);
 }
 
+#if defined(SPI_STS_FFERR)
 /**
   * @brief  Get frame format error flag
   * @param  SPIx SPI Instance
@@ -1643,6 +1617,7 @@ __STATIC_INLINE uint32_t DDL_I2S_IsActiveFlag_FRE(SPI_TypeDef *SPIx)
 {
   return DDL_SPI_IsActiveFlag_FRE(SPIx);
 }
+#endif /* SPI_STS_FFERR */
 
 /**
   * @brief  Get channel side flag.
@@ -1679,6 +1654,7 @@ __STATIC_INLINE void DDL_I2S_ClearFlag_UDR(SPI_TypeDef *SPIx)
   (void)tmpreg;
 }
 
+#if defined(SPI_STS_FFERR)
 /**
   * @brief  Clear frame format error flag
   * @param  SPIx SPI Instance
@@ -1688,6 +1664,7 @@ __STATIC_INLINE void DDL_I2S_ClearFlag_FRE(SPI_TypeDef *SPIx)
 {
   DDL_SPI_ClearFlag_FRE(SPIx);
 }
+#endif /* SPI_STS_FFERR */
 
 /**
   * @}
@@ -1915,6 +1892,8 @@ ErrorStatus DDL_I2S_InitFullDuplex(SPI_TypeDef *I2Sxext, DDL_I2S_InitTypeDef *I2
 /**
   * @}
   */
+
+#endif /* APM32F402xx || APM32F403xx || APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 
 #endif /* defined (SPI1) || defined (SPI2) || defined (SPI3) || defined (SPI4) || defined (SPI5) || defined(SPI6) */
 

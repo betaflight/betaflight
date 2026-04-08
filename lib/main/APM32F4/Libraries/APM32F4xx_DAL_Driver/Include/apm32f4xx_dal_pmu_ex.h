@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,18 +27,14 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef APM32F4xx_DAL_PMU_EX_H
@@ -57,9 +53,9 @@
 
 /** @addtogroup PMUEx
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup PMUEx_Exported_Constants PMUEx Exported Constants
   * @{
@@ -68,30 +64,32 @@
 /** @defgroup PMUEx_Regulator_Voltage_Scale PMUEx Regulator Voltage Scale
   * @{
   */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define PMU_REGULATOR_VOLTAGE_SCALE1         PMU_CTRL_VOSSEL             /* Scale 1 mode(default value at reset): the maximum value of fHCLK = 168 MHz. */
 #define PMU_REGULATOR_VOLTAGE_SCALE2         0x00000000U            /* Scale 2 mode: the maximum value of fHCLK = 144 MHz. */
-#else
+#elif defined(APM32F411xx)
 #define PMU_REGULATOR_VOLTAGE_SCALE1         PMU_CTRL_VOSSEL             /* Scale 1 mode(default value at reset): the maximum value of fHCLK is 168 MHz. It can be extended to
                                                                        180 MHz by activating the over-drive mode. */
 #define PMU_REGULATOR_VOLTAGE_SCALE2         PMU_CTRL_VOSSEL_1           /* Scale 2 mode: the maximum value of fHCLK is 144 MHz. It can be extended to
                                                                        168 MHz by activating the over-drive mode. */
 #define PMU_REGULATOR_VOLTAGE_SCALE3         PMU_CTRL_VOSSEL_0           /* Scale 3 mode: the maximum value of fHCLK is 120 MHz. */
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */ 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup PMUEx_Exported_Constants PMUEx Exported Constants
   *  @{
   */
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  macros configure the main internal regulator output voltage.
   * @param  __REGULATOR__ specifies the regulator output voltage to achieve
   *         a tradeoff between performance and power consumption when the device does
@@ -108,7 +106,7 @@
                                                             tmpreg = READ_BIT(PMU->CTRL, PMU_CTRL_VOSSEL);             \
                                                             UNUSED(tmpreg);                                     \
                                                           } while(0U)
-#else
+#elif defined(APM32F411xx)
 /** @brief  macros configure the main internal regulator output voltage.
   * @param  __REGULATOR__ specifies the regulator output voltage to achieve
   *         a tradeoff between performance and power consumption when the device does
@@ -126,7 +124,7 @@
                                                             tmpreg = READ_BIT(PMU->CTRL, PMU_CTRL_VOSSEL);             \
                                                             UNUSED(tmpreg);                                     \
                                                           } while(0U)
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */ 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /**
   * @}
@@ -136,16 +134,19 @@
 /** @addtogroup PMUEx_Exported_Functions PMUEx Exported Functions
   *  @{
   */
- 
+
 /** @addtogroup PMUEx_Exported_Functions_Group1
   * @{
   */
 void DAL_PMUEx_EnableFlashPowerDown(void);
-void DAL_PMUEx_DisableFlashPowerDown(void); 
+void DAL_PMUEx_DisableFlashPowerDown(void);
 DAL_StatusTypeDef DAL_PMUEx_EnableBkUpReg(void);
-DAL_StatusTypeDef DAL_PMUEx_DisableBkUpReg(void); 
+DAL_StatusTypeDef DAL_PMUEx_DisableBkUpReg(void);
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 uint32_t DAL_PMUEx_GetVoltageRange(void);
 DAL_StatusTypeDef DAL_PMUEx_ControlVoltageScaling(uint32_t VoltageScaling);
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #if defined(APM32F411xx)
 void DAL_PMUEx_EnableMainRegulatorLowVoltage(void);
@@ -184,7 +185,7 @@ void DAL_PMUEx_DisableLowRegulatorLowVoltage(void);
 /* Alias word address of ODSWEN bit */
 #define ODSWEN_BIT_NUMBER        PMU_CTRL_ODSWEN_Pos
 #define CTRL_ODSWEN_BB           (uint32_t)(PERIPH_BB_BASE + (PMU_CTRL_OFFSET_BB * 32U) + (ODSWEN_BIT_NUMBER * 4U))
-    
+
 /* Alias word address of MRLVDS bit */
 #define MRLV_BIT_NUMBER          PMU_CTRL_MRLV_Pos
 #define CTRL_MRLV_BB             (uint32_t)(PERIPH_BB_BASE + (PMU_CTRL_OFFSET_BB * 32U) + (MRLV_BIT_NUMBER * 4U))
@@ -199,7 +200,7 @@ void DAL_PMUEx_DisableLowRegulatorLowVoltage(void);
 
 /** @defgroup PMUEx_CSTS_register_alias PMUx CSTS Register alias address
   * @{
-  */  
+  */
 /* --- CSTS Register ---*/
 /* Alias word address of BRE bit */
 #define BRE_BIT_NUMBER   PMU_CSTS_BKPREN_Pos
@@ -222,14 +223,15 @@ void DAL_PMUEx_DisableLowRegulatorLowVoltage(void);
   * @{
   */
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define IS_PMU_VOLTAGE_SCALING_RANGE(VOLTAGE) (((VOLTAGE) == PMU_REGULATOR_VOLTAGE_SCALE1) || \
                                                ((VOLTAGE) == PMU_REGULATOR_VOLTAGE_SCALE2))
 #else
 #define IS_PMU_VOLTAGE_SCALING_RANGE(VOLTAGE) (((VOLTAGE) == PMU_REGULATOR_VOLTAGE_SCALE1) || \
                                                ((VOLTAGE) == PMU_REGULATOR_VOLTAGE_SCALE2) || \
                                                ((VOLTAGE) == PMU_REGULATOR_VOLTAGE_SCALE3))
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */ 
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 #define IS_PMU_WAKEUP_PIN(PIN) ((PIN) == PMU_WAKEUP_PIN1)
 
@@ -243,12 +245,12 @@ void DAL_PMUEx_DisableLowRegulatorLowVoltage(void);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

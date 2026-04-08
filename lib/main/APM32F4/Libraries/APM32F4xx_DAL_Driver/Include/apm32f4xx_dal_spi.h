@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -308,7 +304,10 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   * @{
   */
 #define SPI_TIMODE_DISABLE              (0x00000000U)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define SPI_TIMODE_ENABLE               SPI_CTRL2_FRFCFG
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -337,13 +336,19 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   */
 #define SPI_FLAG_RXNE                   SPI_STS_RXBNEFLG   /* SPI status flag: Rx buffer not empty flag       */
 #define SPI_FLAG_TXE                    SPI_STS_TXBEFLG    /* SPI status flag: Tx buffer empty flag           */
-#define SPI_FLAG_BSY                    SPI_STS_BSYFLG    /* SPI status flag: Busy flag                      */
-#define SPI_FLAG_CRCERR                 SPI_STS_CRCEFLG /* SPI Error flag: CRC error flag                  */
-#define SPI_FLAG_MODF                   SPI_STS_MEFLG   /* SPI Error flag: Mode fault flag                 */
-#define SPI_FLAG_OVR                    SPI_STS_OVRFLG    /* SPI Error flag: Overrun flag                    */
-#define SPI_FLAG_FRE                    SPI_STS_FFERR    /* SPI Error flag: TI mode frame format error flag */
+#define SPI_FLAG_BSY                    SPI_STS_BSYFLG     /* SPI status flag: Busy flag                      */
+#define SPI_FLAG_CRCERR                 SPI_STS_CRCEFLG    /* SPI Error flag: CRC error flag                  */
+#define SPI_FLAG_MODF                   SPI_STS_MEFLG      /* SPI Error flag: Mode fault flag                 */
+#define SPI_FLAG_OVR                    SPI_STS_OVRFLG     /* SPI Error flag: Overrun flag                    */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define SPI_FLAG_FRE                    SPI_STS_FFERR      /* SPI Error flag: TI mode frame format error flag */
 #define SPI_FLAG_MASK                   (SPI_STS_RXBNEFLG | SPI_STS_TXBEFLG | SPI_STS_BSYFLG | SPI_STS_CRCEFLG\
                                          | SPI_STS_MEFLG | SPI_STS_OVRFLG | SPI_STS_FFERR)
+#else
+#define SPI_FLAG_MASK                   (SPI_STS_RXBNEFLG | SPI_STS_TXBEFLG | SPI_STS_BSYFLG | SPI_STS_CRCEFLG\
+                                         | SPI_STS_MEFLG | SPI_STS_OVRFLG)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -420,7 +425,8 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   *            @arg SPI_FLAG_MODF: Mode fault flag
   *            @arg SPI_FLAG_OVR: Overrun flag
   *            @arg SPI_FLAG_BSY: Busy flag
-  *            @arg SPI_FLAG_FRE: Frame format error flag
+  *            @arg SPI_FLAG_FRE: Frame format error flag (*)
+  *            (*) This parameter is not available for APM32F402/403xx.
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
 #define __DAL_SPI_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->STS) & (__FLAG__)) == (__FLAG__))
@@ -437,12 +443,12 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
-#define __DAL_SPI_CLEAR_MODFFLAG(__HANDLE__)             \
-  do{                                                    \
-    __IO uint32_t tmpreg_modf = 0x00U;                   \
-    tmpreg_modf = (__HANDLE__)->Instance->STS;            \
+#define __DAL_SPI_CLEAR_MODFFLAG(__HANDLE__)                   \
+  do{                                                          \
+    __IO uint32_t tmpreg_modf = 0x00U;                         \
+    tmpreg_modf = (__HANDLE__)->Instance->STS;                 \
     CLEAR_BIT((__HANDLE__)->Instance->CTRL1, SPI_CTRL1_SPIEN); \
-    UNUSED(tmpreg_modf);                                 \
+    UNUSED(tmpreg_modf);                                       \
   } while(0U)
 
 /** @brief  Clear the SPI OVR pending flag.
@@ -453,11 +459,13 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
 #define __DAL_SPI_CLEAR_OVRFLAG(__HANDLE__)        \
   do{                                              \
     __IO uint32_t tmpreg_ovr = 0x00U;              \
-    tmpreg_ovr = (__HANDLE__)->Instance->DATA;       \
-    tmpreg_ovr = (__HANDLE__)->Instance->STS;       \
+    tmpreg_ovr = (__HANDLE__)->Instance->DATA;     \
+    tmpreg_ovr = (__HANDLE__)->Instance->STS;      \
     UNUSED(tmpreg_ovr);                            \
   } while(0U)
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Clear the SPI FRE pending flag.
   * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
@@ -466,9 +474,10 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
 #define __DAL_SPI_CLEAR_FREFLAG(__HANDLE__)        \
   do{                                              \
     __IO uint32_t tmpreg_fre = 0x00U;              \
-    tmpreg_fre = (__HANDLE__)->Instance->STS;       \
+    tmpreg_fre = (__HANDLE__)->Instance->STS;      \
     UNUSED(tmpreg_fre);                            \
   }while(0U)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @brief  Enable the SPI peripheral.
   * @param  __HANDLE__ specifies the SPI Handle.
@@ -525,7 +534,8 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   *            @arg SPI_FLAG_MODF: Mode fault flag
   *            @arg SPI_FLAG_OVR: Overrun flag
   *            @arg SPI_FLAG_BSY: Busy flag
-  *            @arg SPI_FLAG_FRE: Frame format error flag
+  *            @arg SPI_FLAG_FRE: Frame format error flag (*)
+  *            (*) This parameter is not available for APM32F402/403xx.
   * @retval SET or RESET.
   */
 #define SPI_CHECK_FLAG(__STS__, __FLAG__) ((((__STS__) & ((__FLAG__) & SPI_FLAG_MASK)) == \
@@ -633,8 +643,12 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   *         This parameter can be a value of @ref SPI_TI_mode
   * @retval None
   */
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
 #define IS_SPI_TIMODE(__MODE__)    (((__MODE__) == SPI_TIMODE_DISABLE) || \
                                     ((__MODE__) == SPI_TIMODE_ENABLE))
+#else
+#define IS_SPI_TIMODE(__MODE__)    ((__MODE__) == SPI_TIMODE_DISABLE)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 
 /** @brief  Checks if SPI CRC calculation enabled state is in allowed range.
   * @param  __CALCULATION__ specifies the SPI CRC calculation enable state.

@@ -4,9 +4,9 @@
  *
  * @brief       CMSIS APM32F465xx Device Peripheral Access Layer Header File.
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-12-01
+ * @date        2024-08-01
  *
  * @attention
  *
@@ -22,7 +22,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (C) 2023 Geehy Semiconductor.
+ * Copyright (c) 2017 STMicroelectronics.
+ * Copyright (C) 2023-2024 Geehy Semiconductor.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -38,7 +39,7 @@
 /** @addtogroup apm32f465xx
   * @{
   */
-    
+
 #ifndef __APM32F465xx_H
 #define __APM32F465xx_H
 
@@ -51,7 +52,7 @@
   */
 
 /**
-  * @brief Configuration of the Cortex-M4 Processor and Core Peripherals 
+  * @brief Configuration of the Cortex-M4 Processor and Core Peripherals
   */
 #define __CM4_REV                 0x0001U  /*!< Core revision r0p1                            */
 #define __MPU_PRESENT             1U       /*!< APM32F4XX provides an MPU                     */
@@ -62,14 +63,14 @@
 /**
   * @}
   */
-  
+
 /** @addtogroup Peripheral_interrupt_number_definition
   * @{
   */
 
 /**
- * @brief APM32F4XX Interrupt Number Definition, according to the selected device 
- *        in @ref Library_configuration_section 
+ * @brief APM32F4XX Interrupt Number Definition, according to the selected device
+ *        in @ref Library_configuration_section
  */
 typedef enum
 {
@@ -144,7 +145,7 @@ typedef enum
   DMA2_Stream2_IRQn           = 58,     /*!< DMA2 Stream 2 global Interrupt                                    */
   DMA2_Stream3_IRQn           = 59,     /*!< DMA2 Stream 3 global Interrupt                                    */
   DMA2_Stream4_IRQn           = 60,     /*!< DMA2 Stream 4 global Interrupt                                    */
-  
+
   CAN2_TX_IRQn                = 63,     /*!< CAN2 TX Interrupt                                                 */
   CAN2_RX0_IRQn               = 64,     /*!< CAN2 RX0 Interrupt                                                */
   CAN2_RX1_IRQn               = 65,     /*!< CAN2 RX1 Interrupt                                                */
@@ -175,10 +176,10 @@ typedef enum
 
 /** @addtogroup Peripheral_registers_structures
   * @{
-  */   
+  */
 
-/** 
-  * @brief Analog to Digital Converter  
+/**
+  * @brief Analog to Digital Converter
   */
 
 typedef struct
@@ -214,8 +215,8 @@ typedef struct
 } ADC_Common_TypeDef;
 
 
-/** 
-  * @brief Controller Area Network TxMailBox 
+/**
+  * @brief Controller Area Network TxMailBox
   */
 
 typedef struct
@@ -226,10 +227,10 @@ typedef struct
   __IO uint32_t TXMDH;  /*!< CAN mailbox data high register */
 } CAN_TxMailBox_TypeDef;
 
-/** 
-  * @brief Controller Area Network FIFOMailBox 
+/**
+  * @brief Controller Area Network FIFOMailBox
   */
-  
+
 typedef struct
 {
   __IO uint32_t RXMID;  /*!< CAN receive FIFO mailbox identifier register */
@@ -238,20 +239,20 @@ typedef struct
   __IO uint32_t RXMDH;  /*!< CAN receive FIFO mailbox data high register */
 } CAN_FIFOMailBox_TypeDef;
 
-/** 
-  * @brief Controller Area Network FilterRegister 
+/**
+  * @brief Controller Area Network FilterRegister
   */
-  
+
 typedef struct
 {
   __IO uint32_t FBANK1; /*!< CAN Filter bank register 1 */
   __IO uint32_t FBANK2; /*!< CAN Filter bank register 1 */
 } CAN_FilterRegister_TypeDef;
 
-/** 
-  * @brief Controller Area Network 
+/**
+  * @brief Controller Area Network
   */
-  
+
 typedef struct
 {
   __IO uint32_t              MCTRL;               /*!< CAN master control register,         Address offset: 0x00          */
@@ -274,12 +275,12 @@ typedef struct
   __IO uint32_t              FFASS;               /*!< CAN filter FIFO assignment register, Address offset: 0x214         */
   uint32_t                   RESERVED4;           /*!< Reserved, 0x218                                                    */
   __IO uint32_t              FACT;                /*!< CAN filter activation register,      Address offset: 0x21C         */
-  uint32_t                   RESERVED5[8];        /*!< Reserved, 0x220-0x23F                                              */ 
+  uint32_t                   RESERVED5[8];        /*!< Reserved, 0x220-0x23F                                              */
   CAN_FilterRegister_TypeDef sFilterRegister[28]; /*!< CAN Filter Register,                 Address offset: 0x240-0x31C   */
 } CAN_TypeDef;
 
-/** 
-  * @brief CRC calculation unit 
+/**
+  * @brief CRC calculation unit
   */
 
 typedef struct
@@ -291,7 +292,7 @@ typedef struct
   __IO uint32_t CTRL;       /*!< CRC Control register,          Address offset: 0x08 */
 } CRC_TypeDef;
 
-/** 
+/**
   * @brief Digital to Analog Converter
   */
 
@@ -313,7 +314,7 @@ typedef struct
   __IO uint32_t STS;        /*!< DAC status register,                                     Address offset: 0x34 */
 } DAC_TypeDef;
 
-/** 
+/**
   * @brief Debug MCU
   */
 
@@ -325,7 +326,7 @@ typedef struct
   __IO uint32_t APB2F;    /*!< Debug MCU APB2 freeze register,   Address offset: 0x0C */
 } DBGMCU_TypeDef;
 
-/** 
+/**
   * @brief DMA Controller
   */
 
@@ -347,7 +348,7 @@ typedef struct
   __IO uint32_t HIFCLR;   /*!< DMA high interrupt flag clear register, Address offset: 0x0C */
 } DMA_TypeDef;
 
-/** 
+/**
   * @brief External Interrupt/Event Controller
   */
 
@@ -361,7 +362,7 @@ typedef struct
   __IO uint32_t IPEND;    /*!< EINT Pending register,                   Address offset: 0x14 */
 } EINT_TypeDef;
 
-/** 
+/**
   * @brief FLASH Registers
   */
 
@@ -373,19 +374,18 @@ typedef struct
   __IO uint32_t STS;      /*!< FLASH status register,           Address offset: 0x0C */
   __IO uint32_t CTRL;     /*!< FLASH control register,          Address offset: 0x10 */
   __IO uint32_t OPTCTRL;  /*!< FLASH option control register ,  Address offset: 0x14 */
-  __IO uint32_t OPTCTRL1; /*!< FLASH option control register 1, Address offset: 0x18 */
 } FLASH_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller
   */
 
 typedef struct
 {
-  __IO uint32_t CSTR[8];    /*!< NOR/PSRAM chip-select control register(CSCTRL) and chip-select timing register(CSTIM), Address offset: 0x00-1C */   
+  __IO uint32_t CSCTRL[8];    /*!< NOR/PSRAM chip-select control register(CSCTRL) and chip-select timing register(CSTIM), Address offset: 0x00-1C */
 } SMC_Bank1_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank1E
   */
 
@@ -394,10 +394,10 @@ typedef struct
   __IO uint32_t WRTTIM[7];    /*!< NOR/PSRAM write timing registers, Address offset: 0x104-0x11C */
 } SMC_Bank1E_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank2
   */
-  
+
 typedef struct
 {
   __IO uint32_t CTRL2;        /*!< NAND Flash control register 2,                       Address offset: 0x60 */
@@ -416,7 +416,7 @@ typedef struct
   __IO uint32_t ECCRS3;       /*!< NAND Flash ECC result registers 3,                   Address offset: 0x94 */
 } SMC_Bank2_3_TypeDef;
 
-/** 
+/**
   * @brief Flexible Static Memory Controller Bank4
   */
 
@@ -427,9 +427,9 @@ typedef struct
   __IO uint32_t CMSTIM4;      /*!< PC Card  Common memory space timing register 4,    Address offset: 0xA8 */
   __IO uint32_t AMSTIM4;      /*!< PC Card  Attribute memory space timing register 4, Address offset: 0xAC */
   __IO uint32_t IOSTIM4;      /*!< PC Card  I/O space timing register 4,              Address offset: 0xB0 */
-} SMC_Bank4_TypeDef; 
+} SMC_Bank4_TypeDef;
 
-/** 
+/**
   * @brief General Purpose I/O
   */
 
@@ -446,7 +446,7 @@ typedef struct
   __IO uint32_t ALF[2];   /*!< GPIO alternate function registers,     Address offset: 0x20-0x24 */
 } GPIO_TypeDef;
 
-/** 
+/**
   * @brief System configuration controller
   */
 
@@ -459,7 +459,7 @@ typedef struct
   __IO uint32_t CCCTRL;       /*!< SYSCFG Compensation cell control register,         Address offset: 0x20      */
 } SYSCFG_TypeDef;
 
-/** 
+/**
   * @brief Inter-integrated Circuit Interface
   */
 
@@ -476,7 +476,7 @@ typedef struct
   __IO uint32_t RISETMAX;   /*!< I2C RISETMAX register,      Address offset: 0x20 */
 } I2C_TypeDef;
 
-/** 
+/**
   * @brief Independent WATCHDOG
   */
 
@@ -489,7 +489,7 @@ typedef struct
 } IWDT_TypeDef;
 
 
-/** 
+/**
   * @brief Power Control
   */
 
@@ -499,7 +499,7 @@ typedef struct
   __IO uint32_t CSTS; /*!< PMU power control/status register, Address offset: 0x04 */
 } PMU_TypeDef;
 
-/** 
+/**
   * @brief Reset and Clock Control
   */
 
@@ -537,7 +537,7 @@ typedef struct
   __IO uint32_t PLL2CFG;        /*!< RCM PLLI2S configuration register,                           Address offset: 0x84 */
 } RCM_TypeDef;
 
-/** 
+/**
   * @brief Real-Time Clock
   */
 
@@ -585,7 +585,7 @@ typedef struct
   __IO uint32_t BAKP19;  /*!< RTC backup register 19,                                   Address offset: 0x9C */
 } RTC_TypeDef;
 
-/** 
+/**
   * @brief SD host Interface
   */
 
@@ -613,7 +613,7 @@ typedef struct
   __IO uint32_t FIFODATA;             /*!< SDIO data FIFO register,        Address offset: 0x80 */
 } SDIO_TypeDef;
 
-/** 
+/**
   * @brief Serial Peripheral Interface
   */
 
@@ -631,7 +631,7 @@ typedef struct
 } SPI_TypeDef;
 
 
-/** 
+/**
   * @brief TMR
   */
 
@@ -656,14 +656,14 @@ typedef struct
   __IO uint32_t CC4;          /*!< TMR capture/compare register 4,      Address offset: 0x40 */
   __IO uint32_t BDT;          /*!< TMR break and dead-time register,    Address offset: 0x44 */
   __IO uint32_t DCTRL;        /*!< TMR DMA control register,            Address offset: 0x48 */
-  __IO uint32_t DMAR;         /*!< TMR DMA address for full transfer,   Address offset: 0x4C */
-  __IO uint32_t OR;           /*!< TMR option register,                 Address offset: 0x50 */
+  __IO uint32_t DMADDR;       /*!< TMR DMA address for full transfer,   Address offset: 0x4C */
+  __IO uint32_t OPT;          /*!< TMR option register,                 Address offset: 0x50 */
 } TMR_TypeDef;
 
-/** 
+/**
   * @brief Universal Synchronous Asynchronous Receiver Transmitter
   */
- 
+
 typedef struct
 {
   __IO uint32_t STS;        /*!< USART Status register,                   Address offset: 0x00 */
@@ -675,29 +675,29 @@ typedef struct
   __IO uint32_t GTPSC;      /*!< USART Guard time and prescaler register, Address offset: 0x18 */
 } USART_TypeDef;
 
-/** 
+/**
   * @brief Window WATCHDOG
   */
 
 typedef struct
 {
   __IO uint32_t CTRL; /*!< WWDT Control register,       Address offset: 0x00 */
-  __IO uint32_t CFR;  /*!< WWDT Configuration register, Address offset: 0x04 */
+  __IO uint32_t CFG;  /*!< WWDT Configuration register, Address offset: 0x04 */
   __IO uint32_t STS;  /*!< WWDT Status register,        Address offset: 0x08 */
 } WWDT_TypeDef;
 
-/** 
+/**
   * @brief RNG
   */
-  
-typedef struct 
+
+typedef struct
 {
   __IO uint32_t CTRL; /*!< RNG control register, Address offset: 0x00 */
   __IO uint32_t STS;  /*!< RNG status register,  Address offset: 0x04 */
   __IO uint32_t DATA; /*!< RNG data register,    Address offset: 0x08 */
 } RNG_TypeDef;
 
-/** 
+/**
   * @brief USB_OTG_Core_Registers
   */
 typedef struct
@@ -722,10 +722,10 @@ typedef struct
   __IO uint32_t DTXFIFO[0x0F];        /*!< dev Periodic Transmit FIFO                        */
 } USB_OTG_GlobalTypeDef;
 
-/** 
+/**
   * @brief USB_OTG_device_Registers
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DCFG;           /*!< dev Configuration Register   800h */
   __IO uint32_t DCTRL;          /*!< dev Control Register         804h */
@@ -749,10 +749,10 @@ typedef struct
   __IO uint32_t DOUT1MASK;      /*!< dedicated EP msk             884h */
 } USB_OTG_DeviceTypeDef;
 
-/** 
+/**
   * @brief USB_OTG_IN_Endpoint-Specific_Register
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DIEPCTRL;         /*!< dev IN Endpoint Control Reg    900h + (ep_num * 20h) + 00h */
   uint32_t Reserved04;            /*!< Reserved                       900h + (ep_num * 20h) + 04h */
@@ -764,10 +764,10 @@ typedef struct
   uint32_t Reserved18;            /*!< Reserved  900h+(ep_num*20h)+1Ch-900h+ (ep_num * 20h) + 1Ch */
 } USB_OTG_INEndpointTypeDef;
 
-/** 
+/**
   * @brief USB_OTG_OUT_Endpoint-Specific_Registers
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t DOEPCTRL;       /*!< dev OUT Endpoint Control Reg           B00h + (ep_num * 20h) + 00h */
   uint32_t Reserved04;          /*!< Reserved                               B00h + (ep_num * 20h) + 04h */
@@ -778,10 +778,10 @@ typedef struct
   uint32_t Reserved18[2];       /*!< Reserved B00h + (ep_num * 20h) + 18h - B00h + (ep_num * 20h) + 1Ch */
 } USB_OTG_OUTEndpointTypeDef;
 
-/** 
+/**
   * @brief USB_OTG_Host_Mode_Register_Structures
   */
-typedef struct 
+typedef struct
 {
   __IO uint32_t HCFG;             /*!< Host Configuration Register          400h */
   __IO uint32_t HFIVL;            /*!< Host Frame Interval Register         404h */
@@ -792,7 +792,7 @@ typedef struct
   __IO uint32_t HACHIMASK;        /*!< Host All Channels Interrupt Mask     418h */
 } USB_OTG_HostTypeDef;
 
-/** 
+/**
   * @brief USB_OTG_Host_Channel_Specific_Registers
   */
 typedef struct
@@ -805,6 +805,30 @@ typedef struct
   __IO uint32_t HCHDMA;           /*!< Host Channel DMA Address Register        514h */
   uint32_t Reserved[2];           /*!< Reserved                                      */
 } USB_OTG_HostChannelTypeDef;
+
+/**
+  * @brief USB_OTG_HS2_Specific_Registers
+  */
+typedef struct
+{
+    __IO uint32_t USB_SWITCH;               /*!< USB Switch Register 200h */
+    __IO uint32_t POWERON_CORE;             /*!< Power On Core Register 204h */
+    __IO uint32_t USB_PLL_EN;               /*!< USB PLL Enable Register 208h */
+    __IO uint32_t SHORT_5V_ENABLE;          /*!< VBUS Short 5V Enable 20Ch */
+    __IO uint32_t OTG_SUSPENDM;             /*!< OTG VBUS Suspend 210h */
+    __IO uint32_t TXBITSTUFFENABLE;         /*!< TX Bit Stuff Enable 214h */
+    __IO uint32_t PLLICP_SEL_I2C;           /*!< PLL Charge Current Setting 218h */
+    __IO uint32_t HSZR_CNTL_I2C;            /*!< The DP/DM to the Ground Impedance Setting 21Ch */
+    __IO uint32_t SQVTH_CNTL_I2C;           /*!< The SQ Reference Voltage Setting 220h*/
+    __IO uint32_t SW_RREF_I2C;              /*!< The DP/DM Output Swing Setting When HS Mode 224h */
+    __IO uint32_t SW_BUF_I2C;               /*!< The TX Driver Setting 228h */
+    __IO uint32_t TX2RX_T_CFG_I2C;          /*!< Debug Control Signal 22Ch */
+    __IO uint32_t TEST_ANA_FAST_I2C;        /*!< Debug Control Signal 230h */
+    __IO uint32_t CLK_MODE_I2C;             /*!< Debug control signal 234h */
+    __IO uint32_t USB_DBNCE_FLTR_BYPASS;    /*!< Bypass debounce filters for avalid, bvalid, vbusvalid,
+                                                 sessend, iddig signals when enabled 238h */
+    __IO uint32_t USB_SS_SCALEDOWN_MODE;    /*!< Used only in simulation 23Ch */
+} USB_OTG_HS2TypeDef;
 
 /**
   * @}
@@ -931,6 +955,7 @@ typedef struct
 /*!< Debug MCU registers base address */
 #define DBGMCU_BASE           0xE0042000UL
 /*!< USB registers base address */
+#define USB_OTG_HS2_PERIPH_BASE              0x40040200UL
 #define USB_OTG_HS_PERIPH_BASE               0x40040000UL
 #define USB_OTG_FS_PERIPH_BASE               0x50000000UL
 
@@ -956,7 +981,7 @@ typedef struct
 
 /** @addtogroup Peripheral_declaration
   * @{
-  */  
+  */
 #define TMR2                ((TMR_TypeDef *) TMR2_BASE)
 #define TMR3                ((TMR_TypeDef *) TMR3_BASE)
 #define TMR4                ((TMR_TypeDef *) TMR4_BASE)
@@ -1040,6 +1065,7 @@ typedef struct
 #define DBGMCU              ((DBGMCU_TypeDef *) DBGMCU_BASE)
 #define USB_OTG_FS          ((USB_OTG_GlobalTypeDef *) USB_OTG_FS_PERIPH_BASE)
 #define USB_OTG_HS          ((USB_OTG_GlobalTypeDef *) USB_OTG_HS_PERIPH_BASE)
+#define USB_OTG_HS2         ((USB_OTG_HS2TypeDef *) USB_OTG_HS2_PERIPH_BASE)
 
 /**
   * @}
@@ -1060,7 +1086,7 @@ typedef struct
   /** @addtogroup Peripheral_Registers_Bits_Definition
   * @{
   */
-    
+
 /******************************************************************************/
 /*                         Peripheral Registers_Bits_Definition               */
 /******************************************************************************/
@@ -1148,7 +1174,7 @@ typedef struct
 #define ADC_CTRL1_OVRIEN_Pos                                        (26U)
 #define ADC_CTRL1_OVRIEN_Msk                                        (0x1UL << ADC_CTRL1_OVRIEN_Pos)                                /*!< 0x04000000 */
 #define ADC_CTRL1_OVRIEN                                            ADC_CTRL1_OVRIEN_Msk                                           /*!<overrun interrupt enable */
-  
+
 /*******************  Bit definition for ADC_CTRL2 register  ********************/
 #define ADC_CTRL2_ADCEN_Pos                                         (0U)
 #define ADC_CTRL2_ADCEN_Msk                                         (0x1UL << ADC_CTRL2_ADCEN_Pos)                                 /*!< 0x00000001 */
@@ -1195,9 +1221,9 @@ typedef struct
 #define ADC_CTRL2_REGEXTTRGEN                                       ADC_CTRL2_REGEXTTRGEN_Msk                                      /*!<EXTEN[1:0] bits (External Trigger Conversion mode for regular channelsp) */
 #define ADC_CTRL2_REGEXTTRGEN_0                                     (0x1UL << ADC_CTRL2_REGEXTTRGEN_Pos)                           /*!< 0x10000000 */
 #define ADC_CTRL2_REGEXTTRGEN_1                                     (0x2UL << ADC_CTRL2_REGEXTTRGEN_Pos)                           /*!< 0x20000000 */
-#define ADC_CTRL2_REGCHSC_Pos                                       (30U)
-#define ADC_CTRL2_REGCHSC_Msk                                       (0x1UL << ADC_CTRL2_REGCHSC_Pos)                               /*!< 0x40000000 */
-#define ADC_CTRL2_REGCHSC                                           ADC_CTRL2_REGCHSC_Msk                                          /*!<Start Conversion of regular channels */
+#define ADC_CTRL2_REGSWSC_Pos                                       (30U)
+#define ADC_CTRL2_REGSWSC_Msk                                       (0x1UL << ADC_CTRL2_REGSWSC_Pos)                               /*!< 0x40000000 */
+#define ADC_CTRL2_REGSWSC                                           ADC_CTRL2_REGSWSC_Msk                                          /*!<Start Conversion of regular channels */
 
 /******************  Bit definition for ADC_SMPTIM1 register  *******************/
 #define ADC_SMPTIM1_SMPCYCCFG10_Pos                                 (0U)
@@ -2063,7 +2089,7 @@ typedef struct
 #define CAN_TXMID2_STDID_Msk                                        (0x7FFUL << CAN_TXMID2_STDID_Pos)                              /*!< 0xFFE00000 */
 #define CAN_TXMID2_STDID                                            CAN_TXMID2_STDID_Msk                                           /*!<Standard Identifier or Extended Identifier */
 
-/*******************  Bit definition for CAN_TXDLEN2 register  ******************/  
+/*******************  Bit definition for CAN_TXDLEN2 register  ******************/
 #define CAN_TXDLEN2_DLCODE_Pos                                      (0U)
 #define CAN_TXDLEN2_DLCODE_Msk                                      (0xFUL << CAN_TXDLEN2_DLCODE_Pos)                              /*!< 0x0000000F */
 #define CAN_TXDLEN2_DLCODE                                          CAN_TXDLEN2_DLCODE_Msk                                         /*!<Data Length Code */
@@ -2210,279 +2236,279 @@ typedef struct
 
 /*!<CAN filter registers */
 /*******************  Bit definition for CAN_FCTRL register  ********************/
-#define CAN_FCTRL_FINIT_Pos                                         (0U)
-#define CAN_FCTRL_FINIT_Msk                                         (0x1UL << CAN_FCTRL_FINIT_Pos)                                 /*!< 0x00000001 */
-#define CAN_FCTRL_FINIT                                             CAN_FCTRL_FINIT_Msk                                            /*!<Filter Init Mode */
+#define CAN_FCTRL_FINITEN_Pos                                       (0U)
+#define CAN_FCTRL_FINITEN_Msk                                       (0x1UL << CAN_FCTRL_FINITEN_Pos)                               /*!< 0x00000001 */
+#define CAN_FCTRL_FINITEN                                           CAN_FCTRL_FINITEN_Msk                                          /*!<Filter Init Mode */
 #define CAN_FCTRL_CAN2SB_Pos                                        (8U)
 #define CAN_FCTRL_CAN2SB_Msk                                        (0x3FUL << CAN_FCTRL_CAN2SB_Pos)                               /*!< 0x00003F00 */
 #define CAN_FCTRL_CAN2SB                                            CAN_FCTRL_CAN2SB_Msk                                           /*!<CAN2 start bank */
 
 /*******************  Bit definition for CAN_FMCFG register  *******************/
-#define CAN_FMCFG_FBM_Pos                                           (0U)
-#define CAN_FMCFG_FBM_Msk                                           (0xFFFFFFFUL << CAN_FMCFG_FBM_Pos)                             /*!< 0x0FFFFFFF */
-#define CAN_FMCFG_FBM                                               CAN_FMCFG_FBM_Msk                                              /*!<Filter Mode */
-#define CAN_FMCFG_FBM0_Pos                                          (0U)
-#define CAN_FMCFG_FBM0_Msk                                          (0x1UL << CAN_FMCFG_FBM0_Pos)                                  /*!< 0x00000001 */
-#define CAN_FMCFG_FBM0                                              CAN_FMCFG_FBM0_Msk                                             /*!<Filter Init Mode bit 0 */
-#define CAN_FMCFG_FBM1_Pos                                          (1U)
-#define CAN_FMCFG_FBM1_Msk                                          (0x1UL << CAN_FMCFG_FBM1_Pos)                                  /*!< 0x00000002 */
-#define CAN_FMCFG_FBM1                                              CAN_FMCFG_FBM1_Msk                                             /*!<Filter Init Mode bit 1 */
-#define CAN_FMCFG_FBM2_Pos                                          (2U)
-#define CAN_FMCFG_FBM2_Msk                                          (0x1UL << CAN_FMCFG_FBM2_Pos)                                  /*!< 0x00000004 */
-#define CAN_FMCFG_FBM2                                              CAN_FMCFG_FBM2_Msk                                             /*!<Filter Init Mode bit 2 */
-#define CAN_FMCFG_FBM3_Pos                                          (3U)
-#define CAN_FMCFG_FBM3_Msk                                          (0x1UL << CAN_FMCFG_FBM3_Pos)                                  /*!< 0x00000008 */
-#define CAN_FMCFG_FBM3                                              CAN_FMCFG_FBM3_Msk                                             /*!<Filter Init Mode bit 3 */
-#define CAN_FMCFG_FBM4_Pos                                          (4U)
-#define CAN_FMCFG_FBM4_Msk                                          (0x1UL << CAN_FMCFG_FBM4_Pos)                                  /*!< 0x00000010 */
-#define CAN_FMCFG_FBM4                                              CAN_FMCFG_FBM4_Msk                                             /*!<Filter Init Mode bit 4 */
-#define CAN_FMCFG_FBM5_Pos                                          (5U)
-#define CAN_FMCFG_FBM5_Msk                                          (0x1UL << CAN_FMCFG_FBM5_Pos)                                  /*!< 0x00000020 */
-#define CAN_FMCFG_FBM5                                              CAN_FMCFG_FBM5_Msk                                             /*!<Filter Init Mode bit 5 */
-#define CAN_FMCFG_FBM6_Pos                                          (6U)
-#define CAN_FMCFG_FBM6_Msk                                          (0x1UL << CAN_FMCFG_FBM6_Pos)                                  /*!< 0x00000040 */
-#define CAN_FMCFG_FBM6                                              CAN_FMCFG_FBM6_Msk                                             /*!<Filter Init Mode bit 6 */
-#define CAN_FMCFG_FBM7_Pos                                          (7U)
-#define CAN_FMCFG_FBM7_Msk                                          (0x1UL << CAN_FMCFG_FBM7_Pos)                                  /*!< 0x00000080 */
-#define CAN_FMCFG_FBM7                                              CAN_FMCFG_FBM7_Msk                                             /*!<Filter Init Mode bit 7 */
-#define CAN_FMCFG_FBM8_Pos                                          (8U)
-#define CAN_FMCFG_FBM8_Msk                                          (0x1UL << CAN_FMCFG_FBM8_Pos)                                  /*!< 0x00000100 */
-#define CAN_FMCFG_FBM8                                              CAN_FMCFG_FBM8_Msk                                             /*!<Filter Init Mode bit 8 */
-#define CAN_FMCFG_FBM9_Pos                                          (9U)
-#define CAN_FMCFG_FBM9_Msk                                          (0x1UL << CAN_FMCFG_FBM9_Pos)                                  /*!< 0x00000200 */
-#define CAN_FMCFG_FBM9                                              CAN_FMCFG_FBM9_Msk                                             /*!<Filter Init Mode bit 9 */
-#define CAN_FMCFG_FBM10_Pos                                         (10U)
-#define CAN_FMCFG_FBM10_Msk                                         (0x1UL << CAN_FMCFG_FBM10_Pos)                                 /*!< 0x00000400 */
-#define CAN_FMCFG_FBM10                                             CAN_FMCFG_FBM10_Msk                                            /*!<Filter Init Mode bit 10 */
-#define CAN_FMCFG_FBM11_Pos                                         (11U)
-#define CAN_FMCFG_FBM11_Msk                                         (0x1UL << CAN_FMCFG_FBM11_Pos)                                 /*!< 0x00000800 */
-#define CAN_FMCFG_FBM11                                             CAN_FMCFG_FBM11_Msk                                            /*!<Filter Init Mode bit 11 */
-#define CAN_FMCFG_FBM12_Pos                                         (12U)
-#define CAN_FMCFG_FBM12_Msk                                         (0x1UL << CAN_FMCFG_FBM12_Pos)                                 /*!< 0x00001000 */
-#define CAN_FMCFG_FBM12                                             CAN_FMCFG_FBM12_Msk                                            /*!<Filter Init Mode bit 12 */
-#define CAN_FMCFG_FBM13_Pos                                         (13U)
-#define CAN_FMCFG_FBM13_Msk                                         (0x1UL << CAN_FMCFG_FBM13_Pos)                                 /*!< 0x00002000 */
-#define CAN_FMCFG_FBM13                                             CAN_FMCFG_FBM13_Msk                                            /*!<Filter Init Mode bit 13 */
-#define CAN_FMCFG_FBM14_Pos                                         (14U)
-#define CAN_FMCFG_FBM14_Msk                                         (0x1UL << CAN_FMCFG_FBM14_Pos)                                 /*!< 0x00004000 */
-#define CAN_FMCFG_FBM14                                             CAN_FMCFG_FBM14_Msk                                            /*!<Filter Init Mode bit 14 */
-#define CAN_FMCFG_FBM15_Pos                                         (15U)
-#define CAN_FMCFG_FBM15_Msk                                         (0x1UL << CAN_FMCFG_FBM15_Pos)                                 /*!< 0x00008000 */
-#define CAN_FMCFG_FBM15                                             CAN_FMCFG_FBM15_Msk                                            /*!<Filter Init Mode bit 15 */
-#define CAN_FMCFG_FBM16_Pos                                         (16U)
-#define CAN_FMCFG_FBM16_Msk                                         (0x1UL << CAN_FMCFG_FBM16_Pos)                                 /*!< 0x00010000 */
-#define CAN_FMCFG_FBM16                                             CAN_FMCFG_FBM16_Msk                                            /*!<Filter Init Mode bit 16 */
-#define CAN_FMCFG_FBM17_Pos                                         (17U)
-#define CAN_FMCFG_FBM17_Msk                                         (0x1UL << CAN_FMCFG_FBM17_Pos)                                 /*!< 0x00020000 */
-#define CAN_FMCFG_FBM17                                             CAN_FMCFG_FBM17_Msk                                            /*!<Filter Init Mode bit 17 */
-#define CAN_FMCFG_FBM18_Pos                                         (18U)
-#define CAN_FMCFG_FBM18_Msk                                         (0x1UL << CAN_FMCFG_FBM18_Pos)                                 /*!< 0x00040000 */
-#define CAN_FMCFG_FBM18                                             CAN_FMCFG_FBM18_Msk                                            /*!<Filter Init Mode bit 18 */
-#define CAN_FMCFG_FBM19_Pos                                         (19U)
-#define CAN_FMCFG_FBM19_Msk                                         (0x1UL << CAN_FMCFG_FBM19_Pos)                                 /*!< 0x00080000 */
-#define CAN_FMCFG_FBM19                                             CAN_FMCFG_FBM19_Msk                                            /*!<Filter Init Mode bit 19 */
-#define CAN_FMCFG_FBM20_Pos                                         (20U)
-#define CAN_FMCFG_FBM20_Msk                                         (0x1UL << CAN_FMCFG_FBM20_Pos)                                 /*!< 0x00100000 */
-#define CAN_FMCFG_FBM20                                             CAN_FMCFG_FBM20_Msk                                            /*!<Filter Init Mode bit 20 */
-#define CAN_FMCFG_FBM21_Pos                                         (21U)
-#define CAN_FMCFG_FBM21_Msk                                         (0x1UL << CAN_FMCFG_FBM21_Pos)                                 /*!< 0x00200000 */
-#define CAN_FMCFG_FBM21                                             CAN_FMCFG_FBM21_Msk                                            /*!<Filter Init Mode bit 21 */
-#define CAN_FMCFG_FBM22_Pos                                         (22U)
-#define CAN_FMCFG_FBM22_Msk                                         (0x1UL << CAN_FMCFG_FBM22_Pos)                                 /*!< 0x00400000 */
-#define CAN_FMCFG_FBM22                                             CAN_FMCFG_FBM22_Msk                                            /*!<Filter Init Mode bit 22 */
-#define CAN_FMCFG_FBM23_Pos                                         (23U)
-#define CAN_FMCFG_FBM23_Msk                                         (0x1UL << CAN_FMCFG_FBM23_Pos)                                 /*!< 0x00800000 */
-#define CAN_FMCFG_FBM23                                             CAN_FMCFG_FBM23_Msk                                            /*!<Filter Init Mode bit 23 */
-#define CAN_FMCFG_FBM24_Pos                                         (24U)
-#define CAN_FMCFG_FBM24_Msk                                         (0x1UL << CAN_FMCFG_FBM24_Pos)                                 /*!< 0x01000000 */
-#define CAN_FMCFG_FBM24                                             CAN_FMCFG_FBM24_Msk                                            /*!<Filter Init Mode bit 24 */
-#define CAN_FMCFG_FBM25_Pos                                         (25U)
-#define CAN_FMCFG_FBM25_Msk                                         (0x1UL << CAN_FMCFG_FBM25_Pos)                                 /*!< 0x02000000 */
-#define CAN_FMCFG_FBM25                                             CAN_FMCFG_FBM25_Msk                                            /*!<Filter Init Mode bit 25 */
-#define CAN_FMCFG_FBM26_Pos                                         (26U)
-#define CAN_FMCFG_FBM26_Msk                                         (0x1UL << CAN_FMCFG_FBM26_Pos)                                 /*!< 0x04000000 */
-#define CAN_FMCFG_FBM26                                             CAN_FMCFG_FBM26_Msk                                            /*!<Filter Init Mode bit 26 */
-#define CAN_FMCFG_FBM27_Pos                                         (27U)
-#define CAN_FMCFG_FBM27_Msk                                         (0x1UL << CAN_FMCFG_FBM27_Pos)                                 /*!< 0x08000000 */
-#define CAN_FMCFG_FBM27                                             CAN_FMCFG_FBM27_Msk                                            /*!<Filter Init Mode bit 27 */
+#define CAN_FMCFG_FMCFG_Pos                                         (0U)
+#define CAN_FMCFG_FMCFG_Msk                                         (0xFFFFFFFUL << CAN_FMCFG_FMCFG_Pos)                           /*!< 0x0FFFFFFF */
+#define CAN_FMCFG_FMCFG                                             CAN_FMCFG_FMCFG_Msk                                            /*!<Filter Mode */
+#define CAN_FMCFG_FMCFG0_Pos                                        (0U)
+#define CAN_FMCFG_FMCFG0_Msk                                        (0x1UL << CAN_FMCFG_FMCFG0_Pos)                                /*!< 0x00000001 */
+#define CAN_FMCFG_FMCFG0                                            CAN_FMCFG_FMCFG0_Msk                                           /*!<Filter Init Mode bit 0 */
+#define CAN_FMCFG_FMCFG1_Pos                                        (1U)
+#define CAN_FMCFG_FMCFG1_Msk                                        (0x1UL << CAN_FMCFG_FMCFG1_Pos)                                /*!< 0x00000002 */
+#define CAN_FMCFG_FMCFG1                                            CAN_FMCFG_FMCFG1_Msk                                           /*!<Filter Init Mode bit 1 */
+#define CAN_FMCFG_FMCFG2_Pos                                        (2U)
+#define CAN_FMCFG_FMCFG2_Msk                                        (0x1UL << CAN_FMCFG_FMCFG2_Pos)                                /*!< 0x00000004 */
+#define CAN_FMCFG_FMCFG2                                            CAN_FMCFG_FMCFG2_Msk                                           /*!<Filter Init Mode bit 2 */
+#define CAN_FMCFG_FMCFG3_Pos                                        (3U)
+#define CAN_FMCFG_FMCFG3_Msk                                        (0x1UL << CAN_FMCFG_FMCFG3_Pos)                                /*!< 0x00000008 */
+#define CAN_FMCFG_FMCFG3                                            CAN_FMCFG_FMCFG3_Msk                                           /*!<Filter Init Mode bit 3 */
+#define CAN_FMCFG_FMCFG4_Pos                                        (4U)
+#define CAN_FMCFG_FMCFG4_Msk                                        (0x1UL << CAN_FMCFG_FMCFG4_Pos)                                /*!< 0x00000010 */
+#define CAN_FMCFG_FMCFG4                                            CAN_FMCFG_FMCFG4_Msk                                           /*!<Filter Init Mode bit 4 */
+#define CAN_FMCFG_FMCFG5_Pos                                        (5U)
+#define CAN_FMCFG_FMCFG5_Msk                                        (0x1UL << CAN_FMCFG_FMCFG5_Pos)                                /*!< 0x00000020 */
+#define CAN_FMCFG_FMCFG5                                            CAN_FMCFG_FMCFG5_Msk                                           /*!<Filter Init Mode bit 5 */
+#define CAN_FMCFG_FMCFG6_Pos                                        (6U)
+#define CAN_FMCFG_FMCFG6_Msk                                        (0x1UL << CAN_FMCFG_FMCFG6_Pos)                                /*!< 0x00000040 */
+#define CAN_FMCFG_FMCFG6                                            CAN_FMCFG_FMCFG6_Msk                                           /*!<Filter Init Mode bit 6 */
+#define CAN_FMCFG_FMCFG7_Pos                                        (7U)
+#define CAN_FMCFG_FMCFG7_Msk                                        (0x1UL << CAN_FMCFG_FMCFG7_Pos)                                /*!< 0x00000080 */
+#define CAN_FMCFG_FMCFG7                                            CAN_FMCFG_FMCFG7_Msk                                           /*!<Filter Init Mode bit 7 */
+#define CAN_FMCFG_FMCFG8_Pos                                        (8U)
+#define CAN_FMCFG_FMCFG8_Msk                                        (0x1UL << CAN_FMCFG_FMCFG8_Pos)                                /*!< 0x00000100 */
+#define CAN_FMCFG_FMCFG8                                            CAN_FMCFG_FMCFG8_Msk                                           /*!<Filter Init Mode bit 8 */
+#define CAN_FMCFG_FMCFG9_Pos                                        (9U)
+#define CAN_FMCFG_FMCFG9_Msk                                        (0x1UL << CAN_FMCFG_FMCFG9_Pos)                                /*!< 0x00000200 */
+#define CAN_FMCFG_FMCFG9                                            CAN_FMCFG_FMCFG9_Msk                                           /*!<Filter Init Mode bit 9 */
+#define CAN_FMCFG_FMCFG10_Pos                                       (10U)
+#define CAN_FMCFG_FMCFG10_Msk                                       (0x1UL << CAN_FMCFG_FMCFG10_Pos)                               /*!< 0x00000400 */
+#define CAN_FMCFG_FMCFG10                                           CAN_FMCFG_FMCFG10_Msk                                          /*!<Filter Init Mode bit 10 */
+#define CAN_FMCFG_FMCFG11_Pos                                       (11U)
+#define CAN_FMCFG_FMCFG11_Msk                                       (0x1UL << CAN_FMCFG_FMCFG11_Pos)                               /*!< 0x00000800 */
+#define CAN_FMCFG_FMCFG11                                           CAN_FMCFG_FMCFG11_Msk                                          /*!<Filter Init Mode bit 11 */
+#define CAN_FMCFG_FMCFG12_Pos                                       (12U)
+#define CAN_FMCFG_FMCFG12_Msk                                       (0x1UL << CAN_FMCFG_FMCFG12_Pos)                               /*!< 0x00001000 */
+#define CAN_FMCFG_FMCFG12                                           CAN_FMCFG_FMCFG12_Msk                                          /*!<Filter Init Mode bit 12 */
+#define CAN_FMCFG_FMCFG13_Pos                                       (13U)
+#define CAN_FMCFG_FMCFG13_Msk                                       (0x1UL << CAN_FMCFG_FMCFG13_Pos)                               /*!< 0x00002000 */
+#define CAN_FMCFG_FMCFG13                                           CAN_FMCFG_FMCFG13_Msk                                          /*!<Filter Init Mode bit 13 */
+#define CAN_FMCFG_FMCFG14_Pos                                       (14U)
+#define CAN_FMCFG_FMCFG14_Msk                                       (0x1UL << CAN_FMCFG_FMCFG14_Pos)                               /*!< 0x00004000 */
+#define CAN_FMCFG_FMCFG14                                           CAN_FMCFG_FMCFG14_Msk                                          /*!<Filter Init Mode bit 14 */
+#define CAN_FMCFG_FMCFG15_Pos                                       (15U)
+#define CAN_FMCFG_FMCFG15_Msk                                       (0x1UL << CAN_FMCFG_FMCFG15_Pos)                               /*!< 0x00008000 */
+#define CAN_FMCFG_FMCFG15                                           CAN_FMCFG_FMCFG15_Msk                                          /*!<Filter Init Mode bit 15 */
+#define CAN_FMCFG_FMCFG16_Pos                                       (16U)
+#define CAN_FMCFG_FMCFG16_Msk                                       (0x1UL << CAN_FMCFG_FMCFG16_Pos)                               /*!< 0x00010000 */
+#define CAN_FMCFG_FMCFG16                                           CAN_FMCFG_FMCFG16_Msk                                          /*!<Filter Init Mode bit 16 */
+#define CAN_FMCFG_FMCFG17_Pos                                       (17U)
+#define CAN_FMCFG_FMCFG17_Msk                                       (0x1UL << CAN_FMCFG_FMCFG17_Pos)                               /*!< 0x00020000 */
+#define CAN_FMCFG_FMCFG17                                           CAN_FMCFG_FMCFG17_Msk                                          /*!<Filter Init Mode bit 17 */
+#define CAN_FMCFG_FMCFG18_Pos                                       (18U)
+#define CAN_FMCFG_FMCFG18_Msk                                       (0x1UL << CAN_FMCFG_FMCFG18_Pos)                               /*!< 0x00040000 */
+#define CAN_FMCFG_FMCFG18                                           CAN_FMCFG_FMCFG18_Msk                                          /*!<Filter Init Mode bit 18 */
+#define CAN_FMCFG_FMCFG19_Pos                                       (19U)
+#define CAN_FMCFG_FMCFG19_Msk                                       (0x1UL << CAN_FMCFG_FMCFG19_Pos)                               /*!< 0x00080000 */
+#define CAN_FMCFG_FMCFG19                                           CAN_FMCFG_FMCFG19_Msk                                          /*!<Filter Init Mode bit 19 */
+#define CAN_FMCFG_FMCFG20_Pos                                       (20U)
+#define CAN_FMCFG_FMCFG20_Msk                                       (0x1UL << CAN_FMCFG_FMCFG20_Pos)                               /*!< 0x00100000 */
+#define CAN_FMCFG_FMCFG20                                           CAN_FMCFG_FMCFG20_Msk                                          /*!<Filter Init Mode bit 20 */
+#define CAN_FMCFG_FMCFG21_Pos                                       (21U)
+#define CAN_FMCFG_FMCFG21_Msk                                       (0x1UL << CAN_FMCFG_FMCFG21_Pos)                               /*!< 0x00200000 */
+#define CAN_FMCFG_FMCFG21                                           CAN_FMCFG_FMCFG21_Msk                                          /*!<Filter Init Mode bit 21 */
+#define CAN_FMCFG_FMCFG22_Pos                                       (22U)
+#define CAN_FMCFG_FMCFG22_Msk                                       (0x1UL << CAN_FMCFG_FMCFG22_Pos)                               /*!< 0x00400000 */
+#define CAN_FMCFG_FMCFG22                                           CAN_FMCFG_FMCFG22_Msk                                          /*!<Filter Init Mode bit 22 */
+#define CAN_FMCFG_FMCFG23_Pos                                       (23U)
+#define CAN_FMCFG_FMCFG23_Msk                                       (0x1UL << CAN_FMCFG_FMCFG23_Pos)                               /*!< 0x00800000 */
+#define CAN_FMCFG_FMCFG23                                           CAN_FMCFG_FMCFG23_Msk                                          /*!<Filter Init Mode bit 23 */
+#define CAN_FMCFG_FMCFG24_Pos                                       (24U)
+#define CAN_FMCFG_FMCFG24_Msk                                       (0x1UL << CAN_FMCFG_FMCFG24_Pos)                               /*!< 0x01000000 */
+#define CAN_FMCFG_FMCFG24                                           CAN_FMCFG_FMCFG24_Msk                                          /*!<Filter Init Mode bit 24 */
+#define CAN_FMCFG_FMCFG25_Pos                                       (25U)
+#define CAN_FMCFG_FMCFG25_Msk                                       (0x1UL << CAN_FMCFG_FMCFG25_Pos)                               /*!< 0x02000000 */
+#define CAN_FMCFG_FMCFG25                                           CAN_FMCFG_FMCFG25_Msk                                          /*!<Filter Init Mode bit 25 */
+#define CAN_FMCFG_FMCFG26_Pos                                       (26U)
+#define CAN_FMCFG_FMCFG26_Msk                                       (0x1UL << CAN_FMCFG_FMCFG26_Pos)                               /*!< 0x04000000 */
+#define CAN_FMCFG_FMCFG26                                           CAN_FMCFG_FMCFG26_Msk                                          /*!<Filter Init Mode bit 26 */
+#define CAN_FMCFG_FMCFG27_Pos                                       (27U)
+#define CAN_FMCFG_FMCFG27_Msk                                       (0x1UL << CAN_FMCFG_FMCFG27_Pos)                               /*!< 0x08000000 */
+#define CAN_FMCFG_FMCFG27                                           CAN_FMCFG_FMCFG27_Msk                                          /*!<Filter Init Mode bit 27 */
 
 /*******************  Bit definition for CAN_FSCFG register  *******************/
-#define CAN_FSCFG_FSC_Pos                                           (0U)
-#define CAN_FSCFG_FSC_Msk                                           (0xFFFFFFFUL << CAN_FSCFG_FSC_Pos)                             /*!< 0x0FFFFFFF */
-#define CAN_FSCFG_FSC                                               CAN_FSCFG_FSC_Msk                                              /*!<Filter Scale Configuration */
-#define CAN_FSCFG_FSC0_Pos                                          (0U)
-#define CAN_FSCFG_FSC0_Msk                                          (0x1UL << CAN_FSCFG_FSC0_Pos)                                  /*!< 0x00000001 */
-#define CAN_FSCFG_FSC0                                              CAN_FSCFG_FSC0_Msk                                             /*!<Filter Scale Configuration bit 0 */
-#define CAN_FSCFG_FSC1_Pos                                          (1U)
-#define CAN_FSCFG_FSC1_Msk                                          (0x1UL << CAN_FSCFG_FSC1_Pos)                                  /*!< 0x00000002 */
-#define CAN_FSCFG_FSC1                                              CAN_FSCFG_FSC1_Msk                                             /*!<Filter Scale Configuration bit 1 */
-#define CAN_FSCFG_FSC2_Pos                                          (2U)
-#define CAN_FSCFG_FSC2_Msk                                          (0x1UL << CAN_FSCFG_FSC2_Pos)                                  /*!< 0x00000004 */
-#define CAN_FSCFG_FSC2                                              CAN_FSCFG_FSC2_Msk                                             /*!<Filter Scale Configuration bit 2 */
-#define CAN_FSCFG_FSC3_Pos                                          (3U)
-#define CAN_FSCFG_FSC3_Msk                                          (0x1UL << CAN_FSCFG_FSC3_Pos)                                  /*!< 0x00000008 */
-#define CAN_FSCFG_FSC3                                              CAN_FSCFG_FSC3_Msk                                             /*!<Filter Scale Configuration bit 3 */
-#define CAN_FSCFG_FSC4_Pos                                          (4U)
-#define CAN_FSCFG_FSC4_Msk                                          (0x1UL << CAN_FSCFG_FSC4_Pos)                                  /*!< 0x00000010 */
-#define CAN_FSCFG_FSC4                                              CAN_FSCFG_FSC4_Msk                                             /*!<Filter Scale Configuration bit 4 */
-#define CAN_FSCFG_FSC5_Pos                                          (5U)
-#define CAN_FSCFG_FSC5_Msk                                          (0x1UL << CAN_FSCFG_FSC5_Pos)                                  /*!< 0x00000020 */
-#define CAN_FSCFG_FSC5                                              CAN_FSCFG_FSC5_Msk                                             /*!<Filter Scale Configuration bit 5 */
-#define CAN_FSCFG_FSC6_Pos                                          (6U)
-#define CAN_FSCFG_FSC6_Msk                                          (0x1UL << CAN_FSCFG_FSC6_Pos)                                  /*!< 0x00000040 */
-#define CAN_FSCFG_FSC6                                              CAN_FSCFG_FSC6_Msk                                             /*!<Filter Scale Configuration bit 6 */
-#define CAN_FSCFG_FSC7_Pos                                          (7U)
-#define CAN_FSCFG_FSC7_Msk                                          (0x1UL << CAN_FSCFG_FSC7_Pos)                                  /*!< 0x00000080 */
-#define CAN_FSCFG_FSC7                                              CAN_FSCFG_FSC7_Msk                                             /*!<Filter Scale Configuration bit 7 */
-#define CAN_FSCFG_FSC8_Pos                                          (8U)
-#define CAN_FSCFG_FSC8_Msk                                          (0x1UL << CAN_FSCFG_FSC8_Pos)                                  /*!< 0x00000100 */
-#define CAN_FSCFG_FSC8                                              CAN_FSCFG_FSC8_Msk                                             /*!<Filter Scale Configuration bit 8 */
-#define CAN_FSCFG_FSC9_Pos                                          (9U)
-#define CAN_FSCFG_FSC9_Msk                                          (0x1UL << CAN_FSCFG_FSC9_Pos)                                  /*!< 0x00000200 */
-#define CAN_FSCFG_FSC9                                              CAN_FSCFG_FSC9_Msk                                             /*!<Filter Scale Configuration bit 9 */
-#define CAN_FSCFG_FSC10_Pos                                         (10U)
-#define CAN_FSCFG_FSC10_Msk                                         (0x1UL << CAN_FSCFG_FSC10_Pos)                                 /*!< 0x00000400 */
-#define CAN_FSCFG_FSC10                                             CAN_FSCFG_FSC10_Msk                                            /*!<Filter Scale Configuration bit 10 */
-#define CAN_FSCFG_FSC11_Pos                                         (11U)
-#define CAN_FSCFG_FSC11_Msk                                         (0x1UL << CAN_FSCFG_FSC11_Pos)                                 /*!< 0x00000800 */
-#define CAN_FSCFG_FSC11                                             CAN_FSCFG_FSC11_Msk                                            /*!<Filter Scale Configuration bit 11 */
-#define CAN_FSCFG_FSC12_Pos                                         (12U)
-#define CAN_FSCFG_FSC12_Msk                                         (0x1UL << CAN_FSCFG_FSC12_Pos)                                 /*!< 0x00001000 */
-#define CAN_FSCFG_FSC12                                             CAN_FSCFG_FSC12_Msk                                            /*!<Filter Scale Configuration bit 12 */
-#define CAN_FSCFG_FSC13_Pos                                         (13U)
-#define CAN_FSCFG_FSC13_Msk                                         (0x1UL << CAN_FSCFG_FSC13_Pos)                                 /*!< 0x00002000 */
-#define CAN_FSCFG_FSC13                                             CAN_FSCFG_FSC13_Msk                                            /*!<Filter Scale Configuration bit 13 */
-#define CAN_FSCFG_FSC14_Pos                                         (14U)
-#define CAN_FSCFG_FSC14_Msk                                         (0x1UL << CAN_FSCFG_FSC14_Pos)                                 /*!< 0x00004000 */
-#define CAN_FSCFG_FSC14                                             CAN_FSCFG_FSC14_Msk                                            /*!<Filter Scale Configuration bit 14 */
-#define CAN_FSCFG_FSC15_Pos                                         (15U)
-#define CAN_FSCFG_FSC15_Msk                                         (0x1UL << CAN_FSCFG_FSC15_Pos)                                 /*!< 0x00008000 */
-#define CAN_FSCFG_FSC15                                             CAN_FSCFG_FSC15_Msk                                            /*!<Filter Scale Configuration bit 15 */
-#define CAN_FSCFG_FSC16_Pos                                         (16U)
-#define CAN_FSCFG_FSC16_Msk                                         (0x1UL << CAN_FSCFG_FSC16_Pos)                                 /*!< 0x00010000 */
-#define CAN_FSCFG_FSC16                                             CAN_FSCFG_FSC16_Msk                                            /*!<Filter Scale Configuration bit 16 */
-#define CAN_FSCFG_FSC17_Pos                                         (17U)
-#define CAN_FSCFG_FSC17_Msk                                         (0x1UL << CAN_FSCFG_FSC17_Pos)                                 /*!< 0x00020000 */
-#define CAN_FSCFG_FSC17                                             CAN_FSCFG_FSC17_Msk                                            /*!<Filter Scale Configuration bit 17 */
-#define CAN_FSCFG_FSC18_Pos                                         (18U)
-#define CAN_FSCFG_FSC18_Msk                                         (0x1UL << CAN_FSCFG_FSC18_Pos)                                 /*!< 0x00040000 */
-#define CAN_FSCFG_FSC18                                             CAN_FSCFG_FSC18_Msk                                            /*!<Filter Scale Configuration bit 18 */
-#define CAN_FSCFG_FSC19_Pos                                         (19U)
-#define CAN_FSCFG_FSC19_Msk                                         (0x1UL << CAN_FSCFG_FSC19_Pos)                                 /*!< 0x00080000 */
-#define CAN_FSCFG_FSC19                                             CAN_FSCFG_FSC19_Msk                                            /*!<Filter Scale Configuration bit 19 */
-#define CAN_FSCFG_FSC20_Pos                                         (20U)
-#define CAN_FSCFG_FSC20_Msk                                         (0x1UL << CAN_FSCFG_FSC20_Pos)                                 /*!< 0x00100000 */
-#define CAN_FSCFG_FSC20                                             CAN_FSCFG_FSC20_Msk                                            /*!<Filter Scale Configuration bit 20 */
-#define CAN_FSCFG_FSC21_Pos                                         (21U)
-#define CAN_FSCFG_FSC21_Msk                                         (0x1UL << CAN_FSCFG_FSC21_Pos)                                 /*!< 0x00200000 */
-#define CAN_FSCFG_FSC21                                             CAN_FSCFG_FSC21_Msk                                            /*!<Filter Scale Configuration bit 21 */
-#define CAN_FSCFG_FSC22_Pos                                         (22U)
-#define CAN_FSCFG_FSC22_Msk                                         (0x1UL << CAN_FSCFG_FSC22_Pos)                                 /*!< 0x00400000 */
-#define CAN_FSCFG_FSC22                                             CAN_FSCFG_FSC22_Msk                                            /*!<Filter Scale Configuration bit 22 */
-#define CAN_FSCFG_FSC23_Pos                                         (23U)
-#define CAN_FSCFG_FSC23_Msk                                         (0x1UL << CAN_FSCFG_FSC23_Pos)                                 /*!< 0x00800000 */
-#define CAN_FSCFG_FSC23                                             CAN_FSCFG_FSC23_Msk                                            /*!<Filter Scale Configuration bit 23 */
-#define CAN_FSCFG_FSC24_Pos                                         (24U)
-#define CAN_FSCFG_FSC24_Msk                                         (0x1UL << CAN_FSCFG_FSC24_Pos)                                 /*!< 0x01000000 */
-#define CAN_FSCFG_FSC24                                             CAN_FSCFG_FSC24_Msk                                            /*!<Filter Scale Configuration bit 24 */
-#define CAN_FSCFG_FSC25_Pos                                         (25U)
-#define CAN_FSCFG_FSC25_Msk                                         (0x1UL << CAN_FSCFG_FSC25_Pos)                                 /*!< 0x02000000 */
-#define CAN_FSCFG_FSC25                                             CAN_FSCFG_FSC25_Msk                                            /*!<Filter Scale Configuration bit 25 */
-#define CAN_FSCFG_FSC26_Pos                                         (26U)
-#define CAN_FSCFG_FSC26_Msk                                         (0x1UL << CAN_FSCFG_FSC26_Pos)                                 /*!< 0x04000000 */
-#define CAN_FSCFG_FSC26                                             CAN_FSCFG_FSC26_Msk                                            /*!<Filter Scale Configuration bit 26 */
-#define CAN_FSCFG_FSC27_Pos                                         (27U)
-#define CAN_FSCFG_FSC27_Msk                                         (0x1UL << CAN_FSCFG_FSC27_Pos)                                 /*!< 0x08000000 */
-#define CAN_FSCFG_FSC27                                             CAN_FSCFG_FSC27_Msk                                            /*!<Filter Scale Configuration bit 27 */
+#define CAN_FSCFG_FSCFG_Pos                                         (0U)
+#define CAN_FSCFG_FSCFG_Msk                                         (0xFFFFFFFUL << CAN_FSCFG_FSCFG_Pos)                           /*!< 0x0FFFFFFF */
+#define CAN_FSCFG_FSCFG                                             CAN_FSCFG_FSCFG_Msk                                            /*!<Filter Scale Configuration */
+#define CAN_FSCFG_FSCFG0_Pos                                        (0U)
+#define CAN_FSCFG_FSCFG0_Msk                                        (0x1UL << CAN_FSCFG_FSCFG0_Pos)                                /*!< 0x00000001 */
+#define CAN_FSCFG_FSCFG0                                            CAN_FSCFG_FSCFG0_Msk                                           /*!<Filter Scale Configuration bit 0 */
+#define CAN_FSCFG_FSCFG1_Pos                                        (1U)
+#define CAN_FSCFG_FSCFG1_Msk                                        (0x1UL << CAN_FSCFG_FSCFG1_Pos)                                /*!< 0x00000002 */
+#define CAN_FSCFG_FSCFG1                                            CAN_FSCFG_FSCFG1_Msk                                           /*!<Filter Scale Configuration bit 1 */
+#define CAN_FSCFG_FSCFG2_Pos                                        (2U)
+#define CAN_FSCFG_FSCFG2_Msk                                        (0x1UL << CAN_FSCFG_FSCFG2_Pos)                                /*!< 0x00000004 */
+#define CAN_FSCFG_FSCFG2                                            CAN_FSCFG_FSCFG2_Msk                                           /*!<Filter Scale Configuration bit 2 */
+#define CAN_FSCFG_FSCFG3_Pos                                        (3U)
+#define CAN_FSCFG_FSCFG3_Msk                                        (0x1UL << CAN_FSCFG_FSCFG3_Pos)                                /*!< 0x00000008 */
+#define CAN_FSCFG_FSCFG3                                            CAN_FSCFG_FSCFG3_Msk                                           /*!<Filter Scale Configuration bit 3 */
+#define CAN_FSCFG_FSCFG4_Pos                                        (4U)
+#define CAN_FSCFG_FSCFG4_Msk                                        (0x1UL << CAN_FSCFG_FSCFG4_Pos)                                /*!< 0x00000010 */
+#define CAN_FSCFG_FSCFG4                                            CAN_FSCFG_FSCFG4_Msk                                           /*!<Filter Scale Configuration bit 4 */
+#define CAN_FSCFG_FSCFG5_Pos                                        (5U)
+#define CAN_FSCFG_FSCFG5_Msk                                        (0x1UL << CAN_FSCFG_FSCFG5_Pos)                                /*!< 0x00000020 */
+#define CAN_FSCFG_FSCFG5                                            CAN_FSCFG_FSCFG5_Msk                                           /*!<Filter Scale Configuration bit 5 */
+#define CAN_FSCFG_FSCFG6_Pos                                        (6U)
+#define CAN_FSCFG_FSCFG6_Msk                                        (0x1UL << CAN_FSCFG_FSCFG6_Pos)                                /*!< 0x00000040 */
+#define CAN_FSCFG_FSCFG6                                            CAN_FSCFG_FSCFG6_Msk                                           /*!<Filter Scale Configuration bit 6 */
+#define CAN_FSCFG_FSCFG7_Pos                                        (7U)
+#define CAN_FSCFG_FSCFG7_Msk                                        (0x1UL << CAN_FSCFG_FSCFG7_Pos)                                /*!< 0x00000080 */
+#define CAN_FSCFG_FSCFG7                                            CAN_FSCFG_FSCFG7_Msk                                           /*!<Filter Scale Configuration bit 7 */
+#define CAN_FSCFG_FSCFG8_Pos                                        (8U)
+#define CAN_FSCFG_FSCFG8_Msk                                        (0x1UL << CAN_FSCFG_FSCFG8_Pos)                                /*!< 0x00000100 */
+#define CAN_FSCFG_FSCFG8                                            CAN_FSCFG_FSCFG8_Msk                                           /*!<Filter Scale Configuration bit 8 */
+#define CAN_FSCFG_FSCFG9_Pos                                        (9U)
+#define CAN_FSCFG_FSCFG9_Msk                                        (0x1UL << CAN_FSCFG_FSCFG9_Pos)                                /*!< 0x00000200 */
+#define CAN_FSCFG_FSCFG9                                            CAN_FSCFG_FSCFG9_Msk                                           /*!<Filter Scale Configuration bit 9 */
+#define CAN_FSCFG_FSCFG10_Pos                                       (10U)
+#define CAN_FSCFG_FSCFG10_Msk                                       (0x1UL << CAN_FSCFG_FSCFG10_Pos)                               /*!< 0x00000400 */
+#define CAN_FSCFG_FSCFG10                                           CAN_FSCFG_FSCFG10_Msk                                          /*!<Filter Scale Configuration bit 10 */
+#define CAN_FSCFG_FSCFG11_Pos                                       (11U)
+#define CAN_FSCFG_FSCFG11_Msk                                       (0x1UL << CAN_FSCFG_FSCFG11_Pos)                               /*!< 0x00000800 */
+#define CAN_FSCFG_FSCFG11                                           CAN_FSCFG_FSCFG11_Msk                                          /*!<Filter Scale Configuration bit 11 */
+#define CAN_FSCFG_FSCFG12_Pos                                       (12U)
+#define CAN_FSCFG_FSCFG12_Msk                                       (0x1UL << CAN_FSCFG_FSCFG12_Pos)                               /*!< 0x00001000 */
+#define CAN_FSCFG_FSCFG12                                           CAN_FSCFG_FSCFG12_Msk                                          /*!<Filter Scale Configuration bit 12 */
+#define CAN_FSCFG_FSCFG13_Pos                                       (13U)
+#define CAN_FSCFG_FSCFG13_Msk                                       (0x1UL << CAN_FSCFG_FSCFG13_Pos)                               /*!< 0x00002000 */
+#define CAN_FSCFG_FSCFG13                                           CAN_FSCFG_FSCFG13_Msk                                          /*!<Filter Scale Configuration bit 13 */
+#define CAN_FSCFG_FSCFG14_Pos                                       (14U)
+#define CAN_FSCFG_FSCFG14_Msk                                       (0x1UL << CAN_FSCFG_FSCFG14_Pos)                               /*!< 0x00004000 */
+#define CAN_FSCFG_FSCFG14                                           CAN_FSCFG_FSCFG14_Msk                                          /*!<Filter Scale Configuration bit 14 */
+#define CAN_FSCFG_FSCFG15_Pos                                       (15U)
+#define CAN_FSCFG_FSCFG15_Msk                                       (0x1UL << CAN_FSCFG_FSCFG15_Pos)                               /*!< 0x00008000 */
+#define CAN_FSCFG_FSCFG15                                           CAN_FSCFG_FSCFG15_Msk                                          /*!<Filter Scale Configuration bit 15 */
+#define CAN_FSCFG_FSCFG16_Pos                                       (16U)
+#define CAN_FSCFG_FSCFG16_Msk                                       (0x1UL << CAN_FSCFG_FSCFG16_Pos)                               /*!< 0x00010000 */
+#define CAN_FSCFG_FSCFG16                                           CAN_FSCFG_FSCFG16_Msk                                          /*!<Filter Scale Configuration bit 16 */
+#define CAN_FSCFG_FSCFG17_Pos                                       (17U)
+#define CAN_FSCFG_FSCFG17_Msk                                       (0x1UL << CAN_FSCFG_FSCFG17_Pos)                               /*!< 0x00020000 */
+#define CAN_FSCFG_FSCFG17                                           CAN_FSCFG_FSCFG17_Msk                                          /*!<Filter Scale Configuration bit 17 */
+#define CAN_FSCFG_FSCFG18_Pos                                       (18U)
+#define CAN_FSCFG_FSCFG18_Msk                                       (0x1UL << CAN_FSCFG_FSCFG18_Pos)                               /*!< 0x00040000 */
+#define CAN_FSCFG_FSCFG18                                           CAN_FSCFG_FSCFG18_Msk                                          /*!<Filter Scale Configuration bit 18 */
+#define CAN_FSCFG_FSCFG19_Pos                                       (19U)
+#define CAN_FSCFG_FSCFG19_Msk                                       (0x1UL << CAN_FSCFG_FSCFG19_Pos)                               /*!< 0x00080000 */
+#define CAN_FSCFG_FSCFG19                                           CAN_FSCFG_FSCFG19_Msk                                          /*!<Filter Scale Configuration bit 19 */
+#define CAN_FSCFG_FSCFG20_Pos                                       (20U)
+#define CAN_FSCFG_FSCFG20_Msk                                       (0x1UL << CAN_FSCFG_FSCFG20_Pos)                               /*!< 0x00100000 */
+#define CAN_FSCFG_FSCFG20                                           CAN_FSCFG_FSCFG20_Msk                                          /*!<Filter Scale Configuration bit 20 */
+#define CAN_FSCFG_FSCFG21_Pos                                       (21U)
+#define CAN_FSCFG_FSCFG21_Msk                                       (0x1UL << CAN_FSCFG_FSCFG21_Pos)                               /*!< 0x00200000 */
+#define CAN_FSCFG_FSCFG21                                           CAN_FSCFG_FSCFG21_Msk                                          /*!<Filter Scale Configuration bit 21 */
+#define CAN_FSCFG_FSCFG22_Pos                                       (22U)
+#define CAN_FSCFG_FSCFG22_Msk                                       (0x1UL << CAN_FSCFG_FSCFG22_Pos)                               /*!< 0x00400000 */
+#define CAN_FSCFG_FSCFG22                                           CAN_FSCFG_FSCFG22_Msk                                          /*!<Filter Scale Configuration bit 22 */
+#define CAN_FSCFG_FSCFG23_Pos                                       (23U)
+#define CAN_FSCFG_FSCFG23_Msk                                       (0x1UL << CAN_FSCFG_FSCFG23_Pos)                               /*!< 0x00800000 */
+#define CAN_FSCFG_FSCFG23                                           CAN_FSCFG_FSCFG23_Msk                                          /*!<Filter Scale Configuration bit 23 */
+#define CAN_FSCFG_FSCFG24_Pos                                       (24U)
+#define CAN_FSCFG_FSCFG24_Msk                                       (0x1UL << CAN_FSCFG_FSCFG24_Pos)                               /*!< 0x01000000 */
+#define CAN_FSCFG_FSCFG24                                           CAN_FSCFG_FSCFG24_Msk                                          /*!<Filter Scale Configuration bit 24 */
+#define CAN_FSCFG_FSCFG25_Pos                                       (25U)
+#define CAN_FSCFG_FSCFG25_Msk                                       (0x1UL << CAN_FSCFG_FSCFG25_Pos)                               /*!< 0x02000000 */
+#define CAN_FSCFG_FSCFG25                                           CAN_FSCFG_FSCFG25_Msk                                          /*!<Filter Scale Configuration bit 25 */
+#define CAN_FSCFG_FSCFG26_Pos                                       (26U)
+#define CAN_FSCFG_FSCFG26_Msk                                       (0x1UL << CAN_FSCFG_FSCFG26_Pos)                               /*!< 0x04000000 */
+#define CAN_FSCFG_FSCFG26                                           CAN_FSCFG_FSCFG26_Msk                                          /*!<Filter Scale Configuration bit 26 */
+#define CAN_FSCFG_FSCFG27_Pos                                       (27U)
+#define CAN_FSCFG_FSCFG27_Msk                                       (0x1UL << CAN_FSCFG_FSCFG27_Pos)                               /*!< 0x08000000 */
+#define CAN_FSCFG_FSCFG27                                           CAN_FSCFG_FSCFG27_Msk                                          /*!<Filter Scale Configuration bit 27 */
 
 /******************  Bit definition for CAN_FFASS register  *******************/
-#define CAN_FFASS_FFA_Pos                                           (0U)
-#define CAN_FFASS_FFA_Msk                                           (0xFFFFFFFUL << CAN_FFASS_FFA_Pos)                             /*!< 0x0FFFFFFF */
-#define CAN_FFASS_FFA                                               CAN_FFASS_FFA_Msk                                              /*!<Filter FIFO Assignment */
-#define CAN_FFASS_FFA0_Pos                                          (0U)
-#define CAN_FFASS_FFA0_Msk                                          (0x1UL << CAN_FFASS_FFA0_Pos)                                  /*!< 0x00000001 */
-#define CAN_FFASS_FFA0                                              CAN_FFASS_FFA0_Msk                                             /*!<Filter FIFO Assignment bit 0 */
-#define CAN_FFASS_FFA1_Pos                                          (1U)
-#define CAN_FFASS_FFA1_Msk                                          (0x1UL << CAN_FFASS_FFA1_Pos)                                  /*!< 0x00000002 */
-#define CAN_FFASS_FFA1                                              CAN_FFASS_FFA1_Msk                                             /*!<Filter FIFO Assignment bit 1 */
-#define CAN_FFASS_FFA2_Pos                                          (2U)
-#define CAN_FFASS_FFA2_Msk                                          (0x1UL << CAN_FFASS_FFA2_Pos)                                  /*!< 0x00000004 */
-#define CAN_FFASS_FFA2                                              CAN_FFASS_FFA2_Msk                                             /*!<Filter FIFO Assignment bit 2 */
-#define CAN_FFASS_FFA3_Pos                                          (3U)
-#define CAN_FFASS_FFA3_Msk                                          (0x1UL << CAN_FFASS_FFA3_Pos)                                  /*!< 0x00000008 */
-#define CAN_FFASS_FFA3                                              CAN_FFASS_FFA3_Msk                                             /*!<Filter FIFO Assignment bit 3 */
-#define CAN_FFASS_FFA4_Pos                                          (4U)
-#define CAN_FFASS_FFA4_Msk                                          (0x1UL << CAN_FFASS_FFA4_Pos)                                  /*!< 0x00000010 */
-#define CAN_FFASS_FFA4                                              CAN_FFASS_FFA4_Msk                                             /*!<Filter FIFO Assignment bit 4 */
-#define CAN_FFASS_FFA5_Pos                                          (5U)
-#define CAN_FFASS_FFA5_Msk                                          (0x1UL << CAN_FFASS_FFA5_Pos)                                  /*!< 0x00000020 */
-#define CAN_FFASS_FFA5                                              CAN_FFASS_FFA5_Msk                                             /*!<Filter FIFO Assignment bit 5 */
-#define CAN_FFASS_FFA6_Pos                                          (6U)
-#define CAN_FFASS_FFA6_Msk                                          (0x1UL << CAN_FFASS_FFA6_Pos)                                  /*!< 0x00000040 */
-#define CAN_FFASS_FFA6                                              CAN_FFASS_FFA6_Msk                                             /*!<Filter FIFO Assignment bit 6 */
-#define CAN_FFASS_FFA7_Pos                                          (7U)
-#define CAN_FFASS_FFA7_Msk                                          (0x1UL << CAN_FFASS_FFA7_Pos)                                  /*!< 0x00000080 */
-#define CAN_FFASS_FFA7                                              CAN_FFASS_FFA7_Msk                                             /*!<Filter FIFO Assignment bit 7 */
-#define CAN_FFASS_FFA8_Pos                                          (8U)
-#define CAN_FFASS_FFA8_Msk                                          (0x1UL << CAN_FFASS_FFA8_Pos)                                  /*!< 0x00000100 */
-#define CAN_FFASS_FFA8                                              CAN_FFASS_FFA8_Msk                                             /*!<Filter FIFO Assignment bit 8 */
-#define CAN_FFASS_FFA9_Pos                                          (9U)
-#define CAN_FFASS_FFA9_Msk                                          (0x1UL << CAN_FFASS_FFA9_Pos)                                  /*!< 0x00000200 */
-#define CAN_FFASS_FFA9                                              CAN_FFASS_FFA9_Msk                                             /*!<Filter FIFO Assignment bit 9 */
-#define CAN_FFASS_FFA10_Pos                                         (10U)
-#define CAN_FFASS_FFA10_Msk                                         (0x1UL << CAN_FFASS_FFA10_Pos)                                 /*!< 0x00000400 */
-#define CAN_FFASS_FFA10                                             CAN_FFASS_FFA10_Msk                                            /*!<Filter FIFO Assignment bit 10 */
-#define CAN_FFASS_FFA11_Pos                                         (11U)
-#define CAN_FFASS_FFA11_Msk                                         (0x1UL << CAN_FFASS_FFA11_Pos)                                 /*!< 0x00000800 */
-#define CAN_FFASS_FFA11                                             CAN_FFASS_FFA11_Msk                                            /*!<Filter FIFO Assignment bit 11 */
-#define CAN_FFASS_FFA12_Pos                                         (12U)
-#define CAN_FFASS_FFA12_Msk                                         (0x1UL << CAN_FFASS_FFA12_Pos)                                 /*!< 0x00001000 */
-#define CAN_FFASS_FFA12                                             CAN_FFASS_FFA12_Msk                                            /*!<Filter FIFO Assignment bit 12 */
-#define CAN_FFASS_FFA13_Pos                                         (13U)
-#define CAN_FFASS_FFA13_Msk                                         (0x1UL << CAN_FFASS_FFA13_Pos)                                 /*!< 0x00002000 */
-#define CAN_FFASS_FFA13                                             CAN_FFASS_FFA13_Msk                                            /*!<Filter FIFO Assignment bit 13 */
-#define CAN_FFASS_FFA14_Pos                                         (14U)
-#define CAN_FFASS_FFA14_Msk                                         (0x1UL << CAN_FFASS_FFA14_Pos)                                 /*!< 0x00004000 */
-#define CAN_FFASS_FFA14                                             CAN_FFASS_FFA14_Msk                                            /*!<Filter FIFO Assignment bit 14 */
-#define CAN_FFASS_FFA15_Pos                                         (15U)
-#define CAN_FFASS_FFA15_Msk                                         (0x1UL << CAN_FFASS_FFA15_Pos)                                 /*!< 0x00008000 */
-#define CAN_FFASS_FFA15                                             CAN_FFASS_FFA15_Msk                                            /*!<Filter FIFO Assignment bit 15 */
-#define CAN_FFASS_FFA16_Pos                                         (16U)
-#define CAN_FFASS_FFA16_Msk                                         (0x1UL << CAN_FFASS_FFA16_Pos)                                 /*!< 0x00010000 */
-#define CAN_FFASS_FFA16                                             CAN_FFASS_FFA16_Msk                                            /*!<Filter FIFO Assignment bit 16 */
-#define CAN_FFASS_FFA17_Pos                                         (17U)
-#define CAN_FFASS_FFA17_Msk                                         (0x1UL << CAN_FFASS_FFA17_Pos)                                 /*!< 0x00020000 */
-#define CAN_FFASS_FFA17                                             CAN_FFASS_FFA17_Msk                                            /*!<Filter FIFO Assignment bit 17 */
-#define CAN_FFASS_FFA18_Pos                                         (18U)
-#define CAN_FFASS_FFA18_Msk                                         (0x1UL << CAN_FFASS_FFA18_Pos)                                 /*!< 0x00040000 */
-#define CAN_FFASS_FFA18                                             CAN_FFASS_FFA18_Msk                                            /*!<Filter FIFO Assignment bit 18 */
-#define CAN_FFASS_FFA19_Pos                                         (19U)
-#define CAN_FFASS_FFA19_Msk                                         (0x1UL << CAN_FFASS_FFA19_Pos)                                 /*!< 0x00080000 */
-#define CAN_FFASS_FFA19                                             CAN_FFASS_FFA19_Msk                                            /*!<Filter FIFO Assignment bit 19 */
-#define CAN_FFASS_FFA20_Pos                                         (20U)
-#define CAN_FFASS_FFA20_Msk                                         (0x1UL << CAN_FFASS_FFA20_Pos)                                 /*!< 0x00100000 */
-#define CAN_FFASS_FFA20                                             CAN_FFASS_FFA20_Msk                                            /*!<Filter FIFO Assignment bit 20 */
-#define CAN_FFASS_FFA21_Pos                                         (21U)
-#define CAN_FFASS_FFA21_Msk                                         (0x1UL << CAN_FFASS_FFA21_Pos)                                 /*!< 0x00200000 */
-#define CAN_FFASS_FFA21                                             CAN_FFASS_FFA21_Msk                                            /*!<Filter FIFO Assignment bit 21 */
-#define CAN_FFASS_FFA22_Pos                                         (22U)
-#define CAN_FFASS_FFA22_Msk                                         (0x1UL << CAN_FFASS_FFA22_Pos)                                 /*!< 0x00400000 */
-#define CAN_FFASS_FFA22                                             CAN_FFASS_FFA22_Msk                                            /*!<Filter FIFO Assignment bit 22 */
-#define CAN_FFASS_FFA23_Pos                                         (23U)
-#define CAN_FFASS_FFA23_Msk                                         (0x1UL << CAN_FFASS_FFA23_Pos)                                 /*!< 0x00800000 */
-#define CAN_FFASS_FFA23                                             CAN_FFASS_FFA23_Msk                                            /*!<Filter FIFO Assignment bit 23 */
-#define CAN_FFASS_FFA24_Pos                                         (24U)
-#define CAN_FFASS_FFA24_Msk                                         (0x1UL << CAN_FFASS_FFA24_Pos)                                 /*!< 0x01000000 */
-#define CAN_FFASS_FFA24                                             CAN_FFASS_FFA24_Msk                                            /*!<Filter FIFO Assignment bit 24 */
-#define CAN_FFASS_FFA25_Pos                                         (25U)
-#define CAN_FFASS_FFA25_Msk                                         (0x1UL << CAN_FFASS_FFA25_Pos)                                 /*!< 0x02000000 */
-#define CAN_FFASS_FFA25                                             CAN_FFASS_FFA25_Msk                                            /*!<Filter FIFO Assignment bit 25 */
-#define CAN_FFASS_FFA26_Pos                                         (26U)
-#define CAN_FFASS_FFA26_Msk                                         (0x1UL << CAN_FFASS_FFA26_Pos)                                 /*!< 0x04000000 */
-#define CAN_FFASS_FFA26                                             CAN_FFASS_FFA26_Msk                                            /*!<Filter FIFO Assignment bit 26 */
-#define CAN_FFASS_FFA27_Pos                                         (27U)
-#define CAN_FFASS_FFA27_Msk                                         (0x1UL << CAN_FFASS_FFA27_Pos)                                 /*!< 0x08000000 */
-#define CAN_FFASS_FFA27                                             CAN_FFASS_FFA27_Msk                                            /*!<Filter FIFO Assignment bit 27 */
+#define CAN_FFASS_FFASS_Pos                                         (0U)
+#define CAN_FFASS_FFASS_Msk                                         (0xFFFFFFFUL << CAN_FFASS_FFASS_Pos)                           /*!< 0x0FFFFFFF */
+#define CAN_FFASS_FFASS                                             CAN_FFASS_FFASS_Msk                                            /*!<Filter FIFO Assignment */
+#define CAN_FFASS_FFASS0_Pos                                        (0U)
+#define CAN_FFASS_FFASS0_Msk                                        (0x1UL << CAN_FFASS_FFASS0_Pos)                                /*!< 0x00000001 */
+#define CAN_FFASS_FFASS0                                            CAN_FFASS_FFASS0_Msk                                           /*!<Filter FIFO Assignment bit 0 */
+#define CAN_FFASS_FFASS1_Pos                                        (1U)
+#define CAN_FFASS_FFASS1_Msk                                        (0x1UL << CAN_FFASS_FFASS1_Pos)                                /*!< 0x00000002 */
+#define CAN_FFASS_FFASS1                                            CAN_FFASS_FFASS1_Msk                                           /*!<Filter FIFO Assignment bit 1 */
+#define CAN_FFASS_FFASS2_Pos                                        (2U)
+#define CAN_FFASS_FFASS2_Msk                                        (0x1UL << CAN_FFASS_FFASS2_Pos)                                /*!< 0x00000004 */
+#define CAN_FFASS_FFASS2                                            CAN_FFASS_FFASS2_Msk                                           /*!<Filter FIFO Assignment bit 2 */
+#define CAN_FFASS_FFASS3_Pos                                        (3U)
+#define CAN_FFASS_FFASS3_Msk                                        (0x1UL << CAN_FFASS_FFASS3_Pos)                                /*!< 0x00000008 */
+#define CAN_FFASS_FFASS3                                            CAN_FFASS_FFASS3_Msk                                           /*!<Filter FIFO Assignment bit 3 */
+#define CAN_FFASS_FFASS4_Pos                                        (4U)
+#define CAN_FFASS_FFASS4_Msk                                        (0x1UL << CAN_FFASS_FFASS4_Pos)                                /*!< 0x00000010 */
+#define CAN_FFASS_FFASS4                                            CAN_FFASS_FFASS4_Msk                                           /*!<Filter FIFO Assignment bit 4 */
+#define CAN_FFASS_FFASS5_Pos                                        (5U)
+#define CAN_FFASS_FFASS5_Msk                                        (0x1UL << CAN_FFASS_FFASS5_Pos)                                /*!< 0x00000020 */
+#define CAN_FFASS_FFASS5                                            CAN_FFASS_FFASS5_Msk                                           /*!<Filter FIFO Assignment bit 5 */
+#define CAN_FFASS_FFASS6_Pos                                        (6U)
+#define CAN_FFASS_FFASS6_Msk                                        (0x1UL << CAN_FFASS_FFASS6_Pos)                                /*!< 0x00000040 */
+#define CAN_FFASS_FFASS6                                            CAN_FFASS_FFASS6_Msk                                           /*!<Filter FIFO Assignment bit 6 */
+#define CAN_FFASS_FFASS7_Pos                                        (7U)
+#define CAN_FFASS_FFASS7_Msk                                        (0x1UL << CAN_FFASS_FFASS7_Pos)                                /*!< 0x00000080 */
+#define CAN_FFASS_FFASS7                                            CAN_FFASS_FFASS7_Msk                                           /*!<Filter FIFO Assignment bit 7 */
+#define CAN_FFASS_FFASS8_Pos                                        (8U)
+#define CAN_FFASS_FFASS8_Msk                                        (0x1UL << CAN_FFASS_FFASS8_Pos)                                /*!< 0x00000100 */
+#define CAN_FFASS_FFASS8                                            CAN_FFASS_FFASS8_Msk                                           /*!<Filter FIFO Assignment bit 8 */
+#define CAN_FFASS_FFASS9_Pos                                        (9U)
+#define CAN_FFASS_FFASS9_Msk                                        (0x1UL << CAN_FFASS_FFASS9_Pos)                                /*!< 0x00000200 */
+#define CAN_FFASS_FFASS9                                            CAN_FFASS_FFASS9_Msk                                           /*!<Filter FIFO Assignment bit 9 */
+#define CAN_FFASS_FFASS10_Pos                                       (10U)
+#define CAN_FFASS_FFASS10_Msk                                       (0x1UL << CAN_FFASS_FFASS10_Pos)                               /*!< 0x00000400 */
+#define CAN_FFASS_FFASS10                                           CAN_FFASS_FFASS10_Msk                                          /*!<Filter FIFO Assignment bit 10 */
+#define CAN_FFASS_FFASS11_Pos                                       (11U)
+#define CAN_FFASS_FFASS11_Msk                                       (0x1UL << CAN_FFASS_FFASS11_Pos)                               /*!< 0x00000800 */
+#define CAN_FFASS_FFASS11                                           CAN_FFASS_FFASS11_Msk                                          /*!<Filter FIFO Assignment bit 11 */
+#define CAN_FFASS_FFASS12_Pos                                       (12U)
+#define CAN_FFASS_FFASS12_Msk                                       (0x1UL << CAN_FFASS_FFASS12_Pos)                               /*!< 0x00001000 */
+#define CAN_FFASS_FFASS12                                           CAN_FFASS_FFASS12_Msk                                          /*!<Filter FIFO Assignment bit 12 */
+#define CAN_FFASS_FFASS13_Pos                                       (13U)
+#define CAN_FFASS_FFASS13_Msk                                       (0x1UL << CAN_FFASS_FFASS13_Pos)                               /*!< 0x00002000 */
+#define CAN_FFASS_FFASS13                                           CAN_FFASS_FFASS13_Msk                                          /*!<Filter FIFO Assignment bit 13 */
+#define CAN_FFASS_FFASS14_Pos                                       (14U)
+#define CAN_FFASS_FFASS14_Msk                                       (0x1UL << CAN_FFASS_FFASS14_Pos)                               /*!< 0x00004000 */
+#define CAN_FFASS_FFASS14                                           CAN_FFASS_FFASS14_Msk                                          /*!<Filter FIFO Assignment bit 14 */
+#define CAN_FFASS_FFASS15_Pos                                       (15U)
+#define CAN_FFASS_FFASS15_Msk                                       (0x1UL << CAN_FFASS_FFASS15_Pos)                               /*!< 0x00008000 */
+#define CAN_FFASS_FFASS15                                           CAN_FFASS_FFASS15_Msk                                          /*!<Filter FIFO Assignment bit 15 */
+#define CAN_FFASS_FFASS16_Pos                                       (16U)
+#define CAN_FFASS_FFASS16_Msk                                       (0x1UL << CAN_FFASS_FFASS16_Pos)                               /*!< 0x00010000 */
+#define CAN_FFASS_FFASS16                                           CAN_FFASS_FFASS16_Msk                                          /*!<Filter FIFO Assignment bit 16 */
+#define CAN_FFASS_FFASS17_Pos                                       (17U)
+#define CAN_FFASS_FFASS17_Msk                                       (0x1UL << CAN_FFASS_FFASS17_Pos)                               /*!< 0x00020000 */
+#define CAN_FFASS_FFASS17                                           CAN_FFASS_FFASS17_Msk                                          /*!<Filter FIFO Assignment bit 17 */
+#define CAN_FFASS_FFASS18_Pos                                       (18U)
+#define CAN_FFASS_FFASS18_Msk                                       (0x1UL << CAN_FFASS_FFASS18_Pos)                               /*!< 0x00040000 */
+#define CAN_FFASS_FFASS18                                           CAN_FFASS_FFASS18_Msk                                          /*!<Filter FIFO Assignment bit 18 */
+#define CAN_FFASS_FFASS19_Pos                                       (19U)
+#define CAN_FFASS_FFASS19_Msk                                       (0x1UL << CAN_FFASS_FFASS19_Pos)                               /*!< 0x00080000 */
+#define CAN_FFASS_FFASS19                                           CAN_FFASS_FFASS19_Msk                                          /*!<Filter FIFO Assignment bit 19 */
+#define CAN_FFASS_FFASS20_Pos                                       (20U)
+#define CAN_FFASS_FFASS20_Msk                                       (0x1UL << CAN_FFASS_FFASS20_Pos)                               /*!< 0x00100000 */
+#define CAN_FFASS_FFASS20                                           CAN_FFASS_FFASS20_Msk                                          /*!<Filter FIFO Assignment bit 20 */
+#define CAN_FFASS_FFASS21_Pos                                       (21U)
+#define CAN_FFASS_FFASS21_Msk                                       (0x1UL << CAN_FFASS_FFASS21_Pos)                               /*!< 0x00200000 */
+#define CAN_FFASS_FFASS21                                           CAN_FFASS_FFASS21_Msk                                          /*!<Filter FIFO Assignment bit 21 */
+#define CAN_FFASS_FFASS22_Pos                                       (22U)
+#define CAN_FFASS_FFASS22_Msk                                       (0x1UL << CAN_FFASS_FFASS22_Pos)                               /*!< 0x00400000 */
+#define CAN_FFASS_FFASS22                                           CAN_FFASS_FFASS22_Msk                                          /*!<Filter FIFO Assignment bit 22 */
+#define CAN_FFASS_FFASS23_Pos                                       (23U)
+#define CAN_FFASS_FFASS23_Msk                                       (0x1UL << CAN_FFASS_FFASS23_Pos)                               /*!< 0x00800000 */
+#define CAN_FFASS_FFASS23                                           CAN_FFASS_FFASS23_Msk                                          /*!<Filter FIFO Assignment bit 23 */
+#define CAN_FFASS_FFASS24_Pos                                       (24U)
+#define CAN_FFASS_FFASS24_Msk                                       (0x1UL << CAN_FFASS_FFASS24_Pos)                               /*!< 0x01000000 */
+#define CAN_FFASS_FFASS24                                           CAN_FFASS_FFASS24_Msk                                          /*!<Filter FIFO Assignment bit 24 */
+#define CAN_FFASS_FFASS25_Pos                                       (25U)
+#define CAN_FFASS_FFASS25_Msk                                       (0x1UL << CAN_FFASS_FFASS25_Pos)                               /*!< 0x02000000 */
+#define CAN_FFASS_FFASS25                                           CAN_FFASS_FFASS25_Msk                                          /*!<Filter FIFO Assignment bit 25 */
+#define CAN_FFASS_FFASS26_Pos                                       (26U)
+#define CAN_FFASS_FFASS26_Msk                                       (0x1UL << CAN_FFASS_FFASS26_Pos)                               /*!< 0x04000000 */
+#define CAN_FFASS_FFASS26                                           CAN_FFASS_FFASS26_Msk                                          /*!<Filter FIFO Assignment bit 26 */
+#define CAN_FFASS_FFASS27_Pos                                       (27U)
+#define CAN_FFASS_FFASS27_Msk                                       (0x1UL << CAN_FFASS_FFASS27_Pos)                               /*!< 0x08000000 */
+#define CAN_FFASS_FFASS27                                           CAN_FFASS_FFASS27_Msk                                          /*!<Filter FIFO Assignment bit 27 */
 
 /*******************  Bit definition for CAN_FACT register  *******************/
 #define CAN_FACT_FACT_Pos                                           (0U)
@@ -2574,2749 +2600,2749 @@ typedef struct
 #define CAN_FACT_FACT27                                             CAN_FACT_FACT27_Msk                                            /*!<Filter Active bit 27 */
 
 
-/*******************  Bit definition for CAN_F0R1 register  *******************/
-#define CAN_F0R1_FB0_Pos                                            (0U)
-#define CAN_F0R1_FB0_Msk                                            (0x1UL << CAN_F0R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F0R1_FB0                                                CAN_F0R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F0R1_FB1_Pos                                            (1U)
-#define CAN_F0R1_FB1_Msk                                            (0x1UL << CAN_F0R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F0R1_FB1                                                CAN_F0R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F0R1_FB2_Pos                                            (2U)
-#define CAN_F0R1_FB2_Msk                                            (0x1UL << CAN_F0R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F0R1_FB2                                                CAN_F0R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F0R1_FB3_Pos                                            (3U)
-#define CAN_F0R1_FB3_Msk                                            (0x1UL << CAN_F0R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F0R1_FB3                                                CAN_F0R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F0R1_FB4_Pos                                            (4U)
-#define CAN_F0R1_FB4_Msk                                            (0x1UL << CAN_F0R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F0R1_FB4                                                CAN_F0R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F0R1_FB5_Pos                                            (5U)
-#define CAN_F0R1_FB5_Msk                                            (0x1UL << CAN_F0R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F0R1_FB5                                                CAN_F0R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F0R1_FB6_Pos                                            (6U)
-#define CAN_F0R1_FB6_Msk                                            (0x1UL << CAN_F0R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F0R1_FB6                                                CAN_F0R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F0R1_FB7_Pos                                            (7U)
-#define CAN_F0R1_FB7_Msk                                            (0x1UL << CAN_F0R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F0R1_FB7                                                CAN_F0R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F0R1_FB8_Pos                                            (8U)
-#define CAN_F0R1_FB8_Msk                                            (0x1UL << CAN_F0R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F0R1_FB8                                                CAN_F0R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F0R1_FB9_Pos                                            (9U)
-#define CAN_F0R1_FB9_Msk                                            (0x1UL << CAN_F0R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F0R1_FB9                                                CAN_F0R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F0R1_FB10_Pos                                           (10U)
-#define CAN_F0R1_FB10_Msk                                           (0x1UL << CAN_F0R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F0R1_FB10                                               CAN_F0R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F0R1_FB11_Pos                                           (11U)
-#define CAN_F0R1_FB11_Msk                                           (0x1UL << CAN_F0R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F0R1_FB11                                               CAN_F0R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F0R1_FB12_Pos                                           (12U)
-#define CAN_F0R1_FB12_Msk                                           (0x1UL << CAN_F0R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F0R1_FB12                                               CAN_F0R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F0R1_FB13_Pos                                           (13U)
-#define CAN_F0R1_FB13_Msk                                           (0x1UL << CAN_F0R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F0R1_FB13                                               CAN_F0R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F0R1_FB14_Pos                                           (14U)
-#define CAN_F0R1_FB14_Msk                                           (0x1UL << CAN_F0R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F0R1_FB14                                               CAN_F0R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F0R1_FB15_Pos                                           (15U)
-#define CAN_F0R1_FB15_Msk                                           (0x1UL << CAN_F0R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F0R1_FB15                                               CAN_F0R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F0R1_FB16_Pos                                           (16U)
-#define CAN_F0R1_FB16_Msk                                           (0x1UL << CAN_F0R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F0R1_FB16                                               CAN_F0R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F0R1_FB17_Pos                                           (17U)
-#define CAN_F0R1_FB17_Msk                                           (0x1UL << CAN_F0R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F0R1_FB17                                               CAN_F0R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F0R1_FB18_Pos                                           (18U)
-#define CAN_F0R1_FB18_Msk                                           (0x1UL << CAN_F0R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F0R1_FB18                                               CAN_F0R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F0R1_FB19_Pos                                           (19U)
-#define CAN_F0R1_FB19_Msk                                           (0x1UL << CAN_F0R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F0R1_FB19                                               CAN_F0R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F0R1_FB20_Pos                                           (20U)
-#define CAN_F0R1_FB20_Msk                                           (0x1UL << CAN_F0R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F0R1_FB20                                               CAN_F0R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F0R1_FB21_Pos                                           (21U)
-#define CAN_F0R1_FB21_Msk                                           (0x1UL << CAN_F0R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F0R1_FB21                                               CAN_F0R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F0R1_FB22_Pos                                           (22U)
-#define CAN_F0R1_FB22_Msk                                           (0x1UL << CAN_F0R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F0R1_FB22                                               CAN_F0R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F0R1_FB23_Pos                                           (23U)
-#define CAN_F0R1_FB23_Msk                                           (0x1UL << CAN_F0R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F0R1_FB23                                               CAN_F0R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F0R1_FB24_Pos                                           (24U)
-#define CAN_F0R1_FB24_Msk                                           (0x1UL << CAN_F0R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F0R1_FB24                                               CAN_F0R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F0R1_FB25_Pos                                           (25U)
-#define CAN_F0R1_FB25_Msk                                           (0x1UL << CAN_F0R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F0R1_FB25                                               CAN_F0R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F0R1_FB26_Pos                                           (26U)
-#define CAN_F0R1_FB26_Msk                                           (0x1UL << CAN_F0R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F0R1_FB26                                               CAN_F0R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F0R1_FB27_Pos                                           (27U)
-#define CAN_F0R1_FB27_Msk                                           (0x1UL << CAN_F0R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F0R1_FB27                                               CAN_F0R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F0R1_FB28_Pos                                           (28U)
-#define CAN_F0R1_FB28_Msk                                           (0x1UL << CAN_F0R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F0R1_FB28                                               CAN_F0R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F0R1_FB29_Pos                                           (29U)
-#define CAN_F0R1_FB29_Msk                                           (0x1UL << CAN_F0R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F0R1_FB29                                               CAN_F0R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F0R1_FB30_Pos                                           (30U)
-#define CAN_F0R1_FB30_Msk                                           (0x1UL << CAN_F0R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F0R1_FB30                                               CAN_F0R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F0R1_FB31_Pos                                           (31U)
-#define CAN_F0R1_FB31_Msk                                           (0x1UL << CAN_F0R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F0R1_FB31                                               CAN_F0R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F0BANK1 register  *******************/
+#define CAN_F0BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F0BANK1_FBIT0_Msk                                       (0x1UL << CAN_F0BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F0BANK1_FBIT0                                           CAN_F0BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F0BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F0BANK1_FBIT1_Msk                                       (0x1UL << CAN_F0BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F0BANK1_FBIT1                                           CAN_F0BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F0BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F0BANK1_FBIT2_Msk                                       (0x1UL << CAN_F0BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F0BANK1_FBIT2                                           CAN_F0BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F0BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F0BANK1_FBIT3_Msk                                       (0x1UL << CAN_F0BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F0BANK1_FBIT3                                           CAN_F0BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F0BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F0BANK1_FBIT4_Msk                                       (0x1UL << CAN_F0BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F0BANK1_FBIT4                                           CAN_F0BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F0BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F0BANK1_FBIT5_Msk                                       (0x1UL << CAN_F0BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F0BANK1_FBIT5                                           CAN_F0BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F0BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F0BANK1_FBIT6_Msk                                       (0x1UL << CAN_F0BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F0BANK1_FBIT6                                           CAN_F0BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F0BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F0BANK1_FBIT7_Msk                                       (0x1UL << CAN_F0BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F0BANK1_FBIT7                                           CAN_F0BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F0BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F0BANK1_FBIT8_Msk                                       (0x1UL << CAN_F0BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F0BANK1_FBIT8                                           CAN_F0BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F0BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F0BANK1_FBIT9_Msk                                       (0x1UL << CAN_F0BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F0BANK1_FBIT9                                           CAN_F0BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F0BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F0BANK1_FBIT10_Msk                                      (0x1UL << CAN_F0BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F0BANK1_FBIT10                                          CAN_F0BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F0BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F0BANK1_FBIT11_Msk                                      (0x1UL << CAN_F0BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F0BANK1_FBIT11                                          CAN_F0BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F0BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F0BANK1_FBIT12_Msk                                      (0x1UL << CAN_F0BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F0BANK1_FBIT12                                          CAN_F0BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F0BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F0BANK1_FBIT13_Msk                                      (0x1UL << CAN_F0BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F0BANK1_FBIT13                                          CAN_F0BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F0BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F0BANK1_FBIT14_Msk                                      (0x1UL << CAN_F0BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F0BANK1_FBIT14                                          CAN_F0BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F0BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F0BANK1_FBIT15_Msk                                      (0x1UL << CAN_F0BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F0BANK1_FBIT15                                          CAN_F0BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F0BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F0BANK1_FBIT16_Msk                                      (0x1UL << CAN_F0BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F0BANK1_FBIT16                                          CAN_F0BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F0BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F0BANK1_FBIT17_Msk                                      (0x1UL << CAN_F0BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F0BANK1_FBIT17                                          CAN_F0BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F0BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F0BANK1_FBIT18_Msk                                      (0x1UL << CAN_F0BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F0BANK1_FBIT18                                          CAN_F0BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F0BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F0BANK1_FBIT19_Msk                                      (0x1UL << CAN_F0BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F0BANK1_FBIT19                                          CAN_F0BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F0BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F0BANK1_FBIT20_Msk                                      (0x1UL << CAN_F0BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F0BANK1_FBIT20                                          CAN_F0BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F0BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F0BANK1_FBIT21_Msk                                      (0x1UL << CAN_F0BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F0BANK1_FBIT21                                          CAN_F0BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F0BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F0BANK1_FBIT22_Msk                                      (0x1UL << CAN_F0BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F0BANK1_FBIT22                                          CAN_F0BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F0BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F0BANK1_FBIT23_Msk                                      (0x1UL << CAN_F0BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F0BANK1_FBIT23                                          CAN_F0BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F0BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F0BANK1_FBIT24_Msk                                      (0x1UL << CAN_F0BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F0BANK1_FBIT24                                          CAN_F0BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F0BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F0BANK1_FBIT25_Msk                                      (0x1UL << CAN_F0BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F0BANK1_FBIT25                                          CAN_F0BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F0BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F0BANK1_FBIT26_Msk                                      (0x1UL << CAN_F0BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F0BANK1_FBIT26                                          CAN_F0BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F0BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F0BANK1_FBIT27_Msk                                      (0x1UL << CAN_F0BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F0BANK1_FBIT27                                          CAN_F0BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F0BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F0BANK1_FBIT28_Msk                                      (0x1UL << CAN_F0BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F0BANK1_FBIT28                                          CAN_F0BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F0BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F0BANK1_FBIT29_Msk                                      (0x1UL << CAN_F0BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F0BANK1_FBIT29                                          CAN_F0BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F0BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F0BANK1_FBIT30_Msk                                      (0x1UL << CAN_F0BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F0BANK1_FBIT30                                          CAN_F0BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F0BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F0BANK1_FBIT31_Msk                                      (0x1UL << CAN_F0BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F0BANK1_FBIT31                                          CAN_F0BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F1R1 register  *******************/
-#define CAN_F1R1_FB0_Pos                                            (0U)
-#define CAN_F1R1_FB0_Msk                                            (0x1UL << CAN_F1R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F1R1_FB0                                                CAN_F1R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F1R1_FB1_Pos                                            (1U)
-#define CAN_F1R1_FB1_Msk                                            (0x1UL << CAN_F1R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F1R1_FB1                                                CAN_F1R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F1R1_FB2_Pos                                            (2U)
-#define CAN_F1R1_FB2_Msk                                            (0x1UL << CAN_F1R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F1R1_FB2                                                CAN_F1R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F1R1_FB3_Pos                                            (3U)
-#define CAN_F1R1_FB3_Msk                                            (0x1UL << CAN_F1R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F1R1_FB3                                                CAN_F1R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F1R1_FB4_Pos                                            (4U)
-#define CAN_F1R1_FB4_Msk                                            (0x1UL << CAN_F1R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F1R1_FB4                                                CAN_F1R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F1R1_FB5_Pos                                            (5U)
-#define CAN_F1R1_FB5_Msk                                            (0x1UL << CAN_F1R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F1R1_FB5                                                CAN_F1R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F1R1_FB6_Pos                                            (6U)
-#define CAN_F1R1_FB6_Msk                                            (0x1UL << CAN_F1R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F1R1_FB6                                                CAN_F1R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F1R1_FB7_Pos                                            (7U)
-#define CAN_F1R1_FB7_Msk                                            (0x1UL << CAN_F1R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F1R1_FB7                                                CAN_F1R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F1R1_FB8_Pos                                            (8U)
-#define CAN_F1R1_FB8_Msk                                            (0x1UL << CAN_F1R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F1R1_FB8                                                CAN_F1R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F1R1_FB9_Pos                                            (9U)
-#define CAN_F1R1_FB9_Msk                                            (0x1UL << CAN_F1R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F1R1_FB9                                                CAN_F1R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F1R1_FB10_Pos                                           (10U)
-#define CAN_F1R1_FB10_Msk                                           (0x1UL << CAN_F1R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F1R1_FB10                                               CAN_F1R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F1R1_FB11_Pos                                           (11U)
-#define CAN_F1R1_FB11_Msk                                           (0x1UL << CAN_F1R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F1R1_FB11                                               CAN_F1R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F1R1_FB12_Pos                                           (12U)
-#define CAN_F1R1_FB12_Msk                                           (0x1UL << CAN_F1R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F1R1_FB12                                               CAN_F1R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F1R1_FB13_Pos                                           (13U)
-#define CAN_F1R1_FB13_Msk                                           (0x1UL << CAN_F1R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F1R1_FB13                                               CAN_F1R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F1R1_FB14_Pos                                           (14U)
-#define CAN_F1R1_FB14_Msk                                           (0x1UL << CAN_F1R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F1R1_FB14                                               CAN_F1R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F1R1_FB15_Pos                                           (15U)
-#define CAN_F1R1_FB15_Msk                                           (0x1UL << CAN_F1R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F1R1_FB15                                               CAN_F1R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F1R1_FB16_Pos                                           (16U)
-#define CAN_F1R1_FB16_Msk                                           (0x1UL << CAN_F1R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F1R1_FB16                                               CAN_F1R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F1R1_FB17_Pos                                           (17U)
-#define CAN_F1R1_FB17_Msk                                           (0x1UL << CAN_F1R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F1R1_FB17                                               CAN_F1R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F1R1_FB18_Pos                                           (18U)
-#define CAN_F1R1_FB18_Msk                                           (0x1UL << CAN_F1R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F1R1_FB18                                               CAN_F1R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F1R1_FB19_Pos                                           (19U)
-#define CAN_F1R1_FB19_Msk                                           (0x1UL << CAN_F1R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F1R1_FB19                                               CAN_F1R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F1R1_FB20_Pos                                           (20U)
-#define CAN_F1R1_FB20_Msk                                           (0x1UL << CAN_F1R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F1R1_FB20                                               CAN_F1R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F1R1_FB21_Pos                                           (21U)
-#define CAN_F1R1_FB21_Msk                                           (0x1UL << CAN_F1R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F1R1_FB21                                               CAN_F1R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F1R1_FB22_Pos                                           (22U)
-#define CAN_F1R1_FB22_Msk                                           (0x1UL << CAN_F1R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F1R1_FB22                                               CAN_F1R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F1R1_FB23_Pos                                           (23U)
-#define CAN_F1R1_FB23_Msk                                           (0x1UL << CAN_F1R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F1R1_FB23                                               CAN_F1R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F1R1_FB24_Pos                                           (24U)
-#define CAN_F1R1_FB24_Msk                                           (0x1UL << CAN_F1R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F1R1_FB24                                               CAN_F1R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F1R1_FB25_Pos                                           (25U)
-#define CAN_F1R1_FB25_Msk                                           (0x1UL << CAN_F1R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F1R1_FB25                                               CAN_F1R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F1R1_FB26_Pos                                           (26U)
-#define CAN_F1R1_FB26_Msk                                           (0x1UL << CAN_F1R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F1R1_FB26                                               CAN_F1R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F1R1_FB27_Pos                                           (27U)
-#define CAN_F1R1_FB27_Msk                                           (0x1UL << CAN_F1R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F1R1_FB27                                               CAN_F1R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F1R1_FB28_Pos                                           (28U)
-#define CAN_F1R1_FB28_Msk                                           (0x1UL << CAN_F1R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F1R1_FB28                                               CAN_F1R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F1R1_FB29_Pos                                           (29U)
-#define CAN_F1R1_FB29_Msk                                           (0x1UL << CAN_F1R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F1R1_FB29                                               CAN_F1R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F1R1_FB30_Pos                                           (30U)
-#define CAN_F1R1_FB30_Msk                                           (0x1UL << CAN_F1R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F1R1_FB30                                               CAN_F1R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F1R1_FB31_Pos                                           (31U)
-#define CAN_F1R1_FB31_Msk                                           (0x1UL << CAN_F1R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F1R1_FB31                                               CAN_F1R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F1BANK1 register  *******************/
+#define CAN_F1BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F1BANK1_FBIT0_Msk                                       (0x1UL << CAN_F1BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F1BANK1_FBIT0                                           CAN_F1BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F1BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F1BANK1_FBIT1_Msk                                       (0x1UL << CAN_F1BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F1BANK1_FBIT1                                           CAN_F1BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F1BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F1BANK1_FBIT2_Msk                                       (0x1UL << CAN_F1BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F1BANK1_FBIT2                                           CAN_F1BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F1BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F1BANK1_FBIT3_Msk                                       (0x1UL << CAN_F1BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F1BANK1_FBIT3                                           CAN_F1BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F1BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F1BANK1_FBIT4_Msk                                       (0x1UL << CAN_F1BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F1BANK1_FBIT4                                           CAN_F1BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F1BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F1BANK1_FBIT5_Msk                                       (0x1UL << CAN_F1BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F1BANK1_FBIT5                                           CAN_F1BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F1BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F1BANK1_FBIT6_Msk                                       (0x1UL << CAN_F1BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F1BANK1_FBIT6                                           CAN_F1BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F1BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F1BANK1_FBIT7_Msk                                       (0x1UL << CAN_F1BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F1BANK1_FBIT7                                           CAN_F1BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F1BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F1BANK1_FBIT8_Msk                                       (0x1UL << CAN_F1BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F1BANK1_FBIT8                                           CAN_F1BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F1BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F1BANK1_FBIT9_Msk                                       (0x1UL << CAN_F1BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F1BANK1_FBIT9                                           CAN_F1BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F1BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F1BANK1_FBIT10_Msk                                      (0x1UL << CAN_F1BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F1BANK1_FBIT10                                          CAN_F1BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F1BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F1BANK1_FBIT11_Msk                                      (0x1UL << CAN_F1BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F1BANK1_FBIT11                                          CAN_F1BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F1BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F1BANK1_FBIT12_Msk                                      (0x1UL << CAN_F1BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F1BANK1_FBIT12                                          CAN_F1BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F1BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F1BANK1_FBIT13_Msk                                      (0x1UL << CAN_F1BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F1BANK1_FBIT13                                          CAN_F1BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F1BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F1BANK1_FBIT14_Msk                                      (0x1UL << CAN_F1BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F1BANK1_FBIT14                                          CAN_F1BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F1BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F1BANK1_FBIT15_Msk                                      (0x1UL << CAN_F1BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F1BANK1_FBIT15                                          CAN_F1BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F1BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F1BANK1_FBIT16_Msk                                      (0x1UL << CAN_F1BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F1BANK1_FBIT16                                          CAN_F1BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F1BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F1BANK1_FBIT17_Msk                                      (0x1UL << CAN_F1BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F1BANK1_FBIT17                                          CAN_F1BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F1BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F1BANK1_FBIT18_Msk                                      (0x1UL << CAN_F1BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F1BANK1_FBIT18                                          CAN_F1BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F1BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F1BANK1_FBIT19_Msk                                      (0x1UL << CAN_F1BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F1BANK1_FBIT19                                          CAN_F1BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F1BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F1BANK1_FBIT20_Msk                                      (0x1UL << CAN_F1BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F1BANK1_FBIT20                                          CAN_F1BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F1BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F1BANK1_FBIT21_Msk                                      (0x1UL << CAN_F1BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F1BANK1_FBIT21                                          CAN_F1BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F1BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F1BANK1_FBIT22_Msk                                      (0x1UL << CAN_F1BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F1BANK1_FBIT22                                          CAN_F1BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F1BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F1BANK1_FBIT23_Msk                                      (0x1UL << CAN_F1BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F1BANK1_FBIT23                                          CAN_F1BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F1BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F1BANK1_FBIT24_Msk                                      (0x1UL << CAN_F1BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F1BANK1_FBIT24                                          CAN_F1BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F1BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F1BANK1_FBIT25_Msk                                      (0x1UL << CAN_F1BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F1BANK1_FBIT25                                          CAN_F1BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F1BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F1BANK1_FBIT26_Msk                                      (0x1UL << CAN_F1BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F1BANK1_FBIT26                                          CAN_F1BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F1BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F1BANK1_FBIT27_Msk                                      (0x1UL << CAN_F1BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F1BANK1_FBIT27                                          CAN_F1BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F1BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F1BANK1_FBIT28_Msk                                      (0x1UL << CAN_F1BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F1BANK1_FBIT28                                          CAN_F1BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F1BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F1BANK1_FBIT29_Msk                                      (0x1UL << CAN_F1BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F1BANK1_FBIT29                                          CAN_F1BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F1BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F1BANK1_FBIT30_Msk                                      (0x1UL << CAN_F1BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F1BANK1_FBIT30                                          CAN_F1BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F1BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F1BANK1_FBIT31_Msk                                      (0x1UL << CAN_F1BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F1BANK1_FBIT31                                          CAN_F1BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F2R1 register  *******************/
-#define CAN_F2R1_FB0_Pos                                            (0U)
-#define CAN_F2R1_FB0_Msk                                            (0x1UL << CAN_F2R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F2R1_FB0                                                CAN_F2R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F2R1_FB1_Pos                                            (1U)
-#define CAN_F2R1_FB1_Msk                                            (0x1UL << CAN_F2R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F2R1_FB1                                                CAN_F2R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F2R1_FB2_Pos                                            (2U)
-#define CAN_F2R1_FB2_Msk                                            (0x1UL << CAN_F2R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F2R1_FB2                                                CAN_F2R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F2R1_FB3_Pos                                            (3U)
-#define CAN_F2R1_FB3_Msk                                            (0x1UL << CAN_F2R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F2R1_FB3                                                CAN_F2R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F2R1_FB4_Pos                                            (4U)
-#define CAN_F2R1_FB4_Msk                                            (0x1UL << CAN_F2R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F2R1_FB4                                                CAN_F2R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F2R1_FB5_Pos                                            (5U)
-#define CAN_F2R1_FB5_Msk                                            (0x1UL << CAN_F2R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F2R1_FB5                                                CAN_F2R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F2R1_FB6_Pos                                            (6U)
-#define CAN_F2R1_FB6_Msk                                            (0x1UL << CAN_F2R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F2R1_FB6                                                CAN_F2R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F2R1_FB7_Pos                                            (7U)
-#define CAN_F2R1_FB7_Msk                                            (0x1UL << CAN_F2R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F2R1_FB7                                                CAN_F2R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F2R1_FB8_Pos                                            (8U)
-#define CAN_F2R1_FB8_Msk                                            (0x1UL << CAN_F2R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F2R1_FB8                                                CAN_F2R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F2R1_FB9_Pos                                            (9U)
-#define CAN_F2R1_FB9_Msk                                            (0x1UL << CAN_F2R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F2R1_FB9                                                CAN_F2R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F2R1_FB10_Pos                                           (10U)
-#define CAN_F2R1_FB10_Msk                                           (0x1UL << CAN_F2R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F2R1_FB10                                               CAN_F2R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F2R1_FB11_Pos                                           (11U)
-#define CAN_F2R1_FB11_Msk                                           (0x1UL << CAN_F2R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F2R1_FB11                                               CAN_F2R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F2R1_FB12_Pos                                           (12U)
-#define CAN_F2R1_FB12_Msk                                           (0x1UL << CAN_F2R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F2R1_FB12                                               CAN_F2R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F2R1_FB13_Pos                                           (13U)
-#define CAN_F2R1_FB13_Msk                                           (0x1UL << CAN_F2R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F2R1_FB13                                               CAN_F2R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F2R1_FB14_Pos                                           (14U)
-#define CAN_F2R1_FB14_Msk                                           (0x1UL << CAN_F2R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F2R1_FB14                                               CAN_F2R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F2R1_FB15_Pos                                           (15U)
-#define CAN_F2R1_FB15_Msk                                           (0x1UL << CAN_F2R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F2R1_FB15                                               CAN_F2R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F2R1_FB16_Pos                                           (16U)
-#define CAN_F2R1_FB16_Msk                                           (0x1UL << CAN_F2R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F2R1_FB16                                               CAN_F2R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F2R1_FB17_Pos                                           (17U)
-#define CAN_F2R1_FB17_Msk                                           (0x1UL << CAN_F2R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F2R1_FB17                                               CAN_F2R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F2R1_FB18_Pos                                           (18U)
-#define CAN_F2R1_FB18_Msk                                           (0x1UL << CAN_F2R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F2R1_FB18                                               CAN_F2R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F2R1_FB19_Pos                                           (19U)
-#define CAN_F2R1_FB19_Msk                                           (0x1UL << CAN_F2R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F2R1_FB19                                               CAN_F2R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F2R1_FB20_Pos                                           (20U)
-#define CAN_F2R1_FB20_Msk                                           (0x1UL << CAN_F2R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F2R1_FB20                                               CAN_F2R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F2R1_FB21_Pos                                           (21U)
-#define CAN_F2R1_FB21_Msk                                           (0x1UL << CAN_F2R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F2R1_FB21                                               CAN_F2R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F2R1_FB22_Pos                                           (22U)
-#define CAN_F2R1_FB22_Msk                                           (0x1UL << CAN_F2R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F2R1_FB22                                               CAN_F2R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F2R1_FB23_Pos                                           (23U)
-#define CAN_F2R1_FB23_Msk                                           (0x1UL << CAN_F2R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F2R1_FB23                                               CAN_F2R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F2R1_FB24_Pos                                           (24U)
-#define CAN_F2R1_FB24_Msk                                           (0x1UL << CAN_F2R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F2R1_FB24                                               CAN_F2R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F2R1_FB25_Pos                                           (25U)
-#define CAN_F2R1_FB25_Msk                                           (0x1UL << CAN_F2R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F2R1_FB25                                               CAN_F2R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F2R1_FB26_Pos                                           (26U)
-#define CAN_F2R1_FB26_Msk                                           (0x1UL << CAN_F2R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F2R1_FB26                                               CAN_F2R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F2R1_FB27_Pos                                           (27U)
-#define CAN_F2R1_FB27_Msk                                           (0x1UL << CAN_F2R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F2R1_FB27                                               CAN_F2R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F2R1_FB28_Pos                                           (28U)
-#define CAN_F2R1_FB28_Msk                                           (0x1UL << CAN_F2R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F2R1_FB28                                               CAN_F2R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F2R1_FB29_Pos                                           (29U)
-#define CAN_F2R1_FB29_Msk                                           (0x1UL << CAN_F2R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F2R1_FB29                                               CAN_F2R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F2R1_FB30_Pos                                           (30U)
-#define CAN_F2R1_FB30_Msk                                           (0x1UL << CAN_F2R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F2R1_FB30                                               CAN_F2R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F2R1_FB31_Pos                                           (31U)
-#define CAN_F2R1_FB31_Msk                                           (0x1UL << CAN_F2R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F2R1_FB31                                               CAN_F2R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F2BANK1 register  *******************/
+#define CAN_F2BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F2BANK1_FBIT0_Msk                                       (0x1UL << CAN_F2BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F2BANK1_FBIT0                                           CAN_F2BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F2BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F2BANK1_FBIT1_Msk                                       (0x1UL << CAN_F2BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F2BANK1_FBIT1                                           CAN_F2BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F2BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F2BANK1_FBIT2_Msk                                       (0x1UL << CAN_F2BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F2BANK1_FBIT2                                           CAN_F2BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F2BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F2BANK1_FBIT3_Msk                                       (0x1UL << CAN_F2BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F2BANK1_FBIT3                                           CAN_F2BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F2BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F2BANK1_FBIT4_Msk                                       (0x1UL << CAN_F2BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F2BANK1_FBIT4                                           CAN_F2BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F2BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F2BANK1_FBIT5_Msk                                       (0x1UL << CAN_F2BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F2BANK1_FBIT5                                           CAN_F2BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F2BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F2BANK1_FBIT6_Msk                                       (0x1UL << CAN_F2BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F2BANK1_FBIT6                                           CAN_F2BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F2BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F2BANK1_FBIT7_Msk                                       (0x1UL << CAN_F2BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F2BANK1_FBIT7                                           CAN_F2BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F2BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F2BANK1_FBIT8_Msk                                       (0x1UL << CAN_F2BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F2BANK1_FBIT8                                           CAN_F2BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F2BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F2BANK1_FBIT9_Msk                                       (0x1UL << CAN_F2BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F2BANK1_FBIT9                                           CAN_F2BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F2BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F2BANK1_FBIT10_Msk                                      (0x1UL << CAN_F2BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F2BANK1_FBIT10                                          CAN_F2BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F2BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F2BANK1_FBIT11_Msk                                      (0x1UL << CAN_F2BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F2BANK1_FBIT11                                          CAN_F2BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F2BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F2BANK1_FBIT12_Msk                                      (0x1UL << CAN_F2BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F2BANK1_FBIT12                                          CAN_F2BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F2BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F2BANK1_FBIT13_Msk                                      (0x1UL << CAN_F2BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F2BANK1_FBIT13                                          CAN_F2BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F2BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F2BANK1_FBIT14_Msk                                      (0x1UL << CAN_F2BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F2BANK1_FBIT14                                          CAN_F2BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F2BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F2BANK1_FBIT15_Msk                                      (0x1UL << CAN_F2BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F2BANK1_FBIT15                                          CAN_F2BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F2BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F2BANK1_FBIT16_Msk                                      (0x1UL << CAN_F2BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F2BANK1_FBIT16                                          CAN_F2BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F2BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F2BANK1_FBIT17_Msk                                      (0x1UL << CAN_F2BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F2BANK1_FBIT17                                          CAN_F2BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F2BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F2BANK1_FBIT18_Msk                                      (0x1UL << CAN_F2BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F2BANK1_FBIT18                                          CAN_F2BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F2BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F2BANK1_FBIT19_Msk                                      (0x1UL << CAN_F2BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F2BANK1_FBIT19                                          CAN_F2BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F2BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F2BANK1_FBIT20_Msk                                      (0x1UL << CAN_F2BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F2BANK1_FBIT20                                          CAN_F2BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F2BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F2BANK1_FBIT21_Msk                                      (0x1UL << CAN_F2BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F2BANK1_FBIT21                                          CAN_F2BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F2BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F2BANK1_FBIT22_Msk                                      (0x1UL << CAN_F2BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F2BANK1_FBIT22                                          CAN_F2BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F2BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F2BANK1_FBIT23_Msk                                      (0x1UL << CAN_F2BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F2BANK1_FBIT23                                          CAN_F2BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F2BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F2BANK1_FBIT24_Msk                                      (0x1UL << CAN_F2BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F2BANK1_FBIT24                                          CAN_F2BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F2BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F2BANK1_FBIT25_Msk                                      (0x1UL << CAN_F2BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F2BANK1_FBIT25                                          CAN_F2BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F2BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F2BANK1_FBIT26_Msk                                      (0x1UL << CAN_F2BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F2BANK1_FBIT26                                          CAN_F2BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F2BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F2BANK1_FBIT27_Msk                                      (0x1UL << CAN_F2BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F2BANK1_FBIT27                                          CAN_F2BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F2BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F2BANK1_FBIT28_Msk                                      (0x1UL << CAN_F2BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F2BANK1_FBIT28                                          CAN_F2BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F2BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F2BANK1_FBIT29_Msk                                      (0x1UL << CAN_F2BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F2BANK1_FBIT29                                          CAN_F2BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F2BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F2BANK1_FBIT30_Msk                                      (0x1UL << CAN_F2BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F2BANK1_FBIT30                                          CAN_F2BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F2BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F2BANK1_FBIT31_Msk                                      (0x1UL << CAN_F2BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F2BANK1_FBIT31                                          CAN_F2BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F3R1 register  *******************/
-#define CAN_F3R1_FB0_Pos                                            (0U)
-#define CAN_F3R1_FB0_Msk                                            (0x1UL << CAN_F3R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F3R1_FB0                                                CAN_F3R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F3R1_FB1_Pos                                            (1U)
-#define CAN_F3R1_FB1_Msk                                            (0x1UL << CAN_F3R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F3R1_FB1                                                CAN_F3R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F3R1_FB2_Pos                                            (2U)
-#define CAN_F3R1_FB2_Msk                                            (0x1UL << CAN_F3R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F3R1_FB2                                                CAN_F3R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F3R1_FB3_Pos                                            (3U)
-#define CAN_F3R1_FB3_Msk                                            (0x1UL << CAN_F3R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F3R1_FB3                                                CAN_F3R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F3R1_FB4_Pos                                            (4U)
-#define CAN_F3R1_FB4_Msk                                            (0x1UL << CAN_F3R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F3R1_FB4                                                CAN_F3R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F3R1_FB5_Pos                                            (5U)
-#define CAN_F3R1_FB5_Msk                                            (0x1UL << CAN_F3R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F3R1_FB5                                                CAN_F3R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F3R1_FB6_Pos                                            (6U)
-#define CAN_F3R1_FB6_Msk                                            (0x1UL << CAN_F3R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F3R1_FB6                                                CAN_F3R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F3R1_FB7_Pos                                            (7U)
-#define CAN_F3R1_FB7_Msk                                            (0x1UL << CAN_F3R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F3R1_FB7                                                CAN_F3R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F3R1_FB8_Pos                                            (8U)
-#define CAN_F3R1_FB8_Msk                                            (0x1UL << CAN_F3R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F3R1_FB8                                                CAN_F3R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F3R1_FB9_Pos                                            (9U)
-#define CAN_F3R1_FB9_Msk                                            (0x1UL << CAN_F3R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F3R1_FB9                                                CAN_F3R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F3R1_FB10_Pos                                           (10U)
-#define CAN_F3R1_FB10_Msk                                           (0x1UL << CAN_F3R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F3R1_FB10                                               CAN_F3R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F3R1_FB11_Pos                                           (11U)
-#define CAN_F3R1_FB11_Msk                                           (0x1UL << CAN_F3R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F3R1_FB11                                               CAN_F3R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F3R1_FB12_Pos                                           (12U)
-#define CAN_F3R1_FB12_Msk                                           (0x1UL << CAN_F3R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F3R1_FB12                                               CAN_F3R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F3R1_FB13_Pos                                           (13U)
-#define CAN_F3R1_FB13_Msk                                           (0x1UL << CAN_F3R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F3R1_FB13                                               CAN_F3R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F3R1_FB14_Pos                                           (14U)
-#define CAN_F3R1_FB14_Msk                                           (0x1UL << CAN_F3R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F3R1_FB14                                               CAN_F3R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F3R1_FB15_Pos                                           (15U)
-#define CAN_F3R1_FB15_Msk                                           (0x1UL << CAN_F3R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F3R1_FB15                                               CAN_F3R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F3R1_FB16_Pos                                           (16U)
-#define CAN_F3R1_FB16_Msk                                           (0x1UL << CAN_F3R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F3R1_FB16                                               CAN_F3R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F3R1_FB17_Pos                                           (17U)
-#define CAN_F3R1_FB17_Msk                                           (0x1UL << CAN_F3R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F3R1_FB17                                               CAN_F3R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F3R1_FB18_Pos                                           (18U)
-#define CAN_F3R1_FB18_Msk                                           (0x1UL << CAN_F3R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F3R1_FB18                                               CAN_F3R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F3R1_FB19_Pos                                           (19U)
-#define CAN_F3R1_FB19_Msk                                           (0x1UL << CAN_F3R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F3R1_FB19                                               CAN_F3R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F3R1_FB20_Pos                                           (20U)
-#define CAN_F3R1_FB20_Msk                                           (0x1UL << CAN_F3R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F3R1_FB20                                               CAN_F3R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F3R1_FB21_Pos                                           (21U)
-#define CAN_F3R1_FB21_Msk                                           (0x1UL << CAN_F3R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F3R1_FB21                                               CAN_F3R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F3R1_FB22_Pos                                           (22U)
-#define CAN_F3R1_FB22_Msk                                           (0x1UL << CAN_F3R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F3R1_FB22                                               CAN_F3R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F3R1_FB23_Pos                                           (23U)
-#define CAN_F3R1_FB23_Msk                                           (0x1UL << CAN_F3R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F3R1_FB23                                               CAN_F3R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F3R1_FB24_Pos                                           (24U)
-#define CAN_F3R1_FB24_Msk                                           (0x1UL << CAN_F3R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F3R1_FB24                                               CAN_F3R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F3R1_FB25_Pos                                           (25U)
-#define CAN_F3R1_FB25_Msk                                           (0x1UL << CAN_F3R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F3R1_FB25                                               CAN_F3R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F3R1_FB26_Pos                                           (26U)
-#define CAN_F3R1_FB26_Msk                                           (0x1UL << CAN_F3R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F3R1_FB26                                               CAN_F3R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F3R1_FB27_Pos                                           (27U)
-#define CAN_F3R1_FB27_Msk                                           (0x1UL << CAN_F3R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F3R1_FB27                                               CAN_F3R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F3R1_FB28_Pos                                           (28U)
-#define CAN_F3R1_FB28_Msk                                           (0x1UL << CAN_F3R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F3R1_FB28                                               CAN_F3R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F3R1_FB29_Pos                                           (29U)
-#define CAN_F3R1_FB29_Msk                                           (0x1UL << CAN_F3R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F3R1_FB29                                               CAN_F3R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F3R1_FB30_Pos                                           (30U)
-#define CAN_F3R1_FB30_Msk                                           (0x1UL << CAN_F3R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F3R1_FB30                                               CAN_F3R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F3R1_FB31_Pos                                           (31U)
-#define CAN_F3R1_FB31_Msk                                           (0x1UL << CAN_F3R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F3R1_FB31                                               CAN_F3R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F3BANK1 register  *******************/
+#define CAN_F3BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F3BANK1_FBIT0_Msk                                       (0x1UL << CAN_F3BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F3BANK1_FBIT0                                           CAN_F3BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F3BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F3BANK1_FBIT1_Msk                                       (0x1UL << CAN_F3BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F3BANK1_FBIT1                                           CAN_F3BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F3BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F3BANK1_FBIT2_Msk                                       (0x1UL << CAN_F3BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F3BANK1_FBIT2                                           CAN_F3BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F3BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F3BANK1_FBIT3_Msk                                       (0x1UL << CAN_F3BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F3BANK1_FBIT3                                           CAN_F3BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F3BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F3BANK1_FBIT4_Msk                                       (0x1UL << CAN_F3BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F3BANK1_FBIT4                                           CAN_F3BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F3BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F3BANK1_FBIT5_Msk                                       (0x1UL << CAN_F3BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F3BANK1_FBIT5                                           CAN_F3BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F3BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F3BANK1_FBIT6_Msk                                       (0x1UL << CAN_F3BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F3BANK1_FBIT6                                           CAN_F3BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F3BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F3BANK1_FBIT7_Msk                                       (0x1UL << CAN_F3BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F3BANK1_FBIT7                                           CAN_F3BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F3BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F3BANK1_FBIT8_Msk                                       (0x1UL << CAN_F3BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F3BANK1_FBIT8                                           CAN_F3BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F3BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F3BANK1_FBIT9_Msk                                       (0x1UL << CAN_F3BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F3BANK1_FBIT9                                           CAN_F3BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F3BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F3BANK1_FBIT10_Msk                                      (0x1UL << CAN_F3BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F3BANK1_FBIT10                                          CAN_F3BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F3BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F3BANK1_FBIT11_Msk                                      (0x1UL << CAN_F3BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F3BANK1_FBIT11                                          CAN_F3BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F3BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F3BANK1_FBIT12_Msk                                      (0x1UL << CAN_F3BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F3BANK1_FBIT12                                          CAN_F3BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F3BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F3BANK1_FBIT13_Msk                                      (0x1UL << CAN_F3BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F3BANK1_FBIT13                                          CAN_F3BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F3BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F3BANK1_FBIT14_Msk                                      (0x1UL << CAN_F3BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F3BANK1_FBIT14                                          CAN_F3BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F3BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F3BANK1_FBIT15_Msk                                      (0x1UL << CAN_F3BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F3BANK1_FBIT15                                          CAN_F3BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F3BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F3BANK1_FBIT16_Msk                                      (0x1UL << CAN_F3BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F3BANK1_FBIT16                                          CAN_F3BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F3BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F3BANK1_FBIT17_Msk                                      (0x1UL << CAN_F3BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F3BANK1_FBIT17                                          CAN_F3BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F3BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F3BANK1_FBIT18_Msk                                      (0x1UL << CAN_F3BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F3BANK1_FBIT18                                          CAN_F3BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F3BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F3BANK1_FBIT19_Msk                                      (0x1UL << CAN_F3BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F3BANK1_FBIT19                                          CAN_F3BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F3BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F3BANK1_FBIT20_Msk                                      (0x1UL << CAN_F3BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F3BANK1_FBIT20                                          CAN_F3BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F3BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F3BANK1_FBIT21_Msk                                      (0x1UL << CAN_F3BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F3BANK1_FBIT21                                          CAN_F3BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F3BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F3BANK1_FBIT22_Msk                                      (0x1UL << CAN_F3BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F3BANK1_FBIT22                                          CAN_F3BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F3BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F3BANK1_FBIT23_Msk                                      (0x1UL << CAN_F3BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F3BANK1_FBIT23                                          CAN_F3BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F3BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F3BANK1_FBIT24_Msk                                      (0x1UL << CAN_F3BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F3BANK1_FBIT24                                          CAN_F3BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F3BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F3BANK1_FBIT25_Msk                                      (0x1UL << CAN_F3BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F3BANK1_FBIT25                                          CAN_F3BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F3BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F3BANK1_FBIT26_Msk                                      (0x1UL << CAN_F3BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F3BANK1_FBIT26                                          CAN_F3BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F3BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F3BANK1_FBIT27_Msk                                      (0x1UL << CAN_F3BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F3BANK1_FBIT27                                          CAN_F3BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F3BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F3BANK1_FBIT28_Msk                                      (0x1UL << CAN_F3BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F3BANK1_FBIT28                                          CAN_F3BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F3BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F3BANK1_FBIT29_Msk                                      (0x1UL << CAN_F3BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F3BANK1_FBIT29                                          CAN_F3BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F3BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F3BANK1_FBIT30_Msk                                      (0x1UL << CAN_F3BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F3BANK1_FBIT30                                          CAN_F3BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F3BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F3BANK1_FBIT31_Msk                                      (0x1UL << CAN_F3BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F3BANK1_FBIT31                                          CAN_F3BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F4R1 register  *******************/
-#define CAN_F4R1_FB0_Pos                                            (0U)
-#define CAN_F4R1_FB0_Msk                                            (0x1UL << CAN_F4R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F4R1_FB0                                                CAN_F4R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F4R1_FB1_Pos                                            (1U)
-#define CAN_F4R1_FB1_Msk                                            (0x1UL << CAN_F4R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F4R1_FB1                                                CAN_F4R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F4R1_FB2_Pos                                            (2U)
-#define CAN_F4R1_FB2_Msk                                            (0x1UL << CAN_F4R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F4R1_FB2                                                CAN_F4R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F4R1_FB3_Pos                                            (3U)
-#define CAN_F4R1_FB3_Msk                                            (0x1UL << CAN_F4R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F4R1_FB3                                                CAN_F4R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F4R1_FB4_Pos                                            (4U)
-#define CAN_F4R1_FB4_Msk                                            (0x1UL << CAN_F4R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F4R1_FB4                                                CAN_F4R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F4R1_FB5_Pos                                            (5U)
-#define CAN_F4R1_FB5_Msk                                            (0x1UL << CAN_F4R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F4R1_FB5                                                CAN_F4R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F4R1_FB6_Pos                                            (6U)
-#define CAN_F4R1_FB6_Msk                                            (0x1UL << CAN_F4R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F4R1_FB6                                                CAN_F4R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F4R1_FB7_Pos                                            (7U)
-#define CAN_F4R1_FB7_Msk                                            (0x1UL << CAN_F4R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F4R1_FB7                                                CAN_F4R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F4R1_FB8_Pos                                            (8U)
-#define CAN_F4R1_FB8_Msk                                            (0x1UL << CAN_F4R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F4R1_FB8                                                CAN_F4R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F4R1_FB9_Pos                                            (9U)
-#define CAN_F4R1_FB9_Msk                                            (0x1UL << CAN_F4R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F4R1_FB9                                                CAN_F4R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F4R1_FB10_Pos                                           (10U)
-#define CAN_F4R1_FB10_Msk                                           (0x1UL << CAN_F4R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F4R1_FB10                                               CAN_F4R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F4R1_FB11_Pos                                           (11U)
-#define CAN_F4R1_FB11_Msk                                           (0x1UL << CAN_F4R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F4R1_FB11                                               CAN_F4R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F4R1_FB12_Pos                                           (12U)
-#define CAN_F4R1_FB12_Msk                                           (0x1UL << CAN_F4R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F4R1_FB12                                               CAN_F4R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F4R1_FB13_Pos                                           (13U)
-#define CAN_F4R1_FB13_Msk                                           (0x1UL << CAN_F4R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F4R1_FB13                                               CAN_F4R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F4R1_FB14_Pos                                           (14U)
-#define CAN_F4R1_FB14_Msk                                           (0x1UL << CAN_F4R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F4R1_FB14                                               CAN_F4R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F4R1_FB15_Pos                                           (15U)
-#define CAN_F4R1_FB15_Msk                                           (0x1UL << CAN_F4R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F4R1_FB15                                               CAN_F4R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F4R1_FB16_Pos                                           (16U)
-#define CAN_F4R1_FB16_Msk                                           (0x1UL << CAN_F4R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F4R1_FB16                                               CAN_F4R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F4R1_FB17_Pos                                           (17U)
-#define CAN_F4R1_FB17_Msk                                           (0x1UL << CAN_F4R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F4R1_FB17                                               CAN_F4R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F4R1_FB18_Pos                                           (18U)
-#define CAN_F4R1_FB18_Msk                                           (0x1UL << CAN_F4R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F4R1_FB18                                               CAN_F4R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F4R1_FB19_Pos                                           (19U)
-#define CAN_F4R1_FB19_Msk                                           (0x1UL << CAN_F4R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F4R1_FB19                                               CAN_F4R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F4R1_FB20_Pos                                           (20U)
-#define CAN_F4R1_FB20_Msk                                           (0x1UL << CAN_F4R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F4R1_FB20                                               CAN_F4R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F4R1_FB21_Pos                                           (21U)
-#define CAN_F4R1_FB21_Msk                                           (0x1UL << CAN_F4R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F4R1_FB21                                               CAN_F4R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F4R1_FB22_Pos                                           (22U)
-#define CAN_F4R1_FB22_Msk                                           (0x1UL << CAN_F4R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F4R1_FB22                                               CAN_F4R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F4R1_FB23_Pos                                           (23U)
-#define CAN_F4R1_FB23_Msk                                           (0x1UL << CAN_F4R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F4R1_FB23                                               CAN_F4R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F4R1_FB24_Pos                                           (24U)
-#define CAN_F4R1_FB24_Msk                                           (0x1UL << CAN_F4R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F4R1_FB24                                               CAN_F4R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F4R1_FB25_Pos                                           (25U)
-#define CAN_F4R1_FB25_Msk                                           (0x1UL << CAN_F4R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F4R1_FB25                                               CAN_F4R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F4R1_FB26_Pos                                           (26U)
-#define CAN_F4R1_FB26_Msk                                           (0x1UL << CAN_F4R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F4R1_FB26                                               CAN_F4R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F4R1_FB27_Pos                                           (27U)
-#define CAN_F4R1_FB27_Msk                                           (0x1UL << CAN_F4R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F4R1_FB27                                               CAN_F4R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F4R1_FB28_Pos                                           (28U)
-#define CAN_F4R1_FB28_Msk                                           (0x1UL << CAN_F4R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F4R1_FB28                                               CAN_F4R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F4R1_FB29_Pos                                           (29U)
-#define CAN_F4R1_FB29_Msk                                           (0x1UL << CAN_F4R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F4R1_FB29                                               CAN_F4R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F4R1_FB30_Pos                                           (30U)
-#define CAN_F4R1_FB30_Msk                                           (0x1UL << CAN_F4R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F4R1_FB30                                               CAN_F4R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F4R1_FB31_Pos                                           (31U)
-#define CAN_F4R1_FB31_Msk                                           (0x1UL << CAN_F4R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F4R1_FB31                                               CAN_F4R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F4BANK1 register  *******************/
+#define CAN_F4BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F4BANK1_FBIT0_Msk                                       (0x1UL << CAN_F4BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F4BANK1_FBIT0                                           CAN_F4BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F4BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F4BANK1_FBIT1_Msk                                       (0x1UL << CAN_F4BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F4BANK1_FBIT1                                           CAN_F4BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F4BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F4BANK1_FBIT2_Msk                                       (0x1UL << CAN_F4BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F4BANK1_FBIT2                                           CAN_F4BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F4BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F4BANK1_FBIT3_Msk                                       (0x1UL << CAN_F4BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F4BANK1_FBIT3                                           CAN_F4BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F4BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F4BANK1_FBIT4_Msk                                       (0x1UL << CAN_F4BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F4BANK1_FBIT4                                           CAN_F4BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F4BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F4BANK1_FBIT5_Msk                                       (0x1UL << CAN_F4BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F4BANK1_FBIT5                                           CAN_F4BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F4BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F4BANK1_FBIT6_Msk                                       (0x1UL << CAN_F4BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F4BANK1_FBIT6                                           CAN_F4BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F4BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F4BANK1_FBIT7_Msk                                       (0x1UL << CAN_F4BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F4BANK1_FBIT7                                           CAN_F4BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F4BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F4BANK1_FBIT8_Msk                                       (0x1UL << CAN_F4BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F4BANK1_FBIT8                                           CAN_F4BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F4BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F4BANK1_FBIT9_Msk                                       (0x1UL << CAN_F4BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F4BANK1_FBIT9                                           CAN_F4BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F4BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F4BANK1_FBIT10_Msk                                      (0x1UL << CAN_F4BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F4BANK1_FBIT10                                          CAN_F4BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F4BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F4BANK1_FBIT11_Msk                                      (0x1UL << CAN_F4BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F4BANK1_FBIT11                                          CAN_F4BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F4BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F4BANK1_FBIT12_Msk                                      (0x1UL << CAN_F4BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F4BANK1_FBIT12                                          CAN_F4BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F4BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F4BANK1_FBIT13_Msk                                      (0x1UL << CAN_F4BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F4BANK1_FBIT13                                          CAN_F4BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F4BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F4BANK1_FBIT14_Msk                                      (0x1UL << CAN_F4BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F4BANK1_FBIT14                                          CAN_F4BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F4BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F4BANK1_FBIT15_Msk                                      (0x1UL << CAN_F4BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F4BANK1_FBIT15                                          CAN_F4BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F4BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F4BANK1_FBIT16_Msk                                      (0x1UL << CAN_F4BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F4BANK1_FBIT16                                          CAN_F4BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F4BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F4BANK1_FBIT17_Msk                                      (0x1UL << CAN_F4BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F4BANK1_FBIT17                                          CAN_F4BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F4BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F4BANK1_FBIT18_Msk                                      (0x1UL << CAN_F4BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F4BANK1_FBIT18                                          CAN_F4BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F4BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F4BANK1_FBIT19_Msk                                      (0x1UL << CAN_F4BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F4BANK1_FBIT19                                          CAN_F4BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F4BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F4BANK1_FBIT20_Msk                                      (0x1UL << CAN_F4BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F4BANK1_FBIT20                                          CAN_F4BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F4BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F4BANK1_FBIT21_Msk                                      (0x1UL << CAN_F4BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F4BANK1_FBIT21                                          CAN_F4BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F4BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F4BANK1_FBIT22_Msk                                      (0x1UL << CAN_F4BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F4BANK1_FBIT22                                          CAN_F4BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F4BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F4BANK1_FBIT23_Msk                                      (0x1UL << CAN_F4BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F4BANK1_FBIT23                                          CAN_F4BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F4BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F4BANK1_FBIT24_Msk                                      (0x1UL << CAN_F4BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F4BANK1_FBIT24                                          CAN_F4BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F4BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F4BANK1_FBIT25_Msk                                      (0x1UL << CAN_F4BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F4BANK1_FBIT25                                          CAN_F4BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F4BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F4BANK1_FBIT26_Msk                                      (0x1UL << CAN_F4BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F4BANK1_FBIT26                                          CAN_F4BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F4BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F4BANK1_FBIT27_Msk                                      (0x1UL << CAN_F4BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F4BANK1_FBIT27                                          CAN_F4BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F4BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F4BANK1_FBIT28_Msk                                      (0x1UL << CAN_F4BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F4BANK1_FBIT28                                          CAN_F4BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F4BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F4BANK1_FBIT29_Msk                                      (0x1UL << CAN_F4BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F4BANK1_FBIT29                                          CAN_F4BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F4BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F4BANK1_FBIT30_Msk                                      (0x1UL << CAN_F4BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F4BANK1_FBIT30                                          CAN_F4BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F4BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F4BANK1_FBIT31_Msk                                      (0x1UL << CAN_F4BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F4BANK1_FBIT31                                          CAN_F4BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F5R1 register  *******************/
-#define CAN_F5R1_FB0_Pos                                            (0U)
-#define CAN_F5R1_FB0_Msk                                            (0x1UL << CAN_F5R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F5R1_FB0                                                CAN_F5R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F5R1_FB1_Pos                                            (1U)
-#define CAN_F5R1_FB1_Msk                                            (0x1UL << CAN_F5R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F5R1_FB1                                                CAN_F5R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F5R1_FB2_Pos                                            (2U)
-#define CAN_F5R1_FB2_Msk                                            (0x1UL << CAN_F5R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F5R1_FB2                                                CAN_F5R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F5R1_FB3_Pos                                            (3U)
-#define CAN_F5R1_FB3_Msk                                            (0x1UL << CAN_F5R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F5R1_FB3                                                CAN_F5R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F5R1_FB4_Pos                                            (4U)
-#define CAN_F5R1_FB4_Msk                                            (0x1UL << CAN_F5R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F5R1_FB4                                                CAN_F5R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F5R1_FB5_Pos                                            (5U)
-#define CAN_F5R1_FB5_Msk                                            (0x1UL << CAN_F5R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F5R1_FB5                                                CAN_F5R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F5R1_FB6_Pos                                            (6U)
-#define CAN_F5R1_FB6_Msk                                            (0x1UL << CAN_F5R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F5R1_FB6                                                CAN_F5R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F5R1_FB7_Pos                                            (7U)
-#define CAN_F5R1_FB7_Msk                                            (0x1UL << CAN_F5R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F5R1_FB7                                                CAN_F5R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F5R1_FB8_Pos                                            (8U)
-#define CAN_F5R1_FB8_Msk                                            (0x1UL << CAN_F5R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F5R1_FB8                                                CAN_F5R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F5R1_FB9_Pos                                            (9U)
-#define CAN_F5R1_FB9_Msk                                            (0x1UL << CAN_F5R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F5R1_FB9                                                CAN_F5R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F5R1_FB10_Pos                                           (10U)
-#define CAN_F5R1_FB10_Msk                                           (0x1UL << CAN_F5R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F5R1_FB10                                               CAN_F5R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F5R1_FB11_Pos                                           (11U)
-#define CAN_F5R1_FB11_Msk                                           (0x1UL << CAN_F5R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F5R1_FB11                                               CAN_F5R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F5R1_FB12_Pos                                           (12U)
-#define CAN_F5R1_FB12_Msk                                           (0x1UL << CAN_F5R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F5R1_FB12                                               CAN_F5R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F5R1_FB13_Pos                                           (13U)
-#define CAN_F5R1_FB13_Msk                                           (0x1UL << CAN_F5R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F5R1_FB13                                               CAN_F5R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F5R1_FB14_Pos                                           (14U)
-#define CAN_F5R1_FB14_Msk                                           (0x1UL << CAN_F5R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F5R1_FB14                                               CAN_F5R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F5R1_FB15_Pos                                           (15U)
-#define CAN_F5R1_FB15_Msk                                           (0x1UL << CAN_F5R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F5R1_FB15                                               CAN_F5R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F5R1_FB16_Pos                                           (16U)
-#define CAN_F5R1_FB16_Msk                                           (0x1UL << CAN_F5R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F5R1_FB16                                               CAN_F5R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F5R1_FB17_Pos                                           (17U)
-#define CAN_F5R1_FB17_Msk                                           (0x1UL << CAN_F5R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F5R1_FB17                                               CAN_F5R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F5R1_FB18_Pos                                           (18U)
-#define CAN_F5R1_FB18_Msk                                           (0x1UL << CAN_F5R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F5R1_FB18                                               CAN_F5R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F5R1_FB19_Pos                                           (19U)
-#define CAN_F5R1_FB19_Msk                                           (0x1UL << CAN_F5R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F5R1_FB19                                               CAN_F5R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F5R1_FB20_Pos                                           (20U)
-#define CAN_F5R1_FB20_Msk                                           (0x1UL << CAN_F5R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F5R1_FB20                                               CAN_F5R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F5R1_FB21_Pos                                           (21U)
-#define CAN_F5R1_FB21_Msk                                           (0x1UL << CAN_F5R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F5R1_FB21                                               CAN_F5R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F5R1_FB22_Pos                                           (22U)
-#define CAN_F5R1_FB22_Msk                                           (0x1UL << CAN_F5R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F5R1_FB22                                               CAN_F5R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F5R1_FB23_Pos                                           (23U)
-#define CAN_F5R1_FB23_Msk                                           (0x1UL << CAN_F5R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F5R1_FB23                                               CAN_F5R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F5R1_FB24_Pos                                           (24U)
-#define CAN_F5R1_FB24_Msk                                           (0x1UL << CAN_F5R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F5R1_FB24                                               CAN_F5R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F5R1_FB25_Pos                                           (25U)
-#define CAN_F5R1_FB25_Msk                                           (0x1UL << CAN_F5R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F5R1_FB25                                               CAN_F5R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F5R1_FB26_Pos                                           (26U)
-#define CAN_F5R1_FB26_Msk                                           (0x1UL << CAN_F5R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F5R1_FB26                                               CAN_F5R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F5R1_FB27_Pos                                           (27U)
-#define CAN_F5R1_FB27_Msk                                           (0x1UL << CAN_F5R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F5R1_FB27                                               CAN_F5R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F5R1_FB28_Pos                                           (28U)
-#define CAN_F5R1_FB28_Msk                                           (0x1UL << CAN_F5R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F5R1_FB28                                               CAN_F5R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F5R1_FB29_Pos                                           (29U)
-#define CAN_F5R1_FB29_Msk                                           (0x1UL << CAN_F5R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F5R1_FB29                                               CAN_F5R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F5R1_FB30_Pos                                           (30U)
-#define CAN_F5R1_FB30_Msk                                           (0x1UL << CAN_F5R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F5R1_FB30                                               CAN_F5R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F5R1_FB31_Pos                                           (31U)
-#define CAN_F5R1_FB31_Msk                                           (0x1UL << CAN_F5R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F5R1_FB31                                               CAN_F5R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F5BANK1 register  *******************/
+#define CAN_F5BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F5BANK1_FBIT0_Msk                                       (0x1UL << CAN_F5BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F5BANK1_FBIT0                                           CAN_F5BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F5BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F5BANK1_FBIT1_Msk                                       (0x1UL << CAN_F5BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F5BANK1_FBIT1                                           CAN_F5BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F5BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F5BANK1_FBIT2_Msk                                       (0x1UL << CAN_F5BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F5BANK1_FBIT2                                           CAN_F5BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F5BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F5BANK1_FBIT3_Msk                                       (0x1UL << CAN_F5BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F5BANK1_FBIT3                                           CAN_F5BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F5BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F5BANK1_FBIT4_Msk                                       (0x1UL << CAN_F5BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F5BANK1_FBIT4                                           CAN_F5BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F5BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F5BANK1_FBIT5_Msk                                       (0x1UL << CAN_F5BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F5BANK1_FBIT5                                           CAN_F5BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F5BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F5BANK1_FBIT6_Msk                                       (0x1UL << CAN_F5BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F5BANK1_FBIT6                                           CAN_F5BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F5BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F5BANK1_FBIT7_Msk                                       (0x1UL << CAN_F5BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F5BANK1_FBIT7                                           CAN_F5BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F5BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F5BANK1_FBIT8_Msk                                       (0x1UL << CAN_F5BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F5BANK1_FBIT8                                           CAN_F5BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F5BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F5BANK1_FBIT9_Msk                                       (0x1UL << CAN_F5BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F5BANK1_FBIT9                                           CAN_F5BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F5BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F5BANK1_FBIT10_Msk                                      (0x1UL << CAN_F5BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F5BANK1_FBIT10                                          CAN_F5BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F5BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F5BANK1_FBIT11_Msk                                      (0x1UL << CAN_F5BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F5BANK1_FBIT11                                          CAN_F5BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F5BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F5BANK1_FBIT12_Msk                                      (0x1UL << CAN_F5BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F5BANK1_FBIT12                                          CAN_F5BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F5BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F5BANK1_FBIT13_Msk                                      (0x1UL << CAN_F5BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F5BANK1_FBIT13                                          CAN_F5BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F5BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F5BANK1_FBIT14_Msk                                      (0x1UL << CAN_F5BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F5BANK1_FBIT14                                          CAN_F5BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F5BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F5BANK1_FBIT15_Msk                                      (0x1UL << CAN_F5BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F5BANK1_FBIT15                                          CAN_F5BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F5BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F5BANK1_FBIT16_Msk                                      (0x1UL << CAN_F5BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F5BANK1_FBIT16                                          CAN_F5BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F5BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F5BANK1_FBIT17_Msk                                      (0x1UL << CAN_F5BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F5BANK1_FBIT17                                          CAN_F5BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F5BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F5BANK1_FBIT18_Msk                                      (0x1UL << CAN_F5BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F5BANK1_FBIT18                                          CAN_F5BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F5BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F5BANK1_FBIT19_Msk                                      (0x1UL << CAN_F5BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F5BANK1_FBIT19                                          CAN_F5BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F5BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F5BANK1_FBIT20_Msk                                      (0x1UL << CAN_F5BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F5BANK1_FBIT20                                          CAN_F5BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F5BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F5BANK1_FBIT21_Msk                                      (0x1UL << CAN_F5BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F5BANK1_FBIT21                                          CAN_F5BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F5BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F5BANK1_FBIT22_Msk                                      (0x1UL << CAN_F5BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F5BANK1_FBIT22                                          CAN_F5BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F5BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F5BANK1_FBIT23_Msk                                      (0x1UL << CAN_F5BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F5BANK1_FBIT23                                          CAN_F5BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F5BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F5BANK1_FBIT24_Msk                                      (0x1UL << CAN_F5BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F5BANK1_FBIT24                                          CAN_F5BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F5BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F5BANK1_FBIT25_Msk                                      (0x1UL << CAN_F5BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F5BANK1_FBIT25                                          CAN_F5BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F5BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F5BANK1_FBIT26_Msk                                      (0x1UL << CAN_F5BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F5BANK1_FBIT26                                          CAN_F5BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F5BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F5BANK1_FBIT27_Msk                                      (0x1UL << CAN_F5BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F5BANK1_FBIT27                                          CAN_F5BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F5BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F5BANK1_FBIT28_Msk                                      (0x1UL << CAN_F5BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F5BANK1_FBIT28                                          CAN_F5BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F5BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F5BANK1_FBIT29_Msk                                      (0x1UL << CAN_F5BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F5BANK1_FBIT29                                          CAN_F5BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F5BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F5BANK1_FBIT30_Msk                                      (0x1UL << CAN_F5BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F5BANK1_FBIT30                                          CAN_F5BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F5BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F5BANK1_FBIT31_Msk                                      (0x1UL << CAN_F5BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F5BANK1_FBIT31                                          CAN_F5BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F6R1 register  *******************/
-#define CAN_F6R1_FB0_Pos                                            (0U)
-#define CAN_F6R1_FB0_Msk                                            (0x1UL << CAN_F6R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F6R1_FB0                                                CAN_F6R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F6R1_FB1_Pos                                            (1U)
-#define CAN_F6R1_FB1_Msk                                            (0x1UL << CAN_F6R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F6R1_FB1                                                CAN_F6R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F6R1_FB2_Pos                                            (2U)
-#define CAN_F6R1_FB2_Msk                                            (0x1UL << CAN_F6R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F6R1_FB2                                                CAN_F6R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F6R1_FB3_Pos                                            (3U)
-#define CAN_F6R1_FB3_Msk                                            (0x1UL << CAN_F6R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F6R1_FB3                                                CAN_F6R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F6R1_FB4_Pos                                            (4U)
-#define CAN_F6R1_FB4_Msk                                            (0x1UL << CAN_F6R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F6R1_FB4                                                CAN_F6R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F6R1_FB5_Pos                                            (5U)
-#define CAN_F6R1_FB5_Msk                                            (0x1UL << CAN_F6R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F6R1_FB5                                                CAN_F6R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F6R1_FB6_Pos                                            (6U)
-#define CAN_F6R1_FB6_Msk                                            (0x1UL << CAN_F6R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F6R1_FB6                                                CAN_F6R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F6R1_FB7_Pos                                            (7U)
-#define CAN_F6R1_FB7_Msk                                            (0x1UL << CAN_F6R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F6R1_FB7                                                CAN_F6R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F6R1_FB8_Pos                                            (8U)
-#define CAN_F6R1_FB8_Msk                                            (0x1UL << CAN_F6R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F6R1_FB8                                                CAN_F6R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F6R1_FB9_Pos                                            (9U)
-#define CAN_F6R1_FB9_Msk                                            (0x1UL << CAN_F6R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F6R1_FB9                                                CAN_F6R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F6R1_FB10_Pos                                           (10U)
-#define CAN_F6R1_FB10_Msk                                           (0x1UL << CAN_F6R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F6R1_FB10                                               CAN_F6R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F6R1_FB11_Pos                                           (11U)
-#define CAN_F6R1_FB11_Msk                                           (0x1UL << CAN_F6R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F6R1_FB11                                               CAN_F6R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F6R1_FB12_Pos                                           (12U)
-#define CAN_F6R1_FB12_Msk                                           (0x1UL << CAN_F6R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F6R1_FB12                                               CAN_F6R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F6R1_FB13_Pos                                           (13U)
-#define CAN_F6R1_FB13_Msk                                           (0x1UL << CAN_F6R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F6R1_FB13                                               CAN_F6R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F6R1_FB14_Pos                                           (14U)
-#define CAN_F6R1_FB14_Msk                                           (0x1UL << CAN_F6R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F6R1_FB14                                               CAN_F6R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F6R1_FB15_Pos                                           (15U)
-#define CAN_F6R1_FB15_Msk                                           (0x1UL << CAN_F6R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F6R1_FB15                                               CAN_F6R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F6R1_FB16_Pos                                           (16U)
-#define CAN_F6R1_FB16_Msk                                           (0x1UL << CAN_F6R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F6R1_FB16                                               CAN_F6R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F6R1_FB17_Pos                                           (17U)
-#define CAN_F6R1_FB17_Msk                                           (0x1UL << CAN_F6R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F6R1_FB17                                               CAN_F6R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F6R1_FB18_Pos                                           (18U)
-#define CAN_F6R1_FB18_Msk                                           (0x1UL << CAN_F6R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F6R1_FB18                                               CAN_F6R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F6R1_FB19_Pos                                           (19U)
-#define CAN_F6R1_FB19_Msk                                           (0x1UL << CAN_F6R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F6R1_FB19                                               CAN_F6R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F6R1_FB20_Pos                                           (20U)
-#define CAN_F6R1_FB20_Msk                                           (0x1UL << CAN_F6R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F6R1_FB20                                               CAN_F6R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F6R1_FB21_Pos                                           (21U)
-#define CAN_F6R1_FB21_Msk                                           (0x1UL << CAN_F6R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F6R1_FB21                                               CAN_F6R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F6R1_FB22_Pos                                           (22U)
-#define CAN_F6R1_FB22_Msk                                           (0x1UL << CAN_F6R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F6R1_FB22                                               CAN_F6R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F6R1_FB23_Pos                                           (23U)
-#define CAN_F6R1_FB23_Msk                                           (0x1UL << CAN_F6R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F6R1_FB23                                               CAN_F6R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F6R1_FB24_Pos                                           (24U)
-#define CAN_F6R1_FB24_Msk                                           (0x1UL << CAN_F6R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F6R1_FB24                                               CAN_F6R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F6R1_FB25_Pos                                           (25U)
-#define CAN_F6R1_FB25_Msk                                           (0x1UL << CAN_F6R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F6R1_FB25                                               CAN_F6R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F6R1_FB26_Pos                                           (26U)
-#define CAN_F6R1_FB26_Msk                                           (0x1UL << CAN_F6R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F6R1_FB26                                               CAN_F6R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F6R1_FB27_Pos                                           (27U)
-#define CAN_F6R1_FB27_Msk                                           (0x1UL << CAN_F6R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F6R1_FB27                                               CAN_F6R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F6R1_FB28_Pos                                           (28U)
-#define CAN_F6R1_FB28_Msk                                           (0x1UL << CAN_F6R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F6R1_FB28                                               CAN_F6R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F6R1_FB29_Pos                                           (29U)
-#define CAN_F6R1_FB29_Msk                                           (0x1UL << CAN_F6R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F6R1_FB29                                               CAN_F6R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F6R1_FB30_Pos                                           (30U)
-#define CAN_F6R1_FB30_Msk                                           (0x1UL << CAN_F6R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F6R1_FB30                                               CAN_F6R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F6R1_FB31_Pos                                           (31U)
-#define CAN_F6R1_FB31_Msk                                           (0x1UL << CAN_F6R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F6R1_FB31                                               CAN_F6R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F6BANK1 register  *******************/
+#define CAN_F6BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F6BANK1_FBIT0_Msk                                       (0x1UL << CAN_F6BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F6BANK1_FBIT0                                           CAN_F6BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F6BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F6BANK1_FBIT1_Msk                                       (0x1UL << CAN_F6BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F6BANK1_FBIT1                                           CAN_F6BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F6BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F6BANK1_FBIT2_Msk                                       (0x1UL << CAN_F6BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F6BANK1_FBIT2                                           CAN_F6BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F6BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F6BANK1_FBIT3_Msk                                       (0x1UL << CAN_F6BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F6BANK1_FBIT3                                           CAN_F6BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F6BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F6BANK1_FBIT4_Msk                                       (0x1UL << CAN_F6BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F6BANK1_FBIT4                                           CAN_F6BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F6BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F6BANK1_FBIT5_Msk                                       (0x1UL << CAN_F6BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F6BANK1_FBIT5                                           CAN_F6BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F6BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F6BANK1_FBIT6_Msk                                       (0x1UL << CAN_F6BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F6BANK1_FBIT6                                           CAN_F6BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F6BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F6BANK1_FBIT7_Msk                                       (0x1UL << CAN_F6BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F6BANK1_FBIT7                                           CAN_F6BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F6BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F6BANK1_FBIT8_Msk                                       (0x1UL << CAN_F6BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F6BANK1_FBIT8                                           CAN_F6BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F6BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F6BANK1_FBIT9_Msk                                       (0x1UL << CAN_F6BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F6BANK1_FBIT9                                           CAN_F6BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F6BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F6BANK1_FBIT10_Msk                                      (0x1UL << CAN_F6BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F6BANK1_FBIT10                                          CAN_F6BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F6BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F6BANK1_FBIT11_Msk                                      (0x1UL << CAN_F6BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F6BANK1_FBIT11                                          CAN_F6BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F6BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F6BANK1_FBIT12_Msk                                      (0x1UL << CAN_F6BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F6BANK1_FBIT12                                          CAN_F6BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F6BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F6BANK1_FBIT13_Msk                                      (0x1UL << CAN_F6BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F6BANK1_FBIT13                                          CAN_F6BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F6BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F6BANK1_FBIT14_Msk                                      (0x1UL << CAN_F6BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F6BANK1_FBIT14                                          CAN_F6BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F6BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F6BANK1_FBIT15_Msk                                      (0x1UL << CAN_F6BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F6BANK1_FBIT15                                          CAN_F6BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F6BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F6BANK1_FBIT16_Msk                                      (0x1UL << CAN_F6BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F6BANK1_FBIT16                                          CAN_F6BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F6BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F6BANK1_FBIT17_Msk                                      (0x1UL << CAN_F6BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F6BANK1_FBIT17                                          CAN_F6BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F6BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F6BANK1_FBIT18_Msk                                      (0x1UL << CAN_F6BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F6BANK1_FBIT18                                          CAN_F6BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F6BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F6BANK1_FBIT19_Msk                                      (0x1UL << CAN_F6BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F6BANK1_FBIT19                                          CAN_F6BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F6BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F6BANK1_FBIT20_Msk                                      (0x1UL << CAN_F6BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F6BANK1_FBIT20                                          CAN_F6BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F6BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F6BANK1_FBIT21_Msk                                      (0x1UL << CAN_F6BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F6BANK1_FBIT21                                          CAN_F6BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F6BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F6BANK1_FBIT22_Msk                                      (0x1UL << CAN_F6BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F6BANK1_FBIT22                                          CAN_F6BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F6BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F6BANK1_FBIT23_Msk                                      (0x1UL << CAN_F6BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F6BANK1_FBIT23                                          CAN_F6BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F6BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F6BANK1_FBIT24_Msk                                      (0x1UL << CAN_F6BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F6BANK1_FBIT24                                          CAN_F6BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F6BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F6BANK1_FBIT25_Msk                                      (0x1UL << CAN_F6BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F6BANK1_FBIT25                                          CAN_F6BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F6BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F6BANK1_FBIT26_Msk                                      (0x1UL << CAN_F6BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F6BANK1_FBIT26                                          CAN_F6BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F6BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F6BANK1_FBIT27_Msk                                      (0x1UL << CAN_F6BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F6BANK1_FBIT27                                          CAN_F6BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F6BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F6BANK1_FBIT28_Msk                                      (0x1UL << CAN_F6BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F6BANK1_FBIT28                                          CAN_F6BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F6BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F6BANK1_FBIT29_Msk                                      (0x1UL << CAN_F6BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F6BANK1_FBIT29                                          CAN_F6BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F6BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F6BANK1_FBIT30_Msk                                      (0x1UL << CAN_F6BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F6BANK1_FBIT30                                          CAN_F6BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F6BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F6BANK1_FBIT31_Msk                                      (0x1UL << CAN_F6BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F6BANK1_FBIT31                                          CAN_F6BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F7R1 register  *******************/
-#define CAN_F7R1_FB0_Pos                                            (0U)
-#define CAN_F7R1_FB0_Msk                                            (0x1UL << CAN_F7R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F7R1_FB0                                                CAN_F7R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F7R1_FB1_Pos                                            (1U)
-#define CAN_F7R1_FB1_Msk                                            (0x1UL << CAN_F7R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F7R1_FB1                                                CAN_F7R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F7R1_FB2_Pos                                            (2U)
-#define CAN_F7R1_FB2_Msk                                            (0x1UL << CAN_F7R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F7R1_FB2                                                CAN_F7R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F7R1_FB3_Pos                                            (3U)
-#define CAN_F7R1_FB3_Msk                                            (0x1UL << CAN_F7R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F7R1_FB3                                                CAN_F7R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F7R1_FB4_Pos                                            (4U)
-#define CAN_F7R1_FB4_Msk                                            (0x1UL << CAN_F7R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F7R1_FB4                                                CAN_F7R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F7R1_FB5_Pos                                            (5U)
-#define CAN_F7R1_FB5_Msk                                            (0x1UL << CAN_F7R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F7R1_FB5                                                CAN_F7R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F7R1_FB6_Pos                                            (6U)
-#define CAN_F7R1_FB6_Msk                                            (0x1UL << CAN_F7R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F7R1_FB6                                                CAN_F7R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F7R1_FB7_Pos                                            (7U)
-#define CAN_F7R1_FB7_Msk                                            (0x1UL << CAN_F7R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F7R1_FB7                                                CAN_F7R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F7R1_FB8_Pos                                            (8U)
-#define CAN_F7R1_FB8_Msk                                            (0x1UL << CAN_F7R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F7R1_FB8                                                CAN_F7R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F7R1_FB9_Pos                                            (9U)
-#define CAN_F7R1_FB9_Msk                                            (0x1UL << CAN_F7R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F7R1_FB9                                                CAN_F7R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F7R1_FB10_Pos                                           (10U)
-#define CAN_F7R1_FB10_Msk                                           (0x1UL << CAN_F7R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F7R1_FB10                                               CAN_F7R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F7R1_FB11_Pos                                           (11U)
-#define CAN_F7R1_FB11_Msk                                           (0x1UL << CAN_F7R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F7R1_FB11                                               CAN_F7R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F7R1_FB12_Pos                                           (12U)
-#define CAN_F7R1_FB12_Msk                                           (0x1UL << CAN_F7R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F7R1_FB12                                               CAN_F7R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F7R1_FB13_Pos                                           (13U)
-#define CAN_F7R1_FB13_Msk                                           (0x1UL << CAN_F7R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F7R1_FB13                                               CAN_F7R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F7R1_FB14_Pos                                           (14U)
-#define CAN_F7R1_FB14_Msk                                           (0x1UL << CAN_F7R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F7R1_FB14                                               CAN_F7R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F7R1_FB15_Pos                                           (15U)
-#define CAN_F7R1_FB15_Msk                                           (0x1UL << CAN_F7R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F7R1_FB15                                               CAN_F7R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F7R1_FB16_Pos                                           (16U)
-#define CAN_F7R1_FB16_Msk                                           (0x1UL << CAN_F7R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F7R1_FB16                                               CAN_F7R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F7R1_FB17_Pos                                           (17U)
-#define CAN_F7R1_FB17_Msk                                           (0x1UL << CAN_F7R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F7R1_FB17                                               CAN_F7R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F7R1_FB18_Pos                                           (18U)
-#define CAN_F7R1_FB18_Msk                                           (0x1UL << CAN_F7R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F7R1_FB18                                               CAN_F7R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F7R1_FB19_Pos                                           (19U)
-#define CAN_F7R1_FB19_Msk                                           (0x1UL << CAN_F7R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F7R1_FB19                                               CAN_F7R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F7R1_FB20_Pos                                           (20U)
-#define CAN_F7R1_FB20_Msk                                           (0x1UL << CAN_F7R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F7R1_FB20                                               CAN_F7R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F7R1_FB21_Pos                                           (21U)
-#define CAN_F7R1_FB21_Msk                                           (0x1UL << CAN_F7R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F7R1_FB21                                               CAN_F7R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F7R1_FB22_Pos                                           (22U)
-#define CAN_F7R1_FB22_Msk                                           (0x1UL << CAN_F7R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F7R1_FB22                                               CAN_F7R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F7R1_FB23_Pos                                           (23U)
-#define CAN_F7R1_FB23_Msk                                           (0x1UL << CAN_F7R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F7R1_FB23                                               CAN_F7R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F7R1_FB24_Pos                                           (24U)
-#define CAN_F7R1_FB24_Msk                                           (0x1UL << CAN_F7R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F7R1_FB24                                               CAN_F7R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F7R1_FB25_Pos                                           (25U)
-#define CAN_F7R1_FB25_Msk                                           (0x1UL << CAN_F7R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F7R1_FB25                                               CAN_F7R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F7R1_FB26_Pos                                           (26U)
-#define CAN_F7R1_FB26_Msk                                           (0x1UL << CAN_F7R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F7R1_FB26                                               CAN_F7R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F7R1_FB27_Pos                                           (27U)
-#define CAN_F7R1_FB27_Msk                                           (0x1UL << CAN_F7R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F7R1_FB27                                               CAN_F7R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F7R1_FB28_Pos                                           (28U)
-#define CAN_F7R1_FB28_Msk                                           (0x1UL << CAN_F7R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F7R1_FB28                                               CAN_F7R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F7R1_FB29_Pos                                           (29U)
-#define CAN_F7R1_FB29_Msk                                           (0x1UL << CAN_F7R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F7R1_FB29                                               CAN_F7R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F7R1_FB30_Pos                                           (30U)
-#define CAN_F7R1_FB30_Msk                                           (0x1UL << CAN_F7R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F7R1_FB30                                               CAN_F7R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F7R1_FB31_Pos                                           (31U)
-#define CAN_F7R1_FB31_Msk                                           (0x1UL << CAN_F7R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F7R1_FB31                                               CAN_F7R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F7BANK1 register  *******************/
+#define CAN_F7BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F7BANK1_FBIT0_Msk                                       (0x1UL << CAN_F7BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F7BANK1_FBIT0                                           CAN_F7BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F7BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F7BANK1_FBIT1_Msk                                       (0x1UL << CAN_F7BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F7BANK1_FBIT1                                           CAN_F7BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F7BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F7BANK1_FBIT2_Msk                                       (0x1UL << CAN_F7BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F7BANK1_FBIT2                                           CAN_F7BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F7BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F7BANK1_FBIT3_Msk                                       (0x1UL << CAN_F7BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F7BANK1_FBIT3                                           CAN_F7BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F7BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F7BANK1_FBIT4_Msk                                       (0x1UL << CAN_F7BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F7BANK1_FBIT4                                           CAN_F7BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F7BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F7BANK1_FBIT5_Msk                                       (0x1UL << CAN_F7BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F7BANK1_FBIT5                                           CAN_F7BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F7BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F7BANK1_FBIT6_Msk                                       (0x1UL << CAN_F7BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F7BANK1_FBIT6                                           CAN_F7BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F7BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F7BANK1_FBIT7_Msk                                       (0x1UL << CAN_F7BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F7BANK1_FBIT7                                           CAN_F7BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F7BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F7BANK1_FBIT8_Msk                                       (0x1UL << CAN_F7BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F7BANK1_FBIT8                                           CAN_F7BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F7BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F7BANK1_FBIT9_Msk                                       (0x1UL << CAN_F7BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F7BANK1_FBIT9                                           CAN_F7BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F7BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F7BANK1_FBIT10_Msk                                      (0x1UL << CAN_F7BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F7BANK1_FBIT10                                          CAN_F7BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F7BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F7BANK1_FBIT11_Msk                                      (0x1UL << CAN_F7BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F7BANK1_FBIT11                                          CAN_F7BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F7BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F7BANK1_FBIT12_Msk                                      (0x1UL << CAN_F7BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F7BANK1_FBIT12                                          CAN_F7BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F7BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F7BANK1_FBIT13_Msk                                      (0x1UL << CAN_F7BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F7BANK1_FBIT13                                          CAN_F7BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F7BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F7BANK1_FBIT14_Msk                                      (0x1UL << CAN_F7BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F7BANK1_FBIT14                                          CAN_F7BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F7BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F7BANK1_FBIT15_Msk                                      (0x1UL << CAN_F7BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F7BANK1_FBIT15                                          CAN_F7BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F7BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F7BANK1_FBIT16_Msk                                      (0x1UL << CAN_F7BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F7BANK1_FBIT16                                          CAN_F7BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F7BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F7BANK1_FBIT17_Msk                                      (0x1UL << CAN_F7BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F7BANK1_FBIT17                                          CAN_F7BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F7BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F7BANK1_FBIT18_Msk                                      (0x1UL << CAN_F7BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F7BANK1_FBIT18                                          CAN_F7BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F7BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F7BANK1_FBIT19_Msk                                      (0x1UL << CAN_F7BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F7BANK1_FBIT19                                          CAN_F7BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F7BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F7BANK1_FBIT20_Msk                                      (0x1UL << CAN_F7BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F7BANK1_FBIT20                                          CAN_F7BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F7BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F7BANK1_FBIT21_Msk                                      (0x1UL << CAN_F7BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F7BANK1_FBIT21                                          CAN_F7BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F7BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F7BANK1_FBIT22_Msk                                      (0x1UL << CAN_F7BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F7BANK1_FBIT22                                          CAN_F7BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F7BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F7BANK1_FBIT23_Msk                                      (0x1UL << CAN_F7BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F7BANK1_FBIT23                                          CAN_F7BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F7BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F7BANK1_FBIT24_Msk                                      (0x1UL << CAN_F7BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F7BANK1_FBIT24                                          CAN_F7BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F7BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F7BANK1_FBIT25_Msk                                      (0x1UL << CAN_F7BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F7BANK1_FBIT25                                          CAN_F7BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F7BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F7BANK1_FBIT26_Msk                                      (0x1UL << CAN_F7BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F7BANK1_FBIT26                                          CAN_F7BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F7BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F7BANK1_FBIT27_Msk                                      (0x1UL << CAN_F7BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F7BANK1_FBIT27                                          CAN_F7BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F7BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F7BANK1_FBIT28_Msk                                      (0x1UL << CAN_F7BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F7BANK1_FBIT28                                          CAN_F7BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F7BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F7BANK1_FBIT29_Msk                                      (0x1UL << CAN_F7BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F7BANK1_FBIT29                                          CAN_F7BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F7BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F7BANK1_FBIT30_Msk                                      (0x1UL << CAN_F7BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F7BANK1_FBIT30                                          CAN_F7BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F7BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F7BANK1_FBIT31_Msk                                      (0x1UL << CAN_F7BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F7BANK1_FBIT31                                          CAN_F7BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F8R1 register  *******************/
-#define CAN_F8R1_FB0_Pos                                            (0U)
-#define CAN_F8R1_FB0_Msk                                            (0x1UL << CAN_F8R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F8R1_FB0                                                CAN_F8R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F8R1_FB1_Pos                                            (1U)
-#define CAN_F8R1_FB1_Msk                                            (0x1UL << CAN_F8R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F8R1_FB1                                                CAN_F8R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F8R1_FB2_Pos                                            (2U)
-#define CAN_F8R1_FB2_Msk                                            (0x1UL << CAN_F8R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F8R1_FB2                                                CAN_F8R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F8R1_FB3_Pos                                            (3U)
-#define CAN_F8R1_FB3_Msk                                            (0x1UL << CAN_F8R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F8R1_FB3                                                CAN_F8R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F8R1_FB4_Pos                                            (4U)
-#define CAN_F8R1_FB4_Msk                                            (0x1UL << CAN_F8R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F8R1_FB4                                                CAN_F8R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F8R1_FB5_Pos                                            (5U)
-#define CAN_F8R1_FB5_Msk                                            (0x1UL << CAN_F8R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F8R1_FB5                                                CAN_F8R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F8R1_FB6_Pos                                            (6U)
-#define CAN_F8R1_FB6_Msk                                            (0x1UL << CAN_F8R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F8R1_FB6                                                CAN_F8R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F8R1_FB7_Pos                                            (7U)
-#define CAN_F8R1_FB7_Msk                                            (0x1UL << CAN_F8R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F8R1_FB7                                                CAN_F8R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F8R1_FB8_Pos                                            (8U)
-#define CAN_F8R1_FB8_Msk                                            (0x1UL << CAN_F8R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F8R1_FB8                                                CAN_F8R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F8R1_FB9_Pos                                            (9U)
-#define CAN_F8R1_FB9_Msk                                            (0x1UL << CAN_F8R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F8R1_FB9                                                CAN_F8R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F8R1_FB10_Pos                                           (10U)
-#define CAN_F8R1_FB10_Msk                                           (0x1UL << CAN_F8R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F8R1_FB10                                               CAN_F8R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F8R1_FB11_Pos                                           (11U)
-#define CAN_F8R1_FB11_Msk                                           (0x1UL << CAN_F8R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F8R1_FB11                                               CAN_F8R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F8R1_FB12_Pos                                           (12U)
-#define CAN_F8R1_FB12_Msk                                           (0x1UL << CAN_F8R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F8R1_FB12                                               CAN_F8R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F8R1_FB13_Pos                                           (13U)
-#define CAN_F8R1_FB13_Msk                                           (0x1UL << CAN_F8R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F8R1_FB13                                               CAN_F8R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F8R1_FB14_Pos                                           (14U)
-#define CAN_F8R1_FB14_Msk                                           (0x1UL << CAN_F8R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F8R1_FB14                                               CAN_F8R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F8R1_FB15_Pos                                           (15U)
-#define CAN_F8R1_FB15_Msk                                           (0x1UL << CAN_F8R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F8R1_FB15                                               CAN_F8R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F8R1_FB16_Pos                                           (16U)
-#define CAN_F8R1_FB16_Msk                                           (0x1UL << CAN_F8R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F8R1_FB16                                               CAN_F8R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F8R1_FB17_Pos                                           (17U)
-#define CAN_F8R1_FB17_Msk                                           (0x1UL << CAN_F8R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F8R1_FB17                                               CAN_F8R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F8R1_FB18_Pos                                           (18U)
-#define CAN_F8R1_FB18_Msk                                           (0x1UL << CAN_F8R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F8R1_FB18                                               CAN_F8R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F8R1_FB19_Pos                                           (19U)
-#define CAN_F8R1_FB19_Msk                                           (0x1UL << CAN_F8R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F8R1_FB19                                               CAN_F8R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F8R1_FB20_Pos                                           (20U)
-#define CAN_F8R1_FB20_Msk                                           (0x1UL << CAN_F8R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F8R1_FB20                                               CAN_F8R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F8R1_FB21_Pos                                           (21U)
-#define CAN_F8R1_FB21_Msk                                           (0x1UL << CAN_F8R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F8R1_FB21                                               CAN_F8R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F8R1_FB22_Pos                                           (22U)
-#define CAN_F8R1_FB22_Msk                                           (0x1UL << CAN_F8R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F8R1_FB22                                               CAN_F8R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F8R1_FB23_Pos                                           (23U)
-#define CAN_F8R1_FB23_Msk                                           (0x1UL << CAN_F8R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F8R1_FB23                                               CAN_F8R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F8R1_FB24_Pos                                           (24U)
-#define CAN_F8R1_FB24_Msk                                           (0x1UL << CAN_F8R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F8R1_FB24                                               CAN_F8R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F8R1_FB25_Pos                                           (25U)
-#define CAN_F8R1_FB25_Msk                                           (0x1UL << CAN_F8R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F8R1_FB25                                               CAN_F8R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F8R1_FB26_Pos                                           (26U)
-#define CAN_F8R1_FB26_Msk                                           (0x1UL << CAN_F8R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F8R1_FB26                                               CAN_F8R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F8R1_FB27_Pos                                           (27U)
-#define CAN_F8R1_FB27_Msk                                           (0x1UL << CAN_F8R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F8R1_FB27                                               CAN_F8R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F8R1_FB28_Pos                                           (28U)
-#define CAN_F8R1_FB28_Msk                                           (0x1UL << CAN_F8R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F8R1_FB28                                               CAN_F8R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F8R1_FB29_Pos                                           (29U)
-#define CAN_F8R1_FB29_Msk                                           (0x1UL << CAN_F8R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F8R1_FB29                                               CAN_F8R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F8R1_FB30_Pos                                           (30U)
-#define CAN_F8R1_FB30_Msk                                           (0x1UL << CAN_F8R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F8R1_FB30                                               CAN_F8R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F8R1_FB31_Pos                                           (31U)
-#define CAN_F8R1_FB31_Msk                                           (0x1UL << CAN_F8R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F8R1_FB31                                               CAN_F8R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F8BANK1 register  *******************/
+#define CAN_F8BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F8BANK1_FBIT0_Msk                                       (0x1UL << CAN_F8BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F8BANK1_FBIT0                                           CAN_F8BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F8BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F8BANK1_FBIT1_Msk                                       (0x1UL << CAN_F8BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F8BANK1_FBIT1                                           CAN_F8BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F8BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F8BANK1_FBIT2_Msk                                       (0x1UL << CAN_F8BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F8BANK1_FBIT2                                           CAN_F8BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F8BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F8BANK1_FBIT3_Msk                                       (0x1UL << CAN_F8BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F8BANK1_FBIT3                                           CAN_F8BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F8BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F8BANK1_FBIT4_Msk                                       (0x1UL << CAN_F8BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F8BANK1_FBIT4                                           CAN_F8BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F8BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F8BANK1_FBIT5_Msk                                       (0x1UL << CAN_F8BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F8BANK1_FBIT5                                           CAN_F8BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F8BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F8BANK1_FBIT6_Msk                                       (0x1UL << CAN_F8BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F8BANK1_FBIT6                                           CAN_F8BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F8BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F8BANK1_FBIT7_Msk                                       (0x1UL << CAN_F8BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F8BANK1_FBIT7                                           CAN_F8BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F8BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F8BANK1_FBIT8_Msk                                       (0x1UL << CAN_F8BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F8BANK1_FBIT8                                           CAN_F8BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F8BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F8BANK1_FBIT9_Msk                                       (0x1UL << CAN_F8BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F8BANK1_FBIT9                                           CAN_F8BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F8BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F8BANK1_FBIT10_Msk                                      (0x1UL << CAN_F8BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F8BANK1_FBIT10                                          CAN_F8BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F8BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F8BANK1_FBIT11_Msk                                      (0x1UL << CAN_F8BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F8BANK1_FBIT11                                          CAN_F8BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F8BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F8BANK1_FBIT12_Msk                                      (0x1UL << CAN_F8BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F8BANK1_FBIT12                                          CAN_F8BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F8BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F8BANK1_FBIT13_Msk                                      (0x1UL << CAN_F8BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F8BANK1_FBIT13                                          CAN_F8BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F8BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F8BANK1_FBIT14_Msk                                      (0x1UL << CAN_F8BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F8BANK1_FBIT14                                          CAN_F8BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F8BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F8BANK1_FBIT15_Msk                                      (0x1UL << CAN_F8BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F8BANK1_FBIT15                                          CAN_F8BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F8BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F8BANK1_FBIT16_Msk                                      (0x1UL << CAN_F8BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F8BANK1_FBIT16                                          CAN_F8BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F8BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F8BANK1_FBIT17_Msk                                      (0x1UL << CAN_F8BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F8BANK1_FBIT17                                          CAN_F8BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F8BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F8BANK1_FBIT18_Msk                                      (0x1UL << CAN_F8BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F8BANK1_FBIT18                                          CAN_F8BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F8BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F8BANK1_FBIT19_Msk                                      (0x1UL << CAN_F8BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F8BANK1_FBIT19                                          CAN_F8BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F8BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F8BANK1_FBIT20_Msk                                      (0x1UL << CAN_F8BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F8BANK1_FBIT20                                          CAN_F8BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F8BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F8BANK1_FBIT21_Msk                                      (0x1UL << CAN_F8BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F8BANK1_FBIT21                                          CAN_F8BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F8BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F8BANK1_FBIT22_Msk                                      (0x1UL << CAN_F8BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F8BANK1_FBIT22                                          CAN_F8BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F8BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F8BANK1_FBIT23_Msk                                      (0x1UL << CAN_F8BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F8BANK1_FBIT23                                          CAN_F8BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F8BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F8BANK1_FBIT24_Msk                                      (0x1UL << CAN_F8BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F8BANK1_FBIT24                                          CAN_F8BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F8BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F8BANK1_FBIT25_Msk                                      (0x1UL << CAN_F8BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F8BANK1_FBIT25                                          CAN_F8BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F8BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F8BANK1_FBIT26_Msk                                      (0x1UL << CAN_F8BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F8BANK1_FBIT26                                          CAN_F8BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F8BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F8BANK1_FBIT27_Msk                                      (0x1UL << CAN_F8BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F8BANK1_FBIT27                                          CAN_F8BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F8BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F8BANK1_FBIT28_Msk                                      (0x1UL << CAN_F8BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F8BANK1_FBIT28                                          CAN_F8BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F8BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F8BANK1_FBIT29_Msk                                      (0x1UL << CAN_F8BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F8BANK1_FBIT29                                          CAN_F8BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F8BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F8BANK1_FBIT30_Msk                                      (0x1UL << CAN_F8BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F8BANK1_FBIT30                                          CAN_F8BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F8BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F8BANK1_FBIT31_Msk                                      (0x1UL << CAN_F8BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F8BANK1_FBIT31                                          CAN_F8BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F9R1 register  *******************/
-#define CAN_F9R1_FB0_Pos                                            (0U)
-#define CAN_F9R1_FB0_Msk                                            (0x1UL << CAN_F9R1_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F9R1_FB0                                                CAN_F9R1_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F9R1_FB1_Pos                                            (1U)
-#define CAN_F9R1_FB1_Msk                                            (0x1UL << CAN_F9R1_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F9R1_FB1                                                CAN_F9R1_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F9R1_FB2_Pos                                            (2U)
-#define CAN_F9R1_FB2_Msk                                            (0x1UL << CAN_F9R1_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F9R1_FB2                                                CAN_F9R1_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F9R1_FB3_Pos                                            (3U)
-#define CAN_F9R1_FB3_Msk                                            (0x1UL << CAN_F9R1_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F9R1_FB3                                                CAN_F9R1_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F9R1_FB4_Pos                                            (4U)
-#define CAN_F9R1_FB4_Msk                                            (0x1UL << CAN_F9R1_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F9R1_FB4                                                CAN_F9R1_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F9R1_FB5_Pos                                            (5U)
-#define CAN_F9R1_FB5_Msk                                            (0x1UL << CAN_F9R1_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F9R1_FB5                                                CAN_F9R1_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F9R1_FB6_Pos                                            (6U)
-#define CAN_F9R1_FB6_Msk                                            (0x1UL << CAN_F9R1_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F9R1_FB6                                                CAN_F9R1_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F9R1_FB7_Pos                                            (7U)
-#define CAN_F9R1_FB7_Msk                                            (0x1UL << CAN_F9R1_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F9R1_FB7                                                CAN_F9R1_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F9R1_FB8_Pos                                            (8U)
-#define CAN_F9R1_FB8_Msk                                            (0x1UL << CAN_F9R1_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F9R1_FB8                                                CAN_F9R1_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F9R1_FB9_Pos                                            (9U)
-#define CAN_F9R1_FB9_Msk                                            (0x1UL << CAN_F9R1_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F9R1_FB9                                                CAN_F9R1_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F9R1_FB10_Pos                                           (10U)
-#define CAN_F9R1_FB10_Msk                                           (0x1UL << CAN_F9R1_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F9R1_FB10                                               CAN_F9R1_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F9R1_FB11_Pos                                           (11U)
-#define CAN_F9R1_FB11_Msk                                           (0x1UL << CAN_F9R1_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F9R1_FB11                                               CAN_F9R1_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F9R1_FB12_Pos                                           (12U)
-#define CAN_F9R1_FB12_Msk                                           (0x1UL << CAN_F9R1_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F9R1_FB12                                               CAN_F9R1_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F9R1_FB13_Pos                                           (13U)
-#define CAN_F9R1_FB13_Msk                                           (0x1UL << CAN_F9R1_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F9R1_FB13                                               CAN_F9R1_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F9R1_FB14_Pos                                           (14U)
-#define CAN_F9R1_FB14_Msk                                           (0x1UL << CAN_F9R1_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F9R1_FB14                                               CAN_F9R1_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F9R1_FB15_Pos                                           (15U)
-#define CAN_F9R1_FB15_Msk                                           (0x1UL << CAN_F9R1_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F9R1_FB15                                               CAN_F9R1_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F9R1_FB16_Pos                                           (16U)
-#define CAN_F9R1_FB16_Msk                                           (0x1UL << CAN_F9R1_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F9R1_FB16                                               CAN_F9R1_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F9R1_FB17_Pos                                           (17U)
-#define CAN_F9R1_FB17_Msk                                           (0x1UL << CAN_F9R1_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F9R1_FB17                                               CAN_F9R1_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F9R1_FB18_Pos                                           (18U)
-#define CAN_F9R1_FB18_Msk                                           (0x1UL << CAN_F9R1_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F9R1_FB18                                               CAN_F9R1_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F9R1_FB19_Pos                                           (19U)
-#define CAN_F9R1_FB19_Msk                                           (0x1UL << CAN_F9R1_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F9R1_FB19                                               CAN_F9R1_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F9R1_FB20_Pos                                           (20U)
-#define CAN_F9R1_FB20_Msk                                           (0x1UL << CAN_F9R1_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F9R1_FB20                                               CAN_F9R1_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F9R1_FB21_Pos                                           (21U)
-#define CAN_F9R1_FB21_Msk                                           (0x1UL << CAN_F9R1_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F9R1_FB21                                               CAN_F9R1_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F9R1_FB22_Pos                                           (22U)
-#define CAN_F9R1_FB22_Msk                                           (0x1UL << CAN_F9R1_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F9R1_FB22                                               CAN_F9R1_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F9R1_FB23_Pos                                           (23U)
-#define CAN_F9R1_FB23_Msk                                           (0x1UL << CAN_F9R1_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F9R1_FB23                                               CAN_F9R1_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F9R1_FB24_Pos                                           (24U)
-#define CAN_F9R1_FB24_Msk                                           (0x1UL << CAN_F9R1_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F9R1_FB24                                               CAN_F9R1_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F9R1_FB25_Pos                                           (25U)
-#define CAN_F9R1_FB25_Msk                                           (0x1UL << CAN_F9R1_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F9R1_FB25                                               CAN_F9R1_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F9R1_FB26_Pos                                           (26U)
-#define CAN_F9R1_FB26_Msk                                           (0x1UL << CAN_F9R1_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F9R1_FB26                                               CAN_F9R1_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F9R1_FB27_Pos                                           (27U)
-#define CAN_F9R1_FB27_Msk                                           (0x1UL << CAN_F9R1_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F9R1_FB27                                               CAN_F9R1_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F9R1_FB28_Pos                                           (28U)
-#define CAN_F9R1_FB28_Msk                                           (0x1UL << CAN_F9R1_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F9R1_FB28                                               CAN_F9R1_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F9R1_FB29_Pos                                           (29U)
-#define CAN_F9R1_FB29_Msk                                           (0x1UL << CAN_F9R1_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F9R1_FB29                                               CAN_F9R1_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F9R1_FB30_Pos                                           (30U)
-#define CAN_F9R1_FB30_Msk                                           (0x1UL << CAN_F9R1_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F9R1_FB30                                               CAN_F9R1_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F9R1_FB31_Pos                                           (31U)
-#define CAN_F9R1_FB31_Msk                                           (0x1UL << CAN_F9R1_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F9R1_FB31                                               CAN_F9R1_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F9BANK1 register  *******************/
+#define CAN_F9BANK1_FBIT0_Pos                                       (0U)
+#define CAN_F9BANK1_FBIT0_Msk                                       (0x1UL << CAN_F9BANK1_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F9BANK1_FBIT0                                           CAN_F9BANK1_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F9BANK1_FBIT1_Pos                                       (1U)
+#define CAN_F9BANK1_FBIT1_Msk                                       (0x1UL << CAN_F9BANK1_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F9BANK1_FBIT1                                           CAN_F9BANK1_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F9BANK1_FBIT2_Pos                                       (2U)
+#define CAN_F9BANK1_FBIT2_Msk                                       (0x1UL << CAN_F9BANK1_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F9BANK1_FBIT2                                           CAN_F9BANK1_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F9BANK1_FBIT3_Pos                                       (3U)
+#define CAN_F9BANK1_FBIT3_Msk                                       (0x1UL << CAN_F9BANK1_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F9BANK1_FBIT3                                           CAN_F9BANK1_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F9BANK1_FBIT4_Pos                                       (4U)
+#define CAN_F9BANK1_FBIT4_Msk                                       (0x1UL << CAN_F9BANK1_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F9BANK1_FBIT4                                           CAN_F9BANK1_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F9BANK1_FBIT5_Pos                                       (5U)
+#define CAN_F9BANK1_FBIT5_Msk                                       (0x1UL << CAN_F9BANK1_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F9BANK1_FBIT5                                           CAN_F9BANK1_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F9BANK1_FBIT6_Pos                                       (6U)
+#define CAN_F9BANK1_FBIT6_Msk                                       (0x1UL << CAN_F9BANK1_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F9BANK1_FBIT6                                           CAN_F9BANK1_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F9BANK1_FBIT7_Pos                                       (7U)
+#define CAN_F9BANK1_FBIT7_Msk                                       (0x1UL << CAN_F9BANK1_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F9BANK1_FBIT7                                           CAN_F9BANK1_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F9BANK1_FBIT8_Pos                                       (8U)
+#define CAN_F9BANK1_FBIT8_Msk                                       (0x1UL << CAN_F9BANK1_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F9BANK1_FBIT8                                           CAN_F9BANK1_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F9BANK1_FBIT9_Pos                                       (9U)
+#define CAN_F9BANK1_FBIT9_Msk                                       (0x1UL << CAN_F9BANK1_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F9BANK1_FBIT9                                           CAN_F9BANK1_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F9BANK1_FBIT10_Pos                                      (10U)
+#define CAN_F9BANK1_FBIT10_Msk                                      (0x1UL << CAN_F9BANK1_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F9BANK1_FBIT10                                          CAN_F9BANK1_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F9BANK1_FBIT11_Pos                                      (11U)
+#define CAN_F9BANK1_FBIT11_Msk                                      (0x1UL << CAN_F9BANK1_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F9BANK1_FBIT11                                          CAN_F9BANK1_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F9BANK1_FBIT12_Pos                                      (12U)
+#define CAN_F9BANK1_FBIT12_Msk                                      (0x1UL << CAN_F9BANK1_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F9BANK1_FBIT12                                          CAN_F9BANK1_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F9BANK1_FBIT13_Pos                                      (13U)
+#define CAN_F9BANK1_FBIT13_Msk                                      (0x1UL << CAN_F9BANK1_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F9BANK1_FBIT13                                          CAN_F9BANK1_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F9BANK1_FBIT14_Pos                                      (14U)
+#define CAN_F9BANK1_FBIT14_Msk                                      (0x1UL << CAN_F9BANK1_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F9BANK1_FBIT14                                          CAN_F9BANK1_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F9BANK1_FBIT15_Pos                                      (15U)
+#define CAN_F9BANK1_FBIT15_Msk                                      (0x1UL << CAN_F9BANK1_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F9BANK1_FBIT15                                          CAN_F9BANK1_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F9BANK1_FBIT16_Pos                                      (16U)
+#define CAN_F9BANK1_FBIT16_Msk                                      (0x1UL << CAN_F9BANK1_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F9BANK1_FBIT16                                          CAN_F9BANK1_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F9BANK1_FBIT17_Pos                                      (17U)
+#define CAN_F9BANK1_FBIT17_Msk                                      (0x1UL << CAN_F9BANK1_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F9BANK1_FBIT17                                          CAN_F9BANK1_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F9BANK1_FBIT18_Pos                                      (18U)
+#define CAN_F9BANK1_FBIT18_Msk                                      (0x1UL << CAN_F9BANK1_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F9BANK1_FBIT18                                          CAN_F9BANK1_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F9BANK1_FBIT19_Pos                                      (19U)
+#define CAN_F9BANK1_FBIT19_Msk                                      (0x1UL << CAN_F9BANK1_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F9BANK1_FBIT19                                          CAN_F9BANK1_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F9BANK1_FBIT20_Pos                                      (20U)
+#define CAN_F9BANK1_FBIT20_Msk                                      (0x1UL << CAN_F9BANK1_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F9BANK1_FBIT20                                          CAN_F9BANK1_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F9BANK1_FBIT21_Pos                                      (21U)
+#define CAN_F9BANK1_FBIT21_Msk                                      (0x1UL << CAN_F9BANK1_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F9BANK1_FBIT21                                          CAN_F9BANK1_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F9BANK1_FBIT22_Pos                                      (22U)
+#define CAN_F9BANK1_FBIT22_Msk                                      (0x1UL << CAN_F9BANK1_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F9BANK1_FBIT22                                          CAN_F9BANK1_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F9BANK1_FBIT23_Pos                                      (23U)
+#define CAN_F9BANK1_FBIT23_Msk                                      (0x1UL << CAN_F9BANK1_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F9BANK1_FBIT23                                          CAN_F9BANK1_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F9BANK1_FBIT24_Pos                                      (24U)
+#define CAN_F9BANK1_FBIT24_Msk                                      (0x1UL << CAN_F9BANK1_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F9BANK1_FBIT24                                          CAN_F9BANK1_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F9BANK1_FBIT25_Pos                                      (25U)
+#define CAN_F9BANK1_FBIT25_Msk                                      (0x1UL << CAN_F9BANK1_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F9BANK1_FBIT25                                          CAN_F9BANK1_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F9BANK1_FBIT26_Pos                                      (26U)
+#define CAN_F9BANK1_FBIT26_Msk                                      (0x1UL << CAN_F9BANK1_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F9BANK1_FBIT26                                          CAN_F9BANK1_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F9BANK1_FBIT27_Pos                                      (27U)
+#define CAN_F9BANK1_FBIT27_Msk                                      (0x1UL << CAN_F9BANK1_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F9BANK1_FBIT27                                          CAN_F9BANK1_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F9BANK1_FBIT28_Pos                                      (28U)
+#define CAN_F9BANK1_FBIT28_Msk                                      (0x1UL << CAN_F9BANK1_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F9BANK1_FBIT28                                          CAN_F9BANK1_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F9BANK1_FBIT29_Pos                                      (29U)
+#define CAN_F9BANK1_FBIT29_Msk                                      (0x1UL << CAN_F9BANK1_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F9BANK1_FBIT29                                          CAN_F9BANK1_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F9BANK1_FBIT30_Pos                                      (30U)
+#define CAN_F9BANK1_FBIT30_Msk                                      (0x1UL << CAN_F9BANK1_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F9BANK1_FBIT30                                          CAN_F9BANK1_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F9BANK1_FBIT31_Pos                                      (31U)
+#define CAN_F9BANK1_FBIT31_Msk                                      (0x1UL << CAN_F9BANK1_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F9BANK1_FBIT31                                          CAN_F9BANK1_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F10R1 register  ******************/
-#define CAN_F10R1_FB0_Pos                                           (0U)
-#define CAN_F10R1_FB0_Msk                                           (0x1UL << CAN_F10R1_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F10R1_FB0                                               CAN_F10R1_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F10R1_FB1_Pos                                           (1U)
-#define CAN_F10R1_FB1_Msk                                           (0x1UL << CAN_F10R1_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F10R1_FB1                                               CAN_F10R1_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F10R1_FB2_Pos                                           (2U)
-#define CAN_F10R1_FB2_Msk                                           (0x1UL << CAN_F10R1_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F10R1_FB2                                               CAN_F10R1_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F10R1_FB3_Pos                                           (3U)
-#define CAN_F10R1_FB3_Msk                                           (0x1UL << CAN_F10R1_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F10R1_FB3                                               CAN_F10R1_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F10R1_FB4_Pos                                           (4U)
-#define CAN_F10R1_FB4_Msk                                           (0x1UL << CAN_F10R1_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F10R1_FB4                                               CAN_F10R1_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F10R1_FB5_Pos                                           (5U)
-#define CAN_F10R1_FB5_Msk                                           (0x1UL << CAN_F10R1_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F10R1_FB5                                               CAN_F10R1_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F10R1_FB6_Pos                                           (6U)
-#define CAN_F10R1_FB6_Msk                                           (0x1UL << CAN_F10R1_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F10R1_FB6                                               CAN_F10R1_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F10R1_FB7_Pos                                           (7U)
-#define CAN_F10R1_FB7_Msk                                           (0x1UL << CAN_F10R1_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F10R1_FB7                                               CAN_F10R1_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F10R1_FB8_Pos                                           (8U)
-#define CAN_F10R1_FB8_Msk                                           (0x1UL << CAN_F10R1_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F10R1_FB8                                               CAN_F10R1_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F10R1_FB9_Pos                                           (9U)
-#define CAN_F10R1_FB9_Msk                                           (0x1UL << CAN_F10R1_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F10R1_FB9                                               CAN_F10R1_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F10R1_FB10_Pos                                          (10U)
-#define CAN_F10R1_FB10_Msk                                          (0x1UL << CAN_F10R1_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F10R1_FB10                                              CAN_F10R1_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F10R1_FB11_Pos                                          (11U)
-#define CAN_F10R1_FB11_Msk                                          (0x1UL << CAN_F10R1_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F10R1_FB11                                              CAN_F10R1_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F10R1_FB12_Pos                                          (12U)
-#define CAN_F10R1_FB12_Msk                                          (0x1UL << CAN_F10R1_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F10R1_FB12                                              CAN_F10R1_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F10R1_FB13_Pos                                          (13U)
-#define CAN_F10R1_FB13_Msk                                          (0x1UL << CAN_F10R1_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F10R1_FB13                                              CAN_F10R1_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F10R1_FB14_Pos                                          (14U)
-#define CAN_F10R1_FB14_Msk                                          (0x1UL << CAN_F10R1_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F10R1_FB14                                              CAN_F10R1_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F10R1_FB15_Pos                                          (15U)
-#define CAN_F10R1_FB15_Msk                                          (0x1UL << CAN_F10R1_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F10R1_FB15                                              CAN_F10R1_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F10R1_FB16_Pos                                          (16U)
-#define CAN_F10R1_FB16_Msk                                          (0x1UL << CAN_F10R1_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F10R1_FB16                                              CAN_F10R1_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F10R1_FB17_Pos                                          (17U)
-#define CAN_F10R1_FB17_Msk                                          (0x1UL << CAN_F10R1_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F10R1_FB17                                              CAN_F10R1_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F10R1_FB18_Pos                                          (18U)
-#define CAN_F10R1_FB18_Msk                                          (0x1UL << CAN_F10R1_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F10R1_FB18                                              CAN_F10R1_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F10R1_FB19_Pos                                          (19U)
-#define CAN_F10R1_FB19_Msk                                          (0x1UL << CAN_F10R1_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F10R1_FB19                                              CAN_F10R1_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F10R1_FB20_Pos                                          (20U)
-#define CAN_F10R1_FB20_Msk                                          (0x1UL << CAN_F10R1_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F10R1_FB20                                              CAN_F10R1_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F10R1_FB21_Pos                                          (21U)
-#define CAN_F10R1_FB21_Msk                                          (0x1UL << CAN_F10R1_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F10R1_FB21                                              CAN_F10R1_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F10R1_FB22_Pos                                          (22U)
-#define CAN_F10R1_FB22_Msk                                          (0x1UL << CAN_F10R1_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F10R1_FB22                                              CAN_F10R1_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F10R1_FB23_Pos                                          (23U)
-#define CAN_F10R1_FB23_Msk                                          (0x1UL << CAN_F10R1_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F10R1_FB23                                              CAN_F10R1_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F10R1_FB24_Pos                                          (24U)
-#define CAN_F10R1_FB24_Msk                                          (0x1UL << CAN_F10R1_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F10R1_FB24                                              CAN_F10R1_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F10R1_FB25_Pos                                          (25U)
-#define CAN_F10R1_FB25_Msk                                          (0x1UL << CAN_F10R1_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F10R1_FB25                                              CAN_F10R1_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F10R1_FB26_Pos                                          (26U)
-#define CAN_F10R1_FB26_Msk                                          (0x1UL << CAN_F10R1_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F10R1_FB26                                              CAN_F10R1_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F10R1_FB27_Pos                                          (27U)
-#define CAN_F10R1_FB27_Msk                                          (0x1UL << CAN_F10R1_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F10R1_FB27                                              CAN_F10R1_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F10R1_FB28_Pos                                          (28U)
-#define CAN_F10R1_FB28_Msk                                          (0x1UL << CAN_F10R1_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F10R1_FB28                                              CAN_F10R1_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F10R1_FB29_Pos                                          (29U)
-#define CAN_F10R1_FB29_Msk                                          (0x1UL << CAN_F10R1_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F10R1_FB29                                              CAN_F10R1_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F10R1_FB30_Pos                                          (30U)
-#define CAN_F10R1_FB30_Msk                                          (0x1UL << CAN_F10R1_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F10R1_FB30                                              CAN_F10R1_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F10R1_FB31_Pos                                          (31U)
-#define CAN_F10R1_FB31_Msk                                          (0x1UL << CAN_F10R1_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F10R1_FB31                                              CAN_F10R1_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F10BANK1 register  ******************/
+#define CAN_F10BANK1_FBIT0_Pos                                      (0U)
+#define CAN_F10BANK1_FBIT0_Msk                                      (0x1UL << CAN_F10BANK1_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F10BANK1_FBIT0                                          CAN_F10BANK1_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F10BANK1_FBIT1_Pos                                      (1U)
+#define CAN_F10BANK1_FBIT1_Msk                                      (0x1UL << CAN_F10BANK1_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F10BANK1_FBIT1                                          CAN_F10BANK1_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F10BANK1_FBIT2_Pos                                      (2U)
+#define CAN_F10BANK1_FBIT2_Msk                                      (0x1UL << CAN_F10BANK1_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F10BANK1_FBIT2                                          CAN_F10BANK1_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F10BANK1_FBIT3_Pos                                      (3U)
+#define CAN_F10BANK1_FBIT3_Msk                                      (0x1UL << CAN_F10BANK1_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F10BANK1_FBIT3                                          CAN_F10BANK1_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F10BANK1_FBIT4_Pos                                      (4U)
+#define CAN_F10BANK1_FBIT4_Msk                                      (0x1UL << CAN_F10BANK1_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F10BANK1_FBIT4                                          CAN_F10BANK1_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F10BANK1_FBIT5_Pos                                      (5U)
+#define CAN_F10BANK1_FBIT5_Msk                                      (0x1UL << CAN_F10BANK1_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F10BANK1_FBIT5                                          CAN_F10BANK1_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F10BANK1_FBIT6_Pos                                      (6U)
+#define CAN_F10BANK1_FBIT6_Msk                                      (0x1UL << CAN_F10BANK1_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F10BANK1_FBIT6                                          CAN_F10BANK1_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F10BANK1_FBIT7_Pos                                      (7U)
+#define CAN_F10BANK1_FBIT7_Msk                                      (0x1UL << CAN_F10BANK1_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F10BANK1_FBIT7                                          CAN_F10BANK1_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F10BANK1_FBIT8_Pos                                      (8U)
+#define CAN_F10BANK1_FBIT8_Msk                                      (0x1UL << CAN_F10BANK1_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F10BANK1_FBIT8                                          CAN_F10BANK1_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F10BANK1_FBIT9_Pos                                      (9U)
+#define CAN_F10BANK1_FBIT9_Msk                                      (0x1UL << CAN_F10BANK1_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F10BANK1_FBIT9                                          CAN_F10BANK1_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F10BANK1_FBIT10_Pos                                     (10U)
+#define CAN_F10BANK1_FBIT10_Msk                                     (0x1UL << CAN_F10BANK1_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F10BANK1_FBIT10                                         CAN_F10BANK1_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F10BANK1_FBIT11_Pos                                     (11U)
+#define CAN_F10BANK1_FBIT11_Msk                                     (0x1UL << CAN_F10BANK1_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F10BANK1_FBIT11                                         CAN_F10BANK1_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F10BANK1_FBIT12_Pos                                     (12U)
+#define CAN_F10BANK1_FBIT12_Msk                                     (0x1UL << CAN_F10BANK1_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F10BANK1_FBIT12                                         CAN_F10BANK1_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F10BANK1_FBIT13_Pos                                     (13U)
+#define CAN_F10BANK1_FBIT13_Msk                                     (0x1UL << CAN_F10BANK1_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F10BANK1_FBIT13                                         CAN_F10BANK1_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F10BANK1_FBIT14_Pos                                     (14U)
+#define CAN_F10BANK1_FBIT14_Msk                                     (0x1UL << CAN_F10BANK1_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F10BANK1_FBIT14                                         CAN_F10BANK1_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F10BANK1_FBIT15_Pos                                     (15U)
+#define CAN_F10BANK1_FBIT15_Msk                                     (0x1UL << CAN_F10BANK1_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F10BANK1_FBIT15                                         CAN_F10BANK1_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F10BANK1_FBIT16_Pos                                     (16U)
+#define CAN_F10BANK1_FBIT16_Msk                                     (0x1UL << CAN_F10BANK1_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F10BANK1_FBIT16                                         CAN_F10BANK1_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F10BANK1_FBIT17_Pos                                     (17U)
+#define CAN_F10BANK1_FBIT17_Msk                                     (0x1UL << CAN_F10BANK1_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F10BANK1_FBIT17                                         CAN_F10BANK1_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F10BANK1_FBIT18_Pos                                     (18U)
+#define CAN_F10BANK1_FBIT18_Msk                                     (0x1UL << CAN_F10BANK1_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F10BANK1_FBIT18                                         CAN_F10BANK1_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F10BANK1_FBIT19_Pos                                     (19U)
+#define CAN_F10BANK1_FBIT19_Msk                                     (0x1UL << CAN_F10BANK1_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F10BANK1_FBIT19                                         CAN_F10BANK1_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F10BANK1_FBIT20_Pos                                     (20U)
+#define CAN_F10BANK1_FBIT20_Msk                                     (0x1UL << CAN_F10BANK1_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F10BANK1_FBIT20                                         CAN_F10BANK1_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F10BANK1_FBIT21_Pos                                     (21U)
+#define CAN_F10BANK1_FBIT21_Msk                                     (0x1UL << CAN_F10BANK1_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F10BANK1_FBIT21                                         CAN_F10BANK1_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F10BANK1_FBIT22_Pos                                     (22U)
+#define CAN_F10BANK1_FBIT22_Msk                                     (0x1UL << CAN_F10BANK1_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F10BANK1_FBIT22                                         CAN_F10BANK1_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F10BANK1_FBIT23_Pos                                     (23U)
+#define CAN_F10BANK1_FBIT23_Msk                                     (0x1UL << CAN_F10BANK1_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F10BANK1_FBIT23                                         CAN_F10BANK1_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F10BANK1_FBIT24_Pos                                     (24U)
+#define CAN_F10BANK1_FBIT24_Msk                                     (0x1UL << CAN_F10BANK1_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F10BANK1_FBIT24                                         CAN_F10BANK1_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F10BANK1_FBIT25_Pos                                     (25U)
+#define CAN_F10BANK1_FBIT25_Msk                                     (0x1UL << CAN_F10BANK1_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F10BANK1_FBIT25                                         CAN_F10BANK1_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F10BANK1_FBIT26_Pos                                     (26U)
+#define CAN_F10BANK1_FBIT26_Msk                                     (0x1UL << CAN_F10BANK1_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F10BANK1_FBIT26                                         CAN_F10BANK1_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F10BANK1_FBIT27_Pos                                     (27U)
+#define CAN_F10BANK1_FBIT27_Msk                                     (0x1UL << CAN_F10BANK1_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F10BANK1_FBIT27                                         CAN_F10BANK1_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F10BANK1_FBIT28_Pos                                     (28U)
+#define CAN_F10BANK1_FBIT28_Msk                                     (0x1UL << CAN_F10BANK1_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F10BANK1_FBIT28                                         CAN_F10BANK1_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F10BANK1_FBIT29_Pos                                     (29U)
+#define CAN_F10BANK1_FBIT29_Msk                                     (0x1UL << CAN_F10BANK1_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F10BANK1_FBIT29                                         CAN_F10BANK1_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F10BANK1_FBIT30_Pos                                     (30U)
+#define CAN_F10BANK1_FBIT30_Msk                                     (0x1UL << CAN_F10BANK1_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F10BANK1_FBIT30                                         CAN_F10BANK1_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F10BANK1_FBIT31_Pos                                     (31U)
+#define CAN_F10BANK1_FBIT31_Msk                                     (0x1UL << CAN_F10BANK1_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F10BANK1_FBIT31                                         CAN_F10BANK1_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F11R1 register  ******************/
-#define CAN_F11R1_FB0_Pos                                           (0U)
-#define CAN_F11R1_FB0_Msk                                           (0x1UL << CAN_F11R1_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F11R1_FB0                                               CAN_F11R1_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F11R1_FB1_Pos                                           (1U)
-#define CAN_F11R1_FB1_Msk                                           (0x1UL << CAN_F11R1_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F11R1_FB1                                               CAN_F11R1_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F11R1_FB2_Pos                                           (2U)
-#define CAN_F11R1_FB2_Msk                                           (0x1UL << CAN_F11R1_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F11R1_FB2                                               CAN_F11R1_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F11R1_FB3_Pos                                           (3U)
-#define CAN_F11R1_FB3_Msk                                           (0x1UL << CAN_F11R1_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F11R1_FB3                                               CAN_F11R1_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F11R1_FB4_Pos                                           (4U)
-#define CAN_F11R1_FB4_Msk                                           (0x1UL << CAN_F11R1_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F11R1_FB4                                               CAN_F11R1_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F11R1_FB5_Pos                                           (5U)
-#define CAN_F11R1_FB5_Msk                                           (0x1UL << CAN_F11R1_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F11R1_FB5                                               CAN_F11R1_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F11R1_FB6_Pos                                           (6U)
-#define CAN_F11R1_FB6_Msk                                           (0x1UL << CAN_F11R1_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F11R1_FB6                                               CAN_F11R1_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F11R1_FB7_Pos                                           (7U)
-#define CAN_F11R1_FB7_Msk                                           (0x1UL << CAN_F11R1_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F11R1_FB7                                               CAN_F11R1_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F11R1_FB8_Pos                                           (8U)
-#define CAN_F11R1_FB8_Msk                                           (0x1UL << CAN_F11R1_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F11R1_FB8                                               CAN_F11R1_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F11R1_FB9_Pos                                           (9U)
-#define CAN_F11R1_FB9_Msk                                           (0x1UL << CAN_F11R1_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F11R1_FB9                                               CAN_F11R1_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F11R1_FB10_Pos                                          (10U)
-#define CAN_F11R1_FB10_Msk                                          (0x1UL << CAN_F11R1_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F11R1_FB10                                              CAN_F11R1_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F11R1_FB11_Pos                                          (11U)
-#define CAN_F11R1_FB11_Msk                                          (0x1UL << CAN_F11R1_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F11R1_FB11                                              CAN_F11R1_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F11R1_FB12_Pos                                          (12U)
-#define CAN_F11R1_FB12_Msk                                          (0x1UL << CAN_F11R1_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F11R1_FB12                                              CAN_F11R1_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F11R1_FB13_Pos                                          (13U)
-#define CAN_F11R1_FB13_Msk                                          (0x1UL << CAN_F11R1_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F11R1_FB13                                              CAN_F11R1_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F11R1_FB14_Pos                                          (14U)
-#define CAN_F11R1_FB14_Msk                                          (0x1UL << CAN_F11R1_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F11R1_FB14                                              CAN_F11R1_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F11R1_FB15_Pos                                          (15U)
-#define CAN_F11R1_FB15_Msk                                          (0x1UL << CAN_F11R1_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F11R1_FB15                                              CAN_F11R1_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F11R1_FB16_Pos                                          (16U)
-#define CAN_F11R1_FB16_Msk                                          (0x1UL << CAN_F11R1_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F11R1_FB16                                              CAN_F11R1_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F11R1_FB17_Pos                                          (17U)
-#define CAN_F11R1_FB17_Msk                                          (0x1UL << CAN_F11R1_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F11R1_FB17                                              CAN_F11R1_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F11R1_FB18_Pos                                          (18U)
-#define CAN_F11R1_FB18_Msk                                          (0x1UL << CAN_F11R1_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F11R1_FB18                                              CAN_F11R1_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F11R1_FB19_Pos                                          (19U)
-#define CAN_F11R1_FB19_Msk                                          (0x1UL << CAN_F11R1_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F11R1_FB19                                              CAN_F11R1_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F11R1_FB20_Pos                                          (20U)
-#define CAN_F11R1_FB20_Msk                                          (0x1UL << CAN_F11R1_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F11R1_FB20                                              CAN_F11R1_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F11R1_FB21_Pos                                          (21U)
-#define CAN_F11R1_FB21_Msk                                          (0x1UL << CAN_F11R1_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F11R1_FB21                                              CAN_F11R1_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F11R1_FB22_Pos                                          (22U)
-#define CAN_F11R1_FB22_Msk                                          (0x1UL << CAN_F11R1_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F11R1_FB22                                              CAN_F11R1_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F11R1_FB23_Pos                                          (23U)
-#define CAN_F11R1_FB23_Msk                                          (0x1UL << CAN_F11R1_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F11R1_FB23                                              CAN_F11R1_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F11R1_FB24_Pos                                          (24U)
-#define CAN_F11R1_FB24_Msk                                          (0x1UL << CAN_F11R1_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F11R1_FB24                                              CAN_F11R1_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F11R1_FB25_Pos                                          (25U)
-#define CAN_F11R1_FB25_Msk                                          (0x1UL << CAN_F11R1_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F11R1_FB25                                              CAN_F11R1_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F11R1_FB26_Pos                                          (26U)
-#define CAN_F11R1_FB26_Msk                                          (0x1UL << CAN_F11R1_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F11R1_FB26                                              CAN_F11R1_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F11R1_FB27_Pos                                          (27U)
-#define CAN_F11R1_FB27_Msk                                          (0x1UL << CAN_F11R1_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F11R1_FB27                                              CAN_F11R1_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F11R1_FB28_Pos                                          (28U)
-#define CAN_F11R1_FB28_Msk                                          (0x1UL << CAN_F11R1_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F11R1_FB28                                              CAN_F11R1_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F11R1_FB29_Pos                                          (29U)
-#define CAN_F11R1_FB29_Msk                                          (0x1UL << CAN_F11R1_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F11R1_FB29                                              CAN_F11R1_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F11R1_FB30_Pos                                          (30U)
-#define CAN_F11R1_FB30_Msk                                          (0x1UL << CAN_F11R1_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F11R1_FB30                                              CAN_F11R1_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F11R1_FB31_Pos                                          (31U)
-#define CAN_F11R1_FB31_Msk                                          (0x1UL << CAN_F11R1_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F11R1_FB31                                              CAN_F11R1_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F11BANK1 register  ******************/
+#define CAN_F11BANK1_FBIT0_Pos                                      (0U)
+#define CAN_F11BANK1_FBIT0_Msk                                      (0x1UL << CAN_F11BANK1_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F11BANK1_FBIT0                                          CAN_F11BANK1_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F11BANK1_FBIT1_Pos                                      (1U)
+#define CAN_F11BANK1_FBIT1_Msk                                      (0x1UL << CAN_F11BANK1_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F11BANK1_FBIT1                                          CAN_F11BANK1_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F11BANK1_FBIT2_Pos                                      (2U)
+#define CAN_F11BANK1_FBIT2_Msk                                      (0x1UL << CAN_F11BANK1_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F11BANK1_FBIT2                                          CAN_F11BANK1_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F11BANK1_FBIT3_Pos                                      (3U)
+#define CAN_F11BANK1_FBIT3_Msk                                      (0x1UL << CAN_F11BANK1_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F11BANK1_FBIT3                                          CAN_F11BANK1_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F11BANK1_FBIT4_Pos                                      (4U)
+#define CAN_F11BANK1_FBIT4_Msk                                      (0x1UL << CAN_F11BANK1_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F11BANK1_FBIT4                                          CAN_F11BANK1_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F11BANK1_FBIT5_Pos                                      (5U)
+#define CAN_F11BANK1_FBIT5_Msk                                      (0x1UL << CAN_F11BANK1_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F11BANK1_FBIT5                                          CAN_F11BANK1_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F11BANK1_FBIT6_Pos                                      (6U)
+#define CAN_F11BANK1_FBIT6_Msk                                      (0x1UL << CAN_F11BANK1_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F11BANK1_FBIT6                                          CAN_F11BANK1_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F11BANK1_FBIT7_Pos                                      (7U)
+#define CAN_F11BANK1_FBIT7_Msk                                      (0x1UL << CAN_F11BANK1_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F11BANK1_FBIT7                                          CAN_F11BANK1_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F11BANK1_FBIT8_Pos                                      (8U)
+#define CAN_F11BANK1_FBIT8_Msk                                      (0x1UL << CAN_F11BANK1_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F11BANK1_FBIT8                                          CAN_F11BANK1_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F11BANK1_FBIT9_Pos                                      (9U)
+#define CAN_F11BANK1_FBIT9_Msk                                      (0x1UL << CAN_F11BANK1_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F11BANK1_FBIT9                                          CAN_F11BANK1_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F11BANK1_FBIT10_Pos                                     (10U)
+#define CAN_F11BANK1_FBIT10_Msk                                     (0x1UL << CAN_F11BANK1_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F11BANK1_FBIT10                                         CAN_F11BANK1_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F11BANK1_FBIT11_Pos                                     (11U)
+#define CAN_F11BANK1_FBIT11_Msk                                     (0x1UL << CAN_F11BANK1_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F11BANK1_FBIT11                                         CAN_F11BANK1_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F11BANK1_FBIT12_Pos                                     (12U)
+#define CAN_F11BANK1_FBIT12_Msk                                     (0x1UL << CAN_F11BANK1_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F11BANK1_FBIT12                                         CAN_F11BANK1_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F11BANK1_FBIT13_Pos                                     (13U)
+#define CAN_F11BANK1_FBIT13_Msk                                     (0x1UL << CAN_F11BANK1_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F11BANK1_FBIT13                                         CAN_F11BANK1_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F11BANK1_FBIT14_Pos                                     (14U)
+#define CAN_F11BANK1_FBIT14_Msk                                     (0x1UL << CAN_F11BANK1_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F11BANK1_FBIT14                                         CAN_F11BANK1_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F11BANK1_FBIT15_Pos                                     (15U)
+#define CAN_F11BANK1_FBIT15_Msk                                     (0x1UL << CAN_F11BANK1_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F11BANK1_FBIT15                                         CAN_F11BANK1_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F11BANK1_FBIT16_Pos                                     (16U)
+#define CAN_F11BANK1_FBIT16_Msk                                     (0x1UL << CAN_F11BANK1_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F11BANK1_FBIT16                                         CAN_F11BANK1_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F11BANK1_FBIT17_Pos                                     (17U)
+#define CAN_F11BANK1_FBIT17_Msk                                     (0x1UL << CAN_F11BANK1_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F11BANK1_FBIT17                                         CAN_F11BANK1_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F11BANK1_FBIT18_Pos                                     (18U)
+#define CAN_F11BANK1_FBIT18_Msk                                     (0x1UL << CAN_F11BANK1_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F11BANK1_FBIT18                                         CAN_F11BANK1_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F11BANK1_FBIT19_Pos                                     (19U)
+#define CAN_F11BANK1_FBIT19_Msk                                     (0x1UL << CAN_F11BANK1_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F11BANK1_FBIT19                                         CAN_F11BANK1_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F11BANK1_FBIT20_Pos                                     (20U)
+#define CAN_F11BANK1_FBIT20_Msk                                     (0x1UL << CAN_F11BANK1_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F11BANK1_FBIT20                                         CAN_F11BANK1_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F11BANK1_FBIT21_Pos                                     (21U)
+#define CAN_F11BANK1_FBIT21_Msk                                     (0x1UL << CAN_F11BANK1_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F11BANK1_FBIT21                                         CAN_F11BANK1_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F11BANK1_FBIT22_Pos                                     (22U)
+#define CAN_F11BANK1_FBIT22_Msk                                     (0x1UL << CAN_F11BANK1_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F11BANK1_FBIT22                                         CAN_F11BANK1_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F11BANK1_FBIT23_Pos                                     (23U)
+#define CAN_F11BANK1_FBIT23_Msk                                     (0x1UL << CAN_F11BANK1_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F11BANK1_FBIT23                                         CAN_F11BANK1_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F11BANK1_FBIT24_Pos                                     (24U)
+#define CAN_F11BANK1_FBIT24_Msk                                     (0x1UL << CAN_F11BANK1_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F11BANK1_FBIT24                                         CAN_F11BANK1_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F11BANK1_FBIT25_Pos                                     (25U)
+#define CAN_F11BANK1_FBIT25_Msk                                     (0x1UL << CAN_F11BANK1_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F11BANK1_FBIT25                                         CAN_F11BANK1_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F11BANK1_FBIT26_Pos                                     (26U)
+#define CAN_F11BANK1_FBIT26_Msk                                     (0x1UL << CAN_F11BANK1_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F11BANK1_FBIT26                                         CAN_F11BANK1_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F11BANK1_FBIT27_Pos                                     (27U)
+#define CAN_F11BANK1_FBIT27_Msk                                     (0x1UL << CAN_F11BANK1_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F11BANK1_FBIT27                                         CAN_F11BANK1_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F11BANK1_FBIT28_Pos                                     (28U)
+#define CAN_F11BANK1_FBIT28_Msk                                     (0x1UL << CAN_F11BANK1_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F11BANK1_FBIT28                                         CAN_F11BANK1_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F11BANK1_FBIT29_Pos                                     (29U)
+#define CAN_F11BANK1_FBIT29_Msk                                     (0x1UL << CAN_F11BANK1_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F11BANK1_FBIT29                                         CAN_F11BANK1_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F11BANK1_FBIT30_Pos                                     (30U)
+#define CAN_F11BANK1_FBIT30_Msk                                     (0x1UL << CAN_F11BANK1_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F11BANK1_FBIT30                                         CAN_F11BANK1_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F11BANK1_FBIT31_Pos                                     (31U)
+#define CAN_F11BANK1_FBIT31_Msk                                     (0x1UL << CAN_F11BANK1_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F11BANK1_FBIT31                                         CAN_F11BANK1_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F12R1 register  ******************/
-#define CAN_F12R1_FB0_Pos                                           (0U)
-#define CAN_F12R1_FB0_Msk                                           (0x1UL << CAN_F12R1_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F12R1_FB0                                               CAN_F12R1_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F12R1_FB1_Pos                                           (1U)
-#define CAN_F12R1_FB1_Msk                                           (0x1UL << CAN_F12R1_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F12R1_FB1                                               CAN_F12R1_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F12R1_FB2_Pos                                           (2U)
-#define CAN_F12R1_FB2_Msk                                           (0x1UL << CAN_F12R1_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F12R1_FB2                                               CAN_F12R1_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F12R1_FB3_Pos                                           (3U)
-#define CAN_F12R1_FB3_Msk                                           (0x1UL << CAN_F12R1_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F12R1_FB3                                               CAN_F12R1_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F12R1_FB4_Pos                                           (4U)
-#define CAN_F12R1_FB4_Msk                                           (0x1UL << CAN_F12R1_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F12R1_FB4                                               CAN_F12R1_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F12R1_FB5_Pos                                           (5U)
-#define CAN_F12R1_FB5_Msk                                           (0x1UL << CAN_F12R1_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F12R1_FB5                                               CAN_F12R1_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F12R1_FB6_Pos                                           (6U)
-#define CAN_F12R1_FB6_Msk                                           (0x1UL << CAN_F12R1_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F12R1_FB6                                               CAN_F12R1_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F12R1_FB7_Pos                                           (7U)
-#define CAN_F12R1_FB7_Msk                                           (0x1UL << CAN_F12R1_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F12R1_FB7                                               CAN_F12R1_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F12R1_FB8_Pos                                           (8U)
-#define CAN_F12R1_FB8_Msk                                           (0x1UL << CAN_F12R1_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F12R1_FB8                                               CAN_F12R1_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F12R1_FB9_Pos                                           (9U)
-#define CAN_F12R1_FB9_Msk                                           (0x1UL << CAN_F12R1_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F12R1_FB9                                               CAN_F12R1_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F12R1_FB10_Pos                                          (10U)
-#define CAN_F12R1_FB10_Msk                                          (0x1UL << CAN_F12R1_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F12R1_FB10                                              CAN_F12R1_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F12R1_FB11_Pos                                          (11U)
-#define CAN_F12R1_FB11_Msk                                          (0x1UL << CAN_F12R1_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F12R1_FB11                                              CAN_F12R1_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F12R1_FB12_Pos                                          (12U)
-#define CAN_F12R1_FB12_Msk                                          (0x1UL << CAN_F12R1_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F12R1_FB12                                              CAN_F12R1_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F12R1_FB13_Pos                                          (13U)
-#define CAN_F12R1_FB13_Msk                                          (0x1UL << CAN_F12R1_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F12R1_FB13                                              CAN_F12R1_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F12R1_FB14_Pos                                          (14U)
-#define CAN_F12R1_FB14_Msk                                          (0x1UL << CAN_F12R1_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F12R1_FB14                                              CAN_F12R1_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F12R1_FB15_Pos                                          (15U)
-#define CAN_F12R1_FB15_Msk                                          (0x1UL << CAN_F12R1_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F12R1_FB15                                              CAN_F12R1_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F12R1_FB16_Pos                                          (16U)
-#define CAN_F12R1_FB16_Msk                                          (0x1UL << CAN_F12R1_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F12R1_FB16                                              CAN_F12R1_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F12R1_FB17_Pos                                          (17U)
-#define CAN_F12R1_FB17_Msk                                          (0x1UL << CAN_F12R1_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F12R1_FB17                                              CAN_F12R1_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F12R1_FB18_Pos                                          (18U)
-#define CAN_F12R1_FB18_Msk                                          (0x1UL << CAN_F12R1_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F12R1_FB18                                              CAN_F12R1_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F12R1_FB19_Pos                                          (19U)
-#define CAN_F12R1_FB19_Msk                                          (0x1UL << CAN_F12R1_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F12R1_FB19                                              CAN_F12R1_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F12R1_FB20_Pos                                          (20U)
-#define CAN_F12R1_FB20_Msk                                          (0x1UL << CAN_F12R1_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F12R1_FB20                                              CAN_F12R1_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F12R1_FB21_Pos                                          (21U)
-#define CAN_F12R1_FB21_Msk                                          (0x1UL << CAN_F12R1_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F12R1_FB21                                              CAN_F12R1_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F12R1_FB22_Pos                                          (22U)
-#define CAN_F12R1_FB22_Msk                                          (0x1UL << CAN_F12R1_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F12R1_FB22                                              CAN_F12R1_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F12R1_FB23_Pos                                          (23U)
-#define CAN_F12R1_FB23_Msk                                          (0x1UL << CAN_F12R1_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F12R1_FB23                                              CAN_F12R1_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F12R1_FB24_Pos                                          (24U)
-#define CAN_F12R1_FB24_Msk                                          (0x1UL << CAN_F12R1_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F12R1_FB24                                              CAN_F12R1_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F12R1_FB25_Pos                                          (25U)
-#define CAN_F12R1_FB25_Msk                                          (0x1UL << CAN_F12R1_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F12R1_FB25                                              CAN_F12R1_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F12R1_FB26_Pos                                          (26U)
-#define CAN_F12R1_FB26_Msk                                          (0x1UL << CAN_F12R1_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F12R1_FB26                                              CAN_F12R1_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F12R1_FB27_Pos                                          (27U)
-#define CAN_F12R1_FB27_Msk                                          (0x1UL << CAN_F12R1_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F12R1_FB27                                              CAN_F12R1_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F12R1_FB28_Pos                                          (28U)
-#define CAN_F12R1_FB28_Msk                                          (0x1UL << CAN_F12R1_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F12R1_FB28                                              CAN_F12R1_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F12R1_FB29_Pos                                          (29U)
-#define CAN_F12R1_FB29_Msk                                          (0x1UL << CAN_F12R1_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F12R1_FB29                                              CAN_F12R1_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F12R1_FB30_Pos                                          (30U)
-#define CAN_F12R1_FB30_Msk                                          (0x1UL << CAN_F12R1_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F12R1_FB30                                              CAN_F12R1_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F12R1_FB31_Pos                                          (31U)
-#define CAN_F12R1_FB31_Msk                                          (0x1UL << CAN_F12R1_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F12R1_FB31                                              CAN_F12R1_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F12BANK1 register  ******************/
+#define CAN_F12BANK1_FBIT0_Pos                                      (0U)
+#define CAN_F12BANK1_FBIT0_Msk                                      (0x1UL << CAN_F12BANK1_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F12BANK1_FBIT0                                          CAN_F12BANK1_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F12BANK1_FBIT1_Pos                                      (1U)
+#define CAN_F12BANK1_FBIT1_Msk                                      (0x1UL << CAN_F12BANK1_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F12BANK1_FBIT1                                          CAN_F12BANK1_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F12BANK1_FBIT2_Pos                                      (2U)
+#define CAN_F12BANK1_FBIT2_Msk                                      (0x1UL << CAN_F12BANK1_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F12BANK1_FBIT2                                          CAN_F12BANK1_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F12BANK1_FBIT3_Pos                                      (3U)
+#define CAN_F12BANK1_FBIT3_Msk                                      (0x1UL << CAN_F12BANK1_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F12BANK1_FBIT3                                          CAN_F12BANK1_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F12BANK1_FBIT4_Pos                                      (4U)
+#define CAN_F12BANK1_FBIT4_Msk                                      (0x1UL << CAN_F12BANK1_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F12BANK1_FBIT4                                          CAN_F12BANK1_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F12BANK1_FBIT5_Pos                                      (5U)
+#define CAN_F12BANK1_FBIT5_Msk                                      (0x1UL << CAN_F12BANK1_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F12BANK1_FBIT5                                          CAN_F12BANK1_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F12BANK1_FBIT6_Pos                                      (6U)
+#define CAN_F12BANK1_FBIT6_Msk                                      (0x1UL << CAN_F12BANK1_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F12BANK1_FBIT6                                          CAN_F12BANK1_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F12BANK1_FBIT7_Pos                                      (7U)
+#define CAN_F12BANK1_FBIT7_Msk                                      (0x1UL << CAN_F12BANK1_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F12BANK1_FBIT7                                          CAN_F12BANK1_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F12BANK1_FBIT8_Pos                                      (8U)
+#define CAN_F12BANK1_FBIT8_Msk                                      (0x1UL << CAN_F12BANK1_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F12BANK1_FBIT8                                          CAN_F12BANK1_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F12BANK1_FBIT9_Pos                                      (9U)
+#define CAN_F12BANK1_FBIT9_Msk                                      (0x1UL << CAN_F12BANK1_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F12BANK1_FBIT9                                          CAN_F12BANK1_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F12BANK1_FBIT10_Pos                                     (10U)
+#define CAN_F12BANK1_FBIT10_Msk                                     (0x1UL << CAN_F12BANK1_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F12BANK1_FBIT10                                         CAN_F12BANK1_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F12BANK1_FBIT11_Pos                                     (11U)
+#define CAN_F12BANK1_FBIT11_Msk                                     (0x1UL << CAN_F12BANK1_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F12BANK1_FBIT11                                         CAN_F12BANK1_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F12BANK1_FBIT12_Pos                                     (12U)
+#define CAN_F12BANK1_FBIT12_Msk                                     (0x1UL << CAN_F12BANK1_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F12BANK1_FBIT12                                         CAN_F12BANK1_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F12BANK1_FBIT13_Pos                                     (13U)
+#define CAN_F12BANK1_FBIT13_Msk                                     (0x1UL << CAN_F12BANK1_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F12BANK1_FBIT13                                         CAN_F12BANK1_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F12BANK1_FBIT14_Pos                                     (14U)
+#define CAN_F12BANK1_FBIT14_Msk                                     (0x1UL << CAN_F12BANK1_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F12BANK1_FBIT14                                         CAN_F12BANK1_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F12BANK1_FBIT15_Pos                                     (15U)
+#define CAN_F12BANK1_FBIT15_Msk                                     (0x1UL << CAN_F12BANK1_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F12BANK1_FBIT15                                         CAN_F12BANK1_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F12BANK1_FBIT16_Pos                                     (16U)
+#define CAN_F12BANK1_FBIT16_Msk                                     (0x1UL << CAN_F12BANK1_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F12BANK1_FBIT16                                         CAN_F12BANK1_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F12BANK1_FBIT17_Pos                                     (17U)
+#define CAN_F12BANK1_FBIT17_Msk                                     (0x1UL << CAN_F12BANK1_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F12BANK1_FBIT17                                         CAN_F12BANK1_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F12BANK1_FBIT18_Pos                                     (18U)
+#define CAN_F12BANK1_FBIT18_Msk                                     (0x1UL << CAN_F12BANK1_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F12BANK1_FBIT18                                         CAN_F12BANK1_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F12BANK1_FBIT19_Pos                                     (19U)
+#define CAN_F12BANK1_FBIT19_Msk                                     (0x1UL << CAN_F12BANK1_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F12BANK1_FBIT19                                         CAN_F12BANK1_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F12BANK1_FBIT20_Pos                                     (20U)
+#define CAN_F12BANK1_FBIT20_Msk                                     (0x1UL << CAN_F12BANK1_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F12BANK1_FBIT20                                         CAN_F12BANK1_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F12BANK1_FBIT21_Pos                                     (21U)
+#define CAN_F12BANK1_FBIT21_Msk                                     (0x1UL << CAN_F12BANK1_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F12BANK1_FBIT21                                         CAN_F12BANK1_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F12BANK1_FBIT22_Pos                                     (22U)
+#define CAN_F12BANK1_FBIT22_Msk                                     (0x1UL << CAN_F12BANK1_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F12BANK1_FBIT22                                         CAN_F12BANK1_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F12BANK1_FBIT23_Pos                                     (23U)
+#define CAN_F12BANK1_FBIT23_Msk                                     (0x1UL << CAN_F12BANK1_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F12BANK1_FBIT23                                         CAN_F12BANK1_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F12BANK1_FBIT24_Pos                                     (24U)
+#define CAN_F12BANK1_FBIT24_Msk                                     (0x1UL << CAN_F12BANK1_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F12BANK1_FBIT24                                         CAN_F12BANK1_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F12BANK1_FBIT25_Pos                                     (25U)
+#define CAN_F12BANK1_FBIT25_Msk                                     (0x1UL << CAN_F12BANK1_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F12BANK1_FBIT25                                         CAN_F12BANK1_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F12BANK1_FBIT26_Pos                                     (26U)
+#define CAN_F12BANK1_FBIT26_Msk                                     (0x1UL << CAN_F12BANK1_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F12BANK1_FBIT26                                         CAN_F12BANK1_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F12BANK1_FBIT27_Pos                                     (27U)
+#define CAN_F12BANK1_FBIT27_Msk                                     (0x1UL << CAN_F12BANK1_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F12BANK1_FBIT27                                         CAN_F12BANK1_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F12BANK1_FBIT28_Pos                                     (28U)
+#define CAN_F12BANK1_FBIT28_Msk                                     (0x1UL << CAN_F12BANK1_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F12BANK1_FBIT28                                         CAN_F12BANK1_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F12BANK1_FBIT29_Pos                                     (29U)
+#define CAN_F12BANK1_FBIT29_Msk                                     (0x1UL << CAN_F12BANK1_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F12BANK1_FBIT29                                         CAN_F12BANK1_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F12BANK1_FBIT30_Pos                                     (30U)
+#define CAN_F12BANK1_FBIT30_Msk                                     (0x1UL << CAN_F12BANK1_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F12BANK1_FBIT30                                         CAN_F12BANK1_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F12BANK1_FBIT31_Pos                                     (31U)
+#define CAN_F12BANK1_FBIT31_Msk                                     (0x1UL << CAN_F12BANK1_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F12BANK1_FBIT31                                         CAN_F12BANK1_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F13R1 register  ******************/
-#define CAN_F13R1_FB0_Pos                                           (0U)
-#define CAN_F13R1_FB0_Msk                                           (0x1UL << CAN_F13R1_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F13R1_FB0                                               CAN_F13R1_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F13R1_FB1_Pos                                           (1U)
-#define CAN_F13R1_FB1_Msk                                           (0x1UL << CAN_F13R1_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F13R1_FB1                                               CAN_F13R1_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F13R1_FB2_Pos                                           (2U)
-#define CAN_F13R1_FB2_Msk                                           (0x1UL << CAN_F13R1_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F13R1_FB2                                               CAN_F13R1_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F13R1_FB3_Pos                                           (3U)
-#define CAN_F13R1_FB3_Msk                                           (0x1UL << CAN_F13R1_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F13R1_FB3                                               CAN_F13R1_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F13R1_FB4_Pos                                           (4U)
-#define CAN_F13R1_FB4_Msk                                           (0x1UL << CAN_F13R1_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F13R1_FB4                                               CAN_F13R1_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F13R1_FB5_Pos                                           (5U)
-#define CAN_F13R1_FB5_Msk                                           (0x1UL << CAN_F13R1_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F13R1_FB5                                               CAN_F13R1_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F13R1_FB6_Pos                                           (6U)
-#define CAN_F13R1_FB6_Msk                                           (0x1UL << CAN_F13R1_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F13R1_FB6                                               CAN_F13R1_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F13R1_FB7_Pos                                           (7U)
-#define CAN_F13R1_FB7_Msk                                           (0x1UL << CAN_F13R1_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F13R1_FB7                                               CAN_F13R1_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F13R1_FB8_Pos                                           (8U)
-#define CAN_F13R1_FB8_Msk                                           (0x1UL << CAN_F13R1_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F13R1_FB8                                               CAN_F13R1_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F13R1_FB9_Pos                                           (9U)
-#define CAN_F13R1_FB9_Msk                                           (0x1UL << CAN_F13R1_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F13R1_FB9                                               CAN_F13R1_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F13R1_FB10_Pos                                          (10U)
-#define CAN_F13R1_FB10_Msk                                          (0x1UL << CAN_F13R1_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F13R1_FB10                                              CAN_F13R1_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F13R1_FB11_Pos                                          (11U)
-#define CAN_F13R1_FB11_Msk                                          (0x1UL << CAN_F13R1_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F13R1_FB11                                              CAN_F13R1_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F13R1_FB12_Pos                                          (12U)
-#define CAN_F13R1_FB12_Msk                                          (0x1UL << CAN_F13R1_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F13R1_FB12                                              CAN_F13R1_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F13R1_FB13_Pos                                          (13U)
-#define CAN_F13R1_FB13_Msk                                          (0x1UL << CAN_F13R1_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F13R1_FB13                                              CAN_F13R1_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F13R1_FB14_Pos                                          (14U)
-#define CAN_F13R1_FB14_Msk                                          (0x1UL << CAN_F13R1_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F13R1_FB14                                              CAN_F13R1_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F13R1_FB15_Pos                                          (15U)
-#define CAN_F13R1_FB15_Msk                                          (0x1UL << CAN_F13R1_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F13R1_FB15                                              CAN_F13R1_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F13R1_FB16_Pos                                          (16U)
-#define CAN_F13R1_FB16_Msk                                          (0x1UL << CAN_F13R1_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F13R1_FB16                                              CAN_F13R1_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F13R1_FB17_Pos                                          (17U)
-#define CAN_F13R1_FB17_Msk                                          (0x1UL << CAN_F13R1_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F13R1_FB17                                              CAN_F13R1_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F13R1_FB18_Pos                                          (18U)
-#define CAN_F13R1_FB18_Msk                                          (0x1UL << CAN_F13R1_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F13R1_FB18                                              CAN_F13R1_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F13R1_FB19_Pos                                          (19U)
-#define CAN_F13R1_FB19_Msk                                          (0x1UL << CAN_F13R1_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F13R1_FB19                                              CAN_F13R1_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F13R1_FB20_Pos                                          (20U)
-#define CAN_F13R1_FB20_Msk                                          (0x1UL << CAN_F13R1_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F13R1_FB20                                              CAN_F13R1_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F13R1_FB21_Pos                                          (21U)
-#define CAN_F13R1_FB21_Msk                                          (0x1UL << CAN_F13R1_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F13R1_FB21                                              CAN_F13R1_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F13R1_FB22_Pos                                          (22U)
-#define CAN_F13R1_FB22_Msk                                          (0x1UL << CAN_F13R1_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F13R1_FB22                                              CAN_F13R1_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F13R1_FB23_Pos                                          (23U)
-#define CAN_F13R1_FB23_Msk                                          (0x1UL << CAN_F13R1_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F13R1_FB23                                              CAN_F13R1_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F13R1_FB24_Pos                                          (24U)
-#define CAN_F13R1_FB24_Msk                                          (0x1UL << CAN_F13R1_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F13R1_FB24                                              CAN_F13R1_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F13R1_FB25_Pos                                          (25U)
-#define CAN_F13R1_FB25_Msk                                          (0x1UL << CAN_F13R1_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F13R1_FB25                                              CAN_F13R1_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F13R1_FB26_Pos                                          (26U)
-#define CAN_F13R1_FB26_Msk                                          (0x1UL << CAN_F13R1_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F13R1_FB26                                              CAN_F13R1_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F13R1_FB27_Pos                                          (27U)
-#define CAN_F13R1_FB27_Msk                                          (0x1UL << CAN_F13R1_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F13R1_FB27                                              CAN_F13R1_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F13R1_FB28_Pos                                          (28U)
-#define CAN_F13R1_FB28_Msk                                          (0x1UL << CAN_F13R1_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F13R1_FB28                                              CAN_F13R1_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F13R1_FB29_Pos                                          (29U)
-#define CAN_F13R1_FB29_Msk                                          (0x1UL << CAN_F13R1_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F13R1_FB29                                              CAN_F13R1_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F13R1_FB30_Pos                                          (30U)
-#define CAN_F13R1_FB30_Msk                                          (0x1UL << CAN_F13R1_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F13R1_FB30                                              CAN_F13R1_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F13R1_FB31_Pos                                          (31U)
-#define CAN_F13R1_FB31_Msk                                          (0x1UL << CAN_F13R1_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F13R1_FB31                                              CAN_F13R1_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F13BANK1 register  ******************/
+#define CAN_F13BANK1_FBIT0_Pos                                      (0U)
+#define CAN_F13BANK1_FBIT0_Msk                                      (0x1UL << CAN_F13BANK1_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F13BANK1_FBIT0                                          CAN_F13BANK1_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F13BANK1_FBIT1_Pos                                      (1U)
+#define CAN_F13BANK1_FBIT1_Msk                                      (0x1UL << CAN_F13BANK1_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F13BANK1_FBIT1                                          CAN_F13BANK1_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F13BANK1_FBIT2_Pos                                      (2U)
+#define CAN_F13BANK1_FBIT2_Msk                                      (0x1UL << CAN_F13BANK1_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F13BANK1_FBIT2                                          CAN_F13BANK1_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F13BANK1_FBIT3_Pos                                      (3U)
+#define CAN_F13BANK1_FBIT3_Msk                                      (0x1UL << CAN_F13BANK1_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F13BANK1_FBIT3                                          CAN_F13BANK1_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F13BANK1_FBIT4_Pos                                      (4U)
+#define CAN_F13BANK1_FBIT4_Msk                                      (0x1UL << CAN_F13BANK1_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F13BANK1_FBIT4                                          CAN_F13BANK1_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F13BANK1_FBIT5_Pos                                      (5U)
+#define CAN_F13BANK1_FBIT5_Msk                                      (0x1UL << CAN_F13BANK1_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F13BANK1_FBIT5                                          CAN_F13BANK1_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F13BANK1_FBIT6_Pos                                      (6U)
+#define CAN_F13BANK1_FBIT6_Msk                                      (0x1UL << CAN_F13BANK1_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F13BANK1_FBIT6                                          CAN_F13BANK1_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F13BANK1_FBIT7_Pos                                      (7U)
+#define CAN_F13BANK1_FBIT7_Msk                                      (0x1UL << CAN_F13BANK1_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F13BANK1_FBIT7                                          CAN_F13BANK1_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F13BANK1_FBIT8_Pos                                      (8U)
+#define CAN_F13BANK1_FBIT8_Msk                                      (0x1UL << CAN_F13BANK1_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F13BANK1_FBIT8                                          CAN_F13BANK1_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F13BANK1_FBIT9_Pos                                      (9U)
+#define CAN_F13BANK1_FBIT9_Msk                                      (0x1UL << CAN_F13BANK1_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F13BANK1_FBIT9                                          CAN_F13BANK1_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F13BANK1_FBIT10_Pos                                     (10U)
+#define CAN_F13BANK1_FBIT10_Msk                                     (0x1UL << CAN_F13BANK1_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F13BANK1_FBIT10                                         CAN_F13BANK1_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F13BANK1_FBIT11_Pos                                     (11U)
+#define CAN_F13BANK1_FBIT11_Msk                                     (0x1UL << CAN_F13BANK1_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F13BANK1_FBIT11                                         CAN_F13BANK1_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F13BANK1_FBIT12_Pos                                     (12U)
+#define CAN_F13BANK1_FBIT12_Msk                                     (0x1UL << CAN_F13BANK1_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F13BANK1_FBIT12                                         CAN_F13BANK1_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F13BANK1_FBIT13_Pos                                     (13U)
+#define CAN_F13BANK1_FBIT13_Msk                                     (0x1UL << CAN_F13BANK1_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F13BANK1_FBIT13                                         CAN_F13BANK1_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F13BANK1_FBIT14_Pos                                     (14U)
+#define CAN_F13BANK1_FBIT14_Msk                                     (0x1UL << CAN_F13BANK1_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F13BANK1_FBIT14                                         CAN_F13BANK1_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F13BANK1_FBIT15_Pos                                     (15U)
+#define CAN_F13BANK1_FBIT15_Msk                                     (0x1UL << CAN_F13BANK1_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F13BANK1_FBIT15                                         CAN_F13BANK1_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F13BANK1_FBIT16_Pos                                     (16U)
+#define CAN_F13BANK1_FBIT16_Msk                                     (0x1UL << CAN_F13BANK1_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F13BANK1_FBIT16                                         CAN_F13BANK1_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F13BANK1_FBIT17_Pos                                     (17U)
+#define CAN_F13BANK1_FBIT17_Msk                                     (0x1UL << CAN_F13BANK1_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F13BANK1_FBIT17                                         CAN_F13BANK1_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F13BANK1_FBIT18_Pos                                     (18U)
+#define CAN_F13BANK1_FBIT18_Msk                                     (0x1UL << CAN_F13BANK1_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F13BANK1_FBIT18                                         CAN_F13BANK1_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F13BANK1_FBIT19_Pos                                     (19U)
+#define CAN_F13BANK1_FBIT19_Msk                                     (0x1UL << CAN_F13BANK1_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F13BANK1_FBIT19                                         CAN_F13BANK1_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F13BANK1_FBIT20_Pos                                     (20U)
+#define CAN_F13BANK1_FBIT20_Msk                                     (0x1UL << CAN_F13BANK1_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F13BANK1_FBIT20                                         CAN_F13BANK1_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F13BANK1_FBIT21_Pos                                     (21U)
+#define CAN_F13BANK1_FBIT21_Msk                                     (0x1UL << CAN_F13BANK1_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F13BANK1_FBIT21                                         CAN_F13BANK1_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F13BANK1_FBIT22_Pos                                     (22U)
+#define CAN_F13BANK1_FBIT22_Msk                                     (0x1UL << CAN_F13BANK1_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F13BANK1_FBIT22                                         CAN_F13BANK1_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F13BANK1_FBIT23_Pos                                     (23U)
+#define CAN_F13BANK1_FBIT23_Msk                                     (0x1UL << CAN_F13BANK1_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F13BANK1_FBIT23                                         CAN_F13BANK1_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F13BANK1_FBIT24_Pos                                     (24U)
+#define CAN_F13BANK1_FBIT24_Msk                                     (0x1UL << CAN_F13BANK1_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F13BANK1_FBIT24                                         CAN_F13BANK1_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F13BANK1_FBIT25_Pos                                     (25U)
+#define CAN_F13BANK1_FBIT25_Msk                                     (0x1UL << CAN_F13BANK1_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F13BANK1_FBIT25                                         CAN_F13BANK1_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F13BANK1_FBIT26_Pos                                     (26U)
+#define CAN_F13BANK1_FBIT26_Msk                                     (0x1UL << CAN_F13BANK1_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F13BANK1_FBIT26                                         CAN_F13BANK1_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F13BANK1_FBIT27_Pos                                     (27U)
+#define CAN_F13BANK1_FBIT27_Msk                                     (0x1UL << CAN_F13BANK1_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F13BANK1_FBIT27                                         CAN_F13BANK1_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F13BANK1_FBIT28_Pos                                     (28U)
+#define CAN_F13BANK1_FBIT28_Msk                                     (0x1UL << CAN_F13BANK1_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F13BANK1_FBIT28                                         CAN_F13BANK1_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F13BANK1_FBIT29_Pos                                     (29U)
+#define CAN_F13BANK1_FBIT29_Msk                                     (0x1UL << CAN_F13BANK1_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F13BANK1_FBIT29                                         CAN_F13BANK1_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F13BANK1_FBIT30_Pos                                     (30U)
+#define CAN_F13BANK1_FBIT30_Msk                                     (0x1UL << CAN_F13BANK1_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F13BANK1_FBIT30                                         CAN_F13BANK1_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F13BANK1_FBIT31_Pos                                     (31U)
+#define CAN_F13BANK1_FBIT31_Msk                                     (0x1UL << CAN_F13BANK1_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F13BANK1_FBIT31                                         CAN_F13BANK1_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F0R2 register  *******************/
-#define CAN_F0R2_FB0_Pos                                            (0U)
-#define CAN_F0R2_FB0_Msk                                            (0x1UL << CAN_F0R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F0R2_FB0                                                CAN_F0R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F0R2_FB1_Pos                                            (1U)
-#define CAN_F0R2_FB1_Msk                                            (0x1UL << CAN_F0R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F0R2_FB1                                                CAN_F0R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F0R2_FB2_Pos                                            (2U)
-#define CAN_F0R2_FB2_Msk                                            (0x1UL << CAN_F0R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F0R2_FB2                                                CAN_F0R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F0R2_FB3_Pos                                            (3U)
-#define CAN_F0R2_FB3_Msk                                            (0x1UL << CAN_F0R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F0R2_FB3                                                CAN_F0R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F0R2_FB4_Pos                                            (4U)
-#define CAN_F0R2_FB4_Msk                                            (0x1UL << CAN_F0R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F0R2_FB4                                                CAN_F0R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F0R2_FB5_Pos                                            (5U)
-#define CAN_F0R2_FB5_Msk                                            (0x1UL << CAN_F0R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F0R2_FB5                                                CAN_F0R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F0R2_FB6_Pos                                            (6U)
-#define CAN_F0R2_FB6_Msk                                            (0x1UL << CAN_F0R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F0R2_FB6                                                CAN_F0R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F0R2_FB7_Pos                                            (7U)
-#define CAN_F0R2_FB7_Msk                                            (0x1UL << CAN_F0R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F0R2_FB7                                                CAN_F0R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F0R2_FB8_Pos                                            (8U)
-#define CAN_F0R2_FB8_Msk                                            (0x1UL << CAN_F0R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F0R2_FB8                                                CAN_F0R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F0R2_FB9_Pos                                            (9U)
-#define CAN_F0R2_FB9_Msk                                            (0x1UL << CAN_F0R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F0R2_FB9                                                CAN_F0R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F0R2_FB10_Pos                                           (10U)
-#define CAN_F0R2_FB10_Msk                                           (0x1UL << CAN_F0R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F0R2_FB10                                               CAN_F0R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F0R2_FB11_Pos                                           (11U)
-#define CAN_F0R2_FB11_Msk                                           (0x1UL << CAN_F0R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F0R2_FB11                                               CAN_F0R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F0R2_FB12_Pos                                           (12U)
-#define CAN_F0R2_FB12_Msk                                           (0x1UL << CAN_F0R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F0R2_FB12                                               CAN_F0R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F0R2_FB13_Pos                                           (13U)
-#define CAN_F0R2_FB13_Msk                                           (0x1UL << CAN_F0R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F0R2_FB13                                               CAN_F0R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F0R2_FB14_Pos                                           (14U)
-#define CAN_F0R2_FB14_Msk                                           (0x1UL << CAN_F0R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F0R2_FB14                                               CAN_F0R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F0R2_FB15_Pos                                           (15U)
-#define CAN_F0R2_FB15_Msk                                           (0x1UL << CAN_F0R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F0R2_FB15                                               CAN_F0R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F0R2_FB16_Pos                                           (16U)
-#define CAN_F0R2_FB16_Msk                                           (0x1UL << CAN_F0R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F0R2_FB16                                               CAN_F0R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F0R2_FB17_Pos                                           (17U)
-#define CAN_F0R2_FB17_Msk                                           (0x1UL << CAN_F0R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F0R2_FB17                                               CAN_F0R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F0R2_FB18_Pos                                           (18U)
-#define CAN_F0R2_FB18_Msk                                           (0x1UL << CAN_F0R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F0R2_FB18                                               CAN_F0R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F0R2_FB19_Pos                                           (19U)
-#define CAN_F0R2_FB19_Msk                                           (0x1UL << CAN_F0R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F0R2_FB19                                               CAN_F0R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F0R2_FB20_Pos                                           (20U)
-#define CAN_F0R2_FB20_Msk                                           (0x1UL << CAN_F0R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F0R2_FB20                                               CAN_F0R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F0R2_FB21_Pos                                           (21U)
-#define CAN_F0R2_FB21_Msk                                           (0x1UL << CAN_F0R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F0R2_FB21                                               CAN_F0R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F0R2_FB22_Pos                                           (22U)
-#define CAN_F0R2_FB22_Msk                                           (0x1UL << CAN_F0R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F0R2_FB22                                               CAN_F0R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F0R2_FB23_Pos                                           (23U)
-#define CAN_F0R2_FB23_Msk                                           (0x1UL << CAN_F0R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F0R2_FB23                                               CAN_F0R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F0R2_FB24_Pos                                           (24U)
-#define CAN_F0R2_FB24_Msk                                           (0x1UL << CAN_F0R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F0R2_FB24                                               CAN_F0R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F0R2_FB25_Pos                                           (25U)
-#define CAN_F0R2_FB25_Msk                                           (0x1UL << CAN_F0R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F0R2_FB25                                               CAN_F0R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F0R2_FB26_Pos                                           (26U)
-#define CAN_F0R2_FB26_Msk                                           (0x1UL << CAN_F0R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F0R2_FB26                                               CAN_F0R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F0R2_FB27_Pos                                           (27U)
-#define CAN_F0R2_FB27_Msk                                           (0x1UL << CAN_F0R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F0R2_FB27                                               CAN_F0R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F0R2_FB28_Pos                                           (28U)
-#define CAN_F0R2_FB28_Msk                                           (0x1UL << CAN_F0R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F0R2_FB28                                               CAN_F0R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F0R2_FB29_Pos                                           (29U)
-#define CAN_F0R2_FB29_Msk                                           (0x1UL << CAN_F0R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F0R2_FB29                                               CAN_F0R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F0R2_FB30_Pos                                           (30U)
-#define CAN_F0R2_FB30_Msk                                           (0x1UL << CAN_F0R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F0R2_FB30                                               CAN_F0R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F0R2_FB31_Pos                                           (31U)
-#define CAN_F0R2_FB31_Msk                                           (0x1UL << CAN_F0R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F0R2_FB31                                               CAN_F0R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F0BANK2 register  *******************/
+#define CAN_F0BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F0BANK2_FBIT0_Msk                                       (0x1UL << CAN_F0BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F0BANK2_FBIT0                                           CAN_F0BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F0BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F0BANK2_FBIT1_Msk                                       (0x1UL << CAN_F0BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F0BANK2_FBIT1                                           CAN_F0BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F0BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F0BANK2_FBIT2_Msk                                       (0x1UL << CAN_F0BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F0BANK2_FBIT2                                           CAN_F0BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F0BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F0BANK2_FBIT3_Msk                                       (0x1UL << CAN_F0BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F0BANK2_FBIT3                                           CAN_F0BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F0BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F0BANK2_FBIT4_Msk                                       (0x1UL << CAN_F0BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F0BANK2_FBIT4                                           CAN_F0BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F0BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F0BANK2_FBIT5_Msk                                       (0x1UL << CAN_F0BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F0BANK2_FBIT5                                           CAN_F0BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F0BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F0BANK2_FBIT6_Msk                                       (0x1UL << CAN_F0BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F0BANK2_FBIT6                                           CAN_F0BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F0BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F0BANK2_FBIT7_Msk                                       (0x1UL << CAN_F0BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F0BANK2_FBIT7                                           CAN_F0BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F0BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F0BANK2_FBIT8_Msk                                       (0x1UL << CAN_F0BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F0BANK2_FBIT8                                           CAN_F0BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F0BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F0BANK2_FBIT9_Msk                                       (0x1UL << CAN_F0BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F0BANK2_FBIT9                                           CAN_F0BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F0BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F0BANK2_FBIT10_Msk                                      (0x1UL << CAN_F0BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F0BANK2_FBIT10                                          CAN_F0BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F0BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F0BANK2_FBIT11_Msk                                      (0x1UL << CAN_F0BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F0BANK2_FBIT11                                          CAN_F0BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F0BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F0BANK2_FBIT12_Msk                                      (0x1UL << CAN_F0BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F0BANK2_FBIT12                                          CAN_F0BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F0BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F0BANK2_FBIT13_Msk                                      (0x1UL << CAN_F0BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F0BANK2_FBIT13                                          CAN_F0BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F0BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F0BANK2_FBIT14_Msk                                      (0x1UL << CAN_F0BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F0BANK2_FBIT14                                          CAN_F0BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F0BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F0BANK2_FBIT15_Msk                                      (0x1UL << CAN_F0BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F0BANK2_FBIT15                                          CAN_F0BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F0BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F0BANK2_FBIT16_Msk                                      (0x1UL << CAN_F0BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F0BANK2_FBIT16                                          CAN_F0BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F0BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F0BANK2_FBIT17_Msk                                      (0x1UL << CAN_F0BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F0BANK2_FBIT17                                          CAN_F0BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F0BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F0BANK2_FBIT18_Msk                                      (0x1UL << CAN_F0BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F0BANK2_FBIT18                                          CAN_F0BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F0BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F0BANK2_FBIT19_Msk                                      (0x1UL << CAN_F0BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F0BANK2_FBIT19                                          CAN_F0BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F0BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F0BANK2_FBIT20_Msk                                      (0x1UL << CAN_F0BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F0BANK2_FBIT20                                          CAN_F0BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F0BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F0BANK2_FBIT21_Msk                                      (0x1UL << CAN_F0BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F0BANK2_FBIT21                                          CAN_F0BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F0BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F0BANK2_FBIT22_Msk                                      (0x1UL << CAN_F0BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F0BANK2_FBIT22                                          CAN_F0BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F0BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F0BANK2_FBIT23_Msk                                      (0x1UL << CAN_F0BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F0BANK2_FBIT23                                          CAN_F0BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F0BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F0BANK2_FBIT24_Msk                                      (0x1UL << CAN_F0BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F0BANK2_FBIT24                                          CAN_F0BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F0BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F0BANK2_FBIT25_Msk                                      (0x1UL << CAN_F0BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F0BANK2_FBIT25                                          CAN_F0BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F0BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F0BANK2_FBIT26_Msk                                      (0x1UL << CAN_F0BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F0BANK2_FBIT26                                          CAN_F0BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F0BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F0BANK2_FBIT27_Msk                                      (0x1UL << CAN_F0BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F0BANK2_FBIT27                                          CAN_F0BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F0BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F0BANK2_FBIT28_Msk                                      (0x1UL << CAN_F0BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F0BANK2_FBIT28                                          CAN_F0BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F0BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F0BANK2_FBIT29_Msk                                      (0x1UL << CAN_F0BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F0BANK2_FBIT29                                          CAN_F0BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F0BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F0BANK2_FBIT30_Msk                                      (0x1UL << CAN_F0BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F0BANK2_FBIT30                                          CAN_F0BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F0BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F0BANK2_FBIT31_Msk                                      (0x1UL << CAN_F0BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F0BANK2_FBIT31                                          CAN_F0BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F1R2 register  *******************/
-#define CAN_F1R2_FB0_Pos                                            (0U)
-#define CAN_F1R2_FB0_Msk                                            (0x1UL << CAN_F1R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F1R2_FB0                                                CAN_F1R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F1R2_FB1_Pos                                            (1U)
-#define CAN_F1R2_FB1_Msk                                            (0x1UL << CAN_F1R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F1R2_FB1                                                CAN_F1R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F1R2_FB2_Pos                                            (2U)
-#define CAN_F1R2_FB2_Msk                                            (0x1UL << CAN_F1R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F1R2_FB2                                                CAN_F1R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F1R2_FB3_Pos                                            (3U)
-#define CAN_F1R2_FB3_Msk                                            (0x1UL << CAN_F1R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F1R2_FB3                                                CAN_F1R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F1R2_FB4_Pos                                            (4U)
-#define CAN_F1R2_FB4_Msk                                            (0x1UL << CAN_F1R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F1R2_FB4                                                CAN_F1R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F1R2_FB5_Pos                                            (5U)
-#define CAN_F1R2_FB5_Msk                                            (0x1UL << CAN_F1R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F1R2_FB5                                                CAN_F1R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F1R2_FB6_Pos                                            (6U)
-#define CAN_F1R2_FB6_Msk                                            (0x1UL << CAN_F1R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F1R2_FB6                                                CAN_F1R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F1R2_FB7_Pos                                            (7U)
-#define CAN_F1R2_FB7_Msk                                            (0x1UL << CAN_F1R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F1R2_FB7                                                CAN_F1R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F1R2_FB8_Pos                                            (8U)
-#define CAN_F1R2_FB8_Msk                                            (0x1UL << CAN_F1R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F1R2_FB8                                                CAN_F1R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F1R2_FB9_Pos                                            (9U)
-#define CAN_F1R2_FB9_Msk                                            (0x1UL << CAN_F1R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F1R2_FB9                                                CAN_F1R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F1R2_FB10_Pos                                           (10U)
-#define CAN_F1R2_FB10_Msk                                           (0x1UL << CAN_F1R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F1R2_FB10                                               CAN_F1R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F1R2_FB11_Pos                                           (11U)
-#define CAN_F1R2_FB11_Msk                                           (0x1UL << CAN_F1R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F1R2_FB11                                               CAN_F1R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F1R2_FB12_Pos                                           (12U)
-#define CAN_F1R2_FB12_Msk                                           (0x1UL << CAN_F1R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F1R2_FB12                                               CAN_F1R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F1R2_FB13_Pos                                           (13U)
-#define CAN_F1R2_FB13_Msk                                           (0x1UL << CAN_F1R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F1R2_FB13                                               CAN_F1R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F1R2_FB14_Pos                                           (14U)
-#define CAN_F1R2_FB14_Msk                                           (0x1UL << CAN_F1R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F1R2_FB14                                               CAN_F1R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F1R2_FB15_Pos                                           (15U)
-#define CAN_F1R2_FB15_Msk                                           (0x1UL << CAN_F1R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F1R2_FB15                                               CAN_F1R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F1R2_FB16_Pos                                           (16U)
-#define CAN_F1R2_FB16_Msk                                           (0x1UL << CAN_F1R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F1R2_FB16                                               CAN_F1R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F1R2_FB17_Pos                                           (17U)
-#define CAN_F1R2_FB17_Msk                                           (0x1UL << CAN_F1R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F1R2_FB17                                               CAN_F1R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F1R2_FB18_Pos                                           (18U)
-#define CAN_F1R2_FB18_Msk                                           (0x1UL << CAN_F1R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F1R2_FB18                                               CAN_F1R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F1R2_FB19_Pos                                           (19U)
-#define CAN_F1R2_FB19_Msk                                           (0x1UL << CAN_F1R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F1R2_FB19                                               CAN_F1R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F1R2_FB20_Pos                                           (20U)
-#define CAN_F1R2_FB20_Msk                                           (0x1UL << CAN_F1R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F1R2_FB20                                               CAN_F1R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F1R2_FB21_Pos                                           (21U)
-#define CAN_F1R2_FB21_Msk                                           (0x1UL << CAN_F1R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F1R2_FB21                                               CAN_F1R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F1R2_FB22_Pos                                           (22U)
-#define CAN_F1R2_FB22_Msk                                           (0x1UL << CAN_F1R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F1R2_FB22                                               CAN_F1R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F1R2_FB23_Pos                                           (23U)
-#define CAN_F1R2_FB23_Msk                                           (0x1UL << CAN_F1R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F1R2_FB23                                               CAN_F1R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F1R2_FB24_Pos                                           (24U)
-#define CAN_F1R2_FB24_Msk                                           (0x1UL << CAN_F1R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F1R2_FB24                                               CAN_F1R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F1R2_FB25_Pos                                           (25U)
-#define CAN_F1R2_FB25_Msk                                           (0x1UL << CAN_F1R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F1R2_FB25                                               CAN_F1R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F1R2_FB26_Pos                                           (26U)
-#define CAN_F1R2_FB26_Msk                                           (0x1UL << CAN_F1R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F1R2_FB26                                               CAN_F1R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F1R2_FB27_Pos                                           (27U)
-#define CAN_F1R2_FB27_Msk                                           (0x1UL << CAN_F1R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F1R2_FB27                                               CAN_F1R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F1R2_FB28_Pos                                           (28U)
-#define CAN_F1R2_FB28_Msk                                           (0x1UL << CAN_F1R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F1R2_FB28                                               CAN_F1R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F1R2_FB29_Pos                                           (29U)
-#define CAN_F1R2_FB29_Msk                                           (0x1UL << CAN_F1R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F1R2_FB29                                               CAN_F1R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F1R2_FB30_Pos                                           (30U)
-#define CAN_F1R2_FB30_Msk                                           (0x1UL << CAN_F1R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F1R2_FB30                                               CAN_F1R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F1R2_FB31_Pos                                           (31U)
-#define CAN_F1R2_FB31_Msk                                           (0x1UL << CAN_F1R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F1R2_FB31                                               CAN_F1R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F1BANK2 register  *******************/
+#define CAN_F1BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F1BANK2_FBIT0_Msk                                       (0x1UL << CAN_F1BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F1BANK2_FBIT0                                           CAN_F1BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F1BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F1BANK2_FBIT1_Msk                                       (0x1UL << CAN_F1BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F1BANK2_FBIT1                                           CAN_F1BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F1BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F1BANK2_FBIT2_Msk                                       (0x1UL << CAN_F1BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F1BANK2_FBIT2                                           CAN_F1BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F1BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F1BANK2_FBIT3_Msk                                       (0x1UL << CAN_F1BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F1BANK2_FBIT3                                           CAN_F1BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F1BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F1BANK2_FBIT4_Msk                                       (0x1UL << CAN_F1BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F1BANK2_FBIT4                                           CAN_F1BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F1BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F1BANK2_FBIT5_Msk                                       (0x1UL << CAN_F1BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F1BANK2_FBIT5                                           CAN_F1BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F1BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F1BANK2_FBIT6_Msk                                       (0x1UL << CAN_F1BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F1BANK2_FBIT6                                           CAN_F1BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F1BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F1BANK2_FBIT7_Msk                                       (0x1UL << CAN_F1BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F1BANK2_FBIT7                                           CAN_F1BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F1BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F1BANK2_FBIT8_Msk                                       (0x1UL << CAN_F1BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F1BANK2_FBIT8                                           CAN_F1BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F1BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F1BANK2_FBIT9_Msk                                       (0x1UL << CAN_F1BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F1BANK2_FBIT9                                           CAN_F1BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F1BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F1BANK2_FBIT10_Msk                                      (0x1UL << CAN_F1BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F1BANK2_FBIT10                                          CAN_F1BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F1BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F1BANK2_FBIT11_Msk                                      (0x1UL << CAN_F1BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F1BANK2_FBIT11                                          CAN_F1BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F1BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F1BANK2_FBIT12_Msk                                      (0x1UL << CAN_F1BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F1BANK2_FBIT12                                          CAN_F1BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F1BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F1BANK2_FBIT13_Msk                                      (0x1UL << CAN_F1BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F1BANK2_FBIT13                                          CAN_F1BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F1BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F1BANK2_FBIT14_Msk                                      (0x1UL << CAN_F1BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F1BANK2_FBIT14                                          CAN_F1BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F1BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F1BANK2_FBIT15_Msk                                      (0x1UL << CAN_F1BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F1BANK2_FBIT15                                          CAN_F1BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F1BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F1BANK2_FBIT16_Msk                                      (0x1UL << CAN_F1BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F1BANK2_FBIT16                                          CAN_F1BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F1BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F1BANK2_FBIT17_Msk                                      (0x1UL << CAN_F1BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F1BANK2_FBIT17                                          CAN_F1BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F1BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F1BANK2_FBIT18_Msk                                      (0x1UL << CAN_F1BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F1BANK2_FBIT18                                          CAN_F1BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F1BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F1BANK2_FBIT19_Msk                                      (0x1UL << CAN_F1BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F1BANK2_FBIT19                                          CAN_F1BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F1BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F1BANK2_FBIT20_Msk                                      (0x1UL << CAN_F1BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F1BANK2_FBIT20                                          CAN_F1BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F1BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F1BANK2_FBIT21_Msk                                      (0x1UL << CAN_F1BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F1BANK2_FBIT21                                          CAN_F1BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F1BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F1BANK2_FBIT22_Msk                                      (0x1UL << CAN_F1BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F1BANK2_FBIT22                                          CAN_F1BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F1BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F1BANK2_FBIT23_Msk                                      (0x1UL << CAN_F1BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F1BANK2_FBIT23                                          CAN_F1BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F1BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F1BANK2_FBIT24_Msk                                      (0x1UL << CAN_F1BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F1BANK2_FBIT24                                          CAN_F1BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F1BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F1BANK2_FBIT25_Msk                                      (0x1UL << CAN_F1BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F1BANK2_FBIT25                                          CAN_F1BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F1BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F1BANK2_FBIT26_Msk                                      (0x1UL << CAN_F1BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F1BANK2_FBIT26                                          CAN_F1BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F1BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F1BANK2_FBIT27_Msk                                      (0x1UL << CAN_F1BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F1BANK2_FBIT27                                          CAN_F1BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F1BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F1BANK2_FBIT28_Msk                                      (0x1UL << CAN_F1BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F1BANK2_FBIT28                                          CAN_F1BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F1BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F1BANK2_FBIT29_Msk                                      (0x1UL << CAN_F1BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F1BANK2_FBIT29                                          CAN_F1BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F1BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F1BANK2_FBIT30_Msk                                      (0x1UL << CAN_F1BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F1BANK2_FBIT30                                          CAN_F1BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F1BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F1BANK2_FBIT31_Msk                                      (0x1UL << CAN_F1BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F1BANK2_FBIT31                                          CAN_F1BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F2R2 register  *******************/
-#define CAN_F2R2_FB0_Pos                                            (0U)
-#define CAN_F2R2_FB0_Msk                                            (0x1UL << CAN_F2R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F2R2_FB0                                                CAN_F2R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F2R2_FB1_Pos                                            (1U)
-#define CAN_F2R2_FB1_Msk                                            (0x1UL << CAN_F2R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F2R2_FB1                                                CAN_F2R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F2R2_FB2_Pos                                            (2U)
-#define CAN_F2R2_FB2_Msk                                            (0x1UL << CAN_F2R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F2R2_FB2                                                CAN_F2R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F2R2_FB3_Pos                                            (3U)
-#define CAN_F2R2_FB3_Msk                                            (0x1UL << CAN_F2R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F2R2_FB3                                                CAN_F2R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F2R2_FB4_Pos                                            (4U)
-#define CAN_F2R2_FB4_Msk                                            (0x1UL << CAN_F2R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F2R2_FB4                                                CAN_F2R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F2R2_FB5_Pos                                            (5U)
-#define CAN_F2R2_FB5_Msk                                            (0x1UL << CAN_F2R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F2R2_FB5                                                CAN_F2R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F2R2_FB6_Pos                                            (6U)
-#define CAN_F2R2_FB6_Msk                                            (0x1UL << CAN_F2R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F2R2_FB6                                                CAN_F2R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F2R2_FB7_Pos                                            (7U)
-#define CAN_F2R2_FB7_Msk                                            (0x1UL << CAN_F2R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F2R2_FB7                                                CAN_F2R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F2R2_FB8_Pos                                            (8U)
-#define CAN_F2R2_FB8_Msk                                            (0x1UL << CAN_F2R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F2R2_FB8                                                CAN_F2R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F2R2_FB9_Pos                                            (9U)
-#define CAN_F2R2_FB9_Msk                                            (0x1UL << CAN_F2R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F2R2_FB9                                                CAN_F2R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F2R2_FB10_Pos                                           (10U)
-#define CAN_F2R2_FB10_Msk                                           (0x1UL << CAN_F2R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F2R2_FB10                                               CAN_F2R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F2R2_FB11_Pos                                           (11U)
-#define CAN_F2R2_FB11_Msk                                           (0x1UL << CAN_F2R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F2R2_FB11                                               CAN_F2R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F2R2_FB12_Pos                                           (12U)
-#define CAN_F2R2_FB12_Msk                                           (0x1UL << CAN_F2R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F2R2_FB12                                               CAN_F2R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F2R2_FB13_Pos                                           (13U)
-#define CAN_F2R2_FB13_Msk                                           (0x1UL << CAN_F2R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F2R2_FB13                                               CAN_F2R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F2R2_FB14_Pos                                           (14U)
-#define CAN_F2R2_FB14_Msk                                           (0x1UL << CAN_F2R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F2R2_FB14                                               CAN_F2R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F2R2_FB15_Pos                                           (15U)
-#define CAN_F2R2_FB15_Msk                                           (0x1UL << CAN_F2R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F2R2_FB15                                               CAN_F2R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F2R2_FB16_Pos                                           (16U)
-#define CAN_F2R2_FB16_Msk                                           (0x1UL << CAN_F2R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F2R2_FB16                                               CAN_F2R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F2R2_FB17_Pos                                           (17U)
-#define CAN_F2R2_FB17_Msk                                           (0x1UL << CAN_F2R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F2R2_FB17                                               CAN_F2R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F2R2_FB18_Pos                                           (18U)
-#define CAN_F2R2_FB18_Msk                                           (0x1UL << CAN_F2R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F2R2_FB18                                               CAN_F2R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F2R2_FB19_Pos                                           (19U)
-#define CAN_F2R2_FB19_Msk                                           (0x1UL << CAN_F2R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F2R2_FB19                                               CAN_F2R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F2R2_FB20_Pos                                           (20U)
-#define CAN_F2R2_FB20_Msk                                           (0x1UL << CAN_F2R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F2R2_FB20                                               CAN_F2R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F2R2_FB21_Pos                                           (21U)
-#define CAN_F2R2_FB21_Msk                                           (0x1UL << CAN_F2R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F2R2_FB21                                               CAN_F2R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F2R2_FB22_Pos                                           (22U)
-#define CAN_F2R2_FB22_Msk                                           (0x1UL << CAN_F2R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F2R2_FB22                                               CAN_F2R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F2R2_FB23_Pos                                           (23U)
-#define CAN_F2R2_FB23_Msk                                           (0x1UL << CAN_F2R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F2R2_FB23                                               CAN_F2R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F2R2_FB24_Pos                                           (24U)
-#define CAN_F2R2_FB24_Msk                                           (0x1UL << CAN_F2R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F2R2_FB24                                               CAN_F2R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F2R2_FB25_Pos                                           (25U)
-#define CAN_F2R2_FB25_Msk                                           (0x1UL << CAN_F2R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F2R2_FB25                                               CAN_F2R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F2R2_FB26_Pos                                           (26U)
-#define CAN_F2R2_FB26_Msk                                           (0x1UL << CAN_F2R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F2R2_FB26                                               CAN_F2R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F2R2_FB27_Pos                                           (27U)
-#define CAN_F2R2_FB27_Msk                                           (0x1UL << CAN_F2R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F2R2_FB27                                               CAN_F2R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F2R2_FB28_Pos                                           (28U)
-#define CAN_F2R2_FB28_Msk                                           (0x1UL << CAN_F2R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F2R2_FB28                                               CAN_F2R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F2R2_FB29_Pos                                           (29U)
-#define CAN_F2R2_FB29_Msk                                           (0x1UL << CAN_F2R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F2R2_FB29                                               CAN_F2R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F2R2_FB30_Pos                                           (30U)
-#define CAN_F2R2_FB30_Msk                                           (0x1UL << CAN_F2R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F2R2_FB30                                               CAN_F2R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F2R2_FB31_Pos                                           (31U)
-#define CAN_F2R2_FB31_Msk                                           (0x1UL << CAN_F2R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F2R2_FB31                                               CAN_F2R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F2BANK2 register  *******************/
+#define CAN_F2BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F2BANK2_FBIT0_Msk                                       (0x1UL << CAN_F2BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F2BANK2_FBIT0                                           CAN_F2BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F2BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F2BANK2_FBIT1_Msk                                       (0x1UL << CAN_F2BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F2BANK2_FBIT1                                           CAN_F2BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F2BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F2BANK2_FBIT2_Msk                                       (0x1UL << CAN_F2BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F2BANK2_FBIT2                                           CAN_F2BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F2BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F2BANK2_FBIT3_Msk                                       (0x1UL << CAN_F2BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F2BANK2_FBIT3                                           CAN_F2BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F2BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F2BANK2_FBIT4_Msk                                       (0x1UL << CAN_F2BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F2BANK2_FBIT4                                           CAN_F2BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F2BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F2BANK2_FBIT5_Msk                                       (0x1UL << CAN_F2BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F2BANK2_FBIT5                                           CAN_F2BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F2BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F2BANK2_FBIT6_Msk                                       (0x1UL << CAN_F2BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F2BANK2_FBIT6                                           CAN_F2BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F2BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F2BANK2_FBIT7_Msk                                       (0x1UL << CAN_F2BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F2BANK2_FBIT7                                           CAN_F2BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F2BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F2BANK2_FBIT8_Msk                                       (0x1UL << CAN_F2BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F2BANK2_FBIT8                                           CAN_F2BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F2BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F2BANK2_FBIT9_Msk                                       (0x1UL << CAN_F2BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F2BANK2_FBIT9                                           CAN_F2BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F2BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F2BANK2_FBIT10_Msk                                      (0x1UL << CAN_F2BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F2BANK2_FBIT10                                          CAN_F2BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F2BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F2BANK2_FBIT11_Msk                                      (0x1UL << CAN_F2BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F2BANK2_FBIT11                                          CAN_F2BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F2BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F2BANK2_FBIT12_Msk                                      (0x1UL << CAN_F2BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F2BANK2_FBIT12                                          CAN_F2BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F2BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F2BANK2_FBIT13_Msk                                      (0x1UL << CAN_F2BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F2BANK2_FBIT13                                          CAN_F2BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F2BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F2BANK2_FBIT14_Msk                                      (0x1UL << CAN_F2BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F2BANK2_FBIT14                                          CAN_F2BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F2BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F2BANK2_FBIT15_Msk                                      (0x1UL << CAN_F2BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F2BANK2_FBIT15                                          CAN_F2BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F2BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F2BANK2_FBIT16_Msk                                      (0x1UL << CAN_F2BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F2BANK2_FBIT16                                          CAN_F2BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F2BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F2BANK2_FBIT17_Msk                                      (0x1UL << CAN_F2BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F2BANK2_FBIT17                                          CAN_F2BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F2BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F2BANK2_FBIT18_Msk                                      (0x1UL << CAN_F2BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F2BANK2_FBIT18                                          CAN_F2BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F2BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F2BANK2_FBIT19_Msk                                      (0x1UL << CAN_F2BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F2BANK2_FBIT19                                          CAN_F2BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F2BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F2BANK2_FBIT20_Msk                                      (0x1UL << CAN_F2BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F2BANK2_FBIT20                                          CAN_F2BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F2BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F2BANK2_FBIT21_Msk                                      (0x1UL << CAN_F2BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F2BANK2_FBIT21                                          CAN_F2BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F2BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F2BANK2_FBIT22_Msk                                      (0x1UL << CAN_F2BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F2BANK2_FBIT22                                          CAN_F2BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F2BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F2BANK2_FBIT23_Msk                                      (0x1UL << CAN_F2BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F2BANK2_FBIT23                                          CAN_F2BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F2BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F2BANK2_FBIT24_Msk                                      (0x1UL << CAN_F2BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F2BANK2_FBIT24                                          CAN_F2BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F2BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F2BANK2_FBIT25_Msk                                      (0x1UL << CAN_F2BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F2BANK2_FBIT25                                          CAN_F2BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F2BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F2BANK2_FBIT26_Msk                                      (0x1UL << CAN_F2BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F2BANK2_FBIT26                                          CAN_F2BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F2BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F2BANK2_FBIT27_Msk                                      (0x1UL << CAN_F2BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F2BANK2_FBIT27                                          CAN_F2BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F2BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F2BANK2_FBIT28_Msk                                      (0x1UL << CAN_F2BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F2BANK2_FBIT28                                          CAN_F2BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F2BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F2BANK2_FBIT29_Msk                                      (0x1UL << CAN_F2BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F2BANK2_FBIT29                                          CAN_F2BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F2BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F2BANK2_FBIT30_Msk                                      (0x1UL << CAN_F2BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F2BANK2_FBIT30                                          CAN_F2BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F2BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F2BANK2_FBIT31_Msk                                      (0x1UL << CAN_F2BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F2BANK2_FBIT31                                          CAN_F2BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F3R2 register  *******************/
-#define CAN_F3R2_FB0_Pos                                            (0U)
-#define CAN_F3R2_FB0_Msk                                            (0x1UL << CAN_F3R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F3R2_FB0                                                CAN_F3R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F3R2_FB1_Pos                                            (1U)
-#define CAN_F3R2_FB1_Msk                                            (0x1UL << CAN_F3R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F3R2_FB1                                                CAN_F3R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F3R2_FB2_Pos                                            (2U)
-#define CAN_F3R2_FB2_Msk                                            (0x1UL << CAN_F3R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F3R2_FB2                                                CAN_F3R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F3R2_FB3_Pos                                            (3U)
-#define CAN_F3R2_FB3_Msk                                            (0x1UL << CAN_F3R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F3R2_FB3                                                CAN_F3R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F3R2_FB4_Pos                                            (4U)
-#define CAN_F3R2_FB4_Msk                                            (0x1UL << CAN_F3R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F3R2_FB4                                                CAN_F3R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F3R2_FB5_Pos                                            (5U)
-#define CAN_F3R2_FB5_Msk                                            (0x1UL << CAN_F3R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F3R2_FB5                                                CAN_F3R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F3R2_FB6_Pos                                            (6U)
-#define CAN_F3R2_FB6_Msk                                            (0x1UL << CAN_F3R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F3R2_FB6                                                CAN_F3R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F3R2_FB7_Pos                                            (7U)
-#define CAN_F3R2_FB7_Msk                                            (0x1UL << CAN_F3R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F3R2_FB7                                                CAN_F3R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F3R2_FB8_Pos                                            (8U)
-#define CAN_F3R2_FB8_Msk                                            (0x1UL << CAN_F3R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F3R2_FB8                                                CAN_F3R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F3R2_FB9_Pos                                            (9U)
-#define CAN_F3R2_FB9_Msk                                            (0x1UL << CAN_F3R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F3R2_FB9                                                CAN_F3R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F3R2_FB10_Pos                                           (10U)
-#define CAN_F3R2_FB10_Msk                                           (0x1UL << CAN_F3R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F3R2_FB10                                               CAN_F3R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F3R2_FB11_Pos                                           (11U)
-#define CAN_F3R2_FB11_Msk                                           (0x1UL << CAN_F3R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F3R2_FB11                                               CAN_F3R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F3R2_FB12_Pos                                           (12U)
-#define CAN_F3R2_FB12_Msk                                           (0x1UL << CAN_F3R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F3R2_FB12                                               CAN_F3R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F3R2_FB13_Pos                                           (13U)
-#define CAN_F3R2_FB13_Msk                                           (0x1UL << CAN_F3R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F3R2_FB13                                               CAN_F3R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F3R2_FB14_Pos                                           (14U)
-#define CAN_F3R2_FB14_Msk                                           (0x1UL << CAN_F3R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F3R2_FB14                                               CAN_F3R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F3R2_FB15_Pos                                           (15U)
-#define CAN_F3R2_FB15_Msk                                           (0x1UL << CAN_F3R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F3R2_FB15                                               CAN_F3R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F3R2_FB16_Pos                                           (16U)
-#define CAN_F3R2_FB16_Msk                                           (0x1UL << CAN_F3R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F3R2_FB16                                               CAN_F3R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F3R2_FB17_Pos                                           (17U)
-#define CAN_F3R2_FB17_Msk                                           (0x1UL << CAN_F3R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F3R2_FB17                                               CAN_F3R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F3R2_FB18_Pos                                           (18U)
-#define CAN_F3R2_FB18_Msk                                           (0x1UL << CAN_F3R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F3R2_FB18                                               CAN_F3R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F3R2_FB19_Pos                                           (19U)
-#define CAN_F3R2_FB19_Msk                                           (0x1UL << CAN_F3R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F3R2_FB19                                               CAN_F3R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F3R2_FB20_Pos                                           (20U)
-#define CAN_F3R2_FB20_Msk                                           (0x1UL << CAN_F3R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F3R2_FB20                                               CAN_F3R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F3R2_FB21_Pos                                           (21U)
-#define CAN_F3R2_FB21_Msk                                           (0x1UL << CAN_F3R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F3R2_FB21                                               CAN_F3R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F3R2_FB22_Pos                                           (22U)
-#define CAN_F3R2_FB22_Msk                                           (0x1UL << CAN_F3R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F3R2_FB22                                               CAN_F3R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F3R2_FB23_Pos                                           (23U)
-#define CAN_F3R2_FB23_Msk                                           (0x1UL << CAN_F3R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F3R2_FB23                                               CAN_F3R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F3R2_FB24_Pos                                           (24U)
-#define CAN_F3R2_FB24_Msk                                           (0x1UL << CAN_F3R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F3R2_FB24                                               CAN_F3R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F3R2_FB25_Pos                                           (25U)
-#define CAN_F3R2_FB25_Msk                                           (0x1UL << CAN_F3R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F3R2_FB25                                               CAN_F3R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F3R2_FB26_Pos                                           (26U)
-#define CAN_F3R2_FB26_Msk                                           (0x1UL << CAN_F3R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F3R2_FB26                                               CAN_F3R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F3R2_FB27_Pos                                           (27U)
-#define CAN_F3R2_FB27_Msk                                           (0x1UL << CAN_F3R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F3R2_FB27                                               CAN_F3R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F3R2_FB28_Pos                                           (28U)
-#define CAN_F3R2_FB28_Msk                                           (0x1UL << CAN_F3R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F3R2_FB28                                               CAN_F3R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F3R2_FB29_Pos                                           (29U)
-#define CAN_F3R2_FB29_Msk                                           (0x1UL << CAN_F3R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F3R2_FB29                                               CAN_F3R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F3R2_FB30_Pos                                           (30U)
-#define CAN_F3R2_FB30_Msk                                           (0x1UL << CAN_F3R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F3R2_FB30                                               CAN_F3R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F3R2_FB31_Pos                                           (31U)
-#define CAN_F3R2_FB31_Msk                                           (0x1UL << CAN_F3R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F3R2_FB31                                               CAN_F3R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F3BANK2 register  *******************/
+#define CAN_F3BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F3BANK2_FBIT0_Msk                                       (0x1UL << CAN_F3BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F3BANK2_FBIT0                                           CAN_F3BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F3BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F3BANK2_FBIT1_Msk                                       (0x1UL << CAN_F3BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F3BANK2_FBIT1                                           CAN_F3BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F3BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F3BANK2_FBIT2_Msk                                       (0x1UL << CAN_F3BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F3BANK2_FBIT2                                           CAN_F3BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F3BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F3BANK2_FBIT3_Msk                                       (0x1UL << CAN_F3BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F3BANK2_FBIT3                                           CAN_F3BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F3BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F3BANK2_FBIT4_Msk                                       (0x1UL << CAN_F3BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F3BANK2_FBIT4                                           CAN_F3BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F3BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F3BANK2_FBIT5_Msk                                       (0x1UL << CAN_F3BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F3BANK2_FBIT5                                           CAN_F3BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F3BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F3BANK2_FBIT6_Msk                                       (0x1UL << CAN_F3BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F3BANK2_FBIT6                                           CAN_F3BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F3BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F3BANK2_FBIT7_Msk                                       (0x1UL << CAN_F3BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F3BANK2_FBIT7                                           CAN_F3BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F3BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F3BANK2_FBIT8_Msk                                       (0x1UL << CAN_F3BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F3BANK2_FBIT8                                           CAN_F3BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F3BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F3BANK2_FBIT9_Msk                                       (0x1UL << CAN_F3BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F3BANK2_FBIT9                                           CAN_F3BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F3BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F3BANK2_FBIT10_Msk                                      (0x1UL << CAN_F3BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F3BANK2_FBIT10                                          CAN_F3BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F3BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F3BANK2_FBIT11_Msk                                      (0x1UL << CAN_F3BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F3BANK2_FBIT11                                          CAN_F3BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F3BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F3BANK2_FBIT12_Msk                                      (0x1UL << CAN_F3BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F3BANK2_FBIT12                                          CAN_F3BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F3BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F3BANK2_FBIT13_Msk                                      (0x1UL << CAN_F3BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F3BANK2_FBIT13                                          CAN_F3BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F3BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F3BANK2_FBIT14_Msk                                      (0x1UL << CAN_F3BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F3BANK2_FBIT14                                          CAN_F3BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F3BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F3BANK2_FBIT15_Msk                                      (0x1UL << CAN_F3BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F3BANK2_FBIT15                                          CAN_F3BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F3BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F3BANK2_FBIT16_Msk                                      (0x1UL << CAN_F3BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F3BANK2_FBIT16                                          CAN_F3BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F3BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F3BANK2_FBIT17_Msk                                      (0x1UL << CAN_F3BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F3BANK2_FBIT17                                          CAN_F3BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F3BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F3BANK2_FBIT18_Msk                                      (0x1UL << CAN_F3BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F3BANK2_FBIT18                                          CAN_F3BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F3BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F3BANK2_FBIT19_Msk                                      (0x1UL << CAN_F3BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F3BANK2_FBIT19                                          CAN_F3BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F3BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F3BANK2_FBIT20_Msk                                      (0x1UL << CAN_F3BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F3BANK2_FBIT20                                          CAN_F3BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F3BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F3BANK2_FBIT21_Msk                                      (0x1UL << CAN_F3BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F3BANK2_FBIT21                                          CAN_F3BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F3BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F3BANK2_FBIT22_Msk                                      (0x1UL << CAN_F3BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F3BANK2_FBIT22                                          CAN_F3BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F3BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F3BANK2_FBIT23_Msk                                      (0x1UL << CAN_F3BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F3BANK2_FBIT23                                          CAN_F3BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F3BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F3BANK2_FBIT24_Msk                                      (0x1UL << CAN_F3BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F3BANK2_FBIT24                                          CAN_F3BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F3BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F3BANK2_FBIT25_Msk                                      (0x1UL << CAN_F3BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F3BANK2_FBIT25                                          CAN_F3BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F3BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F3BANK2_FBIT26_Msk                                      (0x1UL << CAN_F3BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F3BANK2_FBIT26                                          CAN_F3BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F3BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F3BANK2_FBIT27_Msk                                      (0x1UL << CAN_F3BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F3BANK2_FBIT27                                          CAN_F3BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F3BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F3BANK2_FBIT28_Msk                                      (0x1UL << CAN_F3BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F3BANK2_FBIT28                                          CAN_F3BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F3BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F3BANK2_FBIT29_Msk                                      (0x1UL << CAN_F3BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F3BANK2_FBIT29                                          CAN_F3BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F3BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F3BANK2_FBIT30_Msk                                      (0x1UL << CAN_F3BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F3BANK2_FBIT30                                          CAN_F3BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F3BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F3BANK2_FBIT31_Msk                                      (0x1UL << CAN_F3BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F3BANK2_FBIT31                                          CAN_F3BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F4R2 register  *******************/
-#define CAN_F4R2_FB0_Pos                                            (0U)
-#define CAN_F4R2_FB0_Msk                                            (0x1UL << CAN_F4R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F4R2_FB0                                                CAN_F4R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F4R2_FB1_Pos                                            (1U)
-#define CAN_F4R2_FB1_Msk                                            (0x1UL << CAN_F4R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F4R2_FB1                                                CAN_F4R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F4R2_FB2_Pos                                            (2U)
-#define CAN_F4R2_FB2_Msk                                            (0x1UL << CAN_F4R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F4R2_FB2                                                CAN_F4R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F4R2_FB3_Pos                                            (3U)
-#define CAN_F4R2_FB3_Msk                                            (0x1UL << CAN_F4R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F4R2_FB3                                                CAN_F4R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F4R2_FB4_Pos                                            (4U)
-#define CAN_F4R2_FB4_Msk                                            (0x1UL << CAN_F4R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F4R2_FB4                                                CAN_F4R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F4R2_FB5_Pos                                            (5U)
-#define CAN_F4R2_FB5_Msk                                            (0x1UL << CAN_F4R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F4R2_FB5                                                CAN_F4R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F4R2_FB6_Pos                                            (6U)
-#define CAN_F4R2_FB6_Msk                                            (0x1UL << CAN_F4R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F4R2_FB6                                                CAN_F4R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F4R2_FB7_Pos                                            (7U)
-#define CAN_F4R2_FB7_Msk                                            (0x1UL << CAN_F4R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F4R2_FB7                                                CAN_F4R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F4R2_FB8_Pos                                            (8U)
-#define CAN_F4R2_FB8_Msk                                            (0x1UL << CAN_F4R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F4R2_FB8                                                CAN_F4R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F4R2_FB9_Pos                                            (9U)
-#define CAN_F4R2_FB9_Msk                                            (0x1UL << CAN_F4R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F4R2_FB9                                                CAN_F4R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F4R2_FB10_Pos                                           (10U)
-#define CAN_F4R2_FB10_Msk                                           (0x1UL << CAN_F4R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F4R2_FB10                                               CAN_F4R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F4R2_FB11_Pos                                           (11U)
-#define CAN_F4R2_FB11_Msk                                           (0x1UL << CAN_F4R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F4R2_FB11                                               CAN_F4R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F4R2_FB12_Pos                                           (12U)
-#define CAN_F4R2_FB12_Msk                                           (0x1UL << CAN_F4R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F4R2_FB12                                               CAN_F4R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F4R2_FB13_Pos                                           (13U)
-#define CAN_F4R2_FB13_Msk                                           (0x1UL << CAN_F4R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F4R2_FB13                                               CAN_F4R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F4R2_FB14_Pos                                           (14U)
-#define CAN_F4R2_FB14_Msk                                           (0x1UL << CAN_F4R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F4R2_FB14                                               CAN_F4R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F4R2_FB15_Pos                                           (15U)
-#define CAN_F4R2_FB15_Msk                                           (0x1UL << CAN_F4R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F4R2_FB15                                               CAN_F4R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F4R2_FB16_Pos                                           (16U)
-#define CAN_F4R2_FB16_Msk                                           (0x1UL << CAN_F4R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F4R2_FB16                                               CAN_F4R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F4R2_FB17_Pos                                           (17U)
-#define CAN_F4R2_FB17_Msk                                           (0x1UL << CAN_F4R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F4R2_FB17                                               CAN_F4R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F4R2_FB18_Pos                                           (18U)
-#define CAN_F4R2_FB18_Msk                                           (0x1UL << CAN_F4R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F4R2_FB18                                               CAN_F4R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F4R2_FB19_Pos                                           (19U)
-#define CAN_F4R2_FB19_Msk                                           (0x1UL << CAN_F4R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F4R2_FB19                                               CAN_F4R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F4R2_FB20_Pos                                           (20U)
-#define CAN_F4R2_FB20_Msk                                           (0x1UL << CAN_F4R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F4R2_FB20                                               CAN_F4R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F4R2_FB21_Pos                                           (21U)
-#define CAN_F4R2_FB21_Msk                                           (0x1UL << CAN_F4R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F4R2_FB21                                               CAN_F4R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F4R2_FB22_Pos                                           (22U)
-#define CAN_F4R2_FB22_Msk                                           (0x1UL << CAN_F4R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F4R2_FB22                                               CAN_F4R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F4R2_FB23_Pos                                           (23U)
-#define CAN_F4R2_FB23_Msk                                           (0x1UL << CAN_F4R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F4R2_FB23                                               CAN_F4R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F4R2_FB24_Pos                                           (24U)
-#define CAN_F4R2_FB24_Msk                                           (0x1UL << CAN_F4R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F4R2_FB24                                               CAN_F4R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F4R2_FB25_Pos                                           (25U)
-#define CAN_F4R2_FB25_Msk                                           (0x1UL << CAN_F4R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F4R2_FB25                                               CAN_F4R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F4R2_FB26_Pos                                           (26U)
-#define CAN_F4R2_FB26_Msk                                           (0x1UL << CAN_F4R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F4R2_FB26                                               CAN_F4R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F4R2_FB27_Pos                                           (27U)
-#define CAN_F4R2_FB27_Msk                                           (0x1UL << CAN_F4R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F4R2_FB27                                               CAN_F4R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F4R2_FB28_Pos                                           (28U)
-#define CAN_F4R2_FB28_Msk                                           (0x1UL << CAN_F4R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F4R2_FB28                                               CAN_F4R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F4R2_FB29_Pos                                           (29U)
-#define CAN_F4R2_FB29_Msk                                           (0x1UL << CAN_F4R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F4R2_FB29                                               CAN_F4R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F4R2_FB30_Pos                                           (30U)
-#define CAN_F4R2_FB30_Msk                                           (0x1UL << CAN_F4R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F4R2_FB30                                               CAN_F4R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F4R2_FB31_Pos                                           (31U)
-#define CAN_F4R2_FB31_Msk                                           (0x1UL << CAN_F4R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F4R2_FB31                                               CAN_F4R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F4BANK2 register  *******************/
+#define CAN_F4BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F4BANK2_FBIT0_Msk                                       (0x1UL << CAN_F4BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F4BANK2_FBIT0                                           CAN_F4BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F4BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F4BANK2_FBIT1_Msk                                       (0x1UL << CAN_F4BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F4BANK2_FBIT1                                           CAN_F4BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F4BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F4BANK2_FBIT2_Msk                                       (0x1UL << CAN_F4BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F4BANK2_FBIT2                                           CAN_F4BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F4BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F4BANK2_FBIT3_Msk                                       (0x1UL << CAN_F4BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F4BANK2_FBIT3                                           CAN_F4BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F4BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F4BANK2_FBIT4_Msk                                       (0x1UL << CAN_F4BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F4BANK2_FBIT4                                           CAN_F4BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F4BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F4BANK2_FBIT5_Msk                                       (0x1UL << CAN_F4BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F4BANK2_FBIT5                                           CAN_F4BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F4BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F4BANK2_FBIT6_Msk                                       (0x1UL << CAN_F4BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F4BANK2_FBIT6                                           CAN_F4BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F4BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F4BANK2_FBIT7_Msk                                       (0x1UL << CAN_F4BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F4BANK2_FBIT7                                           CAN_F4BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F4BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F4BANK2_FBIT8_Msk                                       (0x1UL << CAN_F4BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F4BANK2_FBIT8                                           CAN_F4BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F4BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F4BANK2_FBIT9_Msk                                       (0x1UL << CAN_F4BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F4BANK2_FBIT9                                           CAN_F4BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F4BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F4BANK2_FBIT10_Msk                                      (0x1UL << CAN_F4BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F4BANK2_FBIT10                                          CAN_F4BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F4BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F4BANK2_FBIT11_Msk                                      (0x1UL << CAN_F4BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F4BANK2_FBIT11                                          CAN_F4BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F4BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F4BANK2_FBIT12_Msk                                      (0x1UL << CAN_F4BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F4BANK2_FBIT12                                          CAN_F4BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F4BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F4BANK2_FBIT13_Msk                                      (0x1UL << CAN_F4BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F4BANK2_FBIT13                                          CAN_F4BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F4BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F4BANK2_FBIT14_Msk                                      (0x1UL << CAN_F4BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F4BANK2_FBIT14                                          CAN_F4BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F4BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F4BANK2_FBIT15_Msk                                      (0x1UL << CAN_F4BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F4BANK2_FBIT15                                          CAN_F4BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F4BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F4BANK2_FBIT16_Msk                                      (0x1UL << CAN_F4BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F4BANK2_FBIT16                                          CAN_F4BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F4BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F4BANK2_FBIT17_Msk                                      (0x1UL << CAN_F4BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F4BANK2_FBIT17                                          CAN_F4BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F4BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F4BANK2_FBIT18_Msk                                      (0x1UL << CAN_F4BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F4BANK2_FBIT18                                          CAN_F4BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F4BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F4BANK2_FBIT19_Msk                                      (0x1UL << CAN_F4BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F4BANK2_FBIT19                                          CAN_F4BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F4BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F4BANK2_FBIT20_Msk                                      (0x1UL << CAN_F4BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F4BANK2_FBIT20                                          CAN_F4BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F4BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F4BANK2_FBIT21_Msk                                      (0x1UL << CAN_F4BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F4BANK2_FBIT21                                          CAN_F4BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F4BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F4BANK2_FBIT22_Msk                                      (0x1UL << CAN_F4BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F4BANK2_FBIT22                                          CAN_F4BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F4BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F4BANK2_FBIT23_Msk                                      (0x1UL << CAN_F4BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F4BANK2_FBIT23                                          CAN_F4BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F4BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F4BANK2_FBIT24_Msk                                      (0x1UL << CAN_F4BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F4BANK2_FBIT24                                          CAN_F4BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F4BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F4BANK2_FBIT25_Msk                                      (0x1UL << CAN_F4BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F4BANK2_FBIT25                                          CAN_F4BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F4BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F4BANK2_FBIT26_Msk                                      (0x1UL << CAN_F4BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F4BANK2_FBIT26                                          CAN_F4BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F4BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F4BANK2_FBIT27_Msk                                      (0x1UL << CAN_F4BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F4BANK2_FBIT27                                          CAN_F4BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F4BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F4BANK2_FBIT28_Msk                                      (0x1UL << CAN_F4BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F4BANK2_FBIT28                                          CAN_F4BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F4BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F4BANK2_FBIT29_Msk                                      (0x1UL << CAN_F4BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F4BANK2_FBIT29                                          CAN_F4BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F4BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F4BANK2_FBIT30_Msk                                      (0x1UL << CAN_F4BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F4BANK2_FBIT30                                          CAN_F4BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F4BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F4BANK2_FBIT31_Msk                                      (0x1UL << CAN_F4BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F4BANK2_FBIT31                                          CAN_F4BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F5R2 register  *******************/
-#define CAN_F5R2_FB0_Pos                                            (0U)
-#define CAN_F5R2_FB0_Msk                                            (0x1UL << CAN_F5R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F5R2_FB0                                                CAN_F5R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F5R2_FB1_Pos                                            (1U)
-#define CAN_F5R2_FB1_Msk                                            (0x1UL << CAN_F5R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F5R2_FB1                                                CAN_F5R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F5R2_FB2_Pos                                            (2U)
-#define CAN_F5R2_FB2_Msk                                            (0x1UL << CAN_F5R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F5R2_FB2                                                CAN_F5R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F5R2_FB3_Pos                                            (3U)
-#define CAN_F5R2_FB3_Msk                                            (0x1UL << CAN_F5R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F5R2_FB3                                                CAN_F5R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F5R2_FB4_Pos                                            (4U)
-#define CAN_F5R2_FB4_Msk                                            (0x1UL << CAN_F5R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F5R2_FB4                                                CAN_F5R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F5R2_FB5_Pos                                            (5U)
-#define CAN_F5R2_FB5_Msk                                            (0x1UL << CAN_F5R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F5R2_FB5                                                CAN_F5R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F5R2_FB6_Pos                                            (6U)
-#define CAN_F5R2_FB6_Msk                                            (0x1UL << CAN_F5R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F5R2_FB6                                                CAN_F5R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F5R2_FB7_Pos                                            (7U)
-#define CAN_F5R2_FB7_Msk                                            (0x1UL << CAN_F5R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F5R2_FB7                                                CAN_F5R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F5R2_FB8_Pos                                            (8U)
-#define CAN_F5R2_FB8_Msk                                            (0x1UL << CAN_F5R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F5R2_FB8                                                CAN_F5R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F5R2_FB9_Pos                                            (9U)
-#define CAN_F5R2_FB9_Msk                                            (0x1UL << CAN_F5R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F5R2_FB9                                                CAN_F5R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F5R2_FB10_Pos                                           (10U)
-#define CAN_F5R2_FB10_Msk                                           (0x1UL << CAN_F5R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F5R2_FB10                                               CAN_F5R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F5R2_FB11_Pos                                           (11U)
-#define CAN_F5R2_FB11_Msk                                           (0x1UL << CAN_F5R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F5R2_FB11                                               CAN_F5R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F5R2_FB12_Pos                                           (12U)
-#define CAN_F5R2_FB12_Msk                                           (0x1UL << CAN_F5R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F5R2_FB12                                               CAN_F5R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F5R2_FB13_Pos                                           (13U)
-#define CAN_F5R2_FB13_Msk                                           (0x1UL << CAN_F5R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F5R2_FB13                                               CAN_F5R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F5R2_FB14_Pos                                           (14U)
-#define CAN_F5R2_FB14_Msk                                           (0x1UL << CAN_F5R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F5R2_FB14                                               CAN_F5R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F5R2_FB15_Pos                                           (15U)
-#define CAN_F5R2_FB15_Msk                                           (0x1UL << CAN_F5R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F5R2_FB15                                               CAN_F5R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F5R2_FB16_Pos                                           (16U)
-#define CAN_F5R2_FB16_Msk                                           (0x1UL << CAN_F5R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F5R2_FB16                                               CAN_F5R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F5R2_FB17_Pos                                           (17U)
-#define CAN_F5R2_FB17_Msk                                           (0x1UL << CAN_F5R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F5R2_FB17                                               CAN_F5R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F5R2_FB18_Pos                                           (18U)
-#define CAN_F5R2_FB18_Msk                                           (0x1UL << CAN_F5R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F5R2_FB18                                               CAN_F5R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F5R2_FB19_Pos                                           (19U)
-#define CAN_F5R2_FB19_Msk                                           (0x1UL << CAN_F5R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F5R2_FB19                                               CAN_F5R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F5R2_FB20_Pos                                           (20U)
-#define CAN_F5R2_FB20_Msk                                           (0x1UL << CAN_F5R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F5R2_FB20                                               CAN_F5R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F5R2_FB21_Pos                                           (21U)
-#define CAN_F5R2_FB21_Msk                                           (0x1UL << CAN_F5R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F5R2_FB21                                               CAN_F5R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F5R2_FB22_Pos                                           (22U)
-#define CAN_F5R2_FB22_Msk                                           (0x1UL << CAN_F5R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F5R2_FB22                                               CAN_F5R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F5R2_FB23_Pos                                           (23U)
-#define CAN_F5R2_FB23_Msk                                           (0x1UL << CAN_F5R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F5R2_FB23                                               CAN_F5R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F5R2_FB24_Pos                                           (24U)
-#define CAN_F5R2_FB24_Msk                                           (0x1UL << CAN_F5R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F5R2_FB24                                               CAN_F5R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F5R2_FB25_Pos                                           (25U)
-#define CAN_F5R2_FB25_Msk                                           (0x1UL << CAN_F5R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F5R2_FB25                                               CAN_F5R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F5R2_FB26_Pos                                           (26U)
-#define CAN_F5R2_FB26_Msk                                           (0x1UL << CAN_F5R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F5R2_FB26                                               CAN_F5R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F5R2_FB27_Pos                                           (27U)
-#define CAN_F5R2_FB27_Msk                                           (0x1UL << CAN_F5R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F5R2_FB27                                               CAN_F5R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F5R2_FB28_Pos                                           (28U)
-#define CAN_F5R2_FB28_Msk                                           (0x1UL << CAN_F5R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F5R2_FB28                                               CAN_F5R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F5R2_FB29_Pos                                           (29U)
-#define CAN_F5R2_FB29_Msk                                           (0x1UL << CAN_F5R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F5R2_FB29                                               CAN_F5R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F5R2_FB30_Pos                                           (30U)
-#define CAN_F5R2_FB30_Msk                                           (0x1UL << CAN_F5R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F5R2_FB30                                               CAN_F5R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F5R2_FB31_Pos                                           (31U)
-#define CAN_F5R2_FB31_Msk                                           (0x1UL << CAN_F5R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F5R2_FB31                                               CAN_F5R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F5BANK2 register  *******************/
+#define CAN_F5BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F5BANK2_FBIT0_Msk                                       (0x1UL << CAN_F5BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F5BANK2_FBIT0                                           CAN_F5BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F5BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F5BANK2_FBIT1_Msk                                       (0x1UL << CAN_F5BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F5BANK2_FBIT1                                           CAN_F5BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F5BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F5BANK2_FBIT2_Msk                                       (0x1UL << CAN_F5BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F5BANK2_FBIT2                                           CAN_F5BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F5BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F5BANK2_FBIT3_Msk                                       (0x1UL << CAN_F5BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F5BANK2_FBIT3                                           CAN_F5BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F5BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F5BANK2_FBIT4_Msk                                       (0x1UL << CAN_F5BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F5BANK2_FBIT4                                           CAN_F5BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F5BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F5BANK2_FBIT5_Msk                                       (0x1UL << CAN_F5BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F5BANK2_FBIT5                                           CAN_F5BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F5BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F5BANK2_FBIT6_Msk                                       (0x1UL << CAN_F5BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F5BANK2_FBIT6                                           CAN_F5BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F5BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F5BANK2_FBIT7_Msk                                       (0x1UL << CAN_F5BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F5BANK2_FBIT7                                           CAN_F5BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F5BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F5BANK2_FBIT8_Msk                                       (0x1UL << CAN_F5BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F5BANK2_FBIT8                                           CAN_F5BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F5BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F5BANK2_FBIT9_Msk                                       (0x1UL << CAN_F5BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F5BANK2_FBIT9                                           CAN_F5BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F5BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F5BANK2_FBIT10_Msk                                      (0x1UL << CAN_F5BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F5BANK2_FBIT10                                          CAN_F5BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F5BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F5BANK2_FBIT11_Msk                                      (0x1UL << CAN_F5BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F5BANK2_FBIT11                                          CAN_F5BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F5BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F5BANK2_FBIT12_Msk                                      (0x1UL << CAN_F5BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F5BANK2_FBIT12                                          CAN_F5BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F5BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F5BANK2_FBIT13_Msk                                      (0x1UL << CAN_F5BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F5BANK2_FBIT13                                          CAN_F5BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F5BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F5BANK2_FBIT14_Msk                                      (0x1UL << CAN_F5BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F5BANK2_FBIT14                                          CAN_F5BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F5BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F5BANK2_FBIT15_Msk                                      (0x1UL << CAN_F5BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F5BANK2_FBIT15                                          CAN_F5BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F5BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F5BANK2_FBIT16_Msk                                      (0x1UL << CAN_F5BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F5BANK2_FBIT16                                          CAN_F5BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F5BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F5BANK2_FBIT17_Msk                                      (0x1UL << CAN_F5BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F5BANK2_FBIT17                                          CAN_F5BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F5BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F5BANK2_FBIT18_Msk                                      (0x1UL << CAN_F5BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F5BANK2_FBIT18                                          CAN_F5BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F5BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F5BANK2_FBIT19_Msk                                      (0x1UL << CAN_F5BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F5BANK2_FBIT19                                          CAN_F5BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F5BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F5BANK2_FBIT20_Msk                                      (0x1UL << CAN_F5BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F5BANK2_FBIT20                                          CAN_F5BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F5BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F5BANK2_FBIT21_Msk                                      (0x1UL << CAN_F5BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F5BANK2_FBIT21                                          CAN_F5BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F5BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F5BANK2_FBIT22_Msk                                      (0x1UL << CAN_F5BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F5BANK2_FBIT22                                          CAN_F5BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F5BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F5BANK2_FBIT23_Msk                                      (0x1UL << CAN_F5BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F5BANK2_FBIT23                                          CAN_F5BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F5BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F5BANK2_FBIT24_Msk                                      (0x1UL << CAN_F5BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F5BANK2_FBIT24                                          CAN_F5BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F5BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F5BANK2_FBIT25_Msk                                      (0x1UL << CAN_F5BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F5BANK2_FBIT25                                          CAN_F5BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F5BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F5BANK2_FBIT26_Msk                                      (0x1UL << CAN_F5BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F5BANK2_FBIT26                                          CAN_F5BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F5BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F5BANK2_FBIT27_Msk                                      (0x1UL << CAN_F5BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F5BANK2_FBIT27                                          CAN_F5BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F5BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F5BANK2_FBIT28_Msk                                      (0x1UL << CAN_F5BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F5BANK2_FBIT28                                          CAN_F5BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F5BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F5BANK2_FBIT29_Msk                                      (0x1UL << CAN_F5BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F5BANK2_FBIT29                                          CAN_F5BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F5BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F5BANK2_FBIT30_Msk                                      (0x1UL << CAN_F5BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F5BANK2_FBIT30                                          CAN_F5BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F5BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F5BANK2_FBIT31_Msk                                      (0x1UL << CAN_F5BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F5BANK2_FBIT31                                          CAN_F5BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F6R2 register  *******************/
-#define CAN_F6R2_FB0_Pos                                            (0U)
-#define CAN_F6R2_FB0_Msk                                            (0x1UL << CAN_F6R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F6R2_FB0                                                CAN_F6R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F6R2_FB1_Pos                                            (1U)
-#define CAN_F6R2_FB1_Msk                                            (0x1UL << CAN_F6R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F6R2_FB1                                                CAN_F6R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F6R2_FB2_Pos                                            (2U)
-#define CAN_F6R2_FB2_Msk                                            (0x1UL << CAN_F6R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F6R2_FB2                                                CAN_F6R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F6R2_FB3_Pos                                            (3U)
-#define CAN_F6R2_FB3_Msk                                            (0x1UL << CAN_F6R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F6R2_FB3                                                CAN_F6R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F6R2_FB4_Pos                                            (4U)
-#define CAN_F6R2_FB4_Msk                                            (0x1UL << CAN_F6R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F6R2_FB4                                                CAN_F6R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F6R2_FB5_Pos                                            (5U)
-#define CAN_F6R2_FB5_Msk                                            (0x1UL << CAN_F6R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F6R2_FB5                                                CAN_F6R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F6R2_FB6_Pos                                            (6U)
-#define CAN_F6R2_FB6_Msk                                            (0x1UL << CAN_F6R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F6R2_FB6                                                CAN_F6R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F6R2_FB7_Pos                                            (7U)
-#define CAN_F6R2_FB7_Msk                                            (0x1UL << CAN_F6R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F6R2_FB7                                                CAN_F6R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F6R2_FB8_Pos                                            (8U)
-#define CAN_F6R2_FB8_Msk                                            (0x1UL << CAN_F6R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F6R2_FB8                                                CAN_F6R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F6R2_FB9_Pos                                            (9U)
-#define CAN_F6R2_FB9_Msk                                            (0x1UL << CAN_F6R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F6R2_FB9                                                CAN_F6R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F6R2_FB10_Pos                                           (10U)
-#define CAN_F6R2_FB10_Msk                                           (0x1UL << CAN_F6R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F6R2_FB10                                               CAN_F6R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F6R2_FB11_Pos                                           (11U)
-#define CAN_F6R2_FB11_Msk                                           (0x1UL << CAN_F6R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F6R2_FB11                                               CAN_F6R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F6R2_FB12_Pos                                           (12U)
-#define CAN_F6R2_FB12_Msk                                           (0x1UL << CAN_F6R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F6R2_FB12                                               CAN_F6R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F6R2_FB13_Pos                                           (13U)
-#define CAN_F6R2_FB13_Msk                                           (0x1UL << CAN_F6R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F6R2_FB13                                               CAN_F6R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F6R2_FB14_Pos                                           (14U)
-#define CAN_F6R2_FB14_Msk                                           (0x1UL << CAN_F6R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F6R2_FB14                                               CAN_F6R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F6R2_FB15_Pos                                           (15U)
-#define CAN_F6R2_FB15_Msk                                           (0x1UL << CAN_F6R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F6R2_FB15                                               CAN_F6R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F6R2_FB16_Pos                                           (16U)
-#define CAN_F6R2_FB16_Msk                                           (0x1UL << CAN_F6R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F6R2_FB16                                               CAN_F6R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F6R2_FB17_Pos                                           (17U)
-#define CAN_F6R2_FB17_Msk                                           (0x1UL << CAN_F6R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F6R2_FB17                                               CAN_F6R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F6R2_FB18_Pos                                           (18U)
-#define CAN_F6R2_FB18_Msk                                           (0x1UL << CAN_F6R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F6R2_FB18                                               CAN_F6R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F6R2_FB19_Pos                                           (19U)
-#define CAN_F6R2_FB19_Msk                                           (0x1UL << CAN_F6R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F6R2_FB19                                               CAN_F6R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F6R2_FB20_Pos                                           (20U)
-#define CAN_F6R2_FB20_Msk                                           (0x1UL << CAN_F6R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F6R2_FB20                                               CAN_F6R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F6R2_FB21_Pos                                           (21U)
-#define CAN_F6R2_FB21_Msk                                           (0x1UL << CAN_F6R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F6R2_FB21                                               CAN_F6R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F6R2_FB22_Pos                                           (22U)
-#define CAN_F6R2_FB22_Msk                                           (0x1UL << CAN_F6R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F6R2_FB22                                               CAN_F6R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F6R2_FB23_Pos                                           (23U)
-#define CAN_F6R2_FB23_Msk                                           (0x1UL << CAN_F6R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F6R2_FB23                                               CAN_F6R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F6R2_FB24_Pos                                           (24U)
-#define CAN_F6R2_FB24_Msk                                           (0x1UL << CAN_F6R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F6R2_FB24                                               CAN_F6R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F6R2_FB25_Pos                                           (25U)
-#define CAN_F6R2_FB25_Msk                                           (0x1UL << CAN_F6R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F6R2_FB25                                               CAN_F6R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F6R2_FB26_Pos                                           (26U)
-#define CAN_F6R2_FB26_Msk                                           (0x1UL << CAN_F6R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F6R2_FB26                                               CAN_F6R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F6R2_FB27_Pos                                           (27U)
-#define CAN_F6R2_FB27_Msk                                           (0x1UL << CAN_F6R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F6R2_FB27                                               CAN_F6R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F6R2_FB28_Pos                                           (28U)
-#define CAN_F6R2_FB28_Msk                                           (0x1UL << CAN_F6R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F6R2_FB28                                               CAN_F6R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F6R2_FB29_Pos                                           (29U)
-#define CAN_F6R2_FB29_Msk                                           (0x1UL << CAN_F6R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F6R2_FB29                                               CAN_F6R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F6R2_FB30_Pos                                           (30U)
-#define CAN_F6R2_FB30_Msk                                           (0x1UL << CAN_F6R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F6R2_FB30                                               CAN_F6R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F6R2_FB31_Pos                                           (31U)
-#define CAN_F6R2_FB31_Msk                                           (0x1UL << CAN_F6R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F6R2_FB31                                               CAN_F6R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F6BANK2 register  *******************/
+#define CAN_F6BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F6BANK2_FBIT0_Msk                                       (0x1UL << CAN_F6BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F6BANK2_FBIT0                                           CAN_F6BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F6BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F6BANK2_FBIT1_Msk                                       (0x1UL << CAN_F6BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F6BANK2_FBIT1                                           CAN_F6BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F6BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F6BANK2_FBIT2_Msk                                       (0x1UL << CAN_F6BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F6BANK2_FBIT2                                           CAN_F6BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F6BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F6BANK2_FBIT3_Msk                                       (0x1UL << CAN_F6BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F6BANK2_FBIT3                                           CAN_F6BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F6BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F6BANK2_FBIT4_Msk                                       (0x1UL << CAN_F6BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F6BANK2_FBIT4                                           CAN_F6BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F6BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F6BANK2_FBIT5_Msk                                       (0x1UL << CAN_F6BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F6BANK2_FBIT5                                           CAN_F6BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F6BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F6BANK2_FBIT6_Msk                                       (0x1UL << CAN_F6BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F6BANK2_FBIT6                                           CAN_F6BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F6BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F6BANK2_FBIT7_Msk                                       (0x1UL << CAN_F6BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F6BANK2_FBIT7                                           CAN_F6BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F6BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F6BANK2_FBIT8_Msk                                       (0x1UL << CAN_F6BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F6BANK2_FBIT8                                           CAN_F6BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F6BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F6BANK2_FBIT9_Msk                                       (0x1UL << CAN_F6BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F6BANK2_FBIT9                                           CAN_F6BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F6BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F6BANK2_FBIT10_Msk                                      (0x1UL << CAN_F6BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F6BANK2_FBIT10                                          CAN_F6BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F6BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F6BANK2_FBIT11_Msk                                      (0x1UL << CAN_F6BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F6BANK2_FBIT11                                          CAN_F6BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F6BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F6BANK2_FBIT12_Msk                                      (0x1UL << CAN_F6BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F6BANK2_FBIT12                                          CAN_F6BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F6BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F6BANK2_FBIT13_Msk                                      (0x1UL << CAN_F6BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F6BANK2_FBIT13                                          CAN_F6BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F6BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F6BANK2_FBIT14_Msk                                      (0x1UL << CAN_F6BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F6BANK2_FBIT14                                          CAN_F6BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F6BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F6BANK2_FBIT15_Msk                                      (0x1UL << CAN_F6BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F6BANK2_FBIT15                                          CAN_F6BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F6BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F6BANK2_FBIT16_Msk                                      (0x1UL << CAN_F6BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F6BANK2_FBIT16                                          CAN_F6BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F6BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F6BANK2_FBIT17_Msk                                      (0x1UL << CAN_F6BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F6BANK2_FBIT17                                          CAN_F6BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F6BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F6BANK2_FBIT18_Msk                                      (0x1UL << CAN_F6BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F6BANK2_FBIT18                                          CAN_F6BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F6BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F6BANK2_FBIT19_Msk                                      (0x1UL << CAN_F6BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F6BANK2_FBIT19                                          CAN_F6BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F6BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F6BANK2_FBIT20_Msk                                      (0x1UL << CAN_F6BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F6BANK2_FBIT20                                          CAN_F6BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F6BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F6BANK2_FBIT21_Msk                                      (0x1UL << CAN_F6BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F6BANK2_FBIT21                                          CAN_F6BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F6BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F6BANK2_FBIT22_Msk                                      (0x1UL << CAN_F6BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F6BANK2_FBIT22                                          CAN_F6BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F6BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F6BANK2_FBIT23_Msk                                      (0x1UL << CAN_F6BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F6BANK2_FBIT23                                          CAN_F6BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F6BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F6BANK2_FBIT24_Msk                                      (0x1UL << CAN_F6BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F6BANK2_FBIT24                                          CAN_F6BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F6BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F6BANK2_FBIT25_Msk                                      (0x1UL << CAN_F6BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F6BANK2_FBIT25                                          CAN_F6BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F6BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F6BANK2_FBIT26_Msk                                      (0x1UL << CAN_F6BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F6BANK2_FBIT26                                          CAN_F6BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F6BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F6BANK2_FBIT27_Msk                                      (0x1UL << CAN_F6BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F6BANK2_FBIT27                                          CAN_F6BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F6BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F6BANK2_FBIT28_Msk                                      (0x1UL << CAN_F6BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F6BANK2_FBIT28                                          CAN_F6BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F6BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F6BANK2_FBIT29_Msk                                      (0x1UL << CAN_F6BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F6BANK2_FBIT29                                          CAN_F6BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F6BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F6BANK2_FBIT30_Msk                                      (0x1UL << CAN_F6BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F6BANK2_FBIT30                                          CAN_F6BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F6BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F6BANK2_FBIT31_Msk                                      (0x1UL << CAN_F6BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F6BANK2_FBIT31                                          CAN_F6BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F7R2 register  *******************/
-#define CAN_F7R2_FB0_Pos                                            (0U)
-#define CAN_F7R2_FB0_Msk                                            (0x1UL << CAN_F7R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F7R2_FB0                                                CAN_F7R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F7R2_FB1_Pos                                            (1U)
-#define CAN_F7R2_FB1_Msk                                            (0x1UL << CAN_F7R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F7R2_FB1                                                CAN_F7R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F7R2_FB2_Pos                                            (2U)
-#define CAN_F7R2_FB2_Msk                                            (0x1UL << CAN_F7R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F7R2_FB2                                                CAN_F7R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F7R2_FB3_Pos                                            (3U)
-#define CAN_F7R2_FB3_Msk                                            (0x1UL << CAN_F7R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F7R2_FB3                                                CAN_F7R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F7R2_FB4_Pos                                            (4U)
-#define CAN_F7R2_FB4_Msk                                            (0x1UL << CAN_F7R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F7R2_FB4                                                CAN_F7R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F7R2_FB5_Pos                                            (5U)
-#define CAN_F7R2_FB5_Msk                                            (0x1UL << CAN_F7R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F7R2_FB5                                                CAN_F7R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F7R2_FB6_Pos                                            (6U)
-#define CAN_F7R2_FB6_Msk                                            (0x1UL << CAN_F7R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F7R2_FB6                                                CAN_F7R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F7R2_FB7_Pos                                            (7U)
-#define CAN_F7R2_FB7_Msk                                            (0x1UL << CAN_F7R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F7R2_FB7                                                CAN_F7R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F7R2_FB8_Pos                                            (8U)
-#define CAN_F7R2_FB8_Msk                                            (0x1UL << CAN_F7R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F7R2_FB8                                                CAN_F7R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F7R2_FB9_Pos                                            (9U)
-#define CAN_F7R2_FB9_Msk                                            (0x1UL << CAN_F7R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F7R2_FB9                                                CAN_F7R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F7R2_FB10_Pos                                           (10U)
-#define CAN_F7R2_FB10_Msk                                           (0x1UL << CAN_F7R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F7R2_FB10                                               CAN_F7R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F7R2_FB11_Pos                                           (11U)
-#define CAN_F7R2_FB11_Msk                                           (0x1UL << CAN_F7R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F7R2_FB11                                               CAN_F7R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F7R2_FB12_Pos                                           (12U)
-#define CAN_F7R2_FB12_Msk                                           (0x1UL << CAN_F7R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F7R2_FB12                                               CAN_F7R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F7R2_FB13_Pos                                           (13U)
-#define CAN_F7R2_FB13_Msk                                           (0x1UL << CAN_F7R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F7R2_FB13                                               CAN_F7R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F7R2_FB14_Pos                                           (14U)
-#define CAN_F7R2_FB14_Msk                                           (0x1UL << CAN_F7R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F7R2_FB14                                               CAN_F7R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F7R2_FB15_Pos                                           (15U)
-#define CAN_F7R2_FB15_Msk                                           (0x1UL << CAN_F7R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F7R2_FB15                                               CAN_F7R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F7R2_FB16_Pos                                           (16U)
-#define CAN_F7R2_FB16_Msk                                           (0x1UL << CAN_F7R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F7R2_FB16                                               CAN_F7R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F7R2_FB17_Pos                                           (17U)
-#define CAN_F7R2_FB17_Msk                                           (0x1UL << CAN_F7R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F7R2_FB17                                               CAN_F7R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F7R2_FB18_Pos                                           (18U)
-#define CAN_F7R2_FB18_Msk                                           (0x1UL << CAN_F7R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F7R2_FB18                                               CAN_F7R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F7R2_FB19_Pos                                           (19U)
-#define CAN_F7R2_FB19_Msk                                           (0x1UL << CAN_F7R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F7R2_FB19                                               CAN_F7R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F7R2_FB20_Pos                                           (20U)
-#define CAN_F7R2_FB20_Msk                                           (0x1UL << CAN_F7R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F7R2_FB20                                               CAN_F7R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F7R2_FB21_Pos                                           (21U)
-#define CAN_F7R2_FB21_Msk                                           (0x1UL << CAN_F7R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F7R2_FB21                                               CAN_F7R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F7R2_FB22_Pos                                           (22U)
-#define CAN_F7R2_FB22_Msk                                           (0x1UL << CAN_F7R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F7R2_FB22                                               CAN_F7R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F7R2_FB23_Pos                                           (23U)
-#define CAN_F7R2_FB23_Msk                                           (0x1UL << CAN_F7R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F7R2_FB23                                               CAN_F7R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F7R2_FB24_Pos                                           (24U)
-#define CAN_F7R2_FB24_Msk                                           (0x1UL << CAN_F7R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F7R2_FB24                                               CAN_F7R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F7R2_FB25_Pos                                           (25U)
-#define CAN_F7R2_FB25_Msk                                           (0x1UL << CAN_F7R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F7R2_FB25                                               CAN_F7R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F7R2_FB26_Pos                                           (26U)
-#define CAN_F7R2_FB26_Msk                                           (0x1UL << CAN_F7R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F7R2_FB26                                               CAN_F7R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F7R2_FB27_Pos                                           (27U)
-#define CAN_F7R2_FB27_Msk                                           (0x1UL << CAN_F7R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F7R2_FB27                                               CAN_F7R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F7R2_FB28_Pos                                           (28U)
-#define CAN_F7R2_FB28_Msk                                           (0x1UL << CAN_F7R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F7R2_FB28                                               CAN_F7R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F7R2_FB29_Pos                                           (29U)
-#define CAN_F7R2_FB29_Msk                                           (0x1UL << CAN_F7R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F7R2_FB29                                               CAN_F7R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F7R2_FB30_Pos                                           (30U)
-#define CAN_F7R2_FB30_Msk                                           (0x1UL << CAN_F7R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F7R2_FB30                                               CAN_F7R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F7R2_FB31_Pos                                           (31U)
-#define CAN_F7R2_FB31_Msk                                           (0x1UL << CAN_F7R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F7R2_FB31                                               CAN_F7R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F7BANK2 register  *******************/
+#define CAN_F7BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F7BANK2_FBIT0_Msk                                       (0x1UL << CAN_F7BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F7BANK2_FBIT0                                           CAN_F7BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F7BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F7BANK2_FBIT1_Msk                                       (0x1UL << CAN_F7BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F7BANK2_FBIT1                                           CAN_F7BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F7BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F7BANK2_FBIT2_Msk                                       (0x1UL << CAN_F7BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F7BANK2_FBIT2                                           CAN_F7BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F7BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F7BANK2_FBIT3_Msk                                       (0x1UL << CAN_F7BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F7BANK2_FBIT3                                           CAN_F7BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F7BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F7BANK2_FBIT4_Msk                                       (0x1UL << CAN_F7BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F7BANK2_FBIT4                                           CAN_F7BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F7BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F7BANK2_FBIT5_Msk                                       (0x1UL << CAN_F7BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F7BANK2_FBIT5                                           CAN_F7BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F7BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F7BANK2_FBIT6_Msk                                       (0x1UL << CAN_F7BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F7BANK2_FBIT6                                           CAN_F7BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F7BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F7BANK2_FBIT7_Msk                                       (0x1UL << CAN_F7BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F7BANK2_FBIT7                                           CAN_F7BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F7BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F7BANK2_FBIT8_Msk                                       (0x1UL << CAN_F7BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F7BANK2_FBIT8                                           CAN_F7BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F7BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F7BANK2_FBIT9_Msk                                       (0x1UL << CAN_F7BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F7BANK2_FBIT9                                           CAN_F7BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F7BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F7BANK2_FBIT10_Msk                                      (0x1UL << CAN_F7BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F7BANK2_FBIT10                                          CAN_F7BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F7BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F7BANK2_FBIT11_Msk                                      (0x1UL << CAN_F7BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F7BANK2_FBIT11                                          CAN_F7BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F7BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F7BANK2_FBIT12_Msk                                      (0x1UL << CAN_F7BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F7BANK2_FBIT12                                          CAN_F7BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F7BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F7BANK2_FBIT13_Msk                                      (0x1UL << CAN_F7BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F7BANK2_FBIT13                                          CAN_F7BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F7BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F7BANK2_FBIT14_Msk                                      (0x1UL << CAN_F7BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F7BANK2_FBIT14                                          CAN_F7BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F7BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F7BANK2_FBIT15_Msk                                      (0x1UL << CAN_F7BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F7BANK2_FBIT15                                          CAN_F7BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F7BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F7BANK2_FBIT16_Msk                                      (0x1UL << CAN_F7BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F7BANK2_FBIT16                                          CAN_F7BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F7BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F7BANK2_FBIT17_Msk                                      (0x1UL << CAN_F7BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F7BANK2_FBIT17                                          CAN_F7BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F7BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F7BANK2_FBIT18_Msk                                      (0x1UL << CAN_F7BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F7BANK2_FBIT18                                          CAN_F7BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F7BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F7BANK2_FBIT19_Msk                                      (0x1UL << CAN_F7BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F7BANK2_FBIT19                                          CAN_F7BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F7BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F7BANK2_FBIT20_Msk                                      (0x1UL << CAN_F7BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F7BANK2_FBIT20                                          CAN_F7BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F7BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F7BANK2_FBIT21_Msk                                      (0x1UL << CAN_F7BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F7BANK2_FBIT21                                          CAN_F7BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F7BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F7BANK2_FBIT22_Msk                                      (0x1UL << CAN_F7BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F7BANK2_FBIT22                                          CAN_F7BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F7BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F7BANK2_FBIT23_Msk                                      (0x1UL << CAN_F7BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F7BANK2_FBIT23                                          CAN_F7BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F7BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F7BANK2_FBIT24_Msk                                      (0x1UL << CAN_F7BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F7BANK2_FBIT24                                          CAN_F7BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F7BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F7BANK2_FBIT25_Msk                                      (0x1UL << CAN_F7BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F7BANK2_FBIT25                                          CAN_F7BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F7BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F7BANK2_FBIT26_Msk                                      (0x1UL << CAN_F7BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F7BANK2_FBIT26                                          CAN_F7BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F7BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F7BANK2_FBIT27_Msk                                      (0x1UL << CAN_F7BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F7BANK2_FBIT27                                          CAN_F7BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F7BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F7BANK2_FBIT28_Msk                                      (0x1UL << CAN_F7BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F7BANK2_FBIT28                                          CAN_F7BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F7BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F7BANK2_FBIT29_Msk                                      (0x1UL << CAN_F7BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F7BANK2_FBIT29                                          CAN_F7BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F7BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F7BANK2_FBIT30_Msk                                      (0x1UL << CAN_F7BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F7BANK2_FBIT30                                          CAN_F7BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F7BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F7BANK2_FBIT31_Msk                                      (0x1UL << CAN_F7BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F7BANK2_FBIT31                                          CAN_F7BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F8R2 register  *******************/
-#define CAN_F8R2_FB0_Pos                                            (0U)
-#define CAN_F8R2_FB0_Msk                                            (0x1UL << CAN_F8R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F8R2_FB0                                                CAN_F8R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F8R2_FB1_Pos                                            (1U)
-#define CAN_F8R2_FB1_Msk                                            (0x1UL << CAN_F8R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F8R2_FB1                                                CAN_F8R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F8R2_FB2_Pos                                            (2U)
-#define CAN_F8R2_FB2_Msk                                            (0x1UL << CAN_F8R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F8R2_FB2                                                CAN_F8R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F8R2_FB3_Pos                                            (3U)
-#define CAN_F8R2_FB3_Msk                                            (0x1UL << CAN_F8R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F8R2_FB3                                                CAN_F8R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F8R2_FB4_Pos                                            (4U)
-#define CAN_F8R2_FB4_Msk                                            (0x1UL << CAN_F8R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F8R2_FB4                                                CAN_F8R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F8R2_FB5_Pos                                            (5U)
-#define CAN_F8R2_FB5_Msk                                            (0x1UL << CAN_F8R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F8R2_FB5                                                CAN_F8R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F8R2_FB6_Pos                                            (6U)
-#define CAN_F8R2_FB6_Msk                                            (0x1UL << CAN_F8R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F8R2_FB6                                                CAN_F8R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F8R2_FB7_Pos                                            (7U)
-#define CAN_F8R2_FB7_Msk                                            (0x1UL << CAN_F8R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F8R2_FB7                                                CAN_F8R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F8R2_FB8_Pos                                            (8U)
-#define CAN_F8R2_FB8_Msk                                            (0x1UL << CAN_F8R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F8R2_FB8                                                CAN_F8R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F8R2_FB9_Pos                                            (9U)
-#define CAN_F8R2_FB9_Msk                                            (0x1UL << CAN_F8R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F8R2_FB9                                                CAN_F8R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F8R2_FB10_Pos                                           (10U)
-#define CAN_F8R2_FB10_Msk                                           (0x1UL << CAN_F8R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F8R2_FB10                                               CAN_F8R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F8R2_FB11_Pos                                           (11U)
-#define CAN_F8R2_FB11_Msk                                           (0x1UL << CAN_F8R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F8R2_FB11                                               CAN_F8R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F8R2_FB12_Pos                                           (12U)
-#define CAN_F8R2_FB12_Msk                                           (0x1UL << CAN_F8R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F8R2_FB12                                               CAN_F8R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F8R2_FB13_Pos                                           (13U)
-#define CAN_F8R2_FB13_Msk                                           (0x1UL << CAN_F8R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F8R2_FB13                                               CAN_F8R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F8R2_FB14_Pos                                           (14U)
-#define CAN_F8R2_FB14_Msk                                           (0x1UL << CAN_F8R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F8R2_FB14                                               CAN_F8R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F8R2_FB15_Pos                                           (15U)
-#define CAN_F8R2_FB15_Msk                                           (0x1UL << CAN_F8R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F8R2_FB15                                               CAN_F8R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F8R2_FB16_Pos                                           (16U)
-#define CAN_F8R2_FB16_Msk                                           (0x1UL << CAN_F8R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F8R2_FB16                                               CAN_F8R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F8R2_FB17_Pos                                           (17U)
-#define CAN_F8R2_FB17_Msk                                           (0x1UL << CAN_F8R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F8R2_FB17                                               CAN_F8R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F8R2_FB18_Pos                                           (18U)
-#define CAN_F8R2_FB18_Msk                                           (0x1UL << CAN_F8R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F8R2_FB18                                               CAN_F8R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F8R2_FB19_Pos                                           (19U)
-#define CAN_F8R2_FB19_Msk                                           (0x1UL << CAN_F8R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F8R2_FB19                                               CAN_F8R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F8R2_FB20_Pos                                           (20U)
-#define CAN_F8R2_FB20_Msk                                           (0x1UL << CAN_F8R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F8R2_FB20                                               CAN_F8R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F8R2_FB21_Pos                                           (21U)
-#define CAN_F8R2_FB21_Msk                                           (0x1UL << CAN_F8R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F8R2_FB21                                               CAN_F8R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F8R2_FB22_Pos                                           (22U)
-#define CAN_F8R2_FB22_Msk                                           (0x1UL << CAN_F8R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F8R2_FB22                                               CAN_F8R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F8R2_FB23_Pos                                           (23U)
-#define CAN_F8R2_FB23_Msk                                           (0x1UL << CAN_F8R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F8R2_FB23                                               CAN_F8R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F8R2_FB24_Pos                                           (24U)
-#define CAN_F8R2_FB24_Msk                                           (0x1UL << CAN_F8R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F8R2_FB24                                               CAN_F8R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F8R2_FB25_Pos                                           (25U)
-#define CAN_F8R2_FB25_Msk                                           (0x1UL << CAN_F8R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F8R2_FB25                                               CAN_F8R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F8R2_FB26_Pos                                           (26U)
-#define CAN_F8R2_FB26_Msk                                           (0x1UL << CAN_F8R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F8R2_FB26                                               CAN_F8R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F8R2_FB27_Pos                                           (27U)
-#define CAN_F8R2_FB27_Msk                                           (0x1UL << CAN_F8R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F8R2_FB27                                               CAN_F8R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F8R2_FB28_Pos                                           (28U)
-#define CAN_F8R2_FB28_Msk                                           (0x1UL << CAN_F8R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F8R2_FB28                                               CAN_F8R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F8R2_FB29_Pos                                           (29U)
-#define CAN_F8R2_FB29_Msk                                           (0x1UL << CAN_F8R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F8R2_FB29                                               CAN_F8R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F8R2_FB30_Pos                                           (30U)
-#define CAN_F8R2_FB30_Msk                                           (0x1UL << CAN_F8R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F8R2_FB30                                               CAN_F8R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F8R2_FB31_Pos                                           (31U)
-#define CAN_F8R2_FB31_Msk                                           (0x1UL << CAN_F8R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F8R2_FB31                                               CAN_F8R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F8BANK2 register  *******************/
+#define CAN_F8BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F8BANK2_FBIT0_Msk                                       (0x1UL << CAN_F8BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F8BANK2_FBIT0                                           CAN_F8BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F8BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F8BANK2_FBIT1_Msk                                       (0x1UL << CAN_F8BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F8BANK2_FBIT1                                           CAN_F8BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F8BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F8BANK2_FBIT2_Msk                                       (0x1UL << CAN_F8BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F8BANK2_FBIT2                                           CAN_F8BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F8BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F8BANK2_FBIT3_Msk                                       (0x1UL << CAN_F8BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F8BANK2_FBIT3                                           CAN_F8BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F8BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F8BANK2_FBIT4_Msk                                       (0x1UL << CAN_F8BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F8BANK2_FBIT4                                           CAN_F8BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F8BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F8BANK2_FBIT5_Msk                                       (0x1UL << CAN_F8BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F8BANK2_FBIT5                                           CAN_F8BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F8BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F8BANK2_FBIT6_Msk                                       (0x1UL << CAN_F8BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F8BANK2_FBIT6                                           CAN_F8BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F8BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F8BANK2_FBIT7_Msk                                       (0x1UL << CAN_F8BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F8BANK2_FBIT7                                           CAN_F8BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F8BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F8BANK2_FBIT8_Msk                                       (0x1UL << CAN_F8BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F8BANK2_FBIT8                                           CAN_F8BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F8BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F8BANK2_FBIT9_Msk                                       (0x1UL << CAN_F8BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F8BANK2_FBIT9                                           CAN_F8BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F8BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F8BANK2_FBIT10_Msk                                      (0x1UL << CAN_F8BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F8BANK2_FBIT10                                          CAN_F8BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F8BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F8BANK2_FBIT11_Msk                                      (0x1UL << CAN_F8BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F8BANK2_FBIT11                                          CAN_F8BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F8BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F8BANK2_FBIT12_Msk                                      (0x1UL << CAN_F8BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F8BANK2_FBIT12                                          CAN_F8BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F8BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F8BANK2_FBIT13_Msk                                      (0x1UL << CAN_F8BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F8BANK2_FBIT13                                          CAN_F8BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F8BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F8BANK2_FBIT14_Msk                                      (0x1UL << CAN_F8BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F8BANK2_FBIT14                                          CAN_F8BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F8BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F8BANK2_FBIT15_Msk                                      (0x1UL << CAN_F8BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F8BANK2_FBIT15                                          CAN_F8BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F8BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F8BANK2_FBIT16_Msk                                      (0x1UL << CAN_F8BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F8BANK2_FBIT16                                          CAN_F8BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F8BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F8BANK2_FBIT17_Msk                                      (0x1UL << CAN_F8BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F8BANK2_FBIT17                                          CAN_F8BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F8BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F8BANK2_FBIT18_Msk                                      (0x1UL << CAN_F8BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F8BANK2_FBIT18                                          CAN_F8BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F8BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F8BANK2_FBIT19_Msk                                      (0x1UL << CAN_F8BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F8BANK2_FBIT19                                          CAN_F8BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F8BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F8BANK2_FBIT20_Msk                                      (0x1UL << CAN_F8BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F8BANK2_FBIT20                                          CAN_F8BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F8BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F8BANK2_FBIT21_Msk                                      (0x1UL << CAN_F8BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F8BANK2_FBIT21                                          CAN_F8BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F8BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F8BANK2_FBIT22_Msk                                      (0x1UL << CAN_F8BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F8BANK2_FBIT22                                          CAN_F8BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F8BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F8BANK2_FBIT23_Msk                                      (0x1UL << CAN_F8BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F8BANK2_FBIT23                                          CAN_F8BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F8BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F8BANK2_FBIT24_Msk                                      (0x1UL << CAN_F8BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F8BANK2_FBIT24                                          CAN_F8BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F8BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F8BANK2_FBIT25_Msk                                      (0x1UL << CAN_F8BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F8BANK2_FBIT25                                          CAN_F8BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F8BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F8BANK2_FBIT26_Msk                                      (0x1UL << CAN_F8BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F8BANK2_FBIT26                                          CAN_F8BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F8BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F8BANK2_FBIT27_Msk                                      (0x1UL << CAN_F8BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F8BANK2_FBIT27                                          CAN_F8BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F8BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F8BANK2_FBIT28_Msk                                      (0x1UL << CAN_F8BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F8BANK2_FBIT28                                          CAN_F8BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F8BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F8BANK2_FBIT29_Msk                                      (0x1UL << CAN_F8BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F8BANK2_FBIT29                                          CAN_F8BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F8BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F8BANK2_FBIT30_Msk                                      (0x1UL << CAN_F8BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F8BANK2_FBIT30                                          CAN_F8BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F8BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F8BANK2_FBIT31_Msk                                      (0x1UL << CAN_F8BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F8BANK2_FBIT31                                          CAN_F8BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F9R2 register  *******************/
-#define CAN_F9R2_FB0_Pos                                            (0U)
-#define CAN_F9R2_FB0_Msk                                            (0x1UL << CAN_F9R2_FB0_Pos)                                    /*!< 0x00000001 */
-#define CAN_F9R2_FB0                                                CAN_F9R2_FB0_Msk                                               /*!<Filter bit 0 */
-#define CAN_F9R2_FB1_Pos                                            (1U)
-#define CAN_F9R2_FB1_Msk                                            (0x1UL << CAN_F9R2_FB1_Pos)                                    /*!< 0x00000002 */
-#define CAN_F9R2_FB1                                                CAN_F9R2_FB1_Msk                                               /*!<Filter bit 1 */
-#define CAN_F9R2_FB2_Pos                                            (2U)
-#define CAN_F9R2_FB2_Msk                                            (0x1UL << CAN_F9R2_FB2_Pos)                                    /*!< 0x00000004 */
-#define CAN_F9R2_FB2                                                CAN_F9R2_FB2_Msk                                               /*!<Filter bit 2 */
-#define CAN_F9R2_FB3_Pos                                            (3U)
-#define CAN_F9R2_FB3_Msk                                            (0x1UL << CAN_F9R2_FB3_Pos)                                    /*!< 0x00000008 */
-#define CAN_F9R2_FB3                                                CAN_F9R2_FB3_Msk                                               /*!<Filter bit 3 */
-#define CAN_F9R2_FB4_Pos                                            (4U)
-#define CAN_F9R2_FB4_Msk                                            (0x1UL << CAN_F9R2_FB4_Pos)                                    /*!< 0x00000010 */
-#define CAN_F9R2_FB4                                                CAN_F9R2_FB4_Msk                                               /*!<Filter bit 4 */
-#define CAN_F9R2_FB5_Pos                                            (5U)
-#define CAN_F9R2_FB5_Msk                                            (0x1UL << CAN_F9R2_FB5_Pos)                                    /*!< 0x00000020 */
-#define CAN_F9R2_FB5                                                CAN_F9R2_FB5_Msk                                               /*!<Filter bit 5 */
-#define CAN_F9R2_FB6_Pos                                            (6U)
-#define CAN_F9R2_FB6_Msk                                            (0x1UL << CAN_F9R2_FB6_Pos)                                    /*!< 0x00000040 */
-#define CAN_F9R2_FB6                                                CAN_F9R2_FB6_Msk                                               /*!<Filter bit 6 */
-#define CAN_F9R2_FB7_Pos                                            (7U)
-#define CAN_F9R2_FB7_Msk                                            (0x1UL << CAN_F9R2_FB7_Pos)                                    /*!< 0x00000080 */
-#define CAN_F9R2_FB7                                                CAN_F9R2_FB7_Msk                                               /*!<Filter bit 7 */
-#define CAN_F9R2_FB8_Pos                                            (8U)
-#define CAN_F9R2_FB8_Msk                                            (0x1UL << CAN_F9R2_FB8_Pos)                                    /*!< 0x00000100 */
-#define CAN_F9R2_FB8                                                CAN_F9R2_FB8_Msk                                               /*!<Filter bit 8 */
-#define CAN_F9R2_FB9_Pos                                            (9U)
-#define CAN_F9R2_FB9_Msk                                            (0x1UL << CAN_F9R2_FB9_Pos)                                    /*!< 0x00000200 */
-#define CAN_F9R2_FB9                                                CAN_F9R2_FB9_Msk                                               /*!<Filter bit 9 */
-#define CAN_F9R2_FB10_Pos                                           (10U)
-#define CAN_F9R2_FB10_Msk                                           (0x1UL << CAN_F9R2_FB10_Pos)                                   /*!< 0x00000400 */
-#define CAN_F9R2_FB10                                               CAN_F9R2_FB10_Msk                                              /*!<Filter bit 10 */
-#define CAN_F9R2_FB11_Pos                                           (11U)
-#define CAN_F9R2_FB11_Msk                                           (0x1UL << CAN_F9R2_FB11_Pos)                                   /*!< 0x00000800 */
-#define CAN_F9R2_FB11                                               CAN_F9R2_FB11_Msk                                              /*!<Filter bit 11 */
-#define CAN_F9R2_FB12_Pos                                           (12U)
-#define CAN_F9R2_FB12_Msk                                           (0x1UL << CAN_F9R2_FB12_Pos)                                   /*!< 0x00001000 */
-#define CAN_F9R2_FB12                                               CAN_F9R2_FB12_Msk                                              /*!<Filter bit 12 */
-#define CAN_F9R2_FB13_Pos                                           (13U)
-#define CAN_F9R2_FB13_Msk                                           (0x1UL << CAN_F9R2_FB13_Pos)                                   /*!< 0x00002000 */
-#define CAN_F9R2_FB13                                               CAN_F9R2_FB13_Msk                                              /*!<Filter bit 13 */
-#define CAN_F9R2_FB14_Pos                                           (14U)
-#define CAN_F9R2_FB14_Msk                                           (0x1UL << CAN_F9R2_FB14_Pos)                                   /*!< 0x00004000 */
-#define CAN_F9R2_FB14                                               CAN_F9R2_FB14_Msk                                              /*!<Filter bit 14 */
-#define CAN_F9R2_FB15_Pos                                           (15U)
-#define CAN_F9R2_FB15_Msk                                           (0x1UL << CAN_F9R2_FB15_Pos)                                   /*!< 0x00008000 */
-#define CAN_F9R2_FB15                                               CAN_F9R2_FB15_Msk                                              /*!<Filter bit 15 */
-#define CAN_F9R2_FB16_Pos                                           (16U)
-#define CAN_F9R2_FB16_Msk                                           (0x1UL << CAN_F9R2_FB16_Pos)                                   /*!< 0x00010000 */
-#define CAN_F9R2_FB16                                               CAN_F9R2_FB16_Msk                                              /*!<Filter bit 16 */
-#define CAN_F9R2_FB17_Pos                                           (17U)
-#define CAN_F9R2_FB17_Msk                                           (0x1UL << CAN_F9R2_FB17_Pos)                                   /*!< 0x00020000 */
-#define CAN_F9R2_FB17                                               CAN_F9R2_FB17_Msk                                              /*!<Filter bit 17 */
-#define CAN_F9R2_FB18_Pos                                           (18U)
-#define CAN_F9R2_FB18_Msk                                           (0x1UL << CAN_F9R2_FB18_Pos)                                   /*!< 0x00040000 */
-#define CAN_F9R2_FB18                                               CAN_F9R2_FB18_Msk                                              /*!<Filter bit 18 */
-#define CAN_F9R2_FB19_Pos                                           (19U)
-#define CAN_F9R2_FB19_Msk                                           (0x1UL << CAN_F9R2_FB19_Pos)                                   /*!< 0x00080000 */
-#define CAN_F9R2_FB19                                               CAN_F9R2_FB19_Msk                                              /*!<Filter bit 19 */
-#define CAN_F9R2_FB20_Pos                                           (20U)
-#define CAN_F9R2_FB20_Msk                                           (0x1UL << CAN_F9R2_FB20_Pos)                                   /*!< 0x00100000 */
-#define CAN_F9R2_FB20                                               CAN_F9R2_FB20_Msk                                              /*!<Filter bit 20 */
-#define CAN_F9R2_FB21_Pos                                           (21U)
-#define CAN_F9R2_FB21_Msk                                           (0x1UL << CAN_F9R2_FB21_Pos)                                   /*!< 0x00200000 */
-#define CAN_F9R2_FB21                                               CAN_F9R2_FB21_Msk                                              /*!<Filter bit 21 */
-#define CAN_F9R2_FB22_Pos                                           (22U)
-#define CAN_F9R2_FB22_Msk                                           (0x1UL << CAN_F9R2_FB22_Pos)                                   /*!< 0x00400000 */
-#define CAN_F9R2_FB22                                               CAN_F9R2_FB22_Msk                                              /*!<Filter bit 22 */
-#define CAN_F9R2_FB23_Pos                                           (23U)
-#define CAN_F9R2_FB23_Msk                                           (0x1UL << CAN_F9R2_FB23_Pos)                                   /*!< 0x00800000 */
-#define CAN_F9R2_FB23                                               CAN_F9R2_FB23_Msk                                              /*!<Filter bit 23 */
-#define CAN_F9R2_FB24_Pos                                           (24U)
-#define CAN_F9R2_FB24_Msk                                           (0x1UL << CAN_F9R2_FB24_Pos)                                   /*!< 0x01000000 */
-#define CAN_F9R2_FB24                                               CAN_F9R2_FB24_Msk                                              /*!<Filter bit 24 */
-#define CAN_F9R2_FB25_Pos                                           (25U)
-#define CAN_F9R2_FB25_Msk                                           (0x1UL << CAN_F9R2_FB25_Pos)                                   /*!< 0x02000000 */
-#define CAN_F9R2_FB25                                               CAN_F9R2_FB25_Msk                                              /*!<Filter bit 25 */
-#define CAN_F9R2_FB26_Pos                                           (26U)
-#define CAN_F9R2_FB26_Msk                                           (0x1UL << CAN_F9R2_FB26_Pos)                                   /*!< 0x04000000 */
-#define CAN_F9R2_FB26                                               CAN_F9R2_FB26_Msk                                              /*!<Filter bit 26 */
-#define CAN_F9R2_FB27_Pos                                           (27U)
-#define CAN_F9R2_FB27_Msk                                           (0x1UL << CAN_F9R2_FB27_Pos)                                   /*!< 0x08000000 */
-#define CAN_F9R2_FB27                                               CAN_F9R2_FB27_Msk                                              /*!<Filter bit 27 */
-#define CAN_F9R2_FB28_Pos                                           (28U)
-#define CAN_F9R2_FB28_Msk                                           (0x1UL << CAN_F9R2_FB28_Pos)                                   /*!< 0x10000000 */
-#define CAN_F9R2_FB28                                               CAN_F9R2_FB28_Msk                                              /*!<Filter bit 28 */
-#define CAN_F9R2_FB29_Pos                                           (29U)
-#define CAN_F9R2_FB29_Msk                                           (0x1UL << CAN_F9R2_FB29_Pos)                                   /*!< 0x20000000 */
-#define CAN_F9R2_FB29                                               CAN_F9R2_FB29_Msk                                              /*!<Filter bit 29 */
-#define CAN_F9R2_FB30_Pos                                           (30U)
-#define CAN_F9R2_FB30_Msk                                           (0x1UL << CAN_F9R2_FB30_Pos)                                   /*!< 0x40000000 */
-#define CAN_F9R2_FB30                                               CAN_F9R2_FB30_Msk                                              /*!<Filter bit 30 */
-#define CAN_F9R2_FB31_Pos                                           (31U)
-#define CAN_F9R2_FB31_Msk                                           (0x1UL << CAN_F9R2_FB31_Pos)                                   /*!< 0x80000000 */
-#define CAN_F9R2_FB31                                               CAN_F9R2_FB31_Msk                                              /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F9BANK2 register  *******************/
+#define CAN_F9BANK2_FBIT0_Pos                                       (0U)
+#define CAN_F9BANK2_FBIT0_Msk                                       (0x1UL << CAN_F9BANK2_FBIT0_Pos)                               /*!< 0x00000001 */
+#define CAN_F9BANK2_FBIT0                                           CAN_F9BANK2_FBIT0_Msk                                          /*!<Filter bit 0 */
+#define CAN_F9BANK2_FBIT1_Pos                                       (1U)
+#define CAN_F9BANK2_FBIT1_Msk                                       (0x1UL << CAN_F9BANK2_FBIT1_Pos)                               /*!< 0x00000002 */
+#define CAN_F9BANK2_FBIT1                                           CAN_F9BANK2_FBIT1_Msk                                          /*!<Filter bit 1 */
+#define CAN_F9BANK2_FBIT2_Pos                                       (2U)
+#define CAN_F9BANK2_FBIT2_Msk                                       (0x1UL << CAN_F9BANK2_FBIT2_Pos)                               /*!< 0x00000004 */
+#define CAN_F9BANK2_FBIT2                                           CAN_F9BANK2_FBIT2_Msk                                          /*!<Filter bit 2 */
+#define CAN_F9BANK2_FBIT3_Pos                                       (3U)
+#define CAN_F9BANK2_FBIT3_Msk                                       (0x1UL << CAN_F9BANK2_FBIT3_Pos)                               /*!< 0x00000008 */
+#define CAN_F9BANK2_FBIT3                                           CAN_F9BANK2_FBIT3_Msk                                          /*!<Filter bit 3 */
+#define CAN_F9BANK2_FBIT4_Pos                                       (4U)
+#define CAN_F9BANK2_FBIT4_Msk                                       (0x1UL << CAN_F9BANK2_FBIT4_Pos)                               /*!< 0x00000010 */
+#define CAN_F9BANK2_FBIT4                                           CAN_F9BANK2_FBIT4_Msk                                          /*!<Filter bit 4 */
+#define CAN_F9BANK2_FBIT5_Pos                                       (5U)
+#define CAN_F9BANK2_FBIT5_Msk                                       (0x1UL << CAN_F9BANK2_FBIT5_Pos)                               /*!< 0x00000020 */
+#define CAN_F9BANK2_FBIT5                                           CAN_F9BANK2_FBIT5_Msk                                          /*!<Filter bit 5 */
+#define CAN_F9BANK2_FBIT6_Pos                                       (6U)
+#define CAN_F9BANK2_FBIT6_Msk                                       (0x1UL << CAN_F9BANK2_FBIT6_Pos)                               /*!< 0x00000040 */
+#define CAN_F9BANK2_FBIT6                                           CAN_F9BANK2_FBIT6_Msk                                          /*!<Filter bit 6 */
+#define CAN_F9BANK2_FBIT7_Pos                                       (7U)
+#define CAN_F9BANK2_FBIT7_Msk                                       (0x1UL << CAN_F9BANK2_FBIT7_Pos)                               /*!< 0x00000080 */
+#define CAN_F9BANK2_FBIT7                                           CAN_F9BANK2_FBIT7_Msk                                          /*!<Filter bit 7 */
+#define CAN_F9BANK2_FBIT8_Pos                                       (8U)
+#define CAN_F9BANK2_FBIT8_Msk                                       (0x1UL << CAN_F9BANK2_FBIT8_Pos)                               /*!< 0x00000100 */
+#define CAN_F9BANK2_FBIT8                                           CAN_F9BANK2_FBIT8_Msk                                          /*!<Filter bit 8 */
+#define CAN_F9BANK2_FBIT9_Pos                                       (9U)
+#define CAN_F9BANK2_FBIT9_Msk                                       (0x1UL << CAN_F9BANK2_FBIT9_Pos)                               /*!< 0x00000200 */
+#define CAN_F9BANK2_FBIT9                                           CAN_F9BANK2_FBIT9_Msk                                          /*!<Filter bit 9 */
+#define CAN_F9BANK2_FBIT10_Pos                                      (10U)
+#define CAN_F9BANK2_FBIT10_Msk                                      (0x1UL << CAN_F9BANK2_FBIT10_Pos)                              /*!< 0x00000400 */
+#define CAN_F9BANK2_FBIT10                                          CAN_F9BANK2_FBIT10_Msk                                         /*!<Filter bit 10 */
+#define CAN_F9BANK2_FBIT11_Pos                                      (11U)
+#define CAN_F9BANK2_FBIT11_Msk                                      (0x1UL << CAN_F9BANK2_FBIT11_Pos)                              /*!< 0x00000800 */
+#define CAN_F9BANK2_FBIT11                                          CAN_F9BANK2_FBIT11_Msk                                         /*!<Filter bit 11 */
+#define CAN_F9BANK2_FBIT12_Pos                                      (12U)
+#define CAN_F9BANK2_FBIT12_Msk                                      (0x1UL << CAN_F9BANK2_FBIT12_Pos)                              /*!< 0x00001000 */
+#define CAN_F9BANK2_FBIT12                                          CAN_F9BANK2_FBIT12_Msk                                         /*!<Filter bit 12 */
+#define CAN_F9BANK2_FBIT13_Pos                                      (13U)
+#define CAN_F9BANK2_FBIT13_Msk                                      (0x1UL << CAN_F9BANK2_FBIT13_Pos)                              /*!< 0x00002000 */
+#define CAN_F9BANK2_FBIT13                                          CAN_F9BANK2_FBIT13_Msk                                         /*!<Filter bit 13 */
+#define CAN_F9BANK2_FBIT14_Pos                                      (14U)
+#define CAN_F9BANK2_FBIT14_Msk                                      (0x1UL << CAN_F9BANK2_FBIT14_Pos)                              /*!< 0x00004000 */
+#define CAN_F9BANK2_FBIT14                                          CAN_F9BANK2_FBIT14_Msk                                         /*!<Filter bit 14 */
+#define CAN_F9BANK2_FBIT15_Pos                                      (15U)
+#define CAN_F9BANK2_FBIT15_Msk                                      (0x1UL << CAN_F9BANK2_FBIT15_Pos)                              /*!< 0x00008000 */
+#define CAN_F9BANK2_FBIT15                                          CAN_F9BANK2_FBIT15_Msk                                         /*!<Filter bit 15 */
+#define CAN_F9BANK2_FBIT16_Pos                                      (16U)
+#define CAN_F9BANK2_FBIT16_Msk                                      (0x1UL << CAN_F9BANK2_FBIT16_Pos)                              /*!< 0x00010000 */
+#define CAN_F9BANK2_FBIT16                                          CAN_F9BANK2_FBIT16_Msk                                         /*!<Filter bit 16 */
+#define CAN_F9BANK2_FBIT17_Pos                                      (17U)
+#define CAN_F9BANK2_FBIT17_Msk                                      (0x1UL << CAN_F9BANK2_FBIT17_Pos)                              /*!< 0x00020000 */
+#define CAN_F9BANK2_FBIT17                                          CAN_F9BANK2_FBIT17_Msk                                         /*!<Filter bit 17 */
+#define CAN_F9BANK2_FBIT18_Pos                                      (18U)
+#define CAN_F9BANK2_FBIT18_Msk                                      (0x1UL << CAN_F9BANK2_FBIT18_Pos)                              /*!< 0x00040000 */
+#define CAN_F9BANK2_FBIT18                                          CAN_F9BANK2_FBIT18_Msk                                         /*!<Filter bit 18 */
+#define CAN_F9BANK2_FBIT19_Pos                                      (19U)
+#define CAN_F9BANK2_FBIT19_Msk                                      (0x1UL << CAN_F9BANK2_FBIT19_Pos)                              /*!< 0x00080000 */
+#define CAN_F9BANK2_FBIT19                                          CAN_F9BANK2_FBIT19_Msk                                         /*!<Filter bit 19 */
+#define CAN_F9BANK2_FBIT20_Pos                                      (20U)
+#define CAN_F9BANK2_FBIT20_Msk                                      (0x1UL << CAN_F9BANK2_FBIT20_Pos)                              /*!< 0x00100000 */
+#define CAN_F9BANK2_FBIT20                                          CAN_F9BANK2_FBIT20_Msk                                         /*!<Filter bit 20 */
+#define CAN_F9BANK2_FBIT21_Pos                                      (21U)
+#define CAN_F9BANK2_FBIT21_Msk                                      (0x1UL << CAN_F9BANK2_FBIT21_Pos)                              /*!< 0x00200000 */
+#define CAN_F9BANK2_FBIT21                                          CAN_F9BANK2_FBIT21_Msk                                         /*!<Filter bit 21 */
+#define CAN_F9BANK2_FBIT22_Pos                                      (22U)
+#define CAN_F9BANK2_FBIT22_Msk                                      (0x1UL << CAN_F9BANK2_FBIT22_Pos)                              /*!< 0x00400000 */
+#define CAN_F9BANK2_FBIT22                                          CAN_F9BANK2_FBIT22_Msk                                         /*!<Filter bit 22 */
+#define CAN_F9BANK2_FBIT23_Pos                                      (23U)
+#define CAN_F9BANK2_FBIT23_Msk                                      (0x1UL << CAN_F9BANK2_FBIT23_Pos)                              /*!< 0x00800000 */
+#define CAN_F9BANK2_FBIT23                                          CAN_F9BANK2_FBIT23_Msk                                         /*!<Filter bit 23 */
+#define CAN_F9BANK2_FBIT24_Pos                                      (24U)
+#define CAN_F9BANK2_FBIT24_Msk                                      (0x1UL << CAN_F9BANK2_FBIT24_Pos)                              /*!< 0x01000000 */
+#define CAN_F9BANK2_FBIT24                                          CAN_F9BANK2_FBIT24_Msk                                         /*!<Filter bit 24 */
+#define CAN_F9BANK2_FBIT25_Pos                                      (25U)
+#define CAN_F9BANK2_FBIT25_Msk                                      (0x1UL << CAN_F9BANK2_FBIT25_Pos)                              /*!< 0x02000000 */
+#define CAN_F9BANK2_FBIT25                                          CAN_F9BANK2_FBIT25_Msk                                         /*!<Filter bit 25 */
+#define CAN_F9BANK2_FBIT26_Pos                                      (26U)
+#define CAN_F9BANK2_FBIT26_Msk                                      (0x1UL << CAN_F9BANK2_FBIT26_Pos)                              /*!< 0x04000000 */
+#define CAN_F9BANK2_FBIT26                                          CAN_F9BANK2_FBIT26_Msk                                         /*!<Filter bit 26 */
+#define CAN_F9BANK2_FBIT27_Pos                                      (27U)
+#define CAN_F9BANK2_FBIT27_Msk                                      (0x1UL << CAN_F9BANK2_FBIT27_Pos)                              /*!< 0x08000000 */
+#define CAN_F9BANK2_FBIT27                                          CAN_F9BANK2_FBIT27_Msk                                         /*!<Filter bit 27 */
+#define CAN_F9BANK2_FBIT28_Pos                                      (28U)
+#define CAN_F9BANK2_FBIT28_Msk                                      (0x1UL << CAN_F9BANK2_FBIT28_Pos)                              /*!< 0x10000000 */
+#define CAN_F9BANK2_FBIT28                                          CAN_F9BANK2_FBIT28_Msk                                         /*!<Filter bit 28 */
+#define CAN_F9BANK2_FBIT29_Pos                                      (29U)
+#define CAN_F9BANK2_FBIT29_Msk                                      (0x1UL << CAN_F9BANK2_FBIT29_Pos)                              /*!< 0x20000000 */
+#define CAN_F9BANK2_FBIT29                                          CAN_F9BANK2_FBIT29_Msk                                         /*!<Filter bit 29 */
+#define CAN_F9BANK2_FBIT30_Pos                                      (30U)
+#define CAN_F9BANK2_FBIT30_Msk                                      (0x1UL << CAN_F9BANK2_FBIT30_Pos)                              /*!< 0x40000000 */
+#define CAN_F9BANK2_FBIT30                                          CAN_F9BANK2_FBIT30_Msk                                         /*!<Filter bit 30 */
+#define CAN_F9BANK2_FBIT31_Pos                                      (31U)
+#define CAN_F9BANK2_FBIT31_Msk                                      (0x1UL << CAN_F9BANK2_FBIT31_Pos)                              /*!< 0x80000000 */
+#define CAN_F9BANK2_FBIT31                                          CAN_F9BANK2_FBIT31_Msk                                         /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F10R2 register  ******************/
-#define CAN_F10R2_FB0_Pos                                           (0U)
-#define CAN_F10R2_FB0_Msk                                           (0x1UL << CAN_F10R2_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F10R2_FB0                                               CAN_F10R2_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F10R2_FB1_Pos                                           (1U)
-#define CAN_F10R2_FB1_Msk                                           (0x1UL << CAN_F10R2_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F10R2_FB1                                               CAN_F10R2_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F10R2_FB2_Pos                                           (2U)
-#define CAN_F10R2_FB2_Msk                                           (0x1UL << CAN_F10R2_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F10R2_FB2                                               CAN_F10R2_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F10R2_FB3_Pos                                           (3U)
-#define CAN_F10R2_FB3_Msk                                           (0x1UL << CAN_F10R2_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F10R2_FB3                                               CAN_F10R2_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F10R2_FB4_Pos                                           (4U)
-#define CAN_F10R2_FB4_Msk                                           (0x1UL << CAN_F10R2_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F10R2_FB4                                               CAN_F10R2_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F10R2_FB5_Pos                                           (5U)
-#define CAN_F10R2_FB5_Msk                                           (0x1UL << CAN_F10R2_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F10R2_FB5                                               CAN_F10R2_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F10R2_FB6_Pos                                           (6U)
-#define CAN_F10R2_FB6_Msk                                           (0x1UL << CAN_F10R2_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F10R2_FB6                                               CAN_F10R2_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F10R2_FB7_Pos                                           (7U)
-#define CAN_F10R2_FB7_Msk                                           (0x1UL << CAN_F10R2_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F10R2_FB7                                               CAN_F10R2_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F10R2_FB8_Pos                                           (8U)
-#define CAN_F10R2_FB8_Msk                                           (0x1UL << CAN_F10R2_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F10R2_FB8                                               CAN_F10R2_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F10R2_FB9_Pos                                           (9U)
-#define CAN_F10R2_FB9_Msk                                           (0x1UL << CAN_F10R2_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F10R2_FB9                                               CAN_F10R2_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F10R2_FB10_Pos                                          (10U)
-#define CAN_F10R2_FB10_Msk                                          (0x1UL << CAN_F10R2_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F10R2_FB10                                              CAN_F10R2_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F10R2_FB11_Pos                                          (11U)
-#define CAN_F10R2_FB11_Msk                                          (0x1UL << CAN_F10R2_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F10R2_FB11                                              CAN_F10R2_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F10R2_FB12_Pos                                          (12U)
-#define CAN_F10R2_FB12_Msk                                          (0x1UL << CAN_F10R2_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F10R2_FB12                                              CAN_F10R2_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F10R2_FB13_Pos                                          (13U)
-#define CAN_F10R2_FB13_Msk                                          (0x1UL << CAN_F10R2_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F10R2_FB13                                              CAN_F10R2_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F10R2_FB14_Pos                                          (14U)
-#define CAN_F10R2_FB14_Msk                                          (0x1UL << CAN_F10R2_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F10R2_FB14                                              CAN_F10R2_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F10R2_FB15_Pos                                          (15U)
-#define CAN_F10R2_FB15_Msk                                          (0x1UL << CAN_F10R2_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F10R2_FB15                                              CAN_F10R2_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F10R2_FB16_Pos                                          (16U)
-#define CAN_F10R2_FB16_Msk                                          (0x1UL << CAN_F10R2_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F10R2_FB16                                              CAN_F10R2_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F10R2_FB17_Pos                                          (17U)
-#define CAN_F10R2_FB17_Msk                                          (0x1UL << CAN_F10R2_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F10R2_FB17                                              CAN_F10R2_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F10R2_FB18_Pos                                          (18U)
-#define CAN_F10R2_FB18_Msk                                          (0x1UL << CAN_F10R2_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F10R2_FB18                                              CAN_F10R2_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F10R2_FB19_Pos                                          (19U)
-#define CAN_F10R2_FB19_Msk                                          (0x1UL << CAN_F10R2_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F10R2_FB19                                              CAN_F10R2_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F10R2_FB20_Pos                                          (20U)
-#define CAN_F10R2_FB20_Msk                                          (0x1UL << CAN_F10R2_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F10R2_FB20                                              CAN_F10R2_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F10R2_FB21_Pos                                          (21U)
-#define CAN_F10R2_FB21_Msk                                          (0x1UL << CAN_F10R2_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F10R2_FB21                                              CAN_F10R2_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F10R2_FB22_Pos                                          (22U)
-#define CAN_F10R2_FB22_Msk                                          (0x1UL << CAN_F10R2_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F10R2_FB22                                              CAN_F10R2_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F10R2_FB23_Pos                                          (23U)
-#define CAN_F10R2_FB23_Msk                                          (0x1UL << CAN_F10R2_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F10R2_FB23                                              CAN_F10R2_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F10R2_FB24_Pos                                          (24U)
-#define CAN_F10R2_FB24_Msk                                          (0x1UL << CAN_F10R2_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F10R2_FB24                                              CAN_F10R2_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F10R2_FB25_Pos                                          (25U)
-#define CAN_F10R2_FB25_Msk                                          (0x1UL << CAN_F10R2_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F10R2_FB25                                              CAN_F10R2_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F10R2_FB26_Pos                                          (26U)
-#define CAN_F10R2_FB26_Msk                                          (0x1UL << CAN_F10R2_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F10R2_FB26                                              CAN_F10R2_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F10R2_FB27_Pos                                          (27U)
-#define CAN_F10R2_FB27_Msk                                          (0x1UL << CAN_F10R2_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F10R2_FB27                                              CAN_F10R2_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F10R2_FB28_Pos                                          (28U)
-#define CAN_F10R2_FB28_Msk                                          (0x1UL << CAN_F10R2_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F10R2_FB28                                              CAN_F10R2_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F10R2_FB29_Pos                                          (29U)
-#define CAN_F10R2_FB29_Msk                                          (0x1UL << CAN_F10R2_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F10R2_FB29                                              CAN_F10R2_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F10R2_FB30_Pos                                          (30U)
-#define CAN_F10R2_FB30_Msk                                          (0x1UL << CAN_F10R2_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F10R2_FB30                                              CAN_F10R2_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F10R2_FB31_Pos                                          (31U)
-#define CAN_F10R2_FB31_Msk                                          (0x1UL << CAN_F10R2_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F10R2_FB31                                              CAN_F10R2_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F10BANK2 register  ******************/
+#define CAN_F10BANK2_FBIT0_Pos                                      (0U)
+#define CAN_F10BANK2_FBIT0_Msk                                      (0x1UL << CAN_F10BANK2_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F10BANK2_FBIT0                                          CAN_F10BANK2_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F10BANK2_FBIT1_Pos                                      (1U)
+#define CAN_F10BANK2_FBIT1_Msk                                      (0x1UL << CAN_F10BANK2_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F10BANK2_FBIT1                                          CAN_F10BANK2_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F10BANK2_FBIT2_Pos                                      (2U)
+#define CAN_F10BANK2_FBIT2_Msk                                      (0x1UL << CAN_F10BANK2_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F10BANK2_FBIT2                                          CAN_F10BANK2_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F10BANK2_FBIT3_Pos                                      (3U)
+#define CAN_F10BANK2_FBIT3_Msk                                      (0x1UL << CAN_F10BANK2_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F10BANK2_FBIT3                                          CAN_F10BANK2_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F10BANK2_FBIT4_Pos                                      (4U)
+#define CAN_F10BANK2_FBIT4_Msk                                      (0x1UL << CAN_F10BANK2_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F10BANK2_FBIT4                                          CAN_F10BANK2_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F10BANK2_FBIT5_Pos                                      (5U)
+#define CAN_F10BANK2_FBIT5_Msk                                      (0x1UL << CAN_F10BANK2_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F10BANK2_FBIT5                                          CAN_F10BANK2_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F10BANK2_FBIT6_Pos                                      (6U)
+#define CAN_F10BANK2_FBIT6_Msk                                      (0x1UL << CAN_F10BANK2_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F10BANK2_FBIT6                                          CAN_F10BANK2_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F10BANK2_FBIT7_Pos                                      (7U)
+#define CAN_F10BANK2_FBIT7_Msk                                      (0x1UL << CAN_F10BANK2_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F10BANK2_FBIT7                                          CAN_F10BANK2_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F10BANK2_FBIT8_Pos                                      (8U)
+#define CAN_F10BANK2_FBIT8_Msk                                      (0x1UL << CAN_F10BANK2_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F10BANK2_FBIT8                                          CAN_F10BANK2_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F10BANK2_FBIT9_Pos                                      (9U)
+#define CAN_F10BANK2_FBIT9_Msk                                      (0x1UL << CAN_F10BANK2_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F10BANK2_FBIT9                                          CAN_F10BANK2_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F10BANK2_FBIT10_Pos                                     (10U)
+#define CAN_F10BANK2_FBIT10_Msk                                     (0x1UL << CAN_F10BANK2_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F10BANK2_FBIT10                                         CAN_F10BANK2_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F10BANK2_FBIT11_Pos                                     (11U)
+#define CAN_F10BANK2_FBIT11_Msk                                     (0x1UL << CAN_F10BANK2_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F10BANK2_FBIT11                                         CAN_F10BANK2_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F10BANK2_FBIT12_Pos                                     (12U)
+#define CAN_F10BANK2_FBIT12_Msk                                     (0x1UL << CAN_F10BANK2_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F10BANK2_FBIT12                                         CAN_F10BANK2_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F10BANK2_FBIT13_Pos                                     (13U)
+#define CAN_F10BANK2_FBIT13_Msk                                     (0x1UL << CAN_F10BANK2_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F10BANK2_FBIT13                                         CAN_F10BANK2_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F10BANK2_FBIT14_Pos                                     (14U)
+#define CAN_F10BANK2_FBIT14_Msk                                     (0x1UL << CAN_F10BANK2_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F10BANK2_FBIT14                                         CAN_F10BANK2_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F10BANK2_FBIT15_Pos                                     (15U)
+#define CAN_F10BANK2_FBIT15_Msk                                     (0x1UL << CAN_F10BANK2_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F10BANK2_FBIT15                                         CAN_F10BANK2_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F10BANK2_FBIT16_Pos                                     (16U)
+#define CAN_F10BANK2_FBIT16_Msk                                     (0x1UL << CAN_F10BANK2_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F10BANK2_FBIT16                                         CAN_F10BANK2_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F10BANK2_FBIT17_Pos                                     (17U)
+#define CAN_F10BANK2_FBIT17_Msk                                     (0x1UL << CAN_F10BANK2_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F10BANK2_FBIT17                                         CAN_F10BANK2_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F10BANK2_FBIT18_Pos                                     (18U)
+#define CAN_F10BANK2_FBIT18_Msk                                     (0x1UL << CAN_F10BANK2_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F10BANK2_FBIT18                                         CAN_F10BANK2_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F10BANK2_FBIT19_Pos                                     (19U)
+#define CAN_F10BANK2_FBIT19_Msk                                     (0x1UL << CAN_F10BANK2_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F10BANK2_FBIT19                                         CAN_F10BANK2_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F10BANK2_FBIT20_Pos                                     (20U)
+#define CAN_F10BANK2_FBIT20_Msk                                     (0x1UL << CAN_F10BANK2_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F10BANK2_FBIT20                                         CAN_F10BANK2_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F10BANK2_FBIT21_Pos                                     (21U)
+#define CAN_F10BANK2_FBIT21_Msk                                     (0x1UL << CAN_F10BANK2_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F10BANK2_FBIT21                                         CAN_F10BANK2_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F10BANK2_FBIT22_Pos                                     (22U)
+#define CAN_F10BANK2_FBIT22_Msk                                     (0x1UL << CAN_F10BANK2_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F10BANK2_FBIT22                                         CAN_F10BANK2_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F10BANK2_FBIT23_Pos                                     (23U)
+#define CAN_F10BANK2_FBIT23_Msk                                     (0x1UL << CAN_F10BANK2_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F10BANK2_FBIT23                                         CAN_F10BANK2_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F10BANK2_FBIT24_Pos                                     (24U)
+#define CAN_F10BANK2_FBIT24_Msk                                     (0x1UL << CAN_F10BANK2_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F10BANK2_FBIT24                                         CAN_F10BANK2_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F10BANK2_FBIT25_Pos                                     (25U)
+#define CAN_F10BANK2_FBIT25_Msk                                     (0x1UL << CAN_F10BANK2_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F10BANK2_FBIT25                                         CAN_F10BANK2_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F10BANK2_FBIT26_Pos                                     (26U)
+#define CAN_F10BANK2_FBIT26_Msk                                     (0x1UL << CAN_F10BANK2_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F10BANK2_FBIT26                                         CAN_F10BANK2_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F10BANK2_FBIT27_Pos                                     (27U)
+#define CAN_F10BANK2_FBIT27_Msk                                     (0x1UL << CAN_F10BANK2_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F10BANK2_FBIT27                                         CAN_F10BANK2_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F10BANK2_FBIT28_Pos                                     (28U)
+#define CAN_F10BANK2_FBIT28_Msk                                     (0x1UL << CAN_F10BANK2_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F10BANK2_FBIT28                                         CAN_F10BANK2_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F10BANK2_FBIT29_Pos                                     (29U)
+#define CAN_F10BANK2_FBIT29_Msk                                     (0x1UL << CAN_F10BANK2_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F10BANK2_FBIT29                                         CAN_F10BANK2_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F10BANK2_FBIT30_Pos                                     (30U)
+#define CAN_F10BANK2_FBIT30_Msk                                     (0x1UL << CAN_F10BANK2_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F10BANK2_FBIT30                                         CAN_F10BANK2_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F10BANK2_FBIT31_Pos                                     (31U)
+#define CAN_F10BANK2_FBIT31_Msk                                     (0x1UL << CAN_F10BANK2_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F10BANK2_FBIT31                                         CAN_F10BANK2_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F11R2 register  ******************/
-#define CAN_F11R2_FB0_Pos                                           (0U)
-#define CAN_F11R2_FB0_Msk                                           (0x1UL << CAN_F11R2_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F11R2_FB0                                               CAN_F11R2_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F11R2_FB1_Pos                                           (1U)
-#define CAN_F11R2_FB1_Msk                                           (0x1UL << CAN_F11R2_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F11R2_FB1                                               CAN_F11R2_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F11R2_FB2_Pos                                           (2U)
-#define CAN_F11R2_FB2_Msk                                           (0x1UL << CAN_F11R2_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F11R2_FB2                                               CAN_F11R2_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F11R2_FB3_Pos                                           (3U)
-#define CAN_F11R2_FB3_Msk                                           (0x1UL << CAN_F11R2_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F11R2_FB3                                               CAN_F11R2_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F11R2_FB4_Pos                                           (4U)
-#define CAN_F11R2_FB4_Msk                                           (0x1UL << CAN_F11R2_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F11R2_FB4                                               CAN_F11R2_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F11R2_FB5_Pos                                           (5U)
-#define CAN_F11R2_FB5_Msk                                           (0x1UL << CAN_F11R2_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F11R2_FB5                                               CAN_F11R2_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F11R2_FB6_Pos                                           (6U)
-#define CAN_F11R2_FB6_Msk                                           (0x1UL << CAN_F11R2_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F11R2_FB6                                               CAN_F11R2_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F11R2_FB7_Pos                                           (7U)
-#define CAN_F11R2_FB7_Msk                                           (0x1UL << CAN_F11R2_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F11R2_FB7                                               CAN_F11R2_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F11R2_FB8_Pos                                           (8U)
-#define CAN_F11R2_FB8_Msk                                           (0x1UL << CAN_F11R2_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F11R2_FB8                                               CAN_F11R2_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F11R2_FB9_Pos                                           (9U)
-#define CAN_F11R2_FB9_Msk                                           (0x1UL << CAN_F11R2_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F11R2_FB9                                               CAN_F11R2_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F11R2_FB10_Pos                                          (10U)
-#define CAN_F11R2_FB10_Msk                                          (0x1UL << CAN_F11R2_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F11R2_FB10                                              CAN_F11R2_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F11R2_FB11_Pos                                          (11U)
-#define CAN_F11R2_FB11_Msk                                          (0x1UL << CAN_F11R2_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F11R2_FB11                                              CAN_F11R2_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F11R2_FB12_Pos                                          (12U)
-#define CAN_F11R2_FB12_Msk                                          (0x1UL << CAN_F11R2_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F11R2_FB12                                              CAN_F11R2_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F11R2_FB13_Pos                                          (13U)
-#define CAN_F11R2_FB13_Msk                                          (0x1UL << CAN_F11R2_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F11R2_FB13                                              CAN_F11R2_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F11R2_FB14_Pos                                          (14U)
-#define CAN_F11R2_FB14_Msk                                          (0x1UL << CAN_F11R2_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F11R2_FB14                                              CAN_F11R2_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F11R2_FB15_Pos                                          (15U)
-#define CAN_F11R2_FB15_Msk                                          (0x1UL << CAN_F11R2_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F11R2_FB15                                              CAN_F11R2_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F11R2_FB16_Pos                                          (16U)
-#define CAN_F11R2_FB16_Msk                                          (0x1UL << CAN_F11R2_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F11R2_FB16                                              CAN_F11R2_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F11R2_FB17_Pos                                          (17U)
-#define CAN_F11R2_FB17_Msk                                          (0x1UL << CAN_F11R2_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F11R2_FB17                                              CAN_F11R2_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F11R2_FB18_Pos                                          (18U)
-#define CAN_F11R2_FB18_Msk                                          (0x1UL << CAN_F11R2_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F11R2_FB18                                              CAN_F11R2_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F11R2_FB19_Pos                                          (19U)
-#define CAN_F11R2_FB19_Msk                                          (0x1UL << CAN_F11R2_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F11R2_FB19                                              CAN_F11R2_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F11R2_FB20_Pos                                          (20U)
-#define CAN_F11R2_FB20_Msk                                          (0x1UL << CAN_F11R2_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F11R2_FB20                                              CAN_F11R2_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F11R2_FB21_Pos                                          (21U)
-#define CAN_F11R2_FB21_Msk                                          (0x1UL << CAN_F11R2_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F11R2_FB21                                              CAN_F11R2_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F11R2_FB22_Pos                                          (22U)
-#define CAN_F11R2_FB22_Msk                                          (0x1UL << CAN_F11R2_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F11R2_FB22                                              CAN_F11R2_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F11R2_FB23_Pos                                          (23U)
-#define CAN_F11R2_FB23_Msk                                          (0x1UL << CAN_F11R2_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F11R2_FB23                                              CAN_F11R2_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F11R2_FB24_Pos                                          (24U)
-#define CAN_F11R2_FB24_Msk                                          (0x1UL << CAN_F11R2_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F11R2_FB24                                              CAN_F11R2_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F11R2_FB25_Pos                                          (25U)
-#define CAN_F11R2_FB25_Msk                                          (0x1UL << CAN_F11R2_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F11R2_FB25                                              CAN_F11R2_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F11R2_FB26_Pos                                          (26U)
-#define CAN_F11R2_FB26_Msk                                          (0x1UL << CAN_F11R2_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F11R2_FB26                                              CAN_F11R2_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F11R2_FB27_Pos                                          (27U)
-#define CAN_F11R2_FB27_Msk                                          (0x1UL << CAN_F11R2_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F11R2_FB27                                              CAN_F11R2_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F11R2_FB28_Pos                                          (28U)
-#define CAN_F11R2_FB28_Msk                                          (0x1UL << CAN_F11R2_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F11R2_FB28                                              CAN_F11R2_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F11R2_FB29_Pos                                          (29U)
-#define CAN_F11R2_FB29_Msk                                          (0x1UL << CAN_F11R2_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F11R2_FB29                                              CAN_F11R2_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F11R2_FB30_Pos                                          (30U)
-#define CAN_F11R2_FB30_Msk                                          (0x1UL << CAN_F11R2_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F11R2_FB30                                              CAN_F11R2_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F11R2_FB31_Pos                                          (31U)
-#define CAN_F11R2_FB31_Msk                                          (0x1UL << CAN_F11R2_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F11R2_FB31                                              CAN_F11R2_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F11BANK2 register  ******************/
+#define CAN_F11BANK2_FBIT0_Pos                                      (0U)
+#define CAN_F11BANK2_FBIT0_Msk                                      (0x1UL << CAN_F11BANK2_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F11BANK2_FBIT0                                          CAN_F11BANK2_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F11BANK2_FBIT1_Pos                                      (1U)
+#define CAN_F11BANK2_FBIT1_Msk                                      (0x1UL << CAN_F11BANK2_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F11BANK2_FBIT1                                          CAN_F11BANK2_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F11BANK2_FBIT2_Pos                                      (2U)
+#define CAN_F11BANK2_FBIT2_Msk                                      (0x1UL << CAN_F11BANK2_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F11BANK2_FBIT2                                          CAN_F11BANK2_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F11BANK2_FBIT3_Pos                                      (3U)
+#define CAN_F11BANK2_FBIT3_Msk                                      (0x1UL << CAN_F11BANK2_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F11BANK2_FBIT3                                          CAN_F11BANK2_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F11BANK2_FBIT4_Pos                                      (4U)
+#define CAN_F11BANK2_FBIT4_Msk                                      (0x1UL << CAN_F11BANK2_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F11BANK2_FBIT4                                          CAN_F11BANK2_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F11BANK2_FBIT5_Pos                                      (5U)
+#define CAN_F11BANK2_FBIT5_Msk                                      (0x1UL << CAN_F11BANK2_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F11BANK2_FBIT5                                          CAN_F11BANK2_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F11BANK2_FBIT6_Pos                                      (6U)
+#define CAN_F11BANK2_FBIT6_Msk                                      (0x1UL << CAN_F11BANK2_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F11BANK2_FBIT6                                          CAN_F11BANK2_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F11BANK2_FBIT7_Pos                                      (7U)
+#define CAN_F11BANK2_FBIT7_Msk                                      (0x1UL << CAN_F11BANK2_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F11BANK2_FBIT7                                          CAN_F11BANK2_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F11BANK2_FBIT8_Pos                                      (8U)
+#define CAN_F11BANK2_FBIT8_Msk                                      (0x1UL << CAN_F11BANK2_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F11BANK2_FBIT8                                          CAN_F11BANK2_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F11BANK2_FBIT9_Pos                                      (9U)
+#define CAN_F11BANK2_FBIT9_Msk                                      (0x1UL << CAN_F11BANK2_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F11BANK2_FBIT9                                          CAN_F11BANK2_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F11BANK2_FBIT10_Pos                                     (10U)
+#define CAN_F11BANK2_FBIT10_Msk                                     (0x1UL << CAN_F11BANK2_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F11BANK2_FBIT10                                         CAN_F11BANK2_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F11BANK2_FBIT11_Pos                                     (11U)
+#define CAN_F11BANK2_FBIT11_Msk                                     (0x1UL << CAN_F11BANK2_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F11BANK2_FBIT11                                         CAN_F11BANK2_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F11BANK2_FBIT12_Pos                                     (12U)
+#define CAN_F11BANK2_FBIT12_Msk                                     (0x1UL << CAN_F11BANK2_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F11BANK2_FBIT12                                         CAN_F11BANK2_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F11BANK2_FBIT13_Pos                                     (13U)
+#define CAN_F11BANK2_FBIT13_Msk                                     (0x1UL << CAN_F11BANK2_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F11BANK2_FBIT13                                         CAN_F11BANK2_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F11BANK2_FBIT14_Pos                                     (14U)
+#define CAN_F11BANK2_FBIT14_Msk                                     (0x1UL << CAN_F11BANK2_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F11BANK2_FBIT14                                         CAN_F11BANK2_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F11BANK2_FBIT15_Pos                                     (15U)
+#define CAN_F11BANK2_FBIT15_Msk                                     (0x1UL << CAN_F11BANK2_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F11BANK2_FBIT15                                         CAN_F11BANK2_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F11BANK2_FBIT16_Pos                                     (16U)
+#define CAN_F11BANK2_FBIT16_Msk                                     (0x1UL << CAN_F11BANK2_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F11BANK2_FBIT16                                         CAN_F11BANK2_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F11BANK2_FBIT17_Pos                                     (17U)
+#define CAN_F11BANK2_FBIT17_Msk                                     (0x1UL << CAN_F11BANK2_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F11BANK2_FBIT17                                         CAN_F11BANK2_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F11BANK2_FBIT18_Pos                                     (18U)
+#define CAN_F11BANK2_FBIT18_Msk                                     (0x1UL << CAN_F11BANK2_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F11BANK2_FBIT18                                         CAN_F11BANK2_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F11BANK2_FBIT19_Pos                                     (19U)
+#define CAN_F11BANK2_FBIT19_Msk                                     (0x1UL << CAN_F11BANK2_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F11BANK2_FBIT19                                         CAN_F11BANK2_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F11BANK2_FBIT20_Pos                                     (20U)
+#define CAN_F11BANK2_FBIT20_Msk                                     (0x1UL << CAN_F11BANK2_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F11BANK2_FBIT20                                         CAN_F11BANK2_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F11BANK2_FBIT21_Pos                                     (21U)
+#define CAN_F11BANK2_FBIT21_Msk                                     (0x1UL << CAN_F11BANK2_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F11BANK2_FBIT21                                         CAN_F11BANK2_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F11BANK2_FBIT22_Pos                                     (22U)
+#define CAN_F11BANK2_FBIT22_Msk                                     (0x1UL << CAN_F11BANK2_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F11BANK2_FBIT22                                         CAN_F11BANK2_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F11BANK2_FBIT23_Pos                                     (23U)
+#define CAN_F11BANK2_FBIT23_Msk                                     (0x1UL << CAN_F11BANK2_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F11BANK2_FBIT23                                         CAN_F11BANK2_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F11BANK2_FBIT24_Pos                                     (24U)
+#define CAN_F11BANK2_FBIT24_Msk                                     (0x1UL << CAN_F11BANK2_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F11BANK2_FBIT24                                         CAN_F11BANK2_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F11BANK2_FBIT25_Pos                                     (25U)
+#define CAN_F11BANK2_FBIT25_Msk                                     (0x1UL << CAN_F11BANK2_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F11BANK2_FBIT25                                         CAN_F11BANK2_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F11BANK2_FBIT26_Pos                                     (26U)
+#define CAN_F11BANK2_FBIT26_Msk                                     (0x1UL << CAN_F11BANK2_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F11BANK2_FBIT26                                         CAN_F11BANK2_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F11BANK2_FBIT27_Pos                                     (27U)
+#define CAN_F11BANK2_FBIT27_Msk                                     (0x1UL << CAN_F11BANK2_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F11BANK2_FBIT27                                         CAN_F11BANK2_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F11BANK2_FBIT28_Pos                                     (28U)
+#define CAN_F11BANK2_FBIT28_Msk                                     (0x1UL << CAN_F11BANK2_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F11BANK2_FBIT28                                         CAN_F11BANK2_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F11BANK2_FBIT29_Pos                                     (29U)
+#define CAN_F11BANK2_FBIT29_Msk                                     (0x1UL << CAN_F11BANK2_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F11BANK2_FBIT29                                         CAN_F11BANK2_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F11BANK2_FBIT30_Pos                                     (30U)
+#define CAN_F11BANK2_FBIT30_Msk                                     (0x1UL << CAN_F11BANK2_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F11BANK2_FBIT30                                         CAN_F11BANK2_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F11BANK2_FBIT31_Pos                                     (31U)
+#define CAN_F11BANK2_FBIT31_Msk                                     (0x1UL << CAN_F11BANK2_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F11BANK2_FBIT31                                         CAN_F11BANK2_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F12R2 register  ******************/
-#define CAN_F12R2_FB0_Pos                                           (0U)
-#define CAN_F12R2_FB0_Msk                                           (0x1UL << CAN_F12R2_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F12R2_FB0                                               CAN_F12R2_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F12R2_FB1_Pos                                           (1U)
-#define CAN_F12R2_FB1_Msk                                           (0x1UL << CAN_F12R2_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F12R2_FB1                                               CAN_F12R2_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F12R2_FB2_Pos                                           (2U)
-#define CAN_F12R2_FB2_Msk                                           (0x1UL << CAN_F12R2_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F12R2_FB2                                               CAN_F12R2_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F12R2_FB3_Pos                                           (3U)
-#define CAN_F12R2_FB3_Msk                                           (0x1UL << CAN_F12R2_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F12R2_FB3                                               CAN_F12R2_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F12R2_FB4_Pos                                           (4U)
-#define CAN_F12R2_FB4_Msk                                           (0x1UL << CAN_F12R2_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F12R2_FB4                                               CAN_F12R2_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F12R2_FB5_Pos                                           (5U)
-#define CAN_F12R2_FB5_Msk                                           (0x1UL << CAN_F12R2_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F12R2_FB5                                               CAN_F12R2_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F12R2_FB6_Pos                                           (6U)
-#define CAN_F12R2_FB6_Msk                                           (0x1UL << CAN_F12R2_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F12R2_FB6                                               CAN_F12R2_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F12R2_FB7_Pos                                           (7U)
-#define CAN_F12R2_FB7_Msk                                           (0x1UL << CAN_F12R2_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F12R2_FB7                                               CAN_F12R2_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F12R2_FB8_Pos                                           (8U)
-#define CAN_F12R2_FB8_Msk                                           (0x1UL << CAN_F12R2_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F12R2_FB8                                               CAN_F12R2_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F12R2_FB9_Pos                                           (9U)
-#define CAN_F12R2_FB9_Msk                                           (0x1UL << CAN_F12R2_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F12R2_FB9                                               CAN_F12R2_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F12R2_FB10_Pos                                          (10U)
-#define CAN_F12R2_FB10_Msk                                          (0x1UL << CAN_F12R2_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F12R2_FB10                                              CAN_F12R2_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F12R2_FB11_Pos                                          (11U)
-#define CAN_F12R2_FB11_Msk                                          (0x1UL << CAN_F12R2_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F12R2_FB11                                              CAN_F12R2_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F12R2_FB12_Pos                                          (12U)
-#define CAN_F12R2_FB12_Msk                                          (0x1UL << CAN_F12R2_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F12R2_FB12                                              CAN_F12R2_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F12R2_FB13_Pos                                          (13U)
-#define CAN_F12R2_FB13_Msk                                          (0x1UL << CAN_F12R2_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F12R2_FB13                                              CAN_F12R2_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F12R2_FB14_Pos                                          (14U)
-#define CAN_F12R2_FB14_Msk                                          (0x1UL << CAN_F12R2_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F12R2_FB14                                              CAN_F12R2_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F12R2_FB15_Pos                                          (15U)
-#define CAN_F12R2_FB15_Msk                                          (0x1UL << CAN_F12R2_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F12R2_FB15                                              CAN_F12R2_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F12R2_FB16_Pos                                          (16U)
-#define CAN_F12R2_FB16_Msk                                          (0x1UL << CAN_F12R2_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F12R2_FB16                                              CAN_F12R2_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F12R2_FB17_Pos                                          (17U)
-#define CAN_F12R2_FB17_Msk                                          (0x1UL << CAN_F12R2_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F12R2_FB17                                              CAN_F12R2_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F12R2_FB18_Pos                                          (18U)
-#define CAN_F12R2_FB18_Msk                                          (0x1UL << CAN_F12R2_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F12R2_FB18                                              CAN_F12R2_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F12R2_FB19_Pos                                          (19U)
-#define CAN_F12R2_FB19_Msk                                          (0x1UL << CAN_F12R2_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F12R2_FB19                                              CAN_F12R2_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F12R2_FB20_Pos                                          (20U)
-#define CAN_F12R2_FB20_Msk                                          (0x1UL << CAN_F12R2_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F12R2_FB20                                              CAN_F12R2_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F12R2_FB21_Pos                                          (21U)
-#define CAN_F12R2_FB21_Msk                                          (0x1UL << CAN_F12R2_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F12R2_FB21                                              CAN_F12R2_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F12R2_FB22_Pos                                          (22U)
-#define CAN_F12R2_FB22_Msk                                          (0x1UL << CAN_F12R2_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F12R2_FB22                                              CAN_F12R2_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F12R2_FB23_Pos                                          (23U)
-#define CAN_F12R2_FB23_Msk                                          (0x1UL << CAN_F12R2_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F12R2_FB23                                              CAN_F12R2_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F12R2_FB24_Pos                                          (24U)
-#define CAN_F12R2_FB24_Msk                                          (0x1UL << CAN_F12R2_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F12R2_FB24                                              CAN_F12R2_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F12R2_FB25_Pos                                          (25U)
-#define CAN_F12R2_FB25_Msk                                          (0x1UL << CAN_F12R2_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F12R2_FB25                                              CAN_F12R2_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F12R2_FB26_Pos                                          (26U)
-#define CAN_F12R2_FB26_Msk                                          (0x1UL << CAN_F12R2_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F12R2_FB26                                              CAN_F12R2_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F12R2_FB27_Pos                                          (27U)
-#define CAN_F12R2_FB27_Msk                                          (0x1UL << CAN_F12R2_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F12R2_FB27                                              CAN_F12R2_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F12R2_FB28_Pos                                          (28U)
-#define CAN_F12R2_FB28_Msk                                          (0x1UL << CAN_F12R2_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F12R2_FB28                                              CAN_F12R2_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F12R2_FB29_Pos                                          (29U)
-#define CAN_F12R2_FB29_Msk                                          (0x1UL << CAN_F12R2_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F12R2_FB29                                              CAN_F12R2_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F12R2_FB30_Pos                                          (30U)
-#define CAN_F12R2_FB30_Msk                                          (0x1UL << CAN_F12R2_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F12R2_FB30                                              CAN_F12R2_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F12R2_FB31_Pos                                          (31U)
-#define CAN_F12R2_FB31_Msk                                          (0x1UL << CAN_F12R2_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F12R2_FB31                                              CAN_F12R2_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F12BANK2 register  ******************/
+#define CAN_F12BANK2_FBIT0_Pos                                      (0U)
+#define CAN_F12BANK2_FBIT0_Msk                                      (0x1UL << CAN_F12BANK2_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F12BANK2_FBIT0                                          CAN_F12BANK2_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F12BANK2_FBIT1_Pos                                      (1U)
+#define CAN_F12BANK2_FBIT1_Msk                                      (0x1UL << CAN_F12BANK2_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F12BANK2_FBIT1                                          CAN_F12BANK2_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F12BANK2_FBIT2_Pos                                      (2U)
+#define CAN_F12BANK2_FBIT2_Msk                                      (0x1UL << CAN_F12BANK2_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F12BANK2_FBIT2                                          CAN_F12BANK2_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F12BANK2_FBIT3_Pos                                      (3U)
+#define CAN_F12BANK2_FBIT3_Msk                                      (0x1UL << CAN_F12BANK2_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F12BANK2_FBIT3                                          CAN_F12BANK2_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F12BANK2_FBIT4_Pos                                      (4U)
+#define CAN_F12BANK2_FBIT4_Msk                                      (0x1UL << CAN_F12BANK2_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F12BANK2_FBIT4                                          CAN_F12BANK2_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F12BANK2_FBIT5_Pos                                      (5U)
+#define CAN_F12BANK2_FBIT5_Msk                                      (0x1UL << CAN_F12BANK2_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F12BANK2_FBIT5                                          CAN_F12BANK2_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F12BANK2_FBIT6_Pos                                      (6U)
+#define CAN_F12BANK2_FBIT6_Msk                                      (0x1UL << CAN_F12BANK2_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F12BANK2_FBIT6                                          CAN_F12BANK2_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F12BANK2_FBIT7_Pos                                      (7U)
+#define CAN_F12BANK2_FBIT7_Msk                                      (0x1UL << CAN_F12BANK2_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F12BANK2_FBIT7                                          CAN_F12BANK2_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F12BANK2_FBIT8_Pos                                      (8U)
+#define CAN_F12BANK2_FBIT8_Msk                                      (0x1UL << CAN_F12BANK2_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F12BANK2_FBIT8                                          CAN_F12BANK2_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F12BANK2_FBIT9_Pos                                      (9U)
+#define CAN_F12BANK2_FBIT9_Msk                                      (0x1UL << CAN_F12BANK2_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F12BANK2_FBIT9                                          CAN_F12BANK2_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F12BANK2_FBIT10_Pos                                     (10U)
+#define CAN_F12BANK2_FBIT10_Msk                                     (0x1UL << CAN_F12BANK2_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F12BANK2_FBIT10                                         CAN_F12BANK2_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F12BANK2_FBIT11_Pos                                     (11U)
+#define CAN_F12BANK2_FBIT11_Msk                                     (0x1UL << CAN_F12BANK2_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F12BANK2_FBIT11                                         CAN_F12BANK2_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F12BANK2_FBIT12_Pos                                     (12U)
+#define CAN_F12BANK2_FBIT12_Msk                                     (0x1UL << CAN_F12BANK2_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F12BANK2_FBIT12                                         CAN_F12BANK2_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F12BANK2_FBIT13_Pos                                     (13U)
+#define CAN_F12BANK2_FBIT13_Msk                                     (0x1UL << CAN_F12BANK2_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F12BANK2_FBIT13                                         CAN_F12BANK2_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F12BANK2_FBIT14_Pos                                     (14U)
+#define CAN_F12BANK2_FBIT14_Msk                                     (0x1UL << CAN_F12BANK2_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F12BANK2_FBIT14                                         CAN_F12BANK2_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F12BANK2_FBIT15_Pos                                     (15U)
+#define CAN_F12BANK2_FBIT15_Msk                                     (0x1UL << CAN_F12BANK2_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F12BANK2_FBIT15                                         CAN_F12BANK2_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F12BANK2_FBIT16_Pos                                     (16U)
+#define CAN_F12BANK2_FBIT16_Msk                                     (0x1UL << CAN_F12BANK2_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F12BANK2_FBIT16                                         CAN_F12BANK2_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F12BANK2_FBIT17_Pos                                     (17U)
+#define CAN_F12BANK2_FBIT17_Msk                                     (0x1UL << CAN_F12BANK2_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F12BANK2_FBIT17                                         CAN_F12BANK2_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F12BANK2_FBIT18_Pos                                     (18U)
+#define CAN_F12BANK2_FBIT18_Msk                                     (0x1UL << CAN_F12BANK2_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F12BANK2_FBIT18                                         CAN_F12BANK2_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F12BANK2_FBIT19_Pos                                     (19U)
+#define CAN_F12BANK2_FBIT19_Msk                                     (0x1UL << CAN_F12BANK2_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F12BANK2_FBIT19                                         CAN_F12BANK2_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F12BANK2_FBIT20_Pos                                     (20U)
+#define CAN_F12BANK2_FBIT20_Msk                                     (0x1UL << CAN_F12BANK2_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F12BANK2_FBIT20                                         CAN_F12BANK2_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F12BANK2_FBIT21_Pos                                     (21U)
+#define CAN_F12BANK2_FBIT21_Msk                                     (0x1UL << CAN_F12BANK2_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F12BANK2_FBIT21                                         CAN_F12BANK2_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F12BANK2_FBIT22_Pos                                     (22U)
+#define CAN_F12BANK2_FBIT22_Msk                                     (0x1UL << CAN_F12BANK2_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F12BANK2_FBIT22                                         CAN_F12BANK2_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F12BANK2_FBIT23_Pos                                     (23U)
+#define CAN_F12BANK2_FBIT23_Msk                                     (0x1UL << CAN_F12BANK2_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F12BANK2_FBIT23                                         CAN_F12BANK2_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F12BANK2_FBIT24_Pos                                     (24U)
+#define CAN_F12BANK2_FBIT24_Msk                                     (0x1UL << CAN_F12BANK2_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F12BANK2_FBIT24                                         CAN_F12BANK2_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F12BANK2_FBIT25_Pos                                     (25U)
+#define CAN_F12BANK2_FBIT25_Msk                                     (0x1UL << CAN_F12BANK2_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F12BANK2_FBIT25                                         CAN_F12BANK2_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F12BANK2_FBIT26_Pos                                     (26U)
+#define CAN_F12BANK2_FBIT26_Msk                                     (0x1UL << CAN_F12BANK2_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F12BANK2_FBIT26                                         CAN_F12BANK2_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F12BANK2_FBIT27_Pos                                     (27U)
+#define CAN_F12BANK2_FBIT27_Msk                                     (0x1UL << CAN_F12BANK2_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F12BANK2_FBIT27                                         CAN_F12BANK2_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F12BANK2_FBIT28_Pos                                     (28U)
+#define CAN_F12BANK2_FBIT28_Msk                                     (0x1UL << CAN_F12BANK2_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F12BANK2_FBIT28                                         CAN_F12BANK2_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F12BANK2_FBIT29_Pos                                     (29U)
+#define CAN_F12BANK2_FBIT29_Msk                                     (0x1UL << CAN_F12BANK2_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F12BANK2_FBIT29                                         CAN_F12BANK2_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F12BANK2_FBIT30_Pos                                     (30U)
+#define CAN_F12BANK2_FBIT30_Msk                                     (0x1UL << CAN_F12BANK2_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F12BANK2_FBIT30                                         CAN_F12BANK2_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F12BANK2_FBIT31_Pos                                     (31U)
+#define CAN_F12BANK2_FBIT31_Msk                                     (0x1UL << CAN_F12BANK2_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F12BANK2_FBIT31                                         CAN_F12BANK2_FBIT31_Msk                                        /*!<Filter bit 31 */
 
-/*******************  Bit definition for CAN_F13R2 register  ******************/
-#define CAN_F13R2_FB0_Pos                                           (0U)
-#define CAN_F13R2_FB0_Msk                                           (0x1UL << CAN_F13R2_FB0_Pos)                                   /*!< 0x00000001 */
-#define CAN_F13R2_FB0                                               CAN_F13R2_FB0_Msk                                              /*!<Filter bit 0 */
-#define CAN_F13R2_FB1_Pos                                           (1U)
-#define CAN_F13R2_FB1_Msk                                           (0x1UL << CAN_F13R2_FB1_Pos)                                   /*!< 0x00000002 */
-#define CAN_F13R2_FB1                                               CAN_F13R2_FB1_Msk                                              /*!<Filter bit 1 */
-#define CAN_F13R2_FB2_Pos                                           (2U)
-#define CAN_F13R2_FB2_Msk                                           (0x1UL << CAN_F13R2_FB2_Pos)                                   /*!< 0x00000004 */
-#define CAN_F13R2_FB2                                               CAN_F13R2_FB2_Msk                                              /*!<Filter bit 2 */
-#define CAN_F13R2_FB3_Pos                                           (3U)
-#define CAN_F13R2_FB3_Msk                                           (0x1UL << CAN_F13R2_FB3_Pos)                                   /*!< 0x00000008 */
-#define CAN_F13R2_FB3                                               CAN_F13R2_FB3_Msk                                              /*!<Filter bit 3 */
-#define CAN_F13R2_FB4_Pos                                           (4U)
-#define CAN_F13R2_FB4_Msk                                           (0x1UL << CAN_F13R2_FB4_Pos)                                   /*!< 0x00000010 */
-#define CAN_F13R2_FB4                                               CAN_F13R2_FB4_Msk                                              /*!<Filter bit 4 */
-#define CAN_F13R2_FB5_Pos                                           (5U)
-#define CAN_F13R2_FB5_Msk                                           (0x1UL << CAN_F13R2_FB5_Pos)                                   /*!< 0x00000020 */
-#define CAN_F13R2_FB5                                               CAN_F13R2_FB5_Msk                                              /*!<Filter bit 5 */
-#define CAN_F13R2_FB6_Pos                                           (6U)
-#define CAN_F13R2_FB6_Msk                                           (0x1UL << CAN_F13R2_FB6_Pos)                                   /*!< 0x00000040 */
-#define CAN_F13R2_FB6                                               CAN_F13R2_FB6_Msk                                              /*!<Filter bit 6 */
-#define CAN_F13R2_FB7_Pos                                           (7U)
-#define CAN_F13R2_FB7_Msk                                           (0x1UL << CAN_F13R2_FB7_Pos)                                   /*!< 0x00000080 */
-#define CAN_F13R2_FB7                                               CAN_F13R2_FB7_Msk                                              /*!<Filter bit 7 */
-#define CAN_F13R2_FB8_Pos                                           (8U)
-#define CAN_F13R2_FB8_Msk                                           (0x1UL << CAN_F13R2_FB8_Pos)                                   /*!< 0x00000100 */
-#define CAN_F13R2_FB8                                               CAN_F13R2_FB8_Msk                                              /*!<Filter bit 8 */
-#define CAN_F13R2_FB9_Pos                                           (9U)
-#define CAN_F13R2_FB9_Msk                                           (0x1UL << CAN_F13R2_FB9_Pos)                                   /*!< 0x00000200 */
-#define CAN_F13R2_FB9                                               CAN_F13R2_FB9_Msk                                              /*!<Filter bit 9 */
-#define CAN_F13R2_FB10_Pos                                          (10U)
-#define CAN_F13R2_FB10_Msk                                          (0x1UL << CAN_F13R2_FB10_Pos)                                  /*!< 0x00000400 */
-#define CAN_F13R2_FB10                                              CAN_F13R2_FB10_Msk                                             /*!<Filter bit 10 */
-#define CAN_F13R2_FB11_Pos                                          (11U)
-#define CAN_F13R2_FB11_Msk                                          (0x1UL << CAN_F13R2_FB11_Pos)                                  /*!< 0x00000800 */
-#define CAN_F13R2_FB11                                              CAN_F13R2_FB11_Msk                                             /*!<Filter bit 11 */
-#define CAN_F13R2_FB12_Pos                                          (12U)
-#define CAN_F13R2_FB12_Msk                                          (0x1UL << CAN_F13R2_FB12_Pos)                                  /*!< 0x00001000 */
-#define CAN_F13R2_FB12                                              CAN_F13R2_FB12_Msk                                             /*!<Filter bit 12 */
-#define CAN_F13R2_FB13_Pos                                          (13U)
-#define CAN_F13R2_FB13_Msk                                          (0x1UL << CAN_F13R2_FB13_Pos)                                  /*!< 0x00002000 */
-#define CAN_F13R2_FB13                                              CAN_F13R2_FB13_Msk                                             /*!<Filter bit 13 */
-#define CAN_F13R2_FB14_Pos                                          (14U)
-#define CAN_F13R2_FB14_Msk                                          (0x1UL << CAN_F13R2_FB14_Pos)                                  /*!< 0x00004000 */
-#define CAN_F13R2_FB14                                              CAN_F13R2_FB14_Msk                                             /*!<Filter bit 14 */
-#define CAN_F13R2_FB15_Pos                                          (15U)
-#define CAN_F13R2_FB15_Msk                                          (0x1UL << CAN_F13R2_FB15_Pos)                                  /*!< 0x00008000 */
-#define CAN_F13R2_FB15                                              CAN_F13R2_FB15_Msk                                             /*!<Filter bit 15 */
-#define CAN_F13R2_FB16_Pos                                          (16U)
-#define CAN_F13R2_FB16_Msk                                          (0x1UL << CAN_F13R2_FB16_Pos)                                  /*!< 0x00010000 */
-#define CAN_F13R2_FB16                                              CAN_F13R2_FB16_Msk                                             /*!<Filter bit 16 */
-#define CAN_F13R2_FB17_Pos                                          (17U)
-#define CAN_F13R2_FB17_Msk                                          (0x1UL << CAN_F13R2_FB17_Pos)                                  /*!< 0x00020000 */
-#define CAN_F13R2_FB17                                              CAN_F13R2_FB17_Msk                                             /*!<Filter bit 17 */
-#define CAN_F13R2_FB18_Pos                                          (18U)
-#define CAN_F13R2_FB18_Msk                                          (0x1UL << CAN_F13R2_FB18_Pos)                                  /*!< 0x00040000 */
-#define CAN_F13R2_FB18                                              CAN_F13R2_FB18_Msk                                             /*!<Filter bit 18 */
-#define CAN_F13R2_FB19_Pos                                          (19U)
-#define CAN_F13R2_FB19_Msk                                          (0x1UL << CAN_F13R2_FB19_Pos)                                  /*!< 0x00080000 */
-#define CAN_F13R2_FB19                                              CAN_F13R2_FB19_Msk                                             /*!<Filter bit 19 */
-#define CAN_F13R2_FB20_Pos                                          (20U)
-#define CAN_F13R2_FB20_Msk                                          (0x1UL << CAN_F13R2_FB20_Pos)                                  /*!< 0x00100000 */
-#define CAN_F13R2_FB20                                              CAN_F13R2_FB20_Msk                                             /*!<Filter bit 20 */
-#define CAN_F13R2_FB21_Pos                                          (21U)
-#define CAN_F13R2_FB21_Msk                                          (0x1UL << CAN_F13R2_FB21_Pos)                                  /*!< 0x00200000 */
-#define CAN_F13R2_FB21                                              CAN_F13R2_FB21_Msk                                             /*!<Filter bit 21 */
-#define CAN_F13R2_FB22_Pos                                          (22U)
-#define CAN_F13R2_FB22_Msk                                          (0x1UL << CAN_F13R2_FB22_Pos)                                  /*!< 0x00400000 */
-#define CAN_F13R2_FB22                                              CAN_F13R2_FB22_Msk                                             /*!<Filter bit 22 */
-#define CAN_F13R2_FB23_Pos                                          (23U)
-#define CAN_F13R2_FB23_Msk                                          (0x1UL << CAN_F13R2_FB23_Pos)                                  /*!< 0x00800000 */
-#define CAN_F13R2_FB23                                              CAN_F13R2_FB23_Msk                                             /*!<Filter bit 23 */
-#define CAN_F13R2_FB24_Pos                                          (24U)
-#define CAN_F13R2_FB24_Msk                                          (0x1UL << CAN_F13R2_FB24_Pos)                                  /*!< 0x01000000 */
-#define CAN_F13R2_FB24                                              CAN_F13R2_FB24_Msk                                             /*!<Filter bit 24 */
-#define CAN_F13R2_FB25_Pos                                          (25U)
-#define CAN_F13R2_FB25_Msk                                          (0x1UL << CAN_F13R2_FB25_Pos)                                  /*!< 0x02000000 */
-#define CAN_F13R2_FB25                                              CAN_F13R2_FB25_Msk                                             /*!<Filter bit 25 */
-#define CAN_F13R2_FB26_Pos                                          (26U)
-#define CAN_F13R2_FB26_Msk                                          (0x1UL << CAN_F13R2_FB26_Pos)                                  /*!< 0x04000000 */
-#define CAN_F13R2_FB26                                              CAN_F13R2_FB26_Msk                                             /*!<Filter bit 26 */
-#define CAN_F13R2_FB27_Pos                                          (27U)
-#define CAN_F13R2_FB27_Msk                                          (0x1UL << CAN_F13R2_FB27_Pos)                                  /*!< 0x08000000 */
-#define CAN_F13R2_FB27                                              CAN_F13R2_FB27_Msk                                             /*!<Filter bit 27 */
-#define CAN_F13R2_FB28_Pos                                          (28U)
-#define CAN_F13R2_FB28_Msk                                          (0x1UL << CAN_F13R2_FB28_Pos)                                  /*!< 0x10000000 */
-#define CAN_F13R2_FB28                                              CAN_F13R2_FB28_Msk                                             /*!<Filter bit 28 */
-#define CAN_F13R2_FB29_Pos                                          (29U)
-#define CAN_F13R2_FB29_Msk                                          (0x1UL << CAN_F13R2_FB29_Pos)                                  /*!< 0x20000000 */
-#define CAN_F13R2_FB29                                              CAN_F13R2_FB29_Msk                                             /*!<Filter bit 29 */
-#define CAN_F13R2_FB30_Pos                                          (30U)
-#define CAN_F13R2_FB30_Msk                                          (0x1UL << CAN_F13R2_FB30_Pos)                                  /*!< 0x40000000 */
-#define CAN_F13R2_FB30                                              CAN_F13R2_FB30_Msk                                             /*!<Filter bit 30 */
-#define CAN_F13R2_FB31_Pos                                          (31U)
-#define CAN_F13R2_FB31_Msk                                          (0x1UL << CAN_F13R2_FB31_Pos)                                  /*!< 0x80000000 */
-#define CAN_F13R2_FB31                                              CAN_F13R2_FB31_Msk                                             /*!<Filter bit 31 */
+/*******************  Bit definition for CAN_F13BANK2 register  ******************/
+#define CAN_F13BANK2_FBIT0_Pos                                      (0U)
+#define CAN_F13BANK2_FBIT0_Msk                                      (0x1UL << CAN_F13BANK2_FBIT0_Pos)                              /*!< 0x00000001 */
+#define CAN_F13BANK2_FBIT0                                          CAN_F13BANK2_FBIT0_Msk                                         /*!<Filter bit 0 */
+#define CAN_F13BANK2_FBIT1_Pos                                      (1U)
+#define CAN_F13BANK2_FBIT1_Msk                                      (0x1UL << CAN_F13BANK2_FBIT1_Pos)                              /*!< 0x00000002 */
+#define CAN_F13BANK2_FBIT1                                          CAN_F13BANK2_FBIT1_Msk                                         /*!<Filter bit 1 */
+#define CAN_F13BANK2_FBIT2_Pos                                      (2U)
+#define CAN_F13BANK2_FBIT2_Msk                                      (0x1UL << CAN_F13BANK2_FBIT2_Pos)                              /*!< 0x00000004 */
+#define CAN_F13BANK2_FBIT2                                          CAN_F13BANK2_FBIT2_Msk                                         /*!<Filter bit 2 */
+#define CAN_F13BANK2_FBIT3_Pos                                      (3U)
+#define CAN_F13BANK2_FBIT3_Msk                                      (0x1UL << CAN_F13BANK2_FBIT3_Pos)                              /*!< 0x00000008 */
+#define CAN_F13BANK2_FBIT3                                          CAN_F13BANK2_FBIT3_Msk                                         /*!<Filter bit 3 */
+#define CAN_F13BANK2_FBIT4_Pos                                      (4U)
+#define CAN_F13BANK2_FBIT4_Msk                                      (0x1UL << CAN_F13BANK2_FBIT4_Pos)                              /*!< 0x00000010 */
+#define CAN_F13BANK2_FBIT4                                          CAN_F13BANK2_FBIT4_Msk                                         /*!<Filter bit 4 */
+#define CAN_F13BANK2_FBIT5_Pos                                      (5U)
+#define CAN_F13BANK2_FBIT5_Msk                                      (0x1UL << CAN_F13BANK2_FBIT5_Pos)                              /*!< 0x00000020 */
+#define CAN_F13BANK2_FBIT5                                          CAN_F13BANK2_FBIT5_Msk                                         /*!<Filter bit 5 */
+#define CAN_F13BANK2_FBIT6_Pos                                      (6U)
+#define CAN_F13BANK2_FBIT6_Msk                                      (0x1UL << CAN_F13BANK2_FBIT6_Pos)                              /*!< 0x00000040 */
+#define CAN_F13BANK2_FBIT6                                          CAN_F13BANK2_FBIT6_Msk                                         /*!<Filter bit 6 */
+#define CAN_F13BANK2_FBIT7_Pos                                      (7U)
+#define CAN_F13BANK2_FBIT7_Msk                                      (0x1UL << CAN_F13BANK2_FBIT7_Pos)                              /*!< 0x00000080 */
+#define CAN_F13BANK2_FBIT7                                          CAN_F13BANK2_FBIT7_Msk                                         /*!<Filter bit 7 */
+#define CAN_F13BANK2_FBIT8_Pos                                      (8U)
+#define CAN_F13BANK2_FBIT8_Msk                                      (0x1UL << CAN_F13BANK2_FBIT8_Pos)                              /*!< 0x00000100 */
+#define CAN_F13BANK2_FBIT8                                          CAN_F13BANK2_FBIT8_Msk                                         /*!<Filter bit 8 */
+#define CAN_F13BANK2_FBIT9_Pos                                      (9U)
+#define CAN_F13BANK2_FBIT9_Msk                                      (0x1UL << CAN_F13BANK2_FBIT9_Pos)                              /*!< 0x00000200 */
+#define CAN_F13BANK2_FBIT9                                          CAN_F13BANK2_FBIT9_Msk                                         /*!<Filter bit 9 */
+#define CAN_F13BANK2_FBIT10_Pos                                     (10U)
+#define CAN_F13BANK2_FBIT10_Msk                                     (0x1UL << CAN_F13BANK2_FBIT10_Pos)                             /*!< 0x00000400 */
+#define CAN_F13BANK2_FBIT10                                         CAN_F13BANK2_FBIT10_Msk                                        /*!<Filter bit 10 */
+#define CAN_F13BANK2_FBIT11_Pos                                     (11U)
+#define CAN_F13BANK2_FBIT11_Msk                                     (0x1UL << CAN_F13BANK2_FBIT11_Pos)                             /*!< 0x00000800 */
+#define CAN_F13BANK2_FBIT11                                         CAN_F13BANK2_FBIT11_Msk                                        /*!<Filter bit 11 */
+#define CAN_F13BANK2_FBIT12_Pos                                     (12U)
+#define CAN_F13BANK2_FBIT12_Msk                                     (0x1UL << CAN_F13BANK2_FBIT12_Pos)                             /*!< 0x00001000 */
+#define CAN_F13BANK2_FBIT12                                         CAN_F13BANK2_FBIT12_Msk                                        /*!<Filter bit 12 */
+#define CAN_F13BANK2_FBIT13_Pos                                     (13U)
+#define CAN_F13BANK2_FBIT13_Msk                                     (0x1UL << CAN_F13BANK2_FBIT13_Pos)                             /*!< 0x00002000 */
+#define CAN_F13BANK2_FBIT13                                         CAN_F13BANK2_FBIT13_Msk                                        /*!<Filter bit 13 */
+#define CAN_F13BANK2_FBIT14_Pos                                     (14U)
+#define CAN_F13BANK2_FBIT14_Msk                                     (0x1UL << CAN_F13BANK2_FBIT14_Pos)                             /*!< 0x00004000 */
+#define CAN_F13BANK2_FBIT14                                         CAN_F13BANK2_FBIT14_Msk                                        /*!<Filter bit 14 */
+#define CAN_F13BANK2_FBIT15_Pos                                     (15U)
+#define CAN_F13BANK2_FBIT15_Msk                                     (0x1UL << CAN_F13BANK2_FBIT15_Pos)                             /*!< 0x00008000 */
+#define CAN_F13BANK2_FBIT15                                         CAN_F13BANK2_FBIT15_Msk                                        /*!<Filter bit 15 */
+#define CAN_F13BANK2_FBIT16_Pos                                     (16U)
+#define CAN_F13BANK2_FBIT16_Msk                                     (0x1UL << CAN_F13BANK2_FBIT16_Pos)                             /*!< 0x00010000 */
+#define CAN_F13BANK2_FBIT16                                         CAN_F13BANK2_FBIT16_Msk                                        /*!<Filter bit 16 */
+#define CAN_F13BANK2_FBIT17_Pos                                     (17U)
+#define CAN_F13BANK2_FBIT17_Msk                                     (0x1UL << CAN_F13BANK2_FBIT17_Pos)                             /*!< 0x00020000 */
+#define CAN_F13BANK2_FBIT17                                         CAN_F13BANK2_FBIT17_Msk                                        /*!<Filter bit 17 */
+#define CAN_F13BANK2_FBIT18_Pos                                     (18U)
+#define CAN_F13BANK2_FBIT18_Msk                                     (0x1UL << CAN_F13BANK2_FBIT18_Pos)                             /*!< 0x00040000 */
+#define CAN_F13BANK2_FBIT18                                         CAN_F13BANK2_FBIT18_Msk                                        /*!<Filter bit 18 */
+#define CAN_F13BANK2_FBIT19_Pos                                     (19U)
+#define CAN_F13BANK2_FBIT19_Msk                                     (0x1UL << CAN_F13BANK2_FBIT19_Pos)                             /*!< 0x00080000 */
+#define CAN_F13BANK2_FBIT19                                         CAN_F13BANK2_FBIT19_Msk                                        /*!<Filter bit 19 */
+#define CAN_F13BANK2_FBIT20_Pos                                     (20U)
+#define CAN_F13BANK2_FBIT20_Msk                                     (0x1UL << CAN_F13BANK2_FBIT20_Pos)                             /*!< 0x00100000 */
+#define CAN_F13BANK2_FBIT20                                         CAN_F13BANK2_FBIT20_Msk                                        /*!<Filter bit 20 */
+#define CAN_F13BANK2_FBIT21_Pos                                     (21U)
+#define CAN_F13BANK2_FBIT21_Msk                                     (0x1UL << CAN_F13BANK2_FBIT21_Pos)                             /*!< 0x00200000 */
+#define CAN_F13BANK2_FBIT21                                         CAN_F13BANK2_FBIT21_Msk                                        /*!<Filter bit 21 */
+#define CAN_F13BANK2_FBIT22_Pos                                     (22U)
+#define CAN_F13BANK2_FBIT22_Msk                                     (0x1UL << CAN_F13BANK2_FBIT22_Pos)                             /*!< 0x00400000 */
+#define CAN_F13BANK2_FBIT22                                         CAN_F13BANK2_FBIT22_Msk                                        /*!<Filter bit 22 */
+#define CAN_F13BANK2_FBIT23_Pos                                     (23U)
+#define CAN_F13BANK2_FBIT23_Msk                                     (0x1UL << CAN_F13BANK2_FBIT23_Pos)                             /*!< 0x00800000 */
+#define CAN_F13BANK2_FBIT23                                         CAN_F13BANK2_FBIT23_Msk                                        /*!<Filter bit 23 */
+#define CAN_F13BANK2_FBIT24_Pos                                     (24U)
+#define CAN_F13BANK2_FBIT24_Msk                                     (0x1UL << CAN_F13BANK2_FBIT24_Pos)                             /*!< 0x01000000 */
+#define CAN_F13BANK2_FBIT24                                         CAN_F13BANK2_FBIT24_Msk                                        /*!<Filter bit 24 */
+#define CAN_F13BANK2_FBIT25_Pos                                     (25U)
+#define CAN_F13BANK2_FBIT25_Msk                                     (0x1UL << CAN_F13BANK2_FBIT25_Pos)                             /*!< 0x02000000 */
+#define CAN_F13BANK2_FBIT25                                         CAN_F13BANK2_FBIT25_Msk                                        /*!<Filter bit 25 */
+#define CAN_F13BANK2_FBIT26_Pos                                     (26U)
+#define CAN_F13BANK2_FBIT26_Msk                                     (0x1UL << CAN_F13BANK2_FBIT26_Pos)                             /*!< 0x04000000 */
+#define CAN_F13BANK2_FBIT26                                         CAN_F13BANK2_FBIT26_Msk                                        /*!<Filter bit 26 */
+#define CAN_F13BANK2_FBIT27_Pos                                     (27U)
+#define CAN_F13BANK2_FBIT27_Msk                                     (0x1UL << CAN_F13BANK2_FBIT27_Pos)                             /*!< 0x08000000 */
+#define CAN_F13BANK2_FBIT27                                         CAN_F13BANK2_FBIT27_Msk                                        /*!<Filter bit 27 */
+#define CAN_F13BANK2_FBIT28_Pos                                     (28U)
+#define CAN_F13BANK2_FBIT28_Msk                                     (0x1UL << CAN_F13BANK2_FBIT28_Pos)                             /*!< 0x10000000 */
+#define CAN_F13BANK2_FBIT28                                         CAN_F13BANK2_FBIT28_Msk                                        /*!<Filter bit 28 */
+#define CAN_F13BANK2_FBIT29_Pos                                     (29U)
+#define CAN_F13BANK2_FBIT29_Msk                                     (0x1UL << CAN_F13BANK2_FBIT29_Pos)                             /*!< 0x20000000 */
+#define CAN_F13BANK2_FBIT29                                         CAN_F13BANK2_FBIT29_Msk                                        /*!<Filter bit 29 */
+#define CAN_F13BANK2_FBIT30_Pos                                     (30U)
+#define CAN_F13BANK2_FBIT30_Msk                                     (0x1UL << CAN_F13BANK2_FBIT30_Pos)                             /*!< 0x40000000 */
+#define CAN_F13BANK2_FBIT30                                         CAN_F13BANK2_FBIT30_Msk                                        /*!<Filter bit 30 */
+#define CAN_F13BANK2_FBIT31_Pos                                     (31U)
+#define CAN_F13BANK2_FBIT31_Msk                                     (0x1UL << CAN_F13BANK2_FBIT31_Pos)                             /*!< 0x80000000 */
+#define CAN_F13BANK2_FBIT31                                         CAN_F13BANK2_FBIT31_Msk                                        /*!<Filter bit 31 */
 
 /******************************************************************************/
 /*                                                                            */
@@ -5610,7 +5636,7 @@ typedef struct
 #define DMA_NDATAx_14                                               (0x4000UL << DMA_NDATAx_Pos)                                   /*!< 0x00004000 */
 #define DMA_NDATAx_15                                               (0x8000UL << DMA_NDATAx_Pos)                                   /*!< 0x00008000 */
 
-/********************  Bits definition for DMA_FCTRLx register  ****************/ 
+/********************  Bits definition for DMA_FCTRLx register  ****************/
 #define DMA_FCTRLx_FEIEN_Pos                                        (7U)
 #define DMA_FCTRLx_FEIEN_Msk                                        (0x1UL << DMA_FCTRLx_FEIEN_Pos)                                /*!< 0x00000080 */
 #define DMA_FCTRLx_FEIEN                                            DMA_FCTRLx_FEIEN_Msk
@@ -5629,7 +5655,7 @@ typedef struct
 #define DMA_FCTRLx_FTHSEL_0                                         (0x1UL << DMA_FCTRLx_FTHSEL_Pos)                               /*!< 0x00000001 */
 #define DMA_FCTRLx_FTHSEL_1                                         (0x2UL << DMA_FCTRLx_FTHSEL_Pos)                               /*!< 0x00000002 */
 
-/********************  Bits definition for DMA_LINTSTS register  *****************/ 
+/********************  Bits definition for DMA_LINTSTS register  *****************/
 #define DMA_LINTSTS_TXCIFLG3_Pos                                    (27U)
 #define DMA_LINTSTS_TXCIFLG3_Msk                                    (0x1UL << DMA_LINTSTS_TXCIFLG3_Pos)                            /*!< 0x08000000 */
 #define DMA_LINTSTS_TXCIFLG3                                        DMA_LINTSTS_TXCIFLG3_Msk
@@ -5691,7 +5717,7 @@ typedef struct
 #define DMA_LINTSTS_FEIFLG0_Msk                                     (0x1UL << DMA_LINTSTS_FEIFLG0_Pos)                             /*!< 0x00000001 */
 #define DMA_LINTSTS_FEIFLG0                                         DMA_LINTSTS_FEIFLG0_Msk
 
-/********************  Bits definition for DMA_HINTSTS register  *****************/ 
+/********************  Bits definition for DMA_HINTSTS register  *****************/
 #define DMA_HINTSTS_TXCIFLG7_Pos                                    (27U)
 #define DMA_HINTSTS_TXCIFLG7_Msk                                    (0x1UL << DMA_HINTSTS_TXCIFLG7_Pos)                            /*!< 0x08000000 */
 #define DMA_HINTSTS_TXCIFLG7                                        DMA_HINTSTS_TXCIFLG7_Msk
@@ -5753,7 +5779,7 @@ typedef struct
 #define DMA_HINTSTS_FEIFLG4_Msk                                     (0x1UL << DMA_HINTSTS_FEIFLG4_Pos)                             /*!< 0x00000001 */
 #define DMA_HINTSTS_FEIFLG4                                         DMA_HINTSTS_FEIFLG4_Msk
 
-/********************  Bits definition for DMA_LIFCLR register  ****************/ 
+/********************  Bits definition for DMA_LIFCLR register  ****************/
 #define DMA_LIFCLR_CTXCIFLG3_Pos                                    (27U)
 #define DMA_LIFCLR_CTXCIFLG3_Msk                                    (0x1UL << DMA_LIFCLR_CTXCIFLG3_Pos)                            /*!< 0x08000000 */
 #define DMA_LIFCLR_CTXCIFLG3                                        DMA_LIFCLR_CTXCIFLG3_Msk
@@ -5815,7 +5841,7 @@ typedef struct
 #define DMA_LIFCLR_CFEIFLG0_Msk                                     (0x1UL << DMA_LIFCLR_CFEIFLG0_Pos)                             /*!< 0x00000001 */
 #define DMA_LIFCLR_CFEIFLG0                                         DMA_LIFCLR_CFEIFLG0_Msk
 
-/********************  Bits definition for DMA_HIFCLR  register  ****************/ 
+/********************  Bits definition for DMA_HIFCLR  register  ****************/
 #define DMA_HIFCLR_CTXCIFLG7_Pos                                    (27U)
 #define DMA_HIFCLR_CTXCIFLG7_Msk                                    (0x1UL << DMA_HIFCLR_CTXCIFLG7_Pos)                            /*!< 0x08000000 */
 #define DMA_HIFCLR_CTXCIFLG7                                        DMA_HIFCLR_CTXCIFLG7_Msk
@@ -6382,7 +6408,7 @@ typedef struct
 /*                                    FLASH                                   */
 /*                                                                            */
 /******************************************************************************/
-/*******************  Bits definition for FLASH_ACCTRL register  *****************/
+/*******************  Bits definition for FMC_ACCTRL register  *****************/
 #define FLASH_ACCTRL_WAITP_Pos                                      (0U)
 #define FLASH_ACCTRL_WAITP_Msk                                      (0x7UL << FLASH_ACCTRL_WAITP_Pos)                              /*!< 0x00000007 */
 #define FLASH_ACCTRL_WAITP                                          FLASH_ACCTRL_WAITP_Msk
@@ -6418,7 +6444,7 @@ typedef struct
 #define FLASH_ACCTRL_BYTE2_ADDRESS_Msk                              (0x40023C03UL << FLASH_ACCTRL_BYTE2_ADDRESS_Pos)               /*!< 0x40023C03 */
 #define FLASH_ACCTRL_BYTE2_ADDRESS                                  FLASH_ACCTRL_BYTE2_ADDRESS_Msk
 
-/*******************  Bits definition for FLASH_STS register  ******************/
+/*******************  Bits definition for FMC_STS register  ******************/
 #define FLASH_STS_OPRCMP_Pos                                        (0U)
 #define FLASH_STS_OPRCMP_Msk                                        (0x1UL << FLASH_STS_OPRCMP_Pos)                                /*!< 0x00000001 */
 #define FLASH_STS_OPRCMP                                            FLASH_STS_OPRCMP_Msk
@@ -6441,7 +6467,7 @@ typedef struct
 #define FLASH_STS_BUSY_Msk                                          (0x1UL << FLASH_STS_BUSY_Pos)                                  /*!< 0x00010000 */
 #define FLASH_STS_BUSY                                              FLASH_STS_BUSY_Msk
 
-/*******************  Bits definition for FLASH_CTRL register  ******************/
+/*******************  Bits definition for FMC_CTRL register  ******************/
 #define FLASH_CTRL_PG_Pos                                           (0U)
 #define FLASH_CTRL_PG_Msk                                           (0x1UL << FLASH_CTRL_PG_Pos)                                   /*!< 0x00000001 */
 #define FLASH_CTRL_PG                                               FLASH_CTRL_PG_Msk
@@ -6477,7 +6503,7 @@ typedef struct
 #define FLASH_CTRL_LOCK_Msk                                         (0x1UL << FLASH_CTRL_LOCK_Pos)                                 /*!< 0x80000000 */
 #define FLASH_CTRL_LOCK                                             FLASH_CTRL_LOCK_Msk
 
-/*******************  Bits definition for FLASH_OPTCTRL register  ***************/
+/*******************  Bits definition for FMC_OPTCTRL register  ***************/
 #define FLASH_OPTCTRL_OPTLOCK_Pos                                   (0U)
 #define FLASH_OPTCTRL_OPTLOCK_Msk                                   (0x1UL << FLASH_OPTCTRL_OPTLOCK_Pos)                           /*!< 0x00000001 */
 #define FLASH_OPTCTRL_OPTLOCK                                       FLASH_OPTCTRL_OPTLOCK_Msk
@@ -6525,8 +6551,8 @@ typedef struct
 #define FLASH_OPTCTRL_NWPROT_9                                      0x02000000U
 #define FLASH_OPTCTRL_NWPROT_10                                     0x04000000U
 #define FLASH_OPTCTRL_NWPROT_11                                     0x08000000U
-                                             
-/******************  Bits definition for FLASH_OPTCTRL1 register  ***************/
+
+/******************  Bits definition for FMC_OPTCTRL1 register  ***************/
 #define FLASH_OPTCTRL1_NWPROT_Pos                                   (16U)
 #define FLASH_OPTCTRL1_NWPROT_Msk                                   (0xFFFUL << FLASH_OPTCTRL1_NWPROT_Pos)                         /*!< 0x0FFF0000 */
 #define FLASH_OPTCTRL1_NWPROT                                       FLASH_OPTCTRL1_NWPROT_Msk
@@ -7049,6 +7075,22 @@ typedef struct
 #define SMC_WRTTIM1_BUSTURNCFG_2                                    (0x4UL << SMC_WRTTIM1_BUSTURNCFG_Pos)                          /*!< 0x00040000 */
 #define SMC_WRTTIM1_BUSTURNCFG_3                                    (0x8UL << SMC_WRTTIM1_BUSTURNCFG_Pos)                          /*!< 0x00080000 */
 
+#define SMC_WRTTIM1_CLKDIVCFG_Pos                                   (20U)
+#define SMC_WRTTIM1_CLKDIVCFG_Msk                                   (0xFUL << SMC_WRTTIM1_CLKDIVCFG_Pos)                           /*!< 0x00F00000 */
+#define SMC_WRTTIM1_CLKDIVCFG                                       SMC_WRTTIM1_CLKDIVCFG_Msk                                      /*!<CLKDIV[3:0] bits (Clock divide ratio) */
+#define SMC_WRTTIM1_CLKDIVCFG_0                                     (0x1UL << SMC_WRTTIM1_CLKDIVCFG_Pos)                           /*!< 0x00100000 */
+#define SMC_WRTTIM1_CLKDIVCFG_1                                     (0x2UL << SMC_WRTTIM1_CLKDIVCFG_Pos)                           /*!< 0x00200000 */
+#define SMC_WRTTIM1_CLKDIVCFG_2                                     (0x4UL << SMC_WRTTIM1_CLKDIVCFG_Pos)                           /*!< 0x00400000 */
+#define SMC_WRTTIM1_CLKDIVCFG_3                                     (0x8UL << SMC_WRTTIM1_CLKDIVCFG_Pos)                           /*!< 0x00800000 */
+
+#define SMC_WRTTIM1_DATLATCFG_Pos                                   (24U)
+#define SMC_WRTTIM1_DATLATCFG_Msk                                   (0xFUL << SMC_WRTTIM1_DATLATCFG_Pos)                           /*!< 0x0F000000 */
+#define SMC_WRTTIM1_DATLATCFG                                       SMC_WRTTIM1_DATLATCFG_Msk                                      /*!<DATLA[3:0] bits (Data latency) */
+#define SMC_WRTTIM1_DATLATCFG_0                                     (0x1UL << SMC_WRTTIM1_DATLATCFG_Pos)                           /*!< 0x01000000 */
+#define SMC_WRTTIM1_DATLATCFG_1                                     (0x2UL << SMC_WRTTIM1_DATLATCFG_Pos)                           /*!< 0x02000000 */
+#define SMC_WRTTIM1_DATLATCFG_2                                     (0x4UL << SMC_WRTTIM1_DATLATCFG_Pos)                           /*!< 0x04000000 */
+#define SMC_WRTTIM1_DATLATCFG_3                                     (0x8UL << SMC_WRTTIM1_DATLATCFG_Pos)                           /*!< 0x08000000 */
+
 #define SMC_WRTTIM1_ASYNCACCCFG_Pos                                 (28U)
 #define SMC_WRTTIM1_ASYNCACCCFG_Msk                                 (0x3UL << SMC_WRTTIM1_ASYNCACCCFG_Pos)                         /*!< 0x30000000 */
 #define SMC_WRTTIM1_ASYNCACCCFG                                     SMC_WRTTIM1_ASYNCACCCFG_Msk                                    /*!<ACCMOD[1:0] bits (Access mode) */
@@ -7091,6 +7133,22 @@ typedef struct
 #define SMC_WRTTIM2_BUSTURNCFG_1                                    (0x2UL << SMC_WRTTIM2_BUSTURNCFG_Pos)                          /*!< 0x00020000 */
 #define SMC_WRTTIM2_BUSTURNCFG_2                                    (0x4UL << SMC_WRTTIM2_BUSTURNCFG_Pos)                          /*!< 0x00040000 */
 #define SMC_WRTTIM2_BUSTURNCFG_3                                    (0x8UL << SMC_WRTTIM2_BUSTURNCFG_Pos)                          /*!< 0x00080000 */
+
+#define SMC_WRTTIM2_CLKDIVCFG_Pos                                   (20U)
+#define SMC_WRTTIM2_CLKDIVCFG_Msk                                   (0xFUL << SMC_WRTTIM2_CLKDIVCFG_Pos)                           /*!< 0x00F00000 */
+#define SMC_WRTTIM2_CLKDIVCFG                                       SMC_WRTTIM2_CLKDIVCFG_Msk                                      /*!<CLKDIV[3:0] bits (Clock divide ratio) */
+#define SMC_WRTTIM2_CLKDIVCFG_0                                     (0x1UL << SMC_WRTTIM2_CLKDIVCFG_Pos)                           /*!< 0x00100000 */
+#define SMC_WRTTIM2_CLKDIVCFG_1                                     (0x2UL << SMC_WRTTIM2_CLKDIVCFG_Pos)                           /*!< 0x00200000 */
+#define SMC_WRTTIM2_CLKDIVCFG_2                                     (0x4UL << SMC_WRTTIM2_CLKDIVCFG_Pos)                           /*!< 0x00400000 */
+#define SMC_WRTTIM2_CLKDIVCFG_3                                     (0x8UL << SMC_WRTTIM2_CLKDIVCFG_Pos)                           /*!< 0x00800000 */
+
+#define SMC_WRTTIM2_DATLATCFG_Pos                                   (24U)
+#define SMC_WRTTIM2_DATLATCFG_Msk                                   (0xFUL << SMC_WRTTIM2_DATLATCFG_Pos)                           /*!< 0x0F000000 */
+#define SMC_WRTTIM2_DATLATCFG                                       SMC_WRTTIM2_DATLATCFG_Msk                                      /*!<DATLA[3:0] bits (Data latency) */
+#define SMC_WRTTIM2_DATLATCFG_0                                     (0x1UL << SMC_WRTTIM2_DATLATCFG_Pos)                           /*!< 0x01000000 */
+#define SMC_WRTTIM2_DATLATCFG_1                                     (0x2UL << SMC_WRTTIM2_DATLATCFG_Pos)                           /*!< 0x02000000 */
+#define SMC_WRTTIM2_DATLATCFG_2                                     (0x4UL << SMC_WRTTIM2_DATLATCFG_Pos)                           /*!< 0x04000000 */
+#define SMC_WRTTIM2_DATLATCFG_3                                     (0x8UL << SMC_WRTTIM2_DATLATCFG_Pos)                           /*!< 0x08000000 */
 
 #define SMC_WRTTIM2_ASYNCACCCFG_Pos                                 (28U)
 #define SMC_WRTTIM2_ASYNCACCCFG_Msk                                 (0x3UL << SMC_WRTTIM2_ASYNCACCCFG_Pos)                         /*!< 0x30000000 */
@@ -7135,6 +7193,22 @@ typedef struct
 #define SMC_WRTTIM3_BUSTURNCFG_2                                    (0x4UL << SMC_WRTTIM3_BUSTURNCFG_Pos)                          /*!< 0x00040000 */
 #define SMC_WRTTIM3_BUSTURNCFG_3                                    (0x8UL << SMC_WRTTIM3_BUSTURNCFG_Pos)                          /*!< 0x00080000 */
 
+#define SMC_WRTTIM3_CLKDIVCFG_Pos                                   (20U)
+#define SMC_WRTTIM3_CLKDIVCFG_Msk                                   (0xFUL << SMC_WRTTIM3_CLKDIVCFG_Pos)                           /*!< 0x00F00000 */
+#define SMC_WRTTIM3_CLKDIVCFG                                       SMC_WRTTIM3_CLKDIVCFG_Msk                                      /*!<CLKDIV[3:0] bits (Clock divide ratio) */
+#define SMC_WRTTIM3_CLKDIVCFG_0                                     (0x1UL << SMC_WRTTIM3_CLKDIVCFG_Pos)                           /*!< 0x00100000 */
+#define SMC_WRTTIM3_CLKDIVCFG_1                                     (0x2UL << SMC_WRTTIM3_CLKDIVCFG_Pos)                           /*!< 0x00200000 */
+#define SMC_WRTTIM3_CLKDIVCFG_2                                     (0x4UL << SMC_WRTTIM3_CLKDIVCFG_Pos)                           /*!< 0x00400000 */
+#define SMC_WRTTIM3_CLKDIVCFG_3                                     (0x8UL << SMC_WRTTIM3_CLKDIVCFG_Pos)                           /*!< 0x00800000 */
+
+#define SMC_WRTTIM3_DATLATCFG_Pos                                   (24U)
+#define SMC_WRTTIM3_DATLATCFG_Msk                                   (0xFUL << SMC_WRTTIM3_DATLATCFG_Pos)                           /*!< 0x0F000000 */
+#define SMC_WRTTIM3_DATLATCFG                                       SMC_WRTTIM3_DATLATCFG_Msk                                      /*!<DATLA[3:0] bits (Data latency) */
+#define SMC_WRTTIM3_DATLATCFG_0                                     (0x1UL << SMC_WRTTIM3_DATLATCFG_Pos)                           /*!< 0x01000000 */
+#define SMC_WRTTIM3_DATLATCFG_1                                     (0x2UL << SMC_WRTTIM3_DATLATCFG_Pos)                           /*!< 0x02000000 */
+#define SMC_WRTTIM3_DATLATCFG_2                                     (0x4UL << SMC_WRTTIM3_DATLATCFG_Pos)                           /*!< 0x04000000 */
+#define SMC_WRTTIM3_DATLATCFG_3                                     (0x8UL << SMC_WRTTIM3_DATLATCFG_Pos)                           /*!< 0x08000000 */
+
 #define SMC_WRTTIM3_ASYNCACCCFG_Pos                                 (28U)
 #define SMC_WRTTIM3_ASYNCACCCFG_Msk                                 (0x3UL << SMC_WRTTIM3_ASYNCACCCFG_Pos)                         /*!< 0x30000000 */
 #define SMC_WRTTIM3_ASYNCACCCFG                                     SMC_WRTTIM3_ASYNCACCCFG_Msk                                    /*!<ACCMOD[1:0] bits (Access mode) */
@@ -7177,6 +7251,22 @@ typedef struct
 #define SMC_WRTTIM4_BUSTURNCFG_1                                    (0x2UL << SMC_WRTTIM4_BUSTURNCFG_Pos)                          /*!< 0x00020000 */
 #define SMC_WRTTIM4_BUSTURNCFG_2                                    (0x4UL << SMC_WRTTIM4_BUSTURNCFG_Pos)                          /*!< 0x00040000 */
 #define SMC_WRTTIM4_BUSTURNCFG_3                                    (0x8UL << SMC_WRTTIM4_BUSTURNCFG_Pos)                          /*!< 0x00080000 */
+
+#define SMC_WRTTIM4_CLKDIVCFG_Pos                                   (20U)
+#define SMC_WRTTIM4_CLKDIVCFG_Msk                                   (0xFUL << SMC_WRTTIM4_CLKDIVCFG_Pos)                           /*!< 0x00F00000 */
+#define SMC_WRTTIM4_CLKDIVCFG                                       SMC_WRTTIM4_CLKDIVCFG_Msk                                      /*!<CLKDIV[3:0] bits (Clock divide ratio) */
+#define SMC_WRTTIM4_CLKDIVCFG_0                                     (0x1UL << SMC_WRTTIM4_CLKDIVCFG_Pos)                           /*!< 0x00100000 */
+#define SMC_WRTTIM4_CLKDIVCFG_1                                     (0x2UL << SMC_WRTTIM4_CLKDIVCFG_Pos)                           /*!< 0x00200000 */
+#define SMC_WRTTIM4_CLKDIVCFG_2                                     (0x4UL << SMC_WRTTIM4_CLKDIVCFG_Pos)                           /*!< 0x00400000 */
+#define SMC_WRTTIM4_CLKDIVCFG_3                                     (0x8UL << SMC_WRTTIM4_CLKDIVCFG_Pos)                           /*!< 0x00800000 */
+
+#define SMC_WRTTIM4_DATLATCFG_Pos                                   (24U)
+#define SMC_WRTTIM4_DATLATCFG_Msk                                   (0xFUL << SMC_WRTTIM4_DATLATCFG_Pos)                           /*!< 0x0F000000 */
+#define SMC_WRTTIM4_DATLATCFG                                       SMC_WRTTIM4_DATLATCFG_Msk                                      /*!<DATLA[3:0] bits (Data latency) */
+#define SMC_WRTTIM4_DATLATCFG_0                                     (0x1UL << SMC_WRTTIM4_DATLATCFG_Pos)                           /*!< 0x01000000 */
+#define SMC_WRTTIM4_DATLATCFG_1                                     (0x2UL << SMC_WRTTIM4_DATLATCFG_Pos)                           /*!< 0x02000000 */
+#define SMC_WRTTIM4_DATLATCFG_2                                     (0x4UL << SMC_WRTTIM4_DATLATCFG_Pos)                           /*!< 0x04000000 */
+#define SMC_WRTTIM4_DATLATCFG_3                                     (0x8UL << SMC_WRTTIM4_DATLATCFG_Pos)                           /*!< 0x08000000 */
 
 #define SMC_WRTTIM4_ASYNCACCCFG_Pos                                 (28U)
 #define SMC_WRTTIM4_ASYNCACCCFG_Msk                                 (0x3UL << SMC_WRTTIM4_ASYNCACCCFG_Pos)                         /*!< 0x30000000 */
@@ -9161,10 +9251,10 @@ typedef struct
 
 
 /********************  Bit definition for RCM_CFG register  ******************/
-/*!< SW configuration */
+/*!< SCLKSEL configuration */
 #define RCM_CFG_SCLKSEL_Pos                                         (0U)
 #define RCM_CFG_SCLKSEL_Msk                                         (0x3UL << RCM_CFG_SCLKSEL_Pos)                                 /*!< 0x00000003 */
-#define RCM_CFG_SCLKSEL                                             RCM_CFG_SCLKSEL_Msk                                            /*!< SW[1:0] bits (System clock Switch) */
+#define RCM_CFG_SCLKSEL                                             RCM_CFG_SCLKSEL_Msk                                            /*!< SCLKSEL[1:0] bits (System clock Switch) */
 #define RCM_CFG_SCLKSEL_0                                           (0x1UL << RCM_CFG_SCLKSEL_Pos)                                 /*!< 0x00000001 */
 #define RCM_CFG_SCLKSEL_1                                           (0x2UL << RCM_CFG_SCLKSEL_Pos)                                 /*!< 0x00000002 */
 
@@ -9172,21 +9262,21 @@ typedef struct
 #define RCM_CFG_SCLKSEL_HSE                                         0x00000001U                                                    /*!< HSE selected as system clock */
 #define RCM_CFG_SCLKSEL_PLL                                         0x00000002U                                                    /*!< PLL selected as system clock */
 
-/*!< SWS configuration */
-#define RCM_CFG_SCLKSWSTS_Pos                                       (2U)
-#define RCM_CFG_SCLKSWSTS_Msk                                       (0x3UL << RCM_CFG_SCLKSWSTS_Pos)                               /*!< 0x0000000C */
-#define RCM_CFG_SCLKSWSTS                                           RCM_CFG_SCLKSWSTS_Msk                                          /*!< SWS[1:0] bits (System Clock Switch Status) */
-#define RCM_CFG_SCLKSWSTS_0                                         (0x1UL << RCM_CFG_SCLKSWSTS_Pos)                               /*!< 0x00000004 */
-#define RCM_CFG_SCLKSWSTS_1                                         (0x2UL << RCM_CFG_SCLKSWSTS_Pos)                               /*!< 0x00000008 */
+/*!< SCLKSELSTS configuration */
+#define RCM_CFG_SCLKSELSTS_Pos                                      (2U)
+#define RCM_CFG_SCLKSELSTS_Msk                                      (0x3UL << RCM_CFG_SCLKSELSTS_Pos)                              /*!< 0x0000000C */
+#define RCM_CFG_SCLKSELSTS                                          RCM_CFG_SCLKSELSTS_Msk                                         /*!< SCLKSELSTS[1:0] bits (System Clock Switch Status) */
+#define RCM_CFG_SCLKSELSTS_0                                        (0x1UL << RCM_CFG_SCLKSELSTS_Pos)                              /*!< 0x00000004 */
+#define RCM_CFG_SCLKSELSTS_1                                        (0x2UL << RCM_CFG_SCLKSELSTS_Pos)                              /*!< 0x00000008 */
 
-#define RCM_CFG_SCLKSWSTS_HSI                                       0x00000000U                                                    /*!< HSI oscillator used as system clock        */
-#define RCM_CFG_SCLKSWSTS_HSE                                       0x00000004U                                                    /*!< HSE oscillator used as system clock        */
-#define RCM_CFG_SCLKSWSTS_PLL                                       0x00000008U                                                    /*!< PLL used as system clock                   */
+#define RCM_CFG_SCLKSELSTS_HSI                                      0x00000000U                                                    /*!< HSI oscillator used as system clock        */
+#define RCM_CFG_SCLKSELSTS_HSE                                      0x00000004U                                                    /*!< HSE oscillator used as system clock        */
+#define RCM_CFG_SCLKSELSTS_PLL                                      0x00000008U                                                    /*!< PLL used as system clock                   */
 
-/*!< HPRE configuration */
+/*!< AHBPSC configuration */
 #define RCM_CFG_AHBPSC_Pos                                          (4U)
 #define RCM_CFG_AHBPSC_Msk                                          (0xFUL << RCM_CFG_AHBPSC_Pos)                                  /*!< 0x000000F0 */
-#define RCM_CFG_AHBPSC                                              RCM_CFG_AHBPSC_Msk                                             /*!< HPRE[3:0] bits (AHB prescaler) */
+#define RCM_CFG_AHBPSC                                              RCM_CFG_AHBPSC_Msk                                             /*!< AHBPSC[3:0] bits (AHB prescaler) */
 #define RCM_CFG_AHBPSC_0                                            (0x1UL << RCM_CFG_AHBPSC_Pos)                                  /*!< 0x00000010 */
 #define RCM_CFG_AHBPSC_1                                            (0x2UL << RCM_CFG_AHBPSC_Pos)                                  /*!< 0x00000020 */
 #define RCM_CFG_AHBPSC_2                                            (0x4UL << RCM_CFG_AHBPSC_Pos)                                  /*!< 0x00000040 */
@@ -9208,10 +9298,10 @@ typedef struct
 #define RCM_CFG_SDRAMPSC_0                                          (0x1UL << RCM_CFG_SDRAMPSC_Pos)
 #define RCM_CFG_SDRAMPSC_1                                          (0x2UL << RCM_CFG_SDRAMPSC_Pos)
 
-/*!< PPRE1 configuration */
+/*!< APB1PSC configuration */
 #define RCM_CFG_APB1PSC_Pos                                         (10U)
 #define RCM_CFG_APB1PSC_Msk                                         (0x7UL << RCM_CFG_APB1PSC_Pos)                                 /*!< 0x00001C00 */
-#define RCM_CFG_APB1PSC                                             RCM_CFG_APB1PSC_Msk                                            /*!< PRE1[2:0] bits (APB1 prescaler) */
+#define RCM_CFG_APB1PSC                                             RCM_CFG_APB1PSC_Msk                                            /*!< APB1PSC[2:0] bits (APB1 prescaler) */
 #define RCM_CFG_APB1PSC_0                                           (0x1UL << RCM_CFG_APB1PSC_Pos)                                 /*!< 0x00000400 */
 #define RCM_CFG_APB1PSC_1                                           (0x2UL << RCM_CFG_APB1PSC_Pos)                                 /*!< 0x00000800 */
 #define RCM_CFG_APB1PSC_2                                           (0x4UL << RCM_CFG_APB1PSC_Pos)                                 /*!< 0x00001000 */
@@ -9222,10 +9312,10 @@ typedef struct
 #define RCM_CFG_APB1PSC_DIV8                                        0x00001800U                                                    /*!< HCLK divided by 8  */
 #define RCM_CFG_APB1PSC_DIV16                                       0x00001C00U                                                    /*!< HCLK divided by 16 */
 
-/*!< PPRE2 configuration */
+/*!< APB2PSC configuration */
 #define RCM_CFG_APB2PSC_Pos                                         (13U)
 #define RCM_CFG_APB2PSC_Msk                                         (0x7UL << RCM_CFG_APB2PSC_Pos)                                 /*!< 0x0000E000 */
-#define RCM_CFG_APB2PSC                                             RCM_CFG_APB2PSC_Msk                                            /*!< PRE2[2:0] bits (APB2 prescaler) */
+#define RCM_CFG_APB2PSC                                             RCM_CFG_APB2PSC_Msk                                            /*!< APB2PSC[2:0] bits (APB2 prescaler) */
 #define RCM_CFG_APB2PSC_0                                           (0x1UL << RCM_CFG_APB2PSC_Pos)                                 /*!< 0x00002000 */
 #define RCM_CFG_APB2PSC_1                                           (0x2UL << RCM_CFG_APB2PSC_Pos)                                 /*!< 0x00004000 */
 #define RCM_CFG_APB2PSC_2                                           (0x4UL << RCM_CFG_APB2PSC_Pos)                                 /*!< 0x00008000 */
@@ -9236,7 +9326,7 @@ typedef struct
 #define RCM_CFG_APB2PSC_DIV8                                        0x0000C000U                                                    /*!< HCLK divided by 8  */
 #define RCM_CFG_APB2PSC_DIV16                                       0x0000E000U                                                    /*!< HCLK divided by 16 */
 
-/*!< RTCPRE configuration */
+/*!< RTCPSC configuration */
 #define RCM_CFG_RTCPSC_Pos                                          (16U)
 #define RCM_CFG_RTCPSC_Msk                                          (0x1FUL << RCM_CFG_RTCPSC_Pos)                                 /*!< 0x001F0000 */
 #define RCM_CFG_RTCPSC                                              RCM_CFG_RTCPSC_Msk
@@ -9695,6 +9785,11 @@ typedef struct
 #define RCM_APB2CLKEN_TMR11EN_Msk                                   (0x1UL << RCM_APB2CLKEN_TMR11EN_Pos)                           /*!< 0x00040000 */
 #define RCM_APB2CLKEN_TMR11EN                                       RCM_APB2CLKEN_TMR11EN_Msk
 
+/*
+ * @brief Specific device feature definitions (not present on all devices in the APM32F4 serie)
+ */
+#define RCM_LPAHB1_SUPPORT
+
 /********************  Bit definition for RCM_LPAHB1CLKEN register  *************/
 #define RCM_LPAHB1CLKEN_PALPEN_Pos                                  (0U)
 #define RCM_LPAHB1CLKEN_PALPEN_Msk                                  (0x1UL << RCM_LPAHB1CLKEN_PALPEN_Pos)                          /*!< 0x00000001 */
@@ -9751,7 +9846,15 @@ typedef struct
 #define RCM_LPAHB1CLKEN_OTGHSULPIEN_Msk                             (0x1UL << RCM_LPAHB1CLKEN_OTGHSULPIEN_Pos)                     /*!< 0x40000000 */
 #define RCM_LPAHB1CLKEN_OTGHSULPIEN                                 RCM_LPAHB1CLKEN_OTGHSULPIEN_Msk
 
+/*
+ * @brief Specific device feature definitions (not present on all devices in the APM32F4 serie)
+ */
+#define RCM_LPAHB2_SUPPORT
+
 /********************  Bit definition for RCM_LPAHB2CLKEN register  *************/
+#define RCM_LPAHB2CLKEN_FPUEN_Pos                                   (1U)
+#define RCM_LPAHB2CLKEN_FPUEN_Msk                                   (0x1UL << RCM_LPAHB2CLKEN_FPUEN_Pos)                           /*!< 0x00000010 */
+#define RCM_LPAHB2CLKEN_FPUEN                                       RCM_LPAHB2CLKEN_FPUEN_Msk
 #define RCM_LPAHB2CLKEN_RNGEN_Pos                                   (6U)
 #define RCM_LPAHB2CLKEN_RNGEN_Msk                                   (0x1UL << RCM_LPAHB2CLKEN_RNGEN_Pos)                           /*!< 0x00000040 */
 #define RCM_LPAHB2CLKEN_RNGEN                                       RCM_LPAHB2CLKEN_RNGEN_Msk
@@ -9759,10 +9862,20 @@ typedef struct
 #define RCM_LPAHB2CLKEN_OTGFSEN_Msk                                 (0x1UL << RCM_LPAHB2CLKEN_OTGFSEN_Pos)                         /*!< 0x00000080 */
 #define RCM_LPAHB2CLKEN_OTGFSEN                                     RCM_LPAHB2CLKEN_OTGFSEN_Msk
 
+/*
+ * @brief Specific device feature definitions (not present on all devices in the APM32F4 serie)
+ */
+#define RCM_LPAHB3_SUPPORT
+
 /********************  Bit definition for RCM_LPAHB3CLKEN register  *************/
 #define RCM_LPAHB3CLKEN_EMMCEN_Pos                                  (0U)
 #define RCM_LPAHB3CLKEN_EMMCEN_Msk                                  (0x1UL << RCM_LPAHB3CLKEN_EMMCEN_Pos)                          /*!< 0x00000001 */
 #define RCM_LPAHB3CLKEN_EMMCEN                                      RCM_LPAHB3CLKEN_EMMCEN_Msk
+
+/*
+ * @brief Specific device feature definitions (not present on all devices in the APM32F4 serie)
+ */
+#define RCM_LPAPB1_SUPPORT
 
 /********************  Bit definition for RCM_LPAPB1CLKEN register  *************/
 #define RCM_LPAPB1CLKEN_TMR2EN_Pos                                  (0U)
@@ -9834,6 +9947,11 @@ typedef struct
 #define RCM_LPAPB1CLKEN_DACEN_Pos                                   (29U)
 #define RCM_LPAPB1CLKEN_DACEN_Msk                                   (0x1UL << RCM_LPAPB1CLKEN_DACEN_Pos)                           /*!< 0x20000000 */
 #define RCM_LPAPB1CLKEN_DACEN                                       RCM_LPAPB1CLKEN_DACEN_Msk
+
+/*
+ * @brief Specific device feature definitions (not present on all devices in the APM32F4 serie)
+ */
+#define RCM_LPAPB2_SUPPORT
 
 /********************  Bit definition for RCM_LPAPB2CLKEN register  *************/
 #define RCM_LPAPB2CLKEN_TMR1EN_Pos                                  (0U)
@@ -10011,6 +10129,14 @@ typedef struct
  */
 #define RTC_TAMPER2_SUPPORT                                                                                                        /*!< TAMPER 2 feature support */
 #define RTC_AF2_SUPPORT                                                                                                            /*!< RTC Alternate Function 2 mapping support */
+#define RTC_ALARMA_SUPPORT                                                                                                         /*!< ALARMA feature support */
+#define RTC_ALARMB_SUPPORT                                                                                                         /*!< ALARMA feature support */
+#define RTC_TAMPER_SUPPORT                                                                                                         /*!< TAMPER feature support */
+#define RTC_TIMESTAMP_SUPPORT                                                                                                      /*!< TIMESTAMP feature support */
+#define RTC_CALENDAR_SUPPORT                                                                                                       /*!< CALENDAR feature support */
+#define RTC_WAKEUP_SUPPORT                                                                                                         /*!< WAKEUP feature support */
+#define RTC_CALIBRATION_SUPPORT                                                                                                    /*!< CALIBRATION feature support */
+#define RTC_TIME_SUPPORT                                                                                                           /*!< TIME feature support */
 /********************  Bits definition for RTC_TIME register  *******************/
 #define RTC_TIME_TIMEFCFG_Pos                                       (22U)
 #define RTC_TIME_TIMEFCFG_Msk                                       (0x1UL << RTC_TIME_TIMEFCFG_Pos)                               /*!< 0x00400000 */
@@ -11245,7 +11371,7 @@ typedef struct
 #define SYSCFG_EINTCFG1_EINT3_Msk                                   (0xFUL << SYSCFG_EINTCFG1_EINT3_Pos)                           /*!< 0x0000F000 */
 #define SYSCFG_EINTCFG1_EINT3                                       SYSCFG_EINTCFG1_EINT3_Msk                                      /*!<EINT 3 configuration */
 /**
-  * @brief   EINT0 configuration  
+  * @brief   EINT0 configuration
   */
 #define SYSCFG_EINTCFG1_EINT0_PA                                    0x0000U                                                        /*!<PA[0] pin */
 #define SYSCFG_EINTCFG1_EINT0_PB                                    0x0001U                                                        /*!<PB[0] pin */
@@ -11258,7 +11384,7 @@ typedef struct
 #define SYSCFG_EINTCFG1_EINT0_PI                                    0x0008U                                                        /*!<PI[0] pin */
 
 /**
-  * @brief   EINT1 configuration  
+  * @brief   EINT1 configuration
   */
 #define SYSCFG_EINTCFG1_EINT1_PA                                    0x0000U                                                        /*!<PA[1] pin */
 #define SYSCFG_EINTCFG1_EINT1_PB                                    0x0010U                                                        /*!<PB[1] pin */
@@ -11271,7 +11397,7 @@ typedef struct
 #define SYSCFG_EINTCFG1_EINT1_PI                                    0x0080U                                                        /*!<PI[1] pin */
 
 /**
-  * @brief   EINT2 configuration  
+  * @brief   EINT2 configuration
   */
 #define SYSCFG_EINTCFG1_EINT2_PA                                    0x0000U                                                        /*!<PA[2] pin */
 #define SYSCFG_EINTCFG1_EINT2_PB                                    0x0100U                                                        /*!<PB[2] pin */
@@ -11284,7 +11410,7 @@ typedef struct
 #define SYSCFG_EINTCFG1_EINT2_PI                                    0x0800U                                                        /*!<PI[2] pin */
 
 /**
-  * @brief   EINT3 configuration  
+  * @brief   EINT3 configuration
   */
 #define SYSCFG_EINTCFG1_EINT3_PA                                    0x0000U                                                        /*!<PA[3] pin */
 #define SYSCFG_EINTCFG1_EINT3_PB                                    0x1000U                                                        /*!<PB[3] pin */
@@ -11311,7 +11437,7 @@ typedef struct
 #define SYSCFG_EINTCFG2_EINT7                                       SYSCFG_EINTCFG2_EINT7_Msk                                      /*!<EINT 7 configuration */
 
 /**
-  * @brief   EINT4 configuration  
+  * @brief   EINT4 configuration
   */
 #define SYSCFG_EINTCFG2_EINT4_PA                                    0x0000U                                                        /*!<PA[4] pin */
 #define SYSCFG_EINTCFG2_EINT4_PB                                    0x0001U                                                        /*!<PB[4] pin */
@@ -11324,7 +11450,7 @@ typedef struct
 #define SYSCFG_EINTCFG2_EINT4_PI                                    0x0008U                                                        /*!<PI[4] pin */
 
 /**
-  * @brief   EINT5 configuration  
+  * @brief   EINT5 configuration
   */
 #define SYSCFG_EINTCFG2_EINT5_PA                                    0x0000U                                                        /*!<PA[5] pin */
 #define SYSCFG_EINTCFG2_EINT5_PB                                    0x0010U                                                        /*!<PB[5] pin */
@@ -11337,7 +11463,7 @@ typedef struct
 #define SYSCFG_EINTCFG2_EINT5_PI                                    0x0080U                                                        /*!<PI[5] pin */
 
 /**
-  * @brief   EINT6 configuration  
+  * @brief   EINT6 configuration
   */
 #define SYSCFG_EINTCFG2_EINT6_PA                                    0x0000U                                                        /*!<PA[6] pin */
 #define SYSCFG_EINTCFG2_EINT6_PB                                    0x0100U                                                        /*!<PB[6] pin */
@@ -11350,7 +11476,7 @@ typedef struct
 #define SYSCFG_EINTCFG2_EINT6_PI                                    0x0800U                                                        /*!<PI[6] pin */
 
 /**
-  * @brief   EINT7 configuration  
+  * @brief   EINT7 configuration
   */
 #define SYSCFG_EINTCFG2_EINT7_PA                                    0x0000U                                                        /*!<PA[7] pin */
 #define SYSCFG_EINTCFG2_EINT7_PB                                    0x1000U                                                        /*!<PB[7] pin */
@@ -11377,7 +11503,7 @@ typedef struct
 #define SYSCFG_EINTCFG3_EINT11                                      SYSCFG_EINTCFG3_EINT11_Msk                                     /*!<EINT 11 configuration */
 
 /**
-  * @brief   EINT8 configuration  
+  * @brief   EINT8 configuration
   */
 #define SYSCFG_EINTCFG3_EINT8_PA                                    0x0000U                                                        /*!<PA[8] pin */
 #define SYSCFG_EINTCFG3_EINT8_PB                                    0x0001U                                                        /*!<PB[8] pin */
@@ -11390,7 +11516,7 @@ typedef struct
 #define SYSCFG_EINTCFG3_EINT8_PI                                    0x0008U                                                        /*!<PI[8] pin */
 
 /**
-  * @brief   EINT9 configuration  
+  * @brief   EINT9 configuration
   */
 #define SYSCFG_EINTCFG3_EINT9_PA                                    0x0000U                                                        /*!<PA[9] pin */
 #define SYSCFG_EINTCFG3_EINT9_PB                                    0x0010U                                                        /*!<PB[9] pin */
@@ -11403,7 +11529,7 @@ typedef struct
 #define SYSCFG_EINTCFG3_EINT9_PI                                    0x0080U                                                        /*!<PI[9] pin */
 
 /**
-  * @brief   EINT10 configuration  
+  * @brief   EINT10 configuration
   */
 #define SYSCFG_EINTCFG3_EINT10_PA                                   0x0000U                                                        /*!<PA[10] pin */
 #define SYSCFG_EINTCFG3_EINT10_PB                                   0x0100U                                                        /*!<PB[10] pin */
@@ -11416,7 +11542,7 @@ typedef struct
 #define SYSCFG_EINTCFG3_EINT10_PI                                   0x0800U                                                        /*!<PI[10] pin */
 
 /**
-  * @brief   EINT11 configuration  
+  * @brief   EINT11 configuration
   */
 #define SYSCFG_EINTCFG3_EINT11_PA                                   0x0000U                                                        /*!<PA[11] pin */
 #define SYSCFG_EINTCFG3_EINT11_PB                                   0x1000U                                                        /*!<PB[11] pin */
@@ -11443,7 +11569,7 @@ typedef struct
 #define SYSCFG_EINTCFG4_EINT15                                      SYSCFG_EINTCFG4_EINT15_Msk                                     /*!<EINT 15 configuration */
 
 /**
-  * @brief   EINT12 configuration  
+  * @brief   EINT12 configuration
   */
 #define SYSCFG_EINTCFG4_EINT12_PA                                   0x0000U                                                        /*!<PA[12] pin */
 #define SYSCFG_EINTCFG4_EINT12_PB                                   0x0001U                                                        /*!<PB[12] pin */
@@ -11455,7 +11581,7 @@ typedef struct
 #define SYSCFG_EINTCFG4_EINT12_PH                                   0x0007U                                                        /*!<PH[12] pin */
 
 /**
-  * @brief   EINT13 configuration  
+  * @brief   EINT13 configuration
   */
 #define SYSCFG_EINTCFG4_EINT13_PA                                   0x0000U                                                        /*!<PA[13] pin */
 #define SYSCFG_EINTCFG4_EINT13_PB                                   0x0010U                                                        /*!<PB[13] pin */
@@ -11467,7 +11593,7 @@ typedef struct
 #define SYSCFG_EINTCFG4_EINT13_PH                                   0x0070U                                                        /*!<PH[13] pin */
 
 /**
-  * @brief   EINT14 configuration  
+  * @brief   EINT14 configuration
   */
 #define SYSCFG_EINTCFG4_EINT14_PA                                   0x0000U                                                        /*!<PA[14] pin */
 #define SYSCFG_EINTCFG4_EINT14_PB                                   0x0100U                                                        /*!<PB[14] pin */
@@ -11479,7 +11605,7 @@ typedef struct
 #define SYSCFG_EINTCFG4_EINT14_PH                                   0x0700U                                                        /*!<PH[14] pin */
 
 /**
-  * @brief   EINT15 configuration  
+  * @brief   EINT15 configuration
   */
 #define SYSCFG_EINTCFG4_EINT15_PA                                   0x0000U                                                        /*!<PA[15] pin */
 #define SYSCFG_EINTCFG4_EINT15_PB                                   0x1000U                                                        /*!<PB[15] pin */
@@ -11494,9 +11620,9 @@ typedef struct
 #define SYSCFG_CCCTRL_CCPD_Pos                                      (0U)
 #define SYSCFG_CCCTRL_CCPD_Msk                                      (0x1UL << SYSCFG_CCCTRL_CCPD_Pos)                              /*!< 0x00000001 */
 #define SYSCFG_CCCTRL_CCPD                                          SYSCFG_CCCTRL_CCPD_Msk                                         /*!<Compensation cell ready flag */
-#define SYSCFG_CCCTRL_EDYFLG_Pos                                    (8U)
-#define SYSCFG_CCCTRL_EDYFLG_Msk                                    (0x1UL << SYSCFG_CCCTRL_EDYFLG_Pos)                            /*!< 0x00000100 */
-#define SYSCFG_CCCTRL_EDYFLG                                        SYSCFG_CCCTRL_EDYFLG_Msk                                       /*!<Compensation cell power-down */
+#define SYSCFG_CCCTRL_RDYFLG_Pos                                    (8U)
+#define SYSCFG_CCCTRL_RDYFLG_Msk                                    (0x1UL << SYSCFG_CCCTRL_RDYFLG_Pos)                            /*!< 0x00000100 */
+#define SYSCFG_CCCTRL_RDYFLG                                        SYSCFG_CCCTRL_RDYFLG_Msk                                       /*!<Compensation cell power-down */
 
 /******************************************************************************/
 /*                                                                            */
@@ -12038,22 +12164,22 @@ typedef struct
 #define TMR_DMADDR_DMADDR                                           TMR_DMADDR_DMADDR_Msk                                          /*!<DMA register for burst accesses                    */
 
 /*******************  Bit definition for TMR_OR register  *********************/
-#define TMR_OR_TI1_RMPSEL_Pos                                       (0U)
-#define TMR_OR_TI1_RMPSEL_Msk                                       (0x3UL << TMR_OR_TI1_RMPSEL_Pos)                               /*!< 0x00000003 */
-#define TMR_OR_TI1_RMPSEL                                           TMR_OR_TI1_RMPSEL_Msk                                          /*!< TI1_RMP[1:0] bits (TMR11 Input Capture 1 remap) */
-#define TMR_OR_TI1_RMPSEL_0                                         (0x1UL << TMR_OR_TI1_RMPSEL_Pos)                               /*!< 0x00000001 */
-#define TMR_OR_TI1_RMPSEL_1                                         (0x2UL << TMR_OR_TI1_RMPSEL_Pos)                               /*!< 0x00000002 */
+#define TMR_OPT_TI1_RMPSEL_Pos                                       (0U)
+#define TMR_OPT_TI1_RMPSEL_Msk                                       (0x3UL << TMR_OPT_TI1_RMPSEL_Pos)                               /*!< 0x00000003 */
+#define TMR_OPT_TI1_RMPSEL                                           TMR_OPT_TI1_RMPSEL_Msk                                          /*!< TI1_RMP[1:0] bits (TMR11 Input Capture 1 remap) */
+#define TMR_OPT_TI1_RMPSEL_0                                         (0x1UL << TMR_OPT_TI1_RMPSEL_Pos)                               /*!< 0x00000001 */
+#define TMR_OPT_TI1_RMPSEL_1                                         (0x2UL << TMR_OPT_TI1_RMPSEL_Pos)                               /*!< 0x00000002 */
 
-#define TMR_OR_TI4_RMPSEL_Pos                                       (6U)
-#define TMR_OR_TI4_RMPSEL_Msk                                       (0x3UL << TMR_OR_TI4_RMPSEL_Pos)                               /*!< 0x000000C0 */
-#define TMR_OR_TI4_RMPSEL                                           TMR_OR_TI4_RMPSEL_Msk                                          /*!<TI4_RMP[1:0] bits (TMR5 Input 4 remap)             */
-#define TMR_OR_TI4_RMPSEL_0                                         (0x1UL << TMR_OR_TI4_RMPSEL_Pos)                               /*!< 0x0040 */
-#define TMR_OR_TI4_RMPSEL_1                                         (0x2UL << TMR_OR_TI4_RMPSEL_Pos)                               /*!< 0x0080 */
-#define TMR_OR_RMPSEL_Pos                                           (10U)
-#define TMR_OR_RMPSEL_Msk                                           (0x3UL << TMR_OR_RMPSEL_Pos)                                   /*!< 0x00000C00 */
-#define TMR_OR_RMPSEL                                               TMR_OR_RMPSEL_Msk                                              /*!<ITR1_RMP[1:0] bits (TMR2 Internal trigger 1 remap) */
-#define TMR_OR_RMPSEL_0                                             (0x1UL << TMR_OR_RMPSEL_Pos)                                   /*!< 0x0400 */
-#define TMR_OR_RMPSEL_1                                             (0x2UL << TMR_OR_RMPSEL_Pos)                                   /*!< 0x0800 */
+#define TMR_OPT_TI4_RMPSEL_Pos                                       (6U)
+#define TMR_OPT_TI4_RMPSEL_Msk                                       (0x3UL << TMR_OPT_TI4_RMPSEL_Pos)                               /*!< 0x000000C0 */
+#define TMR_OPT_TI4_RMPSEL                                           TMR_OPT_TI4_RMPSEL_Msk                                          /*!<TI4_RMP[1:0] bits (TMR5 Input 4 remap)             */
+#define TMR_OPT_TI4_RMPSEL_0                                         (0x1UL << TMR_OPT_TI4_RMPSEL_Pos)                               /*!< 0x0040 */
+#define TMR_OPT_TI4_RMPSEL_1                                         (0x2UL << TMR_OPT_TI4_RMPSEL_Pos)                               /*!< 0x0080 */
+#define TMR_OPT_RMPSEL_Pos                                           (10U)
+#define TMR_OPT_RMPSEL_Msk                                           (0x3UL << TMR_OPT_RMPSEL_Pos)                                   /*!< 0x00000C00 */
+#define TMR_OPT_RMPSEL                                               TMR_OPT_RMPSEL_Msk                                              /*!<ITR1_RMP[1:0] bits (TMR2 Internal trigger 1 remap) */
+#define TMR_OPT_RMPSEL_0                                             (0x1UL << TMR_OPT_RMPSEL_Pos)                                   /*!< 0x0400 */
+#define TMR_OPT_RMPSEL_1                                             (0x2UL << TMR_OPT_RMPSEL_Pos)                                   /*!< 0x0800 */
 
 
 /******************************************************************************/
@@ -12270,38 +12396,38 @@ typedef struct
 #define WWDT_CTRL_WWDTEN_Msk                                        (0x1UL << WWDT_CTRL_WWDTEN_Pos)                                /*!< 0x00000080 */
 #define WWDT_CTRL_WWDTEN                                            WWDT_CTRL_WWDTEN_Msk                                           /*!<Activation bit */
 
-/*******************  Bit definition for WWDT_CFR register  *******************/
-#define WWDT_CFR_WIN_Pos                                            (0U)
-#define WWDT_CFR_WIN_Msk                                            (0x7FUL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0000007F */
-#define WWDT_CFR_WIN                                                WWDT_CFR_WIN_Msk                                               /*!<W[6:0] bits (7-bit window value) */
-#define WWDT_CFR_WIN_0                                              (0x01UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0001 */
-#define WWDT_CFR_WIN_1                                              (0x02UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0002 */
-#define WWDT_CFR_WIN_2                                              (0x04UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0004 */
-#define WWDT_CFR_WIN_3                                              (0x08UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0008 */
-#define WWDT_CFR_WIN_4                                              (0x10UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0010 */
-#define WWDT_CFR_WIN_5                                              (0x20UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0020 */
-#define WWDT_CFR_WIN_6                                              (0x40UL << WWDT_CFR_WIN_Pos)                                   /*!< 0x0040 */
+/*******************  Bit definition for WWDT_CFG register  *******************/
+#define WWDT_CFG_WIN_Pos                                            (0U)
+#define WWDT_CFG_WIN_Msk                                            (0x7FUL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0000007F */
+#define WWDT_CFG_WIN                                                WWDT_CFG_WIN_Msk                                               /*!<W[6:0] bits (7-bit window value) */
+#define WWDT_CFG_WIN_0                                              (0x01UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0001 */
+#define WWDT_CFG_WIN_1                                              (0x02UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0002 */
+#define WWDT_CFG_WIN_2                                              (0x04UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0004 */
+#define WWDT_CFG_WIN_3                                              (0x08UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0008 */
+#define WWDT_CFG_WIN_4                                              (0x10UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0010 */
+#define WWDT_CFG_WIN_5                                              (0x20UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0020 */
+#define WWDT_CFG_WIN_6                                              (0x40UL << WWDT_CFG_WIN_Pos)                                   /*!< 0x0040 */
 /* Legacy defines */
-#define WWDT_CFR_WIN0                                               WWDT_CFR_WIN_0
-#define WWDT_CFR_WIN1                                               WWDT_CFR_WIN_1
-#define WWDT_CFR_WIN2                                               WWDT_CFR_WIN_2
-#define WWDT_CFR_WIN3                                               WWDT_CFR_WIN_3
-#define WWDT_CFR_WIN4                                               WWDT_CFR_WIN_4
-#define WWDT_CFR_WIN5                                               WWDT_CFR_WIN_5
-#define WWDT_CFR_WIN6                                               WWDT_CFR_WIN_6
+#define WWDT_CFG_WIN0                                               WWDT_CFG_WIN_0
+#define WWDT_CFG_WIN1                                               WWDT_CFG_WIN_1
+#define WWDT_CFG_WIN2                                               WWDT_CFG_WIN_2
+#define WWDT_CFG_WIN3                                               WWDT_CFG_WIN_3
+#define WWDT_CFG_WIN4                                               WWDT_CFG_WIN_4
+#define WWDT_CFG_WIN5                                               WWDT_CFG_WIN_5
+#define WWDT_CFG_WIN6                                               WWDT_CFG_WIN_6
 
-#define WWDT_CFR_TBPSC_Pos                                          (7U)
-#define WWDT_CFR_TBPSC_Msk                                          (0x3UL << WWDT_CFR_TBPSC_Pos)                                  /*!< 0x00000180 */
-#define WWDT_CFR_TBPSC                                              WWDT_CFR_TBPSC_Msk                                             /*!<WDGTB[1:0] bits (Timer Base) */
-#define WWDT_CFR_TBPSC_0                                            (0x1UL << WWDT_CFR_TBPSC_Pos)                                  /*!< 0x0080 */
-#define WWDT_CFR_TBPSC_1                                            (0x2UL << WWDT_CFR_TBPSC_Pos)                                  /*!< 0x0100 */
+#define WWDT_CFG_TBPSC_Pos                                          (7U)
+#define WWDT_CFG_TBPSC_Msk                                          (0x3UL << WWDT_CFG_TBPSC_Pos)                                  /*!< 0x00000180 */
+#define WWDT_CFG_TBPSC                                              WWDT_CFG_TBPSC_Msk                                             /*!<WDGTB[1:0] bits (Timer Base) */
+#define WWDT_CFG_TBPSC_0                                            (0x1UL << WWDT_CFG_TBPSC_Pos)                                  /*!< 0x0080 */
+#define WWDT_CFG_TBPSC_1                                            (0x2UL << WWDT_CFG_TBPSC_Pos)                                  /*!< 0x0100 */
 /* Legacy defines */
-#define WWDT_CFR_TBPSC0                                             WWDT_CFR_TBPSC_0
-#define WWDT_CFR_TBPSC1                                             WWDT_CFR_TBPSC_1
+#define WWDT_CFG_TBPSC0                                             WWDT_CFG_TBPSC_0
+#define WWDT_CFG_TBPSC1                                             WWDT_CFG_TBPSC_1
 
-#define WWDT_CFR_EWIEN_Pos                                          (9U)
-#define WWDT_CFR_EWIEN_Msk                                          (0x1UL << WWDT_CFR_EWIEN_Pos)                                  /*!< 0x00000200 */
-#define WWDT_CFR_EWIEN                                              WWDT_CFR_EWIEN_Msk                                             /*!<Early Wakeup Interrupt */
+#define WWDT_CFG_EWIEN_Pos                                          (9U)
+#define WWDT_CFG_EWIEN_Msk                                          (0x1UL << WWDT_CFG_EWIEN_Pos)                                  /*!< 0x00000200 */
+#define WWDT_CFG_EWIEN                                              WWDT_CFG_EWIEN_Msk                                             /*!<Early Wakeup Interrupt */
 
 /*******************  Bit definition for WWDT_STS register  ********************/
 #define WWDT_STS_EWIFLG_Pos                                         (0U)
@@ -13725,9 +13851,74 @@ typedef struct
 #define USB_OTG_FRMNUM_2                                            (0x4UL << USB_OTG_FRMNUM_Pos)                                  /*!< 0x00800000 */
 #define USB_OTG_FRMNUM_3                                            (0x8UL << USB_OTG_FRMNUM_Pos)                                  /*!< 0x01000000 */
 
+/********************  Bit definition for OTG HS2 register  ********************/
+#define USB_OTG_HS2_USB_SWITCH_usb_switch_Pos                       (0U)
+#define USB_OTG_HS2_USB_SWITCH_usb_switch_Msk                       (0x1UL << USB_OTG_HS2_USB_SWITCH_usb_switch_Pos)               /*!< 0x00000001 */
+#define USB_OTG_HS2_USB_SWITCH                                      USB_OTG_HS2_USB_SWITCH_usb_switch_Msk                          /*!< USB Switch */
+
+#define USB_OTG_HS2_POWERON_CORE_poweron_core_Pos                   (0U)
+#define USB_OTG_HS2_POWERON_CORE_poweron_core_Msk                   (0x1UL << USB_OTG_HS2_POWERON_CORE_poweron_core_Pos)           /*!< 0x00000001 */
+#define USB_OTG_HS2_POWERON_CORE                                    USB_OTG_HS2_POWERON_CORE_poweron_core_Msk                      /*!< Power On Core */
+
+#define USB_OTG_HS2_USB_PLL_EN_usb_pll_en_Pos                       (0U)
+#define USB_OTG_HS2_USB_PLL_EN_usb_pll_en_Msk                       (0x1UL << USB_OTG_HS2_USB_PLL_EN_usb_pll_en_Pos)               /*!< 0x00000001 */
+#define USB_OTG_HS2_USB_PLL_EN                                      USB_OTG_HS2_USB_PLL_EN_usb_pll_en_Msk                          /*!< USB PLL Enable */
+
+#define USB_OTG_HS2_SHORT_5V_ENABLE_short_5v_enable_Pos             (0U)
+#define USB_OTG_HS2_SHORT_5V_ENABLE_short_5v_enable_Msk             (0x1UL << USB_OTG_HS2_SHORT_5V_ENABLE_short_5v_enable_Pos)     /*!< 0x00000001 */
+#define USB_OTG_HS2_SHORT_5V_ENABLE                                 USB_OTG_HS2_SHORT_5V_ENABLE_short_5v_enable_Msk                /*!< Short 5V Enable */
+
+#define USB_OTG_HS2_OTG_SUSPENDM_otg_suspendm_Pos                   (0U)
+#define USB_OTG_HS2_OTG_SUSPENDM_otg_suspendm_Msk                   (0x1UL << USB_OTG_HS2_OTG_SUSPENDM_otg_suspendm_Pos)           /*!< 0x00000001 */
+#define USB_OTG_HS2_OTG_SUSPENDM                                    USB_OTG_HS2_OTG_SUSPENDM_otg_suspendm_Msk                      /*!< OTG VBUS Suspend */
+
+#define USB_OTG_HS2_TXBITSTUFFENABLE_txbitstuffenable_Pos           (0U)
+#define USB_OTG_HS2_TXBITSTUFFENABLE_txbitstuffenable_Msk           (0x1UL << USB_OTG_HS2_TXBITSTUFFENABLE_txbitstuffenable_Pos)   /*!< 0x00000001 */
+#define USB_OTG_HS2_TXBITSTUFFENABLE                                USB_OTG_HS2_TXBITSTUFFENABLE_txbitstuffenable_Msk              /*!< TX Bit Stuff Enable */
+
+#define USB_OTG_HS2_PLLICP_SEL_I2C_pllicp_sel_i2c_Pos               (0U)
+#define USB_OTG_HS2_PLLICP_SEL_I2C_pllicp_sel_i2c_Msk               (0x1UL << USB_OTG_HS2_PLLICP_SEL_I2C_pllicp_sel_i2c_Pos)       /*!< 0x00000001 */
+#define USB_OTG_HS2_PLLICP_SEL_I2C                                  USB_OTG_HS2_PLLICP_SEL_I2C_pllicp_sel_i2c_Msk                  /*!< PLL Charge Current Setting */
+
+#define USB_OTG_HS2_HSZR_CNTL_I2C_hszr_cntl_i2c_Pos                 (0U)
+#define USB_OTG_HS2_HSZR_CNTL_I2C_hszr_cntl_i2c_Msk                 (0x7UL << USB_OTG_HS2_HSZR_CNTL_I2C_hszr_cntl_i2c_Pos)         /*!< 0x00000007 */
+#define USB_OTG_HS2_HSZR_CNTL_I2C                                   USB_OTG_HS2_HSZR_CNTL_I2C_hszr_cntl_i2c_Msk                    /*!< The DP/DM to the Ground Impedance Setting */
+
+#define USB_OTG_HS2_SQVTH_CNTL_I2C_sqvth_cntl_i2c_Pos               (0U)
+#define USB_OTG_HS2_SQVTH_CNTL_I2C_sqvth_cntl_i2c_Msk               (0x3UL << USB_OTG_HS2_SQVTH_CNTL_I2C_sqvth_cntl_i2c_Pos)       /*!< 0x00000003 */
+#define USB_OTG_HS2_SQVTH_CNTL_I2C                                  USB_OTG_HS2_SQVTH_CNTL_I2C_sqvth_cntl_i2c_Msk                  /*!< The SQ Reference Voltage Setting */
+
+#define USB_OTG_HS2_SW_RREF_I2C_sw_rref_i2c_Pos                     (0U)
+#define USB_OTG_HS2_SW_RREF_I2C_sw_rref_i2c_Msk                     (0x7UL << USB_OTG_HS2_SW_RREF_I2C_sw_rref_i2c_Pos)             /*!< 0x00000007 */
+#define USB_OTG_HS2_SW_RREF_I2C                                     USB_OTG_HS2_SW_RREF_I2C_sw_rref_i2c_Msk                        /*!< The DP/DM Output Swing Setting When HS Mode */
+
+#define USB_OTG_HS2_SW_BUF_I2C_sw_buf_i2c_Pos                       (0U)
+#define USB_OTG_HS2_SW_BUF_I2C_sw_buf_i2c_Msk                       (0x1UL << USB_OTG_HS2_SW_BUF_I2C_sw_buf_i2c_Pos)               /*!< 0x00000001 */
+#define USB_OTG_HS2_SW_BUF_I2C                                      USB_OTG_HS2_SW_BUF_I2C_sw_buf_i2c_Msk                          /*!< The TX Driver Setting */
+
+#define USB_OTG_HS2_TX2RX_T_CFG_tx2rx_t_cfg_i2c_Pos                 (0U)
+#define USB_OTG_HS2_TX2RX_T_CFG_tx2rx_t_cfg_i2c_Msk                 (0x3UL << USB_OTG_HS2_TX2RX_T_CFG_tx2rx_t_cfg_i2c_Pos)         /*!< 0x00000003 */
+#define USB_OTG_HS2_TX2RX_T_CFG                                     USB_OTG_HS2_TX2RX_T_CFG_tx2rx_t_cfg_i2c_Msk                    /*!< Debug Control Signal */
+
+#define USB_OTG_HS2_TEST_ANA_FAST_I2C_test_ana_fast_i2c_Pos         (0U)
+#define USB_OTG_HS2_TEST_ANA_FAST_I2C_test_ana_fast_i2c_Msk         (0x7UL << USB_OTG_HS2_TEST_ANA_FAST_I2C_test_ana_fast_i2c_Pos) /*!< 0x00000007 */
+#define USB_OTG_HS2_TEST_ANA_FAST_I2C                               USB_OTG_HS2_TEST_ANA_FAST_I2C_test_ana_fast_i2c_Msk            /*!< Debug Control Signal */
+
+#define USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Pos                   (0U)
+#define USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Msk                   (0x7UL << USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Pos)           /*!< 0x00000007 */
+#define USB_OTG_HS2_CLK_MODE_I2C                                    USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Msk                      /*!< Debug Control Signal */
+
+#define USB_OTG_HS2_USB_DBNCE_FLTR_BYPASS_usb_dbnce_fltr_bypass_Pos (0U)
+#define USB_OTG_HS2_USB_DBNCE_FLTR_BYPASS_usb_dbnce_fltr_bypass_Msk (0x1UL << USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Pos)           /*!< 0x00000001 */
+#define USB_OTG_HS2_USB_DBNCE_FLTR_BYPASS                           USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Msk                      /*!< Bypass debounce filters for avalid, bvalid, vbusvalid, sessend, iddig signals when enabled */
+
+#define USB_OTG_HS2_USB_SS_SCALEDOWN_MODE_clk_mode_i2c_Pos          (0U)
+#define USB_OTG_HS2_USB_SS_SCALEDOWN_MODE_clk_mode_i2c_Msk          (0x7UL << USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Pos)           /*!< 0x00000007 */
+#define USB_OTG_HS2_USB_SS_SCALEDOWN_MODE                           USB_OTG_HS2_CLK_MODE_I2C_clk_mode_i2c_Msk                      /*!< Debug Control Signal */
+
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -13854,7 +14045,7 @@ typedef struct
                                        ((INSTANCE) == TMR5) || \
                                        ((INSTANCE) == TMR8) || \
                                        ((INSTANCE) == TMR9) || \
-                                       ((INSTANCE) == TMR12)) 
+                                       ((INSTANCE) == TMR12))
 
 /************ TMR Instances : at least 3 capture/compare channels *************/
 #define IS_TMR_CC3_INSTANCE(INSTANCE)   (((INSTANCE) == TMR1) || \

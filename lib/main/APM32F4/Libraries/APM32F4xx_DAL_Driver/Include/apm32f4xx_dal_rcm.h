@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -78,6 +74,11 @@ typedef struct
 
   uint32_t HSEState;             /*!< The new state of the HSE.
                                       This parameter can be a value of @ref RCM_HSE_Config                        */
+
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  uint32_t HSEPredivValue;       /*!<  The Prediv1 factor value (named PREDIV1 or PLLXTPRE in RM)
+                                       This parameter can be a value of @ref RCMEx_Prediv1_Factor                 */
+#endif /* APM32F403xx || APM32F402xx */
 
   uint32_t LSEState;             /*!< The new state of the LSE.
                                       This parameter can be a value of @ref RCM_LSE_Config                        */
@@ -198,6 +199,8 @@ typedef struct
   * @}
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RCM_PLL_Clock_Source PLL Clock Source
   * @{
   */
@@ -206,6 +209,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RCM_System_Clock_Type System Clock Type
   * @{
@@ -219,27 +223,21 @@ typedef struct
   */
 
 /** @defgroup RCM_System_Clock_Source System Clock Source
-  * @note     The RCM_SYSCLKSOURCE_PLLRCLK parameter is available only for
-  *           APM32F446xx devices.
   * @{
   */
 #define RCM_SYSCLKSOURCE_HSI             RCM_CFG_SCLKSEL_HSI
 #define RCM_SYSCLKSOURCE_HSE             RCM_CFG_SCLKSEL_HSE
 #define RCM_SYSCLKSOURCE_PLLCLK          RCM_CFG_SCLKSEL_PLL
-#define RCM_SYSCLKSOURCE_PLLRCLK         ((uint32_t)(RCM_CFG_SCLKSEL_0 | RCM_CFG_SCLKSEL_1))
 /**
   * @}
   */
 
 /** @defgroup RCM_System_Clock_Source_Status System Clock Source Status
-  * @note     The RCM_SYSCLKSOURCE_STATUS_PLLRCLK parameter is available only for
-  *           APM32F446xx devices.
   * @{
   */
-#define RCM_SYSCLKSOURCE_STATUS_HSI     RCM_CFG_SCLKSWSTS_HSI   /*!< HSI used as system clock */
-#define RCM_SYSCLKSOURCE_STATUS_HSE     RCM_CFG_SCLKSWSTS_HSE   /*!< HSE used as system clock */
-#define RCM_SYSCLKSOURCE_STATUS_PLLCLK  RCM_CFG_SCLKSWSTS_PLL   /*!< PLL used as system clock */
-#define RCM_SYSCLKSOURCE_STATUS_PLLRCLK ((uint32_t)(RCM_CFG_SCLKSWSTS_0 | RCM_CFG_SCLKSWSTS_1))   /*!< PLLR used as system clock */
+#define RCM_SYSCLKSOURCE_STATUS_HSI     RCM_CFG_SCLKSELSTS_HSI   /*!< HSI used as system clock */
+#define RCM_SYSCLKSOURCE_STATUS_HSE     RCM_CFG_SCLKSELSTS_HSE   /*!< HSE used as system clock */
+#define RCM_SYSCLKSOURCE_STATUS_PLLCLK  RCM_CFG_SCLKSELSTS_PLL   /*!< PLL used as system clock */
 /**
   * @}
   */
@@ -278,6 +276,9 @@ typedef struct
 #define RCM_RTCCLKSOURCE_NO_CLK          0x00000000U
 #define RCM_RTCCLKSOURCE_LSE             0x00000100U
 #define RCM_RTCCLKSOURCE_LSI             0x00000200U
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define RCM_RTCCLKSOURCE_HSE_DIV128      0x00000300U
+#else
 #define RCM_RTCCLKSOURCE_HSE_DIVX        0x00000300U
 #define RCM_RTCCLKSOURCE_HSE_DIV2        0x00020300U
 #define RCM_RTCCLKSOURCE_HSE_DIV3        0x00030300U
@@ -309,6 +310,7 @@ typedef struct
 #define RCM_RTCCLKSOURCE_HSE_DIV29       0x001D0300U
 #define RCM_RTCCLKSOURCE_HSE_DIV30       0x001E0300U
 #define RCM_RTCCLKSOURCE_HSE_DIV31       0x001F0300U
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -325,10 +327,18 @@ typedef struct
 /** @defgroup RCM_MCO1_Clock_Source MCO1 Clock Source
   * @{
   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define RCM_MCO1SOURCE_NOCLOCK           RCM_CFG_MCOSEL_NOCLOCK
+#define RCM_MCO1SOURCE_SYSCLK            RCM_CFG_MCOSEL_SYSCLK
+#define RCM_MCO1SOURCE_HSI               RCM_CFG_MCOSEL_HSI
+#define RCM_MCO1SOURCE_HSE               RCM_CFG_MCOSEL_HSE
+#define RCM_MCO1SOURCE_PLLCLK            RCM_CFG_MCOSEL_PLLCLK_DIV2
+#else
 #define RCM_MCO1SOURCE_HSI               0x00000000U
 #define RCM_MCO1SOURCE_LSE               RCM_CFG_MCO1SEL_0
 #define RCM_MCO1SOURCE_HSE               RCM_CFG_MCO1SEL_1
 #define RCM_MCO1SOURCE_PLLCLK            RCM_CFG_MCO1SEL
+#endif /* APM32F403xx || APM32F402xx */
 /**
   * @}
   */
@@ -353,7 +363,9 @@ typedef struct
 #define RCM_IT_HSIRDY                    ((uint8_t)0x04)
 #define RCM_IT_HSERDY                    ((uint8_t)0x08)
 #define RCM_IT_PLLRDY                    ((uint8_t)0x10)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
 #define RCM_IT_PLL2RDY                   ((uint8_t)0x20)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 #define RCM_IT_CSS                       ((uint8_t)0x80)
 /**
   * @}
@@ -399,6 +411,8 @@ typedef struct
   * @{
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RCM_AHB1_Clock_Enable_Disable AHB1 Peripheral Clock Enable Disable
   * @brief  Enable or disable the AHB1 peripheral clock.
   * @note   After reset, the peripheral clock (used for registers read/write access)
@@ -482,6 +496,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RCM_APB1_Clock_Enable_Disable APB1 Peripheral Clock Enable Disable
   * @brief  Enable or disable the Low Speed APB (APB1) peripheral clock.
@@ -525,13 +540,6 @@ typedef struct
                                         tmpreg = READ_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_I2C1EN);\
                                         UNUSED(tmpreg); \
                                           } while(0U)
-#define __DAL_RCM_I2C2_CLK_ENABLE()     do { \
-                                        __IO uint32_t tmpreg = 0x00U; \
-                                        SET_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_I2C2EN);\
-                                        /* Delay after an RCM peripheral clock enabling */ \
-                                        tmpreg = READ_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_I2C2EN);\
-                                        UNUSED(tmpreg); \
-                                          } while(0U)
 #define __DAL_RCM_PMU_CLK_ENABLE()     do { \
                                         __IO uint32_t tmpreg = 0x00U; \
                                         SET_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_PMUEN);\
@@ -545,8 +553,20 @@ typedef struct
 #define __DAL_RCM_SPI2_CLK_DISABLE()   (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_SPI2EN))
 #define __DAL_RCM_USART2_CLK_DISABLE() (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_USART2EN))
 #define __DAL_RCM_I2C1_CLK_DISABLE()   (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_I2C1EN))
-#define __DAL_RCM_I2C2_CLK_DISABLE()   (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_I2C2EN))
 #define __DAL_RCM_PMU_CLK_DISABLE()    (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_PMUEN))
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_I2C2_CLK_ENABLE()     do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_I2C2EN);\
+                                        /* Delay after an RCM peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCM->APB1CLKEN, RCM_APB1CLKEN_I2C2EN);\
+                                        UNUSED(tmpreg); \
+                                          } while(0U)
+#define __DAL_RCM_I2C2_CLK_DISABLE()   (RCM->APB1CLKEN &= ~(RCM_APB1CLKEN_I2C2EN))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /**
   * @}
   */
@@ -563,7 +583,6 @@ typedef struct
 #define __DAL_RCM_SPI2_IS_CLK_ENABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_SPI2EN)) != RESET)
 #define __DAL_RCM_USART2_IS_CLK_ENABLED() ((RCM->APB1CLKEN & (RCM_APB1CLKEN_USART2EN)) != RESET)
 #define __DAL_RCM_I2C1_IS_CLK_ENABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C1EN)) != RESET)
-#define __DAL_RCM_I2C2_IS_CLK_ENABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C2EN)) != RESET)
 #define __DAL_RCM_PMU_IS_CLK_ENABLED()    ((RCM->APB1CLKEN & (RCM_APB1CLKEN_PMUEN)) != RESET)
 
 #define __DAL_RCM_TMR5_IS_CLK_DISABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_TMR5EN)) == RESET)
@@ -571,8 +590,14 @@ typedef struct
 #define __DAL_RCM_SPI2_IS_CLK_DISABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_SPI2EN)) == RESET)
 #define __DAL_RCM_USART2_IS_CLK_DISABLED() ((RCM->APB1CLKEN & (RCM_APB1CLKEN_USART2EN)) == RESET)
 #define __DAL_RCM_I2C1_IS_CLK_DISABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C1EN)) == RESET)
-#define __DAL_RCM_I2C2_IS_CLK_DISABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C2EN)) == RESET)
 #define __DAL_RCM_PMU_IS_CLK_DISABLED()    ((RCM->APB1CLKEN & (RCM_APB1CLKEN_PMUEN)) == RESET)
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_I2C2_IS_CLK_ENABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C2EN)) != RESET)
+
+#define __DAL_RCM_I2C2_IS_CLK_DISABLED()   ((RCM->APB1CLKEN & (RCM_APB1CLKEN_I2C2EN)) == RESET)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -598,13 +623,6 @@ typedef struct
                                         tmpreg = READ_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_USART1EN);\
                                         UNUSED(tmpreg); \
                                           } while(0U)
-#define __DAL_RCM_USART6_CLK_ENABLE()   do { \
-                                        __IO uint32_t tmpreg = 0x00U; \
-                                        SET_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_USART6EN);\
-                                        /* Delay after an RCM peripheral clock enabling */ \
-                                        tmpreg = READ_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_USART6EN);\
-                                        UNUSED(tmpreg); \
-                                          } while(0U)
 #define __DAL_RCM_ADC1_CLK_ENABLE()     do { \
                                         __IO uint32_t tmpreg = 0x00U; \
                                         SET_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_ADC1EN);\
@@ -617,6 +635,21 @@ typedef struct
                                         SET_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_SPI1EN);\
                                         /* Delay after an RCM peripheral clock enabling */ \
                                         tmpreg = READ_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_SPI1EN);\
+                                        UNUSED(tmpreg); \
+                                          } while(0U)
+
+#define __DAL_RCM_TMR1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_TMR1EN))
+#define __DAL_RCM_USART1_CLK_DISABLE() (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_USART1EN))
+#define __DAL_RCM_ADC1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_ADC1EN))
+#define __DAL_RCM_SPI1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_SPI1EN))
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_USART6_CLK_ENABLE()   do { \
+                                        __IO uint32_t tmpreg = 0x00U; \
+                                        SET_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_USART6EN);\
+                                        /* Delay after an RCM peripheral clock enabling */ \
+                                        tmpreg = READ_BIT(RCM->APB2CLKEN, RCM_APB2CLKEN_USART6EN);\
                                         UNUSED(tmpreg); \
                                           } while(0U)
 #define __DAL_RCM_SYSCFG_CLK_ENABLE()   do { \
@@ -641,14 +674,11 @@ typedef struct
                                         UNUSED(tmpreg); \
                                           } while(0U)
 
-#define __DAL_RCM_TMR1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_TMR1EN))
-#define __DAL_RCM_USART1_CLK_DISABLE() (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_USART1EN))
 #define __DAL_RCM_USART6_CLK_DISABLE() (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_USART6EN))
-#define __DAL_RCM_ADC1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_ADC1EN))
-#define __DAL_RCM_SPI1_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_SPI1EN))
 #define __DAL_RCM_SYSCFG_CLK_DISABLE() (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_SYSCFGEN))
 #define __DAL_RCM_TMR9_CLK_DISABLE()   (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_TMR9EN))
 #define __DAL_RCM_TMR11_CLK_DISABLE()  (RCM->APB2CLKEN &= ~(RCM_APB2CLKEN_TMR11EN))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -662,21 +692,26 @@ typedef struct
   */
 #define __DAL_RCM_TMR1_IS_CLK_ENABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR1EN)) != RESET)
 #define __DAL_RCM_USART1_IS_CLK_ENABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART1EN)) != RESET)
-#define __DAL_RCM_USART6_IS_CLK_ENABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART6EN)) != RESET)
 #define __DAL_RCM_ADC1_IS_CLK_ENABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_ADC1EN)) != RESET)
 #define __DAL_RCM_SPI1_IS_CLK_ENABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_SPI1EN)) != RESET)
+
+#define __DAL_RCM_TMR1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR1EN)) == RESET)
+#define __DAL_RCM_USART1_IS_CLK_DISABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART1EN)) == RESET)
+#define __DAL_RCM_ADC1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_ADC1EN)) == RESET)
+#define __DAL_RCM_SPI1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_SPI1EN)) == RESET)
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_USART6_IS_CLK_ENABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART6EN)) != RESET)
 #define __DAL_RCM_SYSCFG_IS_CLK_ENABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_SYSCFGEN)) != RESET)
 #define __DAL_RCM_TMR9_IS_CLK_ENABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR9EN)) != RESET)
 #define __DAL_RCM_TMR11_IS_CLK_ENABLED()  ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR11EN)) != RESET)
 
-#define __DAL_RCM_TMR1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR1EN)) == RESET)
-#define __DAL_RCM_USART1_IS_CLK_DISABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART1EN)) == RESET)
 #define __DAL_RCM_USART6_IS_CLK_DISABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_USART6EN)) == RESET)
-#define __DAL_RCM_ADC1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_ADC1EN)) == RESET)
-#define __DAL_RCM_SPI1_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_SPI1EN)) == RESET)
 #define __DAL_RCM_SYSCFG_IS_CLK_DISABLED() ((RCM->APB2CLKEN & (RCM_APB2CLKEN_SYSCFGEN)) == RESET)
 #define __DAL_RCM_TMR9_IS_CLK_DISABLED()   ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR9EN)) == RESET)
 #define __DAL_RCM_TMR11_IS_CLK_DISABLED()  ((RCM->APB2CLKEN & (RCM_APB2CLKEN_TMR11EN)) == RESET)
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -686,6 +721,11 @@ typedef struct
   * @{
   */
 #define __DAL_RCM_AHB1_FORCE_RESET()    (RCM->AHB1RST = 0xFFFFFFFFU)
+
+#define __DAL_RCM_AHB1_RELEASE_RESET()  (RCM->AHB1RST = 0x00U)
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 #define __DAL_RCM_GPIOA_FORCE_RESET()   (RCM->AHB1RST |= (RCM_AHB1RST_PARST))
 #define __DAL_RCM_GPIOB_FORCE_RESET()   (RCM->AHB1RST |= (RCM_AHB1RST_PBRST))
 #define __DAL_RCM_GPIOC_FORCE_RESET()   (RCM->AHB1RST |= (RCM_AHB1RST_PCRST))
@@ -693,13 +733,13 @@ typedef struct
 #define __DAL_RCM_DMA1_FORCE_RESET()    (RCM->AHB1RST |= (RCM_AHB1RST_DMA1RST))
 #define __DAL_RCM_DMA2_FORCE_RESET()    (RCM->AHB1RST |= (RCM_AHB1RST_DMA2RST))
 
-#define __DAL_RCM_AHB1_RELEASE_RESET()  (RCM->AHB1RST = 0x00U)
 #define __DAL_RCM_GPIOA_RELEASE_RESET() (RCM->AHB1RST &= ~(RCM_AHB1RST_PARST))
 #define __DAL_RCM_GPIOB_RELEASE_RESET() (RCM->AHB1RST &= ~(RCM_AHB1RST_PBRST))
 #define __DAL_RCM_GPIOC_RELEASE_RESET() (RCM->AHB1RST &= ~(RCM_AHB1RST_PCRST))
 #define __DAL_RCM_GPIOH_RELEASE_RESET() (RCM->AHB1RST &= ~(RCM_AHB1RST_PHRST))
 #define __DAL_RCM_DMA1_RELEASE_RESET()  (RCM->AHB1RST &= ~(RCM_AHB1RST_DMA1RST))
 #define __DAL_RCM_DMA2_RELEASE_RESET()  (RCM->AHB1RST &= ~(RCM_AHB1RST_DMA2RST))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -714,7 +754,6 @@ typedef struct
 #define __DAL_RCM_SPI2_FORCE_RESET()     (RCM->APB1RST |= (RCM_APB1RST_SPI2RST))
 #define __DAL_RCM_USART2_FORCE_RESET()   (RCM->APB1RST |= (RCM_APB1RST_USART2RST))
 #define __DAL_RCM_I2C1_FORCE_RESET()     (RCM->APB1RST |= (RCM_APB1RST_I2C1RST))
-#define __DAL_RCM_I2C2_FORCE_RESET()     (RCM->APB1RST |= (RCM_APB1RST_I2C2RST))
 #define __DAL_RCM_PMU_FORCE_RESET()      (RCM->APB1RST |= (RCM_APB1RST_PMURST))
 
 #define __DAL_RCM_APB1_RELEASE_RESET()   (RCM->APB1RST = 0x00U)
@@ -723,8 +762,13 @@ typedef struct
 #define __DAL_RCM_SPI2_RELEASE_RESET()   (RCM->APB1RST &= ~(RCM_APB1RST_SPI2RST))
 #define __DAL_RCM_USART2_RELEASE_RESET() (RCM->APB1RST &= ~(RCM_APB1RST_USART2RST))
 #define __DAL_RCM_I2C1_RELEASE_RESET()   (RCM->APB1RST &= ~(RCM_APB1RST_I2C1RST))
-#define __DAL_RCM_I2C2_RELEASE_RESET()   (RCM->APB1RST &= ~(RCM_APB1RST_I2C2RST))
 #define __DAL_RCM_PMU_RELEASE_RESET()    (RCM->APB1RST &= ~(RCM_APB1RST_PMURST))
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_I2C2_FORCE_RESET()     (RCM->APB1RST |= (RCM_APB1RST_I2C2RST))
+#define __DAL_RCM_I2C2_RELEASE_RESET()   (RCM->APB1RST &= ~(RCM_APB1RST_I2C2RST))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -736,26 +780,33 @@ typedef struct
 #define __DAL_RCM_APB2_FORCE_RESET()     (RCM->APB2RST = 0xFFFFFFFFU)
 #define __DAL_RCM_TMR1_FORCE_RESET()     (RCM->APB2RST |= (RCM_APB2RST_TMR1RST))
 #define __DAL_RCM_USART1_FORCE_RESET()   (RCM->APB2RST |= (RCM_APB2RST_USART1RST))
-#define __DAL_RCM_USART6_FORCE_RESET()   (RCM->APB2RST |= (RCM_APB2RST_USART6RST))
-#define __DAL_RCM_ADC_FORCE_RESET()      (RCM->APB2RST |= (RCM_APB2RST_ADCRST))
 #define __DAL_RCM_SPI1_FORCE_RESET()     (RCM->APB2RST |= (RCM_APB2RST_SPI1RST))
-#define __DAL_RCM_SYSCFG_FORCE_RESET()   (RCM->APB2RST |= (RCM_APB2RST_SYSCFGRST))
-#define __DAL_RCM_TMR9_FORCE_RESET()     (RCM->APB2RST |= (RCM_APB2RST_TMR9RST))
-#define __DAL_RCM_TMR11_FORCE_RESET()    (RCM->APB2RST |= (RCM_APB2RST_TMR11RST))
 
 #define __DAL_RCM_APB2_RELEASE_RESET()   (RCM->APB2RST = 0x00U)
 #define __DAL_RCM_TMR1_RELEASE_RESET()   (RCM->APB2RST &= ~(RCM_APB2RST_TMR1RST))
 #define __DAL_RCM_USART1_RELEASE_RESET() (RCM->APB2RST &= ~(RCM_APB2RST_USART1RST))
+#define __DAL_RCM_SPI1_RELEASE_RESET()   (RCM->APB2RST &= ~(RCM_APB2RST_SPI1RST))
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+#define __DAL_RCM_USART6_FORCE_RESET()   (RCM->APB2RST |= (RCM_APB2RST_USART6RST))
+#define __DAL_RCM_ADC_FORCE_RESET()      (RCM->APB2RST |= (RCM_APB2RST_ADCRST))
+#define __DAL_RCM_SYSCFG_FORCE_RESET()   (RCM->APB2RST |= (RCM_APB2RST_SYSCFGRST))
+#define __DAL_RCM_TMR9_FORCE_RESET()     (RCM->APB2RST |= (RCM_APB2RST_TMR9RST))
+#define __DAL_RCM_TMR11_FORCE_RESET()    (RCM->APB2RST |= (RCM_APB2RST_TMR11RST))
+
 #define __DAL_RCM_USART6_RELEASE_RESET() (RCM->APB2RST &= ~(RCM_APB2RST_USART6RST))
 #define __DAL_RCM_ADC_RELEASE_RESET()    (RCM->APB2RST &= ~(RCM_APB2RST_ADCRST))
-#define __DAL_RCM_SPI1_RELEASE_RESET()   (RCM->APB2RST &= ~(RCM_APB2RST_SPI1RST))
 #define __DAL_RCM_SYSCFG_RELEASE_RESET() (RCM->APB2RST &= ~(RCM_APB2RST_SYSCFGRST))
 #define __DAL_RCM_TMR9_RELEASE_RESET()   (RCM->APB2RST &= ~(RCM_APB2RST_TMR9RST))
 #define __DAL_RCM_TMR11_RELEASE_RESET()  (RCM->APB2RST &= ~(RCM_APB2RST_TMR11RST))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @defgroup RCM_AHB1_LowPower_Enable_Disable AHB1 Peripheral Low Power Enable Disable
   * @brief  Enable or disable the AHB1 peripheral clock during Low Power (Sleep) mode.
   * @note   Peripheral clock gating in SLEEP mode can be used to further reduce
@@ -836,6 +887,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
 /** @defgroup RCM_HSI_Configuration HSI Configuration
   * @{
@@ -989,6 +1041,8 @@ typedef struct
 #define __DAL_RCM_RTC_ENABLE() (*(__IO uint32_t *) RCM_BDCTRL_RTCCLKEN_BB = ENABLE)
 #define __DAL_RCM_RTC_DISABLE() (*(__IO uint32_t *) RCM_BDCTRL_RTCCLKEN_BB = DISABLE)
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macros to configure the RTC clock (RTCCLK).
   * @note   As the RTC clock configuration bits are in the Backup domain and write
   *         access is denied to this domain after reset, you have to enable write
@@ -1017,6 +1071,26 @@ typedef struct
                                                     RCM->BDCTRL |= ((__RTCCLKSource__) & 0x00000FFFU);  \
                                                    } while(0U)
 
+/**
+  * @brief   Get the RTC and HSE clock divider (RTCPRE).
+  * @retval Returned value can be one of the following values:
+ *            @arg @ref RCM_RTCCLKSOURCE_HSE_DIVX HSE divided by X selected as RTC clock (X can be retrieved thanks to @ref __DAL_RCM_GET_RTC_HSE_PRESCALER()
+  */
+#define  __DAL_RCM_GET_RTC_HSE_PRESCALER() (READ_BIT(RCM->CFG, RCM_CFG_RTCPSC) | RCM_BDCTRL_RTCSRCSEL)
+
+#else
+
+/** @brief Macro to get the RTC clock source.
+  * @retval The clock source can be one of the following values:
+  *            @arg @ref RCM_RTCCLKSOURCE_NO_CLK : No clock selected as RTC clock.
+  *            @arg @ref RCM_RTCCLKSOURCE_LSE : LSE selected as RTC clock.
+  *            @arg @ref RCM_RTCCLKSOURCE_LSI : LSI selected as RTC clock.
+  *            @arg @ref RCM_RTCCLKSOURCE_HSE_DIV128 : HSE divided by 128 selected as RTC clock
+  */
+#define __DAL_RCM_RTC_CONFIG(__RTC_CLKSOURCE__)  (MODIFY_REG(RCM->BDCTRL, RCM_BDCTRL_RTCSRCSEL, (__RTC_CLKSOURCE__)))
+
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
+
 /** @brief Macro to get the RTC clock source.
   * @retval The clock source can be one of the following values:
   *            @arg @ref RCM_RTCCLKSOURCE_NO_CLK No clock selected as RTC clock
@@ -1025,13 +1099,6 @@ typedef struct
   *            @arg @ref RCM_RTCCLKSOURCE_HSE_DIVX HSE divided by X selected as RTC clock (X can be retrieved thanks to @ref __DAL_RCM_GET_RTC_HSE_PRESCALER()
   */
 #define __DAL_RCM_GET_RTC_SOURCE() (READ_BIT(RCM->BDCTRL, RCM_BDCTRL_RTCSRCSEL))
-
-/**
-  * @brief   Get the RTC and HSE clock divider (RTCPRE).
-  * @retval Returned value can be one of the following values:
- *            @arg @ref RCM_RTCCLKSOURCE_HSE_DIVX HSE divided by X selected as RTC clock (X can be retrieved thanks to @ref __DAL_RCM_GET_RTC_HSE_PRESCALER()
-  */
-#define  __DAL_RCM_GET_RTC_HSE_PRESCALER() (READ_BIT(RCM->CFG, RCM_CFG_RTCPSC) | RCM_BDCTRL_RTCSRCSEL)
 
 /** @brief  Macros to force or release the Backup domain reset.
   * @note   This function resets the RTC peripheral (including the backup registers)
@@ -1058,6 +1125,8 @@ typedef struct
 #define __DAL_RCM_PLL_ENABLE() (*(__IO uint32_t *) RCM_CTRL_PLL1EN_BB = ENABLE)
 #define __DAL_RCM_PLL_DISABLE() (*(__IO uint32_t *) RCM_CTRL_PLL1EN_BB = DISABLE)
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macro to configure the PLL clock source.
   * @note   This function must be used only when the main PLL is disabled.
   * @param  __PLLSOURCE__ specifies the PLL entry clock source.
@@ -1078,6 +1147,7 @@ typedef struct
   *
   */
 #define __DAL_RCM_PLL_PLLB_CONFIG(__PLLB__) MODIFY_REG(RCM->PLL1CFG, RCM_PLL1CFG_PLLB, (__PLLB__))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -1092,8 +1162,6 @@ typedef struct
   *              - RCM_SYSCLKSOURCE_HSI: HSI oscillator is used as system clock source.
   *              - RCM_SYSCLKSOURCE_HSE: HSE oscillator is used as system clock source.
   *              - RCM_SYSCLKSOURCE_PLLCLK: PLL output is used as system clock source.
-  *              - RCM_SYSCLKSOURCE_PLLRCLK: PLLR output is used as system clock source. This
-  *                parameter is available only for APM32F446xx devices.
   */
 #define __DAL_RCM_SYSCLK_CONFIG(__RCM_SYSCLKSOURCE__) MODIFY_REG(RCM->CFG, RCM_CFG_SCLKSEL, (__RCM_SYSCLKSOURCE__))
 
@@ -1103,11 +1171,11 @@ typedef struct
   *              - RCM_SYSCLKSOURCE_STATUS_HSI: HSI used as system clock.
   *              - RCM_SYSCLKSOURCE_STATUS_HSE: HSE used as system clock.
   *              - RCM_SYSCLKSOURCE_STATUS_PLLCLK: PLL used as system clock.
-  *              - RCM_SYSCLKSOURCE_STATUS_PLLRCLK: PLLR used as system clock. This parameter
-  *                is available only for APM32F446xx devices.
   */
-#define __DAL_RCM_GET_SYSCLK_SOURCE() (RCM->CFG & RCM_CFG_SCLKSWSTS)
+#define __DAL_RCM_GET_SYSCLK_SOURCE() (RCM->CFG & RCM_CFG_SCLKSELSTS)
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macro to get the oscillator used as PLL clock source.
   * @retval The oscillator used as PLL clock source. The returned value can be one
   *         of the following:
@@ -1115,6 +1183,7 @@ typedef struct
   *              - RCM_PLLSOURCE_HSE: HSE oscillator is used as PLL clock source.
   */
 #define __DAL_RCM_GET_PLL_OSCSOURCE() ((uint32_t)(RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -1123,6 +1192,8 @@ typedef struct
   * @{
   */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
 /** @brief  Macro to configure the MCO1 clock.
   * @param  __MCOCLKSOURCE__ specifies the MCO clock source.
   *          This parameter can be one of the following values:
@@ -1145,8 +1216,7 @@ typedef struct
   * @param  __MCOCLKSOURCE__ specifies the MCO clock source.
   *          This parameter can be one of the following values:
   *            @arg RCM_MCO2SOURCE_SYSCLK: System clock (SYSCLK) selected as MCO2 source
-  *            @arg RCM_MCO2SOURCE_PLLI2SCLK: PLLI2S clock selected as MCO2 source, available for all APM32F4 devices
-  *            @arg RCM_MCO2SOURCE_I2SCLK: I2SCLK clock selected as MCO2 source, available only for APM32F410Rx devices
+  *            @arg RCM_MCO2SOURCE_PLLI2SCLK: PLLI2S clock selected as MCO2 source (*)
   *            @arg RCM_MCO2SOURCE_HSE: HSE clock selected as MCO2 source
   *            @arg RCM_MCO2SOURCE_PLLCLK: main PLL clock selected as MCO2 source
   * @param  __MCODIV__ specifies the MCO clock prescaler.
@@ -1159,6 +1229,23 @@ typedef struct
   */
 #define __DAL_RCM_MCO2_CONFIG(__MCOCLKSOURCE__, __MCODIV__) \
     MODIFY_REG(RCM->CFG, (RCM_CFG_MCO2SEL | RCM_CFG_MCO2PSC), ((__MCOCLKSOURCE__) | ((__MCODIV__) << 3U)));
+#else
+
+/** @brief  Macro to configure the MCO clock.
+  * @param  __MCOCLKSOURCE__ specifies the MCO clock source.
+  *         This parameter can be one of the following values:
+  *            @arg @ref RCM_MCO1SOURCE_NOCLOCK No clock selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_SYSCLK  System clock (SYSCLK) selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_HSI HSI selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_HSE HSE selected as MCO clock
+  *            @arg @ref RCM_MCO1SOURCE_PLLCLK  PLL clock divided by 2 selected as MCO clock
+  * @param  __MCODIV__ specifies the MCO clock prescaler.
+  *         This parameter can be one of the following values:
+  *            @arg @ref RCM_MCODIV_1 No division applied on MCO clock source
+  */
+#define __DAL_RCM_MCO1_CONFIG(__MCOCLKSOURCE__, __MCODIV__) \
+                 MODIFY_REG(RCM->CFG, RCM_CFG_MCOSEL, (__MCOCLKSOURCE__))
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 /**
   * @}
   */
@@ -1177,7 +1264,7 @@ typedef struct
   *            @arg RCM_IT_HSIRDY: HSI ready interrupt.
   *            @arg RCM_IT_HSERDY: HSE ready interrupt.
   *            @arg RCM_IT_PLLRDY: Main PLL ready interrupt.
-  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt.
+  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt. (*)
   */
 #define __DAL_RCM_ENABLE_IT(__INTERRUPT__) (*(__IO uint8_t *) RCM_INT_BYTE1_ADDRESS |= (__INTERRUPT__))
 
@@ -1190,7 +1277,7 @@ typedef struct
   *            @arg RCM_IT_HSIRDY: HSI ready interrupt.
   *            @arg RCM_IT_HSERDY: HSE ready interrupt.
   *            @arg RCM_IT_PLLRDY: Main PLL ready interrupt.
-  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt.
+  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt. (*)
   */
 #define __DAL_RCM_DISABLE_IT(__INTERRUPT__) (*(__IO uint8_t *) RCM_INT_BYTE1_ADDRESS &= (uint8_t)(~(__INTERRUPT__)))
 
@@ -1203,8 +1290,8 @@ typedef struct
   *            @arg RCM_IT_HSIRDY: HSI ready interrupt.
   *            @arg RCM_IT_HSERDY: HSE ready interrupt.
   *            @arg RCM_IT_PLLRDY: Main PLL ready interrupt.
-  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt.
-  *            @arg RCM_IT_CSS: Clock Security System interrupt
+  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt. (*)
+  *            @arg RCM_IT_CSS: Clock Security System interrupt.
   */
 #define __DAL_RCM_CLEAR_IT(__INTERRUPT__) (*(__IO uint8_t *) RCM_INT_BYTE2_ADDRESS = (__INTERRUPT__))
 
@@ -1216,8 +1303,9 @@ typedef struct
   *            @arg RCM_IT_HSIRDY: HSI ready interrupt.
   *            @arg RCM_IT_HSERDY: HSE ready interrupt.
   *            @arg RCM_IT_PLLRDY: Main PLL ready interrupt.
-  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt.
+  *            @arg RCM_IT_PLL2RDY: PLLI2S ready interrupt. (*)
   *            @arg RCM_IT_CSS: Clock Security System interrupt
+
   * @retval The new state of __INTERRUPT__ (TRUE or FALSE).
   */
 #define __DAL_RCM_GET_IT(__INTERRUPT__) ((RCM->INT & (__INTERRUPT__)) == (__INTERRUPT__))
@@ -1233,20 +1321,24 @@ typedef struct
   *            @arg RCM_FLAG_HSIRDY: HSI oscillator clock ready.
   *            @arg RCM_FLAG_HSERDY: HSE oscillator clock ready.
   *            @arg RCM_FLAG_PLLRDY: Main PLL clock ready.
-  *            @arg RCM_FLAG_PLL2RDY: PLLI2S clock ready.
+  *            @arg RCM_FLAG_PLL2RDY: PLLI2S clock ready.  (*)
   *            @arg RCM_FLAG_LSERDY: LSE oscillator clock ready.
   *            @arg RCM_FLAG_LSIRDY: LSI oscillator clock ready.
-  *            @arg RCM_FLAG_BORRST: POR/PDR or BOR reset.
+  *            @arg RCM_FLAG_BORRST: POR/PDR or BOR reset. (*)
   *            @arg RCM_FLAG_PINRST: Pin reset.
   *            @arg RCM_FLAG_PORRST: POR/PDR reset.
   *            @arg RCM_FLAG_SFTRST: Software reset.
   *            @arg RCM_FLAG_IWDTRST: Independent Watchdog reset.
   *            @arg RCM_FLAG_WWDTRST: Window Watchdog reset.
   *            @arg RCM_FLAG_LPWRRST: Low Power reset.
+  *            (*)This parameter is not available for APM32F402/403xx device.
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
 #define RCM_FLAG_MASK  ((uint8_t)0x1FU)
-#define __DAL_RCM_GET_FLAG(__FLAG__) (((((((__FLAG__) >> 5U) == 1U)? RCM->CTRL :((((__FLAG__) >> 5U) == 2U) ? RCM->BDCTRL :((((__FLAG__) >> 5U) == 3U)? RCM->CSTS :RCM->INT))) & (1U << ((__FLAG__) & RCM_FLAG_MASK)))!= 0U)? 1U : 0U)
+#define __DAL_RCM_GET_FLAG(__FLAG__) (((((((__FLAG__) >> 5U) == 1U)? RCM->CTRL : \
+                                        ((((__FLAG__) >> 5U) == 2U)? RCM->BDCTRL : \
+                                        ((((__FLAG__) >> 5U) == 3U)? RCM->CSTS : \
+                                                       RCM->INT))) & (1U << ((__FLAG__) & RCM_FLAG_MASK)))!= 0U)? 1U : 0U)
 
 /**
   * @}
@@ -1311,42 +1403,58 @@ void DAL_RCM_CSSCallback(void);
   * @brief RCM registers bit address in the alias region
   * @{
   */
-#define RCM_OFFSET                 (RCM_BASE - PERIPH_BASE)
+#define RCM_OFFSET                  (RCM_BASE - PERIPH_BASE)
 /* --- CTRL Register --- */
 /* Alias word address of HSIEN bit */
-#define RCM_CTRL_OFFSET              (RCM_OFFSET + 0x00U)
-#define RCM_HSIEN_BIT_NUMBER       0x00U
-#define RCM_CTRL_HSIEN_BB            (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_HSIEN_BIT_NUMBER * 4U))
+#define RCM_CTRL_OFFSET             (RCM_OFFSET + 0x00U)
+#define RCM_HSIEN_BIT_NUMBER        0x00U
+#define RCM_CTRL_HSIEN_BB           (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_HSIEN_BIT_NUMBER * 4U))
 /* Alias word address of CSSEN bit */
-#define RCM_CSSEN_BIT_NUMBER       0x13U
-#define RCM_CTRL_CSSEN_BB            (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_CSSEN_BIT_NUMBER * 4U))
+#define RCM_CSSEN_BIT_NUMBER        0x13U
+#define RCM_CTRL_CSSEN_BB           (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_CSSEN_BIT_NUMBER * 4U))
 /* Alias word address of PLL1EN bit */
-#define RCM_PLLEN_BIT_NUMBER       0x18U
-#define RCM_CTRL_PLL1EN_BB            (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_PLLEN_BIT_NUMBER * 4U))
+#define RCM_PLLEN_BIT_NUMBER        0x18U
+#define RCM_CTRL_PLL1EN_BB          (PERIPH_BB_BASE + (RCM_CTRL_OFFSET * 32U) + (RCM_PLLEN_BIT_NUMBER * 4U))
 
 /* --- BDCTRL Register --- */
 /* Alias word address of RTCEN bit */
-#define RCM_BDCTRL_OFFSET            (RCM_OFFSET + 0x70U)
-#define RCM_RTCEN_BIT_NUMBER       0x0FU
-#define RCM_BDCTRL_RTCCLKEN_BB          (PERIPH_BB_BASE + (RCM_BDCTRL_OFFSET * 32U) + (RCM_RTCEN_BIT_NUMBER * 4U))
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define RCM_BDCTRL_OFFSET           (RCM_OFFSET + 0x20U)
+#else
+#define RCM_BDCTRL_OFFSET           (RCM_OFFSET + 0x70U)
+#endif /* APM32F403xx || APM32F402xx */
+#define RCM_RTCEN_BIT_NUMBER        0x0FU
+#define RCM_BDCTRL_RTCCLKEN_BB      (PERIPH_BB_BASE + (RCM_BDCTRL_OFFSET * 32U) + (RCM_RTCEN_BIT_NUMBER * 4U))
 /* Alias word address of BDRST bit */
-#define RCM_BDRST_BIT_NUMBER       0x10U
-#define RCM_BDCTRL_BDRST_BB          (PERIPH_BB_BASE + (RCM_BDCTRL_OFFSET * 32U) + (RCM_BDRST_BIT_NUMBER * 4U))
+#define RCM_BDRST_BIT_NUMBER        0x10U
+#define RCM_BDCTRL_BDRST_BB         (PERIPH_BB_BASE + (RCM_BDCTRL_OFFSET * 32U) + (RCM_BDRST_BIT_NUMBER * 4U))
 
 /* --- CSTS Register --- */
 /* Alias word address of LSION bit */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define RCM_CSTS_OFFSET             (RCM_OFFSET + 0x24U)
+#else
 #define RCM_CSTS_OFFSET             (RCM_OFFSET + 0x74U)
+#endif /* APM32F403xx || APM32F402xx */
 #define RCM_LSIEN_BIT_NUMBER        0x00U
 #define RCM_CSTS_LSIEN_BB           (PERIPH_BB_BASE + (RCM_CSTS_OFFSET * 32U) + (RCM_LSIEN_BIT_NUMBER * 4U))
 
 /* CTRL register byte 3 (Bits[23:16]) base address */
 #define RCM_CTRL_BYTE2_ADDRESS       0x40023802U
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+/* INT register byte 2 (Bits[15:8]) base address */
+#define RCM_INT_BYTE1_ADDRESS      ((uint32_t)(RCM_BASE + 0x08U + 0x01U))
+
+/* INT register byte 3 (Bits[23:16]) base address */
+#define RCM_INT_BYTE2_ADDRESS      ((uint32_t)(RCM_BASE + 0x08U + 0x02U))
+#else
 /* INT register byte 2 (Bits[15:8]) base address */
 #define RCM_INT_BYTE1_ADDRESS      ((uint32_t)(RCM_BASE + 0x0CU + 0x01U))
 
 /* INT register byte 3 (Bits[23:16]) base address */
 #define RCM_INT_BYTE2_ADDRESS      ((uint32_t)(RCM_BASE + 0x0CU + 0x02U))
+#endif /* APM32F403xx || APM32F402xx */
 
 /* BDCTRL register base address */
 #define RCM_BDCTRL_BYTE0_ADDRESS     (PERIPH_BASE + RCM_BDCTRL_OFFSET)
@@ -1389,14 +1497,24 @@ void DAL_RCM_CSSCallback(void);
 
 #define IS_RCM_PLL(PLL) (((PLL) == RCM_PLL_NONE) ||((PLL) == RCM_PLL_OFF) || ((PLL) == RCM_PLL_ON))
 
+#if defined (APM32F403xx) || defined (APM32F402xx)
+#define IS_RCM_PLLSOURCE(SOURCE) (((SOURCE) == RCM_PLLSOURCE_HSI_DIV2) || \
+                                  ((SOURCE) == RCM_PLLSOURCE_HSE))
+#else
 #define IS_RCM_PLLSOURCE(SOURCE) (((SOURCE) == RCM_PLLSOURCE_HSI) || \
                                   ((SOURCE) == RCM_PLLSOURCE_HSE))
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_RCM_SYSCLKSOURCE(SOURCE) (((SOURCE) == RCM_SYSCLKSOURCE_HSI) || \
                                      ((SOURCE) == RCM_SYSCLKSOURCE_HSE) || \
-                                     ((SOURCE) == RCM_SYSCLKSOURCE_PLLCLK) || \
-                                     ((SOURCE) == RCM_SYSCLKSOURCE_PLLRCLK))
+                                     ((SOURCE) == RCM_SYSCLKSOURCE_PLLCLK))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_RCM_RTCCLKSOURCE(__SOURCE__) (((__SOURCE__) == RCM_RTCCLKSOURCE_NO_CLK) || \
+                                         ((__SOURCE__) == RCM_RTCCLKSOURCE_LSE) || \
+                                         ((__SOURCE__) == RCM_RTCCLKSOURCE_LSI) || \
+                                         ((__SOURCE__) == RCM_RTCCLKSOURCE_HSE_DIV128))
+#else
 #define IS_RCM_RTCCLKSOURCE(__SOURCE__) (((__SOURCE__) == RCM_RTCCLKSOURCE_LSE) || \
                                          ((__SOURCE__) == RCM_RTCCLKSOURCE_LSI) || \
                                          ((__SOURCE__) == RCM_RTCCLKSOURCE_HSE_DIV2) || \
@@ -1429,12 +1547,22 @@ void DAL_RCM_CSSCallback(void);
                                          ((__SOURCE__) == RCM_RTCCLKSOURCE_HSE_DIV29) || \
                                          ((__SOURCE__) == RCM_RTCCLKSOURCE_HSE_DIV30) || \
                                          ((__SOURCE__) == RCM_RTCCLKSOURCE_HSE_DIV31))
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_RCM_PLLB_VALUE(VALUE) ((VALUE) <= 63U)
 
 #define IS_RCM_PLL1C_VALUE(VALUE) (((VALUE) == 2U) || ((VALUE) == 4U) || ((VALUE) == 6U) || ((VALUE) == 8U))
 
 #define IS_RCM_PLLD_VALUE(VALUE) ((2U <= (VALUE)) && ((VALUE) <= 15U))
+
+#define IS_RCM_PLL_MUL(__MUL__) (((__MUL__) == RCM_PLL_MUL2)  || ((__MUL__) == RCM_PLL_MUL3)  || \
+                                 ((__MUL__) == RCM_PLL_MUL4)  || ((__MUL__) == RCM_PLL_MUL5)  || \
+                                 ((__MUL__) == RCM_PLL_MUL6)  || ((__MUL__) == RCM_PLL_MUL7)  || \
+                                 ((__MUL__) == RCM_PLL_MUL8)  || ((__MUL__) == RCM_PLL_MUL9)  || \
+                                 ((__MUL__) == RCM_PLL_MUL10) || ((__MUL__) == RCM_PLL_MUL11) || \
+                                 ((__MUL__) == RCM_PLL_MUL12) || ((__MUL__) == RCM_PLL_MUL13) || \
+                                 ((__MUL__) == RCM_PLL_MUL14) || ((__MUL__) == RCM_PLL_MUL15) || \
+                                 ((__MUL__) == RCM_PLL_MUL16))
 
 #define IS_RCM_HCLK(HCLK) (((HCLK) == RCM_SYSCLK_DIV1)   || ((HCLK) == RCM_SYSCLK_DIV2)   || \
                            ((HCLK) == RCM_SYSCLK_DIV4)   || ((HCLK) == RCM_SYSCLK_DIV8)   || \
@@ -1450,12 +1578,22 @@ void DAL_RCM_CSSCallback(void);
 
 #define IS_RCM_MCO(MCOx) (((MCOx) == RCM_MCO1) || ((MCOx) == RCM_MCO2))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_RCM_MCO1SOURCE(__SOURCE__) (((__SOURCE__) == RCM_MCO1SOURCE_SYSCLK)  || ((__SOURCE__) == RCM_MCO1SOURCE_HSI) \
+                                    || ((__SOURCE__) == RCM_MCO1SOURCE_HSE)     || ((__SOURCE__) == RCM_MCO1SOURCE_PLLCLK) \
+                                    || ((__SOURCE__) == RCM_MCO1SOURCE_NOCLOCK))
+#else
 #define IS_RCM_MCO1SOURCE(SOURCE) (((SOURCE) == RCM_MCO1SOURCE_HSI) || ((SOURCE) == RCM_MCO1SOURCE_LSE) || \
                                    ((SOURCE) == RCM_MCO1SOURCE_HSE) || ((SOURCE) == RCM_MCO1SOURCE_PLLCLK))
+#endif /* APM32F403xx || APM32F402xx */
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_RCM_MCODIV(DIV) ((DIV) == RCM_MCODIV_1)
+#else
 #define IS_RCM_MCODIV(DIV) (((DIV) == RCM_MCODIV_1)  || ((DIV) == RCM_MCODIV_2) || \
                              ((DIV) == RCM_MCODIV_3) || ((DIV) == RCM_MCODIV_4) || \
                              ((DIV) == RCM_MCODIV_5))
+#endif /* APM32F403xx || APM32F402xx */
 #define IS_RCM_CALIBRATION_VALUE(VALUE) ((VALUE) <= 0x1FU)
 
 /**

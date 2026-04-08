@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -45,11 +41,14 @@
 #include "apm32f4xx_ddl_rcm.h"
 #include "apm32f4xx_ddl_system.h"
 #include "apm32f4xx_ddl_pmu.h"
+
 #ifdef  USE_FULL_ASSERT
-#include "apm32_assert.h"
+  #include "apm32_assert.h"
 #else
-#define ASSERT_PARAM(_PARAM_) ((void)(_PARAM_))
-#endif /* USE_FULL_ASSERT */
+#ifndef ASSERT_PARAM
+    #define ASSERT_PARAM(_PARAM_) ((void)(0U))
+#endif
+#endif
 
 /** @addtogroup APM32F4xx_DDL_Driver
   * @{
@@ -81,7 +80,11 @@
 
 /* Defines used for HSE range */
 #define UTILS_HSE_FREQUENCY_MIN      4000000U        /*!< Frequency min for HSE frequency, in Hz   */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define UTILS_HSE_FREQUENCY_MAX     16000000U        /*!< Frequency max for HSE frequency, in Hz   */
+#else
 #define UTILS_HSE_FREQUENCY_MAX     26000000U        /*!< Frequency max for HSE frequency, in Hz   */
+#endif /* APM32F403xx || APM32F402xx */
 
 /* Defines used for FLASH latency according to HCLK Frequency */
 #if defined(FLASH_SCALE1_LATENCY1_FREQ)
@@ -99,8 +102,18 @@
 #if defined(FLASH_SCALE1_LATENCY5_FREQ)
 #define UTILS_SCALE1_LATENCY5_FREQ  FLASH_SCALE1_LATENCY5_FREQ /*!< HCLK frequency to set FLASH latency 5 in power scale 1 */
 #endif
+#if defined(FLASH_SCALE1_LATENCY6_FREQ)
+#define UTILS_SCALE1_LATENCY6_FREQ  FLASH_SCALE1_LATENCY6_FREQ /*!< HCLK frequency to set FLASH latency 6 in power scale 1 */
+#endif
+#if defined(FLASH_SCALE1_LATENCY7_FREQ)
+#define UTILS_SCALE1_LATENCY7_FREQ  FLASH_SCALE1_LATENCY7_FREQ /*!< HCLK frequency to set FLASH latency 7 in power scale 1 */
+#endif
+#if defined(FLASH_SCALE2_LATENCY1_FREQ)
 #define UTILS_SCALE2_LATENCY1_FREQ  FLASH_SCALE2_LATENCY1_FREQ /*!< HCLK frequency to set FLASH latency 1 in power scale 2 */
+#endif
+#if defined(FLASH_SCALE2_LATENCY2_FREQ)
 #define UTILS_SCALE2_LATENCY2_FREQ  FLASH_SCALE2_LATENCY2_FREQ /*!< HCLK frequency to set FLASH latency 2 in power scale 2 */
+#endif
 #if defined(FLASH_SCALE2_LATENCY3_FREQ)
 #define UTILS_SCALE2_LATENCY3_FREQ  FLASH_SCALE2_LATENCY3_FREQ /*!< HCLK frequency to set FLASH latency 2 in power scale 2 */
 #endif
@@ -125,6 +138,16 @@
 #if defined(FLASH_SCALE3_LATENCY5_FREQ)
 #define UTILS_SCALE3_LATENCY5_FREQ  FLASH_SCALE3_LATENCY5_FREQ /*!< HCLK frequency to set FLASH latency 5 in power scale 3 */
 #endif
+
+#if defined(FLASH_LATENCY1_FREQ)
+#define UTILS_LATENCY1_FREQ         FLASH_LATENCY1_FREQ       /*!< HCLK frequency to set FLASH latency 1 */
+#endif /* FLASH_LATENCY1_FREQ */
+#if defined(FLASH_LATENCY2_FREQ)
+#define UTILS_LATENCY2_FREQ         FLASH_LATENCY2_FREQ       /*!< HCLK frequency to set FLASH latency 2 */
+#endif /* FLASH_LATENCY2_FREQ */
+#if defined(FLASH_LATENCY3_FREQ)
+#define UTILS_LATENCY3_FREQ         FLASH_LATENCY3_FREQ       /*!< HCLK frequency to set FLASH latency 3 */
+#endif /* FLASH_LATENCY3_FREQ */
 /**
   * @}
   */
@@ -155,6 +178,25 @@
                                       || ((__VALUE__) == DDL_RCM_APB2_DIV_8) \
                                       || ((__VALUE__) == DDL_RCM_APB2_DIV_16))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_DDL_UTILS_PLLMUL_VALUE(__VALUE__) (((__VALUE__) == DDL_RCM_PLL_MUL_2) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_3) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_4) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_5) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_6) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_7) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_8) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_9) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_10) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_11) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_12) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_13) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_14) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_15) \
+                                          || ((__VALUE__) == DDL_RCM_PLL_MUL_16))
+
+#define IS_DDL_UTILS_PREDIV_VALUE(__VALUE__) (((__VALUE__) == DDL_RCM_PREDIV_DIV_1)  || ((__VALUE__) == DDL_RCM_PREDIV_DIV_2))
+#else
 #define IS_DDL_UTILS_PLLB_VALUE(__VALUE__) (((__VALUE__) == DDL_RCM_PLLB_DIV_2)  \
                                         || ((__VALUE__) == DDL_RCM_PLLB_DIV_3)  \
                                         || ((__VALUE__) == DDL_RCM_PLLB_DIV_4)  \
@@ -224,11 +266,15 @@
                                         || ((__VALUE__) == DDL_RCM_PLL1C_DIV_4) \
                                         || ((__VALUE__) == DDL_RCM_PLL1C_DIV_6) \
                                         || ((__VALUE__) == DDL_RCM_PLL1C_DIV_8))
+#endif /* APM32F403xx || APM32F402xx */
 
 #define IS_DDL_UTILS_PLLVCO_INPUT(__VALUE__)  ((UTILS_PLLVCO_INPUT_MIN <= (__VALUE__)) && ((__VALUE__) <= UTILS_PLLVCO_INPUT_MAX))
 
 #define IS_DDL_UTILS_PLLVCO_OUTPUT(__VALUE__) ((UTILS_PLLVCO_OUTPUT_MIN <= (__VALUE__)) && ((__VALUE__) <= UTILS_PLLVCO_OUTPUT_MAX))
 
+#if defined(APM32F403xx) || defined(APM32F402xx)
+#define IS_DDL_UTILS_PLL_FREQUENCY(__VALUE__) ((__VALUE__) <= UTILS_PLLVCO_OUTPUT_MAX)
+#else
 #if !defined(RCM_MAX_FREQUENCY_SCALE1)
 #define IS_DDL_UTILS_PLL_FREQUENCY(__VALUE__) ((DDL_PMU_GetRegulVoltageScaling() == DDL_PMU_REGU_VOLTAGE_SCALE2) ? ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE2) : \
                                              ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE3))
@@ -243,6 +289,7 @@
                                              ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE2))
 
 #endif /* RCM_MAX_FREQUENCY_SCALE1*/
+#endif /* APM32F403xx || APM32F402xx */
 #define IS_DDL_UTILS_HSE_BYPASS(__STATE__) (((__STATE__) == DDL_UTILS_HSEBYPASS_ON) \
                                         || ((__STATE__) == DDL_UTILS_HSEBYPASS_OFF))
 
@@ -375,8 +422,21 @@ ErrorStatus DDL_SetFlashLatency(uint32_t HCLK_Frequency)
   }
   else
   {
+#if defined(PMU_CTRL_VOSSEL)
     if(DDL_PMU_GetRegulVoltageScaling() == DDL_PMU_REGU_VOLTAGE_SCALE1)
     {
+#if defined (UTILS_SCALE1_LATENCY7_FREQ)
+      if((HCLK_Frequency > UTILS_SCALE1_LATENCY7_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
+      {
+        latency = DDL_FLASH_LATENCY_7;
+      }
+#endif /*UTILS_SCALE1_LATENCY7_FREQ */
+#if defined (UTILS_SCALE1_LATENCY6_FREQ)
+      if((HCLK_Frequency > UTILS_SCALE1_LATENCY6_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
+      {
+        latency = DDL_FLASH_LATENCY_6;
+      }
+#endif /*UTILS_SCALE1_LATENCY6_FREQ */
 #if defined (UTILS_SCALE1_LATENCY5_FREQ)
       if((HCLK_Frequency > UTILS_SCALE1_LATENCY5_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
       {
@@ -416,19 +476,19 @@ ErrorStatus DDL_SetFlashLatency(uint32_t HCLK_Frequency)
       {
         latency = DDL_FLASH_LATENCY_5;
       }
-#endif /*UTILS_SCALE1_LATENCY5_FREQ */
+#endif /*UTILS_SCALE2_LATENCY5_FREQ */
 #if defined (UTILS_SCALE2_LATENCY4_FREQ)
       if((HCLK_Frequency > UTILS_SCALE2_LATENCY4_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
       {
         latency = DDL_FLASH_LATENCY_4;
       }
-#endif /*UTILS_SCALE1_LATENCY4_FREQ */
+#endif /*UTILS_SCALE2_LATENCY4_FREQ */
 #if defined (UTILS_SCALE2_LATENCY3_FREQ)
       if((HCLK_Frequency > UTILS_SCALE2_LATENCY3_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
       {
         latency = DDL_FLASH_LATENCY_3;
       }
-#endif /*UTILS_SCALE1_LATENCY3_FREQ */
+#endif /*UTILS_SCALE2_LATENCY3_FREQ */
       if((HCLK_Frequency > UTILS_SCALE2_LATENCY2_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
       {
         latency = DDL_FLASH_LATENCY_2;
@@ -449,7 +509,7 @@ ErrorStatus DDL_SetFlashLatency(uint32_t HCLK_Frequency)
       {
         latency = DDL_FLASH_LATENCY_3;
       }
-#endif /*UTILS_SCALE1_LATENCY3_FREQ */
+#endif /*UTILS_SCALE3_LATENCY3_FREQ */
 #if defined (UTILS_SCALE3_LATENCY2_FREQ)
       if((HCLK_Frequency > UTILS_SCALE3_LATENCY2_FREQ)&&(latency == DDL_FLASH_LATENCY_0))
       {
@@ -462,9 +522,37 @@ ErrorStatus DDL_SetFlashLatency(uint32_t HCLK_Frequency)
           latency = DDL_FLASH_LATENCY_1;
         }
       }
+#endif /*UTILS_SCALE3_LATENCY2_FREQ */
     }
-#endif /*UTILS_SCALE1_LATENCY2_FREQ */
 #endif /* DDL_PMU_REGU_VOLTAGE_SCALE3 */
+#else
+    if((HCLK_Frequency > UTILS_LATENCY3_FREQ))
+    {
+      /* 90 < HCLK <= 120 MHz => 3WS */
+      latency = DDL_FLASH_LATENCY_3;
+    }
+    else
+    {
+      if((HCLK_Frequency > UTILS_LATENCY2_FREQ))
+      {
+        /* 60 < HCLK <= 90 MHz => 2WS */
+        latency = DDL_FLASH_LATENCY_2;
+      }
+      else
+      {
+        if((HCLK_Frequency > UTILS_LATENCY1_FREQ))
+        {
+          /* 30 < HCLK <= 60 MHz => 1WS */
+          latency = DDL_FLASH_LATENCY_1;
+        }
+        else
+        {
+          /* HCLK <= 30 MHz => 0WS */
+          latency = DDL_FLASH_LATENCY_0;
+        }
+      }
+    }
+#endif /* PMU_CTRL_VOSSEL */
 
     DDL_FLASH_SetLatency(latency);
     /* Check that the new number of wait states is taken into account to access the Flash
@@ -497,6 +585,10 @@ ErrorStatus DDL_SetFlashLatency(uint32_t HCLK_Frequency)
   *         - PLLB: ensure that the VCO input frequency ranges from @ref RCM_PLLVCO_INPUT_MIN to @ref RCM_PLLVCO_INPUT_MAX (PLLVCO_input = HSI frequency / PLLB)
   *         - PLL1A: ensure that the VCO output frequency is between @ref RCM_PLLVCO_OUTPUT_MIN and @ref RCM_PLLVCO_OUTPUT_MAX (PLLVCO_output = PLLVCO_input * PLL1A)
   *         - PLL1C: ensure that max frequency at 180000000 Hz is reach (PLLVCO_output / PLL1C)
+  * @note   Function is based on the following formula(Only for APM32F402/403xx device):
+  *         - PLL output frequency = ((HSI frequency / 2) * PLLMULCFG)
+  *         - PLLMULCFG: The application software must set correctly the PLL multiplication factor to
+  *                   not exceed 120MHz
   * @param  UTILS_PLLInitStruct pointer to a @ref DDL_UTILS_PLLInitTypeDef structure that contains
   *                             the configuration information for the PLL.
   * @param  UTILS_ClkInitStruct pointer to a @ref DDL_UTILS_ClkInitTypeDef structure that contains
@@ -514,6 +606,9 @@ ErrorStatus DDL_PLL_ConfigSystemClock_HSI(DDL_UTILS_PLLInitTypeDef *UTILS_PLLIni
   /* Check if one of the PLL is enabled */
   if(UTILS_PLL_IsBusy() == SUCCESS)
   {
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    UTILS_PLLInitStruct->Prediv = DDL_RCM_PREDIV_DIV_2;
+#endif /* APM32F403xx || APM32F402xx */
     /* Calculate the new PLL output frequency */
     pllfreq = UTILS_GetPLLOutputFrequency(HSI_VALUE, UTILS_PLLInitStruct);
 
@@ -528,8 +623,12 @@ ErrorStatus DDL_PLL_ConfigSystemClock_HSI(DDL_UTILS_PLLInitTypeDef *UTILS_PLLIni
     }
 
     /* Configure PLL */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    DDL_RCM_PLL_ConfigDomain_SYS(DDL_RCM_PLLSOURCE_HSI_DIV_2, UTILS_PLLInitStruct->PLLMul);
+#else
     DDL_RCM_PLL_ConfigDomain_SYS(DDL_RCM_PLLSOURCE_HSI, UTILS_PLLInitStruct->PLLB, UTILS_PLLInitStruct->PLL1A,
                                 UTILS_PLLInitStruct->PLL1C);
+#endif /* APM32F403xx || APM32F402xx */
 
     /* Enable PLL and switch system clock to PLL */
     status = UTILS_EnablePLLAndSwitchSystem(pllfreq, UTILS_ClkInitStruct);
@@ -546,11 +645,17 @@ ErrorStatus DDL_PLL_ConfigSystemClock_HSI(DDL_UTILS_PLLInitTypeDef *UTILS_PLLIni
 /**
   * @brief  This function configures system clock with HSE as clock source of the PLL
   * @note   The application need to ensure that PLL is disabled.
+  * @note   Function is based on the following formula:
   *         - PLL output frequency = (((HSI frequency / PLLB) * PLL1A) / PLL1C)
   *         - PLLB: ensure that the VCO input frequency ranges from @ref RCM_PLLVCO_INPUT_MIN to @ref RCM_PLLVCO_INPUT_MAX (PLLVCO_input = HSI frequency / PLLB)
   *         - PLL1A: ensure that the VCO output frequency is between @ref RCM_PLLVCO_OUTPUT_MIN and @ref RCM_PLLVCO_OUTPUT_MAX (PLLVCO_output = PLLVCO_input * PLL1A)
   *         - PLL1C: ensure that max frequency at 180000000 Hz is reach (PLLVCO_output / PLL1C)
-  * @param  HSEFrequency Value between Min_Data = 4000000 and Max_Data = 26000000
+  * @note   Function is based on the following formula(Only for APM32F402/403xx device):
+  *         - PLL output frequency = ((HSE frequency / PREDIV) * PLLMULCFG)
+  *         - PLLHSEPSC: Set to 2 for few devices
+  *         - PLLMULCFG: The application software must set correctly the PLL multiplication factor to
+  *                   not exceed @ref UTILS_PLL_OUTPUT_MAX
+  * @param  HSEFrequency Value between Min_Data = UTILS_HSE_FREQUENCY_MIN and Max_Data = UTILS_HSE_FREQUENCY_MAX
   * @param  HSEBypass This parameter can be one of the following values:
   *         @arg @ref DDL_UTILS_HSEBYPASS_ON
   *         @arg @ref DDL_UTILS_HSEBYPASS_OFF
@@ -571,6 +676,9 @@ ErrorStatus DDL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEByp
   /* Check the parameters */
   ASSERT_PARAM(IS_DDL_UTILS_HSE_FREQUENCY(HSEFrequency));
   ASSERT_PARAM(IS_DDL_UTILS_HSE_BYPASS(HSEBypass));
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  ASSERT_PARAM(IS_DDL_UTILS_PREDIV_VALUE(UTILS_PLLInitStruct->Prediv));
+#endif /* APM32F403xx || APM32F402xx */
 
   /* Check if one of the PLL is enabled */
   if(UTILS_PLL_IsBusy() == SUCCESS)
@@ -600,8 +708,12 @@ ErrorStatus DDL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEByp
     }
 
     /* Configure PLL */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+    DDL_RCM_PLL_ConfigDomain_SYS((DDL_RCM_PLLSOURCE_HSE | UTILS_PLLInitStruct->Prediv), UTILS_PLLInitStruct->PLLMul);
+#else
     DDL_RCM_PLL_ConfigDomain_SYS(DDL_RCM_PLLSOURCE_HSE, UTILS_PLLInitStruct->PLLB, UTILS_PLLInitStruct->PLL1A,
                                 UTILS_PLLInitStruct->PLL1C);
+#endif /* APM32F403xx || APM32F402xx */
 
     /* Enable PLL and switch system clock to PLL */
     status = UTILS_EnablePLLAndSwitchSystem(pllfreq, UTILS_ClkInitStruct);
@@ -638,10 +750,17 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, DDL_UTI
   uint32_t pllfreq = 0U;
 
   /* Check the parameters */
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  ASSERT_PARAM(IS_DDL_UTILS_PLLMUL_VALUE(UTILS_PLLInitStruct->PLLMul));
+#else
   ASSERT_PARAM(IS_DDL_UTILS_PLLB_VALUE(UTILS_PLLInitStruct->PLLB));
   ASSERT_PARAM(IS_DDL_UTILS_PLL1A_VALUE(UTILS_PLLInitStruct->PLL1A));
   ASSERT_PARAM(IS_DDL_UTILS_PLL1C_VALUE(UTILS_PLLInitStruct->PLL1C));
+#endif /* APM32F403xx || APM32F402xx */
   
+  #if defined(APM32F403xx) || defined(APM32F402xx)
+  pllfreq = __DDL_RCM_CALC_PLLCLK_FREQ(PLL_InputFrequency / ((UTILS_PLLInitStruct->Prediv >> RCM_CFG_PLLHSEPSC_Pos) + 1U), UTILS_PLLInitStruct->PLLMul);
+  #else
   /* Check different PLL parameters according to RM                          */
   /*  - PLLB: ensure that the VCO input frequency ranges from @ref UTILS_PLLVCO_INPUT_MIN to @ref UTILS_PLLVCO_INPUT_MAX MHz.   */
   pllfreq = PLL_InputFrequency / (UTILS_PLLInitStruct->PLLB & (RCM_PLL1CFG_PLLB >> RCM_PLL1CFG_PLLB_Pos));
@@ -653,6 +772,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, DDL_UTI
   
   /*  - PLL1C: ensure that max frequency at @ref RCM_MAX_FREQUENCY Hz is reached     */
   pllfreq = pllfreq / (((UTILS_PLLInitStruct->PLL1C >> RCM_PLL1CFG_PLL1C_Pos) + 1) * 2);
+#endif /* APM32F403xx || APM32F402xx */
   ASSERT_PARAM(IS_DDL_UTILS_PLL_FREQUENCY(pllfreq));
 
   return pllfreq;

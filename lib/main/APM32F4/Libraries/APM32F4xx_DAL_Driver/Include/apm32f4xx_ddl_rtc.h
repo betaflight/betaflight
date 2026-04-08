@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -108,23 +104,36 @@ extern "C" {
   */
 typedef struct
 {
+#if defined (RTC_CTRL_TIMEFCFG)
   uint32_t HourFormat;   /*!< Specifies the RTC Hours Format.
                               This parameter can be a value of @ref RTC_DDL_EC_HOURFORMAT
 
                               This feature can be modified afterwards using unitary function
                               @ref DDL_RTC_SetHourFormat(). */
+#endif /* RTC_CTRL_TIMEFCFG */
 
   uint32_t AsynchPrescaler; /*!< Specifies the RTC Asynchronous Predivider value.
                               This parameter must be a number between Min_Data = 0x00 and Max_Data = 0x7F
+                              This parameter must be a number between Min_Data = 0x00 and Max_Data = 0xFFFFF(Only for APM32F402/403xx Device)
 
                               This feature can be modified afterwards using unitary function
                               @ref DDL_RTC_SetAsynchPrescaler(). */
 
+#if defined (RTC_PSC_SPSC)
   uint32_t SynchPrescaler;  /*!< Specifies the RTC Synchronous Predivider value.
                               This parameter must be a number between Min_Data = 0x00 and Max_Data = 0x7FFF
 
                               This feature can be modified afterwards using unitary function
                               @ref DDL_RTC_SetSynchPrescaler(). */
+#endif /* RTC_PSC_SPSC */
+
+#if defined (BAKPR)
+  uint32_t OutPutSource;    /*!< Specifies which signal will be routed to the RTC Tamper pin.
+                                 This parameter can be a value of @ref DDL_RTC_Output_Source
+
+                              This feature can be modified afterwards using unitary function
+                              @ref DDL_RTC_SetOutputSource(). */
+#endif /* BAKPR */
 } DDL_RTC_InitTypeDef;
 
 /**
@@ -132,10 +141,12 @@ typedef struct
   */
 typedef struct
 {
+#if defined (RTC_CTRL_TIMEFCFG)
   uint32_t TimeFormat; /*!< Specifies the RTC AM/PM Time.
                             This parameter can be a value of @ref RTC_DDL_EC_TIME_FORMAT
 
                             This feature can be modified afterwards using unitary function @ref DDL_RTC_TIME_SetFormat(). */
+#endif /* RTC_CTRL_TIMEFCFG */
 
   uint8_t Hours;       /*!< Specifies the RTC Time Hours.
                             This parameter must be a number between Min_Data = 0 and Max_Data = 12 if the @ref DDL_RTC_TIME_FORMAT_PM is selected.
@@ -154,6 +165,7 @@ typedef struct
                             This feature can be modified afterwards using unitary function @ref DDL_RTC_TIME_SetSecond(). */
 } DDL_RTC_TimeTypeDef;
 
+#if defined (RTC_DATE_YRT)
 /**
   * @brief  RTC Date structure definition
   */
@@ -180,6 +192,8 @@ typedef struct
                          This feature can be modified afterwards using unitary function @ref DDL_RTC_DATE_SetYear(). */
 } DDL_RTC_DateTypeDef;
 
+#endif /* RTC_DATE_YRT */
+
 /**
   * @brief  RTC Alarm structure definition
   */
@@ -187,6 +201,7 @@ typedef struct
 {
   DDL_RTC_TimeTypeDef AlarmTime;  /*!< Specifies the RTC Alarm Time members. */
 
+#if defined (RTC_ALRMA_DATEMEN)
   uint32_t AlarmMask;            /*!< Specifies the RTC Alarm Masks.
                                       This parameter can be a value of @ref RTC_DDL_EC_ALMA_MASK for ALARM A or @ref RTC_DDL_EC_ALMB_MASK for ALARM B.
 
@@ -212,6 +227,7 @@ typedef struct
                                       This feature can be modified afterwards using unitary function @ref DDL_RTC_ALMA_SetWeekDay()
                                       for ALARM A or @ref DDL_RTC_ALMB_SetWeekDay() for ALARM B.
                                  */
+#endif /* RTC_ALRMA_DATEMEN */
 } DDL_RTC_AlarmTypeDef;
 
 /**
@@ -234,43 +250,25 @@ typedef struct
   * @}
   */
 
-/** @defgroup RTC_DDL_EC_ALMA_WEEKDAY_SELECTION RTC Alarm A Date WeekDay
-  * @{
-  */
-#define DDL_RTC_ALMA_DATEWEEKDAYSEL_DATE    0x00000000U             /*!< Alarm A Date is selected */
-#define DDL_RTC_ALMA_DATEWEEKDAYSEL_WEEKDAY RTC_ALRMA_WEEKSEL        /*!< Alarm A WeekDay is selected */
-/**
-  * @}
-  */
-
-/** @defgroup RTC_DDL_EC_ALMB_WEEKDAY_SELECTION RTC Alarm B Date WeekDay
-  * @{
-  */
-#define DDL_RTC_ALMB_DATEWEEKDAYSEL_DATE    0x00000000U             /*!< Alarm B Date is selected */
-#define DDL_RTC_ALMB_DATEWEEKDAYSEL_WEEKDAY RTC_ALRMB_WEEKSEL        /*!< Alarm B WeekDay is selected */
-/**
-  * @}
-  */
-
 #endif /* USE_FULL_DDL_DRIVER */
 
 /** @defgroup RTC_DDL_EC_GET_FLAG Get Flags Defines
   * @brief    Flags defines which can be used with DDL_RTC_ReadReg function
   * @{
   */
-#define DDL_RTC_STS_RCALPFLG                 RTC_STS_RCALPFLG
+#define DDL_RTC_STS_RCALPFLG                  RTC_STS_RCALPFLG
 #if defined(RTC_TAMPER2_SUPPORT)
-#define DDL_RTC_STS_TP2FLG                  RTC_STS_TP2FLG
+#define DDL_RTC_STS_TP2FLG                    RTC_STS_TP2FLG
 #endif /* RTC_TAMPER2_SUPPORT */
-#define DDL_RTC_STS_TP1FLG                  RTC_STS_TP1FLG
-#define DDL_RTC_STS_TSOVRFLG                   RTC_STS_TSOVRFLG
+#define DDL_RTC_STS_TP1FLG                    RTC_STS_TP1FLG
+#define DDL_RTC_STS_TSOVRFLG                  RTC_STS_TSOVRFLG
 #define DDL_RTC_STS_TSFLG                     RTC_STS_TSFLG
 #define DDL_RTC_STS_WUTFLG                    RTC_STS_WUTFLG
 #define DDL_RTC_STS_ALRBFLG                   RTC_STS_ALRBFLG
 #define DDL_RTC_STS_ALRAFLG                   RTC_STS_ALRAFLG
-#define DDL_RTC_STS_RINITFLG                   RTC_STS_RINITFLG
+#define DDL_RTC_STS_RINITFLG                  RTC_STS_RINITFLG
 #define DDL_RTC_STS_RSFLG                     RTC_STS_RSFLG
-#define DDL_RTC_STS_INITSFLG                   RTC_STS_INITSFLG
+#define DDL_RTC_STS_INITSFLG                  RTC_STS_INITSFLG
 #define DDL_RTC_STS_SOPFLG                    RTC_STS_SOPFLG
 #define DDL_RTC_STS_WUTWFLG                   RTC_STS_WUTWFLG
 #define DDL_RTC_STS_ALRBWFLG                  RTC_STS_ALRBWFLG
@@ -287,7 +285,7 @@ typedef struct
 #define DDL_RTC_CTRL_WUTIEN                    RTC_CTRL_WUTIEN
 #define DDL_RTC_CTRL_ALRBIEN                   RTC_CTRL_ALRBIEN
 #define DDL_RTC_CTRL_ALRAIEN                   RTC_CTRL_ALRAIEN
-#define DDL_RTC_TACFG_TPIEN               RTC_TACFG_TPIEN
+#define DDL_RTC_TACFG_TPIEN                    RTC_TACFG_TPIEN
 /**
   * @}
   */
@@ -403,6 +401,15 @@ typedef struct
   * @}
   */
 
+/** @defgroup RTC_DDL_EC_ALMA_WEEKDAY_SELECTION RTC Alarm A Date WeekDay
+  * @{
+  */
+#define DDL_RTC_ALMA_DATEWEEKDAYSEL_DATE    0x00000000U             /*!< Alarm A Date is selected */
+#define DDL_RTC_ALMA_DATEWEEKDAYSEL_WEEKDAY RTC_ALRMA_WEEKSEL        /*!< Alarm A WeekDay is selected */
+/**
+  * @}
+  */
+
 /** @defgroup RTC_DDL_EC_ALMB_MASK  ALARMB MASK
   * @{
   */
@@ -421,6 +428,15 @@ typedef struct
   */
 #define DDL_RTC_ALMB_TIME_FORMAT_AM         0x00000000U           /*!< AM or 24-hour format */
 #define DDL_RTC_ALMB_TIME_FORMAT_PM         RTC_ALRMB_TIMEFCFG         /*!< PM */
+/**
+  * @}
+  */
+
+/** @defgroup RTC_DDL_EC_ALMB_WEEKDAY_SELECTION RTC Alarm B Date WeekDay
+  * @{
+  */
+#define DDL_RTC_ALMB_DATEWEEKDAYSEL_DATE    0x00000000U             /*!< Alarm B Date is selected */
+#define DDL_RTC_ALMB_DATEWEEKDAYSEL_WEEKDAY RTC_ALRMB_WEEKSEL        /*!< Alarm B WeekDay is selected */
 /**
   * @}
   */
@@ -498,6 +514,10 @@ typedef struct
 #if defined(RTC_TAMPER2_SUPPORT)
 #define DDL_RTC_TAMPER_ACTIVELEVEL_TAMP2    RTC_TACFG_TP2ALCFG /*!< RTC_TAMP2 input falling edge (if TAMPFLT = 00) or staying high (if TAMPFLT != 00) triggers a tamper detection event */
 #endif /* RTC_TAMPER2_SUPPORT */
+#if defined (BAKPR)
+#define DDL_RTC_TAMPER_ACTIVELEVEL_LOW          BAKPR_CTRL_TPALCFG     /*!< A high level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
+#define DDL_RTC_TAMPER_ACTIVELEVEL_HIGH         (0x00000000U)          /*!< A low level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
+#endif /* BAKPR */
 /**
   * @}
   */
@@ -529,6 +549,17 @@ typedef struct
 #define DDL_RTC_BKP_DR8                     0x00000008U
 #define DDL_RTC_BKP_DR9                     0x00000009U
 #define DDL_RTC_BKP_DR10                    0x0000000AU
+#if defined (BAKPR)
+#define DDL_RTC_BKP_DR11                    0x00000010U
+#define DDL_RTC_BKP_DR12                    0x00000011U
+#define DDL_RTC_BKP_DR13                    0x00000012U
+#define DDL_RTC_BKP_DR14                    0x00000013U
+#define DDL_RTC_BKP_DR15                    0x00000014U
+#define DDL_RTC_BKP_DR16                    0x00000015U
+#define DDL_RTC_BKP_DR17                    0x00000016U
+#define DDL_RTC_BKP_DR18                    0x00000017U
+#define DDL_RTC_BKP_DR19                    0x00000018U
+#else
 #define DDL_RTC_BKP_DR11                    0x0000000BU
 #define DDL_RTC_BKP_DR12                    0x0000000CU
 #define DDL_RTC_BKP_DR13                    0x0000000DU
@@ -538,19 +569,55 @@ typedef struct
 #define DDL_RTC_BKP_DR17                    0x00000011U
 #define DDL_RTC_BKP_DR18                    0x00000012U
 #define DDL_RTC_BKP_DR19                    0x00000013U
+#endif /*BAKPR*/
+#define DDL_RTC_BKP_DR20                    0x00000019U
+#define DDL_RTC_BKP_DR21                    0x0000001AU
+#define DDL_RTC_BKP_DR22                    0x0000001BU
+#define DDL_RTC_BKP_DR23                    0x0000001CU
+#define DDL_RTC_BKP_DR24                    0x0000001DU
+#define DDL_RTC_BKP_DR25                    0x0000001EU
+#define DDL_RTC_BKP_DR26                    0x0000001FU
+#define DDL_RTC_BKP_DR27                    0x00000020U
+#define DDL_RTC_BKP_DR28                    0x00000021U
+#define DDL_RTC_BKP_DR29                    0x00000022U
+#define DDL_RTC_BKP_DR30                    0x00000023U
+#define DDL_RTC_BKP_DR31                    0x00000024U
+#define DDL_RTC_BKP_DR32                    0x00000025U
+#define DDL_RTC_BKP_DR33                    0x00000026U
+#define DDL_RTC_BKP_DR34                    0x00000027U
+#define DDL_RTC_BKP_DR35                    0x00000028U
+#define DDL_RTC_BKP_DR36                    0x00000029U
+#define DDL_RTC_BKP_DR37                    0x0000002AU
+#define DDL_RTC_BKP_DR38                    0x0000002BU
+#define DDL_RTC_BKP_DR39                    0x0000002CU
+#define DDL_RTC_BKP_DR40                    0x0000002DU
+#define DDL_RTC_BKP_DR41                    0x0000002EU
+#define DDL_RTC_BKP_DR42                    0x0000002FU
 /**
   * @}
   */
-
+#if defined (BAKPR)
+/** @defgroup DDL_RTC_Output_Source         Clock Source to output on the Tamper Pin
+  * @{
+  */
+#define DDL_RTC_CALIB_OUTPUT_NONE           (0x00000000U)                                  /*!< Calibration output disabled */
+#define DDL_RTC_CALIB_OUTPUT_RTCCLOCK       BAKPR_CLKCAL_CALCOEN                           /*!< Calibration output is RTC Clock with a frequency divided by 64 on the TAMPER Pin */
+#define DDL_RTC_CALIB_OUTPUT_ALARM          BAKPR_CLKCAL_ASPOEN                            /*!< Calibration output is Alarm pulse signal on the TAMPER pin */
+#define DDL_RTC_CALIB_OUTPUT_SECOND        (BAKPR_CLKCAL_ASPOEN | BAKPR_CLKCAL_ASPOSEL)    /*!< Calibration output is Second pulse signal on the TAMPER pin*/
+/**
+  * @}
+  */
+#else
 /** @defgroup RTC_DDL_EC_CALIB_OUTPUT  Calibration output
   * @{
   */
-#define DDL_RTC_CALIB_OUTPUT_NONE           0x00000000U                 /*!< Calibration output disabled */
-#define DDL_RTC_CALIB_OUTPUT_1HZ            (RTC_CTRL_CALOEN | RTC_CTRL_CALOSEL) /*!< Calibration output is 1 Hz */
-#define DDL_RTC_CALIB_OUTPUT_512HZ          (RTC_CTRL_CALOEN)                /*!< Calibration output is 512 Hz */
+#define DDL_RTC_CALIB_OUTPUT_NONE           0x00000000U                           /*!< Calibration output disabled */
+#define DDL_RTC_CALIB_OUTPUT_1HZ            (RTC_CTRL_CALOEN | RTC_CTRL_CALOSEL)  /*!< Calibration output is 1 Hz */
+#define DDL_RTC_CALIB_OUTPUT_512HZ          (RTC_CTRL_CALOEN)                     /*!< Calibration output is 512 Hz */
 /**
   * @}
   */
+#endif /* BAKPR */
 
 /** @defgroup RTC_DDL_EC_CALIB_SIGN Coarse digital calibration sign
   * @{
@@ -596,8 +663,9 @@ typedef struct
   */
 #define DDL_RTC_TamperPin_Default           0x00000000U           /*!< Use RTC_AF1 as TAMPER1 */
 #if defined(RTC_AF2_SUPPORT)
-#define DDL_RTC_TamperPin_Pos1              RTC_TACFG_TP1MSEL  /*!< Use RTC_AF2 as TAMPER1 */
+#define DDL_RTC_TamperPin_Pos1              RTC_TACFG_TP1MSEL     /*!< Use RTC_AF2 as TAMPER1 */
 #endif /* RTC_AF2_SUPPORT */
+
 /**
   * @}
   */
@@ -753,7 +821,7 @@ typedef struct
 /** @defgroup RTC_DDL_EF_Configuration Configuration
   * @{
   */
-
+#if defined (RTC_CTRL_TIMEFCFG)
 /**
   * @brief  Set Hours format (24 hour/day or AM/PM hour format)
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -780,7 +848,9 @@ __STATIC_INLINE uint32_t DDL_RTC_GetHourFormat(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->CTRL, RTC_CTRL_TIMEFCFG));
 }
+#endif /* RTC_CTRL_TIMEFCFG */
 
+#if defined (RTC_CTRL_OUTSEL)
 /**
   * @brief  Select the flag to be routed to RTC_ALARM output
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -810,7 +880,9 @@ __STATIC_INLINE uint32_t DDL_RTC_GetAlarmOutEvent(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->CTRL, RTC_CTRL_OUTSEL));
 }
+#endif /* RTC_CTRL_OUTSEL */
 
+#if defined (RTC_TACFG_ALRMOT)
 /**
   * @brief  Set RTC_ALARM output type (ALARM in push-pull or open-drain output)
   * @note   Used only when RTC_ALARM is mapped on PC13
@@ -837,7 +909,9 @@ __STATIC_INLINE uint32_t DDL_RTC_GetAlarmOutputType(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->TACFG, RTC_TACFG_ALRMOT));
 }
+#endif /* RTC_TACFG_ALRMOT */
 
+#if defined (RTC_STS_INITEN)
 /**
   * @brief  Enable initialization mode
   * @note   Initialization mode is used to program time and date register (RTC_TIME and RTC_DATE)
@@ -862,7 +936,9 @@ __STATIC_INLINE void DDL_RTC_DisableInitMode(RTC_TypeDef *RTCx)
   /* Exit Initialization mode */
   WRITE_REG(RTCx->STS, (uint32_t)~RTC_STS_INITEN);
 }
+#endif /* RTC_STS_INITEN */
 
+#if defined (RTC_CTRL_POLCFG)
 /**
   * @brief  Set Output polarity (pin is low when ALRAF/ALRBF/WUTF is asserted)
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -888,7 +964,9 @@ __STATIC_INLINE uint32_t DDL_RTC_GetOutputPolarity(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->CTRL, RTC_CTRL_POLCFG));
 }
+#endif /* RTC_CTRL_POLCFG */
 
+#if defined (RTC_CTRL_RCMCFG)
 /**
   * @brief  Enable Bypass the shadow registers
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -919,7 +997,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsShadowRegBypassEnabled(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->CTRL, RTC_CTRL_RCMCFG) == (RTC_CTRL_RCMCFG)) ? 1UL : 0UL);
 }
+#endif /* RTC_CTRL_RCMCFG */
 
+#if defined (RTC_CTRL_RCLKDEN)
 /**
   * @brief  Enable RTC_REFIN reference clock detection (50 or 60 Hz)
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -943,6 +1023,7 @@ __STATIC_INLINE void DDL_RTC_DisableRefClock(RTC_TypeDef *RTCx)
 {
   CLEAR_BIT(RTCx->CTRL, RTC_CTRL_RCLKDEN);
 }
+#endif /* RTC_CTRL_RCLKDEN */
 
 /**
   * @brief  Set Asynchronous prescaler factor
@@ -952,9 +1033,41 @@ __STATIC_INLINE void DDL_RTC_DisableRefClock(RTC_TypeDef *RTCx)
   */
 __STATIC_INLINE void DDL_RTC_SetAsynchPrescaler(RTC_TypeDef *RTCx, uint32_t AsynchPrescaler)
 {
+#if defined (RTC_PSC_APSC)
   MODIFY_REG(RTCx->PSC, RTC_PSC_APSC, AsynchPrescaler << RTC_PSC_APSC_Pos);
+#else
+  MODIFY_REG(RTCx->PSCRLDH, RTC_PSCRLDH_PSCRLDH, (AsynchPrescaler >> 16));
+  MODIFY_REG(RTCx->PSCRLDL, RTC_PSCRLDL_PSCRLDL, (AsynchPrescaler & RTC_PSCRLDL_PSCRLDL));
+#endif /* RTC_PSC_APSC */
 }
 
+#if defined (RTC_PSC_APSC)
+/**
+  * @brief  Get Asynchronous prescaler factor
+  * @param  RTCx RTC Instance
+  * @retval Value between Min_Data = 0 and Max_Data = 0x7F
+  */
+__STATIC_INLINE uint32_t DDL_RTC_GetAsynchPrescaler(RTC_TypeDef *RTCx)
+{
+  return (uint32_t)(READ_BIT(RTCx->PSC, RTC_PSC_APSC) >> RTC_PSC_APSC_Pos);
+}
+#else
+/**
+  * @brief  Get Asynchronous prescaler factor
+  * @param  RTCx RTC Instance
+  * @retval Value between Min_Data = 0 and Max_Data = 0xFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_RTC_GetDivider(RTC_TypeDef *RTCx)
+{
+  register uint16_t Highprescaler = 0, Lowprescaler = 0;
+  Highprescaler = READ_REG(RTCx->PSCH & RTC_PSCH_PSCH);
+  Lowprescaler  = READ_REG(RTCx->PSCL & RTC_PSCL_PSCL);
+
+  return (((uint32_t) Highprescaler << 16U) | Lowprescaler);
+}
+#endif /* RTC_PSC_APSC */
+
+#if defined (RTC_PSC_SPSC)
 /**
   * @brief  Set Synchronous prescaler factor
   * @param  RTCx RTC Instance
@@ -967,16 +1080,6 @@ __STATIC_INLINE void DDL_RTC_SetSynchPrescaler(RTC_TypeDef *RTCx, uint32_t Synch
 }
 
 /**
-  * @brief  Get Asynchronous prescaler factor
-  * @param  RTCx RTC Instance
-  * @retval Value between Min_Data = 0 and Max_Data = 0x7F
-  */
-__STATIC_INLINE uint32_t DDL_RTC_GetAsynchPrescaler(RTC_TypeDef *RTCx)
-{
-  return (uint32_t)(READ_BIT(RTCx->PSC, RTC_PSC_APSC) >> RTC_PSC_APSC_Pos);
-}
-
-/**
   * @brief  Get Synchronous prescaler factor
   * @param  RTCx RTC Instance
   * @retval Value between Min_Data = 0 and Max_Data = 0x7FFF
@@ -985,6 +1088,7 @@ __STATIC_INLINE uint32_t DDL_RTC_GetSynchPrescaler(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->PSC, RTC_PSC_SPSC));
 }
+#endif /* RTC_PSC_SPSC */
 
 /**
   * @brief  Enable the write protection for RTC registers.
@@ -993,7 +1097,11 @@ __STATIC_INLINE uint32_t DDL_RTC_GetSynchPrescaler(RTC_TypeDef *RTCx)
   */
 __STATIC_INLINE void DDL_RTC_EnableWriteProtection(RTC_TypeDef *RTCx)
 {
+#if defined (RTC_CSTS_CFGMFLG)
+  CLEAR_BIT(RTCx->CSTS, RTC_CSTS_CFGMFLG);
+#else
   WRITE_REG(RTCx->WRPROT, RTC_WRITE_PROTECTION_DISABLE);
+#endif /* RTC_CSTS_CFGMFLG */
 }
 
 /**
@@ -1003,9 +1111,44 @@ __STATIC_INLINE void DDL_RTC_EnableWriteProtection(RTC_TypeDef *RTCx)
   */
 __STATIC_INLINE void DDL_RTC_DisableWriteProtection(RTC_TypeDef *RTCx)
 {
+#if defined (RTC_CSTS_CFGMFLG)
+  SET_BIT(RTCx->CSTS, RTC_CSTS_CFGMFLG);
+#else
   WRITE_REG(RTCx->WRPROT, RTC_WRITE_PROTECTION_ENABLE_1);
   WRITE_REG(RTCx->WRPROT, RTC_WRITE_PROTECTION_ENABLE_2);
+#endif /* RTC_CSTS_CFGMFLG */
 }
+
+#if defined (BAKPR)
+/**
+  * @brief  Set Output Source
+  * @param  BKPx BKP Instance
+  * @param  OutputSource This parameter can be one of the following values:
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_NONE
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_RTCCLOCK
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_ALARM
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_SECOND
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_SetOutputSource(BAKPR_TypeDef *BAKPRx, uint32_t OutputSource)
+{
+  MODIFY_REG(BAKPRx->CLKCAL, (BAKPR_CLKCAL_CALCOEN | BAKPR_CLKCAL_ASPOEN | BAKPR_CLKCAL_ASPOSEL), OutputSource);
+}
+
+/**
+  * @brief  Get Output Source
+  * @param  BKPx BKP Instance
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_NONE
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_RTCCLOCK
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_ALARM
+  *         @arg @ref DDL_RTC_CALIB_OUTPUT_SECOND
+  */
+__STATIC_INLINE uint32_t DDL_RTC_GetOutPutSource(BAKPR_TypeDef *BAKPRx)
+{
+  return (uint32_t)(READ_BIT(BAKPRx->CLKCAL, (BAKPR_CLKCAL_CALCOEN | BAKPR_CLKCAL_ASPOEN | BAKPR_CLKCAL_ASPOSEL)));
+}
+#endif /* BAKPR */
 
 /**
   * @}
@@ -1014,7 +1157,7 @@ __STATIC_INLINE void DDL_RTC_DisableWriteProtection(RTC_TypeDef *RTCx)
 /** @defgroup RTC_DDL_EF_Time Time
   * @{
   */
-
+#if defined (RTC_TIME_SUPPORT)
 /**
   * @brief  Set time format (AM/24-hour or PM notation)
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -1268,11 +1411,44 @@ __STATIC_INLINE void DDL_RTC_TIME_Synchronize(RTC_TypeDef *RTCx, uint32_t ShiftS
 {
   WRITE_REG(RTCx->SHIFT, ShiftSecond | Fraction);
 }
+#endif /* RTC_TIME_SUPPORT */
 
+#if defined (RTC_COUNT_SUPPORT)
+/**
+  * @brief  Set time counter in BCD format
+  * @note   Bit is write-protected. @ref LL_RTC_DisableWriteProtection function should be called before.
+  * @note   It can be written in initialization mode only (@ref LL_RTC_EnterInitMode function)
+  * @param  RTCx RTC Instance
+  * @param  TimeCounter Value between Min_Data=0x00 and Max_Data=0xFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_TIME_Set(RTC_TypeDef *RTCx, uint32_t TimeCounter)
+{
+  /* Set RTC COUNTER MSB word */
+  WRITE_REG(RTCx->CNTH, (TimeCounter >> 16U));
+  /* Set RTC COUNTER LSB word */
+  WRITE_REG(RTCx->CNTL, (TimeCounter & RTC_CNTL_CNTL));
+}
+
+/**
+  * @brief  Get time counter in BCD format
+  * @param  RTCx RTC Instance
+  * @retval Value between Min_Data = 0 and Max_Data = 0xFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_RTC_TIME_Get(RTC_TypeDef *RTCx)
+{
+  register uint16_t high = 0, low = 0;
+
+  high = READ_REG(RTCx->CNTH & RTC_CNTH_CNTH);
+  low  = READ_REG(RTCx->CNTL & RTC_CNTL_CNTL);
+  return ((uint32_t)(((uint32_t) high << 16U) | low));
+}
+#endif /* RTC_COUNT_SUPPORT */
 /**
   * @}
   */
 
+#if defined (RTC_CALENDAR_SUPPORT)
 /** @defgroup RTC_DDL_EF_Date Date
   * @{
   */
@@ -1480,7 +1656,9 @@ __STATIC_INLINE uint32_t DDL_RTC_DATE_Get(RTC_TypeDef *RTCx)
 /**
   * @}
   */
+#endif /* RTC_CALENDAR_SUPPORT */
 
+#if defined (RTC_ALARMA_SUPPORT)
 /** @defgroup RTC_DDL_EF_ALARMA ALARMA
   * @{
   */
@@ -1799,7 +1977,9 @@ __STATIC_INLINE uint32_t DDL_RTC_ALMA_GetSubSecond(RTC_TypeDef *RTCx)
 /**
   * @}
   */
+#endif /* RTC_ALARMA_SUPPORT */
 
+#if defined (RTC_ALARMB_SUPPORT)
 /** @defgroup RTC_DDL_EF_ALARMB ALARMB
   * @{
   */
@@ -2118,7 +2298,50 @@ __STATIC_INLINE uint32_t DDL_RTC_ALMB_GetSubSecond(RTC_TypeDef *RTCx)
 /**
   * @}
   */
+#endif /* RTC_ALARMB_SUPPORT */
 
+#if defined (RTC_ALARM_SUPPORT)
+/** @defgroup RTC_DDL_EF_ALARM  ALARM
+  * @{
+  */
+
+/**
+  * @brief  Set Alarm Counter
+  * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
+  * @param  RTCx RTC Instance
+  * @param  AlarmCounter Value between Min_Data=0x00 and Max_Data=0xFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ALARM_Set(RTC_TypeDef *RTCx, uint32_t AlarmCounter)
+{
+  /* Set RTC COUNTER MSB word */
+  WRITE_REG(RTCx->ALRH, (AlarmCounter >> 16));
+  /* Set RTC COUNTER LSB word */
+  WRITE_REG(RTCx->ALRL, (AlarmCounter & RTC_ALRL_ALRL));
+}
+
+/**
+  * @brief  Get Alarm Counter
+  * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE uint32_t DDL_RTC_ALARM_Get(RTC_TypeDef *RTCx)
+{
+  register uint16_t high = 0, low = 0;
+
+  high  = READ_REG(RTCx->ALRH & RTC_ALRH_ALRH);
+  low   = READ_REG(RTCx->ALRL & RTC_ALRL_ALRL);
+
+  return (((uint32_t) high << 16U) | low);
+}
+
+/**
+  * @}
+  */
+#endif /*  */
+
+#if defined (RTC_TIMESTAMP_SUPPORT)
 /** @defgroup RTC_DDL_EF_Timestamp Timestamp
   * @{
   */
@@ -2360,11 +2583,13 @@ __STATIC_INLINE uint32_t DDL_RTC_TS_GetPin(RTC_TypeDef *RTCx)
 /**
   * @}
   */
+#endif /* RTC_TIMESTAMP_SUPPORT */
 
 /** @defgroup RTC_DDL_EF_Tamper Tamper
   * @{
   */
 
+#if defined (RTC_TAMPER_SUPPORT)
 /**
   * @brief  Enable RTC_TAMPx input detection
   * @param  RTCx RTC Instance
@@ -2571,11 +2796,55 @@ __STATIC_INLINE uint32_t DDL_RTC_TAMPER_GetPin(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->TACFG, RTC_TACFG_TP1MSEL));
 }
+#endif /* RTC_TAMPER_SUPPORT */
 
+#if defined (BAKPR)
+
+/**
+  * @brief  Enable RTC_TAMPx input detection
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_TAMPER_Enable(BAKPR_TypeDef *BAKPRx)
+{
+  SET_BIT(BAKPRx->CTRL, BAKPR_CTRL_TPFCFG);
+}
+
+/**
+  * @brief  Disable RTC_TAMPx Tamper
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_TAMPER_Disable(BAKPR_TypeDef *BAKPRx)
+{
+  CLEAR_BIT(BAKPRx->CTRL, BAKPR_CTRL_TPFCFG);
+}
+
+/**
+  * @brief  Enable Active level for Tamper input
+  * @param  BAKPRx  BKP Instance
+  * @param  Tamper This parameter can be a combination of the following values:
+  *         @arg @ref DDL_RTC_TAMPER_ACTIVELEVEL_LOW
+  *         @arg @ref DDL_RTC_TAMPER_ACTIVELEVEL_HIGH
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_TAMPER_SetActiveLevel(BAKPR_TypeDef *BAKPRx, uint32_t Tamper)
+{
+  MODIFY_REG(BAKPRx->CTRL, BAKPR_CTRL_TPALCFG, Tamper);
+}
+
+/**
+  * @brief  Disable Active level for Tamper input
+  * @retval None
+  */
+__STATIC_INLINE uint32_t DDL_RTC_TAMPER_GetActiveLevel(BAKPR_TypeDef *BAKPRx)
+{
+  return (uint32_t)(READ_BIT(BAKPRx->CTRL, BAKPR_CTRL_TPALCFG));
+}
+#endif /* BAKPR */
 /**
   * @}
   */
 
+#if defined (RTC_WAKEUP_SUPPORT)
 /** @defgroup RTC_DDL_EF_Wakeup Wakeup
   * @{
   */
@@ -2672,11 +2941,132 @@ __STATIC_INLINE uint32_t DDL_RTC_WAKEUP_GetAutoReload(RTC_TypeDef *RTCx)
 /**
   * @}
   */
+#endif /* RTC_WAKEUP_SUPPORT */
 
 /** @defgroup RTC_DDL_EF_Backup_Registers Backup_Registers
   * @{
   */
+#if defined (BAKPR)
 
+/**
+  * @brief  Writes a data in a specified RTC Backup data register.
+  * @param  BKPx  BKP Instance
+  * @param  BackupRegister This parameter can be one of the following values:
+  *         @arg @ref DDL_RTC_BKP_DR1
+  *         @arg @ref DDL_RTC_BKP_DR2
+  *         @arg @ref DDL_RTC_BKP_DR3
+  *         @arg @ref DDL_RTC_BKP_DR4
+  *         @arg @ref DDL_RTC_BKP_DR5
+  *         @arg @ref DDL_RTC_BKP_DR6
+  *         @arg @ref DDL_RTC_BKP_DR7
+  *         @arg @ref DDL_RTC_BKP_DR8
+  *         @arg @ref DDL_RTC_BKP_DR9
+  *         @arg @ref DDL_RTC_BKP_DR10
+  *         @arg @ref DDL_RTC_BKP_DR11
+  *         @arg @ref DDL_RTC_BKP_DR12
+  *         @arg @ref DDL_RTC_BKP_DR13
+  *         @arg @ref DDL_RTC_BKP_DR14
+  *         @arg @ref DDL_RTC_BKP_DR15
+  *         @arg @ref DDL_RTC_BKP_DR16
+  *         @arg @ref DDL_RTC_BKP_DR17
+  *         @arg @ref DDL_RTC_BKP_DR18
+  *         @arg @ref DDL_RTC_BKP_DR19
+  *         @arg @ref DDL_RTC_BKP_DR20
+  *         @arg @ref DDL_RTC_BKP_DR21
+  *         @arg @ref DDL_RTC_BKP_DR22
+  *         @arg @ref DDL_RTC_BKP_DR23
+  *         @arg @ref DDL_RTC_BKP_DR24
+  *         @arg @ref DDL_RTC_BKP_DR25
+  *         @arg @ref DDL_RTC_BKP_DR26
+  *         @arg @ref DDL_RTC_BKP_DR27
+  *         @arg @ref DDL_RTC_BKP_DR28
+  *         @arg @ref DDL_RTC_BKP_DR29
+  *         @arg @ref DDL_RTC_BKP_DR30
+  *         @arg @ref DDL_RTC_BKP_DR31
+  *         @arg @ref DDL_RTC_BKP_DR32
+  *         @arg @ref DDL_RTC_BKP_DR33
+  *         @arg @ref DDL_RTC_BKP_DR34
+  *         @arg @ref DDL_RTC_BKP_DR35
+  *         @arg @ref DDL_RTC_BKP_DR36
+  *         @arg @ref DDL_RTC_BKP_DR37
+  *         @arg @ref DDL_RTC_BKP_DR38
+  *         @arg @ref DDL_RTC_BKP_DR39
+  *         @arg @ref DDL_RTC_BKP_DR40
+  *         @arg @ref DDL_RTC_BKP_DR41
+  *         @arg @ref DDL_RTC_BKP_DR42
+  * @param  Data Value between Min_Data=0x00 and Max_Data=0xFFFFFFFF
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_BKP_SetRegister(BAKPR_TypeDef *BKPx, uint32_t BackupRegister, uint32_t Data)
+{
+  register uint32_t tmp = 0U;
+
+  tmp = (uint32_t)BAKPR_BASE;
+  tmp += (BackupRegister * 4U);
+
+  /* Write the specified register */
+  *(__IO uint32_t *)tmp = (uint32_t)Data;
+}
+
+/**
+  * @brief  Reads data from the specified RTC Backup data Register.
+  * @param  BKPx BKP Instance
+  * @param  BackupRegister This parameter can be one of the following values:
+  *         @arg @ref DDL_RTC_BKP_DR1
+  *         @arg @ref DDL_RTC_BKP_DR2
+  *         @arg @ref DDL_RTC_BKP_DR3
+  *         @arg @ref DDL_RTC_BKP_DR4
+  *         @arg @ref DDL_RTC_BKP_DR5
+  *         @arg @ref DDL_RTC_BKP_DR6
+  *         @arg @ref DDL_RTC_BKP_DR7
+  *         @arg @ref DDL_RTC_BKP_DR8
+  *         @arg @ref DDL_RTC_BKP_DR9
+  *         @arg @ref DDL_RTC_BKP_DR10
+  *         @arg @ref DDL_RTC_BKP_DR11
+  *         @arg @ref DDL_RTC_BKP_DR12
+  *         @arg @ref DDL_RTC_BKP_DR13
+  *         @arg @ref DDL_RTC_BKP_DR14
+  *         @arg @ref DDL_RTC_BKP_DR15
+  *         @arg @ref DDL_RTC_BKP_DR16
+  *         @arg @ref DDL_RTC_BKP_DR17
+  *         @arg @ref DDL_RTC_BKP_DR18
+  *         @arg @ref DDL_RTC_BKP_DR19
+  *         @arg @ref DDL_RTC_BKP_DR20
+  *         @arg @ref DDL_RTC_BKP_DR21
+  *         @arg @ref DDL_RTC_BKP_DR22
+  *         @arg @ref DDL_RTC_BKP_DR23
+  *         @arg @ref DDL_RTC_BKP_DR24
+  *         @arg @ref DDL_RTC_BKP_DR25
+  *         @arg @ref DDL_RTC_BKP_DR26
+  *         @arg @ref DDL_RTC_BKP_DR27
+  *         @arg @ref DDL_RTC_BKP_DR28
+  *         @arg @ref DDL_RTC_BKP_DR29
+  *         @arg @ref DDL_RTC_BKP_DR30
+  *         @arg @ref DDL_RTC_BKP_DR31
+  *         @arg @ref DDL_RTC_BKP_DR32
+  *         @arg @ref DDL_RTC_BKP_DR33
+  *         @arg @ref DDL_RTC_BKP_DR34
+  *         @arg @ref DDL_RTC_BKP_DR35
+  *         @arg @ref DDL_RTC_BKP_DR36
+  *         @arg @ref DDL_RTC_BKP_DR37
+  *         @arg @ref DDL_RTC_BKP_DR38
+  *         @arg @ref DDL_RTC_BKP_DR39
+  *         @arg @ref DDL_RTC_BKP_DR40
+  *         @arg @ref DDL_RTC_BKP_DR41
+  *         @arg @ref DDL_RTC_BKP_DR42
+  * @retval Value between Min_Data=0x00 and Max_Data=0xFFFFFFFF
+  */
+__STATIC_INLINE uint32_t DDL_RTC_BKP_GetRegister(BAKPR_TypeDef *BKPx, uint32_t BackupRegister)
+{
+  register uint32_t tmp = 0U;
+
+  tmp = (uint32_t)BAKPR_BASE;
+  tmp += (BackupRegister * 4U);
+
+  /* Read the specified register */
+  return ((*(__IO uint32_t *)tmp) & BAKPR_DATA1_DATA);
+}
+#else
 /**
   * @brief  Writes a data in a specified RTC Backup data register.
   * @param  RTCx RTC Instance
@@ -2751,15 +3141,15 @@ __STATIC_INLINE uint32_t DDL_RTC_BAK_GetRegister(RTC_TypeDef *RTCx, uint32_t Bac
   /* Read the specified register */
   return (*(__IO uint32_t *)temp);
 }
-
+#endif /* BAKPR */
 /**
   * @}
   */
-
 /** @defgroup RTC_DDL_EF_Calibration Calibration
   * @{
   */
 
+#if defined (RTC_CALIBRATION_SUPPORT)
 /**
   * @brief  Set Calibration output frequency (1 Hz or 512 Hz)
   * @note Bits are write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -2930,7 +3320,33 @@ __STATIC_INLINE uint32_t DDL_RTC_CAL_GetMinus(RTC_TypeDef *RTCx)
 {
   return (uint32_t)(READ_BIT(RTCx->CAL, RTC_CAL_RECALF));
 }
+#endif /* RTC_CALIBRATION_SUPPORT */
 
+#if defined (BAKPR_CLKCAL_CALVALUE)
+/**
+  * @brief  Set the coarse digital calibration
+  * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
+  * @note   It can be written in initialization mode only (@ref DDL_RTC_EnterInitMode function)
+  * @param  BKPx RTC Instance
+  * @param  Value value of coarse calibration expressed in ppm (coded on 5 bits)
+  * @note   This Calibration value should be between 0 and 121 when using positive sign with a 4-ppm step.
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_CAL_SetCoarseDigital(BAKPR_TypeDef *BAKPRx, uint32_t Value)
+{
+  MODIFY_REG(BAKPRx->CLKCAL, BAKPR_CLKCAL_CALVALUE, Value);
+}
+
+/**
+  * @brief  Get the coarse digital calibration value
+  * @param  BKPx BKP Instance
+  * @retval value of coarse calibration expressed in ppm (coded on 5 bits)
+  */
+__STATIC_INLINE uint32_t DDL_RTC_CAL_GetCoarseDigital(BAKPR_TypeDef *BAKPRx)
+{
+  return (uint32_t)(READ_BIT(BAKPRx->CLKCAL, BAKPR_CLKCAL_CALVALUE));
+}
+#endif /* BAKPR_CLKCAL_CALVALUE */
 /**
   * @}
   */
@@ -2938,7 +3354,7 @@ __STATIC_INLINE uint32_t DDL_RTC_CAL_GetMinus(RTC_TypeDef *RTCx)
 /** @defgroup RTC_DDL_EF_FLAG_Management FLAG_Management
   * @{
   */
-
+#if defined (RTC_STS_RCALPFLG)
 /**
   * @brief  Get Recalibration pending Flag
   * @param  RTCx RTC Instance
@@ -2948,6 +3364,7 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_RECALP(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_RCALPFLG) == (RTC_STS_RCALPFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_RCALPFLG */
 
 #if defined(RTC_TAMPER2_SUPPORT)
 /**
@@ -2959,69 +3376,7 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TAMP2(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_TP2FLG) == (RTC_STS_TP2FLG)) ? 1UL : 0UL);
 }
-#endif /* RTC_TAMPER2_SUPPORT */
 
-/**
-  * @brief  Get RTC_TAMP1 detection flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TAMP1(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_TP1FLG) == (RTC_STS_TP1FLG)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Get Time-stamp overflow flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TSOV(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_TSOVRFLG) == (RTC_STS_TSOVRFLG)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Get Time-stamp flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TS(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_TSFLG) == (RTC_STS_TSFLG)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Get Wakeup timer flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_WUT(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_WUTFLG) == (RTC_STS_WUTFLG)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Get Alarm B flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRB(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_ALRBFLG) == (RTC_STS_ALRBFLG)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Get Alarm A flag
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRA(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->STS, RTC_STS_ALRAFLG) == (RTC_STS_ALRAFLG)) ? 1UL : 0UL);
-}
-
-#if defined(RTC_TAMPER2_SUPPORT)
 /**
   * @brief  Clear RTC_TAMP2 detection flag
   * @param  RTCx RTC Instance
@@ -3033,6 +3388,17 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_TAMP2(RTC_TypeDef *RTCx)
 }
 #endif /* RTC_TAMPER2_SUPPORT */
 
+#if defined (RTC_STS_TP1FLG)
+/**
+  * @brief  Get RTC_TAMP1 detection flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TAMP1(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_TP1FLG) == (RTC_STS_TP1FLG)) ? 1UL : 0UL);
+}
+
 /**
   * @brief  Clear RTC_TAMP1 detection flag
   * @param  RTCx RTC Instance
@@ -3041,6 +3407,18 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_TAMP2(RTC_TypeDef *RTCx)
 __STATIC_INLINE void DDL_RTC_ClearFlag_TAMP1(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_TP1FLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
+}
+#endif /* RTC_STS_TP1FLG */
+
+#if defined (RTC_STS_TSOVRFLG)
+/**
+  * @brief  Get Time-stamp overflow flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TSOV(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_TSOVRFLG) == (RTC_STS_TSOVRFLG)) ? 1UL : 0UL);
 }
 
 /**
@@ -3052,6 +3430,18 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_TSOV(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_TSOVRFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
 }
+#endif /* RTC_STS_TSOVRFLG */
+
+#if defined (RTC_STS_TSFLG)
+/**
+  * @brief  Get Time-stamp flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TS(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_TSFLG) == (RTC_STS_TSFLG)) ? 1UL : 0UL);
+}
 
 /**
   * @brief  Clear Time-stamp flag
@@ -3061,6 +3451,18 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_TSOV(RTC_TypeDef *RTCx)
 __STATIC_INLINE void DDL_RTC_ClearFlag_TS(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_TSFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
+}
+#endif /* RTC_STS_TSFLG */
+
+#if defined (RTC_STS_WUTFLG)
+/**
+  * @brief  Get Wakeup timer flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_WUT(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_WUTFLG) == (RTC_STS_WUTFLG)) ? 1UL : 0UL);
 }
 
 /**
@@ -3072,6 +3474,18 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_WUT(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_WUTFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
 }
+#endif /* RTC_STS_WUTFLG */
+
+#if defined (RTC_STS_ALRBFLG)
+/**
+  * @brief  Get Alarm B flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRB(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_ALRBFLG) == (RTC_STS_ALRBFLG)) ? 1UL : 0UL);
+}
 
 /**
   * @brief  Clear Alarm B flag
@@ -3081,6 +3495,18 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_WUT(RTC_TypeDef *RTCx)
 __STATIC_INLINE void DDL_RTC_ClearFlag_ALRB(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_ALRBFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
+}
+#endif /* RTC_STS_ALRBFLG */
+
+#if defined (RTC_STS_ALRAFLG)
+/**
+  * @brief  Get Alarm A flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRA(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->STS, RTC_STS_ALRAFLG) == (RTC_STS_ALRAFLG)) ? 1UL : 0UL);
 }
 
 /**
@@ -3092,7 +3518,9 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_ALRA(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_ALRAFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
 }
+#endif /* RTC_STS_ALRAFLG */
 
+#if defined (RTC_STS_RINITFLG)
 /**
   * @brief  Get Initialization flag
   * @param  RTCx RTC Instance
@@ -3102,7 +3530,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_INIT(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_RINITFLG) == (RTC_STS_RINITFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_RINITFLG */
 
+#if defined (RTC_STS_RSFLG)
 /**
   * @brief  Get Registers synchronization flag
   * @param  RTCx RTC Instance
@@ -3122,7 +3552,9 @@ __STATIC_INLINE void DDL_RTC_ClearFlag_RS(RTC_TypeDef *RTCx)
 {
   WRITE_REG(RTCx->STS, (~((RTC_STS_RSFLG | RTC_STS_INITEN) & 0x0000FFFFU) | (RTCx->STS & RTC_STS_INITEN)));
 }
+#endif /* RTC_STS_RSFLG */
 
+#if defined (RTC_STS_INITSFLG)
 /**
   * @brief  Get Initialization status flag
   * @param  RTCx RTC Instance
@@ -3132,7 +3564,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_INITS(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_INITSFLG) == (RTC_STS_INITSFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_INITSFLG */
 
+#if defined (RTC_STS_SOPFLG)
 /**
   * @brief  Get Shift operation pending flag
   * @param  RTCx RTC Instance
@@ -3142,7 +3576,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_SHP(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_SOPFLG) == (RTC_STS_SOPFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_SOPFLG */
 
+#if defined (RTC_STS_WUTWFLG)
 /**
   * @brief  Get Wakeup timer write flag
   * @param  RTCx RTC Instance
@@ -3152,7 +3588,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_WUTW(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_WUTWFLG) == (RTC_STS_WUTWFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_WUTWFLG */
 
+#if defined (RTC_STS_ALRBWFLG)
 /**
   * @brief  Get Alarm B write flag
   * @param  RTCx RTC Instance
@@ -3162,7 +3600,9 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRBW(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_ALRBWFLG) == (RTC_STS_ALRBWFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_ALRBWFLG */
 
+#if defined (RTC_STS_ALRAWFLG)
 /**
   * @brief  Get Alarm A write flag
   * @param  RTCx RTC Instance
@@ -3172,7 +3612,149 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRAW(RTC_TypeDef *RTCx)
 {
   return ((READ_BIT(RTCx->STS, RTC_STS_ALRAWFLG) == (RTC_STS_ALRAWFLG)) ? 1UL : 0UL);
 }
+#endif /* RTC_STS_ALRAWFLG */
 
+#if defined (BAKPR)
+/**
+  * @brief  Get RTC_TAMPI  Interruption detection flag
+  * @param  BAKPRx BAKPR Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TAMPI(BAKPR_TypeDef *BAKPRx)
+{
+  return (READ_BIT(BAKPRx->CSTS, BAKPR_CSTS_TIFLG) == (BAKPR_CSTS_TIFLG));
+}
+
+/**
+  * @brief  Clear RTC_TAMPI Interruption detection flag
+  * @param  BAKPRx BAKPR Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_TAMPI(BAKPR_TypeDef *BAKPRx)
+{
+  SET_BIT(BAKPRx->CSTS, BAKPR_CSTS_TICLR);
+}
+
+/**
+  * @brief  Get RTC_TAMPE  Event detection flag
+  * @param  BAKPRx BAKPR Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_TAMPE(BAKPR_TypeDef *BAKPRx)
+{
+  return (READ_BIT(BAKPRx->CSTS, BAKPR_CSTS_TEFLG) == (BAKPR_CSTS_TEFLG));
+}
+
+/**
+  * @brief  Clear RTC_TAMPE Even detection flag
+  * @param  BAKPRx BAKPR Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_TAMPE(BAKPR_TypeDef *BAKPRx)
+{
+  SET_BIT(BAKPRx->CSTS, BAKPR_CSTS_TECLR);
+}
+#endif /* BAKPR */
+
+#if defined (RTC_CSTS_ALRFLG)
+/**
+  * @brief  Get Alarm  flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALR(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CSTS, RTC_CSTS_ALRFLG) == (RTC_CSTS_ALRFLG));
+}
+
+/**
+  * @brief  Clear Alarm flag
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_ALR(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CSTS, RTC_CSTS_ALRFLG);
+}
+#endif /* RTC_CSTS_ALRFLG */
+
+#if defined (RTC_CSTS_RSYNCFLG)
+/**
+  * @brief  Get Registers synchronization flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_RS(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CSTS, RTC_CSTS_RSYNCFLG) == (RTC_CSTS_RSYNCFLG));
+}
+
+/**
+  * @brief  Clear Registers synchronization flag
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_RS(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CSTS, RTC_CSTS_RSYNCFLG);
+}
+#endif /* RTC_CSTS_RSYNCFLG */
+
+#if defined (RTC_CSTS_OVRFLG)
+/**
+  * @brief  Get Registers OverFlow flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_OW(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CSTS, RTC_CSTS_OVRFLG) == (RTC_CSTS_OVRFLG));
+}
+
+/**
+  * @brief  Clear Registers OverFlow flag
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_OW(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CSTS, RTC_CSTS_OVRFLG);
+}
+#endif /* RTC_CSTS_OVRFLG */
+
+#if defined (RTC_CSTS_SECFLG)
+/**
+  * @brief  Get Registers synchronization flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_SEC(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CSTS, RTC_CSTS_SECFLG) == (RTC_CSTS_SECFLG));
+}
+
+/**
+  * @brief  Clear Registers synchronization flag
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_ClearFlag_SEC(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CSTS, RTC_CSTS_SECFLG);
+}
+#endif /* RTC_CSTS_SECFLG */
+
+#if defined (RTC_CSTS_OCFLG)
+/**
+  * @brief  Get RTC Operation OFF status flag
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_RTOF(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CSTS, RTC_CSTS_OCFLG) == (RTC_CSTS_OCFLG));
+}
+#endif /* RTC_CSTS_OCFLG */
 /**
   * @}
   */
@@ -3180,7 +3762,7 @@ __STATIC_INLINE uint32_t DDL_RTC_IsActiveFlag_ALRAW(RTC_TypeDef *RTCx)
 /** @defgroup RTC_DDL_EF_IT_Management IT_Management
   * @{
   */
-
+#if defined (RTC_CTRL_TSIEN)
 /**
   * @brief  Enable Time-stamp interrupt
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -3204,6 +3786,18 @@ __STATIC_INLINE void DDL_RTC_DisableIT_TS(RTC_TypeDef *RTCx)
 }
 
 /**
+  * @brief  Check if  Time-stamp interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_TS(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_TSIEN) == (RTC_CTRL_TSIEN)) ? 1UL : 0UL);
+}
+#endif /* RTC_CTRL_TSIEN */
+
+#if defined (RTC_CTRL_WUTIEN)
+/**
   * @brief  Enable Wakeup timer interrupt
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
   * @param  RTCx RTC Instance
@@ -3225,6 +3819,18 @@ __STATIC_INLINE void DDL_RTC_DisableIT_WUT(RTC_TypeDef *RTCx)
   CLEAR_BIT(RTCx->CTRL, RTC_CTRL_WUTIEN);
 }
 
+/**
+  * @brief  Check if  Wakeup timer interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_WUT(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_WUTIEN) == (RTC_CTRL_WUTIEN)) ? 1UL : 0UL);
+}
+#endif /* RTC_CTRL_WUTIEN */
+
+#if defined (RTC_CTRL_ALRBIEN)
 /**
   * @brief  Enable Alarm B interrupt
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
@@ -3248,6 +3854,18 @@ __STATIC_INLINE void DDL_RTC_DisableIT_ALRB(RTC_TypeDef *RTCx)
 }
 
 /**
+  * @brief  Check if  Alarm B interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_ALRB(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_ALRBIEN) == (RTC_CTRL_ALRBIEN)) ? 1UL : 0UL);
+}
+#endif /* RTC_CTRL_ALRBIEN */
+
+#if defined (RTC_CTRL_ALRAIEN)
+/**
   * @brief  Enable Alarm A interrupt
   * @note   Bit is write-protected. @ref DDL_RTC_DisableWriteProtection function should be called before.
   * @param  RTCx RTC Instance
@@ -3270,6 +3888,18 @@ __STATIC_INLINE void DDL_RTC_DisableIT_ALRA(RTC_TypeDef *RTCx)
 }
 
 /**
+  * @brief  Check if  Alarm A interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_ALRA(RTC_TypeDef *RTCx)
+{
+  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_ALRAIEN) == (RTC_CTRL_ALRAIEN)) ? 1UL : 0UL);
+}
+#endif /* RTC_CTRL_ALRAIEN */
+
+#if defined (RTC_TACFG_TPIEN)
+/**
   * @brief  Enable all Tamper Interrupt
   * @param  RTCx RTC Instance
   * @retval None
@@ -3290,46 +3920,6 @@ __STATIC_INLINE void DDL_RTC_DisableIT_TAMP(RTC_TypeDef *RTCx)
 }
 
 /**
-  * @brief  Check if  Time-stamp interrupt is enabled or not
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_TS(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_TSIEN) == (RTC_CTRL_TSIEN)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Check if  Wakeup timer interrupt is enabled or not
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_WUT(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_WUTIEN) == (RTC_CTRL_WUTIEN)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Check if  Alarm B interrupt is enabled or not
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_ALRB(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_ALRBIEN) == (RTC_CTRL_ALRBIEN)) ? 1UL : 0UL);
-}
-
-/**
-  * @brief  Check if  Alarm A interrupt is enabled or not
-  * @param  RTCx RTC Instance
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_ALRA(RTC_TypeDef *RTCx)
-{
-  return ((READ_BIT(RTCx->CTRL, RTC_CTRL_ALRAIEN) == (RTC_CTRL_ALRAIEN)) ? 1UL : 0UL);
-}
-
-/**
   * @brief  Check if all the TAMPER interrupts are enabled or not
   * @param  RTCx RTC Instance
   * @retval State of bit (1 or 0).
@@ -3339,7 +3929,139 @@ __STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_TAMP(RTC_TypeDef *RTCx)
   return ((READ_BIT(RTCx->TACFG,
                     RTC_TACFG_TPIEN) == (RTC_TACFG_TPIEN)) ? 1UL : 0UL);
 }
+#endif /* RTC_TACFG_TPIEN */
 
+#if defined (RTC_CTRL_ALRIEN)
+/**
+  * @brief  Enable Alarm  interrupt
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_EnableIT_ALR(RTC_TypeDef *RTCx)
+{
+  SET_BIT(RTCx->CTRL, RTC_CTRL_ALRIEN);
+}
+
+/**
+  * @brief  Disable Alarm  interrupt
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_DisableIT_ALR(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CTRL, RTC_CTRL_ALRIEN);
+}
+
+/**
+  * @brief  Check if  Alarm  interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_ALR(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CTRL, RTC_CTRL_ALRIEN) == (RTC_CTRL_ALRIEN));
+}
+#endif /* RTC_CTRL_ALRIEN */
+
+#if defined (RTC_CTRL_SECIEN)
+/**
+  * @brief  Enable Second Interrupt interrupt
+  * @note   Bit is write-protected. @ref LL_RTC_DisableWriteProtection function should be called before.
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_EnableIT_SEC(RTC_TypeDef *RTCx)
+{
+  SET_BIT(RTCx->CTRL, RTC_CTRL_SECIEN);
+}
+
+/**
+  * @brief  Disable Second interrupt
+  * @note   Bit is write-protected. @ref LL_RTC_DisableWriteProtection function should be called before
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_DisableIT_SEC(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CTRL, RTC_CTRL_SECIEN);
+}
+
+/**
+  * @brief  Check if  Second interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_SEC(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CTRL, RTC_CTRL_SECIEN) == (RTC_CTRL_SECIEN));
+}
+#endif /* RTC_CTRL_SECIEN */
+
+#if defined (RTC_CTRL_OVRIEN)
+/**
+  * @brief  Enable OverFlow interrupt
+  * @note   Bit is write-protected. @ref LL_RTC_DisableWriteProtection function should be called before.
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_EnableIT_OW(RTC_TypeDef *RTCx)
+{
+  SET_BIT(RTCx->CTRL, RTC_CTRL_OVRIEN);
+}
+
+/**
+  * @brief  Disable OverFlow interrupt
+  * @note   Bit is write-protected. @ref LL_RTC_DisableWriteProtection function should be called before.
+  * @param  RTCx RTC Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_DisableIT_OW(RTC_TypeDef *RTCx)
+{
+  CLEAR_BIT(RTCx->CTRL, RTC_CTRL_OVRIEN);
+}
+
+/**
+  * @brief  Check if  OverFlow interrupt is enabled or not
+  * @param  RTCx RTC Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_OW(RTC_TypeDef *RTCx)
+{
+  return (READ_BIT(RTCx->CTRL, RTC_CTRL_OVRIEN) == (RTC_CTRL_OVRIEN));
+}
+#endif /* RTC_CTRL_OVRIEN */
+
+#if defined (BAKPR)
+/**
+  * @brief  Enable Tamper  interrupt
+  * @param  BAKPRx BAKPR Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_EnableIT_TAMP(BAKPR_TypeDef *BAKPRx)
+{
+  SET_BIT(BAKPRx->CSTS, BAKPR_CSTS_TPIEN);
+}
+
+/**
+  * @brief  Disable Tamper  interrupt
+  * @param  BAKPRx BAKPR Instance
+  * @retval None
+  */
+__STATIC_INLINE void DDL_RTC_DisableIT_TAMP(BAKPR_TypeDef *BAKPRx)
+{
+  CLEAR_BIT(BAKPRx->CSTS, BAKPR_CSTS_TPIEN);
+}
+
+/**
+  * @brief  Check if all the TAMPER interrupts are enabled or not
+  * @param  BAKPRx BAKPR Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t DDL_RTC_IsEnabledIT_TAMP(BAKPR_TypeDef *BAKPRx)
+{
+  return (READ_BIT(BAKPRx->CSTS, BAKPR_CSTS_TPIEN) == BAKPR_CSTS_TPIEN);
+}
+#endif /* BAKPR */
 /**
   * @}
   */
@@ -3354,12 +4076,26 @@ ErrorStatus DDL_RTC_Init(RTC_TypeDef *RTCx, DDL_RTC_InitTypeDef *RTC_InitStruct)
 void        DDL_RTC_StructInit(DDL_RTC_InitTypeDef *RTC_InitStruct);
 ErrorStatus DDL_RTC_TIME_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_TimeTypeDef *RTC_TimeStruct);
 void        DDL_RTC_TIME_StructInit(DDL_RTC_TimeTypeDef *RTC_TimeStruct);
+#if defined (RTC_CALENDAR_SUPPORT)
 ErrorStatus DDL_RTC_DATE_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_DateTypeDef *RTC_DateStruct);
 void        DDL_RTC_DATE_StructInit(DDL_RTC_DateTypeDef *RTC_DateStruct);
+#endif /* RTC_CALENDAR_SUPPORT */
+#if defined (RTC_ALARMA_SUPPORT)
 ErrorStatus DDL_RTC_ALMA_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
-ErrorStatus DDL_RTC_ALMB_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
 void        DDL_RTC_ALMA_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
+#endif /* RTC_ALARMA_SUPPORT */
+#if defined (RTC_ALARMB_SUPPORT)
+ErrorStatus DDL_RTC_ALMB_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
 void        DDL_RTC_ALMB_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
+#endif /* RTC_ALARMB_SUPPORT */
+#if defined (RTC_ALARM_SUPPORT)
+ErrorStatus DDL_RTC_ALARM_Init(RTC_TypeDef *RTCx, uint32_t RTC_Format, DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
+void        DDL_RTC_ALARM_StructInit(DDL_RTC_AlarmTypeDef *RTC_AlarmStruct);
+#endif /* RTC_ALARMA_SUPPORT */
+#if defined (RTC_COUNT_SUPPORT)
+ErrorStatus DDL_RTC_TIME_SetCounter(RTC_TypeDef *RTCx, uint32_t TimeCounter);
+ErrorStatus DDL_RTC_ALARM_SetCounter(RTC_TypeDef *RTCx, uint32_t AlarmCounter);
+#endif /* RTC_COUNT_SUPPORT */
 ErrorStatus DDL_RTC_EnterInitMode(RTC_TypeDef *RTCx);
 ErrorStatus DDL_RTC_ExitInitMode(RTC_TypeDef *RTCx);
 ErrorStatus DDL_RTC_WaitForSynchro(RTC_TypeDef *RTCx);

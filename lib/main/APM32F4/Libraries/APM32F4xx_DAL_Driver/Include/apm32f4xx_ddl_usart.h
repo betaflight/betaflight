@@ -5,7 +5,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -27,13 +27,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -182,11 +178,11 @@ typedef struct
 #define DDL_USART_STS_PEFLG                          USART_STS_PEFLG                   /*!< Parity error flag */
 #define DDL_USART_STS_FEFLG                          USART_STS_FEFLG                   /*!< Framing error flag */
 #define DDL_USART_STS_NEFLG                          USART_STS_NEFLG                   /*!< Noise detected flag */
-#define DDL_USART_STS_OVREFLG                         USART_STS_OVREFLG                  /*!< Overrun error flag */
+#define DDL_USART_STS_OVREFLG                        USART_STS_OVREFLG                 /*!< Overrun error flag */
 #define DDL_USART_STS_IDLEFLG                        USART_STS_IDLEFLG                 /*!< Idle line detected flag */
-#define DDL_USART_STS_RXBNEFLG                        USART_STS_RXBNEFLG                 /*!< Read data register not empty flag */
-#define DDL_USART_STS_TXCFLG                          USART_STS_TXCFLG                   /*!< Transmission complete flag */
-#define DDL_USART_STS_TXBEFLG                         USART_STS_TXBEFLG                  /*!< Transmit data register empty flag */
+#define DDL_USART_STS_RXBNEFLG                       USART_STS_RXBNEFLG                /*!< Read data register not empty flag */
+#define DDL_USART_STS_TXCFLG                         USART_STS_TXCFLG                  /*!< Transmission complete flag */
+#define DDL_USART_STS_TXBEFLG                        USART_STS_TXBEFLG                 /*!< Transmit data register empty flag */
 #define DDL_USART_STS_LBDFLG                         USART_STS_LBDFLG                  /*!< LIN break detection flag */
 #define DDL_USART_STS_CTSFLG                         USART_STS_CTSFLG                  /*!< CTS flag */
 /**
@@ -198,12 +194,12 @@ typedef struct
   * @{
   */
 #define DDL_USART_CTRL1_IDLEIEN                     USART_CTRL1_IDLEIEN              /*!< IDLE interrupt enable */
-#define DDL_USART_CTRL1_RXBNEIEN                     USART_CTRL1_RXBNEIEN              /*!< Read data register not empty interrupt enable */
-#define DDL_USART_CTRL1_TXCIEN                       USART_CTRL1_TXCIEN                /*!< Transmission complete interrupt enable */
-#define DDL_USART_CTRL1_TXBEIEN                      USART_CTRL1_TXBEIEN               /*!< Transmit data register empty interrupt enable */
+#define DDL_USART_CTRL1_RXBNEIEN                    USART_CTRL1_RXBNEIEN             /*!< Read data register not empty interrupt enable */
+#define DDL_USART_CTRL1_TXCIEN                      USART_CTRL1_TXCIEN               /*!< Transmission complete interrupt enable */
+#define DDL_USART_CTRL1_TXBEIEN                     USART_CTRL1_TXBEIEN              /*!< Transmit data register empty interrupt enable */
 #define DDL_USART_CTRL1_PEIEN                       USART_CTRL1_PEIEN                /*!< Parity error */
 #define DDL_USART_CTRL2_LBDIEN                      USART_CTRL2_LBDIEN               /*!< LIN break detection interrupt enable */
-#define DDL_USART_CTRL3_ERRIEN                        USART_CTRL3_ERRIEN                 /*!< Error interrupt enable */
+#define DDL_USART_CTRL3_ERRIEN                      USART_CTRL3_ERRIEN               /*!< Error interrupt enable */
 #define DDL_USART_CTRL3_CTSIEN                      USART_CTRL3_CTSIEN               /*!< CTS interrupt enable */
 /**
   * @}
@@ -212,10 +208,10 @@ typedef struct
 /** @defgroup USART_DDL_EC_DIRECTION Communication Direction
   * @{
   */
-#define DDL_USART_DIRECTION_NONE                 0x00000000U                        /*!< Transmitter and Receiver are disabled */
+#define DDL_USART_DIRECTION_NONE                 0x00000000U                            /*!< Transmitter and Receiver are disabled */
 #define DDL_USART_DIRECTION_RX                   USART_CTRL1_RXEN                       /*!< Transmitter is disabled and Receiver is enabled */
 #define DDL_USART_DIRECTION_TX                   USART_CTRL1_TXEN                       /*!< Transmitter is enabled and Receiver is disabled */
-#define DDL_USART_DIRECTION_TX_RX                (USART_CTRL1_TXEN |USART_CTRL1_RXEN)       /*!< Transmitter and Receiver are enabled */
+#define DDL_USART_DIRECTION_TX_RX                (USART_CTRL1_TXEN |USART_CTRL1_RXEN)   /*!< Transmitter and Receiver are enabled */
 /**
   * @}
   */
@@ -223,9 +219,9 @@ typedef struct
 /** @defgroup USART_DDL_EC_PARITY Parity Control
   * @{
   */
-#define DDL_USART_PARITY_NONE                    0x00000000U                          /*!< Parity control disabled */
+#define DDL_USART_PARITY_NONE                    0x00000000U                             /*!< Parity control disabled */
 #define DDL_USART_PARITY_EVEN                    USART_CTRL1_PCEN                        /*!< Parity control enabled and Even Parity is selected */
-#define DDL_USART_PARITY_ODD                     (USART_CTRL1_PCEN | USART_CTRL1_PCFG)       /*!< Parity control enabled and Odd Parity is selected */
+#define DDL_USART_PARITY_ODD                     (USART_CTRL1_PCEN | USART_CTRL1_PCFG)   /*!< Parity control enabled and Odd Parity is selected */
 /**
   * @}
   */
@@ -233,7 +229,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_WAKEUP Wakeup
   * @{
   */
-#define DDL_USART_WAKEUP_IDLELINE                0x00000000U           /*!<  USART wake up from Mute mode on Idle Line */
+#define DDL_USART_WAKEUP_IDLELINE                0x00000000U                /*!<  USART wake up from Mute mode on Idle Line */
 #define DDL_USART_WAKEUP_ADDRESSMARK             USART_CTRL1_WUPMCFG        /*!<  USART wake up from Mute mode on Address Mark */
 /**
   * @}
@@ -242,7 +238,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_DATAWIDTH Datawidth
   * @{
   */
-#define DDL_USART_DATAWIDTH_8B                   0x00000000U             /*!< 8 bits word length : Start bit, 8 data bits, n stop bits */
+#define DDL_USART_DATAWIDTH_8B                   0x00000000U                    /*!< 8 bits word length : Start bit, 8 data bits, n stop bits */
 #define DDL_USART_DATAWIDTH_9B                   USART_CTRL1_DBLCFG             /*!< 9 bits word length : Start bit, 9 data bits, n stop bits */
 /**
   * @}
@@ -252,7 +248,9 @@ typedef struct
   * @{
   */
 #define DDL_USART_OVERSAMPLING_16                0x00000000U            /*!< Oversampling by 16 */
-#define DDL_USART_OVERSAMPLING_8                 USART_CTRL1_OSMCFG        /*!< Oversampling by 8 */
+#if defined (USART_CTRL1_OSMCFG)
+#define DDL_USART_OVERSAMPLING_8                 USART_CTRL1_OSMCFG     /*!< Oversampling by 8 */
+#endif /* USART_CTRL1_OSMCFG */
 /**
   * @}
   */
@@ -262,7 +260,7 @@ typedef struct
   * @{
   */
 
-#define DDL_USART_CLOCK_DISABLE                  0x00000000U            /*!< Clock signal not provided */
+#define DDL_USART_CLOCK_DISABLE                  0x00000000U              /*!< Clock signal not provided */
 #define DDL_USART_CLOCK_ENABLE                   USART_CTRL2_CLKEN        /*!< Clock signal provided */
 /**
   * @}
@@ -272,7 +270,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_LASTCLKPULSE Last Clock Pulse
   * @{
   */
-#define DDL_USART_LASTCLKPULSE_NO_OUTPUT         0x00000000U           /*!< The clock pulse of the last data bit is not output to the SCLK pin */
+#define DDL_USART_LASTCLKPULSE_NO_OUTPUT         0x00000000U                /*!< The clock pulse of the last data bit is not output to the SCLK pin */
 #define DDL_USART_LASTCLKPULSE_OUTPUT            USART_CTRL2_LBCPOEN        /*!< The clock pulse of the last data bit is output to the SCLK pin */
 /**
   * @}
@@ -281,7 +279,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_PHASE Clock Phase
   * @{
   */
-#define DDL_USART_PHASE_1EDGE                    0x00000000U           /*!< The first clock transition is the first data capture edge */
+#define DDL_USART_PHASE_1EDGE                    0x00000000U             /*!< The first clock transition is the first data capture edge */
 #define DDL_USART_PHASE_2EDGE                    USART_CTRL2_CPHA        /*!< The second clock transition is the first data capture edge */
 /**
   * @}
@@ -290,7 +288,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_POLARITY Clock Polarity
   * @{
   */
-#define DDL_USART_POLARITY_LOW                   0x00000000U           /*!< Steady low value on SCLK pin outside transmission window*/
+#define DDL_USART_POLARITY_LOW                   0x00000000U             /*!< Steady low value on SCLK pin outside transmission window*/
 #define DDL_USART_POLARITY_HIGH                  USART_CTRL2_CPOL        /*!< Steady high value on SCLK pin outside transmission window */
 /**
   * @}
@@ -299,10 +297,10 @@ typedef struct
 /** @defgroup USART_DDL_EC_STOPBITS Stop Bits
   * @{
   */
-#define DDL_USART_STOPBITS_0_5                   USART_CTRL2_STOPCFG_0                           /*!< 0.5 stop bit */
-#define DDL_USART_STOPBITS_1                     0x00000000U                                /*!< 1 stop bit */
-#define DDL_USART_STOPBITS_1_5                   (USART_CTRL2_STOPCFG_0 | USART_CTRL2_STOPCFG_1)      /*!< 1.5 stop bits */
-#define DDL_USART_STOPBITS_2                     USART_CTRL2_STOPCFG_1                           /*!< 2 stop bits */
+#define DDL_USART_STOPBITS_0_5                   USART_CTRL2_STOPCFG_0                             /*!< 0.5 stop bit */
+#define DDL_USART_STOPBITS_1                     0x00000000U                                       /*!< 1 stop bit */
+#define DDL_USART_STOPBITS_1_5                   (USART_CTRL2_STOPCFG_0 | USART_CTRL2_STOPCFG_1)   /*!< 1.5 stop bits */
+#define DDL_USART_STOPBITS_2                     USART_CTRL2_STOPCFG_1                             /*!< 2 stop bits */
 /**
   * @}
   */
@@ -310,10 +308,10 @@ typedef struct
 /** @defgroup USART_DDL_EC_HWCONTROL Hardware Control
   * @{
   */
-#define DDL_USART_HWCONTROL_NONE                 0x00000000U                          /*!< CTS and RTS hardware flow control disabled */
-#define DDL_USART_HWCONTROL_RTS                  USART_CTRL3_RTSEN                       /*!< RTS output enabled, data is only requested when there is space in the receive buffer */
-#define DDL_USART_HWCONTROL_CTS                  USART_CTRL3_CTSEN                       /*!< CTS mode enabled, data is only transmitted when the nCTS input is asserted (tied to 0) */
-#define DDL_USART_HWCONTROL_RTS_CTS              (USART_CTRL3_RTSEN | USART_CTRL3_CTSEN)    /*!< CTS and RTS hardware flow control enabled */
+#define DDL_USART_HWCONTROL_NONE                 0x00000000U                               /*!< CTS and RTS hardware flow control disabled */
+#define DDL_USART_HWCONTROL_RTS                  USART_CTRL3_RTSEN                         /*!< RTS output enabled, data is only requested when there is space in the receive buffer */
+#define DDL_USART_HWCONTROL_CTS                  USART_CTRL3_CTSEN                         /*!< CTS mode enabled, data is only transmitted when the nCTS input is asserted (tied to 0) */
+#define DDL_USART_HWCONTROL_RTS_CTS              (USART_CTRL3_RTSEN | USART_CTRL3_CTSEN)   /*!< CTS and RTS hardware flow control enabled */
 /**
   * @}
   */
@@ -321,7 +319,7 @@ typedef struct
 /** @defgroup USART_DDL_EC_IRDA_POWER IrDA Power
   * @{
   */
-#define DDL_USART_IRDA_POWER_NORMAL              0x00000000U           /*!< IrDA normal power mode */
+#define DDL_USART_IRDA_POWER_NORMAL              0x00000000U               /*!< IrDA normal power mode */
 #define DDL_USART_IRDA_POWER_LOW                 USART_CTRL3_IRLPEN        /*!< IrDA low power mode */
 /**
   * @}
@@ -330,8 +328,8 @@ typedef struct
 /** @defgroup USART_DDL_EC_LINBREAK_DETECT LIN Break Detection Length
   * @{
   */
-#define DDL_USART_LINBREAK_DETECT_10B            0x00000000U           /*!< 10-bit break detection method selected */
-#define DDL_USART_LINBREAK_DETECT_11B            USART_CTRL2_LBDLCFG        /*!< 11-bit break detection method selected */
+#define DDL_USART_LINBREAK_DETECT_10B            0x00000000U               /*!< 10-bit break detection method selected */
+#define DDL_USART_LINBREAK_DETECT_11B            USART_CTRL2_LBDLCFG       /*!< 11-bit break detection method selected */
 /**
   * @}
   */
@@ -608,6 +606,7 @@ __STATIC_INLINE uint32_t DDL_USART_GetDataWidth(USART_TypeDef *USARTx)
   return (uint32_t)(READ_BIT(USARTx->CTRL1, USART_CTRL1_DBLCFG));
 }
 
+#if defined (USART_CTRL1_OSMCFG)
 /**
   * @brief  Set Oversampling to 8-bit or 16-bit mode
   * @param  USARTx USART Instance
@@ -632,6 +631,7 @@ __STATIC_INLINE uint32_t DDL_USART_GetOverSampling(USART_TypeDef *USARTx)
 {
   return (uint32_t)(READ_BIT(USARTx->CTRL1, USART_CTRL1_OSMCFG));
 }
+#endif /* USART_CTRL1_OSMCFG */
 
 /**
   * @brief  Configure if Clock pulse of the last data bit is output to the SCLK pin or not
@@ -944,6 +944,7 @@ __STATIC_INLINE uint32_t DDL_USART_GetHWFlowCtrl(USART_TypeDef *USARTx)
   return (uint32_t)(READ_BIT(USARTx->CTRL3, USART_CTRL3_RTSEN | USART_CTRL3_CTSEN));
 }
 
+#if defined (USART_CTRL3_SAMCFG)
 /**
   * @brief  Enable One bit sampling method
   * @param  USARTx USART Instance
@@ -973,7 +974,9 @@ __STATIC_INLINE uint32_t DDL_USART_IsEnabledOneBitSamp(USART_TypeDef *USARTx)
 {
   return (READ_BIT(USARTx->CTRL3, USART_CTRL3_SAMCFG) == (USART_CTRL3_SAMCFG));
 }
+#endif /* USART_CTRL3_SAMCFG */
 
+#if defined (USART_CTRL1_OSMCFG)
 /**
   * @brief  Configure USART BRR register for achieving expected Baud Rate value.
   * @note   Compute and set USARTDIV value in BRR Register (full BRR content)
@@ -1036,7 +1039,45 @@ __STATIC_INLINE uint32_t DDL_USART_GetBaudRate(USART_TypeDef *USARTx, uint32_t P
   }
   return (brrresult);
 }
+#else
+/**
+  * @brief  Configure USART BRR register for achieving expected Baud Rate value.
+  * @note   Compute and set USARTDIV value in BRR Register (full BRR content)
+  *         according to used Peripheral Clock, Oversampling mode, and expected Baud Rate values
+  * @note   Peripheral clock and Baud rate values provided as function parameters should be valid
+  *         (Baud rate value != 0)
+  * @param  USARTx USART Instance
+  * @param  PeriphClk Peripheral Clock
+  * @param  BaudRate Baud Rate
+  * @retval None
+  */
+__STATIC_INLINE void DDL_USART_SetBaudRate(USART_TypeDef *USARTx, uint32_t PeriphClk, uint32_t BaudRate)
+{
+  USARTx->BR = (uint16_t)(__DDL_USART_DIV_SAMPLING16(PeriphClk, BaudRate));
+}
 
+/**
+  * @brief  Return current Baud Rate value, according to USARTDIV present in BRR register
+  *         (full BRR content), and to used Peripheral Clock and Oversampling mode values
+  * @note   In case of non-initialized or invalid value stored in BRR register, value 0 will be returned.
+  * @param  USARTx USART Instance
+  * @param  PeriphClk Peripheral Clock
+  * @retval Baud Rate
+  */
+__STATIC_INLINE uint32_t DDL_USART_GetBaudRate(USART_TypeDef *USARTx, uint32_t PeriphClk)
+{
+  register uint32_t usartdiv = 0x0U;
+  register uint32_t brresult = 0x0U;
+
+  usartdiv = USARTx->BR;
+
+  if ((usartdiv & 0xFFFFU) != 0U)
+  {
+    brresult = PeriphClk / usartdiv;
+  }
+  return (brresult);
+}
+#endif /* USART_CTRL1_OSMCFG */
 /**
   * @}
   */

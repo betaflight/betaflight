@@ -4,13 +4,13 @@
  *
  * @brief       CMSIS Cortex-M4 Device Peripheral Access Layer System Source File.
  *
- * @version     V1.0.0
+ * @version     V1.0.3
  *
- * @date        2023-07-31
+ * @date        2025-12-15
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -30,8 +30,8 @@
 
 /** @addtogroup apm32f4xx_system
   * @{
-  */  
-  
+  */
+
 /** @addtogroup APM32F4xx_System_Private_Includes
   * @{
   */
@@ -39,13 +39,17 @@
 #include "apm32f4xx.h"
 
 /* Value of the external oscillator in Hz */
-#if !defined  (HSE_VALUE) 
+#if !defined  (HSE_VALUE)
   #define HSE_VALUE    ((uint32_t)8000000U)
 #endif /* HSE_VALUE */
 
 /* Value of the internal oscillator in Hz */
 #if !defined  (HSI_VALUE)
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  #define HSI_VALUE    ((uint32_t)8000000U)
+#else
   #define HSI_VALUE    ((uint32_t)16000000U)
+#endif /* APM32F403xx || APM32F402xx */
 #endif /* HSI_VALUE */
 
 /**
@@ -84,7 +88,7 @@
 /** @addtogroup APM32F4xx_System_Private_Variables
   * @{
   */
-uint32_t SystemCoreClock = 16000000;
+uint32_t SystemCoreClock = HSI_VALUE;
 const uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
 /**
@@ -130,8 +134,11 @@ void SystemInit(void)
     /* FPU settings */
 #if (__FPU_PRESENT == 1U) && (__FPU_USED == 1U)
       SCB->CPACR |= ((3UL << 10U * 2U)|(3UL << 11U * 2U));  /* set CP10 and CP11 Full Access */
-#endif
+#endif /* (__FPU_PRESENT == 1U) && (__FPU_USED == 1U) */
+
     /* Reset the RCM clock configuration to the default reset state */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
     /* Set HSIEN bit */
     RCM->CTRL |= (uint32_t)0x00000001;
 
@@ -149,31 +156,50 @@ void SystemInit(void)
 
     /* Disable all interrupts */
     RCM->INT = 0x00000000;
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+    /* Set HSIEN bit */
+    RCM->CTRL |= (uint32_t)0x00000001;
+
+    /* Reset SCLKSEL, AHBPSC, APB1PSC, APB2PSC, ADCPSC and MCOSEL bits */
+    RCM->CFG &= 0xF8FF0000;
+
+    /* Reset HSEEN, CSSEN and PLLEN bits */
+    RCM->CTRL &= (uint32_t)0xFEF6FFFF;
+
+    /* Reset HSEBCFG bit */
+    RCM->CTRL &= (uint32_t)0xFFFBFFFF;
+
+    /* Reset PLLSRCSEL, PLLHSEPSC, PLLMULCFG and USBDIV bits */
+    RCM->CFG &= (uint32_t) 0xFF80FFFF;
+
+    /* Disable all interrupts and clear pending bits */
+    RCM->INT = 0x009F0000;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
     /* Configure the Vector Table location add offset address */
 #ifdef VECT_TAB_SRAM
     SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
 #else
     SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-#endif
+#endif /* VECT_TAB_SRAM */
 
     /* Enable global interrupt */
     __enable_irq();
 }
 
 /**
-   * @brief Update SystemCoreClock variable according to clock register values
- *          The SystemCoreClock variable contains the core clock (HCLK)
-  *     
+  * @brief Update SystemCoreClock variable according to clock register values
+  *          The SystemCoreClock variable contains the core clock (HCLK)
+  *
   * @param  None
   * @retval None
   */
 void SystemCoreClockUpdate(void)
 {
     uint32_t sysClock = 0, pllvco = 0, pllc, pllClock, pllb;
-    
+
     /* Get SYSCLK source */
-    sysClock = RCM->CFG & RCM_CFG_SCLKSWSTS;
+    sysClock = RCM->CFG & RCM_CFG_SCLKSELSTS;
 
     switch (sysClock)
     {
@@ -186,9 +212,11 @@ void SystemCoreClockUpdate(void)
             break;
 
         case 0x08:  /* PLL used as system clock source */
+#if defined (APM32F405xx) || defined (APM32F407xx) || defined (APM32F415xx) || defined (APM32F417xx) || defined (APM32F411xx) || defined (APM32F465xx) || \
+    defined (APM32F423xx) || defined (APM32F425xx) || defined (APM32F427xx)
             pllClock = (RCM->PLL1CFG & RCM_PLL1CFG_PLL1CLKS) >> 22;
             pllb = RCM->PLL1CFG & RCM_PLL1CFG_PLLB;
-            
+
             if (pllClock != 0)
             {
                 /* HSE used as PLL clock source */
@@ -202,6 +230,26 @@ void SystemCoreClockUpdate(void)
 
             pllc = (((RCM->PLL1CFG & RCM_PLL1CFG_PLL1C) >> 16) + 1 ) * 2;
             SystemCoreClock = pllvco / pllc;
+#elif defined (APM32F403xx) || defined (APM32F402xx)
+            pllClock = (RCM->CFG & RCM_CFG_PLLSRCSEL) >> 16;
+            /* Get PLLHSEPSC value */
+            pllc = (RCM->CFG & RCM_CFG_PLLHSEPSC) >> 17;
+
+            if (pllClock != 0)
+            {
+                /* HSE used as PLL clock source */
+                pllvco = HSE_VALUE >> pllc;
+            }
+            else
+            {
+                /* HSI used as PLL clock source */
+                pllvco = (HSI_VALUE >> 1);
+            }
+
+            /* Get PLLMULCFG value */
+            pllb = ((RCM->CFG & RCM_CFG_PLLMULCFG) >> 18) + 2;
+            SystemCoreClock = pllvco * pllb;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
             break;
 
         default:
@@ -223,7 +271,7 @@ void SystemCoreClockUpdate(void)
 /**
   * @}
   */
-  
+
 /**
   * @}
-  */    
+  */

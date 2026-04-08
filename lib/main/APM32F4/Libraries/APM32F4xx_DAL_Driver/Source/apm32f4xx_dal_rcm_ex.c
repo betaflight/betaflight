@@ -9,7 +9,7 @@
   *
   * @attention
   *
-  * Redistribution and use in source and binary forms, with or without modification, 
+  * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
   *
   * 1. Redistributions of source code must retain the above copyright notice,
@@ -31,13 +31,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -94,8 +90,6 @@
   * @{
   */
 
-#if defined(APM32F405xx) || defined(APM32F407xx)|| defined(APM32F417xx) ||\
-    defined(APM32F465xx) || defined(APM32F411xx)
 /**
   * @brief  Initializes the RCM extended peripherals clocks according to the specified parameters in the
   *         RCM_PeriphCLKInitTypeDef.
@@ -116,7 +110,7 @@ DAL_StatusTypeDef DAL_RCMEx_PeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClk
   /* Check the parameters */
   ASSERT_PARAM(IS_RCM_PERIPHCLOCK(PeriphClkInit->PeriphClockSelection));
 
-#if defined(APM32F407xx) || defined(APM32F417xx)
+#if defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /*---------------------------- SDRAM configuration ---------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_SDRAM) == RCM_PERIPHCLK_SDRAM)
   {
@@ -127,8 +121,9 @@ DAL_StatusTypeDef DAL_RCMEx_PeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClk
     MODIFY_REG(RCM->CFG, RCM_CFG_SDRAMPSC, \
               (PeriphClkInit->SDRAMClockDivision << RCM_CFG_SDRAMPSC_Pos));
   }
-#endif /* APM32F407xx || APM32F417xx */
+#endif /* APM32F407xx || APM32F417xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
   /*---------------------------- I2S configuration ---------------------------*/
   if((((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_I2S) == RCM_PERIPHCLK_I2S) ||
      (((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_PLLI2S) == RCM_PERIPHCLK_PLLI2S))
@@ -179,6 +174,7 @@ DAL_StatusTypeDef DAL_RCMEx_PeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClk
       }
     }
   }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 
   /*---------------------------- RTC configuration ---------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_RTC) == (RCM_PERIPHCLK_RTC))
@@ -232,6 +228,29 @@ DAL_StatusTypeDef DAL_RCMEx_PeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClk
     }
     __DAL_RCM_RTC_CONFIG(PeriphClkInit->RTCClockSelection);
   }
+
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  /*------------------------------ ADC clock Configuration ------------------*/
+  if (((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_ADC) == RCM_PERIPHCLK_ADC)
+  {
+    /* Check the parameters */
+    ASSERT_PARAM(IS_RCM_ADCPLLCLK_DIV(PeriphClkInit->AdcClockSelection));
+
+    /* Configure the ADC clock source */
+    __DAL_RCM_ADC_CONFIG(PeriphClkInit->AdcClockSelection);
+  }
+
+  /*------------------------------ USB clock Configuration ------------------*/
+  if (((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_USB) == RCM_PERIPHCLK_USB)
+  {
+    /* Check the parameters */
+    ASSERT_PARAM(IS_RCM_USBPLLCLK_DIV(PeriphClkInit->UsbClockSelection));
+
+    /* Configure the USB clock source */
+    __DAL_RCM_USB_CONFIG(PeriphClkInit->UsbClockSelection);
+  }
+#endif /* APM32F403xx || APM32F402xx */
+
 #if defined(APM32F411xx)
   /*---------------------------- TMR configuration ---------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCM_PERIPHCLK_TMR) == (RCM_PERIPHCLK_TMR))
@@ -253,15 +272,26 @@ void DAL_RCMEx_GetPeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClkInit)
 {
   uint32_t tempreg;
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
+
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
   /* Set all possible values for the extended clock type parameter------------*/
   PeriphClkInit->PeriphClockSelection = RCM_PERIPHCLK_I2S | RCM_PERIPHCLK_RTC;
+#else
+  /* Set all possible values for the extended clock type parameter------------*/
+  PeriphClkInit->PeriphClockSelection = RCM_PERIPHCLK_RTC;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
   /* Get the PLLI2S Clock configuration --------------------------------------*/
   PeriphClkInit->PLLI2S.PLL2A = (uint32_t)((RCM->PLL2CFG & RCM_PLL2CFG_PLL2A) >> RCM_PLL2CFG_PLL2A_Pos);
   PeriphClkInit->PLLI2S.PLL2C = (uint32_t)((RCM->PLL2CFG & RCM_PLL2CFG_PLL2C) >> RCM_PLL2CFG_PLL2C_Pos);
 #if defined(APM32F411xx)
   PeriphClkInit->PLLI2S.PLL2B = (uint32_t)(RCM->PLL2CFG & RCM_PLL2CFG_PLL2B);
 #endif /* APM32F411xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
+
   /* Get the RTC Clock configuration -----------------------------------------*/
   tempreg = (RCM->CFG & RCM_CFG_RTCPSC);
   PeriphClkInit->RTCClockSelection = (uint32_t)((tempreg) | (RCM->BDCTRL & RCM_BDCTRL_RTCSRCSEL));
@@ -277,28 +307,63 @@ void DAL_RCMEx_GetPeriphCLKConfig(RCM_PeriphCLKInitTypeDef  *PeriphClkInit)
     PeriphClkInit->TMRPresSelection = RCM_TMRPRES_ACTIVATED;
   }
 #endif /* APM32F411xx */
+#else
+  /* Set all possible values for the extended clock type parameter------------*/
+  PeriphClkInit->PeriphClockSelection = RCM_PERIPHCLK_RTC;
+
+  /* Get the RTC configuration -----------------------------------------------*/
+  tempreg = __DAL_RCM_GET_RTC_SOURCE();
+  /* Source clock is LSE or LSI*/
+  PeriphClkInit->RTCClockSelection = tempreg;
+
+  /* Get the I2S2 clock configuration -----------------------------------------*/
+  PeriphClkInit->PeriphClockSelection |= RCM_PERIPHCLK_I2S2;
+  PeriphClkInit->I2s2ClockSelection = RCM_I2S2CLKSOURCE_SYSCLK;
+
+  /* Get the ADC clock configuration -----------------------------------------*/
+  PeriphClkInit->PeriphClockSelection |= RCM_PERIPHCLK_ADC;
+  PeriphClkInit->AdcClockSelection = __DAL_RCM_GET_ADC_SOURCE();
+
+  /* Get the USB clock configuration -----------------------------------------*/
+  PeriphClkInit->PeriphClockSelection |= RCM_PERIPHCLK_USB;
+  PeriphClkInit->UsbClockSelection = __DAL_RCM_GET_USB_SOURCE();
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 }
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx) || \
+    defined(APM32F402xx) || defined(APM32F403xx)
 /**
   * @brief  Return the peripheral clock frequency for a given peripheral(SAI..)
   * @note   Return 0 if peripheral clock identifier not managed by this API
   * @param  PeriphClk Peripheral clock identifier
   *         This parameter can be one of the following values:
-  *            @arg RCM_PERIPHCLK_I2S: I2S peripheral clock
+  *            @arg RCM_PERIPHCLK_I2S : I2S peripheral clock
+  *            @arg RCM_PERIPHCLK_I2S2: I2S2 peripheral clock (*)
+  *            @arg RCM_PERIPHCLK_RTC : RTC peripheral clock (*)
+  *            @arg RCM_PERIPHCLK_ADC : ADC peripheral clock (*)
+  *            @arg RCM_PERIPHCLK_USB : USB peripheral clock (*)
   * @retval Frequency in KHz
   */
 uint32_t DAL_RCMEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 {
   /* This variable used to store the I2S clock frequency (value in Hz) */
   uint32_t frequency = 0U;
+#if defined(APM32F403xx) || defined(APM32F402xx)
+  uint32_t temp_reg = 0U;
+  uint32_t prediv = 0U;
+  uint32_t pllclk = 0U;
+  uint32_t pllmul = 0U;
+#else
   /* This variable used to store the VCO Input (value in Hz) */
   uint32_t vcoinput = 0U;
   uint32_t srcclk = 0U;
   /* This variable used to store the VCO Output (value in Hz) */
   uint32_t vcooutput = 0U;
+#endif /* APM32F403xx || APM32F402xx */
   switch (PeriphClk)
   {
-  case RCM_PERIPHCLK_I2S:
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F411xx) || defined(APM32F465xx)
+    case RCM_PERIPHCLK_I2S:
     {
       /* Get the current I2S source */
       srcclk = __DAL_RCM_GET_I2S_SOURCE();
@@ -356,10 +421,97 @@ uint32_t DAL_RCMEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       }
       break;
     }
+#else
+    case RCM_PERIPHCLK_USB:
+    {
+      /* Check if PLL is enabled */
+      if (DAL_IS_BIT_SET(RCM->CTRL, RCM_CTRL_PLL1EN))
+      {
+        pllmul = (((RCM->CFG & RCM_CFG_PLLMULCFG) >> RCM_CFG_PLLMULCFG_Pos) + 2U) > 16U? 16U:\
+                             (((RCM->CFG & RCM_CFG_PLLMULCFG) >> RCM_CFG_PLLMULCFG_Pos) + 2U);
+        if((RCM->CFG & RCM_CFG_PLLSRCSEL) != RCM_PLLSOURCE_HSI_DIV2)
+        {
+          prediv = ((RCM->CFG & RCM_CFG_PLLHSEPSC) >> RCM_CFG_PLLHSEPSC_Pos) + 1;
+
+          /* HSE used as PLL clock source : PLLCLK = HSE/PREDIV1 * PLLMUL */
+          pllclk = (uint32_t)((HSE_VALUE  * pllmul) / prediv);
+        }
+        else
+        {
+          /* HSI used as PLL clock source : PLLCLK = HSI/2 * PLLMUL */
+          pllclk = (uint32_t)((HSI_VALUE >> 1) * pllmul);
+        }
+
+        /* USBCLK = PLLCLK / USB prescaler */
+        if (__DAL_RCM_GET_USB_SOURCE() == RCM_USBCLKSOURCE_PLL)
+        {
+          /* No prescaler selected for USB */
+          frequency = pllclk;
+        }
+        else if(__DAL_RCM_GET_USB_SOURCE() == RCM_USBCLKSOURCE_PLL_DIV1_5)
+        {
+          /* Prescaler of 1.5 selected for USB */
+          frequency = (pllclk * 2) / 3;
+        }
+        else if(__DAL_RCM_GET_USB_SOURCE() == RCM_USBCLKSOURCE_PLL_DIV2)
+        {
+          /* Prescaler of 2 selected for USB */
+          frequency = pllclk / 2;
+        }
+        else
+        {
+          /* Prescaler of 2.5 selected for USB */
+          frequency = (pllclk * 2) / 5;
+        }
+      }
+      break;
+    }
+    case RCM_PERIPHCLK_I2S2:
+    {
+      /* SYSCLK used as source clock for I2S2 */
+      frequency = DAL_RCM_GetSysClockFreq();
+      break;
+    }
+    case RCM_PERIPHCLK_RTC:
+    {
+      /* Get RCM BDCTRL configuration ------------------------------------------------------*/
+      temp_reg = RCM->BDCTRL;
+
+      /* Check if LSE is ready if RTC clock selection is LSE */
+      if (((temp_reg & RCM_BDCTRL_RTCSRCSEL) == RCM_RTCCLKSOURCE_LSE) && (DAL_IS_BIT_SET(temp_reg, RCM_BDCTRL_LSERDYFLG)))
+      {
+        frequency = LSE_VALUE;
+      }
+      /* Check if LSI is ready if RTC clock selection is LSI */
+      else if (((temp_reg & RCM_BDCTRL_RTCSRCSEL) == RCM_RTCCLKSOURCE_LSI) && (DAL_IS_BIT_SET(RCM->CSTS, RCM_CSTS_LSIRDYFLG)))
+      {
+        frequency = LSI_VALUE;
+      }
+      else if (((temp_reg & RCM_BDCTRL_RTCSRCSEL) == RCM_RTCCLKSOURCE_HSE_DIV128) && (DAL_IS_BIT_SET(RCM->CTRL, RCM_CTRL_HSERDYFLG)))
+      {
+        frequency = HSE_VALUE / 128U;
+      }
+      /* Clock not enabled for RTC*/
+      else
+      {
+        /* nothing to do: frequency already initialized to 0U */
+      }
+      break;
+    }
+    case RCM_PERIPHCLK_ADC:
+    {
+      frequency = DAL_RCM_GetPCLK2Freq() / (((__DAL_RCM_GET_ADC_SOURCE() >> RCM_CFG_ADCPSC_Pos) + 1) * 2);
+      break;
+    }
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx */
+    default:
+    {
+      break;
+    }
   }
   return frequency;
 }
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F411xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F402xx || APM32F403xx */
 
 #if defined(APM32F411xx) && defined(RCM_BDCTRL_LSEMOD)
 /**
@@ -392,12 +544,12 @@ void DAL_RCMEx_SelectLSEMode(uint8_t Mode)
 /** @defgroup RCMEx_Exported_Functions_Group2 Extended Clock management functions
  *  @brief  Extended Clock management functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
                 ##### Extended clock management functions  #####
  ===============================================================================
     [..]
-    This subsection provides a set of functions allowing to control the 
+    This subsection provides a set of functions allowing to control the
     activation or deactivation of PLLI2S, PLLSAI.
 @endverbatim
   * @{
@@ -550,7 +702,7 @@ DAL_StatusTypeDef DAL_RCM_DeInit(void)
   CLEAR_REG(RCM->CFG);
 
   /* Wait till clock switch is ready */
-  while (READ_BIT(RCM->CFG, RCM_CFG_SCLKSWSTS) != RESET)
+  while (READ_BIT(RCM->CFG, RCM_CFG_SCLKSELSTS) != RESET)
   {
     if ((DAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
     {
@@ -622,15 +774,18 @@ DAL_StatusTypeDef DAL_RCM_DeInit(void)
   }
 #endif /* RCM_PLLSAI_SUPPORT */
 
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx) || defined(APM32F411xx) || \
+    defined(APM32F423xx) || defined(APM32F425xx) || defined(APM32F427xx)
   /* Once PLL, PLLI2S and PLLSAI are OFF, reset PLLCFGR register to default value */
   RCM->PLL1CFG = RCM_PLL1CFG_PLLB_4 | RCM_PLL1CFG_PLL1A_6 | RCM_PLL1CFG_PLL1A_7 | RCM_PLL1CFG_PLLD_2;
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F411xx || APM32F465xx || APM32F423xx || APM32F425xx || APM32F427xx */
 
   /* Reset PLLI2SCFGR register to default value */
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx) || defined(APM32F465xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
   RCM->PLL2CFG = RCM_PLL2CFG_PLL2A_6 | RCM_PLL2CFG_PLL2A_7 | RCM_PLL2CFG_PLL2C_1;
 #elif defined(APM32F411xx)
   RCM->PLL2CFG = RCM_PLL2CFG_PLL2B_4 | RCM_PLL2CFG_PLL2A_6 | RCM_PLL2CFG_PLL2A_7 | RCM_PLL2CFG_PLL2C_1;
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx || APM32F465xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
 
   /* Disable all interrupts */
   CLEAR_BIT(RCM->INT, RCM_INT_LSIRDYEN | RCM_INT_LSERDYEN | RCM_INT_HSIRDYEN | RCM_INT_HSERDYEN | RCM_INT_PLL1RDYEN);
@@ -639,20 +794,12 @@ DAL_StatusTypeDef DAL_RCM_DeInit(void)
   CLEAR_BIT(RCM->INT, RCM_INT_PLL2RDYEN);
 #endif /* RCM_INT_PLL2RDYEN */
 
-#if defined(RCM_INT_PLLSAIRDYIE)
-  CLEAR_BIT(RCM->INT, RCM_INT_PLLSAIRDYIE);
-#endif /* RCM_INT_PLLSAIRDYIE */
-
   /* Clear all interrupt flags */
   SET_BIT(RCM->INT, RCM_INT_LSIRDYCLR | RCM_INT_LSERDYCLR | RCM_INT_HSIRDYCLR | RCM_INT_HSERDYCLR | RCM_INT_PLL1RDYCLR | RCM_INT_CSSCLR);
 
 #if defined(RCM_INT_PLL2RDYCLR)
   SET_BIT(RCM->INT, RCM_INT_PLL2RDYCLR);
 #endif /* RCM_INT_PLL2RDYCLR */
-
-#if defined(RCM_INT_PLLSAIRDYC)
-  SET_BIT(RCM->INT, RCM_INT_PLLSAIRDYC);
-#endif /* RCM_INT_PLLSAIRDYC */
 
   /* Clear LSIEN bit */
   CLEAR_BIT(RCM->CSTS, RCM_CSTS_LSIEN);

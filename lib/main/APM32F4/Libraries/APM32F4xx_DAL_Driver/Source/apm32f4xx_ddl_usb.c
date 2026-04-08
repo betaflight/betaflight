@@ -35,13 +35,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -71,14 +67,14 @@
   */
 
 #if defined (DAL_PCD_MODULE_ENABLED) || defined (DAL_HCD_MODULE_ENABLED)
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS) || defined (USB_OTG_FS2)
 static DAL_StatusTypeDef USB_CoreReset(USB_OTG_GlobalTypeDef *USBx);
 
 /* Exported functions --------------------------------------------------------*/
@@ -127,7 +123,7 @@ DAL_StatusTypeDef USB_CoreInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
   }
   else /* Embedded Phy */
   {
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
     /* USBD_HS_SPEED || USBH_HS_SPEED */
     if (cfg.speed == USBD_HS_SPEED)
     {
@@ -190,7 +186,7 @@ DAL_StatusTypeDef USB_CoreInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
         /* Deactivate the USB Transceiver */
         USBx->GGCCFG &= ~(USB_OTG_GGCCFG_PWEN);
     }
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
   }
 
   if (cfg.dma_enable == 1U)
@@ -417,7 +413,7 @@ DAL_StatusTypeDef USB_DevInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef cf
   }
   else
   {
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
     if (cfg.speed == USBD_HS_SPEED)
     {
       /* Set Core speed to High speed mode */
@@ -436,7 +432,7 @@ DAL_StatusTypeDef USB_DevInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef cf
 #else
     /* Set Core speed to Full speed mode */
     (void)USB_SetDevSpeed(USBx, USB_OTG_SPEED_FULL);
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
   }
 
   /* Flush the FIFOs */
@@ -1372,6 +1368,23 @@ uint32_t  USB_ReadInterrupts(USB_OTG_GlobalTypeDef *USBx)
 }
 
 /**
+  * @brief  USB_ReadChInterrupts: return USB channel interrupt status
+  * @param  USBx  Selected device
+  * @param  chnum Channel number
+  * @retval USB Channel Interrupt status
+  */
+uint32_t USB_ReadChInterrupts(USB_OTG_GlobalTypeDef *USBx, uint8_t chnum)
+{
+  uint32_t USBx_BASE = (uint32_t)USBx;
+  uint32_t tmpreg;
+
+  tmpreg = USBx_HC(chnum)->HCHINT;
+  tmpreg &= USBx_HC(chnum)->HCHIMASK;
+
+  return tmpreg;
+}
+
+/**
   * @brief  USB_ReadDevAllOutEpInterrupt: return the USB device OUT endpoints interrupt status
   * @param  USBx  Selected device
   * @retval DAL status
@@ -1451,7 +1464,7 @@ uint32_t USB_ReadDevInEPInterrupt(USB_OTG_GlobalTypeDef *USBx, uint8_t epnum)
   */
 void  USB_ClearInterrupts(USB_OTG_GlobalTypeDef *USBx, uint32_t interrupt)
 {
-  USBx->GCINT |= interrupt;
+  USBx->GCINT &= interrupt;
 }
 
 /**
@@ -1584,7 +1597,7 @@ DAL_StatusTypeDef USB_HostInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
   USBx->GGCCFG &= ~USB_OTG_GGCCFG_BDVBSEN;
   USBx->GGCCFG &= ~USB_OTG_GGCCFG_ADVBSEN;
 
-  if ((USBx->GCID & (0x1U << 8)) != 0U)
+  if ((USBx->GUSBCFG & USB_OTG_GUSBCFG_FSSTSEL) == 0U)
   {
     if (cfg.speed == USBH_FSLS_SPEED)
     {
@@ -1627,8 +1640,8 @@ DAL_StatusTypeDef USB_HostInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
   /* Clear any pending interrupts */
   USBx->GCINT = 0xFFFFFFFFU;
 
-#if 0
-  if ((USBx->GCID & (0x1U << 8)) != 0U)
+#if defined (USB_OTG_HS)
+  if (USBx == USB_OTG_HS)
   {
     /* set Rx FIFO size */
     USBx->GRXFIFO  = 0x200U;
@@ -1636,23 +1649,7 @@ DAL_StatusTypeDef USB_HostInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
     USBx->GHPTXFSIZE = (uint32_t)(((0xE0U << 16) & USB_OTG_GHPTXFSIZE_HPDTXFDEP) | 0x300U);
   }
   else
-  {
-    /* set Rx FIFO size */
-    USBx->GRXFIFO  = 0x80U;
-    USBx->GTXFCFG = (uint32_t)(((0x60U << 16) & USB_OTG_NPTXFDEP) | 0x80U);
-    USBx->GHPTXFSIZE = (uint32_t)(((0x40U << 16)& USB_OTG_GHPTXFSIZE_HPDTXFDEP) | 0xE0U);
-  }
-#endif
-
-  /* USBD_HS_SPEED || USBH_HS_SPEED */
-  if (cfg.speed == USBD_HS_SPEED)
-  {
-    /* set Rx FIFO size */
-    USBx->GRXFIFO  = 0x200U;
-    USBx->GTXFCFG = (uint32_t)(((0x100U << 16) & USB_OTG_NPTXFDEP) | 0x200U);
-    USBx->GHPTXFSIZE = (uint32_t)(((0xE0U << 16) & USB_OTG_GHPTXFSIZE_HPDTXFDEP) | 0x300U);
-  }
-  else
+#endif /* defined (USB_OTG_HS) */
   {
     /* set Rx FIFO size */
     USBx->GRXFIFO  = 0x80U;
@@ -1847,11 +1844,13 @@ DAL_StatusTypeDef USB_HC_Init(USB_OTG_GlobalTypeDef *USBx, uint8_t ch_num,
       }
       else
       {
-        if ((USBx->GCID & (0x1U << 8)) != 0U)
+#if defined (USB_OTG_HS)
+        if (USBx == USB_OTG_HS)
         {
           USBx_HC((uint32_t)ch_num)->HCHIMASK |= USB_OTG_HCHIMASK_RXNYETM |
                                                  USB_OTG_HCHIMASK_RXTXACKM;
         }
+#endif /* defined (USB_OTG_HS) */
       }
       break;
 
@@ -1952,23 +1951,30 @@ DAL_StatusTypeDef USB_HC_StartXfer(USB_OTG_GlobalTypeDef *USBx, USB_OTG_HCTypeDe
   uint16_t num_packets;
   uint16_t max_hc_pkt_count = 256U;
 
-  if (((USBx->GCID & (0x1U << 8)) != 0U) && (hc->speed == USBH_HS_SPEED))
+#if defined (USB_OTG_HS)
+  if (USBx == USB_OTG_HS)
   {
     /* in DMA mode host Core automatically issues ping  in case of NYET/NAK */
-    if ((dma == 1U) && ((hc->ep_type == EP_TYPE_CTRL) || (hc->ep_type == EP_TYPE_BULK)))
+    if (dma == 1U)
     {
-      USBx_HC((uint32_t)ch_num)->HCHIMASK &= ~(USB_OTG_HCHIMASK_RXNYETM |
-                                               USB_OTG_HCHIMASK_RXTXACKM |
-                                               USB_OTG_HCHIMASK_RXNAKM);
+      if ((hc->ep_type == EP_TYPE_CTRL) || (hc->ep_type == EP_TYPE_BULK))
+      {
+        USBx_HC((uint32_t)ch_num)->HCHIMASK &= ~(USB_OTG_HCHIMASK_RXNYETM |
+                                                 USB_OTG_HCHIMASK_RXTXACKM |
+                                                 USB_OTG_HCHIMASK_RXNAKM);
+      }
     }
-
-    if ((dma == 0U) && (hc->do_ping == 1U))
+    else
     {
-      (void)USB_DoPing(USBx, hc->ch_num);
-      return DAL_OK;
+      if ((hc->speed == USBH_HS_SPEED) && (hc->do_ping == 1U))
+      {
+        (void)USB_DoPing(USBx, hc->ch_num);
+        return DAL_OK;
+      }
     }
 
   }
+#endif /* defined (USB_OTG_HS) */
 
   /* Compute the expected number of packets associated to the transfer */
   if (hc->xfer_len > 0U)
@@ -2286,7 +2292,7 @@ DAL_StatusTypeDef USB_DeActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx)
 
   return DAL_OK;
 }
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
 
 
 /**
@@ -2296,8 +2302,8 @@ DAL_StatusTypeDef USB_DeActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx)
 /**
   * @}
   */
-#endif /* defined (USB_OTG_FS) || defined (USB_OTG_HS) */
-#endif /* defined (DAL_PCD_MODULE_ENABLED) || defined (DAL_HCD_MODULE_ENABLED) */
+#endif /* USB_OTG_FS || USB_OTG_HS || USB_OTG_FS2 */
+#endif /* DAL_PCD_MODULE_ENABLED || DAL_HCD_MODULE_ENABLED */
 
 /**
   * @}

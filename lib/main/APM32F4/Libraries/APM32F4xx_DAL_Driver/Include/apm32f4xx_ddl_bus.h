@@ -44,13 +44,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2017 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file in
   * the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -92,33 +88,33 @@ extern "C" {
   * @{
   */
 #define DDL_AHB1_GRP1_PERIPH_ALL             0xFFFFFFFFU
+#if defined(RCM_AHB1CLKEN_PAEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOA           RCM_AHB1CLKEN_PAEN
+#endif /* RCM_AHB1CLKEN_PAEN */
+#if defined(RCM_AHB1CLKEN_PBEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOB           RCM_AHB1CLKEN_PBEN
+#endif /* RCM_AHB1CLKEN_PBEN */
+#if defined(RCM_AHB1CLKEN_PCEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOC           RCM_AHB1CLKEN_PCEN
-#if defined(GPIOD)
+#endif /* RCM_AHB1CLKEN_PCEN */
+#if defined(RCM_AHB1CLKEN_PDEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOD           RCM_AHB1CLKEN_PDEN
-#endif /* GPIOD */
-#if defined(GPIOE)
+#endif /* RCM_AHB1CLKEN_PDEN */
+#if defined(RCM_AHB1CLKEN_PEEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOE           RCM_AHB1CLKEN_PEEN
-#endif /* GPIOE */
-#if defined(GPIOF)
+#endif /* RCM_AHB1CLKEN_PEEN */
+#if defined(RCM_AHB1CLKEN_PFEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOF           RCM_AHB1CLKEN_PFEN
-#endif /* GPIOF */
-#if defined(GPIOG)
+#endif /* RCM_AHB1CLKEN_PFEN */
+#if defined(RCM_AHB1CLKEN_PGEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOG           RCM_AHB1CLKEN_PGEN
-#endif /* GPIOG */
-#if defined(GPIOH)
+#endif /* RCM_AHB1CLKEN_PGEN */
+#if defined(RCM_AHB1CLKEN_PHEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOH           RCM_AHB1CLKEN_PHEN
-#endif /* GPIOH */
-#if defined(GPIOI)
+#endif /* RCM_AHB1CLKEN_PHEN */
+#if defined(RCM_AHB1CLKEN_PIEN)
 #define DDL_AHB1_GRP1_PERIPH_GPIOI           RCM_AHB1CLKEN_PIEN
-#endif /* GPIOI */
-#if defined(GPIOJ)
-#define DDL_AHB1_GRP1_PERIPH_GPIOJ           RCM_AHB1CLKEN_GPIOJEN
-#endif /* GPIOJ */
-#if defined(GPIOK)
-#define DDL_AHB1_GRP1_PERIPH_GPIOK           RCM_AHB1CLKEN_GPIOKEN
-#endif /* GPIOK */
+#endif /* RCM_AHB1CLKEN_PIEN */
 #define DDL_AHB1_GRP1_PERIPH_CRC             RCM_AHB1CLKEN_CRCEN
 #if defined(RCM_AHB1CLKEN_BKPSRAMEN)
 #define DDL_AHB1_GRP1_PERIPH_BKPSRAM         RCM_AHB1CLKEN_BKPSRAMEN
@@ -128,27 +124,40 @@ extern "C" {
 #endif /* RCM_AHB1CLKEN_DRAMEN */
 #define DDL_AHB1_GRP1_PERIPH_DMA1            RCM_AHB1CLKEN_DMA1EN
 #define DDL_AHB1_GRP1_PERIPH_DMA2            RCM_AHB1CLKEN_DMA2EN
-#if defined(RCM_AHB1CLKEN_RNGEN)
-#define DDL_AHB1_GRP1_PERIPH_RNG             RCM_AHB1CLKEN_RNGEN
-#endif /* RCM_AHB1CLKEN_RNGEN */
+#if defined(RCM_AHB1CLKEN_SRAMEN)
+#define DDL_AHB1_GRP1_PERIPH_SRAM            RCM_AHB1CLKEN_SRAMEN
+#endif /* RCM_AHB1CLKEN_SRAMEN */
+#if defined(RCM_AHB1CLKEN_FMCEN)
+#define DDL_AHB1_GRP1_PERIPH_FLASH           RCM_AHB1CLKEN_FMCEN
+#endif /* RCM_AHB1CLKEN_FMCEN */
 #if defined(ETH)
 #define DDL_AHB1_GRP1_PERIPH_ETHMAC          RCM_AHB1CLKEN_ETHEN
 #define DDL_AHB1_GRP1_PERIPH_ETHMACTX        RCM_AHB1CLKEN_ETHTXEN
 #define DDL_AHB1_GRP1_PERIPH_ETHMACRX        RCM_AHB1CLKEN_ETHRXEN
 #define DDL_AHB1_GRP1_PERIPH_ETHMACPTP       RCM_AHB1CLKEN_ETHPTPEN
 #endif /* ETH */
+#if defined(RCM_AHB1CLKEN_OTGFSEN)
+#define DDL_AHB1_GRP1_PERIPH_OTGFS           RCM_AHB1CLKEN_OTGFSEN
+#endif /* RCM_AHB1CLKEN_OTGFSEN */
 #if defined(USB_OTG_HS)
 #define DDL_AHB1_GRP1_PERIPH_OTGHS           RCM_AHB1CLKEN_OTGHS1EN
 #define DDL_AHB1_GRP1_PERIPH_OTGHSULPI       RCM_AHB1CLKEN_OTGHSULPIEN
 #endif /* USB_OTG_HS */
+#if defined(USB_OTG_FS2)
+#define DDL_AHB1_GRP1_PERIPH_OTGFS2          RCM_AHB1CLKEN_OTGFS2EN
+#endif /* USB_OTG_FS2 */
+#if defined(RCM_LPAHB1CLKEN_FMCEN)
 #define DDL_AHB1_GRP1_PERIPH_FLITF           RCM_LPAHB1CLKEN_FMCEN
+#endif /* RCM_LPAHB1CLKEN_FMCEN */
+#if defined(RCM_LPAHB1CLKEN_SRAM1EN)
 #define DDL_AHB1_GRP1_PERIPH_SRAM1           RCM_LPAHB1CLKEN_SRAM1EN
+#endif /* RCM_LPAHB1CLKEN_SRAM1EN */
 #if defined(RCM_LPAHB1CLKEN_SRAM2EN)
 #define DDL_AHB1_GRP1_PERIPH_SRAM2           RCM_LPAHB1CLKEN_SRAM2EN
 #endif /* RCM_LPAHB1CLKEN_SRAM2EN */
-#if defined(RCM_LPAHB1CLKEN_SRAM3LPEN)
-#define DDL_AHB1_GRP1_PERIPH_SRAM3           RCM_LPAHB1CLKEN_SRAM3LPEN
-#endif /* RCM_LPAHB1CLKEN_SRAM3LPEN */
+#if defined(RCM_LPAHB1CLKEN_SRAM3EN)
+#define DDL_AHB1_GRP1_PERIPH_SRAM3           RCM_LPAHB1CLKEN_SRAM3EN
+#endif /* RCM_LPAHB1CLKEN_SRAM3EN */
 /**
   * @}
   */
@@ -180,15 +189,15 @@ extern "C" {
 #if defined(RCM_AHB2CLKEN_RNGEN)
 #define DDL_AHB2_GRP1_PERIPH_RNG            RCM_AHB2CLKEN_RNGEN
 #endif /* RCM_AHB2CLKEN_RNGEN */
-#if defined(USB_OTG_FS)
+#if defined(RCM_AHB2CLKEN_OTGFSEN)
 #define DDL_AHB2_GRP1_PERIPH_OTGFS          RCM_AHB2CLKEN_OTGFSEN
-#endif /* USB_OTG_FS */
-#if defined(QSPI)
+#endif /* RCM_AHB2CLKEN_OTGFSEN */
+#if defined(RCM_AHB2CLKEN_QSPIEN)
 #define DDL_AHB2_GRP1_PERIPH_QSPI           RCM_AHB2CLKEN_QSPIEN
-#endif /* QSPI */
-#if defined(SMC_Bank1)
+#endif /* RCM_AHB2CLKEN_QSPIEN */
+#if defined(RCM_AHB2CLKEN_SMCEN)
 #define DDL_AHB2_GRP1_PERIPH_SMC            RCM_AHB2CLKEN_SMCEN
-#endif /* SMC_Bank1 */
+#endif /* RCM_AHB2CLKEN_SMCEN */
 /**
   * @}
   */
@@ -199,9 +208,12 @@ extern "C" {
   * @{
   */
 #define DDL_AHB3_GRP1_PERIPH_ALL            0xFFFFFFFFU
-#if defined(SMC_Bank1)
+#if defined(RCM_AHB3CLKEN_EMMCEN)
 #define DDL_AHB3_GRP1_PERIPH_EMMC           RCM_AHB3CLKEN_EMMCEN
-#endif /* SMC_Bank1 */
+#endif /* RCM_AHB3CLKEN_EMMCEN */
+#if defined(RCM_AHB3CLKEN_QSPIEN)
+#define DDL_AHB3_GRP1_PERIPH_QSPI           RCM_AHB3CLKEN_QSPIEN
+#endif /* RCM_AHB3CLKEN_QSPIEN */
 /**
   * @}
   */
@@ -236,9 +248,6 @@ extern "C" {
 #if defined(TMR14)
 #define DDL_APB1_GRP1_PERIPH_TMR14          RCM_APB1CLKEN_TMR14EN
 #endif /* TMR14 */
-#if defined(RCM_APB1CLKEN_RTCAPBEN)
-#define DDL_APB1_GRP1_PERIPH_RTCAPB         RCM_APB1CLKEN_RTCAPBEN
-#endif /* RCM_APB1CLKEN_RTCAPBEN */
 #define DDL_APB1_GRP1_PERIPH_WWDT           RCM_APB1CLKEN_WWDTEN
 #if defined(SPI2)
 #define DDL_APB1_GRP1_PERIPH_SPI2           RCM_APB1CLKEN_SPI2EN
@@ -257,7 +266,9 @@ extern "C" {
 #define DDL_APB1_GRP1_PERIPH_UART5          RCM_APB1CLKEN_UART5EN
 #endif /* UART5 */
 #define DDL_APB1_GRP1_PERIPH_I2C1           RCM_APB1CLKEN_I2C1EN
+#if defined(I2C2)
 #define DDL_APB1_GRP1_PERIPH_I2C2           RCM_APB1CLKEN_I2C2EN
+#endif /* I2C2 */
 #if defined(I2C3)
 #define DDL_APB1_GRP1_PERIPH_I2C3           RCM_APB1CLKEN_I2C3EN
 #endif /* I2C3 */
@@ -270,6 +281,9 @@ extern "C" {
 #if defined(CAN3)
 #define DDL_APB1_GRP1_PERIPH_CAN3           RCM_APB1CLKEN_CAN3EN
 #endif /* CAN3 */
+#if defined(RCM_APB1CLKEN_BAKPEN)
+#define DDL_APB1_GRP1_PERIPH_BAKP           RCM_APB1CLKEN_BAKPEN
+#endif /* RCM_APB1CLKEN_BAKPEN */
 #define DDL_APB1_GRP1_PERIPH_PMU            RCM_APB1CLKEN_PMUEN
 #if defined(DAC1)
 #define DDL_APB1_GRP1_PERIPH_DAC1           RCM_APB1CLKEN_DACEN
@@ -288,6 +302,21 @@ extern "C" {
   * @{
   */
 #define DDL_APB2_GRP1_PERIPH_ALL          0xFFFFFFFFU
+#if defined(AFIO)
+#define DDL_APB2_GRP1_PERIPH_AFIO         RCM_APB2CLKEN_AFIOEN
+#endif /* AFIO */
+#if defined(RCM_APB2CLKEN_PAEN)
+#define DDL_APB2_GRP1_PERIPH_GPIOA        RCM_APB2CLKEN_PAEN
+#endif /* RCM_APB2CLKEN_PAEN */
+#if defined(RCM_APB2CLKEN_PBEN)
+#define DDL_APB2_GRP1_PERIPH_GPIOB        RCM_APB2CLKEN_PBEN
+#endif /* RCM_APB2CLKEN_PBEN */
+#if defined(RCM_APB2CLKEN_PCEN)
+#define DDL_APB2_GRP1_PERIPH_GPIOC        RCM_APB2CLKEN_PCEN
+#endif /* RCM_APB2CLKEN_PCEN */
+#if defined(RCM_APB2CLKEN_PDEN)
+#define DDL_APB2_GRP1_PERIPH_GPIOD        RCM_APB2CLKEN_PDEN
+#endif /* RCM_APB2CLKEN_PDEN */
 #define DDL_APB2_GRP1_PERIPH_TMR1         RCM_APB2CLKEN_TMR1EN
 #if defined(TMR8)
 #define DDL_APB2_GRP1_PERIPH_TMR8         RCM_APB2CLKEN_TMR8EN
@@ -296,12 +325,6 @@ extern "C" {
 #if defined(USART6)
 #define DDL_APB2_GRP1_PERIPH_USART6       RCM_APB2CLKEN_USART6EN
 #endif /* USART6 */
-#if defined(UART9)
-#define DDL_APB2_GRP1_PERIPH_UART9        RCM_APB2CLKEN_UART9EN
-#endif /* UART9 */
-#if defined(UART10)
-#define DDL_APB2_GRP1_PERIPH_UART10       RCM_APB2CLKEN_UART10EN
-#endif /* UART10 */
 #define DDL_APB2_GRP1_PERIPH_ADC1         RCM_APB2CLKEN_ADC1EN
 #if defined(ADC2)
 #define DDL_APB2_GRP1_PERIPH_ADC2         RCM_APB2CLKEN_ADC2EN
@@ -316,25 +339,27 @@ extern "C" {
 #if defined(SPI4)
 #define DDL_APB2_GRP1_PERIPH_SPI4         RCM_APB2CLKEN_SPI4EN
 #endif /* SPI4 */
+#if defined(SYSCFG)
 #define DDL_APB2_GRP1_PERIPH_SYSCFG       RCM_APB2CLKEN_SYSCFGEN
-#if defined(RCM_APB2CLKEN_EINTEN)
-#define DDL_APB2_GRP1_PERIPH_EINT         RCM_APB2CLKEN_EINTEN
-#endif /* RCM_APB2CLKEN_EINTEN */
+#endif /* SYSCFG */
+#if defined(TMR9)
 #define DDL_APB2_GRP1_PERIPH_TMR9         RCM_APB2CLKEN_TMR9EN
+#endif /* TMR9 */
 #if defined(TMR10)
 #define DDL_APB2_GRP1_PERIPH_TMR10        RCM_APB2CLKEN_TMR10EN
 #endif /* TMR10 */
+#if defined(TMR11)
 #define DDL_APB2_GRP1_PERIPH_TMR11        RCM_APB2CLKEN_TMR11EN
+#endif /* TMR11 */
 #if defined(SPI5)
 #define DDL_APB2_GRP1_PERIPH_SPI5         RCM_APB2CLKEN_SPI5EN
 #endif /* SPI5 */
-#if defined(SPI6)
-#define DDL_APB2_GRP1_PERIPH_SPI6         RCM_APB2CLKEN_SPI6EN
-#endif /* SPI6 */
 #if defined(COMP1) || defined(COMP2)
 #define DDL_APB2_GRP1_PERIPH_COMP         RCM_APB2CLKEN_SYSCFGEN
 #endif /* COMP1 || COMP2 */
+#if defined(RCM_APB2RST_ADCRST)
 #define DDL_APB2_GRP1_PERIPH_ADC          RCM_APB2RST_ADCRST
+#endif /* RCM_APB2RST_ADCRST */
 /**
   * @}
   */
@@ -372,13 +397,21 @@ extern "C" {
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_CCMDATARAM (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACTX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACRX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACPTP (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHSULPI (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_SRAM
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_FLASH
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_CRC
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -411,13 +444,21 @@ __STATIC_INLINE void DDL_AHB1_GRP1_EnableClock(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_CCMDATARAM (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACTX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACRX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACPTP (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHSULPI (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_SRAM
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_FLASH
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_CRC
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS
   *
   *         (*) value not defined in all devices.
   * @retval State of Periphs (1 or 0).
@@ -446,14 +487,22 @@ __STATIC_INLINE uint32_t DDL_AHB1_GRP1_IsEnabledClock(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_CCMDATARAM (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACTX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACRX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACPTP (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHSULPI (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
   *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_SRAM
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_FLASH
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_CRC
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS
+  * 
   *         (*) value not defined in all devices.
   * @retval None
 */
@@ -480,10 +529,13 @@ __STATIC_INLINE void DDL_AHB1_GRP1_DisableClock(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_CRC
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
   *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS
+  * 
   *         (*) value not defined in all devices.
   * @retval None
 */
@@ -510,10 +562,13 @@ __STATIC_INLINE void DDL_AHB1_GRP1_ForceReset(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_CRC
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
   *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS
+
   *         (*) value not defined in all devices.
   * @retval None
 */
@@ -522,6 +577,7 @@ __STATIC_INLINE void DDL_AHB1_GRP1_ReleaseReset(uint32_t Periphs)
   CLEAR_BIT(RCM->AHB1RST, Periphs);
 }
 
+#if defined(RCM_LPAHB1_SUPPORT)
 /**
   * @brief  Enable AHB1 peripheral clocks in low-power mode
   * @param  Periphs This parameter can be a combination of the following values:
@@ -544,13 +600,13 @@ __STATIC_INLINE void DDL_AHB1_GRP1_ReleaseReset(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_SRAM3 (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACTX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACRX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACPTP (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHSULPI (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -586,13 +642,13 @@ __STATIC_INLINE void DDL_AHB1_GRP1_EnableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_SRAM3 (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_DMA2
-  *         @arg @ref DDL_AHB1_GRP1_PERIPH_RNG (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMAC (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACTX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACRX (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_ETHMACPTP (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHS (*)
   *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGHSULPI (*)
+  *         @arg @ref DDL_AHB1_GRP1_PERIPH_OTGFS2 (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -601,6 +657,8 @@ __STATIC_INLINE void DDL_AHB1_GRP1_DisableClockLowPower(uint32_t Periphs)
 {
   CLEAR_BIT(RCM->LPAHB1CLKEN, Periphs);
 }
+
+#endif /* RCM_LPAHB1_SUPPORT */
 
 /**
   * @}
@@ -722,6 +780,8 @@ __STATIC_INLINE void DDL_AHB2_GRP1_ReleaseReset(uint32_t Periphs)
   CLEAR_BIT(RCM->AHB2RST, Periphs);
 }
 
+#if defined(RCM_LPAHB2_SUPPORT)
+
 /**
   * @brief  Enable AHB2 peripheral clocks in low-power mode
   * @param  Periphs This parameter can be a combination of the following values:
@@ -768,6 +828,8 @@ __STATIC_INLINE void DDL_AHB2_GRP1_DisableClockLowPower(uint32_t Periphs)
   CLEAR_BIT(RCM->LPAHB2CLKEN, Periphs);
 }
 
+#endif /* RCM_LPAHB2_SUPPORT */
+
 /**
   * @}
   */
@@ -782,6 +844,7 @@ __STATIC_INLINE void DDL_AHB2_GRP1_DisableClockLowPower(uint32_t Periphs)
   * @brief  Enable AHB3 peripherals clock.
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -799,6 +862,7 @@ __STATIC_INLINE void DDL_AHB3_GRP1_EnableClock(uint32_t Periphs)
   * @brief  Check if AHB3 peripheral clock is enabled or not
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval State of Periphs (1 or 0).
@@ -812,6 +876,7 @@ __STATIC_INLINE uint32_t DDL_AHB3_GRP1_IsEnabledClock(uint32_t Periphs)
   * @brief  Disable AHB3 peripherals clock.
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -826,6 +891,7 @@ __STATIC_INLINE void DDL_AHB3_GRP1_DisableClock(uint32_t Periphs)
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_ALL
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -840,6 +906,7 @@ __STATIC_INLINE void DDL_AHB3_GRP1_ForceReset(uint32_t Periphs)
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB2_GRP1_PERIPH_ALL
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -849,10 +916,13 @@ __STATIC_INLINE void DDL_AHB3_GRP1_ReleaseReset(uint32_t Periphs)
   CLEAR_BIT(RCM->AHB3RST, Periphs);
 }
 
+#if defined(RCM_LPAHB3_SUPPORT)
+
 /**
   * @brief  Enable AHB3 peripheral clocks in low-power mode
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -870,6 +940,7 @@ __STATIC_INLINE void DDL_AHB3_GRP1_EnableClockLowPower(uint32_t Periphs)
   * @brief  Disable AHB3 peripheral clocks in low-power mode
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref DDL_AHB3_GRP1_PERIPH_EMMC (*)
+  *         @arg @ref DDL_AHB3_GRP1_PERIPH_QSPI (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -878,6 +949,8 @@ __STATIC_INLINE void DDL_AHB3_GRP1_DisableClockLowPower(uint32_t Periphs)
 {
   CLEAR_BIT(RCM->LPAHB3CLKEN, Periphs);
 }
+
+#endif /* RCM_LPAHB3_SUPPORT */
 
 /**
   * @}
@@ -917,7 +990,22 @@ __STATIC_INLINE void DDL_AHB3_GRP1_DisableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
-  *         @arg @ref DDL_APB1_GRP1_PERIPH_RTCAPB (*)
+  *
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR5
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_WWDT
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_SPI2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART2
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_UART4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_I2C1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN1 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_BAKP
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_PMU
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -960,7 +1048,22 @@ __STATIC_INLINE void DDL_APB1_GRP1_EnableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
-  *         @arg @ref DDL_APB1_GRP1_PERIPH_RTCAPB (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR5
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_WWDT
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_SPI2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART2
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_UART4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_I2C1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_BAKP
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_PMU
   *
   *         (*) value not defined in all devices.
   * @retval State of Periphs (1 or 0).
@@ -999,7 +1102,22 @@ __STATIC_INLINE uint32_t DDL_APB1_GRP1_IsEnabledClock(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
-  *         @arg @ref DDL_APB1_GRP1_PERIPH_RTCAPB (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR5
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_WWDT
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_SPI2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART2
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_UART4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_I2C1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_BAKP
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_PMU
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1038,6 +1156,22 @@ __STATIC_INLINE void DDL_APB1_GRP1_DisableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR5
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_WWDT
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_SPI2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART2
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_UART4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_I2C1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_BAKP
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_PMU
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1076,6 +1210,22 @@ __STATIC_INLINE void DDL_APB1_GRP1_ForceReset(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_TMR5
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_WWDT
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_SPI2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART2
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_USART3 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_UART4 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_I2C1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN1
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_CAN2 (*)
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_BAKP
+  *         @arg @ref DDL_APB1_GRP1_PERIPH_PMU
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1084,6 +1234,8 @@ __STATIC_INLINE void DDL_APB1_GRP1_ReleaseReset(uint32_t Periphs)
 {
   CLEAR_BIT(RCM->APB1RST, Periphs);
 }
+
+#if defined(RCM_LPAPB1_SUPPORT)
 
 /**
   * @brief  Enable APB1 peripheral clocks in low-power mode
@@ -1114,7 +1266,6 @@ __STATIC_INLINE void DDL_APB1_GRP1_ReleaseReset(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
-  *         @arg @ref DDL_APB1_GRP1_PERIPH_RTCAPB (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1157,7 +1308,6 @@ __STATIC_INLINE void DDL_APB1_GRP1_EnableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_DAC1 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART7 (*)
   *         @arg @ref DDL_APB1_GRP1_PERIPH_UART8 (*)
-  *         @arg @ref DDL_APB1_GRP1_PERIPH_RTCAPB (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1166,6 +1316,8 @@ __STATIC_INLINE void DDL_APB1_GRP1_DisableClockLowPower(uint32_t Periphs)
 {
   CLEAR_BIT(RCM->LPAPB1CLKEN, Periphs);
 }
+
+#endif /* RCM_LPAPB1_SUPPORT */
 
 /**
   * @}
@@ -1182,8 +1334,6 @@ __STATIC_INLINE void DDL_APB1_GRP1_DisableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC3 (*)
@@ -1192,13 +1342,23 @@ __STATIC_INLINE void DDL_APB1_GRP1_DisableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
   *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
-
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_AFIO
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOA
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOB
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOC
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOD
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1219,8 +1379,6 @@ __STATIC_INLINE void DDL_APB2_GRP1_EnableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC3 (*)
@@ -1229,12 +1387,23 @@ __STATIC_INLINE void DDL_APB2_GRP1_EnableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
   *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_AFIO
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOA
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOB
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOC
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOD
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *
   *         (*) value not defined in all devices.
   * @retval State of Periphs (1 or 0).
@@ -1251,8 +1420,6 @@ __STATIC_INLINE uint32_t DDL_APB2_GRP1_IsEnabledClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC3 (*)
@@ -1261,12 +1428,23 @@ __STATIC_INLINE uint32_t DDL_APB2_GRP1_IsEnabledClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
   *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_AFIO
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOA
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOB
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOC
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOD
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1284,8 +1462,6 @@ __STATIC_INLINE void DDL_APB2_GRP1_DisableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
@@ -1293,11 +1469,24 @@ __STATIC_INLINE void DDL_APB2_GRP1_DisableClock(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_AFIO
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOA
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOB
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOC
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOD
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1316,8 +1505,6 @@ __STATIC_INLINE void DDL_APB2_GRP1_ForceReset(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
@@ -1325,12 +1512,24 @@ __STATIC_INLINE void DDL_APB2_GRP1_ForceReset(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
+  * 
+  * @param  Periphs This parameter can be a combination of the following values(Only for APM32F402/403xx device):
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_AFIO
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOA
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOB
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOC
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_GPIOD
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1341,6 +1540,8 @@ __STATIC_INLINE void DDL_APB2_GRP1_ReleaseReset(uint32_t Periphs)
   CLEAR_BIT(RCM->APB2RST, Periphs);
 }
 
+#if defined(RCM_LPAPB2_SUPPORT)
+
 /**
   * @brief  Enable APB2 peripheral clocks in low-power mode
   * @param  Periphs This parameter can be a combination of the following values:
@@ -1348,8 +1549,6 @@ __STATIC_INLINE void DDL_APB2_GRP1_ReleaseReset(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC3 (*)
@@ -1357,12 +1556,11 @@ __STATIC_INLINE void DDL_APB2_GRP1_ReleaseReset(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1383,8 +1581,6 @@ __STATIC_INLINE void DDL_APB2_GRP1_EnableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR8 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_USART6 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART9 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_UART10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC2 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_ADC3 (*)
@@ -1392,12 +1588,11 @@ __STATIC_INLINE void DDL_APB2_GRP1_EnableClockLowPower(uint32_t Periphs)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI1
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI4 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SYSCFG
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_EINT (*)
+  *         @arg @ref DDL_APB2_GRP1_PERIPH_COMP (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR9
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR10 (*)
   *         @arg @ref DDL_APB2_GRP1_PERIPH_TMR11
   *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI5 (*)
-  *         @arg @ref DDL_APB2_GRP1_PERIPH_SPI6 (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -1406,6 +1601,8 @@ __STATIC_INLINE void DDL_APB2_GRP1_DisableClockLowPower(uint32_t Periphs)
 {
   CLEAR_BIT(RCM->LPAPB2CLKEN, Periphs);
 }
+
+#endif /* RCM_LPAPB2_SUPPORT */
 
 /**
   * @}

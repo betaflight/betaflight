@@ -34,13 +34,9 @@
   * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
   * OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
   * The original code has been modified by Geehy Semiconductor.
-  *
-  * Copyright (c) 2016 STMicroelectronics.
-  * Copyright (C) 2023 Geehy Semiconductor.
+  * Copyright (c) 2016 STMicroelectronics. Copyright (C) 2023-2025 Geehy Semiconductor.
   * All rights reserved.
-  *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
@@ -176,10 +172,18 @@ DAL_StatusTypeDef DAL_HCD_Init(HCD_HandleTypeDef *hhcd)
   hhcd->State = DAL_HCD_STATE_BUSY;
 
   /* Disable DMA mode for FS instance */
-  if ((USBx->GCID & (0x1U << 8)) == 0U)
+#if defined (USB_OTG_FS)
+  if (USBx == USB_OTG_FS)
   {
     hhcd->Init.dma_enable = 0U;
   }
+#endif /* defined (USB_OTG_FS) */
+#if defined (USB_OTG_FS2)
+  else if (USBx == USB_OTG_FS2)
+  {
+    hhcd->Init.dma_enable = 0U;
+  }
+#endif /* defined (USB_OTG_FS2) */
 
   /* Disable the Interrupts */
   __DAL_HCD_DISABLE(hhcd);
@@ -566,8 +570,11 @@ void DAL_HCD_IRQHandler(HCD_HandleTypeDef *hhcd)
         (void)USB_FlushTxFifo(USBx, 0x10U);
         (void)USB_FlushRxFifo(USBx);
 
-        /* Restore FS Clock */
-        (void)USB_InitFSLSPClkSel(hhcd->Instance, HCFG_48_MHZ);
+        if ((hhcd->Init.phy_itface == USB_OTG_EMBEDDED_PHY) && (hhcd->Init.speed == HCD_SPEED_FULL))
+        {
+            /* Restore FS Clock */
+            (void)USB_InitFSLSPClkSel(hhcd->Instance, HCFG_48_MHZ);
+        }
 
         /* Handle Host Port Disconnect Interrupt */
 #if (USE_DAL_HCD_REGISTER_CALLBACKS == 1U)
@@ -1738,7 +1745,7 @@ static void HCD_Port_IRQHandler(HCD_HandleTypeDef *hhcd)
     {
       if (hhcd->Init.phy_itface  == USB_OTG_EMBEDDED_PHY)
       {
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F417xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || defined(APM32F465xx)
         if (hhcd->Init.speed == USBH_HS_SPEED)
         {
           if ((hprt0 & USB_OTG_HPORTCSTS_PSPDSEL) == (HPRT0_PRTSPD_LOW_SPEED << 17))
@@ -1774,7 +1781,7 @@ static void HCD_Port_IRQHandler(HCD_HandleTypeDef *hhcd)
         {
           (void)USB_InitFSLSPClkSel(hhcd->Instance, HCFG_48_MHZ);
         }
-#endif /* APM32F405xx || APM32F407xx || APM32F417xx */
+#endif /* APM32F405xx || APM32F407xx || APM32F415xx || APM32F417xx || APM32F465xx */
       }
       else
       {
