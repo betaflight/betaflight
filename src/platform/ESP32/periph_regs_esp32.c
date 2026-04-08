@@ -52,6 +52,7 @@
 #include "soc/system_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
 #include "soc/gdma_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/reg_base.h"
 
 #pragma GCC diagnostic pop
@@ -74,6 +75,7 @@ ledc_dev_t              LEDC                __attribute__((section(".peripheral_
 system_dev_t            SYSTEM              __attribute__((section(".peripheral_system")))       = {};
 usb_serial_jtag_dev_t   USB_SERIAL_JTAG     __attribute__((section(".peripheral_usb_serial")))  = {};
 gdma_dev_t              GDMA                __attribute__((section(".peripheral_gdma")))         = {};
+sens_dev_t              SENS                __attribute__((section(".peripheral_sens")))         = {};
 
 /* Restore platform macros */
 #define UART0 (&esp32UartDev0)

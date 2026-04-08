@@ -20,6 +20,7 @@ MEMORY
     /* Peripheral register regions (memory-mapped I/O) */
     periph_uart0_seg (RW) :   org = 0x60000000, len = 0x1000
     periph_gpio_seg (RW) :    org = 0x60004000, len = 0x1000
+    periph_sens_seg (RW) :    org = 0x60008800, len = 0x800
     periph_uart1_seg (RW) :   org = 0x60010000, len = 0x1000
     periph_i2c0_seg (RW) :    org = 0x60013000, len = 0x1000
     periph_rmt_seg (RW) :     org = 0x60016000, len = 0x800
@@ -118,6 +119,7 @@ SECTIONS
     /* Peripheral register mappings at fixed hardware addresses */
     .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg
     .peripheral_gpio (NOLOAD) :     { *(.peripheral_gpio) }    > periph_gpio_seg
+    .peripheral_sens (NOLOAD) :     { *(.peripheral_sens) }    > periph_sens_seg
     .peripheral_uart1 (NOLOAD) :    { *(.peripheral_uart1) }   > periph_uart1_seg
     .peripheral_i2c0 (NOLOAD) :     { *(.peripheral_i2c0) }    > periph_i2c0_seg
     .peripheral_rmt (NOLOAD) :      { *(.peripheral_rmt) }     > periph_rmt_seg
