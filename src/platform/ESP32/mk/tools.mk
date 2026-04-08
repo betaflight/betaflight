@@ -38,6 +38,8 @@ $(ESP_IDF_STAMP):
 esp_tools_install: | $(ESP_IDF_STAMP)
 	@ldconfig -p 2>/dev/null | grep -q libusb-1.0 || \
 		echo "WARNING: libusb-1.0 not found. Install it (e.g. 'sudo apt-get install libusb-1.0-0') or esp32 tools may fail."
+	@python3 -c 'import venv' 2>/dev/null || \
+		echo "WARNING: python3-venv not found. Install it (e.g. 'sudo apt-get install python3-venv') or esp32 tools may fail."
 	@echo "Installing ESP32 tools to $(IDF_TOOLS_PATH)"
 	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) ./install.sh esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
 	@echo "ESP32 tools installed. Source export.sh before building:"
