@@ -3,13 +3,13 @@
  *
  * @brief       usb device hid class handler header file
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-03-18
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -44,15 +44,34 @@
 
 #define USBD_CUSTOM_HID_REPORT_DESC_SIZE        63
 #define USBD_CUSTOM_HID_DESC_SIZE               9
+
+#ifndef USBD_CUSTOM_HID_FS_INTERVAL
 #define USBD_CUSTOM_HID_FS_INTERVAL             10
+#endif /* USBD_CUSTOM_HID_FS_INTERVAL */
+
+#ifndef USBD_CUSTOM_HID_HS_INTERVAL
 #define USBD_CUSTOM_HID_HS_INTERVAL             7
+#endif /* USBD_CUSTOM_HID_HS_INTERVAL */
+
+#ifndef USBD_CUSTOM_HID_IN_EP_ADDR
 #define USBD_CUSTOM_HID_IN_EP_ADDR              0x81
+#endif /* USBD_CUSTOM_HID_IN_EP_ADDR */
+
+#ifndef USBD_CUSTOM_HID_IN_EP_SIZE
 #define USBD_CUSTOM_HID_IN_EP_SIZE              0x04
+#endif /* USBD_CUSTOM_HID_IN_EP_SIZE */
 
+#ifndef USBD_CUSTOM_HID_OUT_EP_ADDR
 #define USBD_CUSTOM_HID_OUT_EP_ADDR             0x01
-#define USBD_CUSTOM_HID_OUT_EP_SIZE             0x04
+#endif /* USBD_CUSTOM_HID_OUT_EP_ADDR */
 
+#ifndef USBD_CUSTOM_HID_OUT_EP_SIZE
+#define USBD_CUSTOM_HID_OUT_EP_SIZE             0x04
+#endif /* USBD_CUSTOM_HID_OUT_EP_SIZE */
+
+#ifndef USBD_CUSTOM_HID_FS_MP_SIZE
 #define USBD_CUSTOM_HID_FS_MP_SIZE              0x40
+#endif /* USBD_CUSTOM_HID_FS_MP_SIZE */
 
 #define USBD_CLASS_SET_IDLE                     0x0A
 #define USBD_CLASS_GET_IDLE                     0x02

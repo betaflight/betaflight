@@ -3,13 +3,13 @@
  *
  * @brief       usb device config header file
  *
- * @version     V1.0.1
+ * @version     V1.0.4
  *
- * @date        2023-03-27
+ * @date        2025-03-19
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -43,10 +43,10 @@
   @{
 */
 
-/*!< [31:16] APM32 USB Device Library main version V1.1.3*/
+/*!< [31:16] APM32 USB Device Library main version V1.1.8 */
 #define __APM32_USB_DEVICE_VERSION_MAIN   (0x01) /*!< [31:24] main version */
 #define __APM32_USB_DEVICE_VERSION_SUB1   (0x01) /*!< [23:16] sub1 version */
-#define __APM32_USB_DEVICE_VERSION_SUB2   (0x03) /*!< [15:8]  sub2 version */
+#define __APM32_USB_DEVICE_VERSION_SUB2   (0x08) /*!< [15:8]  sub2 version */
 #define __APM32_USB_DEVICE_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __APM32_USB_DEVICE_VERSION        ((__APM32_USB_DEVICE_VERSION_MAIN << 24)\
                                           |(__APM32_USB_DEVICE_VERSION_SUB1 << 16)\
@@ -55,6 +55,10 @@
 
 #define USBD_DEVICE_DEFAULT_ADDRESS         0
 #define USBD_EP0_PACKET_MAX_SIZE            64
+
+#ifndef UNUSED
+#define UNUSED(X)                           ((void)(X))
+#endif
 
 /**@} end of group USBD_Core_Macros*/
 
@@ -79,6 +83,7 @@ typedef enum
 {
     USBD_SPEED_FS,
     USBD_SPEED_HS,
+    USBD_SPEED_FS2, // Only for detect OTG FS2 peripheral
 } USBD_SPEED_T;
 
 /**
@@ -258,6 +263,44 @@ typedef struct
     uint8_t* desc;
     uint8_t size;
 } USBD_DESC_INFO_T;
+
+/**
+ * @brief   USB device configuration descriptor
+ */
+typedef struct
+{
+    uint8_t   bLength;
+    uint8_t   bDescriptorType;
+    uint16_t  wTotalLength;
+    uint8_t   bNumInterfaces;
+    uint8_t   bConfigurationValue;
+    uint8_t   iConfiguration;
+    uint8_t   bmAttributes;
+    uint8_t   bMaxPower;
+} __PACKED USBD_CONFIG_DESC_T;
+
+/**
+ * @brief   USB device endpoint descriptor
+ */
+typedef struct
+{
+    uint8_t   bLength;
+    uint8_t   bDescriptorType;
+    uint8_t   bEndpointAddress;
+    uint8_t   bmAttributes;
+    uint16_t  wMaxPacketSize;
+    uint8_t   bInterval;
+} __PACKED USBD_EP_DESC_T;
+
+/**
+ * @brief   USB descriptor header
+ */
+typedef struct
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bDescriptorSubType;
+} USBD_DESC_HEADER_T;
 
 struct _USBD_INFO_T;
 

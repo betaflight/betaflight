@@ -3,13 +3,13 @@
  *
  * @brief       usb device custom hid class handler
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-01-21
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -129,6 +129,8 @@ static USBD_STA_T USBD_CUSTOM_HID_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t
 
     USBD_CUSTOM_HID_INFO_T* usbDevHID;
 
+    UNUSED(cfgIndex);
+
     /* Link class data */
     usbInfo->devClass[usbInfo->classID]->classData = (USBD_CUSTOM_HID_INFO_T*)malloc(sizeof(USBD_CUSTOM_HID_INFO_T));
     usbDevHID = (USBD_CUSTOM_HID_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
@@ -145,7 +147,7 @@ static USBD_STA_T USBD_CUSTOM_HID_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t
     usbDevHID->epInAddr = USBD_CUSTOM_HID_IN_EP_ADDR;
     usbDevHID->epOutAddr = USBD_CUSTOM_HID_OUT_EP_ADDR;
 
-    if (usbInfo->devSpeed == USBD_SPEED_FS)
+    if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
     {
         usbInfo->devEpIn[usbDevHID->epInAddr & 0x0F].interval = USBD_CUSTOM_HID_FS_INTERVAL;
         usbInfo->devEpOut[usbDevHID->epOutAddr & 0x0F].interval = USBD_CUSTOM_HID_FS_INTERVAL;
@@ -188,6 +190,14 @@ static USBD_STA_T USBD_CUSTOM_HID_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8
     USBD_STA_T usbStatus = USBD_OK;
     USBD_CUSTOM_HID_INFO_T* usbDevHID = (USBD_CUSTOM_HID_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
 
+    UNUSED(cfgIndex);
+
+    /* If class data is NULL, skip */
+    if (usbDevHID == NULL)
+    {
+        return USBD_OK;
+    }
+
     /* Close HID EP */
     USBD_EP_CloseCallback(usbInfo, usbDevHID->epInAddr);
     usbInfo->devEpIn[usbDevHID->epInAddr & 0x0F].interval = 0;
@@ -219,6 +229,8 @@ static USBD_STA_T USBD_CUSTOM_HID_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8
 static USBD_STA_T USBD_CUSTOM_HID_SOFHandler(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T  usbStatus = USBD_BUSY;
+
+    UNUSED(usbInfo);
 
     return usbStatus;
 }
@@ -451,6 +463,8 @@ static USBD_STA_T USBD_CUSTOM_HID_DataInHandler(USBD_INFO_T* usbInfo, uint8_t ep
     USBD_STA_T  usbStatus = USBD_OK;
     USBD_CUSTOM_HID_INFO_T* usbDevHID = (USBD_CUSTOM_HID_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
 
+    UNUSED(epNum);
+
     if (usbDevHID == NULL)
     {
         return USBD_FAIL;
@@ -516,6 +530,8 @@ static USBD_DESC_INFO_T USBD_CUSTOM_HID_ReportDescHandler(USBD_INFO_T* usbInfo)
 static USBD_DESC_INFO_T USBD_CUSTOM_HID_DescHandler(uint8_t usbSpeed)
 {
     USBD_DESC_INFO_T descInfo;
+
+    UNUSED(usbSpeed);
 
     descInfo.desc = USBD_HIDDesc;
     descInfo.size = sizeof(USBD_HIDDesc);
@@ -605,7 +621,7 @@ uint8_t USBD_CUSTOM_HID_ReadInterval(USBD_INFO_T* usbInfo)
 {
     uint8_t interval;
 
-    if (usbInfo->devSpeed == USBD_SPEED_FS)
+    if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
     {
         interval = USBD_CUSTOM_HID_FS_INTERVAL;
     }

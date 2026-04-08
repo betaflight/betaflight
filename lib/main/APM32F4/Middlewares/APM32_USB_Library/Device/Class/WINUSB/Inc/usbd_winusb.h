@@ -45,17 +45,31 @@
 #define USBD_WINUSB_OS_FEATURE_DESC_SIZE            0x28
 #define USBD_WINUSB_OS_PROPERTY_DESC_SIZE           0x8E
 
+#ifndef USBD_WINUSB_FS_MP_SIZE
 #define USBD_WINUSB_FS_MP_SIZE                      0x40
+#endif /* USBD_WINUSB_FS_MP_SIZE */
+
+#ifndef USBD_WINUSB_HS_MP_SIZE
 #define USBD_WINUSB_HS_MP_SIZE                      0x200
-#define USBD_WINUSB_CMD_MP_SIZE                     0x08
-#define USBD_WINUSB_DATA_MP_SIZE                    0x07
+#endif /* USBD_WINUSB_HS_MP_SIZE */
 
-#define USBD_WINUSB_CMD_EP_ADDR                     0x82
+#ifndef USBD_WINUSB_DATA_IN_EP_ADDR
 #define USBD_WINUSB_DATA_IN_EP_ADDR                 0x81
-#define USBD_WINUSB_DATA_OUT_EP_ADDR                0x01
+#endif /* USBD_WINUSB_DATA_IN_EP_ADDR */
 
+#ifndef USBD_WINUSB_DATA_OUT_EP_ADDR
+#define USBD_WINUSB_DATA_OUT_EP_ADDR                0x01
+#endif /* USBD_WINUSB_DATA_OUT_EP_ADDR */
+
+#ifndef USBD_WINUSB_FS_INTERVAL
 #define USBD_WINUSB_FS_INTERVAL                     16
+#endif /* USBD_WINUSB_FS_INTERVAL */
+
+#ifndef USBD_WINUSB_HS_INTERVAL
 #define USBD_WINUSB_HS_INTERVAL                     16
+#endif /* USBD_WINUSB_HS_INTERVAL */
+
+#define USBD_WINUSB_DATA_MP_SIZE                    0X07
 
 /**@} end of group USBD_WINUSB_Macros*/
 

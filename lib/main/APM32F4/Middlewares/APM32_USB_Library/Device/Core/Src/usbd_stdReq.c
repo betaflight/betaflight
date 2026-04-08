@@ -3,13 +3,13 @@
  *
  * @brief       USB standard request process
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-01-21
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -385,7 +385,7 @@ static USBD_STA_T USBD_REQ_GetDesc(USBD_INFO_T* usbInfo, USBD_REQ_SETUP_T* req)
             break;
 
         case USBD_DESC_DEVICE_QUALIFIER:
-            if (usbInfo->devSpeed == USBD_SPEED_FS)
+            if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
             {
                 USBD_REQ_CtrlError(usbInfo, req);
                 reqError++;
@@ -397,7 +397,7 @@ static USBD_STA_T USBD_REQ_GetDesc(USBD_INFO_T* usbInfo, USBD_REQ_SETUP_T* req)
             break;
 
         case USBD_DESC_OTHER_SPEED:
-            if (usbInfo->devSpeed == USBD_SPEED_FS)
+            if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
             {
                 USBD_REQ_CtrlError(usbInfo, req);
                 reqError++;

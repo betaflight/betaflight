@@ -97,6 +97,10 @@ USBD_STA_T USBD_Composite_Init(USBD_INFO_T* usbInfo, void* itf1, void* itf2)
 {
     USBD_STA_T usbStatus = USBD_OK;
 
+    UNUSED(usbInfo);
+    UNUSED(itf1);
+    UNUSED(itf2);
+
     return usbStatus;
 }
 
@@ -110,6 +114,8 @@ USBD_STA_T USBD_Composite_Init(USBD_INFO_T* usbInfo, void* itf1, void* itf2)
 USBD_STA_T USBD_Composite_Deinit(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T usbStatus = USBD_OK;
+
+    UNUSED(usbInfo);
 
     return usbStatus;
 }
@@ -126,6 +132,9 @@ USBD_STA_T USBD_Composite_Deinit(USBD_INFO_T* usbInfo)
 static USBD_STA_T USBD_Composite_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfgIndex)
 {
     USBD_STA_T usbStatus = USBD_OK;
+
+    UNUSED(usbInfo);
+    UNUSED(cfgIndex);
     
     return usbStatus;
 }
@@ -142,6 +151,9 @@ static USBD_STA_T USBD_Composite_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t 
 static USBD_STA_T USBD_Composite_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8_t cfgIndex)
 {
     USBD_STA_T usbStatus = USBD_OK;
+
+    UNUSED(usbInfo);
+    UNUSED(cfgIndex);
     
     return usbStatus;
 }
@@ -156,6 +168,8 @@ static USBD_STA_T USBD_Composite_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8_
 static USBD_STA_T USBD_Composite_SOFHandler(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T  usbStatus = USBD_BUSY;
+
+    UNUSED(usbInfo);
 
     return usbStatus;
 }
@@ -173,6 +187,9 @@ static USBD_STA_T USBD_Composite_SetupHandler(USBD_INFO_T* usbInfo, USBD_REQ_SET
 {
     USBD_STA_T  usbStatus = USBD_OK;
 
+    UNUSED(usbInfo);
+    UNUSED(req);
+
     return usbStatus;
 }
 
@@ -186,6 +203,8 @@ static USBD_STA_T USBD_Composite_SetupHandler(USBD_INFO_T* usbInfo, USBD_REQ_SET
 static USBD_STA_T USBD_Composite_RxEP0Handler(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T  usbStatus = USBD_OK;
+
+    UNUSED(usbInfo);
 
     return usbStatus;
 }
@@ -204,6 +223,9 @@ static USBD_STA_T USBD_Composite_DataInHandler(USBD_INFO_T* usbInfo, uint8_t epN
 {
     USBD_STA_T  usbStatus = USBD_OK;
 
+    UNUSED(usbInfo);
+    UNUSED(epNum);
+
     return usbStatus;
 }
 
@@ -219,6 +241,9 @@ static USBD_STA_T USBD_Composite_DataInHandler(USBD_INFO_T* usbInfo, uint8_t epN
 static USBD_STA_T USBD_Composite_DataOutHandler(USBD_INFO_T* usbInfo, uint8_t epNum)
 {
     USBD_STA_T  usbStatus = USBD_OK;
+
+    UNUSED(usbInfo);
+    UNUSED(epNum);
 
     return usbStatus;
 }

@@ -3,13 +3,13 @@
  *
  * @brief       usb device cdc class handler header file
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-03-19
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -42,17 +42,41 @@
   @{
 */
 
+#ifndef USBD_CDC_FS_MP_SIZE
 #define USBD_CDC_FS_MP_SIZE                     0x40
+#endif /* USBD_CDC_FS_MP_SIZE */
+
+#ifndef USBD_CDC_HS_MP_SIZE
 #define USBD_CDC_HS_MP_SIZE                     0x200
+#endif /* USBD_CDC_HS_MP_SIZE */
+
+#ifndef USBD_CDC_CMD_MP_SIZE
 #define USBD_CDC_CMD_MP_SIZE                    0x08
+#endif /* USBD_CDC_CMD_MP_SIZE */
+
+#ifndef USBD_CDC_DATA_MP_SIZE
 #define USBD_CDC_DATA_MP_SIZE                   0x07
+#endif /* USBD_CDC_DATA_MP_SIZE */
 
+#ifndef USBD_CDC_CMD_EP_ADDR
 #define USBD_CDC_CMD_EP_ADDR                    0x82
-#define USBD_CDC_DATA_IN_EP_ADDR                0x81
-#define USBD_CDC_DATA_OUT_EP_ADDR               0x01
+#endif /* USBD_CDC_CMD_EP_ADDR */
 
+#ifndef USBD_CDC_DATA_IN_EP_ADDR
+#define USBD_CDC_DATA_IN_EP_ADDR                0x81
+#endif /* USBD_CDC_DATA_IN_EP_ADDR */
+
+#ifndef USBD_CDC_DATA_OUT_EP_ADDR
+#define USBD_CDC_DATA_OUT_EP_ADDR               0x01
+#endif /* USBD_CDC_DATA_OUT_EP_ADDR */
+
+#ifndef USBD_CDC_FS_INTERVAL
 #define USBD_CDC_FS_INTERVAL                    16
+#endif /* USBD_CDC_FS_INTERVAL */
+
+#ifndef USBD_CDC_HS_INTERVAL
 #define USBD_CDC_HS_INTERVAL                    16
+#endif /* USBD_CDC_HS_INTERVAL */
 
 /**@} end of group USBD_CDC_Macros*/
 

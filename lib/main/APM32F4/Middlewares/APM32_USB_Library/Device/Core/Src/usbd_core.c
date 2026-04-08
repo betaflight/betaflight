@@ -3,13 +3,13 @@
  *
  * @brief       USB device core function
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-01-21
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -83,6 +83,7 @@ USBD_STA_T USBD_Init(USBD_INFO_T* usbInfo, USBD_SPEED_T usbDevSpeed, \
     usbInfo->userCallback = userCallbackFunc;
 
     usbInfo->devState = USBD_DEV_DEFAULT;
+
     /* Set USB device speed */
     usbInfo->devSpeed = usbDevSpeed;
 
@@ -142,7 +143,7 @@ USBD_STA_T USBD_SetSpeed(USBD_INFO_T* usbInfo, USBD_DEVICE_SPEED_T speed)
 
     if (speed == USBD_DEVICE_SPEED_FS)
     {
-        usbInfo->devSpeed = USBD_SPEED_FS;
+        usbInfo->devSpeed = USBD_SPEED_FS; // Ignore USBD_SPEED_FS2
     }
     else
     {
@@ -163,7 +164,15 @@ USBD_STA_T USBD_TestModeHandler(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T usbStatus = USBD_OK;
 
+#ifdef USBD_HS_TESTMODE_ENABLE
+
+    /* Run USB HS test mode */
+    usbStatus = USBD_SetTestModeCallback(usbInfo, usbInfo->devTestModeStatus);
+#else
+
     UNUSED(usbInfo);
+
+#endif /* USBD_HS_TESTMODE_ENABLE */
 
     return usbStatus;
 }
@@ -222,6 +231,10 @@ USBD_STA_T USBD_SetupStage(USBD_INFO_T* usbInfo, uint8_t* setup)
                         if (USBD_StdDevReqHandler[request] != NULL)
                         {
                             USBD_StdDevReqHandler[request](usbInfo, &usbInfo->reqSetup);
+                        }
+                        else
+                        {
+                            USBD_REQ_CtrlError(usbInfo, &usbInfo->reqSetup);
                         }
                     }
                     break;
@@ -691,10 +704,10 @@ USBD_STA_T USBD_DataInStage(USBD_INFO_T* usbInfo, uint8_t epNum, uint8_t* buffer
 
         }
 
-        if (usbInfo->devTestModeStatus == ENABLE)
+        if (usbInfo->devTestModeStatus != 0U)
         {
             USBD_TestModeHandler(usbInfo);
-            usbInfo->devTestModeStatus = DISABLE;
+            usbInfo->devTestModeStatus = 0;
         }
     }
 
@@ -1162,6 +1175,28 @@ __weak void USBD_StopDeviceCallback(USBD_INFO_T* usbInfo)
     /* Callback Interface */
     UNUSED(usbInfo);
 }
+
+#ifdef USBD_HS_TESTMODE_ENABLE
+/*!
+ * @brief     USB device set test mode handler callback
+ *
+ * @param     usbInfo : usb handler information
+ *
+ * @param     testMode : test mode
+ *
+ * @retval    usb device status
+ */
+__weak USBD_STA_T USBD_SetTestModeCallback(USBD_INFO_T* usbInfo, uint8_t testMode)
+{
+    USBD_STA_T usbStatus = USBD_OK;
+
+    /* Callback Interface */
+    UNUSED(usbInfo);
+    UNUSED(testMode);
+
+    return usbStatus;
+}
+#endif /* USBD_HS_TESTMODE_ENABLE */
 
 /**@} end of group USBD_Core_Functions */
 /**@} end of group USBD_Core */

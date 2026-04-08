@@ -45,10 +45,23 @@
 #define USBD_HID_MOUSE_REPORT_DESC_SIZE         74
 #define USBD_HID_KEYBOARD_REPORT_DESC_SIZE      63
 #define USBD_HID_DESC_SIZE                      9
+
+#ifndef USBD_HID_FS_INTERVAL
 #define USBD_HID_FS_INTERVAL                    10
+#endif /* USBD_HID_FS_INTERVAL */
+
+#ifndef USBD_HID_HS_INTERVAL
 #define USBD_HID_HS_INTERVAL                    7
+#endif /* USBD_HID_HS_INTERVAL */
+
+#ifndef USBD_HID_IN_EP_ADDR
 #define USBD_HID_IN_EP_ADDR                     0x81
+#endif /* USBD_HID_IN_EP_ADDR */
+
+#ifndef USBD_HID_IN_EP_SIZE
 #define USBD_HID_IN_EP_SIZE                     0x04
+#endif /* USBD_HID_IN_EP_SIZE */
+
 #define USBD_HID_FS_MP_SIZE                     0x40
 
 #define USBD_CLASS_SET_IDLE                     0x0A

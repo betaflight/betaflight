@@ -3,13 +3,13 @@
  *
  * @brief       usb device cdc class handler
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-01-21
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -126,6 +126,7 @@ static USBD_STA_T USBD_CDC_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfgInd
     switch (usbInfo->devSpeed)
     {
         case USBD_SPEED_FS:
+        case USBD_SPEED_FS2:
             USBD_EP_OpenCallback(usbInfo, usbDevCDC->epOutAddr, EP_TYPE_BULK, USBD_CDC_FS_MP_SIZE);
             usbInfo->devEpOut[usbDevCDC->epOutAddr & 0x0F].useStatus = ENABLE;
 
@@ -164,6 +165,7 @@ static USBD_STA_T USBD_CDC_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfgInd
     switch (usbInfo->devSpeed)
     {
         case USBD_SPEED_FS:
+        case USBD_SPEED_FS2:
             USBD_EP_ReceiveCallback(usbInfo, usbDevCDC->epOutAddr, \
                                     usbDevCDC->cdcRx.buffer, \
                                     USBD_CDC_FS_MP_SIZE);
@@ -194,6 +196,12 @@ static USBD_STA_T USBD_CDC_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8_t cfgI
     USBD_CDC_INFO_T* usbDevCDC = (USBD_CDC_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
 
     UNUSED(cfgIndex);
+
+    /* If class data is NULL, skip */
+    if (usbDevCDC == NULL)
+    {
+        return USBD_OK;
+    }
 
     /* Close CDC EP */
     USBD_EP_CloseCallback(usbInfo, usbDevCDC->epOutAddr);
@@ -646,7 +654,7 @@ uint8_t USBD_CDC_ReadInterval(USBD_INFO_T* usbInfo)
 {
     uint8_t interval;
 
-    if (usbInfo->devSpeed == USBD_SPEED_FS)
+    if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
     {
         interval = USBD_CDC_FS_INTERVAL;
     }

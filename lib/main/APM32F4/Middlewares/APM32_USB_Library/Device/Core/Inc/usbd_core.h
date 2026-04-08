@@ -82,6 +82,8 @@ USBD_STA_T USBD_IsoOutInComplete(USBD_INFO_T* usbInfo, uint8_t epNum);
 USBD_STA_T USBD_Connect(USBD_INFO_T* usbInfo);
 USBD_STA_T USBD_Disconnect(USBD_INFO_T* usbInfo);
 
+USBD_STA_T USBD_TestModeHandler(USBD_INFO_T* usbInfo);
+
 void USBD_StartCallback(USBD_INFO_T* usbInfo);
 void USBD_StopCallback(USBD_INFO_T* usbInfo);
 void USBD_StopDeviceCallback(USBD_INFO_T* usbInfo);
@@ -101,6 +103,10 @@ USBD_STA_T USBD_EP_TransferCallback(USBD_INFO_T* usbInfo, uint8_t epAddr, \
 USBD_STA_T USBD_EP_FlushCallback(USBD_INFO_T* usbInfo, uint8_t epAddr);
 
 USBD_STA_T USBD_SetDevAddressCallback(USBD_INFO_T* usbInfo, uint8_t address);
+
+#ifdef USBD_HS_TESTMODE_ENABLE
+USBD_STA_T USBD_SetTestModeCallback(USBD_INFO_T* usbInfo, uint8_t testMode);
+#endif /* USBD_HS_TESTMODE_ENABLE */
 
 /**@} end of group USBD_Core_Functions */
 /**@} end of group USBD_Core */

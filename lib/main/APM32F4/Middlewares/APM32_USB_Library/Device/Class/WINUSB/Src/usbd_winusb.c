@@ -3,13 +3,13 @@
  *
  * @brief       usb device winUSB class handler
  *
- * @version     V1.0.0
+ * @version     V1.0.1
  *
- * @date        2023-01-16
+ * @date        2025-01-21
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2023-2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -188,6 +188,8 @@ static USBD_DESC_INFO_T USBD_WinUsbFeatureDescHandler(uint8_t usbSpeed)
 {
     USBD_DESC_INFO_T descInfo;
 
+    UNUSED(usbSpeed);
+
     descInfo.desc = USBD_WinUsbOsFeatureDesc;
     descInfo.size = sizeof(USBD_WinUsbOsFeatureDesc);
 
@@ -204,6 +206,8 @@ static USBD_DESC_INFO_T USBD_WinUsbFeatureDescHandler(uint8_t usbSpeed)
 static USBD_DESC_INFO_T USBD_WinUsbPropertyDescHandler(uint8_t usbSpeed)
 {
     USBD_DESC_INFO_T descInfo;
+
+    UNUSED(usbSpeed);
 
     descInfo.desc = USBD_WinUsbOsPropertyDesc;
     descInfo.size = sizeof(USBD_WinUsbOsPropertyDesc);
@@ -226,6 +230,8 @@ static USBD_STA_T USBD_WINUSB_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfg
 
     USBD_WINUSB_INFO_T* usbDevWINUSB;
 
+    UNUSED(cfgIndex);
+
     /* Link class data */
     usbInfo->devClass[usbInfo->classID]->classData = (USBD_WINUSB_INFO_T*)malloc(sizeof(USBD_WINUSB_INFO_T));
     usbDevWINUSB = (USBD_WINUSB_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
@@ -246,6 +252,7 @@ static USBD_STA_T USBD_WINUSB_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfg
     switch (usbInfo->devSpeed)
     {
         case USBD_SPEED_FS:
+        case USBD_SPEED_FS2:
             USBD_EP_OpenCallback(usbInfo, usbDevWINUSB->epOutAddr, EP_TYPE_BULK, USBD_WINUSB_FS_MP_SIZE);
             usbInfo->devEpOut[usbDevWINUSB->epOutAddr & 0x0F].useStatus = ENABLE;
 
@@ -280,6 +287,7 @@ static USBD_STA_T USBD_WINUSB_ClassInitHandler(USBD_INFO_T* usbInfo, uint8_t cfg
     switch (usbInfo->devSpeed)
     {
         case USBD_SPEED_FS:
+        case USBD_SPEED_FS2:
             USBD_EP_ReceiveCallback(usbInfo, usbDevWINUSB->epOutAddr, \
                                     usbDevWINUSB->winusbRx.buffer, \
                                     USBD_WINUSB_FS_MP_SIZE);
@@ -308,6 +316,14 @@ static USBD_STA_T USBD_WINUSB_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8_t c
 {
     USBD_STA_T usbStatus = USBD_OK;
     USBD_WINUSB_INFO_T* usbDevWINUSB = (USBD_WINUSB_INFO_T*)usbInfo->devClass[usbInfo->classID]->classData;
+
+    UNUSED(cfgIndex);
+
+    /* If class data is NULL, skip */
+    if (usbDevWINUSB == NULL)
+    {
+        return USBD_OK;
+    }
 
     /* Close WINUSB EP */
     USBD_EP_CloseCallback(usbInfo, usbDevWINUSB->epOutAddr);
@@ -340,6 +356,8 @@ static USBD_STA_T USBD_WINUSB_ClassDeInitHandler(USBD_INFO_T* usbInfo, uint8_t c
 static USBD_STA_T USBD_WINUSB_SOFHandler(USBD_INFO_T* usbInfo)
 {
     USBD_STA_T  usbStatus = USBD_BUSY;
+
+    UNUSED(usbInfo);
 
     return usbStatus;
 }
@@ -752,7 +770,7 @@ uint8_t USBD_WINUSB_ReadInterval(USBD_INFO_T* usbInfo)
 {
     uint8_t interval;
 
-    if (usbInfo->devSpeed == USBD_SPEED_FS)
+    if ((usbInfo->devSpeed == USBD_SPEED_FS) || (usbInfo->devSpeed == USBD_SPEED_FS2))
     {
         interval = USBD_WINUSB_FS_INTERVAL;
     }

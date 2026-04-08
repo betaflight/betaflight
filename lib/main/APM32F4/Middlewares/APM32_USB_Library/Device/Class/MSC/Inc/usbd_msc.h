@@ -44,15 +44,24 @@
   @{
 */
 
+#ifndef USBD_MSC_OUT_EP_ADDR
 #define USBD_MSC_OUT_EP_ADDR            0x01
-#define USBD_MSC_IN_EP_ADDR             0x81
+#endif /* USBD_MSC_OUT_EP_ADDR */
 
+#ifndef USBD_MSC_IN_EP_ADDR
+#define USBD_MSC_IN_EP_ADDR             0x81
+#endif /* USBD_MSC_IN_EP_ADDR */
+
+#ifndef USBD_MSC_FS_MP_SIZE
 #define USBD_MSC_FS_MP_SIZE             0x40
+#endif /* USBD_MSC_FS_MP_SIZE */
+
+#ifndef USBD_MSC_HS_MP_SIZE
 #define USBD_MSC_HS_MP_SIZE             0x200
+#endif /* USBD_MSC_HS_MP_SIZE */
 
 #define USBD_CLASS_GET_MAX_LUN          0xFE
 #define USBD_CLASS_BOT_RESET            0xFF
-
 
 /**@} end of group USBD_MSC_Macros*/
 
