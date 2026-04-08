@@ -173,7 +173,7 @@ void systemInit(void)
     // Configure NVIC preempt/priority groups
     nvic_priority_group_config(NVIC_PRIORITY_GROUPING);
 
-    // cache RCC->CSR value to use it in isMPUSoftReset() and others
+    // cache CRM->ctrlsts value to use it in isMPUSoftReset() and others
     cachedResetFlags = CRM->ctrlsts;
 
     // Although VTOR is already loaded with a possible vector table in RAM,

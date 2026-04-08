@@ -45,7 +45,7 @@ void systemInit(void)
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
-    // cache RCC->RSR value to use it in isMPUSoftReset() and others
+    // cache RCC->CSR value to use it in isMPUSoftReset() and others
     cachedResetFlags = RCC->CSR;
 
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
