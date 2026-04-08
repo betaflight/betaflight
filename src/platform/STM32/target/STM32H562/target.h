@@ -53,7 +53,7 @@
 #undef USE_VCP
 #undef USE_ESCSERIAL
 //#undef USE_SPI
-#undef USE_I2C
+//#undef USE_I2C
 //#undef USE_UART
 #undef USE_USB_DETECT
 #undef USE_BEEPER
@@ -83,10 +83,10 @@
 
 #define USE_VIRTUAL_GYRO
 
-//#define USE_I2C_DEVICE_1
-//#define USE_I2C_DEVICE_2
-//#define USE_I2C_DEVICE_3
-//#define USE_I2C_DEVICE_4
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
 
 //#define USE_VCP
 
@@ -118,8 +118,8 @@
 #define TARGET_IO_PORTF 0xffff
 //#define TARGET_IO_PORTG 0xffff
 
-//#define USE_I2C
-//#define I2C_FULL_RECONFIGURABILITY
+#define USE_I2C
+#define I2C_FULL_RECONFIGURABILITY
 
 //#define USE_BEEPER
 
