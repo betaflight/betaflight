@@ -87,7 +87,9 @@ static uint16_t adcReadChannel(uint8_t channel)
 void adcInit(const adcConfig_t *config)
 {
     memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
-    memset((void *)adcValues, 0, sizeof(adcValues));
+    for (unsigned i = 0; i < ARRAYLEN(adcValues); i++) {
+        adcValues[i] = 0;
+    }
 
     // Enable ADC bus clock and reset
     {
@@ -126,10 +128,14 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
+        IO_t io = IOGetByTag(adcOperatingConfig[i].tag);
+        IOInit(io, OWNER_ADC_BATT + i, 0);
+        IOConfigGPIO(io, IOCFG_IN_FLOATING);
+
         adcOperatingConfig[i].channel = channel;
         adcOperatingConfig[i].enabled = true;
 
-        // Set attenuation to 11dB for 0-3.3V input range
+        // Set attenuation to 12dB for 0-3.3V input range
         adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, ADC_ATTEN_DB_12);
     }
 
