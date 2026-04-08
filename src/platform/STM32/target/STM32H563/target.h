@@ -58,14 +58,14 @@
 //#undef USE_USB_DETECT
 #undef USE_BEEPER
 //#undef USE_EXTI
-//#undef USE_TIMER_UP_CONFIG
+#undef USE_TIMER_UP_CONFIG
 //#undef USE_RX_SPI
 #undef USE_RX_CC2500
 #undef USE_BARO
 #undef USE_I2C_GYRO
 //#undef USE_SPI_GYRO
-#undef USE_GYRO
-#undef USE_ACC
+//#undef USE_GYRO
+//#undef USE_ACC
 #undef USE_MAG
 #undef USE_MAX7456
 #undef USE_VTX_RTC6705
@@ -137,7 +137,7 @@
 //#define USE_ESCSERIAL
 
 #define USE_ADC
-//#define USE_EXTI
+#define USE_EXTI
 //#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x20000) // 128K sectors
