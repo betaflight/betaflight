@@ -221,6 +221,12 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 #define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
 #endif
 
+#if defined(FLASH_PAGE_PER_BANK)
+#if (FLASH_BANK_SIZE != (FLASH_PAGE_SIZE * FLASH_PAGE_PER_BANK))
+#error "FLASH bank/page configuration mismatch"
+#endif
+#endif
+
 void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *sector)
 {
 #if defined(FLASH_BANK2_BASE)
