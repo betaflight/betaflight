@@ -42,8 +42,9 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    memProtReset();
-    memProtConfigure(mpuRegions, mpuRegionCount);
+    // TODO: enable MPU memory protection for H5
+    // memProtReset();
+    // memProtConfigure(mpuRegions, mpuRegionCount);
 
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
@@ -100,8 +101,8 @@ void systemJumpToBootloader(void)
     //Disable all interrupts
     __disable_irq();
 
-    //remap system memory
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+    // TODO: H5 memory remap for bootloader entry needs implementation
+    // __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
 
     //default bootloader call stack routine
     uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
