@@ -34,7 +34,7 @@
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
+    if (cachedRccCsrValue & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
@@ -49,7 +49,7 @@ void systemInit(void)
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->CSR;
+    cachedRccCsrValue = RCC->RSR;
 
     // Init cycle counter
     cycleCounterInit();
