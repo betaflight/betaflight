@@ -162,6 +162,8 @@
 #define PG_BATTERY_PROFILES         561
 #define PG_FLIGHT_PLAN_CONFIG       562
 
+// TODO TBC
+#define PG_DISPLAY_PORT_FBOSD_CONFIG 561
 
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047
