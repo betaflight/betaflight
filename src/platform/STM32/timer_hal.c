@@ -185,7 +185,7 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #if USED_TIMERS & TIM_N(8)
     _DEF(8),
 #endif
-#if !(defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32G4))
 #if USED_TIMERS & TIM_N(9)
     _DEF(9),
 #endif
@@ -1227,7 +1227,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     }
     switch (Channel) {
     case TIM_CHANNEL_1: {
-#if !defined(STM32N6) // N6 HAL made DMA callbacks static
+#if !defined(STM32H5) && !defined(STM32N6) // H5/N6 HAL made DMA callbacks static
         htim->hdma[TIM_DMA_ID_CC1]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1236,7 +1236,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_2: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC2]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC2]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1245,7 +1245,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_3: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC3]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC3]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1254,7 +1254,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_4: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC4]->XferErrorCallback = HAL_TIM_DMAError;
 #endif

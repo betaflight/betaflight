@@ -114,6 +114,11 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
+# Per-file warning suppressions for vendor HAL sources
+SRC_CFLAGS_stm32h5xx_hal_flash_ex.c := -Wno-old-style-definition
+SRC_CFLAGS_stm32h5xx_hal_pwr.c := -Wno-unused-parameter
+SRC_CFLAGS_stm32h5xx_hal_rcc.c := -Wno-unused-parameter
+
 #
 # H562xx : 2M FLASH, 640KB SRAM (no Ethernet)
 #
@@ -189,13 +194,13 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/serial_escserial.c \
             STM32/serial_uart_stm32h5xx.c \
+            STM32/adc_stm32h5xx.c \
             STM32/timer_stm32h5xx.c \
             STM32/startup/system_stm32h5xx.c
 
 #            memprot_hal.c \
 #            memprot_stm32h5xx.c \
 #            sdio_h5xx.c \
-            STM32/adc_stm32h5xx.c \
 
 MSC_SRC =
 #MSC_SRC = \

@@ -221,7 +221,8 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 #define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
 #endif
 
-#if defined(FLASH_PAGE_PER_BANK)
+#if defined(FLASH_PAGE_PER_BANK) && !defined(STM32H5)
+// H5 FLASH_BANK_SIZE is runtime-computed from flash size register, so cannot be used in static assertion
 _Static_assert(FLASH_BANK_SIZE == (FLASH_PAGE_SIZE * FLASH_PAGE_PER_BANK), "FLASH bank/page configuration mismatch");
 #endif
 
