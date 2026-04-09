@@ -40,6 +40,9 @@
 
 #include "telemetry/telemetry.h"
 
+#include "common/time.h"
+#include "drivers/time.h"
+#include "io/vtx_msp.h"
 #include "pg/piniobox.h"
 
 #include "msp_box.h"
@@ -393,7 +396,23 @@ bool getBoxIdState(boxId_e boxid)
     STATIC_ASSERT(ARRAYLEN(boxIdToFlightModeMap) == BOXID_FLIGHTMODE_LAST + 1, FLIGHT_MODE_BOXID_MAP_INITIALIZER_does_not_match_boxId_e);
 
     if (boxid == BOXARM) {
-        return ARMING_FLAG(ARMED);
+#if defined(USE_VTX_MSP)
+        static bool mspPrevArmedState = false;
+        const bool armed = ARMING_FLAG(ARMED);
+        if (armed && !mspPrevArmedState) {
+            resetMspDisarmTimestamp();
+        }
+        mspPrevArmedState = armed;
+#endif
+        if (ARMING_FLAG(ARMED)) {
+            return true;
+        }
+#if defined(USE_VTX_MSP)
+        if (isMspArmedDelayActive(micros())) {
+            return true;
+        }
+#endif
+        return false;
     } else if (boxid <= BOXID_FLIGHTMODE_LAST) {
         return FLIGHT_MODE(1 << boxIdToFlightModeMap[boxid]);
     } else {
