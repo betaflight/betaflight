@@ -285,7 +285,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_DSHOT
 // --- handle crashFlip behaviours while armed ---
-if (crashFlipModeActive) {
+if (isMotorProtocolDshot() && crashFlipModeActive) {
     if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
         // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
         if (!mixerConfig()->crashflip_auto_rearm) {

@@ -294,7 +294,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef USE_BRUSHED_FLIPOVERAFTERCRASH
+#if defined(USE_BRUSHED_FLIPOVERAFTERCRASH) && defined(BRUSHED_REVERSE_PIN)
     BME(BOXCRASHFLIP);
 #endif
 
