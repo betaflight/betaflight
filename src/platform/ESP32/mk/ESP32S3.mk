@@ -101,6 +101,7 @@ MCU_COMMON_SRC = \
             ESP32/serial_usb_vcp_esp32.c \
             ESP32/system.c \
             ESP32/light_ws2811strip_esp32.c \
+            ESP32/timer_esp32.c \
             ESP32/periph_regs_esp32.c
 
 # ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)
