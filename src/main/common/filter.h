@@ -52,11 +52,13 @@ typedef struct pt3Filter_s {
     float k;
 } pt3Filter_t;
 
-// SVF filter in Chamberlin form (less accurate cutoff but fine for lpf)
+// SVF filter in TPT form
 typedef struct butterworthFilter_s {
     float f;
-    float low;
-    float band;
+    float a1;
+    float a2;
+    float ic1;
+    float ic2;
 } butterworthFilter_t;
 
 // SVF filter in TPT form
