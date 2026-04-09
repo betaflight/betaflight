@@ -28,11 +28,11 @@
 #define USBD_PRODUCT_STRING     "Betaflight STM32H562"
 #endif
 
-#undef USE_PWM
-#undef USE_PWM_OUTPUT
-#undef USE_DSHOT
+//#undef USE_PWM
+//#undef USE_PWM_OUTPUT
+//#undef USE_DSHOT
 #undef USE_ADC
-#undef USE_TIMER
+//#undef USE_TIMER
 //#undef USE_DMA
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
@@ -73,12 +73,10 @@
 //#undef USE_CLI
 #undef USE_CAMERA_CONTROL
 #undef USE_RX_PWM
-#undef USE_LED_STRIP
-#undef USE_TRANSPONDER
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#undef USE_MOTOR
+//#undef USE_MOTOR
 #undef USE_SERVO
 
 #define USE_VIRTUAL_GYRO
