@@ -383,7 +383,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_AF
 
 // Camera control PWM availability per STM32 family
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #endif
 
