@@ -346,6 +346,8 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_F746, .name = "STM32F746" },
 #elif defined(STM32F765xx)
         { .id = MCU_TYPE_F765, .name = "STM32F765" },
+#elif defined(STM32H562xx)
+        { .id = MCU_TYPE_H562, .name = "STM32H562" },
 #elif defined(STM32H563xx)
         { .id = MCU_TYPE_H563, .name = "STM32H563" },
 #elif defined(STM32H750xx)

@@ -67,6 +67,7 @@ typedef enum {
     MCU_TYPE_RP2350B,
     MCU_TYPE_H735,
     MCU_TYPE_N657,
+    MCU_TYPE_H562,
     MCU_TYPE_H563,
     MCU_TYPE_ESP32S3,
     MCU_TYPE_COUNT,
