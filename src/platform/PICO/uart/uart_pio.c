@@ -255,12 +255,17 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
                     const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
 {
     // Set up details for state machine, will be finalised in uartReconfigure.
-    if (options != 0) {
-        bprintf("*** non-default options not yet supported for UART PIO");
+    if ((options & SERIAL_STOPBITS_2) != 0) {
+        bprintf("*** option SERIAL_STOPBITS_2 not yet supported for UART PIO ***");
         return false;
     }
 
-    // mode and baudrate are captured on the uartPort in uartOpen, and can be addressed in uartReconfigure
+    if ((options & SERIAL_PARITY_EVEN) != 0) {
+        bprintf("*** option SERIAL_PARITY_EVEN not yet supported for UART PIO ***");
+        return false;
+    }
+
+    // mode and baudrate are captured on the uartPort in uartOpen, and are addressed in uartReconfigure
     UNUSED(mode);
     UNUSED(baudRate);
 
