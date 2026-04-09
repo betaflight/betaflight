@@ -171,25 +171,40 @@ void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float 
     butterworthFilterUpdate(filter, filterFreq, dt);
 
     // zero initial samples
-    filter->low = 0.0f;
-    filter->band = 0.0f;
+    filter->ic2 = 0.0f;
+    filter->ic1 = 0.0f;
 }
 
 FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt)
 {
-    filter->f = 2.0f * sin_approx(M_PIf * filterFreq * dt);
+    #define BUTTERWORTH_Q 1.41421356237f // Q is always set to this value, we can remove Q
+    float sn, cs;
+    sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
+
+    float f = sn / cs;
+    float inv_denom = 1.0f / (1.0f + f * (f + BUTTERWORTH_Q));
+    filter->a1 = inv_denom;
+    filter->a2 = f * inv_denom;
+    filter->f = f;
 }
 
-// Computes a SVF filter in Chamberlin form on a sample
+// Computes a SVF filter in TPT form on a sample
 FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
 {
-    #define BUTTERWORTH_Q_RECIP 1.41421356237f // Q is always set to this value, we can remove Q
+    float a1 = filter->a1;
+    float a2 = filter->a2;
+    float f = filter->f;
+    float ic1 = filter->ic1;
+    float ic2 = filter->ic2;
 
-    const float low  = filter->low + filter->f * filter->band;
-    const float high = input - low - BUTTERWORTH_Q_RECIP * filter->band;
-    filter->band = filter->f * high + filter->band;
-    filter->low  = low;
-    return low;
+    float v3 = input - ic2;
+    float v1 = a1 * ic1 + a2 * v3;
+    float v2 = ic2 + f * v1;
+
+    filter->ic1 = 2.0f * v1 - ic1;
+    filter->ic2 = 2.0f * v2 - ic2;
+
+    return v2;
 }
 
 void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q)
