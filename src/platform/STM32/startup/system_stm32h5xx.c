@@ -292,6 +292,8 @@ void SystemInit(void)
   }
 
   initialiseDmaMemorySections();
+
+  systemProcessResetReason();
 }
 
 /**

@@ -62,6 +62,12 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
+void systemResetWithoutDisablingCaches(void)
+{
+    __disable_irq();
+    NVIC_SystemReset();
+}
+
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
     switch (requestType) {
@@ -114,4 +120,34 @@ void systemJumpToBootloader(void)
     SysMemBootJump();
 
     while (1);
+}
+
+void systemProcessResetReason(void)
+{
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    switch (bootloaderRequest) {
+    case RESET_BOOTLOADER_REQUEST_ROM:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
+        systemJumpToBootloader();
+
+        break;
+
+    case RESET_FORCED:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+        break;
+
+    case RESET_BOOTLOADER_POST:
+        // Boot loader activity magically prevents SysTick from interrupting.
+        // Issue a soft reset to prevent the condition.
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
+        systemResetWithoutDisablingCaches();
+
+        break;
+
+    case RESET_MSC_REQUEST:
+    case RESET_NONE:
+    default:
+        break;
+    }
 }

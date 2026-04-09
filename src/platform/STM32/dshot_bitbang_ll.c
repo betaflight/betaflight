@@ -267,11 +267,13 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 #elif defined(STM32H5)
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
-    memset(dmainit, 0, sizeof(*dmainit));
+    LL_DMA_StructInit(dmainit);
     dmainit->Request = bbPort->dmaChannel;
     dmainit->BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
     dmainit->SrcBurstLength = 1;
     dmainit->DestBurstLength = 1;
+    dmainit->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    dmainit->Mode = LL_DMA_NORMAL;
 
     if (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) {
         dmainit->Priority = LL_DMA_HIGH_PRIORITY;
