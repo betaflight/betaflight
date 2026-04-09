@@ -28,6 +28,7 @@
 
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/exti.h"
+#include "drivers/memprot.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/system.h"
@@ -42,9 +43,8 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    // TODO: enable MPU memory protection for H5
-    // memProtReset();
-    // memProtConfigure(mpuRegions, mpuRegionCount);
+    memProtReset();
+    memProtConfigure(mpuRegions, mpuRegionCount);
 
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
