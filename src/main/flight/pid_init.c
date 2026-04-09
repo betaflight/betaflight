@@ -140,7 +140,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         return;
     }
 
-    const uint32_t pidFrequencyNyquist = pidRuntime.pidFrequency / 2; // No rounding needed
+    // limit to 95% of the nyquist to help with stability
+    const uint32_t pidFrequencyNyquist = (pidRuntime.pidFrequency / 2.0f) * 0.95f;
 
     uint16_t dTermNotchHz;
     if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
