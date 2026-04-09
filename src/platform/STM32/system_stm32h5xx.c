@@ -34,7 +34,7 @@
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
+    if (cachedResetFlags & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
@@ -42,20 +42,27 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-    memProtReset();
-    memProtConfigure(mpuRegions, mpuRegionCount);
+    // TODO: enable MPU memory protection for H5
+    // memProtReset();
+    // memProtConfigure(mpuRegions, mpuRegionCount);
 
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->CSR;
+    cachedResetFlags = RCC->RSR;
 
     // Init cycle counter
     cycleCounterInit();
 }
 
 void systemReset(void)
+{
+    __disable_irq();
+    NVIC_SystemReset();
+}
+
+void systemResetWithoutDisablingCaches(void)
 {
     __disable_irq();
     NVIC_SystemReset();
@@ -100,8 +107,8 @@ void systemJumpToBootloader(void)
     //Disable all interrupts
     __disable_irq();
 
-    //remap system memory
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+    // TODO: H5 memory remap for bootloader entry needs implementation
+    // __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
 
     //default bootloader call stack routine
     uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
@@ -113,4 +120,34 @@ void systemJumpToBootloader(void)
     SysMemBootJump();
 
     while (1);
+}
+
+void systemProcessResetReason(void)
+{
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    switch (bootloaderRequest) {
+    case RESET_BOOTLOADER_REQUEST_ROM:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
+        systemJumpToBootloader();
+
+        break;
+
+    case RESET_FORCED:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+        break;
+
+    case RESET_BOOTLOADER_POST:
+        // Boot loader activity magically prevents SysTick from interrupting.
+        // Issue a soft reset to prevent the condition.
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
+        systemResetWithoutDisablingCaches();
+
+        break;
+
+    case RESET_MSC_REQUEST:
+    case RESET_NONE:
+    default:
+        break;
+    }
 }

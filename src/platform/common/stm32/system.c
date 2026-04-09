@@ -50,8 +50,8 @@ static float usTicksInv = 0.0f;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 static volatile uint32_t sysTickValStamp = 0;
-// cached value of RCC->CSR
-uint32_t cachedRccCsrValue;
+// cached value of reset status register
+uint32_t cachedResetFlags;
 static uint32_t cpuClockFrequency = 0;
 
 void cycleCounterInit(void)
