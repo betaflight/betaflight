@@ -286,6 +286,8 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 
 #ifdef USE_DMA_REGISTER_CACHE
         xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
+        // Enable TC and DTE interrupts before saving so the cached CCR includes them
+        SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE | DMA_CCR_DTEIE);
         bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegOutput);
 #endif
     } else {
@@ -301,6 +303,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 
 #ifdef USE_DMA_REGISTER_CACHE
         xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
+        SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE | DMA_CCR_DTEIE);
         bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegInput);
 #endif
     }
