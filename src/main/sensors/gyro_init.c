@@ -82,7 +82,8 @@ static uint8_t gyroDetectedFlags = 0;
 
 static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
 {
-    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
+    // Limit the nyquist to 95% to help with stability
+    const uint32_t gyroFrequencyNyquist = (1000000 / 2 / gyro.targetLooptime) * 0.95f;
     if (notchHz > gyroFrequencyNyquist) {
         if (notchCutoffHz < gyroFrequencyNyquist) {
             notchHz = gyroFrequencyNyquist;
@@ -146,8 +147,8 @@ static bool gyroInitLowpassFilterLpf(int slot, int type, uint16_t lpfHz, uint32_
 
     bool ret = false;
 
-    // Establish some common constants
-    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / looptime;
+    // Limit the nyquist to 95% to help with stability
+    const uint32_t gyroFrequencyNyquist = (1000000 / 2 / looptime) * 0.95f;
     const float gyroDt = looptime * 1e-6f;
 
     // Dereference the pointer to null before checking valid cutoff and filter
