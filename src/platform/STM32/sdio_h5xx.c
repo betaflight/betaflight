@@ -138,7 +138,7 @@ void sdioPinConfigure(void)
 {
     SDIODevice device = SDIO_CFG_TO_DEV(sdioConfig()->device);
 
-    if (device == SDIOINVALID) {
+    if (device == SDIOINVALID || device >= SDIODEV_COUNT) {
         return;
     }
 
