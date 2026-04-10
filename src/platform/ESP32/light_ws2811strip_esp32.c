@@ -47,17 +47,21 @@
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-// ESP32-S3 has 4 RMT TX channels (0-3). DShot uses channels 0..N-1 for
-// N motors. The LED strip uses the next available TX channel after DShot.
-#define WS2812_RMT_TX_CHANNELS  4
+// DShot uses channels 0..N-1 for N motors.
+// The LED strip uses the next available TX channel after DShot.
+#if defined(ESP32S3)
+#define WS2812_RMT_TX_CHANNELS  4   // ESP32-S3: 4 TX + 4 RX channels
+#else
+#define WS2812_RMT_TX_CHANNELS  8   // ESP32: 8 bidirectional channels
+#endif
 #define WS2812_RMT_CLK_DIV     4       // 80MHz / 4 = 20MHz (50ns per tick)
 #define WS2812_T0H_TICKS       8       // 400ns
 #define WS2812_T0L_TICKS       17      // 850ns
 #define WS2812_T1H_TICKS       16      // 800ns
 #define WS2812_T1L_TICKS       9       // 450ns
 
-// RMTMEM is provided by periph_regs_esp32.c at 0x60016800
-// Each channel has 48 words (items) of memory
+// RMTMEM is provided by periph_regs_esp32.c
+// ESP32-S3: each channel has 48 words; ESP32: each has 64 words
 extern uint32_t RMTMEM[];
 
 #define WS2812_BITS_PER_LED    24
