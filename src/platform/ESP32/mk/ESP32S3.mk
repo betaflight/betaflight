@@ -85,6 +85,7 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             ESP32/adc_esp32.c \
             ESP32/bus_i2c_esp32.c \
+            drivers/bus_spi_config.c \
             ESP32/bus_spi_esp32.c \
             ESP32/config_flash.c \
             ESP32/debug_esp32.c \

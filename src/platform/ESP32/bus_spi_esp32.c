@@ -177,26 +177,19 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
     }
 }
 
-void spiPreinit(void)
-{
-    // NOOP
-}
-
 void spiPreinitRegister(ioTag_t iotag, uint32_t iocfg, uint8_t init)
 {
-    UNUSED(iotag);
-    UNUSED(iocfg);
-    UNUSED(init);
+    ioPreinitByTag(iotag, iocfg, init);
 }
 
 void spiPreinitByIO(IO_t io)
 {
-    UNUSED(io);
+    ioPreinitByIO(io, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
 }
 
 void spiPreinitByTag(ioTag_t tag)
 {
-    UNUSED(tag);
+    spiPreinitByIO(IOGetByTag(tag));
 }
 
 void spiInitDevice(spiDevice_e device)

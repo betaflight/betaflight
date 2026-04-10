@@ -58,6 +58,13 @@
 #undef USE_FLASH_CHIP
 #undef USE_RCC
 
+// SD card over SPI for blackbox logging (runtime-configured pins)
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+
+// Default blackbox to serial; SD card available as an option
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+
 // Config stored in flash partition
 #define CONFIG_IN_FLASH
 
@@ -133,4 +140,3 @@
 #undef USE_OSD_HD
 
 #undef USE_USB_MSC
-#undef USE_SDCARD
