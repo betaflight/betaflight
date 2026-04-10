@@ -23,28 +23,29 @@
 #include "pg/pg.h"
 
 #define FAILSAFE_POWER_ON_DELAY_US (1000 * 1000 * 5)
-#define MILLIS_PER_TENTH_SECOND      100
-#define MILLIS_PER_SECOND           1000
-#define PERIOD_OF_1_SECONDS            1 * MILLIS_PER_SECOND
-#define PERIOD_OF_3_SECONDS            3 * MILLIS_PER_SECOND
-#define PERIOD_OF_30_SECONDS          30 * MILLIS_PER_SECOND
-#define PERIOD_RXDATA_FAILURE        10     // millis
-#define PERIOD_RXDATA_RECOVERY       100    // millis
+#define MILLIS_PER_TENTH_SECOND    100
+#define MILLIS_PER_SECOND          1000
+#define PERIOD_OF_1_SECONDS        1 * MILLIS_PER_SECOND
+#define PERIOD_OF_3_SECONDS        3 * MILLIS_PER_SECOND
+#define PERIOD_OF_30_SECONDS       30 * MILLIS_PER_SECOND
+#define PERIOD_RXDATA_FAILURE      10     // millis
+#define PERIOD_RXDATA_RECOVERY     100    // millis
 
 typedef struct failsafeConfig_s {
-    uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
-    uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
-    uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
-    uint8_t failsafe_landing_time;             // Time for Landing before disarm in seconds.
-    uint8_t failsafe_switch_mode;           // failsafe switch action is 0: Stage 1, 1: Disarms instantly, 2: Stage 2
-    uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it
-    uint16_t failsafe_recovery_delay;       // Time (in 0.1sec) of valid rx data (min 100ms PERIOD_RXDATA_RECOVERY) to allow recovering from failsafe procedure
-    uint8_t failsafe_stick_threshold;       // Stick deflection percentage to exit GPS Rescue procedure
+    uint16_t failsafe_throttle; // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
+    uint16_t failsafe_throttle_low_delay; // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure".
+    uint8_t failsafe_delay; // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
+    uint8_t failsafe_landing_time; // Time for Landing before disarm in seconds.
+    uint8_t failsafe_switch_mode; // failsafe switch action is 0: Stage 1, 1: Disarms instantly, 2: Stage 2
+    uint8_t failsafe_procedure; // selected full failsafe procedure is 0: auto-landing, 1: Drop it
+    uint16_t failsafe_recovery_delay; // Time (in 0.1sec) of valid rx data (min 100ms PERIOD_RXDATA_RECOVERY) to allow recovering from failsafe procedure
+    uint8_t failsafe_stick_threshold; // Stick deflection percentage to exit GPS Rescue procedure
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_IDLE = 0,
     FAILSAFE_RX_LOSS_DETECTED,
     FAILSAFE_LANDING,
@@ -54,23 +55,26 @@ typedef enum {
     FAILSAFE_GPS_RESCUE
 } failsafePhase_e;
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_RXLINK_DOWN = 0,
     FAILSAFE_RXLINK_UP
 } failsafeRxLinkState_e;
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
 #ifdef USE_GPS_RESCUE
     FAILSAFE_PROCEDURE_GPS_RESCUE,
 #endif
-    FAILSAFE_PROCEDURE_COUNT   // must be last
+    FAILSAFE_PROCEDURE_COUNT // must be last
 } failsafeProcedure_e;
 
-extern const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
+extern const char *const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_SWITCH_MODE_STAGE1 = 0,
     FAILSAFE_SWITCH_MODE_KILL,
     FAILSAFE_SWITCH_MODE_STAGE2
@@ -84,10 +88,10 @@ typedef struct failsafeState_s {
     uint32_t rxDataRecoveryPeriod;
     uint32_t validRxDataReceivedAt;
     uint32_t validRxDataFailedAt;
-    uint32_t throttleLowPeriod;             // throttle stick must have been below 'min_check' for this period
+    uint32_t throttleLowPeriod; // throttle stick must have been below 'min_check' for this period
     uint32_t landingShouldBeFinishedAt;
-    uint32_t receivingRxDataPeriod;         // period for the required period of valid rxData
-    uint32_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
+    uint32_t receivingRxDataPeriod; // period for the required period of valid rxData
+    uint32_t receivingRxDataPeriodPreset; // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
     bool boxFailsafeSwitchWasOn;

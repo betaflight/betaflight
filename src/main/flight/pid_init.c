@@ -50,9 +50,9 @@
 #include "pid_init.h"
 
 #ifdef USE_D_MAX
-#define D_MAX_RANGE_HZ 85    // PT2 lowpass input cutoff to peak D around propwash frequencies
-#define D_MAX_LOWPASS_HZ 35  // PT2 lowpass cutoff to smooth the boost effect. Do not set to Zero to avoid div/0 error
-#define D_MAX_GYRO_GAIN_FACTOR 0.00008f
+#define D_MAX_RANGE_HZ             85    // PT2 lowpass input cutoff to peak D around propwash frequencies
+#define D_MAX_LOWPASS_HZ           35  // PT2 lowpass cutoff to smooth the boost effect. Do not set to Zero to avoid div/0 error
+#define D_MAX_GYRO_GAIN_FACTOR     0.00008f
 #define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f // same DMax gain with either rate of change source; not intended preserve legacy behaviour
 #endif
 
@@ -103,7 +103,7 @@ static void tpaSpeedAdvancedInit(const pidProfile_t *pidProfile)
     const float b = mass * pidRuntime.tpaSpeed.twr * G_ACCELERATION * pidRuntime.tpaSpeed.inversePropMaxSpeed;
     const float c = -mass * (pidRuntime.tpaSpeed.twr + 1) * G_ACCELERATION;
 
-    const float maxDiveSpeed = (-b + sqrtf(b*b - 4.0f * a * c)) / (2.0f * a);
+    const float maxDiveSpeed = (-b + sqrtf(b * b - 4.0f * a * c)) / (2.0f * a);
 
     pidRuntime.tpaSpeed.maxSpeed = MAX(maxFallSpeed, maxDiveSpeed);
     UNUSED(pidProfile);
@@ -164,7 +164,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.dtermNotchApplyFn = nullFilterApply;
     }
 
-    //1st Dterm Lowpass Filter
+    // 1st Dterm Lowpass Filter
     uint16_t dterm_lpf1_init_hz = pidProfile->dterm_lpf1_static_hz;
 
 #ifdef USE_DYN_LPF
@@ -215,7 +215,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.dtermLowpassApplyFn = nullFilterApply;
     }
 
-    //2nd Dterm Lowpass Filter
+    // 2nd Dterm Lowpass Filter
     if (pidProfile->dterm_lpf2_static_hz > 0) {
         switch (pidProfile->dterm_lpf2_type) {
         case FILTER_PT1:
@@ -289,7 +289,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pt2FilterInit(&pidRuntime.dMaxRange[axis], pt2FilterGain(D_MAX_RANGE_HZ, pidRuntime.dT));
         pt2FilterInit(&pidRuntime.dMaxLowpass[axis], pt2FilterGain(D_MAX_LOWPASS_HZ, pidRuntime.dT));
-     }
+    }
 #endif
 
 #ifdef USE_ACC
@@ -313,7 +313,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #ifdef USE_CHIRP
     const float alpha = pidRuntime.chirpLeadFreqHz / pidRuntime.chirpLagFreqHz;
     const float centerFreqHz = pidRuntime.chirpLagFreqHz * sqrtf(alpha);
-    const float centerPhaseDeg = asinf( (1.0f - alpha) / (1.0f + alpha) ) / RAD;
+    const float centerPhaseDeg = asinf((1.0f - alpha) / (1.0f + alpha)) / RAD;
     phaseCompInit(&pidRuntime.chirpFilter, centerFreqHz, centerPhaseDeg, targetPidLooptime);
     chirpInit(&pidRuntime.chirp, pidRuntime.chirpFrequencyStartHz, pidRuntime.chirpFrequencyEndHz, pidRuntime.chirpTimeSeconds, targetPidLooptime);
 #endif
@@ -329,7 +329,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 #ifdef USE_ADVANCED_TPA
 static float tpaCurveHyperbolicFunction(float x, void *args)
 {
-    const pidProfile_t *pidProfile = (const pidProfile_t*)args;
+    const pidProfile_t *pidProfile = (const pidProfile_t *)args;
 
     const float thrStall = pidProfile->tpa_curve_stall_throttle / 100.0f;
     const float pidThr0 = pidProfile->tpa_curve_pid_thr0 / 100.0f;
@@ -339,7 +339,7 @@ static float tpaCurveHyperbolicFunction(float x, void *args)
     }
 
     const float expoDivider = pidProfile->tpa_curve_expo / 10.0f - 1.0f;
-    const float expo = (fabsf(expoDivider) > 1e-3f) ?  1.0f / expoDivider : 1e3f; // avoiding division by zero for const float base = ...
+    const float expo = (fabsf(expoDivider) > 1e-3f) ? 1.0f / expoDivider : 1e3f; // avoiding division by zero for const float base = ...
 
     const float pidThr100 = pidProfile->tpa_curve_pid_thr100 / 100.0f;
     const float xShifted = scaleRangef(x, thrStall, 1.0f, 0.0f, 1.0f);
@@ -352,20 +352,20 @@ static float tpaCurveHyperbolicFunction(float x, void *args)
 static void tpaCurveHyperbolicInit(const pidProfile_t *pidProfile)
 {
     pwlInitialize(&pidRuntime.tpaCurvePwl, pidRuntime.tpaCurvePwl_yValues, TPA_CURVE_PWL_SIZE, 0.0f, 1.0f);
-    pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void*)pidProfile);
+    pwlFill(&pidRuntime.tpaCurvePwl, tpaCurveHyperbolicFunction, (void *)pidProfile);
 }
 
 static void tpaCurveInit(const pidProfile_t *pidProfile)
 {
-        pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
-        switch (pidRuntime.tpaCurveType) {
-        case TPA_CURVE_HYPERBOLIC:
-            tpaCurveHyperbolicInit(pidProfile);
-            return;
-        case TPA_CURVE_CLASSIC:
-        default:
-            return;
-        }
+    pidRuntime.tpaCurveType = pidProfile->tpa_curve_type;
+    switch (pidRuntime.tpaCurveType) {
+    case TPA_CURVE_HYPERBOLIC:
+        tpaCurveHyperbolicInit(pidProfile);
+        return;
+    case TPA_CURVE_CLASSIC:
+    default:
+        return;
+    }
 }
 #endif // USE_ADVANCED_TPA
 
@@ -417,7 +417,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.chirpLeadFreqHz = pidProfile->chirp_lead_freq_hz;
     pidRuntime.chirpAmplitude[FD_ROLL] = pidProfile->chirp_amplitude_roll;
     pidRuntime.chirpAmplitude[FD_PITCH] = pidProfile->chirp_amplitude_pitch;
-    pidRuntime.chirpAmplitude[FD_YAW]= pidProfile->chirp_amplitude_yaw;
+    pidRuntime.chirpAmplitude[FD_YAW] = pidProfile->chirp_amplitude_yaw;
     pidRuntime.chirpFrequencyStartHz = pidProfile->chirp_frequency_start_deci_hz / 10.0f;
     pidRuntime.chirpFrequencyEndHz = pidProfile->chirp_frequency_end_deci_hz / 10.0f;
     pidRuntime.chirpTimeSeconds = pidProfile->chirp_time_seconds;
@@ -523,7 +523,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         const uint8_t dMax = pidProfile->d_max[axis];
         if ((pidProfile->pid[axis].D > 0) && dMax > pidProfile->pid[axis].D) {
-            pidRuntime.dMaxPercent[axis] = (float) dMax / pidProfile->pid[axis].D;
+            pidRuntime.dMaxPercent[axis] = (float)dMax / pidProfile->pid[axis].D;
             // fraction that Dmax is higher than D, eg if D is 8 and Dmax is 10, Dmax is 1.25 times bigger
         } else {
             pidRuntime.dMaxPercent[axis] = 1.0f;
@@ -577,8 +577,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
 {
-    if (dstPidProfileIndex < PID_PROFILE_COUNT && srcPidProfileIndex < PID_PROFILE_COUNT
-        && dstPidProfileIndex != srcPidProfileIndex) {
+    if (dstPidProfileIndex < PID_PROFILE_COUNT && srcPidProfileIndex < PID_PROFILE_COUNT && dstPidProfileIndex != srcPidProfileIndex) {
         memcpy(pidProfilesMutable(dstPidProfileIndex), pidProfilesMutable(srcPidProfileIndex), sizeof(pidProfile_t));
     }
 }

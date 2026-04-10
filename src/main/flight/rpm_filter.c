@@ -42,7 +42,7 @@
 
 #include "rpm_filter.h"
 
-#define RPM_FILTER_DURATION_S    0.001f  // Maximum duration allowed to update all RPM notches once
+#define RPM_FILTER_DURATION_S 0.001f  // Maximum duration allowed to update all RPM notches once
 
 typedef struct rpmFilter_s {
 

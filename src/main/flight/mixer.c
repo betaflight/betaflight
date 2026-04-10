@@ -67,11 +67,11 @@
 
 #include "mixer.h"
 
-#define DYN_LPF_THROTTLE_STEPS             100
-#define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
+#define DYN_LPF_THROTTLE_STEPS           100
+#define DYN_LPF_THROTTLE_UPDATE_DELAY_US 5000 // minimum of 5ms between updates
 
-#define CRASHFLIP_MOTOR_DEADBAND         0.02f // 2%; send 'disarm' value to motors below this drive value
-#define CRASHFLIP_STICK_DEADBAND         0.15f // 15%
+#define CRASHFLIP_MOTOR_DEADBAND 0.02f // 2%; send 'disarm' value to motors below this drive value
+#define CRASHFLIP_STICK_DEADBAND 0.15f // 15%
 
 static FAST_DATA_ZERO_INIT float motorMixRange;
 
@@ -181,9 +181,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
-                !flight3DConfigMutable()->switched_mode3d) ||
-                isMotorsReversed()) {
+        } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow && !flight3DConfigMutable()->switched_mode3d) || isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = mixerRuntime.motorOutputLow;
             motorRangeMax = mixerRuntime.deadbandMotor3dLow;
@@ -228,8 +226,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         currentThrottleInputRange = PWM_RANGE;
 #ifdef USE_DYN_IDLE
         if (mixerRuntime.dynIdleMinRps > 0.0f) {
-            const float maxIncrease = wasThrottleRaised()
-                ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
+            const float maxIncrease = wasThrottleRaised() ? mixerRuntime.dynIdleMaxIncrease : mixerRuntime.dynIdleStartIncrease;
             float minRps = getMinMotorFrequencyHz();
             DEBUG_SET(DEBUG_DYN_IDLE, 3, lrintf(minRps * 10.0f));
             float rpsError = mixerRuntime.dynIdleMinRps - minRps;
@@ -238,7 +235,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             float dynIdleD = (mixerRuntime.prevMinRps - minRps) * mixerRuntime.dynIdleDGain;
             mixerRuntime.prevMinRps = minRps;
             float dynIdleP = rpsError * mixerRuntime.dynIdlePGain;
-            rpsError = MAX(-0.1f, rpsError); //I rises fast, falls slowly
+            rpsError = MAX(-0.1f, rpsError); // I rises fast, falls slowly
             mixerRuntime.dynIdleI += rpsError * mixerRuntime.dynIdleIGain;
             mixerRuntime.dynIdleI = constrainf(mixerRuntime.dynIdleI, 0.0f, maxIncrease);
             motorRangeMinIncrease = constrainf((dynIdleP + mixerRuntime.dynIdleI + dynIdleD), 0.0f, maxIncrease);
@@ -261,7 +258,8 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             DEBUG_SET(DEBUG_BATTERY, 2, lrintf(batteryGoodness * 100));
             DEBUG_SET(DEBUG_BATTERY, 3, lrintf(motorRangeAttenuationFactor * 1000));
         }
-        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
+        motorRangeMax = isCrashFlipModeActive() ? mixerRuntime.motorOutputHigh
+                                                : mixerRuntime.motorOutputHigh - motorRangeAttenuationFactor * (mixerRuntime.motorOutputHigh - mixerRuntime.motorOutputLow);
 #else
         motorRangeMax = mixerRuntime.motorOutputHigh;
 #endif
@@ -347,9 +345,9 @@ static bool applyCrashFlipModeToMotors(void)
             const float tiltAngle = getCosTiltAngle();  // -1 if flat inverted, 0 when 90° (on edge), +1 when flat and upright
             if (!isTiltAngleAtStartSet) {
             // first tun after activating crashFlip mode...
-            tiltAngleAtStart = tiltAngle;
-            isTiltAngleAtStartSet = true;
-            crashflipSuccess = false;
+                tiltAngleAtStart = tiltAngle;
+                isTiltAngleAtStartSet = true;
+                crashflipSuccess = false;
             }
             // attitudeChangeNeeded is 1.0 at the start, decreasing to 0 when attitude change exceeds approx 90 degrees
             const float attitudeChangeNeeded = fmaxf(1.0f - fabsf(tiltAngle - tiltAngleAtStart), 0.0f);
@@ -374,10 +372,7 @@ static bool applyCrashFlipModeToMotors(void)
     }
 
     for (int i = 0; i < mixerRuntime.motorCount; ++i) {
-        float motorOutputNormalised =
-            signPitch * mixerRuntime.currentMixer[i].pitch +
-            signRoll * mixerRuntime.currentMixer[i].roll +
-            signYaw * mixerRuntime.currentMixer[i].yaw;
+        float motorOutputNormalised = signPitch * mixerRuntime.currentMixer[i].pitch + signRoll * mixerRuntime.currentMixer[i].roll + signYaw * mixerRuntime.currentMixer[i].yaw;
 
         if (motorOutputNormalised < 0) {
             if (mixerConfig()->crashflip_motor_percent > 0) {
@@ -419,12 +414,14 @@ static void applyRpmLimiter(mixerRuntime_t *mixer)
     // Throttle limit learning
     if (error > 0.0f && rcCommand[THROTTLE] < rxConfig()->maxcheck) {
         mixer->rpmLimiterThrottleScale *= 1.0f - 4.8f * pidGetDT();
-    } else if (pidOutput < -400.0f * pidGetDT() && lrintf(rcCommand[THROTTLE]) >= rxConfig()->maxcheck - STICK_HIGH_DEADBAND && !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
+    } else if (pidOutput < -400.0f * pidGetDT() && lrintf(rcCommand[THROTTLE]) >= rxConfig()->maxcheck - STICK_HIGH_DEADBAND &&
+               !areMotorsSaturated()) { // Throttle accel corresponds with motor accel
         mixer->rpmLimiterThrottleScale *= 1.0f + 3.2f * pidGetDT();
     }
     mixer->rpmLimiterThrottleScale = constrainf(mixer->rpmLimiterThrottleScale, 0.01f, 1.0f);
 
-    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter, constrainf(mixer->rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
+    float rpmLimiterThrottleScaleOffset = pt1FilterApply(&mixer->rpmLimiterThrottleScaleOffsetFilter,
+                                                         constrainf(mixer->rpmLimiterRpmLimit / motorEstimateMaxRpm(), 0.0f, 1.0f) - mixer->rpmLimiterInitialThrottleScale);
     throttle *= constrainf(mixer->rpmLimiterThrottleScale + rpmLimiterThrottleScaleOffset, 0.0f, 1.0f);
 
     // Output
@@ -510,10 +507,10 @@ static float applyThrottleLimit(float throttle)
     if (currentControlRateProfile->throttle_limit_percent < 100 && !RPM_LIMIT_ACTIVE) {
         const float throttleLimitFactor = currentControlRateProfile->throttle_limit_percent / 100.0f;
         switch (currentControlRateProfile->throttle_limit_type) {
-            case THROTTLE_LIMIT_TYPE_SCALE:
-                return throttle * throttleLimitFactor;
-            case THROTTLE_LIMIT_TYPE_CLIP:
-                return MIN(throttle, throttleLimitFactor);
+        case THROTTLE_LIMIT_TYPE_SCALE:
+            return throttle * throttleLimitFactor;
+        case THROTTLE_LIMIT_TYPE_CLIP:
+            return MIN(throttle, throttleLimitFactor);
         }
     }
 
@@ -682,11 +679,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (applyCrashFlipModeToMotors()) {
         return;
         // if crash flip modeis being applied to the motors, mixing is done
-
-
     }
 
-    motorMixer_t * activeMixer = &mixerRuntime.currentMixer[0];
+    motorMixer_t *activeMixer = &mixerRuntime.currentMixer[0];
 #ifdef USE_LAUNCH_CONTROL
     if (launchControlActive && (currentPidProfile->launchControlMode == LAUNCH_CONTROL_MODE_PITCHONLY)) {
         activeMixer = &mixerRuntime.launchControlMixer[0];
@@ -694,10 +689,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 #endif
 
     // Calculate and Limit the PID sum
-    const float scaledAxisPidRoll =
-        constrainf(pidData[FD_ROLL].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
-    const float scaledAxisPidPitch =
-        constrainf(pidData[FD_PITCH].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
+    const float scaledAxisPidRoll = constrainf(pidData[FD_ROLL].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
+    const float scaledAxisPidPitch = constrainf(pidData[FD_PITCH].Sum, -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
 
     uint16_t yawPidSumLimit = currentPidProfile->pidSumLimitYaw;
 
@@ -708,8 +701,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif // USE_YAW_SPIN_RECOVERY
 
-    float scaledAxisPidYaw =
-        constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
+    float scaledAxisPidYaw = constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
 
     if (!mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
@@ -765,10 +757,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     for (int i = 0; i < mixerRuntime.motorCount; i++) {
-        float mix =
-            scaledAxisPidRoll  * activeMixer[i].roll +
-            scaledAxisPidPitch * activeMixer[i].pitch +
-            scaledAxisPidYaw   * activeMixer[i].yaw;
+        float mix = scaledAxisPidRoll * activeMixer[i].roll + scaledAxisPidPitch * activeMixer[i].pitch + scaledAxisPidYaw * activeMixer[i].yaw;
 
         if (mix > motorMixMax) {
             motorMixMax = mix;
@@ -829,11 +818,8 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         break;
     }
 
-    if (featureIsEnabled(FEATURE_MOTOR_STOP)
-        && ARMING_FLAG(ARMED)
-        && !mixerRuntime.feature3dEnabled
-        && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
+    if (featureIsEnabled(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !mixerRuntime.feature3dEnabled && !airmodeEnabled &&
+        !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         applyMotorStop();
     } else {

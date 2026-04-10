@@ -64,7 +64,7 @@ static uint32_t imuDeltaT = 0;
 static bool imuUpdated = false;
 #endif
 
-#define IMU_LOCK pthread_mutex_lock(&imuUpdateLock)
+#define IMU_LOCK   pthread_mutex_lock(&imuUpdateLock)
 #define IMU_UNLOCK pthread_mutex_unlock(&imuUpdateLock)
 
 #else
@@ -81,10 +81,10 @@ static bool imuUpdated = false;
 
 #define SPIN_RATE_LIMIT 20
 
-#define ATTITUDE_RESET_QUIET_TIME 250000   // 250ms - gyro quiet period after disarm before attitude reset
-#define ATTITUDE_RESET_GYRO_LIMIT 15       // 15 deg/sec - gyro limit for quiet period
+#define ATTITUDE_RESET_QUIET_TIME  250000   // 250ms - gyro quiet period after disarm before attitude reset
+#define ATTITUDE_RESET_GYRO_LIMIT  15       // 15 deg/sec - gyro limit for quiet period
 #define ATTITUDE_RESET_ACTIVE_TIME 500000  // 500ms - Time to wait for attitude to converge at high gain
-#define GPS_COG_MIN_GROUNDSPEED 100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
+#define GPS_COG_MIN_GROUNDSPEED    100        // 1.0m/s - min groundspeed for GPS Heading reinitialisation etc
 
 bool canUseGPSHeading = false;
 
@@ -121,12 +121,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 3);
 #endif
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
-    .imu_dcm_kp = 2500,      // 1.0 * 10000
-    .imu_dcm_ki = 0,         // 0.003 * 10000
-    .small_angle = DEFAULT_SMALL_ANGLE,
-    .imu_process_denom = 2,
-    .mag_declination = 0,
-);
+                  .imu_dcm_kp = 2500,      // 1.0 * 10000
+                  .imu_dcm_ki = 0,         // 0.003 * 10000
+                  .small_angle = DEFAULT_SMALL_ANGLE, .imu_process_denom = 2, .mag_declination = 0, );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)
 {
@@ -209,13 +206,10 @@ static float invSqrt(float x)
 // headingErrMag - heading error (in earth frame) derived from magnetometter, rad/s around Z axis (* dcmKpGain)
 // headingErrCog - heading error (in earth frame) derived from CourseOverGround, rad/s around Z axis (* dcmKpGain)
 // dcmKpGain - gain applied to all error sources
-STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
-                                float gx, float gy, float gz,
-                                bool useAcc, float ax, float ay, float az,
-                                float headingErrMag, float headingErrCog,
-                                const float dcmKpGain)
+STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz, bool useAcc, float ax, float ay, float az, float headingErrMag, float headingErrCog,
+                                            const float dcmKpGain)
 {
-    static float integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
+    static float integralFBx = 0.0f, integralFBy = 0.0f, integralFBz = 0.0f;    // integral error terms scaled by Ki
 
     // Calculate general spin rate (rad/s)
     const float spin_rate = sqrtf(sq(gx) + sq(gy) + sq(gz));
@@ -301,17 +295,17 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     quaternionProducts buffer;
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-       imuQuaternionComputeProducts(&headfree, &buffer);
+        imuQuaternionComputeProducts(&headfree, &buffer);
 
-       attitude.values.roll = lrintf(atan2_approx((+2.0f * (buffer.wx + buffer.yz)), (+1.0f - 2.0f * (buffer.xx + buffer.yy))) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
-       attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
-       imuAttitudeQuaternion = headfree;
+        attitude.values.roll = lrintf(atan2_approx((+2.0f * (buffer.wx + buffer.yz)), (+1.0f - 2.0f * (buffer.xx + buffer.yy))) * (1800.0f / M_PIf));
+        attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(+2.0f * (buffer.wy - buffer.xz))) * (1800.0f / M_PIf));
+        attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
+        imuAttitudeQuaternion = headfree;
     } else {
-       attitude.values.roll = lrintf(atan2_approx(rMat.m[2][1], rMat.m[2][2]) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[2][0])) * (1800.0f / M_PIf));
-       attitude.values.yaw = lrintf((-atan2_approx(rMat.m[1][0], rMat.m[0][0]) * (1800.0f / M_PIf)));
-       imuAttitudeQuaternion = q; //using current q quaternion  for blackbox log
+        attitude.values.roll = lrintf(atan2_approx(rMat.m[2][1], rMat.m[2][2]) * (1800.0f / M_PIf));
+        attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[2][0])) * (1800.0f / M_PIf));
+        attitude.values.yaw = lrintf((-atan2_approx(rMat.m[1][0], rMat.m[0][0]) * (1800.0f / M_PIf)));
+        imuAttitudeQuaternion = q; // using current q quaternion  for blackbox log
     }
 
     if (attitude.values.yaw < 0) {
@@ -333,13 +327,7 @@ static bool imuIsAccelerometerHealthy(void)
 //   - reset the gain back to the standard setting
 static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAverage)
 {
-    static enum {
-        stArmed,
-        stRestart,
-        stQuiet,
-        stReset,
-        stDisarmed
-    } arState = stDisarmed;
+    static enum { stArmed, stRestart, stQuiet, stReset, stDisarmed } arState = stDisarmed;
 
     static timeUs_t stateTimeout;
 
@@ -349,11 +337,9 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
         // If gyro activity exceeds the threshold then restart the quiet period.
         // Also, if the attitude reset has been complete and there is subsequent gyro activity then
         //  start the reset cycle again. This addresses the case where the pilot rights the craft after a crash.
-        if (   (fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)  // gyro axis limit exceeded
-            || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT)
-            || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT)
-            || !useAcc                                              // acc reading out of range
-            ) {
+        if ((fabsf(gyroAverage[X]) > ATTITUDE_RESET_GYRO_LIMIT)  // gyro axis limit exceeded
+            || (fabsf(gyroAverage[Y]) > ATTITUDE_RESET_GYRO_LIMIT) || (fabsf(gyroAverage[Z]) > ATTITUDE_RESET_GYRO_LIMIT) || !useAcc // acc reading out of range
+        ) {
             arState = stRestart;
         }
 
@@ -406,7 +392,7 @@ static float imuCalcGroundspeedGain(float dt)
     const float speedRatio = (float)gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
     float speedBasedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : sq(speedRatio);
 
-    const bool isWing = isFixedWing();  // different weighting for airplane aerodynamic
+    const bool isWing = isFixedWing(); // different weighting for airplane aerodynamic
 
     // 2. suppress heading correction during and after yaw inputs, down to zero at 100% yaw
     const float yawStickDeflectionInv = 1.0f - getRcDeflectionAbs(FD_YAW);
@@ -419,7 +405,7 @@ static float imuCalcGroundspeedGain(float dt)
 
     // 3. suppress heading correction unless roll is centered, from 1.0 to zero if Roll is more than 12 degrees from flat
     // this is to prevent adaptation to GPS while flying sideways, or with a significant sideways element
-    const float absRollAngle = fabsf(attitude.values.roll * .1f);  // degrees
+    const float absRollAngle = fabsf(attitude.values.roll * .1f); // degrees
     float rollMax = isWing ? 25.0f : 12.0f; // 25 degrees for wing, 12 degrees for quad
     // note: these value are 'educated guesses' - for quads it must be very tight
     // for wings, which can't fly sideways, it can be wider
@@ -656,12 +642,11 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     float magErr = 0;
 
 #ifdef USE_MAG
-    if (sensors(SENSOR_MAG)
-        && compassIsHealthy()
+    if (sensors(SENSOR_MAG) && compassIsHealthy()
 #ifdef USE_GPS_RESCUE
         && !gpsRescueDisableMag()
 #endif
-        ) {
+    ) {
         useMag = true;
         magErr = imuCalcMagErr();
     }
@@ -675,9 +660,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     // *** GoC based error estimate ***
     float cogErr = 0;
 #if defined(USE_GPS)
-    if (!useMag
-        && sensors(SENSOR_GPS)
-        && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+    if (!useMag && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         static bool gpsHeadingInitialized = false;  // TODO - remove
         if (gpsHeadingInitialized) {
             float groundspeedGain;  // IMU yaw gain to be applied in imuMahonyAHRSupdate from ground course,
@@ -715,11 +698,8 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 
     const bool useAcc = imuIsAccelerometerHealthy(); // all smoothed accADC values are within 10% of 1G
-    imuMahonyAHRSupdate(dt,
-                        DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
-                        useAcc, acc.accADC.x, acc.accADC.y, acc.accADC.z,
-                        magErr, cogErr,
-                        imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
+    imuMahonyAHRSupdate(dt, DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]), useAcc, acc.accADC.x, acc.accADC.y,
+                        acc.accADC.z, magErr, cogErr, imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
 
     imuUpdateEulerAngles();
 }
@@ -729,10 +709,10 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 static int calculateThrottleAngleCorrection(void)
 {
     /*
-    * Use 0 as the throttle angle correction if we are inverted, vertical or with a
-    * small angle < 0.86 deg
-    * TODO: Define this small angle in config.
-    */
+     * Use 0 as the throttle angle correction if we are inverted, vertical or with a
+     * small angle < 0.86 deg
+     * TODO: Define this small angle in config.
+     */
     if (getCosTiltAngle() <= 0.015f) {
         return 0;
     }
@@ -759,9 +739,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 
         // Update the throttle correction for angle and supply it to the mixer
         int throttleAngleCorrection = 0;
-        if (throttleAngleValue
-            && (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE))
-            && ARMING_FLAG(ARMED)) {
+        if (throttleAngleValue && (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE)) && ARMING_FLAG(ARMED)) {
             throttleAngleCorrection = calculateThrottleAngleCorrection();
         }
         mixerSetThrottleAngleCorrection(throttleAngleCorrection);
@@ -793,10 +771,10 @@ float getCosTiltAngle(void)
 
 void getQuaternion(quaternion_t *quat)
 {
-   quat->w = q.w;
-   quat->x = q.x;
-   quat->y = q.y;
-   quat->z = q.z;
+    quat->w = q.w;
+    quat->x = q.x;
+    quat->y = q.y;
+    quat->z = q.z;
 }
 
 #if ENABLE_SIMULATOR
@@ -843,10 +821,10 @@ void imuSetHasNewData(uint32_t dt)
 
 bool imuQuaternionHeadfreeOffsetSet(void)
 {
-    if ((abs(attitude.values.roll) < 450)  && (abs(attitude.values.pitch) < 450)) {
+    if ((abs(attitude.values.roll) < 450) && (abs(attitude.values.pitch) < 450)) {
         const float yaw = -atan2_approx((+2.0f * (qP.wz + qP.xy)), (+1.0f - 2.0f * (qP.yy + qP.zz)));
         float sin, cos;
-        sincosf_approx(yaw/2, &sin, &cos);
+        sincosf_approx(yaw / 2, &sin, &cos);
 
         offset.w = cos;
         offset.x = 0;
@@ -870,10 +848,10 @@ static void imuQuaternionMultiplication(quaternion_t *q1, quaternion_t *q2, quat
     const float G = (q1->w + q1->y) * (q2->w - q2->z);
     const float H = (q1->w - q1->y) * (q2->w + q2->z);
 
-    result->w = B + (- E - F + G + H) / 2.0f;
-    result->x = A - (+ E + F + G + H) / 2.0f;
-    result->y = C + (+ E - F + G - H) / 2.0f;
-    result->z = D + (+ E - F - G + H) / 2.0f;
+    result->w = B + (-E - F + G + H) / 2.0f;
+    result->x = A - (+E + F + G + H) / 2.0f;
+    result->y = C + (+E - F + G - H) / 2.0f;
+    result->z = D + (+E - F - G + H) / 2.0f;
 }
 
 void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v)
