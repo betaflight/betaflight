@@ -49,7 +49,6 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/rpm_filter.h"
 
 #include "io/gps.h"
 
@@ -178,7 +177,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
             // NOTE: dynamic lpf is enabled by default so this setting is actually
             // overridden and the static lowpass 1 is disabled. We can't set this
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
-            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+            // reset the lowpass filter type to PT1 overriding the desired Butterworth setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -1173,10 +1172,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
-#ifdef USE_RPM_FILTER
-    rpmFilterUpdate();
-#endif
-
     if (pidRuntime.useEzDisarm) {
         disarmOnImpact();
     }
@@ -1573,9 +1568,9 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_BUTTERWORTH:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+                butterworthFilterUpdate(&pidRuntime.dtermLowpass[axis].butterworthFilter, cutoffFreq, pidRuntime.dT);
             }
             break;
         case DYN_LPF_PT2:
