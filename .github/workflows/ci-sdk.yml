@@ -1,0 +1,154 @@
+# Per-SDK CI Pipeline
+#
+# Reusable workflow that caches an SDK toolchain and builds all
+# targets belonging to that SDK.
+
+name: SDK Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      sdk:
+        description: 'SDK name (arm, pico_sdk, stm32h5, stm32n6, esp_idf, none)'
+        required: true
+        type: string
+      targets:
+        description: 'JSON array of build targets for this SDK'
+        required: true
+        type: string
+      tools-cache-key:
+        description: 'Base cache key for toolchain'
+        required: true
+        type: string
+      release_build:
+        description: 'Whether to build without commit hash in filenames'
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  cache:
+    name: Cache (${{ inputs.sdk }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        if: inputs.sdk != 'none'
+        uses: actions/checkout@v5
+
+      - name: Cache tools
+        if: inputs.sdk != 'none'
+        uses: actions/cache@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ inputs.tools-cache-key }}-${{ inputs.sdk }}
+
+      - name: Restore ARM tools as base
+        if: inputs.sdk != 'none' && inputs.sdk != 'arm' && steps.cache-tools.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v5
+        with:
+          path: tools
+          key: ${{ inputs.tools-cache-key }}-arm
+
+      - name: Get SDK cache info
+        if: inputs.sdk != 'arm' && inputs.sdk != 'none'
+        id: sdk-info
+        run: |
+          SUBMODULE=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${{ inputs.sdk }}-$(make SDK=${{ inputs.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache platform SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true'
+        uses: actions/cache@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
+
+      - name: Hydrate SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ inputs.sdk }} platform-sdk-hydrate
+
+      - name: Install tools
+        if: inputs.sdk != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ inputs.sdk }} platform-tools-install
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: cache
+    if: inputs.targets != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(inputs.targets) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Get SDK cache info
+        if: inputs.sdk != 'arm' && inputs.sdk != 'none'
+        id: sdk-info
+        run: |
+          SUBMODULE=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${{ inputs.sdk }}-$(make SDK=${{ inputs.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore platform SDK from cache
+        if: steps.sdk-info.outputs.has-submodule == 'true'
+        uses: actions/cache/restore@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
+
+      - name: Hydrate platform SDK (fallback)
+        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ inputs.sdk }} platform-sdk-hydrate
+
+      - name: Restore toolchain from cache
+        if: inputs.sdk != 'none'
+        uses: actions/cache/restore@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ inputs.tools-cache-key }}-${{ inputs.sdk }}
+
+      - name: Install tools (fallback)
+        if: inputs.sdk != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ inputs.sdk }} platform-tools-install
+
+      - name: Hydrate configuration
+        run: make configs
+
+      - name: Build target (without revision)
+        if: inputs.release_build == true
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
+
+      - name: Build target (with revision)
+        if: inputs.release_build == false
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
+
+      - name: Publish build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            obj/*.hex
+            obj/*.uf2
+            obj/*_${{ matrix.target }}*
+          retention-days: 60
