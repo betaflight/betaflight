@@ -47,7 +47,7 @@
 //#undef USE_FLASH_PY25Q128HA
 
 #undef USE_TRANSPONDER
-#undef USE_SDCARD
+//#undef USE_SDCARD
 #undef USE_LED_STRIP
 //#undef USE_SOFTSERIAL
 //#undef USE_VCP
@@ -122,6 +122,10 @@
 #define I2C_FULL_RECONFIGURABILITY
 
 //#define USE_BEEPER
+
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
