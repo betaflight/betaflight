@@ -472,7 +472,7 @@ SD_Error_t SD_GetCardInfo(void)
     SD_CardInfo.SD_cid.OEM_AppliID = Temp << 8;
 
     // Byte 2
-    Temp = (uint8_t)((SD_Handle.CID[0] & 0x000000FF00) >> 8);
+    Temp = (uint8_t)((SD_Handle.CID[0] & 0x0000FF00) >> 8);
     SD_CardInfo.SD_cid.OEM_AppliID |= Temp;
 
     // Byte 3
@@ -578,6 +578,7 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
 
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)buffer, WriteAddress, NumberOfBlocks)) != HAL_OK) {
+        SD_Handle.TXCplt = 0;
         return SD_ERROR;
     }
 
@@ -600,6 +601,7 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
 
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)buffer, ReadAddress, NumberOfBlocks)) != HAL_OK) {
+        SD_Handle.RXCplt = 0;
         return SD_ERROR;
     }
 
