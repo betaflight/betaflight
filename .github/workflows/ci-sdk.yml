@@ -28,7 +28,7 @@ on:
 
 jobs:
   cache:
-    name: Cache (${{ inputs.sdk }})
+    name: Cache (${{ inputs.sdk == 'none' && 'Generic' || inputs.sdk }})
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -82,7 +82,6 @@ jobs:
   build:
     name: Build (${{ matrix.target }})
     needs: cache
-    if: inputs.targets != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -90,13 +89,15 @@ jobs:
         target: ${{ fromJson(inputs.targets) }}
     steps:
       - name: Checkout code
+        if: matrix.target != 'None'
         uses: actions/checkout@v5
 
       - name: Init config submodule
+        if: matrix.target != 'None'
         run: git submodule update --init -- src/config
 
       - name: Get SDK cache info
-        if: inputs.sdk != 'arm' && inputs.sdk != 'none'
+        if: matrix.target != 'None' && inputs.sdk != 'arm' && inputs.sdk != 'none'
         id: sdk-info
         run: |
           SUBMODULE=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
@@ -109,7 +110,7 @@ jobs:
           fi
 
       - name: Restore platform SDK from cache
-        if: steps.sdk-info.outputs.has-submodule == 'true'
+        if: matrix.target != 'None' && steps.sdk-info.outputs.has-submodule == 'true'
         uses: actions/cache/restore@v5
         id: cache-sdk
         with:
@@ -117,11 +118,11 @@ jobs:
           key: ${{ steps.sdk-info.outputs.key }}
 
       - name: Hydrate platform SDK (fallback)
-        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        if: matrix.target != 'None' && steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
         run: make SDK=${{ inputs.sdk }} platform-sdk-hydrate
 
       - name: Restore toolchain from cache
-        if: inputs.sdk != 'none'
+        if: matrix.target != 'None' && inputs.sdk != 'none'
         uses: actions/cache/restore@v5
         id: cache-tools
         with:
@@ -129,21 +130,23 @@ jobs:
           key: ${{ inputs.tools-cache-key }}-${{ inputs.sdk }}
 
       - name: Install tools (fallback)
-        if: inputs.sdk != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
+        if: matrix.target != 'None' && inputs.sdk != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
         run: make SDK=${{ inputs.sdk }} platform-tools-install
 
       - name: Hydrate configuration
+        if: matrix.target != 'None'
         run: make configs
 
       - name: Build target (without revision)
-        if: inputs.release_build == true
+        if: matrix.target != 'None' && inputs.release_build == true
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
 
       - name: Build target (with revision)
-        if: inputs.release_build == false
+        if: matrix.target != 'None' && inputs.release_build == false
         run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
 
       - name: Publish build artifacts
+        if: matrix.target != 'None'
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.target }}

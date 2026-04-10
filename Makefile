@@ -791,7 +791,10 @@ targets-ci-grouped-print:
 			family = target_family[t]; \
 			if (family == "") { mcu = config_target[t]; family = target_family[mcu] } \
 			sdk = family_sdk[family]; \
-			if (sdk == "") sdk = "unknown"; \
+			if (sdk == "") { \
+				printf("Unable to resolve PLATFORM_SDK for CI target %s (family=%s)\n", t, family) > "/dev/stderr"; \
+				exit 1; \
+			} \
 			grouped[sdk] = grouped[sdk] ? grouped[sdk] " " t : t \
 		} \
 		END { for (sdk in grouped) print sdk ":" grouped[sdk] } \

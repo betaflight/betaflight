@@ -49,9 +49,9 @@ jobs:
           json="["
           first=true
           for sdk in $all_sdks; do
-            targets=${sdk_targets[$sdk]:-"[]"}
+            targets=${sdk_targets[$sdk]:-'["None"]'}
             $first || json="$json,"
-            json="$json{\"sdk\":\"$sdk\",\"targets\":$(echo $targets | jq -R -c .)}"
+            json="$json{\"sdk\":\"$sdk\",\"targets\":$(echo "$targets" | jq -R -c .)}"
             first=false
           done
           json="$json]"
