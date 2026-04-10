@@ -20,6 +20,31 @@ MAKE_SCRIPT_DIR := $(ROOT)/mk
 
 include $(MAKE_SCRIPT_DIR)/system-id.mk
 
+# Setup locale
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(USER_DIR)/locales/*/bf_locale.xml)))))
+ifeq ($(LOCALE),)
+    LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+
+INCLUDE_DIRS := $(USER_DIR)/locales/$(LOCALE)
+
+LOCALES_DIR := $(USER_DIR)/locales
+
+LOCALE_GENERATED_HEADERS := \
+    $(LOCALES_DIR)/untranslated.h \
+    $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
+
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
 # specify which files that are included in the test in addition to the unittest file.
@@ -129,6 +154,7 @@ blackbox_encoding_unittest_SRC :=  \
 
 cli_unittest_SRC := \
 		$(USER_DIR)/cli/cli.c \
+		$(USER_DIR)/locales/localisation.c \
 		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
@@ -544,7 +570,7 @@ OPTIMIZE = -O0
 
 COMMON_FLAGS = \
 	-g -ggdb3 \
-	-Wall -Wextra  \
+	-Wall -Wextra \
 	$(OPTIMIZE) \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
@@ -728,7 +754,7 @@ $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.
 
 # includes in test dir must override includes in user dir, unless the user
 # specifies a list of endorsed directories in ${target}_INCLUDE_DIRS.
-test_include_dirs  = $1 $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
+test_include_dirs  = $1 $(INCLUDE_DIRS) $(TEST_DIR) $(USER_DIR) $(ROOT)/lib/main/MAVLink
 test_cflags	   = $(addprefix -I,$(call test_include_dirs,$1))
 
 
@@ -765,6 +791,18 @@ $1_OBJS = $$(patsubst \
 $1_DEFINES = $(call $(basename $1)_DEFINES,$(call target,$1))
 $1_INCLUDE_DIRS = $(call $(basename $1)_INCLUDE_DIRS,$(call target,$1))
 endif
+
+# Only source files that directly include locales/localisation.h
+# need generated locale headers before compilation.
+$1_LOCALE_DEP_SRC := $(shell grep -l \
+	'#include "locales/localisation.h"' \
+	$($1_SRC) 2>/dev/null)
+
+$1_LOCALE_DEP_OBJS := $$(patsubst \
+	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$$(patsubst \
+	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$$($1_LOCALE_DEP_SRC:.c=.c.o)))
+
+$$($1_LOCALE_DEP_OBJS): $(LOCALE_GENERATED_HEADERS)
 
 # $$(info $1 -v-v-------)
 # $$(info $1_SRC:  $$($1_SRC))

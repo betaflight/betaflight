@@ -269,6 +269,33 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 VPATH           := $(VPATH):$(TARGET_DIR)
 
+#
+# Setup locale
+#
+LOCALES_DIR		:= $(SRC_DIR)/locales
+LOCALE_LIST := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(LOCALES_DIR)/*/bf_locale.xml)))))
+ifeq ($(LOCALE),)
+LOCALE := en
+endif
+ifeq ($(filter $(LOCALE),$(LOCALE_LIST)),)
+    $(error LOCALE $(LOCALE) must be one of >$(LOCALE_LIST)<)
+endif
+
+INCLUDE_DIRS += $(LOCALES_DIR)/$(LOCALE)
+
+LOCALE_GENERATED_HEADERS := \
+    $(LOCALES_DIR)/untranslated.h \
+    $(LOCALES_DIR)/$(LOCALE)/bf_locale.h
+
+$(LOCALES_DIR)/untranslated.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/en/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py UT $(LOCALES_DIR) en $< $@
+
+$(LOCALES_DIR)/$(LOCALE)/bf_locale.h: $(LOCALES_DIR)/gen_defines.py $(LOCALES_DIR)/$(LOCALE)/bf_locale.xml
+	@echo "Creating $@" "$(STDOUT)"
+	$(V1) $(PYTHON) $(LOCALES_DIR)/gen_defines.py BF $(LOCALES_DIR) $(LOCALE) $< $@
+
+# import source files
 include $(MAKE_SCRIPT_DIR)/source.mk
 
 ifneq ($(TARGET),)
@@ -424,8 +451,16 @@ endif
 
 TARGET_EF_HASH_FILE := $(TARGET_OBJ_DIR)/.efhash_$(TARGET_EF_HASH)
 
-CLEAN_ARTIFACTS := $(TARGET_ELF) $(TARGET_EXST_ELF) $(TARGET_MAP)
-CLEAN_ARTIFACTS += $(wildcard $(BIN_DIR)/*$(TARGET_NAME_CLEAN)*)
+CLEAN_ARTIFACTS := $(TARGET_BIN)
+CLEAN_ARTIFACTS += $(TARGET_HEX_REV) $(TARGET_HEX)
+CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(TARGET_LST)
+CLEAN_ARTIFACTS += $(TARGET_DFU)
+CLEAN_ARTIFACTS += $(TARGET_UF2)
+CLEAN_ARTIFACTS += $(LOCALE_GENERATED_HEADERS)
+
+# Force generation of locale headers before any compilation starts
+$(TARGET_OBJS): $(LOCALE_GENERATED_HEADERS)
 
 # Make sure build date and revision is updated on every incremental build
 $(TARGET_OBJ_DIR)/build/version.o : $(SRC)
