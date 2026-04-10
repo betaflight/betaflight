@@ -2,7 +2,9 @@
 # APM32F4 Make file include
 #
 
-PLATFORM_SDK := arm
+# Auto-hydrate APM32F4 submodule when building APM32 targets
+PLATFORM_SDK := apm32f4
+PLATFORM_SDK_STAMP := $(APM32F4_SDK_STAMP)
 
 #CMSIS
 CMSIS_DIR      := $(LIB_MAIN_DIR)/APM32F4/Libraries/Device
