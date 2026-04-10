@@ -284,7 +284,7 @@ void FAST_CODE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_YAW].S = 10.0f * yawStabilityCtrl;
     pidData[FD_YAW].P = 10.0f * rollToYawCrossControl;
 
-    DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum / 50.0f));
     DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].I * 10.0f));
     DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
 }
