@@ -102,8 +102,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART0,
         .reg = (usartResource_t *)UART0,
+#if defined(ESP32S3)
         .rxPins = { { .pin = DEFIO_TAG_E(PA44) }, },
         .txPins = { { .pin = DEFIO_TAG_E(PA43) }, },
+#else
+        .rxPins = { { .pin = DEFIO_TAG_E(PA3) }, },
+        .txPins = { { .pin = DEFIO_TAG_E(PA1) }, },
+#endif
         .af = 0,
         .irqn = 0,
         .txPriority = 0,

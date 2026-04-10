@@ -41,9 +41,14 @@
 
 #include "pg/adc.h"
 
-// ESP32-S3 ADC1 channels 0-9 map to GPIO 1-10
+#if defined(ESP32S3)
+// ESP32-S3 ADC1 channels 0-9 map to GPIO 1-10 (linear)
 #define ESP32_ADC1_CHANNEL_COUNT  10
 #define ESP32_ADC1_GPIO_BASE      1   // GPIO1 = ADC1_CH0
+#else
+// ESP32 ADC1: GPIO36=CH0, 37=CH1, 38=CH2, 39=CH3, 32=CH4, 33=CH5, 34=CH6, 35=CH7
+#define ESP32_ADC1_CHANNEL_COUNT  8
+#endif
 
 // Polling timeout for oneshot conversion (iterations)
 #define ADC_CONV_TIMEOUT  10000
@@ -60,10 +65,17 @@ static volatile uint16_t adcValues[ADC_EXTERNAL_COUNT];
 // Convert a GPIO pin number to an ADC1 channel, or -1 if not an ADC pin
 static int adcChannelByPin(int pin)
 {
+#if defined(ESP32S3)
+    // ESP32-S3: linear mapping GPIO1-10 -> CH0-9
     int channel = pin - ESP32_ADC1_GPIO_BASE;
     if (channel >= 0 && channel < ESP32_ADC1_CHANNEL_COUNT) {
         return channel;
     }
+#else
+    // ESP32: non-linear mapping
+    if (pin >= 36 && pin <= 39) return pin - 36;   // GPIO36-39 -> CH0-3
+    if (pin >= 32 && pin <= 35) return pin - 32 + 4; // GPIO32-35 -> CH4-7
+#endif
     return -1;
 }
 
