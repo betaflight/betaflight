@@ -144,6 +144,11 @@ void sdioPinConfigure(void)
 
     sdioHardware = &sdioPinHardware[device];
 
+    if (!sdioHardware->instance) {
+        sdioHardware = NULL;
+        return;
+    }
+
     SDIOFINDPIN(CK);
     SDIOFINDPIN(CMD);
     SDIOFINDPIN(D0);
@@ -558,7 +563,6 @@ SD_Error_t SD_CheckRead(void)
 SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
     SD_Error_t ErrorState = SD_OK;
-    SD_Handle.TXCplt = 1;
 
     if (BlockSize != 512) {
         return SD_ERROR; // unsupported.
@@ -567,6 +571,8 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     if ((uint32_t)buffer & 0x1f) {
         return SD_ADDR_MISALIGNED;
     }
+
+    SD_Handle.TXCplt = 1;
 
     // STM32H5 (Cortex-M33) has no data cache — no SCB_CleanDCache needed
 
