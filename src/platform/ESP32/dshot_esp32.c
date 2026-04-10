@@ -85,10 +85,14 @@ static const dshotTiming_t dshotTiming150 = {
     .t0l = 83,
 };
 
-// RMT memory base address for ESP32-S3 (from linker script: RMTMEM = 0x60016800)
+// RMT memory base address (from linker script / periph_regs)
+#if defined(ESP32S3)
 #define RMT_MEM_BASE         0x60016800
+#else
+#define RMT_MEM_BASE         0x3FF56800
+#endif
 #define RMT_MEM_ITEM_SIZE    sizeof(rmt_symbol_word_t)
-#define RMT_MEM_BLOCK_WORDS  SOC_RMT_MEM_WORDS_PER_CHANNEL  // 48 words per channel block
+#define RMT_MEM_BLOCK_WORDS  SOC_RMT_MEM_WORDS_PER_CHANNEL
 
 typedef struct {
     dshotProtocolControl_t protocolControl;
@@ -226,7 +230,10 @@ static void dshotUpdateComplete(void)
 static void dshotShutdown(void)
 {
     for (int i = 0; i < esp32DshotMotorCount; i++) {
+#if defined(ESP32S3)
         rmt_ll_tx_stop(&RMT, dshotMotors[i].rmtChannel);
+#endif
+        rmt_ll_tx_reset_pointer(&RMT, dshotMotors[i].rmtChannel);
         dshotMotors[i].enabled = false;
     }
 }

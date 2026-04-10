@@ -64,8 +64,16 @@ static i2c_dev_t *const i2cHwRegs[] = {
 #define I2C0 (&esp32I2cDev0)
 #define I2C1 (&esp32I2cDev1)
 
-// ESP32-S3 XTAL clock frequency used as I2C source clock (40 MHz)
-#define ESP32_I2C_SOURCE_CLK_FREQ  40000000
+// I2C source clock frequencies
+// ESP32-S3 uses XTAL (40 MHz), original ESP32 uses APB (80 MHz)
+#define ESP32_I2C_XTAL_CLK_FREQ  40000000
+#define ESP32_I2C_APB_CLK_FREQ   80000000
+
+#if defined(ESP32S3)
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_XTAL_CLK_FREQ
+#else
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_APB_CLK_FREQ
+#endif
 
 // Error counter across all I2C buses
 static volatile uint16_t i2cErrorCount = 0;
@@ -167,9 +175,13 @@ void i2cInit(i2cDevice_e device)
     i2c_ll_enable_pins_open_drain(hw, true);
     i2c_ll_enable_arbitration(hw, true);
 
-    // Enable controller clock and select XTAL as source
+    // Enable controller clock and select clock source
+#if defined(ESP32S3)
     i2c_ll_set_source_clk(hw, I2C_CLK_SRC_XTAL);
     i2c_ll_enable_controller_clock(hw, true);
+#else
+    i2c_ll_set_source_clk(hw, I2C_CLK_SRC_APB);
+#endif
 
     // Configure bus timing for desired speed
     uint32_t busFreq = dev->clockSpeed ? ((uint32_t)dev->clockSpeed * 1000) : 400000;

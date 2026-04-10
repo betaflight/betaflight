@@ -22,11 +22,11 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "ES3A"
+#define TARGET_BOARD_IDENTIFIER "EWRM"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight ESP32S3"
+#define USBD_PRODUCT_STRING     "Betaflight ESP32-WROOM"
 #endif
 
 #define USE_UART0
@@ -49,7 +49,8 @@
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
-#define USE_VCP
+// ESP32-WROOM has no USB — serial communication via UART0 only
+#undef USE_VCP
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
@@ -71,7 +72,8 @@
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE   256
 #define FLASH_CONFIG_BUFFER_TYPE            uint8_t
 
-/* DMA Settings */
+/* DMA Settings — no GDMA on original ESP32, SPI runs polled */
+#undef USE_DMA
 #undef USE_DMA_SPEC
 
 // Unsupported features for ESP32 bring-up
@@ -86,7 +88,7 @@
 #undef USE_SERIALRX_SUMH
 #undef USE_SERIALRX_XBUS
 
-// Spektrum requires USE_TIMER for bind support - deferred until timer driver exists
+// Spektrum requires USE_TIMER for bind support
 #undef USE_SERIALRX_SPEKTRUM
 
 // Serial RX protocols enabled (UART-based, no special hardware needed):
