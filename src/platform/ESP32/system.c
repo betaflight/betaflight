@@ -33,16 +33,19 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
+#if defined(ESP32S3)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "hal/systimer_ll.h"
 #pragma GCC diagnostic pop
-#include "esp_rom_sys.h"
 #include "soc/systimer_struct.h"
+#endif
+
+#include "esp_rom_sys.h"
 #include "soc/efuse_reg.h"
 #include "soc/soc.h"
 
-// ESP32-S3 runs at 240 MHz by default
+// Both ESP32 and ESP32-S3 run at 240 MHz by default
 uint32_t SystemCoreClock = 240000000;
 
 // Peripheral instance storage (port numbers for ESP-IDF)
@@ -59,9 +62,6 @@ uint32_t systemUniqueId[3] = { 0 };
 static uint32_t usTicks = 0;
 static float usTicksInv = 0.0f;
 
-// ESP32-S3 systimer runs at 16 MHz (XTAL_CLK), each tick = 62.5 ns
-#define SYSTIMER_TICKS_PER_US  16
-
 void cycleCounterInit(void)
 {
     usTicks = SystemCoreClock / 1000000;
@@ -72,15 +72,21 @@ void systemInit(void)
 {
     cycleCounterInit();
 
+#if defined(ESP32S3)
     // Initialize systimer - should already be running from ROM bootloader,
     // but enable clock and counter 0 to be safe
     systimer_ll_enable_clock(&SYSTIMER, true);
     systimer_ll_enable_counter(&SYSTIMER, 0, true);
 
     // Read 6-byte MAC address from eFuse into systemUniqueId
-    // REG0 contains MAC bytes [0..3] (low 32 bits), REG1[15:0] contains MAC bytes [4..5]
     uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SPI_SYS_0_REG);
     uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SPI_SYS_1_REG);
+#else
+    // Original ESP32 uses CCOUNT for timing — already running from reset
+    // Read 6-byte MAC address from eFuse (different register names on ESP32)
+    uint32_t mac0 = REG_READ(EFUSE_BLK0_RDATA1_REG);
+    uint32_t mac1 = REG_READ(EFUSE_BLK0_RDATA2_REG);
+#endif
     systemUniqueId[0] = mac0;
     systemUniqueId[1] = mac1 & 0xFFFF;
     systemUniqueId[2] = 0;
@@ -101,6 +107,10 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
 STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 
+#if defined(ESP32S3)
+// ESP32-S3 systimer runs at 16 MHz (XTAL_CLK), each tick = 62.5 ns
+#define SYSTIMER_TICKS_PER_US  16
+
 timeUs_t micros(void)
 {
     // Take a snapshot of counter unit 0
@@ -118,6 +128,25 @@ timeUs_t micros(void)
     // Convert 16 MHz ticks to microseconds
     return (timeUs_t)(ticks / SYSTIMER_TICKS_PER_US);
 }
+
+#else
+// Original ESP32 uses CCOUNT (Xtensa cycle counter at 240 MHz)
+static uint32_t lastCcount = 0;
+static uint32_t usOverflow = 0;
+
+timeUs_t micros(void)
+{
+    uint32_t ccount;
+    __asm__ __volatile__("rsr %0, ccount" : "=a"(ccount));
+
+    // Handle 32-bit overflow (~17.9s at 240MHz)
+    uint32_t delta = ccount - lastCcount;
+    lastCcount = ccount;
+    usOverflow += delta / usTicks;
+
+    return usOverflow;
+}
+#endif
 
 timeMs_t millis(void)
 {
@@ -238,8 +267,14 @@ __attribute__((used, externally_visible)) int _getpid(void)
 
 const mcuTypeInfo_t *getMcuTypeInfo(void)
 {
+#if defined(ESP32S3)
     static const mcuTypeInfo_t info = {
         .id = MCU_TYPE_ESP32S3, .name = "ESP32S3"
     };
+#else
+    static const mcuTypeInfo_t info = {
+        .id = MCU_TYPE_ESP32, .name = "ESP32"
+    };
+#endif
     return &info;
 }

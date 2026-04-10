@@ -20,23 +20,32 @@
  */
 
 /*
- * Minimal sdkconfig.h for bare-metal Betaflight ESP32-S3 build.
- * ESP-IDF headers require this file but we run without FreeRTOS.
- * Only defines needed to satisfy header-level #ifdef checks.
+ * DMA stub for original ESP32 (no GDMA).
+ * The original ESP32 has per-peripheral DMA built into SPI/I2S,
+ * not a centralized GDMA controller. This stub satisfies the
+ * linker for code that references DMA functions when USE_DMA is
+ * not defined.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-/* No FreeRTOS - disable all RTOS features */
-/* #undef CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
-/* #undef CONFIG_FREERTOS_USE_TRACE_FACILITY */
+#include "platform.h"
 
-/* Disable compiler optimization assertion tweaks */
-/* #undef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT */
+#ifndef USE_DMA
 
-/* Target selection — ESP-IDF headers gate peripherals on these defines */
-#if defined(ESP32S3)
-#define CONFIG_IDF_TARGET_ESP32S3  1
-#else
-#define CONFIG_IDF_TARGET_ESP32    1
-#endif
+#include "drivers/bus_spi.h"
+
+bool spiUseDMA(const extDevice_t *dev)
+{
+    (void)dev;
+    return false;
+}
+
+bool spiUseSDO_DMA(const extDevice_t *dev)
+{
+    (void)dev;
+    return false;
+}
+
+#endif // !USE_DMA

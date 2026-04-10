@@ -78,7 +78,7 @@ typedef int esp32_peripheral_t;
 #define MAX_QUADSPI_PIN_SEL  1
 
 // Peripheral instances (pointers to static peripheral id storage)
-// SPI: ESP32-S3 has SPI2 (FSPI) and SPI3 (HSPI) available for general use
+// SPI: ESP32 has SPI2 and SPI3 available for general use
 extern esp32_peripheral_t esp32SpiDev0;
 extern esp32_peripheral_t esp32SpiDev1;
 #define SPI0 (&esp32SpiDev0)

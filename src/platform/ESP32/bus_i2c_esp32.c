@@ -167,9 +167,13 @@ void i2cInit(i2cDevice_e device)
     i2c_ll_enable_pins_open_drain(hw, true);
     i2c_ll_enable_arbitration(hw, true);
 
-    // Enable controller clock and select XTAL as source
+    // Enable controller clock and select clock source
+#if defined(ESP32S3)
     i2c_ll_set_source_clk(hw, I2C_CLK_SRC_XTAL);
     i2c_ll_enable_controller_clock(hw, true);
+#else
+    i2c_ll_set_source_clk(hw, I2C_CLK_SRC_APB);
+#endif
 
     // Configure bus timing for desired speed
     uint32_t busFreq = dev->clockSpeed ? ((uint32_t)dev->clockSpeed * 1000) : 400000;
