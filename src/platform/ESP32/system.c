@@ -132,7 +132,8 @@ timeUs_t micros(void)
 #else
 // Original ESP32 uses CCOUNT (Xtensa cycle counter at 240 MHz)
 static uint32_t lastCcount = 0;
-static uint32_t usOverflow = 0;
+static uint32_t cycleRemainder = 0;
+static uint32_t usAccumulator = 0;
 
 timeUs_t micros(void)
 {
@@ -142,9 +143,13 @@ timeUs_t micros(void)
     // Handle 32-bit overflow (~17.9s at 240MHz)
     uint32_t delta = ccount - lastCcount;
     lastCcount = ccount;
-    usOverflow += delta / usTicks;
 
-    return usOverflow;
+    // Accumulate cycles including sub-microsecond remainder from previous calls
+    uint32_t totalCycles = cycleRemainder + delta;
+    usAccumulator += totalCycles / usTicks;
+    cycleRemainder = totalCycles % usTicks;
+
+    return usAccumulator;
 }
 #endif
 

@@ -64,8 +64,16 @@ static i2c_dev_t *const i2cHwRegs[] = {
 #define I2C0 (&esp32I2cDev0)
 #define I2C1 (&esp32I2cDev1)
 
-// ESP32-S3 XTAL clock frequency used as I2C source clock (40 MHz)
-#define ESP32_I2C_SOURCE_CLK_FREQ  40000000
+// I2C source clock frequencies
+// ESP32-S3 uses XTAL (40 MHz), original ESP32 uses APB (80 MHz)
+#define ESP32_I2C_XTAL_CLK_FREQ  40000000
+#define ESP32_I2C_APB_CLK_FREQ   80000000
+
+#if defined(ESP32S3)
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_XTAL_CLK_FREQ
+#else
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_APB_CLK_FREQ
+#endif
 
 // Error counter across all I2C buses
 static volatile uint16_t i2cErrorCount = 0;

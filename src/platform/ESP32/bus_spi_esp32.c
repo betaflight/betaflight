@@ -204,6 +204,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
         const spiDevice_e device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
+        // First try to match against the known pin table entries
         for (int pindex = 0; pindex < MAX_SPI_PIN_SEL; pindex++) {
             if (pConfig[device].ioTagSck == hw->sckPins[pindex].pin) {
                 pDev->sck = hw->sckPins[pindex].pin;
@@ -214,6 +215,18 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
             if (pConfig[device].ioTagMosi == hw->mosiPins[pindex].pin) {
                 pDev->mosi = hw->mosiPins[pindex].pin;
             }
+        }
+
+        // On ESP32 any GPIO can be routed via the GPIO matrix, so accept
+        // configured pins even when they don't match a table entry.
+        if (!pDev->sck && pConfig[device].ioTagSck) {
+            pDev->sck = pConfig[device].ioTagSck;
+        }
+        if (!pDev->miso && pConfig[device].ioTagMiso) {
+            pDev->miso = pConfig[device].ioTagMiso;
+        }
+        if (!pDev->mosi && pConfig[device].ioTagMosi) {
+            pDev->mosi = pConfig[device].ioTagMosi;
         }
 
         if (pDev->sck) {
@@ -230,7 +243,7 @@ void spiPreinitRegister(ioTag_t iotag, uint32_t iocfg, uint8_t init)
 
 void spiPreinitByIO(IO_t io)
 {
-    ioPreinitByIO(io, IOCFG_IPU, PREINIT_PIN_STATE_HIGH);
+    ioPreinitByIO(io, SPI_IO_CS_HIGH_CFG, PREINIT_PIN_STATE_HIGH);
 }
 
 void spiPreinitByTag(ioTag_t tag)

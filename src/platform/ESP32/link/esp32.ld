@@ -89,6 +89,9 @@ SECTIONS
         _edata = .;
     } > dram_seg AT > flash_seg
 
+    /* Mark end of flash usage (load address after .data initializers) */
+    _flash_used_end = LOADADDR(.data) + SIZEOF(.data);
+
     .bss (NOLOAD) :
     {
         _sbss = .;
@@ -107,13 +110,16 @@ SECTIONS
     _end = .;
     PROVIDE(end = .);
 
-    /* Provide heap and stack regions */
+    /* Provide heap and stack regions — reserve stack at top of DRAM */
     _heap_start = .;
-    _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg);
+    _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg) - _Min_Stack_Size;
 
     /* Config flash storage - last 64KB of flash */
     __config_start = ORIGIN(flash_seg) + LENGTH(flash_seg) - 64K;
     __config_end = ORIGIN(flash_seg) + LENGTH(flash_seg);
+
+    /* Ensure code/data sections do not extend into the config partition */
+    ASSERT(_flash_used_end <= __config_start, "Flash sections overflow into config partition")
 
     /* Peripheral register mappings at fixed hardware addresses */
     .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg

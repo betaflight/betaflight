@@ -37,6 +37,8 @@
 /* Target selection — ESP-IDF headers gate peripherals on these defines */
 #if defined(ESP32S3)
 #define CONFIG_IDF_TARGET_ESP32S3  1
-#else
+#elif defined(ESP32)
 #define CONFIG_IDF_TARGET_ESP32    1
+#else
+#error "Exactly one of ESP32S3 or ESP32 must be defined"
 #endif
