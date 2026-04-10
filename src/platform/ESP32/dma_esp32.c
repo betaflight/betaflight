@@ -68,6 +68,9 @@ static const int gdmaRxIntrSource[ESP32_GDMA_CHANNEL_COUNT] = {
 static const int gdmaCpuIntrPool[] = {
     ESP32_CPU_INTR_DMA_CH0,
     ESP32_CPU_INTR_DMA_CH1,
+    ESP32_CPU_INTR_DMA_CH2,
+    ESP32_CPU_INTR_DMA_CH3,
+    ESP32_CPU_INTR_DMA_CH4,
 };
 
 #define GDMA_CPU_INTR_POOL_SIZE (int)(sizeof(gdmaCpuIntrPool) / sizeof(gdmaCpuIntrPool[0]))
