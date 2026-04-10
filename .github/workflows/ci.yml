@@ -37,10 +37,11 @@ jobs:
         id: sdk-config
         run: |
           # Get grouped targets (sdk:target1 target2 ...)
+          grouped=$(make targets-ci-grouped-print)
           declare -A sdk_targets
           while IFS=: read -r sdk targets; do
             sdk_targets[$sdk]=$(echo "$targets" | jq -R -c 'split(" ")')
-          done < <(make targets-ci-grouped-print)
+          done <<< "$grouped"
 
           # Get all registered SDKs + none
           all_sdks="$(make platform-sdk-list-print) none"
