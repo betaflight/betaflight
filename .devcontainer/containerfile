@@ -52,6 +52,7 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     clang-18 \
+    clang-format-18 \
     llvm-18-dev \
     libc++-18-dev \
     libc++abi-18-dev \
@@ -60,6 +61,7 @@ RUN apt-get update && \
 
 # Set clang/clang++ alternatives to clang-18
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \
+    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
 
 # Install stm32flash from source - NOTE: make stm32flash_install points to a broken link
