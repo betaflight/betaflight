@@ -53,13 +53,25 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+static bool memoryMappedModeEnabledOnBoot = false;
+
 bool isMemoryMappedModeEnabledOnBoot(void)
 {
-    return false;
+    return memoryMappedModeEnabledOnBoot;
+}
+
+void memoryMappedModeInit(void)
+{
+#ifdef USE_OCTOSPI
+    // XSPI2 is memory-mapped at 0x70000000 for boot flash
+    memoryMappedModeEnabledOnBoot = READ_BIT(XSPI2->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+#endif
 }
 
 void systemInit(void)
 {
+    memoryMappedModeInit();
+
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
