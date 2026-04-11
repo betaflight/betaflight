@@ -1354,6 +1354,10 @@ extern "C" {
         return simulationBatteryVoltage / simulationBatteryCellCount;
     }
 
+    uint8_t calculateBatteryPercentageRemaining(void) {
+        return  0;
+    }
+
     int32_t getAmperage() {
         return simulationBatteryAmperage;
     }
