@@ -91,7 +91,8 @@ static compassBiasEstimator_t compassBiasEstimator;
 magDev_t magDev;
 mag_t mag;
 
-PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 4);
+// bumped PG version to allow adding `mag_calib_version` to persisted config
+PG_REGISTER_WITH_RESET_FN(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 5);
 
 // If the i2c bus is busy, try again in 500us
 #define COMPASS_BUS_BUSY_INTERVAL_US 500
@@ -116,6 +117,8 @@ static uint32_t compassReadIntervalUs = TASK_PERIOD_HZ(TASK_COMPASS_RATE_HZ);
 #ifndef MAG_I2C_ADDRESS
 #define MAG_I2C_ADDRESS 0
 #endif
+
+#define COMPASS_CALIB_VERSION 1
 
 void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 {
@@ -160,6 +163,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_customAlignment.roll = MAG_ALIGN_ROLL;
     compassConfig->mag_customAlignment.pitch = MAG_ALIGN_PITCH;
     compassConfig->mag_customAlignment.yaw = MAG_ALIGN_YAW;
+    compassConfig->mag_calib_version = COMPASS_CALIB_VERSION;
 }
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -410,6 +414,19 @@ bool compassInit(void)
 
     buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
+    // magZero is now applied in the sensor frame (before alignment), so old
+    // calibration data stored in the board-aligned frame is no longer valid.
+    // Clear it and require the user to recalibrate rather than attempting a
+    // complex and error-prone coordinate transform of the stored bias.
+    if (compassConfig()->mag_calib_version != COMPASS_CALIB_VERSION) {
+        flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+        magZero->raw[0] = 0;
+        magZero->raw[1] = 0;
+        magZero->raw[2] = 0;
+        compassConfigMutable()->mag_calib_version = COMPASS_CALIB_VERSION;
+        setConfigDirty();
+    }
+
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
     if (magDev.magOdrHz) {
@@ -476,37 +493,42 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
     // If debug_mode is DEBUG_GPS_RESCUE_HEADING, we should update the magYaw value, after which isNewMagADCFlag will be set false
     mag.isNewMagADCFlag = true;
 
-    if (magDev.magAlignment == ALIGN_CUSTOM) {
-        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
-    } else {
-        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
+    // make magZero available for the early movement-detection below
+    flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+
+    // If calibration was requested, check for movement start early so we can
+    // avoid subtracting the old bias on the very first movement sample.
+    if (magCalProcessActive && cmpTimeUs(magCalEndTime, currentTimeUs) > 0 && !didMovementStart) {
+        float gyroNormSquared = 0.0f;
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
+        }
+        if (gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
+            beeper(BEEPER_READY_BEEP);
+            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+                magZero->raw[axis] = 0;
+            }
+            didMovementStart = true;
+            magCalEndTime = micros() + CALIBRATION_TIME_US;
+        }
     }
 
-    // get stored cal/bias values
-    flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
+    // get stored cal/bias values (magZero already declared above)
+
+    // apply stored calibration bias in sensor frame BEFORE applying any sensor/board alignment
+    // When actively calibrating and movement has started, skip applying the old bias so the
+    // estimator sees raw sensor values (otherwise it would converge to the delta).
+    if (!(magCalProcessActive && didMovementStart)) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            mag.magADC.v[axis] -= magZero->raw[axis];
+        }
+    }
 
     // ** perform calibration, if initiated by switch or Configurator button **
     if (magCalProcessActive) {
         if (cmpTimeUs(magCalEndTime, currentTimeUs) > 0) {
-                // compare squared norm of rotation rate to GYRO_NORM_SQUARED_MIN
-            float gyroNormSquared = 0.0f;
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroNormSquared += sq(DEGREES_TO_RADIANS(gyroGetFilteredDownsampled(axis)));
-            }
-            if (!didMovementStart && gyroNormSquared > GYRO_NORM_SQUARED_MIN) {
-                // movement has started
-                beeper(BEEPER_READY_BEEP); // Beep to alert user to start moving the quad (does this work?)
-                // zero the old cal/bias values
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    magZero->raw[axis] = 0;
-                }
-                didMovementStart = true;
-                // the user has CALIBRATION_TIME_US from now to move the quad in all directions
-                magCalEndTime = micros() + CALIBRATION_TIME_US;
-            }
-            // start acquiring mag data and computing new cal factors
+            // when movement has started, feed raw mag samples to the estimator
             if (didMovementStart) {
-                // LED will flash at task rate while calibrating, looks like 'ON' all the time.
                 LED0_ON;
                 compassBiasEstimatorApply(&compassBiasEstimator, &mag.magADC);
             }
@@ -531,9 +553,11 @@ uint32_t compassUpdate(timeUs_t currentTimeUs)
         }
     }
 
-    // remove saved cal/bias; this is zero while calibrating
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC.v[axis] -= magZero->raw[axis];
+    // apply sensor/board alignment after calibration bias has been removed
+    if (magDev.magAlignment == ALIGN_CUSTOM) {
+        alignSensorViaMatrix(&mag.magADC, &magDev.rotationMatrix);
+    } else {
+        alignSensorViaRotation(&mag.magADC, magDev.magAlignment);
     }
 
     if (debugMode == DEBUG_MAG_CALIB) {
