@@ -26,3 +26,9 @@
 	url = https://github.com/STMicroelectronics/STM32CubeH5
 	ignore = dirty
 	update = none
+[submodule "lib/main/GD32H7"]
+	path = lib/main/GD32H7
+	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git
+	branch = master
+	ignore = dirty
+	update = none
