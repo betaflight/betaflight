@@ -46,6 +46,10 @@ typedef struct flashGeometry_s {
     uint16_t pagesPerSector;
     flashType_e flashType;
     uint32_t jedecId;
+    uint32_t maxReadClkSPIHz;
+    int32_t bbReplacementBlocks;
+    uint8_t bufReadModeSet;
+    uint8_t bblutTableEntryCount;
 } flashGeometry_t;
 
 typedef enum {
