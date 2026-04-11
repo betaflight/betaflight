@@ -42,6 +42,7 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
+#include "drivers/dma.h"
 #include "drivers/sdio.h"
 
 typedef struct SD_Handle_s
@@ -144,11 +145,16 @@ void sdioPinConfigure(void)
 {
     SDIODevice device = SDIO_CFG_TO_DEV(sdioConfig()->device);
 
-    if (device == SDIOINVALID) {
+    if (device == SDIOINVALID || device >= SDIODEV_COUNT) {
         return;
     }
 
     sdioHardware = &sdioPinHardware[device];
+
+    if (!sdioHardware->instance) {
+        sdioHardware = NULL;
+        return;
+    }
 
     SDIOFINDPIN(CK);
     SDIOFINDPIN(CMD);
@@ -212,7 +218,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     HAL_NVIC_EnableIRQ(sdioHardware->irqn);
 }
 
-void SDIO_GPIO_Init(void)
+void sdioInitialize(void)
 {
     if (!sdioHardware) {
         return;
@@ -258,7 +264,7 @@ void SDIO_GPIO_Init(void)
     IOConfigGPIO(cmd, IOCFG_OUT_PP);
 }
 
-bool SD_Initialize_LL(DMA_ARCH_TYPE *dma)
+bool SD_InitialiseHardware(dmaResource_t *dma)
 {
     UNUSED(dma);
 
@@ -561,7 +567,6 @@ SD_Error_t SD_CheckRead(void)
 SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
     SD_Error_t ErrorState = SD_OK;
-    SD_Handle.TXCplt = 1;
 
     if (BlockSize != 512) {
         return SD_ERROR; // unsupported.
@@ -571,8 +576,14 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
         return SD_ADDR_MISALIGNED;
     }
 
+    SD_Handle.TXCplt = 1;
+
+    // Cortex-M55 has D-cache — flush buffer to main memory before DMA reads it
+    SCB_CleanDCache_by_Addr(buffer, NumberOfBlocks * BlockSize);
+
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)buffer, WriteAddress, NumberOfBlocks)) != HAL_OK) {
+        SD_Handle.TXCplt = 0;
         return SD_ERROR;
     }
 
@@ -607,6 +618,7 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
 
     HAL_StatusTypeDef status;
     if ((status = HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)buffer, ReadAddress, NumberOfBlocks)) != HAL_OK) {
+        SD_Handle.RXCplt = 0;
         return SD_ERROR;
     }
 
@@ -636,7 +648,9 @@ void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
 
     SD_Handle.RXCplt = 0;
 
-    // N6 Cortex-M55 does not require SCB_InvalidateDCache_by_Addr like H7's Cortex-M7
+    // Cortex-M55 has D-cache — invalidate so CPU sees DMA-written data
+    uint32_t alignedAddr = (uint32_t)sdReadParameters.buffer & ~0x1F;
+    SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize + ((uint32_t)sdReadParameters.buffer - alignedAddr));
 }
 
 void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
