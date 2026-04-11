@@ -257,7 +257,7 @@ void beeper(beeperMode_e mode)
 {
     if (mode == BEEPER_SILENCE
         || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && getBatteryState() == BATTERY_NOT_PRESENT)
+            && mspSerialIsConfiguratorActive())
         || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
         beeperSilence();
         return;
@@ -443,7 +443,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
         // Allow user-triggered beacon via AUX switch while the RX link is healthy.
         if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
             && failsafeIsReceivingRxData()
-            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET)) ) {
+            && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
+            && !((beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_USB))
+                && mspSerialIsConfiguratorActive()) ) {
             dshotBeaconRequested = true;
         }
     }
@@ -489,7 +491,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
         FALLTHROUGH;
     case BeepOn:
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))) {
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))
+            && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && mspSerialIsConfiguratorActive())) {
             BEEP_ON;
             beeperIsOn = true;
             visualBeep = true;
