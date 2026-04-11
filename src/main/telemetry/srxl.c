@@ -66,6 +66,7 @@
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 
+#include "telemetry/motor_sensor.h"
 #include "telemetry/telemetry.h"
 
 #include "srxl.h"
@@ -189,8 +190,8 @@ static uint16_t getMotorAveragePeriod(void)
     uint16_t period_us = SPEKTRUM_RPM_UNUSED;
 
 #if defined( USE_ESC_SENSOR_TELEMETRY)
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData != NULL) {
+    const escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+    if (escData && escData->dataAge < ESC_DATA_INVALID) {
         rpm = escData->rpm;
     }
 #endif
