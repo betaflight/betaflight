@@ -543,7 +543,7 @@ static MMFLASH_CODE_NOINLINE void xspiTestEnableDisableMemoryMappedMode(octoSpiD
     __enable_irq();
 }
 
-MMFLASH_DATA static const uint32_t xspi_addressSizeMap[] = {
+static const uint32_t xspi_addressSizeMap[] = {
     XSPI_ADDRESS_8_BITS,
     XSPI_ADDRESS_16_BITS,
     XSPI_ADDRESS_24_BITS,

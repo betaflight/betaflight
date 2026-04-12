@@ -115,7 +115,6 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
-    _etext = .;        /* define a global symbols at end of code */
   } >RAM AT >FLASH1
 
   .ARM.extab   :
@@ -144,19 +143,14 @@ SECTIONS
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
   } >RAM AT >FLASH1
 
-  /* used by the startup to initialize data */
-  _sidata = LOADADDR(.data);
-
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
     . = ALIGN(4);
-    _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
     . = ALIGN(4);
-    _edata = .;        /* define a global symbol at data end */
   } >RAM AT >FLASH1
 
   /*
@@ -169,6 +163,7 @@ SECTIONS
     *(.ram_code)
     *(.ram_code*)
     . = ALIGN(4);
+    _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
   } >RAM AT >FLASH1
 
   /* Uninitialized data section */

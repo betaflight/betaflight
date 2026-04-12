@@ -31,23 +31,11 @@
 .global g_pfnVectors
 .global Default_Handler
 
-/* start address for the initialization values of the .text section.
-defined in linker script */
+/* Linker symbols used by Reset_Handler */
 .word _sitext
-/* start address for the .text section. defined in linker script */
 .word _stext
-/* end address for the .text section. defined in linker script */
 .word _etext
-/* start address for the initialization values of the .data section.
-defined in linker script */
-.word _sidata
-/* start address for the .data section. defined in linker script */
-.word _sdata
-/* end address for the .data section. defined in linker script */
-.word _edata
-/* start address for the .bss section. defined in linker script */
 .word _sbss
-/* end address for the .bss section. defined in linker script */
 .word _ebss
 
 /**
@@ -88,23 +76,6 @@ LoopCopyTextInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyTextInit
-
-/* Copy the data segment initializers from flash to SRAM */
-  ldr r0, =_sdata
-  ldr r1, =_edata
-  ldr r2, =_sidata
-  movs r3, #0
-  b LoopCopyDataInit
-
-CopyDataInit:
-  ldr r4, [r2, r3]
-  str r4, [r0, r3]
-  adds r3, r3, #4
-
-LoopCopyDataInit:
-  adds r4, r0, r3
-  cmp r4, r1
-  bcc CopyDataInit
 
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
