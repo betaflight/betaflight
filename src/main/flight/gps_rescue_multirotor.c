@@ -784,7 +784,7 @@ void gpsRescueUpdate(void)
                 // otherwise behave as for a normal rescue
                 initialiseRescueValues ();
                 returnAltitudeLow = getAltitudeCmControl() < rescueState.intent.returnAltitudeCm;
-                if (positionEstimatorIsValidXY())
+                if (positionEstimatorIsValidXY()){
                     resetPositionControl(TASK_GPS_RESCUE_RATE_HZ);
                 }
                 rescueState.phase = RESCUE_ATTAIN_ALT;
@@ -814,12 +814,11 @@ void gpsRescueUpdate(void)
 
         // give velocity P and I no error that otherwise could be present due to velocity drift at the start of the rescue
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
-        if (positionEstimatorIsValidXY())
+        if (positionEstimatorIsValidXY()){
             positionControl();
             gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
             gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
         } else {
-            // Work like bevor without position hold
             resetPositionControl(POSHOLD_TASK_RATE_HZ);
         }
         break;
