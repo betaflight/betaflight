@@ -211,16 +211,6 @@ static void rescueAttainPosition(bool newGpsData)
         rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
         rescueState.sensor.imuYawCogGain = 1.0f;
         return;
-    case RESCUE_ATTAIN_ALT:
-        // Altitude-Control wird weiter unten (wie früher) ausgeführt.
-        // Hier machen wir nur die Positionsregelung und überspringen danach Yaw + Velocity.
-        if (positionEstimatorIsValidXY()) {
-            positionControl();                    // echte X/Y-Hold während des Steigens
-            gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
-            gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
-        }
-        // Wenn kein valider Position Estimator vorhanden ist → normales altes Verhalten
-        break;
     case RESCUE_DO_NOTHING:
         // 20s of hover for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
@@ -340,6 +330,13 @@ static void rescueAttainPosition(bool newGpsData)
 
     gpsRescueAngle[AI_PITCH] = pitchAdjustmentFiltered;
     // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
+
+    if (rescueState.phase == RESCUE_ATTAIN_ALT && positionEstimatorIsValidXY()) {
+            // Wir nutzen den internen Autopiloten, um die X/Y Koordinaten "festzunageln"
+            positionControl(); 
+            gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
+            gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
+        }
 
     DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
