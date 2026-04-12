@@ -1,6 +1,14 @@
 #
 # CH32H4 Make file include
 #
+
+# Select CH32 WCH RISC-V toolchain
+PLATFORM_SDK := ch32_sdk
+
+# Override ARM toolchain with WCH RISC-V toolchain
+# CH32_SDK_PREFIX is resolved in tools.mk
+ARM_SDK_PREFIX := $(CH32_SDK_PREFIX)
+
 CMSIS_DIR       := $(LIB_MAIN_DIR)/CH32H41x/Cmsis
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/CH32H41x/Peripheral
 MIDDLEWARES_DIR = $(LIB_MAIN_DIR)/CH32H41x/middlewares
