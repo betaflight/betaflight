@@ -815,11 +815,9 @@ void gpsRescueUpdate(void)
         // give velocity P and I no error that otherwise could be present due to velocity drift at the start of the rescue
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         if (positionEstimatorIsValidXY()){
-            positionControl();
+            positionControl(); //only for this phase
             gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
             gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
-        } else {
-            resetPositionControl(TASK_GPS_RESCUE_RATE_HZ);
         }
         break;
 
