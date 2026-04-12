@@ -211,6 +211,16 @@ static void rescueAttainPosition(bool newGpsData)
         rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
         rescueState.sensor.imuYawCogGain = 1.0f;
         return;
+    case RESCUE_ATTAIN_ALT:
+        // Altitude-Control wird weiter unten (wie früher) ausgeführt.
+        // Hier machen wir nur die Positionsregelung und überspringen danach Yaw + Velocity.
+        if (positionEstimatorIsValidXY()) {
+            positionControl();                    // echte X/Y-Hold während des Steigens
+            gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
+            gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
+        }
+        // Wenn kein valider Position Estimator vorhanden ist → normales altes Verhalten
+        break;
     case RESCUE_DO_NOTHING:
         // 20s of hover for switch induced sanity failures to allow time to recover
         gpsRescueAngle[AI_PITCH] = 0.0f;
@@ -814,11 +824,6 @@ void gpsRescueUpdate(void)
 
         // give velocity P and I no error that otherwise could be present due to velocity drift at the start of the rescue
         rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
-        if (positionEstimatorIsValidXY()){
-            positionControl(); //only for this phase
-            gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
-            gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
-        }
         break;
 
     case RESCUE_ROTATE:
