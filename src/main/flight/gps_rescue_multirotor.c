@@ -819,7 +819,7 @@ void gpsRescueUpdate(void)
             gpsRescueAngle[AI_PITCH] = autopilotAngle[AI_PITCH];
             gpsRescueAngle[AI_ROLL]  = autopilotAngle[AI_ROLL];
         } else {
-            resetPositionControl(POSHOLD_TASK_RATE_HZ);
+            resetPositionControl(TASK_GPS_RESCUE_RATE_HZ);
         }
         break;
 
