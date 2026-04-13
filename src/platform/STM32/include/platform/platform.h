@@ -182,6 +182,11 @@
 #define STM32N6
 #endif
 
+// N6 boots from external XSPI flash in memory-mapped mode
+#if !defined(USE_FLASH_MEMORY_MAPPED) && !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD)
+#define USE_FLASH_MEMORY_MAPPED
+#endif
+
 #endif // MCU family selection
 
 #ifdef STM32F4
