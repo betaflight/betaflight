@@ -22,4 +22,4 @@
 #pragma once
 #include "pid.h"
 void psasInit(const pidProfile_t *pidProfile);
-void FAST_CODE psasUpdate(const pidProfile_t *pidProfile);
+void psasUpdate(const pidProfile_t *pidProfile);
