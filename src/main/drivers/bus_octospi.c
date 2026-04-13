@@ -60,10 +60,10 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
-MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(octoSpiResource_t *instance)
 {
 #ifdef USE_OCTOSPI_DEVICE_1
-    if (instance == OCTOSPI1) {
+    if (instance == (octoSpiResource_t *)OCTOSPI1) {
         return OCTOSPIDEV_1;
     }
 #endif
@@ -71,7 +71,7 @@ MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(OCTOSPI_TypeDef *i
     return OCTOSPIINVALID;
 }
 
-OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
+octoSpiResource_t *octoSpiInstanceByDevice(octoSpiDevice_e device)
 {
     if (device == OCTOSPIINVALID || device >= OCTOSPIDEV_COUNT) {
         return NULL;

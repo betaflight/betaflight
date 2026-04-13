@@ -92,7 +92,7 @@ bool ws2811LedStripHardwareInit(void)
         return false;
     }
 
-    timer = timerHardware->tim;
+    timer = (TIM_TypeDef *)timerHardware->tim;
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
@@ -120,14 +120,14 @@ bool ws2811LedStripHardwareInit(void)
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
 
-    RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
     // Stop timer
     timer_disable((uint32_t)timer);
 
     /* Compute the prescaler value */
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, WS2811_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
@@ -182,7 +182,7 @@ bool ws2811LedStripHardwareInit(void)
     xDMA_Cmd(dmaRef, DISABLE);
     xDMA_DeInit(dmaRef);
     dma_single_data_para_struct_init(&dma_init_struct);
-    dma_init_struct.periph_addr = (uint32_t)timerCCR(timer, timerHardware->channel);
+    dma_init_struct.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
     dma_init_struct.number = WS2811_DMA_BUFFER_SIZE;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;

@@ -238,6 +238,10 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_SIMPLIFIED_MASTER_MULTIPLIER,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .switchPositions = 100 }
+    }, {
+        .adjustmentFunction = ADJUSTMENT_BATTERY_PROFILE,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .switchPositions = BATTERY_PROFILE_COUNT }
     }
 };
 
@@ -279,6 +283,7 @@ static const char * const adjustmentLabels[] = {
     "LED PROFILE",
     "LED DIMMER",
     "SLIDER MASTER MULTIPLIER",
+    "BATTERY PROFILE",
 };
 
 static int adjustmentRangeNameIndex = 0;
@@ -620,6 +625,14 @@ static uint8_t applySelectAdjustment(adjustmentFunction_e adjustmentFunction, ui
         if (getCurrentControlRateProfileIndex() != position) {
             changeControlRateProfile(position);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
+
+            beeps = position + 1;
+        }
+        break;
+    case ADJUSTMENT_BATTERY_PROFILE:
+        if (getCurrentBatteryProfileIndex() != position) {
+            changeBatteryProfile(position);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_BATTERY_PROFILE, position);
 
             beeps = position + 1;
         }

@@ -580,7 +580,7 @@ static char osdGetBatterySymbol(int cellVoltage)
         return SYM_MAIN_BATT; // FIXME: currently the BAT- symbol, ideally replace with a battery with exclamation mark
     } else {
         // Calculate a symbol offset using cell voltage over full cell voltage range
-        const int symOffset = scaleRange(cellVoltage, batteryConfig()->vbatmincellvoltage, batteryConfig()->vbatmaxcellvoltage, 0, 8);
+        const int symOffset = scaleRange(cellVoltage, currentBatteryProfile->vbatmincellvoltage, currentBatteryProfile->vbatmaxcellvoltage, 0, 8);
         return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
     }
 }
@@ -719,6 +719,20 @@ static void osdElementCustomSerialText(osdElementParms_t *element)
         element->buff[OSD_ELEMENT_BUFFER_LENGTH - 1] = '\0';
     } else {
         strcpy(element->buff, "---");
+    }
+}
+#endif
+
+#ifdef USE_PROFILE_NAMES
+static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength);
+
+// Displays the active battery profile name or index.
+static void osdElementBatteryProfileName(osdElementParms_t *element)
+{
+    if (currentBatteryProfile->profileName[0] != '\0') {
+        toUpperCase(element->buff, currentBatteryProfile->profileName, MAX_BATTERY_PROFILE_NAME_LENGTH);
+    } else {
+        tfp_sprintf(element->buff, "BAT%d", getCurrentBatteryProfileIndex() + 1);
     }
 }
 #endif
@@ -1446,21 +1460,21 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
     switch (element->type) {
     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        displayBasis = constrain(currentBatteryProfile->batteryCapacity - usedCapacity, 0, currentBatteryProfile->batteryCapacity);
         FALLTHROUGH;
 
     case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
         {
             int displayPercent = 0;
-            if (batteryConfig()->batteryCapacity) {
-                displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
+            if (currentBatteryProfile->batteryCapacity) {
+                displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
             }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
         }
 
     case OSD_ELEMENT_TYPE_2:  // mAh used graphical progress bar (grows as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        displayBasis = constrain(currentBatteryProfile->batteryCapacity - usedCapacity, 0, currentBatteryProfile->batteryCapacity);
         FALLTHROUGH;
 
     case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
@@ -1468,9 +1482,10 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
         {
             uint8_t remainingCapacityBars = 0;
 
-            if (batteryConfig()->batteryCapacity) {
-                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
-                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            if (currentBatteryProfile->batteryCapacity > 0) {
+                const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
+                const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
+                remainingCapacityBars = ceilf(batteryRemaining / stepSize);
             }
 
             // Create empty battery indicator bar
@@ -1939,6 +1954,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_PROFILE_NAMES
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
+    OSD_BATTERY_PROFILE_NAME,
 #endif
 #ifdef USE_OSD_PROFILES
     OSD_PROFILE_NAME,
@@ -2076,6 +2092,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PROFILE_NAMES
     [OSD_RATE_PROFILE_NAME]       = osdElementRateProfileName,
     [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
+    [OSD_BATTERY_PROFILE_NAME]    = osdElementBatteryProfileName,
 #endif
 #ifdef USE_OSD_PROFILES
     [OSD_PROFILE_NAME]            = osdElementOsdProfileName,

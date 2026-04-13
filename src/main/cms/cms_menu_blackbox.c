@@ -82,7 +82,7 @@ static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 3, cmsx_BlackboxDeviceNames };
 static uint8_t cmsx_BlackboxRate;
 static OSD_TAB_t cmsx_BlackboxRateTable = { &cmsx_BlackboxRate, 4, cmsx_BlackboxRateNames };
-static debugType_e systemConfig_debug_mode;
+static uint8_t systemConfig_debug_mode;
 
 #define CMS_BLACKBOX_STRING_LENGTH 8
 static char cmsx_BlackboxStatus[CMS_BLACKBOX_STRING_LENGTH];

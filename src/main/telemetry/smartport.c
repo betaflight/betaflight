@@ -707,7 +707,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_FUEL       :
                 {
                     uint32_t data;
-                    if (batteryConfig()->batteryCapacity > 0) {
+                    if (currentBatteryProfile->batteryCapacity > 0) {
                         data = calculateBatteryPercentageRemaining();
                     } else {
                         data = getMAhDrawn();

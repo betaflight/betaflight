@@ -110,7 +110,6 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -304,6 +303,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
 #endif // TARGET_FLASH_SIZE >= 1024
@@ -341,6 +341,7 @@
 #ifndef CONTROL_RATE_PROFILE_COUNT
 #define CONTROL_RATE_PROFILE_COUNT 4 // or maybe 6
 #endif
+#define BATTERY_PROFILE_COUNT 3
 
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
@@ -403,7 +404,6 @@
 #define USE_RX_MSP_OVERRIDE
 #define USE_RX_LINK_UPLINK_POWER
 
-#define USE_AIRMODE_LPF
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
@@ -532,8 +532,8 @@
 
 #endif // USE_WING
 
-#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
 
 // backwards compatibility for older config.h targets

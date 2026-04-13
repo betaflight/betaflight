@@ -103,7 +103,7 @@ PLATFORMS        := $(sort $(notdir $(patsubst /%,%, $(wildcard $(PLATFORM_DIR)/
 BASE_TARGETS     := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/target.mk)))))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
-TOOLS_DIR  ?= $(ROOT)/tools
+TOOLS_DIR  ?= $(ROOT_DIR)/tools
 DL_DIR     := $(ROOT)/downloads
 CONFIG_DIR ?= $(BETAFLIGHT_CONFIG)
 ifeq ($(CONFIG_DIR),)
@@ -170,8 +170,10 @@ include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
+ifneq ($(wildcard .git/),)
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git rev-parse --short=9 HEAD)
+endif
 endif
 
 LD_FLAGS        :=
@@ -229,6 +231,9 @@ SPEED_OPTIMISED_SRC :=
 SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
+
+# Validate the platform toolchain is available
+include $(MAKE_SCRIPT_DIR)/tools_check.mk
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(TARGET_FLASH_SIZE),)
@@ -505,9 +510,10 @@ $(TARGET_EXE): $(TARGET_ELF)
 # Compile
 
 ## compile_file takes two arguments: (1) optimisation description string and (2) optimisation compiler flag
+## SRC_CFLAGS_<filename> can override CFLAGS per source file (e.g. to suppress vendor warnings)
 define compile_file
 	echo "%% ($(1)) $<" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(2) $<
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(SRC_CFLAGS_$(notdir $<)) $(2) $<
 endef
 
 ## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
@@ -662,15 +668,15 @@ zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 .PHONY: binary
-binary:
+binary: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex:
+hex: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2:
+uf2: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
@@ -683,6 +689,8 @@ ifeq ($(DEFAULT_OUTPUT),exe)
 	$(V1) $(MAKE) exe
 else ifeq ($(DEFAULT_OUTPUT),uf2)
 	$(V1) $(MAKE) uf2
+else ifeq ($(DEFAULT_OUTPUT),bin)
+	$(V1) $(MAKE) binary
 else
 	$(V1) $(MAKE) hex
 endif
@@ -753,6 +761,45 @@ targets:
 targets-ci-print:
 	@echo $(CI_TARGETS)
 
+## targets-ci-grouped-print : print CI targets grouped by SDK (one "sdk:target1 target2 ..." per line)
+targets-ci-grouped-print:
+	@( \
+		for f in $(PLATFORM_DIR)/*/mk/*.mk; do \
+			family=$$(basename "$$f" .mk); \
+			sdk=$$(grep -m1 '^PLATFORM_SDK[[:space:]]*:=' "$$f" 2>/dev/null | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$sdk" ] && echo "FAMILY $$family $$sdk"; \
+		done; \
+		for f in $(PLATFORM_DIR)/*/target/*/target.mk; do \
+			target=$$(basename "$$(dirname "$$f")"); \
+			family=$$(grep -m1 'TARGET_MCU_FAMILY[[:space:]]*:=' "$$f" | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$family" ] && echo "TARGET $$target $$family"; \
+		done; \
+		for t in $(CI_TARGETS); do \
+			config_h="$(CONFIG_DIR)/configs/$$t/config.h"; \
+			if [ -f "$$config_h" ]; then \
+				mcu=$$(grep -m1 'FC_TARGET_MCU' "$$config_h" | awk '{print $$NF}'); \
+				echo "CONFIG $$t $$mcu"; \
+			fi; \
+		done; \
+		for t in $(CI_TARGETS); do echo "CI $$t"; done \
+	) | awk ' \
+		/^FAMILY/ { family_sdk[$$2] = $$3 } \
+		/^TARGET/ { target_family[$$2] = $$3 } \
+		/^CONFIG/ { config_target[$$2] = $$3 } \
+		/^CI/ { \
+			t = $$2; \
+			family = target_family[t]; \
+			if (family == "") { mcu = config_target[t]; family = target_family[mcu] } \
+			sdk = family_sdk[family]; \
+			if (sdk == "") { \
+				printf("Unable to resolve PLATFORM_SDK for CI target %s (family=%s)\n", t, family) > "/dev/stderr"; \
+				exit 1; \
+			} \
+			grouped[sdk] = grouped[sdk] ? grouped[sdk] " " t : t \
+		} \
+		END { for (sdk in grouped) print sdk ":" grouped[sdk] } \
+	'
+
 ## target-mcu        : print the MCU type of the target
 target-mcu:
 	@echo "$(TARGET_MCU_FAMILY) : $(TARGET_MCU)"
@@ -802,7 +849,7 @@ $(TARGET_EF_HASH_FILE):
 	$(V1) touch $(TARGET_EF_HASH_FILE)
 
 # rebuild everything when makefile changes or the extra flags have changed
-$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE)
+$(TARGET_OBJS): $(TARGET_EF_HASH_FILE) Makefile $(TARGET_DIR)/target.mk $(wildcard make/*) $(CONFIG_FILE) | $(PLATFORM_SDK_STAMP)
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)

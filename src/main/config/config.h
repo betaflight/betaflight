@@ -42,6 +42,7 @@ typedef struct systemConfig_s {
     uint8_t hseMhz;                 // Only used for F4 and G4 targets
     uint8_t configurationState;     // The state of the configuration (defaults / configured)
     uint8_t enableStickArming; // boolean that determines whether stick arming can be used
+    uint8_t activeBatteryProfile;
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);
@@ -71,6 +72,9 @@ void changePidProfileFromCellCount(uint8_t cellCount);
 
 uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
+
+uint8_t getCurrentBatteryProfileIndex(void);
+void changeBatteryProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 

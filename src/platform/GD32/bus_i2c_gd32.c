@@ -51,7 +51,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_0
     {
         .device = I2CDEV_0,
-        .reg = (I2C_TypeDef *)I2C0,
+        .reg = (i2cResource_t *)I2C0,
         .sclPins = {
             I2CPINDEF(PB6, GPIO_AF_4),
             I2CPINDEF(PB8, GPIO_AF_4),
@@ -68,7 +68,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
  #ifdef USE_I2C_DEVICE_1
      {
          .device = I2CDEV_1,
-         .reg = (I2C_TypeDef *)I2C1,
+         .reg = (i2cResource_t *)I2C1,
          .sclPins = {
              I2CPINDEF(PB10, GPIO_AF_4),
              I2CPINDEF(PF1,  GPIO_AF_4),
@@ -85,7 +85,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
  #ifdef USE_I2C_DEVICE_2
      {
          .device = I2CDEV_2,
-         .reg = (I2C_TypeDef *)I2C2,
+         .reg = (i2cResource_t *)I2C2,
          .sclPins = {
              I2CPINDEF(PA8, GPIO_AF_4),
          },
@@ -188,7 +188,7 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
             i2c_start_on_bus(I2Cx);                                               // send the start for the new job
         }
         i2c_interrupt_enable(I2Cx, I2C_INT_ERR);                                  // allow the interrupts to fire off again
-        i2c_interrupt_enable(I2Cx, I2C_INT_EV); 
+        i2c_interrupt_enable(I2Cx, I2C_INT_EV);
     }
 
     return true;
@@ -330,7 +330,7 @@ static void i2c_er_handler(i2cDevice_e device)
                     }
                 }
                 i2c_interrupt_disable(I2Cx, I2C_INT_ERR);                                        // Disable EV and ERR interrupts while bus inactive
-                i2c_interrupt_disable(I2Cx, I2C_INT_EV); 
+                i2c_interrupt_disable(I2Cx, I2C_INT_EV);
             }
         }
     }
@@ -376,7 +376,7 @@ void i2c_ev_handler(i2cDevice_e device)
 
             ev_state->final_stop = 1;
             i2c_interrupt_enable(I2Cx, I2C_INT_BUF);
-        } else {   
+        } else {
             I2C_STAT1(I2Cx);                                                                    // clear the ADDR here
             __DMB();
             if (state->bytes == 2 && state->reading && ev_state->subaddress_sent) {             // rx 2 bytes
@@ -456,7 +456,7 @@ void i2c_ev_handler(i2cDevice_e device)
         if (state->bytes == ev_state->index)
             ev_state->index++;
     } else if (SReg_1 & I2C_STAT0_TBE) {                                                        // Byte transmitted
-        if (ev_state->index != -1) { 
+        if (ev_state->index != -1) {
             if (state->bytes == (ev_state->index + 1) )                                         // we have sent all the data
                 i2c_interrupt_disable(I2Cx, I2C_INT_BUF);                                       // disable TXE to allow the buffer to flush
             I2C_DATA(I2Cx) = state->write_p[ev_state->index++];
@@ -471,8 +471,8 @@ void i2c_ev_handler(i2cDevice_e device)
     if (ev_state->index == state->bytes + 1) {
         ev_state->subaddress_sent = 0;                                                          // reset this here
         if (ev_state->final_stop){
-            i2c_interrupt_disable(I2Cx, I2C_INT_ERR); 
-            i2c_interrupt_disable(I2Cx, I2C_INT_EV); 
+            i2c_interrupt_disable(I2Cx, I2C_INT_ERR);
+            i2c_interrupt_disable(I2Cx, I2C_INT_EV);
         }                                                                                       // If there is a final stop and no more jobs, bus is inactive, disable interrupts to prevent BTC
 
         state->busy = 0;

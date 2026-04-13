@@ -37,7 +37,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART0
     {
         .identifier = SERIAL_PORT_UART0,
-        .reg = uart0,
+        .reg = (usartResource_t *)uart0,
         .rxPins = {
             { DEFIO_TAG_E(PA1) },
             { DEFIO_TAG_E(PA3) },
@@ -81,7 +81,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_UART1,
-        .reg = uart1,
+        .reg = (usartResource_t *)uart1,
         .rxPins = {
             { DEFIO_TAG_E(PA5) },
             { DEFIO_TAG_E(PA7) },
@@ -136,7 +136,7 @@ void uartPinConfigure_hw(const serialPinConfig_t *pSerialPinConfig)
         }
         const ioTag_t cfgRx = pSerialPinConfig->ioTagRx[resourceIndex];
         const ioTag_t cfgTx = pSerialPinConfig->ioTagTx[resourceIndex];
-        bprintf("pico uartPinConfigure hw = %p (UART%d) dev = %p,  tags rx 0x%x, tx 0x%x", hardware, UART_NUM(hardware->reg), uartdev, cfgRx, cfgTx);
+        bprintf("pico uartPinConfigure hw = %p (UART%d) dev = %p,  tags rx 0x%x, tx 0x%x", hardware, UART_NUM(UART_INST(hardware->reg)), uartdev, cfgRx, cfgTx);
         if (!cfgRx && !cfgTx) {
             continue;
         }

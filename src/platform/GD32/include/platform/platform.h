@@ -137,6 +137,10 @@ typedef struct EXTI_InitTypeDef    EXTI_InitTypeDef;
 #define DMA1_CH6_BASE        (DMA1 + 0xA0)
 #define DMA1_CH7_BASE        (DMA1 + 0xB8)
 
+// GD32 timer channels are 0-based sequential (not shifted by 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x))
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x))
+
 extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 
 #define USE_ADC_DEVICE_0

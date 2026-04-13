@@ -106,12 +106,14 @@ void spiInitDevice(spiDevice_e device)
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     DMA_InitTypeDef *dmaGenerInitTx = bus->dmaInitTx;
+
     dmaGenerInitTx->data_mode = DMA_DATA_MODE_SINGLE;
     dmaGenerInitTx->sub_periph = bus->dmaTx->channel;
     dma_single_data_parameter_struct *dmaInitTx = &dmaGenerInitTx->config.init_struct_s;
 
-    uint32_t spi_periph = PERIPH_INT(bus->busType_u.spi.instance);
+    uint32_t spi_periph = PERIPH_INT(instance);
     dma_single_data_para_struct_init(dmaInitTx);
     dmaInitTx->direction = DMA_MEMORY_TO_PERIPH;
     dmaInitTx->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
@@ -147,8 +149,9 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     dma_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_FLAG_FEE | DMA_FLAG_SDE | DMA_FLAG_TAE | DMA_FLAG_HTF | DMA_FLAG_FTF);
 }
 
-bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const uint8_t *txData, uint8_t *rxData, int len)
 {
+    SPI_TypeDef *instance = (SPI_TypeDef *)spiInstance;
     uint8_t b;
     uint32_t spi_periph = PERIPH_INT(instance);
 
@@ -208,12 +211,9 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
             dmaInitRx->memory0_addr = (uint32_t)&dummyRxByte;
             dmaInitRx->memory_inc = DMA_MEMORY_INCREASE_DISABLE;
         }
-        // If possible use 16 bit memory writes to prevent atomic access issues on gyro data
-        if ((dmaInitRx->memory0_addr & 0x1) || (len & 0x1)) {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-        } else {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-        }
+
+        dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+
         dmaInitRx->number = len;
     }
 }
@@ -320,10 +320,11 @@ void spiInternalStopDMA (const extDevice_t *dev)
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
-    uint32_t spi_periph = PERIPH_INT(bus->busType_u.spi.instance);
+    uint32_t spi_periph = PERIPH_INT(instance);
 
     dev->bus->initSegment = true;
 
@@ -331,7 +332,7 @@ void spiSequenceStart(const extDevice_t *dev)
 
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
-        spiSetDivisorBRreg(bus->busType_u.spi.instance, dev->busType_u.spi.speed);
+        spiSetDivisorBRreg(instance, dev->busType_u.spi.speed);
         bus->busType_u.spi.speed = dev->busType_u.spi.speed;
     }
 

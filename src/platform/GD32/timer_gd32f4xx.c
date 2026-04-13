@@ -157,7 +157,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
-uint32_t timerClockFromInstance(const void *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
     uint32_t timer = (uint32_t)tim;
     if (timer == TIMER7 || timer == TIMER0 || timer == TIMER8 || timer == TIMER9 || timer == TIMER10) {

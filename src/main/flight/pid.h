@@ -252,7 +252,6 @@ typedef struct pidProfile_s {
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
-    uint8_t transient_throttle_limit;       // Maximum DC component of throttle change to mix into throttle to prevent airmode mirroring noise
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
 
     uint8_t dyn_idle_min_rpm;               // minimum motor speed enforced by the dynamic idle controller
@@ -370,6 +369,7 @@ typedef struct pidCoefficient_s {
     float Ki;
     float Kd;
     float Kf;
+    float Kii;
 } pidCoefficient_t;
 
 typedef struct tpaSpeedParams_s {
@@ -461,11 +461,6 @@ typedef struct pidRuntime_s {
     float dMaxSetpointGain;
 #endif
 
-#ifdef USE_AIRMODE_LPF
-    pt1Filter_t airmodeThrottleLpf1;
-    pt1Filter_t airmodeThrottleLpf2;
-#endif
-
 #ifdef USE_ACRO_TRAINER
     float acroTrainerAngleLimit;
     float acroTrainerLookaheadTime;
@@ -496,10 +491,6 @@ typedef struct pidRuntime_s {
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
     float throttleCompensateAmount;
-#endif
-
-#ifdef USE_AIRMODE_LPF
-    float airmodeThrottleOffsetLimit;
 #endif
 
 #ifdef USE_FEEDFORWARD
@@ -580,11 +571,6 @@ bool pidAntiGravityEnabled(void);
 #ifdef USE_THRUST_LINEARIZATION
 float pidApplyThrustLinearization(float motorValue);
 float pidCompensateThrustLinearization(float throttle);
-#endif
-
-#ifdef USE_AIRMODE_LPF
-void pidUpdateAirmodeLpf(float currentOffset);
-float pidGetAirmodeThrottleOffset(void);
 #endif
 
 #ifdef UNIT_TEST

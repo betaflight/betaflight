@@ -39,7 +39,7 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#if defined(SIMULATOR_BUILD)
+#if ENABLE_SIMULATOR
 #include "drivers/serial_tcp.h"
 #endif
 
@@ -580,7 +580,7 @@ serialPort_t *openSerialPort(
     case SERIALTYPE_UART:
     case SERIALTYPE_LPUART:
     case SERIALTYPE_PIOUART:
-#if defined(SIMULATOR_BUILD)
+#if ENABLE_SIMULATOR
         // emulate serial ports over TCP
         serialPort = serTcpOpen(identifier, rxCallback, rxCallbackData, baudRate, mode, options);
 #else

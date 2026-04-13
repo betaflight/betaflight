@@ -2,12 +2,16 @@
 # N6 Make file include
 #
 
+# Auto-hydrate STM32CubeN6 submodule when building N6 targets
+PLATFORM_SDK := stm32n6
+PLATFORM_SDK_STAMP := $(STM32N6_SDK_STAMP)
+
 ifeq ($(DEBUG_HARDFAULTS),N6)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
+CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS
 
 #STDPERIPH
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
@@ -41,23 +45,25 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_uart_ex.c \
             stm32n6xx_ll_dma.c \
             stm32n6xx_ll_exti.c \
+            stm32n6xx_ll_i2c.c \
             stm32n6xx_ll_gpio.c \
             stm32n6xx_ll_rcc.c \
             stm32n6xx_ll_sdmmc.c \
             stm32n6xx_ll_spi.c \
+            stm32n6xx_ll_usart.c \
             stm32n6xx_ll_tim.c \
             stm32n6xx_ll_usb.c \
             stm32n6xx_ll_utils.c
 
 
 #USB
-USBCORE_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = STM32_USB_Device_Library_HAL/Core
 USBCORE_SRC = \
             $(USBCORE_DIR)/Src/usbd_core.c \
             $(USBCORE_DIR)/Src/usbd_ctlreq.c \
             $(USBCORE_DIR)/Src/usbd_ioreq.c
 
-USBCDC_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
@@ -75,8 +81,9 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/Core/Include \
+                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
                    $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -84,6 +91,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
+
+# Suppress old-style-definition warning in vendor HAL source (ST bug: empty () instead of (void))
+SRC_CFLAGS_stm32n6xx_hal_rcc_ex.c := -Wno-old-style-definition
 
 ifeq ($(TARGET_MCU),STM32N657xx)
 DEVICE_FLAGS       += -DSTM32N657xx
@@ -112,8 +122,8 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32n6xx.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
@@ -126,7 +136,8 @@ MCU_COMMON_SRC = \
             STM32/persistent.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
+            STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
             STM32/timer_hal.c \
@@ -141,11 +152,11 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
+DSP_LIB := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM55
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

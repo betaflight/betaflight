@@ -321,7 +321,7 @@ static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
     if (overflowDetected) {
         handleOverflow(currentTimeUs);
     } else {
-#ifndef SIMULATOR_BUILD
+#if !ENABLE_SIMULATOR
         // check for overflow in the axes set in overflowAxisMask
         gyroOverflow_e overflowCheck = GYRO_OVERFLOW_NONE;
 
@@ -347,7 +347,7 @@ static FAST_CODE_NOINLINE void checkForOverflow(timeUs_t currentTimeUs)
             yawSpinDetected = false;
 #endif // USE_YAW_SPIN_RECOVERY
         }
-#endif // SIMULATOR_BUILD
+#endif // ENABLE_SIMULATOR
     }
 }
 #endif // USE_GYRO_OVERFLOW_CHECK
@@ -380,13 +380,13 @@ static FAST_CODE_NOINLINE void checkForYawSpin(timeUs_t currentTimeUs)
     if (yawSpinDetected) {
         handleYawSpin(currentTimeUs);
     } else {
-#ifndef SIMULATOR_BUILD
+#if !ENABLE_SIMULATOR
         // check for spin on yaw axis only
          if (abs((int)gyro.gyroADCf[Z]) > yawSpinRecoveryThreshold) {
             yawSpinDetected = true;
             yawSpinTimeUs = currentTimeUs;
         }
-#endif // SIMULATOR_BUILD
+#endif // ENABLE_SIMULATOR
     }
 }
 #endif // USE_YAW_SPIN_RECOVERY
@@ -487,7 +487,7 @@ FAST_CODE void gyroUpdate(void)
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
 #define GYRO_FILTER_DEBUG_SET DEBUG_SET
-#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == (int)gyro.gyroDebugAxis) DEBUG_SET(mode, index, value)
+#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == gyro.gyroDebugAxis) DEBUG_SET(mode, index, value)
 #include "gyro_filter_impl.c"
 #undef GYRO_FILTER_FUNCTION_NAME
 #undef GYRO_FILTER_DEBUG_SET

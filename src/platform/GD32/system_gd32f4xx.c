@@ -67,12 +67,12 @@ void checkForBootLoaderRequest(void)
         return;
     }
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-    
+
     rcu_periph_clock_enable(RCU_SYSCFG);
     syscfg_bootmode_config(SYSCFG_BOOTMODE_BOOTLOADER);
 
     extern isrVector_t system_isr_vector_table_base;
-    
+
     SCB->VTOR = (uint32_t)&system_isr_vector_table_base;
     __DSB();
     __DSB();
@@ -141,7 +141,7 @@ void sys_clock_config(void)
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCU_RSTSCK_SWRSTF)
+    if (cachedResetFlags & RCU_RSTSCK_SWRSTF)
         return true;
     else
         return false;
@@ -159,7 +159,7 @@ void systemInit(void)
     nvic_priority_group_set(NVIC_PRIORITY_GROUPING);
 
     // cache RCU RSTSCK register value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCU_RSTSCK;
+    cachedResetFlags = RCU_RSTSCK;
 
     // Although VTOR is already loaded with a possible vector table in RAM,
     // removing the call to NVIC_SetVectorTable causes USB not to become active,

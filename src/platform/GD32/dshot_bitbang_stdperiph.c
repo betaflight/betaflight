@@ -92,7 +92,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     timer_disable((uint32_t)(bbPort->timhw->tim));
 
-    timerOCInit(timhw->tim, timhw->channel, &timer_ocintpara);
+    timerOCInit((TIM_TypeDef *)timhw->tim, timhw->channel, &timer_ocintpara);
     timerOCModeConfig(timhw->tim, timhw->channel, TIMER_OC_MODE_PWM0);
 
 #ifdef DEBUG_MONITOR_PACER

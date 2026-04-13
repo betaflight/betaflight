@@ -103,7 +103,7 @@ uint16_t spiCalculateDivider(uint32_t freq)
 {
 #if defined(STM32F4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(STM32G4)
     uint32_t spiClk = SystemCoreClock;
@@ -136,7 +136,7 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 {
 #if defined(STM32F4) || defined(STM32G4) || defined(STM32F7) || defined(APM32F4)
     uint32_t spiClk = SystemCoreClock / 2;
-#elif defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     uint32_t spiClk = 100000000;
 #elif defined(AT32F4)
     uint32_t spiClk = system_core_clock / 2;
@@ -205,7 +205,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -243,7 +243,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

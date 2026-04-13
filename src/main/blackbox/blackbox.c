@@ -1525,9 +1525,9 @@ static bool blackboxWriteSysinfo(void)
             }
         );
 
-        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           batteryConfig()->vbatmincellvoltage,
-                                                                            batteryConfig()->vbatwarningcellvoltage,
-                                                                            batteryConfig()->vbatmaxcellvoltage);
+        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", "%u,%u,%u",           currentBatteryProfile->vbatmincellvoltage,
+                                                                            currentBatteryProfile->vbatwarningcellvoltage,
+                                                                            currentBatteryProfile->vbatmaxcellvoltage);
         BLACKBOX_PRINT_HEADER_LINE("vbatref", "%u",                         vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1743,6 +1743,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_II, "%d",        autopilotConfig()->positionII);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);

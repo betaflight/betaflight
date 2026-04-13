@@ -82,7 +82,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 #endif
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     dmaResource_t *dmaRef = motor->dmaRef;
 
@@ -129,7 +129,7 @@ static void pwmDshotSetDirectionInput(
     DMA_InitTypeDef* pGenerDmaInit = &motor->dmaInitStruct;
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     dmaResource_t *dmaRef = motor->dmaRef;
 
@@ -294,7 +294,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     motor->dmaRef = dmaRef;
 
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     // Boolean configureTimer is always true when different channels of the same timer are processed in sequence,
     // causing the timer and the associated DMA initialized more than once.
@@ -324,7 +324,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         timer_parameter_struct timer_initpara;
         timer_struct_para_init(&timer_initpara);
 
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         timer_disable((uint32_t)timer);
 
         timer_initpara.period            = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;

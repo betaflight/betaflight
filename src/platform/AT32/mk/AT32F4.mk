@@ -2,6 +2,8 @@
 # AT32F4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 CMSIS_DIR      := $(LIB_MAIN_DIR)/AT32F43x/cmsis
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/AT32F43x/drivers
 MIDDLEWARES_DIR = $(LIB_MAIN_DIR)/AT32F43x/middlewares

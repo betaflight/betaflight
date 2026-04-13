@@ -265,7 +265,7 @@ void pwmCompleteDshotMotorUpdate(void)
             xDMA_Cmd(dmaMotorTimers[i].dmaBurstRef, TRUE);
 
             // TIM_DMAConfig(dmaMotorTimers[i].timer, TIM_DMABase_CCR1, TIM_DMABurstLength_4Transfers);
-            tmr_dma_control_config(dmaMotorTimers[i].timer, TMR_DMA_TRANSFER_4BYTES, TMR_CTRL1_ADDRESS);
+            tmr_dma_control_config((tmr_type *)dmaMotorTimers[i].timer, TMR_DMA_TRANSFER_4BYTES, TMR_CTRL1_ADDRESS);
 
             // XXX TODO - what is the equivalent of TIM_DMA_Update in AT32?
             // TIM_DMACmd(dmaMotorTimers[i].timer, TIM_DMA_Update, ENABLE);
@@ -275,23 +275,23 @@ void pwmCompleteDshotMotorUpdate(void)
         {
             // I think the counter is reset here to ensure that the first pulse is the correct width,
             // and maybe also to reduce the chance of an interrupt firing prematurely
-            tmr_counter_value_set(dmaMotorTimers[i].timer, 0);
+            tmr_counter_value_set((tmr_type *)dmaMotorTimers[i].timer, 0);
 
             // Allows setting the period with immediate effect
-            tmr_period_buffer_enable(dmaMotorTimers[i].timer, FALSE);
+            tmr_period_buffer_enable((tmr_type *)dmaMotorTimers[i].timer, FALSE);
 
             #ifdef USE_DSHOT_TELEMETRY
             // NB outputPeriod isn't set when telemetry is not #def'd
-            tmr_period_value_set(dmaMotorTimers[i].timer, dmaMotorTimers[i].outputPeriod);
+            tmr_period_value_set((tmr_type *)dmaMotorTimers[i].timer, dmaMotorTimers[i].outputPeriod);
             #endif
 
-            tmr_period_buffer_enable(dmaMotorTimers[i].timer, TRUE);
+            tmr_period_buffer_enable((tmr_type *)dmaMotorTimers[i].timer, TRUE);
 
             // Ensure that overflow events are enabled. This event may affect both period and duty cycle
-            tmr_overflow_event_disable(dmaMotorTimers[i].timer, FALSE);
+            tmr_overflow_event_disable((tmr_type *)dmaMotorTimers[i].timer, FALSE);
 
             // Generate requests from the timer to one or more DMA channels
-            tmr_dma_request_enable(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, TRUE);
+            tmr_dma_request_enable((tmr_type *)dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, TRUE);
 
             dmaMotorTimers[i].timerDmaSources = 0;
         }
@@ -448,11 +448,11 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     if (configureTimer) {
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
         tmr_counter_enable(timer, FALSE);
 
-        uint32_t prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        uint32_t prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timerHardware->tim) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         uint32_t period = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? (MOTOR_NIBBLE_LENGTH_PROSHOT) : MOTOR_BITLENGTH) - 1;
 
         tmr_clock_source_div_set(timer, TMR_CLOCK_DIV1);

@@ -79,7 +79,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         dmaRef = NULL;
         return false;
     }
-    timer = timerHardware->tim;
+    timer = (TIM_TypeDef *)timerHardware->tim;
     alternateFunction = timerHardware->alternateFunction;
 
 #if defined(USE_DMA_SPEC)
@@ -112,10 +112,10 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     dmaEnable(dmaGetIdentifier(dmaRef));
     dmaSetHandler(dmaGetIdentifier(dmaRef), TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
 
-    RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, transponder->timer_hz);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, transponder->timer_carrier_hz);
 
     transponder->bitToggleOne = period / 2;
 
@@ -151,7 +151,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     xDMA_DeInit(dmaRef);
 
     dma_single_data_para_struct_init(&dma_init_struct);
-    dma_init_struct.periph_addr = (uint32_t)timerCCR(timer, timerHardware->channel);
+    dma_init_struct.periph_addr = (uint32_t)timerCCR(timerHardware->tim, timerHardware->channel);
 
     uint32_t temp_dma_periph;
     int temp_dma_channel;

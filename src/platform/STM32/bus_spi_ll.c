@@ -30,12 +30,16 @@
 #include "common/maths.h"
 
 #include "drivers/bus.h"
+#include "drivers/bus_spi_types.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma.h"
 #include "platform/dma.h"
 #include "drivers/io.h"
 #include "platform/rcc.h"
+#if SPI_TRAIT_HANDLE
+#include "platform/bus_spi_hal.h"
+#endif
 
 // Use DMA if possible if this many bytes are to be transferred
 #define SPI_DMA_THRESHOLD 8
@@ -61,10 +65,17 @@
 #define IS_DTCM(p) (((uint32_t)p & 0xffff0000) == 0x20000000)
 #elif defined(STM32G4)
 #define IS_CCM(p) ((((uint32_t)p & 0xffff8000) == 0x10000000) || (((uint32_t)p & 0xffff8000) == 0x20018000))
+#elif defined(STM32H5)
+// H5 has no DTCM/CCM restrictions for DMA
+#define IS_DTCM(p) (0)
 #elif defined(STM32N6)
 // N6 has no DTCM/CCM restrictions for DMA
 #define IS_DTCM(p) (0)
 #endif
+#if SPI_TRAIT_HANDLE
+static struct spiHalHandle_s spiHalHandles[SPIDEV_COUNT];
+#endif
+
 static LL_SPI_InitTypeDef defaultInit =
 {
     .TransferDirection = LL_SPI_FULL_DUPLEX,
@@ -95,7 +106,7 @@ static uint32_t spiDivisorToBRbits(const SPI_TypeDef *instance, uint16_t divisor
 
     divisor = constrain(divisor, 2, 256);
 
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     const uint32_t baudRatePrescaler[8] = {
         LL_SPI_BAUDRATEPRESCALER_DIV2,
         LL_SPI_BAUDRATEPRESCALER_DIV4,
@@ -122,6 +133,12 @@ void spiInitDevice(spiDevice_e device)
         return;
     }
 
+#if SPI_TRAIT_HANDLE
+    spi->halHandle = &spiHalHandles[device];
+#endif
+
+    SPI_TypeDef *dev = (SPI_TypeDef *)spi->dev;
+
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
@@ -134,34 +151,67 @@ void spiInitDevice(spiDevice_e device)
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
     IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
 
-    LL_SPI_Disable(spi->dev);
-    LL_SPI_DeInit(spi->dev);
+    LL_SPI_Disable(dev);
+    LL_SPI_DeInit(dev);
 
-#if defined(STM32H7)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     // Prevent glitching when SPI is disabled
-    LL_SPI_EnableGPIOControl(spi->dev);
+    LL_SPI_EnableGPIOControl(dev);
 
-    LL_SPI_SetFIFOThreshold(spi->dev, LL_SPI_FIFO_TH_01DATA);
-    LL_SPI_Init(spi->dev, &defaultInit);
-#elif defined(STM32N6)
-    LL_SPI_EnableGPIOControl(spi->dev);
-
-    LL_SPI_SetFIFOThreshold(spi->dev, LL_SPI_FIFO_TH_01DATA);
-    LL_SPI_Init(spi->dev, &defaultInit);
+    LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_TH_01DATA);
+    LL_SPI_Init(dev, &defaultInit);
 #else
-    LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
+    LL_SPI_SetRxFIFOThreshold(dev, SPI_RXFIFO_THRESHOLD_QF);
 
-    LL_SPI_Init(spi->dev, &defaultInit);
-    LL_SPI_Enable(spi->dev);
+    LL_SPI_Init(dev, &defaultInit);
+    LL_SPI_Enable(dev);
 #endif
 }
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
+#if defined(STM32H5)
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
+    LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
+
+    memset(dmaInitTx, 0, sizeof(*dmaInitTx));
+    dmaInitTx->Request = bus->dmaTx->channel;
+    dmaInitTx->BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
+    dmaInitTx->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+    dmaInitTx->SrcIncMode = LL_DMA_SRC_INCREMENT;
+    dmaInitTx->DestIncMode = LL_DMA_DEST_FIXED;
+    dmaInitTx->SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
+    dmaInitTx->DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
+    dmaInitTx->SrcBurstLength = 1;
+    dmaInitTx->DestBurstLength = 1;
+    dmaInitTx->Priority = LL_DMA_LOW_PRIORITY_LOW_WEIGHT;
+    dmaInitTx->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    dmaInitTx->Mode = LL_DMA_NORMAL;
+    dmaInitTx->DestAddress = (uint32_t)&instance->TXDR;
+
+    if (bus->dmaRx) {
+        LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
+
+        memset(dmaInitRx, 0, sizeof(*dmaInitRx));
+        dmaInitRx->Request = bus->dmaRx->channel;
+        dmaInitRx->BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
+        dmaInitRx->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+        dmaInitRx->SrcIncMode = LL_DMA_SRC_FIXED;
+        dmaInitRx->DestIncMode = LL_DMA_DEST_INCREMENT;
+        dmaInitRx->SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
+        dmaInitRx->DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
+        dmaInitRx->SrcBurstLength = 1;
+        dmaInitRx->DestBurstLength = 1;
+        dmaInitRx->Priority = LL_DMA_LOW_PRIORITY_MID_WEIGHT;
+        dmaInitRx->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+        dmaInitRx->Mode = LL_DMA_NORMAL;
+        dmaInitRx->SrcAddress = (uint32_t)&instance->RXDR;
+    }
+#elif defined(STM32N6)
+    // TODO: GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
     UNUSED(bus);
 #else
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
     LL_DMA_StructInit(dmaInitTx);
@@ -173,9 +223,9 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     dmaInitTx->Mode = LL_DMA_MODE_NORMAL;
     dmaInitTx->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
 #if defined(STM32H7)
-    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->TXDR;
+    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&instance->TXDR;
 #else
-    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
+    dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&instance->DR;
 #endif
     dmaInitTx->Priority = LL_DMA_PRIORITY_LOW;
     dmaInitTx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
@@ -194,9 +244,9 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         dmaInitRx->Mode = LL_DMA_MODE_NORMAL;
         dmaInitRx->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
 #if defined(STM32H7)
-        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->RXDR;
+        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&instance->RXDR;
 #else
-        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&bus->busType_u.spi.instance->DR;
+        dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&instance->DR;
 #endif
         dmaInitRx->Priority = LL_DMA_PRIORITY_MEDIUM;
         dmaInitRx->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
@@ -208,7 +258,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
 {
     // Disable the stream
-#if defined(STM32G4) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
     LL_DMA_DisableChannel(descriptor->dma, descriptor->stream);
     while (LL_DMA_IsEnabledChannel(descriptor->dma, descriptor->stream));
 #else
@@ -220,9 +270,10 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
-FAST_CODE bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+FAST_CODE bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const uint8_t *txData, uint8_t *rxData, int len)
 {
-#if defined(STM32H7) || defined(STM32N6)
+    SPI_TypeDef *instance = (SPI_TypeDef *)spiInstance;
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
     LL_SPI_SetTransferSize(instance, len);
     LL_SPI_Enable(instance);
     LL_SPI_StartMasterTransfer(instance);
@@ -284,8 +335,37 @@ FAST_CODE bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_
 
 void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
+#if defined(STM32H5)
+    STATIC_DMA_DATA_AUTO uint8_t dummyTxByte = 0xff;
+    STATIC_DMA_DATA_AUTO uint8_t dummyRxByte;
+    busDevice_t *bus = dev->bus;
+    int len = segment->len;
+
+    uint8_t *txData = segment->u.buffers.txData;
+    LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
+
+    if (txData) {
+        dmaInitTx->SrcAddress = (uint32_t)txData;
+        dmaInitTx->SrcIncMode = LL_DMA_SRC_INCREMENT;
+    } else {
+        dmaInitTx->SrcAddress = (uint32_t)&dummyTxByte;
+        dmaInitTx->SrcIncMode = LL_DMA_SRC_FIXED;
+    }
+    dmaInitTx->BlkDataLength = len;
+
+    uint8_t *rxData = segment->u.buffers.rxData;
+    LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
+
+    if (rxData) {
+        dmaInitRx->DestAddress = (uint32_t)rxData;
+        dmaInitRx->DestIncMode = LL_DMA_DEST_INCREMENT;
+    } else {
+        dmaInitRx->DestAddress = (uint32_t)&dummyRxByte;
+        dmaInitRx->DestIncMode = LL_DMA_DEST_FIXED;
+    }
+    dmaInitRx->BlkDataLength = len;
+#elif defined(STM32N6)
+    // TODO: GPDMA uses a completely different LL_DMA API; SPI DMA not yet supported
     UNUSED(dev);
     UNUSED(segment);
 #else
@@ -358,11 +438,44 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
 void spiInternalStartDMA(const extDevice_t *dev)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different API; SPI DMA not yet supported
+#if defined(STM32H5)
+    busDevice_t *bus = dev->bus;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
+
+    dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
+    dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
+
+    // Use the correct callback argument
+    dmaRx->userParam = (uint32_t)dev;
+
+    // Clear transfer flags
+    DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+    DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+
+    // Disable channels to enable update
+    LL_DMA_DisableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_DisableChannel(dmaRx->dma, dmaRx->stream);
+
+    // Use the Rx interrupt as this occurs once the SPI operation is complete
+    LL_DMA_EnableIT_TC(dmaRx->dma, dmaRx->stream);
+
+    // Update channels
+    LL_DMA_Init(dmaTx->dma, dmaTx->stream, bus->dmaInitTx);
+    LL_DMA_Init(dmaRx->dma, dmaRx->stream, bus->dmaInitRx);
+
+    // Setup SPI transfer size, enable DMA channels, then SPI
+    LL_SPI_SetTransferSize(instance, dev->bus->curSegment->len);
+    LL_DMA_EnableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_EnableChannel(dmaRx->dma, dmaRx->stream);
+    SET_BIT(instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
+    LL_SPI_Enable(instance);
+    LL_SPI_StartMasterTransfer(instance);
+#elif defined(STM32N6)
+    // TODO: GPDMA uses a completely different API; SPI DMA not yet supported
     UNUSED(dev);
 #else
     busDevice_t *bus = dev->bus;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
 
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
@@ -395,7 +508,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         LL_DMA_EnableChannel(dmaTx->dma, dmaTx->stream);
         LL_DMA_EnableChannel(dmaRx->dma, dmaRx->stream);
 
-        SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
+        SET_BIT(instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
 #else
         DMA_Stream_TypeDef *streamRegsTx = (DMA_Stream_TypeDef *)dmaTx->ref;
         DMA_Stream_TypeDef *streamRegsRx = (DMA_Stream_TypeDef *)dmaRx->ref;
@@ -422,18 +535,18 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Enable the SPI DMA Tx & Rx requests
 #if defined(STM32H7)
-        LL_SPI_SetTransferSize(dev->bus->busType_u.spi.instance, dev->bus->curSegment->len);
+        LL_SPI_SetTransferSize(instance, dev->bus->curSegment->len);
         LL_DMA_EnableStream(dmaTx->dma, dmaTx->stream);
         LL_DMA_EnableStream(dmaRx->dma, dmaRx->stream);
-        SET_BIT(dev->bus->busType_u.spi.instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
-        LL_SPI_Enable(dev->bus->busType_u.spi.instance);
-        LL_SPI_StartMasterTransfer(dev->bus->busType_u.spi.instance);
+        SET_BIT(instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
+        LL_SPI_Enable(instance);
+        LL_SPI_StartMasterTransfer(instance);
 #else
         // Enable streams
         LL_DMA_EnableStream(dmaTx->dma, dmaTx->stream);
         LL_DMA_EnableStream(dmaRx->dma, dmaRx->stream);
 
-        SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
+        SET_BIT(instance->CR2, SPI_CR2_TXDMAEN | SPI_CR2_RXDMAEN);
 #endif
 #if !defined(STM32G4) && !defined(STM32H7)
     } else {
@@ -464,7 +577,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         // Enable streams
         LL_DMA_EnableStream(dmaTx->dma, dmaTx->stream);
 
-        SET_BIT(dev->bus->busType_u.spi.instance->CR2, SPI_CR2_TXDMAEN);
+        SET_BIT(instance->CR2, SPI_CR2_TXDMAEN);
     }
 #endif
 #endif
@@ -473,15 +586,33 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
 void spiInternalStopDMA (const extDevice_t *dev)
 {
-#if defined(STM32N6)
-    // TODO: STM32N6 GPDMA uses a completely different API; SPI DMA not yet supported
+#if defined(STM32H5)
+    busDevice_t *bus = dev->bus;
+
+    dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
+    dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
+
+    // Disable the DMA channels
+    LL_DMA_DisableChannel(dmaTx->dma, dmaTx->stream);
+    LL_DMA_DisableChannel(dmaRx->dma, dmaRx->stream);
+
+    // Clear transfer flags
+    DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+
+    LL_SPI_DisableDMAReq_TX(instance);
+    LL_SPI_DisableDMAReq_RX(instance);
+    LL_SPI_ClearFlag_TXTF(instance);
+    LL_SPI_Disable(instance);
+#elif defined(STM32N6)
+    // TODO: GPDMA uses a completely different API; SPI DMA not yet supported
     UNUSED(dev);
 #else
     busDevice_t *bus = dev->bus;
 
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
 
 #if !defined(STM32G4) && !defined(STM32H7)
     if (dmaRx) {
@@ -501,12 +632,11 @@ void spiInternalStopDMA (const extDevice_t *dev)
         LL_SPI_DisableDMAReq_TX(instance);
         LL_SPI_DisableDMAReq_RX(instance);
 #if defined(STM32H7)
-        LL_SPI_ClearFlag_TXTF(dev->bus->busType_u.spi.instance);
-        LL_SPI_Disable(dev->bus->busType_u.spi.instance);
+        LL_SPI_ClearFlag_TXTF(instance);
+        LL_SPI_Disable(instance);
 #endif
 #if !defined(STM32G4) && !defined(STM32H7)
     } else {
-        SPI_TypeDef *instance = bus->busType_u.spi.instance;
 
         // Ensure the current transmission is complete
         while (LL_SPI_IsActiveFlag_BSY(instance));
@@ -533,8 +663,8 @@ void spiInternalStopDMA (const extDevice_t *dev)
 FAST_CODE void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
-    spiDevice_t *spi = &spiDevice[spiDeviceByInstance(instance)];
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
+    spiDevice_t *spi = &spiDevice[spiDeviceByInstance(bus->busType_u.spi.instance)];
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
@@ -542,7 +672,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
     bus->initSegment = true;
 
     // Switch bus speed
-#if !defined(STM32H7) && !defined(STM32N6)
+#if !defined(STM32H7) && !defined(STM32H5) && !defined(STM32N6)
     LL_SPI_Disable(instance);
 #endif
 
@@ -567,7 +697,7 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
         bus->busType_u.spi.leadingEdge = dev->busType_u.spi.leadingEdge;
     }
 
-#if !defined(STM32H7) && !defined(STM32N6)
+#if !defined(STM32H7) && !defined(STM32H5) && !defined(STM32N6)
     LL_SPI_Enable(instance);
 #endif
 

@@ -54,33 +54,34 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 {
     uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
     if (uartDevice->pinSwap) {
-        usart_transmit_receive_pin_swap(uartDevice->port.USARTx, TRUE);
+        usart_transmit_receive_pin_swap((usart_type *)uartDevice->port.USARTx, TRUE);
     }
 }
 
 void uartReconfigure(uartPort_t *uartPort)
 {
-    usart_enable(uartPort->USARTx, FALSE);
+    usart_type *USARTx = (usart_type *)uartPort->USARTx;
+    usart_enable(USARTx, FALSE);
     //init
-    usart_init(uartPort->USARTx,
+    usart_init(USARTx,
                uartPort->port.baudRate,
                USART_DATA_8BITS,
               (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_STOP_2_BIT : USART_STOP_1_BIT);
 
     //set parity
-    usart_parity_selection_config(uartPort->USARTx,
+    usart_parity_selection_config(USARTx,
             (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_PARITY_EVEN : USART_PARITY_NONE);
 
     //set hardware control
-    usart_hardware_flow_control_set(uartPort->USARTx, USART_HARDWARE_FLOW_NONE);
+    usart_hardware_flow_control_set(USARTx, USART_HARDWARE_FLOW_NONE);
 
     //set mode rx or tx
     if (uartPort->port.mode & MODE_RX) {
-        usart_receiver_enable(uartPort->USARTx, TRUE);
+        usart_receiver_enable(USARTx, TRUE);
     }
 
     if (uartPort->port.mode & MODE_TX) {
-        usart_transmitter_enable(uartPort->USARTx, TRUE);
+        usart_transmitter_enable(USARTx, TRUE);
     }
 
     // config external pin inverter (no internal pin inversion available)
@@ -90,12 +91,12 @@ void uartReconfigure(uartPort_t *uartPort)
     uartConfigurePinSwap(uartPort);
 
     if (uartPort->port.options & SERIAL_BIDIR) {
-        usart_single_line_halfduplex_select(uartPort->USARTx, TRUE);
+        usart_single_line_halfduplex_select(USARTx, TRUE);
     } else {
-        usart_single_line_halfduplex_select(uartPort->USARTx, FALSE);
+        usart_single_line_halfduplex_select(USARTx, FALSE);
     }
     //enable usart
-    usart_enable(uartPort->USARTx, TRUE);
+    usart_enable(USARTx, TRUE);
 
     // Receive DMA or IRQ
     dma_init_type DMA_InitStructure;
@@ -117,12 +118,12 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_DeInit(uartPort->rxDMAResource);
             xDMA_Init(uartPort->rxDMAResource, &DMA_InitStructure);
             xDMA_Cmd(uartPort->rxDMAResource, TRUE);
-            usart_dma_receiver_enable(uartPort->USARTx,TRUE);
+            usart_dma_receiver_enable(USARTx,TRUE);
             uartPort->rxDMAPos = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
         } else {
-            usart_flag_clear(uartPort->USARTx, USART_RDBF_FLAG);
-            usart_interrupt_enable(uartPort->USARTx, USART_RDBF_INT, TRUE);
-            usart_interrupt_enable(uartPort->USARTx, USART_IDLE_INT, TRUE);
+            usart_flag_clear(USARTx, USART_RDBF_FLAG);
+            usart_interrupt_enable(USARTx, USART_RDBF_INT, TRUE);
+            usart_interrupt_enable(USARTx, USART_IDLE_INT, TRUE);
         }
     }
 
@@ -145,15 +146,15 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_Init(uartPort->txDMAResource, &DMA_InitStructure);
             xDMA_ITConfig(uartPort->txDMAResource, DMA_IT_TCIF, TRUE);
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
-            usart_dma_transmitter_enable(uartPort->USARTx, TRUE);
+            usart_dma_transmitter_enable(USARTx, TRUE);
 
         } else {
-            usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+            usart_interrupt_enable(USARTx, USART_TDBE_INT, TRUE);
         }
-        usart_interrupt_enable(uartPort->USARTx, USART_TDC_INT, TRUE);
+        usart_interrupt_enable(USARTx, USART_TDC_INT, TRUE);
     }
     // TODO: usart_enable is called twice
-    usart_enable(uartPort->USARTx,TRUE);
+    usart_enable(USARTx,TRUE);
 }
 
 bool checkUsartTxOutput(uartPort_t *s)
@@ -170,7 +171,7 @@ bool checkUsartTxOutput(uartPort_t *s)
             IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
 
             // Enable the UART transmitter
-            usart_transmitter_enable(s->USARTx, true);
+            usart_transmitter_enable((usart_type *)s->USARTx, true);
 
             return true;
         } else {
@@ -190,7 +191,7 @@ void uartTxMonitor(uartPort_t *s)
         IO_t txIO = IOGetByTag(uart->tx.pin);
 
         // Disable the UART transmitter
-        usart_transmitter_enable(s->USARTx, false);
+        usart_transmitter_enable((usart_type *)s->USARTx, false);
 
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
@@ -269,43 +270,45 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 void uartIrqHandler(uartPort_t *s)
 {
-    if (!s->rxDMAResource && (usart_flag_get(s->USARTx, USART_RDBF_FLAG) == SET)) {
+    usart_type *USARTx = (usart_type *)s->USARTx;
+
+    if (!s->rxDMAResource && (usart_flag_get(USARTx, USART_RDBF_FLAG) == SET)) {
         if (s->port.rxCallback) {
-            s->port.rxCallback(s->USARTx->dt, s->port.rxCallbackData);
+            s->port.rxCallback(USARTx->dt, s->port.rxCallbackData);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->dt;
+            s->port.rxBuffer[s->port.rxBufferHead] = USARTx->dt;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
 
     // UART transmission completed
-    if ((usart_flag_get(s->USARTx, USART_TDC_FLAG) != RESET)) {
-        usart_flag_clear(s->USARTx, USART_TDC_FLAG);
+    if ((usart_flag_get(USARTx, USART_TDC_FLAG) != RESET)) {
+        usart_flag_clear(USARTx, USART_TDC_FLAG);
 
         // Switch TX to an input with pull-up so it's state can be monitored
         uartTxMonitor(s);
     }
 
-    if (!s->txDMAResource && (usart_flag_get(s->USARTx, USART_TDBE_FLAG) == SET)) {
+    if (!s->txDMAResource && (usart_flag_get(USARTx, USART_TDBE_FLAG) == SET)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
-            usart_data_transmit(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
+            usart_data_transmit(USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
-            usart_interrupt_enable(s->USARTx, USART_TDBE_INT, FALSE);
+            usart_interrupt_enable(USARTx, USART_TDBE_INT, FALSE);
         }
     }
 
-    if (usart_flag_get(s->USARTx, USART_ROERR_FLAG) == SET) {
-        usart_flag_clear(s->USARTx, USART_ROERR_FLAG);
+    if (usart_flag_get(USARTx, USART_ROERR_FLAG) == SET) {
+        usart_flag_clear(USARTx, USART_ROERR_FLAG);
     }
 
-    if (usart_flag_get(s->USARTx, USART_IDLEF_FLAG) == SET) {
+    if (usart_flag_get(USARTx, USART_IDLEF_FLAG) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
 
-        (void) s->USARTx->sts;
-        (void) s->USARTx->dt;
+        (void) USARTx->sts;
+        (void) USARTx->dt;
     }
 }
 #endif // USE_UART
