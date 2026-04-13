@@ -62,9 +62,9 @@ bool isMemoryMappedModeEnabledOnBoot(void)
 
 void memoryMappedModeInit(void)
 {
-#ifdef USE_OCTOSPI
-    // XSPI2 is memory-mapped at 0x70000000 for boot flash
-    memoryMappedModeEnabledOnBoot = READ_BIT(XSPI2->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+#if defined(USE_OCTOSPI) && defined(FLASH_OCTOSPI_INSTANCE)
+    // Boot flash XSPI peripheral is memory-mapped at 0x70000000 by the bootloader
+    memoryMappedModeEnabledOnBoot = READ_BIT(FLASH_OCTOSPI_INSTANCE->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
 #endif
 }
 
