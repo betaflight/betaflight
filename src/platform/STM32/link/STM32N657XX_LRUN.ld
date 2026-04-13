@@ -157,6 +157,7 @@ SECTIONS
    * All code already runs from RAM, so .ram_code merges into the same
    * region.  Keep the section so MMFLASH_CODE attributed functions still link.
    */
+  ram_code = LOADADDR(.ram_code);  /* LMA in FLASH1 for initialiseMemorySections() */
   .ram_code :
   {
     . = ALIGN(4);
@@ -167,7 +168,6 @@ SECTIONS
     ram_code_end = .;
     _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
   } >RAM AT >FLASH1
-  ram_code = _etext;   /* stub LMA — LRUN already copied .ram_code via _sitext.._etext */
 
   /* Uninitialized data section */
   . = ALIGN(4);
