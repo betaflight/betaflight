@@ -2,6 +2,8 @@
 # GD32F4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/GD32F4/Drivers/GD32F4xx_standard_peripheral
 USB_LIB_DIR    := $(LIB_MAIN_DIR)/GD32F4/Middlewares/GD32F4xx_usb_library
