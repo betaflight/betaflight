@@ -51,18 +51,51 @@
 #define DSHOT_FRAME_BITS     16
 #define DSHOT_RMT_CLK_DIV    4      // 80MHz APB / 4 = 20MHz (50ns per tick)
 
-// DShot600 timing in RMT ticks (at 20MHz = 50ns per tick)
-#define DSHOT600_T1H_TICKS   25     // 1.25us high for '1'
-#define DSHOT600_T1L_TICKS   8      // 0.42us low for '1'
-#define DSHOT600_T0H_TICKS   12     // 0.625us high for '0'
-#define DSHOT600_T0L_TICKS   21     // 1.04us low for '0'
+// DShot timing in RMT ticks at 20MHz (50ns per tick).
+// Bit encoding: '1' = ~75% high / 25% low, '0' = ~37% high / 63% low.
+// Timing values scale linearly with bit period.
+typedef struct {
+    uint16_t t1h;   // '1' bit high duration
+    uint16_t t1l;   // '1' bit low duration
+    uint16_t t0h;   // '0' bit high duration
+    uint16_t t0l;   // '0' bit low duration
+} dshotTiming_t;
 
-// RMT memory base address for ESP32-S3 (from linker script: RMTMEM = 0x60016800)
+// DShot600: 600 kbps → 1.667 µs/bit → 33 ticks @ 20MHz
+static const dshotTiming_t dshotTiming600 = {
+    .t1h = 25,   // 1.25 µs
+    .t1l = 8,    // 0.42 µs
+    .t0h = 12,   // 0.625 µs
+    .t0l = 21,   // 1.04 µs
+};
+
+// DShot300: 300 kbps → 3.333 µs/bit → 67 ticks @ 20MHz (2× DShot600)
+static const dshotTiming_t dshotTiming300 = {
+    .t1h = 50,
+    .t1l = 17,
+    .t0h = 25,
+    .t0l = 42,
+};
+
+// DShot150: 150 kbps → 6.667 µs/bit → 133 ticks @ 20MHz (4× DShot600)
+static const dshotTiming_t dshotTiming150 = {
+    .t1h = 100,
+    .t1l = 33,
+    .t0h = 50,
+    .t0l = 83,
+};
+
+// RMT memory base address (from linker script / periph_regs)
+#if defined(ESP32S3)
 #define RMT_MEM_BASE         0x60016800
+#else
+#define RMT_MEM_BASE         0x3FF56800
+#endif
 #define RMT_MEM_ITEM_SIZE    sizeof(rmt_symbol_word_t)
-#define RMT_MEM_BLOCK_WORDS  SOC_RMT_MEM_WORDS_PER_CHANNEL  // 48 words per channel block
+#define RMT_MEM_BLOCK_WORDS  SOC_RMT_MEM_WORDS_PER_CHANNEL
 
 typedef struct {
+    dshotProtocolControl_t protocolControl;
     IO_t io;
     uint8_t rmtChannel;
     bool enabled;
@@ -71,6 +104,7 @@ typedef struct {
 static dshotMotor_t dshotMotors[DSHOT_MAX_MOTORS];
 static uint8_t esp32DshotMotorCount = 0;
 static bool dshotInitialized = false;
+static const dshotTiming_t *activeTiming = &dshotTiming600;
 
 // DShot packet buffer per motor: 16 data bits + 1 end marker
 static rmt_symbol_word_t dshotBuffer[DSHOT_MAX_MOTORS][DSHOT_FRAME_BITS + 1];
@@ -78,14 +112,14 @@ static rmt_symbol_word_t dshotBuffer[DSHOT_MAX_MOTORS][DSHOT_FRAME_BITS + 1];
 static void dshotEncodeBit(rmt_symbol_word_t *item, bool bit)
 {
     if (bit) {
-        item->duration0 = DSHOT600_T1H_TICKS;
+        item->duration0 = activeTiming->t1h;
         item->level0 = 1;
-        item->duration1 = DSHOT600_T1L_TICKS;
+        item->duration1 = activeTiming->t1l;
         item->level1 = 0;
     } else {
-        item->duration0 = DSHOT600_T0H_TICKS;
+        item->duration0 = activeTiming->t0h;
         item->level0 = 1;
-        item->duration1 = DSHOT600_T0L_TICKS;
+        item->duration1 = activeTiming->t0l;
         item->level1 = 0;
     }
 }
@@ -150,8 +184,8 @@ static void dshotWriteInt(uint8_t index, uint16_t value)
         return;
     }
 
-    dshotProtocolControl_t pcb = { .value = value, .requestTelemetry = false };
-    uint16_t packet = prepareDshotPacket(&pcb);
+    dshotMotors[index].protocolControl.value = value;
+    uint16_t packet = prepareDshotPacket(&dshotMotors[index].protocolControl);
 
     dshotEncodePacket(index, packet);
 
@@ -174,6 +208,19 @@ static void dshotUpdateComplete(void)
     for (int i = 0; i < esp32DshotMotorCount; i++) {
         if (dshotMotors[i].enabled) {
             uint8_t ch = dshotMotors[i].rmtChannel;
+
+            // Wait for any previous transmission to complete before starting
+            // a new one to prevent frame overlap.
+            // Check the TX_DONE raw interrupt flag (set by hardware on completion).
+            const timeUs_t startUs = micros();
+            while (!(rmt_ll_tx_get_interrupt_status_raw(&RMT, ch) & RMT_LL_EVENT_TX_DONE(ch))) {
+                if (cmpTimeUs(micros(), startUs) >= 500) {
+                    break;  // safety timeout
+                }
+            }
+            // Clear the TX_DONE flag for the next frame
+            rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_TX_DONE(ch));
+
             rmt_ll_tx_reset_pointer(&RMT, ch);
             rmt_ll_tx_start(&RMT, ch);
         }
@@ -183,15 +230,21 @@ static void dshotUpdateComplete(void)
 static void dshotShutdown(void)
 {
     for (int i = 0; i < esp32DshotMotorCount; i++) {
+#if defined(ESP32S3)
         rmt_ll_tx_stop(&RMT, dshotMotors[i].rmtChannel);
+#endif
+        rmt_ll_tx_reset_pointer(&RMT, dshotMotors[i].rmtChannel);
         dshotMotors[i].enabled = false;
     }
 }
 
 static bool dshotIsMotorIdle(unsigned index)
 {
-    UNUSED(index);
-    return false;
+    if (index >= esp32DshotMotorCount) {
+        return true;
+    }
+    uint8_t ch = dshotMotors[index].rmtChannel;
+    return (rmt_ll_tx_get_interrupt_status_raw(&RMT, ch) & RMT_LL_EVENT_TX_DONE(ch)) != 0;
 }
 
 static IO_t dshotGetMotorIO(unsigned index)
@@ -204,7 +257,9 @@ static IO_t dshotGetMotorIO(unsigned index)
 
 static void dshotRequestTelemetry(unsigned index)
 {
-    UNUSED(index);
+    if (index < esp32DshotMotorCount) {
+        dshotMotors[index].protocolControl.requestTelemetry = true;
+    }
 }
 
 static const motorVTable_t dshotVTable = {
@@ -231,6 +286,20 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     // The rmt_ll_enable_bus_clock and rmt_ll_reset_register macros require
     // a local __DECLARE_RCC_ATOMIC_ENV variable for critical section usage
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
+
+    // Select timing table based on protocol
+    switch (motorConfig->motorProtocol) {
+    case MOTOR_PROTOCOL_DSHOT150:
+        activeTiming = &dshotTiming150;
+        break;
+    case MOTOR_PROTOCOL_DSHOT300:
+        activeTiming = &dshotTiming300;
+        break;
+    case MOTOR_PROTOCOL_DSHOT600:
+    default:
+        activeTiming = &dshotTiming600;
+        break;
+    }
 
     // Enable RMT peripheral clock and reset
     rmt_ll_enable_bus_clock(0, true);
@@ -269,6 +338,8 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         dshotMotors[i].io = io;
         dshotMotors[i].rmtChannel = ch;
         dshotMotors[i].enabled = false;
+        dshotMotors[i].protocolControl.value = 0;
+        dshotMotors[i].protocolControl.requestTelemetry = false;
 
         // Set per-channel clock divider: APB 80MHz / 4 = 20MHz (50ns per tick)
         rmt_ll_tx_set_channel_clock_div(&RMT, ch, DSHOT_RMT_CLK_DIV);

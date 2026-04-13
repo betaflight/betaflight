@@ -31,6 +31,7 @@
 
 #define USE_UART0
 #define USE_UART1
+#define USE_UART2
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 8
@@ -55,8 +56,14 @@
 #undef USE_TRANSPONDER
 #undef USE_FLASH
 #undef USE_FLASH_CHIP
-#undef USE_TIMER
 #undef USE_RCC
+
+// SD card over SPI for blackbox logging (runtime-configured pins)
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+
+// Default blackbox to serial; SD card available as an option
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 
 // Config stored in flash partition
 #define CONFIG_IN_FLASH
@@ -67,24 +74,28 @@
 /* DMA Settings */
 #undef USE_DMA_SPEC
 
-// Unsupported features for initial ESP32 bring-up
+// Unsupported features for ESP32 bring-up
 #undef USE_RX_SPI
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
 #undef USE_RX_SX1280
-#undef USE_SERIALRX_GHST
-#undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
-#undef USE_SERIALRX_SBUS
-#undef USE_SERIALRX_SPEKTRUM
 #undef USE_SERIALRX_SUMD
 #undef USE_SERIALRX_SUMH
 #undef USE_SERIALRX_XBUS
-#undef USE_SERIALRX_FPORT
 
-#undef USE_TELEMETRY_GHST
+// Spektrum requires USE_TIMER for bind support - deferred until timer driver exists
+#undef USE_SERIALRX_SPEKTRUM
+
+// Serial RX protocols enabled (UART-based, no special hardware needed):
+//   CRSF        - enabled via common_pre.h (most common modern protocol)
+//   S.BUS       - enabled via common_pre.h (hardware inversion supported)
+//   GHST        - enabled via common_pre.h (ImmersionRC Ghost)
+//   IBUS        - enabled via common_pre.h (FlySky)
+//   FPORT       - enabled via common_pre.h (FrSky FPort)
+
 #undef USE_TELEMETRY_FRSKY_HUB
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_IBUS
@@ -94,6 +105,10 @@
 #undef USE_TELEMETRY_MAVLINK
 #undef USE_TELEMETRY_SMARTPORT
 #undef USE_TELEMETRY_SRXL
+
+// Telemetry protocols enabled:
+//   CRSF        - enabled via common_pre.h (paired with CRSF RX)
+//   GHST        - enabled via common_pre.h (paired with GHST RX)
 
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
@@ -107,12 +122,8 @@
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
 #undef USE_SRXL
-#undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
 
-#undef USE_SERIAL_PASSTHROUGH
-
-#undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 
 #undef USE_DSHOT_BITBANG
@@ -129,4 +140,3 @@
 #undef USE_OSD_HD
 
 #undef USE_USB_MSC
-#undef USE_SDCARD

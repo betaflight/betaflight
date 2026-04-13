@@ -29,6 +29,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/utils.h"
+#include "drivers/dshot.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/light_ws2811strip.h"
@@ -46,15 +47,21 @@
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-#define WS2812_RMT_CHANNEL     3       // Use last RMT TX channel (0-3 are TX on ESP32-S3)
-#define WS2812_RMT_CLK_DIV    4       // 80MHz / 4 = 20MHz (50ns per tick)
-#define WS2812_T0H_TICKS      8       // 400ns
-#define WS2812_T0L_TICKS      17      // 850ns
-#define WS2812_T1H_TICKS      16      // 800ns
-#define WS2812_T1L_TICKS      9       // 450ns
+// DShot uses channels 0..N-1 for N motors.
+// The LED strip uses the next available TX channel after DShot.
+#if defined(ESP32S3)
+#define WS2812_RMT_TX_CHANNELS  4   // ESP32-S3: 4 TX + 4 RX channels
+#else
+#define WS2812_RMT_TX_CHANNELS  8   // ESP32: 8 bidirectional channels
+#endif
+#define WS2812_RMT_CLK_DIV     4       // 80MHz / 4 = 20MHz (50ns per tick)
+#define WS2812_T0H_TICKS       8       // 400ns
+#define WS2812_T0L_TICKS       17      // 850ns
+#define WS2812_T1H_TICKS       16      // 800ns
+#define WS2812_T1L_TICKS       9       // 450ns
 
-// RMTMEM is provided by periph_regs_esp32.c at 0x60016800
-// Each channel has 48 words (items) of memory
+// RMTMEM is provided by periph_regs_esp32.c
+// ESP32-S3: each channel has 48 words; ESP32: each has 64 words
 extern uint32_t RMTMEM[];
 
 #define WS2812_BITS_PER_LED    24
@@ -63,6 +70,7 @@ extern uint32_t RMTMEM[];
 static IO_t ledStripIO = IO_NONE;
 static bool ws2812Initialized = false;
 static ledStripFormatRGB_e ledFormat = LED_GRB;
+static uint8_t ws2812RmtChannel = 0;
 
 // Software buffer for LED strip RMT items
 // 24 bits per LED (GRB), plus end marker
@@ -102,6 +110,14 @@ bool ws2811LedStripHardwareInit(void)
 {
     if (!ledStripIO) return false;
 
+    // Assign the first free RMT TX channel after DShot motors.
+    // dshotMotorCount is set during dshotPwmDevInit which runs before LED init.
+    ws2812RmtChannel = dshotMotorCount;
+    if (ws2812RmtChannel >= WS2812_RMT_TX_CHANNELS) {
+        // All TX channels used by DShot, no room for LED strip
+        return false;
+    }
+
     // Enable RMT peripheral (may already be enabled by DShot)
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
     rmt_ll_enable_bus_clock(0, true);
@@ -110,11 +126,14 @@ bool ws2811LedStripHardwareInit(void)
     // Enable direct memory access (non-FIFO mode)
     rmt_ll_enable_mem_access_nonfifo(&RMT, true);
 
-    uint8_t ch = WS2812_RMT_CHANNEL;
+    uint8_t ch = ws2812RmtChannel;
     uint32_t pin = IO_Pin(ledStripIO);
 
     rmt_ll_tx_set_channel_clock_div(&RMT, ch, WS2812_RMT_CLK_DIV);
     rmt_ll_tx_set_mem_blocks(&RMT, ch, 1);
+    rmt_ll_tx_fix_idle_level(&RMT, ch, 0, true);
+    rmt_ll_tx_enable_carrier_modulation(&RMT, ch, false);
+    rmt_ll_tx_enable_loop(&RMT, ch, false);
 
     // Connect RMT output to GPIO pin
     esp_rom_gpio_pad_select_gpio(pin);
@@ -157,7 +176,7 @@ void ws2811LedStripStartTransfer(void)
 
     ws2811LedDataTransferInProgress = true;
 
-    const uint8_t ch = WS2812_RMT_CHANNEL;
+    const uint8_t ch = ws2812RmtChannel;
     const uint32_t totalItems = WS2811_LED_STRIP_LENGTH * WS2812_BITS_PER_LED;
 
     // Write RMT items to hardware memory via RMTMEM
@@ -175,9 +194,14 @@ void ws2811LedStripStartTransfer(void)
     rmt_ll_tx_reset_pointer(&RMT, ch);
     rmt_ll_tx_start(&RMT, ch);
 
-    // Wait for completion (simple polling for now)
-    // ~30us per LED plus 50us reset pulse
-    delayMicroseconds(50 + (WS2811_LED_STRIP_LENGTH * 30));
+    // Wait for TX_DONE instead of blind delay
+    const timeUs_t startUs = micros();
+    while (!(rmt_ll_tx_get_interrupt_status_raw(&RMT, ch) & RMT_LL_EVENT_TX_DONE(ch))) {
+        if (cmpTimeUs(micros(), startUs) >= 5000) {
+            break;  // 5ms safety timeout
+        }
+    }
+    rmt_ll_clear_interrupt_status(&RMT, RMT_LL_EVENT_TX_DONE(ch));
 
     ws2811LedDataTransferInProgress = false;
 }

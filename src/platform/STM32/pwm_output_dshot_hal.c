@@ -112,7 +112,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
     timer->ARR = 0xffffffff;
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5)
     // Configure pin as GPIO output to avoid glitch during timer configuration
     uint32_t pin = IO_Pin(motor->io);
     LL_GPIO_SetPinMode(IO_GPIO(motor->io), pin, LL_GPIO_MODE_OUTPUT);
@@ -123,7 +123,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 
     LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5)
     // Configure pin back to timer
     LL_GPIO_SetPinMode(IO_GPIO(motor->io), IO_Pin(motor->io), LL_GPIO_MODE_ALTERNATE);
     if (IO_Pin(motor->io) & 0xFF) {
@@ -152,7 +152,7 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
             xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
             /* configure the DMA Burst Mode */
-#if defined(STM32N6)
+#if defined(STM32H5) || defined(STM32N6)
             LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS, LL_TIM_DMA_UPDATE);
 #else
             LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS);
@@ -279,7 +279,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         output ^= TIMER_OUTPUT_INVERTED;
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5)
         if (output & TIMER_OUTPUT_INVERTED) {
             IOHi(motorIO);
         } else {
@@ -291,7 +291,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->timerHardware = timerHardware;
 
     motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_LOW, pupMode);
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5)
     motor->io = motorIO;
 #endif
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
@@ -361,7 +361,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     LL_DMA_StructInit(&DMAINIT);
-#if defined(STM32N6)
+#if defined(STM32H5) || defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA DMA init for DShot not yet implemented
     // Set minimal fields that exist in N6 LL_DMA_InitTypeDef
 #ifdef USE_DSHOT_DMAR

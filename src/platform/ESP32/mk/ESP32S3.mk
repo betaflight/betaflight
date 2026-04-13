@@ -85,12 +85,14 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             ESP32/adc_esp32.c \
             ESP32/bus_i2c_esp32.c \
+            drivers/bus_spi_config.c \
             ESP32/bus_spi_esp32.c \
             ESP32/config_flash.c \
             ESP32/debug_esp32.c \
             ESP32/dma_esp32.c \
             ESP32/dshot_esp32.c \
             ESP32/exti_esp32.c \
+            ESP32/interrupt_esp32.c \
             ESP32/io_esp32.c \
             ESP32/persistent.c \
             ESP32/pwm_motor_esp32.c \
@@ -100,6 +102,7 @@ MCU_COMMON_SRC = \
             ESP32/serial_usb_vcp_esp32.c \
             ESP32/system.c \
             ESP32/light_ws2811strip_esp32.c \
+            ESP32/timer_esp32.c \
             ESP32/periph_regs_esp32.c
 
 # ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)

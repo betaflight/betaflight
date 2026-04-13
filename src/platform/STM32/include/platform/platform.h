@@ -76,7 +76,7 @@
 #define STM32H7
 #endif
 
-#elif defined(STM32H563xx)
+#elif defined(STM32H563xx) || defined(STM32H562xx)
 #include "stm32h5xx.h"
 #include "stm32h5xx_hal.h"
 #include "system_stm32h5xx.h"
@@ -87,6 +87,7 @@
 #include "stm32h5xx_ll_dma.h"
 #include "stm32h5xx_ll_rcc.h"
 #include "stm32h5xx_ll_bus.h"
+#include "stm32h5xx_ll_i2c.h"
 #include "stm32h5xx_ll_tim.h"
 #include "stm32h5xx_ll_system.h"
 #include "stm32h5xx_ll_ex.h"
@@ -382,7 +383,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_AF
 
 // Camera control PWM availability per STM32 family
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #endif
 
@@ -442,7 +443,7 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32G4)
@@ -472,14 +473,14 @@ extern uint8_t _dmaram_end__;
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
-#elif defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 #define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 4
 #endif
 
 // Work around different check routines in the libraries for different MCU types
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 #define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
 #define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
 #else
@@ -492,7 +493,7 @@ extern uint8_t _dmaram_end__;
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
 #elif defined(STM32H5)
-#define MAX_SPI_PIN_SEL 4
+#define MAX_SPI_PIN_SEL 5
 #elif defined(STM32H7) || defined(STM32N6)
 #define MAX_SPI_PIN_SEL 5
 #else
@@ -571,7 +572,7 @@ extern uint8_t _dmaram_end__;
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6)
 #define I2C_TRAIT_STATE 1
 #endif
 

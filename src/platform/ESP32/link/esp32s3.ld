@@ -20,6 +20,7 @@ MEMORY
     /* Peripheral register regions (memory-mapped I/O) */
     periph_uart0_seg (RW) :   org = 0x60000000, len = 0x1000
     periph_gpio_seg (RW) :    org = 0x60004000, len = 0x1000
+    periph_sens_seg (RW) :    org = 0x60008800, len = 0x800
     periph_uart1_seg (RW) :   org = 0x60010000, len = 0x1000
     periph_i2c0_seg (RW) :    org = 0x60013000, len = 0x1000
     periph_rmt_seg (RW) :     org = 0x60016000, len = 0x800
@@ -31,6 +32,7 @@ MEMORY
     periph_i2c1_seg (RW) :    org = 0x60027000, len = 0x1000
     periph_uart2_seg (RW) :   org = 0x6002E000, len = 0x1000
     periph_usb_serial_seg (RW): org = 0x60038000, len = 0x1000
+    periph_gdma_seg (RW) :    org = 0x6003F000, len = 0x1000
     periph_system_seg (RW) :  org = 0x600C0000, len = 0x1000
 }
 
@@ -117,6 +119,7 @@ SECTIONS
     /* Peripheral register mappings at fixed hardware addresses */
     .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg
     .peripheral_gpio (NOLOAD) :     { *(.peripheral_gpio) }    > periph_gpio_seg
+    .peripheral_sens (NOLOAD) :     { *(.peripheral_sens) }    > periph_sens_seg
     .peripheral_uart1 (NOLOAD) :    { *(.peripheral_uart1) }   > periph_uart1_seg
     .peripheral_i2c0 (NOLOAD) :     { *(.peripheral_i2c0) }    > periph_i2c0_seg
     .peripheral_rmt (NOLOAD) :      { *(.peripheral_rmt) }     > periph_rmt_seg
@@ -128,6 +131,7 @@ SECTIONS
     .peripheral_i2c1 (NOLOAD) :     { *(.peripheral_i2c1) }    > periph_i2c1_seg
     .peripheral_uart2 (NOLOAD) :    { *(.peripheral_uart2) }   > periph_uart2_seg
     .peripheral_usb_serial (NOLOAD): { *(.peripheral_usb_serial) } > periph_usb_serial_seg
+    .peripheral_gdma (NOLOAD) :     { *(.peripheral_gdma) }    > periph_gdma_seg
     .peripheral_system (NOLOAD) :   { *(.peripheral_system) }  > periph_system_seg
 
     /DISCARD/ :

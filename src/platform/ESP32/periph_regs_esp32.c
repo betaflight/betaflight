@@ -41,37 +41,62 @@
 #undef UART2
 #undef I2C0
 #undef I2C1
+#undef SPI0
+#undef SPI1
 
 #include "soc/gpio_struct.h"
-#include "soc/systimer_struct.h"
 #include "soc/uart_struct.h"
 #include "soc/spi_struct.h"
 #include "soc/i2c_struct.h"
 #include "soc/rmt_struct.h"
 #include "soc/ledc_struct.h"
+#include "soc/sens_struct.h"
+#include "soc/reg_base.h"
+
+#if defined(ESP32S3)
+#include "soc/systimer_struct.h"
 #include "soc/system_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
-#include "soc/reg_base.h"
+#include "soc/gdma_struct.h"
+#else
+#include "soc/timer_group_struct.h"
+#endif
 
 #pragma GCC diagnostic pop
 
 /* Each peripheral symbol is placed at the base address from reg_base.h.
  * The linker resolves e.g. &GPIO -> DR_REG_GPIO_BASE (0x60004000). */
 gpio_dev_t              GPIO                __attribute__((section(".peripheral_gpio")))         = {};
-systimer_dev_t          SYSTIMER            __attribute__((section(".peripheral_systimer")))     = {};
 uart_dev_t              UART0               __attribute__((section(".peripheral_uart0")))        = {};
 uart_dev_t              UART1               __attribute__((section(".peripheral_uart1")))        = {};
 uart_dev_t              UART2               __attribute__((section(".peripheral_uart2")))        = {};
+#if defined(ESP32S3)
 spi_dev_t               GPSPI2              __attribute__((section(".peripheral_spi2")))         = {};
 spi_dev_t               GPSPI3              __attribute__((section(".peripheral_spi3")))         = {};
+#else
+/* SPI1 is the internal flash SPI, SPI2=HSPI, SPI3=VSPI */
+spi_dev_t               SPI1                __attribute__((section(".peripheral_spi1")))         = {};
+spi_dev_t               SPI2                __attribute__((section(".peripheral_spi2")))         = {};
+spi_dev_t               SPI3                __attribute__((section(".peripheral_spi3")))         = {};
+#endif
 i2c_dev_t               I2C0                __attribute__((section(".peripheral_i2c0")))         = {};
 i2c_dev_t               I2C1                __attribute__((section(".peripheral_i2c1")))         = {};
 rmt_dev_t               RMT                 __attribute__((section(".peripheral_rmt")))          = {};
+ledc_dev_t              LEDC                __attribute__((section(".peripheral_ledc")))         = {};
+sens_dev_t              SENS                __attribute__((section(".peripheral_sens")))         = {};
+
+#if defined(ESP32S3)
+systimer_dev_t          SYSTIMER            __attribute__((section(".peripheral_systimer")))     = {};
 /* RMTMEM is 4 TX + 4 RX channels × 48 items each = 384 items × 4 bytes */
 uint32_t                RMTMEM[384]         __attribute__((section(".peripheral_rmtmem")))       = {};
-ledc_dev_t              LEDC                __attribute__((section(".peripheral_ledc")))         = {};
 system_dev_t            SYSTEM              __attribute__((section(".peripheral_system")))       = {};
 usb_serial_jtag_dev_t   USB_SERIAL_JTAG     __attribute__((section(".peripheral_usb_serial")))  = {};
+gdma_dev_t              GDMA                __attribute__((section(".peripheral_gdma")))         = {};
+#else
+timg_dev_t              TIMERG0             __attribute__((section(".peripheral_timg0")))        = {};
+/* ESP32 has 8 bidirectional RMT channels × 64 items each = 512 items × 4 bytes */
+uint32_t                RMTMEM[512]         __attribute__((section(".peripheral_rmtmem")))       = {};
+#endif
 
 /* Restore platform macros */
 #define UART0 (&esp32UartDev0)
@@ -79,3 +104,5 @@ usb_serial_jtag_dev_t   USB_SERIAL_JTAG     __attribute__((section(".peripheral_
 #define UART2 (&esp32UartDev2)
 #define I2C0  (&esp32I2cDev0)
 #define I2C1  (&esp32I2cDev1)
+#define SPI0  (&esp32SpiDev0)
+#define SPI1  (&esp32SpiDev1)

@@ -28,13 +28,14 @@
 
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/exti.h"
+#include "drivers/memprot.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
 #include "drivers/system.h"
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
+    if (cachedResetFlags & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
@@ -49,13 +50,19 @@ void systemInit(void)
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->CSR;
+    cachedResetFlags = RCC->RSR;
 
     // Init cycle counter
     cycleCounterInit();
 }
 
 void systemReset(void)
+{
+    __disable_irq();
+    NVIC_SystemReset();
+}
+
+void systemResetWithoutDisablingCaches(void)
 {
     __disable_irq();
     NVIC_SystemReset();
@@ -75,8 +82,8 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     NVIC_SystemReset();
 }
 
-#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x1fff0000)
-#define SYSMEMBOOT_LOADER       ((uint32_t *)0x1fff0000)
+// STM32H5 system flash (ROM bootloader) base address
+#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)FLASH_SYSTEM_BASE_NS)
 
 typedef void *(*bootJumpPtr)(void);
 
@@ -100,8 +107,9 @@ void systemJumpToBootloader(void)
     //Disable all interrupts
     __disable_irq();
 
-    //remap system memory
-    __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+    // STM32H5 (Cortex-M33) does not have SYSCFG memory remap.
+    // Use VTOR to point directly to the system flash vector table.
+    SCB->VTOR = (uint32_t)SYSMEMBOOT_VECTOR_TABLE;
 
     //default bootloader call stack routine
     uint32_t bootStack = SYSMEMBOOT_VECTOR_TABLE[0];
@@ -113,4 +121,34 @@ void systemJumpToBootloader(void)
     SysMemBootJump();
 
     while (1);
+}
+
+void systemProcessResetReason(void)
+{
+    uint32_t bootloaderRequest = persistentObjectRead(PERSISTENT_OBJECT_RESET_REASON);
+
+    switch (bootloaderRequest) {
+    case RESET_BOOTLOADER_REQUEST_ROM:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_BOOTLOADER_POST);
+        systemJumpToBootloader();
+
+        break;
+
+    case RESET_FORCED:
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
+        break;
+
+    case RESET_BOOTLOADER_POST:
+        // Boot loader activity magically prevents SysTick from interrupting.
+        // Issue a soft reset to prevent the condition.
+        persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_FORCED);
+        systemResetWithoutDisablingCaches();
+
+        break;
+
+    case RESET_MSC_REQUEST:
+    case RESET_NONE:
+    default:
+        break;
+    }
 }

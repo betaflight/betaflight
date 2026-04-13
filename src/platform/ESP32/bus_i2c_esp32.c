@@ -29,8 +29,10 @@
 #include "common/utils.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
+#include "drivers/bus_i2c_utils.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/time.h"
 #include "pg/bus_i2c.h"
 
 // The ESP-IDF SOC headers define I2C0/I2C1 as extern i2c_dev_t structs,
@@ -62,11 +64,19 @@ static i2c_dev_t *const i2cHwRegs[] = {
 #define I2C0 (&esp32I2cDev0)
 #define I2C1 (&esp32I2cDev1)
 
-// ESP32-S3 XTAL clock frequency used as I2C source clock (40 MHz)
-#define ESP32_I2C_SOURCE_CLK_FREQ  40000000
+// I2C source clock frequencies
+// ESP32-S3 uses XTAL (40 MHz), original ESP32 uses APB (80 MHz)
+#define ESP32_I2C_XTAL_CLK_FREQ  40000000
+#define ESP32_I2C_APB_CLK_FREQ   80000000
 
-// Polling timeout for I2C operations (iterations)
-#define I2C_POLL_TIMEOUT  10000
+#if defined(ESP32S3)
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_XTAL_CLK_FREQ
+#else
+#define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_APB_CLK_FREQ
+#endif
+
+// Error counter across all I2C buses
+static volatile uint16_t i2cErrorCount = 0;
 
 // Get the i2c_dev_t hardware register pointer from a port number
 static i2c_dev_t *i2cGetHw(int portNum)
@@ -75,21 +85,21 @@ static i2c_dev_t *i2cGetHw(int portNum)
 }
 
 // Get the I2C port number (0 or 1) from our platform peripheral pointer
-static int i2cGetPortNum(I2C_TypeDef *reg)
+static int i2cGetPortNum(i2cResource_t *reg)
 {
-    return I2C_INST(reg);
+    return I2C_INST((I2C_TypeDef *)reg);
 }
 
 const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_0,
-        .reg = I2C0,
+        .reg = (i2cResource_t *)I2C0,
         .sclPins = { I2CPINDEF(PA9), I2CPINDEF(PA2), },
         .sdaPins = { I2CPINDEF(PA8), I2CPINDEF(PA1), },
     },
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = { I2CPINDEF(PA7), I2CPINDEF(PA4), },
         .sdaPins = { I2CPINDEF(PA6), I2CPINDEF(PA3), },
     },
@@ -97,9 +107,23 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT] = { 0 };
 
+// Attempt bus recovery by unsticking the I2C lines and re-initialising
+static bool i2cRecover(i2cDevice_e device)
+{
+    i2cDevice_t *dev = &i2cDevice[device];
+
+    // Generate 9 clock pulses + STOP to free any stuck slave
+    const bool unstuck = i2cUnstick(dev->scl, dev->sda);
+
+    // Re-initialise the peripheral from scratch
+    i2cInit(device);
+
+    return unstuck;
+}
+
 void i2cInit(i2cDevice_e device)
 {
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return;
     }
 
@@ -151,9 +175,13 @@ void i2cInit(i2cDevice_e device)
     i2c_ll_enable_pins_open_drain(hw, true);
     i2c_ll_enable_arbitration(hw, true);
 
-    // Enable controller clock and select XTAL as source
+    // Enable controller clock and select clock source
+#if defined(ESP32S3)
     i2c_ll_set_source_clk(hw, I2C_CLK_SRC_XTAL);
     i2c_ll_enable_controller_clock(hw, true);
+#else
+    i2c_ll_set_source_clk(hw, I2C_CLK_SRC_APB);
+#endif
 
     // Configure bus timing for desired speed
     uint32_t busFreq = dev->clockSpeed ? ((uint32_t)dev->clockSpeed * 1000) : 400000;
@@ -179,31 +207,46 @@ void i2cInit(i2cDevice_e device)
 // Wait for the bus to become free, returns true if bus is free
 static bool i2cWaitBusFree(i2c_dev_t *hw)
 {
-    int timeout = I2C_POLL_TIMEOUT;
-    while (i2c_ll_is_bus_busy(hw) && --timeout > 0) {
-    }
-    return timeout > 0;
-}
-
-// Wait for a specific command to complete, returns true on success
-static bool i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
-{
-    int timeout = I2C_POLL_TIMEOUT;
-    while (!i2c_ll_master_is_cmd_done(hw, cmdIdx) && --timeout > 0) {
-        // Check for NACK or timeout errors
-        uint32_t status;
-        i2c_ll_get_intr_mask(hw, &status);
-        if (status & (I2C_LL_INTR_NACK | I2C_LL_INTR_TIMEOUT | I2C_LL_INTR_ARBITRATION)) {
-            i2c_ll_clear_intr_mask(hw, status);
+    const timeUs_t startUs = micros();
+    while (i2c_ll_is_bus_busy(hw)) {
+        if (cmpTimeUs(micros(), startUs) >= I2C_TIMEOUT_US) {
             return false;
         }
     }
-    return timeout > 0;
+    return true;
+}
+
+typedef enum {
+    I2C_CMD_OK = 0,
+    I2C_CMD_ERR_NACK,
+    I2C_CMD_ERR_BUS,
+} i2cCmdResult_e;
+
+// Wait for a specific command to complete
+static i2cCmdResult_e i2cWaitCmdDone(i2c_dev_t *hw, int cmdIdx)
+{
+    const timeUs_t startUs = micros();
+    while (!i2c_ll_master_is_cmd_done(hw, cmdIdx)) {
+        // Check for errors via raw status (not masked by interrupt enable)
+        uint32_t status = hw->int_raw.val;
+        if (status & (I2C_LL_INTR_TIMEOUT | I2C_LL_INTR_ARBITRATION)) {
+            hw->int_clr.val = status;
+            return I2C_CMD_ERR_BUS;
+        }
+        if (status & I2C_LL_INTR_NACK) {
+            hw->int_clr.val = status;
+            return I2C_CMD_ERR_NACK;
+        }
+        if (cmpTimeUs(micros(), startUs) >= I2C_TIMEOUT_US) {
+            return I2C_CMD_ERR_BUS;
+        }
+    }
+    return I2C_CMD_OK;
 }
 
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
@@ -216,6 +259,8 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     i2c_dev_t *hw = i2cGetHw(portNum);
 
     if (!i2cWaitBusFree(hw)) {
+        i2cErrorCount++;
+        i2cRecover(device);
         return false;
     }
 
@@ -259,7 +304,16 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     i2c_ll_start_trans(hw);
 
     // Wait for STOP command to complete
-    return i2cWaitCmdDone(hw, cmdIdx - 1);
+    const i2cCmdResult_e result = i2cWaitCmdDone(hw, cmdIdx - 1);
+    if (result != I2C_CMD_OK) {
+        i2cErrorCount++;
+        if (result == I2C_CMD_ERR_BUS) {
+            i2cRecover(device);
+        }
+        return false;
+    }
+
+    return true;
 }
 
 bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -269,7 +323,7 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t *buf)
 {
-    if (device >= I2CDEV_COUNT || len == 0 || !buf) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT || len == 0 || !buf) {
         return false;
     }
 
@@ -282,6 +336,8 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     i2c_dev_t *hw = i2cGetHw(portNum);
 
     if (!i2cWaitBusFree(hw)) {
+        i2cErrorCount++;
+        i2cRecover(device);
         return false;
     }
 
@@ -355,7 +411,12 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     i2c_ll_start_trans(hw);
 
     // Wait for STOP command to complete
-    if (!i2cWaitCmdDone(hw, cmdIdx - 1)) {
+    const i2cCmdResult_e result = i2cWaitCmdDone(hw, cmdIdx - 1);
+    if (result != I2C_CMD_OK) {
+        i2cErrorCount++;
+        if (result == I2C_CMD_ERR_BUS) {
+            i2cRecover(device);
+        }
         return false;
     }
 
@@ -376,7 +437,7 @@ bool i2cBusy(i2cDevice_e device, bool *error)
         *error = false;
     }
 
-    if (device >= I2CDEV_COUNT) {
+    if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
@@ -424,7 +485,7 @@ void i2cPinConfigure(const struct i2cConfig_s *i2cConfig)
 
 uint16_t i2cGetErrorCounter(void)
 {
-    return 0;
+    return i2cErrorCount;
 }
 
 #endif // USE_I2C

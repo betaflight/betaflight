@@ -23,7 +23,9 @@
 
 #include "drivers/dma.h"
 
-// ESP32-S3 has GDMA with 5 channels, each with TX and RX pairs
+// ESP32-S3 has GDMA with 5 channels, each with TX and RX pairs.
+// Each GDMA channel has an independent RX (in) and TX (out) sub-channel.
+// For SPI DMA we allocate channel pairs: one for TX, one for RX.
 #define DMA_INVALID (-1)
 #define DMA_CH0_HANDLER (DMA_FIRST_HANDLER)
 #define DMA_CH1_HANDLER (DMA_FIRST_HANDLER + 1)
@@ -56,4 +58,10 @@
 #define DMA_CHANNEL_TO_IDENTIFIER(channel) ((dmaIdentifier_e)((channel) + DMA_FIRST_HANDLER))
 #define DMA_CHANNEL_TO_INDEX(channel) (channel)
 
+// GDMA channel count
+#define ESP32_GDMA_CHANNEL_COUNT 5
+
 dmaIdentifier_e dmaGetFreeIdentifier(void);
+
+// Initialise the GDMA hardware (bus clock, reset)
+void esp32DmaInit(void);

@@ -45,6 +45,16 @@
 #include "flight/pos_hold.h"
 #endif
 
+// DEBUG_AUTOPILOT_PID
+// 0 - P term (East) * 100
+// 1 - P term (North) * 100
+// 2 - I term (East) * 100
+// 3 - I term (North) * 100
+// 4 - II term (East) * 100
+// 5 - II term (North) * 100
+// 6 - Roll angle command * 100
+// 7 - Pitch angle command * 100
+
 #ifndef POSHOLD_TASK_RATE_HZ
 #define POSHOLD_TASK_RATE_HZ 100
 #endif

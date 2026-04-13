@@ -33,26 +33,55 @@
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
+#include "drivers/dma.h"
+#include "drivers/dma_impl.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "pg/bus_spi.h"
+
+#include "platform/dma.h"
+
+// Undefine SPI0/SPI1 macros before ESP-IDF headers to avoid conflict
+// with extern spi_dev_t SPI0/SPI1 in soc/spi_struct.h (included transitively)
+#undef SPI0
+#undef SPI1
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "hal/spi_ll.h"
 #include "hal/gpio_ll.h"
+#ifdef USE_DMA
+#include "hal/gdma_ll.h"
+#endif
 #pragma GCC diagnostic pop
 
-#include "soc/spi_struct.h"
+// Do NOT restore SPI0/SPI1 macros in this file — ESP-IDF's SPI_LL_GET_HW
+// references SPI1/SPI2/SPI3 as extern spi_dev_t symbols, and our macros
+// would break &SPI1 expansions. Use esp32SpiDev0/1 directly below.
+
 #include "soc/gpio_struct.h"
+#ifdef USE_DMA
+#include "soc/gdma_channel.h"
+#include "esp_rom_lldesc.h"
+#endif
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-// ESP32-S3 APB clock frequency
+// SPI clock idle edge register differs between ESP32 and ESP32-S3
+#if defined(ESP32S3)
+#define ESP32_SPI_CK_IDLE  misc.ck_idle_edge
+#else
+#define ESP32_SPI_CK_IDLE  pin.ck_idle_edge
+#endif
+
+// APB clock frequency
 #define ESP32_APB_CLK_FREQ  80000000
 
-// SPI hardware buffer size in bytes
+// SPI hardware buffer size in bytes (for polled transfers)
 #define SPI_MAX_TRANSFER_SIZE  64
+
+// DMA threshold: use DMA for transfers >= this many bytes
+#define SPI_DMA_THRESHOLD  8
 
 // GPIO matrix signal indices for SPI2 (FSPI) and SPI3 (HSPI)
 static const struct {
@@ -60,46 +89,96 @@ static const struct {
     uint8_t mosiOut;
     uint8_t misoIn;
 } spiSignals[] = {
+#if defined(ESP32S3)
     { FSPICLK_OUT_IDX, FSPID_OUT_IDX,    FSPIQ_IN_IDX    },  // SPI2 (FSPI)
-    { SPI3_CLK_OUT_IDX, SPI3_D_OUT_IDX,  SPI3_Q_IN_IDX   },  // SPI3 (HSPI)
+    { SPI3_CLK_OUT_IDX, SPI3_D_OUT_IDX,  SPI3_Q_IN_IDX   },  // SPI3
+#else
+    { HSPICLK_OUT_IDX, HSPID_OUT_IDX,    HSPIQ_IN_IDX    },  // SPI2 (HSPI)
+    { VSPICLK_OUT_IDX, VSPID_OUT_IDX,    VSPIQ_IN_IDX    },  // SPI3 (VSPI)
+#endif
 };
+
+#ifdef USE_DMA
+// GDMA trigger peripheral IDs for SPI2 and SPI3
+static const int spiGdmaPeriphId[] = {
+    SOC_GDMA_TRIG_PERIPH_SPI2,  // SPI device 0 -> SPI2
+    SOC_GDMA_TRIG_PERIPH_SPI3,  // SPI device 1 -> SPI3
+};
+#endif
 
 // ESP32-S3 has SPI2 (FSPI) and SPI3 (HSPI) available for general use.
 // GPIO matrix allows any pin to be used, but define common defaults.
 const spiHardware_t spiHardware[SPIDEV_COUNT] = {
     {
         .device = SPIDEV_0,
-        .reg = SPI0,  // Maps to SPI2 (FSPI)
+        .reg = (spiResource_t *)&esp32SpiDev0,  // Maps to SPI2
         .sckPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA12) },
             { DEFIO_TAG_E(PA36) },
+#else
+            { DEFIO_TAG_E(PA14) },  // HSPI default SCK
+#endif
         },
         .misoPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA13) },
             { DEFIO_TAG_E(PA37) },
+#else
+            { DEFIO_TAG_E(PA12) },  // HSPI default MISO
+#endif
         },
         .mosiPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA11) },
             { DEFIO_TAG_E(PA35) },
+#else
+            { DEFIO_TAG_E(PA13) },  // HSPI default MOSI
+#endif
         },
     },
     {
         .device = SPIDEV_1,
-        .reg = SPI1,  // Maps to SPI3 (HSPI)
+        .reg = (spiResource_t *)&esp32SpiDev1,  // Maps to SPI3
         .sckPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA14) },
             { DEFIO_TAG_E(PA38) },
+#else
+            { DEFIO_TAG_E(PA18) },  // VSPI default SCK
+#endif
         },
         .misoPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA15) },
             { DEFIO_TAG_E(PA39) },
+#else
+            { DEFIO_TAG_E(PA19) },  // VSPI default MISO
+#endif
         },
         .mosiPins = {
+#if defined(ESP32S3)
             { DEFIO_TAG_E(PA16) },
             { DEFIO_TAG_E(PA40) },
+#else
+            { DEFIO_TAG_E(PA23) },  // VSPI default MOSI
+#endif
         },
     },
 };
+
+extern busDevice_t spiBusDevice[SPIDEV_COUNT];
+
+#ifdef USE_DMA
+// DMA descriptors for SPI transfers (one TX + one RX per SPI bus).
+static lldesc_t dmaTxDesc[SPIDEV_COUNT];
+static lldesc_t dmaRxDesc[SPIDEV_COUNT];
+
+// Dummy buffers for DMA when no TX/RX buffer is provided.
+#define SPI_DMA_DUMMY_BUFFER_SIZE  SPI_MAX_TRANSFER_SIZE
+static uint8_t dummyTxBuf[SPI_DMA_DUMMY_BUFFER_SIZE];
+static uint8_t dummyRxBuf[SPI_DMA_DUMMY_BUFFER_SIZE];
+#endif
 
 // Map from Betaflight SPI device number (0/1) to ESP-IDF SPI host ID.
 // esp32SpiDev0 = 0 -> SPI2_HOST (1), esp32SpiDev1 = 1 -> SPI3_HOST (2)
@@ -125,6 +204,7 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
         const spiDevice_e device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
+        // First try to match against the known pin table entries
         for (int pindex = 0; pindex < MAX_SPI_PIN_SEL; pindex++) {
             if (pConfig[device].ioTagSck == hw->sckPins[pindex].pin) {
                 pDev->sck = hw->sckPins[pindex].pin;
@@ -137,6 +217,18 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
             }
         }
 
+        // On ESP32 any GPIO can be routed via the GPIO matrix, so accept
+        // configured pins even when they don't match a table entry.
+        if (!pDev->sck && pConfig[device].ioTagSck) {
+            pDev->sck = pConfig[device].ioTagSck;
+        }
+        if (!pDev->miso && pConfig[device].ioTagMiso) {
+            pDev->miso = pConfig[device].ioTagMiso;
+        }
+        if (!pDev->mosi && pConfig[device].ioTagMosi) {
+            pDev->mosi = pConfig[device].ioTagMosi;
+        }
+
         if (pDev->sck) {
             pDev->dev = hw->reg;
             pDev->leadingEdge = false;
@@ -144,26 +236,19 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
     }
 }
 
-void spiPreinit(void)
-{
-    // NOOP
-}
-
 void spiPreinitRegister(ioTag_t iotag, uint32_t iocfg, uint8_t init)
 {
-    UNUSED(iotag);
-    UNUSED(iocfg);
-    UNUSED(init);
+    ioPreinitByTag(iotag, iocfg, init);
 }
 
 void spiPreinitByIO(IO_t io)
 {
-    UNUSED(io);
+    ioPreinitByIO(io, SPI_IO_CS_HIGH_CFG, PREINIT_PIN_STATE_HIGH);
 }
 
 void spiPreinitByTag(ioTag_t tag)
 {
-    UNUSED(tag);
+    spiPreinitByIO(IOGetByTag(tag));
 }
 
 void spiInitDevice(spiDevice_e device)
@@ -174,7 +259,7 @@ void spiInitDevice(spiDevice_e device)
         return;
     }
 
-    int deviceNum = SPI_INST(spi->dev);
+    int deviceNum = SPI_INST((SPI_TypeDef *)spi->dev);
     spi_host_device_t hostId = spiGetHostId(deviceNum);
     spi_dev_t *hw = SPI_LL_GET_HW(hostId);
 
@@ -244,25 +329,165 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     UNUSED(descriptor);
 }
 
-void spiInternalStartDMA(const extDevice_t *dev)
+#ifdef USE_DMA
+// Interrupt handler for SPI RX DMA completion
+FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t *descriptor)
 {
-    UNUSED(dev);
+    const extDevice_t *dev = (const extDevice_t *)descriptor->userParam;
+
+    if (!dev) {
+        return;
+    }
+
+    busDevice_t *bus = dev->bus;
+
+    if (bus->curSegment->negateCS) {
+        IOHi(dev->busType_u.spi.csnPin);
+    }
+
+    spiInternalStopDMA(dev);
+
+    spiIrqHandler(dev);
 }
+#endif
 
 void spiInternalStopDMA(const extDevice_t *dev)
 {
+#ifndef USE_DMA
     UNUSED(dev);
+#else
+    busDevice_t *bus = dev->bus;
+
+    if (!bus->dmaTx || !bus->dmaRx) {
+        return;
+    }
+
+    int txCh = bus->dmaTx->channel;
+    int rxCh = bus->dmaRx->channel;
+
+    // Stop both GDMA channels
+    gdma_ll_tx_stop(&GDMA, txCh);
+    gdma_ll_rx_stop(&GDMA, rxCh);
+
+    // Disable SPI DMA
+    int deviceNum = SPI_INST((SPI_TypeDef *)bus->busType_u.spi.instance);
+    spi_dev_t *hw = spiGetHw(deviceNum);
+    spi_ll_dma_tx_enable(hw, false);
+    spi_ll_dma_rx_enable(hw, false);
+#endif
 }
 
 void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segment)
 {
+#ifndef USE_DMA
     UNUSED(dev);
     UNUSED(segment);
+#else
+    busDevice_t *bus = dev->bus;
+
+    if (!bus->dmaTx || !bus->dmaRx) {
+        return;
+    }
+
+    // Cache whether we have real TX/RX buffers for this segment.
+    // The actual descriptor setup happens in spiInternalStartDMA.
+    // Store the increment flags in the dmaInit fields.
+    // Non-zero = has buffer (increment address), zero = use dummy (no increment).
+    int txCh = bus->dmaTx->channel;
+    int rxCh = bus->dmaRx->channel;
+
+    *(bus->dmaInitTx) = (segment->u.buffers.txData != NULL) ? 1 : 0;
+    *(bus->dmaInitRx) = (segment->u.buffers.rxData != NULL) ? 1 : 0;
+
+    UNUSED(txCh);
+    UNUSED(rxCh);
+#endif
 }
 
-bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+void spiInternalStartDMA(const extDevice_t *dev)
 {
-    int deviceNum = SPI_INST(instance);
+#ifndef USE_DMA
+    UNUSED(dev);
+#else
+    busDevice_t *bus = dev->bus;
+    int deviceNum = SPI_INST((SPI_TypeDef *)bus->busType_u.spi.instance);
+    spi_dev_t *hw = spiGetHw(deviceNum);
+
+    int txCh = bus->dmaTx->channel;
+    int rxCh = bus->dmaRx->channel;
+
+    // Pass device pointer to RX ISR via userParam
+    bus->dmaRx->userParam = (uint32_t)dev;
+
+    volatile busSegment_t *segment = bus->curSegment;
+    int xferLen = segment->len;
+
+    const uint8_t *txBuffer = segment->u.buffers.txData;
+    uint8_t *rxBuffer = segment->u.buffers.rxData;
+
+    bool hasTx = *(bus->dmaInitTx) != 0;
+    bool hasRx = *(bus->dmaInitRx) != 0;
+
+    // Reset GDMA channels
+    gdma_ll_tx_reset_channel(&GDMA, txCh);
+    gdma_ll_rx_reset_channel(&GDMA, rxCh);
+
+    // Reset SPI DMA FIFOs
+    spi_ll_dma_tx_fifo_reset(hw);
+    spi_ll_dma_rx_fifo_reset(hw);
+
+    // Configure TX DMA descriptor
+    lldesc_t *txDesc = &dmaTxDesc[deviceNum];
+    memset(txDesc, 0, sizeof(*txDesc));
+    txDesc->size = xferLen;
+    txDesc->length = xferLen;
+    txDesc->buf = hasTx ? txBuffer : dummyTxBuf;
+    txDesc->eof = 1;
+    txDesc->owner = 1;  // owned by DMA hardware
+
+    // Configure RX DMA descriptor
+    lldesc_t *rxDesc = &dmaRxDesc[deviceNum];
+    memset(rxDesc, 0, sizeof(*rxDesc));
+    rxDesc->size = xferLen;
+    rxDesc->length = 0;  // filled by hardware
+    rxDesc->buf = hasRx ? rxBuffer : dummyRxBuf;
+    rxDesc->eof = 0;
+    rxDesc->owner = 1;  // owned by DMA hardware
+
+    // Set SPI transfer length
+    spi_ll_set_mosi_bitlen(hw, xferLen * 8);
+    spi_ll_set_miso_bitlen(hw, xferLen * 8);
+
+    // Enable SPI DMA
+    spi_ll_dma_tx_enable(hw, true);
+    spi_ll_dma_rx_enable(hw, true);
+
+    // Configure EOF generation by SPI transaction done
+    spi_ll_dma_set_rx_eof_generation(hw, true);
+
+    // Set descriptor addresses
+    gdma_ll_tx_set_desc_addr(&GDMA, txCh, (uint32_t)txDesc);
+    gdma_ll_rx_set_desc_addr(&GDMA, rxCh, (uint32_t)rxDesc);
+
+    // Clear any pending RX interrupt
+    gdma_ll_rx_clear_interrupt_status(&GDMA, rxCh, GDMA_LL_EVENT_RX_SUC_EOF);
+
+    // Enable RX SUC_EOF interrupt for transfer completion notification
+    gdma_ll_rx_enable_interrupt(&GDMA, rxCh, GDMA_LL_EVENT_RX_SUC_EOF, true);
+
+    // Start both DMA channels
+    gdma_ll_rx_start(&GDMA, rxCh);
+    gdma_ll_tx_start(&GDMA, txCh);
+
+    // Apply SPI config and start the SPI transaction
+    spi_ll_apply_config(hw);
+    spi_ll_user_start(hw);
+#endif
+}
+
+bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData, uint8_t *rxData, int len)
+{
+    int deviceNum = SPI_INST((SPI_TypeDef *)instance);
     spi_dev_t *hw = spiGetHw(deviceNum);
 
     int offset = 0;
@@ -287,6 +512,10 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
             memset(dummy, 0xFF, chunkLen);
             spi_ll_write_buffer(hw, dummy, bitLen);
         }
+
+        // Ensure DMA is disabled for polled transfers
+        spi_ll_dma_tx_enable(hw, false);
+        spi_ll_dma_rx_enable(hw, false);
 
         // Apply config and start transfer
         spi_ll_apply_config(hw);
@@ -314,14 +543,17 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
+    spiResource_t *instance = bus->busType_u.spi.instance;
     spiDevice_t *spi = &spiDevice[spiDeviceByInstance(instance)];
+    bool dmaSafe = dev->useDMA;
+    uint32_t xferLen = 0;
+    uint32_t segmentCount = 0;
 
     bus->initSegment = true;
 
     // Switch bus speed if needed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
-        int deviceNum = SPI_INST(instance);
+        int deviceNum = SPI_INST((SPI_TypeDef *)instance);
         spi_dev_t *hw = spiGetHw(deviceNum);
         uint32_t freq = spiCalculateClock(dev->busType_u.spi.speed);
         spi_ll_master_set_clock(hw, ESP32_APB_CLK_FREQ, freq, 128);
@@ -331,16 +563,16 @@ void spiSequenceStart(const extDevice_t *dev)
 
     // Switch SPI clock polarity/phase if necessary
     if (dev->busType_u.spi.leadingEdge != bus->busType_u.spi.leadingEdge) {
-        int deviceNum = SPI_INST(instance);
+        int deviceNum = SPI_INST((SPI_TypeDef *)instance);
         spi_dev_t *hw = spiGetHw(deviceNum);
 
         if (dev->busType_u.spi.leadingEdge) {
             // SPI Mode 0: CPOL=0, CPHA=0
-            hw->misc.ck_idle_edge = 0;    // Clock idle low
+            hw->ESP32_SPI_CK_IDLE = 0;    // Clock idle low
             hw->user.ck_out_edge = 0;     // Data clocked on leading edge
         } else {
             // SPI Mode 3: CPOL=1, CPHA=1
-            hw->misc.ck_idle_edge = 1;    // Clock idle high
+            hw->ESP32_SPI_CK_IDLE = 1;    // Clock idle high
             hw->user.ck_out_edge = 1;     // Data clocked on trailing edge
         }
         spi_ll_apply_config(hw);
@@ -350,8 +582,23 @@ void spiSequenceStart(const extDevice_t *dev)
 
     UNUSED(spi);
 
-    // Use polled transfer (no DMA support yet)
-    spiProcessSegmentsPolled(dev);
+    // Count segments and total transfer length
+    for (busSegment_t *checkSegment = (busSegment_t *)bus->curSegment; checkSegment->len; checkSegment++) {
+        segmentCount++;
+        xferLen += checkSegment->len;
+    }
+
+    // Use DMA if possible:
+    // - Bus supports DMA (bus->useDMA set by spiInitBusDMA)
+    // - Device allows DMA (dev->useDMA)
+    // - Multiple segments, or single segment >= threshold, or CS held after last segment
+    if (bus->useDMA && dmaSafe && ((segmentCount > 1) ||
+                                    (xferLen >= SPI_DMA_THRESHOLD) ||
+                                    !bus->curSegment[segmentCount].negateCS)) {
+        spiProcessSegmentsDMA(dev);
+    } else {
+        spiProcessSegmentsPolled(dev);
+    }
 }
 
 uint16_t spiCalculateDivider(uint32_t freq)
@@ -384,7 +631,71 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 
 void spiInitBusDMA(void)
 {
-    // DMA not yet supported on ESP32
+#ifdef USE_DMA
+    // Initialise the GDMA hardware
+    esp32DmaInit();
+
+    // Fill TX dummy buffer with 0xFF (SPI idle byte convention)
+    memset(dummyTxBuf, 0xFF, sizeof(dummyTxBuf));
+
+    for (uint32_t device = 0; device < SPIDEV_COUNT; device++) {
+        busDevice_t *bus = &spiBusDevice[device];
+
+        if (bus->busType != BUS_TYPE_SPI) {
+            continue;
+        }
+
+        int deviceNum = SPI_INST((SPI_TypeDef *)bus->busType_u.spi.instance);
+
+        // Allocate a GDMA channel for TX
+        dmaIdentifier_e txId = dmaGetFreeIdentifier();
+        if (txId == DMA_NONE) {
+            return;
+        }
+
+        // Allocate a GDMA channel for RX
+        dmaIdentifier_e rxId = dmaGetFreeIdentifier();
+        if (rxId == DMA_NONE) {
+            return;
+        }
+
+        if (!dmaAllocate(txId, OWNER_SPI_SDO, device + 1) ||
+            !dmaAllocate(rxId, OWNER_SPI_SDI, device + 1)) {
+            return;
+        }
+
+        int txCh = DMA_IDENTIFIER_TO_CHANNEL(txId);
+        int rxCh = DMA_IDENTIFIER_TO_CHANNEL(rxId);
+
+        bus->dmaTx = &dmaDescriptors[DMA_CHANNEL_TO_INDEX(txCh)];
+        bus->dmaTx->channel = txCh;
+
+        bus->dmaRx = &dmaDescriptors[DMA_CHANNEL_TO_INDEX(rxCh)];
+        bus->dmaRx->channel = rxCh;
+
+        // Use the dmaInit fields to cache per-segment config (has TX/RX buffer flags)
+        static DMA_InitTypeDef dmaInitTxStore[SPIDEV_COUNT];
+        static DMA_InitTypeDef dmaInitRxStore[SPIDEV_COUNT];
+        bus->dmaInitTx = &dmaInitTxStore[device];
+        bus->dmaInitRx = &dmaInitRxStore[device];
+
+        // Connect GDMA channels to SPI peripheral
+        int periphId = spiGdmaPeriphId[deviceNum];
+        gdma_ll_tx_connect_to_periph(&GDMA, txCh, GDMA_TRIG_PERIPH_SPI, periphId);
+        gdma_ll_rx_connect_to_periph(&GDMA, rxCh, GDMA_TRIG_PERIPH_SPI, periphId);
+
+        // Enable burst mode for better throughput
+        gdma_ll_tx_enable_data_burst(&GDMA, txCh, true);
+        gdma_ll_tx_enable_descriptor_burst(&GDMA, txCh, true);
+        gdma_ll_rx_enable_data_burst(&GDMA, rxCh, true);
+        gdma_ll_rx_enable_descriptor_burst(&GDMA, rxCh, true);
+
+        // Register RX DMA completion interrupt handler
+        dmaSetHandler(rxId, spiRxIrqHandler, 0, 0);
+
+        bus->useDMA = true;
+    }
+#endif
 }
 
 #endif // USE_SPI

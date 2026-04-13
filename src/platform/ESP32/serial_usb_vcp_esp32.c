@@ -40,7 +40,15 @@
 #include "hal/usb_serial_jtag_ll.h"
 #pragma GCC diagnostic pop
 
+// SOF-based USB host connection detection.
+// USB full-speed host sends a SOF frame every 1ms. We poll the raw SOF
+// interrupt bit periodically — if SOF has been seen since the last check,
+// the host is connected. If not seen for SOF_TIMEOUT_US, assume disconnected.
+#define SOF_TIMEOUT_US  3000   // 3ms without SOF = disconnected
+
 static vcpPort_t vcpPort = { 0 };
+static timeUs_t lastSofTime = 0;
+static bool usbConnected = false;
 
 static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
@@ -167,7 +175,17 @@ uint32_t usbVcpGetBaudRate(serialPort_t *instance)
 
 uint8_t usbVcpIsConnected(void)
 {
-    return 1;  // USB Serial/JTAG is always available when USB is connected
+    const timeUs_t now = micros();
+
+    if (usb_serial_jtag_ll_get_intraw_mask() & USB_SERIAL_JTAG_INTR_SOF) {
+        usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SOF);
+        lastSofTime = now;
+        usbConnected = true;
+    } else if (usbConnected && cmpTimeUs(now, lastSofTime) >= SOF_TIMEOUT_US) {
+        usbConnected = false;
+    }
+
+    return usbConnected;
 }
 
 #endif // USE_VCP

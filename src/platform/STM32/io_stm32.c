@@ -218,7 +218,7 @@ void IOToggle(IO_t io)
 #endif
 }
 
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
