@@ -160,11 +160,14 @@ SECTIONS
   .ram_code :
   {
     . = ALIGN(4);
+    ram_code_start = .;
     *(.ram_code)
     *(.ram_code*)
     . = ALIGN(4);
+    ram_code_end = .;
     _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
   } >RAM AT >FLASH1
+  ram_code = _etext;   /* stub LMA — LRUN already copied .ram_code via _sitext.._etext */
 
   /* Uninitialized data section */
   . = ALIGN(4);

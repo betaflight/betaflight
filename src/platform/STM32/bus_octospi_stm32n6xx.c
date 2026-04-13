@@ -203,7 +203,7 @@ MMFLASH_CODE_NOINLINE static ErrorStatus xspiConfigureCommand(XSPI_TypeDef *inst
         instance->ABR = cmd->AlternateBytes;
 
         MODIFY_REG(
-            instance->ABR,
+            instance->CCR,
             (XSPI_CCR_ABMODE | XSPI_CCR_ABDTR | XSPI_CCR_ABSIZE),
             (cmd->AlternateBytesMode | cmd->AlternateBytesDtrMode | cmd->AlternateBytesSize)
         );

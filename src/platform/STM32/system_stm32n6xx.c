@@ -86,6 +86,11 @@ void systemInit(void)
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM5EN);
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM6EN);
 
+    // Copy .fastram_data, .dmaram_data, etc. from flash to RAM.
+    // On other platforms this runs from SystemInit (assembly startup), but the
+    // N6 LRUN bootstrap only copies the main _stext.._etext range.
+    initialiseMemorySections();
+
     // Init cycle counter
     cycleCounterInit();
 
