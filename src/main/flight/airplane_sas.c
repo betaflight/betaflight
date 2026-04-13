@@ -31,6 +31,7 @@
 #include <math.h>
 #include "common/maths.h"
 #include "build/debug.h"
+#include "flight/mixer.h"
 
 static bool isLiftCoefValid = false;
 static float validLiftCoefTime = 0.0f;
@@ -189,20 +190,6 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
 
 void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 {
-    // Clear all PID values and reset the all PSAS filters by first PSAS run
-    if (!pidRuntime.isReadyPSAS) {
-        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-            pidData[axis].P = 0;
-            pidData[axis].I = 0;
-            pidData[axis].D = 0;
-            pidData[axis].F = 0;
-            pidData[axis].S = 0;
-            pidData[axis].Sum = 0;
-        }
-        psasInit(pidProfile);
-        pidRuntime.isReadyPSAS = true;
-    }
-
     // Pitch channel
     pidData[FD_PITCH].I /= 10.0f;   //restore % last value
     const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
@@ -287,5 +274,52 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum / 50.0f));
     DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].I * 10.0f));
     DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
+}
+
+bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
+    bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
+    if (isPSAS) {
+        const bool psasUnsafe =
+            !pidRuntime.pidStabilisationEnabled ||
+            gyroOverflowDetected();
+        if (psasUnsafe) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+                pidData[axis].P = pidData[axis].I = pidData[axis].D = 0;
+                pidData[axis].F = pidData[axis].S = 0;
+                pidData[axis].Sum = 0;
+            }
+            pidRuntime.isReadyPSAS = false;
+            return true;
+        }
+
+        // Clear all PID values and reset the all PSAS filters by first PSAS run
+        if (!pidRuntime.isReadyPSAS) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+                pidData[axis].P = 0;
+                pidData[axis].I = 0;
+                pidData[axis].D = 0;
+                pidData[axis].F = 0;
+                pidData[axis].S = 0;
+                pidData[axis].Sum = 0;
+            }
+            psasInit(pidProfile);
+            pidRuntime.isReadyPSAS = true;
+        }
+
+        psasUpdate(pidProfile);
+        return true;
+    } else if (pidRuntime.isReadyPSAS) {      // Clear the all PID values after PSAS work
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            pidData[axis].P = 0;
+            pidData[axis].I = 0;
+            pidData[axis].D = 0;
+            pidData[axis].F = 0;
+            pidData[axis].S = 0;
+            pidData[axis].Sum = 0;
+        }
+        pidRuntime.isReadyPSAS = false;
+        return false;
+    }
+    return false;
 }
 #endif

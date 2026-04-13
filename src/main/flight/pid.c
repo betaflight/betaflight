@@ -1241,35 +1241,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif // USE_CHIRP
 
 #ifdef USE_AIRPLANE_SAS
-    bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
-    if (isPSAS) {
-        const bool psasUnsafe =
-            !pidRuntime.pidStabilisationEnabled ||
-            gyroOverflowDetected() ||
-            (isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE));
-        if (psasUnsafe) {
-            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-                pidData[axis].P = pidData[axis].I = pidData[axis].D = 0;
-                pidData[axis].F = pidData[axis].S = 0;
-                pidData[axis].Sum = 0;
-                previousGyroRateDterm[axis] = gyroRateDterm[axis];
-            }
-            pidRuntime.isReadyPSAS = false;
-            return;
-        }
-        psasUpdate(pidProfile);
+    if (psasHandleMode(pidProfile)) {
         return; // PSAS replaces PID controller
-     } else if (pidRuntime.isReadyPSAS) {      // Clear the all PID values after PSAS work
-        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-            pidData[axis].P = 0;
-            pidData[axis].I = 0;
-            pidData[axis].D = 0;
-            pidData[axis].F = 0;
-            pidData[axis].S = 0;
-            pidData[axis].Sum = 0;
-            previousGyroRateDterm[axis] = gyroRateDterm[axis];
-        }
-        pidRuntime.isReadyPSAS = false;
     }
 #endif
 
