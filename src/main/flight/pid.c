@@ -271,7 +271,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_time_seconds = 20,
 #ifdef USE_AIRPLANE_SAS
         .psas_stick_gain = { 100, 100, 100 },  // Percent control output {roll, pitch, yaw}
-        .psas_damping_gain = { 20, 30, 50 },   // percent control range addition by 1 degree per second angle rate * 1000
+        .psas_damping_gain = { 20, 100, 100 }, // percent control range addition by 1 degree per second angle rate * 1000
         .psas_pitch_damping_filter_freq = 30,  // pitch damping filter cut freq 0.3Hz (Tf=0.531s)
         .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *100
         .psas_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
