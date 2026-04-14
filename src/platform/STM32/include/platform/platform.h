@@ -151,6 +151,37 @@
 #define STM32F4
 #endif
 
+#elif defined(STM32C591xx)
+#include "stm32c5xx.h"
+#include "stm32c5xx_hal.h"
+#include "system_stm32c5xx.h"
+#include "stm32c5xx_hal2_compat.h"
+
+#include "stm32c5xx_ll_spi.h"
+#include "stm32c5xx_ll_usart.h"
+#include "stm32c5xx_ll_gpio.h"
+#include "stm32c5xx_ll_dma.h"
+#include "stm32c5xx_ll_rcc.h"
+#include "stm32c5xx_ll_bus.h"
+#include "stm32c5xx_ll_tim.h"
+#include "stm32c5xx_ll_i2c.h"
+#include "stm32c5xx_ll_system.h"
+#include "stm32c5xx_ll_ex.h"
+
+// Chip Unique ID on C5
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+
+#define USE_PIN_AF
+
+#define SPI_TRAIT_AF_PIN 1
+#define I2C_TRAIT_AF_PIN 1
+
+#ifndef STM32C5
+#define STM32C5
+#endif
+
 #elif defined(STM32N657xx)
 #include "stm32n6xx.h"
 #include "partition_stm32n6xx.h"
@@ -295,6 +326,16 @@
 #define USE_LATE_TASK_STATISTICS
 #endif
 
+#ifdef STM32C5
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER
+#define USE_ADC_INTERNAL
+#define USE_DMA_SPEC
+#define USE_PERSISTENT_OBJECTS
+#define USE_LATE_TASK_STATISTICS
+#endif
+
 #ifdef STM32N6
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
@@ -308,7 +349,7 @@
 #define USE_LATE_TASK_STATISTICS
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
@@ -355,7 +396,7 @@
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
-#if defined(STM32F4) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
@@ -463,7 +504,7 @@ extern uint8_t _dmaram_end__;
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
@@ -478,14 +519,14 @@ extern uint8_t _dmaram_end__;
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
-#elif defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 #define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 4
 #endif
 
 // Work around different check routines in the libraries for different MCU types
-#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 #define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
 #define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
 #else
@@ -497,7 +538,7 @@ extern uint8_t _dmaram_end__;
 #define MAX_SPI_PIN_SEL 2
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define MAX_SPI_PIN_SEL 5
 #elif defined(STM32H7) || defined(STM32N6)
 #define MAX_SPI_PIN_SEL 5
@@ -515,7 +556,7 @@ extern uint8_t _dmaram_end__;
 #elif defined(STM32N6)
 #define UART_TX_BUFFER_ATTRIBUTE DMA_RAM
 #define UART_RX_BUFFER_ATTRIBUTE DMA_RAM
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #elif defined(STM32G4)
@@ -529,7 +570,7 @@ extern uint8_t _dmaram_end__;
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
 #elif defined(STM32F4)
@@ -541,7 +582,7 @@ extern uint8_t _dmaram_end__;
 
 #define PLATFORM_TRAIT_RCC 1
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define UART_TRAIT_PINSWAP 1
 #endif
 
