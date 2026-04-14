@@ -84,7 +84,7 @@ typedef enum {
  * LL DMA API name changes: HAL2 renamed many LL DMA constants.
  * -------------------------------------------------------------------------- */
 #define LL_DMA_NORMAL                   0x00000000U
-#define LL_DMA_DATA_ALIGN_ZEROPADD      LL_DMA_DATA_ALIGN_ZERO_PAD
+#define LL_DMA_DATA_ALIGN_ZEROPADD      0x00000000U  /* HAL2 removed alignment control */
 #define LL_DMA_SRC_DATAWIDTH_BYTE       LL_DMA_SRC_DATA_WIDTH_BYTE
 #define LL_DMA_SRC_DATAWIDTH_HALFWORD   LL_DMA_SRC_DATA_WIDTH_HALFWORD
 #define LL_DMA_SRC_DATAWIDTH_WORD       LL_DMA_SRC_DATA_WIDTH_WORD
@@ -95,7 +95,7 @@ typedef enum {
 #define LL_DMA_SRC_INCREMENT            LL_DMA_SRC_ADDR_INCREMENTED
 #define LL_DMA_DEST_FIXED               LL_DMA_DEST_ADDR_FIXED
 #define LL_DMA_DEST_INCREMENT           LL_DMA_DEST_ADDR_INCREMENTED
-#define LL_DMA_HWREQUEST_SINGLEBURST    LL_DMA_HWREQUEST_BLK
+#define LL_DMA_HWREQUEST_SINGLEBURST    LL_DMA_HARDWARE_REQUEST_BURST
 #define LL_DMA_LOW_PRIORITY_LOW_WEIGHT  LL_DMA_PRIORITY_LOW_WEIGHT_MID
 
 /* --------------------------------------------------------------------------
@@ -106,14 +106,14 @@ typedef enum {
 #define TIM_ICPOLARITY_RISING           LL_TIM_IC_POLARITY_RISING
 #define TIM_ICPOLARITY_FALLING          LL_TIM_IC_POLARITY_FALLING
 #define TIM_ICPSC_DIV1                  LL_TIM_ICPSC_DIV1
-#define TIM_ICSELECTION_DIRECTTI        LL_TIM_ACTIVEINPUT_DIRECTTI
+#define TIM_ICSELECTION_DIRECTTI        LL_TIM_ACTIVEINPUT_DIRECT
 #define TIM_OCMODE_PWM1                 LL_TIM_OCMODE_PWM1
 #define TIM_OCPOLARITY_HIGH             LL_TIM_OCPOLARITY_HIGH
 #define TIM_OCPOLARITY_LOW              LL_TIM_OCPOLARITY_LOW
 #define TIM_OCNPOLARITY_HIGH            LL_TIM_OCPOLARITY_HIGH
 #define TIM_OCNPOLARITY_LOW             LL_TIM_OCPOLARITY_LOW
-#define TIM_OCIDLESTATE_SET             LL_TIM_OCIDLESTATE_HIGH
-#define TIM_OCNIDLESTATE_SET            LL_TIM_OCIDLESTATE_HIGH
+#define TIM_OCIDLESTATE_SET             LL_TIM_OCIDLESTATE_SET
+#define TIM_OCNIDLESTATE_SET            LL_TIM_OCIDLESTATE_SET
 #define TIM_OCFAST_DISABLE              0x00000000U
 
 /* --------------------------------------------------------------------------

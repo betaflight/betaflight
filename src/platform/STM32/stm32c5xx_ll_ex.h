@@ -26,55 +26,44 @@
 #include "stm32c5xx.h"
 #include "common/utils.h"
 
-// C5 uses LPDMA1/LPDMA2 with channel-based DMA (not stream-based).
-// The LL_EX functions provide a simplified interface for Betaflight's DMA abstraction.
+/*
+ * HAL2 LL DMA extension functions for Betaflight.
+ *
+ * HAL2 LL DMA API takes DMA_Channel_TypeDef* directly for per-channel
+ * operations. There is no LL_DMA_Init/LL_DMA_InitTypeDef -- configuration
+ * is done through individual register writes.
+ */
 
-// Compatibility defines for older STM32 families.
-#define LL_DMA_MODE_NORMAL   LL_DMA_NORMAL
-#define LL_DMA_MODE_CIRCULAR 0x80000000U  // sentinel value handled by LL_EX_DMA_ConfigStream
+// Compatibility defines for Betaflight DMA abstraction layer
+#define LL_DMA_MODE_NORMAL   0x00000000U
+#define LL_DMA_MODE_CIRCULAR 0x80000000U  // sentinel for LL_EX_DMA_ConfigStream
 
 // Linked-list node for LPDMA circular DMA (linear addressing mode: 6 registers)
 typedef struct {
     uint32_t reg[6];  // CTR1, CTR2, CBR1, CSAR, CDAR, CLLR
 } dmaCircularNode_t;
 
-__STATIC_INLINE uint32_t LL_EX_DMA_Channel_to_Channel(DMA_Channel_TypeDef *DMAx_Channely)
+__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely, void *unused)
 {
-    // Determine channel number from address offset within the DMA peripheral
-    // Channel 0 starts at offset 0x50, each channel is 0x80 apart
-    uint32_t addr = (uint32_t)DMAx_Channely;
-    uint32_t base;
-
-    if (addr >= LPDMA2_BASE && addr < LPDMA2_BASE + 0x1000) {
-        base = LPDMA2_BASE;
-    } else {
-        base = LPDMA1_BASE;
-    }
-
-    return ((addr - base) - 0x50U) / 0x80U;
-}
-
-__STATIC_INLINE DMA_TypeDef *LL_EX_DMA_Channel_to_DMA(DMA_Channel_TypeDef *DMAx_Channely)
-{
-    uint32_t addr = (uint32_t)DMAx_Channely;
-    if (addr >= LPDMA2_BASE && addr < LPDMA2_BASE + 0x1000) {
-        return LPDMA2;
-    }
-    return LPDMA1;
-}
-
-__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely, LL_DMA_InitTypeDef *DMA_InitStruct)
-{
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    return LL_DMA_Init(DMA, Channel, DMA_InitStruct);
+    (void)unused;
+    // HAL2: no LL_DMA_Init. Channel is configured via direct register writes
+    // in LL_EX_DMA_ConfigStream(). This stub exists for API compatibility.
+    return 0;
 }
 
 __STATIC_INLINE uint32_t LL_EX_DMA_DeInit(DMA_Channel_TypeDef *DMAx_Channely)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    return LL_DMA_DeInit(DMA, Channel);
+    // Reset channel: disable and clear configuration
+    DMAx_Channely->CCR = 0;
+    DMAx_Channely->CTR1 = 0;
+    DMAx_Channely->CTR2 = 0;
+    DMAx_Channely->CBR1 = 0;
+    DMAx_Channely->CSAR = 0;
+    DMAx_Channely->CDAR = 0;
+    DMAx_Channely->CLLR = 0;
+    // Clear all flags
+    DMAx_Channely->CFCR = 0x00003F00U;
+    return 0;
 }
 
 __STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Channel_TypeDef *DMAx_Channely)
@@ -84,7 +73,7 @@ __STATIC_INLINE void LL_EX_DMA_EnableResource(DMA_Channel_TypeDef *DMAx_Channely
 
 __STATIC_INLINE void LL_EX_DMA_DisableResource(DMA_Channel_TypeDef *DMAx_Channely)
 {
-    CLEAR_BIT(DMAx_Channely->CCR, DMA_CCR_EN);
+    SET_BIT(DMAx_Channely->CCR, DMA_CCR_SUSP | DMA_CCR_RESET);
 }
 
 __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Channel_TypeDef *DMAx_Channely)
@@ -94,101 +83,100 @@ __STATIC_INLINE void LL_EX_DMA_EnableIT_TC(DMA_Channel_TypeDef *DMAx_Channely)
 
 __STATIC_INLINE void LL_EX_DMA_SetMemoryAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    if (LL_DMA_GetDataTransferDirection(DMA, Channel) == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
-        LL_DMA_SetSrcAddress(DMA, Channel, addr);
+    // HAL2: direction is in CTR2. Check SWREQ/DREQ bits to determine direction.
+    uint32_t direction = LL_DMA_GetDataTransferDirection(DMAx_Channely);
+    if (direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+        LL_DMA_SetSrcAddress(DMAx_Channely, addr);
     } else {
-        LL_DMA_SetDestAddress(DMA, Channel, addr);
+        LL_DMA_SetDestAddress(DMAx_Channely, addr);
     }
 }
 
 __STATIC_INLINE void LL_EX_DMA_SetPeriphAddress(DMA_Channel_TypeDef *DMAx_Channely, uint32_t addr)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    if (LL_DMA_GetDataTransferDirection(DMA, Channel) == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
-        LL_DMA_SetDestAddress(DMA, Channel, addr);
+    uint32_t direction = LL_DMA_GetDataTransferDirection(DMAx_Channely);
+    if (direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+        LL_DMA_SetDestAddress(DMAx_Channely, addr);
     } else {
-        LL_DMA_SetSrcAddress(DMA, Channel, addr);
+        LL_DMA_SetSrcAddress(DMAx_Channely, addr);
     }
 }
 
-__STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *DMAx_Channely,
+__STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *ch,
     uint32_t request, uint32_t direction,
     uint32_t periphAddr, uint32_t memAddr,
     uint32_t dataLength, uint32_t mode)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
     const bool circular = (mode == LL_DMA_MODE_CIRCULAR);
-    LL_DMA_InitTypeDef init = { 0 };
 
-    init.Request = request;
-    init.BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
-    init.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
-    init.SrcBurstLength = 1;
-    init.DestBurstLength = 1;
-    init.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
-    init.DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
-    init.Priority = LL_DMA_LOW_PRIORITY_LOW_WEIGHT;
-    init.BlkDataLength = dataLength;
-    init.Mode = LL_DMA_NORMAL;
+    // Reset channel
+    LL_EX_DMA_DeInit(ch);
 
+    // CTR1: data widths (byte), increments
+    uint32_t ctr1 = 0;
     if (direction == LL_DMA_DIRECTION_PERIPH_TO_MEMORY) {
-        init.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
-        init.SrcAddress = periphAddr;
-        init.DestAddress = memAddr;
-        init.SrcIncMode = LL_DMA_SRC_FIXED;
-        init.DestIncMode = LL_DMA_DEST_INCREMENT;
+        ctr1 = DMA_CTR1_DINC;  // dest (memory) increments, src (periph) fixed
     } else {
-        init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-        init.SrcAddress = memAddr;
-        init.DestAddress = periphAddr;
-        init.SrcIncMode = LL_DMA_SRC_INCREMENT;
-        init.DestIncMode = LL_DMA_DEST_FIXED;
+        ctr1 = DMA_CTR1_SINC;  // src (memory) increments, dest (periph) fixed
     }
+    ch->CTR1 = ctr1;
 
-    LL_DMA_DeInit(DMA, Channel);
-    LL_DMA_Init(DMA, Channel, &init);
+    // CTR2: request, direction
+    uint32_t ctr2 = (request & DMA_CTR2_REQSEL);
+    if (direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
+        ctr2 |= DMA_CTR2_DREQ;  // destination is HW request (periph)
+    }
+    ch->CTR2 = ctr2;
+
+    // CBR1: block data length
+    ch->CBR1 = dataLength & DMA_CBR1_BNDT;
+
+    // Addresses
+    if (direction == LL_DMA_DIRECTION_PERIPH_TO_MEMORY) {
+        ch->CSAR = periphAddr;
+        ch->CDAR = memAddr;
+    } else {
+        ch->CSAR = memAddr;
+        ch->CDAR = periphAddr;
+    }
 
     if (circular) {
         // LPDMA circular mode via linked-list self-linking
         static dmaCircularNode_t circularNodes[16] __attribute__((aligned(32)));
-        const uint32_t isLPDMA2 = ((uint32_t)DMAx_Channely >= LPDMA2_BASE) ? 8U : 0U;
-        dmaCircularNode_t *node = &circularNodes[isLPDMA2 + Channel];
+
+        // Determine node index from channel address
+        uint32_t addr = (uint32_t)ch;
+        uint32_t base = (addr >= LPDMA2_BASE) ? LPDMA2_BASE : LPDMA1_BASE;
+        uint32_t chIdx = ((addr - base) - 0x50U) / 0x80U;
+        uint32_t nodeIdx = ((addr >= LPDMA2_BASE) ? 8U : 0U) + chIdx;
+        dmaCircularNode_t *node = &circularNodes[nodeIdx];
 
         // Copy configured channel registers into the linked-list node
-        node->reg[0] = DMAx_Channely->CTR1;
-        node->reg[1] = DMAx_Channely->CTR2;
-        node->reg[2] = DMAx_Channely->CBR1;
-        node->reg[3] = DMAx_Channely->CSAR;
-        node->reg[4] = DMAx_Channely->CDAR;
+        node->reg[0] = ch->CTR1;
+        node->reg[1] = ch->CTR2;
+        node->reg[2] = ch->CBR1;
+        node->reg[3] = ch->CSAR;
+        node->reg[4] = ch->CDAR;
 
-        // Self-link: CLLR points back to this node, reloading all transfer registers
+        // Self-link: CLLR points back to this node
         const uint32_t nodeAddr = (uint32_t)node;
         const uint32_t updateFlags = DMA_CLLR_UT1 | DMA_CLLR_UT2 | DMA_CLLR_UB1
                                    | DMA_CLLR_USA | DMA_CLLR_UDA;
         node->reg[5] = (nodeAddr & DMA_CLLR_LA_Msk) | updateFlags;
 
-        // Program the channel's linked-list base address and link register
-        DMAx_Channely->CLBAR = nodeAddr & DMA_CLBAR_LBA;
-        DMAx_Channely->CLLR  = (nodeAddr & DMA_CLLR_LA_Msk) | updateFlags;
+        ch->CLBAR = nodeAddr & DMA_CLBAR_LBA;
+        ch->CLLR  = (nodeAddr & DMA_CLLR_LA_Msk) | updateFlags;
     }
 }
 
 __STATIC_INLINE void LL_EX_DMA_SetDataLength(DMA_Channel_TypeDef *DMAx_Channely, uint32_t NbData)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    LL_DMA_SetBlkDataLength(DMA, Channel, NbData);
+    LL_DMA_SetBlkDataLength(DMAx_Channely, NbData);
 }
 
 __STATIC_INLINE uint32_t LL_EX_DMA_GetDataLength(DMA_Channel_TypeDef *DMAx_Channely)
 {
-    DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
-    const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
-    return LL_DMA_GetBlkDataLength(DMA, Channel);
+    return LL_DMA_GetBlkDataLength(DMAx_Channely);
 }
 
 __STATIC_INLINE void LL_EX_TIM_EnableIT(TIM_TypeDef *TIMx, uint32_t Sources)
