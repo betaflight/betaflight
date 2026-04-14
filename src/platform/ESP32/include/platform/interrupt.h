@@ -31,6 +31,12 @@
 #define ESP32_CPU_INTR_UART0    20
 #define ESP32_CPU_INTR_UART1    21
 #define ESP32_CPU_INTR_UART2    23
+#define ESP32_CPU_INTR_DMA_CH0  24
+#define ESP32_CPU_INTR_DMA_CH1  25
+#define ESP32_CPU_INTR_DMA_CH2  26
+#define ESP32_CPU_INTR_DMA_CH3  27
+#define ESP32_CPU_INTR_DMA_CH4  28
+#define ESP32_CPU_INTR_USB      29
 
 typedef void (*esp32IsrHandler_t)(void *arg);
 

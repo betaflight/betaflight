@@ -47,24 +47,36 @@ void SystemClock_Config(void);
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_RSR_SFTRSTF)
+    if (cachedResetFlags & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
 }
 
+static bool memoryMappedModeEnabledOnBoot = false;
+
 bool isMemoryMappedModeEnabledOnBoot(void)
 {
-    return false;
+    return memoryMappedModeEnabledOnBoot;
+}
+
+void memoryMappedModeInit(void)
+{
+#if defined(USE_OCTOSPI) && defined(FLASH_OCTOSPI_INSTANCE)
+    // Boot flash XSPI peripheral is memory-mapped at 0x70000000 by the bootloader
+    memoryMappedModeEnabledOnBoot = READ_BIT(FLASH_OCTOSPI_INSTANCE->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+#endif
 }
 
 void systemInit(void)
 {
+    memoryMappedModeInit();
+
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->RSR;
+    cachedResetFlags = RCC->RSR;
 
     // Enable AXI SRAM clocks
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM1EN);
@@ -73,6 +85,11 @@ void systemInit(void)
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM4EN);
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM5EN);
     SET_BIT(RCC->MEMENSR, RCC_MEMENR_AXISRAM6EN);
+
+    // Copy .fastram_data, .dmaram_data, etc. from flash to RAM.
+    // On other platforms this runs from SystemInit (assembly startup), but the
+    // N6 LRUN bootstrap only copies the main _stext.._etext range.
+    initialiseMemorySections();
 
     // Init cycle counter
     cycleCounterInit();

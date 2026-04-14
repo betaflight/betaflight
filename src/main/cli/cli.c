@@ -1546,7 +1546,9 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
     int port1PinioDtr = -1;          // route port2 USB DTR to pinio
 #endif
     bool port1ResetOnDtr = false;    // reset board with DTR
+#ifdef USE_PWM_OUTPUT
     bool escSensorPassthrough = false;
+#endif
 
     char* nexttok = cmdline;
     char* tok;
@@ -1563,7 +1565,9 @@ static void cliSerialPassthrough(const char *cmdName, char *cmdline)
             serialPortIdentifier_e portId;
             char* endptr;
             if (portN == 0 && strcasestr(tok, "esc_sensor") != NULL) {
+#ifdef USE_PWM_OUTPUT
                 escSensorPassthrough = true;
+#endif
                 const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
                 portId = portConfig ? portConfig->identifier : SERIAL_PORT_NONE;
             } else if (strcasecmp(tok, "cli") == 0) {

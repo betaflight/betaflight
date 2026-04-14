@@ -13,11 +13,12 @@ IDF_TOOLS_PATH  ?= $(TOOLS_DIR)/espressif
 export IDF_TOOLS_PATH
 
 # Resolve Xtensa compiler: prefer local install, fall back to PATH
+# The unified xtensa-esp-elf toolchain supports all ESP32 variants via target prefixes
 ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
 ifneq ($(ESP_TOOLS_BIN),)
-  PLATFORM_SDK_esp_idf_CC := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-gcc
+  PLATFORM_SDK_esp_idf_CC := $(ESP_TOOLS_BIN)/xtensa-esp32-elf-gcc
 else
-  PLATFORM_SDK_esp_idf_CC := xtensa-esp32s3-elf-gcc
+  PLATFORM_SDK_esp_idf_CC := xtensa-esp32-elf-gcc
 endif
 
 # Stamp file indicating esp-idf has been hydrated
@@ -36,8 +37,12 @@ $(ESP_IDF_STAMP):
 ## esp_tools_install  : Install ESP32 toolchain via esp-idf
 .PHONY: esp_tools_install
 esp_tools_install: | $(ESP_IDF_STAMP)
+	@ldconfig -p 2>/dev/null | grep -q libusb-1.0 || \
+		echo "WARNING: libusb-1.0 not found. Install it (e.g. 'sudo apt-get install libusb-1.0-0') or esp32 tools may fail."
+	@python3 -c 'import venv' 2>/dev/null || \
+		echo "WARNING: python3-venv not found. Install it (e.g. 'sudo apt-get install python3-venv') or esp32 tools may fail."
 	@echo "Installing ESP32 tools to $(IDF_TOOLS_PATH)"
-	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) ./install.sh esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
+	$(V1) cd $(ESP_IDF_PATH) && IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) ./install.sh esp32,esp32s3 || { echo "Failed to install ESP32 tools"; exit 1; }
 	@echo "ESP32 tools installed. Source export.sh before building:"
 	@echo "  IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) . $(ESP_IDF_PATH)/export.sh"
 

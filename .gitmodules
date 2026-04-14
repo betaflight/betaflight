@@ -26,6 +26,11 @@
 	url = https://github.com/STMicroelectronics/STM32CubeH5
 	ignore = dirty
 	update = none
+[submodule "lib/main/APM32F4"]
+	path = lib/main/APM32F4
+	url = https://github.com/LuckkMaker/APM32F4xx_DAL_SDK
+	ignore = dirty
+	update = none
 [submodule "lib/main/GD32H7"]
 	path = lib/main/GD32H7
 	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git

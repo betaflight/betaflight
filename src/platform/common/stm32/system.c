@@ -50,8 +50,8 @@ static float usTicksInv = 0.0f;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
 static volatile uint32_t sysTickUptime = 0;
 static volatile uint32_t sysTickValStamp = 0;
-// cached value of RCC->CSR
-uint32_t cachedRccCsrValue;
+// cached value of reset status register
+uint32_t cachedResetFlags;
 static uint32_t cpuClockFrequency = 0;
 
 void cycleCounterInit(void)
@@ -346,6 +346,8 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_F746, .name = "STM32F746" },
 #elif defined(STM32F765xx)
         { .id = MCU_TYPE_F765, .name = "STM32F765" },
+#elif defined(STM32H562xx)
+        { .id = MCU_TYPE_H562, .name = "STM32H562" },
 #elif defined(STM32H563xx)
         { .id = MCU_TYPE_H563, .name = "STM32H563" },
 #elif defined(STM32H750xx)
