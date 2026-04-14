@@ -38,7 +38,6 @@
 #include "fc/rc.h"
 
 #include "flight/pid.h"
-#include "flight/rpm_filter.h"
 
 #include "pg/motor.h"
 
@@ -374,9 +373,6 @@ void pidInit(const pidProfile_t *pidProfile)
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
-#ifdef USE_RPM_FILTER
-    rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
-#endif
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
