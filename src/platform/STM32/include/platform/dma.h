@@ -167,10 +167,10 @@
 #define DMA_OUTPUT_INDEX    0
 #define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
 
-// C5 LPDMA uses _Channel for register blocks but _CH for IRQ naming
+// C5 LPDMA uses _CH naming for both register blocks and IRQs
 #define DEFINE_DMA_CHANNEL(d, c, f) { \
     .dma = d, \
-    .ref = (dmaResource_t *)d ## _Channel ## c, \
+    .ref = (dmaResource_t *)d ## _CH ## c, \
     .irqHandlerCallback = NULL, \
     .flagsShift = f, \
     .irqN = d ## _CH ## c ## _IRQn, \

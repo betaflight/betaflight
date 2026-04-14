@@ -37,6 +37,7 @@ STDPERIPH_SRC   = \
             stm32c5xx_hal_rtc.c \
             stm32c5xx_hal_spi.c \
             stm32c5xx_hal_tim.c \
+            stm32c5xx_hal_tamp.c \
             stm32c5xx_hal_uart.c \
             stm32c5xx_hal_usart.c
 
@@ -55,7 +56,7 @@ USBCDC_SRC = \
 DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(STDPERIPH_DIR):$(STM32C5_LIB)/stm32c5xx_dfp/Include
+VPATH           := $(VPATH):$(STDPERIPH_DIR):$(STM32C5_LIB)/stm32c5xx_dfp/Include:$(STM32C5_LIB)/stm32c5xx_dfp/Source/Templates
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
@@ -108,8 +109,10 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 # TODO: USB VCP requires HAL2 PCD compatibility work
 VCP_SRC =
 
-# Stage 1: bare minimum for boot. Peripheral drivers added incrementally as
-# HAL2 compatibility shims are written for each subsystem.
+# Files that compile cleanly with HAL2.
+# Peripheral drivers that deeply use old HAL types (timer_hal, bus_spi_ll,
+# dshot_bitbang_ll, etc.) need HAL2 forks and are excluded for now.
+# A stub file provides weak symbols for the missing functions.
 MCU_COMMON_SRC = \
             STM32/system_stm32c5xx.c \
             STM32/memprot_stm32c5xx.c \
@@ -117,7 +120,11 @@ MCU_COMMON_SRC = \
             STM32/debug.c \
             STM32/io_stm32.c \
             STM32/exti.c \
-            STM32/rcc_stm32_hal2.c
+            STM32/rcc_stm32_hal2.c \
+            STM32/adc_stm32c5xx.c \
+            STM32/dma_stm32c5xx.c \
+            STM32/stubs_stm32c5xx.c \
+            STM32/startup/system_stm32c5xx.c
 
 MSC_SRC =
 

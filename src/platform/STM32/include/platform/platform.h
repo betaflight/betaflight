@@ -622,7 +622,7 @@ extern uint8_t _dmaram_end__;
 #endif
 
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_TRAIT_CHANNEL 1
 #endif
 
@@ -674,7 +674,7 @@ extern uint8_t _dmaram_end__;
 #define MCO_DIVIDER_COUNT  5
 #endif
 
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_CHANREQ_STRING "Request"
 
 #define ADC_INTERNAL_VBAT4_ENABLED 1

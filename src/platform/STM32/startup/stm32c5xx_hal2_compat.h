@@ -123,6 +123,7 @@ typedef struct {
 } LL_TIM_InitTypeDef;
 typedef struct { void *Instance; } UART_HandleTypeDef;
 typedef struct { void *Instance; void *IN_ep; void *OUT_ep; void *Setup; void *pData; } PCD_HandleTypeDef;
+typedef struct { ADC_TypeDef *Instance; } ADC_HandleTypeDef;
 
 /* --------------------------------------------------------------------------
  * Flash: HAL2 completely rewrites flash API. Stub types for config_flash.c.

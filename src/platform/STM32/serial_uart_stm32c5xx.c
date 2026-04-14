@@ -85,18 +85,18 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_USART1,
         .reg = (usartResource_t *)USART1,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_USART1_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_USART1_RX,
         .rxDMAResource = (dmaResource_t *)UART1_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_USART1_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_USART1_TX,
         .txDMAResource = (dmaResource_t *)UART1_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA10), GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB7),  GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PA10), HAL_GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PB7),  HAL_GPIO_AF7_USART1 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA9),  GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB6),  GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PA9),  HAL_GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PB6),  HAL_GPIO_AF7_USART1 },
         },
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -114,18 +114,18 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_USART2,
         .reg = (usartResource_t *)USART2,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_USART2_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_USART2_RX,
         .rxDMAResource = (dmaResource_t *)UART2_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_USART2_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_USART2_TX,
         .txDMAResource = (dmaResource_t *)UART2_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA3), GPIO_AF7_USART2 },
-            { DEFIO_TAG_E(PD6), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PA3), HAL_GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PD6), HAL_GPIO_AF7_USART2 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA2), GPIO_AF7_USART2 },
-            { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PA2), HAL_GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PD5), HAL_GPIO_AF7_USART2 },
         },
         .rcc = RCC_APB1L(USART2),
         .irqn = USART2_IRQn,
@@ -143,20 +143,20 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_USART3,
         .reg = (usartResource_t *)USART3,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_USART3_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_USART3_RX,
         .rxDMAResource = (dmaResource_t *)UART3_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_USART3_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_USART3_TX,
         .txDMAResource = (dmaResource_t *)UART3_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PB11), GPIO_AF7_USART3 },
-            { DEFIO_TAG_E(PC11), GPIO_AF7_USART3 },
-            { DEFIO_TAG_E(PD9),  GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PB11), HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PC11), HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PD9),  HAL_GPIO_AF7_USART3 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PB10), GPIO_AF7_USART3 },
-            { DEFIO_TAG_E(PC10), GPIO_AF7_USART3 },
-            { DEFIO_TAG_E(PD8),  GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PB10), HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PC10), HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PD8),  HAL_GPIO_AF7_USART3 },
         },
         .rcc = RCC_APB1L(USART3),
         .irqn = USART3_IRQn,
@@ -174,18 +174,18 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_UART4,
         .reg = (usartResource_t *)UART4,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_UART4_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_UART4_RX,
         .rxDMAResource = (dmaResource_t *)UART4_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_UART4_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_UART4_TX,
         .txDMAResource = (dmaResource_t *)UART4_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA1),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PA1),  HAL_GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PC11), HAL_GPIO_AF8_UART4 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA0),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PA0),  HAL_GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PC10), HAL_GPIO_AF8_UART4 },
         },
         .rcc = RCC_APB1L(UART4),
         .irqn = UART4_IRQn,
@@ -203,18 +203,18 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_UART5,
         .reg = (usartResource_t *)UART5,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_UART5_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_UART5_RX,
         .rxDMAResource = (dmaResource_t *)UART5_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_UART5_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_UART5_TX,
         .txDMAResource = (dmaResource_t *)UART5_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PB5),  GPIO_AF14_UART5 },
-            { DEFIO_TAG_E(PD2),  GPIO_AF8_UART5 },
+            { DEFIO_TAG_E(PB5),  HAL_GPIO_AF14_UART5 },
+            { DEFIO_TAG_E(PD2),  HAL_GPIO_AF8_UART5 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PB6),  GPIO_AF14_UART5 },
-            { DEFIO_TAG_E(PC12), GPIO_AF8_UART5 },
+            { DEFIO_TAG_E(PB6),  HAL_GPIO_AF14_UART5 },
+            { DEFIO_TAG_E(PC12), HAL_GPIO_AF8_UART5 },
         },
         .rcc = RCC_APB1L(UART5),
         .irqn = UART5_IRQn,
@@ -232,16 +232,16 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_USART6,
         .reg = (usartResource_t *)USART6,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_USART6_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_USART6_RX,
         .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_USART6_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_USART6_TX,
         .txDMAResource = (dmaResource_t *)UART6_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PC7), GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PC7), HAL_GPIO_AF7_USART6 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PC6), GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PC6), HAL_GPIO_AF7_USART6 },
         },
         .rcc = RCC_APB1L(USART6),
         .irqn = USART6_IRQn,
@@ -259,20 +259,20 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .identifier = SERIAL_PORT_USART7,
         .reg = (usartResource_t *)UART7,
 #ifdef USE_DMA
-        .rxDMAChannel = LPDMA1_REQUEST_UART7_RX,
+        .rxDMAChannel = HAL_LPDMA1_REQUEST_UART7_RX,
         .rxDMAResource = (dmaResource_t *)UART7_RX_DMA_STREAM,
-        .txDMAChannel = LPDMA1_REQUEST_UART7_TX,
+        .txDMAChannel = HAL_LPDMA1_REQUEST_UART7_TX,
         .txDMAResource = (dmaResource_t *)UART7_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA8), GPIO_AF11_UART7 },
-            { DEFIO_TAG_E(PB3), GPIO_AF11_UART7 },
-            { DEFIO_TAG_E(PF6), GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PA8), HAL_GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PB3), HAL_GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PF6), HAL_GPIO_AF7_UART7 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA15), GPIO_AF11_UART7 },
-            { DEFIO_TAG_E(PB4),  GPIO_AF11_UART7 },
-            { DEFIO_TAG_E(PF7),  GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PA15), HAL_GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PB4),  HAL_GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PF7),  HAL_GPIO_AF7_UART7 },
         },
         .rcc = RCC_APB1L(UART7),
         .irqn = UART7_IRQn,

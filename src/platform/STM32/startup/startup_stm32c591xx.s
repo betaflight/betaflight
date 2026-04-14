@@ -18,6 +18,8 @@
 
 .global g_pfnVectors
 .global Default_Handler
+.global __Vectors
+.set __Vectors, g_pfnVectors
 
 /* start address for the initialization values of the .data section.
 defined in linker script */

@@ -58,8 +58,6 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .dmaResource = (dmaResource_t *)ADC1_DMA_STREAM,
         .channel = DMA_REQUEST_ADC1,
 #endif
-        .enabled = false,
-        .useDMA = false,
     },
     {
         .ADCx = ADC2,
@@ -68,8 +66,6 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
         .dmaResource = (dmaResource_t *)ADC2_DMA_STREAM,
         .channel = DMA_REQUEST_ADC2,
 #endif
-        .enabled = false,
-        .useDMA = false,
     },
 };
 
