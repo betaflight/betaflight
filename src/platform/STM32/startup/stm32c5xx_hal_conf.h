@@ -13,7 +13,26 @@
 #endif
 
 /* ########################## Module Selection ############################## */
+/* HAL2 uses USE_HAL_xxx_MODULE=1 (checked by stm32_hal.h) */
 #define HAL_MODULE_ENABLED
+#define USE_HAL_ADC_MODULE       1
+#define USE_HAL_CORTEX_MODULE    1
+#define USE_HAL_DMA_MODULE       1
+#define USE_HAL_EXTI_MODULE      1
+#define USE_HAL_FLASH_MODULE     1
+#define USE_HAL_GPIO_MODULE      1
+#define USE_HAL_I2C_MODULE       1
+#define USE_HAL_PCD_MODULE       1
+#define USE_HAL_PWR_MODULE       1
+#define USE_HAL_RCC_MODULE       1
+#define USE_HAL_RNG_MODULE       1
+#define USE_HAL_RTC_MODULE       1
+#define USE_HAL_SPI_MODULE       1
+#define USE_HAL_TIM_MODULE       1
+#define USE_HAL_UART_MODULE      1
+#define USE_HAL_TAMP_MODULE      1
+#define USE_HAL_USART_MODULE     1
+/* Old-style defines for Betaflight platform code that checks these */
 #define HAL_ADC_MODULE_ENABLED
 #define HAL_CORTEX_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED

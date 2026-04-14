@@ -86,7 +86,7 @@ static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
 #endif
 
 static uint32_t triggerLookupTable[] = {
-#if defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     [BETAFLIGHT_EXTI_TRIGGER_RISING]    = GPIO_MODE_IT_RISING,
     [BETAFLIGHT_EXTI_TRIGGER_FALLING]   = GPIO_MODE_IT_FALLING,
     [BETAFLIGHT_EXTI_TRIGGER_BOTH]      = GPIO_MODE_IT_RISING_FALLING
@@ -150,7 +150,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
 
     EXTIDisable(io);
 
-#if defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
         .Mode = GPIO_MODE_INPUT | IO_CONFIG_GET_MODE(config) | triggerLookupTable[trigger],
@@ -211,7 +211,7 @@ void EXTIRelease(IO_t io)
 
 void EXTIEnable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -226,7 +226,7 @@ void EXTIEnable(IO_t io)
 
 void EXTIDisable(IO_t io)
 {
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     uint32_t extiLine = IO_EXTI_Line(io);
 
     if (!extiLine) {
@@ -265,15 +265,15 @@ static void EXTI_IRQHandler(uint32_t mask)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler, 0x0001);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler, 0x0002);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 _EXTI_IRQ_HANDLER(EXTI2_IRQHandler, 0x0004);
 #else
 # warning "Unknown CPU"
 #endif
 _EXTI_IRQ_HANDLER(EXTI3_IRQHandler, 0x0008);
 _EXTI_IRQ_HANDLER(EXTI4_IRQHandler, 0x0010);
-#if defined(STM32H5) || defined(STM32N6)
-// H5 and N6 have individual EXTI IRQs for each line
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+// H5, C5 and N6 have individual EXTI IRQs for each line
 _EXTI_IRQ_HANDLER(EXTI5_IRQHandler, 0x0020);
 _EXTI_IRQ_HANDLER(EXTI6_IRQHandler, 0x0040);
 _EXTI_IRQ_HANDLER(EXTI7_IRQHandler, 0x0080);

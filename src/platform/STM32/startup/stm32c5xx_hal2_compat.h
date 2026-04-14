@@ -80,6 +80,76 @@ typedef enum {
 #define GPIO_SPEED_FREQ_HIGH       0x02U
 #define GPIO_SPEED_FREQ_VERY_HIGH  0x03U
 
+#define GPIO_PIN_RESET             0U
+#define GPIO_PIN_SET               1U
+
+/* --------------------------------------------------------------------------
+ * GPIO: HAL2 removed GPIO_InitTypeDef (uses LL_GPIO_InitTypeDef instead).
+ * Many shared files use the old HAL GPIO_InitTypeDef for EXTI config etc.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint32_t Pin;
+    uint32_t Mode;
+    uint32_t Speed;
+    uint32_t OutputType;
+    uint32_t Pull;
+    uint32_t Alternate;
+} GPIO_InitTypeDef;
+#define GPIO_MODE_IT_RISING          0x10110000U
+#define GPIO_MODE_IT_FALLING         0x10210000U
+#define GPIO_MODE_IT_RISING_FALLING  0x10310000U
+
+/* --------------------------------------------------------------------------
+ * TIM: HAL2 removed HAL TIM init structs. Stub them for struct declarations.
+ * -------------------------------------------------------------------------- */
+typedef struct { TIM_TypeDef *Instance; } TIM_HandleTypeDef;
+typedef struct {
+    uint32_t OCMode; uint32_t Pulse; uint32_t OCPolarity; uint32_t OCNPolarity;
+    uint32_t OCFastMode; uint32_t OCIdleState; uint32_t OCNIdleState;
+} TIM_OC_InitTypeDef;
+typedef struct {
+    uint32_t ICPolarity; uint32_t ICSelection; uint32_t ICPrescaler; uint32_t ICFilter;
+} TIM_IC_InitTypeDef;
+typedef struct {
+    uint32_t OCMode; uint32_t Pulse; uint32_t OCPolarity; uint32_t OCNPolarity;
+    uint32_t OCFastMode; uint32_t OCIdleState; uint32_t OCNIdleState;
+} LL_TIM_OC_InitTypeDef;
+typedef struct {
+    uint32_t ICPolarity; uint32_t ICActiveInput; uint32_t ICPrescaler; uint32_t ICFilter;
+} LL_TIM_IC_InitTypeDef;
+typedef struct {
+    uint32_t Prescaler; uint32_t CounterMode; uint32_t Autoreload;
+    uint32_t ClockDivision; uint32_t RepetitionCounter;
+} LL_TIM_InitTypeDef;
+typedef struct { void *Instance; } UART_HandleTypeDef;
+
+/* --------------------------------------------------------------------------
+ * Flash: HAL2 completely rewrites flash API. Stub types for config_flash.c.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint32_t TypeErase;
+    uint32_t Banks;
+    uint32_t Sector;
+    uint32_t NbSectors;
+} FLASH_EraseInitTypeDef;
+#define FLASH_TYPEERASE_SECTORS 0x02U
+#define FLASH_TYPEPROGRAM_QUADWORD 0x03U
+
+/* --------------------------------------------------------------------------
+ * LL DMA types: HAL2 removed LL_DMA_InitTypeDef. Provide a stub struct so
+ * that bus.h compiles (actual DMA config uses direct register writes).
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint32_t placeholder;  // HAL2 has no LL_DMA_Init; config via registers
+} LL_DMA_InitTypeDef;
+
+/* --------------------------------------------------------------------------
+ * HAL DMA handle: stub for headers that reference DMA_HandleTypeDef.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    DMA_Channel_TypeDef *Instance;
+} DMA_HandleTypeDef;
+
 /* --------------------------------------------------------------------------
  * LL DMA API name changes: HAL2 renamed many LL DMA constants.
  * -------------------------------------------------------------------------- */
@@ -117,19 +187,49 @@ typedef enum {
 #define TIM_OCFAST_DISABLE              0x00000000U
 
 /* --------------------------------------------------------------------------
- * Flash constants: HAL2 renames flash types.
+ * Flash: HAL2 completely rewrites the flash API. Provide stubs so
+ * config_flash.c compiles. Actual flash operations need a HAL2 fork.
  * -------------------------------------------------------------------------- */
-#define FLASH_BANK_1                    LL_FLASH_BANK_1
-#define FLASH_BANK_2                    LL_FLASH_BANK_2
+#define FLASH_BANK_1                    0x01U
+#define FLASH_BANK_2                    0x02U
+
+#define HAL_FLASH_Unlock()              ((void)0)
+#define HAL_FLASH_Lock()                ((void)0)
+#define HAL_FLASH_Program(type, addr, data) ((void)(addr), (void)(data), HAL_OK)
+#define HAL_FLASHEx_Erase(pEraseInit, pSectorError) ((void)(pEraseInit), (void)(pSectorError), HAL_OK)
+
+/* --------------------------------------------------------------------------
+ * TIM HAL function renames: HAL2 simplifies TIM API.
+ * -------------------------------------------------------------------------- */
+#define HAL_TIM_Base_Start(htim)            do { (void)(htim); } while(0)
+#define HAL_TIM_PWM_Start(htim, ch)         do { (void)(htim); (void)(ch); } while(0)
+#define HAL_TIMEx_PWMN_Start(htim, ch)      do { (void)(htim); (void)(ch); } while(0)
+#define HAL_TIM_PWM_ConfigChannel(htim, cfg, ch)  do { (void)(htim); (void)(cfg); (void)(ch); } while(0)
+#define HAL_TIM_IC_ConfigChannel(htim, cfg, ch)   do { (void)(htim); (void)(cfg); (void)(ch); } while(0)
+#define HAL_TIM_IC_Start_IT(htim, ch)       do { (void)(htim); (void)(ch); } while(0)
+#define TIM_CCxChannelCmd(TIMx, ch, state)  do { (void)(TIMx); (void)(ch); (void)(state); } while(0)
+
+/* --------------------------------------------------------------------------
+ * USART LL: HAL2 renames TXE → TXFE.
+ * -------------------------------------------------------------------------- */
+#define LL_USART_EnableIT_TXE  LL_USART_EnableIT_TXFE
 
 /* --------------------------------------------------------------------------
  * NVIC priority grouping: HAL2 drops the HAL wrappers, use CMSIS directly.
  * The old NVIC_PRIORITYGROUP_2 = 0x05 maps to 2 bits preemption / 2 bits sub.
  * -------------------------------------------------------------------------- */
 #define HAL_NVIC_SetPriorityGrouping  NVIC_SetPriorityGrouping
-#define HAL_NVIC_SetPriority          NVIC_SetPriority
 #define HAL_NVIC_EnableIRQ            NVIC_EnableIRQ
 #define HAL_NVIC_DisableIRQ           NVIC_DisableIRQ
+
+// HAL_NVIC_SetPriority(irq, preempt, sub) → NVIC_SetPriority(irq, encoded)
+#define HAL_NVIC_SetPriority(irq, preempt, sub) \
+    NVIC_SetPriority((irq), NVIC_EncodePriority(NVIC_GetPriorityGrouping(), (preempt), (sub)))
+
+// HAL2 HAL_GPIO_Init has a different signature (3 args). Redirect old 2-arg
+// calls to a no-op so shared code compiles. Actual GPIO config uses LL.
+static inline void HAL_GPIO_Init_stub_(void *a __attribute__((unused)), void *b __attribute__((unused))) {}
+#define HAL_GPIO_Init(gpio, initptr) HAL_GPIO_Init_stub_((void*)(gpio), (void*)(initptr))
 
 #ifndef NVIC_PRIORITYGROUP_2
 #define NVIC_PRIORITYGROUP_2  ((uint32_t)0x00000005)

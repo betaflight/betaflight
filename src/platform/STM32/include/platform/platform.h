@@ -154,8 +154,16 @@
 #elif defined(STM32C591xx)
 #include "stm32c5xx.h"
 #include "stm32c5xx_hal.h"
+// HAL2: module headers must be included explicitly (hal_conf.h only defines enables)
+#include "stm32c5xx_hal_rcc.h"
+#include "stm32c5xx_hal_gpio.h"
+#include "stm32c5xx_hal_dma.h"
+#include "stm32c5xx_hal_cortex.h"
+#include "stm32c5xx_hal_flash.h"
+#include "stm32c5xx_hal_pwr.h"
+#include "stm32c5xx_hal_tim.h"
+#include "stm32c5xx_hal_tamp.h"
 #include "system_stm32c5xx.h"
-#include "stm32c5xx_hal2_compat.h"
 
 #include "stm32c5xx_ll_spi.h"
 #include "stm32c5xx_ll_usart.h"
@@ -166,6 +174,9 @@
 #include "stm32c5xx_ll_tim.h"
 #include "stm32c5xx_ll_i2c.h"
 #include "stm32c5xx_ll_system.h"
+
+// HAL2 compat must come AFTER all HAL/LL headers (needs their types)
+#include "stm32c5xx_hal2_compat.h"
 #include "stm32c5xx_ll_ex.h"
 
 // Chip Unique ID on C5

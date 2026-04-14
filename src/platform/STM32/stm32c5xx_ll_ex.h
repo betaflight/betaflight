@@ -43,9 +43,8 @@ typedef struct {
     uint32_t reg[6];  // CTR1, CTR2, CBR1, CSAR, CDAR, CLLR
 } dmaCircularNode_t;
 
-__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely, void *unused)
+__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely __attribute__((unused)), void *unused __attribute__((unused)))
 {
-    (void)unused;
     // HAL2: no LL_DMA_Init. Channel is configured via direct register writes
     // in LL_EX_DMA_ConfigStream(). This stub exists for API compatibility.
     return 0;
@@ -121,12 +120,9 @@ __STATIC_INLINE void LL_EX_DMA_ConfigStream(DMA_Channel_TypeDef *ch,
     }
     ch->CTR1 = ctr1;
 
-    // CTR2: request, direction
-    uint32_t ctr2 = (request & DMA_CTR2_REQSEL);
-    if (direction == LL_DMA_DIRECTION_MEMORY_TO_PERIPH) {
-        ctr2 |= DMA_CTR2_DREQ;  // destination is HW request (periph)
-    }
-    ch->CTR2 = ctr2;
+    // CTR2: request selection. HAL2 LPDMA has no direction bit -- src/dst
+    // addresses determine direction implicitly.
+    ch->CTR2 = (request & DMA_CTR2_REQSEL);
 
     // CBR1: block data length
     ch->CBR1 = dataLength & DMA_CBR1_BNDT;
