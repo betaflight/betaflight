@@ -122,6 +122,7 @@ typedef struct {
     uint32_t ClockDivision; uint32_t RepetitionCounter;
 } LL_TIM_InitTypeDef;
 typedef struct { void *Instance; } UART_HandleTypeDef;
+typedef struct { void *Instance; void *IN_ep; void *OUT_ep; void *Setup; void *pData; } PCD_HandleTypeDef;
 
 /* --------------------------------------------------------------------------
  * Flash: HAL2 completely rewrites flash API. Stub types for config_flash.c.

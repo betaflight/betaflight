@@ -51,9 +51,8 @@ USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
-DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
-                        $(USBCORE_SRC) \
-                        $(USBCDC_SRC)
+# TODO: USB library needs HAL2 PCD compatibility work
+DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(STDPERIPH_DIR):$(STM32C5_LIB)/stm32c5xx_dfp/Include
@@ -75,6 +74,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
+
+# Suppress warnings in vendor HAL2 sources (ST coding style differences)
+SRC_CFLAGS_stm32c5xx_hal_adc.c := -Wno-unused-parameter
 
 ifeq ($(TARGET_MCU),STM32C591xx)
 DEVICE_FLAGS       += -DSTM32C591xx
