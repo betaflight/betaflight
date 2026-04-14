@@ -181,8 +181,8 @@ FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filter
     float sn, cs;
     sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
 
-    float f = sn / cs;
-    float inv_denom = 1.0f / (1.0f + f * (f + BUTTERWORTH_Q));
+    const float f = sn / cs;
+    const float inv_denom = 1.0f / (1.0f + f * (f + BUTTERWORTH_Q));
     filter->a1 = inv_denom;
     filter->a2 = f * inv_denom;
     filter->f = f;
@@ -191,15 +191,15 @@ FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filter
 // Computes a SVF filter in TPT form on a sample
 FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
 {
-    float a1 = filter->a1;
-    float a2 = filter->a2;
-    float f = filter->f;
-    float ic1 = filter->ic1;
-    float ic2 = filter->ic2;
+    const float a1 = filter->a1;
+    const float a2 = filter->a2;
+    const float f = filter->f;
+    const float ic1 = filter->ic1;
+    const float ic2 = filter->ic2;
 
-    float v3 = input - ic2;
-    float v1 = a1 * ic1 + a2 * v3;
-    float v2 = ic2 + f * v1;
+    const float v3 = input - ic2;
+    const float v1 = a1 * ic1 + a2 * v3;
+    const float v2 = ic2 + f * v1;
 
     filter->ic1 = 2.0f * v1 - ic1;
     filter->ic2 = 2.0f * v2 - ic2;
