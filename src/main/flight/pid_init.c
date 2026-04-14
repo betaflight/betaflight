@@ -182,7 +182,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BUTTERWORTH:
-            if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
+            if (dterm_lpf1_init_hz < pidFrequencyNyquist) {
                 pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
                     butterworthFilterInit(&pidRuntime.dtermLowpass[axis].butterworthFilter, dterm_lpf1_init_hz, pidRuntime.dT);
