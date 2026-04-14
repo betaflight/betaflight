@@ -57,48 +57,6 @@
 
 #define STUB __attribute__((weak))
 
-/* ---- Timer ---- */
-
-STUB const timerHardware_t fullTimerHardware[1] = {};
-
-STUB void timerInit(void) {}
-STUB void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint32_t hz) { (void)timHw; (void)period; (void)hz; }
-STUB void timerEnable(const timerHardware_t *timHw) { (void)timHw; }
-STUB void timerDisable(const timerHardware_t *timHw) { (void)timHw; }
-STUB void timerEnableInterrupt(const timerHardware_t *timHw) { (void)timHw; }
-STUB void timerForceOverflow(timerResource_t *tim) { (void)tim; }
-STUB void timerSetCounter(const timerHardware_t *timHw, uint32_t val) { (void)timHw; (void)val; }
-STUB void timerSetPeriod(const timerHardware_t *timHw, uint32_t val) { (void)timHw; (void)val; }
-STUB void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uint32_t hz) { (void)timHw; (void)period; (void)hz; }
-STUB uint32_t timerClock(const timerHardware_t *timHw) { (void)timHw; return SystemCoreClock; }
-STUB uint32_t timerGetPrescaler(const timerHardware_t *timHw) { (void)timHw; return 0; }
-STUB int8_t timerGetTIMNumber(const timerHardware_t *timHw) { (void)timHw; return 0; }
-STUB int8_t timerGetNumberByIndex(uint8_t index) { (void)index; return -1; }
-STUB int8_t timerGetIndexByNumber(uint8_t number) { (void)number; return -1; }
-STUB uint8_t timerLookupChannelIndex(const uint16_t channel) { (void)channel; return 0; }
-STUB uint8_t timerInputInterrupt(const timerHardware_t *timHw) { (void)timHw; return 0; }
-STUB void timerConfigUpdateCallback(const timerHardware_t *timHw, timerOvrHandlerRec_t *cb) { (void)timHw; (void)cb; }
-STUB void timerChannelConfigCallbacks(const timerHardware_t *timHw, timerEdgeHandlerRec_t *edgeCb, timerOvrHandlerRec_t *ovrCb) { (void)timHw; (void)edgeCb; (void)ovrCb; }
-STUB void timerChannelEdgeHandlerInit(timerEdgeHandlerRec_t *self, timerCCHandlerCallback *fn) { (void)self; (void)fn; }
-STUB void timerChannelOverflowHandlerInit(timerOvrHandlerRec_t *self, timerOvrHandlerCallback *fn) { (void)self; (void)fn; }
-STUB volatile timCCR_t* timerChCCR(const timerHardware_t *timHw) { (void)timHw; return NULL; }
-STUB void* timerFindTimerHandle(timerResource_t *tim) { (void)tim; return NULL; }
-
-/* ---- UART ---- */
-
-STUB const uartHardware_t uartHardware[UARTDEV_COUNT] = {};
-STUB void uartReconfigure(uartPort_t *s) { (void)s; }
-STUB void uartTryStartTxDMA(uartPort_t *s) { (void)s; }
-STUB void uartTxMonitor(uartPort_t *s) { (void)s; }
-STUB void uartDmaIrqHandler(dmaChannelDescriptor_t *descriptor) { (void)descriptor; }
-STUB void uartIrqHandler(uartPort_t *s) { (void)s; }
-STUB bool checkUsartTxOutput(uartPort_t *s) { (void)s; return false; }
-
-/* ---- SPI ---- */
-
-STUB void spiInitDevice(spiDevice_e device) { (void)device; }
-STUB bool spiSequenceStart(const extDevice_t *dev) { (void)dev; return false; }
-
 /* ---- I2C ---- */
 
 STUB const i2cHardware_t i2cHardware[1] = {};

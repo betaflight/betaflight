@@ -100,6 +100,28 @@ typedef struct {
 #define GPIO_MODE_IT_RISING_FALLING  0x10310000U
 
 /* --------------------------------------------------------------------------
+ * TIM: channel byte offsets used by Betaflight's timer infrastructure.
+ * HAL2 removed these #defines (uses enums instead).
+ * -------------------------------------------------------------------------- */
+#define TIM_CHANNEL_1  0x0000U
+#define TIM_CHANNEL_2  0x0004U
+#define TIM_CHANNEL_3  0x0008U
+#define TIM_CHANNEL_4  0x000CU
+
+/* Interrupt enable bits (old HAL TIM_IT_ names → DIER register bits) */
+#define TIM_IT_UPDATE  TIM_DIER_UIE
+#define TIM_IT_CC1     TIM_DIER_CC1IE
+#define TIM_IT_CC2     TIM_DIER_CC2IE
+#define TIM_IT_CC3     TIM_DIER_CC3IE
+#define TIM_IT_CC4     TIM_DIER_CC4IE
+
+/* DMA enable bits */
+#define TIM_DMA_CC1    TIM_DIER_CC1DE
+#define TIM_DMA_CC2    TIM_DIER_CC2DE
+#define TIM_DMA_CC3    TIM_DIER_CC3DE
+#define TIM_DMA_CC4    TIM_DIER_CC4DE
+
+/* --------------------------------------------------------------------------
  * TIM: HAL2 removed HAL TIM init structs. Stub them for struct declarations.
  * -------------------------------------------------------------------------- */
 typedef struct { TIM_TypeDef *Instance; } TIM_HandleTypeDef;
@@ -138,11 +160,20 @@ typedef struct {
 #define FLASH_TYPEPROGRAM_QUADWORD 0x03U
 
 /* --------------------------------------------------------------------------
- * LL DMA types: HAL2 removed LL_DMA_InitTypeDef. Provide a stub struct so
- * that bus.h compiles (actual DMA config uses direct register writes).
+ * LL DMA types: HAL2 removed LL_DMA_InitTypeDef / LL_DMA_Init. Provide
+ * a struct with the fields used by bus_spi_hal2.c for DMA staging.
  * -------------------------------------------------------------------------- */
 typedef struct {
-    uint32_t placeholder;  // HAL2 has no LL_DMA_Init; config via registers
+    uint32_t SrcAddress;
+    uint32_t DestAddress;
+    uint32_t Direction;
+    uint32_t SrcIncMode;
+    uint32_t DestIncMode;
+    uint32_t SrcDataWidth;
+    uint32_t DestDataWidth;
+    uint32_t BlkDataLength;
+    uint32_t Request;
+    uint32_t Priority;
 } LL_DMA_InitTypeDef;
 
 /* --------------------------------------------------------------------------
@@ -212,9 +243,83 @@ typedef struct {
 #define TIM_CCxChannelCmd(TIMx, ch, state)  do { (void)(TIMx); (void)(ch); (void)(state); } while(0)
 
 /* --------------------------------------------------------------------------
- * USART LL: HAL2 renames TXE → TXFE.
+ * ErrorStatus: HAL2 removed this CMSIS typedef.  LL_USART_Init returns it.
  * -------------------------------------------------------------------------- */
-#define LL_USART_EnableIT_TXE  LL_USART_EnableIT_TXFE
+#ifndef __ERRORSTATUS_DEFINED
+#define __ERRORSTATUS_DEFINED
+typedef enum { ERROR = 0, SUCCESS = !ERROR } ErrorStatus;
+#endif
+
+/* --------------------------------------------------------------------------
+ * USART LL: HAL2 renames TXE/RXNE flag and interrupt functions to
+ * combined FIFO-aware names. Map old names used by serial_uart_ll.c.
+ * -------------------------------------------------------------------------- */
+#define LL_USART_EnableIT_TXE       LL_USART_EnableIT_TXE_TXFNF
+#define LL_USART_IsEnabledIT_TXE    LL_USART_IsEnabledIT_TXE_TXFNF
+#define LL_USART_IsActiveFlag_TXE   LL_USART_IsActiveFlag_TXE_TXFNF
+#define LL_USART_IsEnabledIT_RXNE   LL_USART_IsEnabledIT_RXNE_RXFNE
+#define LL_USART_IsActiveFlag_RXNE  LL_USART_IsActiveFlag_RXNE_RXFNE
+
+/* USART constant renames */
+#define LL_USART_DATAWIDTH_8B       LL_USART_DATAWIDTH_8_BIT
+#define LL_USART_DATAWIDTH_9B       LL_USART_DATAWIDTH_9_BIT
+#define LL_USART_STOPBITS_1         LL_USART_STOP_BIT_1
+#define LL_USART_STOPBITS_2         LL_USART_STOP_BIT_2
+
+/* --------------------------------------------------------------------------
+ * USART LL: HAL2 removed LL_USART_InitTypeDef / Init / StructInit / DeInit.
+ * Provide lightweight implementations using the individual LL setters.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint32_t BaudRate;
+    uint32_t DataWidth;
+    uint32_t StopBits;
+    uint32_t Parity;
+    uint32_t TransferDirection;
+    uint32_t HardwareFlowControl;
+    uint32_t OverSampling;
+    uint32_t PrescalerValue;
+} LL_USART_InitTypeDef;
+
+static inline void LL_USART_StructInit(LL_USART_InitTypeDef *init)
+{
+    init->BaudRate            = 9600U;
+    init->DataWidth           = LL_USART_DATAWIDTH_8_BIT;
+    init->StopBits            = LL_USART_STOP_BIT_1;
+    init->Parity              = LL_USART_PARITY_NONE;
+    init->TransferDirection   = LL_USART_DIRECTION_TX_RX;
+    init->HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+    init->OverSampling        = LL_USART_OVERSAMPLING_16;
+    init->PrescalerValue      = LL_USART_PRESCALER_DIV1;
+}
+
+static inline ErrorStatus LL_USART_Init(USART_TypeDef *USARTx,
+                                        const LL_USART_InitTypeDef *init)
+{
+    LL_USART_SetDataWidth(USARTx, init->DataWidth);
+    LL_USART_SetParity(USARTx, init->Parity);
+    LL_USART_SetStopBitsLength(USARTx, init->StopBits);
+    LL_USART_SetTransferDirection(USARTx, init->TransferDirection);
+    LL_USART_SetHWFlowCtrl(USARTx, init->HardwareFlowControl);
+    LL_USART_SetOverSampling(USARTx, init->OverSampling);
+    LL_USART_SetPrescaler(USARTx, init->PrescalerValue);
+
+    uint32_t periphclk = ((uintptr_t)USARTx >= APB2PERIPH_BASE)
+                         ? HAL_RCC_GetPCLK2Freq()
+                         : HAL_RCC_GetPCLK1Freq();
+    LL_USART_SetBaudRate(USARTx, periphclk, init->PrescalerValue,
+                         init->OverSampling, init->BaudRate);
+
+    return (USARTx->BRR != 0U) ? SUCCESS : ERROR;
+}
+
+static inline void LL_USART_DeInit(USART_TypeDef *USARTx)
+{
+    USARTx->CR1 = 0U;
+    USARTx->CR2 = 0U;
+    USARTx->CR3 = 0U;
+    USARTx->BRR = 0U;
+}
 
 /* --------------------------------------------------------------------------
  * NVIC priority grouping: HAL2 drops the HAL wrappers, use CMSIS directly.
@@ -248,5 +353,179 @@ static inline void HAL_GPIO_Init_stub_(void *a __attribute__((unused)), void *b 
  * -------------------------------------------------------------------------- */
 #define HAL_PWR_EnableBkUpAccess() ((void)0)  /* C5: backup regs accessible without enable */
 #define __HAL_RCC_PWR_CLK_ENABLE() ((void)0)
+
+/* --------------------------------------------------------------------------
+ * IRQ names: HAL2 renames some timer update IRQ vectors.
+ * -------------------------------------------------------------------------- */
+#define TIM1_UP_IRQn   TIM1_UPD_IRQn
+#define TIM8_UP_IRQn   TIM8_UPD_IRQn
+
+/* --------------------------------------------------------------------------
+ * GPIO AF: HAL2 renames GPIO_AFx_TIMy → HAL_GPIO_AFx_TIMy.
+ * -------------------------------------------------------------------------- */
+#define GPIO_AF1_TIM1    HAL_GPIO_AF1_TIM1
+#define GPIO_AF1_TIM2    HAL_GPIO_AF1_TIM2
+#define GPIO_AF1_TIM17   HAL_GPIO_AF1_TIM17
+#define GPIO_AF2_TIM1    HAL_GPIO_AF2_TIM1
+#define GPIO_AF2_TIM3    HAL_GPIO_AF2_TIM3
+#define GPIO_AF2_TIM4    HAL_GPIO_AF2_TIM4
+#define GPIO_AF2_TIM5    HAL_GPIO_AF2_TIM5
+#define GPIO_AF2_TIM8    HAL_GPIO_AF2_TIM8
+#define GPIO_AF2_TIM12   HAL_GPIO_AF2_TIM12
+#define GPIO_AF2_TIM15   HAL_GPIO_AF2_TIM15
+#define GPIO_AF3_TIM1    HAL_GPIO_AF3_TIM1
+#define GPIO_AF3_TIM5    HAL_GPIO_AF3_TIM5
+#define GPIO_AF3_TIM8    HAL_GPIO_AF3_TIM8
+#define GPIO_AF4_TIM15   HAL_GPIO_AF4_TIM15
+#define GPIO_AF8_TIM5    HAL_GPIO_AF8_TIM5
+#define GPIO_AF10_TIM16  HAL_GPIO_AF10_TIM16
+#define GPIO_AF13_TIM8   HAL_GPIO_AF13_TIM8
+#define GPIO_AF14_TIM2   HAL_GPIO_AF14_TIM2
+
+/* --------------------------------------------------------------------------
+ * DMA: C5 has LPDMA (not GPDMA). Map H5 GPDMA names to C5 LPDMA equivalents
+ * so the shared timer_def.h compiles for both.  HAL2 also renames CH→CC and
+ * UP→UPD in the DMA request constants.
+ * -------------------------------------------------------------------------- */
+
+/* DMA channel instances: GPDMA1_Channelx → LPDMA1_CHx */
+#define GPDMA1_Channel0  LPDMA1_CH0
+#define GPDMA1_Channel1  LPDMA1_CH1
+#define GPDMA1_Channel2  LPDMA1_CH2
+#define GPDMA1_Channel3  LPDMA1_CH3
+#define GPDMA1_Channel4  LPDMA1_CH4
+#define GPDMA1_Channel5  LPDMA1_CH5
+#define GPDMA1_Channel6  LPDMA1_CH6
+#define GPDMA1_Channel7  LPDMA1_CH7
+
+/* DMA channel IRQ handlers */
+#define GPDMA1_CH0_HANDLER  LPDMA1_CH0_HANDLER
+#define GPDMA1_CH1_HANDLER  LPDMA1_CH1_HANDLER
+#define GPDMA1_CH2_HANDLER  LPDMA1_CH2_HANDLER
+#define GPDMA1_CH3_HANDLER  LPDMA1_CH3_HANDLER
+#define GPDMA1_CH4_HANDLER  LPDMA1_CH4_HANDLER
+#define GPDMA1_CH5_HANDLER  LPDMA1_CH5_HANDLER
+#define GPDMA1_CH6_HANDLER  LPDMA1_CH6_HANDLER
+#define GPDMA1_CH7_HANDLER  LPDMA1_CH7_HANDLER
+
+/* DMA timer request IDs: GPDMA1→LPDMA1, CHx→CCx, UP→UPD */
+#define LL_GPDMA1_REQUEST_TIM1_CH1   LL_LPDMA1_REQUEST_TIM1_CC1
+#define LL_GPDMA1_REQUEST_TIM1_CH2   LL_LPDMA1_REQUEST_TIM1_CC2
+#define LL_GPDMA1_REQUEST_TIM1_CH3   LL_LPDMA1_REQUEST_TIM1_CC3
+#define LL_GPDMA1_REQUEST_TIM1_CH4   LL_LPDMA1_REQUEST_TIM1_CC4
+#define LL_GPDMA1_REQUEST_TIM1_UP    LL_LPDMA1_REQUEST_TIM1_UPD
+#define LL_GPDMA1_REQUEST_TIM2_CH1   LL_LPDMA1_REQUEST_TIM2_CC1
+#define LL_GPDMA1_REQUEST_TIM2_CH2   LL_LPDMA1_REQUEST_TIM2_CC2
+#define LL_GPDMA1_REQUEST_TIM2_CH3   LL_LPDMA1_REQUEST_TIM2_CC3
+#define LL_GPDMA1_REQUEST_TIM2_CH4   LL_LPDMA1_REQUEST_TIM2_CC4
+#define LL_GPDMA1_REQUEST_TIM2_UP    LL_LPDMA1_REQUEST_TIM2_UPD
+#define LL_GPDMA1_REQUEST_TIM3_CH1   LL_LPDMA1_REQUEST_TIM3_CC1
+#define LL_GPDMA1_REQUEST_TIM3_CH2   LL_LPDMA1_REQUEST_TIM3_CC2
+#define LL_GPDMA1_REQUEST_TIM3_CH3   LL_LPDMA1_REQUEST_TIM3_CC3
+#define LL_GPDMA1_REQUEST_TIM3_CH4   LL_LPDMA1_REQUEST_TIM3_CC4
+#define LL_GPDMA1_REQUEST_TIM3_UP    LL_LPDMA1_REQUEST_TIM3_UPD
+#define LL_GPDMA1_REQUEST_TIM4_CH1   LL_LPDMA1_REQUEST_TIM4_CC1
+#define LL_GPDMA1_REQUEST_TIM4_CH2   LL_LPDMA1_REQUEST_TIM4_CC2
+#define LL_GPDMA1_REQUEST_TIM4_CH3   LL_LPDMA1_REQUEST_TIM4_CC3
+#define LL_GPDMA1_REQUEST_TIM4_CH4   LL_LPDMA1_REQUEST_TIM4_CC4
+#define LL_GPDMA1_REQUEST_TIM4_UP    LL_LPDMA1_REQUEST_TIM4_UPD
+#define LL_GPDMA1_REQUEST_TIM5_CH1   LL_LPDMA1_REQUEST_TIM5_CC1
+#define LL_GPDMA1_REQUEST_TIM5_CH2   LL_LPDMA1_REQUEST_TIM5_CC2
+#define LL_GPDMA1_REQUEST_TIM5_CH3   LL_LPDMA1_REQUEST_TIM5_CC3
+#define LL_GPDMA1_REQUEST_TIM5_CH4   LL_LPDMA1_REQUEST_TIM5_CC4
+#define LL_GPDMA1_REQUEST_TIM5_UP    LL_LPDMA1_REQUEST_TIM5_UPD
+#define LL_GPDMA1_REQUEST_TIM6_UP    LL_LPDMA1_REQUEST_TIM6_UPD
+#define LL_GPDMA1_REQUEST_TIM7_UP    LL_LPDMA1_REQUEST_TIM7_UPD
+#define LL_GPDMA1_REQUEST_TIM8_CH1   LL_LPDMA1_REQUEST_TIM8_CC1
+#define LL_GPDMA1_REQUEST_TIM8_CH2   LL_LPDMA1_REQUEST_TIM8_CC2
+#define LL_GPDMA1_REQUEST_TIM8_CH3   LL_LPDMA1_REQUEST_TIM8_CC3
+#define LL_GPDMA1_REQUEST_TIM8_CH4   LL_LPDMA1_REQUEST_TIM8_CC4
+#define LL_GPDMA1_REQUEST_TIM8_UP    LL_LPDMA1_REQUEST_TIM8_UPD
+#define LL_GPDMA1_REQUEST_TIM15_CH1  LL_LPDMA1_REQUEST_TIM15_CC1
+#define LL_GPDMA1_REQUEST_TIM15_UP   LL_LPDMA1_REQUEST_TIM15_UPD
+#define LL_GPDMA1_REQUEST_TIM16_CH1  LL_LPDMA1_REQUEST_TIM16_CC1
+#define LL_GPDMA1_REQUEST_TIM16_UP   LL_LPDMA1_REQUEST_TIM16_UPD
+#define LL_GPDMA1_REQUEST_TIM17_CH1  LL_LPDMA1_REQUEST_TIM17_CC1
+#define LL_GPDMA1_REQUEST_TIM17_UP   LL_LPDMA1_REQUEST_TIM17_UPD
+
+/* --------------------------------------------------------------------------
+ * SPI LL: HAL2 renames many LL_SPI constants.
+ * -------------------------------------------------------------------------- */
+#define LL_SPI_BAUDRATEPRESCALER_DIV2    LL_SPI_BAUD_RATE_PRESCALER_2
+#define LL_SPI_BAUDRATEPRESCALER_DIV4    LL_SPI_BAUD_RATE_PRESCALER_4
+#define LL_SPI_BAUDRATEPRESCALER_DIV8    LL_SPI_BAUD_RATE_PRESCALER_8
+#define LL_SPI_BAUDRATEPRESCALER_DIV16   LL_SPI_BAUD_RATE_PRESCALER_16
+#define LL_SPI_BAUDRATEPRESCALER_DIV32   LL_SPI_BAUD_RATE_PRESCALER_32
+#define LL_SPI_BAUDRATEPRESCALER_DIV64   LL_SPI_BAUD_RATE_PRESCALER_64
+#define LL_SPI_BAUDRATEPRESCALER_DIV128  LL_SPI_BAUD_RATE_PRESCALER_128
+#define LL_SPI_BAUDRATEPRESCALER_DIV256  LL_SPI_BAUD_RATE_PRESCALER_256
+
+#define LL_SPI_DATAWIDTH_8BIT            LL_SPI_DATA_WIDTH_8_BIT
+
+#define LL_SPI_PHASE_1EDGE               LL_SPI_CLOCK_PHASE_1_EDGE
+#define LL_SPI_PHASE_2EDGE               LL_SPI_CLOCK_PHASE_2_EDGE
+#define LL_SPI_POLARITY_LOW              LL_SPI_CLOCK_POLARITY_LOW
+#define LL_SPI_POLARITY_HIGH             LL_SPI_CLOCK_POLARITY_HIGH
+
+#define LL_SPI_FIFO_TH_01DATA           LL_SPI_FIFO_THRESHOLD_1_DATA
+
+#define LL_SPI_CRCCALCULATION_DISABLE    0x00000000U
+
+/* SPI LL: HAL2 renamed LL_SPI_SetBitOrder → LL_SPI_SetTransferBitOrder */
+#define LL_SPI_SetBitOrder               LL_SPI_SetTransferBitOrder
+
+/* SPI LL: HAL2 removed LL_SPI_InitTypeDef / Init / DeInit. Provide
+ * lightweight implementations using the individual LL setters. */
+typedef struct {
+    uint32_t TransferDirection;
+    uint32_t Mode;
+    uint32_t DataWidth;
+    uint32_t ClockPolarity;
+    uint32_t ClockPhase;
+    uint32_t NSS;
+    uint32_t BaudRate;
+    uint32_t BitOrder;
+    uint32_t CRCCalculation;
+    uint32_t CRCPoly;
+} LL_SPI_InitTypeDef;
+
+static inline ErrorStatus LL_SPI_Init(SPI_TypeDef *SPIx,
+                                      const LL_SPI_InitTypeDef *init)
+{
+    LL_SPI_SetTransferDirection(SPIx, init->TransferDirection);
+    LL_SPI_SetMode(SPIx, init->Mode);
+    LL_SPI_SetDataWidth(SPIx, init->DataWidth);
+    LL_SPI_SetClockPolarity(SPIx, init->ClockPolarity);
+    LL_SPI_SetClockPhase(SPIx, init->ClockPhase);
+    LL_SPI_SetNSSMode(SPIx, init->NSS);
+    LL_SPI_SetBaudRatePrescaler(SPIx, init->BaudRate);
+    LL_SPI_SetTransferBitOrder(SPIx, init->BitOrder);
+    if (init->CRCCalculation) {
+        LL_SPI_EnableCRC(SPIx);
+    }
+    return SUCCESS;
+}
+
+static inline void LL_SPI_DeInit(SPI_TypeDef *SPIx)
+{
+    SPIx->CR1  = 0U;
+    SPIx->CFG1 = 0x00070007U;  /* reset value */
+    SPIx->CFG2 = 0U;
+    SPIx->IER  = 0U;
+    SPIx->IFCR = 0xFFFFFFFFU;  /* clear all flags */
+}
+
+/* --------------------------------------------------------------------------
+ * GPIO AF: HAL2 renames GPIO_AFx_SPIy → HAL_GPIO_AFx_SPIy.
+ * -------------------------------------------------------------------------- */
+#define GPIO_AF5_SPI1    HAL_GPIO_AF5_SPI1
+#define GPIO_AF5_SPI2    HAL_GPIO_AF5_SPI2
+#define GPIO_AF5_SPI3    HAL_GPIO_AF5_SPI3
+#define GPIO_AF6_SPI3    HAL_GPIO_AF6_SPI3
+
+/* --------------------------------------------------------------------------
+ * LL_TIM_DeInit: not available in HAL2 LL. Use HAL version.
+ * -------------------------------------------------------------------------- */
+#define LL_TIM_DeInit(tim) do { (void)(tim); } while(0)
 
 #endif /* STM32C5XX_HAL2_COMPAT_H */

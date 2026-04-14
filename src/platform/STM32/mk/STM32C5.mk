@@ -109,9 +109,9 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 # TODO: USB VCP requires HAL2 PCD compatibility work
 VCP_SRC =
 
-# Files that compile cleanly with HAL2.
-# Peripheral drivers that deeply use old HAL types (timer_hal, bus_spi_ll,
-# dshot_bitbang_ll, etc.) need HAL2 forks and are excluded for now.
+# Files that compile cleanly with HAL2, plus HAL2-specific forks.
+# Peripheral drivers that deeply use old HAL types (dshot_bitbang_ll, etc.)
+# need HAL2 forks and are excluded for now.
 # A stub file provides weak symbols for the missing functions.
 MCU_COMMON_SRC = \
             STM32/system_stm32c5xx.c \
@@ -121,6 +121,11 @@ MCU_COMMON_SRC = \
             STM32/io_stm32.c \
             STM32/exti.c \
             STM32/rcc_stm32_hal2.c \
+            STM32/timer_hal2.c \
+            STM32/timer_stm32c5xx.c \
+            STM32/bus_spi_hal2.c \
+            STM32/serial_uart_ll.c \
+            STM32/serial_uart_stm32c5xx.c \
             STM32/adc_stm32c5xx.c \
             STM32/dma_stm32c5xx.c \
             STM32/stubs_stm32c5xx.c \

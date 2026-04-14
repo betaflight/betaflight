@@ -86,4 +86,25 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 };
 #endif
 
+uint32_t timerClockFromInstance(const timerResource_t *tim)
+{
+    uint32_t pclk;
+    uint32_t ppre;
+
+    if ((uintptr_t)tim >= APB2PERIPH_BASE) {
+        pclk = HAL_RCC_GetPCLK2Freq();
+        ppre = (RCC->CFGR2 & RCC_CFGR2_PPRE2) >> RCC_CFGR2_PPRE2_Pos;
+    } else {
+        pclk = HAL_RCC_GetPCLK1Freq();
+        ppre = (RCC->CFGR2 & RCC_CFGR2_PPRE1) >> RCC_CFGR2_PPRE1_Pos;
+    }
+
+    // Standard STM32 rule: if APB prescaler > 1 (bit 2 set), timer clock = 2 * PCLK
+    return (ppre & 0x04) ? pclk * 2 : pclk;
+}
+
+uint32_t timerClock(const timerHardware_t *timHw)
+{
+    return timerClockFromInstance(timHw->tim);
+}
 #endif
