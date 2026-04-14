@@ -111,6 +111,9 @@ void mcoInit(void)
 #elif defined(STM32G4)
     // G4 only supports one MCO on PA8
     mcoConfigure(MCODEV_1, mcoConfig(MCODEV_1));
+#elif defined(STM32C5)
+    // C5 MCO not yet implemented
+    return;
 #else
 #error Unsupported MCU
 #endif

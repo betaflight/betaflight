@@ -38,8 +38,8 @@ typedef struct {
 extiChannelRec_t extiChannelRecs[16];
 
 // IRQ grouping
-#if defined(STM32H5) || defined(STM32N6)
-// H5 and N6 have individual EXTI IRQs for each line (no grouping)
+#if defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
+// H5, N6 and C5 have individual EXTI IRQs for each line (no grouping)
 #define EXTI_IRQ_GROUPS 16
 //                                      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
@@ -105,9 +105,9 @@ static uint32_t triggerLookupTable[] = {
 #define EXTI_REG_IMR (EXTI_D1->IMR1)
 #define EXTI_REG_PR  (EXTI_D1->PR1)
 #define EXTI_REG_PR_CLEAR(mask) do { EXTI_REG_PR = (mask); } while(0)
-#elif defined(STM32H5) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 #define EXTI_REG_IMR (EXTI->IMR1)
-// H5 and N6 use separate rising/falling pending registers; must clear both
+// H5, N6 and C5 use separate rising/falling pending registers; must clear both
 #define EXTI_REG_PR  (EXTI->RPR1 | EXTI->FPR1)
 #define EXTI_REG_PR_CLEAR(mask) do { EXTI->RPR1 = (mask); EXTI->FPR1 = (mask); } while(0)
 #elif defined(STM32G4)

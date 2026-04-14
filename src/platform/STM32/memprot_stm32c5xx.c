@@ -27,6 +27,17 @@
 extern uint8_t dmaram_start;
 extern uint8_t dmaram_end;
 
+// Memory attribute index for non-cacheable normal memory
+#define MEMPROT_ATTR_IDX_NON_CACHEABLE  0
+
+// Access permission encoding for mpuRegion_t.perm field.
+// Stores the combined AP value: (RO << 1) | NP, matching the
+// ARMv8-M MPU RBAR AP field layout used by ARM_MPU_AP_().
+#define MEMPROT_PERM_RW_NP  ARM_MPU_AP_(ARM_MPU_AP_RW, ARM_MPU_AP_NP)  // 0x01: RW, non-privileged
+#define MEMPROT_PERM_RW_PO  ARM_MPU_AP_(ARM_MPU_AP_RW, ARM_MPU_AP_PO)  // 0x00: RW, privileged only
+#define MEMPROT_PERM_RO_NP  ARM_MPU_AP_(ARM_MPU_AP_RO, ARM_MPU_AP_NP)  // 0x03: RO, non-privileged
+#define MEMPROT_PERM_RO_PO  ARM_MPU_AP_(ARM_MPU_AP_RO, ARM_MPU_AP_PO)  // 0x02: RO, privileged only
+
 mpuRegion_t mpuRegions[] = {
 #ifdef USE_DMA_RAM
     {
@@ -35,10 +46,10 @@ mpuRegion_t mpuRegions[] = {
         // DMA coherency without requiring cache maintenance operations.
         .start      = (uint32_t)&dmaram_start,
         .end        = (uint32_t)&dmaram_end,
-        .size       = 0,  // Size determined by ".end"
-        .perm       = MPU_REGION_ALL_RW,
-        .exec       = MPU_INSTRUCTION_ACCESS_ENABLE,
-        .shareable  = MPU_ACCESS_INNER_SHAREABLE,
+        .size       = 0,               // Size determined by ".end"
+        .perm       = MEMPROT_PERM_RW_NP,
+        .exec       = ARM_MPU_EX,      // Execute permitted
+        .shareable  = ARM_MPU_SH_INNER,
         .cacheable  = 0,
         .bufferable = 0,
     },
@@ -51,16 +62,18 @@ STATIC_ASSERT(ARRAYLEN(mpuRegions) <= MAX_MPU_REGIONS, MPU_region_count_exceeds_
 
 // STM32C5 uses Cortex-M33 (ARMv8-M) MPU which has a different register
 // model from the ARMv7-M MPU used by STM32F4/F7/H7/G4.
+// This implementation uses the CMSIS ARMv8-M MPU API directly
+// (armv8m_mpu.h) instead of the HAL MPU wrappers.
 
 void memProtReset(void)
 {
-    HAL_MPU_Disable();
+    ARM_MPU_Disable();
 
     for (uint32_t region = 0; region < MAX_MPU_REGIONS; region++) {
-        HAL_MPU_DisableRegion(region);
+        ARM_MPU_ClrRegion(region);
     }
 
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+    ARM_MPU_Enable(MPU_CTRL_PRIVDEFENA_Msk);
 }
 
 void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
@@ -69,13 +82,11 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
         for (;;) {}
     }
 
-    HAL_MPU_Disable();
+    ARM_MPU_Disable();
 
-    // Configure memory attribute for non-cacheable normal memory
-    MPU_Attributes_InitTypeDef attrInit;
-    attrInit.Number = MPU_ATTRIBUTES_NUMBER0;
-    attrInit.Attributes = INNER_OUTER(MPU_NOT_CACHEABLE);
-    HAL_MPU_ConfigMemoryAttributes(&attrInit);
+    // Configure memory attribute 0: non-cacheable normal memory
+    ARM_MPU_SetMemAttr(MEMPROT_ATTR_IDX_NON_CACHEABLE,
+        ARM_MPU_ATTR(ARM_MPU_ATTR_NON_CACHEABLE, ARM_MPU_ATTR_NON_CACHEABLE));
 
     for (unsigned i = 0; i < regionCount; i++) {
         mpuRegion_t *region = &regions[i];
@@ -95,18 +106,14 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
             limitAddr -= 1;
         }
 
-        MPU_Region_InitTypeDef regionInit;
-        regionInit.Enable = MPU_REGION_ENABLE;
-        regionInit.Number = i;
-        regionInit.BaseAddress = baseAddr;
-        regionInit.LimitAddress = limitAddr;
-        regionInit.AttributesIndex = MPU_ATTRIBUTES_NUMBER0;
-        regionInit.AccessPermission = region->perm;
-        regionInit.DisableExec = region->exec;
-        regionInit.IsShareable = region->shareable;
+        // Decode perm field: bit 1 = RO, bit 0 = NP (non-privileged)
+        uint32_t ro = (region->perm >> 1) & 1U;
+        uint32_t np = region->perm & 1U;
 
-        HAL_MPU_ConfigRegion(&regionInit);
+        ARM_MPU_SetRegion(i,
+            ARM_MPU_RBAR(baseAddr, region->shareable, ro, np, region->exec),
+            ARM_MPU_RLAR(limitAddr, MEMPROT_ATTR_IDX_NON_CACHEABLE));
     }
 
-    HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+    ARM_MPU_Enable(MPU_CTRL_PRIVDEFENA_Msk);
 }

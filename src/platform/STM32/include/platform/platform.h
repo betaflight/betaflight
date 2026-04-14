@@ -429,7 +429,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_AF
 
 // Camera control PWM availability per STM32 family
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5)
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #endif
 
@@ -437,7 +437,7 @@ extern uint8_t _dmaram_end__;
 #define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 
 // speed is packed between modebits 4 and 1,
 // 7       6        5        4         3         2        1        0
@@ -477,7 +477,7 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 
 #define IO_CONFIG_GET_MODE(cfg)  (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
@@ -489,7 +489,7 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5)
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5) || defined(STM32C5)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32G4)
@@ -596,13 +596,13 @@ extern uint8_t _dmaram_end__;
 #define UARTHARDWARE_MAX_PINS 6
 #elif defined(STM32G4)
 #define UARTHARDWARE_MAX_PINS 3
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define UARTHARDWARE_MAX_PINS 5
 #elif defined(STM32N6)
 #define UARTHARDWARE_MAX_PINS 5
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 #define UART_REG_RXD(base) (((USART_TypeDef *)(base))->RDR)
 #define UART_REG_TXD(base) (((USART_TypeDef *)(base))->TDR)
 #elif defined(STM32F4)
@@ -618,7 +618,7 @@ extern uint8_t _dmaram_end__;
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6) || defined(STM32C5)
 #define I2C_TRAIT_STATE 1
 #endif
 

@@ -46,8 +46,8 @@ void systemInit(void)
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
-    // Configure NVIC preempt/priority groups
-    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
+    // Configure NVIC preempt/priority groups (CMSIS direct, HAL2 has no wrapper)
+    NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
     cachedResetFlags = RCC->RSR;
@@ -83,7 +83,7 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 }
 
 // STM32C5 system flash (ROM bootloader) base address
-#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)FLASH_SYSTEM_BASE_NS)
+#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)FLASH_SYSTEM_BASE)
 
 typedef void *(*bootJumpPtr)(void);
 
@@ -97,7 +97,7 @@ typedef struct isrVector_s {
 void systemJumpToBootloader(void)
 {
     //DeInit all used peripherals
-    HAL_RCC_DeInit();
+    HAL_RCC_Reset();
 
     //Disable all system timers and set to default values
     SysTick->CTRL = 0;
