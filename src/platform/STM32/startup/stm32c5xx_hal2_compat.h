@@ -355,6 +355,17 @@ static inline void HAL_GPIO_Init_stub_(void *a __attribute__((unused)), void *b 
 #define __HAL_RCC_PWR_CLK_ENABLE() ((void)0)
 
 /* --------------------------------------------------------------------------
+ * ADC calibration constants: map generic names to C5 LL_ADC_* addresses.
+ * -------------------------------------------------------------------------- */
+#define VREFINT_CAL_ADDR            ((const uint16_t *)(0x08FFF810UL))
+#define VREFINT_CAL_VREF            (3300UL)
+#define TEMPSENSOR_CAL1_ADDR        ((const uint16_t *)(0x08FFF814UL))
+#define TEMPSENSOR_CAL2_ADDR        ((const uint16_t *)(0x08FFF818UL))
+#define TEMPSENSOR_CAL1_TEMP        ((int32_t) 30)
+#define TEMPSENSOR_CAL2_TEMP        ((int32_t)140)
+#define TEMPSENSOR_CAL_VREFANALOG   (3300UL)
+
+/* --------------------------------------------------------------------------
  * IRQ names: HAL2 renames some timer update IRQ vectors.
  * -------------------------------------------------------------------------- */
 #define TIM1_UP_IRQn   TIM1_UPD_IRQn

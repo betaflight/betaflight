@@ -69,15 +69,6 @@ STUB bool i2cRead(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, ui
 STUB bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) { (void)device; (void)addr; (void)reg; (void)len; (void)buf; return false; }
 STUB uint16_t i2cGetErrorCounter(void) { return 0; }
 
-/* ---- ADC ---- */
-
-STUB void adcInit(const adcConfig_t *config) { (void)config; }
-STUB void adcGetChannelValues(void) {}
-STUB bool adcInternalIsBusy(void) { return false; }
-STUB void adcInternalStartConversion(void) {}
-STUB uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue) { (void)vrefAdcValue; return 0; }
-STUB int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue) { (void)tempAdcValue; (void)vrefValue; return 25; }
-
 /* ---- DSHOT ---- */
 
 STUB void dshotEnableChannels(unsigned motorCount) { (void)motorCount; }

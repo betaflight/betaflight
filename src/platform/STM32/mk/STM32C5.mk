@@ -126,6 +126,7 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_hal2.c \
             STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32c5xx.c \
+            drivers/adc.c \
             STM32/adc_stm32c5xx.c \
             STM32/dma_stm32c5xx.c \
             STM32/dma_reqmap_mcu.c \
