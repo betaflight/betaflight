@@ -539,4 +539,67 @@ static inline void LL_SPI_DeInit(SPI_TypeDef *SPIx)
  * -------------------------------------------------------------------------- */
 #define LL_TIM_DeInit(tim) do { (void)(tim); } while(0)
 
+/* --------------------------------------------------------------------------
+ * I2C: IRQ name compat — C5 uses I2Cx_ERR_IRQn, Betaflight expects I2Cx_ER_IRQn.
+ * -------------------------------------------------------------------------- */
+#define I2C1_ER_IRQn  I2C1_ERR_IRQn
+#define I2C2_ER_IRQn  I2C2_ERR_IRQn
+
+/* I2C: GPIO AF compat */
+#define GPIO_AF4_I2C1  HAL_GPIO_AF4_I2C1
+#define GPIO_AF4_I2C2  HAL_GPIO_AF4_I2C2
+
+/* --------------------------------------------------------------------------
+ * LL I2C: HAL2 removed LL_I2C_InitTypeDef / Init / DeInit / StructInit.
+ * Provide inline implementations using individual LL setters.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint32_t PeripheralMode;
+    uint32_t Timing;
+    uint32_t AnalogFilter;
+    uint32_t DigitalFilter;
+    uint32_t OwnAddress1;
+    uint32_t TypeAcknowledge;
+    uint32_t OwnAddrSize;
+} LL_I2C_InitTypeDef;
+
+static inline void LL_I2C_StructInit(LL_I2C_InitTypeDef *init)
+{
+    init->PeripheralMode  = LL_I2C_MODE_I2C;
+    init->Timing          = 0U;
+    init->AnalogFilter    = LL_I2C_ANALOGFILTER_ENABLE;
+    init->DigitalFilter   = 0U;
+    init->OwnAddress1     = 0U;
+    init->TypeAcknowledge = LL_I2C_ACK;
+    init->OwnAddrSize     = LL_I2C_OWNADDRESS1_7BIT;
+}
+
+static inline ErrorStatus LL_I2C_Init(I2C_TypeDef *I2Cx,
+                                      const LL_I2C_InitTypeDef *init)
+{
+    LL_I2C_Disable(I2Cx);
+    LL_I2C_SetMode(I2Cx, init->PeripheralMode);
+    LL_I2C_SetTiming(I2Cx, init->Timing);
+    if (init->AnalogFilter == LL_I2C_ANALOGFILTER_ENABLE) {
+        LL_I2C_EnableAnalogFilter(I2Cx);
+    } else {
+        LL_I2C_DisableAnalogFilter(I2Cx);
+    }
+    LL_I2C_SetDigitalFilter(I2Cx, init->DigitalFilter);
+    LL_I2C_SetOwnAddress1(I2Cx, init->OwnAddress1, init->OwnAddrSize);
+    LL_I2C_AcknowledgeNextData(I2Cx, init->TypeAcknowledge);
+    return SUCCESS;
+}
+
+static inline ErrorStatus LL_I2C_DeInit(I2C_TypeDef *I2Cx)
+{
+    LL_I2C_Disable(I2Cx);
+    I2Cx->CR1    = 0U;
+    I2Cx->CR2    = 0U;
+    I2Cx->OAR1   = 0U;
+    I2Cx->OAR2   = 0U;
+    I2Cx->TIMINGR = 0U;
+    return SUCCESS;
+}
+
 #endif /* STM32C5XX_HAL2_COMPAT_H */

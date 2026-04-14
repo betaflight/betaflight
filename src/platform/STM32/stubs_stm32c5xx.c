@@ -57,18 +57,6 @@
 
 #define STUB __attribute__((weak))
 
-/* ---- I2C ---- */
-
-STUB const i2cHardware_t i2cHardware[1] = {};
-STUB i2cDevice_t i2cDevice[1] = {};
-STUB void i2cInit(i2cDevice_e device) { (void)device; }
-STUB bool i2cBusy(i2cDevice_e device, bool *error) { (void)device; (void)error; return false; }
-STUB bool i2cWrite(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t data) { (void)device; (void)addr; (void)reg; (void)data; return false; }
-STUB bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *data) { (void)device; (void)addr; (void)reg; (void)len; (void)data; return false; }
-STUB bool i2cRead(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) { (void)device; (void)addr; (void)reg; (void)len; (void)buf; return false; }
-STUB bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf) { (void)device; (void)addr; (void)reg; (void)len; (void)buf; return false; }
-STUB uint16_t i2cGetErrorCounter(void) { return 0; }
-
 /* ---- DSHOT ---- */
 
 STUB void dshotEnableChannels(unsigned motorCount) { (void)motorCount; }

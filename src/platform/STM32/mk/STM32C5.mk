@@ -124,6 +124,9 @@ MCU_COMMON_SRC = \
             STM32/timer_hal2.c \
             STM32/timer_stm32c5xx.c \
             STM32/bus_spi_hal2.c \
+            STM32/bus_i2c_ll.c \
+            STM32/bus_i2c_ll_init.c \
+            drivers/bus_i2c_timing.c \
             STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32c5xx.c \
             drivers/adc.c \
