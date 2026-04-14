@@ -78,12 +78,6 @@ STUB void adcInternalStartConversion(void) {}
 STUB uint16_t adcInternalCompensateVref(uint16_t vrefAdcValue) { (void)vrefAdcValue; return 0; }
 STUB int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue) { (void)tempAdcValue; (void)vrefValue; return 25; }
 
-/* ---- DMA reqmap ---- */
-
-STUB const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e periph, uint8_t index, int8_t opt) { (void)periph; (void)index; (void)opt; return NULL; }
-STUB const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(timerResource_t *tim, uint8_t channel, dmaoptValue_t dmaopt) { (void)tim; (void)channel; (void)dmaopt; return NULL; }
-STUB dmaoptValue_t dmaoptByTag(ioTag_t ioTag) { (void)ioTag; return -1; }
-
 /* ---- DSHOT ---- */
 
 STUB void dshotEnableChannels(unsigned motorCount) { (void)motorCount; }

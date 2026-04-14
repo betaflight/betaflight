@@ -128,6 +128,7 @@ MCU_COMMON_SRC = \
             STM32/serial_uart_stm32c5xx.c \
             STM32/adc_stm32c5xx.c \
             STM32/dma_stm32c5xx.c \
+            STM32/dma_reqmap_mcu.c \
             STM32/stubs_stm32c5xx.c \
             STM32/startup/system_stm32c5xx.c
 
