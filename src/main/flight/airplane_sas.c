@@ -97,14 +97,14 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
 }
 
 //The astatic accel Z controller by stick position
-static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchPilotCtrl, float accelZ)
+static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
 {
     float deltaAccP = 0.0f;
     if (sensors(SENSOR_ACC) &&
         (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0)) {
         const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
-        float accelReq = pitchPilotCtrl < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchPilotCtrl * 0.01f + 1.0f
-                                               : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchPilotCtrl * 0.01f + 1.0f;
+        float accelReq = pitchStick < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchStick + 1.0f
+                                           : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchStick + 1.0f;
         float accelDelta = accelZ - accelReq;
         float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
         servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
@@ -193,7 +193,9 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Pitch channel
     pidData[FD_PITCH].I /= 10.0f;   //restore % last value
     const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
-    float pitchPilotCtrl = getSetpointRate(FD_PITCH) / maxRcRatePitch * pidProfile->psas_stick_gain[FD_PITCH];
+    float pitchStick = getSetpointRate(FD_PITCH) / maxRcRatePitch;  // pitch stick [-1 ... +1]
+    float pitchPilotCtrl = pitchStick * pidProfile->psas_stick_gain[FD_PITCH];
+
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->psas_pitch_damping_filter_freq != 0) {
         float gyroPitchLow = pt1FilterApply(&pidRuntime.psasPitchDampingLowpass, gyroPitch);
@@ -213,7 +215,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     float deltaAccP = 0.0f;
     if (isLimitAoA == false) {
-        deltaAccP = updateAstaticAccelZController(pidProfile, pitchPilotCtrl, accelZ);
+        deltaAccP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
     }
     pidData[FD_PITCH].Sum += deltaAccP;
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
