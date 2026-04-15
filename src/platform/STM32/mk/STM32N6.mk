@@ -139,6 +139,7 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/serial_uart_ll.c \
+            STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
             STM32/timer_hal.c \
