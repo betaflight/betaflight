@@ -39,15 +39,15 @@
 //-----------------------------------------------------------------------------
 // Message RAM layout
 //
-// Both G4 and H7 expose the same Bosch M_CAN IP and share a dedicated
-// Message RAM (CAN SRAM) at SRAMCAN_BASE. The significant difference is
-// *who* picks the layout:
+// All currently supported families (G4, H7, C5) expose the same Bosch M_CAN
+// IP and share a dedicated Message RAM (CAN SRAM) at SRAMCAN_BASE. The
+// significant difference is *who* picks the layout:
 //
-//   - G4: layout is fixed by silicon. Each FDCAN instance owns a region of
-//     SRAMCAN_SIZE bytes at SRAMCAN_BASE + N*SRAMCAN_SIZE; the sub-ranges
-//     (filters, FIFOs, Tx buffers) are at hardwired offsets within the
-//     region. We only have to match the HAL's assumed element counts and
-//     sizes when addressing the RAM.
+//   - G4 and C5: layout is fixed by silicon. Each FDCAN instance owns a
+//     region of SRAMCAN_SIZE bytes at SRAMCAN_BASE + N*SRAMCAN_SIZE; the
+//     sub-ranges (filters, FIFOs, Tx buffers) are at hardwired offsets
+//     within the region. We only have to match the SDK's assumed element
+//     counts and sizes when addressing the RAM.
 //
 //   - H7: layout is software-defined. We partition the shared RAM and
 //     program the start-address / element-count / element-size into each
@@ -65,12 +65,13 @@
 //   word 2: data[0..3]
 //   word 3: data[4..7]
 //
-// On G4 the hardware reserves 18 words per element (enough for FD 64-byte
-// payloads); we just leave words 4..17 unused. On H7 we select element size
-// code 0b000 = 8-byte data which gives a natural 4-word element.
+// On G4/C5 the hardware reserves 18 words per element (enough for FD
+// 64-byte payloads); we just leave words 4..17 unused. On H7 we select
+// element size code 0b000 = 8-byte data which gives a natural 4-word
+// element.
 //-----------------------------------------------------------------------------
 
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
 
 // Element counts mirror ST's HAL private constants so the fixed offsets we
 // compute below match the silicon layout.
@@ -124,11 +125,11 @@
 
 #endif
 
-// Per-instance base address of Message RAM. On both families the regions
-// are laid out contiguously from SRAMCAN_BASE in device-index order.
+// Per-instance base address of Message RAM. On all supported families the
+// regions are laid out contiguously from SRAMCAN_BASE in device-index order.
 static uint32_t canMessageRamBase(canDevice_e device)
 {
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
     return SRAMCAN_BASE + (uint32_t)device * CAN_SRAM_PER_INSTANCE;
 #elif defined(STM32H7)
     return SRAMCAN_BASE + (uint32_t)device * CAN_H7_PER_INSTANCE_WORDS * 4U;
@@ -140,7 +141,7 @@ static uint32_t canMessageRamBase(canDevice_e device)
 
 static uint32_t canRxElementAddress(canDevice_e device, uint32_t index)
 {
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
     return canMessageRamBase(device) + CAN_SRAM_RF0SA + index * CAN_SRAM_RF_SIZE;
 #elif defined(STM32H7)
     return canMessageRamBase(device)
@@ -154,7 +155,7 @@ static uint32_t canRxElementAddress(canDevice_e device, uint32_t index)
 
 static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
 {
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
     return canMessageRamBase(device) + CAN_SRAM_TFQSA + index * CAN_SRAM_TFQ_SIZE;
 #elif defined(STM32H7)
     return canMessageRamBase(device)
@@ -258,7 +259,7 @@ static void canClearMessageRam(canDevice_e device)
 {
     uint32_t base = canMessageRamBase(device);
 
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
     uint32_t bytes = CAN_SRAM_PER_INSTANCE;
 #elif defined(STM32H7)
     uint32_t bytes = CAN_H7_PER_INSTANCE_WORDS * 4U;
@@ -371,7 +372,7 @@ void canInitDevice(canDevice_e device)
     // Wipe the per-instance message RAM region to remove any prior contents.
     canClearMessageRam(device);
 
-#if defined(STM32G4)
+#if defined(STM32G4) || defined(STM32C5)
     // Accept-non-matching policy: route everything to Rx FIFO 0 (fields 00b
     // in ANFS / ANFE). The Message RAM layout itself is fixed by silicon.
     regs->RXGFC &= ~(FDCAN_RXGFC_ANFS | FDCAN_RXGFC_ANFE);
