@@ -325,6 +325,7 @@
 #define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
+#define ENABLE_CAN 1
 #endif
 
 #ifdef STM32H5

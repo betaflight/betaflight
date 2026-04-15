@@ -765,3 +765,7 @@ extern struct linker_symbol __config_end;
 #elif !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 0
 #endif
+
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 0
+#endif

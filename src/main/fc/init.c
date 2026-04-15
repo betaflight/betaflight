@@ -51,6 +51,8 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
+#include "drivers/can/can.h"
+#include "drivers/can/can_impl.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
@@ -147,6 +149,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/bus_quadspi.h"
+#include "pg/can.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
@@ -263,6 +266,16 @@ static void configureOctoSPIBusses(void)
 #endif
 #endif
 }
+
+#if ENABLE_CAN
+static void configureCANBusses(void)
+{
+    canPinConfigure(canPinConfig(0));
+    canInit(CANDEV_1);
+    canInit(CANDEV_2);
+    canInit(CANDEV_3);
+}
+#endif
 
 #ifdef USE_SDCARD
 static void sdCardAndFSInit(void)
@@ -662,6 +675,10 @@ void initPhase3(void)
     i2cInit(I2CDEV_4);
 #endif
 #endif // USE_I2C
+
+#if ENABLE_CAN
+    configureCANBusses();
+#endif
 
 #endif // TARGET_BUS_INIT
 
