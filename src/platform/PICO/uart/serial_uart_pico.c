@@ -83,10 +83,8 @@ static void clearTxMonitorState(uartPort_t *s, bool isPio, uartDevice_t *uartDev
 
 bool checkUsartTxOutput(uartPort_t *s)
 {
-    static int cutc;
     uartDevice_t *uartDev = container_of(s, uartDevice_t, port);
     IO_t txIO = IOGetByTag(uartDev->tx.pin);
-    cutc++;
 
     if (txIO) {
         bool isPio = isPioUART(s->port.identifier);
