@@ -121,6 +121,10 @@
 /* ################## PCD peripheral configuration ########################## */
 #define USE_HAL_PCD_USER_DATA         1U
 
+/* ################## FLASH peripheral configuration ######################## */
+#define USE_HAL_FLASH_PROGRAM_BY_ADDR 1U
+#define USE_HAL_FLASH_ERASE_PAGE      1U
+
 /* ################## SPI peripheral configuration ########################## */
 #define USE_SPI_CRC                   0U
 

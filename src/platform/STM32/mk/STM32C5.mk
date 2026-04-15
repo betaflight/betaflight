@@ -28,6 +28,7 @@ STDPERIPH_SRC   = \
             stm32c5xx_hal_dma.c \
             stm32c5xx_hal_exti.c \
             stm32c5xx_hal_flash.c \
+            stm32c5xx_hal_flash_itf.c \
             stm32c5xx_hal_gpio.c \
             stm32c5xx_hal_i2c.c \
             stm32c5xx_hal_pcd.c \

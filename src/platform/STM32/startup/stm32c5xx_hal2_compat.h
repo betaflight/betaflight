@@ -168,8 +168,11 @@ typedef hal_pcd_handle_t PCD_HandleTypeDef;
 typedef struct { ADC_TypeDef *Instance; } ADC_HandleTypeDef;
 
 /* --------------------------------------------------------------------------
- * Flash: HAL2 completely rewrites flash API. Stub types for config_flash.c.
+ * Flash: HAL2 completely rewrites flash API. Provide shims mapping old HAL1
+ * names used by config_flash.c to the HAL2 equivalents.
  * -------------------------------------------------------------------------- */
+#include "stm32c5xx_hal_flash.h"
+
 typedef struct {
     uint32_t TypeErase;
     uint32_t Banks;
@@ -240,16 +243,49 @@ typedef struct {
 #define TIM_OCFAST_DISABLE              0x00000000U
 
 /* --------------------------------------------------------------------------
- * Flash: HAL2 completely rewrites the flash API. Provide stubs so
- * config_flash.c compiles. Actual flash operations need a HAL2 fork.
+ * Flash: HAL2 lock/unlock uses HAL_FLASH_ITF_Unlock/Lock(instance).
+ * Program uses HAL_FLASH_ProgramByAddr, erase uses HAL_FLASH_ErasePage.
  * -------------------------------------------------------------------------- */
-#define FLASH_BANK_1                    0x01U
-#define FLASH_BANK_2                    0x02U
+#define FLASH_BANK_1  HAL_FLASH_BANK_1
+#define FLASH_BANK_2  HAL_FLASH_BANK_2
 
-#define HAL_FLASH_Unlock()              ((void)0)
-#define HAL_FLASH_Lock()                ((void)0)
-#define HAL_FLASH_Program(type, addr, data) ((void)(addr), (void)(data), HAL_OK)
-#define HAL_FLASHEx_Erase(pEraseInit, pSectorError) ((void)(pEraseInit), (void)(pSectorError), HAL_OK)
+extern hal_flash_handle_t hflash_compat;
+
+static inline HAL_StatusTypeDef HAL_FLASH_Unlock(void)
+{
+    if (hflash_compat.global_state == 0) {
+        HAL_FLASH_Init(&hflash_compat, HAL_FLASH);
+    }
+    return HAL_FLASH_ITF_Unlock(HAL_FLASH);
+}
+
+static inline HAL_StatusTypeDef HAL_FLASH_Lock(void)
+{
+    return HAL_FLASH_ITF_Lock(HAL_FLASH);
+}
+
+static inline HAL_StatusTypeDef HAL_FLASH_Program(uint32_t typeProgram,
+                                                  uint32_t address,
+                                                  uint32_t dataAddress)
+{
+    (void)typeProgram;
+    return HAL_FLASH_ProgramByAddr(&hflash_compat, address,
+                                   (const uint32_t *)dataAddress,
+                                   16, /* quad-word = 128 bits = 16 bytes */
+                                   5000);
+}
+
+static inline HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit,
+                                                  uint32_t *pSectorError)
+{
+    (void)pSectorError;
+    hal_flash_bank_t bank = (pEraseInit->Banks == FLASH_BANK_1)
+                            ? HAL_FLASH_BANK_1 : HAL_FLASH_BANK_2;
+    return HAL_FLASH_ErasePage(&hflash_compat, bank,
+                               pEraseInit->Sector,
+                               pEraseInit->NbSectors,
+                               5000);
+}
 
 /* --------------------------------------------------------------------------
  * TIM HAL function renames: HAL2 simplifies TIM API.

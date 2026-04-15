@@ -26,6 +26,11 @@
 
 #include "platform.h"
 
+#include "stm32c5xx_hal_flash.h"
+
+/* Global flash handle for compat shims (HAL_FLASH_Unlock/Lock/Program/Erase) */
+hal_flash_handle_t hflash_compat;
+
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/exti.h"
 #include "drivers/memprot.h"
