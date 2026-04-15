@@ -145,7 +145,7 @@ MCU_COMMON_SRC = \
             STM32/dshot_bitbang_ll.c \
             STM32/dshot_bitbang.c \
             STM32/pwm_output_dshot_hal.c \
-            STM32/stubs_stm32c5xx.c \
+            STM32/light_ws2811strip_hal2.c \
             STM32/startup/system_stm32c5xx.c
 
 MSC_SRC =
