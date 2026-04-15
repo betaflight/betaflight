@@ -143,7 +143,8 @@ typedef struct {
     uint32_t ICPolarity; uint32_t ICSelection; uint32_t ICPrescaler; uint32_t ICFilter;
 } TIM_IC_InitTypeDef;
 typedef struct {
-    uint32_t OCMode; uint32_t Pulse; uint32_t OCPolarity; uint32_t OCNPolarity;
+    uint32_t OCMode; uint32_t OCState; uint32_t OCNState;
+    uint32_t CompareValue; uint32_t OCPolarity; uint32_t OCNPolarity;
     uint32_t OCFastMode; uint32_t OCIdleState; uint32_t OCNIdleState;
 } LL_TIM_OC_InitTypeDef;
 typedef struct {
@@ -197,7 +198,18 @@ typedef struct {
     uint32_t BlkDataLength;
     uint32_t Request;
     uint32_t Priority;
+    uint32_t Mode;
+    /* Extra fields used by dshot_bitbang H5 path (not stored in registers) */
+    uint32_t BlkHWRequest;
+    uint32_t SrcBurstLength;
+    uint32_t DestBurstLength;
+    uint32_t DataAlignment;
 } LL_DMA_InitTypeDef;
+
+static inline void LL_DMA_StructInit(LL_DMA_InitTypeDef *init)
+{
+    *init = (LL_DMA_InitTypeDef){ 0 };
+}
 
 /* --------------------------------------------------------------------------
  * HAL DMA handle: stub for headers that reference DMA_HandleTypeDef.
@@ -223,6 +235,8 @@ typedef struct {
 #define LL_DMA_DEST_INCREMENT           LL_DMA_DEST_ADDR_INCREMENTED
 #define LL_DMA_HWREQUEST_SINGLEBURST    LL_DMA_HARDWARE_REQUEST_BURST
 #define LL_DMA_LOW_PRIORITY_LOW_WEIGHT  LL_DMA_PRIORITY_LOW_WEIGHT_MID
+#define LL_DMA_LOW_PRIORITY_HIGH_WEIGHT LL_DMA_PRIORITY_LOW_WEIGHT_HIGH
+#define LL_DMA_HIGH_PRIORITY            LL_DMA_PRIORITY_HIGH
 
 /* --------------------------------------------------------------------------
  * TIM HAL constants: HAL2 renames many timer defines.
@@ -241,6 +255,94 @@ typedef struct {
 #define TIM_OCIDLESTATE_SET             LL_TIM_OCIDLESTATE_SET
 #define TIM_OCNIDLESTATE_SET            LL_TIM_OCIDLESTATE_SET
 #define TIM_OCFAST_DISABLE              0x00000000U
+#define TIM_AUTORELOAD_PRELOAD_ENABLE   TIM_CR1_ARPE
+
+/* HAL2 renamed OC idle state constants: LOW→RESET, HIGH→SET */
+#define LL_TIM_OCIDLESTATE_LOW          LL_TIM_OCIDLESTATE_RESET
+#define LL_TIM_OCIDLESTATE_HIGH         LL_TIM_OCIDLESTATE_SET
+
+/* HAL2 renamed IC polarity: BOTHEDGE→RISING_FALLING */
+#define LL_TIM_IC_POLARITY_BOTHEDGE     LL_TIM_IC_POLARITY_RISING_FALLING
+
+/* DMA burst source: H5 uses LL_TIM_DMA_UPDATE, C5 uses LL_TIM_DMABURST_UPD */
+#define LL_TIM_DMA_UPDATE               LL_TIM_DMABURST_UPD
+
+/* --------------------------------------------------------------------------
+ * LL TIM Init functions: HAL2 removed LL_TIM_Init / OC_Init / IC_Init.
+ * Provide inline implementations using the individual LL setters that
+ * DO exist in C5 HAL2.  Used by dshot and pwm_output drivers.
+ * -------------------------------------------------------------------------- */
+static inline void LL_TIM_StructInit(LL_TIM_InitTypeDef *init)
+{
+    init->Prescaler = 0;
+    init->CounterMode = LL_TIM_COUNTERMODE_UP;
+    init->Autoreload = 0xFFFFFFFFU;
+    init->ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+    init->RepetitionCounter = 0;
+}
+
+static inline void LL_TIM_Init(TIM_TypeDef *tim, LL_TIM_InitTypeDef *init)
+{
+    LL_TIM_SetPrescaler(tim, init->Prescaler);
+    LL_TIM_SetAutoReload(tim, init->Autoreload);
+    LL_TIM_SetCounterMode(tim, init->CounterMode);
+    LL_TIM_SetClockDivision(tim, init->ClockDivision);
+    LL_TIM_SetRepetitionCounter(tim, init->RepetitionCounter);
+    LL_TIM_GenerateEvent_UPDATE(tim);
+}
+
+static inline void LL_TIM_OC_StructInit(LL_TIM_OC_InitTypeDef *init)
+{
+    init->OCMode = LL_TIM_OCMODE_FROZEN;
+    init->OCState = LL_TIM_OCSTATE_DISABLE;
+    init->OCNState = 0;
+    init->CompareValue = 0;
+    init->OCPolarity = LL_TIM_OCPOLARITY_HIGH;
+    init->OCNPolarity = LL_TIM_OCPOLARITY_HIGH;
+    init->OCIdleState = LL_TIM_OCIDLESTATE_RESET;
+    init->OCNIdleState = LL_TIM_OCIDLESTATE_RESET;
+}
+
+static inline void LL_TIM_OC_Init(TIM_TypeDef *tim, uint32_t channel,
+                                  LL_TIM_OC_InitTypeDef *init)
+{
+    LL_TIM_OC_SetMode(tim, channel, init->OCMode);
+    LL_TIM_OC_SetPolarity(tim, channel, init->OCPolarity);
+    LL_TIM_OC_SetIdleState(tim, channel, init->OCIdleState);
+
+    /* Set compare value for the appropriate channel */
+    switch (channel) {
+    case LL_TIM_CHANNEL_CH1: LL_TIM_OC_SetCompareCH1(tim, init->CompareValue); break;
+    case LL_TIM_CHANNEL_CH2: LL_TIM_OC_SetCompareCH2(tim, init->CompareValue); break;
+    case LL_TIM_CHANNEL_CH3: LL_TIM_OC_SetCompareCH3(tim, init->CompareValue); break;
+    case LL_TIM_CHANNEL_CH4: LL_TIM_OC_SetCompareCH4(tim, init->CompareValue); break;
+    default: break;
+    }
+
+    /* Enable/disable channel in CCER */
+    if (init->OCState == LL_TIM_OCSTATE_ENABLE) {
+        LL_TIM_CC_EnableChannel(tim, channel);
+    }
+}
+
+static inline void LL_TIM_IC_StructInit(LL_TIM_IC_InitTypeDef *init)
+{
+    init->ICPolarity = LL_TIM_IC_POLARITY_RISING;
+    init->ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECT;
+    init->ICPrescaler = LL_TIM_ICPSC_DIV1;
+    init->ICFilter = LL_TIM_IC_FILTER_FDIV1;
+}
+
+static inline void LL_TIM_IC_Init(TIM_TypeDef *tim, uint32_t channel,
+                                  LL_TIM_IC_InitTypeDef *init)
+{
+    /* C5 HAL2 IC functions use shifted encoding (LL_TIM_IC_CONFIG_POS=16).
+     * Use the individual LL setter functions which handle the shift. */
+    LL_TIM_IC_SetActiveInput(tim, channel, init->ICActiveInput);
+    LL_TIM_IC_SetPrescaler(tim, channel, init->ICPrescaler);
+    LL_TIM_IC_SetFilter(tim, channel, init->ICFilter);
+    LL_TIM_IC_SetPolarity(tim, channel, init->ICPolarity);
+}
 
 /* --------------------------------------------------------------------------
  * Flash: HAL2 lock/unlock uses HAL_FLASH_ITF_Unlock/Lock(instance).

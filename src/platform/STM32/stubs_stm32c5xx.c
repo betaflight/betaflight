@@ -33,29 +33,10 @@
 
 #include "platform.h"
 
-#include "drivers/motor.h"
-#include "drivers/pwm_output.h"
-#include "drivers/timer.h"
-#include "platform/timer.h"
 #include "common/color.h"
 #include "drivers/light_ws2811strip.h"
-#include "dshot_dpwm.h"
 
 #define STUB __attribute__((weak))
-
-/* ---- DSHOT ---- */
-
-STUB void dshotEnableChannels(unsigned motorCount) { (void)motorCount; }
-STUB bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig) { (void)device; (void)motorConfig; return false; }
-STUB dshotBitbangStatus_e dshotBitbangGetStatus(void) { return 0; }
-STUB const timerHardware_t *dshotBitbangTimerGetAllocatedByNumberAndChannel(int8_t timerNumber, uint16_t timerChannel) { (void)timerNumber; (void)timerChannel; return NULL; }
-STUB const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *timer) { (void)timer; return NULL; }
-
-/* ---- PWM/DSHOT output ---- */
-
-STUB void pwmCompleteDshotMotorUpdate(void) {}
-STUB bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output) { (void)timerHardware; (void)motorIndex; (void)reorderedMotorIndex; (void)pwmProtocolType; (void)output; return false; }
-STUB void pwmDshotSetDirectionOutput(motorDmaOutput_t *const motor) { (void)motor; }
 
 /* ---- LED strip ---- */
 

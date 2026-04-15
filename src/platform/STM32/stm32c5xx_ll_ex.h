@@ -43,10 +43,38 @@ typedef struct {
     uint32_t reg[6];  // CTR1, CTR2, CBR1, CSAR, CDAR, CLLR
 } dmaCircularNode_t;
 
-__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely __attribute__((unused)), void *unused __attribute__((unused)))
+// Forward declaration — LL_DMA_InitTypeDef is defined in the compat header
+// which is included after the device headers. Use void* here to avoid
+// header ordering issues; callers always pass LL_DMA_InitTypeDef*.
+__STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *ch, void *initPtr)
 {
-    // HAL2: no LL_DMA_Init. Channel is configured via direct register writes
-    // in LL_EX_DMA_ConfigStream(). This stub exists for API compatibility.
+    // HAL2 LPDMA has no LL_DMA_Init. Program channel registers directly
+    // from the staging struct fields.
+    typedef struct {
+        uint32_t SrcAddress; uint32_t DestAddress; uint32_t Direction;
+        uint32_t SrcIncMode; uint32_t DestIncMode;
+        uint32_t SrcDataWidth; uint32_t DestDataWidth;
+        uint32_t BlkDataLength; uint32_t Request; uint32_t Priority;
+    } dmaInitCompat_t;
+    const dmaInitCompat_t *init = (const dmaInitCompat_t *)initPtr;
+
+    // CTR1: data widths + increment modes (constants are already register-field values)
+    ch->CTR1 = init->SrcDataWidth | init->DestDataWidth
+             | init->SrcIncMode | init->DestIncMode;
+
+    // CTR2: peripheral request selection
+    ch->CTR2 = (init->Request & DMA_CTR2_REQSEL);
+
+    // CBR1: block data length in bytes
+    ch->CBR1 = init->BlkDataLength & DMA_CBR1_BNDT;
+
+    // Addresses
+    ch->CSAR = init->SrcAddress;
+    ch->CDAR = init->DestAddress;
+
+    // CCR: priority (preserve other bits like EN, TCIE set earlier)
+    STM32_MODIFY_REG(ch->CCR, DMA_CCR_PRIO, init->Priority);
+
     return 0;
 }
 

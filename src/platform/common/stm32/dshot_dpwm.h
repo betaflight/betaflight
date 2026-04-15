@@ -115,7 +115,7 @@ typedef struct motorDmaOutput_s {
     uint16_t timerDmaSource;
     uint8_t timerDmaIndex;
     bool configured;
-#if defined(STM32H7) || defined(STM32H5) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
     IO_t io;

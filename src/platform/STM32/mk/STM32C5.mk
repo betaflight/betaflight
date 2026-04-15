@@ -141,6 +141,10 @@ MCU_COMMON_SRC = \
             STM32/adc_stm32c5xx.c \
             STM32/dma_stm32c5xx.c \
             STM32/dma_reqmap_mcu.c \
+            drivers/dshot_bitbang_decode.c \
+            STM32/dshot_bitbang_ll.c \
+            STM32/dshot_bitbang.c \
+            STM32/pwm_output_dshot_hal.c \
             STM32/stubs_stm32c5xx.c \
             STM32/startup/system_stm32c5xx.c
 
