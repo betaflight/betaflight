@@ -144,10 +144,15 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     }
 
     if (options & SERIAL_INVERTED) {
-        bprintf("UART inverting input on GPIO %d", IO_Pin(rxIO));
-        gpio_set_inover(IO_Pin(rxIO), GPIO_OVERRIDE_INVERT);
-        bprintf("UART inverting output on GPIO %d", IO_Pin(txIO));
-        gpio_set_outover(IO_Pin(txIO), GPIO_OVERRIDE_INVERT);
+        if (rxIO) {
+            bprintf("UART inverting input on GPIO %d", IO_Pin(rxIO));
+            gpio_set_inover(IO_Pin(rxIO), GPIO_OVERRIDE_INVERT);
+        }
+
+        if (txIO) {
+            bprintf("UART inverting output on GPIO %d", IO_Pin(txIO));
+            gpio_set_outover(IO_Pin(txIO), GPIO_OVERRIDE_INVERT);
+        }
     }
 
     if (options & SERIAL_CHECK_TX) {
