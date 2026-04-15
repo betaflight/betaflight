@@ -124,7 +124,17 @@ typedef struct {
 /* --------------------------------------------------------------------------
  * TIM: HAL2 removed HAL TIM init structs. Stub them for struct declarations.
  * -------------------------------------------------------------------------- */
-typedef struct { TIM_TypeDef *Instance; } TIM_HandleTypeDef;
+typedef struct {
+    TIM_TypeDef *Instance;
+    struct {
+        uint32_t Prescaler;
+        uint32_t CounterMode;
+        uint32_t Period;
+        uint32_t ClockDivision;
+        uint32_t RepetitionCounter;
+    } Init;
+} TIM_HandleTypeDef;
+#define TIM_COUNTERMODE_UP  LL_TIM_COUNTERMODE_UP
 typedef struct {
     uint32_t OCMode; uint32_t Pulse; uint32_t OCPolarity; uint32_t OCNPolarity;
     uint32_t OCFastMode; uint32_t OCIdleState; uint32_t OCNIdleState;
@@ -144,7 +154,17 @@ typedef struct {
     uint32_t ClockDivision; uint32_t RepetitionCounter;
 } LL_TIM_InitTypeDef;
 typedef struct { void *Instance; } UART_HandleTypeDef;
-typedef struct { void *Instance; void *IN_ep; void *OUT_ep; void *Setup; void *pData; } PCD_HandleTypeDef;
+/* --------------------------------------------------------------------------
+ * USB PCD: HAL2 renames PCD_HandleTypeDef → hal_pcd_handle_t and changes
+ * field names. The USB Device Library (usbd_cdc.c) still uses old names.
+ * Include the HAL2 PCD header and typedef + map the old field names.
+ * -------------------------------------------------------------------------- */
+#include "stm32c5xx_hal_pcd.h"
+typedef hal_pcd_handle_t PCD_HandleTypeDef;
+/* HAL1 field → HAL2 field mappings for PCD handle access in USB library */
+#define IN_ep       in_ep
+#define OUT_ep      out_ep
+#define maxpacket   max_packet
 typedef struct { ADC_TypeDef *Instance; } ADC_HandleTypeDef;
 
 /* --------------------------------------------------------------------------
@@ -241,6 +261,9 @@ typedef struct {
 #define HAL_TIM_IC_ConfigChannel(htim, cfg, ch)   do { (void)(htim); (void)(cfg); (void)(ch); } while(0)
 #define HAL_TIM_IC_Start_IT(htim, ch)       do { (void)(htim); (void)(ch); } while(0)
 #define TIM_CCxChannelCmd(TIMx, ch, state)  do { (void)(TIMx); (void)(ch); (void)(state); } while(0)
+
+/* Note: HAL2 TIM API is incompatible with old HAL_TIM_Base_Init/Start_IT/IRQHandler.
+ * CDC interface timer handling uses LL TIM directly for C5 — see usbd_cdc_interface.c. */
 
 /* --------------------------------------------------------------------------
  * ErrorStatus: HAL2 removed this CMSIS typedef.  LL_USART_Init returns it.
@@ -353,6 +376,14 @@ static inline void HAL_GPIO_Init_stub_(void *a __attribute__((unused)), void *b 
  * -------------------------------------------------------------------------- */
 #define HAL_PWR_EnableBkUpAccess() ((void)0)  /* C5: backup regs accessible without enable */
 #define __HAL_RCC_PWR_CLK_ENABLE() ((void)0)
+
+/* --------------------------------------------------------------------------
+ * HAL RCC GPIO/USB clock: HAL2 renames macro-style to function-style.
+ * -------------------------------------------------------------------------- */
+#define __HAL_RCC_GPIOA_CLK_ENABLE()  HAL_RCC_GPIOA_EnableClock()
+#define __HAL_RCC_USB_CLK_ENABLE()    HAL_RCC_USB_EnableClock()
+#define __HAL_RCC_USB_CLK_DISABLE()   HAL_RCC_USB_DisableClock()
+#define __HAL_RCC_TIM7_CLK_ENABLE()   HAL_RCC_TIM7_EnableClock()
 
 /* --------------------------------------------------------------------------
  * ADC calibration constants: map generic names to C5 LL_ADC_* addresses.
@@ -529,6 +560,9 @@ static inline void LL_SPI_DeInit(SPI_TypeDef *SPIx)
 /* --------------------------------------------------------------------------
  * GPIO AF: HAL2 renames GPIO_AFx_SPIy → HAL_GPIO_AFx_SPIy.
  * -------------------------------------------------------------------------- */
+/* USB AF: C5 uses AF13 for USB (not AF10 like H5) */
+#define GPIO_AF10_USB    HAL_GPIO_AF13_USB
+
 #define GPIO_AF5_SPI1    HAL_GPIO_AF5_SPI1
 #define GPIO_AF5_SPI2    HAL_GPIO_AF5_SPI2
 #define GPIO_AF5_SPI3    HAL_GPIO_AF5_SPI3

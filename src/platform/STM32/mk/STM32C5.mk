@@ -31,6 +31,7 @@ STDPERIPH_SRC   = \
             stm32c5xx_hal_gpio.c \
             stm32c5xx_hal_i2c.c \
             stm32c5xx_hal_pcd.c \
+            stm32c5xx_usb_drd_core.c \
             stm32c5xx_hal_pwr.c \
             stm32c5xx_hal_rcc.c \
             stm32c5xx_hal_rng.c \
@@ -52,8 +53,9 @@ USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
-# TODO: USB library needs HAL2 PCD compatibility work
-DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC)
+DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
+                        $(USBCORE_SRC) \
+                        $(USBCDC_SRC)
 
 #CMSIS
 VPATH           := $(VPATH):$(STDPERIPH_DIR):$(STM32C5_LIB)/stm32c5xx_dfp/Include:$(STM32C5_LIB)/stm32c5xx_dfp/Source/Templates
@@ -106,8 +108,13 @@ endif
 
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE) -DHSE_STARTUP_TIMEOUT=1000 -DSTM32
 
-# TODO: USB VCP requires HAL2 PCD compatibility work
-VCP_SRC =
+VCP_SRC = \
+            STM32/vcp_hal/usbd_desc.c \
+            STM32/vcp_hal/usbd_conf_stm32c5xx.c \
+            STM32/vcp_hal/usbd_cdc_hid.c \
+            STM32/vcp_hal/usbd_cdc_interface.c \
+            STM32/serial_usb_vcp.c \
+            drivers/usb_io.c
 
 # Files that compile cleanly with HAL2, plus HAL2-specific forks.
 # Peripheral drivers that deeply use old HAL types (dshot_bitbang_ll, etc.)

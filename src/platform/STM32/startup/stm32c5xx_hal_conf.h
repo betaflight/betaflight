@@ -118,6 +118,9 @@
 #define  USE_HAL_WWDG_REGISTER_CALLBACKS      0U
 #define  USE_HAL_XSPI_REGISTER_CALLBACKS      0U
 
+/* ################## PCD peripheral configuration ########################## */
+#define USE_HAL_PCD_USER_DATA         1U
+
 /* ################## SPI peripheral configuration ########################## */
 #define USE_SPI_CRC                   0U
 

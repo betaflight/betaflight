@@ -33,27 +33,13 @@
 
 #include "platform.h"
 
-#include "drivers/adc.h"
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_i2c_impl.h"
-#include "drivers/bus_spi.h"
-#include "drivers/dma.h"
-#include "drivers/dma_reqmap.h"
-#include "drivers/io.h"
 #include "drivers/motor.h"
 #include "drivers/pwm_output.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/serial_uart_impl.h"
-#include "drivers/serial_usb_vcp.h"
 #include "drivers/timer.h"
 #include "platform/timer.h"
 #include "common/color.h"
 #include "drivers/light_ws2811strip.h"
 #include "dshot_dpwm.h"
-
-#include "pg/adc.h"
 
 #define STUB __attribute__((weak))
 
@@ -70,13 +56,6 @@ STUB const resourceOwner_t *dshotBitbangTimerGetOwner(const timerHardware_t *tim
 STUB void pwmCompleteDshotMotorUpdate(void) {}
 STUB bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t reorderedMotorIndex, motorProtocolTypes_e pwmProtocolType, uint8_t output) { (void)timerHardware; (void)motorIndex; (void)reorderedMotorIndex; (void)pwmProtocolType; (void)output; return false; }
 STUB void pwmDshotSetDirectionOutput(motorDmaOutput_t *const motor) { (void)motor; }
-
-/* ---- USB VCP ---- */
-
-STUB serialPort_t *usbVcpOpen(void) { return NULL; }
-STUB uint8_t usbVcpIsConnected(void) { return 0; }
-STUB void usbVcpInit(void) {}
-STUB bool usbCableIsInserted(void) { return false; }
 
 /* ---- LED strip ---- */
 
