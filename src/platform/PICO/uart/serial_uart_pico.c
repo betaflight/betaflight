@@ -155,7 +155,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
-    if (options & SERIAL_CHECK_TX) {
+    if (txIO && (options & SERIAL_CHECK_TX)) {
         bprintf("serialUART option SERIAL_CHECK_TX");
         s->checkUsartTxOutput = checkUsartTxOutput;
         setTxMonitorState(uartdev, txIO);
