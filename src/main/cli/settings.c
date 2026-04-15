@@ -1411,6 +1411,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_PITCH_STICK_GAIN,           VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_PITCH]) },
     { PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_damping_filter_freq) },
+    { PARAM_NAME_PSAS_ACCEL_Z_FILTER_FREQ,        VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_accel_z_filter_freq) },
     { PARAM_NAME_PSAS_PITCH_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_stability_gain) },
     { PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_accel_p_gain) },
     { PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_accel_i_gain) },
@@ -1423,6 +1424,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_YAW_STICK_GAIN,           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_YAW]) },
     { PARAM_NAME_PSAS_YAW_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_YAW]) },
     { PARAM_NAME_PSAS_YAW_DAMPING_FILTER_FREQ,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_yaw_damping_filter_freq) },
+    { PARAM_NAME_PSAS_ACCEL_Y_FILTER_FREQ,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_accel_y_filter_freq) },
     { PARAM_NAME_PSAS_YAW_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_yaw_stability_gain) },
 
     { PARAM_NAME_PSAS_WING_LOAD,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 1500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_wing_load) },

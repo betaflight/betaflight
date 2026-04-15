@@ -41,6 +41,8 @@ void psasInit(const pidProfile_t *pidProfile)
     pt1FilterInit(&pidRuntime.psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&pidRuntime.psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
+    pt1FilterInit(&pidRuntime.psasAccelZLowpass, pt1FilterGain(pidProfile->psas_accel_z_filter_freq * 0.1f, pidRuntime.dT));
+    pt1FilterInit(&pidRuntime.psasAccelYLowpass, pt1FilterGain(pidProfile->psas_accel_y_filter_freq * 0.1f, pidRuntime.dT));
     pidRuntime.isReadyPSAS = false;
     isLiftCoefValid = false;
     validLiftCoefTime = 0.0f;
@@ -192,25 +194,43 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 {
     // Pitch channel
     pidData[FD_PITCH].I /= 10.0f;   //restore % last value
+
+    // Pilot pitch control
     const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
     float pitchStick = getSetpointRate(FD_PITCH) / maxRcRatePitch;  // pitch stick [-1 ... +1]
     float pitchPilotCtrl = pitchStick * pidProfile->psas_stick_gain[FD_PITCH];
 
+    // Plane pitch damping improvement
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->psas_pitch_damping_filter_freq != 0) {
         float gyroPitchLow = pt1FilterApply(&pidRuntime.psasPitchDampingLowpass, gyroPitch);
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
     float pitchDampingCtrl = -1.0f * gyroPitch * (pidProfile->psas_damping_gain[FD_PITCH] * 0.001f);
-    float accelZ = sensors(SENSOR_ACC) ? acc.accADC.z * acc.dev.acc_1G_rec : 1.0f;
-    float pitchStabilityCtrl = (accelZ - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.01f);
+
+    // Plane pitch stability improvement
+    float accelZ = 1.0f,
+          accelZ_filtered = 1.0f;
+    if (sensors(SENSOR_ACC)) {
+        accelZ =  acc.accADC.z * acc.dev.acc_1G_rec;
+        if (pidProfile->psas_accel_z_filter_freq != 0) {
+            accelZ_filtered = pt1FilterApply(&pidRuntime.psasAccelZLowpass, accelZ);
+        } else {
+            accelZ_filtered = accelZ;
+        }
+    }
+    float pitchStabilityCtrl = (accelZ_filtered - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.01f);
 
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
 
-    // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
+    // Additional features
+    // We have not got the angle of attack (AoA) sensor
+    // Therefore to use lift coefficient instead of AoA. It is proportional AoA in the linear region
     float liftCoef = 0.0f;
     float liftCoefVelocity = 0.0f;
     computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+
+    // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
     bool isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
 
     float deltaAccP = 0.0f;
@@ -241,9 +261,13 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_PITCH].P = 10.0f * deltaAccP;
 
     // Roll channel
+    // Pilot roll control
     const float maxRcRateRoll = fmaxf(getMaxRcRate(FD_ROLL), 1.0f);
     float rollPilotCtrl = getSetpointRate(FD_ROLL) / maxRcRateRoll * (pidProfile->psas_stick_gain[FD_ROLL]);
+
+    // Plane roll damping improvement
     float rollDampingCtrl = -1.0f * gyro.gyroADCf[FD_ROLL] * (pidProfile->psas_damping_gain[FD_ROLL] * 0.001f);
+
     pidData[FD_ROLL].Sum = rollPilotCtrl + rollDampingCtrl;
     pidData[FD_ROLL].Sum = constrainf(pidData[FD_ROLL].Sum, -100.0f, 100.0f) / 100.0f * 500.0f;
 
@@ -252,16 +276,31 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_ROLL].D = 10.0f * rollDampingCtrl;
 
     // Yaw channel
+    // Pilot yaw control
     const float maxRcRateYaw = fmaxf(getMaxRcRate(FD_YAW), 1.0f);
     float yawPilotCtrl = getSetpointRate(FD_YAW) / maxRcRateYaw * (pidProfile->psas_stick_gain[FD_YAW]);
+
+    // Plane yaw damping improvement
     float gyroYaw = gyro.gyroADCf[FD_YAW];
     if (pidProfile->psas_yaw_damping_filter_freq != 0) {
         float gyroYawLow = pt1FilterApply(&pidRuntime.psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
     float yawDampingCtrl = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
-    float accelY = sensors(SENSOR_ACC) ? acc.accADC.y * acc.dev.acc_1G_rec : 0.0f;
-    float yawStabilityCtrl = accelY * (pidProfile->psas_yaw_stability_gain * 0.01f);
+
+    // Plane yaw stability improvement
+    float accelY_filtered = 1.0f;
+    if (sensors(SENSOR_ACC)) {
+        float accelY =  acc.accADC.y * acc.dev.acc_1G_rec;
+        if (pidProfile->psas_accel_y_filter_freq != 0) {
+            accelY_filtered = pt1FilterApply(&pidRuntime.psasAccelYLowpass, accelY);
+        } else {
+            accelY_filtered = accelY;
+        }
+    }
+    float yawStabilityCtrl = accelY_filtered * (pidProfile->psas_yaw_stability_gain * 0.01f);
+
+    // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
     float rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
 
     pidData[FD_YAW].Sum = yawPilotCtrl + yawDampingCtrl + yawStabilityCtrl + rollToYawCrossControl;
