@@ -27,6 +27,16 @@
 
 #if ENABLE_CAN
 
+// Driver supports the Bosch M_CAN IP as implemented on G4 / H7 / C5.
+// Other families either lack FDCAN (e.g. F4 / F7) or use a different IP
+// revision that this driver has not been ported to yet. Fail loud at
+// compile time if ENABLE_CAN is forced on elsewhere, rather than silently
+// producing a non-functional build where TX would accept frames but do
+// nothing.
+#if !defined(STM32G4) && !defined(STM32H7) && !defined(STM32C5)
+#error "ENABLE_CAN is set but the target MCU family has no FDCAN support in this driver"
+#endif
+
 #include "common/utils.h"
 
 #include "drivers/can/can.h"
@@ -170,11 +180,22 @@ static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
 //-----------------------------------------------------------------------------
 // Bit timing for 1 Mbit/s classic CAN
 //
-// The FDCAN kernel clock tree differs per family. On G4 the default kernel
-// clock routing produces 24 MHz on many FC boards; on H7 the FDCAN_CLK is
-// selected via RCC->D2CCIP1R.FDCANSEL and typically also lands at around
-// 24 MHz on boards that haven't explicitly tuned it. The current constants
-// target that 24 MHz case; a future pass should make bit timing a PG value.
+// The FDCAN kernel clock tree differs per family and per board. On G4 the
+// system clock config explicitly selects RCC_FDCANCLKSOURCE_PCLK1 (see
+// system_stm32g4xx.c) which on overclocked FCs runs at 150-170 MHz. On H7
+// the selector in RCC->D2CCIP1R.FDCANSEL defaults to HSE but may be tuned
+// per board. Hard-coding a prescaler therefore gives the wrong line rate on
+// any board whose FDCAN kernel clock does not match the assumption.
+//
+// canNominalBitTiming() discovers the actual FDCAN kernel clock at init
+// time and searches for a (prescaler, tseg1, tseg2) triple that lands
+// exactly on CAN_BITRATE_NOMINAL with a sample point near 75 %. On clocks
+// that are integer multiples of 1 MHz (common FC configurations) the search
+// always succeeds; if no valid setting is found we fall back to the
+// historical 24 MHz preset rather than misconfiguring silently.
+//
+// TODO: expose the target bit rate (and eventually the FDCAN clock source
+// selection) via a PG so boards running at non-integer MHz can override.
 //-----------------------------------------------------------------------------
 
 // NBTP fields: NTSEG1=bits 8:15, NTSEG2=bits 0:6, NBRP=16:24, NSJW=25:31
@@ -183,18 +204,84 @@ static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
 #define CAN_NBTP_NTSEG1_POS     (8U)
 #define CAN_NBTP_NTSEG2_POS     (0U)
 
+#define CAN_BITRATE_NOMINAL     (1000000U)
+#define CAN_NBRP_MAX            (512U)
+#define CAN_NTSEG1_MAX          (256U)
+#define CAN_NTSEG2_MAX          (128U)
+#define CAN_TOTAL_TQ_MIN        (8U)
+#define CAN_TOTAL_TQ_MAX        (25U)
+
+// Sample-point target in tenths of a per-mille (i.e. 750 = 75.0%).
+#define CAN_SAMPLE_POINT_PERMILLE (750U)
+
+static uint32_t canPackNominalBitTiming(uint32_t nbrp, uint32_t ntseg1,
+                                        uint32_t ntseg2, uint32_t nsjw)
+{
+    // Register fields store (value - 1); caller passes the real tq counts.
+    return ((nsjw - 1U)   << CAN_NBTP_NSJW_POS)
+         | ((nbrp - 1U)   << CAN_NBTP_NBRP_POS)
+         | ((ntseg1 - 1U) << CAN_NBTP_NTSEG1_POS)
+         | ((ntseg2 - 1U) << CAN_NBTP_NTSEG2_POS);
+}
+
+// Query the FDCAN kernel clock. HAL_RCCEx_GetPeriphCLKFreq tracks the
+// family's actual clock-source selection where available; C5's HAL2 has
+// no equivalent that works without a handle, so fall back to PCLK1 which
+// matches the HAL2 reset default for FDCAN.
+static uint32_t canGetKernelClockHz(void)
+{
+#if defined(STM32G4) || defined(STM32H7)
+    return HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+#else
+    return HAL_RCC_GetPCLK1Freq();
+#endif
+}
+
 static uint32_t canNominalBitTiming(void)
 {
-    // 24 MHz / (1 * (1 + 17 + 6)) = 1 MHz (sample point ~75 %)
-    const uint32_t nbrp = 0;        // prescaler 1
-    const uint32_t ntseg1 = 16;     // tseg1 17
-    const uint32_t ntseg2 = 5;      // tseg2 6
-    const uint32_t nsjw = 0;        // sjw 1
+    const uint32_t kernelHz = canGetKernelClockHz();
 
-    return (nsjw << CAN_NBTP_NSJW_POS)
-         | (nbrp << CAN_NBTP_NBRP_POS)
-         | (ntseg1 << CAN_NBTP_NTSEG1_POS)
-         | (ntseg2 << CAN_NBTP_NTSEG2_POS);
+    // Search for a prescaler that divides the kernel clock down to an
+    // integer tq count in the valid range [8..25]. Pick the first match,
+    // which is the smallest prescaler (gives finest resolution for SJW).
+    for (uint32_t nbrp = 1; nbrp <= CAN_NBRP_MAX; nbrp++) {
+        if ((kernelHz % nbrp) != 0U) {
+            continue;
+        }
+        const uint32_t tqClock = kernelHz / nbrp;
+        if ((tqClock % CAN_BITRATE_NOMINAL) != 0U) {
+            continue;
+        }
+        const uint32_t totalTq = tqClock / CAN_BITRATE_NOMINAL;
+        if (totalTq < CAN_TOTAL_TQ_MIN || totalTq > CAN_TOTAL_TQ_MAX) {
+            continue;
+        }
+
+        // Sample point falls after (1 SYNC_SEG + tseg1). Round to the
+        // nearest tq and clamp so tseg2 stays >= 1.
+        uint32_t ntseg1 = (totalTq * CAN_SAMPLE_POINT_PERMILLE + 500U) / 1000U;
+        if (ntseg1 < 1U) {
+            ntseg1 = 1U;
+        }
+        if (ntseg1 >= totalTq) {
+            ntseg1 = totalTq - 1U;
+        }
+        const uint32_t ntseg2 = totalTq - 1U - ntseg1;
+        if (ntseg1 < 1U || ntseg1 > CAN_NTSEG1_MAX) {
+            continue;
+        }
+        if (ntseg2 < 1U || ntseg2 > CAN_NTSEG2_MAX) {
+            continue;
+        }
+
+        // SJW = min(4, tseg2) keeps resync margin within spec.
+        const uint32_t nsjw = (ntseg2 < 4U) ? ntseg2 : 4U;
+        return canPackNominalBitTiming(nbrp, ntseg1, ntseg2, nsjw);
+    }
+
+    // Fallback: legacy 24 MHz preset. Produces 1 Mbit/s only on 24 MHz
+    // kernel clocks; on any other clock this is better than wedging init.
+    return canPackNominalBitTiming(1U, 17U, 6U, 1U);
 }
 
 //-----------------------------------------------------------------------------
@@ -226,6 +313,12 @@ static FDCAN_GlobalTypeDef *canRegs(canDevice_e device)
     return (FDCAN_GlobalTypeDef *)canDevice[device].reg;
 }
 
+// Bounded spin count for CCCR.INIT transitions. At 170 MHz SYSCLK this
+// translates to ~600 us of worst-case polling, which is more than enough
+// for the peripheral to synchronise (the datasheet spec is a few bit times)
+// but short enough that a stuck peripheral does not wedge boot.
+#define CAN_INIT_SPIN_MAX       (100000U)
+
 // Enter INIT + CCE (configuration change enable). Required for any change to
 // bit timing or message RAM layout. Busy-loops until the peripheral reports
 // that INIT has taken effect.
@@ -235,7 +328,7 @@ static bool canEnterConfigMode(FDCAN_GlobalTypeDef *regs)
 
     // Peripheral synchronises to the bus before asserting INIT. Give it a
     // bounded number of polls so a disconnected transceiver does not hang us.
-    uint32_t timeout = 100000;
+    uint32_t timeout = CAN_INIT_SPIN_MAX;
     while (!(regs->CCCR & FDCAN_CCCR_INIT) && timeout--) {
         // spin
     }
@@ -247,9 +340,21 @@ static bool canEnterConfigMode(FDCAN_GlobalTypeDef *regs)
     return true;
 }
 
-static void canExitConfigMode(FDCAN_GlobalTypeDef *regs)
+// Leaving INIT is also asynchronous: the peripheral waits for 11 consecutive
+// recessive bits on the bus before it accepts normal operation. Poll CCCR
+// until the bit clears so callers do not attempt TX/RX while the controller
+// is still held in init. Returns false on timeout so the caller can decide
+// whether to mark the device initialised or bail.
+static bool canExitConfigMode(FDCAN_GlobalTypeDef *regs)
 {
     regs->CCCR &= ~FDCAN_CCCR_INIT;
+
+    uint32_t timeout = CAN_INIT_SPIN_MAX;
+    while ((regs->CCCR & FDCAN_CCCR_INIT) && timeout--) {
+        // spin
+    }
+
+    return (regs->CCCR & FDCAN_CCCR_INIT) == 0U;
 }
 
 // Clear out the per-instance message RAM region. A cold peripheral contains
@@ -364,7 +469,7 @@ void canInitDevice(canDevice_e device)
 
     // Classic CAN: clear the FD-enable and bit-rate-switch bits. Everything
     // else in CCCR can be left at reset (normal mode, no monitoring).
-    regs->CCCR &= ~((1UL << 8) | (1UL << 9));    // clear FDOE (8) and BRSE (9)
+    regs->CCCR &= ~(FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE);
 
     // Nominal bit timing. Data bit timing (DBTP) is not needed for classic CAN.
     regs->NBTP = canNominalBitTiming();
@@ -383,15 +488,21 @@ void canInitDevice(canDevice_e device)
     canConfigureMessageRamH7(device, regs);
 #endif
 
-    // Enable RX FIFO 0 new-message interrupt, route it to IRQ line 0, and
-    // arm the peripheral side of IRQ line 0.
-    regs->IE  |= FDCAN_IE_RF0NE;
-    regs->ILS &= ~(1UL << 3);                 // RF0N -> line 0
+    // Enable Rx FIFO 0 new-message and message-lost interrupts, and arm
+    // the peripheral side of IRQ line 0. The line-select register (ILS)
+    // resets to 0 which routes all sources to line 0, so no write needed.
+    // Enabling RF0LE lets the IRQ path observe and clear overrun flags so
+    // the peripheral does not stay stuck in the "lost" state after a burst.
+    regs->IE  |= FDCAN_IE_RF0NE | FDCAN_IE_RF0LE;
     regs->ILE |= FDCAN_ILE_EINT0;
 
     canEnableInterrupt(device, pDev->irq0);
 
-    canExitConfigMode(regs);
+    if (!canExitConfigMode(regs)) {
+        // Peripheral stuck in init — leave device flagged uninitialised so
+        // canTransmit() and canInit()'s caller see the failure.
+        return;
+    }
 
     pDev->initialized = true;
 }
@@ -415,6 +526,10 @@ void canRegisterRxCallback(canDevice_e device, canRxCallbackPtr callback)
     canDevice[device].rxCallback = callback;
 }
 
+// NOTE: canTransmit() is NOT internally synchronised. The read-modify-write
+// sequence on the Tx FIFO (read TXFQS put-index, write slot, set TXBAR) is
+// not re-entrant; calling concurrently from thread context and an ISR can
+// corrupt messages. Callers must serialise externally if they need that.
 bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
                  const uint8_t *data, uint8_t length)
 {
@@ -424,6 +539,12 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
 
     canDevice_t *pDev = &canDevice[device];
     if (!pDev->initialized || length > CAN_CLASSIC_MAX_DLC) {
+        return false;
+    }
+
+    // Per API contract: data may be NULL only if length is zero. Reject
+    // the invalid combination rather than dereferencing a null pointer.
+    if (length > 0 && data == NULL) {
         return false;
     }
 
@@ -526,6 +647,14 @@ void canIrqHandler(canDevice_e device)
     if (ir & FDCAN_IR_RF0N) {
         regs->IR = FDCAN_IR_RF0N;             // write-1-to-clear
         canDispatchRx(device);
+    }
+
+    // RF0L = Rx FIFO 0 message lost (overrun). Drop the flag so the
+    // peripheral re-arms; dropped frames are visible in the device state
+    // via an incrementing counter for diagnostics.
+    if (ir & FDCAN_IR_RF0L) {
+        regs->IR = FDCAN_IR_RF0L;
+        canDevice[device].rxOverruns++;
     }
 }
 

@@ -676,11 +676,11 @@ void initPhase3(void)
 #endif
 #endif // USE_I2C
 
-#if ENABLE_CAN
+#endif // TARGET_BUS_INIT
+
+#if ENABLE_CAN && !defined(TARGET_BUS_INIT)
     configureCANBusses();
 #endif
-
-#endif // TARGET_BUS_INIT
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();

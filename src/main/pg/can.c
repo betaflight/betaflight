@@ -29,18 +29,26 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
+// Default each pin macro independently so a target that defines only TX
+// (or only RX) still compiles — missing pins fall back to NONE.
 #ifndef CAN1_TX_PIN
 #define CAN1_TX_PIN NONE
+#endif
+#ifndef CAN1_RX_PIN
 #define CAN1_RX_PIN NONE
 #endif
 
 #ifndef CAN2_TX_PIN
 #define CAN2_TX_PIN NONE
+#endif
+#ifndef CAN2_RX_PIN
 #define CAN2_RX_PIN NONE
 #endif
 
 #ifndef CAN3_TX_PIN
 #define CAN3_TX_PIN NONE
+#endif
+#ifndef CAN3_RX_PIN
 #define CAN3_RX_PIN NONE
 #endif
 

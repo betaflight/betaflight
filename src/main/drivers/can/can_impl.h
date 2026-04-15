@@ -65,6 +65,7 @@ typedef struct canDevice_s {
     uint8_t irq0;
     uint8_t irq1;
     canRxCallbackPtr rxCallback;
+    volatile uint32_t rxOverruns;   // FIFO 0 message-lost events (diagnostics)
     bool initialized;
 } canDevice_t;
 
