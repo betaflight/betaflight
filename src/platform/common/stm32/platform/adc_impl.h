@@ -49,7 +49,7 @@
 #else
 #define ADC_TAG_MAP_COUNT 47
 #endif
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_COUNT 19
 #else
@@ -73,7 +73,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t devices;
     uint32_t channel;
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     uint8_t channelOrdinal;
 #endif
 } adcTagMap_t;
@@ -110,15 +110,15 @@ typedef struct adcDevice_s {
 #endif
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6) || defined(GD32F4)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(APM32F4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(APM32F4) || defined(STM32N6)
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
 #endif
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     uint8_t irq;
     uint32_t channelBits;
 #endif
