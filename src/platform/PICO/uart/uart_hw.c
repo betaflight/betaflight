@@ -159,6 +159,23 @@ void uartPinConfigure_hw(const serialPinConfig_t *pSerialPinConfig)
     }
 }
 
+void uartSelectFunction_hw(uartPort_t *s, uint32_t gpio)
+{
+    uart_inst_t *uartInstance = UART_INST(s->USARTx);
+    gpio_set_function(gpio, UART_FUNCSEL_NUM(uartInstance, gpio)); // select GPIO_FUNC_UART or GPIO_FUNC_UART_AUX as appropriate.
+    UNUSED(uartInstance); // Current pico sdk funcsel macro ignores uartInstance, but that might change in future.
+}
+
+bool isTxComplete_hw(uartPort_t *s)
+{
+    uart_inst_t *uartInstance = UART_INST(s->USARTx);
+    uart_hw_t *uartHw = uart_get_hw(uartInstance);
+    uint32_t flags = uartHw->fr;
+
+    // Check nothing in FIFO, and uart has finished transmitting (not BUSY).
+    return (flags & UART_UARTFR_TXFE_BITS) != 0 && (flags & UART_UARTFR_BUSY_BITS) == 0;
+}
+
 static void sendBufferToUART(uartPort_t *s)
 {
     uart_inst_t *uartInstance = UART_INST(s->USARTx);
@@ -228,6 +245,7 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
         uint32_t txPin = IO_Pin(txIO);
         bprintf("gpio set function UART on tx pin %d", txPin);
         gpio_set_function(txPin, UART_FUNCSEL_NUM(uartInstance, txPin)); // select GPIO_FUNC_UART or GPIO_FUNC_UART_AUX as appropriate.
+        gpio_set_pulls(txPin, false, false); // No pull up, no pull down
     }
 
     if (rxIO) {

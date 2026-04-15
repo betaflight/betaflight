@@ -163,7 +163,7 @@ typedef struct uartDevice_s {
 #if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
-    txPinState_t txPinState;
+    volatile txPinState_t txPinState;
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;
