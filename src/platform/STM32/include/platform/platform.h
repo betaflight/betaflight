@@ -308,6 +308,7 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_LATE_TASK_STATISTICS
+#define ENABLE_CAN 1
 #endif
 
 #ifdef STM32G4

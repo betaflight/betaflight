@@ -37,18 +37,43 @@
 #include "platform/rcc.h"
 
 //-----------------------------------------------------------------------------
-// Message RAM layout (G4)
+// Message RAM layout
 //
-// The G4 has a single shared message RAM at SRAMCAN_BASE, divided into three
-// equal regions (one per FDCAN instance). Within each region the layout of
-// filters / FIFOs / buffers is fixed by hardware.
+// Both G4 and H7 expose the same Bosch M_CAN IP and share a dedicated
+// Message RAM (CAN SRAM) at SRAMCAN_BASE. The significant difference is
+// *who* picks the layout:
 //
-// The element counts below mirror the ones used by ST's HAL, so the fixed
-// offsets inside the region match what the FDCAN peripheral already uses.
+//   - G4: layout is fixed by silicon. Each FDCAN instance owns a region of
+//     SRAMCAN_SIZE bytes at SRAMCAN_BASE + N*SRAMCAN_SIZE; the sub-ranges
+//     (filters, FIFOs, Tx buffers) are at hardwired offsets within the
+//     region. We only have to match the HAL's assumed element counts and
+//     sizes when addressing the RAM.
+//
+//   - H7: layout is software-defined. We partition the shared RAM and
+//     program the start-address / element-count / element-size into each
+//     instance's SIDFC/XIDFC/RXF0C/RXF1C/RXBC/TXEFC/TXBC and RXESC/TXESC
+//     registers. The driver hands out a fixed-size slice to each instance
+//     using a per-instance word offset; within each slice we only use
+//     Rx FIFO 0 and the Tx FIFO, and pick the smallest element size
+//     (8-byte data) since this driver currently targets classic CAN.
+//
+// To keep the Tx / Rx element access paths identical across families, both
+// configurations use a 4-word slot layout:
+//
+//   word 0: identifier + XTD flag
+//   word 1: DLC (+ classic CAN flags, zero for now)
+//   word 2: data[0..3]
+//   word 3: data[4..7]
+//
+// On G4 the hardware reserves 18 words per element (enough for FD 64-byte
+// payloads); we just leave words 4..17 unused. On H7 we select element size
+// code 0b000 = 8-byte data which gives a natural 4-word element.
 //-----------------------------------------------------------------------------
 
 #if defined(STM32G4)
 
+// Element counts mirror ST's HAL private constants so the fixed offsets we
+// compute below match the silicon layout.
 #define CAN_SRAM_FLS_NBR    (28U)
 #define CAN_SRAM_FLE_NBR    (8U)
 #define CAN_SRAM_RF0_NBR    (3U)
@@ -56,11 +81,11 @@
 #define CAN_SRAM_TEF_NBR    (3U)
 #define CAN_SRAM_TFQ_NBR    (3U)
 
-#define CAN_SRAM_FLS_SIZE   (1U * 4U)       // standard filter element
-#define CAN_SRAM_FLE_SIZE   (2U * 4U)       // extended filter element
-#define CAN_SRAM_RF_SIZE    (18U * 4U)      // Rx FIFO element (header + 64B payload)
-#define CAN_SRAM_TEF_SIZE   (2U * 4U)       // Tx event FIFO element
-#define CAN_SRAM_TFQ_SIZE   (18U * 4U)      // Tx FIFO element
+#define CAN_SRAM_FLS_SIZE   (1U * 4U)           // standard filter element
+#define CAN_SRAM_FLE_SIZE   (2U * 4U)           // extended filter element
+#define CAN_SRAM_RF_SIZE    (18U * 4U)          // Rx FIFO element (header + 64B)
+#define CAN_SRAM_TEF_SIZE   (2U * 4U)           // Tx event FIFO element
+#define CAN_SRAM_TFQ_SIZE   (18U * 4U)          // Tx FIFO element
 
 #define CAN_SRAM_FLSSA      (0U)
 #define CAN_SRAM_FLESA      (CAN_SRAM_FLSSA + CAN_SRAM_FLS_NBR * CAN_SRAM_FLS_SIZE)
@@ -71,32 +96,87 @@
 #define CAN_SRAM_PER_INSTANCE \
                             (CAN_SRAM_TFQSA + CAN_SRAM_TFQ_NBR * CAN_SRAM_TFQ_SIZE)
 
+#define CAN_RX_ELEMENT_BYTES    CAN_SRAM_RF_SIZE
+#define CAN_TX_ELEMENT_BYTES    CAN_SRAM_TFQ_SIZE
+
+#elif defined(STM32H7)
+
+// H7 layout (software-defined). Values are in *elements* or *bytes* as noted.
+// Per-instance RAM reservation in WORDS (1 word = 4 bytes):
+//  - 3 Rx FIFO 0 slots × 4 words = 12 words
+//  - 3 Tx FIFO slots  × 4 words = 12 words
+//  Round to a fixed 64-word (256-byte) slice per instance to leave head-room
+//  for future additions (extra FIFOs, filters). Total usage with 3 instances
+//  is 192 words / 768 bytes out of the 10 KiB of shared Message RAM.
+#define CAN_H7_RF0_NBR              (3U)
+#define CAN_H7_TFQ_NBR              (3U)
+#define CAN_H7_ELEMENT_WORDS        (4U)        // 2 hdr + 8-byte data
+#define CAN_H7_PER_INSTANCE_WORDS   (64U)
+#define CAN_H7_RF0_WORD_OFFSET      (0U)
+#define CAN_H7_TFQ_WORD_OFFSET      (CAN_H7_RF0_WORD_OFFSET + \
+                                     CAN_H7_RF0_NBR * CAN_H7_ELEMENT_WORDS)
+
+// Element-size code 0b000 = 8-byte data field (classic CAN).
+#define CAN_H7_ESC_CODE_8B          (0U)
+
+#define CAN_RX_ELEMENT_BYTES        (CAN_H7_ELEMENT_WORDS * 4U)
+#define CAN_TX_ELEMENT_BYTES        (CAN_H7_ELEMENT_WORDS * 4U)
+
+#endif
+
+// Per-instance base address of Message RAM. On both families the regions
+// are laid out contiguously from SRAMCAN_BASE in device-index order.
 static uint32_t canMessageRamBase(canDevice_e device)
 {
-    // Each FDCAN instance owns a CAN_SRAM_PER_INSTANCE-sized region, laid out
-    // FDCAN1, FDCAN2, FDCAN3 in ascending address order from SRAMCAN_BASE.
+#if defined(STM32G4)
     return SRAMCAN_BASE + (uint32_t)device * CAN_SRAM_PER_INSTANCE;
+#elif defined(STM32H7)
+    return SRAMCAN_BASE + (uint32_t)device * CAN_H7_PER_INSTANCE_WORDS * 4U;
+#else
+    UNUSED(device);
+    return 0;
+#endif
 }
 
-#endif // STM32G4
+static uint32_t canRxElementAddress(canDevice_e device, uint32_t index)
+{
+#if defined(STM32G4)
+    return canMessageRamBase(device) + CAN_SRAM_RF0SA + index * CAN_SRAM_RF_SIZE;
+#elif defined(STM32H7)
+    return canMessageRamBase(device)
+         + CAN_H7_RF0_WORD_OFFSET * 4U
+         + index * CAN_RX_ELEMENT_BYTES;
+#else
+    UNUSED(device); UNUSED(index);
+    return 0;
+#endif
+}
+
+static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
+{
+#if defined(STM32G4)
+    return canMessageRamBase(device) + CAN_SRAM_TFQSA + index * CAN_SRAM_TFQ_SIZE;
+#elif defined(STM32H7)
+    return canMessageRamBase(device)
+         + CAN_H7_TFQ_WORD_OFFSET * 4U
+         + index * CAN_TX_ELEMENT_BYTES;
+#else
+    UNUSED(device); UNUSED(index);
+    return 0;
+#endif
+}
 
 //-----------------------------------------------------------------------------
 // Bit timing for 1 Mbit/s classic CAN
 //
-// The FDCAN kernel clock on G4 is sourced from PCLK1 by default (170 MHz on
-// overclocked G474). The HAL default at reset maps FDCAN_CLK = HSE = 24 MHz on
-// typical FC boards; we assume the PCLK1 path here. Nominal bit time is
-// (1 + tseg1 + tseg2) prescaler-scaled tq. Choose tq = 8 -> divisor must be
-// (PCLK1 / 1M / 8). The config below works for the common 170/160 MHz and
-// 24 MHz clock options and errs toward sample-point ~ 75 %.
-//
-// A future pass should make this configurable via PG; for now it targets
-// a 24 MHz FDCAN kernel clock (common STM32G474 default when PLLQ isn't
-// routed to FDCAN).
+// The FDCAN kernel clock tree differs per family. On G4 the default kernel
+// clock routing produces 24 MHz on many FC boards; on H7 the FDCAN_CLK is
+// selected via RCC->D2CCIP1R.FDCANSEL and typically also lands at around
+// 24 MHz on boards that haven't explicitly tuned it. The current constants
+// target that 24 MHz case; a future pass should make bit timing a PG value.
 //-----------------------------------------------------------------------------
 
 // NBTP fields: NTSEG1=bits 8:15, NTSEG2=bits 0:6, NBRP=16:24, NSJW=25:31
-// For 1 Mbps with 24 MHz kernel clock: prescaler 1, tseg1 17, tseg2 6, sjw 1
 #define CAN_NBTP_NSJW_POS       (25U)
 #define CAN_NBTP_NBRP_POS       (16U)
 #define CAN_NBTP_NTSEG1_POS     (8U)
@@ -104,8 +184,7 @@ static uint32_t canMessageRamBase(canDevice_e device)
 
 static uint32_t canNominalBitTiming(void)
 {
-    // prescaler - 1, tseg1 - 1, tseg2 - 1, sjw - 1
-    // 24 MHz / (1 * (1 + 17 + 6)) = 1 MHz
+    // 24 MHz / (1 * (1 + 17 + 6)) = 1 MHz (sample point ~75 %)
     const uint32_t nbrp = 0;        // prescaler 1
     const uint32_t ntseg1 = 16;     // tseg1 17
     const uint32_t ntseg2 = 5;      // tseg2 6
@@ -118,7 +197,7 @@ static uint32_t canNominalBitTiming(void)
 }
 
 //-----------------------------------------------------------------------------
-// Classic CAN frame header encoding for the Tx FIFO element (G4).
+// Tx/Rx element header encoding (identical across G4 and H7 M_CAN IP)
 //
 // Word 0: ID field.
 //  - Standard ID occupies bits 18..28 (11-bit ID shifted left by 18).
@@ -130,7 +209,6 @@ static uint32_t canNominalBitTiming(void)
 #define CAN_TX_WORD0_XTD        (1UL << 30)
 #define CAN_TX_WORD1_DLC_POS    (16U)
 
-// Rx header encoding (mirrors the Tx layout with additional filter info we ignore)
 #define CAN_RX_WORD0_XTD        (1UL << 30)
 #define CAN_RX_WORD0_EXTID_MASK (0x1FFFFFFFUL)
 #define CAN_RX_WORD0_STDID_POS  (18U)
@@ -173,18 +251,24 @@ static void canExitConfigMode(FDCAN_GlobalTypeDef *regs)
     regs->CCCR &= ~FDCAN_CCCR_INIT;
 }
 
-// Clear out the whole per-instance message RAM region. A cold peripheral
-// contains indeterminate SRAM contents; sending garbage would be reported as
-// a spurious message.
-static void canClearMessageRam(uint32_t base)
+// Clear out the per-instance message RAM region. A cold peripheral contains
+// indeterminate SRAM contents; sending garbage would be reported as spurious
+// messages on start-up.
+static void canClearMessageRam(canDevice_e device)
 {
+    uint32_t base = canMessageRamBase(device);
+
 #if defined(STM32G4)
-    for (uint32_t addr = base; addr < base + CAN_SRAM_PER_INSTANCE; addr += 4) {
+    uint32_t bytes = CAN_SRAM_PER_INSTANCE;
+#elif defined(STM32H7)
+    uint32_t bytes = CAN_H7_PER_INSTANCE_WORDS * 4U;
+#else
+    uint32_t bytes = 0;
+#endif
+
+    for (uint32_t addr = base; addr < base + bytes; addr += 4) {
         *(volatile uint32_t *)addr = 0;
     }
-#else
-    UNUSED(base);
-#endif
 }
 
 static void canEnableInterrupt(canDevice_e device, uint8_t irq)
@@ -199,6 +283,43 @@ static void canEnableInterrupt(canDevice_e device, uint8_t irq)
     NVIC_EnableIRQ(irq);
 #endif
 }
+
+#if defined(STM32H7)
+// Program the H7 Message RAM layout for this instance. Addresses in the
+// SIDFC/XIDFC/RXF0C/TXBC registers are word offsets from SRAMCAN_BASE, not
+// absolute byte addresses. We only activate Rx FIFO 0 and the Tx FIFO; the
+// other regions (standard/extended filters, Rx FIFO 1, Rx buffers, Tx event
+// FIFO) are left zero-sized.
+static void canConfigureMessageRamH7(canDevice_e device, FDCAN_GlobalTypeDef *regs)
+{
+    const uint32_t instanceWords = (uint32_t)device * CAN_H7_PER_INSTANCE_WORDS;
+
+    const uint32_t rf0SA = instanceWords + CAN_H7_RF0_WORD_OFFSET;
+    const uint32_t tfqSA = instanceWords + CAN_H7_TFQ_WORD_OFFSET;
+
+    // No standard / extended filter lists installed — point at the region
+    // start with size 0 so the peripheral never walks them.
+    regs->SIDFC = (instanceWords << FDCAN_SIDFC_FLSSA_Pos) & FDCAN_SIDFC_FLSSA_Msk;
+    regs->XIDFC = (instanceWords << FDCAN_XIDFC_FLESA_Pos) & FDCAN_XIDFC_FLESA_Msk;
+
+    // Rx FIFO 0: 3 classic-CAN elements.
+    regs->RXF0C = ((rf0SA << FDCAN_RXF0C_F0SA_Pos) & FDCAN_RXF0C_F0SA_Msk)
+                | ((CAN_H7_RF0_NBR << FDCAN_RXF0C_F0S_Pos) & FDCAN_RXF0C_F0S_Msk);
+    regs->RXF1C = 0;
+    regs->RXBC  = 0;
+
+    // All Rx paths use 8-byte data elements (smallest, matches classic CAN).
+    regs->RXESC = (CAN_H7_ESC_CODE_8B << FDCAN_RXESC_F0DS_Pos)
+                | (CAN_H7_ESC_CODE_8B << FDCAN_RXESC_F1DS_Pos)
+                | (CAN_H7_ESC_CODE_8B << FDCAN_RXESC_RBDS_Pos);
+
+    // Tx buffers: 3 FIFO-mode slots, 0 dedicated buffers. TFQM = 0 (FIFO mode).
+    regs->TXBC = ((tfqSA << FDCAN_TXBC_TBSA_Pos) & FDCAN_TXBC_TBSA_Msk)
+               | ((CAN_H7_TFQ_NBR << FDCAN_TXBC_TFQS_Pos) & FDCAN_TXBC_TFQS_Msk);
+    regs->TXEFC = 0;
+    regs->TXESC = (CAN_H7_ESC_CODE_8B << FDCAN_TXESC_TBDS_Pos);
+}
+#endif // STM32H7
 
 //-----------------------------------------------------------------------------
 // Init / public API
@@ -247,14 +368,18 @@ void canInitDevice(canDevice_e device)
     // Nominal bit timing. Data bit timing (DBTP) is not needed for classic CAN.
     regs->NBTP = canNominalBitTiming();
 
+    // Wipe the per-instance message RAM region to remove any prior contents.
+    canClearMessageRam(device);
+
 #if defined(STM32G4)
     // Accept-non-matching policy: route everything to Rx FIFO 0 (fields 00b
-    // in ANFS / ANFE). No filter list entries are installed in this first
-    // cut, which is fine because the accept-non-match path handles everything.
+    // in ANFS / ANFE). The Message RAM layout itself is fixed by silicon.
     regs->RXGFC &= ~(FDCAN_RXGFC_ANFS | FDCAN_RXGFC_ANFE);
-
-    // Wipe the per-instance message RAM region.
-    canClearMessageRam(canMessageRamBase(device));
+#elif defined(STM32H7)
+    // H7 uses a separate GFC register and requires explicit Message RAM
+    // configuration via SIDFC/XIDFC/RXF0C/TXBC/RXESC/TXESC.
+    regs->GFC &= ~(FDCAN_GFC_ANFS | FDCAN_GFC_ANFE);
+    canConfigureMessageRamH7(device, regs);
 #endif
 
     // Enable RX FIFO 0 new-message interrupt, route it to IRQ line 0, and
@@ -310,15 +435,11 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
         return false;
     }
 
-#if defined(STM32G4)
     // Put index tells us which slot in the Tx FIFO the next message belongs
     // in. The peripheral manages the ring; software just fills the slot and
     // sets the corresponding TXBAR bit.
     uint32_t putIndex = (txfqs & FDCAN_TXFQS_TFQPI) >> 16;
-    uint32_t base = canMessageRamBase(device) + CAN_SRAM_TFQSA
-                    + putIndex * CAN_SRAM_TFQ_SIZE;
-
-    volatile uint32_t *slot = (volatile uint32_t *)base;
+    volatile uint32_t *slot = (volatile uint32_t *)canTxElementAddress(device, putIndex);
 
     // Word 0: identifier with XTD flag if extended.
     if (isExtended) {
@@ -330,8 +451,9 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
     // Word 1: length only (no BRS/FDF -> classic CAN frame).
     slot[1] = (uint32_t)length << CAN_TX_WORD1_DLC_POS;
 
-    // Words 2+: copy the payload in 32-bit chunks, handling any trailing
-    // 1..3 bytes by masking. The Tx RAM requires 32-bit writes.
+    // Words 2..3: copy the payload in 32-bit chunks. The Tx RAM requires
+    // 32-bit writes and classic CAN tops out at 8 bytes of payload, so two
+    // words is always enough.
     uint32_t words[2] = { 0, 0 };
     for (uint8_t i = 0; i < length; i++) {
         words[i >> 2] |= ((uint32_t)data[i]) << ((i & 3U) * 8U);
@@ -341,12 +463,6 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
 
     // Trigger transmission of this slot.
     regs->TXBAR = 1UL << putIndex;
-#else
-    UNUSED(identifier);
-    UNUSED(isExtended);
-    UNUSED(data);
-    UNUSED(length);
-#endif
 
     return true;
 }
@@ -365,10 +481,8 @@ static void canDispatchRx(canDevice_e device)
     while (regs->RXF0S & FDCAN_RXF0S_F0FL) {
         uint32_t getIndex = (regs->RXF0S & FDCAN_RXF0S_F0GI) >> 8;
 
-#if defined(STM32G4)
-        uint32_t base = canMessageRamBase(device) + CAN_SRAM_RF0SA
-                        + getIndex * CAN_SRAM_RF_SIZE;
-        volatile const uint32_t *slot = (volatile const uint32_t *)base;
+        volatile const uint32_t *slot =
+            (volatile const uint32_t *)canRxElementAddress(device, getIndex);
 
         uint32_t w0 = slot[0];
         uint32_t w1 = slot[1];
@@ -390,12 +504,6 @@ static void canDispatchRx(canDevice_e device)
             uint32_t word = (i < 4) ? w2 : w3;
             payload[i] = (uint8_t)(word >> ((i & 3U) * 8U));
         }
-#else
-        uint32_t identifier = 0;
-        bool isExtended = false;
-        uint8_t dlc = 0;
-        uint8_t payload[CAN_CLASSIC_MAX_DLC] = { 0 };
-#endif
 
         // Ack the slot so the peripheral can recycle it for the next message.
         // Must be done before invoking the callback in case the callback is
@@ -422,7 +530,8 @@ void canIrqHandler(canDevice_e device)
 
 // Strong definitions of the FDCAN IRQ handlers (weak stubs in startup *.s).
 // These only exist when CAN is compiled in; otherwise the linker keeps the
-// weak Default_Handler stubs.
+// weak Default_Handler stubs. FDCAN3 is guarded with #ifdef so H7 variants
+// without that instance (H74x/H75x) do not pick up an unresolved symbol.
 
 void FDCAN1_IT0_IRQHandler(void)
 {
@@ -434,7 +543,7 @@ void FDCAN2_IT0_IRQHandler(void)
     canIrqHandler(CANDEV_2);
 }
 
-#if defined(STM32G4)
+#if defined(FDCAN3)
 void FDCAN3_IT0_IRQHandler(void)
 {
     canIrqHandler(CANDEV_3);
