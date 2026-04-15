@@ -99,18 +99,12 @@ void calculateEstimatedAltitude(void)
     const float kfAltCm = positionEstimatorGetAltitudeCm();
     const float kfVelCm = positionEstimatorGetAltitudeDerivative();
 
-    if (!ARMING_FLAG(ARMED)) {
-        filteredAltitudeCm = 0.0f;
-        displayAltitudeCm = 0.0f;
-        controlAltitudeCm = 0.0f;
-        controlAltitudeDerivative = 0.0f;
-    } else {
-        // Apply PT2 display smoothing on top of KF output
-        filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
-        displayAltitudeCm = filteredAltitudeCm;
-        controlAltitudeCm = kfAltCm;
-        controlAltitudeDerivative = kfVelCm;
-    }
+    // Keep altitude estimate updating while disarmed so sensors/debug views show live data.
+    // Arming-specific references are handled in estimator sensor offsets/reset logic.
+    filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
+    displayAltitudeCm = filteredAltitudeCm;
+    controlAltitudeCm = kfAltCm;
+    controlAltitudeDerivative = kfVelCm;
 
     filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
 
