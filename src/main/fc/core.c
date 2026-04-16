@@ -74,6 +74,9 @@
 #include "flight/position.h"
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
+#ifdef USE_WING_LAUNCH
+#include "flight/wing_launch.h"
+#endif
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -619,6 +622,12 @@ if (isMotorProtocolDshot()) {
         pidAcroTrainerInit();
 #endif // USE_ACRO_TRAINER
 
+#ifdef USE_WING_LAUNCH
+        if (isFixedWing() && IS_RC_MODE_ACTIVE(BOXAUTOLAUNCH)) {
+            wingLaunchInit(currentPidProfile);
+        }
+#endif
+
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
@@ -940,6 +949,12 @@ bool processRx(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_WING_LAUNCH
+    if (ARMING_FLAG(ARMED)) {
+        wingLaunchUpdate(currentTimeUs);
+    }
+#endif
+
     return true;
 }
 
@@ -1028,6 +1043,9 @@ void processRxModes(timeUs_t currentTimeUs)
 #endif
 #ifdef USE_POSITION_HOLD
         || FLIGHT_MODE(POS_HOLD_MODE)
+#endif
+#ifdef USE_WING_LAUNCH
+        || (isWingLaunchInProgress() && IS_RC_MODE_ACTIVE(BOXAUTOLAUNCH))
 #endif
         ) && (sensors(SENSOR_ACC))) {
         // bumpless transfer to Level mode
