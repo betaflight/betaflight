@@ -219,7 +219,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelZ_filtered = accelZ;
         }
     }
-    float pitchStabilityCtrl = (accelZ_filtered - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.01f);
+    float pitchStabilityCtrl = (accelZ_filtered - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.1f);
 
     pidData[FD_PITCH].Sum = pitchPilotCtrl + pitchDampingCtrl + pitchStabilityCtrl;
 
@@ -298,7 +298,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelY_filtered = accelY;
         }
     }
-    float yawStabilityCtrl = accelY_filtered * (pidProfile->psas_yaw_stability_gain * 0.01f);
+    float yawStabilityCtrl = accelY_filtered * (pidProfile->psas_yaw_stability_gain * 0.1f);
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
     float rollToYawCrossControl = rollToYawCrossLinkControl(pidProfile, rollPilotCtrl, liftCoef);
