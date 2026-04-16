@@ -82,7 +82,7 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   LED1_OFF;
 
   while (1) {
-      // Simple busy-wait delay (~50ms at 216MHz)
+      // Simple busy-wait delay (approximate heartbeat)
       for (volatile int i = 0; i < 2000000; i++);
       LED0_TOGGLE;
       LED1_TOGGLE;
