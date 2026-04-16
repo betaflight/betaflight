@@ -83,6 +83,7 @@ typedef enum {
     BOXBEEPERMUTE,
     BOXREADY,
     BOXLAPTIMERRESET,
+    BOXAUTOLAUNCH,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
