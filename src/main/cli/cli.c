@@ -6340,7 +6340,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif
-#if defined(STM32H7) && defined(USE_SDCARD_SDIO)
+#if ENABLE_SDIO_PIN_CONFIG
     DEFS( OWNER_SDIO_CK,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CKPin ),
     DEFS( OWNER_SDIO_CMD,      PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CMDPin ),
     DEFS( OWNER_SDIO_D0,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D0Pin ),
@@ -6590,7 +6590,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFW_OFS("LPUART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
     DEFW_OFS("LPUART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, RESOURCE_LPUART_OFFSET, RESOURCE_LPUART_COUNT, MASK_IGNORED),
 #endif
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(USE_TIMER_UP_CONFIG)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };

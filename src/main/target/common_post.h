@@ -760,6 +760,14 @@ extern struct linker_symbol __config_end;
 #define ENABLE_SDIO_INIT 0
 #endif
 
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 0
+#endif
+
+#if !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 0
+#endif
+
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
