@@ -209,6 +209,9 @@ typedef enum {
     OSD_WP_NEXT_NUMBER,         // "NEXT 4" - next waypoint number
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
+#ifdef USE_WING_LAUNCH
+    OSD_WING_LAUNCH_STATUS,
+#endif
 
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;

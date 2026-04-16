@@ -159,6 +159,9 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#ifdef USE_WING_LAUNCH
+#include "flight/wing_launch.h"
+#endif
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -1986,6 +1989,55 @@ static const uint8_t osdElementDisplayOrder[] = {
 #endif
 };
 
+#ifdef USE_WING_LAUNCH
+static void osdElementWingLaunchStatus(osdElementParms_t *element)
+{
+    switch (wingLaunchGetState()) {
+    case WING_LAUNCH_IDLE:
+        if (!IS_RC_MODE_ACTIVE(BOXAUTOLAUNCH)) {
+            element->drawElement = false;
+        } else {
+            tfp_sprintf(element->buff, "LNCH RDY");
+        }
+        break;
+    case WING_LAUNCH_DETECTED:
+        if (!wingLaunchIsThrottleGatePassed()) {
+            tfp_sprintf(element->buff, "THR UP");
+        } else {
+            tfp_sprintf(element->buff, "THROW!");
+        }
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
+        break;
+    case WING_LAUNCH_MOTOR_DELAY:
+    case WING_LAUNCH_MOTOR_RAMP:
+        tfp_sprintf(element->buff, "LNCH GO");
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
+        break;
+    case WING_LAUNCH_CLIMBING:
+    {
+        const int32_t remainMs = wingLaunchGetClimbTimeRemainingMs();
+        const int32_t secs = remainMs / 1000;
+        const int32_t tenths = (remainMs % 1000) / 100;
+        tfp_sprintf(element->buff, "CLM %d.%ds", (int)secs, (int)tenths);
+        element->attr = DISPLAYPORT_SEVERITY_WARNING;
+        break;
+    }
+    case WING_LAUNCH_TRANSITION:
+        tfp_sprintf(element->buff, "RECOVER");
+        element->attr = DISPLAYPORT_SEVERITY_INFO;
+        break;
+    case WING_LAUNCH_ABORT:
+        tfp_sprintf(element->buff, "ABORT");
+        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        break;
+    case WING_LAUNCH_COMPLETE:
+    default:
+        element->drawElement = false;
+        break;
+    }
+}
+#endif // USE_WING_LAUNCH
+
 // Define the mapping between the OSD element id and the function to draw it
 
 const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
@@ -2135,6 +2187,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
+#ifdef USE_WING_LAUNCH
+    [OSD_WING_LAUNCH_STATUS]     = osdElementWingLaunchStatus,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2208,6 +2263,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
+#endif
+
+#ifdef USE_WING_LAUNCH
+    osdAddActiveElement(OSD_WING_LAUNCH_STATUS);
 #endif
 }
 

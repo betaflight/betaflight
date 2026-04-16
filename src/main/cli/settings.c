@@ -1406,6 +1406,18 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_YAW_TYPE,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_YAW_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_type) },
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
 #endif
+#ifdef USE_WING_LAUNCH
+    { PARAM_NAME_WING_LAUNCH_ACCEL_THRESH, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_accel_thresh) },
+    { PARAM_NAME_WING_LAUNCH_MOTOR_DELAY,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 500 },  PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_motor_delay) },
+    { PARAM_NAME_WING_LAUNCH_MOTOR_RAMP,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_motor_ramp) },
+    { PARAM_NAME_WING_LAUNCH_THROTTLE,     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 25, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_throttle) },
+    { PARAM_NAME_WING_LAUNCH_CLIMB_TIME,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1000, 20000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_climb_time) },
+    { PARAM_NAME_WING_LAUNCH_CLIMB_ANGLE,  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 10, 60 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_climb_angle) },
+    { PARAM_NAME_WING_LAUNCH_TRANSITION,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 3000 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_transition) },
+    { PARAM_NAME_WING_LAUNCH_MAX_TILT,     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 90 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_max_tilt) },
+    { PARAM_NAME_WING_LAUNCH_IDLE_THR,     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 25 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_idle_thr) },
+    { PARAM_NAME_WING_LAUNCH_STICK_OVERRIDE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, wing_launch_stick_override) },
+#endif // USE_WING_LAUNCH
 
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

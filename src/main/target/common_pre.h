@@ -530,6 +530,8 @@
 #undef USE_INTEGRATED_YAW_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
 
+#define USE_WING_LAUNCH
+
 #endif // USE_WING
 
 #if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
