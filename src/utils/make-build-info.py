@@ -19,6 +19,7 @@ HEADER_FILE_TEMPLATE = """{license_header}
 {defines}
 
 void sbufWriteBuildInfoFlags(sbuf_t *dst);
+const uint16_t *getBuildOptions(unsigned *count);
 """
 
 SOURCE_FILE_TEMPLATE = """{license_header}
@@ -33,16 +34,21 @@ SOURCE_FILE_TEMPLATE = """{license_header}
 
 #include "msp/msp_build_info.h"
 
+static const uint16_t buildOptions[] = {
+{build_options}
+};
+
 void sbufWriteBuildInfoFlags(sbuf_t *dst)
 {
-    static const uint16_t options[] = {
-{build_options}
-    };
-
-    for (unsigned i = 0; i < ARRAYLEN(options); i++)
-    {
-        sbufWriteU16(dst, options[i]);
+    for (unsigned i = 0; i < ARRAYLEN(buildOptions); i++) {
+        sbufWriteU16(dst, buildOptions[i]);
     }
+}
+
+const uint16_t *getBuildOptions(unsigned *count)
+{
+    *count = ARRAYLEN(buildOptions);
+    return buildOptions;
 }
 """
 

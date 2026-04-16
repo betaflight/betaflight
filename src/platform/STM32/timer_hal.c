@@ -185,7 +185,7 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #if USED_TIMERS & TIM_N(8)
     _DEF(8),
 #endif
-#if !(defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32G4))
 #if USED_TIMERS & TIM_N(9)
     _DEF(9),
 #endif
@@ -377,7 +377,7 @@ void timerReconfigureTimeBase(const timerHardware_t *timHw, uint16_t period, uin
 
     HAL_TIM_Base_Init(handle);
     if (tim_ptr == TIM1 || tim_ptr == TIM2 || tim_ptr == TIM3 || tim_ptr == TIM4 || tim_ptr == TIM5 || tim_ptr == TIM8
-#if !(defined(STM32H7) || defined(STM32G4))
+#if !(defined(STM32G4) || defined(STM32H5) || defined(STM32H7))
         || tim_ptr == TIM9
 #endif
       ) {
@@ -417,7 +417,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     case TIM1_CC_IRQn:
 #if defined(STM32F7)
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
-#elif defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
         timerNVICConfigure(TIM1_UP_IRQn);
 #elif defined(STM32G4)
         timerNVICConfigure(TIM1_UP_TIM16_IRQn);
@@ -426,7 +426,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 #endif
         break;
     case TIM8_CC_IRQn:
-#if defined(STM32G4) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
         timerNVICConfigure(TIM8_UP_IRQn);
 #else
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
@@ -882,7 +882,7 @@ static inline void timUpdateHandler(timerResource_t *tim, timerConfig_t *timerCo
 
 #if USED_TIMERS & TIM_N(1)
 _TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
-#  if defined(STM32H7) || defined(STM32N6)
+#  if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM1_UP_IRQHandler, 1);
 #  elif defined(STM32G4)
 #    if USED_TIMERS & TIM_N(16)
@@ -914,12 +914,16 @@ _TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
 
 #if USED_TIMERS & TIM_N(6)
 #  if !(defined(USE_PID_AUDIO) && (defined(STM32H7) || defined(STM32F7)))
+#    if defined(STM32H5)
+_TIM_IRQ_HANDLER_UPDATE_ONLY(TIM6_IRQHandler, 6);
+#    else
 _TIM_IRQ_HANDLER_UPDATE_ONLY(TIM6_DAC_IRQHandler, 6);
+#    endif
 #  endif
 #endif
 #if USED_TIMERS & TIM_N(7)
 // The USB VCP_HAL driver conflicts with TIM7, see TIMx_IRQHandler in usbd_cdc_interface.h
-#  if !(defined(USE_VCP) && (defined(STM32F4) || defined(STM32G4) || defined(STM32H7) || defined(STM32F7)))
+#  if !(defined(USE_VCP) && (defined(STM32F4) || defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32F7)))
 #    if defined(STM32G4)
 _TIM_IRQ_HANDLER_UPDATE_ONLY(TIM7_DAC_IRQHandler, 7);
 #    else
@@ -930,14 +934,14 @@ _TIM_IRQ_HANDLER_UPDATE_ONLY(TIM7_IRQHandler, 7);
 
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
-#  if defined(STM32G4)
+#  if defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
 _TIM_IRQ_HANDLER(TIM8_UP_IRQHandler, 8);
-#  endif
-
-#  if USED_TIMERS & TIM_N(13)
-_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
 #  else
+#    if USED_TIMERS & TIM_N(13)
+_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
+#    else
 _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);     // timer13 is not used
+#    endif
 #  endif
 #endif
 
@@ -948,23 +952,34 @@ _TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
 #  endif
 #if USED_TIMERS & TIM_N(12)
+#  if defined(STM32H5) || defined(STM32N6)
+_TIM_IRQ_HANDLER(TIM12_IRQHandler, 12);
+#  else
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
+#  endif
 #endif
-#if defined(STM32H7) && (USED_TIMERS & TIM_N(14))
+#if (defined(STM32H5) || defined(STM32N6)) && (USED_TIMERS & TIM_N(13))
+_TIM_IRQ_HANDLER(TIM13_IRQHandler, 13);
+#endif
+#if (defined(STM32H5) || defined(STM32H7) || defined(STM32N6)) && (USED_TIMERS & TIM_N(14))
+#  if defined(STM32H5) || defined(STM32N6)
+_TIM_IRQ_HANDLER(TIM14_IRQHandler, 14);
+#  else
 _TIM_IRQ_HANDLER(TIM8_TRG_COM_TIM14_IRQHandler, 14);
+#  endif
 #endif
 #if USED_TIMERS & TIM_N(15)
-#  if defined(STM32H7)
+#  if defined(STM32H5) || defined(STM32H7)
 _TIM_IRQ_HANDLER(TIM15_IRQHandler, 15);
 #  else
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
 #  endif
 #endif
-#if defined(STM32H7) && (USED_TIMERS & TIM_N(16))
+#if (defined(STM32H5) || defined(STM32H7)) && (USED_TIMERS & TIM_N(16))
 _TIM_IRQ_HANDLER(TIM16_IRQHandler, 16);
 #endif
 #if USED_TIMERS & TIM_N(17)
-#  if defined(STM32H7)
+#  if defined(STM32H5) || defined(STM32H7)
 _TIM_IRQ_HANDLER(TIM17_IRQHandler, 17);
 #  else
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
@@ -1117,16 +1132,25 @@ uint16_t timerDmaSource(uint8_t channel)
 
 uint16_t timerGetPrescalerByDesiredMhz(timerResource_t *tim, uint16_t mhz)
 {
+    if (mhz == 0) {
+        return 0;
+    }
     return timerGetPrescalerByDesiredHertz(tim, MHZ_TO_HZ(mhz));
 }
 
 uint16_t timerGetPeriodByPrescaler(timerResource_t *tim, uint16_t prescaler, uint32_t hz)
 {
+    if (hz == 0) {
+        return 0;
+    }
     return (uint16_t)((timerClockFromInstance(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(timerResource_t *tim, uint32_t hz)
 {
+    if (hz == 0) {
+        return 0;
+    }
     // protection here for desired hertz > SystemCoreClock???
     if (hz > timerClockFromInstance(tim)) {
         return 0;
@@ -1203,7 +1227,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     }
     switch (Channel) {
     case TIM_CHANNEL_1: {
-#if !defined(STM32N6) // N6 HAL made DMA callbacks static
+#if !defined(STM32H5) && !defined(STM32N6) // H5/N6 HAL made DMA callbacks static
         htim->hdma[TIM_DMA_ID_CC1]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1212,7 +1236,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_2: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC2]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC2]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1221,7 +1245,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_3: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC3]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC3]->XferErrorCallback = HAL_TIM_DMAError;
 #endif
@@ -1230,7 +1254,7 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
         break;
 
     case TIM_CHANNEL_4: {
-#if !defined(STM32N6)
+#if !defined(STM32H5) && !defined(STM32N6)
         htim->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = HAL_TIM_DMADelayPulseCplt;
         htim->hdma[TIM_DMA_ID_CC4]->XferErrorCallback = HAL_TIM_DMAError;
 #endif

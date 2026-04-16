@@ -128,7 +128,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(APM32F4)
+#if defined(STM32F7) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(APM32F4)
         // Note: APM32F4 is different from STM32F4 here
         const ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
@@ -194,13 +194,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
     }
 
-    if (true
-#ifdef USE_DMA
-        && !s->rxDMAResource  // do not enable IRW if using rxDMA
-#endif
-        ) {
-        enableRxIrq(hardware);
-    }
+    enableRxIrq(hardware);
     return s;
 }
 
@@ -249,7 +243,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (cfg->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->txDmaopt);
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, uartDeviceIdx, cfg->rxDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
 #if DMA_TRAIT_CHANNEL

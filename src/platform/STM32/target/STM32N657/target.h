@@ -62,9 +62,17 @@
 #define TARGET_IO_PORTP     0xffff
 #define TARGET_IO_PORTQ     0xffff
 
+// XSPI2 is used for boot flash at 0x70000000
+#define USE_OCTOSPI
+#define USE_OCTOSPI_DEVICE_1
+#define USE_FLASH_MEMORY_MAPPED
+#define USE_FLASH_W25Q128FV
+#define USE_FLASH_CHIP
+#define FLASH_OCTOSPI_INSTANCE  XSPI2
+
 // Provide a default so that this target builds on the build server.
-#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH)
-#define CONFIG_IN_RAM
+#if !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD) && !defined(CONFIG_IN_EXTERNAL_FLASH) && !defined(CONFIG_IN_MEMORY_MAPPED_FLASH)
+#define CONFIG_IN_MEMORY_MAPPED_FLASH
 #endif
 #define EEPROM_SIZE     5120
 
@@ -73,11 +81,14 @@
 
 // #define USE_BEEPER
 
-// SDIO not yet supported on N6
-//#ifdef USE_SDCARD
-//#define USE_SDCARD_SPI
-//#define USE_SDCARD_SDIO
-//#endif
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+
+#ifdef USE_SDCARD
+#define USE_SDCARD_SPI
+#define USE_SDCARD_SDIO
+#endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY

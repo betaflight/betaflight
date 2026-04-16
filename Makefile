@@ -668,15 +668,15 @@ zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
 .PHONY: binary
-binary:
+binary: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex:
+hex: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2:
+uf2: $(PLATFORM_SDK_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
@@ -760,6 +760,45 @@ targets:
 
 targets-ci-print:
 	@echo $(CI_TARGETS)
+
+## targets-ci-grouped-print : print CI targets grouped by SDK (one "sdk:target1 target2 ..." per line)
+targets-ci-grouped-print:
+	@( \
+		for f in $(PLATFORM_DIR)/*/mk/*.mk; do \
+			family=$$(basename "$$f" .mk); \
+			sdk=$$(grep -m1 '^PLATFORM_SDK[[:space:]]*:=' "$$f" 2>/dev/null | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$sdk" ] && echo "FAMILY $$family $$sdk"; \
+		done; \
+		for f in $(PLATFORM_DIR)/*/target/*/target.mk; do \
+			target=$$(basename "$$(dirname "$$f")"); \
+			family=$$(grep -m1 'TARGET_MCU_FAMILY[[:space:]]*:=' "$$f" | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$family" ] && echo "TARGET $$target $$family"; \
+		done; \
+		for t in $(CI_TARGETS); do \
+			config_h="$(CONFIG_DIR)/configs/$$t/config.h"; \
+			if [ -f "$$config_h" ]; then \
+				mcu=$$(grep -m1 'FC_TARGET_MCU' "$$config_h" | awk '{print $$NF}'); \
+				echo "CONFIG $$t $$mcu"; \
+			fi; \
+		done; \
+		for t in $(CI_TARGETS); do echo "CI $$t"; done \
+	) | awk ' \
+		/^FAMILY/ { family_sdk[$$2] = $$3 } \
+		/^TARGET/ { target_family[$$2] = $$3 } \
+		/^CONFIG/ { config_target[$$2] = $$3 } \
+		/^CI/ { \
+			t = $$2; \
+			family = target_family[t]; \
+			if (family == "") { mcu = config_target[t]; family = target_family[mcu] } \
+			sdk = family_sdk[family]; \
+			if (sdk == "") { \
+				printf("Unable to resolve PLATFORM_SDK for CI target %s (family=%s)\n", t, family) > "/dev/stderr"; \
+				exit 1; \
+			} \
+			grouped[sdk] = grouped[sdk] ? grouped[sdk] " " t : t \
+		} \
+		END { for (sdk in grouped) print sdk ":" grouped[sdk] } \
+	'
 
 ## target-mcu        : print the MCU type of the target
 target-mcu:

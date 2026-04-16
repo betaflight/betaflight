@@ -201,6 +201,17 @@
   * @retval None
   */
 
+static void initialiseDmaMemorySections(void)
+{
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
+
 void SystemInit(void)
 {
   uint32_t reg_opsr;
@@ -279,6 +290,10 @@ void SystemInit(void)
     /* Lock the FLASH Option Control Register access */
     FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
   }
+
+  initialiseDmaMemorySections();
+
+  systemProcessResetReason();
 }
 
 /**

@@ -81,6 +81,9 @@ struct {
     // Macronix MX25L25635E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
     { 0xC22019, 80, 50, 512, 256 },
+    // Macronix MX25L12845G
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8740/MX25L12845G,%203V,%20128Mb,%20v1.8.pdf
+    { 0xC22018, 120, 50, 256, 256 },
     // Micron M25P16
     // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/m25p/m25p16.pdf
     { 0x202015, 25, 20, 32, 256 },

@@ -119,7 +119,16 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   // Bus Fault Address Register
   _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
 
-  __asm("BKPT #0\n") ; // Break into the debugger
+  // Blink LEDs to indicate hard fault visually
+  LED0_OFF;
+  LED1_OFF;
+
+  while (1) {
+      // Simple busy-wait delay (~50ms at 216MHz)
+      for (volatile int i = 0; i < 2000000; i++);
+      LED0_TOGGLE;
+      LED1_TOGGLE;
+  }
 }
 
 #else

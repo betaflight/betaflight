@@ -68,7 +68,7 @@ void persistentObjectRTCEnable(void)
     UNUSED(rtcHandle);
 #endif
 
-#if !defined(STM32H7) && !defined(STM32N6)
+#if !defined(STM32H7) && !defined(STM32H5) && !defined(STM32C5) && !defined(STM32N6)
     __HAL_RCC_PWR_CLK_ENABLE(); // Enable Access to PWR
 #endif
 
@@ -131,7 +131,7 @@ void persistentObjectInit(void)
 
     uint32_t wasSoftReset;
 
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     wasSoftReset = RCC->RSR & RCC_RSR_SFTRSTF;
 #else
     wasSoftReset = RCC->CSR & RCC_CSR_SFTRSTF;

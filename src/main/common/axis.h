@@ -45,4 +45,11 @@ typedef enum {
 #define RP_AXIS_COUNT 2
 #define EF_AXIS_COUNT 2
 
+// NED (North-East-Down) coordinate frame - aviation standard
+typedef enum {
+    NED_NORTH = 0,  // X-axis in NED frame
+    NED_EAST = 1,   // Y-axis in NED frame
+    NED_DOWN = 2    // Z-axis in NED frame
+} axisNED_e;
+
 #define GET_DIRECTION(isReversed) ((isReversed) ? -1 : 1)
