@@ -872,7 +872,7 @@ static void osdElementAverageCellVoltage(osdElementParms_t *element)
     osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
-static void generate_compass_bar_with_degrees(const int offset, char *bar)
+static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
 {
     // Fill with tick characters matching the standard pattern
     for (int i = 0; i < 9; i++) {
@@ -916,7 +916,7 @@ static void osdElementCompassBar(osdElementParms_t *element)
     if (osdConfig()->osd_compass_style) {
         // Degree style: display 0/90/180/270 instead of N/E/S/W
         char bar[9];
-        generate_compass_bar_with_degrees(offset, bar);
+        osdGenerateCompassBarWithDegrees(offset, bar);
         memcpy(element->buff, bar, 9);
     } else {
         memcpy(element->buff, compassBar + offset, 9);
