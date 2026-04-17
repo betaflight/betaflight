@@ -433,6 +433,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
+    osdConfig->osd_compass_style = 0; //defaults to 0 e.g. characters (N,S,E,W)
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
