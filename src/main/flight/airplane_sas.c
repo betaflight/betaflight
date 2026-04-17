@@ -235,11 +235,15 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Therefore to use lift coefficient instead of AoA. It is proportional AoA in the linear region
     float liftCoef = 0.0f;
     float liftCoefVelocity = 0.0f;
-    computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
 
-    // Hold required accel z value. If it is unpossible due of big angle of attack value, then limit angle of attack
-    bool isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
+    // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value. It works when psas_aoa_limiter_gain is not zero
+    bool isLimitAoA = false;
+    if (isValidLiftCoef) {
+        isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
+    }
 
+    // Else, if the lift coefficent (angle of attack) value is normal then hold required G load (accel z) value. It works when psas_pitch_accel_i_gain is not zero
     float deltaAccP = 0.0f;
     if (isLimitAoA == false) {
         deltaAccP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
