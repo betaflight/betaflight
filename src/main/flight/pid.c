@@ -277,7 +277,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *10
         .psas_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
         .psas_accel_y_filter_freq = 10,        // accel Y filter cut freq Hz * 10, 1Hz
-        .psas_yaw_stability_gain = 0,          // percent control by 1g Y accel change *10
+        .psas_yaw_stability_gain = 25,         // percent control by 1g Y accel change *10
         .psas_pitch_accel_p_gain = 0,          // elevator for 1g Z accel difference in % *10
         .psas_pitch_accel_i_gain = 0,          // elevator speed for 1g Z accel difference in %/sec *10
         .psas_pitch_accel_max = 40,            // maximal positive Z accel value *10
