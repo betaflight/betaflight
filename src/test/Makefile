@@ -519,6 +519,13 @@ vtx_msp_unittest_DEFINES := \
 		USE_VTX_TABLE= \
 		USE_VTX_MSP=
 
+wing_msp_unittest_SRC := \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/msp/msp_wing.c
+
+wing_msp_unittest_DEFINES := \
+		USE_WING=
+
 pwl_unittest_SRC := \
 		$(USER_DIR)/common/pwl.c
 
