@@ -43,6 +43,9 @@ static pt1Filter_t psasAccelYLowpass;
 static bool isLiftCoefValid = false;
 static float validLiftCoefTime = 0.0f;
 
+static bool isEnabledAccelZController = false,
+            isEnabledAoALimiter = false;
+
 void psasInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
@@ -50,9 +53,12 @@ void psasInit(const pidProfile_t *pidProfile)
     pt1FilterInit(&psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
     pt1FilterInit(&psasAccelZLowpass, pt1FilterGain(pidProfile->psas_accel_z_filter_freq * 0.1f, pidRuntime.dT));
     pt1FilterInit(&psasAccelYLowpass, pt1FilterGain(pidProfile->psas_accel_y_filter_freq * 0.1f, pidRuntime.dT));
+
     isReadyPSAS = false;
     isLiftCoefValid = false;
     validLiftCoefTime = 0.0f;
+    isEnabledAccelZController = sensors(SENSOR_ACC) && (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0);
+    isEnabledAoALimiter = pidProfile->psas_aoa_limiter_gain != 0;
 }
 
 static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
@@ -109,22 +115,20 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
 static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
 {
     float deltaAccP = 0.0f;
-    if (sensors(SENSOR_ACC) &&
-        (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0)) {
-        const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
-        float accelReq = pitchStick < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchStick + 1.0f
+    const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
+    float accelReq = pitchStick < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchStick + 1.0f
                                            : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchStick + 1.0f;
-        float accelDelta = accelZ - accelReq;
-        float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
-        servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+    float accelDelta = accelZ - accelReq;
+    float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
+    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
 
-        pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
-        deltaAccP = accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
+    pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
+    deltaAccP = accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
 
-        DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f));
-        DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f));
-        DEBUG_SET(DEBUG_PSAS, 5, lrintf(deltaAccP * 10.0f));
-    }
+    DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 4, lrintf(accelDelta * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 5, lrintf(deltaAccP * 10.0f));
+
     return deltaAccP;
 }
 
@@ -132,46 +136,45 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
 static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef, float liftCoefVelocity)
 {
     bool isLimitAoA = false;
-    if (pidProfile->psas_aoa_limiter_gain != 0) {
-        float liftCoefDiff = 0.0f,
-              servoVelocity = 0.0f;
-        if (isLiftCoefValid) {
-            const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
-            const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
 
-            const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
-            if (liftCoef > 0.0f) {
-                if (liftCoefForecastChange > 0.0f) {
-                    liftCoef += liftCoefForecastChange;
-                }
-                liftCoefDiff = liftCoef - limitLiftC;
-                if (liftCoefDiff > 0.0f) {
-                    isLimitAoA = true;
-                    servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
-                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                }
-            } else {
-                if (liftCoefForecastChange < 0.0f) {
-                    liftCoef += liftCoefForecastChange;
-                }
-                liftCoefDiff = liftCoef + limitLiftC;
-                if (liftCoefDiff < 0.0f) {
-                    isLimitAoA = true;
-                    servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
-                    servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
-                }
+    float liftCoefDiff = 0.0f,
+          servoVelocity = 0.0f;
+    if (isLiftCoefValid) {
+        const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
+        const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
+
+        const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s
+        if (liftCoef > 0.0f) {
+            if (liftCoefForecastChange > 0.0f) {
+                liftCoef += liftCoefForecastChange;
+            }
+            liftCoefDiff = liftCoef - limitLiftC;
+            if (liftCoefDiff > 0.0f) {
+                isLimitAoA = true;
+                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
+            }
+        } else {
+            if (liftCoefForecastChange < 0.0f) {
+                liftCoef += liftCoefForecastChange;
+            }
+            liftCoefDiff = liftCoef + limitLiftC;
+            if (liftCoefDiff < 0.0f) {
+                isLimitAoA = true;
+                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
             }
         }
-
-        if (isLimitAoA) {
-            pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
-        } else if (pidProfile->psas_pitch_accel_i_gain == 0) {
-            // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
-            pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
-        }
-
-        DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
     }
+
+    if (isLimitAoA) {
+        pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
+    } else if (pidProfile->psas_pitch_accel_i_gain == 0) {
+        // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
+        pidData[FD_PITCH].I -= pidData[FD_PITCH].I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
+    }
+
+    DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
 
     return isLimitAoA;
 }
@@ -200,7 +203,7 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
 void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 {
     // Pitch channel
-    pidData[FD_PITCH].I /= 10.0f;   //restore % last value
+    pidData[FD_PITCH].I /= 10.0f;   //restore actual % last value after save its *10 value to blackbox
 
     // Pilot pitch control
     const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
@@ -237,39 +240,43 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     float liftCoefVelocity = 0.0f;
     bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
 
-    // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value. It works when psas_aoa_limiter_gain is not zero
+    // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
-    if (isValidLiftCoef) {
+    if (isEnabledAoALimiter && isValidLiftCoef) {
         isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
     }
 
-    // Else, if the lift coefficent (angle of attack) value is normal then hold required G load (accel z) value. It works when psas_pitch_accel_i_gain is not zero
-    float deltaAccP = 0.0f;
-    if (isLimitAoA == false) {
-        deltaAccP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
+    // Else, if the lift coefficent (angle of attack) value is normal then hold required G load (accel z) value.
+    if (isEnabledAccelZController && isLimitAoA == false) {
+        float deltaAccP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
+        pidData[FD_PITCH].Sum += deltaAccP;
+        pidData[FD_PITCH].P = 10.0f * deltaAccP;
     }
-    pidData[FD_PITCH].Sum += deltaAccP;
+
     pidData[FD_PITCH].Sum = constrainf(pidData[FD_PITCH].Sum, -100.0f, 100.0f);
 
-    // limit integrator output
-    float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
-    if ( output > 100.0f) {
-        pidData[FD_PITCH].I = 100.0f - pidData[FD_PITCH].Sum;
-    } else if (output < -100.0f) {
-        pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
+    // The AoA limiter and Accel Z controller accumulate pitch I value
+    // limit integrator output and add it to Sum
+    if (isEnabledAoALimiter || isEnabledAccelZController) {
+        float output = pidData[FD_PITCH].Sum + pidData[FD_PITCH].I;
+        if ( output > 100.0f) {
+            pidData[FD_PITCH].I = 100.0f - pidData[FD_PITCH].Sum;
+        } else if (output < -100.0f) {
+            pidData[FD_PITCH].I = -100.0f - pidData[FD_PITCH].Sum;
+        }
+
+        // Add integrator output to Sum value
+        pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
     }
 
-    // Add integrator output to Sum value
-    pidData[FD_PITCH].Sum += pidData[FD_PITCH].I;
-    // Scale output to [-500, +500] range
+    // Scale output to the servos [-500, +500] range
     pidData[FD_PITCH].Sum = pidData[FD_PITCH].Sum / 100.0f * 500.0f;
 
     // Save control components instead of PID fields values to get blackbox logging without additional variables
     pidData[FD_PITCH].F = 10.0f * pitchPilotCtrl;
     pidData[FD_PITCH].D = 10.0f * pitchDampingCtrl;
     pidData[FD_PITCH].S = 10.0f * pitchStabilityCtrl;
-    pidData[FD_PITCH].I *= 10.0f;  // Store *10 value
-    pidData[FD_PITCH].P = 10.0f * deltaAccP;
+    pidData[FD_PITCH].I *= 10.0f; // Store *10 value. Need to restore its actrual value at the next loops step
 
     // Roll channel
     // Pilot roll control
@@ -323,7 +330,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     pidData[FD_YAW].S = 10.0f * yawStabilityCtrl;
     pidData[FD_YAW].P = 10.0f * rollToYawCrossControl;
 
-    DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum * 2.0f));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(pidData[FD_PITCH].Sum * 2.0f)); // 2 multipler to save Sum in [-1000 ... +1000] range
     DEBUG_SET(DEBUG_PSAS, 1, lrintf(pidData[FD_PITCH].I));
     DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
 }
