@@ -567,15 +567,6 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
 #endif // USE_CHIRP
-
-#ifdef USE_AIRPLANE_SAS
-    bool isReadyPSAS;
-    pt1Filter_t psasPitchDampingLowpass;
-    pt1Filter_t psasYawDampingLowpass;
-    pt1Filter_t psasLiftCoefLowpass;
-    pt1Filter_t psasAccelZLowpass;
-    pt1Filter_t psasAccelYLowpass;
-#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

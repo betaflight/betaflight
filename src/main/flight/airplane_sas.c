@@ -33,17 +33,24 @@
 #include "build/debug.h"
 #include "flight/mixer.h"
 
+static bool isReadyPSAS;
+static pt1Filter_t psasPitchDampingLowpass;
+static pt1Filter_t psasYawDampingLowpass;
+static pt1Filter_t psasLiftCoefLowpass;
+static pt1Filter_t psasAccelZLowpass;
+static pt1Filter_t psasAccelYLowpass;
+
 static bool isLiftCoefValid = false;
 static float validLiftCoefTime = 0.0f;
 
 void psasInit(const pidProfile_t *pidProfile)
 {
-    pt1FilterInit(&pidRuntime.psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.psasAccelZLowpass, pt1FilterGain(pidProfile->psas_accel_z_filter_freq * 0.1f, pidRuntime.dT));
-    pt1FilterInit(&pidRuntime.psasAccelYLowpass, pt1FilterGain(pidProfile->psas_accel_y_filter_freq * 0.1f, pidRuntime.dT));
-    pidRuntime.isReadyPSAS = false;
+    pt1FilterInit(&psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
+    pt1FilterInit(&psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
+    pt1FilterInit(&psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
+    pt1FilterInit(&psasAccelZLowpass, pt1FilterGain(pidProfile->psas_accel_z_filter_freq * 0.1f, pidRuntime.dT));
+    pt1FilterInit(&psasAccelYLowpass, pt1FilterGain(pidProfile->psas_accel_y_filter_freq * 0.1f, pidRuntime.dT));
+    isReadyPSAS = false;
     isLiftCoefValid = false;
     validLiftCoefTime = 0.0f;
 }
@@ -67,7 +74,7 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
             const float airSpeedPressure = (0.001f * pidProfile->psas_air_density) * sq(speed) / 2.0f;
             *liftCoef = accelZ * (0.01f * pidProfile->psas_wing_load) * G_ACCELERATION / airSpeedPressure;
             if (pidProfile->psas_lift_coef_filter_freq != 0) {
-                *liftCoef = pt1FilterApply(&pidRuntime.psasLiftCoefLowpass, *liftCoef);
+                *liftCoef = pt1FilterApply(&psasLiftCoefLowpass, *liftCoef);
             }
             *liftCoefVelocity = (*liftCoef - liftCoefLast) / pidRuntime.dT;
             liftCoefLast = *liftCoef;
@@ -203,7 +210,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Plane pitch damping improvement
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
     if (pidProfile->psas_pitch_damping_filter_freq != 0) {
-        float gyroPitchLow = pt1FilterApply(&pidRuntime.psasPitchDampingLowpass, gyroPitch);
+        float gyroPitchLow = pt1FilterApply(&psasPitchDampingLowpass, gyroPitch);
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
     float pitchDampingCtrl = -1.0f * gyroPitch * (pidProfile->psas_damping_gain[FD_PITCH] * 0.001f);
@@ -214,7 +221,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     if (sensors(SENSOR_ACC)) {
         accelZ =  acc.accADC.z * acc.dev.acc_1G_rec;
         if (pidProfile->psas_accel_z_filter_freq != 0) {
-            accelZ_filtered = pt1FilterApply(&pidRuntime.psasAccelZLowpass, accelZ);
+            accelZ_filtered = pt1FilterApply(&psasAccelZLowpass, accelZ);
         } else {
             accelZ_filtered = accelZ;
         }
@@ -283,7 +290,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Plane yaw damping improvement
     float gyroYaw = gyro.gyroADCf[FD_YAW];
     if (pidProfile->psas_yaw_damping_filter_freq != 0) {
-        float gyroYawLow = pt1FilterApply(&pidRuntime.psasYawDampingLowpass, gyroYaw);
+        float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
     float yawDampingCtrl = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
@@ -293,7 +300,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     if (sensors(SENSOR_ACC)) {
         float accelY =  acc.accADC.y * acc.dev.acc_1G_rec;
         if (pidProfile->psas_accel_y_filter_freq != 0) {
-            accelY_filtered = pt1FilterApply(&pidRuntime.psasAccelYLowpass, accelY);
+            accelY_filtered = pt1FilterApply(&psasAccelYLowpass, accelY);
         } else {
             accelY_filtered = accelY;
         }
@@ -329,12 +336,12 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
                 pidData[axis].F = pidData[axis].S = 0;
                 pidData[axis].Sum = 0;
             }
-            pidRuntime.isReadyPSAS = false;
+            isReadyPSAS = false;
             return true;
         }
 
         // Clear all PID values and reset the all PSAS filters by first PSAS run
-        if (!pidRuntime.isReadyPSAS) {
+        if (!isReadyPSAS) {
             for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
                 pidData[axis].P = 0;
                 pidData[axis].I = 0;
@@ -344,12 +351,12 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
                 pidData[axis].Sum = 0;
             }
             psasInit(pidProfile);
-            pidRuntime.isReadyPSAS = true;
+            isReadyPSAS = true;
         }
 
         psasUpdate(pidProfile);
         return true;
-    } else if (pidRuntime.isReadyPSAS) {      // Clear the all PID values after PSAS work
+    } else if (isReadyPSAS) {      // Clear the all PID values after PSAS work
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             pidData[axis].P = 0;
             pidData[axis].I = 0;
@@ -358,7 +365,7 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
             pidData[axis].S = 0;
             pidData[axis].Sum = 0;
         }
-        pidRuntime.isReadyPSAS = false;
+        isReadyPSAS = false;
         return false;
     }
     return false;
