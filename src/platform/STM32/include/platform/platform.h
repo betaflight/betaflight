@@ -308,6 +308,9 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32G4
@@ -325,6 +328,9 @@
 #define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32H5
@@ -345,6 +351,10 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
+#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32N6

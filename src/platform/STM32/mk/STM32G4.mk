@@ -129,6 +129,7 @@ MCU_COMMON_SRC = \
             drivers/bus_quadspi.c \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32g4xx.c \
+            STM32/can_stm32g4xx.c \
             STM32/bus_i2c_ll_init.c \
             STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
