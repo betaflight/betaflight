@@ -200,7 +200,8 @@ MCU_COMMON_SRC = \
         common/stm32/ledstrip_ws2811_stm32.c \
         common/stm32/debug_pin.c \
         common/stm32/adc_impl.c \
-        common/stm32/expresslrs_driver_hw.c
+        common/stm32/expresslrs_driver_hw.c \
+        common/stm32/fault_handlers.c
 
 VCP_SRC = \
         APM32/usb/vcp/usbd_cdc_descriptor.c \

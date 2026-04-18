@@ -200,8 +200,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         return;
     }
 
-#if defined(USE_DMA_SPEC) && !defined(STM32H5)
-    // STM32H5 SDMMC uses internal DMA (IDMA) and does not need external DMA channel allocation
+#if ENABLE_SDIO_EXTERNAL_DMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
     dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 

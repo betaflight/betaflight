@@ -665,6 +665,12 @@ extern uint8_t _dmaram_end__;
 #define ENABLE_SDIO_INIT 0
 #endif
 
+// F4 and F7 SDIO drivers use external DMA channel allocation via dma_reqmap;
+// H5/H7/N6 SDMMC peripherals use internal DMA and do not need allocation.
+#if (defined(STM32F4) || defined(STM32F7)) && !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
+#endif
+
 // QUAD SPI
 #if defined(STM32H7) || defined(STM32N6)
 #define MAX_QUADSPI_PIN_SEL 3
