@@ -43,6 +43,7 @@ extern "C" {
     #include "io/gps.h"
 
     #include "rx/rx.h"
+    #include "scheduler/scheduler.h"
     #include "sensors/gyro.h"
 
     #include "pg/autopilot.h"
@@ -91,6 +92,12 @@ extern "C" {
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);
+    }
+
+    timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
+    {
+        UNUSED(taskId);
+        return TASK_PERIOD_HZ(100); // default poshold rate in tests
     }
 
     throttleStatus_e calculateThrottleStatus() {

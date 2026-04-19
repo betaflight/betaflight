@@ -36,6 +36,7 @@
 #include "flight/position.h"
 #include "flight/position_estimator.h"
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 #include "sensors/gyro.h"
 
 #include "pg/autopilot.h"
@@ -315,7 +316,8 @@ void setSticksActiveStatus(bool areSticksActive)
 bool positionControl(void)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-    const float dt = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
+    const timeDelta_t posholdDtUs = getTaskDeltaTimeUs(TASK_SELF);
+    const float dt = (posholdDtUs > 0) ? (posholdDtUs * 1e-6f) : HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
 
     if (!est->isValidXY) {
         return false;
