@@ -71,6 +71,8 @@ extern "C" {
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
+    float getAltitudeCmControl(void) { return 0.0f; }
+    float getAltitudeDerivativeControl(void) { return 0.0f; }
     float getCosTiltAngle(void) { return 1.0f; }
 
     uint8_t armingFlags = 0;
@@ -357,6 +359,29 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.2f);
+}
+
+TEST_F(PosHoldTest, ReleasingSticksBrakesThenSettles)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Pilot is moving with sticks active: controller should output zero angles.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 120.0f;
+    runIterations(5);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.01f);
+
+    // Stick release at high speed should enter braking (not yet settled hold).
+    setSticksActiveStatus(false);
+    runIterations(5);
+    const float brakingRoll = autopilotAngle[AI_ROLL];
+    EXPECT_NE(brakingRoll, 0.0f);
+
+    // Once velocity settles below threshold, hold point capture should settle output.
+    testEstimate.velocity.x = 0.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.1f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
 // -- GPS-like scenario: large displacement, position + velocity --

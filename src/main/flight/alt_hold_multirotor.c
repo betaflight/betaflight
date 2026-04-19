@@ -56,7 +56,7 @@ altHoldState_t altHold;
 static void altHoldReset(void)
 {
     resetAltitudeControl();
-    altHold.targetAltitudeCm = getAltitudeCm();
+    altHold.targetAltitudeCm = getAltitudeCmControl();
     altHold.targetVelocity = 0.0f;
 }
 
@@ -126,7 +126,7 @@ static void altHoldUpdateTargetAltitude(void)
         // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
         // the deceleration may be a bit rocky if it starts very high up
         // constant (set) deceleration target in the last 2m
-        stickFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
+        stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
     altHold.targetVelocity = stickFactor * altHold.maxVelocity;
 
@@ -135,7 +135,7 @@ static void altHoldUpdateTargetAltitude(void)
     // using maxVelocity means the stick can bring altitude target to current within 1s
     // this constrains the P and I response to user target changes, but not D of F responses
     // Range is compared to distance that might be traveled in one second
-    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
+    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
@@ -158,7 +158,7 @@ static void altHoldUpdate(void)
         }
     }
 
-    altitudeControl(targetAltCm, taskIntervalSeconds, targetVelForAlt);
+    altitudeControl(targetAltCm, taskIntervalSeconds, targetVelForAlt, altHold.maxVelocity);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {

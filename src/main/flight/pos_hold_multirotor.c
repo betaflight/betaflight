@@ -84,7 +84,6 @@ void updatePosHold(timeUs_t currentTimeUs) {
                 autopilotAngle[i] = 0.0f;
             }
             setSticksActiveStatus(false);
-            positionEstimatorEnableXY(false);
         }
         posHold.isEnabled = false;
     }

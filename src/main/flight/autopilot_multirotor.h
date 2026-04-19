@@ -42,10 +42,6 @@ uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 
-uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
-void autopilotCaptureHoverThrottleForAltHold(void);
-void autopilotClearAltHoldHoverThrottle(void);
-
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
 bool isAutopilotInControl(void);

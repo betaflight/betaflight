@@ -126,7 +126,7 @@ void calculateEstimatedAltitude(void)
     controlAltitudeCm = kfAltCm;
     controlAltitudeDerivative = kfVelCm;
 
-    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, kfVelCm);
+    filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
 
 #ifdef USE_VARIO
     estimatedVario = lrintf(filteredAltitudeDerivative);
@@ -153,6 +153,16 @@ float getAltitudeCm(void)
 float getAltitudeDerivative(void)
 {
     return filteredAltitudeDerivative;
+}
+
+float getAltitudeCmControl(void)
+{
+    return controlAltitudeCm;
+}
+
+float getAltitudeDerivativeControl(void)
+{
+    return controlAltitudeDerivative;
 }
 
 bool isAltitudeAvailable(void)

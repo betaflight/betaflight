@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <string.h>
 
 extern "C" {
 
@@ -61,6 +62,10 @@ extern "C" {
     bool failsafeIsActive(void) { return false; }
     timeUs_t currentTimeUs = 0;
     bool isAltHoldActive();
+    extern float testAltitudeCm;
+    extern float testAltitudeDerivativeCmS;
+    extern float testCosTiltAngle;
+    extern throttleStatus_e testThrottleStatus;
 }
 
 #include "unittest_macros.h"
@@ -70,6 +75,41 @@ uint32_t millisRW;
 uint32_t millis() {
     return millisRW;
 }
+
+class AltholdControlUnittest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        memset(&attitude, 0, sizeof(attitude));
+        memset(&gpsSol, 0, sizeof(gpsSol));
+        memset(rcCommand, 0, sizeof(rcCommand));
+        flightModeFlags = 0;
+        millisRW = 0;
+        testAltitudeCm = 0.0f;
+        testAltitudeDerivativeCmS = 0.0f;
+        testCosTiltAngle = 1.0f;
+        testThrottleStatus = THROTTLE_LOW;
+
+        autopilotConfig_t *apCfg = autopilotConfigMutable();
+        apCfg->hoverThrottle = 1500;
+        apCfg->throttleMin = 1000;
+        apCfg->throttleMax = 2000;
+        apCfg->altitudeP = 50;
+        apCfg->altitudeI = 50;
+        apCfg->altitudeD = 50;
+        apCfg->altitudeF = 0;
+        apCfg->landingAltitudeM = 5;
+
+        altHoldConfig_t *ahCfg = altHoldConfigMutable();
+        ahCfg->deadband = 10;
+        ahCfg->climbRate = 50;
+
+        rxConfigMutable()->mincheck = 1050;
+
+        autopilotInit();
+        altHoldInit();
+        resetAltitudeControl();
+    }
+};
 
 TEST(AltholdUnittest, altHoldTransitionsTest)
 {
@@ -118,6 +158,54 @@ TEST(AltholdUnittest, altHoldCapturesHoverThrottleWhenConfigZero)
     EXPECT_EQ(autopilotGetEffectiveHoverThrottlePwm(), AP_HOVER_THROTTLE_DEFAULT);
 }
 
+TEST_F(AltholdControlUnittest, AltitudeControlRaisesThrottleWhenBelowTarget)
+{
+    testAltitudeCm = 0.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float belowTargetThrottle = getAutopilotThrottle();
+
+    resetAltitudeControl();
+    testAltitudeCm = 200.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float aboveTargetThrottle = getAutopilotThrottle();
+
+    EXPECT_GT(belowTargetThrottle, aboveTargetThrottle);
+}
+
+TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
+{
+    testAltitudeCm = 0.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+
+    altitudeControl(800.0f, 0.01f, 0.0f, 100.0f);
+    const float limitedThrottle = getAutopilotThrottle();
+
+    resetAltitudeControl();
+    altitudeControl(800.0f, 0.01f, 0.0f, 1000.0f);
+    const float highLimitThrottle = getAutopilotThrottle();
+
+    EXPECT_GT(highLimitThrottle, limitedThrottle);
+}
+
+TEST_F(AltholdControlUnittest, AltitudeControlCompensatesForTilt)
+{
+    testAltitudeCm = 100.0f;
+    testAltitudeDerivativeCmS = 0.0f;
+
+    testCosTiltAngle = 1.0f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float levelThrottle = getAutopilotThrottle();
+
+    resetAltitudeControl();
+    testCosTiltAngle = 0.5f;
+    altitudeControl(100.0f, 0.01f, 0.0f, 500.0f);
+    const float tiltedThrottle = getAutopilotThrottle();
+
+    EXPECT_GT(tiltedThrottle, levelThrottle);
+}
+
 // STUBS
 
 extern "C" {
@@ -131,11 +219,16 @@ extern "C" {
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
 
-    float getAltitudeCm(void) { return 0.0f; }
-    float getAltitudeDerivative(void) { return 0.0f; }
-    float getAltitudeCmControl(void) { return 0.0f; }
-    float getAltitudeDerivativeControl(void) { return 0.0f; }
-    float getCosTiltAngle(void) { return 0.0f; }
+    float testAltitudeCm = 0.0f;
+    float testAltitudeDerivativeCmS = 0.0f;
+    float testCosTiltAngle = 1.0f;
+    throttleStatus_e testThrottleStatus = THROTTLE_LOW;
+
+    float getAltitudeCm(void) { return testAltitudeCm; }
+    float getAltitudeDerivative(void) { return testAltitudeDerivativeCmS; }
+    float getAltitudeCmControl(void) { return testAltitudeCm; }
+    float getAltitudeDerivativeControl(void) { return testAltitudeDerivativeCmS; }
+    float getCosTiltAngle(void) { return testCosTiltAngle; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
     float getGpsDataFrequencyHz(void) { return 10.0f; }
     float rcCommand[4];
@@ -166,7 +259,5 @@ extern "C" {
         UNUSED(rxConfig);
     }
 
-    throttleStatus_e calculateThrottleStatus() {
-        return THROTTLE_LOW;
-    }
+    throttleStatus_e calculateThrottleStatus() { return testThrottleStatus; }
 }
