@@ -212,6 +212,7 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
     const bool reached = withinAcceptanceRadius && withinAcceptanceAltitude && horizSpeedOk && vertSpeedOk;
 
     if (reached && !cmd.completionSignalled) {
+        const bool autoClearOnReach = cmd.autoClearOnReach;
         cmd.completed = true;
         cmd.completionSignalled = true;
 
@@ -221,7 +222,7 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
             cmd.callback(cmd.callbackUserData);
         }
 
-        if (cmd.autoClearOnReach) {
+        if (autoClearOnReach && cmd.completed && cmd.completionSignalled) {
             positionNavClearTarget();
         }
     }
