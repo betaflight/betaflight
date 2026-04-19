@@ -44,6 +44,7 @@
 #include "drivers/mco.h"
 #include "drivers/pinio.h"
 #include "drivers/sdio.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
