@@ -233,7 +233,6 @@ static void on_uart1(void)
 bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptions_e options,
                    const uartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
 {
-    UNUSED(options);
     UNUSED(mode);
 
     const int ownerIndex = serialOwnerIndex(identifier);
@@ -253,39 +252,52 @@ bool serialUART_hw(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOption
         uint32_t rxPin = IO_Pin(rxIO);
         gpio_set_function(rxPin, UART_FUNCSEL_NUM(uartInstance, rxPin)); // select GPIO_FUNC_UART or GPIO_FUNC_UART_AUX as appropriate.
         bprintf("gpio set function UART on rx pin %d", rxPin);
-        gpio_set_pulls(rxPin, true, false); // Pull up
+        if (options & SERIAL_INVERTED) {
+            bprintf(" with pull down for RX on inverted uart");
+            gpio_set_pulls(rxPin, false, true); // Pull down
+        } else {
+            gpio_set_pulls(rxPin, true, false); // Pull up
+        }
     }
 
     bprintf("serialUART uart init %p baudrate %d (options 0x%0x)", uartInstance, baudRate, options);
     uart_init(uartInstance, baudRate);
 
-    // TODO implement - use options here...
     uart_set_hw_flow(uartInstance, false, false);
     uart_set_format(uartInstance, 8, 1, UART_PARITY_NONE);
-
     uart_set_fifo_enabled(uartInstance, true);
 
     bprintf("serialUART_hw: set exclusive handler and enable for irqn %d", hardware->irqn);
-
     irq_set_exclusive_handler(hardware->irqn, hardware->irqn == UART0_IRQ ? on_uart0 : on_uart1);
     irq_set_enabled(hardware->irqn, true);
-    bprintf("set handler and enabled irqn = %d", hardware->irqn);
 
-    // Don't enable any uart irq yet, wait until a call to uartReconfigure...
-    // (with the code as it currently is in serial_uart.c, this will prevent irq callback before rxCallback has been set)
-    // TODO review serial_uart.c uartOpen()
+    // TODO make further use of s->port.options
+    const bool twoStop = s->port.options & SERIAL_STOPBITS_2;
+    const bool evenParity = s->port.options & SERIAL_PARITY_EVEN;
+    uart_set_format(uartInstance, 8, twoStop ? 2 : 1, evenParity ? UART_PARITY_EVEN : UART_PARITY_NONE);
+    uart_set_fifo_enabled(uartInstance, true);
+    uartConfigureExternalPinInversion(s);
+    uart_set_hw_flow(uartInstance, false, false);
 
     s->port.rxBuffer = hardware->rxBuffer;
     s->port.txBuffer = hardware->txBuffer;
     s->port.rxBufferSize = hardware->rxBufferSize;
     s->port.txBufferSize = hardware->txBufferSize;
     s->USARTx = hardware->reg;
+
+    // Don't enable any uart irq yet, wait until a call to uartReconfigure...
+    // (with the code as it currently is in serial_uart.c, this will prevent irq callback before rxCallback has been set)
+    // TODO review serial_uart.c uartOpen()
+
     bprintf("====== setting USARTx to reg == %p", s->USARTx);
     return true;
 }
 
 void uartReconfigure_hw(uartPort_t *s)
 {
+    // Reconfigure is only called from uartOpen initially, and then from uartSetBaudRate and uartSetMode,
+    // so we only consider option changes to baud rate and mode here.
+
     uart_inst_t *uartInstance = UART_INST(s->USARTx);
     bprintf("uartReconfigure for port %p with USARTX %p", s, uartInstance);
     int achievedBaudrate = uart_init(uartInstance, s->port.baudRate);
@@ -294,13 +306,6 @@ void uartReconfigure_hw(uartPort_t *s)
 #else
     UNUSED(achievedBaudrate);
 #endif
-    // TODO make further use of s->port.options
-    const bool twoStop = s->port.options & SERIAL_STOPBITS_2;
-    const bool evenParity = s->port.options & SERIAL_PARITY_EVEN;
-    uart_set_format(uartInstance, 8, twoStop ? 2 : 1, evenParity ? UART_PARITY_EVEN : UART_PARITY_NONE);
-    uart_set_fifo_enabled(uartInstance, true);
-    uartConfigureExternalPinInversion(s);
-    uart_set_hw_flow(uartInstance, false, false);
 
     bprintf("uartReconfigure note options 0x%0x, port.mode = 0x%x", s->port.options, s->port.mode);
 
