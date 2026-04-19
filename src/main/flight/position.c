@@ -59,7 +59,9 @@ static float filteredAltitudeDerivative = 0.0f;
 
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 static bool wasArmed = false;
+#endif
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
