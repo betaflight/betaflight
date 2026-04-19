@@ -271,7 +271,7 @@ static void configureOctoSPIBusses(void)
 static void configureCANBusses(void)
 {
     canPinConfigure(canPinConfig(0));
-    const uint32_t bitrate = canConfig()->bitrate;
+    const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
     canInit(CANDEV_1, bitrate);
     canInit(CANDEV_2, bitrate);
     canInit(CANDEV_3, bitrate);

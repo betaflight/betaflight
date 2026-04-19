@@ -53,9 +53,10 @@ typedef void (*canRxCallbackPtr)(uint32_t identifier, bool isExtended,
                                  const uint8_t *data, uint8_t length);
 
 // Initialise the given CAN device at the specified nominal bit rate (Hz).
-// Returns false if the device has no hardware resources configured or the
-// peripheral failed to start. A bitrate the driver cannot synthesise from
-// the current FDCAN kernel clock falls back to a legacy 1 Mbit/s preset.
+// Returns false if the device has no hardware resources configured, the
+// peripheral failed to start, or the driver could not synthesise the
+// requested bit rate from the current FDCAN kernel clock. On failure the
+// device stays uninitialised and subsequent canTransmit() calls return false.
 bool canInit(canDevice_e device, uint32_t bitrate);
 
 // Transmit a classic CAN frame. Returns true if the frame was queued,

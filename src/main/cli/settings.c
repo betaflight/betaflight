@@ -1906,7 +1906,7 @@ const clivalue_t valueTable[] = {
 #endif
 #if ENABLE_CAN
 // PG_CAN_CONFIG
-    { "can_bitrate",    VAR_UINT32 | HARDWARE_VALUE, .config.u32Max = 1000000, PG_CAN_CONFIG, offsetof(canConfig_t, bitrate) },
+    { "can_bitrate_khz", VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 125, 1000 }, PG_CAN_CONFIG, offsetof(canConfig_t, bitrate_khz) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)
