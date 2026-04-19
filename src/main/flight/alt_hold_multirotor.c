@@ -150,11 +150,18 @@ static void altHoldUpdate(void)
     float targetAltCm = altHold.targetAltitudeCm;
     float targetVelForAlt = altHold.targetVelocity;
 
-    if (positionNavHasActiveTarget() && !positionNavTargetReached()) {
+    if (positionNavHasActiveTarget()) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
             targetAltCm = navCmd->targetPosEfM.z * 100.0f;
-            targetVelForAlt = positionNavGetTargetVelocityCmS().z;
+            if (positionNavTargetReached()) {
+                // Seed hold altitude at waypoint completion so Alt Hold does not revert
+                // to the pre-nav target altitude on the next cycle.
+                altHold.targetAltitudeCm = targetAltCm;
+                targetVelForAlt = 0.0f;
+            } else {
+                targetVelForAlt = positionNavGetTargetVelocityCmS().z;
+            }
         }
     }
 
