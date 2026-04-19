@@ -52,9 +52,11 @@ typedef enum {
 typedef void (*canRxCallbackPtr)(uint32_t identifier, bool isExtended,
                                  const uint8_t *data, uint8_t length);
 
-// Initialise the given CAN device. Returns false if the device has no
-// hardware resources configured or the peripheral failed to start.
-bool canInit(canDevice_e device);
+// Initialise the given CAN device at the specified nominal bit rate (Hz).
+// Returns false if the device has no hardware resources configured or the
+// peripheral failed to start. A bitrate the driver cannot synthesise from
+// the current FDCAN kernel clock falls back to a legacy 1 Mbit/s preset.
+bool canInit(canDevice_e device, uint32_t bitrate);
 
 // Transmit a classic CAN frame. Returns true if the frame was queued,
 // false if the TX FIFO is full, the device is uninitialised, or the

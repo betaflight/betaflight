@@ -72,7 +72,7 @@ typedef struct canDevice_s {
 extern canDevice_t canDevice[CANDEV_COUNT];
 
 // Internal: shared init routine implemented per-platform in can_hw.c.
-void canInitDevice(canDevice_e device);
+void canInitDevice(canDevice_e device, uint32_t bitrate);
 
 // Internal: ISR dispatch helper invoked from named FDCANx IRQ handlers.
 void canIrqHandler(canDevice_e device);

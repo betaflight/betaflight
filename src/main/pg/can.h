@@ -32,3 +32,9 @@ typedef struct canPinConfig_s {
 } canPinConfig_t;
 
 PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);
+
+typedef struct canConfig_s {
+    uint32_t bitrate;       // nominal bit rate in Hz (default 1 Mbit/s)
+} canConfig_t;
+
+PG_DECLARE(canConfig_t, canConfig);

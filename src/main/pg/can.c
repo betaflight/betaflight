@@ -75,4 +75,10 @@ void pgResetFn_canPinConfig(canPinConfig_t *config)
     }
 }
 
+PG_REGISTER_WITH_RESET_TEMPLATE(canConfig_t, canConfig, PG_CAN_CONFIG, 0);
+
+PG_RESET_TEMPLATE(canConfig_t, canConfig,
+    .bitrate = 1000000U,
+);
+
 #endif // ENABLE_CAN

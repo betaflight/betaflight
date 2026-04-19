@@ -86,6 +86,7 @@
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
+#include "pg/can.h"
 #include "pg/dashboard.h"
 #include "pg/displayport_profiles.h"
 #include "pg/dyn_notch.h"
@@ -1902,6 +1903,10 @@ const clivalue_t valueTable[] = {
     { "i2c4_pullup",    VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_I2C_CONFIG, PG_ARRAY_ELEMENT_OFFSET(i2cConfig_t, I2CDEV_4, pullUp) },
     { "i2c4_clockspeed_khz", VAR_UINT16 | HARDWARE_VALUE, .config.minmax = { I2C_CLOCKSPEED_MIN_KHZ, I2C_CLOCKSPEED_MAX_KHZ }, PG_I2C_CONFIG, PG_ARRAY_ELEMENT_OFFSET(i2cConfig_t, I2CDEV_4, clockSpeed) },
 #endif
+#endif
+#if ENABLE_CAN
+// PG_CAN_CONFIG
+    { "can_bitrate",    VAR_UINT32 | HARDWARE_VALUE, .config.u32Max = 1000000, PG_CAN_CONFIG, offsetof(canConfig_t, bitrate) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)
