@@ -59,12 +59,13 @@ static float filteredAltitudeDerivative = 0.0f;
 
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
+static bool wasArmed = false;
 
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
 
-void positionInit(void)
+static void positionResetAltitudeState(void)
 {
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
 
@@ -75,6 +76,18 @@ void positionInit(void)
     const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
+
+    filteredAltitudeCm = 0.0f;
+    displayAltitudeCm = 0.0f;
+    filteredAltitudeDerivative = 0.0f;
+    controlAltitudeCm = 0.0f;
+    controlAltitudeDerivative = 0.0f;
+}
+
+void positionInit(void)
+{
+    positionResetAltitudeState();
+    wasArmed = ARMING_FLAG(ARMED);
 
     positionEstimatorInit();
 }
@@ -92,6 +105,14 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(void)
 {
+    const bool isArmed = ARMING_FLAG(ARMED);
+
+    if (isArmed != wasArmed) {
+        positionEstimatorResetZ();
+        positionResetAltitudeState();
+        wasArmed = isArmed;
+    }
+
     // Run the Kalman filter estimator (prediction + all sensor measurement updates)
     positionEstimatorUpdate();
 

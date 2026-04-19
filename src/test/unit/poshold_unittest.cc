@@ -315,6 +315,42 @@ TEST_F(PosHoldTest, SticksActiveZerosOutput)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
+TEST_F(PosHoldTest, EstimateValidityTransitionsUnavailableAvailableUnavailable)
+{
+    initAndSettleAt(0, 0, 0);
+
+    testEstimate.isValidXY = false;
+    EXPECT_FALSE(positionControl());
+
+    testEstimate.isValidXY = true;
+    testEstimate.position.x = 80.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_TRUE(positionControl());
+    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+
+    testEstimate.isValidXY = false;
+    EXPECT_FALSE(positionControl());
+}
+
+TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
+{
+    initAndSettleAt(0, 0, 0);
+
+    testEstimate.velocity.x = 120.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float highVelocityRoll = autopilotAngle[AI_ROLL];
+    EXPECT_NE(highVelocityRoll, 0.0f);
+
+    testEstimate.velocity.x = 20.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float lowVelocityRoll = autopilotAngle[AI_ROLL];
+    EXPECT_LT(fabsf(lowVelocityRoll), fabsf(highVelocityRoll));
+
+    testEstimate.velocity.x = 0.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.2f);
+}
+
 // -- GPS-like scenario: large displacement, position + velocity --
 
 TEST_F(PosHoldTest, GpsScenarioDriftAndReturn)

@@ -443,6 +443,7 @@ extern "C" {
 
     void positionEstimatorInit(void) { }
     void positionEstimatorUpdate(void) { }
+    void positionEstimatorResetZ(void) { }
     bool positionEstimatorIsValidZ(void) { return false; }
     float positionEstimatorGetAltitudeCm(void) { return 0.0f; }
     float positionEstimatorGetAltitudeDerivative(void) { return 0.0f; }
