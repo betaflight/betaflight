@@ -1500,7 +1500,7 @@ const clivalue_t valueTable[] = {
 // PG_TRANSPONDER_CONFIG
 #ifdef USE_TRANSPONDER
     { PARAM_NAME_TRANSPONDER_PROVIDER, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TRANSPONDER_PROVIDER }, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, provider) },
-    { PARAM_NAME_TRANSPONDER_DATA,     VAR_UINT8 | MASTER_VALUE | MODE_ARRAY,  .config.array.length = 9, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, data) },
+    { PARAM_NAME_TRANSPONDER_DATA,     VAR_UINT8 | MASTER_VALUE | MODE_ARRAY,  .config.array.length = TRANSPONDER_DATA_LENGTH, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, data) },
 #endif
 
 // PG_SDCARD_CONFIG
