@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "io/serial.h"
 #include "io/serial_feature_map.h"
 
@@ -452,4 +454,14 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 #endif
 
     return ok;
+}
+
+void serialBackfillFeatureFields(void)
+{
+    for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
+        const serialPortConfig_t *port = &serialConfig()->portConfigs[i];
+        if (port->functionMask != 0) {
+            serialApplyFunctionMask(port->identifier, port->functionMask);
+        }
+    }
 }

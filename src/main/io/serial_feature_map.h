@@ -36,3 +36,10 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier);
 // migration on config load.  Returns false when the requested combination
 // cannot be represented (e.g. more MSP ports requested than slots available).
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask);
+
+// Walk serialConfig.portConfigs[] and populate the per-feature PG fields
+// from each port's legacy functionMask.  Idempotent.  Called once after
+// EEPROM load so pre-existing configs carry their function assignments
+// into the new per-feature view while the legacy mask is still the
+// runtime source of truth.
+void serialBackfillFeatureFields(void);
