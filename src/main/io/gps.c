@@ -1393,9 +1393,9 @@ void gpsUpdate(timeUs_t currentTimeUs)
         if (!gpsPort) {
             break;
         }
-        const uint32_t initialCycleCount = getCycleCounter();
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        const uint32_t initialCycleCount = getCycleCounter();
         static uint8_t wait = 0;
         static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
