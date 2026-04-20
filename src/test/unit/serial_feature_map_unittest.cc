@@ -280,6 +280,25 @@ TEST(SerialFeatureMap, DecomposeRejectsMspOverflow)
     EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_MSP));
 }
 
+TEST(SerialFeatureMap, FailedApplyLeavesPriorStateIntact)
+{
+    resetAllConfigs();
+    // Set up a valid claim, then attempt an invalid apply on the same port.
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART1;
+    blackboxConfigMutable()->blackbox_uart = SERIAL_PORT_USART1;
+
+    // Two VTX bits on one port is structurally invalid and must fail.
+    EXPECT_FALSE(serialApplyFunctionMask(
+        SERIAL_PORT_USART1, FUNCTION_VTX_SMARTAUDIO | FUNCTION_VTX_TRAMP));
+
+    // Prior feature claims for the port survive — validation happens before
+    // any PG mutation, so a rejected mask is atomic from the caller's view.
+    EXPECT_EQ(SERIAL_PORT_USART1, gpsConfig()->gps_uart);
+    EXPECT_EQ(SERIAL_PORT_USART1, blackboxConfig()->blackbox_uart);
+    EXPECT_EQ(SERIAL_PORT_NONE, vtxSettingsConfig()->vtx_uart);
+    EXPECT_EQ(VTXDEV_UNSUPPORTED, vtxSettingsConfig()->vtx_type);
+}
+
 TEST(SerialFeatureMap, DecomposeAcceptsAllTelemetryProtocols)
 {
     resetAllConfigs();
