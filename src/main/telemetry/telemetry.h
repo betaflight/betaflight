@@ -57,7 +57,10 @@ typedef struct telemetryProvider_s {
     int8_t uart;       // serialPortIdentifier_e; SERIAL_PORT_NONE = unused slot
 } telemetryProvider_t;
 
-#define MAX_TELEMETRY_PROVIDERS 3
+// One slot per protocol bit in serialPortFunction_e (FrSky Hub, HoTT, LTM,
+// SmartPort, MAVLink, iBus).  Sized so a legacy functionMask that assigns
+// every telemetry protocol across distinct ports still decomposes cleanly.
+#define MAX_TELEMETRY_PROVIDERS 6
 
 typedef enum {
     SENSOR_VOLTAGE         = 1 << 0,

@@ -280,6 +280,47 @@ TEST(SerialFeatureMap, DecomposeRejectsMspOverflow)
     EXPECT_FALSE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_MSP));
 }
 
+TEST(SerialFeatureMap, DecomposeAcceptsAllTelemetryProtocols)
+{
+    resetAllConfigs();
+    // Six protocol bits across six distinct ports must all fit.
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART1, FUNCTION_TELEMETRY_FRSKY_HUB));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART2, FUNCTION_TELEMETRY_HOTT));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART3, FUNCTION_TELEMETRY_LTM));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART4,  FUNCTION_TELEMETRY_SMARTPORT));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5,  FUNCTION_TELEMETRY_MAVLINK));
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_USART6, FUNCTION_TELEMETRY_IBUS));
+}
+
+TEST(SerialFeatureMap, RangefinderPreservesCompatibleHardwareSelection)
+{
+    resetAllConfigs();
+    // User picked a specific TF model; FUNCTION_LIDAR_TF on the same
+    // category must NOT downgrade that choice to the default.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFNOVA;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
+    EXPECT_EQ(RANGEFINDER_TFNOVA, rangefinderConfig()->rangefinder_hardware);
+
+    // Specific Nooploop model preserved across FUNCTION_LIDAR_NL writes.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2MINI;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_NL));
+    EXPECT_EQ(RANGEFINDER_NOOPLOOP_F2MINI, rangefinderConfig()->rangefinder_hardware);
+}
+
+TEST(SerialFeatureMap, RangefinderOverwritesWrongCategoryOnly)
+{
+    resetAllConfigs();
+    // NL model with a TF bit incoming → snap to TFMINI default.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
+    EXPECT_EQ(RANGEFINDER_TFMINI, rangefinderConfig()->rangefinder_hardware);
+
+    // Unset (NONE) is left alone — user can pick a specific model later.
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+    EXPECT_TRUE(serialApplyFunctionMask(SERIAL_PORT_UART5, FUNCTION_LIDAR_TF));
+    EXPECT_EQ(RANGEFINDER_NONE, rangefinderConfig()->rangefinder_hardware);
+}
+
 TEST(SerialFeatureMap, BackfillRehydratesFromLegacyMask)
 {
     resetAllConfigs();
@@ -299,4 +340,19 @@ TEST(SerialFeatureMap, BackfillRehydratesFromLegacyMask)
     EXPECT_EQ(FUNCTION_GPS, serialSynthesizeFunctionMask(SERIAL_PORT_USART1));
     EXPECT_EQ((uint32_t)(FUNCTION_MSP | FUNCTION_BLACKBOX),
               serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
+}
+
+TEST(SerialFeatureMap, BackfillClearsStaleFeatureFieldsForZeroMaskPort)
+{
+    resetAllConfigs();
+    // Pretend the new PG fields carry a stale claim to UART3 from a
+    // previous save, but the legacy mask on UART3 now claims nothing.
+    gpsConfigMutable()->gps_uart = SERIAL_PORT_USART3;
+    serialConfigMutable()->portConfigs[0].identifier = SERIAL_PORT_USART3;
+    serialConfigMutable()->portConfigs[0].functionMask = 0;
+
+    serialBackfillFeatureFields();
+
+    EXPECT_EQ(SERIAL_PORT_NONE, gpsConfig()->gps_uart);
+    EXPECT_EQ(0u, serialSynthesizeFunctionMask(SERIAL_PORT_USART3));
 }
