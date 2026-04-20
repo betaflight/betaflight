@@ -27,6 +27,9 @@
 #include "io/serial.h"
 #include "io/serial_feature_map.h"
 
+#include "msp/msp_serial.h"
+#include "pg/msp.h"
+
 #ifdef USE_GPS
 #include "pg/gps.h"
 #endif
@@ -55,6 +58,9 @@
 #ifdef USE_OSD
 #include "osd/osd.h"
 #endif
+#ifdef USE_TELEMETRY
+#include "telemetry/telemetry.h"
+#endif
 
 uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
 {
@@ -63,6 +69,13 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     }
 
     uint32_t mask = 0;
+
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspConfig()->msp_uart[i] == identifier) {
+            mask |= FUNCTION_MSP;
+            break;
+        }
+    }
 
 #ifdef USE_GPS
     if (gpsConfig()->gps_uart == identifier) {
@@ -145,6 +158,47 @@ uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier)
     }
     if (osdConfig()->osd_custom_text_uart == identifier) {
         mask |= FUNCTION_OSD_CUSTOM_TEXT;
+    }
+#endif
+#ifdef USE_TELEMETRY
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        if (telemetryConfig()->providers[i].uart != identifier) {
+            continue;
+        }
+        switch (telemetryConfig()->providers[i].protocol) {
+#ifdef USE_TELEMETRY_FRSKY_HUB
+        case TELEMETRY_PROTOCOL_FRSKY_HUB:
+            mask |= FUNCTION_TELEMETRY_FRSKY_HUB;
+            break;
+#endif
+#ifdef USE_TELEMETRY_HOTT
+        case TELEMETRY_PROTOCOL_HOTT:
+            mask |= FUNCTION_TELEMETRY_HOTT;
+            break;
+#endif
+#ifdef USE_TELEMETRY_LTM
+        case TELEMETRY_PROTOCOL_LTM:
+            mask |= FUNCTION_TELEMETRY_LTM;
+            break;
+#endif
+#ifdef USE_TELEMETRY_SMARTPORT
+        case TELEMETRY_PROTOCOL_SMARTPORT:
+            mask |= FUNCTION_TELEMETRY_SMARTPORT;
+            break;
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+        case TELEMETRY_PROTOCOL_MAVLINK:
+            mask |= FUNCTION_TELEMETRY_MAVLINK;
+            break;
+#endif
+#ifdef USE_TELEMETRY_IBUS
+        case TELEMETRY_PROTOCOL_IBUS:
+            mask |= FUNCTION_TELEMETRY_IBUS;
+            break;
+#endif
+        default:
+            break;
+        }
     }
 #endif
 

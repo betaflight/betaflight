@@ -20,9 +20,19 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
 #include "msp.h"
 
-PG_REGISTER(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(mspConfig_t, mspConfig, PG_MSP_CONFIG, 0);
+
+void pgResetFn_mspConfig(mspConfig_t *mspConfig)
+{
+    mspConfig->halfDuplex = 0;
+    for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        mspConfig->msp_uart[i] = SERIAL_PORT_NONE;
+    }
+}
