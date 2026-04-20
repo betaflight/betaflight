@@ -23,6 +23,8 @@
 
 #ifdef USE_GIMBAL
 
+#include "io/serial.h"
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -48,6 +50,7 @@ PG_RESET_TEMPLATE(gimbalTrackConfig_t, gimbalTrackConfig,
     .gimbal_yaw_offset          = 0,
     .gimbal_yaw_limit           = 100,
     .gimbal_stabilisation       = 0,
-    .gimbal_sensitivity         = 15
+    .gimbal_sensitivity         = 15,
+    .gimbal_uart                = SERIAL_PORT_NONE,
 );
 #endif
