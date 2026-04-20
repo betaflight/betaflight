@@ -1469,13 +1469,16 @@ static void cliSerial(const char *cmdName, char *cmdline)
         return;
     }
 
-    memcpy(currentConfig, &portConfig, sizeof(portConfig));
+    // Mirror the legacy bitmask into the per-feature PG fields.  If the
+    // requested combination cannot be represented we reject the whole
+    // command so the synthesized view and the stored functionMask stay
+    // in sync.
+    if (!serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask)) {
+        cliShowParseError(cmdName);
+        return;
+    }
 
-    // Mirror the legacy bitmask into the per-feature PG fields.  Legacy
-    // functionMask is still authoritative at runtime; the shadow is
-    // maintained so the two views stay in sync until feature call sites
-    // migrate over.
-    serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask);
+    memcpy(currentConfig, &portConfig, sizeof(portConfig));
 
     cliDumpPrintLinef(0, false, format,
         serialName(portConfig.identifier, invalidName),

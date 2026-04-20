@@ -375,22 +375,12 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 #endif
 #ifdef USE_RANGEFINDER
     {
+        // Only overwrite rangefinder_hardware when its current value is
+        // clearly in the *other* lidar category; a compatible or
+        // unselected (RANGEFINDER_NONE) value is left alone so the user's
+        // specific model choice is preserved across CLI/MSP writes.
         uint8_t lidarBits = 0;
         if (mask & FUNCTION_LIDAR_TF) {
-            rangefinderConfigMutable()->rangefinder_uart = identifier;
-            switch (rangefinderConfig()->rangefinder_hardware) {
-            case RANGEFINDER_TFMINI:
-            case RANGEFINDER_TF02:
-            case RANGEFINDER_TFNOVA:
-            case RANGEFINDER_UPT1:
-                break;  // compatible; leave alone
-            default:
-                rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
-                break;
-            }
-            lidarBits++;
-        }
-        if (mask & FUNCTION_LIDAR_NL) {
             rangefinderConfigMutable()->rangefinder_uart = identifier;
             switch (rangefinderConfig()->rangefinder_hardware) {
             case RANGEFINDER_NOOPLOOP_F2:
@@ -399,9 +389,23 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
             case RANGEFINDER_NOOPLOOP_F:
             case RANGEFINDER_NOOPLOOP_FP:
             case RANGEFINDER_NOOPLOOP_F2MINI:
+                rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
                 break;
             default:
+                break;  // compatible or unset — leave alone
+            }
+            lidarBits++;
+        }
+        if (mask & FUNCTION_LIDAR_NL) {
+            rangefinderConfigMutable()->rangefinder_uart = identifier;
+            switch (rangefinderConfig()->rangefinder_hardware) {
+            case RANGEFINDER_TFMINI:
+            case RANGEFINDER_TF02:
+            case RANGEFINDER_TFNOVA:
+            case RANGEFINDER_UPT1:
                 rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
+                break;
+            default:
                 break;
             }
             lidarBits++;
@@ -458,10 +462,11 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 
 void serialBackfillFeatureFields(void)
 {
+    // Apply every port's mask unconditionally: apply-with-mask=0 runs the
+    // clear phase so stale *_uart fields from EEPROM cannot out-live a
+    // port that no longer claims them in the legacy view.
     for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
         const serialPortConfig_t *port = &serialConfig()->portConfigs[i];
-        if (port->functionMask != 0) {
-            serialApplyFunctionMask(port->identifier, port->functionMask);
-        }
+        serialApplyFunctionMask(port->identifier, port->functionMask);
     }
 }

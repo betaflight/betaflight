@@ -4062,7 +4062,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
                 portConfig->telemetry_baudrateIndex = sbufReadU8(src);
                 portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-                serialApplyFunctionMask(identifier, portConfig->functionMask);
+                if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+                    return MSP_RESULT_ERROR;
+                }
             }
         }
         break;
@@ -4090,7 +4092,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             portConfig->gps_baudrateIndex = sbufReadU8(src);
             portConfig->telemetry_baudrateIndex = sbufReadU8(src);
             portConfig->blackbox_baudrateIndex = sbufReadU8(src);
-            serialApplyFunctionMask(identifier, portConfig->functionMask);
+            if (!serialApplyFunctionMask(identifier, portConfig->functionMask)) {
+                return MSP_RESULT_ERROR;
+            }
             // Skip unknown bytes
             while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
                 sbufReadU8(src);
