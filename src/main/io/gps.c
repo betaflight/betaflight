@@ -1404,7 +1404,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 isFast = true;
             }
-            if ((getCycleCounter() - initialCycleCount) > cpuCycleLimit()) {
+            if (cmp32((getCycleCounter() - initialCycleCount), cpuCycleLimit()) > 0) {
                 break;
             }
             if (gpsNewFrameUBLOX(serialRead(gpsPort))) {
