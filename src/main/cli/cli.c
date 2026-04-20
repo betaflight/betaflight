@@ -117,6 +117,7 @@ bool cliMode = false;
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -1469,6 +1470,12 @@ static void cliSerial(const char *cmdName, char *cmdline)
     }
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
+
+    // Mirror the legacy bitmask into the per-feature PG fields.  Legacy
+    // functionMask is still authoritative at runtime; the shadow is
+    // maintained so the two views stay in sync until feature call sites
+    // migrate over.
+    serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask);
 
     cliDumpPrintLinef(0, false, format,
         serialName(portConfig.identifier, invalidName),
