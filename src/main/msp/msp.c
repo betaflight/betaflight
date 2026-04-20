@@ -101,6 +101,7 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -4267,6 +4268,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
                 portConfig->telemetry_baudrateIndex = sbufReadU8(src);
                 portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                serialApplyFunctionMask(identifier, portConfig->functionMask);
             }
         }
         break;
@@ -4297,6 +4299,7 @@ RAM_CODE static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t
             portConfig->gps_baudrateIndex = sbufReadU8(src);
             portConfig->telemetry_baudrateIndex = sbufReadU8(src);
             portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+            serialApplyFunctionMask(identifier, portConfig->functionMask);
             // Skip unknown bytes
             while (start - sbufBytesRemaining(src) < portConfigSize && sbufBytesRemaining(src)) {
                 sbufReadU8(src);
