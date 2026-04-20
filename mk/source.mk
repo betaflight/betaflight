@@ -126,6 +126,7 @@ COMMON_SRC = \
             io/beeper.c \
             io/piniobox.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_resource.c \
             io/smartaudio_protocol.c \
             io/statusindicator.c \
@@ -498,6 +499,7 @@ SIZE_OPTIMISED_SRC += \
             config/simplified_tuning.c \
             io/dashboard.c \
             io/serial.c \
+            io/serial_feature_map.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
