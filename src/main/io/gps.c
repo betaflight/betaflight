@@ -90,7 +90,8 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_TIME_MAX 15           // Max permitted time, in us, for the Receive Data process
+#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
+#define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
 #define GPS_FRAME_PROCES_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
@@ -1374,9 +1375,9 @@ static bool ubloxParsingAlmostDone = false;
 static inline uint32_t cpuCycleLimit(void)
 {
     if (ubloxParsingAlmostDone) {
-        return clockMicrosToCycles(GPS_RECV_TIME_MAX - GPS_FRAME_PROCES_TIME_US);
+        return clockMicrosToCycles(GPS_UBLOX_RECV_TIME_MAX - GPS_FRAME_PROCES_TIME_US);
     }
-    return clockMicrosToCycles(GPS_RECV_TIME_MAX);
+    return clockMicrosToCycles(GPS_UBLOX_RECV_TIME_MAX);
 }
 
 void gpsUpdate(timeUs_t currentTimeUs)
