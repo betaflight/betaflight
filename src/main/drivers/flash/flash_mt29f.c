@@ -130,6 +130,9 @@ struct {
     // Micron MT29F1G01ABAFDWB-IT:F
     // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m78a-1gb-3v-nand-spi.pdf
     { 0x2C14, 1024, 64, 2048 },
+    // Micron MT29F4G01ABAFDWB-IT:F
+    // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m70a-4gb-3v-nand-spi.pdf
+    { 0x2C34, 2048, 64, 4096 },
     { 0, 0, 0, 0 },
 };
 
