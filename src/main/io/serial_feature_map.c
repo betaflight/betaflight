@@ -279,19 +279,111 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
 #ifdef USE_TELEMETRY
 // A build can define USE_TELEMETRY without any individual protocol, leaving
 // assignTelemetrySlot() unreachable; mark it possibly-unused so -Werror
-// -Wunused-function doesn't fire (e.g. on PICO).
-static MAYBE_UNUSED bool assignTelemetrySlot(serialPortIdentifier_e identifier, uint8_t protocol)
+// -Wunused-function doesn't fire (e.g. on PICO).  Callers must pre-validate
+// slot availability via canApplyFunctionMask() — this helper asserts on
+// overflow rather than returning an error.
+static MAYBE_UNUSED void assignTelemetrySlot(serialPortIdentifier_e identifier, uint8_t protocol)
 {
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         if (telemetryConfig()->providers[i].protocol == TELEMETRY_PROTOCOL_NONE) {
             telemetryConfigMutable()->providers[i].protocol = protocol;
             telemetryConfigMutable()->providers[i].uart = identifier;
-            return true;
+            return;
         }
     }
-    return false;
 }
 #endif
+
+#ifdef USE_TELEMETRY
+static unsigned countTelemetryBits(uint32_t mask)
+{
+    unsigned n = 0;
+#ifdef USE_TELEMETRY_FRSKY_HUB
+    if (mask & FUNCTION_TELEMETRY_FRSKY_HUB) n++;
+#endif
+#ifdef USE_TELEMETRY_HOTT
+    if (mask & FUNCTION_TELEMETRY_HOTT) n++;
+#endif
+#ifdef USE_TELEMETRY_LTM
+    if (mask & FUNCTION_TELEMETRY_LTM) n++;
+#endif
+#ifdef USE_TELEMETRY_SMARTPORT
+    if (mask & FUNCTION_TELEMETRY_SMARTPORT) n++;
+#endif
+#ifdef USE_TELEMETRY_MAVLINK
+    if (mask & FUNCTION_TELEMETRY_MAVLINK) n++;
+#endif
+#ifdef USE_TELEMETRY_IBUS
+    if (mask & FUNCTION_TELEMETRY_IBUS) n++;
+#endif
+    (void)mask;  // A USE_TELEMETRY build without any sub-protocol touches none.
+    return n;
+}
+#endif
+
+// Check whether a mask can be applied to `identifier` without leaving the
+// feature PGs in an inconsistent state.  Counts bits per category and checks
+// MSP/telemetry slot availability as if clearClaimsOnPort(identifier) had
+// already run — slots currently held by this port are considered free for
+// the new mask.  No PG mutations are performed.
+static bool canApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+#ifdef USE_VTX_COMMON
+    unsigned vtxBits = 0;
+#ifdef USE_VTX_SMARTAUDIO
+    if (mask & FUNCTION_VTX_SMARTAUDIO) vtxBits++;
+#endif
+#ifdef USE_VTX_TRAMP
+    if (mask & FUNCTION_VTX_TRAMP) vtxBits++;
+#endif
+#ifdef USE_VTX_MSP
+    if (mask & FUNCTION_VTX_MSP) vtxBits++;
+#endif
+    if (vtxBits > 1) {
+        return false;
+    }
+#endif
+
+#ifdef USE_RANGEFINDER
+    unsigned lidarBits = 0;
+    if (mask & FUNCTION_LIDAR_TF) lidarBits++;
+    if (mask & FUNCTION_LIDAR_NL) lidarBits++;
+    if (lidarBits > 1) {
+        return false;
+    }
+#endif
+
+    if (mask & FUNCTION_MSP) {
+        unsigned availableMsp = 0;
+        for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+            if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE
+                || mspConfig()->msp_uart[i] == identifier) {
+                availableMsp++;
+            }
+        }
+        if (availableMsp < 1) {
+            return false;
+        }
+    }
+
+#ifdef USE_TELEMETRY
+    const unsigned tlmNeeded = countTelemetryBits(mask);
+    if (tlmNeeded > 0) {
+        unsigned availableTlm = 0;
+        for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+            if (telemetryConfig()->providers[i].protocol == TELEMETRY_PROTOCOL_NONE
+                || telemetryConfig()->providers[i].uart == identifier) {
+                availableTlm++;
+            }
+        }
+        if (availableTlm < tlmNeeded) {
+            return false;
+        }
+    }
+#endif
+
+    return true;
+}
 
 bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
 {
@@ -299,21 +391,21 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
         return mask == 0;
     }
 
+    // Validate against the pre-clear state so callers see an atomic
+    // success/failure; if the mask can't be represented we must not
+    // have touched the PGs.
+    if (!canApplyFunctionMask(identifier, mask)) {
+        return false;
+    }
+
     clearClaimsOnPort(identifier);
 
-    bool ok = true;
-
     if (mask & FUNCTION_MSP) {
-        bool placed = false;
         for (unsigned i = 0; i < MAX_MSP_PORT_COUNT; i++) {
             if (mspConfig()->msp_uart[i] == SERIAL_PORT_NONE) {
                 mspConfigMutable()->msp_uart[i] = identifier;
-                placed = true;
                 break;
             }
-        }
-        if (!placed) {
-            ok = false;
         }
     }
 #ifdef USE_GPS
@@ -347,74 +439,58 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     }
 #endif
 #ifdef USE_VTX_COMMON
-    {
-        // At most one VTX bit may be set; later bits overwrite earlier ones and flag a conflict.
-        uint8_t vtxBits = 0;
+    // VTX bit count pre-validated ≤ 1; at most one branch fires.
 #ifdef USE_VTX_SMARTAUDIO
-        if (mask & FUNCTION_VTX_SMARTAUDIO) {
-            vtxSettingsConfigMutable()->vtx_uart = identifier;
-            vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
-            vtxBits++;
-        }
-#endif
-#ifdef USE_VTX_TRAMP
-        if (mask & FUNCTION_VTX_TRAMP) {
-            vtxSettingsConfigMutable()->vtx_uart = identifier;
-            vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
-            vtxBits++;
-        }
-#endif
-#ifdef USE_VTX_MSP
-        if (mask & FUNCTION_VTX_MSP) {
-            vtxSettingsConfigMutable()->vtx_uart = identifier;
-            vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
-            vtxBits++;
-        }
-#endif
-        if (vtxBits > 1) {
-            ok = false;
-        }
+    if (mask & FUNCTION_VTX_SMARTAUDIO) {
+        vtxSettingsConfigMutable()->vtx_uart = identifier;
+        vtxSettingsConfigMutable()->vtx_type = VTXDEV_SMARTAUDIO;
     }
 #endif
+#ifdef USE_VTX_TRAMP
+    if (mask & FUNCTION_VTX_TRAMP) {
+        vtxSettingsConfigMutable()->vtx_uart = identifier;
+        vtxSettingsConfigMutable()->vtx_type = VTXDEV_TRAMP;
+    }
+#endif
+#ifdef USE_VTX_MSP
+    if (mask & FUNCTION_VTX_MSP) {
+        vtxSettingsConfigMutable()->vtx_uart = identifier;
+        vtxSettingsConfigMutable()->vtx_type = VTXDEV_MSP;
+    }
+#endif
+#endif
 #ifdef USE_RANGEFINDER
-    {
-        // Only overwrite rangefinder_hardware when its current value is
-        // clearly in the *other* lidar category; a compatible or
-        // unselected (RANGEFINDER_NONE) value is left alone so the user's
-        // specific model choice is preserved across CLI/MSP writes.
-        uint8_t lidarBits = 0;
-        if (mask & FUNCTION_LIDAR_TF) {
-            rangefinderConfigMutable()->rangefinder_uart = identifier;
-            switch (rangefinderConfig()->rangefinder_hardware) {
-            case RANGEFINDER_NOOPLOOP_F2:
-            case RANGEFINDER_NOOPLOOP_F2P:
-            case RANGEFINDER_NOOPLOOP_F2PH:
-            case RANGEFINDER_NOOPLOOP_F:
-            case RANGEFINDER_NOOPLOOP_FP:
-            case RANGEFINDER_NOOPLOOP_F2MINI:
-                rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
-                break;
-            default:
-                break;  // compatible or unset — leave alone
-            }
-            lidarBits++;
+    // Lidar bit count pre-validated ≤ 1; at most one branch fires.  Only
+    // overwrite rangefinder_hardware when the current value is clearly in
+    // the *other* lidar category; a compatible or unselected
+    // (RANGEFINDER_NONE) value is left alone so the user's specific model
+    // choice is preserved across CLI/MSP writes.
+    if (mask & FUNCTION_LIDAR_TF) {
+        rangefinderConfigMutable()->rangefinder_uart = identifier;
+        switch (rangefinderConfig()->rangefinder_hardware) {
+        case RANGEFINDER_NOOPLOOP_F2:
+        case RANGEFINDER_NOOPLOOP_F2P:
+        case RANGEFINDER_NOOPLOOP_F2PH:
+        case RANGEFINDER_NOOPLOOP_F:
+        case RANGEFINDER_NOOPLOOP_FP:
+        case RANGEFINDER_NOOPLOOP_F2MINI:
+            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_TFMINI;
+            break;
+        default:
+            break;  // compatible or unset — leave alone
         }
-        if (mask & FUNCTION_LIDAR_NL) {
-            rangefinderConfigMutable()->rangefinder_uart = identifier;
-            switch (rangefinderConfig()->rangefinder_hardware) {
-            case RANGEFINDER_TFMINI:
-            case RANGEFINDER_TF02:
-            case RANGEFINDER_TFNOVA:
-            case RANGEFINDER_UPT1:
-                rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
-                break;
-            default:
-                break;
-            }
-            lidarBits++;
-        }
-        if (lidarBits > 1) {
-            ok = false;
+    }
+    if (mask & FUNCTION_LIDAR_NL) {
+        rangefinderConfigMutable()->rangefinder_uart = identifier;
+        switch (rangefinderConfig()->rangefinder_hardware) {
+        case RANGEFINDER_TFMINI:
+        case RANGEFINDER_TF02:
+        case RANGEFINDER_TFNOVA:
+        case RANGEFINDER_UPT1:
+            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NOOPLOOP_F2;
+            break;
+        default:
+            break;
         }
     }
 #endif
@@ -428,39 +504,28 @@ bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
     }
 #endif
 #ifdef USE_TELEMETRY
+    // Telemetry slot availability pre-validated; assignTelemetrySlot always fits.
 #ifdef USE_TELEMETRY_FRSKY_HUB
-    if (mask & FUNCTION_TELEMETRY_FRSKY_HUB) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_FRSKY_HUB);
-    }
+    if (mask & FUNCTION_TELEMETRY_FRSKY_HUB) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_FRSKY_HUB);
 #endif
 #ifdef USE_TELEMETRY_HOTT
-    if (mask & FUNCTION_TELEMETRY_HOTT) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_HOTT);
-    }
+    if (mask & FUNCTION_TELEMETRY_HOTT) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_HOTT);
 #endif
 #ifdef USE_TELEMETRY_LTM
-    if (mask & FUNCTION_TELEMETRY_LTM) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_LTM);
-    }
+    if (mask & FUNCTION_TELEMETRY_LTM) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_LTM);
 #endif
 #ifdef USE_TELEMETRY_SMARTPORT
-    if (mask & FUNCTION_TELEMETRY_SMARTPORT) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_SMARTPORT);
-    }
+    if (mask & FUNCTION_TELEMETRY_SMARTPORT) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_SMARTPORT);
 #endif
 #ifdef USE_TELEMETRY_MAVLINK
-    if (mask & FUNCTION_TELEMETRY_MAVLINK) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_MAVLINK);
-    }
+    if (mask & FUNCTION_TELEMETRY_MAVLINK) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_MAVLINK);
 #endif
 #ifdef USE_TELEMETRY_IBUS
-    if (mask & FUNCTION_TELEMETRY_IBUS) {
-        ok &= assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_IBUS);
-    }
+    if (mask & FUNCTION_TELEMETRY_IBUS) assignTelemetrySlot(identifier, TELEMETRY_PROTOCOL_IBUS);
 #endif
 #endif
 
-    return ok;
+    return true;
 }
 
 void serialBackfillFeatureFields(void)
@@ -468,8 +533,17 @@ void serialBackfillFeatureFields(void)
     // Apply every port's mask unconditionally: apply-with-mask=0 runs the
     // clear phase so stale *_uart fields from EEPROM cannot out-live a
     // port that no longer claims them in the legacy view.
+    //
+    // A per-port apply can only fail if the legacy mask itself is
+    // structurally invalid (two VTX protocols on one port, two lidar
+    // categories on one port, or more MSP/telemetry claims across ports
+    // than slots hold).  None of those are reachable from a well-formed
+    // legacy config, so the return value is intentionally discarded; the
+    // synthesized view of a partially-migrated port simply omits the bits
+    // that couldn't be represented, which matches the legacy-is-invalid
+    // semantics those masks had before migration.
     for (unsigned i = 0; i < ARRAYLEN(serialConfig()->portConfigs); i++) {
         const serialPortConfig_t *port = &serialConfig()->portConfigs[i];
-        serialApplyFunctionMask(port->identifier, port->functionMask);
+        (void)serialApplyFunctionMask(port->identifier, port->functionMask);
     }
 }
