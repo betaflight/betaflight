@@ -277,7 +277,10 @@ static void clearClaimsOnPort(serialPortIdentifier_e identifier)
 }
 
 #ifdef USE_TELEMETRY
-static bool assignTelemetrySlot(serialPortIdentifier_e identifier, uint8_t protocol)
+// A build can define USE_TELEMETRY without any individual protocol, leaving
+// assignTelemetrySlot() unreachable; mark it possibly-unused so -Werror
+// -Wunused-function doesn't fire (e.g. on PICO).
+static MAYBE_UNUSED bool assignTelemetrySlot(serialPortIdentifier_e identifier, uint8_t protocol)
 {
     for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
         if (telemetryConfig()->providers[i].protocol == TELEMETRY_PROTOCOL_NONE) {
