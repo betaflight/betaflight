@@ -47,11 +47,13 @@ void altHoldInit(void)
 {
 }
 
-void updateAltHold(timeUs_t currentTimeUs) {
+void updateAltHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
 }
 
-bool isAltHoldActive(void) {
+bool isAltHoldActive(void)
+{
     return false;
 }
 
