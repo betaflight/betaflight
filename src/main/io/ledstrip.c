@@ -112,10 +112,10 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 #define BEACON_FAILSAFE_PERIOD_US 250      // 2Hz
 #define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
-#define VTX_FREQ_MIN 5658 // R1, anything below this will be white
-#define VTX_FREQ_RANGE 259.0f // R2 should be Red with Hue of 0
-#define VTX_HUE_MAX 330.0f // Hue for R8 or above cannot be higher than 330
-#define VTX_SCALER (VTX_HUE_MAX / VTX_FREQ_RANGE) // Pre-calculated as 1.2741312f by compiler
+#define VTX_FREQ_MIN 5650 // Below this will be white, above we get colour starting at an orange - red
+#define VTX_FREQ_RANGE 250.0f // leads to hue max at 5918 (R8 is 5917) or above
+#define VTX_HUE_MAX 345.0f // Hue for R8 or above should not hit red (360). 345 is a strong magenta but not like red
+#define VTX_SCALER (VTX_HUE_MAX / VTX_FREQ_RANGE)
 
 
 const hsvColor_t hsv[] = {
