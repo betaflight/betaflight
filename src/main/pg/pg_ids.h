@@ -163,6 +163,7 @@
 #define PG_FLIGHT_PLAN_CONFIG       562
 #define PG_CAN_PIN_CONFIG           563
 #define PG_CAN_CONFIG               564
+#define PG_DRONECAN_CONFIG          565
 
 
 // OSD configuration (subject to change)

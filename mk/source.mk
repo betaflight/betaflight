@@ -11,6 +11,7 @@ PG_SRC = \
             pg/bus_spi.c \
             pg/can.c \
             pg/dashboard.c \
+            pg/dronecan.c \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
@@ -124,6 +125,8 @@ COMMON_SRC = \
             fc/runtime_config.c \
             fc/stats.c \
             io/beeper.c \
+            io/dronecan/dronecan.c \
+            io/dronecan/dronecan_node.c \
             io/piniobox.c \
             io/serial.c \
             io/serial_resource.c \
@@ -571,4 +574,16 @@ ifneq ($(OLC_DIR),)
 INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(OLC_DIR)
 SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
+endif
+
+# libcanard (DroneCAN transport) — vendored as a submodule. Only pulled in
+# on platforms that compile CAN in; non-CAN targets don't see it in SRC and
+# the #if ENABLE_DRONECAN guards in the Betaflight-side glue keep the link
+# clean when the peripheral is absent.
+LIBCANARD_DIR := dronecan/libcanard
+
+ifneq ($(LIBCANARD_DIR),)
+INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(LIBCANARD_DIR)
+SRC += $(LIBCANARD_DIR)/canard.c
+SIZE_OPTIMISED_SRC += $(LIBCANARD_DIR)/canard.c
 endif

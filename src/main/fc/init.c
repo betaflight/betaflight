@@ -110,6 +110,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/dronecan/dronecan.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
@@ -681,6 +682,10 @@ void initPhase3(void)
 
 #if ENABLE_CAN && !defined(TARGET_BUS_INIT)
     configureCANBusses();
+#endif
+
+#if ENABLE_DRONECAN
+    dronecanInit();
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
