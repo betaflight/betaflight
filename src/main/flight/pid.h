@@ -348,7 +348,7 @@ typedef struct pidProfile_s {
     uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 10.
     uint16_t psas_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *10
-    uint16_t psas_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
+    uint8_t psas_aoa_limiter_gain;              // elevator speed for 0.1 lift force coef difference in %/sec
     uint8_t psas_lift_coef_filter_freq;         // aoa limiter lift coef filter cut freq Hz * 10
     uint8_t psas_aoa_limiter_forecast_time;     // aoa limiter lift coef forecast time, s *100
     uint8_t psas_aoa_limiter_tau_return;        // aoa limiter tau value, to return zero I value output s * 10

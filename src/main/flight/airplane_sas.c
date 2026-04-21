@@ -151,7 +151,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             liftCoefDiff = liftCoef - limitLiftC;
             if (liftCoefDiff > 0.0f) {
                 isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 10.0f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
             }
         } else {
@@ -161,7 +161,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
             liftCoefDiff = liftCoef + limitLiftC;
             if (liftCoefDiff < 0.0f) {
                 isLimitAoA = true;
-                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 0.1f);
+                servoVelocity = liftCoefDiff * (pidProfile->psas_aoa_limiter_gain * 10.0f);
                 servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
             }
         }
