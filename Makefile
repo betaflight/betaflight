@@ -70,6 +70,12 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
 
+# Cross-platform submodule stamps. Declared up-front so rules defined later
+# (and rules that run before them in the file, like $(BASE_TARGETS)) can
+# pick them up as prerequisites without ordering gymnastics.
+LIBCANARD_SUBMODULE_DIR := lib/main/dronecan/libcanard
+LIBCANARD_STAMP         := $(LIBCANARD_SUBMODULE_DIR)/.git
+
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 
 ## V                 : Set verbosity level based on the V= parameter
@@ -562,7 +568,7 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 all: $(CI_TARGETS)
 
 .PHONY: $(BASE_TARGETS)
-$(BASE_TARGETS):
+$(BASE_TARGETS): $(LIBCANARD_STAMP)
 	$(MAKE) fwo TARGET=$@
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
@@ -667,20 +673,37 @@ $(TARGETS_ZIP):
 zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
+# libcanard is vendored at lib/main/dronecan/libcanard and pulled into SRC
+# unconditionally (the ENABLE_DRONECAN guards inside the Betaflight code
+# path decide whether the symbols link). The build always needs the source
+# present, so hydrate it as a prerequisite of every firmware-output target.
+# The stamp is the submodule's .git pointer file, which only exists after
+# the first successful `git submodule update --init`; Make treats the stamp
+# as up-to-date on subsequent runs so hydration stays idempotent and
+# cacheable.
+$(LIBCANARD_STAMP):
+	@echo "Hydrating libcanard submodule: $(LIBCANARD_SUBMODULE_DIR)"
+	$(V1) git submodule update --init -- "$(LIBCANARD_SUBMODULE_DIR)" \
+	    || { echo "libcanard submodule update failed. Please check your git configuration."; exit 1; }
+
+## libcanard         : Hydrate libcanard submodule
+.PHONY: libcanard
+libcanard: $(LIBCANARD_STAMP)
+
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP)
+binary: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP)
+hex: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP)
+uf2: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(TARGET_EXE)
+exe: $(LIBCANARD_STAMP) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
@@ -698,7 +721,7 @@ endif
 TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 .PHONY: $(TARGETS_REVISION)
-$(TARGETS_REVISION):
+$(TARGETS_REVISION): $(LIBCANARD_STAMP)
 	$(V1) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
 .PHONY: all_rev
