@@ -140,7 +140,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     float liftCoefDiff = 0.0f,
           servoVelocity = 0.0f;
     if (isLiftCoefValid) {
-        const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.1f);
+        const float liftCoefForecastChange = liftCoefVelocity * (pidProfile->psas_aoa_limiter_forecast_time * 0.01f);
         const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
 
         const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s

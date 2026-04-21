@@ -350,7 +350,7 @@ typedef struct pidProfile_s {
     uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *10
     uint16_t psas_aoa_limiter_gain;             // elevator speed for 0.1 lift force coef difference in %/sec *10
     uint8_t psas_lift_coef_filter_freq;         // aoa limiter lift coef filter cut freq Hz * 10
-    uint8_t psas_aoa_limiter_forecast_time;     // aoa limiter lift coef forecast time, s *10
+    uint8_t psas_aoa_limiter_forecast_time;     // aoa limiter lift coef forecast time, s *100
     uint8_t psas_aoa_limiter_tau_return;        // aoa limiter tau value, to return zero I value output s * 10
     uint16_t psas_servo_time;                   // minimal time of servo movement from neutral to maximum, ms
     uint8_t psas_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *10
