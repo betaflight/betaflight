@@ -339,7 +339,7 @@ typedef struct pidProfile_s {
     uint8_t psas_accel_z_filter_freq;           // accel Z filter cut freq Hz * 10
     uint16_t psas_pitch_stability_gain;         // percent control range addition by 1g accel z change *10
     uint16_t psas_pitch_accel_p_gain;           // elevator for 1g Z accel difference in % *10
-    uint16_t psas_pitch_accel_i_gain;           // elevator speed for 1g Z accel difference in %/sec *10
+    uint8_t psas_pitch_accel_i_gain;            // elevator speed for 1g Z accel difference in %/sec
     uint8_t psas_pitch_accel_max;               // maximal positive Z accel value *10
     uint8_t psas_pitch_accel_min;               // maximal negative Z accel value *10
     uint16_t psas_yaw_damping_filter_freq;      // yaw damping filter cut freq Hz *100

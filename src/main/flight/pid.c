@@ -279,7 +279,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_accel_y_filter_freq = 10,        // accel Y filter cut freq Hz * 10, 1Hz
         .psas_yaw_stability_gain = 25,         // percent control by 1g Y accel change *10
         .psas_pitch_accel_p_gain = 0,          // elevator for 1g Z accel difference in % *10
-        .psas_pitch_accel_i_gain = 0,          // elevator speed for 1g Z accel difference in %/sec *10
+        .psas_pitch_accel_i_gain = 0,          // elevator speed for 1g Z accel difference in %/sec
         .psas_pitch_accel_max = 40,            // maximal positive Z accel value *10
         .psas_pitch_accel_min = 40,            // maximal negative Z accel value *10
         .psas_wing_load = 300,                 // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think. My wings value is 260

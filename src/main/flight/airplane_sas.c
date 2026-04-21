@@ -119,7 +119,7 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
     float accelReq = pitchStick < 0.0f ? (1.0f - 0.1f * pidProfile->psas_pitch_accel_max) * pitchStick + 1.0f
                                            : -(1.0f + 0.1f * pidProfile->psas_pitch_accel_min) * pitchStick + 1.0f;
     float accelDelta = accelZ - accelReq;
-    float servoVelocity = accelDelta * (pidProfile->psas_pitch_accel_i_gain * 0.1f);
+    float servoVelocity = accelDelta * pidProfile->psas_pitch_accel_i_gain;
     servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
 
     pidData[FD_PITCH].I += servoVelocity * pidRuntime.dT;
