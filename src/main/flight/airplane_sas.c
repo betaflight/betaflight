@@ -175,6 +175,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     }
 
     DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
+    DEBUG_SET(DEBUG_PSAS, 7, isLimitAoA ? 1 : 0);
 
     return isLimitAoA;
 }
