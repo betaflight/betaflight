@@ -125,8 +125,6 @@ COMMON_SRC = \
             fc/runtime_config.c \
             fc/stats.c \
             io/beeper.c \
-            io/dronecan/dronecan.c \
-            io/dronecan/dronecan_node.c \
             io/piniobox.c \
             io/serial.c \
             io/serial_resource.c \
@@ -576,14 +574,8 @@ SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
 endif
 
-# libcanard (DroneCAN transport) — vendored as a submodule. Only pulled in
-# on platforms that compile CAN in; non-CAN targets don't see it in SRC and
-# the #if ENABLE_DRONECAN guards in the Betaflight-side glue keep the link
-# clean when the peripheral is absent.
-LIBCANARD_DIR := dronecan/libcanard
-
-ifneq ($(LIBCANARD_DIR),)
-INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(LIBCANARD_DIR)
-SRC += $(LIBCANARD_DIR)/canard.c
-SIZE_OPTIMISED_SRC += $(LIBCANARD_DIR)/canard.c
-endif
+# libcanard (DroneCAN transport) and the Betaflight-side glue live in the
+# per-MCU makefiles: they're only wired into the build for families whose
+# platform mk adds a CAN driver (currently STM32G4 / H7 / C5). This keeps
+# non-CAN targets from having to compile a ~2k-line external library whose
+# symbols would never link.

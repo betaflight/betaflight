@@ -344,6 +344,11 @@ PLATFORM_SDK_arm_TOOLS      := arm_sdk_install
 PLATFORM_SDK_arm_CC         := $(if $(ARM_SDK_PREFIX),$(ARM_SDK_PREFIX)gcc,arm-none-eabi-gcc)
 PLATFORM_SDK_arm_CC_VERSION := $(GCC_REQUIRED_VERSION)
 PLATFORM_SDK_arm_CC_INSTALL := arm_sdk_install
+# Cross-platform lib submodules the arm-SDK targets opt in to. Listed at
+# the SDK level so the CI tools cache covers them without knowing which
+# specific target will be built. Kept empty on SDKs that don't need them
+# (e.g. ESP / Pico) so their tools cache stays lean.
+PLATFORM_SDK_arm_LIB_SUBMODULES := $(DRONECAN_LIB_DIR)
 
 include $(wildcard $(PLATFORM_DIR)/*/mk/tools.mk)
 
@@ -361,19 +366,24 @@ ifneq ($(PLATFORM_SDK_$(SDK)_SUBMODULE),)
 else
 	@echo "tools"
 endif
+	@$(foreach mod,$(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES), \
+	    echo "$(mod)"; \
+	    echo ".git/modules/$(mod)";)
 
 ## platform-sdk-cache-key-print : print cache key for SDK specified by SDK= variable
 .PHONY: platform-sdk-cache-key-print
 platform-sdk-cache-key-print:
 ifneq ($(PLATFORM_SDK_$(SDK)_SUBMODULE),)
-	@echo $(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)
+	@echo "$(shell git rev-parse HEAD:$(PLATFORM_SDK_$(SDK)_SUBMODULE) 2>/dev/null)$(foreach mod,$(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES),-$(shell git rev-parse HEAD:$(mod) 2>/dev/null))"
+else ifneq ($(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES),)
+	@echo "$(subst $(eval ) ,-,$(strip $(foreach mod,$(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES),$(shell git rev-parse HEAD:$(mod) 2>/dev/null))))"
 else
 	@echo "base"
 endif
 
 ## platform-sdk-hydrate : hydrate SDK specified by SDK= variable, or all SDKs if SDK is unset
 .PHONY: platform-sdk-hydrate
-platform-sdk-hydrate:
+platform-sdk-hydrate: platform-sdk-lib-submodules-hydrate
 ifneq ($(PLATFORM_SDK_$(SDK)_HYDRATE),)
 	$(V1) $(MAKE) $(PLATFORM_SDK_$(SDK)_HYDRATE)
 else ifdef SDK
@@ -382,11 +392,28 @@ else
 	$(V1) $(MAKE) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_HYDRATE))
 endif
 
+## platform-sdk-lib-submodules-hydrate : hydrate the lib submodules listed
+##   by $(PLATFORM_SDK_<sdk>_LIB_SUBMODULES). No-op if the list is empty
+##   or if the submodules are already initialised. Runs alongside the SDK
+##   tools install so CI caches them in the same layer.
+.PHONY: platform-sdk-lib-submodules-hydrate
+platform-sdk-lib-submodules-hydrate:
+ifneq ($(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES),)
+	$(V1) for mod in $(PLATFORM_SDK_$(SDK)_LIB_SUBMODULES); do \
+	    if [ ! -e "$$mod/.git" ]; then \
+	        echo "Hydrating lib submodule: $$mod"; \
+	        git submodule update --init -- "$$mod" \
+	            || { echo "submodule update failed: $$mod"; exit 1; }; \
+	    fi; \
+	done
+endif
+
 ## platform-tools-install : install tools for SDK specified by SDK= variable, or all if unset
 .PHONY: platform-tools-install
 platform-tools-install:
 ifdef SDK
 	$(V1) $(if $(PLATFORM_SDK_$(SDK)_TOOLS),$(MAKE) $(PLATFORM_SDK_$(SDK)_TOOLS),@true)
+	$(V1) $(MAKE) SDK=$(SDK) platform-sdk-lib-submodules-hydrate
 else
 	$(V1) $(MAKE) $(sort $(PLATFORM_SDK_arm_TOOLS) $(foreach s,$(PLATFORM_SDKS),$(PLATFORM_SDK_$(s)_TOOLS)))
 endif

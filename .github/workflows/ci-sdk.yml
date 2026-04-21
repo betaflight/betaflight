@@ -51,15 +51,22 @@ jobs:
           key: ${{ inputs.tools-cache-key }}-arm
 
       - name: Get SDK cache info
-        if: inputs.sdk != 'arm' && inputs.sdk != 'none'
+        if: inputs.sdk != 'none'
         id: sdk-info
         run: |
-          SUBMODULE=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
-          if [ "$SUBMODULE" != "tools" ]; then
+          # platform-sdk-cache-paths-print emits the tools-cache sentinel
+          # first (handled by the separate "Cache tools" step) followed by
+          # any platform-SDK submodule paths and cross-platform lib
+          # submodule paths that this SDK depends on. Anything after the
+          # sentinel goes into this SDK cache step.
+          paths_no_tools=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | grep -v '^tools$' || true)
+          if [ -n "$paths_no_tools" ]; then
             echo "has-submodule=true" >> $GITHUB_OUTPUT
-            echo "paths<<EOF" >> $GITHUB_OUTPUT
-            make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            {
+              echo "paths<<EOF"
+              echo "$paths_no_tools"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
             echo "key=${{ runner.os }}-sdk-${{ inputs.sdk }}-$(make SDK=${{ inputs.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
           fi
 
@@ -97,15 +104,17 @@ jobs:
         run: git submodule update --init -- src/config
 
       - name: Get SDK cache info
-        if: matrix.target != 'None' && inputs.sdk != 'arm' && inputs.sdk != 'none'
+        if: matrix.target != 'None' && inputs.sdk != 'none'
         id: sdk-info
         run: |
-          SUBMODULE=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
-          if [ "$SUBMODULE" != "tools" ]; then
+          paths_no_tools=$(make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print 2>/dev/null | grep -v '^tools$' || true)
+          if [ -n "$paths_no_tools" ]; then
             echo "has-submodule=true" >> $GITHUB_OUTPUT
-            echo "paths<<EOF" >> $GITHUB_OUTPUT
-            make SDK=${{ inputs.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            {
+              echo "paths<<EOF"
+              echo "$paths_no_tools"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
             echo "key=${{ runner.os }}-sdk-${{ inputs.sdk }}-$(make SDK=${{ inputs.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
           fi
 

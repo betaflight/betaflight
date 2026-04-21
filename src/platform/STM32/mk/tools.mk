@@ -17,6 +17,9 @@ PLATFORM_SDK_stm32c5_TOOLS      := arm_sdk_install
 PLATFORM_SDK_stm32c5_CC         := $(PLATFORM_SDK_arm_CC)
 PLATFORM_SDK_stm32c5_CC_VERSION := $(PLATFORM_SDK_arm_CC_VERSION)
 PLATFORM_SDK_stm32c5_CC_INSTALL := arm_sdk_install
+# C5 silicon supports FDCAN — advertise the same cross-platform lib deps
+# as the plain arm SDK so the CI tools cache covers libcanard for C5 too.
+PLATFORM_SDK_stm32c5_LIB_SUBMODULES := $(DRONECAN_LIB_DIR)
 
 # STM32N6 vendor HAL (STM32CubeN6 submodule)
 # Register SDK for CI caching and hydration

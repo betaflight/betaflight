@@ -70,11 +70,15 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
 
-# Cross-platform submodule stamps. Declared up-front so rules defined later
-# (and rules that run before them in the file, like $(BASE_TARGETS)) can
-# pick them up as prerequisites without ordering gymnastics.
-LIBCANARD_SUBMODULE_DIR := lib/main/dronecan/libcanard
-LIBCANARD_STAMP         := $(LIBCANARD_SUBMODULE_DIR)/.git
+# LIB_SUBMODULES is populated by per-MCU .mk files (e.g. STM32G4.mk opts
+# into $(DRONECAN_LIB_DIR) for its DroneCAN stack). The per-MCU list is
+# then resolved into stamp-file prerequisites below, so only platforms
+# that actually pull the sources in end up requiring submodule hydration.
+LIB_SUBMODULES :=
+
+# Paths to cross-platform lib submodules. Defined up-front so MCU .mk
+# files can reference them when opting in via LIB_SUBMODULES.
+DRONECAN_LIB_DIR := lib/main/dronecan/libcanard
 
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 
@@ -237,6 +241,17 @@ SPEED_OPTIMISED_SRC :=
 SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
+
+# Feature source lists that fan out from the MCU's LIB_SUBMODULES opt-in.
+# Sourced after the MCU .mk so each feature file can check what the
+# platform asked for.
+include $(MAKE_SCRIPT_DIR)/dronecan.mk
+
+# Resolve the MCU-requested lib submodules into stamp files. Firmware-
+# output targets depend on these stamps so Make hydrates any missing
+# submodule before the first source access, matching the behaviour of
+# the platform SDK stamps.
+LIB_SUBMODULE_STAMPS := $(addsuffix /.git,$(LIB_SUBMODULES))
 
 # Validate the platform toolchain is available
 include $(MAKE_SCRIPT_DIR)/tools_check.mk
@@ -568,7 +583,7 @@ $(TARGET_OBJ_DIR)/%.o: %.S
 all: $(CI_TARGETS)
 
 .PHONY: $(BASE_TARGETS)
-$(BASE_TARGETS): $(LIBCANARD_STAMP)
+$(BASE_TARGETS):
 	$(MAKE) fwo TARGET=$@
 
 TARGETS_CLEAN = $(addsuffix _clean,$(BASE_TARGETS))
@@ -673,37 +688,29 @@ $(TARGETS_ZIP):
 zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
-# libcanard is vendored at lib/main/dronecan/libcanard and pulled into SRC
-# unconditionally (the ENABLE_DRONECAN guards inside the Betaflight code
-# path decide whether the symbols link). The build always needs the source
-# present, so hydrate it as a prerequisite of every firmware-output target.
-# The stamp is the submodule's .git pointer file, which only exists after
-# the first successful `git submodule update --init`; Make treats the stamp
-# as up-to-date on subsequent runs so hydration stays idempotent and
-# cacheable.
-$(LIBCANARD_STAMP):
-	@echo "Hydrating libcanard submodule: $(LIBCANARD_SUBMODULE_DIR)"
-	$(V1) git submodule update --init -- "$(LIBCANARD_SUBMODULE_DIR)" \
-	    || { echo "libcanard submodule update failed. Please check your git configuration."; exit 1; }
-
-## libcanard         : Hydrate libcanard submodule
-.PHONY: libcanard
-libcanard: $(LIBCANARD_STAMP)
+# Lib submodules the MCU .mk opted in to (see LIB_SUBMODULES). The stamp
+# for each is its `.git` pointer file, which only exists after a
+# successful `git submodule update --init`; Make treats it as up-to-date
+# on subsequent runs so hydration stays idempotent and cacheable.
+$(LIB_SUBMODULE_STAMPS):
+	@echo "Hydrating submodule: $(@:/.git=)"
+	$(V1) git submodule update --init -- "$(@:/.git=)" \
+	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
+binary: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
+hex: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(LIBCANARD_STAMP)
+uf2: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(LIBCANARD_STAMP) $(TARGET_EXE)
+exe: $(LIB_SUBMODULE_STAMPS) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
@@ -721,7 +728,7 @@ endif
 TARGETS_REVISION = $(addsuffix _rev, $(BASE_TARGETS))
 ## <TARGET>_rev    : build target and add revision to filename
 .PHONY: $(TARGETS_REVISION)
-$(TARGETS_REVISION): $(LIBCANARD_STAMP)
+$(TARGETS_REVISION):
 	$(V1) $(MAKE) fwo REV=yes TARGET=$(subst _rev,,$@)
 
 .PHONY: all_rev

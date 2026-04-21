@@ -158,6 +158,8 @@ MCU_COMMON_SRC = \
             drivers/serial_escserial.c \
             STM32/startup/system_stm32g4xx.c
 
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
+
 # G4's MSC use the same driver layer file with F7
 MSC_SRC = \
             drivers/usb_msc_common.c \

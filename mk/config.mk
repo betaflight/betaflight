@@ -81,13 +81,13 @@ else
 endif
 endif
 
-$(BASE_CONFIGS): $(LIBCANARD_STAMP)
+$(BASE_CONFIGS):
 	@echo "Building target config $@"
 	$(V0) $(MAKE) fwo CONFIG=$@
 	@echo "Building target config $@ succeeded."
 
 ## <CONFIG>_rev    : build configured target and add revision to filename
-$(addsuffix _rev,$(BASE_CONFIGS)): $(LIBCANARD_STAMP)
+$(addsuffix _rev,$(BASE_CONFIGS)):
 	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes
 
 # When configs are not hydrated, BASE_CONFIGS is empty so config targets
