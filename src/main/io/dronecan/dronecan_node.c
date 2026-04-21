@@ -42,16 +42,27 @@
 // convention is a reverse-DNS-style identifier; the wider ecosystem uses the
 // vendor prefix to identify who built the firmware, not the target board.
 #define DRONECAN_NODE_NAME          "org.betaflight"
-#define DRONECAN_NODE_NAME_LEN      14
+#define DRONECAN_NODE_NAME_LEN      (sizeof(DRONECAN_NODE_NAME) - 1U)
 
-// Upper bound on the encoded response. NodeStatus(7) + SoftwareVersion(15)
-// + HardwareVersion(18 with zero-length COA) + name (up to 80).
-#define DRONECAN_GET_NODE_INFO_MAX  (7U + 15U + 18U + 80U)
+// Upper bound on the encoded response:
+//   NodeStatus        : 7  bytes  (UAVCAN_NODE_STATUS_PAYLOAD_LEN)
+//   SoftwareVersion   : 15 bytes  (major + minor + flags + vcs_commit + image_crc)
+//   HardwareVersion   : 19 bytes  (major + minor + unique_id[16] + coa length byte)
+//   name              : up to 80 bytes (uavcan.protocol.GetNodeInfo.Response.name)
+// Total fits 121. The stack buffer in dronecanHandleGetNodeInfoRequest is
+// sized from this constant so overruns stay caught at compile time if the
+// node name grows.
+#define DRONECAN_GET_NODE_INFO_MAX  (UAVCAN_NODE_STATUS_PAYLOAD_LEN + 15U + 19U + 80U)
 
 // Transfer-ID counters. DroneCAN requires a monotonically-increasing 5-bit
 // counter per (node, data_type_id, transfer_type) triple. Libcanard manages
 // the wrap; we just give it a persistent storage location.
 static uint8_t dronecanNodeStatusTransferId;
+
+// Monotonic uptime counter in whole seconds, incremented each time the
+// periodic task publishes NodeStatus. Avoids the ~71-minute wraparound
+// of micros() on 32-bit time builds.
+static uint32_t dronecanNodeUptimeSec;
 
 //-----------------------------------------------------------------------------
 // Encoding helpers
@@ -115,11 +126,10 @@ static void dronecanHandleGetNodeInfoRequest(CanardInstance *ins,
     uint8_t response[DRONECAN_GET_NODE_INFO_MAX];
     size_t offset = 0;
 
-    const timeUs_t now = micros();
-    const uint32_t uptime_sec = (uint32_t)((now / 1000000U));
-
-    // NodeStatus (7 bytes)
-    encodeNodeStatus(&response[offset], uptime_sec);
+    // NodeStatus (7 bytes). Uses the monotonic uptime counter — not
+    // micros() — so the value matches what we publish periodically and
+    // doesn't roll over at 32-bit micros wrap (~71 minutes).
+    encodeNodeStatus(&response[offset], dronecanNodeUptimeSec);
     offset += UAVCAN_NODE_STATUS_PAYLOAD_LEN;
 
     // SoftwareVersion (15 bytes): major, minor, optional_flags,
@@ -173,12 +183,17 @@ void dronecanNodeInit(void)
     (void)dronecanRegisterSubscriber(&sub);
 
     dronecanNodeStatusTransferId = 0;
+    dronecanNodeUptimeSec = 0;
 }
 
 void dronecanNodeUpdate(timeUs_t currentTimeUs)
 {
-    // Broadcast NodeStatus. Called from the dronecan.c 1 Hz boundary.
-    const uint32_t uptime_sec = (uint32_t)(currentTimeUs / 1000000U);
+    UNUSED(currentTimeUs);
+
+    // Broadcast NodeStatus. Called from the dronecan.c 1 Hz boundary, so
+    // incrementing a monotonic counter gives us uptime_sec without
+    // relying on the 32-bit micros() clock.
+    const uint32_t uptime_sec = ++dronecanNodeUptimeSec;
 
     uint8_t payload[UAVCAN_NODE_STATUS_PAYLOAD_LEN];
     encodeNodeStatus(payload, uptime_sec);

@@ -160,14 +160,21 @@ static void dronecanCanRxAdapter(uint32_t identifier, bool isExtended,
         slot->data[i] = data[i];
     }
 
-    // Publish the frame by advancing head *after* the payload is written.
-    // Cortex-M in-order writes make this safe without explicit barriers.
+    // Barrier before advancing the head so the task never observes an
+    // incremented head index with a partially-written slot. Cortex-M is
+    // strongly ordered at the hardware level but the C standard lets the
+    // compiler reorder non-volatile stores around a volatile one, so we
+    // need an explicit compiler-side fence.
+    __asm volatile ("" ::: "memory");
     dronecanRxHead = next;
 }
 
 static void dronecanDrainRxRing(timeUs_t currentTimeUs)
 {
     while (dronecanRxTail != dronecanRxHead) {
+        // Pair the ISR-side fence on head with a consumer-side fence so
+        // the compiler can't hoist slot reads above the head snapshot.
+        __asm volatile ("" ::: "memory");
         const dronecanRxRingEntry_t *slot = &dronecanRxRing[dronecanRxTail];
 
         CanardCANFrame frame;
