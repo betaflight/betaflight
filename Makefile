@@ -70,14 +70,30 @@ BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
 
-# LIB_SUBMODULES is populated by per-MCU .mk files (e.g. STM32G4.mk opts
-# into $(DRONECAN_LIB_DIR) for its DroneCAN stack). The per-MCU list is
-# then resolved into stamp-file prerequisites below, so only platforms
-# that actually pull the sources in end up requiring submodule hydration.
-LIB_SUBMODULES :=
+# Auto-hydrate submodules from .gitmodules that are not marked
+# `update = none`. Currently that's `src/config` (board configs) and
+# `lib/main/dronecan/libcanard` (DroneCAN transport). Heavy vendor SDKs
+# (pico-sdk, esp-idf, STM32H5/N6/C5, APM32F4) keep `update = none` and
+# stay opt-in through their platform-SDK hydration targets.
+AUTOHYDRATE_SUBMODULES := $(shell \
+    git config --file .gitmodules -l 2>/dev/null | \
+    awk -F '=' '/^submodule\..*\.path=/ { \
+                    name=$$1; sub(/^submodule\./,"",name); sub(/\.path$$/,"",name); \
+                    paths[name]=$$2 \
+                } \
+                /^submodule\..*\.update=/ { \
+                    name=$$1; sub(/^submodule\./,"",name); sub(/\.update$$/,"",name); \
+                    updates[name]=$$2 \
+                } \
+                END { for (n in paths) if (updates[n] != "none") print paths[n] }' )
+AUTOHYDRATE_STAMPS := $(addsuffix /.git,$(AUTOHYDRATE_SUBMODULES))
 
-# Paths to cross-platform lib submodules. Defined up-front so MCU .mk
-# files can reference them when opting in via LIB_SUBMODULES.
+# MCU .mk files opt in to the DroneCAN source fan-out with
+#   LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
+# The hydration above is independent — it keeps the submodule present on
+# every target; the LIB_SUBMODULES check in mk/dronecan.mk is what decides
+# whether to actually compile the sources.
+LIB_SUBMODULES  :=
 DRONECAN_LIB_DIR := lib/main/dronecan/libcanard
 
 MAKE_SCRIPT_DIR := $(ROOT)/mk
@@ -246,12 +262,6 @@ include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
 # Sourced after the MCU .mk so each feature file can check what the
 # platform asked for.
 include $(MAKE_SCRIPT_DIR)/dronecan.mk
-
-# Resolve the MCU-requested lib submodules into stamp files. Firmware-
-# output targets depend on these stamps so Make hydrates any missing
-# submodule before the first source access, matching the behaviour of
-# the platform SDK stamps.
-LIB_SUBMODULE_STAMPS := $(addsuffix /.git,$(LIB_SUBMODULES))
 
 # Validate the platform toolchain is available
 include $(MAKE_SCRIPT_DIR)/tools_check.mk
@@ -688,29 +698,30 @@ $(TARGETS_ZIP):
 zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
-# Lib submodules the MCU .mk opted in to (see LIB_SUBMODULES). The stamp
-# for each is its `.git` pointer file, which only exists after a
-# successful `git submodule update --init`; Make treats it as up-to-date
-# on subsequent runs so hydration stays idempotent and cacheable.
-$(LIB_SUBMODULE_STAMPS):
+# Stamp rule for any submodule listed in $(AUTOHYDRATE_SUBMODULES) (i.e.
+# any .gitmodules entry that doesn't have `update = none`). The stamp is
+# the submodule's `.git` pointer, which exists only after a successful
+# `git submodule update --init`, so Make treats it as up-to-date on
+# subsequent runs — hydration stays idempotent and cheap.
+$(AUTOHYDRATE_STAMPS):
 	@echo "Hydrating submodule: $(@:/.git=)"
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(LIB_SUBMODULE_STAMPS)
+exe: $(AUTOHYDRATE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
