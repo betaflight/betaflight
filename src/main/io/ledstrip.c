@@ -112,12 +112,6 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 #define BEACON_FAILSAFE_PERIOD_US 250      // 2Hz
 #define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
-#define VTX_FREQ_MIN 5650 // Below this will be white, above we get colour starting at an orange - red
-#define VTX_FREQ_RANGE 250.0f // leads to hue max at 5918 (R8 is 5917) or above
-#define VTX_HUE_MAX 345.0f // Hue for R8 or above should not hit red (360). 345 is a strong magenta but not like red
-#define VTX_SCALER (VTX_HUE_MAX / VTX_FREQ_RANGE)
-
-
 const hsvColor_t hsv[] = {
     //                        H    S    V
     [COLOR_BLACK] =        {  0,   0,   0},
@@ -139,10 +133,16 @@ const hsvColor_t hsv[] = {
 #define HSV(color) (hsv[COLOR_ ## color])
 
 
+
+#define VTX_FREQ_MIN 5650 // Below this will be white, above we get colour starting at an orange - red
+#define VTX_FREQ_RANGE 250.0f // leads to hue max at 5918 (R8 is 5917) or above
+#define VTX_HUE_MAX 345.0f // Hue for R8 or above should not hit red (360). 345 is a strong magenta but not like red
+
 static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
 {
     hsvColor_t color;
-
+    const float hsvScaleFactor = VTX_HUE_MAX / VTX_FREQ_RANGE;
+    
     if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
     // usuallyt caused by misc configured frequency or no band / channel
         color = HSV(BLACK);
@@ -151,9 +151,8 @@ static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
         // show colours above R1
         color.s = 0; 
         color.v = 255; 
-        float hue = (float)(freq - (uint16_t)VTX_FREQ_MIN) * VTX_SCALER;
-        
-        // Clamp to 330
+        float hue = (float)(freq - (uint16_t)VTX_FREQ_MIN) * hsvScaleFactor;
+        // set hue to range from 0 to VTX_HUE_MAX
         color.h = (hue > VTX_HUE_MAX) ? (uint16_t)VTX_HUE_MAX : (uint16_t)hue;
     } 
     else { // Frequencies below R1 will be white
@@ -854,18 +853,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
     else { // calculate the VTX color based on frequency
 
-        hsvColor_t color;
-        if (frequency < VTX_FREQ_MIN) {
-            color.h = 0;
-            color.s = 0;   // 0 Saturation = White
-        } else {
-            color.s = 255; // All colours fully saturated
-            float hue = (float)(frequency - VTX_FREQ_MIN) * VTX_SCALER;
-            
-            // Clamp Hue to VTX_HUE_MAX (330)
-            color.h = (hue > VTX_HUE_MAX) ? (uint16_t)VTX_HUE_MAX : (uint16_t)hue;
-        }
-
+        hsvColor_t color = getHsvByVtxFrequency(frequency);
         color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
@@ -1410,9 +1398,8 @@ static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCus
 static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
 {
     static timeUs_t colorUpdateTimeUs = 0;
-     static uint16_t lastVtxFreq = 0;
-         uint16_t currentVtxFreq = 0;
-    static bool vtxFreqChanged;
+    static uint16_t lastVtxFreq = 0;
+    bool vtxFreqChanged = false;
     bool useDirectHsv = false;
 
     uint8_t colorIndex = COLOR_BLACK;
@@ -1441,6 +1428,7 @@ case LED_PROFILE_RACE:
                         useDirectHsv = true;
                         uint8_t const band = vtxSettingsConfig()->band;
                         uint8_t const channel = vtxSettingsConfig()->channel;
+                        uint16_t currentVtxFreq = 0;
                         
                         if (band && channel) {
                             currentVtxFreq = vtxCommonLookupFrequency(vtxDevice, band, channel);
@@ -1483,9 +1471,9 @@ case LED_PROFILE_RACE:
         colorIndex = selectVisualBeeperColor(colorIndex, &useCustomColors);
     }
 
-    bool updateStripColor = vtxFreqChanged || (colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs);
+    bool updateLedStripColor = vtxFreqChanged || (colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs);
 
-     if (updateStripColor) {
+     if (updateLedStripColor) {
         if (useDirectHsv) {
             hsvColor_t vtxHsv = getHsvByVtxFrequency(lastVtxFreq);
             setStripColor(&vtxHsv);
