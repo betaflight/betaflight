@@ -162,6 +162,7 @@
 #define PG_BATTERY_PROFILES         561
 #define PG_FLIGHT_PLAN_CONFIG       562
 #define PG_CAN_PIN_CONFIG           563
+#define PG_CAN_CONFIG               564
 
 
 // OSD configuration (subject to change)

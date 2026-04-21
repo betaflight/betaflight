@@ -189,13 +189,11 @@ static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
 //
 // canNominalBitTiming() discovers the actual FDCAN kernel clock at init
 // time and searches for a (prescaler, tseg1, tseg2) triple that lands
-// exactly on CAN_BITRATE_NOMINAL with a sample point near 75 %. On clocks
-// that are integer multiples of 1 MHz (common FC configurations) the search
-// always succeeds; if no valid setting is found we fall back to the
-// historical 24 MHz preset rather than misconfiguring silently.
-//
-// TODO: expose the target bit rate (and eventually the FDCAN clock source
-// selection) via a PG so boards running at non-integer MHz can override.
+// exactly on the requested bit rate with a sample point near 75 %. On
+// clocks that are integer multiples of the target rate (common FC
+// configurations) the search always succeeds; if no valid setting is
+// found we return false so the caller can leave the device uninitialised
+// rather than silently running at a different bit rate than configured.
 //-----------------------------------------------------------------------------
 
 // NBTP fields: NTSEG1=bits 8:15, NTSEG2=bits 0:6, NBRP=16:24, NSJW=25:31
@@ -204,7 +202,6 @@ static uint32_t canTxElementAddress(canDevice_e device, uint32_t index)
 #define CAN_NBTP_NTSEG1_POS     (8U)
 #define CAN_NBTP_NTSEG2_POS     (0U)
 
-#define CAN_BITRATE_NOMINAL     (1000000U)
 #define CAN_NBRP_MAX            (512U)
 #define CAN_NTSEG1_MAX          (256U)
 #define CAN_NTSEG2_MAX          (128U)
@@ -237,8 +234,12 @@ static uint32_t canGetKernelClockHz(void)
 #endif
 }
 
-static uint32_t canNominalBitTiming(void)
+static bool canNominalBitTiming(uint32_t bitrate, uint32_t *nbtp)
 {
+    if (bitrate == 0U || nbtp == NULL) {
+        return false;
+    }
+
     const uint32_t kernelHz = canGetKernelClockHz();
 
     // Search for a prescaler that divides the kernel clock down to an
@@ -249,39 +250,37 @@ static uint32_t canNominalBitTiming(void)
             continue;
         }
         const uint32_t tqClock = kernelHz / nbrp;
-        if ((tqClock % CAN_BITRATE_NOMINAL) != 0U) {
+        if ((tqClock % bitrate) != 0U) {
             continue;
         }
-        const uint32_t totalTq = tqClock / CAN_BITRATE_NOMINAL;
+        const uint32_t totalTq = tqClock / bitrate;
         if (totalTq < CAN_TOTAL_TQ_MIN || totalTq > CAN_TOTAL_TQ_MAX) {
             continue;
         }
 
-        // Sample point falls after (1 SYNC_SEG + tseg1). Round to the
-        // nearest tq and clamp so tseg2 stays >= 1.
-        uint32_t ntseg1 = (totalTq * CAN_SAMPLE_POINT_PERMILLE + 500U) / 1000U;
-        if (ntseg1 < 1U) {
-            ntseg1 = 1U;
+        // Sample point is (SYNC_SEG + TSEG1) / totalTq. Round the target
+        // position to the nearest tq, then clamp so TSEG1 >= 1 and
+        // TSEG2 >= 1.
+        uint32_t samplePointTq = (totalTq * CAN_SAMPLE_POINT_PERMILLE + 500U) / 1000U;
+        if (samplePointTq < 2U) {
+            samplePointTq = 2U;
         }
-        if (ntseg1 >= totalTq) {
-            ntseg1 = totalTq - 1U;
+        if (samplePointTq >= totalTq) {
+            samplePointTq = totalTq - 1U;
         }
-        const uint32_t ntseg2 = totalTq - 1U - ntseg1;
-        if (ntseg1 < 1U || ntseg1 > CAN_NTSEG1_MAX) {
-            continue;
-        }
-        if (ntseg2 < 1U || ntseg2 > CAN_NTSEG2_MAX) {
+        const uint32_t ntseg1 = samplePointTq - 1U;
+        const uint32_t ntseg2 = totalTq - samplePointTq;
+        if (ntseg1 > CAN_NTSEG1_MAX || ntseg2 > CAN_NTSEG2_MAX) {
             continue;
         }
 
         // SJW = min(4, tseg2) keeps resync margin within spec.
         const uint32_t nsjw = (ntseg2 < 4U) ? ntseg2 : 4U;
-        return canPackNominalBitTiming(nbrp, ntseg1, ntseg2, nsjw);
+        *nbtp = canPackNominalBitTiming(nbrp, ntseg1, ntseg2, nsjw);
+        return true;
     }
 
-    // Fallback: legacy 24 MHz preset. Produces 1 Mbit/s only on 24 MHz
-    // kernel clocks; on any other clock this is better than wedging init.
-    return canPackNominalBitTiming(1U, 17U, 6U, 1U);
+    return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -431,7 +430,7 @@ static void canConfigureMessageRamH7(canDevice_e device, FDCAN_GlobalTypeDef *re
 // Init / public API
 //-----------------------------------------------------------------------------
 
-void canInitDevice(canDevice_e device)
+void canInitDevice(canDevice_e device, uint32_t bitrate)
 {
     if (device < 0 || device >= CANDEV_COUNT) {
         return;
@@ -472,7 +471,13 @@ void canInitDevice(canDevice_e device)
     regs->CCCR &= ~(FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE);
 
     // Nominal bit timing. Data bit timing (DBTP) is not needed for classic CAN.
-    regs->NBTP = canNominalBitTiming();
+    // If synthesis fails the caller-visible `initialized` flag stays false so
+    // canTransmit() rejects traffic rather than running at an unknown rate.
+    uint32_t nbtp;
+    if (!canNominalBitTiming(bitrate, &nbtp)) {
+        return;
+    }
+    regs->NBTP = nbtp;
 
     // Wipe the per-instance message RAM region to remove any prior contents.
     canClearMessageRam(device);
@@ -507,13 +512,13 @@ void canInitDevice(canDevice_e device)
     pDev->initialized = true;
 }
 
-bool canInit(canDevice_e device)
+bool canInit(canDevice_e device, uint32_t bitrate)
 {
     if (device < 0 || device >= CANDEV_COUNT) {
         return false;
     }
 
-    canInitDevice(device);
+    canInitDevice(device, bitrate);
     return canDevice[device].initialized;
 }
 
