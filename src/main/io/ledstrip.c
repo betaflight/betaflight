@@ -112,6 +112,12 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 #define BEACON_FAILSAFE_PERIOD_US 250      // 2Hz
 #define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
+#define VTX_FREQ_MIN 5658 // R1, anything below this will be white
+#define VTX_FREQ_RANGE 259.0f // R2 should be Red with Hue of 0
+#define VTX_HUE_MAX 330.0f // Hue for R8 or above cannot be higher than 330
+#define VTX_SCALER (VTX_HUE_MAX / VTX_FREQ_RANGE) // Pre-calculated as 1.2741312f by compiler
+
+
 const hsvColor_t hsv[] = {
     //                        H    S    V
     [COLOR_BLACK] =        {  0,   0,   0},
@@ -131,6 +137,32 @@ const hsvColor_t hsv[] = {
 };
 // macro to save typing on default colors
 #define HSV(color) (hsv[COLOR_ ## color])
+
+
+static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
+{
+    hsvColor_t color;
+
+    if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
+    // usuallyt caused by misc configured frequency or no band / channel
+        color = HSV(BLACK);
+    } 
+    else if (freq >= VTX_FREQ_MIN) {
+        // show colours above R1
+        color.s = 0; 
+        color.v = 255; 
+        float hue = (float)(freq - (uint16_t)VTX_FREQ_MIN) * VTX_SCALER;
+        
+        // Clamp to 330
+        color.h = (hue > VTX_HUE_MAX) ? (uint16_t)VTX_HUE_MAX : (uint16_t)hue;
+    } 
+    else { // Frequencies below R1 will be white
+        color = HSV(WHITE);
+    }
+    
+    return color;
+}
+
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
@@ -755,31 +787,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 }
 
 #ifdef USE_VTX_COMMON
-static const struct {
-    uint16_t freq_upper_limit;
-    uint8_t color_index;
-} freq_to_color_lookup[] = {
-    {VTX_SETTINGS_MIN_FREQUENCY_MHZ, COLOR_BLACK},       // invalid
-    // Freqs are divided to match Raceband channels
-    {                          5672, COLOR_WHITE},       // R1
-    {                          5711, COLOR_RED},         // R2
-    {                          5750, COLOR_ORANGE},      // R3
-    {                          5789, COLOR_YELLOW},      // R4
-    {                          5829, COLOR_GREEN},       // R5
-    {                          5867, COLOR_BLUE},        // R6
-    {                          5906, COLOR_DARK_VIOLET}, // R7
-    {VTX_SETTINGS_MAX_FREQUENCY_MHZ, COLOR_DEEP_PINK},   // R8
-};
 
-static uint8_t getColorByVtxFrequency(const uint16_t freq)
-{
-    for (unsigned iter = 0; iter < ARRAYLEN(freq_to_color_lookup); iter++) {
-        if (freq <= freq_to_color_lookup[iter].freq_upper_limit) {
-            return freq_to_color_lookup[iter].color_index;
-        }
-    }
-    return COLOR_BLACK; // invalid
-}
 
 static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
 {
@@ -844,10 +852,20 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
             }
         }
     }
-    else { // show frequency
-        // calculate the VTX color based on frequency
-        uint8_t const colorIndex = getColorByVtxFrequency(frequency);
-        hsvColor_t color = ledStripStatusModeConfig()->colors[colorIndex];
+    else { // calculate the VTX color based on frequency
+
+        hsvColor_t color;
+        if (frequency < VTX_FREQ_MIN) {
+            color.h = 0;
+            color.s = 0;   // 0 Saturation = White
+        } else {
+            color.s = 255; // All colours fully saturated
+            float hue = (float)(frequency - VTX_FREQ_MIN) * VTX_SCALER;
+            
+            // Clamp Hue to VTX_HUE_MAX (330)
+            color.h = (hue > VTX_HUE_MAX) ? (uint16_t)VTX_HUE_MAX : (uint16_t)hue;
+        }
+
         color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
@@ -1392,6 +1410,11 @@ static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCus
 static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
 {
     static timeUs_t colorUpdateTimeUs = 0;
+     static uint16_t lastVtxFreq = 0;
+         uint16_t currentVtxFreq = 0;
+    static bool vtxFreqChanged;
+    bool useDirectHsv = false;
+
     uint8_t colorIndex = COLOR_BLACK;
     bool blinkLed = false;
     bool visualBeeperOverride = true;
@@ -1408,28 +1431,30 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         colorIndex = ledStripConfig()->ledstrip_visual_beeper_color;
     } else {
         switch (ledStripConfig()->ledstrip_profile) {
-            case LED_PROFILE_RACE:
+case LED_PROFILE_RACE:
                 colorIndex = ledStripConfig()->ledstrip_race_color;
 #ifdef USE_VTX_COMMON
                 if (colorIndex == COLOR_BLACK) {
-                    // ledstrip_race_color is not set. Set color based on VTX frequency
+                    // when ledstrip_race_color is black, Color is set using HSV from VTx frequency
                     const vtxDevice_t *vtxDevice = vtxCommonDevice();
                     if (vtxDevice) {
-                        uint16_t freq;
-                        uint8_t const band = vtxSettingsConfigMutable()->band;
+                        useDirectHsv = true;
+                        uint8_t const band = vtxSettingsConfig()->band;
                         uint8_t const channel = vtxSettingsConfig()->channel;
+                        
                         if (band && channel) {
-                            freq = vtxCommonLookupFrequency(vtxDevice, band, channel);
+                            currentVtxFreq = vtxCommonLookupFrequency(vtxDevice, band, channel);
                         } else {
-                            // Direct frequency is used
-                            freq = vtxSettingsConfig()->freq;
+                            // If no band/channel, use the direct frequency
+                            currentVtxFreq = vtxSettingsConfig()->freq;
                         }
-                        colorIndex = getColorByVtxFrequency(freq);
-                        // getColorByVtxFrequency always uses custom colors
-                        // as they may be reassigned by the race director
-                        useCustomColors = true;
+
+                        if (currentVtxFreq != lastVtxFreq) {
+                            vtxFreqChanged = true;
+                            lastVtxFreq = currentVtxFreq;
+                        }
                     }
-                }
+                } 
 #endif
                 break;
 
@@ -1458,8 +1483,18 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         colorIndex = selectVisualBeeperColor(colorIndex, &useCustomColors);
     }
 
-    if ((colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs)) {
-        setStripColor((useCustomColors) ? &ledStripStatusModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
+    bool updateStripColor = vtxFreqChanged || (colorIndex != previousProfileColorIndex) || (currentTimeUs >= colorUpdateTimeUs);
+
+     if (updateStripColor) {
+        if (useDirectHsv) {
+            hsvColor_t vtxHsv = getHsvByVtxFrequency(lastVtxFreq);
+            setStripColor(&vtxHsv);
+        } else {
+            // APPLY ORIGINAL PALETTE
+            setStripColor((useCustomColors) ? &ledStripStatusModeConfig()->colors[colorIndex] : &hsv[colorIndex]);
+        }
+
+        // UPDATE STATE
         previousProfileColorIndex = colorIndex;
         colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
         return LED_PROFILE_ADVANCE;
