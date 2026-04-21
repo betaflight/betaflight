@@ -710,7 +710,8 @@ uf2: $(PLATFORM_SDK_STAMP) $(LIB_SUBMODULE_STAMPS)
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(LIB_SUBMODULE_STAMPS) $(TARGET_EXE)
+exe: $(LIB_SUBMODULE_STAMPS)
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
