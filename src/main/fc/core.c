@@ -64,7 +64,7 @@
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
-#if ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 #include "flight/flight_plan_nav.h"
 #endif
 
@@ -1084,7 +1084,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-#if ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
     if (ARMING_FLAG(ARMED)
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
         && IS_RC_MODE_ACTIVE(BOXAUTOPILOT)

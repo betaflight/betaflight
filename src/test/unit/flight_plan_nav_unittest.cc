@@ -106,6 +106,11 @@ bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
     return true;
 }
 
+float positionEstimatorGetAltitudeCm(void)
+{
+    return 0.0f;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.

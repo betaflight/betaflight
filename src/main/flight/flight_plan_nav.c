@@ -24,7 +24,8 @@
 
 #include "platform.h"
 
-#if ENABLE_FLIGHT_PLAN
+// positionNav is multirotor-only; flight plan execution follows suit.
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 
 #include "common/time.h"
 #include "common/vector.h"
@@ -40,8 +41,8 @@
 #include "pg/autopilot.h"
 #include "pg/flight_plan.h"
 
-#define FP_MIN_CRUISE_MPS       1.0f
-#define FP_FLYBY_COMPLETION_MPS 2.0f
+#define FP_MIN_CRUISE_MPS         1.0f
+#define FP_FLYBY_COMPLETION_MPS   2.0f
 #define FP_FLYOVER_COMPLETION_MPS 0.5f
 
 static struct {
@@ -50,6 +51,7 @@ static struct {
     timeUs_t holdStartUs;
     uint16_t holdDurationDs;
     bool active;
+    float zBiasM;               // estimator Z at engage, so waypoint Z shares the estimator baseline
 } fp;
 
 static void onWaypointReached(void *userData);
@@ -81,7 +83,10 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
 
     out->x = enuCm.x * 0.01f;
     out->y = enuCm.y * 0.01f;
-    out->z = (wp->altitude - origin.altCm) * 0.01f;
+    // Waypoint altitude is AMSL (GPS frame); the estimator's Z is zeroed to
+    // whichever source armed it first (baro or GPS). zBiasM is the estimator
+    // reading at engage time, which aligns the target Z with the feedback Z.
+    out->z = (wp->altitude - origin.altCm) * 0.01f + fp.zBiasM;
     return true;
 }
 
@@ -96,13 +101,16 @@ static bool dispatchWaypoint(void)
 
     vector3_t targetEnuM;
     if (!computeTargetEnuM(wp, &targetEnuM)) {
-        // no origin yet; stay idle and retry next engage
+        // No GPS origin captured yet — stay IDLE and let flightPlanNavUpdate()
+        // retry once the estimator has locked in.
         fp.state = FP_NAV_IDLE;
         return false;
     }
 
     const autopilotConfig_t *cfg = autopilotConfig();
-    const float arrivalRadiusM = cfg->waypointArrivalRadius * 0.01f;
+    const bool isHoldOrLand = (wp->type == WAYPOINT_TYPE_HOLD) || (wp->type == WAYPOINT_TYPE_LAND);
+    const float arrivalRadiusM = (isHoldOrLand ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
+
     float cruiseMps = (wp->speed > 0) ? wp->speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
         cruiseMps = FP_MIN_CRUISE_MPS;
@@ -124,12 +132,15 @@ static bool dispatchWaypoint(void)
 
 static void advanceToNext(void)
 {
-    fp.currentIndex++;
-    if (fp.currentIndex >= flightPlanConfig()->waypointCount) {
+    if (fp.currentIndex + 1 >= flightPlanConfig()->waypointCount) {
         fp.state = FP_NAV_COMPLETE;
         positionNavClearTarget();
         return;
     }
+    fp.currentIndex++;
+    // If dispatch fails (e.g. origin lost), state falls back to IDLE and the
+    // update loop will retry; index has already advanced so we won't replay
+    // the previous waypoint.
     dispatchWaypoint();
 }
 
@@ -143,6 +154,7 @@ static void onWaypointReached(void *userData)
     const waypoint_t *wp = currentWaypoint();
     if (wp == NULL) {
         fp.state = FP_NAV_COMPLETE;
+        positionNavClearTarget();
         return;
     }
 
@@ -162,19 +174,28 @@ void flightPlanNavInit(void)
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
     fp.active = false;
+    fp.zBiasM = 0.0f;
 }
 
 void flightPlanNavEngage(void)
 {
-    fp.active = true;
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
 
+    // Capture the estimator's current Z so subsequent waypoint altitudes are
+    // referenced to the same baseline the position controller uses.
+    fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+
     if (flightPlanConfig()->waypointCount == 0) {
         fp.state = FP_NAV_COMPLETE;
+        fp.active = true;
+        positionNavClearTarget();
         return;
     }
 
+    fp.active = true;
+    // Try to dispatch immediately; if the GPS origin isn't ready yet we stay
+    // IDLE and flightPlanNavUpdate() will retry.
     dispatchWaypoint();
 }
 
@@ -191,9 +212,16 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         return;
     }
 
+    // Retry dispatch if we engaged before the estimator had an origin.
+    if (fp.state == FP_NAV_IDLE && flightPlanConfig()->waypointCount > 0) {
+        dispatchWaypoint();
+        return;
+    }
+
     if (fp.state == FP_NAV_HOLDING) {
         const uint32_t holdUs = (uint32_t)fp.holdDurationDs * 100000u;
-        if (cmpTimeUs(currentTimeUs, fp.holdStartUs) >= (timeDelta_t)holdUs) {
+        const uint32_t elapsedUs = (uint32_t)(currentTimeUs - fp.holdStartUs);
+        if (elapsedUs >= holdUs) {
             advanceToNext();
         }
     }
@@ -214,4 +242,4 @@ uint8_t flightPlanNavGetCurrentIndex(void)
     return fp.currentIndex;
 }
 
-#endif // ENABLE_FLIGHT_PLAN
+#endif // ENABLE_FLIGHT_PLAN && !USE_WING

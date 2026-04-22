@@ -338,6 +338,14 @@ static void feedGPSMeasurements(timeUs_t nowUs)
                                 altSource == ALTITUDE_SOURCE_GPS_ONLY ||
                                 altSource == ALTITUDE_SOURCE_RANGEFINDER_PREFER);
 
+    // Late origin capture: if XY fusion was enabled before GPS_FIX became
+    // available (e.g. opticalflow-only arm), grab the origin the first time
+    // a valid fix arrives so downstream consumers (flight plan) can proceed.
+    if (xyEnabled && !gpsArmLocationSet && gpsXYAllowed) {
+        armLocationGps = gpsSol.llh;
+        gpsArmLocationSet = true;
+    }
+
     // XY position + velocity measurements
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;

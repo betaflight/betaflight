@@ -98,7 +98,7 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
-#if ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 #include "flight/flight_plan_nav.h"
 #endif
 #include "flight/imu.h"
@@ -858,7 +858,7 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
-#if ENABLE_FLIGHT_PLAN
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
     flightPlanNavInit();
 #endif
 

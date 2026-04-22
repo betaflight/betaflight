@@ -36,15 +36,17 @@ typedef enum {
 void flightPlanNavInit(void);
 
 // Called when AUTOPILOT mode transitions to active; resets to the first waypoint
-// and feeds it to positionNav. Silently no-ops if the plan is empty or the
-// position estimator has no GPS origin.
+// and dispatches it to positionNav. If the estimator has no GPS origin yet, the
+// executor stays IDLE and flightPlanNavUpdate() retries dispatch.
 void flightPlanNavEngage(void);
 
 // Called when AUTOPILOT mode transitions to inactive; clears any pending target.
 void flightPlanNavDisengage(void);
 
-// Should be called at the position-control rate. Currently only drives HOLD
-// timing; waypoint advance is callback-driven from positionNav.
+// Called periodically while AUTOPILOT is active; the caller determines the
+// cadence (currently processRxModes()). currentTimeUs must be the current
+// monotonic microsecond timestamp. Drives HOLD-state timeout and retries
+// waypoint dispatch when a GPS origin becomes available.
 void flightPlanNavUpdate(timeUs_t currentTimeUs);
 
 bool flightPlanNavIsActive(void);
