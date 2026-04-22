@@ -436,14 +436,27 @@ CLI_DEBUG_EXPORT void cliPrintLinef(const char *format, ...)
     cliPrintLinefeed();
 }
 
+static const char *cliEnvFilter;
+
+static bool cliEnvKeyMatches(const char *name)
+{
+    return !cliEnvFilter || strncmp(name, cliEnvFilter, strlen(cliEnvFilter)) == 0;
+}
+
 static void cliPrintNameValue(const char *name, const char *value)
 {
+    if (!cliEnvKeyMatches(name)) {
+        return;
+    }
     cliPrintf("%s=%s", name, value);
     cliPrintLinefeed();
 }
 
 static void cliPrintNameValuef(const char *name, const char *format, ...)
 {
+    if (!cliEnvKeyMatches(name)) {
+        return;
+    }
     cliPrintf("%s=", name);
     va_list va;
     va_start(va, format);
@@ -6221,7 +6234,9 @@ static void cliVersion(const char *cmdName, char *cmdline)
 static void cliEnv(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
-    UNUSED(cmdline);
+
+    const char *filter = skipSpace(cmdline);
+    cliEnvFilter = (filter && *filter) ? filter : NULL;
 
     // Version-related
     cliPrintNameValue("FIRMWARE_NAME", FC_FIRMWARE_NAME);
@@ -6383,19 +6398,23 @@ static void cliEnv(const char *cmdName, char *cmdline)
     cliPrintNameValue("BATTERY_STATE", getBatteryStateString());
 
     // Arming disable flags (space-separated, empty if none)
-    cliPrint("ARMING_DISABLE_FLAGS=");
-    armingDisableFlags_e flags = getArmingDisableFlags();
-    bool first = true;
-    while (flags) {
-        const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
-        flags &= ~flag;
-        if (!first) {
-            cliPrint(" ");
+    if (cliEnvKeyMatches("ARMING_DISABLE_FLAGS")) {
+        cliPrint("ARMING_DISABLE_FLAGS=");
+        armingDisableFlags_e flags = getArmingDisableFlags();
+        bool first = true;
+        while (flags) {
+            const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+            flags &= ~flag;
+            if (!first) {
+                cliPrint(" ");
+            }
+            cliPrintf("%s", getArmingDisableFlagName(flag));
+            first = false;
         }
-        cliPrintf("%s", getArmingDisableFlagName(flag));
-        first = false;
+        cliPrintLinefeed();
     }
-    cliPrintLinefeed();
+
+    cliEnvFilter = NULL;
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
@@ -8022,7 +8041,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
-    CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", NULL, cliEnv),
+    CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", "[prefix]", cliEnv),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
