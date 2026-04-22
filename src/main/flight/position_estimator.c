@@ -683,3 +683,17 @@ void positionEstimatorResetXY(void)
     }
 #endif
 }
+
+bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
+{
+#ifdef USE_GPS
+    if (!gpsArmLocationSet || out == NULL) {
+        return false;
+    }
+    *out = armLocationGps;
+    return true;
+#else
+    UNUSED(out);
+    return false;
+#endif
+}

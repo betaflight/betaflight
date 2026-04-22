@@ -98,6 +98,9 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#if ENABLE_FLIGHT_PLAN
+#include "flight/flight_plan_nav.h"
+#endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
@@ -855,6 +858,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#if ENABLE_FLIGHT_PLAN
+    flightPlanNavInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();

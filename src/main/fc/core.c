@@ -64,6 +64,10 @@
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
+#if ENABLE_FLIGHT_PLAN
+#include "flight/flight_plan_nav.h"
+#endif
+
 #if defined(USE_DYN_NOTCH_FILTER)
 #include "flight/dyn_notch_filter.h"
 #endif
@@ -1077,6 +1081,24 @@ void processRxModes(timeUs_t currentTimeUs)
         }
     } else {
         DISABLE_FLIGHT_MODE(POS_HOLD_MODE);
+    }
+#endif
+
+#if ENABLE_FLIGHT_PLAN
+    if (ARMING_FLAG(ARMED)
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && IS_RC_MODE_ACTIVE(BOXAUTOPILOT)
+        && sensors(SENSOR_ACC)
+        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
+            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavEngage();
+        }
+        flightPlanNavUpdate(currentTimeUs);
+    } else if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+        flightPlanNavDisengage();
     }
 #endif
 
