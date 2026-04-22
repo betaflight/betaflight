@@ -173,6 +173,7 @@ COMMON_SRC = \
             flight/position.c \
             flight/position_estimator.c \
             flight/position_filter.c \
+            flight/position_nav.c \
             flight/pos_hold_multirotor.c \
             flight/pos_hold_wing.c \
             flight/rpm_filter.c \
