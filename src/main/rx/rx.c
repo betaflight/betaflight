@@ -205,10 +205,15 @@ static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
     return udpChannelData[channel];
 }
 
-static uint8_t frameStatusUdp(rxRuntimeState_t *rxRuntimeState)
+static uint8_t frameStatusUdp(rxRuntimeState_t *state)
 {
-    UNUSED(rxRuntimeState);
     if (udpFrameReceived) {
+        // Sync the runtime channel count from the transport on every consumed
+        // frame so both rxRuntimeState.channelCount and the static
+        // rxChannelCount snapshot (updated below) reflect the actual frame.
+        const uint8_t count = udpChannelCount;
+        state->channelCount = count;
+        rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, count);
         udpFrameReceived = false;
         return RX_FRAME_COMPLETE;
     }
@@ -222,11 +227,6 @@ void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount)
         udpChannelData[i] = channels[i];
     }
     udpChannelCount = count;
-    // Update the runtime channel count so consumers of rxRuntimeState see
-    // the actual transport width rather than the architectural maximum.
-    if (rxRuntimeState.rxProvider == RX_PROVIDER_UDP) {
-        rxRuntimeState.channelCount = count;
-    }
     udpFrameReceived = true;
 }
 #endif
