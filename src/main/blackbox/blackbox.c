@@ -1566,6 +1566,19 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_SPA_YAW_MODE, "%d",           currentPidProfile->spa_mode[FD_YAW]);
 #endif // USE_WING
 
+#ifdef USE_WING_LAUNCH
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_ACCEL_THRESH, "%d", currentPidProfile->wing_launch_accel_thresh);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_MOTOR_DELAY, "%d",  currentPidProfile->wing_launch_motor_delay);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_MOTOR_RAMP, "%d",   currentPidProfile->wing_launch_motor_ramp);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_THROTTLE, "%d",     currentPidProfile->wing_launch_throttle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_CLIMB_TIME, "%d",   currentPidProfile->wing_launch_climb_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_CLIMB_ANGLE, "%d",  currentPidProfile->wing_launch_climb_angle);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_TRANSITION, "%d",   currentPidProfile->wing_launch_transition);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_MAX_TILT, "%d",     currentPidProfile->wing_launch_max_tilt);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_IDLE_THR, "%d",     currentPidProfile->wing_launch_idle_thr);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_WING_LAUNCH_STICK_OVERRIDE, "%d", currentPidProfile->wing_launch_stick_override);
+#endif // USE_WING_LAUNCH
+
 #ifdef USE_ADVANCED_TPA
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_TYPE, "%d",           currentPidProfile->tpa_curve_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_TPA_CURVE_STALL_THROTTLE, "%d", currentPidProfile->tpa_curve_stall_throttle);

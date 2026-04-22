@@ -322,6 +322,18 @@ typedef struct pidProfile_s {
     int16_t tpa_speed_pitch_offset;     // For wings: pitch offset in degrees*10 for craft speed estimation
     uint8_t yaw_type;                   // For wings: type of yaw (rudder or differential thrust)
     int16_t angle_pitch_offset;         // For wings: pitch offset for angle modes; in decidegrees; positive values tilting the wing down
+#ifdef USE_WING_LAUNCH
+    uint8_t wing_launch_accel_thresh;   // Throw detection threshold in 0.1G units (25 = 2.5G)
+    uint16_t wing_launch_motor_delay;   // Delay before motor starts after detection (ms)
+    uint16_t wing_launch_motor_ramp;    // Time to ramp motor to target throttle (ms)
+    uint8_t wing_launch_throttle;       // Throttle percent during climb (25-100)
+    uint16_t wing_launch_climb_time;    // Climb duration (ms)
+    int16_t wing_launch_climb_angle;    // Climb pitch angle in degrees
+    uint16_t wing_launch_transition;    // Blend time to pilot control (ms)
+    uint8_t wing_launch_max_tilt;       // Abort if roll exceeds this (degrees)
+    uint8_t wing_launch_idle_thr;       // Throttle percent while waiting for throw
+    uint8_t wing_launch_stick_override; // Stick percent to override launch (0=disabled)
+#endif // USE_WING_LAUNCH
 
     uint8_t chirp_lag_freq_hz;              // leadlag1Filter cutoff/pole to shape the excitation signal
     uint8_t chirp_lead_freq_hz;             // leadlag1Filter cutoff/zero

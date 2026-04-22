@@ -54,6 +54,9 @@
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
+#ifdef USE_WING_LAUNCH
+#include "flight/wing_launch.h"
+#endif
 
 #include "io/gps.h"
 
@@ -739,9 +742,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
-    // send throttle value to blackbox, including scaling and throttle boost, but not TL compensation, dyn idle or airmode
-    mixerThrottle = throttle;
-
 #ifdef USE_DYN_IDLE
     // Set min throttle offset of 1% when stick is at zero and dynamic idle is active
     if (mixerRuntime.dynIdleMinRps > 0.0f) {
@@ -795,6 +795,23 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_WING_LAUNCH
+    if (isWingLaunchInProgress() && wingLaunchGetThrottle() >= 0.0f) {
+        const float launchThrottle = wingLaunchGetThrottle();
+        const float blend = wingLaunchGetTransitionFactor();
+        // blend from launch throttle toward pilot stick during transition
+        throttle = launchThrottle + (throttle - launchThrottle) * blend;
+    }
+#endif
+
+    // Send throttle value to blackbox, including scaling, throttle boost, and
+    // the wing-launch blend above, but not TL compensation, dyn idle, airmode,
+    // alt_hold, or gps_rescue overrides. Latching here (rather than before the
+    // wing-launch block) means post-flight analysis of launch logs shows the
+    // actual commanded throttle during MOTOR_DELAY/MOTOR_RAMP/CLIMBING instead
+    // of the pilot's stick position (which is often 0% during a hands-off throw).
+    mixerThrottle = throttle;
+
 #ifdef USE_ALTITUDE_HOLD
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
@@ -829,6 +846,15 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         break;
     }
 
+#ifdef USE_WING_LAUNCH
+    // DETECTED: hold motors OFF while pilot is holding the aircraft.
+    // ABORT:    latch motors OFF after a mid-launch abort so pilot-stick
+    //           throttle cannot be reapplied until the pilot disarms.
+    if (wingLaunchGetState() == WING_LAUNCH_DETECTED
+        || wingLaunchGetState() == WING_LAUNCH_ABORT) {
+        applyMotorStop();
+    } else
+#endif
     if (featureIsEnabled(FEATURE_MOTOR_STOP)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
