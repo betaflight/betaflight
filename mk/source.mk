@@ -282,6 +282,7 @@ COMMON_SRC = \
             telemetry/ibus.c \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
+            locales/localisation.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
@@ -289,6 +290,13 @@ COMMON_SRC = \
             io/vtx_control.c \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
+
+TRANSLATED_SRC = \
+            osd/osd.c \
+            osd/osd_elements.c \
+            osd/osd_warnings.c \
+            cli/cli.c \
+            locales/localisation.c
 
 ifneq ($(SIMULATOR_BUILD),yes)
 
@@ -318,7 +326,6 @@ COMMON_SRC += \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_bmp388.c \
-            drivers/barometer/barometer_bmp5xx.c \
             drivers/barometer/barometer_dps310.c \
             drivers/barometer/barometer_lps22df.c \
             drivers/barometer/barometer_lps.c \
@@ -365,7 +372,6 @@ RX_SRC = \
 FLASH_SRC += \
             drivers/flash/flash.c \
             drivers/flash/flash_m25p16.c \
-            drivers/flash/flash_mt29f.c \
             drivers/flash/flash_w25m.c \
             drivers/flash/flash_w25n.c \
             drivers/flash/flash_w25q128fv.c \
