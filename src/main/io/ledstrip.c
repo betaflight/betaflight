@@ -153,16 +153,15 @@ static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
         //  give the LED a solid color above VTX_FREQ_MIN
         if (freq > VTX_FREQ_MAX) {
             freq = VTX_FREQ_MAX;
-            // Clamp incoming frequencyto mapping range
+            // Clamp incoming frequency to mapping range
         }
-    color.s = 0;
-    color.v = 255;
-    // for strong colours in betaflight, S must be 0 and V must be 255
+        color.s = 0;
+        color.v = 255;
+        // for strong colours in betaflight, S must be 0 and V must be 255
 
-    color.h = scaleRange(freq, VTX_FREQ_MIN, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
-    // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
-
-    return color;
+        color.h = scaleRange(freq, VTX_FREQ_MIN, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
+        // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
+        return color;
     }
 }
 
