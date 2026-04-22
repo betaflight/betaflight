@@ -6318,6 +6318,11 @@ static void cliEnv(const char *cmdName, char *cmdline)
         }
         char sensorKey[24];
         tfp_sprintf(sensorKey, "%s_HW", sensorTypeDisplayNames[i]);
+        for (char *p = sensorKey; *p; p++) {
+            if (*p == '-') {
+                *p = '_';
+            }
+        }
         cliPrintNameValue(sensorKey, names[sensorHardwareIndex]);
     }
 #endif
