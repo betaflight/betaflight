@@ -112,6 +112,7 @@
 #include "msp/msp_protocol_v2_betaflight.h"
 #include "msp/msp_protocol_v2_common.h"
 #include "msp/msp_serial.h"
+#include "msp/msp_wing.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -2760,6 +2761,12 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         break;
 #endif
 
+#ifdef USE_WING
+    case MSP2_WING_TUNING:
+        serializeWingTuning(dst, currentPidProfile);
+        break;
+#endif
+
     default:
         return MSP_RESULT_CMD_UNKNOWN;
     }
@@ -4328,6 +4335,22 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         profile->consumptionWarningPercentage = consumptionWarnPct;
         break;
     }
+
+#ifdef USE_WING
+    case MSP2_SET_WING_TUNING:
+        if (!deserializeWingTuning(src, currentPidProfile)) {
+            return MSP_RESULT_ERROR;
+        }
+        // Reinitialize derived runtime state so the new wing tuning
+        // takes effect on the next tick, not just after reboot/profile
+        // reload. Matches the comprehensive-reinit pattern used by
+        // nearby handlers that mutate both PID and mixer-relevant
+        // fields (yaw_type affects mixer output routing).
+        pidInitConfig(currentPidProfile);
+        initEscEndpoints();
+        mixerInitProfile();
+        break;
+#endif
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

@@ -137,6 +137,7 @@ COMMON_SRC = \
             msp/msp_box.c \
             msp/msp_build_info.c \
             msp/msp_serial.c \
+            msp/msp_wing.c \
             scheduler/scheduler.c \
             sensors/adcinternal.c \
             sensors/battery.c \
