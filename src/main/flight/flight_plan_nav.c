@@ -186,6 +186,11 @@ void flightPlanNavEngage(void)
     // referenced to the same baseline the position controller uses.
     fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
 
+    // HOLD waypoints keep the position target live for the hold duration; a
+    // new target replaces the previous on advance anyway, so this module
+    // never wants positionNav to auto-clear the target on reach.
+    positionNavSetAutoClearOnReach(false);
+
     if (flightPlanConfig()->waypointCount == 0) {
         fp.state = FP_NAV_COMPLETE;
         fp.active = true;

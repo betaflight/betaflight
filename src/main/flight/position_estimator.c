@@ -259,6 +259,11 @@ void positionEstimatorEnableXY(bool enable)
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
+        // Clear before recapture: a stale origin from a prior XY session must
+        // not survive into a new one, otherwise the late-capture path (see
+        // positionEstimatorUpdate) will skip and we'd target waypoints
+        // against the previous flight's baseline.
+        gpsArmLocationSet = false;
         if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
             armLocationGps = gpsSol.llh;
             gpsArmLocationSet = true;
@@ -685,6 +690,7 @@ void positionEstimatorResetXY(void)
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS
+    gpsArmLocationSet = false;
     if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
         armLocationGps = gpsSol.llh;
         gpsArmLocationSet = true;

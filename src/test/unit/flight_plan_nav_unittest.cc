@@ -97,6 +97,11 @@ void positionNavClearTarget(void)
     g_lastTarget.valid = false;
 }
 
+void positionNavSetAutoClearOnReach(bool autoClear)
+{
+    (void)autoClear;
+}
+
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 {
     if (!g_stubGpsOriginSet || out == NULL) {
