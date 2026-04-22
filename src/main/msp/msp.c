@@ -648,7 +648,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP2_MCU_INFO: {
-        sbufWriteU8(dst, getMcuTypeId());
+        sbufWriteU8(dst, MCU_TYPE_ID_PROVIDED_BY_NAME);
         sbufWritePString(dst, getMcuTypeName());
         break;
     }
@@ -713,7 +713,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
 
-        sbufWriteU8(dst, getMcuTypeId());
+        sbufWriteU8(dst, MCU_TYPE_ID_PROVIDED_BY_NAME);
 
         // Added in API version 1.42
         sbufWriteU8(dst, systemConfig()->configurationState);

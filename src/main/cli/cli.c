@@ -6202,6 +6202,178 @@ static void cliVersion(const char *cmdName, char *cmdline)
     printVersion(true);
 }
 
+static void cliEnv(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    // Version-related
+    cliPrintLinef("FIRMWARE_NAME=%s", FC_FIRMWARE_NAME);
+    cliPrintLinef("FIRMWARE_VERSION=%s", FC_VERSION_STRING);
+    cliPrintLinef("TARGET=%s", targetName);
+    cliPrintLinef("BOARD_IDENTIFIER=%s", systemConfig()->boardIdentifier);
+    cliPrintLinef("BUILD_DATE=%s", buildDate);
+    cliPrintLinef("BUILD_TIME=%s", buildTime);
+    cliPrintLinef("GIT_REVISION=%s", shortGitRevision);
+    cliPrintLinef("MSP_API_VERSION=%s", MSP_API_VERSION_STRING);
+#if defined(__CONFIG_REVISION__)
+    cliPrintLinef("CONFIG_REVISION=%s", shortConfigGitRevision);
+#endif
+#if defined(USE_BOARD_INFO)
+    if (strlen(getManufacturerId())) {
+        cliPrintLinef("MANUFACTURER_ID=%s", getManufacturerId());
+    }
+    if (strlen(getBoardName())) {
+        cliPrintLinef("BOARD_NAME=%s", getBoardName());
+    }
+#endif
+    if (buildKey) {
+        cliPrintLinef("BUILD_KEY=%s", buildKey);
+    }
+    if (releaseName) {
+        cliPrintLinef("RELEASE_NAME=%s", releaseName);
+    }
+
+    // MCU and clock
+    cliPrintLinef("MCU=%s", getMcuTypeName());
+    cliPrintLinef("CLK_MHZ=%u", (unsigned)(SystemCoreClock / 1000000));
+
+#if PLATFORM_TRAIT_CONFIG_HSE
+    const char * const sysclkSourceNames[] = { "HSI", "HSE", "PLLP", "PLLR" };
+    const char * const pllSourceNames[] = { "HSI", "HSE" };
+    int sysclkSource = SystemSYSCLKSource();
+    if (sysclkSource >= 2) {
+        cliPrintLinef("SYSCLK_SOURCE=%s-%s", sysclkSourceNames[sysclkSource], pllSourceNames[SystemPLLSource()]);
+    } else {
+        cliPrintLinef("SYSCLK_SOURCE=%s", sysclkSourceNames[sysclkSource]);
+    }
+#endif
+
+#ifdef USE_ADC_INTERNAL
+    const uint16_t vrefintMv = getVrefMv();
+    cliPrintLinef("VREF_MV=%u", vrefintMv);
+    cliPrintLinef("CORE_TEMP_C=%d", getCoreTemperatureCelsius());
+#endif
+
+    // Stack / config
+    cliPrintLinef("STACK_SIZE=%d", stackTotalSize());
+    cliPrintLinef("STACK_HIGH=0x%x", stackHighMem());
+#ifdef USE_STACK_CHECK
+    cliPrintLinef("STACK_USED=%d", stackUsedSize());
+#endif
+    cliPrintLinef("CONFIG_STATE=%s", configurationStates[systemConfigMutable()->configurationState]);
+    cliPrintLinef("CONFIG_SIZE=%d", getEEPROMConfigSize());
+    cliPrintLinef("CONFIG_MAX_SIZE=%d", getEEPROMStorageSize());
+
+    // Bus devices
+#if defined(USE_SPI)
+    cliPrintLinef("SPI_COUNT=%d", spiGetRegisteredDeviceCount());
+#endif
+#if defined(USE_I2C)
+    cliPrintLinef("I2C_COUNT=%d", i2cGetRegisteredDeviceCount());
+    cliPrintLinef("I2C_ERRORS=%d", i2cGetErrorCounter());
+#endif
+
+    // Gyros
+    unsigned gyroCount = 0;
+    for (unsigned pos = 0; pos < GYRO_COUNT; pos++) {
+        if (gyroConfig()->gyrosDetected & BIT(pos)) {
+            gyroCount++;
+#if defined(USE_SENSOR_NAMES)
+            cliPrintLinef("GYRO_%u_HW=%s", pos + 1, lookupTableGyroHardware[detectedGyros[pos]]);
+#endif
+        }
+    }
+    cliPrintLinef("GYRO_COUNT=%u", gyroCount);
+
+#if defined(USE_SENSOR_NAMES)
+    const uint32_t detectedSensorsMask = sensorsMask();
+    for (unsigned i = SENSOR_INDEX_ACC; i < SENSOR_INDEX_COUNT; i++) {
+        const uint32_t mask = (1U << i);
+        if ((detectedSensorsMask & mask) == 0) {
+            continue;
+        }
+        const uint8_t sensorHardwareIndex = detectedSensors[i];
+        int count;
+        const char * const *names = sensorHardwareNames(i, &count);
+        if (!names || sensorHardwareIndex >= count) {
+            continue;
+        }
+        cliPrintLinef("%s_HW=%s", sensorTypeDisplayNames[i], names[sensorHardwareIndex]);
+    }
+#endif
+
+#ifdef USE_GPS
+    cliPrintLinef("GPS_ENABLED=%s", featureIsEnabled(FEATURE_GPS) ? "ON" : "OFF");
+    if (featureIsEnabled(FEATURE_GPS)) {
+        cliPrintLinef("GPS_CONNECTED=%s", gpsData.state >= GPS_STATE_CONFIGURE ? "ON" : "OFF");
+        cliPrintLinef("GPS_CONFIGURED=%s", gpsData.state > GPS_STATE_CONFIGURE ? "ON" : "OFF");
+#ifdef USE_GPS_UBLOX
+        cliPrintLinef("GPS_VERSION=%s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+#endif
+    }
+#endif
+
+#if defined(USE_OSD)
+    osdDisplayPortDevice_e displayPortDeviceType;
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(&displayPortDeviceType);
+    cliPrintLinef("OSD_DEVICE=%s", lookupTableOsdDisplayPortDevice[displayPortDeviceType]);
+    if (osdDisplayPort) {
+        cliPrintLinef("OSD_COLS=%u", osdDisplayPort->cols);
+        cliPrintLinef("OSD_ROWS=%u", osdDisplayPort->rows);
+    }
+#endif
+
+#ifdef USE_FLASH_CHIP
+    const flashGeometry_t *layout = flashGetGeometry();
+    if (layout->jedecId != 0) {
+        cliPrintLinef("FLASH_JEDEC_ID=0x%08x", layout->jedecId);
+        cliPrintLinef("FLASH_SIZE_MB=%u", (unsigned)(layout->totalSize >> 20));
+    }
+#endif
+
+    // Runtime
+    cliPrintLinef("UPTIME_S=%u", (unsigned)(millis() / 1000));
+#ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintLinef("CURRENT_TIME=%s", buf);
+    }
+#endif
+
+    const int gyroRate = getTaskDeltaTimeUs(TASK_GYRO) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_GYRO)));
+    const int rxRate = getRxRateValid() ? lrintf(getCurrentRxRateHz()) : 0;
+    const int systemRate = getTaskDeltaTimeUs(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTimeUs(TASK_SYSTEM)));
+    cliPrintLinef("CPU_LOAD_PCT=%d", constrain(getAverageSystemLoadPercent(), 0, LOAD_PERCENTAGE_ONE));
+    cliPrintLinef("CYCLE_TIME_US=%d", getTaskDeltaTimeUs(TASK_GYRO));
+    cliPrintLinef("GYRO_RATE_HZ=%d", gyroRate);
+    cliPrintLinef("RX_RATE_HZ=%d", rxRate);
+    cliPrintLinef("SYSTEM_RATE_HZ=%d", systemRate);
+
+    // Battery
+    const uint16_t v01 = getBatteryVoltage();
+    cliPrintLinef("VOLTAGE_V=%d.%02d", v01 / 100, v01 % 100);
+    cliPrintLinef("BATTERY_CELLS=%d", getBatteryCellCount());
+    cliPrintLinef("BATTERY_STATE=%s", getBatteryStateString());
+
+    // Arming disable flags (space-separated, empty if none)
+    cliPrint("ARMING_DISABLE_FLAGS=");
+    armingDisableFlags_e flags = getArmingDisableFlags();
+    bool first = true;
+    while (flags) {
+        const armingDisableFlags_e flag = 1 << (ffs(flags) - 1);
+        flags &= ~flag;
+        if (!first) {
+            cliPrint(" ");
+        }
+        cliPrintf("%s", getArmingDisableFlagName(flag));
+        first = false;
+    }
+    cliPrintLinefeed();
+}
+
 #ifdef USE_RC_SMOOTHING_FILTER
 static void cliRcSmoothing(const char *cmdName, char *cmdline)
 {
@@ -7826,6 +7998,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
+    CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", NULL, cliEnv),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
