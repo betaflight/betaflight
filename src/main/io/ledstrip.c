@@ -134,9 +134,9 @@ const hsvColor_t hsv[] = {
 
 
 
-#define VTX_FREQ_MIN 5653  // Below this VTx frequency will be white, above it we get color,starting at full Red.  R1 at 5658 is a slightly orange red.
-#define VTX_FREQ_MAX 5900  // upper frequency limit for whichover which the Hue changes, above this Hue is HUE_MAX
-#define VTX_HUE_MAX 345    // Maximum Hue value.Hue is red at 0 and 360.  345 is a strong magenta that is easily distinguished from red
+#define VTX_FREQ_MIN 5653  // Below this VTx frequency, LEDs will be white. Above it we get colors, starting from full  Red at this frequency.  R1 at 5658 is a slightly orange red.
+#define VTX_FREQ_MAX 5900  // upper frequency limit for which the Hue changes, above this Hue is HUE_MAX
+#define VTX_HUE_MAX 345    // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
 
 static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
 {
