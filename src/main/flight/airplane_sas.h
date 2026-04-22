@@ -20,6 +20,39 @@
  */
 
 #pragma once
+
 #include "pid.h"
+
+typedef struct psas_pitch_ctrl_s {
+    float pilot;
+    float damping;
+    float stability;
+    float I;
+    float accelP;
+    float Sum;
+} psas_pitch_ctrl_t;
+
+typedef struct psas_roll_ctrl_s {
+    float pilot;
+    float damping;
+    float Sum;
+} psas_roll_ctrl_t;
+
+typedef struct psas_yaw_ctrl_s {
+    float pilot;
+    float damping;
+    float stability;
+    float rollToYawCrossLink;
+    float Sum;
+} psas_yaw_ctrl_t;
+
+typedef struct psas_control_s {
+    psas_pitch_ctrl_t pitch;
+    psas_roll_ctrl_t roll;
+    psas_yaw_ctrl_t yaw;
+} psas_control_t;
+
+extern psas_control_t psasControl;
+
 void psasInit(const pidProfile_t *pidProfile);
 bool psasHandleMode(const pidProfile_t *pidProfile);
