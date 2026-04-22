@@ -736,6 +736,20 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+// GPS secondary defines - here (not common_pre.h) because SITL defines
+// USE_GPS in target.h which is included after common_pre.h
+#ifdef USE_GPS
+#if !defined(USE_GPS_NMEA)
+#define USE_GPS_NMEA
+#endif
+#if !defined(USE_GPS_UBLOX)
+#define USE_GPS_UBLOX
+#endif
+#if !defined(USE_GPS_RESCUE)
+#define USE_GPS_RESCUE
+#endif
+#endif // USE_GPS
+
 /*****************************************************
 
  Place any ENABLE_X_FEATURE=0 definitions here for those
@@ -772,6 +786,10 @@ extern struct linker_symbol __config_end;
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 0
+#endif
+
+#if !defined(ENABLE_RX_UDP)
+#define ENABLE_RX_UDP 0
 #endif
 
 #if !defined(ENABLE_CAN)
