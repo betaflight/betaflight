@@ -296,6 +296,7 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_ll.c \
             STM32/bus_quadspi_hal.c \
             STM32/bus_octospi_stm32h7xx.c \
+            STM32/can_stm32h7xx.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
             STM32/dma_stm32h7xx.c \

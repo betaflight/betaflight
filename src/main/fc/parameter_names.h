@@ -355,3 +355,7 @@
 #define PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP "psas_roll_yaw_clift_stop"
 #define PARAM_NAME_PSAS_ROLL_TO_YAW_LINK "psas_roll_to_yaw_link"
 #endif
+#ifdef USE_TRANSPONDER
+#define PARAM_NAME_TRANSPONDER_PROVIDER "transponder_provider"
+#define PARAM_NAME_TRANSPONDER_DATA "transponder_data"
+#endif

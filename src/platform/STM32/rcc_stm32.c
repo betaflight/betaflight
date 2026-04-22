@@ -62,7 +62,7 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_CLK(AHB2, NOSUFFIX, mask, NewState);
         break;
 
-#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6))
+#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6))
     case RCC_APB1:
         __HAL_RCC_CLK(APB1, NOSUFFIX, mask, NewState);
         break;
@@ -72,7 +72,7 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_CLK(APB2, NOSUFFIX, mask, NewState);
         break;
 
-#ifdef STM32H5
+#if defined(STM32H5) || defined(STM32C5)
 
     case RCC_AHB4:
         __HAL_RCC_CLK(AHB4, NOSUFFIX, mask, NewState);
@@ -251,7 +251,7 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_RESET(AHB2, NOSUFFIX, mask, NewState);
         break;
 
-#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6))
+#if !(defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6))
     case RCC_APB1:
         __HAL_RCC_RESET(APB1, NOSUFFIX, mask, NewState);
         break;
@@ -261,7 +261,7 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL_RCC_RESET(APB2, NOSUFFIX, mask, NewState);
         break;
 
-#ifdef STM32H5
+#if defined(STM32H5) || defined(STM32C5)
 
     case RCC_AHB4:
         __HAL_RCC_RESET(AHB4, NOSUFFIX, mask, NewState);

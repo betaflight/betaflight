@@ -151,6 +151,48 @@
 #define STM32F4
 #endif
 
+#elif defined(STM32C591xx)
+#include "stm32c5xx.h"
+#include "stm32c5xx_hal.h"
+// HAL2: module headers must be included explicitly (hal_conf.h only defines enables)
+#include "stm32c5xx_hal_rcc.h"
+#include "stm32c5xx_hal_gpio.h"
+#include "stm32c5xx_hal_dma.h"
+#include "stm32c5xx_hal_cortex.h"
+#include "stm32c5xx_hal_flash.h"
+#include "stm32c5xx_hal_pwr.h"
+#include "stm32c5xx_hal_tim.h"
+#include "stm32c5xx_hal_tamp.h"
+#include "system_stm32c5xx.h"
+
+#include "stm32c5xx_ll_spi.h"
+#include "stm32c5xx_ll_usart.h"
+#include "stm32c5xx_ll_gpio.h"
+#include "stm32c5xx_ll_dma.h"
+#include "stm32c5xx_ll_rcc.h"
+#include "stm32c5xx_ll_bus.h"
+#include "stm32c5xx_ll_tim.h"
+#include "stm32c5xx_ll_i2c.h"
+#include "stm32c5xx_ll_system.h"
+
+// HAL2 compat must come AFTER all HAL/LL headers (needs their types)
+#include "stm32c5xx_hal2_compat.h"
+#include "stm32c5xx_ll_ex.h"
+
+// Chip Unique ID on C5
+#define U_ID_0 (*(uint32_t*)UID_BASE)
+#define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
+#define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+
+#define USE_PIN_AF
+
+#define SPI_TRAIT_AF_PIN 1
+#define I2C_TRAIT_AF_PIN 1
+
+#ifndef STM32C5
+#define STM32C5
+#endif
+
 #elif defined(STM32N657xx)
 #include "stm32n6xx.h"
 #include "partition_stm32n6xx.h"
@@ -180,6 +222,11 @@
 
 #ifndef STM32N6
 #define STM32N6
+#endif
+
+// N6 boots from external XSPI flash in memory-mapped mode
+#if !defined(USE_FLASH_MEMORY_MAPPED) && !defined(CONFIG_IN_RAM) && !defined(CONFIG_IN_SDCARD)
+#define USE_FLASH_MEMORY_MAPPED
 #endif
 
 #endif // MCU family selection
@@ -261,6 +308,9 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32G4
@@ -278,6 +328,9 @@
 #define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32H5
@@ -288,6 +341,20 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+#endif
+
+#ifdef STM32C5
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER
+#define USE_ADC_INTERNAL
+#define USE_DMA_SPEC
+#define USE_PERSISTENT_OBJECTS
+#define USE_LATE_TASK_STATISTICS
+// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
+#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32N6
@@ -303,7 +370,7 @@
 #define USE_LATE_TASK_STATISTICS
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
@@ -350,7 +417,7 @@
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
-#if defined(STM32F4) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
@@ -383,7 +450,7 @@ extern uint8_t _dmaram_end__;
 #define USE_TIMER_AF
 
 // Camera control PWM availability per STM32 family
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5)
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #endif
 
@@ -391,7 +458,7 @@ extern uint8_t _dmaram_end__;
 #define CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 
 // speed is packed between modebits 4 and 1,
 // 7       6        5        4         3         2        1        0
@@ -431,7 +498,7 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 
 #define IO_CONFIG_GET_MODE(cfg)  (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)
@@ -443,7 +510,7 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
-#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5)
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5) || defined(STM32C5)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 16  // Flash word = 128-bits (4 rows, uint32_t per row - 4 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32G4)
@@ -458,7 +525,7 @@ extern uint8_t _dmaram_end__;
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#elif defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_AF_SCK_CFG_LOW   IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
@@ -473,14 +540,14 @@ extern uint8_t _dmaram_end__;
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
-#elif defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 #define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 4
 #endif
 
 // Work around different check routines in the libraries for different MCU types
-#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
 #define CHECK_SPI_RX_DATA_AVAILABLE(instance) LL_SPI_IsActiveFlag_RXWNE(instance)
 #define SPI_RX_DATA_REGISTER(base) ((base)->RXDR)
 #else
@@ -492,7 +559,7 @@ extern uint8_t _dmaram_end__;
 #define MAX_SPI_PIN_SEL 2
 #elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define MAX_SPI_PIN_SEL 5
 #elif defined(STM32H7) || defined(STM32N6)
 #define MAX_SPI_PIN_SEL 5
@@ -510,7 +577,7 @@ extern uint8_t _dmaram_end__;
 #elif defined(STM32N6)
 #define UART_TX_BUFFER_ATTRIBUTE DMA_RAM
 #define UART_RX_BUFFER_ATTRIBUTE DMA_RAM
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #elif defined(STM32G4)
@@ -524,7 +591,7 @@ extern uint8_t _dmaram_end__;
 #define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
  // pin AF mode is configured for each pin individually
 #define UART_TRAIT_AF_PIN 1
 #elif defined(STM32F4)
@@ -536,7 +603,7 @@ extern uint8_t _dmaram_end__;
 
 #define PLATFORM_TRAIT_RCC 1
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define UART_TRAIT_PINSWAP 1
 #endif
 
@@ -550,13 +617,13 @@ extern uint8_t _dmaram_end__;
 #define UARTHARDWARE_MAX_PINS 6
 #elif defined(STM32G4)
 #define UARTHARDWARE_MAX_PINS 3
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
 #define UARTHARDWARE_MAX_PINS 5
 #elif defined(STM32N6)
 #define UARTHARDWARE_MAX_PINS 5
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6) || defined(STM32C5)
 #define UART_REG_RXD(base) (((USART_TypeDef *)(base))->RDR)
 #define UART_REG_TXD(base) (((USART_TypeDef *)(base))->TDR)
 #elif defined(STM32F4)
@@ -565,14 +632,14 @@ extern uint8_t _dmaram_end__;
 #endif
 
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_TRAIT_CHANNEL 1
 #endif
 
 #define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6) || defined(STM32C5)
 #define I2C_TRAIT_STATE 1
 #endif
 
@@ -598,6 +665,12 @@ extern uint8_t _dmaram_end__;
 #define ENABLE_SDIO_INIT 0
 #endif
 
+// F4 and F7 SDIO drivers use external DMA channel allocation via dma_reqmap;
+// H5/H7/N6 SDMMC peripherals use internal DMA and do not need allocation.
+#if (defined(STM32F4) || defined(STM32F7)) && !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
+#endif
+
 // QUAD SPI
 #if defined(STM32H7) || defined(STM32N6)
 #define MAX_QUADSPI_PIN_SEL 3
@@ -617,7 +690,7 @@ extern uint8_t _dmaram_end__;
 #define MCO_DIVIDER_COUNT  5
 #endif
 
-#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_CHANREQ_STRING "Request"
 
 #define ADC_INTERNAL_VBAT4_ENABLED 1

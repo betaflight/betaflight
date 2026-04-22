@@ -54,7 +54,7 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
-#if defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     bbPort->gpioModeMask |= (GPIO_MODER_MODE0 << (pinIndex * 2)); // A minor name change in H7 CMSIS
 #else
     bbPort->gpioModeMask |= (GPIO_MODER_MODER0 << (pinIndex * 2));
@@ -139,7 +139,7 @@ static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     ((DMA_ARCH_TYPE *)dmaResource)->CNDTR = dmaRegCache->CNDTR;
     ((DMA_ARCH_TYPE *)dmaResource)->CPAR = dmaRegCache->CPAR;
     ((DMA_ARCH_TYPE *)dmaResource)->CMAR = dmaRegCache->CMAR;
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
     ((DMA_ARCH_TYPE *)dmaResource)->CCR = dmaRegCache->CCR;
     ((DMA_ARCH_TYPE *)dmaResource)->CTR1 = dmaRegCache->CTR1;
     ((DMA_ARCH_TYPE *)dmaResource)->CTR2 = dmaRegCache->CTR2;
@@ -168,7 +168,7 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->CNDTR;
     dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->CPAR;
     dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->CMAR;
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
     dmaRegCache->CCR = ((DMA_ARCH_TYPE *)dmaResource)->CCR;
     dmaRegCache->CTR1 = ((DMA_ARCH_TYPE *)dmaResource)->CTR1;
     dmaRegCache->CTR2 = ((DMA_ARCH_TYPE *)dmaResource)->CTR2;
@@ -264,7 +264,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     // TODO: N6 HPDMA/GPDMA DMA preconfiguration not yet implemented
     UNUSED(bbPort);
     UNUSED(direction);
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
     LL_DMA_StructInit(dmainit);
@@ -391,7 +391,7 @@ void bbDMA_ITConfig(bbPort_t *bbPort)
 
     xLL_EX_DMA_EnableIT_TC(bbPort->dmaResource);
 
-#if defined(STM32H5)
+#if defined(STM32H5) || defined(STM32C5)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_DTEIE);
 #elif defined(STM32G4)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_TEIE);

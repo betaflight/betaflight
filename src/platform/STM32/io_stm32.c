@@ -74,6 +74,15 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOE) },
     { RCC_AHB2(GPIOF) },
 };
+#elif defined(STM32C5)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB2(GPIOA) },
+    { RCC_AHB2(GPIOB) },
+    { RCC_AHB2(GPIOC) },
+    { RCC_AHB2(GPIOD) },
+    { RCC_AHB2(GPIOE) },
+    { RCC_AHB2(GPIOF) },
+};
 #elif defined(STM32H5)
 const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOA) },
@@ -111,7 +120,7 @@ uint32_t IO_EXTI_Line(IO_t io)
     if (!io) {
         return 0;
     }
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(SIMULATOR_BUILD)
     return 0;
@@ -243,6 +252,46 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
     };
 
     HAL_GPIO_Init(IO_GPIO(io), &init);
+}
+
+#elif defined(STM32C5)
+
+// HAL2: no HAL_GPIO_Init or LL_GPIO_Init. Configure via direct LL register access.
+void IOConfigGPIO(IO_t io, ioConfig_t cfg)
+{
+    IOConfigGPIOAF(io, cfg, 0);
+}
+
+void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
+{
+    if (!io) {
+        return;
+    }
+
+    rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
+    RCC_ClockCmd(rcc, ENABLE);
+
+    GPIO_TypeDef *gpio = IO_GPIO(io);
+    uint16_t pin = IO_Pin(io);
+    uint32_t pinPos = IO_GPIOPinIdx(io);
+
+    uint32_t mode = (cfg >> 0) & 0x03;
+    uint32_t speed = (cfg >> 2) & 0x03;
+    uint32_t otype = (cfg >> 4) & 0x01;
+    uint32_t pull = (cfg >> 5) & 0x03;
+
+    LL_GPIO_SetPinMode(gpio, pin, mode);
+    LL_GPIO_SetPinSpeed(gpio, pin, speed);
+    LL_GPIO_SetPinOutputType(gpio, pin, otype);
+    LL_GPIO_SetPinPull(gpio, pin, pull);
+
+    if (mode == LL_GPIO_MODE_ALTERNATE) {
+        if (pinPos < 8) {
+            LL_GPIO_SetAFPin_0_7(gpio, pin, af);
+        } else {
+            LL_GPIO_SetAFPin_8_15(gpio, pin, af);
+        }
+    }
 }
 
 #elif defined(STM32F7)
