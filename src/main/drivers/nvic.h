@@ -77,3 +77,4 @@
 #define NVIC_PRIO_USB_WUP                  NVIC_BUILD_PRIORITY(1, 0)
 #define NVIC_PRIO_SPI_DMA                  NVIC_BUILD_PRIORITY(0, 0)
 #define NVIC_PRIO_SDIO_DMA                 NVIC_BUILD_PRIORITY(0, 0)
+#define NVIC_PRIO_CAN                      NVIC_BUILD_PRIORITY(1, 2)

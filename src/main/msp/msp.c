@@ -4354,14 +4354,14 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             return MSP_RESULT_ERROR;
         }
 
-        const uint8_t requirementIndex = provider - 1;
-        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
-
         transponderConfigMutable()->provider = provider;
 
         if (provider == TRANSPONDER_NONE) {
             break;
         }
+
+        const uint8_t requirementIndex = provider - 1;
+        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
 
         if (bytesRemaining != transponderDataSize) {
             return MSP_RESULT_ERROR;

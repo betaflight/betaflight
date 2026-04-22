@@ -308,6 +308,9 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32G4
@@ -325,6 +328,9 @@
 #define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32H5
@@ -345,6 +351,10 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
+#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32N6
@@ -653,6 +663,12 @@ extern uint8_t _dmaram_end__;
 // F4 has a different SDIO driver that doesn't require early GPIO init
 #if defined(STM32F4) && !defined(ENABLE_SDIO_INIT)
 #define ENABLE_SDIO_INIT 0
+#endif
+
+// F4 and F7 SDIO drivers use external DMA channel allocation via dma_reqmap;
+// H5/H7/N6 SDMMC peripherals use internal DMA and do not need allocation.
+#if (defined(STM32F4) || defined(STM32F7)) && !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
 #endif
 
 // QUAD SPI

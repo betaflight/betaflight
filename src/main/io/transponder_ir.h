@@ -23,10 +23,13 @@
 #include "common/time.h"
 #include "pg/pg.h"
 
+// Storage size for transponder data, sized for the largest provider (ARCITIMER = 9).
+#define TRANSPONDER_DATA_LENGTH 9
+
 typedef struct transponderConfig_s {
     transponderProvider_e provider;
     uint8_t reserved;
-    uint8_t data[9];
+    uint8_t data[TRANSPONDER_DATA_LENGTH];
     ioTag_t ioTag;
 } transponderConfig_t;
 
