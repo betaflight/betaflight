@@ -448,9 +448,11 @@ void servoMixer(void)
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     } else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+#ifdef USE_AIRPLANE_SAS
         input[INPUT_STABILIZED_ROLL] = psasData.roll.Sum / 100.0f * 500.0f;
         input[INPUT_STABILIZED_PITCH] = psasData.pitch.Sum / 100.0f * 500.0f;
         input[INPUT_STABILIZED_YAW] = psasData.yaw.Sum / 100.0f * 500.0f;
+#endif
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
