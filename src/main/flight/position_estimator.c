@@ -65,27 +65,27 @@
 // Accelerometer process noise in (cm/s^2)^2.
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
-#define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0f
+#define Q_ACCEL_XY 50000.0f
+#define Q_ACCEL_Z  20000.0f
 
 // Initial covariance values
-#define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
-#define INITIAL_VEL_VAR     10000.0f    // (cm/s)^2
+#define INITIAL_POS_VAR 10000.0f    // cm^2  (1m uncertainty)
+#define INITIAL_VEL_VAR 10000.0f    // (cm/s)^2
 
 // Measurement noise base values (R)
-#define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
-#define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      40000.0f    // cm^2 at pDOP=1.0
-#define R_BARO_ALT          2500.0f     // cm^2
-#define R_RANGEFINDER_ALT   100.0f      // cm^2
-#define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
+#define R_GPS_POS_BASE    10000.0f    // cm^2 at pDOP=1.0
+#define R_GPS_VEL_BASE    2500.0f     // (cm/s)^2 at pDOP=1.0
+#define R_GPS_ALT_BASE    40000.0f    // cm^2 at pDOP=1.0
+#define R_BARO_ALT        2500.0f     // cm^2
+#define R_RANGEFINDER_ALT 100.0f      // cm^2
+#define R_OPTICALFLOW_VEL 400.0f      // (cm/s)^2 at max quality
 
-#define GRAVITY_CMSS        980.665f
+#define GRAVITY_CMSS 980.665f
 
 // Timeout: if no measurement for this long, mark invalid
-#define MEASUREMENT_TIMEOUT_US  2000000  // 2 seconds
+#define MEASUREMENT_TIMEOUT_US 2000000  // 2 seconds
 
-#define RANGEFINDER_MIN_ALT_CM  10
+#define RANGEFINDER_MIN_ALT_CM 10
 
 #ifdef USE_RANGEFINDER
 // Valid rangefinder sample for Z fusion and optical-flow scaling (driver returns cm).
@@ -154,7 +154,7 @@ static bool positionEstimatorWantXYFusion(void)
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
 // only GPS is available) so a single alpha suffices.
-#define CROSS_CAL_ALPHA  0.005f
+#define CROSS_CAL_ALPHA 0.005f
 
 typedef struct {
     float rawReading;
@@ -163,7 +163,13 @@ typedef struct {
     bool drifts;
 } sensorCalEntry_t;
 
-enum { CAL_Z_BARO = 0, CAL_Z_GPS, CAL_Z_RF, CAL_Z_COUNT };
+enum
+{
+    CAL_Z_BARO = 0,
+    CAL_Z_GPS,
+    CAL_Z_RF,
+    CAL_Z_COUNT
+};
 
 static positionKalman_t kfX;
 static positionKalman_t kfY;
@@ -268,18 +274,18 @@ void positionEstimatorEnableXY(bool enable)
 static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp)
 {
     const float accScale = acc.dev.acc_1G_rec;
-    vector3_t accBF = {{ acc.accADC.x * accScale,
-                         acc.accADC.y * accScale,
-                         acc.accADC.z * accScale }};
+    vector3_t accBF = {{acc.accADC.x * accScale,
+                        acc.accADC.y * accScale,
+                        acc.accADC.z * accScale}};
 
     // rMat rotates body -> earth NED
     vector3_t accEF_NED;
     matrixVectorMul(&accEF_NED, &rMat, &accBF);
 
     // NED -> ENU, subtract gravity (NED gravity = [0,0,+1g]), convert G -> cm/s^2
-    *accelEast  =  accEF_NED.y * GRAVITY_CMSS;
-    *accelNorth =  accEF_NED.x * GRAVITY_CMSS;
-    *accelUp    = -(accEF_NED.z - 1.0f) * GRAVITY_CMSS;
+    *accelEast = accEF_NED.y * GRAVITY_CMSS;
+    *accelNorth = accEF_NED.x * GRAVITY_CMSS;
+    *accelUp = -(accEF_NED.z - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
@@ -508,7 +514,7 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
 
     // Also project through pitch/roll to horizontal plane
     const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
-    const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+    const float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
     const float vBodyX = vBFx * cosRoll;   // lateral velocity, tilt-corrected
     const float vBodyY = vBFy * cosPitch;  // longitudinal velocity, tilt-corrected
 
@@ -516,8 +522,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     // Body X (roll) = rightward, Body Y (pitch) = forward
     // ENU East  =  bodyY * sinYaw + bodyX * cosYaw
     // ENU North =  bodyY * cosYaw - bodyX * sinYaw
-    const float velEast  =  vBodyY * sinYaw + vBodyX * cosYaw;
-    const float velNorth =  vBodyY * cosYaw - vBodyX * sinYaw;
+    const float velEast = vBodyY * sinYaw + vBodyX * cosYaw;
+    const float velNorth = vBodyY * cosYaw - vBodyX * sinYaw;
 
     kalmanUpdateVelocity(&kfX, velEast, flowR);
     kalmanUpdateVelocity(&kfY, velNorth, flowR);

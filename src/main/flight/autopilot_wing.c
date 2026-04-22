@@ -51,7 +51,8 @@ void autopilotInit(void)
 {
 }
 
-void resetAltitudeControl (void) {
+void resetAltitudeControl(void)
+{
 }
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)

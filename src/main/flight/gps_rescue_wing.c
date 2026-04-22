@@ -52,7 +52,7 @@
 
 #include "gps_rescue.h"
 
-float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
+float gpsRescueAngle[RP_AXIS_COUNT] = {0, 0};
 
 void gpsRescueInit(void)
 {

@@ -70,7 +70,8 @@ static bool sensorsOk(void)
     return positionEstimatorIsValidXY();
 }
 
-void updatePosHold(timeUs_t currentTimeUs) {
+void updatePosHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
         if (!posHold.isEnabled) {
@@ -101,7 +102,8 @@ void updatePosHold(timeUs_t currentTimeUs) {
     }
 }
 
-bool posHoldFailure(void) {
+bool posHoldFailure(void)
+{
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
 

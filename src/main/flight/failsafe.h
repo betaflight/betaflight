@@ -23,13 +23,13 @@
 #include "pg/pg.h"
 
 #define FAILSAFE_POWER_ON_DELAY_US (1000 * 1000 * 5)
-#define MILLIS_PER_TENTH_SECOND      100
-#define MILLIS_PER_SECOND           1000
-#define PERIOD_OF_1_SECONDS            1 * MILLIS_PER_SECOND
-#define PERIOD_OF_3_SECONDS            3 * MILLIS_PER_SECOND
-#define PERIOD_OF_30_SECONDS          30 * MILLIS_PER_SECOND
-#define PERIOD_RXDATA_FAILURE        10     // millis
-#define PERIOD_RXDATA_RECOVERY       100    // millis
+#define MILLIS_PER_TENTH_SECOND    100
+#define MILLIS_PER_SECOND          1000
+#define PERIOD_OF_1_SECONDS        1 * MILLIS_PER_SECOND
+#define PERIOD_OF_3_SECONDS        3 * MILLIS_PER_SECOND
+#define PERIOD_OF_30_SECONDS       30 * MILLIS_PER_SECOND
+#define PERIOD_RXDATA_FAILURE      10     // millis
+#define PERIOD_RXDATA_RECOVERY     100    // millis
 
 typedef struct failsafeConfig_s {
     uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
@@ -44,7 +44,8 @@ typedef struct failsafeConfig_s {
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_IDLE = 0,
     FAILSAFE_RX_LOSS_DETECTED,
     FAILSAFE_LANDING,
@@ -54,12 +55,14 @@ typedef enum {
     FAILSAFE_GPS_RESCUE
 } failsafePhase_e;
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_RXLINK_DOWN = 0,
     FAILSAFE_RXLINK_UP
 } failsafeRxLinkState_e;
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
 #ifdef USE_GPS_RESCUE
@@ -68,9 +71,10 @@ typedef enum {
     FAILSAFE_PROCEDURE_COUNT   // must be last
 } failsafeProcedure_e;
 
-extern const char * const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
+extern const char *const failsafeProcedureNames[FAILSAFE_PROCEDURE_COUNT];
 
-typedef enum {
+typedef enum
+{
     FAILSAFE_SWITCH_MODE_STAGE1 = 0,
     FAILSAFE_SWITCH_MODE_KILL,
     FAILSAFE_SWITCH_MODE_STAGE2

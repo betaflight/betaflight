@@ -68,7 +68,8 @@ void altHoldInit(void)
     altHoldReset();
 }
 
-static void altHoldProcessTransitions(void) {
+static void altHoldProcessTransitions(void)
+{
 
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHold.isActive) {
@@ -148,7 +149,8 @@ static void altHoldUpdate(void)
     altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity, altHold.maxVelocity);
 }
 
-void updateAltHold(timeUs_t currentTimeUs) {
+void updateAltHold(timeUs_t currentTimeUs)
+{
     UNUSED(currentTimeUs);
 
     // check for enabling Alt Hold, otherwise do as little as possible while inactive
@@ -159,7 +161,8 @@ void updateAltHold(timeUs_t currentTimeUs) {
     }
 }
 
-bool isAltHoldActive(void) {
+bool isAltHoldActive(void)
+{
     return altHold.isActive;
 }
 #endif
