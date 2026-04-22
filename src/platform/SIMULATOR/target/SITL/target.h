@@ -224,11 +224,7 @@ typedef struct {
     double imu_orientation_quat[4];     //w, x, y, z
     double velocity_xyz[3];             // m/s, earth frame. ENU (Ve, Vn, Vup) for virtual GPS mode (USE_VIRTUAL_GPS)!
     double position_xyz[3];             // meters, NED from origin. Longitude, Latitude, Altitude (ENU) for virtual GPS mode (USE_VIRTUAL_GPS)!
-    double esc_temperature[4];          // ESC temperature
-    double esc_voltage[4];              // ESC voltage
-    double esc_current[4];              // ESC current
-    double esc_consumption[4];          // ESC consumption (mAh)
-    double esc_rpm[4];                  // ESC RPM
+    double pressure;
 } fdm_packet;
 
 typedef struct {

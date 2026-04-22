@@ -153,7 +153,7 @@ static void gpxTrackOpen(void)
     }
 }
 
-static void gpxTrackWrite(double lat, double lon, double altM, uint32_t simTimeMs)
+static void gpxTrackWrite(double lat, double lon, double altM)
 {
     if (!gpxTrackFile) {
         gpxTrackOpen();
@@ -161,16 +161,17 @@ static void gpxTrackWrite(double lat, double lon, double altM, uint32_t simTimeM
     if (!gpxTrackFile) {
         return;
     }
-    const uint32_t totalSec = simTimeMs / 1000;
-    const uint32_t h = totalSec / 3600;
-    const uint32_t m = (totalSec % 3600) / 60;
-    const uint32_t s = totalSec % 60;
+    char iso[32];
+    const time_t now = time(NULL);
+    struct tm tm_utc;
+    gmtime_r(&now, &tm_utc);
+    strftime(iso, sizeof(iso), "%Y-%m-%dT%H:%M:%SZ", &tm_utc);
     fprintf(gpxTrackFile,
         "      <trkpt lat=\"%.7f\" lon=\"%.7f\">\n"
         "        <ele>%.2f</ele>\n"
-        "        <time>2026-01-01T%02u:%02u:%02uZ</time>\n"
+        "        <time>%s</time>\n"
         "      </trkpt>\n",
-        lat, lon, altM, h, m, s);
+        lat, lon, altM, iso);
     fflush(gpxTrackFile);
 }
 
@@ -358,6 +359,10 @@ static void updateState(const fdm_packet* pkt)
     // deltas: moving East in the ENU world frame produces DECREASING longitude,
     // and moving North produces DECREASING latitude. Mirror the GPS position
     // around the initial origin to correct this 180° horizontal inversion.
+    // Assumes the first FDM packet arrives while the vehicle is at its spawn
+    // position; attach the simulator before starting the world to guarantee
+    // this. A cleaner fix is to have the Gazebo plugin pass the world origin
+    // in fdm_packet — left as a follow-up.
     static double originLat = 0, originLon = 0;
     static bool gpsOriginSet = false;
     if (!gpsOriginSet) {
@@ -382,7 +387,7 @@ static void updateState(const fdm_packet* pkt)
         static uint64_t lastGpxTimeUs = 0;
         if (realtime_now - lastGpxTimeUs >= 1000000) {
             lastGpxTimeUs = realtime_now;
-            gpxTrackWrite(correctedLat, correctedLon, altitude, millis());
+            gpxTrackWrite(correctedLat, correctedLon, altitude);
         }
     }
 #endif

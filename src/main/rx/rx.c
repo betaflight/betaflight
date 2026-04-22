@@ -195,8 +195,9 @@ static bool nullProcessFrame(const rxRuntimeState_t *rxRuntimeState)
 }
 
 #if ENABLE_RX_UDP
-static uint16_t udpChannelData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-static bool udpFrameReceived = false;
+static volatile uint16_t udpChannelData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+static volatile uint8_t udpChannelCount = 0;
+static volatile bool udpFrameReceived = false;
 
 static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 {
@@ -207,13 +208,25 @@ static float readRCUdp(const rxRuntimeState_t *rxRuntimeState, uint8_t channel)
 static uint8_t frameStatusUdp(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
-    return udpFrameReceived ? RX_FRAME_COMPLETE : RX_FRAME_PENDING;
+    if (udpFrameReceived) {
+        udpFrameReceived = false;
+        return RX_FRAME_COMPLETE;
+    }
+    return RX_FRAME_PENDING;
 }
 
 void rxUpdateUdpChannels(const uint16_t *channels, uint8_t channelCount)
 {
-    const uint8_t count = MIN(channelCount, MAX_SUPPORTED_RC_CHANNEL_COUNT);
-    memcpy(udpChannelData, channels, count * sizeof(uint16_t));
+    const uint8_t count = MIN(channelCount, (uint8_t)MAX_SUPPORTED_RC_CHANNEL_COUNT);
+    for (uint8_t i = 0; i < count; i++) {
+        udpChannelData[i] = channels[i];
+    }
+    udpChannelCount = count;
+    // Update the runtime channel count so consumers of rxRuntimeState see
+    // the actual transport width rather than the architectural maximum.
+    if (rxRuntimeState.rxProvider == RX_PROVIDER_UDP) {
+        rxRuntimeState.channelCount = count;
+    }
     udpFrameReceived = true;
 }
 #endif
@@ -403,7 +416,9 @@ void rxInit(void)
 
 #if ENABLE_RX_UDP
     case RX_PROVIDER_UDP:
-        rxRuntimeState.channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+        // Actual channel count is set by rxUpdateUdpChannels() on the first
+        // UDP frame; start at 0 so unpopulated channels aren't read as stale.
+        rxRuntimeState.channelCount = udpChannelCount;
         rxRuntimeState.rcReadRawFn = readRCUdp;
         rxRuntimeState.rcFrameStatusFn = frameStatusUdp;
 
