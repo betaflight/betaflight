@@ -114,9 +114,9 @@ static uint8_t previousProfileColorIndex = COLOR_UNDEFINED;
 
 const hsvColor_t hsv[] = {
     //                        H    S    V
-    [COLOR_BLACK] =        {  0,   0,   0},
-    [COLOR_WHITE] =        {  0, 255, 255},
-    [COLOR_RED] =          {  0,   0, 255},
+    [COLOR_BLACK] =        {  0,   0,   0}, // LED is off
+    [COLOR_WHITE] =        {  0, 255, 255}, // for white, S must be 255 and V must be 255, H is ignored
+    [COLOR_RED] =          {  0,   0, 255}, // for full colour S must be 0 and V must be 255
     [COLOR_ORANGE] =       { 30,   0, 255},
     [COLOR_YELLOW] =       { 60,   0, 255},
     [COLOR_LIME_GREEN] =   { 90,   0, 255},
@@ -134,32 +134,36 @@ const hsvColor_t hsv[] = {
 
 
 
-#define VTX_FREQ_MIN 5650 // Below this will be white, above we get colour starting at an orange - red
-#define VTX_FREQ_RANGE 250.0f // leads to hue max at 5918 (R8 is 5917) or above
-#define VTX_HUE_MAX 345.0f // Hue for R8 or above should not hit red (360). 345 is a strong magenta but not like red
+#define VTX_FREQ_MIN 5653  // Below this VTx frequency will be white, above it we get color,starting at full Red.  R1 at 5658 is a slightly orange red.
+#define VTX_FREQ_MAX 5900  // upper frequency limit for whichover which the Hue changes, above this Hue is HUE_MAX
+#define VTX_HUE_MAX 345    // Maximum Hue value.Hue is red at 0 and 360.  345 is a strong magenta that is easily distinguished from red
 
 static hsvColor_t getHsvByVtxFrequency(uint16_t freq)
 {
-    hsvColor_t color;
-    const float hsvScaleFactor = VTX_HUE_MAX / VTX_FREQ_RANGE;
-    
-    if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
-    // usuallyt caused by misc configured frequency or no band / channel
-        color = HSV(BLACK);
-    } 
-    else if (freq >= VTX_FREQ_MIN) {
-        // show colours above R1
-        color.s = 0; 
-        color.v = 255; 
-        float hue = (float)(freq - (uint16_t)VTX_FREQ_MIN) * hsvScaleFactor;
-        // set hue to range from 0 to VTX_HUE_MAX
-        color.h = (hue > VTX_HUE_MAX) ? (uint16_t)VTX_HUE_MAX : (uint16_t)hue;
-    } 
-    else { // Frequencies below R1 will be white
-        color = HSV(WHITE);
+    hsvColor_t color = HSV(BLACK);
+
+    // Invalid or no VTX data, eg User has not set band or channel
+    if (freq <= VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
+        return color;
     }
-    
+
+    if (freq < VTX_FREQ_MIN) {
+        return HSV(WHITE);
+    } else {
+        //  give the LED a solid color above VTX_FREQ_MIN
+        if (freq > VTX_FREQ_MAX) {
+            freq = VTX_FREQ_MAX;
+            // Clamp incoming frequencyto mapping range
+        }
+    color.s = 0;
+    color.v = 255;
+    // for strong colours in betaflight, S must be 0 and V must be 255
+
+    color.h = scaleRange(freq, VTX_FREQ_MIN, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
+    // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
+
     return color;
+    }
 }
 
 
