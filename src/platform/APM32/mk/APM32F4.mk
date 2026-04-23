@@ -147,6 +147,18 @@ DEVICE_FLAGS    += -DAPM32F407xx
 LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f407.ld
 STARTUP_SRC     = APM32/startup/startup_apm32f407xx.S
 MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),APM32F425xx)
+DEVICE_FLAGS    += -DAPM32F425xx
+LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f425.ld
+STARTUP_SRC     = APM32/startup/startup_apm32f425xx.S
+MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),APM32F427xx)
+DEVICE_FLAGS    += -DAPM32F427xx
+LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f427.ld
+STARTUP_SRC     = APM32/startup/startup_apm32f427xx.S
+MCU_FLASH_SIZE  := 1024
 else
 $(error TARGET_MCU [$(TARGET_MCU)] is not supported)
 endif
