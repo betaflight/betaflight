@@ -1498,20 +1498,20 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_PLANE_SAS
-    blackboxCurrent->planeSAS.pitch_pilot = lrintf(psasData.pitch.pilot * 100.0f);
-    blackboxCurrent->planeSAS.pitch_damping = lrintf(psasData.pitch.damping * 100.0f);
-    blackboxCurrent->planeSAS.pitch_stability = lrintf(psasData.pitch.stability * 100.0f);
-    blackboxCurrent->planeSAS.pitch_I = lrintf(psasData.pitch.I * 100.0f);
-    blackboxCurrent->planeSAS.pitch_P = lrintf(psasData.pitch.accelP * 100.0f);
+#ifdef USE_AIRPLANE_SAS
+    blackboxCurrent->planeSAS.pitch_pilot = lrintf(psasData.pitch.pilot * 10.0f);
+    blackboxCurrent->planeSAS.pitch_damping = lrintf(psasData.pitch.damping * 10.0f);
+    blackboxCurrent->planeSAS.pitch_stability = lrintf(psasData.pitch.stability * 10.0f);
+    blackboxCurrent->planeSAS.pitch_I = lrintf(psasData.pitch.I * 10.0f);
+    blackboxCurrent->planeSAS.pitch_P = lrintf(psasData.pitch.accelP * 10.0f);
 
-    blackboxCurrent->planeSAS.roll_pilot = lrintf(psasData.roll.pilot * 100.0f);
-    blackboxCurrent->planeSAS.roll_damping = lrintf(psasData.roll.damping * 100.0f);
+    blackboxCurrent->planeSAS.roll_pilot = lrintf(psasData.roll.pilot * 10.0f);
+    blackboxCurrent->planeSAS.roll_damping = lrintf(psasData.roll.damping * 10.0f);
 
-    blackboxCurrent->planeSAS.yaw_pilot = lrintf(psasData.yaw.pilot * 100.0f);
-    blackboxCurrent->planeSAS.yaw_damping = lrintf(psasData.yaw.damping * 100.0f);
-    blackboxCurrent->planeSAS.yaw_stability = lrintf(psasData.yaw.stability * 100.0f);
-    blackboxCurrent->planeSAS.yaw_roll_cross_link = lrintf(psasData.yaw.rollToYawCrossLink * 100.0f);
+    blackboxCurrent->planeSAS.yaw_pilot = lrintf(psasData.yaw.pilot * 10.0f);
+    blackboxCurrent->planeSAS.yaw_damping = lrintf(psasData.yaw.damping * 10.0f);
+    blackboxCurrent->planeSAS.yaw_stability = lrintf(psasData.yaw.stability * 10.0f);
+    blackboxCurrent->planeSAS.yaw_roll_cross_link = lrintf(psasData.yaw.rollToYawCrossLink * 10.0f);
 #endif
 
 #else
