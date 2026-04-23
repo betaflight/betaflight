@@ -34,7 +34,7 @@
 #include "flight/mixer.h"
 #include "flight/airplane_sas.h"
 
-FAST_DATA_ZERO_INIT psas_control_t psasControl;
+FAST_DATA_ZERO_INIT psas_data_t psasData;
 
 static bool isReadyPSAS;
 static pt1Filter_t psasPitchDampingLowpass;
@@ -125,7 +125,7 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
     float servoVelocity = accelDelta * pidProfile->psas_pitch_accel_i_gain;
     servoVelocity = constrainf(servoVelocity, -servoVelocityLimit, servoVelocityLimit);
 
-    psasControl.pitch.I += servoVelocity * pidRuntime.dT;
+    psasData.pitch.I += servoVelocity * pidRuntime.dT;
     deltaAccP = accelDelta * pidProfile->psas_pitch_accel_p_gain * 0.1f;
 
     DEBUG_SET(DEBUG_PSAS, 3, lrintf(accelReq * 10.0f));
@@ -171,10 +171,10 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
     }
 
     if (isLimitAoA) {
-        psasControl.pitch.I += servoVelocity * pidRuntime.dT;
+        psasData.pitch.I += servoVelocity * pidRuntime.dT;
     } else if (pidProfile->psas_pitch_accel_i_gain == 0) {
         // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
-        psasControl.pitch.I -= psasControl.pitch.I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
+        psasData.pitch.I -= psasData.pitch.I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
     }
 
     DEBUG_SET(DEBUG_PSAS, 6, lrintf(liftCoefDiff * 100.0f));
@@ -210,7 +210,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Pilot pitch control
     const float maxRcRatePitch = fmaxf(getMaxRcRate(FD_PITCH), 1.0f);
     float pitchStick = getSetpointRate(FD_PITCH) / maxRcRatePitch;  // pitch stick [-1 ... +1]
-    psasControl.pitch.pilot = pitchStick * pidProfile->psas_stick_gain[FD_PITCH];
+    psasData.pitch.pilot = pitchStick * pidProfile->psas_stick_gain[FD_PITCH];
 
     // Plane pitch damping improvement
     float gyroPitch = gyro.gyroADCf[FD_PITCH];
@@ -218,7 +218,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
         float gyroPitchLow = pt1FilterApply(&psasPitchDampingLowpass, gyroPitch);
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
-    psasControl.pitch.damping = -1.0f * gyroPitch * (pidProfile->psas_damping_gain[FD_PITCH] * 0.001f);
+    psasData.pitch.damping = -1.0f * gyroPitch * (pidProfile->psas_damping_gain[FD_PITCH] * 0.001f);
 
     // Plane pitch stability improvement
     float accelZ = 1.0f,
@@ -231,9 +231,9 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelZ_filtered = accelZ;
         }
     }
-    psasControl.pitch.stability = (accelZ_filtered - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.1f);
+    psasData.pitch.stability = (accelZ_filtered - 1.0f) * (pidProfile->psas_pitch_stability_gain * 0.1f);
 
-    psasControl.pitch.Sum = psasControl.pitch.pilot + psasControl.pitch.damping + psasControl.pitch.stability;
+    psasData.pitch.Sum = psasData.pitch.pilot + psasData.pitch.damping + psasData.pitch.stability;
 
     // Additional features
     // We have not got the angle of attack (AoA) sensor
@@ -249,43 +249,43 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     }
 
     // Else, if the lift coefficent (angle of attack) value is normal then hold required G load (accel z) value.
-    psasControl.pitch.accelP = 0.0f;
+    psasData.pitch.accelP = 0.0f;
     if (isEnabledAccelZController && isLimitAoA == false) {
-        psasControl.pitch.accelP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
-        psasControl.pitch.Sum += psasControl.pitch.accelP;
+        psasData.pitch.accelP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
+        psasData.pitch.Sum += psasData.pitch.accelP;
     }
 
-    psasControl.pitch.Sum = constrainf(psasControl.pitch.Sum, -100.0f, 100.0f);
+    psasData.pitch.Sum = constrainf(psasData.pitch.Sum, -100.0f, 100.0f);
 
     // The AoA limiter and Accel Z controller accumulate pitch I value
     // limit integrator output and add it to Sum
     if (isEnabledAoALimiter || isEnabledAccelZController) {
-        float output = psasControl.pitch.Sum + psasControl.pitch.I;
+        float output = psasData.pitch.Sum + psasData.pitch.I;
         if ( output > 100.0f) {
-            psasControl.pitch.I = 100.0f - psasControl.pitch.Sum;
+            psasData.pitch.I = 100.0f - psasData.pitch.Sum;
         } else if (output < -100.0f) {
-            psasControl.pitch.I = -100.0f - psasControl.pitch.Sum;
+            psasData.pitch.I = -100.0f - psasData.pitch.Sum;
         }
 
         // Add integrator output to Sum value
-        psasControl.pitch.Sum += psasControl.pitch.I;
+        psasData.pitch.Sum += psasData.pitch.I;
     }
 
     // Roll channel
     // Pilot roll control
     const float maxRcRateRoll = fmaxf(getMaxRcRate(FD_ROLL), 1.0f);
-    psasControl.roll.pilot = getSetpointRate(FD_ROLL) / maxRcRateRoll * (pidProfile->psas_stick_gain[FD_ROLL]);
+    psasData.roll.pilot = getSetpointRate(FD_ROLL) / maxRcRateRoll * (pidProfile->psas_stick_gain[FD_ROLL]);
 
     // Plane roll damping improvement
-    psasControl.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * (pidProfile->psas_damping_gain[FD_ROLL] * 0.001f);
+    psasData.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * (pidProfile->psas_damping_gain[FD_ROLL] * 0.001f);
 
-    psasControl.roll.Sum = psasControl.roll.pilot + psasControl.roll.damping;
-    psasControl.roll.Sum = constrainf(psasControl.roll.Sum, -100.0f, 100.0f);
+    psasData.roll.Sum = psasData.roll.pilot + psasData.roll.damping;
+    psasData.roll.Sum = constrainf(psasData.roll.Sum, -100.0f, 100.0f);
 
     // Yaw channel
     // Pilot yaw control
     const float maxRcRateYaw = fmaxf(getMaxRcRate(FD_YAW), 1.0f);
-    psasControl.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * (pidProfile->psas_stick_gain[FD_YAW]);
+    psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * (pidProfile->psas_stick_gain[FD_YAW]);
 
     // Plane yaw damping improvement
     float gyroYaw = gyro.gyroADCf[FD_YAW];
@@ -293,7 +293,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
-    psasControl.yaw.damping = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
+    psasData.yaw.damping = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
 
     // Plane yaw stability improvement
     float accelY_filtered = 1.0f;
@@ -305,16 +305,16 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelY_filtered = accelY;
         }
     }
-    psasControl.yaw.stability = accelY_filtered * (pidProfile->psas_yaw_stability_gain * 0.1f);
+    psasData.yaw.stability = accelY_filtered * (pidProfile->psas_yaw_stability_gain * 0.1f);
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
-    psasControl.yaw.rollToYawCrossLink = rollToYawCrossLinkControl(pidProfile,  psasControl.roll.pilot, liftCoef);
+    psasData.yaw.rollToYawCrossLink = rollToYawCrossLinkControl(pidProfile,  psasData.roll.pilot, liftCoef);
 
-    psasControl.yaw.Sum = psasControl.yaw.pilot + psasControl.yaw.damping + psasControl.yaw.stability + psasControl.yaw.rollToYawCrossLink;
-    psasControl.yaw.Sum = constrainf(psasControl.yaw.Sum, -100.0f, 100.0f);
+    psasData.yaw.Sum = psasData.yaw.pilot + psasData.yaw.damping + psasData.yaw.stability + psasData.yaw.rollToYawCrossLink;
+    psasData.yaw.Sum = constrainf(psasData.yaw.Sum, -100.0f, 100.0f);
 
-    DEBUG_SET(DEBUG_PSAS, 0, lrintf(psasControl.pitch.Sum * 10.0f));
-    DEBUG_SET(DEBUG_PSAS, 1, lrintf(psasControl.pitch.I * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 0, lrintf(psasData.pitch.Sum * 10.0f));
+    DEBUG_SET(DEBUG_PSAS, 1, lrintf(psasData.pitch.I * 10.0f));
     DEBUG_SET(DEBUG_PSAS, 2, lrintf(liftCoef * 100.0f));
 }
 
@@ -325,7 +325,7 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
             !pidRuntime.pidStabilisationEnabled ||
             gyroOverflowDetected();
         if (psasUnsafe) {
-            memset(&psasControl, 0, sizeof(psasControl));
+            memset(&psasData, 0, sizeof(psasData));
             isReadyPSAS = false;
             return true;
         }
@@ -333,7 +333,7 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile) {
         // Clear all PID values and reset the all PSAS filters by first PSAS run
         if (!isReadyPSAS) {
             psasInit(pidProfile);
-            memset(&psasControl, 0, sizeof(psasControl));
+            memset(&psasData, 0, sizeof(psasData));
             isReadyPSAS = true;
         }
 

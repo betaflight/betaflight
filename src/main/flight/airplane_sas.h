@@ -50,9 +50,9 @@ typedef struct psas_control_s {
     psas_pitch_ctrl_t pitch;
     psas_roll_ctrl_t roll;
     psas_yaw_ctrl_t yaw;
-} psas_control_t;
+} psas_data_t;
 
-extern psas_control_t psasControl;
+extern psas_data_t psasData;
 
 void psasInit(const pidProfile_t *pidProfile);
 bool psasHandleMode(const pidProfile_t *pidProfile);
