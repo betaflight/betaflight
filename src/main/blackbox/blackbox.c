@@ -2072,6 +2072,36 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ANGLE_PITCH_OFFSET, "%d", currentPidProfile->angle_pitch_offset);
 #endif // USE_WING
 
+#ifdef USE_AIRPLANE_SAS
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_DAMPING_FILTER_FREQ, "%d", currentPidProfile->psas_pitch_damping_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Z_FILTER_FREQ, "%d", currentPidProfile->psas_accel_z_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_STABILITY_GAIN, "%d", currentPidProfile->psas_pitch_stability_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_P_GAIN, "%d", currentPidProfile->psas_pitch_accel_p_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_I_GAIN, "%d", currentPidProfile->psas_pitch_accel_i_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MAX, "%d", currentPidProfile->psas_pitch_accel_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_PITCH_ACCEL_MIN, "%d", currentPidProfile->psas_pitch_accel_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STICK_GAIN, "%d", currentPidProfile->psas_stick_gain[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_GAIN, "%d", currentPidProfile->psas_damping_gain[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_DAMPING_FILTER_FREQ, "%d", currentPidProfile->psas_yaw_damping_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ACCEL_Y_FILTER_FREQ, "%d", currentPidProfile->psas_accel_y_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_YAW_STABILITY_GAIN, "%d", currentPidProfile->psas_yaw_stability_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_WING_LOAD, "%d", currentPidProfile->psas_wing_load);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AIR_DENSITY, "%d", currentPidProfile->psas_air_density);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_C_LIMIT, "%d", currentPidProfile->psas_lift_c_limit);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_GAIN, "%d", currentPidProfile->psas_aoa_limiter_gain);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_LIFT_COEF_FILTER_FREQ, "%d", currentPidProfile->psas_lift_coef_filter_freq);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_FORECAST_TIME, "%d", currentPidProfile->psas_aoa_limiter_forecast_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_AOA_LIMITER_TAU_RETURN, "%d", currentPidProfile->psas_aoa_limiter_tau_return);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SERVO_TIME, "%d", currentPidProfile->psas_servo_time);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPidProfile->psas_roll_yaw_clift_start);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPidProfile->psas_roll_yaw_clift_stop);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPidProfile->psas_roll_to_yaw_link);
+#endif // USE_WING
+
         default:
             return true;
     }
