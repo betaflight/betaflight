@@ -70,6 +70,7 @@
 #include "flight/rpm_filter.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
+#include "flight/airplane_sas.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -299,6 +300,23 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"eRPM",  6, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_7_HAS_RPM)},
     {"eRPM",  7, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(MOTOR_8_HAS_RPM)},
 #endif /* USE_DSHOT_TELEMETRY */
+
+#ifdef USE_AIRPLANE_SAS
+    // Airplane SAS control * 100
+    {"PSAS_pitch", 0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_PILOT)},
+    {"PSAS_pitch", 1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_DAMPING)},
+    {"PSAS_pitch", 2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_STABILITY)},
+    {"PSAS_pitch", 3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_I)},
+    {"PSAS_pitch", 4, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_PITCH_P)},
+
+    {"PSAS_roll",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_ROLL_PILOT)},
+    {"PSAS_roll",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_ROLL_DAMPING)},
+
+    {"PSAS_yaw", 0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_PILOT)},
+    {"PSAS_yaw", 1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_DAMPING)},
+    {"PSAS_yaw", 2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_STABILITY)},
+    {"PSAS_yaw", 3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK)},
+#endif /* USE_AIRPLANE_SAS */
 };
 
 #ifdef USE_GPS
@@ -355,6 +373,22 @@ typedef enum {
     BLACKBOX_STATE_ERASED
 } blackboxState_e;
 
+#ifdef USE_AIRPLANE_SAS
+typedef struct blackboxPsasState_s {
+    int16_t pitch_pilot;
+    int16_t pitch_damping;
+    int16_t pitch_stability;
+    int16_t pitch_I;
+    int16_t pitch_P;
+    int16_t roll_pilot;
+    int16_t roll_damping;
+    int16_t yaw_pilot;
+    int16_t yaw_damping;
+    int16_t yaw_stability;
+    int16_t yaw_roll_cross_link;
+} blackboxPsasState_t;
+#endif
+
 typedef struct blackboxMainState_s {
     uint32_t time;
 
@@ -392,6 +426,10 @@ typedef struct blackboxMainState_s {
     int32_t surfaceRaw;
 #endif
     uint16_t rssi;
+
+#ifdef USE_AIRPLANE_SAS
+    blackboxPsasState_t planeSAS;
+#endif
 } blackboxMainState_t;
 
 typedef struct blackboxGpsState_s {
@@ -585,6 +623,44 @@ static bool testBlackboxConditionUncached(flightLogFieldCondition_e condition)
 
     case CONDITION(DEBUG_LOG):
         return (debugMode != DEBUG_NONE) && isFieldEnabled(FIELD_SELECT(DEBUG_LOG));
+
+#ifdef USE_AIRPLANE_SAS
+    // PSAS Pitch control data
+    case CONDITION(NONZERO_PSAS_PITCH_PILOT):
+        return (currentPidProfile->psas_stick_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_PITCH_DAMPING):
+        return (currentPidProfile->psas_damping_gain[FD_PITCH] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_PITCH_STABILITY):
+        return (currentPidProfile->psas_pitch_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_PITCH_I):
+        return (currentPidProfile->psas_pitch_accel_i_gain != 0 || currentPidProfile->psas_aoa_limiter_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_PITCH_P):
+        return (currentPidProfile->psas_pitch_accel_p_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    // PSAS Roll control data
+    case CONDITION(NONZERO_PSAS_ROLL_PILOT):
+        return (currentPidProfile->psas_stick_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_ROLL_DAMPING):
+        return (currentPidProfile->psas_damping_gain[FD_ROLL] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    // PSAS YAW control data
+    case CONDITION(NONZERO_PSAS_YAW_PILOT):
+        return (currentPidProfile->psas_stick_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_YAW_DAMPING):
+        return (currentPidProfile->psas_damping_gain[FD_YAW] != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_YAW_STABILITY):
+        return (currentPidProfile->psas_yaw_stability_gain != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+
+    case CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK):
+        return (currentPidProfile->psas_roll_to_yaw_link != 0) && isFieldEnabled(FIELD_SELECT(PSAS));
+#endif
 
     case CONDITION(NEVER):
         return false;
@@ -793,6 +869,54 @@ static void writeIntraframe(void)
     }
 #endif
 
+#ifdef USE_AIRPLANE_SAS
+    if (isFieldEnabled(FIELD_SELECT(PSAS))) {
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_stability);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_I);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_P);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.roll_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.roll_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_stability);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_roll_cross_link);
+        }
+    }
+#endif
+
     //Rotate our history buffers:
 
     //The current state becomes the new "before" state
@@ -968,6 +1092,54 @@ static void writeInterframe(void)
             if (testBlackboxCondition(CONDITION(MOTOR_1_HAS_RPM) + x)) {
                 blackboxWriteSignedVB(blackboxCurrent->erpm[x] - blackboxLast->erpm[x]);
             }
+        }
+    }
+#endif
+
+#ifdef USE_AIRPLANE_SAS
+    if (isFieldEnabled(FIELD_SELECT(PSAS))) {
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_pilot - blackboxLast->planeSAS.pitch_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_damping - blackboxLast->planeSAS.pitch_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_STABILITY))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_stability - blackboxLast->planeSAS.pitch_stability);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_I))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_I - blackboxLast->planeSAS.pitch_I);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_PITCH_P))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.pitch_P - blackboxLast->planeSAS.pitch_P);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.roll_pilot - blackboxLast->planeSAS.roll_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_ROLL_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.roll_damping - blackboxLast->planeSAS.roll_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_PILOT))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_pilot - blackboxLast->planeSAS.yaw_pilot);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_DAMPING))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_damping - blackboxLast->planeSAS.yaw_damping);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_STABILITY))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_stability - blackboxLast->planeSAS.yaw_stability);
+        }
+
+        if (testBlackboxCondition(CONDITION(NONZERO_PSAS_YAW_ROLL_CROSS_LINK))) {
+            blackboxWriteS16(blackboxCurrent->planeSAS.yaw_roll_cross_link - blackboxLast->planeSAS.yaw_roll_cross_link);
         }
     }
 #endif
@@ -1325,6 +1497,23 @@ static void loadMainState(timeUs_t currentTimeUs)
         blackboxCurrent->servo[i] = servo[i];
     }
 #endif
+
+#ifdef USE_PLANE_SAS
+    blackboxCurrent->planeSAS.pitch_pilot = lrintf(psasControl.pitch.pilot * 100.0f);
+    blackboxCurrent->planeSAS.pitch_damping = lrintf(psasControl.pitch.damping * 100.0f);
+    blackboxCurrent->planeSAS.pitch_stability = lrintf(psasControl.pitch.stability * 100.0f);
+    blackboxCurrent->planeSAS.pitch_I = lrintf(psasControl.pitch.I * 100.0f);
+    blackboxCurrent->planeSAS.pitch_P = lrintf(psasControl.pitch.accelP * 100.0f);
+
+    blackboxCurrent->planeSAS.roll_pilot = lrintf(psasControl.roll.pilot * 100.0f);
+    blackboxCurrent->planeSAS.roll_damping = lrintf(psasControl.roll.damping * 100.0f);
+
+    blackboxCurrent->planeSAS.yaw_pilot = lrintf(psasControl.yaw.pilot * 100.0f);
+    blackboxCurrent->planeSAS.yaw_damping = lrintf(psasControl.yaw.damping * 100.0f);
+    blackboxCurrent->planeSAS.yaw_stability = lrintf(psasControl.yaw.stability * 100.0f);
+    blackboxCurrent->planeSAS.yaw_roll_cross_link = lrintf(psasControl.yaw.rollToYawCrossLink * 100.0f);
+#endif
+
 #else
     UNUSED(currentTimeUs);
 #endif // UNIT_TEST
