@@ -131,6 +131,7 @@ typedef enum {
     DEBUG_MAVLINK_TELEMETRY,
     DEBUG_AUTOPILOT_PID,
     DEBUG_POSITION_NAV,
+    DEBUG_ADAPTIVE_DTERM_LPF,   // [0]=cutoff*10, [1]=noise, [2]=learning, [3]=state|freeze
     DEBUG_COUNT
 } debugType_e;
 

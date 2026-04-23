@@ -495,7 +495,7 @@ FAST_CODE void gyroUpdate(void)
 
 FAST_CODE void gyroFiltering(timeUs_t currentTimeUs)
 {
-    if (gyro.gyroDebugMode == DEBUG_NONE) {
+    if (LIKELY(gyro.gyroDebugMode == DEBUG_NONE)) {
         filterGyro();
     } else {
         filterGyroDebug();

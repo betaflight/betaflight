@@ -249,6 +249,7 @@ static void validateAndFixConfig(void)
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_lpf2_static_hz, LPF_MAX_HZ);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, LPF_MAX_HZ);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
+        adjustFilterLimit(&pidProfilesMutable(i)->dterm_prediff_hz, LPF_MAX_HZ);
 
         // Prevent invalid notch cutoff
         if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {
@@ -261,6 +262,14 @@ static void validateAndFixConfig(void)
             pidProfilesMutable(i)->dterm_lpf1_dyn_min_hz = 0;
         }
 #endif
+
+        if (pidProfilesMutable(i)->adaptive_dterm_lpf_min_hz >= pidProfilesMutable(i)->adaptive_dterm_lpf_max_hz ||
+            pidProfilesMutable(i)->adaptive_dterm_lpf_start_hz < pidProfilesMutable(i)->adaptive_dterm_lpf_min_hz ||
+            pidProfilesMutable(i)->adaptive_dterm_lpf_start_hz > pidProfilesMutable(i)->adaptive_dterm_lpf_max_hz ||
+            pidProfilesMutable(i)->adaptive_dterm_lpf_update_ms == 0 ||
+            pidProfilesMutable(i)->adaptive_dterm_lpf_step_hz == 0) {
+            pidProfilesMutable(i)->adaptive_dterm_lpf = 0;
+        }
 
         if (pidProfilesMutable(i)->motor_output_limit > 100 || pidProfilesMutable(i)->motor_output_limit == 0) {
             pidProfilesMutable(i)->motor_output_limit = 100;

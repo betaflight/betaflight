@@ -22,6 +22,14 @@
 
 static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 {
+    const float sampleScale = (!gyro.downsampleFilterEnabled && gyro.sampleCount) ? 1.0f / gyro.sampleCount : 0.0f;
+
+#ifdef USE_DYN_NOTCH_FILTER
+    const bool dynNotchActive = isDynNotchActive();
+#endif
+    const bool hasNotch1 = (gyro.notchFilter1ApplyFn != nullFilterApply);
+    const bool hasNotch2 = (gyro.notchFilter2ApplyFn != nullFilterApply);
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // DEBUG_GYRO_RAW records the raw value read from the sensor (not zero offset, not scaled)
         GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_RAW, axis, gyro.rawSensorDev->gyroADCRaw[axis]);
@@ -37,7 +45,7 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         } else {
             // using simple average for downsampling
             if (gyro.sampleCount) {
-                gyroADCf = gyro.sampleSum[axis] / gyro.sampleCount;
+                gyroADCf = gyro.sampleSum[axis] * sampleScale;
             }
             gyro.sampleSum[axis] = 0;
         }
@@ -52,23 +60,37 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
         // DEBUG_GYRO_SAMPLE(2) Record the post-RPM Filter value for the selected debug axis
         GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 2, lrintf(gyroADCf));
 
-        // apply static notch filters and software lowpass filters
-        gyroADCf = gyro.notchFilter1ApplyFn((filter_t *)&gyro.notchFilter1[axis], gyroADCf);
-        gyroADCf = gyro.notchFilter2ApplyFn((filter_t *)&gyro.notchFilter2[axis], gyroADCf);
-        gyroADCf = gyro.lowpassFilterApplyFn((filter_t *)&gyro.lowpassFilter[axis], gyroADCf);
-
-        // DEBUG_GYRO_SAMPLE(3) Record the post-static notch and lowpass filter value for the selected debug axis
-        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCf));
+        // apply static notch filters (skip indirect call when disabled)
+        if (hasNotch1) {
+            gyroADCf = gyro.notchFilter1ApplyFn((filter_t *)&gyro.notchFilter1[axis], gyroADCf);
+        }
+        if (hasNotch2) {
+            gyroADCf = gyro.notchFilter2ApplyFn((filter_t *)&gyro.notchFilter2[axis], gyroADCf);
+        }
 
 #ifdef USE_DYN_NOTCH_FILTER
-        if (isDynNotchActive()) {
+        if (dynNotchActive) {
             if (axis == gyro.gyroDebugAxis) {
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf));
                 GYRO_FILTER_DEBUG_SET(DEBUG_FFT_FREQ, 0, lrintf(gyroADCf));
                 GYRO_FILTER_DEBUG_SET(DEBUG_DYN_LPF, 0, lrintf(gyroADCf));
             }
 
+            // Push pre-LPF signal for detection: peaks are not yet attenuated by
+            // the broadband lowpass, so FFT tracks noise frequencies faster and
+            // more accurately. dynNotchFilter() is still applied after LPF below.
             dynNotchPush(axis, gyroADCf);
+        }
+#endif
+
+        // Apply broadband lowpass after detection push so dynNotch sees full-amplitude peaks
+        gyroADCf = gyro.lowpassFilterApplyFn((filter_t *)&gyro.lowpassFilter[axis], gyroADCf);
+
+        // DEBUG_GYRO_SAMPLE(3) Record the post-static notch and lowpass filter value for the selected debug axis
+        GYRO_FILTER_AXIS_DEBUG_SET(axis, DEBUG_GYRO_SAMPLE, 3, lrintf(gyroADCf));
+
+#ifdef USE_DYN_NOTCH_FILTER
+        if (dynNotchActive) {
             gyroADCf = dynNotchFilter(axis, gyroADCf);
 
             if (axis == gyro.gyroDebugAxis) {

@@ -412,7 +412,7 @@ FAST_CODE float dynNotchFilter(const int axis, float value)
     return value;
 }
 
-bool isDynNotchActive(void)
+FAST_CODE bool isDynNotchActive(void)
 {
     return dynNotch.count > 0;
 }

@@ -46,6 +46,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/alt_hold.h"
+#include "flight/adaptive_filter.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
@@ -812,6 +813,20 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
     motorMixRange = motorMixMax - motorMixMin;
 
+    // Update adaptive D-term LPF cutoff based on noise energy (no-op when disabled).
+    // Freeze decisions use the largest current-axis setpoint and gyro error, plus
+    // the motor mix range calculated for this loop.
+    {
+        float maxSetpointRate = 0.0f;
+        float maxGyroError = 0.0f;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            const float setpointRate = getSetpointRate(axis);
+            maxSetpointRate = fmaxf(maxSetpointRate, fabsf(setpointRate));
+            maxGyroError = fmaxf(maxGyroError, fabsf(gyro.gyroADCf[axis] - setpointRate));
+        }
+        adaptiveFilterUpdate(throttle, maxSetpointRate, maxGyroError, motorMixRange);
+    }
+
     // note that here airmodeEnabled is true also when Launch Control is active
     switch (mixerConfig()->mixer_type) {
     case MIXER_LEGACY:
@@ -833,7 +848,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && ARMING_FLAG(ARMED)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
-        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
+        && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | BRAKING_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold / Braking is active
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         applyMotorStop();
     } else {
