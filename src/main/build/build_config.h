@@ -69,6 +69,7 @@ typedef enum {
     MCU_TYPE_N657,
     MCU_TYPE_H562,
     MCU_TYPE_H563,
+    MCU_TYPE_F427,
     MCU_TYPE_ESP32S3,
     MCU_TYPE_ESP32,
     MCU_TYPE_C591,
