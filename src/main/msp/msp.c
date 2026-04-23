@@ -1098,12 +1098,23 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         const int flagBits = packFlightModeFlags(&flightModeFlags);
 
 #if defined(USE_VTX_MSP)
+        // Both MSP_STATUS and MSP_STATUS_EX fall through into this block, so
+        // VTXs polling either command receive the same delayed BOXARM bit.
         // For the VTX MSP port only, keep BOXARM reported as armed during the
         // configured vtx_msp_disarm_delay so digital VTXs (DJI/HDZero/Walksnail)
         // keep recording after landing. All other MSP consumers (Configurator,
         // Blackbox, telemetry) see the true armed state.
+        //
+        // The BOXARM bit position in flightModeFlags is not a fixed index -
+        // packFlightModeFlags() emits bits in active-box order, so we resolve
+        // BOXARM's current position via getActiveBoxIndex(). A -1 return means
+        // BOXARM is not currently active (should not happen in practice); skip
+        // the override silently rather than corrupting an unrelated bit.
         if (isVtxMspDescriptor(srcDesc) && isMspArmedDelayActive(micros())) {
-            bitArraySet(&flightModeFlags, 0); // BOXARM is always the first active box, bit index 0
+            const int armBitIndex = getActiveBoxIndex(BOXARM);
+            if (armBitIndex >= 0) {
+                bitArraySet(&flightModeFlags, armBitIndex);
+            }
         }
 #endif
 

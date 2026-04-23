@@ -397,6 +397,23 @@ bool getBoxIdState(boxId_e boxid)
     }
 }
 
+// Returns the position of the given boxId inside the active-boxes list, or -1
+// if the box is not active.  Mirrors the indexing used by packFlightModeFlags()
+// so callers can set or query a specific flightModeFlags bit by boxId.
+int getActiveBoxIndex(boxId_e boxid)
+{
+    unsigned mspBoxIdx = 0;
+    for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
+        if (activeBoxIdGet(id)) {
+            if (id == boxid) {
+                return (int)mspBoxIdx;
+            }
+            mspBoxIdx++;
+        }
+    }
+    return -1;
+}
+
 // pack used flightModeFlags into supplied array
 // returns number of bits used
 int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)

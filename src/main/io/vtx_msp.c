@@ -76,7 +76,7 @@ static vtxDevice_t vtxMsp = {
 };
 
 STATIC_UNIT_TESTED mspVtxStatus_e mspVtxStatus = MSP_VTX_STATUS_OFFLINE;
-static uint8_t mspVtxPortIdentifier = 255;
+static serialPortIdentifier_e mspVtxPortIdentifier = SERIAL_PORT_NONE;
 
 #define MSP_VTX_REQUEST_PERIOD_US (200 * 1000) // 200ms
 
@@ -97,6 +97,8 @@ static bool isLowPowerDisarmed(void)
  * every new disarm event.  Uses a separate validity flag so a zero-valued
  * timestamp (wraparound edge case) is handled correctly.  Invalidating the
  * timestamp on arm ensures multi-cycle arm/disarm works without power cycling.
+ * Safe to call more than once per scheduler tick: the prevArmed edge gate
+ * makes repeated calls a no-op until the armed state actually changes.
  */
 static void updateDisarmTimestamp(timeUs_t currentTimeUs)
 {
@@ -168,7 +170,7 @@ bool isMspArmedDelayActive(timeUs_t currentTimeUs)
  */
 bool isVtxMspDescriptor(mspDescriptor_t descriptor)
 {
-    if (mspVtxPortIdentifier == 255) {
+    if (mspVtxPortIdentifier == SERIAL_PORT_NONE) {
         return false;
     }
     if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor) {
