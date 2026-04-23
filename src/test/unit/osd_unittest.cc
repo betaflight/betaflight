@@ -103,6 +103,7 @@ extern "C" {
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
+    uint8_t simulationBatteryPercentage;
     uint32_t simulationBatteryAmperage;
     uint32_t simulationMahDrawn;
     float simulationWhDrawn;
@@ -132,6 +133,7 @@ void setDefaultSimulationState()
     simulationBatteryState = BATTERY_OK;
     simulationBatteryCellCount = 4;
     simulationBatteryVoltage = 1680;
+    simulationBatteryPercentage = 100;
     simulationBatteryAmperage = 0;
     simulationMahDrawn = 0;
     simulationWhDrawn = 0;
@@ -1355,7 +1357,7 @@ extern "C" {
     }
 
     uint8_t calculateBatteryPercentageRemaining(void) {
-        return  0;
+        return simulationBatteryPercentage;
     }
 
     int32_t getAmperage() {
