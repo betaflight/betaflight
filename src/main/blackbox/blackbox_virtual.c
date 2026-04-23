@@ -87,7 +87,7 @@ bool blackboxVirtualBeginLog(void)
     if (blackboxVirtualFile != NULL) {
         return false;
     }
-    const size_t name_buffer_length = snprintf(NULL, 0, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
+    const size_t name_buffer_length = snprintf(NULL, 0, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX) + 1;
     char filename[name_buffer_length];
     snprintf(filename, sizeof(filename), "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
