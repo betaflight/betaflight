@@ -93,18 +93,22 @@ static bool isLowPowerDisarmed(void)
 }
 
 /**
- * Lazily records the disarm timestamp on the first call after a disarm event.
- * Only sets the timestamp when the FC has been armed at least once and is
- * currently disarmed, avoiding false triggers at boot.  Uses a separate
- * validity flag so that a zero-valued timestamp (wraparound edge case) is
- * handled correctly.
+ * Tracks arm/disarm transitions so that lastMspDisarmTimeUs is refreshed on
+ * every new disarm event.  Uses a separate validity flag so a zero-valued
+ * timestamp (wraparound edge case) is handled correctly.  Invalidating the
+ * timestamp on arm ensures multi-cycle arm/disarm works without power cycling.
  */
-static void ensureDisarmTimestampSet(timeUs_t currentTimeUs)
+static void updateDisarmTimestamp(timeUs_t currentTimeUs)
 {
-    if (!disarmTimestampValid && !ARMING_FLAG(ARMED) && ARMING_FLAG(WAS_EVER_ARMED)) {
+    static bool prevArmed = false;
+    const bool armed = ARMING_FLAG(ARMED);
+    if (armed && !prevArmed) {
+        disarmTimestampValid = false;
+    } else if (!armed && !disarmTimestampValid && ARMING_FLAG(WAS_EVER_ARMED)) {
         lastMspDisarmTimeUs = currentTimeUs;
         disarmTimestampValid = true;
     }
+    prevArmed = armed;
 }
 
 /**
@@ -130,31 +134,23 @@ static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
  */
 static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
 {
+    updateDisarmTimestamp(currentTimeUs);
     if (!isLowPowerDisarmed()) {
         return false;
     }
-    ensureDisarmTimestampSet(currentTimeUs);
     return isMspDisarmDelayElapsed(currentTimeUs);
 }
 
 /**
- * Resets the disarm timestamp so that the next disarm event will be freshly
- * recorded.  Called from getBoxIdState() when an arm transition is detected.
- */
-void resetMspDisarmTimestamp(void)
-{
-    disarmTimestampValid = false;
-}
-
-/**
  * Returns true while the MSP disarm delay is active — i.e. the FC is disarmed
- * but the configured delay has not yet elapsed.  Used by getBoxIdState(BOXARM)
- * to keep reporting armed status to the VTX during the delay window, which
- * prevents digital VTX systems (e.g. DJI) from stopping video recording
+ * but the configured delay has not yet elapsed.  Used by the MSP_STATUS
+ * handler to keep reporting armed status to the VTX during the delay window,
+ * which prevents digital VTX systems (e.g. DJI) from stopping video recording
  * immediately on disarm.
  */
 bool isMspArmedDelayActive(timeUs_t currentTimeUs)
 {
+    updateDisarmTimestamp(currentTimeUs);
     if (ARMING_FLAG(ARMED)) {
         return false;
     }
@@ -162,8 +158,29 @@ bool isMspArmedDelayActive(timeUs_t currentTimeUs)
     if (delaySeconds == 0 || !ARMING_FLAG(WAS_EVER_ARMED)) {
         return false;
     }
-    ensureDisarmTimestampSet(currentTimeUs);
     return !isMspDisarmDelayElapsed(currentTimeUs);
+}
+
+/**
+ * Returns true if the given MSP descriptor is associated with the VTX MSP
+ * port (direct serial or CRSF-over-telemetry).  Used to limit the disarm
+ * delay override to MSP responses destined for the digital VTX.
+ */
+bool isVtxMspDescriptor(mspDescriptor_t descriptor)
+{
+    if (mspVtxPortIdentifier == 255) {
+        return false;
+    }
+    if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor) {
+        return true;
+    }
+#if defined(USE_MSP_OVER_TELEMETRY)
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);
+    if (portConfig && isCrsfPortConfig(portConfig) && getMspTelemetryDescriptor() == descriptor) {
+        return true;
+    }
+#endif
+    return false;
 }
 
 void setMspVtxDeviceStatusReady(const int descriptor)

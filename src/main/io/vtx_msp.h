@@ -25,6 +25,7 @@
 
 #include "build/build_config.h"
 #include "common/time.h"
+#include "msp/msp.h"
 
 typedef enum {
     // Offline - device hasn't responded yet
@@ -38,5 +39,5 @@ void setMspVtxDeviceStatusReady(const int descriptor);
 /** Returns true while the MSP disarm delay is active, keeping VTX armed status reported. */
 bool isMspArmedDelayActive(timeUs_t currentTimeUs);
 
-/** Resets the disarm timestamp; call on each arm transition to prepare for the next cycle. */
-void resetMspDisarmTimestamp(void);
+/** Returns true if the given MSP descriptor corresponds to the VTX MSP port. */
+bool isVtxMspDescriptor(mspDescriptor_t descriptor);
