@@ -856,7 +856,11 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     else { // calculate the VTX color based on frequency
 
         hsvColor_t color = getHsvFromVtxFrequency(frequency);
-        color.v = (vtxStatus & VTX_STATUS_PIT_MODE) ? (blink ? 15 : 0) : 255; // blink when in pit mode
+        if (vtxStatus & VTX_STATUS_PIT_MODE) {
+            color.v = blink ? color.v : 15;
+            // blink to a pale color when in pit mode
+            // if no vtx color (black means vtx frequency known) blink from off to pale red (0,0,15)
+        }
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
 }
