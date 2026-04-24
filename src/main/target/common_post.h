@@ -693,10 +693,6 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
-#ifndef USE_ITERM_RELAX
-#undef USE_ABSOLUTE_CONTROL
-#endif
-
 #if defined(USE_RX_EXPRESSLRS)
 // ELRS depends on CRSF telemetry
 #if !defined(USE_TELEMETRY)

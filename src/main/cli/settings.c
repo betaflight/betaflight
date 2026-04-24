@@ -1302,13 +1302,6 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_CHIRP_TIME_SECONDS,            VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_time_seconds) },
 #endif
 
-#if defined(USE_ABSOLUTE_CONTROL)
-    { PARAM_NAME_ABS_CONTROL_GAIN,  VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_gain) },
-    { "abs_control_limit",          VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 10, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_limit) },
-    { "abs_control_error_limit",    VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 1, 45 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_error_limit) },
-    { "abs_control_cutoff",         VAR_UINT8 | PROFILE_VALUE,  .config.minmaxUnsigned = { 1, 45 }, PG_PID_PROFILE, offsetof(pidProfile_t, abs_control_cutoff) },
-#endif
-
 #ifdef USE_INTEGRATED_YAW_CONTROL
     { PARAM_NAME_USE_INTEGRATED_YAW, VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, use_integrated_yaw) },
     { "integrated_yaw_relax",        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, integrated_yaw_relax) },
