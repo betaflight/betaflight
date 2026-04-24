@@ -163,16 +163,18 @@ bool dronecanGnssGetLatest(gpsSolutionData_t *out)
         return false;
     }
 
-    // Seqlock-style read: retry if the writer was mid-update or the count
-    // changed mid-copy. Task-context access means this converges in one or
-    // two iterations at worst.
+    // Seqlock-style read: spin until the sequence is even (writer quiescent)
+    // so we never copy a mid-update struct, then confirm the count was
+    // stable across the copy. Splitting the wait into its own inner loop
+    // avoids the UB of comparing an uninitialised s2 on the first iteration
+    // if the writer happens to be mid-update when we first sample the
+    // sequence. Task-context access converges in one or two iterations.
     uint32_t s1;
     uint32_t s2;
     do {
-        s1 = latestSeq;
-        if (s1 & 1U) {
-            continue;
-        }
+        do {
+            s1 = latestSeq;
+        } while (s1 & 1U);
         __asm volatile ("" ::: "memory");
         *out = latest;
         __asm volatile ("" ::: "memory");
