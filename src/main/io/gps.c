@@ -49,6 +49,10 @@
 #include "io/gps.h"
 #include "io/gps_virtual.h"
 
+#if ENABLE_DRONECAN
+#include "io/dronecan/dronecan_gnss.h"
+#endif
+
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -411,7 +415,11 @@ void gpsInit(void)
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_STATE_UNKNOWN);
 
-    if (gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) { // no serial ports used when GPS_MSP or GPS_VIRTUAL is configured
+    // MSP / virtual / DroneCAN providers don't own a serial port — the
+    // frame source is another subsystem feeding gpsSol through updateXxxGPS().
+    if (gpsConfig()->provider == GPS_MSP
+        || gpsConfig()->provider == GPS_VIRTUAL
+        || gpsConfig()->provider == GPS_DRONECAN) {
         gpsSetState(GPS_STATE_INITIALIZED);
         return;
     }
@@ -1324,6 +1332,55 @@ static void calculateNavInterval (void)
     gpsSol.navIntervalMs = constrain(navDeltaTimeMs, 50, 2500);
 }
 
+#if ENABLE_DRONECAN
+static void updateDronecanGPS(void)
+{
+    // Same 100 ms cadence as the virtual provider — there's no point polling
+    // faster than the GPS task's Hz profile while the cache is fed at the
+    // device's native rate from the DroneCAN RX path.
+    const uint32_t updateInterval = 100;
+    static uint32_t nextUpdateTime = 0;
+
+    if (cmp32(gpsData.now, nextUpdateTime) <= 0) {
+        return;
+    }
+
+    if (gpsData.state == GPS_STATE_INITIALIZED) {
+        gpsSetState(GPS_STATE_RECEIVING_DATA);
+    }
+
+    gpsSolutionData_t incoming;
+    if (!dronecanGnssGetLatest(&incoming)) {
+        // No Fix2 frame yet; re-check on the next tick.
+        nextUpdateTime = gpsData.now + updateInterval;
+        return;
+    }
+
+    // Drop the solution if it's gone stale; better to surface GPS loss than
+    // to keep navigating off a last-known position.
+    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
+    const bool fresh = (ageUs < 2000000); // 2 s
+
+    gpsSol = incoming;
+    gpsSol.time = gpsData.now;
+
+    gpsData.lastNavMessage = gpsData.now;
+    sensorsSet(SENSOR_GPS);
+
+    if (fresh && gpsSol.numSat > 3) {
+        gpsSetFixState(GPS_FIX);
+    } else {
+        gpsSetFixState(0);
+    }
+    GPS_update ^= GPS_DIRECT_TICK;
+
+    calculateNavInterval();
+    onGpsNewData();
+
+    nextUpdateTime = gpsData.now + updateInterval;
+}
+#endif
+
 #if defined(USE_VIRTUAL_GPS)
 static void updateVirtualGPS(void)
 {
@@ -1459,6 +1516,11 @@ void gpsUpdate(timeUs_t currentTimeUs)
 #if defined(USE_VIRTUAL_GPS)
     case GPS_VIRTUAL:
         updateVirtualGPS();
+        break;
+#endif
+#if ENABLE_DRONECAN
+    case GPS_DRONECAN:
+        updateDronecanGPS();
         break;
 #endif
     }

@@ -179,6 +179,7 @@ typedef enum {
     GPS_UBLOX,
     GPS_MSP,
     GPS_VIRTUAL,
+    GPS_DRONECAN,
 } gpsProvider_e;
 
 typedef enum {
