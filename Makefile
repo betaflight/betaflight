@@ -330,6 +330,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
+              -D'__MCU_NAME__="$(TARGET_MCU)"' \
               -D'__REVISION__="$(REVISION)"' \
               -D'__FC_VERSION__="$(FC_VER)"' \
               $(CONFIG_REVISION_DEFINE) \
