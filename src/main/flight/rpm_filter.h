@@ -29,4 +29,4 @@
 void rpmFilterInit(const rpmFilterConfig_t *config, const timeUs_t looptimeUs);
 void rpmFilterUpdate(void);
 float rpmFilterApply(const int axis, float value);
-bool isRpmFilterEnabled(void);
+bool isRpmFilterEnabled(void) __attribute__((pure));

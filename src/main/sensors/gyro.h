@@ -72,27 +72,17 @@ typedef struct gyroSensor_s {
 } gyroSensor_t;
 
 typedef struct gyro_s {
-    uint16_t sampleRateHz;
-    uint32_t targetLooptime;
-    uint32_t sampleLooptime;
-    float scale;
-    float gyroADC[XYZ_AXIS_COUNT];     // aligned, calibrated, scaled, but unfiltered data from the sensor(s)
+    // --- hot path fields (accessed every gyro/PID cycle) ---
     float gyroADCf[XYZ_AXIS_COUNT];    // filtered gyro data
-    uint8_t sampleCount;               // gyro sensor sample counter
+    float gyroADC[XYZ_AXIS_COUNT];     // aligned, calibrated, scaled, but unfiltered data from the sensor(s)
     float sampleSum[XYZ_AXIS_COUNT];   // summed samples used for downsampling
+    uint8_t sampleCount;               // gyro sensor sample counter
     bool downsampleFilterEnabled;      // if true then downsample using gyro lowpass 2, otherwise use averaging
-
-    gyroSensor_t gyroSensor[GYRO_COUNT];
-
-    gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
+    float scale;
 
     // lowpass gyro soft filter
     filterApplyFnPtr lowpassFilterApplyFn;
     gyroLowpassFilter_t lowpassFilter[XYZ_AXIS_COUNT];
-
-    // lowpass2 gyro soft filter
-    filterApplyFnPtr lowpass2FilterApplyFn;
-    gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
 
     // notch filters
     filterApplyFnPtr notchFilter1ApplyFn;
@@ -100,6 +90,21 @@ typedef struct gyro_s {
 
     filterApplyFnPtr notchFilter2ApplyFn;
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
+
+    // lowpass2 gyro soft filter
+    filterApplyFnPtr lowpass2FilterApplyFn;
+    gyroLowpassFilter_t lowpass2Filter[XYZ_AXIS_COUNT];
+
+    pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
+
+    // --- cold path fields (init, config, debug) ---
+    uint16_t sampleRateHz;
+    uint32_t targetLooptime;
+    uint32_t sampleLooptime;
+
+    gyroSensor_t gyroSensor[GYRO_COUNT];
+
+    gyroDev_t *rawSensorDev;           // pointer to the sensor providing the raw data for DEBUG_GYRO_RAW
 
     uint16_t accSampleRateHz;
     uint8_t gyroEnabledBitmask;
@@ -118,7 +123,6 @@ typedef struct gyro_s {
 #ifdef USE_GYRO_OVERFLOW_CHECK
     uint8_t overflowAxisMask;
 #endif
-    pt1Filter_t imuGyroFilter[XYZ_AXIS_COUNT];
 } gyro_t;
 
 extern gyro_t gyro;

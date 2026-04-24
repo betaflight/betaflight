@@ -143,3 +143,6 @@ void * memcpy_fn ( void * destination, const void * source, size_t num ) asm("me
 #else
 #define FALLTHROUGH do {} while(0)
 #endif
+
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)

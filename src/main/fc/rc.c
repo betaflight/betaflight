@@ -669,20 +669,24 @@ FAST_CODE void processRcCommand(void)
 
             rawSetpoint[axis] = constrainf(angleRate, -1.0f * currentControlRateProfile->rate_limit[axis], 1.0f * currentControlRateProfile->rate_limit[axis]);
             DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
-
-#ifdef USE_FEEDFORWARD
-            calculateFeedforward(&pidRuntime, axis);
-#endif // USE_FEEDFORWARD
-
-            // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
-            DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));
-            DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz)); // all smoothed values
-            DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));
         }
-        // adjust unfiltered setpoint steps to camera angle (mixing Roll and Yaw)
+
+        // FPV camera angle mixing changes the final roll/yaw setpoint pair, so it
+        // must happen before feedforward is derived from rawSetpoint.
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRawSetpointToFpvCamAngle();
         }
+
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+#ifdef USE_FEEDFORWARD
+            calculateFeedforward(&pidRuntime, axis);
+#endif // USE_FEEDFORWARD
+        }
+
+        // log the smoothed Rx Rate from non-outliers, this will not show the steps every three valid packets
+        DEBUG_SET(DEBUG_RX_TIMING, 5, lrintf(smoothedRxRateHz));
+        DEBUG_SET(DEBUG_RC_SMOOTHING, 5, lrintf(smoothedRxRateHz)); // all smoothed values
+        DEBUG_SET(DEBUG_RC_SMOOTHING_RATE, 2, lrintf(smoothedRxRateHz));
     }
 
 #ifdef USE_RC_SMOOTHING_FILTER

@@ -69,6 +69,7 @@
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
 #define DTERM_LPF1_DYN_MAX_HZ_DEFAULT 150
 #define DTERM_LPF2_HZ_DEFAULT 150
+#define DTERM_PREDIFF_HZ_DEFAULT 0    // Pre-differentiation LPF cutoff, 0 = disabled
 
 #define TPA_MAX 100
 
@@ -221,6 +222,15 @@ typedef struct pidProfile_s {
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
     uint16_t dterm_lpf2_static_hz;          // Static Dterm lowpass 2 filter cutoff value in hz
+    uint16_t dterm_prediff_hz;              // Pre-differentiation LPF cutoff (0 = disabled)
+    // Adaptive D-term LPF1 cutoff
+    uint8_t  adaptive_dterm_lpf;            // 0 = OFF, 1 = ON
+    uint16_t adaptive_dterm_lpf_min_hz;     // minimum allowed cutoff (Hz)
+    uint16_t adaptive_dterm_lpf_max_hz;     // maximum allowed cutoff (Hz)
+    uint16_t adaptive_dterm_lpf_start_hz;   // initial cutoff on arm (Hz)
+    uint16_t adaptive_dterm_lpf_update_ms;  // update interval (ms)
+    uint8_t  adaptive_dterm_lpf_step_hz;    // max cutoff change per update (Hz)
+    uint8_t  adaptive_dterm_lpf_learn_delay_s; // seconds after arm before learning starts
     uint8_t crash_recovery;                 // off, on, on and beeps when it is in crash recovery mode
     uint8_t throttle_boost;                 // how much should throttle be boosted during transient changes 0-100, 100 adds 10x hpf filtered throttle
     uint8_t throttle_boost_cutoff;          // Which cutoff frequency to use for throttle boost. higher cutoffs keep the boost on for shorter. Specified in hz.
@@ -383,26 +393,39 @@ typedef struct tpaSpeedParams_s {
 } tpaSpeedParams_t;
 
 typedef struct pidRuntime_s {
+    // --- hot scalars (first cache line, accessed every PID cycle) ---
     float dT;
     float pidFrequency;
-    bool pidStabilisationEnabled;
+    float tpaFactor;
+    float itermLimit;
+    float itermLimitYaw;
+    float itermAccelerator;
+    float antiGravityThrottleD;
+    float antiGravityPGain;
+
+    // --- hot per-axis data ---
+    pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float previousPidSetpoint[XYZ_AXIS_COUNT];
+    float maxVelocity[XYZ_AXIS_COUNT];
+
+    // --- D-term filter chain ---
     filterApplyFnPtr dtermNotchApplyFn;
     biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
     dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpass2ApplyFn;
     dtermLowpass_t dtermLowpass2[XYZ_AXIS_COUNT];
+    pt1Filter_t dtermPreDiffLpf[XYZ_AXIS_COUNT];  // Pre-differentiation LPF state
+    bool dtermPreDiffEnabled;                      // true when dterm_prediff_hz > 0
+
+    // --- less frequently accessed ---
+    bool pidStabilisationEnabled;
     filterApplyFnPtr ptermYawLowpassApplyFn;
     pt1Filter_t ptermYawLowpass;
     bool antiGravityEnabled;
     pt2Filter_t antiGravityLpf;
     float antiGravityOsdCutoff;
-    float antiGravityThrottleD;
-    float itermAccelerator;
     uint8_t antiGravityGain;
-    float antiGravityPGain;
-    pidCoefficient_t pidCoefficient[XYZ_AXIS_COUNT];
     float angleGain;
     float angleFeedforwardGain;
     float horizonGain;
@@ -411,7 +434,6 @@ typedef struct pidRuntime_s {
     float horizonLimitDegrees;
     float horizonLimitDegreesInv;
     float horizonIgnoreSticks;
-    float maxVelocity[XYZ_AXIS_COUNT];
     bool inCrashRecoveryMode;
     timeUs_t crashDetectedAtUs;
     timeDelta_t crashTimeLimitUs;
@@ -422,12 +444,9 @@ typedef struct pidRuntime_s {
     float crashDtermThreshold;
     float crashSetpointThreshold;
     float crashLimitYaw;
-    float itermLimit;
-    float itermLimitYaw;
     bool itermRotation;
     bool zeroThrottleItermReset;
     bool levelRaceMode;
-    float tpaFactor;
     float tpaBreakpoint;
     float tpaMultiplier;
     float tpaLowBreakpoint;

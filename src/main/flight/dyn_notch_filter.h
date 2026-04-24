@@ -32,6 +32,6 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
 void dynNotchPush(const int axis, const float sample);
 void dynNotchUpdate(void);
 float dynNotchFilter(const int axis, float value);
-bool isDynNotchActive(void);
+bool isDynNotchActive(void) __attribute__((pure));
 int getMaxFFT(void);
 void resetMaxFFT(void);

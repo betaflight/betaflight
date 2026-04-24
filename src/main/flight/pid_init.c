@@ -37,6 +37,7 @@
 #include "fc/runtime_config.h"
 #include "fc/rc.h"
 
+#include "flight/adaptive_filter.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
 
@@ -182,7 +183,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BIQUAD:
-            if (pidProfile->dterm_lpf1_static_hz < pidFrequencyNyquist) {
+            if (dterm_lpf1_init_hz < pidFrequencyNyquist) {
 #ifdef USE_DYN_LPF
                 pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1;
 #else
@@ -231,7 +232,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                     biquadFilterInitLPF(&pidRuntime.dtermLowpass2[axis].biquadFilter, pidProfile->dterm_lpf2_static_hz, targetPidLooptime);
                 }
             } else {
-                pidRuntime.dtermLowpassApplyFn = nullFilterApply;
+                pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
             }
             break;
         case FILTER_PT2:
@@ -252,6 +253,17 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     } else {
         pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
+    }
+
+    // Optional pre-differentiation LPF (PT1)
+    // Applied to raw gyro before computing delta, preventing noise amplification by differentiation.
+    if (pidProfile->dterm_prediff_hz > 0) {
+        pidRuntime.dtermPreDiffEnabled = true;
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            pt1FilterInit(&pidRuntime.dtermPreDiffLpf[axis], pt1FilterGain(pidProfile->dterm_prediff_hz, pidRuntime.dT));
+        }
+    } else {
+        pidRuntime.dtermPreDiffEnabled = false;
     }
 
     if (pidProfile->yaw_lowpass_hz == 0) {
@@ -324,6 +336,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.spa[axis] = 1.0f; // 1.0 = no PID attenuation in runtime. 0 - full attenuation (no PIDs)
     }
 #endif
+
+    adaptiveFilterInit();
 }
 
 #ifdef USE_ADVANCED_TPA
@@ -380,6 +394,7 @@ void pidInit(const pidProfile_t *pidProfile)
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
+    adaptiveFilterInit();
 }
 
 void pidInitConfig(const pidProfile_t *pidProfile)

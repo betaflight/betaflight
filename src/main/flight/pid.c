@@ -46,10 +46,12 @@
 #include "fc/runtime_config.h"
 
 #include "flight/autopilot.h"
+#include "flight/braking_multirotor.h"
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/rpm_filter.h"
+#include "flight/adaptive_filter.h"
 
 #include "io/gps.h"
 
@@ -124,7 +126,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -180,6 +182,14 @@ void resetPidProfile(pidProfile_t *pidProfile)
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
             // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
+        .dterm_prediff_hz = DTERM_PREDIFF_HZ_DEFAULT,     // pre-differentiation LPF, OFF by default
+        .adaptive_dterm_lpf = 0,                          // OFF by default
+        .adaptive_dterm_lpf_min_hz = 70,
+        .adaptive_dterm_lpf_max_hz = 180,
+        .adaptive_dterm_lpf_start_hz = 120,
+        .adaptive_dterm_lpf_update_ms = 100,
+        .adaptive_dterm_lpf_step_hz = 2,
+        .adaptive_dterm_lpf_learn_delay_s = 3,
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
         .dterm_lpf1_dyn_min_hz = DTERM_LPF1_DYN_MIN_HZ_DEFAULT,
@@ -729,7 +739,7 @@ static FAST_CODE_NOINLINE float applyAcroTrainer(int axis, const rollAndPitchTri
 {
     float ret = setPoint;
 
-    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
+    if (!FLIGHT_MODE(ANGLE_MODE  | HORIZON_MODE | GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | BRAKING_MODE)) {
         bool resetIterm = false;
         float projectedAngle = 0;
         const int setpointSign = acroTrainerSign(setPoint);
@@ -1156,19 +1166,36 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     // Precalculate gyro delta for D-term here, this allows loop unrolling
     float gyroRateDterm[XYZ_AXIS_COUNT];
+    const bool hasDtermNotch = (pidRuntime.dtermNotchApplyFn != nullFilterApply);
+    const bool hasDtermLpf = (pidRuntime.dtermLowpassApplyFn != nullFilterApply);
+    const bool hasDtermLpf2 = (pidRuntime.dtermLowpass2ApplyFn != nullFilterApply);
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
         gyroRateDterm[axis] = gyro.gyroADCf[axis];
 
         // Log the unfiltered D for ROLL and PITCH
-        if (debugMode == DEBUG_D_LPF && axis != FD_YAW) {
+        if (UNLIKELY(debugMode == DEBUG_D_LPF) && axis != FD_YAW) {
             const float delta = (previousRawGyroRateDterm[axis] - gyroRateDterm[axis]) * pidRuntime.pidFrequency / D_LPF_RAW_SCALE;
             previousRawGyroRateDterm[axis] = gyroRateDterm[axis];
             DEBUG_SET(DEBUG_D_LPF, axis, lrintf(delta)); // debug d_lpf 2 and 3 used for pre-TPA D
         }
 
-        gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch[axis], gyroRateDterm[axis]);
-        gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass[axis], gyroRateDterm[axis]);
-        gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2[axis], gyroRateDterm[axis]);
+        if (pidRuntime.dtermPreDiffEnabled) {
+            // Pre-differentiation LPF: filter gyro before computing delta.
+            // Prevents noise amplification by differentiation; post-diff LPF can
+            // then use a higher cutoff, reducing total D-term delay.
+            // Architecture mirrors INAV's dTermProcess() pre-diff design.
+            gyroRateDterm[axis] = pt1FilterApply(&pidRuntime.dtermPreDiffLpf[axis], gyroRateDterm[axis]);
+        }
+
+        if (hasDtermNotch) {
+            gyroRateDterm[axis] = pidRuntime.dtermNotchApplyFn((filter_t *) &pidRuntime.dtermNotch[axis], gyroRateDterm[axis]);
+        }
+        if (hasDtermLpf) {
+            gyroRateDterm[axis] = pidRuntime.dtermLowpassApplyFn((filter_t *) &pidRuntime.dtermLowpass[axis], gyroRateDterm[axis]);
+        }
+        if (hasDtermLpf2) {
+            gyroRateDterm[axis] = pidRuntime.dtermLowpass2ApplyFn((filter_t *) &pidRuntime.dtermLowpass2[axis], gyroRateDterm[axis]);
+        }
     }
 
     rotateItermAndAxisError();
@@ -1221,6 +1248,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif // USE_CHIRP
 
     // ----------PID controller----------
+    const float pidFreq = pidRuntime.pidFrequency;
+    const float dT = pidRuntime.dT;
+
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
 #ifdef USE_CHIRP
@@ -1277,6 +1307,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
             currentPidSetpoint = applyLaunchControl(axis, NULL);
 #endif
+        }
+#endif
+
+#ifndef USE_WING
+        if ((axis < FD_YAW) && isBrakingActive()) {
+            pidRuntime.axisInAngleMode[axis] = false;
+            currentPidSetpoint = getBrakingSetpoint(axis);
         }
 #endif
 
@@ -1344,7 +1381,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
 
-        float iTermChange = (Ki + pidRuntime.itermAccelerator) * pidRuntime.dT * itermErrorRate;
+        float iTermChange = (Ki + pidRuntime.itermAccelerator) * dT * itermErrorRate;
 #ifdef USE_WING
         if (pidProfile->spa_mode[axis] != SPA_MODE_OFF) {
             // slowing down I-term change, or even making it zero if setpoint is high enough
@@ -1385,7 +1422,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             // This is done to avoid DTerm spikes that occur with dynamically
             // calculated deltaT whenever another task causes the PID
             // loop execution to be delayed.
-            const float delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
+            const float delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidFreq;
             float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #if defined(USE_ACC)
@@ -1419,6 +1456,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
 
             pidData[axis].D = preTpaD * getTpaFactor(pidProfile, axis, TERM_D);
+
+            // Feed D-term into adaptive filter noise estimator
+            adaptiveFilterPushDterm(axis, pidData[axis].D);
 
             // Log the value of D pre application of TPA
             if (axis != FD_YAW) {

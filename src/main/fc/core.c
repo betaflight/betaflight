@@ -62,6 +62,7 @@
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
 #include "flight/alt_hold.h"
+#include "flight/braking_multirotor.h"
 #include "flight/pos_hold.h"
 
 #if defined(USE_DYN_NOTCH_FILTER)
@@ -242,6 +243,7 @@ static bool accNeedsCalibration(void)
             isModeActivationConditionPresent(BOXHORIZON) ||
             isModeActivationConditionPresent(BOXALTHOLD) ||
             isModeActivationConditionPresent(BOXPOSHOLD) ||
+            isModeActivationConditionPresent(BOXBRAKING) ||
             isModeActivationConditionPresent(BOXGPSRESCUE) ||
             isModeActivationConditionPresent(BOXCAMSTAB) ||
             isModeActivationConditionPresent(BOXCALIB) ||
@@ -361,6 +363,12 @@ if (crashFlipModeActive) {
             setArmingDisabled(ARMING_DISABLED_POSHOLD);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXBRAKING)) {
+            setArmingDisabled(ARMING_DISABLED_BRAKING);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_BRAKING);
         }
 
         if (calculateThrottleStatus() != THROTTLE_LOW) {
@@ -1066,6 +1074,8 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !FLIGHT_MODE(BRAKING_MODE)
+        && !IS_RC_MODE_ACTIVE(BOXBRAKING)
         // and either the alt_hold switch is activated, or are in failsafe landing mode
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
         // and we have Acc for self-levelling
@@ -1077,6 +1087,23 @@ void processRxModes(timeUs_t currentTimeUs)
         }
     } else {
         DISABLE_FLIGHT_MODE(POS_HOLD_MODE);
+    }
+#endif
+
+#ifndef USE_WING
+    if (ARMING_FLAG(ARMED)
+        && !failsafeIsActive()
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+        && !isFixedWing()
+        && IS_RC_MODE_ACTIVE(BOXBRAKING)
+        && sensors(SENSOR_ACC)
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(BRAKING_MODE)) {
+            ENABLE_FLIGHT_MODE(BRAKING_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(BRAKING_MODE);
     }
 #endif
 
@@ -1109,7 +1136,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | BRAKING_MODE | HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
         rescheduleTask(TASK_ATTITUDE, TASK_PERIOD_HZ(acc.sampleRateHz / (float)imuConfig()->imu_process_denom));
@@ -1395,6 +1422,9 @@ FAST_CODE void taskMainPidLoop(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     subTaskRcCommand(currentTimeUs);
+#ifndef USE_WING
+    brakingUpdate(currentTimeUs);
+#endif
     subTaskPidController(currentTimeUs);
     subTaskMotorUpdate(currentTimeUs);
     subTaskPidSubprocesses(currentTimeUs);
