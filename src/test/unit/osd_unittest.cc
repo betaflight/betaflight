@@ -1298,6 +1298,41 @@ TEST_F(OsdTest, TestHdPositioning)
     displayPortTestBufferSubstring(53, 1, "  0.00%c", SYM_AMP);
 }
 
+TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
+{
+    // given
+    batteryProfilesMutable(0)->batteryCapacity = 0;
+    currentBatteryProfile = batteryProfiles(0);
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(1, 1) | OSD_PROFILE_1_FLAG;
+
+    osdAnalyzeActiveElements();
+
+    // when
+    simulationBatteryPercentage = 0;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 1, "0%");
+
+    // when
+    simulationBatteryPercentage = 50;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 1, "50%");
+
+    // when
+    simulationBatteryPercentage = 100;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+
+    // then
+    displayPortTestBufferSubstring(1, 1, "100%");
+}
+
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
