@@ -370,6 +370,9 @@ bool getDshotSensorData(escSensorData_t *dest, int motorIndex) {
     dest->current = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_CURRENT)) ?
         motorState->telemetryData[DSHOT_TELEMETRY_TYPE_CURRENT] : 0;
 
+    dest->voltage = edt && (motorState->telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) ? 
+        motorState->telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] * 25 : 0;
+
     return true;
 }
 
