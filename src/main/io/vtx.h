@@ -40,6 +40,7 @@ typedef struct vtxSettingsConfig_s {
     uint16_t pitModeFreq;   // sets out-of-range pitmode frequency
     uint8_t lowPowerDisarm; // min power while disarmed, from vtxLowerPowerDisarm_e
     uint8_t softserialAlt;  // prepend 0xff before sending frame even with SOFTSERIAL
+    uint8_t mspDisarmDelay; // seconds to delay MSP low-power/disarm effect (digital VTX)
 } vtxSettingsConfig_t;
 
 PG_DECLARE(vtxSettingsConfig_t, vtxSettingsConfig);
