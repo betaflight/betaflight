@@ -3350,10 +3350,26 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (sbufBytesRemaining(src) >= 7) {
             // Added in MSP API 1.48
 #if defined(USE_RPM_FILTER)
-            rpmFilterConfigMutable()->rpm_filter_fade_range_hz = sbufReadU16(src);
-            rpmFilterConfigMutable()->rpm_filter_q = sbufReadU16(src);
-            for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
-                rpmFilterConfigMutable()->rpm_filter_weights[j] = sbufReadU8(src);
+            {
+                const uint16_t fadeRangeHz = sbufReadU16(src);
+                const uint16_t q = sbufReadU16(src);
+                uint8_t weights[RPM_FILTER_HARMONICS_MAX];
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    weights[j] = sbufReadU8(src);
+                }
+                if (q < 250 || q > 3000 || fadeRangeHz > 1000) {
+                    return MSP_RESULT_ERROR;
+                }
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    if (weights[j] > 100) {
+                        return MSP_RESULT_ERROR;
+                    }
+                }
+                rpmFilterConfigMutable()->rpm_filter_fade_range_hz = fadeRangeHz;
+                rpmFilterConfigMutable()->rpm_filter_q = q;
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    rpmFilterConfigMutable()->rpm_filter_weights[j] = weights[j];
+                }
             }
 #else
             sbufReadU16(src);
