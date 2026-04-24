@@ -186,7 +186,22 @@ bool dronecanGnssGetLatest(gpsSolutionData_t *out)
 
 timeUs_t dronecanGnssLastUpdateUs(void)
 {
-    return lastUpdateUs;
+    // timeUs_t is 64-bit on targets with USE_64BIT_TIME (e.g. SITL), so a
+    // plain read can tear against a concurrent writer. Use the same seqlock
+    // pattern as dronecanGnssGetLatest() to stay consistent.
+    uint32_t s1;
+    uint32_t s2;
+    timeUs_t t;
+    do {
+        do {
+            s1 = latestSeq;
+        } while (s1 & 1U);
+        __asm volatile ("" ::: "memory");
+        t = lastUpdateUs;
+        __asm volatile ("" ::: "memory");
+        s2 = latestSeq;
+    } while (s1 != s2);
+    return t;
 }
 
 #endif // ENABLE_DRONECAN
