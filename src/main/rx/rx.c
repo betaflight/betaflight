@@ -716,6 +716,7 @@ STATIC_UNIT_TESTED float applyRxChannelRangeConfiguraton(float sample, const rxC
 
 static void readRxChannelsApplyRanges(void)
 {
+    uint8_t unmappedCount = 0;
     for (int channel = 0; channel < rxChannelCount; channel++) {
 
         const uint8_t rawChannel = channel < RX_MAPPABLE_CHANNEL_COUNT ? rxConfig()->rcmap[channel] : channel;
@@ -728,7 +729,14 @@ static void readRxChannelsApplyRanges(void)
         } else
 #endif
         {
-            sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, rawChannel);
+            if (rawChannel == RCMAP_UNMAPPED_INDEX) {
+                sample = rxConfig()->midrc;
+                unmappedCount++;
+            } else {
+                sample = rxRuntimeState.rcReadRawFn(&rxRuntimeState, channel < RX_MAPPABLE_CHANNEL_COUNT
+                    ? rawChannel
+                    : rawChannel - unmappedCount);
+            }
         }
 
         // apply the rx calibration
@@ -858,6 +866,10 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig)
 {
+    // Initialize all rc map values to 255 (indicating unmapped)
+    for (unsigned i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
+        rxConfig->rcmap[i] = RCMAP_UNMAPPED_INDEX;
+    }
     for (const char *c = input; *c; c++) {
         const char *s = strchr(rcChannelLetters, *c);
         if (s && (s < rcChannelLetters + RX_MAPPABLE_CHANNEL_COUNT)) {
