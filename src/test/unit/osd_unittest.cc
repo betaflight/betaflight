@@ -1314,7 +1314,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(1, 1, "0%");
+    displayPortTestBufferSubstring(1, 1, "0%%");
 
     // when
     simulationBatteryPercentage = 50;
@@ -1322,7 +1322,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(1, 1, "50%");
+    displayPortTestBufferSubstring(1, 1, "50%%");
 
     // when
     simulationBatteryPercentage = 100;
@@ -1330,7 +1330,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(1, 1, "100%");
+    displayPortTestBufferSubstring(1, 1, "100%%");
 }
 
 // STUBS
