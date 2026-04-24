@@ -108,7 +108,7 @@ static bool ledStripEnabled = false;
 
 #define VISUAL_BEEPER_COLOR COLOR_WHITE
 
-#define BEACON_FAILSAFE_PERIOD_MS 250      // 2Hz
+#define BEACON_FAILSAFE_PERIOD_MS 250      // 4Hz
 #define BEACON_FAILSAFE_ON_PERCENT 50      // 50% duty cycle
 
 const hsvColor_t hsv[] = {
