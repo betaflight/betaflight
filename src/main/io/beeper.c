@@ -94,6 +94,12 @@ static timeUs_t lastDshotBeaconCommandTimeUs;
 
 STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits exceeded");
 
+static bool beeperUsbSuppressed(void)
+{
+    return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+        && mspSerialIsConfiguratorActive();
+}
+
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -256,8 +262,7 @@ static const beeperTableEntry_t *beeperFind(beeperMode_e mode)
 void beeper(beeperMode_e mode)
 {
     if (mode == BEEPER_SILENCE
-        || ((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && mspSerialIsConfiguratorActive())
+        || beeperUsbSuppressed()
         || IS_RC_MODE_ACTIVE(BOXBEEPERMUTE) ) {
         beeperSilence();
         return;
@@ -444,8 +449,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
             && failsafeIsReceivingRxData()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
-            && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-                && mspSerialIsConfiguratorActive()) ) {
+            && !beeperUsbSuppressed() ) {
             dshotBeaconRequested = true;
         }
     }
@@ -492,8 +496,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         FALLTHROUGH;
     case BeepOn:
         if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(currentBeeperEntry->mode))
-            && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-            && mspSerialIsConfiguratorActive())) {
+            && !beeperUsbSuppressed()) {
             BEEP_ON;
             beeperIsOn = true;
             visualBeep = true;

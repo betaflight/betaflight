@@ -196,13 +196,13 @@ TEST_F(BeeperTest, DshotBeaconRxSet_NoUsbFlag_Sounds)
 
 TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
 {
-    // AUX switch active, RX healthy, USB flag in dshotBeaconOffFlags,
+    // AUX switch active, RX healthy, USB flag in beeper_off_flags,
     // configurator active → beacon must NOT be requested
     simulatorBoxBeeperOn = true;
     simulatorFailsafeRxDataReceived = true;
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
-    beeperConfigMutable()->dshotBeaconOffFlags = BEEPER_GET_FLAG(BEEPER_USB);
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
 
     beeper(BEEPER_RX_SET);
     simulatorCurrentTimeUs = 200000000;
@@ -219,7 +219,7 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorNotActive_Sounds)
     simulatorFailsafeRxDataReceived = true;
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
-    beeperConfigMutable()->dshotBeaconOffFlags = BEEPER_GET_FLAG(BEEPER_USB);
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
 
     beeper(BEEPER_RX_SET);
     simulatorCurrentTimeUs = 300000000;
