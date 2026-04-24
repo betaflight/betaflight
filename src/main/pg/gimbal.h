@@ -42,6 +42,7 @@ typedef struct gimbalTrackConfig_s {
     int8_t gimbal_yaw_limit;
     int8_t gimbal_stabilisation;
     int8_t gimbal_sensitivity;
+    int8_t gimbal_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } gimbalTrackConfig_t;
 
 PG_DECLARE(gimbalTrackConfig_t, gimbalTrackConfig);

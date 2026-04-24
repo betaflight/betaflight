@@ -23,6 +23,7 @@
 #ifdef USE_GPS
 
 #include "io/gps.h"
+#include "io/serial.h"
 
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
@@ -50,6 +51,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .gps_ublox_utc_standard = UBLOX_UTC_STANDARD_AUTO,
     .gps_ublox_enable_ana = false,
     .nmeaCustomCommands = "",
+    .gps_uart = SERIAL_PORT_NONE,
 );
 
 #endif // USE_GPS

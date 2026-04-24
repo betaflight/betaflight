@@ -331,6 +331,30 @@ scheduler_unittest_SRC := \
 scheduler_unittest_DEFINES := \
 		USE_OSD=
 
+serial_feature_map_unittest_SRC := \
+		$(USER_DIR)/io/serial_feature_map.c
+
+serial_feature_map_unittest_DEFINES := \
+		USE_GPS= \
+		USE_SERIALRX= \
+		USE_BLACKBOX= \
+		USE_ESC_SENSOR= \
+		USE_RCDEVICE= \
+		USE_GIMBAL= \
+		USE_VTX_COMMON= \
+		USE_VTX_SMARTAUDIO= \
+		USE_VTX_TRAMP= \
+		USE_VTX_MSP= \
+		USE_RANGEFINDER= \
+		USE_OSD= \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_FRSKY_HUB= \
+		USE_TELEMETRY_HOTT= \
+		USE_TELEMETRY_LTM= \
+		USE_TELEMETRY_SMARTPORT= \
+		USE_TELEMETRY_MAVLINK= \
+		USE_TELEMETRY_IBUS=
+
 sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/sensors/gyro.c \
 		$(USER_DIR)/sensors/gyro_init.c \
