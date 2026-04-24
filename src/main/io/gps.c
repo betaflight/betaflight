@@ -417,9 +417,7 @@ void gpsInit(void)
 
     // MSP / virtual / DroneCAN providers don't own a serial port — the
     // frame source is another subsystem feeding gpsSol through updateXxxGPS().
-    if (gpsConfig()->provider == GPS_MSP
-        || gpsConfig()->provider == GPS_VIRTUAL
-        || gpsConfig()->provider == GPS_DRONECAN) {
+    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
         gpsSetState(GPS_STATE_INITIALIZED);
         return;
     }
@@ -1344,22 +1342,28 @@ static void updateDronecanGPS(void)
     if (cmp32(gpsData.now, nextUpdateTime) <= 0) {
         return;
     }
+    nextUpdateTime = gpsData.now + updateInterval;
+
+    gpsSolutionData_t incoming;
+    if (!dronecanGnssGetLatest(&incoming)) {
+        // No Fix2 frame yet; stay in GPS_STATE_INITIALIZED so the generic
+        // connection-timeout bookkeeping doesn't start ticking against an
+        // offline bus.
+        return;
+    }
+
+    // If the cached frame is stale treat it as no new data: don't bump
+    // lastNavMessage or keep SENSOR_GPS pegged, so the normal receive-timeout
+    // path can trip to GPS_STATE_LOST_COMMUNICATION when the module dies.
+    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
+    if (ageUs >= 2000000) { // 2 s
+        gpsSetFixState(0);
+        return;
+    }
 
     if (gpsData.state == GPS_STATE_INITIALIZED) {
         gpsSetState(GPS_STATE_RECEIVING_DATA);
     }
-
-    gpsSolutionData_t incoming;
-    if (!dronecanGnssGetLatest(&incoming)) {
-        // No Fix2 frame yet; re-check on the next tick.
-        nextUpdateTime = gpsData.now + updateInterval;
-        return;
-    }
-
-    // Drop the solution if it's gone stale; better to surface GPS loss than
-    // to keep navigating off a last-known position.
-    const timeUs_t ageUs = micros() - dronecanGnssLastUpdateUs();
-    const bool fresh = (ageUs < 2000000); // 2 s
 
     gpsSol = incoming;
     gpsSol.time = gpsData.now;
@@ -1367,7 +1371,7 @@ static void updateDronecanGPS(void)
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
-    if (fresh && gpsSol.numSat > 3) {
+    if (gpsSol.numSat > 3) {
         gpsSetFixState(GPS_FIX);
     } else {
         gpsSetFixState(0);
@@ -1376,8 +1380,6 @@ static void updateDronecanGPS(void)
 
     calculateNavInterval();
     onGpsNewData();
-
-    nextUpdateTime = gpsData.now + updateInterval;
 }
 #endif
 

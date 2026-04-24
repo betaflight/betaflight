@@ -36,8 +36,9 @@
 void dronecanGnssInit(void);
 
 // Pull the last-received solution into the caller's buffer. Returns false if
-// no frame has been received yet. The populated fields match the subset
-// gps.c needs: llh, numSat, dop.pdop, groundSpeed, groundCourse, speed3d.
+// no frame has been received yet. Populated fields today: llh, numSat,
+// groundSpeed, groundCourse, speed3d, velned. dop / acc / dateTime are left
+// zero until a follow-up decodes covariance + pdop past the Fix2 TAO fields.
 bool dronecanGnssGetLatest(gpsSolutionData_t *out);
 
 // Microsecond timestamp of the most recent accepted Fix2 (host clock, not

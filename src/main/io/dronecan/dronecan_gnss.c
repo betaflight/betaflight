@@ -63,9 +63,17 @@ static int32_t scaleLonLat_1e8to1e7(int64_t deg_1e8)
     return (int32_t)(deg_1e8 / 10);
 }
 
+// Seqlock-style publication so a reader on a different task can never observe
+// a partially-written solution (the shared struct is ~40 bytes). Writer bumps
+// the sequence before and after the copy: odd value = write in progress, even
+// value = stable. Reader loads sequence, copies, reloads; retries if either
+// read saw an odd count or the endpoints differ. Betaflight's scheduler is
+// cooperative between tasks today, so the retry loop is defensive against a
+// future preemptive scheduler rather than fixing a current race.
 static gpsSolutionData_t latest;
-static bool received = false;
-static timeUs_t lastUpdateUs = 0;
+static volatile uint32_t latestSeq = 0;
+static volatile bool received = false;
+static volatile timeUs_t lastUpdateUs = 0;
 
 static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 {
@@ -95,10 +103,16 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 
     const float speed2d = sqrtf(velN * velN + velE * velE);
     const float speed3d = sqrtf(velN * velN + velE * velE + velD * velD);
-    float courseDeg = (speed2d > 0.01f) ? (atan2f(velE, velN) * (180.0f / (float)M_PI)) : 0.0f;
+    float courseDeg = (speed2d > 0.01f) ? (atan2f(velE, velN) * (180.0f / M_PIf)) : 0.0f;
     if (courseDeg < 0.0f) {
         courseDeg += 360.0f;
     }
+
+    // Enter write: mark the sequence odd before touching the struct, and a
+    // release-style compiler fence so the reader can't see the incremented
+    // sequence before the writes below.
+    latestSeq++;
+    __asm volatile ("" ::: "memory");
 
     memset(&latest, 0, sizeof(latest));
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
@@ -122,6 +136,10 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 
     lastUpdateUs = micros();
     received = true;
+
+    // Leave write: fence before the final bump so everything above is visible.
+    __asm volatile ("" ::: "memory");
+    latestSeq++;
 }
 
 void dronecanGnssInit(void)
@@ -144,7 +162,23 @@ bool dronecanGnssGetLatest(gpsSolutionData_t *out)
     if (!received || out == NULL) {
         return false;
     }
-    *out = latest;
+
+    // Seqlock-style read: retry if the writer was mid-update or the count
+    // changed mid-copy. Task-context access means this converges in one or
+    // two iterations at worst.
+    uint32_t s1;
+    uint32_t s2;
+    do {
+        s1 = latestSeq;
+        if (s1 & 1U) {
+            continue;
+        }
+        __asm volatile ("" ::: "memory");
+        *out = latest;
+        __asm volatile ("" ::: "memory");
+        s2 = latestSeq;
+    } while (s1 != s2);
+
     return true;
 }
 
