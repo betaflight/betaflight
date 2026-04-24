@@ -38,10 +38,12 @@ extern "C" {
     #include "flight/pid.h"
     #include "flight/position.h"
     #include "flight/position_estimator.h"
+    #include "flight/position_nav.h"
 
     #include "io/gps.h"
 
     #include "rx/rx.h"
+    #include "scheduler/scheduler.h"
     #include "sensors/gyro.h"
 
     #include "pg/autopilot.h"
@@ -58,6 +60,15 @@ extern "C" {
     }
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
+
+    // Nav stubs: position hold tests run without active navigation
+    void positionNavInit(void) { }
+    void positionNavReset(void) { }
+    void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
+    bool positionNavHasActiveTarget(void) { return false; }
+    bool positionNavTargetReached(void) { return false; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
+    const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
@@ -81,6 +92,12 @@ extern "C" {
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);
+    }
+
+    timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
+    {
+        UNUSED(taskId);
+        return TASK_PERIOD_HZ(100); // default poshold rate in tests
     }
 
     throttleStatus_e calculateThrottleStatus() {
@@ -349,6 +366,29 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.2f);
+}
+
+TEST_F(PosHoldTest, ReleasingSticksBrakesThenSettles)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Pilot is moving with sticks active: controller should output zero angles.
+    setSticksActiveStatus(true);
+    testEstimate.velocity.x = 120.0f;
+    runIterations(5);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.01f);
+
+    // Stick release at high speed should enter braking (not yet settled hold).
+    setSticksActiveStatus(false);
+    runIterations(5);
+    const float brakingRoll = autopilotAngle[AI_ROLL];
+    EXPECT_NE(brakingRoll, 0.0f);
+
+    // Once velocity settles below threshold, hold point capture should settle output.
+    testEstimate.velocity.x = 0.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.1f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
 // -- GPS-like scenario: large displacement, position + velocity --

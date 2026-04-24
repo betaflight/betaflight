@@ -252,6 +252,10 @@ void positionEstimatorEnableXY(bool enable)
     if (enable && !xyEnabled) {
         kalmanInit(&kfX, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
         kalmanInit(&kfY, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
+        estimate.position.x = 0.0f;
+        estimate.position.y = 0.0f;
+        estimate.velocity.x = 0.0f;
+        estimate.velocity.y = 0.0f;
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS

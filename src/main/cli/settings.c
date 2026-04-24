@@ -44,6 +44,7 @@
 #include "drivers/mco.h"
 #include "drivers/pinio.h"
 #include "drivers/sdio.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
@@ -71,6 +72,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
@@ -509,7 +511,7 @@ static const char* const lookupTableDshotBitbangedTimer[] = {
 };
 
 const char * const lookupTableOsdDisplayPortDevice[] = {
-    "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD"
+    "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD", "FBOSD"
 };
 
 #ifdef USE_OSD
@@ -566,6 +568,12 @@ const char* const lookupTableYawType[] = {
     "RUDDER", "DIFF_THRUST",
 };
 #endif // USE_WING
+
+#ifdef USE_TRANSPONDER
+static const char * const lookupTableTransponderProvider[] = {
+    "NONE", "ILAP", "ARCITIMER", "ERLT"
+};
+#endif
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
@@ -710,6 +718,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
 #endif // USE_WING
+#ifdef USE_TRANSPONDER
+    LOOKUP_TABLE_ENTRY(lookupTableTransponderProvider),
+#endif
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1486,6 +1497,12 @@ const clivalue_t valueTable[] = {
     { "ledstrip_brightness",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_brightness) },
     { "ledstrip_rainbow_delta",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_delta) },
     { "ledstrip_rainbow_freq",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_freq) },
+#endif
+
+// PG_TRANSPONDER_CONFIG
+#ifdef USE_TRANSPONDER
+    { PARAM_NAME_TRANSPONDER_PROVIDER, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TRANSPONDER_PROVIDER }, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, provider) },
+    { PARAM_NAME_TRANSPONDER_DATA,     VAR_UINT8 | MASTER_VALUE | MODE_ARRAY,  .config.array.length = TRANSPONDER_DATA_LENGTH, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, data) },
 #endif
 
 // PG_SDCARD_CONFIG

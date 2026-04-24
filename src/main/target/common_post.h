@@ -687,6 +687,10 @@ extern uint8_t eepromData[EEPROM_SIZE];
 struct linker_symbol;
 extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
 extern struct linker_symbol __config_end;
+#ifdef FONTDATA_IN_FLASH
+extern struct linker_symbol __fontdata_start; // configured via linker script when building binaries.
+extern struct linker_symbol __fontdata_end;
+#endif
 #endif
 
 #ifndef USE_ITERM_RELAX
@@ -736,6 +740,26 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+// GPS secondary defines - here (not common_pre.h) because SITL defines
+// USE_GPS in target.h which is included after common_pre.h. USE_GPS_RESCUE
+// additionally requires USE_ACC to match the earlier "!USE_ACC undef"
+// invariant; re-apply USE_CMS_GPS_RESCUE_MENU gating afterwards.
+#ifdef USE_GPS
+#if !defined(USE_GPS_NMEA)
+#define USE_GPS_NMEA
+#endif
+#if !defined(USE_GPS_UBLOX)
+#define USE_GPS_UBLOX
+#endif
+#if !defined(USE_GPS_RESCUE) && defined(USE_ACC)
+#define USE_GPS_RESCUE
+#endif
+#endif // USE_GPS
+
+#if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
+#undef USE_CMS_GPS_RESCUE_MENU
+#endif
+
 /*****************************************************
 
  Place any ENABLE_X_FEATURE=0 definitions here for those
@@ -772,6 +796,10 @@ extern struct linker_symbol __config_end;
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 0
+#endif
+
+#if !defined(ENABLE_RX_UDP)
+#define ENABLE_RX_UDP 0
 #endif
 
 #if !defined(ENABLE_CAN)
