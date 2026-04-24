@@ -15,6 +15,7 @@ ifneq ($(filter $(DRONECAN_LIB_DIR),$(LIB_SUBMODULES)),)
 
 MCU_COMMON_SRC += \
             io/dronecan/dronecan.c \
+            io/dronecan/dronecan_gnss.c \
             io/dronecan/dronecan_node.c \
             dronecan/libcanard/canard.c
 
