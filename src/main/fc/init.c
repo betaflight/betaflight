@@ -79,6 +79,7 @@
 #include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
+#include "drivers/brushed_reverse.h"
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
@@ -295,6 +296,10 @@ void initPhase1(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
+    // If the target provides a brushed direction pin, configure it immediately
+    // and drive it to the safe "normal direction" state to avoid shoot-through.
+    brushedReverseInit();
 
 #if defined(USE_TARGET_CONFIG)
     // Call once before the config is loaded for any target specific configuration required to support loading the config
