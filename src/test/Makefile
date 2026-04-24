@@ -461,6 +461,18 @@ position_nav_unittest_SRC := \
 		$(USER_DIR)/flight/position_nav.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
