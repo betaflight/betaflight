@@ -444,7 +444,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
             && failsafeIsReceivingRxData()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
-            && !((beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_USB))
+            && !((beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
                 && mspSerialIsConfiguratorActive()) ) {
             dshotBeaconRequested = true;
         }
