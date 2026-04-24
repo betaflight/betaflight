@@ -118,8 +118,8 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
     latest.llh.lon   = scaleLonLat_1e8to1e7(lon_1e8);
     latest.llh.altCm = height_msl_mm / 10; // mm -> cm
-    // NED -> ENU on the ned_velocity reporting shortcut: N/E components map
-    // one-to-one for the horizontal speed + course we care about.
+    // Fix2 reports NED and gpsVelned_t is NED, so forward N/E/D unchanged
+    // (velD is Down, positive downward).
     latest.velned.velN = (int16_t)constrainf(velN * CM_PER_METRE, INT16_MIN, INT16_MAX);
     latest.velned.velE = (int16_t)constrainf(velE * CM_PER_METRE, INT16_MIN, INT16_MAX);
     latest.velned.velD = (int16_t)constrainf(velD * CM_PER_METRE, INT16_MIN, INT16_MAX);
@@ -144,6 +144,12 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 
 void dronecanGnssInit(void)
 {
+    // Clear the cache before registering so a frame that lands between
+    // dronecanRegisterSubscriber() and the reset can't be silently clobbered.
+    memset(&latest, 0, sizeof(latest));
+    received = false;
+    lastUpdateUs = 0;
+
     const dronecanSubscriber_t sub = {
         .signature    = UAVCAN_GNSS_FIX2_SIGNATURE,
         .dataTypeId   = UAVCAN_GNSS_FIX2_ID,
@@ -151,10 +157,6 @@ void dronecanGnssInit(void)
         .handler      = handleFix2,
     };
     (void)dronecanRegisterSubscriber(&sub);
-
-    memset(&latest, 0, sizeof(latest));
-    received = false;
-    lastUpdateUs = 0;
 }
 
 bool dronecanGnssGetLatest(gpsSolutionData_t *out)
