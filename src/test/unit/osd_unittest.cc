@@ -1303,7 +1303,6 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     // given
     batteryProfilesMutable(0)->batteryCapacity = 0;
     currentBatteryProfile = batteryProfiles(0);
-
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
         OSD_POS(1, 1) | OSD_PROFILE_1_FLAG | OSD_ELEMENT_TYPE_4;
 
@@ -1315,7 +1314,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(2, 1, "0");
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
 
     // when
     simulationBatteryPercentage = 50;
@@ -1323,7 +1322,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(2, 1, "50");
+    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
 
     // when
     simulationBatteryPercentage = 100;
@@ -1331,7 +1330,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     osdRefresh();
 
     // then
-    displayPortTestBufferSubstring(2, 1, "100");
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
 }
 
 // STUBS
