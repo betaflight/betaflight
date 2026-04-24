@@ -1305,7 +1305,7 @@ TEST_F(OsdTest, TestBatteryCapacityZeroPercentage)
     currentBatteryProfile = batteryProfiles(0);
 
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
-        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | OSD_ELEMENT_TYPE_4;
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | OSD_ELEMENT_TYPE_3;
 
     osdAnalyzeActiveElements();
 
