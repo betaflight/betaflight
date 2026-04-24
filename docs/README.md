@@ -8,6 +8,7 @@ This branch collects a set of flight-control experiments and supporting fixes th
 - related control-path, telemetry, CLI, blackbox, and debug plumbing
 
 The detailed behavior and configuration notes live in [experimental-flight-control.md](experimental-flight-control.md).
+The focused before/after review for the highest-impact behavior changes lives in [flight-control-change-review.md](flight-control-change-review.md).
 
 ## Build Verification
 
