@@ -805,3 +805,11 @@ extern struct linker_symbol __fontdata_end;
 #if !defined(ENABLE_CAN)
 #define ENABLE_CAN 0
 #endif
+
+// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
+// stack is meaningless without a CAN peripheral to drive. Platforms that
+// compile CAN in also compile DroneCAN in by default, with the runtime PG
+// flag (dronecan_enabled) deciding whether the task is actually started.
+#if !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN ENABLE_CAN
+#endif
