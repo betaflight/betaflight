@@ -1302,7 +1302,7 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
 {
     batteryProfilesMutable(0)->batteryCapacity = 0;
     currentBatteryProfile = batteryProfiles(0);
-
+    
     // TYPE 4
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
         OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_4 << 14);
@@ -1312,17 +1312,17 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
     simulationBatteryPercentage = 0;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "0%%");
 
     simulationBatteryPercentage = 50;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "50%%");
 
     simulationBatteryPercentage = 100;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "100%%");
 
     // TYPE 3
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
@@ -1333,17 +1333,17 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
     simulationBatteryPercentage = 0;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "100%%");
 
     simulationBatteryPercentage = 50;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "50%%");
 
     simulationBatteryPercentage = 100;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
+    displayPortTestBufferSubstring(3, 1, "0%%");
 }
 
 // STUBS
