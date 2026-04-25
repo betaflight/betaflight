@@ -1309,34 +1309,19 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
     osdAnalyzeActiveElements();
 
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-
     simulationBatteryPercentage = 0;
     osdRefresh();
-
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 3], '0');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 4], '%');
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
 
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-
     simulationBatteryPercentage = 50;
     osdRefresh();
-
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 3], '5');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 4], '0');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 5], '%');
+    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
 
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-
     simulationBatteryPercentage = 100;
     osdRefresh();
-
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 3], '1');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 4], '0');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 5], '0');
-    EXPECT_EQ(testDisplayPortBuffer[(1 * testDisplayPort.cols) + 6], '%');
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
 }
 
 // STUBS
