@@ -1311,17 +1311,27 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
     simulationBatteryPercentage = 0;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(1, 1, "0%%");
+
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '0');
 
     simulationBatteryPercentage = 50;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(1, 1, "50%%");
+
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '5');
+
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 4], '0');
 
     simulationBatteryPercentage = 100;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-    displayPortTestBufferSubstring(1, 1, "100%%");
+
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '1');
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 4], '0');
+    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 5], '0');
 }
 
 // STUBS
