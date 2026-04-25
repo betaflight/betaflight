@@ -1376,7 +1376,7 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
         SYM_PB_FULL,
         SYM_PB_FULL,
         SYM_PB_FULL,
-        SYM_PB_FULL,
+        SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
