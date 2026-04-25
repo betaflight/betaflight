@@ -1301,7 +1301,6 @@ TEST_F(OsdTest, TestHdPositioning)
 TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
 {
     batteryProfilesMutable(0)->batteryCapacity = 0;
-    currentBatteryProfile = batteryProfiles(0);
 
     osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
         OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_3 << 14);
@@ -1322,6 +1321,21 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
     simulationBatteryPercentage = 100;
     osdRefresh();
     displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_4 << 14);
+
+    osdAnalyzeActiveElements();
+
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 20;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c80%%", SYM_MAH);
+
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 75;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c25%%", SYM_MAH);
 }
 
 // STUBS
