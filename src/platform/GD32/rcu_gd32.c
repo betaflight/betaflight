@@ -31,7 +31,7 @@ void rcu_periph_clk_config(volatile uint32_t *reg, uint32_t mask, FunctionalStat
     }
 }
 
-static void rcu_periph_rst_config(volatile uint32_t *reg, uint32_t mask, FunctionalState NewState) 
+static void rcu_periph_rst_config(volatile uint32_t *reg, uint32_t mask, FunctionalState NewState)
 {
     if (NewState == ENABLE) {
         *reg |= mask;

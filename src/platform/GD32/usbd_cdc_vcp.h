@@ -70,8 +70,8 @@ typedef struct __attribute__ ((packed))
 
 typedef struct _CDC_IF_PROP
 {
-  uint16_t (*pIf_Init)     (void);   
-  uint16_t (*pIf_DeInit)   (void);   
+  uint16_t (*pIf_Init)     (void);
+  uint16_t (*pIf_DeInit)   (void);
   uint16_t (*pIf_Ctrl)     (uint32_t Cmd, uint8_t* Buf, uint32_t Len);
   uint16_t (*pIf_DataTx)   (const uint8_t* Buf, uint32_t Len);
   uint16_t (*pIf_DataRx)   (uint8_t* Buf, uint32_t Len);

@@ -128,6 +128,8 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_TIMER9);
     rcu_periph_clock_enable(RCU_TIMER10);
 
+    /* Eliminate the impact of the bootloader */
+    timer_deinit(TIMER1);
 }
 
 void sys_clock_config(void)

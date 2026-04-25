@@ -54,7 +54,7 @@ void persistentObjectRTCEnable(void)
     /* Enable access to the backup domain */
     rcu_periph_clock_enable(RCU_PMU);
     pmu_backup_write_enable();
-    rcu_periph_clock_enable(RCU_RTC); 
+    rcu_periph_clock_enable(RCU_RTC);
 
     rtc_register_sync_wait();
 

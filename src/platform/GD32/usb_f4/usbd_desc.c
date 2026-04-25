@@ -8,27 +8,27 @@
 /*
     Copyright (c) 2024, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -307,19 +307,19 @@ static void usbd_string_buf_get(const char *src, uint8_t *unicode)
 {
   uint8_t idx = 0;
   uint8_t len = 0;
-  
-  if (src != NULL) 
+
+  if (src != NULL)
   {
-    len =  USB_STRING_LEN(strlen(src));    
+    len =  USB_STRING_LEN(strlen(src));
     unicode[idx++] = len;
     unicode[idx++] =  USB_DESCTYPE_STR;
-    
-    while (*src != '\0') 
+
+    while (*src != '\0')
     {
       unicode[idx++] = *src++;
       unicode[idx++] =  0x00;
     }
-  } 
+  }
 }
 
 
@@ -346,7 +346,7 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
     (void)(config_index);
 
     static __ALIGN_BEGIN usb_cdc_handler cdc_handler __ALIGN_END;
-    
+
     /* initialize the data TX endpoint */
     usbd_ep_setup(udev, &(bf_cdc_config_desc.cdc_in_endpoint));
 
@@ -355,9 +355,9 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
 
     /* initialize the command TX endpoint */
     usbd_ep_setup(udev, &(bf_cdc_config_desc.cdc_cmd_endpoint));
-    
+
     udev->dev.class_data[CDC_COM_INTERFACE] = (void *)&cdc_handler;
-    
+
     APP_FOPS.pIf_Init();
 
     usbd_ep_recev(udev, CDC_DATA_OUT_EP, (uint8_t*)(USB_Rx_Buffer), USB_CDC_DATA_PACKET_SIZE);
@@ -374,7 +374,7 @@ static uint8_t bf_cdc_acm_init(usb_dev *udev, uint8_t config_index)
 static uint8_t bf_cdc_acm_deinit(usb_dev *udev, uint8_t config_index)
 {
     (void)(config_index);
-    
+
     /* deinitialize the data TX/RX endpoint */
     usbd_ep_clear(udev, CDC_DATA_IN_EP);
     usbd_ep_clear(udev, CDC_DATA_OUT_EP);
@@ -383,7 +383,7 @@ static uint8_t bf_cdc_acm_deinit(usb_dev *udev, uint8_t config_index)
     usbd_ep_clear(udev, CDC_CMD_EP);
 
     APP_FOPS.pIf_DeInit();
-    
+
     return USBD_OK;
 }
 
@@ -504,7 +504,7 @@ static uint8_t bf_cdc_acm_ctlx_out(usb_dev *udev)
     \retval     USB device operation status
 */
 static uint8_t bf_cdc_acm_in(usb_dev *udev, uint8_t ep_num)
-{  
+{
     (void)(ep_num);
     uint16_t USB_Tx_length;
 
@@ -557,17 +557,17 @@ static uint8_t bf_cdc_acm_in(usb_dev *udev, uint8_t ep_num)
 static uint8_t bf_cdc_acm_out(usb_dev *udev, uint8_t ep_num)
 {
   uint16_t USB_Rx_Cnt;
-  
+
   /* Get the received data buffer and update the counter */
   USB_Rx_Cnt = ((usb_core_driver *)udev)->dev.transc_out[ep_num].xfer_count;
-  
-  /* USB data will be immediately processed, this allow next USB traffic being 
+
+  /* USB data will be immediately processed, this allow next USB traffic being
   NAKed till the end of the application Xfer */
   APP_FOPS.pIf_DataRx(USB_Rx_Buffer, USB_Rx_Cnt);
-  
+
   /* Prepare Out endpoint to receive next packet */
   usbd_ep_recev(udev, CDC_DATA_OUT_EP, (uint8_t *)(uint8_t*)(USB_Rx_Buffer), USB_CDC_DATA_PACKET_SIZE);
-  
+
   return USBD_OK;
 }
 
@@ -579,18 +579,18 @@ static uint8_t bf_cdc_acm_out(usb_dev *udev, uint8_t ep_num)
   * @retval status
   */
 uint8_t bf_cdc_acm_sof(usb_dev *udev)
-{      
+{
   static uint32_t FrameCount = 0;
-  
+
   if (FrameCount++ == CDC_IN_FRAME_INTERVAL)
   {
     /* Reset the frame counter */
     FrameCount = 0;
-    
+
     /* Check the data to be sent through IN pipe */
     Handle_USBAsynchXfer(udev);
   }
-  
+
   return USBD_OK;
 }
 
@@ -636,7 +636,7 @@ static void Handle_USBAsynchXfer (usb_dev *udev)
                 USB_Tx_State = USB_CDC_BUSY;
             }
         }
-    
+
         usbd_ep_send(udev, CDC_DATA_IN_EP, (uint8_t*)&APP_Rx_Buffer[APP_Rx_ptr_out], USB_Tx_length);
 
         APP_Rx_ptr_out = (APP_Rx_ptr_out + USB_Tx_length) % APP_RX_DATA_SIZE;

@@ -325,3 +325,8 @@
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
 #endif
+
+#ifdef USE_TRANSPONDER
+#define PARAM_NAME_TRANSPONDER_PROVIDER "transponder_provider"
+#define PARAM_NAME_TRANSPONDER_DATA "transponder_data"
+#endif

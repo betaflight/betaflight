@@ -22,6 +22,17 @@
 
 /* reset Handler */
 Reset_Handler:
+  /* Enable TCM RAM clock. */
+  ldr     r0, =0x40023800       // RCU_BASE
+  ldr     r1, [r0, #0x30]       // AHB1EN
+  orr     r1, r1, 0x00100000    // RCU_TCMSRAM
+  str     r1, [r0, #0x30]
+  dsb
+
+  ldr     r0, =_estack
+  msr     msp, r0
+  isb
+
   movs r1, #0
   b DataInit
 

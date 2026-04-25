@@ -59,12 +59,14 @@ static float filteredAltitudeDerivative = 0.0f;
 
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
-
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+static bool wasArmed = false;
+#endif
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
 
-void positionInit(void)
+static void positionResetAltitudeState(void)
 {
     const float sampleTimeS = HZ_TO_INTERVAL(TASK_ALTITUDE_RATE_HZ);
 
@@ -75,6 +77,20 @@ void positionInit(void)
     const float altitudeDerivativeCutoffHz = positionConfig()->altitude_d_lpf / 100.0f;
     const float altitudeDerivativeGain = pt2FilterGain(altitudeDerivativeCutoffHz, sampleTimeS);
     pt2FilterInit(&altitudeDerivativeLpf, altitudeDerivativeGain);
+
+    filteredAltitudeCm = 0.0f;
+    displayAltitudeCm = 0.0f;
+    filteredAltitudeDerivative = 0.0f;
+    controlAltitudeCm = 0.0f;
+    controlAltitudeDerivative = 0.0f;
+}
+
+void positionInit(void)
+{
+    positionResetAltitudeState();
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+    wasArmed = ARMING_FLAG(ARMED);
+#endif
 
     positionEstimatorInit();
 }
@@ -92,6 +108,16 @@ PG_RESET_TEMPLATE(positionConfig_t, positionConfig,
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 void calculateEstimatedAltitude(void)
 {
+    const bool isArmed = ARMING_FLAG(ARMED);
+
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+    if (isArmed != wasArmed) {
+        positionEstimatorResetZ();
+        positionResetAltitudeState();
+        wasArmed = isArmed;
+    }
+#endif
+
     // Run the Kalman filter estimator (prediction + all sensor measurement updates)
     positionEstimatorUpdate();
 
@@ -99,18 +125,12 @@ void calculateEstimatedAltitude(void)
     const float kfAltCm = positionEstimatorGetAltitudeCm();
     const float kfVelCm = positionEstimatorGetAltitudeDerivative();
 
-    if (!ARMING_FLAG(ARMED)) {
-        filteredAltitudeCm = 0.0f;
-        displayAltitudeCm = 0.0f;
-        controlAltitudeCm = 0.0f;
-        controlAltitudeDerivative = 0.0f;
-    } else {
-        // Apply PT2 display smoothing on top of KF output
-        filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
-        displayAltitudeCm = filteredAltitudeCm;
-        controlAltitudeCm = kfAltCm;
-        controlAltitudeDerivative = kfVelCm;
-    }
+    // Keep altitude estimate updating while disarmed so sensors/debug views show live data.
+    // Arming-specific references are handled in estimator sensor offsets/reset logic.
+    filteredAltitudeCm = pt2FilterApply(&altitudeLpf, kfAltCm);
+    displayAltitudeCm = filteredAltitudeCm;
+    controlAltitudeCm = kfAltCm;
+    controlAltitudeDerivative = kfVelCm;
 
     filteredAltitudeDerivative = pt2FilterApply(&altitudeDerivativeLpf, controlAltitudeDerivative);
 
@@ -127,6 +147,10 @@ void calculateEstimatedAltitude(void)
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(filteredAltitudeCm));
+
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+    wasArmed = isArmed;
+#endif
 }
 
 #endif // defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)

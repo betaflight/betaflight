@@ -154,6 +154,9 @@ struct {
     // GD25Q128
     // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
     { 0xC84018, 104, 80, 4096, 16 },
+    // Boyamicro BY25Q128ES
+    // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
+    { 0x684018, 104, 50, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

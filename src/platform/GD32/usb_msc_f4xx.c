@@ -105,7 +105,7 @@ uint8_t mscStart(void)
         usbd_internal_storage_fops.mem_block_size[0] = 0;
         usbd_internal_storage_fops.mem_block_len[0] = 0;
     }
-    
+
     usbd_mem_fops = &usbd_internal_storage_fops;
     usb_gpio_config();
     usb_rcu_config();

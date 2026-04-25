@@ -134,6 +134,7 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_hal2.c \
             STM32/bus_i2c_ll.c \
             STM32/bus_i2c_ll_init.c \
+            STM32/can_stm32c5xx.c \
             drivers/bus_i2c_timing.c \
             STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32c5xx.c \
@@ -147,6 +148,8 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/light_ws2811strip_hal2.c \
             STM32/startup/system_stm32c5xx.c
+
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
 
 MSC_SRC =
 

@@ -270,16 +270,3 @@ __attribute__((used, externally_visible)) int _getpid(void)
     return 1;
 }
 
-const mcuTypeInfo_t *getMcuTypeInfo(void)
-{
-#if defined(ESP32S3)
-    static const mcuTypeInfo_t info = {
-        .id = MCU_TYPE_ESP32S3, .name = "ESP32S3"
-    };
-#else
-    static const mcuTypeInfo_t info = {
-        .id = MCU_TYPE_ESP32, .name = "ESP32"
-    };
-#endif
-    return &info;
-}

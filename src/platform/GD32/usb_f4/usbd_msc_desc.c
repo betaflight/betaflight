@@ -8,27 +8,27 @@
 /*
     Copyright (c) 2024, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -229,7 +229,7 @@ static __ALIGN_BEGIN usb_desc_str product_string __ALIGN_END = {
         .bLength         = USB_STRING_LEN(34U),
         .bDescriptorType = USB_DESCTYPE_STR
     },
-    .unicode_string = {'B', 'e', 't', 'a', 'f', 'l', 'i', 'g', 'h', 't', ' ', 
+    .unicode_string = {'B', 'e', 't', 'a', 'f', 'l', 'i', 'g', 'h', 't', ' ',
                        'F', 'C', ' ', 'M', 'a', 's', 's', ' ', 'S', 't', 'o', 'r', 'a', 'g', 'e', ' ',
                        'F', 'S', ' ', 'M', 'o', 'd', 'e'
                       }
@@ -280,18 +280,18 @@ static void usbd_msc_string_buf_get(const char *src, uint8_t *unicode)
 {
     uint8_t idx = 0;
     uint8_t len = 0;
-    
+
     if (src != NULL) {
-        len =  USB_STRING_LEN(strlen(src));    
+        len =  USB_STRING_LEN(strlen(src));
         unicode[idx++] = len;
         unicode[idx++] =  USB_DESCTYPE_STR;
-        
-        while (*src != '\0') 
+
+        while (*src != '\0')
         {
         unicode[idx++] = *src++;
         unicode[idx++] =  0x00;
         }
-    } 
+    }
 }
 
 
@@ -340,7 +340,7 @@ static uint8_t bf_msc_core_init(usb_dev *udev, uint8_t config_index)
 static uint8_t bf_msc_core_deinit(usb_dev *udev, uint8_t config_index)
 {
     (void)(config_index);
-    
+
     /* clear MSC endpoints */
     usbd_ep_clear(udev, MSC_IN_EP);
     usbd_ep_clear(udev, MSC_OUT_EP);
