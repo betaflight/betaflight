@@ -1355,66 +1355,6 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
     displayPortTestBufferSubstring(2, 1,
         "%c%c%c%c%c%c%c%c%c%c%c%c",
         SYM_PB_START,
-        SYM_PB_FULL,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY);
-
-    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-    simulationBatteryPercentage = 42;
-    osdRefresh();
-    displayPortTestBufferSubstring(2, 1,
-        "%c%c%c%c%c%c%c%c%c%c%c%c",
-        SYM_PB_START,
-        SYM_PB_FULL,
-        SYM_PB_FULL,
-        SYM_PB_FULL,
-        SYM_PB_FULL,
-        SYM_PB_FULL,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY);
-
-    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-    simulationBatteryPercentage = 100;
-    osdRefresh();
-    displayPortTestBufferSubstring(2, 1,
-        "%c%c%c%c%c%c%c%c%c%c%c%c",
-        SYM_PB_START,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY,
-        SYM_PB_EMPTY);
-
-    // TYPE 2
-
-    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
-        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_2 << 14);
-    osdAnalyzeActiveElements();
-
-    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
-    simulationBatteryPercentage = 0;
-    osdRefresh();
-    displayPortTestBufferSubstring(2, 1,
-        "%c%c%c%c%c%c%c%c%c%c%c%c",
-        SYM_PB_START,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
@@ -1438,7 +1378,7 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
         SYM_PB_FULL,
         SYM_PB_FULL,
         SYM_PB_FULL,
-        SYM_PB_FULL,
+        SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
@@ -1462,6 +1402,66 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
         SYM_PB_FULL,
         SYM_PB_FULL,
         SYM_PB_FULL);
+
+    // TYPE 2
+
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_2 << 14);
+    osdAnalyzeActiveElements();
+
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 0;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL);
+
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 42;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
+
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 100;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
 }
 
 // STUBS
