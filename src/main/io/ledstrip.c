@@ -1416,22 +1416,16 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
             useVtxColors = (colorIndex == COLOR_BLACK);
 
 #ifdef USE_VTX_COMMON
-            if (useVtxColors)
-            {
+            if (useVtxColors) {
                 const vtxDevice_t *vtxDevice = vtxCommonDevice();
-
-                if (vtxDevice)
-                {
+                if (vtxDevice) {
                     uint8_t const band = vtxSettingsConfig()->band;
                     uint8_t const channel = vtxSettingsConfig()->channel;
                     uint16_t freq = 0;
 
-                    if (band && channel)
-                    {
+                    if (band && channel) {
                         freq = vtxCommonLookupFrequency(vtxDevice, band, channel);
-                    }
-                    else
-                    {
+                    } else {
                         freq = vtxSettingsConfig()->freq;
                         // use manually configured frequency if no band and channel
                     }
@@ -1460,9 +1454,8 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
             break;
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive())
+    if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive()) {
         // turn LEDs on and off at fixed intervals to help find it if lost
-    {
         flashPeriod = BEACON_FAILSAFE_PERIOD_MS;
         onPercent   = BEACON_FAILSAFE_ON_PERCENT;
         periodicBlink = true;
@@ -1475,8 +1468,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     if (periodicBlink && flashPeriod > 0){
         // Handle a periodic blink request
         const unsigned onPeriod = flashPeriod * onPercent / 100;
-        const bool ledOn = (millis() % flashPeriod) < onPeriod;
-        
+        const bool ledOn = (millis() % flashPeriod) < onPeriod; 
         colorIndex = ledOn ? beaconColor : COLOR_BLACK;
         // use the configured beacon color when the LED is on
         useVtxColors = !ledOn;
@@ -1485,28 +1477,24 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         // these blinks will not use the custom color table to ensure reliable interpretation
     }
 
-    if (beeperEventsPermitted && isBeeperOn())
-    // Handle transient visual beeps with audio beeps, e.g. on arming or calibrating something
-    {
-        useVtxColors = false;
-        // Don't override the beep color with the Vtx color while the beep color is active
+    if (ledStripConfig()->ledstrip_visual_beeper && beeperEventsPermitted && isBeeperOn()) {
+        // Handle transient visual beeps with audio beeps, e.g. on arming or calibrating something
+        colorIndex = ledStripConfig()->ledstrip_visual_beeper_color;
         useCustomColors = false;
+        // use the system-defined visual_beeper_color, not allowing customisation
+        useVtxColors = false;
+    // Don't override the beep color with the Vtx color while the beep color is active
     }
 
-    if (useVtxColors)
-    {
+    if (useVtxColors) {
         currentHsv = getHsvFromVtxFrequency(currentVtxFrequency);
         // apply the algorithm to calculate HSV values from VTx frequency
-    }
-    else
-    {
-        currentHsv = (useCustomColors)
-            ? ledStripStatusModeConfig()->colors[colorIndex]
-            : hsv[colorIndex];
-            // get the HSV value of the current color
+    } else {
+        currentHsv = (useCustomColors) ? ledStripStatusModeConfig()->colors[colorIndex] : hsv[colorIndex];
+        // get the HSV value of the current color
     }
 
-    bool updateLedStripColor =
+        bool updateLedStripColor =
         currentHsv.h != previousHsv.h ||
         currentHsv.s != previousHsv.s ||
         currentHsv.v != previousHsv.v ||
@@ -1514,8 +1502,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         (currentTimeUs >= colorUpdateTimeUs);
         // or update interval is reached
 
-    if (updateLedStripColor)
-    {
+    if (updateLedStripColor) {
         setStripColor(&currentHsv);
         // set all LEDs to the current HSV values
 
@@ -1530,8 +1517,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
 
 
 timeUs_t executeTimeUs;
-void ledStripUpdate(timeUs_t currentTimeUs)
-{
+void ledStripUpdate(timeUs_t currentTimeUs) {
     static uint16_t ledStateDurationFractionUs[2] = { 0 };
     static bool applyProfile = true;
     static timeUs_t updateStartTimeUs = 0;
