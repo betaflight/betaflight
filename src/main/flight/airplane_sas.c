@@ -60,11 +60,11 @@ void psasInit(const pidProfile_t *pidProfile)
     isReadyPSAS = false;
     isLiftCoefValid = false;
     validLiftCoefTime = 0.0f;
-    isEnabledAccelZController = sensors(SENSOR_ACC) && (pidProfile->psas_pitch_accel_i_gain != 0 || pidProfile->psas_pitch_accel_p_gain != 0);
+    isEnabledAccelZController = sensors(SENSOR_ACC) && (pidProfile->psas_pitch_accel_i_gain != 0);
     isEnabledAoALimiter = pidProfile->psas_aoa_limiter_gain != 0;
 }
 
-static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
+static void computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
 {
     static float liftCoefLast = 0.0f;
     const float timeForValid = 3.0f;
@@ -110,8 +110,6 @@ static bool computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
         isLiftCoefValid = false;
         validLiftCoefTime = 0.0f;
     }
-
-    return isLiftCoefValid;
 }
 
 //The astatic accel Z controller by stick position
@@ -172,7 +170,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
 
     if (isLimitAoA) {
         psasData.pitch.I += servoVelocity * pidRuntime.dT;
-    } else if (pidProfile->psas_pitch_accel_i_gain == 0) {
+    } else if (!isEnabledAccelZController) {
         // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
         psasData.pitch.I -= psasData.pitch.I / (pidProfile->psas_aoa_limiter_tau_return * 0.1f) * pidRuntime.dT;
     }
@@ -240,11 +238,11 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Therefore to use lift coefficient instead of AoA. It is proportional AoA in the linear region
     float liftCoef = 0.0f;
     float liftCoefVelocity = 0.0f;
-    bool isValidLiftCoef = computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+    computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
 
     // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
-    if (isEnabledAoALimiter && isValidLiftCoef) {
+    if (isEnabledAoALimiter) {
         isLimitAoA = updateAngleOfAttackLimiter(pidProfile, liftCoef, liftCoefVelocity);
     }
 
