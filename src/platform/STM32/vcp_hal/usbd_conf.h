@@ -59,6 +59,10 @@
 #include "stm32h7xx_hal.h"
 #elif defined(STM32G4)
 #include "stm32g4xx_hal.h"
+#elif defined(STM32H5)
+#include "stm32h5xx_hal.h"
+#elif defined(STM32C5)
+#include "stm32c5xx_hal.h"
 #elif defined(STM32N6)
 #include "stm32n6xx_hal.h"
 #else

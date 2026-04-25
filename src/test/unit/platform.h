@@ -84,20 +84,12 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-typedef struct
-{
-    void* test;
-} SPI_TypeDef;
+struct spiResource_s;
+struct quadSpiResource_s;
+struct octoSpiResource_s;
+struct i2cResource_s;
 
-typedef struct
-{
-    void* test;
-} USART_TypeDef;
-
-typedef struct
-{
-    void *test;
-} I2C_TypeDef;
+typedef struct USART_TypeDef_s USART_TypeDef;
 
 typedef struct
 {
@@ -116,7 +108,6 @@ typedef struct
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
 
-#define MCU_TYPE_ID   99
 #define MCU_TYPE_NAME "UNIT_TEST"
 
 #include "target.h"

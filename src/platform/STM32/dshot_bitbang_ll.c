@@ -54,7 +54,7 @@ void bbGpioSetup(bbMotor_t *bbMotor)
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     bbPort->gpioModeMask |= (GPIO_MODER_MODE0 << (pinIndex * 2)); // A minor name change in H7 CMSIS
 #else
     bbPort->gpioModeMask |= (GPIO_MODER_MODER0 << (pinIndex * 2));
@@ -139,6 +139,13 @@ static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     ((DMA_ARCH_TYPE *)dmaResource)->CNDTR = dmaRegCache->CNDTR;
     ((DMA_ARCH_TYPE *)dmaResource)->CPAR = dmaRegCache->CPAR;
     ((DMA_ARCH_TYPE *)dmaResource)->CMAR = dmaRegCache->CMAR;
+#elif defined(STM32H5) || defined(STM32C5)
+    ((DMA_ARCH_TYPE *)dmaResource)->CCR = dmaRegCache->CCR;
+    ((DMA_ARCH_TYPE *)dmaResource)->CTR1 = dmaRegCache->CTR1;
+    ((DMA_ARCH_TYPE *)dmaResource)->CTR2 = dmaRegCache->CTR2;
+    ((DMA_ARCH_TYPE *)dmaResource)->CBR1 = dmaRegCache->CBR1;
+    ((DMA_ARCH_TYPE *)dmaResource)->CSAR = dmaRegCache->CSAR;
+    ((DMA_ARCH_TYPE *)dmaResource)->CDAR = dmaRegCache->CDAR;
 #elif defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
     UNUSED(dmaResource);
@@ -161,6 +168,13 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->CNDTR;
     dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->CPAR;
     dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->CMAR;
+#elif defined(STM32H5) || defined(STM32C5)
+    dmaRegCache->CCR = ((DMA_ARCH_TYPE *)dmaResource)->CCR;
+    dmaRegCache->CTR1 = ((DMA_ARCH_TYPE *)dmaResource)->CTR1;
+    dmaRegCache->CTR2 = ((DMA_ARCH_TYPE *)dmaResource)->CTR2;
+    dmaRegCache->CBR1 = ((DMA_ARCH_TYPE *)dmaResource)->CBR1;
+    dmaRegCache->CSAR = ((DMA_ARCH_TYPE *)dmaResource)->CSAR;
+    dmaRegCache->CDAR = ((DMA_ARCH_TYPE *)dmaResource)->CDAR;
 #elif defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
     UNUSED(dmaResource);
@@ -250,6 +264,51 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
     // TODO: N6 HPDMA/GPDMA DMA preconfiguration not yet implemented
     UNUSED(bbPort);
     UNUSED(direction);
+#elif defined(STM32H5) || defined(STM32C5)
+    LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
+
+    LL_DMA_StructInit(dmainit);
+    dmainit->Request = bbPort->dmaChannel;
+    dmainit->BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
+    dmainit->SrcBurstLength = 1;
+    dmainit->DestBurstLength = 1;
+    dmainit->DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    dmainit->Mode = LL_DMA_NORMAL;
+
+    if (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) {
+        dmainit->Priority = LL_DMA_HIGH_PRIORITY;
+        dmainit->Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+        dmainit->BlkDataLength = bbPort->portOutputCount * sizeof(uint32_t);
+        dmainit->DestAddress = (uint32_t)&bbPort->gpio->BSRR;
+        dmainit->DestDataWidth = LL_DMA_DEST_DATAWIDTH_WORD;
+        dmainit->DestIncMode = LL_DMA_DEST_FIXED;
+        dmainit->SrcAddress = (uint32_t)bbPort->portOutputBuffer;
+        dmainit->SrcDataWidth = LL_DMA_SRC_DATAWIDTH_WORD;
+        dmainit->SrcIncMode = LL_DMA_SRC_INCREMENT;
+
+#ifdef USE_DMA_REGISTER_CACHE
+        xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
+        // Enable TC and DTE interrupts before saving so the cached CCR includes them
+        SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE | DMA_CCR_DTEIE);
+        bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegOutput);
+#endif
+    } else {
+        dmainit->Priority = LL_DMA_LOW_PRIORITY_HIGH_WEIGHT;
+        dmainit->Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+        dmainit->BlkDataLength = bbPort->portInputCount * sizeof(uint16_t);
+        dmainit->SrcAddress = (uint32_t)&bbPort->gpio->IDR;
+        dmainit->SrcDataWidth = LL_DMA_SRC_DATAWIDTH_HALFWORD;
+        dmainit->SrcIncMode = LL_DMA_SRC_FIXED;
+        dmainit->DestAddress = (uint32_t)bbPort->portInputBuffer;
+        dmainit->DestDataWidth = LL_DMA_DEST_DATAWIDTH_HALFWORD;
+        dmainit->DestIncMode = LL_DMA_DEST_INCREMENT;
+
+#ifdef USE_DMA_REGISTER_CACHE
+        xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
+        SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE | DMA_CCR_DTEIE);
+        bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegInput);
+#endif
+    }
 #else
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
@@ -332,7 +391,9 @@ void bbDMA_ITConfig(bbPort_t *bbPort)
 
     xLL_EX_DMA_EnableIT_TC(bbPort->dmaResource);
 
-#if defined(STM32G4)
+#if defined(STM32H5) || defined(STM32C5)
+    SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_DTEIE);
+#elif defined(STM32G4)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_TEIE);
 #elif defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA interrupt configuration not yet implemented

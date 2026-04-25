@@ -91,6 +91,109 @@
 #define DMA_IT_DMEIF        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
+#elif defined(STM32H5)
+
+#define GPDMA1_CH0_HANDLER     (DMA_FIRST_HANDLER + 0)
+#define GPDMA1_CH1_HANDLER     (DMA_FIRST_HANDLER + 1)
+#define GPDMA1_CH2_HANDLER     (DMA_FIRST_HANDLER + 2)
+#define GPDMA1_CH3_HANDLER     (DMA_FIRST_HANDLER + 3)
+#define GPDMA1_CH4_HANDLER     (DMA_FIRST_HANDLER + 4)
+#define GPDMA1_CH5_HANDLER     (DMA_FIRST_HANDLER + 5)
+#define GPDMA1_CH6_HANDLER     (DMA_FIRST_HANDLER + 6)
+#define GPDMA1_CH7_HANDLER     (DMA_FIRST_HANDLER + 7)
+#define GPDMA2_CH0_HANDLER     (DMA_FIRST_HANDLER + 8)
+#define GPDMA2_CH1_HANDLER     (DMA_FIRST_HANDLER + 9)
+#define GPDMA2_CH2_HANDLER     (DMA_FIRST_HANDLER + 10)
+#define GPDMA2_CH3_HANDLER     (DMA_FIRST_HANDLER + 11)
+#define GPDMA2_CH4_HANDLER     (DMA_FIRST_HANDLER + 12)
+#define GPDMA2_CH5_HANDLER     (DMA_FIRST_HANDLER + 13)
+#define GPDMA2_CH6_HANDLER     (DMA_FIRST_HANDLER + 14)
+#define GPDMA2_CH7_HANDLER     (DMA_FIRST_HANDLER + 15)
+#define DMA_LAST_HANDLER       GPDMA2_CH7_HANDLER
+
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
+#define DMA_OUTPUT_INDEX    0
+#define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+
+#define DEFINE_DMA_CHANNEL(d, c, f) { \
+    .dma = d, \
+    .ref = (dmaResource_t *)d ## _Channel ## c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, i) FAST_IRQ_HANDLER void d ## _Channel ## c ## _IRQHandler(void) {\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
+                                                            }
+
+// H5 GPDMA uses per-channel flag registers (CSR for status, CFCR for clear)
+#define DMA_CLEAR_FLAG(d, flag) ((DMA_Channel_TypeDef*)(d)->ref)->CFCR = (flag)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_Channel_TypeDef*)(d)->ref)->CSR & (flag))
+
+#define DMA_IT_TCIF         DMA_CSR_TCF
+#define DMA_IT_HTIF         DMA_CSR_HTF
+#define DMA_IT_TEIF         DMA_CSR_DTEF
+
+#elif defined(STM32C5)
+
+#define LPDMA1_CH0_HANDLER     (DMA_FIRST_HANDLER + 0)
+#define LPDMA1_CH1_HANDLER     (DMA_FIRST_HANDLER + 1)
+#define LPDMA1_CH2_HANDLER     (DMA_FIRST_HANDLER + 2)
+#define LPDMA1_CH3_HANDLER     (DMA_FIRST_HANDLER + 3)
+#define LPDMA1_CH4_HANDLER     (DMA_FIRST_HANDLER + 4)
+#define LPDMA1_CH5_HANDLER     (DMA_FIRST_HANDLER + 5)
+#define LPDMA1_CH6_HANDLER     (DMA_FIRST_HANDLER + 6)
+#define LPDMA1_CH7_HANDLER     (DMA_FIRST_HANDLER + 7)
+#define LPDMA2_CH0_HANDLER     (DMA_FIRST_HANDLER + 8)
+#define LPDMA2_CH1_HANDLER     (DMA_FIRST_HANDLER + 9)
+#define LPDMA2_CH2_HANDLER     (DMA_FIRST_HANDLER + 10)
+#define LPDMA2_CH3_HANDLER     (DMA_FIRST_HANDLER + 11)
+#define LPDMA2_CH4_HANDLER     (DMA_FIRST_HANDLER + 12)
+#define LPDMA2_CH5_HANDLER     (DMA_FIRST_HANDLER + 13)
+#define LPDMA2_CH6_HANDLER     (DMA_FIRST_HANDLER + 14)
+#define LPDMA2_CH7_HANDLER     (DMA_FIRST_HANDLER + 15)
+#define DMA_LAST_HANDLER       LPDMA2_CH7_HANDLER
+
+#define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
+#define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
+#define DMA_OUTPUT_INDEX    0
+#define DMA_OUTPUT_STRING   "DMA%d Channel %d:"
+
+// C5 LPDMA uses _CH naming for both register blocks and IRQs
+#define DEFINE_DMA_CHANNEL(d, c, f) { \
+    .dma = d, \
+    .ref = (dmaResource_t *)d ## _CH ## c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = d ## _CH ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, i) FAST_IRQ_HANDLER void d ## _CH ## c ## _IRQHandler(void) {\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
+                                                            }
+
+// C5 LPDMA uses per-channel flag registers (CSR for status, CFCR for clear)
+#define DMA_CLEAR_FLAG(d, flag) ((DMA_Channel_TypeDef*)(d)->ref)->CFCR = (flag)
+#define DMA_GET_FLAG_STATUS(d, flag) (((DMA_Channel_TypeDef*)(d)->ref)->CSR & (flag))
+
+#define DMA_IT_TCIF         DMA_CSR_TCF
+#define DMA_IT_HTIF         DMA_CSR_HTF
+#define DMA_IT_TEIF         DMA_CSR_DTEF
+
 #elif defined(STM32N6)
 
 #define HPDMA1_CH0_HANDLER     (DMA_FIRST_HANDLER + 0)
@@ -258,6 +361,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
         (((DMA_Stream_TypeDef *)(reg))->CR & DMA_SxCR_EN) : \
         (((BDMA_Channel_TypeDef *)(reg))->CCR & BDMA_CCR_EN)
 #endif
+#elif defined(STM32C5)
+#define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #elif defined(STM32N6)
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #elif defined(STM32G4)
@@ -280,6 +385,10 @@ uint32_t dmaGetChannel(const uint8_t channel);
 #define xLL_EX_DMA_GetDataLength(dmaResource) LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)(dmaResource))
 #define xLL_EX_DMA_SetDataLength(dmaResource, length) LL_EX_DMA_SetDataLength((DMA_ARCH_TYPE *)(dmaResource), length)
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
+#define xLL_EX_DMA_SetMemoryAddress(dmaResource, addr) LL_EX_DMA_SetMemoryAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xLL_EX_DMA_SetPeriphAddress(dmaResource, addr) LL_EX_DMA_SetPeriphAddress((DMA_ARCH_TYPE *)(dmaResource), addr)
+#define xLL_EX_DMA_ConfigStream(dmaResource, channel, dir, pAddr, mAddr, len, mode) \
+    LL_EX_DMA_ConfigStream((DMA_ARCH_TYPE *)(dmaResource), channel, dir, pAddr, mAddr, len, mode)
 
 #else
 

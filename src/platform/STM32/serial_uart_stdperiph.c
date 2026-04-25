@@ -51,8 +51,9 @@
 
 void uartReconfigure(uartPort_t *uartPort)
 {
+    USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
     USART_InitTypeDef USART_InitStructure;
-    USART_Cmd(uartPort->USARTx, DISABLE);
+    USART_Cmd(USARTx, DISABLE);
 
     USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
 
@@ -74,17 +75,17 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
 
-    USART_Init(uartPort->USARTx, &USART_InitStructure);
+    USART_Init(USARTx, &USART_InitStructure);
 
     // config external pin inverter (no internal pin inversion available)
     uartConfigureExternalPinInversion(uartPort);
 
     if (uartPort->port.options & SERIAL_BIDIR)
-        USART_HalfDuplexCmd(uartPort->USARTx, ENABLE);
+        USART_HalfDuplexCmd(USARTx, ENABLE);
     else
-        USART_HalfDuplexCmd(uartPort->USARTx, DISABLE);
+        USART_HalfDuplexCmd(USARTx, DISABLE);
 
-    USART_Cmd(uartPort->USARTx, ENABLE);
+    USART_Cmd(USARTx, ENABLE);
 
     // Receive DMA or IRQ
     DMA_InitTypeDef DMA_InitStructure;
@@ -118,14 +119,14 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_DeInit(uartPort->rxDMAResource);
             xDMA_Init(uartPort->rxDMAResource, &DMA_InitStructure);
             xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
-            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Rx, ENABLE);
+            USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);
             uartPort->rxDMAPos = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
         } else
 #endif
         {
-            USART_ClearITPendingBit(uartPort->USARTx, USART_IT_RXNE);
-            USART_ITConfig(uartPort->USARTx, USART_IT_RXNE, ENABLE);
-            USART_ITConfig(uartPort->USARTx, USART_IT_IDLE, ENABLE);
+            USART_ClearITPendingBit(USARTx, USART_IT_RXNE);
+            USART_ITConfig(USARTx, USART_IT_RXNE, ENABLE);
+            USART_ITConfig(USARTx, USART_IT_IDLE, ENABLE);
         }
     }
 
@@ -166,17 +167,16 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
 
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
-            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Tx, ENABLE);
+            USART_DMACmd(USARTx, USART_DMAReq_Tx, ENABLE);
         } else
 #endif
         {
-            USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
+            USART_ITConfig(USARTx, USART_IT_TXE, ENABLE);
         }
         // Enable the interrupt so completion of the transmission will be signalled
-        USART_ITConfig(uartPort->USARTx, USART_IT_TC, ENABLE);
+        USART_ITConfig(USARTx, USART_IT_TC, ENABLE);
     }
 
-    USART_Cmd(uartPort->USARTx, ENABLE); // TODO : enabling twice?
 }
 
 #ifdef USE_DMA

@@ -55,7 +55,7 @@ LOCAL_UNUSED_FUNCTION static void configureMasterClockOutputs(void)
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_RSR_SFTRSTF)
+    if (cachedResetFlags & RCC_RSR_SFTRSTF)
         return true;
     else
         return false;
@@ -102,7 +102,7 @@ void systemInit(void)
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCC->RSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->RSR;
+    cachedResetFlags = RCC->RSR;
 
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     //extern void *isr_vector_table_base;

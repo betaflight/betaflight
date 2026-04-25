@@ -51,6 +51,8 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
+#include "drivers/can/can.h"
+#include "drivers/can/can_impl.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
@@ -108,9 +110,11 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_fb_osd.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
@@ -147,6 +151,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/bus_quadspi.h"
+#include "pg/can.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
@@ -263,6 +268,17 @@ static void configureOctoSPIBusses(void)
 #endif
 #endif
 }
+
+#if ENABLE_CAN
+static void configureCANBusses(void)
+{
+    canPinConfigure(canPinConfig(0));
+    const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
+    canInit(CANDEV_1, bitrate);
+    canInit(CANDEV_2, bitrate);
+    canInit(CANDEV_3, bitrate);
+}
+#endif
 
 #ifdef USE_SDCARD
 static void sdCardAndFSInit(void)
@@ -418,9 +434,7 @@ void initPhase1(void)
 #endif
     LED2_ON;
 
-#if !defined(SIMULATOR_BUILD)
     EXTIInit();
-#endif
 }
 
 void initPhase2(void)
@@ -528,7 +542,7 @@ void initPhase2(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART) && !defined(SIMULATOR_BUILD)
+#if defined(USE_UART)
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -564,7 +578,7 @@ void initPhase2(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#if defined(USE_INVERTER) && !defined(SIMULATOR_BUILD)
+#if defined(USE_INVERTER)
     initInverters(serialPinConfig());
 #endif
 
@@ -666,6 +680,14 @@ void initPhase3(void)
 #endif // USE_I2C
 
 #endif // TARGET_BUS_INIT
+
+#if ENABLE_CAN && !defined(TARGET_BUS_INIT)
+    configureCANBusses();
+#endif
+
+#if ENABLE_DRONECAN
+    dronecanInit();
+#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
@@ -937,6 +959,15 @@ void initPhase3(void)
             // If there is a max7456 chip for the OSD configured and detected then use it.
             if (max7456DisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_MAX7456) {
                 osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_MAX7456;
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
+#if ENABLE_FB_OSD
+        case OSD_DISPLAYPORT_DEVICE_FBOSD:
+            if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;
                 break;
             }
             FALLTHROUGH;

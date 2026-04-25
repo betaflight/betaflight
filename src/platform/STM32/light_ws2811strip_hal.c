@@ -89,8 +89,8 @@ bool ws2811LedStripHardwareInit(void)
     TimHandle.Instance = timer;
 
     /* Compute the prescaler value */
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, WS2811_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
@@ -110,7 +110,10 @@ bool ws2811LedStripHardwareInit(void)
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
-#if defined(STM32N6)
+#if defined(STM32H5)
+    __HAL_RCC_GPDMA1_CLK_ENABLE();
+    __HAL_RCC_GPDMA2_CLK_ENABLE();
+#elif defined(STM32N6)
     __HAL_RCC_GPDMA1_CLK_ENABLE();
     __HAL_RCC_HPDMA1_CLK_ENABLE();
 #else
@@ -119,7 +122,7 @@ bool ws2811LedStripHardwareInit(void)
 #endif
 
     /* Set the parameters to be configured */
-#if defined(STM32N6)
+#if defined(STM32H5) || defined(STM32N6)
     // N6 uses HPDMA/GPDMA with a different HAL DMA init structure
     hdma_tim.Init.Request = dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;

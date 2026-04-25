@@ -45,10 +45,12 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_uart_ex.c \
             stm32n6xx_ll_dma.c \
             stm32n6xx_ll_exti.c \
+            stm32n6xx_ll_i2c.c \
             stm32n6xx_ll_gpio.c \
             stm32n6xx_ll_rcc.c \
             stm32n6xx_ll_sdmmc.c \
             stm32n6xx_ll_spi.c \
+            stm32n6xx_ll_usart.c \
             stm32n6xx_ll_tim.c \
             stm32n6xx_ll_usb.c \
             stm32n6xx_ll_utils.c
@@ -118,10 +120,12 @@ VCP_SRC = \
 
 MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
+            drivers/bus_octospi.c \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32n6xx.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
+            STM32/bus_octospi_stm32n6xx.c \
             STM32/bus_spi_ll.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
@@ -134,7 +138,8 @@ MCU_COMMON_SRC = \
             STM32/persistent.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
+            STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
             STM32/timer_hal.c \
@@ -149,7 +154,7 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 

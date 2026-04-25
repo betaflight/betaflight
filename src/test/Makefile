@@ -435,6 +435,32 @@ pid_unittest_DEFINES := \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 
+position_rescue_geometry_unittest_SRC := \
+		$(USER_DIR)/common/maths.c
+
+
+poshold_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+position_estimator_unittest_SRC := \
+		$(USER_DIR)/flight/position_estimator.c \
+		$(USER_DIR)/flight/position_filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+position_estimator_unittest_DEFINES := \
+		USE_GPS= \
+		USE_BARO= \
+		USE_RANGEFINDER=
+
+position_nav_unittest_SRC := \
+		$(USER_DIR)/flight/position_nav.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
@@ -549,7 +575,7 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 18
+CC_VERSION_CHECK_MAX := 21
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator

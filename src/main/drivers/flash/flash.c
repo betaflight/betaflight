@@ -103,7 +103,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
     }
 #endif
 
-    OCTOSPI_TypeDef *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
+    octoSpiResource_t *instance = octoSpiInstanceByDevice(OCTOSPI_CFG_TO_DEV(flashConfig->octoSpiDevice));
 
     flashDevice.io.handle.octoSpi = instance;
     flashDevice.io.mode = FLASHIO_OCTOSPI;

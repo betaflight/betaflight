@@ -81,6 +81,9 @@ struct {
     // Macronix MX25L25635E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
     { 0xC22019, 80, 50, 512, 256 },
+    // Macronix MX25L12845G
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8740/MX25L12845G,%203V,%20128Mb,%20v1.8.pdf
+    { 0xC22018, 120, 50, 256, 256 },
     // Micron M25P16
     // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/m25p/m25p16.pdf
     { 0x202015, 25, 20, 32, 256 },
@@ -151,6 +154,9 @@ struct {
     // GD25Q128
     // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
     { 0xC84018, 104, 80, 4096, 16 },
+    // Boyamicro BY25Q128ES
+    // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
+    { 0x684018, 104, 50, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

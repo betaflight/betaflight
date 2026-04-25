@@ -530,7 +530,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
     }
 
-    if (axis == gyro.gyroDebugAxis) {
+    if ((int)axis == gyro.gyroDebugAxis) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));

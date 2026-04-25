@@ -114,6 +114,13 @@ typedef struct dmaRegCache_s {
     uint32_t NDATA;
     uint32_t PADDR;
     uint32_t M0ADDR;
+#elif defined(STM32H5) || defined(STM32C5)
+    uint32_t CCR;
+    uint32_t CTR1;
+    uint32_t CTR2;
+    uint32_t CBR1;
+    uint32_t CSAR;
+    uint32_t CDAR;
 #elif defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA register cache - placeholder for future implementation
     uint32_t placeholder;
@@ -126,7 +133,7 @@ typedef struct dmaRegCache_s {
 // Per pacer timer
 
 typedef struct bbPacer_s {
-    void *tim;
+    timerResource_t *tim;
     uint16_t dmaSources;
 } bbPacer_t;
 

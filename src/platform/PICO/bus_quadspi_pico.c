@@ -34,7 +34,7 @@
 const quadSpiHardware_t quadSpiHardware[QUADSPIDEV_COUNT] = {
     {
         .device = QUADSPIDEV_1,
-        .reg = (QUADSPI_TypeDef *)0x1, // sentinel; common layer uses it only for identity
+        .reg = (quadSpiResource_t *)0x1, // sentinel; common layer uses it only for identity
         .clkPins = { { 0 } },
         .bk1IO0Pins = { { 0 } },
         .bk1IO1Pins = { { 0 } },

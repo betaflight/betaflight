@@ -200,7 +200,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         return;
     }
 
-#ifdef USE_DMA_SPEC
+#if ENABLE_SDIO_EXTERNAL_DMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
     dmaResource_t *dmaRef = dmaChannelSpec ? dmaChannelSpec->ref : NULL;
 

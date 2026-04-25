@@ -48,11 +48,11 @@ static uint16_t timerChannel = 0;
 static uint8_t output;
 static uint8_t alternateFunction;
 
-#if !(defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6))
+#if !(defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6))
 #error "Transponder (via HAL) not supported on this MCU."
 #endif
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32H5)
 DMA_RAM transponder_t transponder;
 #elif defined(STM32N6)
 DMA_RAM transponder_t transponder;
@@ -108,8 +108,8 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 
     TimHandle.Instance = timer;
 
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, transponder->timer_hz);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, transponder->timer_carrier_hz);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, transponder->timer_hz);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, transponder->timer_carrier_hz);
 
     transponder->bitToggleOne = period / 2;
 
@@ -130,7 +130,10 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
-#if defined(STM32N6)
+#if defined(STM32H5)
+    __HAL_RCC_GPDMA1_CLK_ENABLE();
+    __HAL_RCC_GPDMA2_CLK_ENABLE();
+#elif defined(STM32N6)
     __HAL_RCC_GPDMA1_CLK_ENABLE();
     __HAL_RCC_HPDMA1_CLK_ENABLE();
 #else
@@ -139,7 +142,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
 #endif
 
     /* Set the parameters to be configured */
-#if defined(STM32N6)
+#if defined(STM32H5) || defined(STM32N6)
     // N6 uses HPDMA/GPDMA with a different HAL DMA init structure
     hdma_tim.Init.Request = dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -201,7 +204,7 @@ bool transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
         return false;
     }
 
-    RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OC_InitTypeDef  TIM_OCInitStructure;

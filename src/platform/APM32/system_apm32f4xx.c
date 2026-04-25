@@ -121,7 +121,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCM_CSTS_SWRSTFLG) {
+    if (cachedResetFlags & RCM_CSTS_SWRSTFLG) {
         return true;
     } else {
         return false;
@@ -148,7 +148,7 @@ void systemInit(void)
     DAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
     // cache RCM->CSTS value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = READ_REG(RCM->CSTS);
+    cachedResetFlags = READ_REG(RCM->CSTS);
 
     // Although VTOR is already loaded with a possible vector table in RAM,
     // removing the call to NVIC_SetVectorTable causes USB not to become active,

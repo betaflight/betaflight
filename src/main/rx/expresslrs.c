@@ -73,7 +73,7 @@
 #include "rx/expresslrs_impl.h"
 #include "rx/expresslrs_telemetry.h"
 
-static const timerHardware_t elrsTimerHw = { .tim = RX_EXPRESSLRS_TIMER_INSTANCE };
+static const timerHardware_t elrsTimerHw = { .tim = (timerResource_t *)RX_EXPRESSLRS_TIMER_INSTANCE };
 
 UNIT_TESTED elrsReceiver_t receiver;
 static const uint8_t BindingUID[6] = {0,1,2,3,4,5}; // Special binding UID values
