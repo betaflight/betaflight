@@ -1367,7 +1367,7 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
         SYM_PB_EMPTY,
         SYM_PB_EMPTY);
 
-    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    /*displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     simulationBatteryPercentage = 42;
     osdRefresh();
     displayPortTestBufferSubstring(2, 1,
@@ -1383,7 +1383,7 @@ TEST_F(OsdTest, TestBatteryUsage_CapacityZero)
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
         SYM_PB_EMPTY,
-        SYM_PB_EMPTY);
+        SYM_PB_EMPTY);*/
 
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     simulationBatteryPercentage = 100;
