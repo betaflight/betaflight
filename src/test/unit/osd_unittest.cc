@@ -1308,30 +1308,42 @@ TEST_F(OsdTest, TestBatteryUsage_Percentage_Fallback)
 
     osdAnalyzeActiveElements();
 
+    // TYPE 4
     simulationBatteryPercentage = 0;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '0');
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
 
     simulationBatteryPercentage = 50;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
-
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '5');
-
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 4], '0');
+    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
 
     simulationBatteryPercentage = 100;
     displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
     osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
 
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 2], SYM_MAH);
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 3], '1');
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 4], '0');
-    EXPECT_EQ(testDisplayPort.buffer[(1 * testDisplayPort.cols) + 5], '0');
+    // TYPE 3
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_3 << 14);
+
+    osdAnalyzeActiveElements();
+
+    simulationBatteryPercentage = 0;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+
+    simulationBatteryPercentage = 50;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c50%%", SYM_MAH);
+
+    simulationBatteryPercentage = 100;
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
 }
 
 // STUBS
