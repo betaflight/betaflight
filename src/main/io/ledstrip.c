@@ -142,7 +142,7 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
     hsvColor_t color = HSV(BLACK);
 
     // Invalid or no VTX data, eg User has not set band or channel
-    if (freq <= VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
+    if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
         return color;
     }
 
