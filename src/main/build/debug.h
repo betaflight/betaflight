@@ -131,6 +131,7 @@ typedef enum {
     DEBUG_MAVLINK_TELEMETRY,
     DEBUG_AUTOPILOT_PID,
     DEBUG_POSITION_NAV,
+    DEBUG_PSAS,
     DEBUG_COUNT
 } debugType_e;
 
