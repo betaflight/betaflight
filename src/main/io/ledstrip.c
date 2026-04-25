@@ -1472,7 +1472,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         // do not allow transient led flashes at the same time, can mess up the regular timing
     }
 
-    if (periodicBlink){
+    if (periodicBlink && flashPeriod > 0){
         // Handle a periodic blink request
         const unsigned onPeriod = flashPeriod * onPercent / 100;
         const bool ledOn = (millis() % flashPeriod) < onPeriod;
