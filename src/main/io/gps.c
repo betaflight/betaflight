@@ -18,7 +18,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +39,7 @@
 
 #include "drivers/light_led.h"
 #include "drivers/time.h"
+#include "drivers/system.h"
 
 #include "io/beeper.h"
 #ifdef USE_DASHBOARD
@@ -90,7 +90,9 @@ GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
 #define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the Receive Data process
+#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
+#define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
+#define GPS_FRAME_PROCES_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
 
@@ -1368,6 +1370,16 @@ void rescheduleWhenNecessary(uint8_t* wait, bool* isFast)
     }
 }
 
+static bool ubloxParsingAlmostDone = false;
+
+static inline uint32_t cpuCycleLimit(void)
+{
+    if (ubloxParsingAlmostDone) {
+        return clockMicrosToCycles(GPS_UBLOX_RECV_TIME_MAX - GPS_FRAME_PROCES_TIME_US);
+    }
+    return clockMicrosToCycles(GPS_UBLOX_RECV_TIME_MAX);
+}
+
 void gpsUpdate(timeUs_t currentTimeUs)
 {
     static timeDelta_t gpsStateDurationFractionUs[GPS_STATE_COUNT];
@@ -1384,6 +1396,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         }
         rxBytesWaiting = serialRxBytesWaiting(gpsPort);
         DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        const uint32_t initialCycleCount = getCycleCounter();
         static uint8_t wait = 0;
         static bool isFast = false;
         while (rxBytesWaiting-- > 0) {
@@ -1392,7 +1405,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
                 isFast = true;
             }
-            if (cmpTimeUs(micros(), currentTimeUs) > GPS_RECV_TIME_MAX) {
+            if (cmp32((getCycleCounter() - initialCycleCount), cpuCycleLimit()) > 0) {
                 break;
             }
             if (gpsNewFrameUBLOX(serialRead(gpsPort))) {
@@ -2551,6 +2564,7 @@ static bool UBLOX_parse_gps(void)
 static bool gpsNewFrameUBLOX(uint8_t data)
 {
     bool newPositionDataReceived = false;
+    ubloxParsingAlmostDone = false;
 
     switch (ubxFrameParseState) {
     case UBX_PARSE_PREAMBLE_SYNC_1:
@@ -2632,6 +2646,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
         if (ubxRcvMsgChecksumA == data) {
             // Checksum A matches, go on to checksum B.
             ubxFrameParseState = UBX_PARSE_CHECKSUM_B;
+            ubloxParsingAlmostDone = true;
             break;
         }
         // Bad checksum A, restart new message parsing.
