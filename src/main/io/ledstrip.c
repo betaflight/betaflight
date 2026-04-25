@@ -1471,7 +1471,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         const bool ledOn = (millis() % flashPeriod) < onPeriod; 
         colorIndex = ledOn ? beaconColor : COLOR_BLACK;
         // use the configured beacon color when the LED is on
-        useVtxColors = !ledOn;
+        useVtxColors = useVtxColors && !ledOn;
         // Don't override the beep color with the Vtx color while the beep color is active
         useCustomColors = false;
         // these blinks will not use the custom color table to ensure reliable interpretation
