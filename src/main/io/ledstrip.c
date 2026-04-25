@@ -1388,18 +1388,6 @@ void ledStripInit(void)
     ws2811LedStripInit(ledStripConfig()->ioTag, (ledStripFormatRGB_e)ledStripConfig()->ledstrip_grb_rgb);
 }
 
-static uint8_t selectVisualBeeperColor(uint8_t colorIndex, bool *colorIndexIsCustom)
-{
-    if (ledStripConfig()->ledstrip_visual_beeper) {
-        if (colorIndexIsCustom) {
-            *colorIndexIsCustom = false;
-        }
-
-        return ledStripConfig()->ledstrip_visual_beeper_color;
-    }
-
-    return colorIndex;
-}
 
 static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
 {
@@ -1412,7 +1400,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     uint8_t colorIndex = COLOR_BLACK;
     uint8_t beaconColor = COLOR_BLACK;
 
-    bool useCustomColors = false;
+    bool useCustomColors = true;
     bool useVtxColors = false;
     bool beeperEventsPermitted = true;
     bool periodicBlink = false;
@@ -1493,6 +1481,8 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         // use the configured beacon color when the LED is on
         useVtxColors = !ledOn;
         // Don't override the beep color with the Vtx color while the beep color is active
+        useCustomColors = false;
+        // these blinks will not use the custom color table to ensure reliable interpretation
     }
 
     if (beeperEventsPermitted && isBeeperOn())
@@ -1500,8 +1490,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     {
         useVtxColors = false;
         // Don't override the beep color with the Vtx color while the beep color is active
-        colorIndex = selectVisualBeeperColor(colorIndex, &useCustomColors);
-        // set the active color to use for the visual beep
+        useCustomColors = false;
     }
 
     if (useVtxColors)
