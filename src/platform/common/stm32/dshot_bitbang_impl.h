@@ -114,7 +114,7 @@ typedef struct dmaRegCache_s {
     uint32_t NDATA;
     uint32_t PADDR;
     uint32_t M0ADDR;
-#elif defined(STM32H5)
+#elif defined(STM32H5) || defined(STM32C5)
     uint32_t CCR;
     uint32_t CTR1;
     uint32_t CTR2;

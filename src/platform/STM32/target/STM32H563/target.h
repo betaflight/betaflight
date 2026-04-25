@@ -126,6 +126,9 @@
 #if !defined(ENABLE_SDIO_INIT)
 #define ENABLE_SDIO_INIT 1
 #endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI

@@ -103,7 +103,7 @@ void uartReconfigure(uartPort_t *uartPort)
     }
     usartInit.TransferDirection = direction;
 
-#if defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     if (USARTx == LPUART1) {
         usartInit.PrescalerValue = LL_USART_PRESCALER_DIV8;
     }
@@ -120,7 +120,7 @@ void uartReconfigure(uartPort_t *uartPort)
 #endif
 
     LL_USART_DisableOverrunDetect(USARTx);
-#if defined(STM32G4) || defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32N6)
     LL_USART_DisableFIFO(USARTx);
 #endif
     LL_USART_ConfigAsyncMode(USARTx);

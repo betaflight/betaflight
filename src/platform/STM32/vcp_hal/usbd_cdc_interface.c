@@ -108,7 +108,7 @@ static int8_t CDC_Itf_Receive(uint8_t* pbuf, uint32_t *Len);
 // The CDC_Itf_TransmitCplt field was introduced in MiddleWare that comes with
 // H7 V1.8.0.
 // Other MCU can be add here as the MiddleWare version advances.
-#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
 static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum);
 #endif
 
@@ -121,15 +121,27 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
   CDC_Itf_DeInit,
   CDC_Itf_Control,
   CDC_Itf_Receive,
-#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
   CDC_Itf_TransmitCplt
 #endif
 };
 
+#if defined(STM32C5)
+static void CDC_TIM_PeriodElapsedHandler(void);
+
+void TIMx_IRQHandler(void)
+{
+    if (LL_TIM_IsActiveFlag_UPDATE(TIMusb)) {
+        LL_TIM_ClearFlag_UPDATE(TIMusb);
+        CDC_TIM_PeriodElapsedHandler();
+    }
+}
+#else
 void TIMx_IRQHandler(void)
 {
     HAL_TIM_IRQHandler(&TimHandle);
 }
+#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -145,12 +157,18 @@ static int8_t CDC_Itf_Init(void)
   TIM_Config();
 
   /*##-4- Start the TIM Base generation in interrupt mode ####################*/
+#if defined(STM32C5)
+  LL_TIM_ClearFlag_UPDATE(TIMusb);
+  LL_TIM_EnableIT_UPDATE(TIMusb);
+  LL_TIM_EnableCounter(TIMusb);
+#else
   /* Start Channel1 */
   if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
   {
     /* Starting Error */
     Error_Handler();
   }
+#endif
 
   /*##-5- Set Application Buffers ############################################*/
   USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t *)UserTxBuffer, 0);
@@ -257,6 +275,11 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @param  htim: TIM handle
   * @retval None
   */
+#if defined(STM32C5)
+static void CDC_TIM_PeriodElapsedHandler(void)
+{
+    uint32_t buffsize;
+#else
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance != TIMusb) {
@@ -264,6 +287,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 
     uint32_t buffsize;
+#endif
     static uint32_t lastBuffsize = 0;
 
     USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pCDC_ClassData;
@@ -325,7 +349,7 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
     return (USBD_OK);
 }
 
-#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
 static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 {
     UNUSED(Buf);
@@ -343,6 +367,20 @@ static int8_t CDC_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   */
 static void TIM_Config(void)
 {
+#if defined(STM32C5)
+  /* Enable TIM peripheral clock first (HAL2 uses function-style RCC API) */
+  TIMx_CLK_ENABLE();
+
+  /* Configure TIM7 via LL: simple periodic interrupt for CDC TX polling */
+  TimHandle.Instance = TIMusb;
+  LL_TIM_SetPrescaler(TIMusb, (SystemCoreClock / 2 / 1000000) - 1);
+  LL_TIM_SetAutoReload(TIMusb, (CDC_POLLING_INTERVAL * 1000) - 1);
+  LL_TIM_SetCounterMode(TIMusb, LL_TIM_COUNTERMODE_UP);
+  LL_TIM_GenerateEvent_UPDATE(TIMusb);
+
+  HAL_NVIC_SetPriority(TIMx_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(TIMx_IRQn);
+#else
   /* Set TIMusb instance */
   TimHandle.Instance = TIMusb;
 
@@ -371,6 +409,7 @@ static void TIM_Config(void)
 
   /* Enable the TIMx global Interrupt */
   HAL_NVIC_EnableIRQ(TIMx_IRQn);
+#endif
 }
 
 /**
@@ -378,7 +417,7 @@ static void TIM_Config(void)
   * @param  None
   * @retval None
   */
-static void Error_Handler(void)
+static void __attribute__((unused)) Error_Handler(void)
 {
   /* Add your own code here */
 }

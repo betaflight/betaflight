@@ -117,6 +117,8 @@ typedef enum {
     OWNER_GYRO_CLKIN,
     OWNER_PIOUART_TX,            // TX must be just before RX
     OWNER_PIOUART_RX,
+    OWNER_CAN_TX,                // TX must be just before RX
+    OWNER_CAN_RX,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

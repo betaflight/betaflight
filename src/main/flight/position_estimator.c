@@ -189,6 +189,7 @@ static bool gpsAltOffsetSet = false;
 #ifdef USE_BARO
 static float baroAltOffsetCm = 0.0f;
 static float baroAltAccumulator = 0.0f;
+static bool baroOffsetSet = false;
 #endif
 
 #ifdef USE_RANGEFINDER
@@ -236,6 +237,7 @@ void positionEstimatorInit(void)
 #ifdef USE_BARO
     baroAltOffsetCm = 0.0f;
     baroAltAccumulator = 0.0f;
+    baroOffsetSet = false;
 #endif
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;
@@ -250,6 +252,10 @@ void positionEstimatorEnableXY(bool enable)
     if (enable && !xyEnabled) {
         kalmanInit(&kfX, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
         kalmanInit(&kfY, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
+        estimate.position.x = 0.0f;
+        estimate.position.y = 0.0f;
+        estimate.velocity.x = 0.0f;
+        estimate.velocity.y = 0.0f;
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
@@ -389,11 +395,11 @@ static void feedBaroMeasurements(timeUs_t nowUs)
 
     const float baroAltCm = getBaroAltitude();
 
-    if (!ARMING_FLAG(ARMED)) {
-        // Accumulate a smoothed offset while disarmed
-        baroAltAccumulator = 0.2f * baroAltCm + 0.8f * baroAltAccumulator;
-        baroAltOffsetCm = baroAltAccumulator;
-        return;
+    if (!baroOffsetSet) {
+        // Capture disarmed baseline once; keep live relative altitude while disarmed.
+        baroAltAccumulator = baroAltCm;
+        baroAltOffsetCm = baroAltCm;
+        baroOffsetSet = true;
     }
 
     // Scale R based on altitude_prefer_baro: higher value = lower baro R = more trust
@@ -421,11 +427,6 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
 
     float altCm;
     if (!rangefinderSampleAltitudeCm(&altCm, positionConfig()->rangefinder_max_range_cm)) {
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) {
-        rangefinderAltOffsetCm = altCm;
         return;
     }
 
@@ -565,16 +566,10 @@ void positionEstimatorUpdate(void)
     float accelEast, accelNorth, accelUp;
     getLinearAccelENU(&accelEast, &accelNorth, &accelUp);
 
-    // Z-axis: always runs (for altitude hold, OSD, vario)
-    if (ARMING_FLAG(ARMED)) {
-        kalmanPredict(&kfZ, dt, accelUp);
-    } else {
-        // While disarmed, hold Z at zero and let sensors calibrate offsets
-        kalmanInit(&kfZ, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
-#ifdef USE_RANGEFINDER
-        rangefinderOffsetSet = false;
-#endif
-    }
+    // Z-axis: always runs (for altitude hold, OSD, vario).
+    // While disarmed, predict with zero acceleration so covariance continues to evolve
+    // and incoming baro/rangefinder updates remain responsive.
+    kalmanPredict(&kfZ, dt, ARMING_FLAG(ARMED) ? accelUp : 0.0f);
 
     // XY axes: only when a consumer is active
     if (xyEnabled && ARMING_FLAG(ARMED)) {
@@ -661,6 +656,7 @@ void positionEstimatorResetZ(void)
 #ifdef USE_BARO
     baroAltOffsetCm = 0.0f;
     baroAltAccumulator = 0.0f;
+    baroOffsetSet = false;
 #endif
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;

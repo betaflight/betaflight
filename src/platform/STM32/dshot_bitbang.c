@@ -82,6 +82,9 @@
 #elif defined(STM32H5)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
 #define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
+#elif defined(STM32C5)
+#define BB_OUTPUT_BUFFER_ATTRIBUTE
+#define BB_INPUT_BUFFER_ATTRIBUTE
 #elif defined(STM32N6)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
 #define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
@@ -108,7 +111,7 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH3, NONE,   0, 1),
     DEF_TIM(TIM1,  CH4, NONE,   0, 0),
 
-#elif defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32N6)
+#elif defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     // XXX TODO: STM32G4, STM32H7, and STM32N6 can use any timer for pacing
 
     // DMA request numbers are duplicated for TIM1 and TIM8:

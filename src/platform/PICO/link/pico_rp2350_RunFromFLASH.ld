@@ -160,6 +160,7 @@ SECTIONS
         *(vtable)
 
         *(.time_critical*)
+        *(.fastcode*)
 
         /* remaining .text and .rodata; i.e. stuff we exclude above because we want it in RAM */
         *(.text*)
@@ -273,6 +274,10 @@ SECTIONS
     /* Base address where the config is stored. */
     __config_start = ORIGIN(FLASH_CONFIG);
     __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
+
+    /* Base address for font data. */
+    __fontdata_start = ORIGIN(FLASH_FONT);
+    __fontdata_end = ORIGIN(FLASH_FONT) + LENGTH(FLASH_FONT);
 
     .pg_registry :
     {

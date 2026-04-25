@@ -15,6 +15,12 @@
 	branch = main
 	ignore = dirty
 	update = none
+[submodule "lib/main/STM32C5"]
+	path = lib/main/STM32C5
+	url = https://github.com/STMicroelectronics/STM32CubeC5
+	branch = main
+	ignore = dirty
+	update = none
 [submodule "lib/main/esp-idf"]
 	path = lib/main/esp-idf
 	url = https://github.com/espressif/esp-idf.git
@@ -31,6 +37,9 @@
 	url = https://github.com/LuckkMaker/APM32F4xx_DAL_SDK
 	ignore = dirty
 	update = none
+[submodule "lib/main/dronecan/libcanard"]
+	path = lib/main/dronecan/libcanard
+	url = https://github.com/dronecan/libcanard.git
 [submodule "lib/main/GD32H7"]
 	path = lib/main/GD32H7
 	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git
