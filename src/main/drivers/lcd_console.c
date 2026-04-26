@@ -26,8 +26,9 @@
 // Compile-time check: ENABLE_LCD_CONSOLE requires exactly one panel selector
 // to be defined. Without one, lcdPanelGet() is undefined and the link fails
 // with a less obvious message. Add new backends to this list as they land.
-#if !defined(LCD_CONSOLE_PANEL_STUB)
-#error "ENABLE_LCD_CONSOLE is set but no LCD_CONSOLE_PANEL_<NAME> selector is defined. See drivers/lcd_panel/."
+#if !defined(LCD_CONSOLE_PANEL_STUB) \
+ && !defined(LCD_CONSOLE_PANEL_LTDC)
+#error "ENABLE_LCD_CONSOLE is set but no LCD_CONSOLE_PANEL_<NAME> selector is defined. See drivers/lcd_panel/ or src/platform/."
 #endif
 
 #include <string.h>
