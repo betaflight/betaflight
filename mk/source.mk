@@ -104,6 +104,8 @@ COMMON_SRC = \
             drivers/dma.c \
             drivers/io.c \
             drivers/io_preinit.c \
+            drivers/lcd_console.c \
+            drivers/lcd_panel/lcd_panel_stub.c \
             drivers/light_led.c \
             drivers/motor.c \
             drivers/pinio.c \
@@ -112,6 +114,7 @@ COMMON_SRC = \
             drivers/resource.c \
             drivers/serial.c \
             drivers/serial_impl.c \
+            drivers/serial_lcd_console.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/timer_common.c \
