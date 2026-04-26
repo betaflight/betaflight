@@ -69,7 +69,10 @@ static void stubClearRect(lcdPanel_t *panel, uint16_t row, uint16_t col,
 static void stubScrollUp(lcdPanel_t *panel, uint16_t rows)
 {
     UNUSED(panel);
-    if (rows == 0 || rows >= STUB_ROWS) {
+    if (rows == 0) {
+        return;
+    }
+    if (rows >= STUB_ROWS) {
         memset(stubGrid, ' ', sizeof(stubGrid));
         return;
     }

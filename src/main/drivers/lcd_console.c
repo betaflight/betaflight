@@ -23,6 +23,13 @@
 
 #if ENABLE_LCD_CONSOLE
 
+// Compile-time check: ENABLE_LCD_CONSOLE requires exactly one panel selector
+// to be defined. Without one, lcdPanelGet() is undefined and the link fails
+// with a less obvious message. Add new backends to this list as they land.
+#if !defined(LCD_CONSOLE_PANEL_STUB)
+#error "ENABLE_LCD_CONSOLE is set but no LCD_CONSOLE_PANEL_<NAME> selector is defined. See drivers/lcd_panel/."
+#endif
+
 #include <string.h>
 
 #include "drivers/lcd_console.h"
@@ -49,7 +56,12 @@ static void blankRow(uint16_t row)
 
 static void scrollUpOne(void)
 {
+    // Shift the in-memory grid up by one. Pending dirty rows must shift in
+    // lockstep so a later flush still re-draws the right cells (otherwise a
+    // cell that was dirty at the old position would be lost while a freshly
+    // flushed-from cell would silently move out of sync with the panel).
     memmove(&grid[0][0], &grid[1][0], (ROWS - 1) * COLS);
+    memmove(&dirty[0], &dirty[1], ROWS - 1);
     blankRow(ROWS - 1);
     if (panel && panel->vtable->scrollUp) {
         panel->vtable->scrollUp(panel, 1);
@@ -87,7 +99,11 @@ bool lcdConsoleInit(void)
         return true;
     }
     panel = lcdPanelGet();
-    if (!panel || !panel->vtable || !panel->vtable->init) {
+    // init and drawGlyphCell are mandatory (see lcd_panel.h); the rest are
+    // optional and NULL-checked at the call sites.
+    if (!panel || !panel->vtable
+            || !panel->vtable->init
+            || !panel->vtable->drawGlyphCell) {
         return false;
     }
     if (!panel->vtable->init(panel)) {
@@ -116,6 +132,7 @@ void lcdConsoleClear(void)
     if (panel->vtable->clearRect) {
         panel->vtable->clearRect(panel, 0, 0, ROWS, COLS);
     }
+    lcdConsoleFlush();
 }
 
 void lcdConsolePutc(uint8_t c)

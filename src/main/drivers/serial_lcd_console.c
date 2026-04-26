@@ -114,13 +114,21 @@ static void lcdSerialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 static bool lcdSerialIsTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
+    // tfp_printf and other per-byte writers go through serialWrite() (which
+    // hands a single byte to lcdConsolePutc) and only check
+    // isSerialTransmitBufferEmpty at the end of the print to wait for the
+    // line to drain. Without flushing here, dirty rows would sit in L2 until
+    // a later writer triggers endWrite or an explicit flush. Flushing on
+    // every poll is idempotent — flush is a no-op when nothing is dirty.
+    lcdConsoleFlush();
     return !lcdConsoleIsBusy();
 }
 
 static void lcdSerialSetMode(serialPort_t *instance, portMode_e mode)
 {
-    UNUSED(instance);
-    UNUSED(mode);
+    if (instance) {
+        instance->mode = mode;
+    }
 }
 
 static void lcdSerialSetCtrlLineStateCb(serialPort_t *instance,

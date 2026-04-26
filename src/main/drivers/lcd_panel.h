@@ -32,37 +32,49 @@
 // hooks to push state to the panel. Backends are selected at compile time
 // via LCD_CONSOLE_PANEL_<NAME> defines in the per-config config.h; only one
 // backend exposes lcdPanelGet() per build.
+//
+// Backend init() runs early in main() (right after systemInit()), before the
+// initPhase1/2/3 stages that bring up I2C/SPI/QuadSPI/DMA. Backends that
+// require those buses must self-defer their hardware bring-up until the bus
+// is available — e.g. a no-op init() and a lazy first-use bring-up inside
+// drawGlyphCell()/flush(). The stub backend is RAM-only and unaffected.
 
 struct lcdPanel_s;
 
 typedef struct lcdPanelVTable_s {
-    // Bring up the underlying hardware/bus and clear the panel. Called once
-    // by the L2 layer at first use.
+    // [required] Bring up the underlying hardware/bus and clear the panel.
+    // Called once by the L2 layer at first use; must return true on success.
     bool (*init)(struct lcdPanel_s *panel);
 
-    // Render a single glyph cell at (row, col). The glyph is an 8-bit
-    // codepoint mapped through the font selected by L2; attr is reserved
-    // (0 = normal). The backend may buffer; flush() commits.
+    // [required] Render a single glyph cell at (row, col). The glyph is an
+    // 8-bit codepoint mapped through the font selected by the backend; attr
+    // is reserved (0 = normal). The backend may buffer; flush() commits.
     void (*drawGlyphCell)(struct lcdPanel_s *panel,
                           uint16_t row, uint16_t col,
                           uint8_t glyph, uint8_t attr);
 
-    // Clear an inclusive rectangle of cells.
+    // [optional, may be NULL] Clear a `rows × cols` rectangle of cells
+    // starting at (row, col). Half-open in both axes. When NULL, the L2
+    // layer falls back to per-cell drawGlyphCell() with the blank glyph.
     void (*clearRect)(struct lcdPanel_s *panel,
                       uint16_t row, uint16_t col,
                       uint16_t rows, uint16_t cols);
 
-    // Scroll the visible region up by `rows` cell rows. Backends that can
-    // do this with a hardware/framebuffer copy should; otherwise the L2
-    // layer falls back to row-by-row redraw via drawGlyphCell.
+    // [optional, may be NULL] Scroll the visible region up by `rows` cell
+    // rows. Backends that can do this with a hardware/framebuffer copy
+    // should; when NULL, the L2 layer falls back to marking every row dirty
+    // and redrawing via drawGlyphCell.
     void (*scrollUp)(struct lcdPanel_s *panel, uint16_t rows);
 
-    // Commit any buffered draws. Idempotent.
+    // [optional, may be NULL] Commit any buffered draws. Idempotent. When
+    // NULL the backend is assumed to commit synchronously inside
+    // drawGlyphCell/clearRect/scrollUp.
     void (*flush)(struct lcdPanel_s *panel);
 
-    // Return true if the backend still has pending bus/DMA traffic. The
-    // virtual serialPort_t reports !isBusy() to its isSerialTransmitBufferEmpty
-    // caller so writers can back-pressure correctly.
+    // [optional, may be NULL] Return true if the backend still has pending
+    // bus/DMA traffic. The virtual serialPort_t reports !isBusy() to its
+    // isSerialTransmitBufferEmpty caller so writers can back-pressure
+    // correctly. When NULL the backend is assumed to be never busy.
     bool (*isBusy)(struct lcdPanel_s *panel);
 } lcdPanelVTable_t;
 
