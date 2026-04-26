@@ -65,6 +65,7 @@ typedef struct autopilotConfig_s {
     uint8_t positionD;
     uint8_t positionA;
     uint8_t positionCutoff;
+    uint8_t stopThreshold;       // cm/s, speed below which braking captures a position hold target
     uint8_t maxAngle;
 
     // Velocity-based position control with drag compensation
