@@ -261,6 +261,10 @@
 #define USE_GPS_PLUS_CODES
 #endif
 
+#if !defined(USE_GPS_MGRS)
+#define USE_GPS_MGRS
+#endif
+
 #if !defined(USE_LED_STRIP)
 #define USE_LED_STRIP
 #endif

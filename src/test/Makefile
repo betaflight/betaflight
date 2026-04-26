@@ -22,6 +22,10 @@ include $(MAKE_SCRIPT_DIR)/system-id.mk
 
 VPATH := $(VPATH):$(USER_DIR):$(TEST_DIR)
 
+# Allow tests to depend on third-party / vendored sources under lib/main/.
+# Used by tests for libraries that ship as .c files (e.g. lib/main/mgrs/).
+LIB_MAIN_DIR := $(ROOT)/lib/main
+
 # specify which files that are included in the test in addition to the unittest file.
 # variables available:
 #   <test_name>_SRC
@@ -205,6 +209,13 @@ ledstrip_unittest_DEFINES := \
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
+
+
+mgrs_unittest_SRC := \
+		$(LIB_MAIN_DIR)/mgrs/mgrs.c
+
+mgrs_unittest_INCLUDE_DIRS := \
+		$(LIB_MAIN_DIR)/mgrs
 
 
 motor_output_unittest_SRC := \
@@ -737,7 +748,8 @@ ifeq ($1,$(basename $1))
 # standard global test
 $1_OBJS = $(patsubst \
 	$(TEST_DIR)/%,$(OBJECT_DIR)/$1/%,$(patsubst \
-	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$($1_SRC:=.o)))
+	$(USER_DIR)/%,$(OBJECT_DIR)/$1/%,$(patsubst \
+	$(LIB_MAIN_DIR)/%,$(OBJECT_DIR)/$1/lib_main/%,$($1_SRC:=.o))))
 else
 # test executed for each target, $1 has the form of test.target
 $1_SRC = $(addsuffix .o,$(call $(basename $1)_SRC,$(call target,$1)))
@@ -767,6 +779,16 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 
 $(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
 	@echo "compiling test c file: $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
+                -c $$< -o $$@
+
+# Compile vendored / third-party sources from lib/main/ into a per-test
+# subdirectory so their object files don't collide with same-named
+# user-code sources from src/main/.
+$(OBJECT_DIR)/$1/lib_main/%.c.o: $(LIB_MAIN_DIR)/%.c
+	@echo "compiling lib_main: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \

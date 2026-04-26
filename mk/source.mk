@@ -558,3 +558,14 @@ INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(OLC_DIR)
 SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
 endif
+
+# Search path and source files for the MGRS forward-conversion library.
+# Compiled in size-optimised mode like OLC; the encoder is only called at
+# OSD redraw cadence so per-call cost is irrelevant — flash size matters more.
+MGRS_DIR := mgrs
+
+ifneq ($(MGRS_DIR),)
+INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(MGRS_DIR)
+SRC += $(MGRS_DIR)/mgrs.c
+SIZE_OPTIMISED_SRC += $(MGRS_DIR)/mgrs.c
+endif
