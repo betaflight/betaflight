@@ -166,11 +166,15 @@ static void lcdSerialEndWrite(serialPort_t *instance)
     lcdConsoleFlush();
 }
 
-// Explicit logging API — bypass the global printf sink.
+// Explicit logging API — bypass the global printf sink. These helpers are
+// callable independently of whether ENABLE_LCD_PRINTF_REDIRECT routed the
+// global printf sink at boot, so they can't rely on main.c having opened
+// the L1 port. Each entry point opens it lazily and bails silently if the
+// panel can't come up.
 
 void lcdConsolePuts(const char *s)
 {
-    if (!s) {
+    if (!s || !lcdConsoleSerialOpen()) {
         return;
     }
     lcdConsoleWrite((const uint8_t *)s, strlen(s));
@@ -184,6 +188,9 @@ static void lcdConsolePrintfPutc(void *p, char c)
 
 void lcdConsolePrintf(const char *fmt, ...)
 {
+    if (!lcdConsoleSerialOpen()) {
+        return;
+    }
     va_list va;
     va_start(va, fmt);
     tfp_format(NULL, lcdConsolePrintfPutc, fmt, va);
