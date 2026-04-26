@@ -33,6 +33,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+#include "flight/position_nav.h"
 
 #include "rx/rx.h"
 #include "pg/autopilot.h"
@@ -145,7 +146,26 @@ static void altHoldUpdate(void)
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
-    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity, altHold.maxVelocity);
+
+    float targetAltCm = altHold.targetAltitudeCm;
+    float targetVelForAlt = altHold.targetVelocity;
+
+    if (positionNavHasActiveTarget()) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        if (navCmd->includeAltitude) {
+            targetAltCm = navCmd->targetPosEfM.z * 100.0f;
+            if (positionNavTargetReached()) {
+                // Seed hold altitude at waypoint completion so Alt Hold does not revert
+                // to the pre-nav target altitude on the next cycle.
+                altHold.targetAltitudeCm = targetAltCm;
+                targetVelForAlt = 0.0f;
+            } else {
+                targetVelForAlt = positionNavGetTargetVelocityCmS().z;
+            }
+        }
+    }
+
+    altitudeControl(targetAltCm, taskIntervalSeconds, targetVelForAlt, altHold.maxVelocity);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {

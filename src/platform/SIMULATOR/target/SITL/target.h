@@ -94,12 +94,18 @@
 #define USE_UART7
 #define USE_UART8
 
+#define ENABLE_RX_UDP           1
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
-#ifdef USE_GPS
+// Gazebo Iris model uses "props in" motor directions (M0/M3=CW, M1/M2=CCW),
+// which is the "reversed" configuration in BF's convention.
+#define YAW_MOTORS_REVERSED     1
+
+#define USE_GPS
 #define USE_VIRTUAL_GPS
-#endif
+#define USE_FLIGHT_PLAN
 
 #define USE_PARAMETER_GROUPS
 

@@ -11,6 +11,7 @@ PG_SRC = \
             pg/bus_spi.c \
             pg/can.c \
             pg/dashboard.c \
+            pg/dronecan.c \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
@@ -173,6 +174,7 @@ COMMON_SRC = \
             flight/position.c \
             flight/position_estimator.c \
             flight/position_filter.c \
+            flight/position_nav.c \
             flight/pos_hold_multirotor.c \
             flight/pos_hold_wing.c \
             flight/rpm_filter.c \
@@ -247,6 +249,7 @@ COMMON_SRC = \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
+            io/displayport_fb_osd.c \
             io/displayport_frsky_osd.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -572,3 +575,9 @@ INCLUDE_DIRS += $(LIB_MAIN_DIR)/$(OLC_DIR)
 SRC += $(OLC_DIR)/olc.c
 SIZE_OPTIMISED_SRC += $(OLC_DIR)/olc.c
 endif
+
+# libcanard (DroneCAN transport) and the Betaflight-side glue live in the
+# per-MCU makefiles: they're only wired into the build for families whose
+# platform mk adds a CAN driver (currently STM32G4 / H7 / C5). This keeps
+# non-CAN targets from having to compile a ~2k-line external library whose
+# symbols would never link.

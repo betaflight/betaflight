@@ -59,8 +59,9 @@ static float filteredAltitudeDerivative = 0.0f;
 
 static float controlAltitudeCm = 0.0f;
 static float controlAltitudeDerivative = 0.0f;
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
 static bool wasArmed = false;
-
+#endif
 #ifdef USE_VARIO
 static int16_t estimatedVario = 0;
 #endif
@@ -87,7 +88,9 @@ static void positionResetAltitudeState(void)
 void positionInit(void)
 {
     positionResetAltitudeState();
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     wasArmed = ARMING_FLAG(ARMED);
+#endif
 
     positionEstimatorInit();
 }
@@ -107,11 +110,13 @@ void calculateEstimatedAltitude(void)
 {
     const bool isArmed = ARMING_FLAG(ARMED);
 
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     if (isArmed != wasArmed) {
         positionEstimatorResetZ();
         positionResetAltitudeState();
         wasArmed = isArmed;
     }
+#endif
 
     // Run the Kalman filter estimator (prediction + all sensor measurement updates)
     positionEstimatorUpdate();
@@ -142,6 +147,10 @@ void calculateEstimatedAltitude(void)
 #endif
     DEBUG_SET(DEBUG_RTH, 1, lrintf(displayAltitudeCm / 10.0f));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(filteredAltitudeCm));
+
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
+    wasArmed = isArmed;
+#endif
 }
 
 #endif // defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)

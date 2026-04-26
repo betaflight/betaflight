@@ -322,6 +322,8 @@ MCU_COMMON_SRC = \
             drivers/serial_escserial.c \
             STM32/startup/system_stm32h7xx.c
 
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
+
 MSC_SRC = \
             STM32/usb_msc_hal.c \
             drivers/usb_msc_common.c \
