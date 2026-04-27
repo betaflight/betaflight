@@ -213,4 +213,12 @@ bool lcdConsoleIsBusy(void)
     return panel->vtable->isBusy(panel);
 }
 
+const uint8_t *lcdConsoleRow(uint16_t row)
+{
+    if (!initialised || row >= ROWS) {
+        return NULL;
+    }
+    return &grid[row][0];
+}
+
 #endif // ENABLE_LCD_CONSOLE
