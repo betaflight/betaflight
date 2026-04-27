@@ -319,7 +319,7 @@ static void updateState(const fdm_packet* pkt)
     virtualBaroSet(pressure, 2500);
 #else
     // Legacy bridges (X-Plane, RealFlight) supply pressure directly in fdm_packet
-    virtualBaroSet(pkt->pressure, 2500);
+    virtualBaroSet((int32_t)pkt->pressure, 2500);
 #endif
 #if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
@@ -361,8 +361,8 @@ static void updateState(const fdm_packet* pkt)
     imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
 #else
     // Legacy bridges send body-to-world quaternion directly
-    imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1],
-                       pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
+    imuSetAttitudeQuat((float)pkt->imu_orientation_quat[0], (float)pkt->imu_orientation_quat[1],
+                       (float)pkt->imu_orientation_quat[2], (float)pkt->imu_orientation_quat[3]);
 #endif
 #endif
 #endif
