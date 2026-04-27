@@ -27,7 +27,8 @@
 // to be defined. Without one, lcdPanelGet() is undefined and the link fails
 // with a less obvious message. Add new backends to this list as they land.
 #if !defined(LCD_CONSOLE_PANEL_STUB) \
- && !defined(LCD_CONSOLE_PANEL_LTDC)
+ && !defined(LCD_CONSOLE_PANEL_LTDC) \
+ && !defined(LCD_CONSOLE_PANEL_SSD1306_I2C)
 #error "ENABLE_LCD_CONSOLE is set but no LCD_CONSOLE_PANEL_<NAME> selector is defined. See drivers/lcd_panel/ or src/platform/."
 #endif
 
