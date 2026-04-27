@@ -195,6 +195,37 @@
 
 #endif // END MAG HW defines
 
+#if defined(USE_RANGEFINDER)
+
+#ifndef USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_HCSR04
+#endif
+#ifndef USE_RANGEFINDER_TF
+#define USE_RANGEFINDER_TF
+#endif
+#ifndef USE_RANGEFINDER_MT
+#define USE_RANGEFINDER_MT
+#endif
+#ifndef USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_NOOPLOOP
+#endif
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
+#endif
+
+#endif // USE_RANGEFINDER
+
+#if defined(USE_OPTICALFLOW)
+
+#ifndef USE_OPTICALFLOW_MT
+#define USE_OPTICALFLOW_MT
+#endif
+#ifndef USE_OPTICALFLOW_UPT1
+#define USE_OPTICALFLOW_UPT1
+#endif
+
+#endif // USE_OPTICALFLOW
+
 #if defined(USE_RX_CC2500)
 
 #if !defined(USE_RX_SPI)
@@ -647,27 +678,33 @@
 #undef USED_TIMERS
 #endif
 
+// Hardware cross-deps: OF drivers need their rangefinder driver counterparts
+// (the optical flow code lives inside the rangefinder driver files)
 #if defined(USE_OPTICALFLOW_MT)
 #ifndef USE_RANGEFINDER_MT
 #define USE_RANGEFINDER_MT
 #endif
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
-#endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_UPT1)
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
 #endif
-#endif // USE_RANGEFINDER_UPT1
+#endif // USE_OPTICALFLOW_UPT1
 
+// Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
 #if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
-
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
 #endif // USE_RANGEFINDER_XXX
+
+// Bottom-up: individual opticalflow drivers → USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_OPTICALFLOW_XXX
 
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
