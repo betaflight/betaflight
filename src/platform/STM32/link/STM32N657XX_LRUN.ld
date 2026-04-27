@@ -52,6 +52,7 @@ MEMORY
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K
 
     D2_RAM (rwx)      : ORIGIN = 0x24100000, LENGTH = 1024K /* AXISRAM2 */
+    AXISRAM3 (rwx)    : ORIGIN = 0x24200000, LENGTH = 448K  /* LCD framebuffer landing zone */
 
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
@@ -287,6 +288,19 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
+
+  /* LCD framebuffer landing zone — sized for 800x480 L8 (~376KB), with
+   * room to spare in the 448KB AXISRAM3 region. Backends opt in via
+   * __attribute__((section(".lcdbuffer"))). */
+  .lcdbuffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    _slcdbuffer = .;
+    KEEP(*(.lcdbuffer))
+    KEEP(*(.lcdbuffer*))
+    . = ALIGN(32);
+    _elcdbuffer = .;
+  } >AXISRAM3
 
   .persistent_data (NOLOAD) :
   {
