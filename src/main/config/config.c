@@ -250,6 +250,9 @@ static void validateAndFixConfig(void)
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_hz, LPF_MAX_HZ);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_notch_cutoff, 0);
         adjustFilterLimit(&pidProfilesMutable(i)->dterm_prediff_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->adaptive_dterm_lpf_min_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->adaptive_dterm_lpf_max_hz, LPF_MAX_HZ);
+        adjustFilterLimit(&pidProfilesMutable(i)->adaptive_dterm_lpf_start_hz, LPF_MAX_HZ);
 
         // Prevent invalid notch cutoff
         if (pidProfilesMutable(i)->dterm_notch_cutoff >= pidProfilesMutable(i)->dterm_notch_hz) {

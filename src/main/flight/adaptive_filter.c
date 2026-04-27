@@ -98,9 +98,12 @@ static void applyNewCutoff(float cutoff)
 
 static bool isAdaptiveConfigSupported(const pidProfile_t *profile)
 {
-    if (adMinHz == 0 || adMaxHz == 0 || adMinHz >= adMaxHz ||
-        adStartHz < adMinHz || adStartHz > adMaxHz || adUpdateMs == 0 ||
-        adStepHz == 0) {
+    if (profile->adaptive_dterm_lpf_min_hz == 0 || profile->adaptive_dterm_lpf_max_hz == 0 ||
+        profile->adaptive_dterm_lpf_min_hz >= profile->adaptive_dterm_lpf_max_hz ||
+        profile->adaptive_dterm_lpf_start_hz < profile->adaptive_dterm_lpf_min_hz ||
+        profile->adaptive_dterm_lpf_start_hz > profile->adaptive_dterm_lpf_max_hz ||
+        profile->adaptive_dterm_lpf_update_ms == 0 ||
+        profile->adaptive_dterm_lpf_step_hz == 0) {
         return false;
     }
 
@@ -222,14 +225,16 @@ void adaptiveFilterUpdate(float throttle, float setpointRate, float gyroError, f
 
     if (!ARMING_FLAG(ARMED)) {
         adFreezeReason |= ADAPTIVE_FREEZE_DISARMED;
-        adArmedAtUs = 0;
-        adCurrentCutoff = adStartHz;
-        adNoiseEnergy = 0.0f;
-        for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
-            adPrevDterm[i] = 0.0f;
-            adPrevDtermValid[i] = false;
+        if (adArmedAtUs != 0) {
+            adArmedAtUs = 0;
+            adCurrentCutoff = adStartHz;
+            adNoiseEnergy = 0.0f;
+            for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
+                adPrevDterm[i] = 0.0f;
+                adPrevDtermValid[i] = false;
+            }
+            applyNewCutoff(adStartHz);
         }
-        applyNewCutoff(adStartHz);
     } else {
         if (adArmedAtUs == 0) {
             adArmedAtUs = now;

@@ -36,6 +36,7 @@
 
 #define BRAKING_GRAVITY_MSS             9.80665f
 #define BRAKING_STATE_TIMEOUT_US        50000
+#define BRAKING_FALLBACK_DT_US          1000
 #define BRAKING_VELOCITY_LEAK_PER_SEC   4.8f
 #define BRAKING_VELOCITY_SEED_PER_DEG   0.05f
 #define BRAKING_VELOCITY_P_GAIN         95.0f
@@ -50,13 +51,18 @@ static timeUs_t brakingPreviousUpdateUs = 0;
 static vector2_t brakingVelocityEf = { { 0.0f, 0.0f } };
 static float brakingSetpoint[RP_AXIS_COUNT] = { 0.0f, 0.0f };
 
-static bool isBrakingControllerAllowed(void)
+static bool isBrakingEstimatorAllowed(void)
 {
-    return FLIGHT_MODE(BRAKING_MODE)
-        && ARMING_FLAG(ARMED)
+    return ARMING_FLAG(ARMED)
         && sensors(SENSOR_ACC)
         && !isFixedWing()
         && !failsafeIsActive();
+}
+
+static bool isBrakingControllerAllowed(void)
+{
+    return isBrakingEstimatorAllowed()
+        && FLIGHT_MODE(BRAKING_MODE);
 }
 
 static void brakingResetState(void)
@@ -70,7 +76,7 @@ static void brakingResetState(void)
 
 bool isBrakingActive(void)
 {
-    return isBrakingControllerAllowed();
+    return brakingControllerActive;
 }
 
 static void seedVelocityEstimateFromAttitude(void)
@@ -135,44 +141,48 @@ static float calculateBrakingAxisSetpoint(float estimatedVelocity, float measure
 
 void brakingUpdate(timeUs_t currentTimeUs)
 {
-    if (!isBrakingControllerAllowed()) {
+    if (!isBrakingEstimatorAllowed()) {
         brakingResetState();
         return;
     }
 
-    if (!brakingControllerActive) {
-        brakingControllerActive = true;
-        brakingPreviousUpdateUs = currentTimeUs;
-        seedVelocityEstimateFromAttitude();
-    }
-
-    const timeDelta_t deltaTimeUs = cmpTimeUs(currentTimeUs, brakingPreviousUpdateUs);
+    timeDelta_t deltaTimeUs = brakingPreviousUpdateUs ? cmpTimeUs(currentTimeUs, brakingPreviousUpdateUs) : 0;
     brakingPreviousUpdateUs = currentTimeUs;
+
+    const bool controllerAllowed = isBrakingControllerAllowed();
 
     if ((deltaTimeUs <= 0) || (deltaTimeUs > BRAKING_STATE_TIMEOUT_US)) {
         seedVelocityEstimateFromAttitude();
-        brakingSetpoint[FD_ROLL] = 0.0f;
-        brakingSetpoint[FD_PITCH] = 0.0f;
-        return;
+        deltaTimeUs = controllerAllowed ? BRAKING_FALLBACK_DT_US : 0;
     }
 
-    const float dt = deltaTimeUs * 1e-6f;
+    if (deltaTimeUs > 0) {
+        const float dt = deltaTimeUs * 1e-6f;
+        const vector2_t accelEf = getHorizontalAccelEarthFrame();
 
-    const vector2_t accelEf = getHorizontalAccelEarthFrame();
-    vector2_t velocityBf;
-    vector2_t accelBf;
+        updateVelocityEstimate(&accelEf, dt);
 
-    updateVelocityEstimate(&accelEf, dt);
-    rotateHorizontalStateToBodyFrame(&brakingVelocityEf, &accelEf, &velocityBf, &accelBf);
+        if (controllerAllowed) {
+            vector2_t velocityBf;
+            vector2_t accelBf;
+            rotateHorizontalStateToBodyFrame(&brakingVelocityEf, &accelEf, &velocityBf, &accelBf);
 
-    const float rollDegrees = attitude.values.roll * 0.1f;
-    const float pitchDegrees = attitude.values.pitch * 0.1f;
+            const float rollDegrees = attitude.values.roll * 0.1f;
+            const float pitchDegrees = attitude.values.pitch * 0.1f;
 
-    const float rollSetpoint = calculateBrakingAxisSetpoint(velocityBf.y, accelBf.y, rollDegrees, gyro.gyroADCf[FD_ROLL]);
-    const float pitchSetpoint = calculateBrakingAxisSetpoint(velocityBf.x, accelBf.x, pitchDegrees, gyro.gyroADCf[FD_PITCH]);
+            const float rollSetpoint = calculateBrakingAxisSetpoint(velocityBf.y, accelBf.y, rollDegrees, gyro.gyroADCf[FD_ROLL]);
+            const float pitchSetpoint = calculateBrakingAxisSetpoint(velocityBf.x, accelBf.x, pitchDegrees, gyro.gyroADCf[FD_PITCH]);
 
-    brakingSetpoint[FD_ROLL] = constrainf(rollSetpoint, -BRAKING_MAX_SETPOINT_DPS, BRAKING_MAX_SETPOINT_DPS);
-    brakingSetpoint[FD_PITCH] = constrainf(pitchSetpoint, -BRAKING_MAX_SETPOINT_DPS, BRAKING_MAX_SETPOINT_DPS);
+            brakingSetpoint[FD_ROLL] = constrainf(rollSetpoint, -BRAKING_MAX_SETPOINT_DPS, BRAKING_MAX_SETPOINT_DPS);
+            brakingSetpoint[FD_PITCH] = constrainf(pitchSetpoint, -BRAKING_MAX_SETPOINT_DPS, BRAKING_MAX_SETPOINT_DPS);
+            brakingControllerActive = true;
+            return;
+        }
+    }
+
+    brakingControllerActive = false;
+    brakingSetpoint[FD_ROLL] = 0.0f;
+    brakingSetpoint[FD_PITCH] = 0.0f;
 }
 
 float getBrakingSetpoint(int axis)

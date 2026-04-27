@@ -1310,11 +1310,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif
 
-#ifndef USE_WING
-        if ((axis < FD_YAW) && isBrakingActive()) {
+#if !defined(USE_WING) && defined(USE_ACC)
+        const bool brakingActive = (axis < FD_YAW) && isBrakingActive();
+        if (brakingActive) {
             pidRuntime.axisInAngleMode[axis] = false;
             currentPidSetpoint = getBrakingSetpoint(axis);
         }
+#else
+        const bool brakingActive = false;
 #endif
 
         // Handle yaw spin recovery - zero the setpoint on yaw to aid in recovery
@@ -1396,7 +1399,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         float pidSetpointDelta = 0;
 
 #if defined(USE_FEEDFORWARD) && defined(USE_ACC)
-        if (FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) {
+        if ((FLIGHT_MODE(ANGLE_MODE) && pidRuntime.axisInAngleMode[axis]) || brakingActive) {
             // this axis is fully under self-levelling control
             // it will already have stick based feedforward applied in the input to their angle setpoint
             // a simple setpoint Delta can be used to for PID feedforward element for motor lag on these axes
@@ -1458,7 +1461,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].D = preTpaD * getTpaFactor(pidProfile, axis, TERM_D);
 
             // Feed D-term into adaptive filter noise estimator
-            adaptiveFilterPushDterm(axis, pidData[axis].D);
+            adaptiveFilterPushDterm(axis, preTpaD);
 
             // Log the value of D pre application of TPA
             if (axis != FD_YAW) {

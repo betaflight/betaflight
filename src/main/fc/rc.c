@@ -265,8 +265,8 @@ static void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
-    float cosFactor = 1.0f;
-    float sinFactor = 0.0f;
+    static float cosFactor = 1.0f;
+    static float sinFactor = 0.0f;
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;

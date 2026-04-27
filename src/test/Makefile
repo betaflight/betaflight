@@ -57,7 +57,8 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/autopilot_multirotor.c \
-		$(USER_DIR)/flight/gps_rescue_multirotor.c
+		$(USER_DIR)/flight/gps_rescue_multirotor.c \
+		$(TEST_DIR)/braking_multirotor_stubs.c
 
 arming_prevention_unittest_DEFINES := \
             USE_GPS_RESCUE=
@@ -425,7 +426,9 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/flight/pid_init.c \
-		$(USER_DIR)/pg/pg.c
+		$(USER_DIR)/pg/pg.c \
+		$(TEST_DIR)/adaptive_filter_stubs.c \
+		$(TEST_DIR)/braking_multirotor_stubs.c
 
 pid_unittest_DEFINES := \
 		USE_ITERM_RELAX= \
@@ -474,7 +477,8 @@ vtx_unittest_SRC := \
 		$(USER_DIR)/drivers/vtx_table.c \
 		$(USER_DIR)/io/vtx_control.c \
 		$(USER_DIR)/io/vtx.c \
-		$(USER_DIR)/common/bitarray.c
+		$(USER_DIR)/common/bitarray.c \
+		$(TEST_DIR)/braking_multirotor_stubs.c
 
 vtx_unittest_DEFINES := \
 		USE_VTX_COMMON= \

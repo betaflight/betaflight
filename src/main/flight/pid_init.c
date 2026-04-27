@@ -394,7 +394,6 @@ void pidInit(const pidProfile_t *pidProfile)
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
-    adaptiveFilterInit();
 }
 
 void pidInitConfig(const pidProfile_t *pidProfile)
