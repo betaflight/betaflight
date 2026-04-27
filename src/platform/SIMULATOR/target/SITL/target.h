@@ -31,6 +31,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
+// SITL bridge selector. Set by config.h for SITL_X_PLANE / SITL_REAL_FLIGHT
+// (legacy bridge interface); defaults to Gazebo for the bare TARGET=SITL build.
+#ifndef SITL_BRIDGE_GAZEBO
+#define SITL_BRIDGE_GAZEBO  1
+#endif
+
 #define ENABLE_SIMULATOR_MULTITHREAD 1
 
 #define SYSTEM_HSE_MHZ 0
@@ -99,13 +105,18 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
+#if SITL_BRIDGE_GAZEBO
 // Gazebo Iris model uses "props in" motor directions (M0/M3=CW, M1/M2=CCW),
 // which is the "reversed" configuration in BF's convention.
 #define YAW_MOTORS_REVERSED     1
+#endif
 
 #define USE_GPS
 #define USE_VIRTUAL_GPS
+
+#if SITL_BRIDGE_GAZEBO
 #define USE_FLIGHT_PLAN
+#endif
 
 #define USE_PARAMETER_GROUPS
 

@@ -285,6 +285,7 @@ static void updateState(const fdm_packet* pkt)
         return;
     }
 
+#if SITL_BRIDGE_GAZEBO
     // The BetaflightPlugin reads angular velocity from the IMU *sensor* entity
     // (components::AngularVelocity on imuEntity), so the data arrives in the
     // sensor frame. The IMU sensor pose is Rx(π) relative to the FLU link,
@@ -294,6 +295,7 @@ static void updateState(const fdm_packet* pkt)
     //   Roll  = +wx_FRD (roll right)          → keep X
     //   Pitch = -wy_FRD (BF positive = nose down, opposite to FRD) → negate Y
     //   Yaw   = +wz_FRD (CW viewed from above)                    → keep Z
+#endif
     int16_t x,y,z;
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
@@ -302,14 +304,23 @@ static void updateState(const fdm_packet* pkt)
 
     x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#if SITL_BRIDGE_GAZEBO
     z = constrain(pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#else
+    z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#endif
     virtualGyroSet(virtualGyroDev, x, y, z);
 
-    // Barometric pressure from altitude using standard atmosphere model
-    // P = 101325 * (1 - 2.25577e-5 * h)^5.25588, h in metres
+#if SITL_BRIDGE_GAZEBO
+    // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
+    // standard atmosphere model: P = 101325 * (1 - 2.25577e-5 * h)^5.25588
     const double altMeters = pkt->position_xyz[2];
     const int32_t pressure = (int32_t)(101325.0 * pow(1.0 - 2.25577e-5 * altMeters, 5.25588));
     virtualBaroSet(pressure, 2500);
+#else
+    // Legacy bridges (X-Plane, RealFlight) supply pressure directly in fdm_packet
+    virtualBaroSet(pkt->pressure, 2500);
+#endif
 #if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
@@ -337,6 +348,7 @@ static void updateState(const fdm_packet* pkt)
     zf = atan2(t3, t4) * RAD2DEG;
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
+#if SITL_BRIDGE_GAZEBO
     // The Gazebo BetaflightPlugin computes the quaternion as Rx(π)*M*Rx(π)
     // (a similarity transform), but Betaflight needs the body(FRD)-to-world(NED)
     // quaternion: ENUtoNED * M * FRDtoFLU = Rz(π/2) * Rx(π) * M * Rx(π).
@@ -347,6 +359,11 @@ static void updateState(const fdm_packet* pkt)
     const float qz = pkt->imu_orientation_quat[3];
     static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
     imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
+#else
+    // Legacy bridges send body-to-world quaternion directly
+    imuSetAttitudeQuat(pkt->imu_orientation_quat[0], pkt->imu_orientation_quat[1],
+                       pkt->imu_orientation_quat[2], pkt->imu_orientation_quat[3]);
+#endif
 #endif
 #endif
 
@@ -355,6 +372,7 @@ static void updateState(const fdm_packet* pkt)
     const double latitude = pkt->position_xyz[1];
     const double altitude = pkt->position_xyz[2];
 
+#if SITL_BRIDGE_GAZEBO
     // Gazebo Harmonic's SphericalFromLocalPosition inverts horizontal position
     // deltas: moving East in the ENU world frame produces DECREASING longitude,
     // and moving North produces DECREASING latitude. Mirror the GPS position
@@ -372,6 +390,10 @@ static void updateState(const fdm_packet* pkt)
     }
     const double correctedLat = 2.0 * originLat - latitude;
     const double correctedLon = 2.0 * originLon - longitude;
+#else
+    const double correctedLat = latitude;
+    const double correctedLon = longitude;
+#endif
 
     const double speed = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]));
     const double speed3D = sqrt(sq(pkt->velocity_xyz[0]) + sq(pkt->velocity_xyz[1]) + sq(pkt->velocity_xyz[2]));
