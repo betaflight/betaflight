@@ -285,7 +285,7 @@ static void updateState(const fdm_packet* pkt)
         return;
     }
 
-#if SITL_BRIDGE_GAZEBO
+#if ENABLE_GAZEBO_BRIDGE
     // The BetaflightPlugin reads angular velocity from the IMU *sensor* entity
     // (components::AngularVelocity on imuEntity), so the data arrives in the
     // sensor frame. The IMU sensor pose is Rx(π) relative to the FLU link,
@@ -304,14 +304,14 @@ static void updateState(const fdm_packet* pkt)
 
     x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-#if SITL_BRIDGE_GAZEBO
+#if ENABLE_GAZEBO_BRIDGE
     z = constrain(pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
 #else
     z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
 #endif
     virtualGyroSet(virtualGyroDev, x, y, z);
 
-#if SITL_BRIDGE_GAZEBO
+#if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
     // standard atmosphere model: P = 101325 * (1 - 2.25577e-5 * h)^5.25588
     const double altMeters = pkt->position_xyz[2];
@@ -348,7 +348,7 @@ static void updateState(const fdm_packet* pkt)
     zf = atan2(t3, t4) * RAD2DEG;
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
-#if SITL_BRIDGE_GAZEBO
+#if ENABLE_GAZEBO_BRIDGE
     // The Gazebo BetaflightPlugin computes the quaternion as Rx(π)*M*Rx(π)
     // (a similarity transform), but Betaflight needs the body(FRD)-to-world(NED)
     // quaternion: ENUtoNED * M * FRDtoFLU = Rz(π/2) * Rx(π) * M * Rx(π).
@@ -372,7 +372,7 @@ static void updateState(const fdm_packet* pkt)
     const double latitude = pkt->position_xyz[1];
     const double altitude = pkt->position_xyz[2];
 
-#if SITL_BRIDGE_GAZEBO
+#if ENABLE_GAZEBO_BRIDGE
     // Gazebo Harmonic's SphericalFromLocalPosition inverts horizontal position
     // deltas: moving East in the ENU world frame produces DECREASING longitude,
     // and moving North produces DECREASING latitude. Mirror the GPS position
