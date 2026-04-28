@@ -397,7 +397,17 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
     case OSD_ELEMENT_TYPE_3: // degree, minutes, seconds style. ddd^mm'ss.00"W
         {
             char trailingSymbol;
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+            UNUSED(leadingSymbol);
+            if (coordinateType == GPS_LONGITUDE) {
+                tfp_sprintf(buff, "%c%c%c%c", SYM_SAT_L, SYM_SAT_R, SYM_LON, SYM_LON_2);
+            } else {
+                tfp_sprintf(buff, "%c%c%c%c", SYM_SAT_L, SYM_SAT_R, SYM_LAT, SYM_LAT_2);
+            }
+            buff += 4;
+#else
             *buff++ = leadingSymbol;
+#endif
 
             const int minutes = fractionalPart * 60 / GPS_DEGREES_DIVIDER;
             const int fractionalMinutes =  fractionalPart * 60 % GPS_DEGREES_DIVIDER;
@@ -419,7 +429,16 @@ static void osdFormatCoordinate(char *buff, gpsCoordinateType_e coordinateType, 
 
     case OSD_ELEMENT_TYPE_1:
     default:
-        *buff++ = leadingSymbol;
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+            if (coordinateType == GPS_LONGITUDE) {
+                tfp_sprintf(buff, "%c%c%c%c", SYM_SAT_L, SYM_SAT_R, SYM_LON, SYM_LON_2);
+            } else {
+                tfp_sprintf(buff, "%c%c%c%c", SYM_SAT_L, SYM_SAT_R, SYM_LAT, SYM_LAT_2);
+            }
+            buff += 4;
+#else
+            *buff++ = leadingSymbol;
+#endif
         if (gpsValue < 0) {
             *buff++ = SYM_HYPHEN;
         }
@@ -785,7 +804,15 @@ static void osdElementAltitude(osdElementParms_t *element)
 static void osdElementAngleRollPitch(osdElementParms_t *element)
 {
     const float angle = ((element->item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll) / 10.0f;
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+    if (angle < 0) {
+        osdPrintFloat(element->buff, SYM_NONE, fabsf(angle), element->item == OSD_PITCH_ANGLE ? "PIT: -%02u" : "ROL: -%02u", 1, true, SYM_NONE);
+    } else {
+        osdPrintFloat(element->buff, SYM_NONE, fabsf(angle), element->item == OSD_PITCH_ANGLE ? "PIT:  %02u" : "ROL:  %02u", 1, true, SYM_NONE);
+    }
+#else
     osdPrintFloat(element->buff, (element->item == OSD_PITCH_ANGLE) ? SYM_PITCH : SYM_ROLL, fabsf(angle), ((angle < 0) ? "-%02u" : " %02u"), 1, true, SYM_NONE);
+#endif
 }
 #endif
 
@@ -800,6 +827,9 @@ static void osdElementAntiGravity(osdElementParms_t *element)
 
 static void osdElementArtificialHorizon(osdElementParms_t *element)
 {
+#ifdef OSD_FB_ELEMENT_ARTIFICIAL_HORIZON
+    UNUSED(element);
+#else
     static int x = -4;
     // Get pitch and roll limits in tenths of degrees
     const int maxPitch = osdConfig()->ahMaxPitch * 10;
@@ -832,6 +862,7 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
         element->rendered = false;
         x++;
     }
+#endif
 }
 
 static void osdElementUpDownReference(osdElementParms_t *element)
@@ -1328,6 +1359,9 @@ static void osdElementGpsLapTimeBest3(osdElementParms_t *element)
 
 static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 {
+#ifdef OSD_FB_ELEMENT_ARTIFICIAL_HORIZON
+    UNUSED(element);
+#else
     static bool renderLevel = false;
     static int8_t y = -AH_SIDEBAR_HEIGHT_POS;
     // Draw AH sides
@@ -1356,6 +1390,7 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
     }
 
     element->drawElement = false;  // element already drawn
+#endif
 }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -1453,8 +1488,13 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 {
     // Set length of indicator bar
     #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centered.
+
+#ifdef DEBUG_OSD_BATTERY_TEST
+    const int mAhDrawn = (sinf(((float)micros())/3000000) + 1.22f) * currentBatteryProfile->batteryCapacity * 0.45f;
+#else
     const int mAhDrawn = getMAhDrawn();
-    const int usedCapacity = getMAhDrawn();
+#endif
+    const int usedCapacity = mAhDrawn;
     int displayBasis = usedCapacity;
 
     if (mAhDrawn >= osdConfig()->cap_alarm) {
@@ -1478,7 +1518,13 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
                 }
                 displayPercent = voltagePercent;
             }
+#ifdef OSD_BATTERY_PERCENT_WITH_SYMBOL
+            int symOffset = scaleRange(constrain(displayPercent, 0, 99), 0, 100, 0, 7);
+            int sym = SYM_BATT_EMPTY - symOffset;
+            tfp_sprintf(element->buff, "%c%d%%", sym, displayPercent);
+#else
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
+#endif
             break;
         }
 
@@ -1657,16 +1703,24 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 
 static void osdElementRssi(osdElementParms_t *element)
 {
-    uint16_t osdRssi = getRssi() * 100 / 1024; // change range
-    if (osdRssi >= 100) {
-        osdRssi = 99;
+#ifdef DEBUG_OSD_RSSI_TEST
+    uint16_t osdRssiPercent = 50+50*cosf((float)(micros())/8000000);
+#else
+    uint16_t osdRssiPercent = getRssiPercent();
+#endif
+    if (osdRssiPercent >= 100) {
+        osdRssiPercent = 99;
     }
 
-    if (getRssiPercent() < osdConfig()->rssi_alarm) {
+    if (osdRssiPercent < osdConfig()->rssi_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
-    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssi);
+#ifdef OSD_RSSI_WITH_SYMBOL
+    tfp_sprintf(element->buff, "%c%c%c %2d", SYM_HEADSET_L, SYM_HEADSET_R, SYM_RSSI, osdRssiPercent);
+#else
+    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssiPercent);
+#endif
 }
 
 #ifdef USE_RTC_TIME

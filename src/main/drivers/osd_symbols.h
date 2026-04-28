@@ -23,6 +23,7 @@
 
 //Misc
 #define SYM_NONE                    0x00
+#define SYM_LOGO_START              0xA0
 #define SYM_END_OF_FONT             0xFF
 #define SYM_BLANK                   0x20
 #define SYM_HYPHEN                  0x2D
@@ -98,6 +99,14 @@
 #define SYM_ARROW_SMALL_UP          0x75
 #define SYM_ARROW_SMALL_DOWN        0x76
 
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+#define SYM_LAT_2                   0x80
+#define SYM_LON_2                   0x81
+#define SYM_HEADSET_L               0x82
+#define SYM_HEADSET_R               0x83
+#endif
+
+#ifndef OSD_FB_ELEMENT_ARTIFICIAL_HORIZON
 // AH Bars
 #define SYM_AH_BAR9_0               0x80
 #define SYM_AH_BAR9_1               0x81
@@ -108,6 +117,7 @@
 #define SYM_AH_BAR9_6               0x86
 #define SYM_AH_BAR9_7               0x87
 #define SYM_AH_BAR9_8               0x88
+#endif
 
 // Progress bar
 #define SYM_PB_START                0x8A
