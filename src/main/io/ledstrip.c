@@ -137,6 +137,7 @@ const hsvColor_t hsv[] = {
 #define VTX_FREQ_MAX 5900  // upper frequency limit for which the Hue changes, above this Hue is HUE_MAX
 #define VTX_HUE_MAX 345    // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
 
+#ifdef USE_VTX_COMMON
 static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
 {
     hsvColor_t color = HSV(BLACK);
@@ -163,7 +164,7 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
         return color;
     }
 }
-
+#endif
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
