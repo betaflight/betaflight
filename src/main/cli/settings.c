@@ -1439,7 +1439,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_ACCEL_Y_FILTER_FREQ,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_accel_y_filter_freq) },
     { PARAM_NAME_PSAS_YAW_STABILITY_GAIN,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_yaw_stability_gain) },
 
-    { PARAM_NAME_PSAS_WING_LOAD,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 200, 1500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_wing_load) },
+    { PARAM_NAME_PSAS_WING_LOAD,   VAR_UINT16  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_wing_load) },
     { PARAM_NAME_PSAS_AIR_DENSITY, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1200, 1300 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_air_density) },
     { PARAM_NAME_PSAS_LIFT_C_LIMIT, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_lift_c_limit) },
     { PARAM_NAME_PSAS_AOA_LIMITER_GAIN, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_aoa_limiter_gain) },

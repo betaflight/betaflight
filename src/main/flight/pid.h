@@ -345,7 +345,7 @@ typedef struct pidProfile_s {
     uint16_t psas_yaw_damping_filter_freq;      // yaw damping filter cut freq Hz *100
     uint8_t psas_accel_y_filter_freq;           // accel Y filter cut freq Hz * 10
     uint16_t psas_yaw_stability_gain;           // percent control by 1g Y accel change *10
-    uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 10.
+    uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 10. Set yours plane proper value to use lift coef estimation, AoA limiter, roll to yaw cross link
     uint16_t psas_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *10
     uint8_t psas_aoa_limiter_gain;              // elevator speed for 0.1 lift force coef difference in %/sec

@@ -53,6 +53,7 @@ static bool isLiftCoefValid = false;
 static float validLiftCoefTime = 0.0f;
 
 static bool isEnabledAccelZController = false;
+static bool isEnabledLiftCoefEstimation = false;
 static bool isEnabledAoALimiter = false;
 
 void psasInit(const pidProfile_t *pidProfile)
@@ -66,8 +67,9 @@ void psasInit(const pidProfile_t *pidProfile)
     isReadyPSAS = false;
     isLiftCoefValid = false;
     validLiftCoefTime = 0.0f;
-    isEnabledAccelZController = sensors(SENSOR_ACC) && (pidProfile->psas_pitch_accel_i_gain != 0); // Enable controller for non zero I. The P (psas_pitch_accel_p_gain) is an additional option
-    isEnabledAoALimiter = pidProfile->psas_aoa_limiter_gain != 0;
+    isEnabledAccelZController = sensors(SENSOR_ACC) && pidProfile->psas_pitch_accel_i_gain != 0; // Enable controller for non zero I. The P (psas_pitch_accel_p_gain) is an additional option
+    isEnabledLiftCoefEstimation = sensors(SENSOR_ACC) && sensors(SENSOR_GPS) && pidProfile->psas_wing_load != 0;
+    isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
 }
 
 static void computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
@@ -78,8 +80,6 @@ static void computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
     *liftCoefVelocity = 0.0f;
 
     if (ARMING_FLAG(ARMED) &&
-        sensors(SENSOR_ACC) &&
-        sensors(SENSOR_GPS) &&
         STATE(GPS_FIX) &&
         gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         const float limitLiftC = 0.1f * pidProfile->psas_lift_c_limit;
@@ -244,7 +244,9 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Therefore to use lift coefficient instead of AoA. It is proportional AoA in the linear region
     float liftCoef = 0.0f;
     float liftCoefVelocity = 0.0f;
-    computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+    if (isEnabledLiftCoefEstimation) {
+        computeLiftCoefficient(pidProfile, accelZ, &liftCoef, &liftCoefVelocity);
+    }
 
     // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
