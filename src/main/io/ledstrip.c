@@ -1392,18 +1392,15 @@ void ledStripInit(void)
 static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
 {
     static timeUs_t colorUpdateTimeUs = 0;
-    static uint16_t currentVtxFrequency = 0;
 
-    hsvColor_t currentHsv;
     static hsvColor_t previousHsv = {0, 0, 0};
+    hsvColor_t currentHsv = hsv[COLOR_BLACK];
+    // will be replaced by color as needed
+    const hsvColor_t beaconHsv = hsv[ledStripConfig()->ledstrip_beacon_color];
+    // no custom color modifications for beacon color
 
-    uint8_t colorIndex = COLOR_BLACK;
-    uint8_t beaconColor = COLOR_BLACK;
-
-    bool useCustomColors = true;
-    bool useVtxColors = false;
-    bool beeperEventsPermitted = true;
-    bool periodicBlink = false;
+    const hsvColor_t visualBeeperHsv = hsv[ledStripConfig()->ledstrip_visual_beeper_color];
+    // no custom color mofifications for visual_beeper color
 
     unsigned flashPeriod = 0;
     unsigned onPercent = 0;
@@ -1411,90 +1408,71 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
     switch (ledStripConfig()->ledstrip_profile)
     {
         case LED_PROFILE_RACE:
-            colorIndex = ledStripConfig()->ledstrip_race_color;
-            // All LEDs steadily at colour, but if black,  colour according to VTx frequency
-            useVtxColors = (colorIndex == COLOR_BLACK);
+        {
+            const uint8_t raceColor = ledStripConfig()->ledstrip_race_color;
 
+            if (raceColor == COLOR_BLACK) {
 #ifdef USE_VTX_COMMON
-            if (useVtxColors) {
                 const vtxDevice_t *vtxDevice = vtxCommonDevice();
                 if (vtxDevice) {
                     uint8_t const band = vtxSettingsConfig()->band;
                     uint8_t const channel = vtxSettingsConfig()->channel;
-                    uint16_t freq = 0;
+                    uint16_t vtxFrequency = VTX_SETTINGS_MIN_FREQUENCY_MHZ;
 
                     if (band && channel) {
-                        freq = vtxCommonLookupFrequency(vtxDevice, band, channel);
+                        vtxFrequency = vtxCommonLookupFrequency(vtxDevice, band, channel);
                     } else {
-                        freq = vtxSettingsConfig()->freq;
+                        vtxFrequency = vtxSettingsConfig()->freq;
                         // use manually configured frequency if no band and channel
                     }
 
-                    currentVtxFrequency = freq;
+                    currentHsv = getHsvFromVtxFrequency(vtxFrequency);
+                }
+#endif
+            } else {
+                currentHsv = ledStripStatusModeConfig()->colors[raceColor];
+                // non-black race colors  can be customised
+            }
+
+            if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive()) {
+                flashPeriod = BEACON_FAILSAFE_PERIOD_MS;
+                // must not be configured to zero
+                onPercent   = BEACON_FAILSAFE_ON_PERCENT;
+
+                const unsigned onPeriod = flashPeriod * onPercent / 100;
+
+                if (onPeriod > 0 && (millis() % flashPeriod) < onPeriod) {
+                    currentHsv = visualBeeperHsv;
+                }
+            } else {
+                if (ledStripConfig()->ledstrip_visual_beeper && isBeeperOn()) {
+                    currentHsv = visualBeeperHsv;
                 }
             }
-#endif
+
             break;
+        }
 
         case LED_PROFILE_BEACON:
-                // flash all LEDs, alternating between beacon color and off
-            if (!ledStripConfig()->ledstrip_beacon_armed_only || ARMING_FLAG(ARMED))
-            {
-                flashPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
-                onPercent   = ledStripConfig()->ledstrip_beacon_percent;
-                beaconColor = ledStripConfig()->ledstrip_beacon_color;
-                periodicBlink = true;
-                // use a periodical blink pattern
-                useVtxColors = false;
-                // do not overlay the vtx color (not calculated anyway)
+        {
+            flashPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
+            // must not be configurable  to zero
+            onPercent   = ledStripConfig()->ledstrip_beacon_percent;
+
+            const unsigned onPeriod = flashPeriod * onPercent / 100;
+
+            if ((millis() % flashPeriod) < onPeriod) {
+                currentHsv = beaconHsv;
             }
+
             break;
+        }
 
         default:
             break;
     }
 
-    if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive()) {
-        // turn LEDs on and off at fixed intervals to help find it if lost
-        flashPeriod = BEACON_FAILSAFE_PERIOD_MS;
-        onPercent   = BEACON_FAILSAFE_ON_PERCENT;
-        periodicBlink = true;
-        // use a periodical blink pattern
-        beaconColor = ledStripConfig()->ledstrip_visual_beeper_color;
-        beeperEventsPermitted = false;
-        // do not allow transient led flashes at the same time, can mess up the regular timing
-    }
-
-    if (periodicBlink && flashPeriod > 0){
-        // Handle a periodic blink request
-        const unsigned onPeriod = flashPeriod * onPercent / 100;
-        const bool ledOn = (millis() % flashPeriod) < onPeriod; 
-        colorIndex = ledOn ? beaconColor : COLOR_BLACK;
-        // use the configured beacon color when the LED is on
-        useVtxColors = useVtxColors && !ledOn;
-        // Don't override the beep color with the Vtx color while the beep color is active
-        useCustomColors = false;
-        // these blinks will not use the custom color table to ensure reliable interpretation
-    }
-
-    if (ledStripConfig()->ledstrip_visual_beeper && beeperEventsPermitted && isBeeperOn()) {
-        // Handle transient visual beeps with audio beeps, e.g. on arming or calibrating something
-        colorIndex = ledStripConfig()->ledstrip_visual_beeper_color;
-        useCustomColors = false;
-        // use the system-defined visual_beeper_color, not allowing customisation
-        useVtxColors = false;
-    // Don't override the beep color with the Vtx color while the beep color is active
-    }
-
-    if (useVtxColors) {
-        currentHsv = getHsvFromVtxFrequency(currentVtxFrequency);
-        // apply the algorithm to calculate HSV values from VTx frequency
-    } else {
-        currentHsv = (useCustomColors) ? ledStripStatusModeConfig()->colors[colorIndex] : hsv[colorIndex];
-        // get the HSV value of the current color
-    }
-
-        bool updateLedStripColor =
+    bool updateLedStripColor =
         currentHsv.h != previousHsv.h ||
         currentHsv.s != previousHsv.s ||
         currentHsv.v != previousHsv.v ||
