@@ -72,7 +72,7 @@ void psasInit(const pidProfile_t *pidProfile)
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
 }
 
-static void computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
+static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
 {
     static float liftCoefLast = 0.0f; // liftCoefLast is full defined after timeForValid time, its first value does not matter after any re-init
     const float timeForValid = 3.0f;
@@ -119,7 +119,7 @@ static void computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ,
 }
 
 //The astatic accel Z controller by stick position
-static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
+static float FAST_CODE_NOINLINE updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
 {
     float deltaAccP = 0.0f;
     const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s. The psas_servo_time can not be zero - the CLI minimum value is 5.
@@ -140,7 +140,7 @@ static float updateAstaticAccelZController(const pidProfile_t *pidProfile, float
 }
 
 // The angle of attack limiter. The aerodynamics lift force coefficient depends by angle of attack. Therefore it possible to use this coef instead of AoA value.
-static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef, float liftCoefVelocity)
+static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float liftCoef, float liftCoefVelocity)
 {
     bool isLimitAoA = false;
 
@@ -188,7 +188,7 @@ static bool updateAngleOfAttackLimiter(const pidProfile_t *pidProfile, float lif
 }
 
 // Roll to yaw control cross link to improve roll rotation at high angle of attack
-static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rollPilotControl, float liftCoef)
+static float FAST_CODE_NOINLINE rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rollPilotControl, float liftCoef)
 {
     if (!isLiftCoefValid || pidProfile->psas_roll_to_yaw_link == 0) {
         return 0.0f;
@@ -208,7 +208,7 @@ static float rollToYawCrossLinkControl(const pidProfile_t *pidProfile, float rol
     return crossYawControl;
 }
 
-void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
+static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 {
     // Pitch channel
     // Pilot pitch control
