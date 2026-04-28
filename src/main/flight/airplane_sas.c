@@ -291,6 +291,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Yaw channel
     // Pilot yaw control
     const float maxRcRateYaw = MAX(getMaxRcRate(FD_YAW), 1.0f);
+    // The positive rudder deflection gives positive yaw rotation (the nose moves to the left side)
     psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * (pidProfile->psas_stick_gain[FD_YAW]);
 
     // Plane yaw damping improvement
@@ -299,6 +300,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
+    // On the positive yaw gyro rotation (left side direction) it needs to turn nose on the right, therefore it needs to use negative sign
     psasData.yaw.damping = -gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
 
     // Plane yaw stability improvement
@@ -311,10 +313,12 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelYFiltered = accelY;
         }
     }
+    // On the positive accel Y value (left side direction) it needs to turn nose on the right, therefore it needs to use negative sign
     psasData.yaw.stability = -accelYFiltered * (pidProfile->psas_yaw_stability_gain * 0.1f);
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
-    psasData.yaw.rollToYawCrossLink = rollToYawCrossLinkControl(pidProfile,  psasData.roll.pilot, liftCoef);
+    // On the right roll rotation it needs the nose on the right yaw rotation, therefore it needs to use negative sign
+    psasData.yaw.rollToYawCrossLink = -rollToYawCrossLinkControl(pidProfile,  psasData.roll.pilot, liftCoef);
 
     psasData.yaw.Sum = psasData.yaw.pilot + psasData.yaw.damping + psasData.yaw.stability + psasData.yaw.rollToYawCrossLink;
     psasData.yaw.Sum = constrainf(psasData.yaw.Sum, -100.0f, 100.0f);
