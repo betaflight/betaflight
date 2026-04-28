@@ -300,7 +300,7 @@ void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     psasData.yaw.damping = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
 
     // Plane yaw stability improvement
-    float accelYFiltered = 1.0f;
+    float accelYFiltered = 0.0f;
     if (sensors(SENSOR_ACC)) {
         float accelY =  acc.accADC.y * acc.dev.acc_1G_rec;
         if (pidProfile->psas_accel_y_filter_freq != 0) {
