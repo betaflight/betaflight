@@ -37,3 +37,6 @@
 	url = https://github.com/LuckkMaker/APM32F4xx_DAL_SDK
 	ignore = dirty
 	update = none
+[submodule "lib/main/dronecan/libcanard"]
+	path = lib/main/dronecan/libcanard
+	url = https://github.com/dronecan/libcanard.git

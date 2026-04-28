@@ -114,6 +114,7 @@
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
@@ -682,6 +683,10 @@ void initPhase3(void)
 
 #if ENABLE_CAN && !defined(TARGET_BUS_INIT)
     configureCANBusses();
+#endif
+
+#if ENABLE_DRONECAN
+    dronecanInit();
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

@@ -149,6 +149,8 @@ MCU_COMMON_SRC = \
             STM32/light_ws2811strip_hal2.c \
             STM32/startup/system_stm32c5xx.c
 
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
+
 MSC_SRC =
 
 SPEED_OPTIMISED_SRC +=
