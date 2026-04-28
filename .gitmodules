@@ -40,3 +40,8 @@
 [submodule "lib/main/dronecan/libcanard"]
 	path = lib/main/dronecan/libcanard
 	url = https://github.com/dronecan/libcanard.git
+[submodule "lib/main/X32M7"]
+	path = lib/main/X32M7
+	url = https://github.com/X-CORE-LABS-PTE-LTD/X32M7_Std_SDK.git
+	ignore = dirty
+	update = none
