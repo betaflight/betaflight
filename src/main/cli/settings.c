@@ -89,6 +89,7 @@
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
 #include "pg/can.h"
+#include "pg/dronecan.h"
 #include "pg/dashboard.h"
 #include "pg/displayport_profiles.h"
 #include "pg/dyn_notch.h"
@@ -1431,7 +1432,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_PITCH_ACCEL_MIN,            VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_accel_min) },
 
     { PARAM_NAME_PSAS_ROLL_STICK_GAIN,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_ROLL]) },
-    { PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 250 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_ROLL]) },
+    { PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_ROLL]) },
 
     { PARAM_NAME_PSAS_YAW_STICK_GAIN,           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_YAW]) },
     { PARAM_NAME_PSAS_YAW_DAMPING_GAIN,         VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_YAW]) },
@@ -1449,7 +1450,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_SERVO_TIME, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_servo_time) },
     { PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_yaw_clift_start) },
     { PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_yaw_clift_stop) },
-    { PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_to_yaw_link) },
+    { PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_roll_to_yaw_link) },
 #endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY
@@ -1956,6 +1957,12 @@ const clivalue_t valueTable[] = {
 #if ENABLE_CAN
 // PG_CAN_CONFIG
     { "can_bitrate_khz", VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 125, 1000 }, PG_CAN_CONFIG, offsetof(canConfig_t, bitrate_khz) },
+#endif
+#if ENABLE_DRONECAN
+// PG_DRONECAN_CONFIG
+    { "dronecan_enabled", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, enabled) },
+    { "dronecan_node_id", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 127 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, node_id) },
+    { "dronecan_device", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, CANDEV_COUNT }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, device) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)
