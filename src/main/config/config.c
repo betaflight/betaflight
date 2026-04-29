@@ -233,11 +233,11 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if ((gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) && gpsSerial) {
+    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
 
-    if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial) {
+    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && !gpsSerial) {
         featureDisableImmediate(FEATURE_GPS);
     }
 #endif
