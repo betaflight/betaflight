@@ -88,11 +88,13 @@ static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
 #if defined(USE_CRSF_V3)
 static bool telemetryResponsePending;
-static timeUs_t lastGpsTimeFrameTime = (timeUs_t)(-30000000);  // Send GPS Time immediately, then every 30s thereafter while disarmed
 #endif
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 #ifdef USE_GPS
 static uint32_t lastGpsSolnTime;
+#endif
+#if defined(USE_CRSF_V3) && defined(USE_GPS)
+static timeUs_t lastGpsTimeFrameTime = (timeUs_t)(-30000000);  // Send GPS Time immediately, then every 30s thereafter while disarmed
 #endif
 #ifdef USE_BARO
 static uint32_t lastBaroTime;
