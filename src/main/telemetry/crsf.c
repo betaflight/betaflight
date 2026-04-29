@@ -986,10 +986,11 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && gpsSol.time != lastGpsSolnTime && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) {
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
+		lastGpsSolnTime = gpsSol.time;
         lastGpsTimeFrameTime = currentTimeUs;
         return true;
     }
