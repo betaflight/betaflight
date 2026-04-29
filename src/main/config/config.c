@@ -314,31 +314,37 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_ACC
 
-    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
+    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI) || featureIsConfigured(FEATURE_RX_UDP))) {
         featureEnableImmediate(DEFAULT_RX_FEATURE);
     }
 
     if (featureIsConfigured(FEATURE_RX_PPM)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
     if (featureIsConfigured(FEATURE_RX_MSP)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
     if (featureIsConfigured(FEATURE_RX_SERIAL)) {
-        featureDisableImmediate(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
 #ifdef USE_RX_SPI
     if (featureIsConfigured(FEATURE_RX_SPI)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP | FEATURE_RX_UDP);
     }
 #endif // USE_RX_SPI
 
     if (featureIsConfigured(FEATURE_RX_PARALLEL_PWM)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
+
+#if ENABLE_RX_UDP
+    if (featureIsConfigured(FEATURE_RX_UDP)) {
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+    }
+#endif // ENABLE_RX_UDP
 
 #if defined(USE_ADC)
     if (featureIsConfigured(FEATURE_RSSI_ADC)) {
