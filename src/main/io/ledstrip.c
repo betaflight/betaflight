@@ -116,11 +116,11 @@ const hsvColor_t hsv[] = {
     [COLOR_BLACK] =        {  0,   0,   0}, // LED is off
     [COLOR_WHITE] =        {  0, 255, 255}, // for white, S must be 255 and V must be 255, H is ignored
     [COLOR_RED] =          {  0,   0, 255}, // for full colour S must be 0 and V must be 255
-    [COLOR_ORANGE] =       { 30,   0, 255},
-    [COLOR_YELLOW] =       { 60,   0, 255},
-    [COLOR_LIME_GREEN] =   { 90,   0, 255},
-    [COLOR_GREEN] =        {120,   0, 255},
-    [COLOR_MINT_GREEN] =   {150,   0, 255},
+    [COLOR_ORANGE] =       { 15,   0, 255},
+    [COLOR_YELLOW] =       { 50,   0, 255},
+    [COLOR_LIME_GREEN] =   { 100,  0, 255},
+    [COLOR_GREEN] =        {115,   0, 255},
+    [COLOR_MINT_GREEN] =   {125,   0, 255},
     [COLOR_CYAN] =         {180,   0, 255},
     [COLOR_LIGHT_BLUE] =   {210,   0, 255},
     [COLOR_BLUE] =         {240,   0, 255},
@@ -133,38 +133,49 @@ const hsvColor_t hsv[] = {
 
 
 
-#define VTX_FREQ_MIN 5653  // Below this VTx frequency, LEDs will be white. Above it we get colors, starting from full  Red at this frequency.  R1 at 5658 is a slightly orange red.
-#define VTX_FREQ_MAX 5900  // upper frequency limit for which the Hue changes, above this Hue is HUE_MAX
-#define VTX_HUE_MAX 345    // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
+#define VTX_FREQ_MIN 5358   // Lowest frequency at which Vtx colors start (Just below L1)
+                            // L1 is 5362, R1 is 8 *  37 MHz channels higher,  at 5658.
+                            // Below 5355, LEDs will be white, then  Red at this frequency, returning  orange-Red for L1
+                            // Above this the color Hue rotates  as the frequency moves  through the  LowBand channels until again becoming orange-red for R1
+                            // then the same color rotation applies above R1 through to R8
+#define VTX_FREQ_MAX 5900   // upper frequency limit for which the Hue changes, above this Hue is fixed at HUE_MAX
+#define VTX_HUE_MAX 355     // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
 
 #ifdef USE_VTX_COMMON
 static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
 {
     hsvColor_t color = HSV(BLACK);
+    const unsigned bandRange = 296 // 8 channels per band, each 37MHz wide
 
-    // Invalid or no VTX data, eg User has not set band or channel
     if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
-        return color;
+        // Invalid or no VTX data, eg User hasn't set band or channel
+        return color; // black; turn LEDs off
     }
 
     if (freq < VTX_FREQ_MIN) {
         return HSV(WHITE);
-    } else {
-        //  give the LED a solid color above VTX_FREQ_MIN
+        // if below L1, exit and show white
+    }
+
+    if (freq < VTX_FREQ_MIN + bandRange){
+        // if below R1, shift up from L1...L8 to R1...R8 range  
+        freq += bandRange;
+    }
         if (freq > VTX_FREQ_MAX) {
             freq = VTX_FREQ_MAX;
-            // Clamp incoming frequency to mapping range
-        }
+            // Clamp incoming frequency to an upper limit
+    }
+
         color.s = 0;
         color.v = 255;
         // for strong colours in betaflight, S must be 0 and V must be 255
 
-        color.h = scaleRange(freq, VTX_FREQ_MIN, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
+        color.h = scaleRange(freq, VTX_FREQ_MIN + 296, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
         // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
         return color;
-    }
 }
 #endif
+
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
