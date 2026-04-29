@@ -86,7 +86,7 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
-static timeUs_t lastGpsTimeFrameTime = 0;
+static timeUs_t lastGpsTimeFrameTime = (timeUs_t)(-30000000);  // Send GPS Time immediately, then every 30s thereafter while disarmed
 #if defined(USE_CRSF_V3)
 static bool telemetryResponsePending;
 #endif
