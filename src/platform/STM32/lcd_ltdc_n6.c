@@ -210,8 +210,12 @@ static bool ltdcConfigController(void)
     static uint32_t clut[256];
     clut[COLOUR_BG] = 0x00000000;       // ARGB: opaque black
     clut[COLOUR_FG] = 0x00FFFFFF;       // ARGB: opaque white
-    HAL_LTDC_ConfigCLUT(&hltdc, clut, 256, 0);
-    HAL_LTDC_EnableCLUT(&hltdc, 0);
+    if (HAL_LTDC_ConfigCLUT(&hltdc, clut, 256, 0) != HAL_OK) {
+        return false;
+    }
+    if (HAL_LTDC_EnableCLUT(&hltdc, 0) != HAL_OK) {
+        return false;
+    }
 
     return true;
 }
@@ -287,11 +291,14 @@ static void ltdcClearRect(lcdPanel_t *panel,
     if (!ltdcEnsureHw()) {
         return;
     }
+    const uint16_t startX = col * CELL_W;
+    if (startX >= PANEL_WIDTH) {
+        return;
+    }
+    const uint16_t span = cols * CELL_W;
+    const uint16_t clipped = (startX + span > PANEL_WIDTH)
+                             ? (PANEL_WIDTH - startX) : span;
     for (uint16_t r = row; r < row + rows && r * CELL_H < PANEL_HEIGHT; r++) {
-        const uint16_t startX = col * CELL_W;
-        const uint16_t span = cols * CELL_W;
-        const uint16_t clipped = (startX + span > PANEL_WIDTH)
-                                 ? (PANEL_WIDTH - startX) : span;
         for (uint16_t cy = 0; cy < CELL_H && r * CELL_H + cy < PANEL_HEIGHT; cy++) {
             uint8_t *line = &framebuffer[(r * CELL_H + cy) * PANEL_WIDTH + startX];
             memset(line, COLOUR_BG, clipped);

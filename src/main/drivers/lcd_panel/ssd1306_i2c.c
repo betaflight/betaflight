@@ -120,7 +120,9 @@ static bool ssd1306HwInit(void)
             return false;
         }
         for (uint16_t col = 0; col < SSD1306_WIDTH; col += sizeof(zeros)) {
-            ssd1306WriteData(zeros, sizeof(zeros));
+            if (!ssd1306WriteData(zeros, sizeof(zeros))) {
+                return false;
+            }
         }
     }
     return true;
@@ -180,7 +182,9 @@ static void ssd1306DrawGlyphCell(lcdPanel_t *panel,
     // Place the 5-pixel glyph in the leftmost columns; remaining 3 columns
     // stay zero for inter-cell spacing.
     memcpy(cell, bitmap, LCD_PANEL_FONT_GLYPH_COLS);
-    ssd1306WriteData(cell, sizeof(cell));
+    if (!ssd1306WriteData(cell, sizeof(cell))) {
+        return;
+    }
 }
 
 static void ssd1306ClearRect(lcdPanel_t *panel,
@@ -203,8 +207,12 @@ static void ssd1306ClearRect(lcdPanel_t *panel,
                 (uint8_t)(0x00 | (pixelCol & 0x0F)),
                 (uint8_t)(0x10 | ((pixelCol >> 4) & 0x0F)),
             };
-            ssd1306WriteCommands(setAddr, sizeof(setAddr));
-            ssd1306WriteData(zeroCell, sizeof(zeroCell));
+            if (!ssd1306WriteCommands(setAddr, sizeof(setAddr))) {
+                return;
+            }
+            if (!ssd1306WriteData(zeroCell, sizeof(zeroCell))) {
+                return;
+            }
         }
     }
 }
