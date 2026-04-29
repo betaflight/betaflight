@@ -314,7 +314,16 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_ACC
 
-    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI) || featureIsConfigured(FEATURE_RX_UDP))) {
+    bool hasConfiguredRxFeature =
+        featureIsConfigured(FEATURE_RX_PARALLEL_PWM) ||
+        featureIsConfigured(FEATURE_RX_PPM) ||
+        featureIsConfigured(FEATURE_RX_SERIAL) ||
+        featureIsConfigured(FEATURE_RX_MSP) ||
+        featureIsConfigured(FEATURE_RX_SPI);
+#if ENABLE_RX_UDP
+    hasConfiguredRxFeature = hasConfiguredRxFeature || featureIsConfigured(FEATURE_RX_UDP);
+#endif
+    if (!hasConfiguredRxFeature) {
         featureEnableImmediate(DEFAULT_RX_FEATURE);
     }
 
