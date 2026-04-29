@@ -1,9 +1,9 @@
 /*
 *****************************************************************************
 **
-**  File        : apm32_flash_f405.ld
+**  File        : apm32_flash_f425.ld
 **
-**  Abstract    : Linker script for APM32F405RG Device with
+**  Abstract    : Linker script for APM32F425RG Device with
 **                1024KByte FLASH, 128KByte RAM 64KByte CCM (RAM)
 **
 *****************************************************************************

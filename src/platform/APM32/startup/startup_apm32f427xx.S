@@ -1,7 +1,7 @@
 /**
- * @file        startup_apm32f407xx.S
+ * @file        startup_apm32f427xx.S
  *
- * @brief       APM32F407xx Devices vector table for GCC based toolchains.
+ * @brief       APM32F427xx Devices vector table for GCC based toolchains.
  *              This module performs:
  *                  - Set the initial SP
  *                  - Set the initial PC == Reset_Handler,
@@ -13,11 +13,11 @@
  *
  * @version     V1.0.0
  *
- * @date        2023-07-31
+ * @date        2025-02-15
  *
  * @attention
  *
- *  Copyright (C) 2023 Geehy Semiconductor
+ *  Copyright (C) 2025 Geehy Semiconductor
  *
  *  You may not use this file except in compliance with the
  *  GEEHY COPYRIGHT NOTICE (GEEHY SOFTWARE PACKAGE LICENSE).
@@ -259,17 +259,20 @@ g_apm32_Vectors:
   .word     USART6_IRQHandler               // USART6
   .word     I2C3_EV_IRQHandler              // I2C3 event
   .word     I2C3_ER_IRQHandler              // I2C3 error
-  .word     OTG_HS1_EP1_OUT_IRQHandler      // USB OTG HS End Point 1 Out
-  .word     OTG_HS1_EP1_IN_IRQHandler       // USB OTG HS End Point 1 In
-  .word     OTG_HS1_WKUP_IRQHandler         // USB OTG HS Wakeup through EINT
-  .word     OTG_HS1_IRQHandler              // USB OTG HS
-  .word     DCI_IRQHandler                  // DCI
   .word     0                               // Reserved
-  .word     HASH_RNG_IRQHandler             // Hash and Rng
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     RNG_IRQHandler                  // Rng
   .word     FPU_IRQHandler                  // FPU
-  .word     SM3_IRQHandler                  // SM3
-  .word     SM4_IRQHandler                  // SM4
-  .word     BN_IRQHandler                   // BN
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     0                               // Reserved
+  .word     OTG_FS2_WKUP_IRQHandler         // USB OTG FS2 Wakeup through EINT line
+  .word     OTG_FS2_IRQHandler              // USB OTG FS2
+  .word     QSPI_IRQHandler                 // QSPI
 
 // Default exception/interrupt handler
 
@@ -522,32 +525,17 @@ g_apm32_Vectors:
    .weak      I2C3_ER_IRQHandler
    .thumb_set I2C3_ER_IRQHandler,Default_Handler
 
-   .weak      OTG_HS1_EP1_OUT_IRQHandler
-   .thumb_set OTG_HS1_EP1_OUT_IRQHandler,Default_Handler
-
-   .weak      OTG_HS1_EP1_IN_IRQHandler
-   .thumb_set OTG_HS1_EP1_IN_IRQHandler,Default_Handler
-
-   .weak      OTG_HS1_WKUP_IRQHandler
-   .thumb_set OTG_HS1_WKUP_IRQHandler,Default_Handler
-
-   .weak      OTG_HS1_IRQHandler
-   .thumb_set OTG_HS1_IRQHandler,Default_Handler
-
-   .weak      DCI_IRQHandler
-   .thumb_set DCI_IRQHandler,Default_Handler
-
-   .weak      HASH_RNG_IRQHandler
-   .thumb_set HASH_RNG_IRQHandler,Default_Handler
+   .weak      RNG_IRQHandler
+   .thumb_set RNG_IRQHandler,Default_Handler
 
    .weak      FPU_IRQHandler
    .thumb_set FPU_IRQHandler,Default_Handler
 
-   .weak      SM3_IRQHandler
-   .thumb_set SM3_IRQHandler,Default_Handler
+   .weak      OTG_FS2_WKUP_IRQHandler
+   .thumb_set OTG_FS2_WKUP_IRQHandler,Default_Handler
 
-   .weak      SM4_IRQHandler
-   .thumb_set SM4_IRQHandler,Default_Handler
+   .weak      OTG_FS2_IRQHandler
+   .thumb_set OTG_FS2_IRQHandler,Default_Handler
 
-   .weak      BN_IRQHandler
-   .thumb_set BN_IRQHandler,Default_Handler
+   .weak      QSPI_IRQHandler
+   .thumb_set QSPI_IRQHandler,Default_Handler
