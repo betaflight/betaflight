@@ -86,6 +86,7 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
+static timeUs_t lastGpsTimeFrameTime = 0;
 #if defined(USE_CRSF_V3)
 static bool telemetryResponsePending;
 #endif
@@ -985,11 +986,11 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time != lastGpsSolnTime && gpsSol.dateTime.valid) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) {
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
-        crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX);
+        lastGpsTimeFrameTime = currentTimeUs;
         return true;
     }
     if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time != lastGpsSolnTime) {
