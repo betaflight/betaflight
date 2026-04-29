@@ -133,46 +133,43 @@ const hsvColor_t hsv[] = {
 
 
 
-#define VTX_FREQ_MIN 5358   // Lowest frequency at which Vtx colors start (Just below L1)
-                            // L1 is 5362, R1 is 8 *  37 MHz channels higher,  at 5658.
-                            // Below 5355, LEDs will be white, then  Red at this frequency, returning  orange-Red for L1
-                            // Above this the color Hue rotates  as the frequency moves  through the  LowBand channels until again becoming orange-red for R1
-                            // then the same color rotation applies above R1 through to R8
-#define VTX_FREQ_MAX 5900   // upper frequency limit for which the Hue changes, above this Hue is fixed at HUE_MAX
-#define VTX_HUE_MAX 355     // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
+#define VTX_HUE_START_FREQ 5654     // frequency, just below R1 at 5658, that returns solid red
+#define VTX_HUE_STOP_FREQ 5900      // frequency just below R8  at 5917,  above which Hue does not exceed VTX_HUE_MAX
+#define VTX_HUE_MAX 355             // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
 
 #ifdef USE_VTX_COMMON
 static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
 {
+// assign LowBand and RaceBand Vtx channels to colors, with the same color for the same channel number in each band.
+
     hsvColor_t color = HSV(BLACK);
-    const unsigned bandRange = 296 // 8 channels per band, each 37MHz wide
+    const unsigned bandRange = 296; // width of the L or R bands;  8 channels per band, each 37MHz wide
 
     if (freq < VTX_SETTINGS_MIN_FREQUENCY_MHZ) {
-        // Invalid or no VTX data, eg User hasn't set band or channel
-        return color; // black; turn LEDs off
-    }
-
-    if (freq < VTX_FREQ_MIN) {
+        // Invalid channel or frequency value, e.g., user hasn't set band or channel
+        return color;
+        // turn LEDs off
+    } else if (freq < VTX_HUE_START_FREQ - bandRange) {
         return HSV(WHITE);
-        // if below L1, exit and show white
+        // frequency too low to map; exit and show white
     }
-
-    if (freq < VTX_FREQ_MIN + bandRange){
-        // if below R1, shift up from L1...L8 to R1...R8 range  
-        freq += bandRange;
-    }
-        if (freq > VTX_FREQ_MAX) {
-            freq = VTX_FREQ_MAX;
-            // Clamp incoming frequency to an upper limit
+    else {
+        if (freq < VTX_HUE_START_FREQ) {
+            // fold frequencies below RaceBand up to equivalent RaceBand frequencies for Hue assignment 
+            freq += bandRange;
+        }
+    if (freq > VTX_HUE_STOP_FREQ) {
+            freq = VTX_HUE_STOP_FREQ;
+            // Clamp incoming frequencies to an upper limit around R8
     }
 
         color.s = 0;
         color.v = 255;
         // for strong colours in betaflight, S must be 0 and V must be 255
-
-        color.h = scaleRange(freq, VTX_FREQ_MIN + 296, VTX_FREQ_MAX, 0, VTX_HUE_MAX);
+        color.h = scaleRange(freq, VTX_HUE_START_FREQ, VTX_HUE_STOP_FREQ, 0, VTX_HUE_MAX);
         // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
         return color;
+    }
 }
 #endif
 
