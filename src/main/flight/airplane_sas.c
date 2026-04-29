@@ -299,7 +299,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
     }
-    psasData.yaw.damping = gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
+    psasData.yaw.damping = -gyroYaw * (pidProfile->psas_damping_gain[FD_YAW] * 0.001f);
 
     // Plane yaw stability improvement
     float accelYFiltered = 0.0f;
@@ -311,7 +311,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
             accelYFiltered = accelY;
         }
     }
-    psasData.yaw.stability = accelYFiltered * (pidProfile->psas_yaw_stability_gain * 0.1f);
+    psasData.yaw.stability = -accelYFiltered * (pidProfile->psas_yaw_stability_gain * 0.1f);
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
     psasData.yaw.rollToYawCrossLink = rollToYawCrossLinkControl(pidProfile,  psasData.roll.pilot, liftCoef);
