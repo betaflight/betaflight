@@ -98,7 +98,7 @@ static uint8_t framebuffer[FB_PIXELS];
 static LTDC_HandleTypeDef hltdc;
 static bool hwInitialised;
 
-static void ltdcConfigClock(void)
+static bool ltdcConfigClock(void)
 {
     // LTDC PCLK ~25 MHz from PLL4 via IC16. Mirrors the ST example;
     // PLL4 is already enabled from the firmware's main clock setup if
@@ -109,9 +109,12 @@ static void ltdcConfigClock(void)
     periph.LtdcClockSelection = RCC_LTDCCLKSOURCE_IC16;
     periph.ICSelection[RCC_IC16].ClockSelection = RCC_ICCLKSOURCE_PLL4;
     periph.ICSelection[RCC_IC16].ClockDivider = 64;
-    HAL_RCCEx_PeriphCLKConfig(&periph);
+    if (HAL_RCCEx_PeriphCLKConfig(&periph) != HAL_OK) {
+        return false;
+    }
 
     __HAL_RCC_LTDC_CLK_ENABLE();
+    return true;
 }
 
 static void ltdcConfigGpio(void)
@@ -226,7 +229,9 @@ static bool ltdcEnsureHw(void)
         return true;
     }
     memset(framebuffer, COLOUR_BG, sizeof(framebuffer));
-    ltdcConfigClock();
+    if (!ltdcConfigClock()) {
+        return false;
+    }
     ltdcConfigGpio();
     if (!ltdcConfigController()) {
         return false;
