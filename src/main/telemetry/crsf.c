@@ -989,12 +989,11 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-// Removed isCrsfV3Running check from GPS Time 0x03 message as it requires baudrate negotiation which ELRS does not perform
-    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && gpsSol.time != lastGpsTimeSolnTime && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && gpsSol.time != lastGpsTimeSolnTime && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) { // Removed isCrsfV3Running check from GPS Time 0x03 message as it requires baudrate negotiation which ELRS does not perform
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
-		lastGpsTimeSolnTime  = gpsSol.time;
+        lastGpsTimeSolnTime = gpsSol.time;
         lastGpsTimeFrameTime = currentTimeUs;
         return true;
     }
