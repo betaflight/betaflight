@@ -234,6 +234,7 @@ static const char * const mixerNames[] = {
 #define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
     _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_RX_UDP, "RX_UDP"),
     _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
     _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
     _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
