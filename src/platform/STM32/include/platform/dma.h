@@ -123,7 +123,9 @@
      (((f) & 0x08u) ? 0x08u : 0))
 
 #define IS_BDMA_DESCRIPTOR(d) ((d)->dma == (void*)BDMA)
-#define IS_SRAM4(p) (((uint32_t)(p) & 0xFF000000) == 0x38000000)
+#define IS_SRAM4(p) \
+    (((uintptr_t)(p) >= (uintptr_t)&_bdmaram_start__) && \
+     ((uintptr_t)(p) < (uintptr_t)&_bdmaram_end__))
 
 #define DMA_CLEAR_FLAG(d, flag) \
     do { \
