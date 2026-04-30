@@ -30,7 +30,7 @@
 #if defined(STM32F4) || defined(STM32F7)
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #elif defined(STM32H7)
-// H7 has stream based DMA and channel based BDMA, but we ignore BDMA (for now).
+// H7 has stream based DMA (DMA1/DMA2) and channel based BDMA for D3 domain peripherals.
 #define DMA_ARCH_TYPE DMA_Stream_TypeDef
 #else
 #define DMA_ARCH_TYPE DMA_Channel_TypeDef
@@ -56,7 +56,19 @@
 #define DMA2_ST5_HANDLER    (DMA_FIRST_HANDLER + 13)
 #define DMA2_ST6_HANDLER    (DMA_FIRST_HANDLER + 14)
 #define DMA2_ST7_HANDLER    (DMA_FIRST_HANDLER + 15)
+#ifdef STM32H7
+#define BDMA_CH0_HANDLER    (DMA_FIRST_HANDLER + 16)
+#define BDMA_CH1_HANDLER    (DMA_FIRST_HANDLER + 17)
+#define BDMA_CH2_HANDLER    (DMA_FIRST_HANDLER + 18)
+#define BDMA_CH3_HANDLER    (DMA_FIRST_HANDLER + 19)
+#define BDMA_CH4_HANDLER    (DMA_FIRST_HANDLER + 20)
+#define BDMA_CH5_HANDLER    (DMA_FIRST_HANDLER + 21)
+#define BDMA_CH6_HANDLER    (DMA_FIRST_HANDLER + 22)
+#define BDMA_CH7_HANDLER    (DMA_FIRST_HANDLER + 23)
+#define DMA_LAST_HANDLER    BDMA_CH7_HANDLER
+#else
 #define DMA_LAST_HANDLER    DMA2_ST7_HANDLER
+#endif
 
 #define DMA_DEVICE_NO(x)    ((((x)-1) / 8) + 1)
 #define DMA_DEVICE_INDEX(x) ((((x)-1) % 8))
@@ -82,8 +94,61 @@
                                                                     handler(&dmaDescriptors[index]); \
                                                             }
 
+#ifdef STM32H7
+#define DEFINE_BDMA_CHANNEL(c, f) { \
+    .dma = BDMA, \
+    .ref = (dmaResource_t *)BDMA_Channel ## c, \
+    .stream = c, \
+    .irqHandlerCallback = NULL, \
+    .flagsShift = f, \
+    .irqN = BDMA_Channel ## c ## _IRQn, \
+    .userParam = 0, \
+    .resourceOwner.owner = 0, \
+    .resourceOwner.index = 0 \
+    }
+
+#define DEFINE_BDMA_IRQ_HANDLER(c, i) FAST_IRQ_HANDLER void BDMA_Channel ## c ## _IRQHandler(void) {\
+                                                                const uint8_t index = DMA_IDENTIFIER_TO_INDEX(i); \
+                                                                dmaCallbackHandlerFuncPtr handler = dmaDescriptors[index].irqHandlerCallback; \
+                                                                if (handler) \
+                                                                    handler(&dmaDescriptors[index]); \
+                                                            }
+
+// Translate DMA stream flags to BDMA channel flags
+// DMA stream: TCIF=0x20 HTIF=0x10 TEIF=0x08 DMEIF=0x04 FEIF=0x01
+// BDMA channel: TCIF=0x02 HTIF=0x04 TEIF=0x08
+#define DMA_TO_BDMA_FLAGS(f) \
+    ((((f) & 0x20u) ? 0x02u : 0) | \
+     (((f) & 0x10u) ? 0x04u : 0) | \
+     (((f) & 0x08u) ? 0x08u : 0))
+
+#define IS_BDMA_DESCRIPTOR(d) ((d)->dma == (void*)BDMA)
+#define IS_SRAM4(p) (((uint32_t)(p) & 0xFF000000) == 0x38000000)
+
+#define DMA_CLEAR_FLAG(d, flag) \
+    do { \
+        if (IS_BDMA_DESCRIPTOR(d)) { \
+            ((BDMA_TypeDef*)(d)->dma)->IFCR = (DMA_TO_BDMA_FLAGS(flag) << (d)->flagsShift); \
+        } else if ((d)->flagsShift > 31) { \
+            ((DMA_TypeDef*)(d)->dma)->HIFCR = ((flag) << ((d)->flagsShift - 32)); \
+        } else { \
+            ((DMA_TypeDef*)(d)->dma)->LIFCR = ((flag) << (d)->flagsShift); \
+        } \
+    } while(0)
+
+#define DMA_GET_FLAG_STATUS(d, flag) \
+    (IS_BDMA_DESCRIPTOR(d) ? \
+        (((BDMA_TypeDef*)(d)->dma)->ISR & (DMA_TO_BDMA_FLAGS(flag) << (d)->flagsShift)) : \
+        ((d)->flagsShift > 31 ? \
+            (((DMA_TypeDef*)(d)->dma)->HISR & ((flag) << ((d)->flagsShift - 32))) : \
+            (((DMA_TypeDef*)(d)->dma)->LISR & ((flag) << (d)->flagsShift))))
+
+#else // !STM32H7 (F4/F7)
+
 #define DMA_CLEAR_FLAG(d, flag) if (d->flagsShift > 31) ((DMA_TypeDef*)(d)->dma)->HIFCR = (flag << (d->flagsShift - 32)); else ((DMA_TypeDef*)(d)->dma)->LIFCR = (flag << d->flagsShift)
 #define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? ((DMA_TypeDef*)(d)->dma)->HISR & (flag << (d->flagsShift - 32)): ((DMA_TypeDef*)(d)->dma)->LISR & (flag << d->flagsShift))
+
+#endif // STM32H7
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)

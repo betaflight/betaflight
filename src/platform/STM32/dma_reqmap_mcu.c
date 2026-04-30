@@ -255,8 +255,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(SPI, 4, SDI),
     REQMAP_DIR(SPI, 5, SDO), // Not available in smaller packages
     REQMAP_DIR(SPI, 5, SDI), // ditto
-    // REQMAP_DIR(SPI, 6, SDO), // SPI6 is on BDMA (todo)
-    // REQMAP_DIR(SPI, 6, SDI), // ditto
 #endif // USE_SPI
 
 #ifdef USE_ADC
@@ -307,11 +305,6 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     REQMAP_DIR(UART, 10, TX),
     REQMAP_DIR(UART, 10, RX),
 #endif
-#ifdef USE_LPUART1
-    { DMA_PERIPH_UART_TX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_TX },
-    { DMA_PERIPH_UART_RX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_RX },
-#endif
-
 #ifdef USE_TIMER
 // Pseudo peripheral for TIMx_UP channel
     REQMAP_TIMUP(TIMUP, 1),
@@ -391,6 +384,43 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 };
 
 #undef DMA
+
+// BDMA channel spec pool for D3 domain peripherals (SPI6, LPUART1, etc.)
+// Using controller=3 in DMA_CODE to distinguish BDMA from DMA1(1)/DMA2(2)
+#define MAX_BDMA_CHANNEL_OPTIONS 8
+#define BDMA_CH(c) { DMA_CODE(3, c, 0), (dmaResource_t *)BDMA_Channel ## c, 0 }
+
+static dmaChannelSpec_t bdmaChannelSpec[MAX_BDMA_CHANNEL_OPTIONS] = {
+    BDMA_CH(0),
+    BDMA_CH(1),
+    BDMA_CH(2),
+    BDMA_CH(3),
+    BDMA_CH(4),
+    BDMA_CH(5),
+    BDMA_CH(6),
+    BDMA_CH(7),
+};
+
+#undef BDMA_CH
+
+// Resolve SPI6 SDO/SDI naming for BDMA requests
+#define BDMA_REQUEST_SPI6_SDO BDMA_REQUEST_SPI6_TX
+#define BDMA_REQUEST_SPI6_SDI BDMA_REQUEST_SPI6_RX
+
+#define BDMA_REQMAP_DIR(periph, device, dir) { DMA_PERIPH_ ## periph ## _ ## dir, periph ## DEV_ ## device, BDMA_REQUEST_ ## periph ## device ## _ ## dir }
+
+static const dmaPeripheralMapping_t bdmaPeripheralMapping[] = {
+#ifdef USE_SPI
+    BDMA_REQMAP_DIR(SPI, 6, SDO),
+    BDMA_REQMAP_DIR(SPI, 6, SDI),
+#endif
+#ifdef USE_LPUART1
+    { DMA_PERIPH_UART_TX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_TX },
+    { DMA_PERIPH_UART_RX, UARTDEV_LP1, BDMA_REQUEST_LPUART1_RX },
+#endif
+};
+
+#undef BDMA_REQMAP_DIR
 
 #elif defined(STM32H5)
 
@@ -1056,6 +1086,20 @@ const dmaChannelSpec_t *dmaGetChannelSpecByPeripheral(dmaPeripheral_e device, ui
     if (opt < 0 || opt >= MAX_PERIPHERAL_DMA_OPTIONS) {
         return NULL;
     }
+
+#ifdef STM32H7
+    // Check BDMA peripherals first (SPI6, LPUART1, etc.)
+    for (const dmaPeripheralMapping_t *periph = bdmaPeripheralMapping; periph < ARRAYEND(bdmaPeripheralMapping); periph++) {
+        if (periph->device == device && periph->index == index) {
+            if (opt >= MAX_BDMA_CHANNEL_OPTIONS) {
+                return NULL;
+            }
+            dmaChannelSpec_t *dmaSpec = &bdmaChannelSpec[opt];
+            dmaSetupRequest(dmaSpec, periph->dmaRequest);
+            return dmaSpec;
+        }
+    }
+#endif
 
     for (const dmaPeripheralMapping_t *periph =  dmaPeripheralMapping; periph < ARRAYEND(dmaPeripheralMapping) ; periph++) {
 #if defined(STM32H7) || defined(STM32H5) || defined(STM32G4) || defined(STM32N6) || defined(STM32C5)

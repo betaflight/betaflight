@@ -56,6 +56,7 @@
 #include "stm32h7xx_ll_spi.h"
 #include "stm32h7xx_ll_usart.h"
 #include "stm32h7xx_ll_gpio.h"
+#include "stm32h7xx_ll_bdma.h"
 #include "stm32h7xx_ll_dma.h"
 #include "stm32h7xx_ll_rcc.h"
 #include "stm32h7xx_ll_bus.h"
@@ -426,8 +427,11 @@
 #if defined(STM32H7)
 #define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+#define BDMA_RAM __attribute__((section(".BDMA_RAM"), aligned(4)))
 extern uint8_t _dmaram_start__;
 extern uint8_t _dmaram_end__;
+extern uint8_t _bdmaram_start__;
+extern uint8_t _bdmaram_end__;
 #elif defined(STM32N6)
 #define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
 #define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
@@ -441,6 +445,7 @@ extern uint8_t _dmaram_end__;
 #else
 #define DMA_RAM
 #define DMA_RW_AXI
+#define BDMA_RAM
 #define DMA_RAM_R
 #define DMA_RAM_W
 #define DMA_RAM_RW
