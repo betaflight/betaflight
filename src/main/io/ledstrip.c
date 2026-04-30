@@ -1486,7 +1486,7 @@ static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
         currentHsv.s != previousHsv.s ||
         currentHsv.v != previousHsv.v ||
         // HSV value has changed
-        (currentTimeUs >= colorUpdateTimeUs);
+        (cmpTimeUs(currentTimeUs, colorUpdateTimeUs) >= 0);
         // or update interval is reached
 
     if (updateLedStripColor) {
