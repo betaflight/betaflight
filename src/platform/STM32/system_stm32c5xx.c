@@ -27,6 +27,7 @@
 #include "platform.h"
 
 #include "stm32c5xx_hal_flash.h"
+#include "stm32c5xx_ll_rcc.h"
 
 /* Global flash handle for compat shims (HAL_FLASH_Unlock/Lock/Program/Erase) */
 hal_flash_handle_t hflash_compat;
@@ -61,6 +62,17 @@ static void systemClockTo144MHz(void)
     // on the boot ROM. Enable + wait-ready before switching.
     if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
         HAL_RCC_HSIS_Enable();
+    }
+
+    // HSIK feeds the peripheral kernel-clock muxes (CCIPR*.xxxSEL). It is
+    // gated independently from HSI/HSIS via RCC_CR1_HSIKON and is OFF
+    // after reset, so any peripheral selecting HSIK sees no clock until
+    // it's enabled here. Divider stays at the reset default (DIV_1) so
+    // HSIK == 144 MHz.
+    if (LL_RCC_HSIK_IsReady() == 0) {
+        LL_RCC_HSIK_Enable();
+        while (LL_RCC_HSIK_IsReady() == 0) {
+        }
     }
 
     HAL_RCC_SetSYSCLKSource(HAL_RCC_SYSCLK_SRC_HSIS);
