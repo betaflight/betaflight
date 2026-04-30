@@ -133,7 +133,7 @@ const hsvColor_t hsv[] = {
 
 
 
-#define VTX_HUE_START_FREQ 5654     // frequency, just below R1 at 5658, that returns solid red
+#define VTX_HUE_START_FREQ 5658     //  R1, returns solid red at R1
 #define VTX_HUE_STOP_FREQ 5900      // frequency just below R8  at 5917,  above which Hue does not exceed VTX_HUE_MAX
 #define VTX_HUE_MAX 355             // Maximum Hue value. Hue is circular in degrees, with red at 0 and 360.  345 is a strong magenta that is easily distinguished from red.
 
