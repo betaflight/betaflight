@@ -597,6 +597,8 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define LL_LPDMA1_REQUEST_TIM2_CH3  LL_LPDMA1_REQUEST_TIM2_CC3
 #define LL_LPDMA1_REQUEST_TIM2_CH4  LL_LPDMA1_REQUEST_TIM2_CC4
 #define LL_LPDMA1_REQUEST_TIM2_UP   LL_LPDMA1_REQUEST_TIM2_UPD
+#if !defined(STM32C562xx)
+// STM32C562 lacks TIM3 and TIM4
 #define LL_LPDMA1_REQUEST_TIM3_CH1  LL_LPDMA1_REQUEST_TIM3_CC1
 #define LL_LPDMA1_REQUEST_TIM3_CH2  LL_LPDMA1_REQUEST_TIM3_CC2
 #define LL_LPDMA1_REQUEST_TIM3_CH3  LL_LPDMA1_REQUEST_TIM3_CC3
@@ -607,6 +609,7 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
 #define LL_LPDMA1_REQUEST_TIM4_CH3  LL_LPDMA1_REQUEST_TIM4_CC3
 #define LL_LPDMA1_REQUEST_TIM4_CH4  LL_LPDMA1_REQUEST_TIM4_CC4
 #define LL_LPDMA1_REQUEST_TIM4_UP   LL_LPDMA1_REQUEST_TIM4_UPD
+#endif
 #define LL_LPDMA1_REQUEST_TIM5_CH1  LL_LPDMA1_REQUEST_TIM5_CC1
 #define LL_LPDMA1_REQUEST_TIM5_CH2  LL_LPDMA1_REQUEST_TIM5_CC2
 #define LL_LPDMA1_REQUEST_TIM5_CH3  LL_LPDMA1_REQUEST_TIM5_CC3
@@ -674,8 +677,10 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 // Pseudo peripheral for TIMx_UP channel
     REQMAP_TIMUP(TIMUP, 1),
     REQMAP_TIMUP(TIMUP, 2),
+#if !defined(STM32C562xx)
     REQMAP_TIMUP(TIMUP, 3),
     REQMAP_TIMUP(TIMUP, 4),
+#endif
     REQMAP_TIMUP(TIMUP, 5),
     REQMAP_TIMUP(TIMUP, 6),
     REQMAP_TIMUP(TIMUP, 7),
@@ -705,6 +710,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM2, CH2),
     REQMAP_TIM(TIM2, CH3),
     REQMAP_TIM(TIM2, CH4),
+#if !defined(STM32C562xx)
     REQMAP_TIM(TIM3, CH1),
     REQMAP_TIM(TIM3, CH2),
     REQMAP_TIM(TIM3, CH3),
@@ -713,6 +719,7 @@ static const dmaTimerMapping_t dmaTimerMapping[] = {
     REQMAP_TIM(TIM4, CH2),
     REQMAP_TIM(TIM4, CH3),
     REQMAP_TIM(TIM4, CH4),
+#endif
     REQMAP_TIM(TIM5, CH1),
     REQMAP_TIM(TIM5, CH2),
     REQMAP_TIM(TIM5, CH3),
@@ -748,10 +755,13 @@ static dmaChannelSpec_t dmaChannelSpec[MAX_PERIPHERAL_DMA_OPTIONS] = {
     DMA2(2, 1),
     DMA2(2, 2),
     DMA2(2, 3),
+#if !defined(STM32C562xx)
+    // STM32C562 LPDMA2 only has channels 0-3
     DMA2(2, 4),
     DMA2(2, 5),
     DMA2(2, 6),
     DMA2(2, 7),
+#endif
 };
 
 #undef DMA1

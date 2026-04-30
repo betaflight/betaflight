@@ -37,8 +37,10 @@
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),   .inputIrq = TIM1_CC_IRQn},
     { .TIMx = TIM2,  .rcc = RCC_APB1L(TIM2),  .inputIrq = TIM2_IRQn},
+#if !defined(STM32C562xx)
     { .TIMx = TIM3,  .rcc = RCC_APB1L(TIM3),  .inputIrq = TIM3_IRQn},
     { .TIMx = TIM4,  .rcc = RCC_APB1L(TIM4),  .inputIrq = TIM4_IRQn},
+#endif
     { .TIMx = TIM5,  .rcc = RCC_APB1L(TIM5),  .inputIrq = TIM5_IRQn},
     { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_IRQn},
     { .TIMx = TIM7,  .rcc = RCC_APB1L(TIM7),  .inputIrq = TIM7_IRQn},
@@ -61,24 +63,30 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM5, CH2, PA1, 0, 0, 0),
     DEF_TIM(TIM5, CH3, PA2, 0, 0, 0),
     DEF_TIM(TIM5, CH4, PA3, 0, 0, 0),
+#if !defined(STM32C562xx)
     DEF_TIM(TIM3, CH1, PA6, 0, 0, 0),
     DEF_TIM(TIM3, CH2, PA7, 0, 0, 0),
+#endif
     DEF_TIM(TIM1, CH1, PA8, 0, 0, 0),
     DEF_TIM(TIM1, CH2, PA9, 0, 0, 0),
     DEF_TIM(TIM1, CH3, PA10, 0, 0, 0),
     DEF_TIM(TIM1, CH4, PA11, 0, 0, 0),
 // Port B
+#if !defined(STM32C562xx)
     DEF_TIM(TIM3, CH3, PB0, 0, 0, 0),
     DEF_TIM(TIM3, CH4, PB1, 0, 0, 0),
     DEF_TIM(TIM4, CH1, PB6, 0, 0, 0),
     DEF_TIM(TIM4, CH2, PB7, 0, 0, 0),
     DEF_TIM(TIM4, CH3, PB8, 0, 0, 0),
     DEF_TIM(TIM4, CH4, PB9, 0, 0, 0),
+#endif
 // Port C
+#if !defined(STM32C562xx)
     DEF_TIM(TIM3, CH1, PC6, 0, 0, 0),
     DEF_TIM(TIM3, CH2, PC7, 0, 0, 0),
     DEF_TIM(TIM3, CH3, PC8, 0, 0, 0),
     DEF_TIM(TIM3, CH4, PC9, 0, 0, 0),
+#endif
     DEF_TIM(TIM8, CH1, PC6, 0, 0, 0),
     DEF_TIM(TIM8, CH2, PC7, 0, 0, 0),
     DEF_TIM(TIM8, CH3, PC8, 0, 0, 0),

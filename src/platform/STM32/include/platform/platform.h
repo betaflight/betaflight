@@ -151,7 +151,7 @@
 #define STM32F4
 #endif
 
-#elif defined(STM32C591xx)
+#elif defined(STM32C591xx) || defined(STM32C562xx)
 #include "stm32c5xx.h"
 #include "stm32c5xx_hal.h"
 // HAL2: module headers must be included explicitly (hal_conf.h only defines enables)
