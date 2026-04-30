@@ -51,6 +51,14 @@ void systemInit(void)
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
+    // Bring up the HAL tick (SysTick at HAL_TICK_FREQ_DEFAULT = 1 kHz) so
+    // micros()/delay() advance. HAL_Init also sets the SysTick clock source
+    // to the CPU internal clock and configures NVIC priority grouping for
+    // the HAL stack. Other STM32 platforms call this from the startup
+    // SystemInit(), but on C5 .data is initialised after SystemInit so we
+    // call it here instead -- by this point .data is live.
+    HAL_Init();
+
     // Configure NVIC preempt/priority groups (CMSIS direct, HAL2 has no wrapper)
     NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
