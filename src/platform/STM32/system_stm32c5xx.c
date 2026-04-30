@@ -62,6 +62,8 @@ static void systemClockTo144MHz(void)
     // on the boot ROM. Enable + wait-ready before switching.
     if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
         HAL_RCC_HSIS_Enable();
+        while (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
+        }
     }
 
     // HSIK feeds the peripheral kernel-clock muxes (CCIPR*.xxxSEL). It is
