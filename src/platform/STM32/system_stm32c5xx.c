@@ -46,10 +46,46 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+// Switch the system clock from the reset-default HSIDIV3 (48 MHz) to the
+// HSIS source running at the full HSI rate (144 MHz). Done before HAL_Init
+// so the SysTick reload it computes from SystemCoreClock matches the
+// running HCLK. We don't need PSI/PLL here: HSI is always on after reset
+// and HSIS taps it directly, so the only step is to bump flash latency,
+// switch SWS, and set the bus prescalers to 1.
+static void systemClockTo144MHz(void)
+{
+    // 144 MHz needs 4 wait states on the C5 flash interface.
+    HAL_FLASH_ITF_SetLatency(HAL_FLASH, HAL_FLASH_ITF_LATENCY_4);
+
+    // Make sure HSIS is enabled; on reset HSI is on but HSIS gating depends
+    // on the boot ROM. Enable + wait-ready before switching.
+    if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
+        HAL_RCC_HSIS_Enable();
+    }
+
+    HAL_RCC_SetSYSCLKSource(HAL_RCC_SYSCLK_SRC_HSIS);
+
+    // Programming delay must follow the SYSCLK switch when running fast.
+    HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
+
+    // HCLK = SYSCLK, PCLK1/2/3 = HCLK so SPI1/USART1/etc. all see 144 MHz.
+    hal_rcc_bus_clk_config_t busConfig = {
+        .hclk_prescaler  = HAL_RCC_HCLK_PRESCALER1,
+        .pclk1_prescaler = HAL_RCC_PCLK_PRESCALER1,
+        .pclk2_prescaler = HAL_RCC_PCLK_PRESCALER1,
+        .pclk3_prescaler = HAL_RCC_PCLK_PRESCALER1,
+    };
+    HAL_RCC_SetBusClockConfig(&busConfig);
+}
+
 void systemInit(void)
 {
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
+
+    // Bump SYSCLK from HSIDIV3 (48 MHz) to HSIS (144 MHz) before HAL_Init
+    // so SysTick is configured against the final HCLK.
+    systemClockTo144MHz();
 
     // Bring up the HAL tick (SysTick at HAL_TICK_FREQ_DEFAULT = 1 kHz) so
     // micros()/delay() advance. HAL_Init also sets the SysTick clock source
