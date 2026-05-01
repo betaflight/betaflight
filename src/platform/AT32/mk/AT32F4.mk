@@ -2,6 +2,8 @@
 # AT32F4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 CMSIS_DIR      := $(LIB_MAIN_DIR)/AT32F43x/cmsis
 STDPERIPH_DIR   = $(LIB_MAIN_DIR)/AT32F43x/drivers
 MIDDLEWARES_DIR = $(LIB_MAIN_DIR)/AT32F43x/middlewares
@@ -139,7 +141,9 @@ MCU_COMMON_SRC = \
             msc/usbd_storage_sd_spi.c \
             common/stm32/ledstrip_ws2811_stm32.c \
             common/stm32/debug_pin.c \
-            common/stm32/adc_impl.c
+            common/stm32/adc_impl.c \
+            common/stm32/expresslrs_driver_hw.c \
+            common/stm32/fault_handlers.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/dshot_bitbang_shared.c \

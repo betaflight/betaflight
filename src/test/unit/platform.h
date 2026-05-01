@@ -44,6 +44,7 @@
 
 #define PID_PROFILE_COUNT 4
 #define CONTROL_RATE_PROFILE_COUNT 4
+#define BATTERY_PROFILE_COUNT 3
 #define USE_MAG
 #define USE_BARO
 #define USE_GPS
@@ -70,26 +71,6 @@ typedef enum
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
-typedef enum {
-    EXTI_Trigger_Rising = 0x08,
-    EXTI_Trigger_Falling = 0x0C,
-    EXTI_Trigger_Rising_Falling = 0x10
-} EXTITrigger_TypeDef;
-
-typedef struct
-{
-    void *test;
-} GPIO_TypeDef;
-
-typedef struct
-{
-    void* test;
-} TIM_TypeDef;
-
-typedef struct
-{
-    void* test;
-} TIM_OCInitTypeDef;
 
 typedef struct {
     void* test;
@@ -103,20 +84,12 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
-typedef struct
-{
-    void* test;
-} SPI_TypeDef;
+struct spiResource_s;
+struct quadSpiResource_s;
+struct octoSpiResource_s;
+struct i2cResource_s;
 
-typedef struct
-{
-    void* test;
-} USART_TypeDef;
-
-typedef struct
-{
-    void *test;
-} I2C_TypeDef;
+typedef struct USART_TypeDef_s USART_TypeDef;
 
 typedef struct
 {
@@ -130,8 +103,11 @@ typedef struct
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 #define NVIC_PriorityGroup_2 0x500
+#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
 
-#define MCU_TYPE_ID   99
 #define MCU_TYPE_NAME "UNIT_TEST"
 
 #include "target.h"

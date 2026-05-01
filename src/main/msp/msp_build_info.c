@@ -23,8 +23,8 @@
  * WARNING: This is an auto-generated file, please do not edit directly!
  *
  * Generator    : `src/utils/make-build-info.py`
- * Source       : https://build.betaflight.com/api/options/2025.12
- * Input hash   : 6a57c50d7938349a1e8363e85d6741dc
+ * Source       : https://build.betaflight.com/api/options/2026.6
+ * Input hash   : 7078aa17160739f81692eed6cf885e85
  */
 
 #include <stdint.h>
@@ -35,9 +35,7 @@
 
 #include "msp/msp_build_info.h"
 
-void sbufWriteBuildInfoFlags(sbuf_t *dst)
-{
-    static const uint16_t options[] = {
+static const uint16_t buildOptions[] = {
 #ifdef USE_SERIALRX_CRSF
         BUILD_OPTION_SERIALRX_CRSF,
 #endif
@@ -125,6 +123,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_ESCSERIAL_SIMONK
         BUILD_OPTION_ESCSERIAL_SIMONK,
 #endif
+#ifdef USE_FLIGHT_PLAN
+        BUILD_OPTION_FLIGHT_PLAN,
+#endif
 #ifdef USE_GPS
         BUILD_OPTION_GPS,
 #endif
@@ -136,6 +137,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_MAG
         BUILD_OPTION_MAG,
+#endif
+#ifdef USE_OPTICALFLOW
+        BUILD_OPTION_OPTICALFLOW,
 #endif
 #ifdef USE_OSD_SD
         BUILD_OPTION_OSD_SD,
@@ -155,6 +159,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_RACE_PRO
         BUILD_OPTION_RACE_PRO,
 #endif
+#ifdef USE_RANGEFINDER
+        BUILD_OPTION_RANGEFINDER,
+#endif
 #ifdef USE_SOFTSERIAL
         BUILD_OPTION_SOFTSERIAL,
 #endif
@@ -166,6 +173,9 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #endif
 #ifdef USE_WING
         BUILD_OPTION_WING,
+#endif
+#if ENABLE_FLIGHT_PLAN
+        BUILD_OPTION_FLIGHT_PLAN,
 #endif
 #ifdef USE_BRUSHED
         BUILD_OPTION_BRUSHED,
@@ -185,10 +195,17 @@ void sbufWriteBuildInfoFlags(sbuf_t *dst)
 #ifdef USE_PWM_OUTPUT
         BUILD_OPTION_PWM_OUTPUT,
 #endif
-    };
+};
 
-    for (unsigned i = 0; i < ARRAYLEN(options); i++)
-    {
-        sbufWriteU16(dst, options[i]);
+void sbufWriteBuildInfoFlags(sbuf_t *dst)
+{
+    for (unsigned i = 0; i < ARRAYLEN(buildOptions); i++) {
+        sbufWriteU16(dst, buildOptions[i]);
     }
+}
+
+const uint16_t *getBuildOptions(unsigned *count)
+{
+    *count = ARRAYLEN(buildOptions);
+    return buildOptions;
 }

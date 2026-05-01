@@ -214,7 +214,7 @@ void taskSystemLoad(timeUs_t currentTimeUs)
         schedulerIgnoreTaskExecTime();
     }
 
-#if defined(SIMULATOR_BUILD)
+#if ENABLE_SIMULATOR
     averageSystemLoadPercent = 0;
 #endif
 }
@@ -228,10 +228,10 @@ uint32_t getCpuPercentageLate(void)
 #endif
 }
 
-timeUs_t checkFuncMaxExecutionTimeUs;
-timeUs_t checkFuncTotalExecutionTimeUs;
-timeUs_t checkFuncMovingSumExecutionTimeUs;
-timeUs_t checkFuncMovingSumDeltaTimeUs;
+static timeUs_t checkFuncMaxExecutionTimeUs;
+static timeUs_t checkFuncTotalExecutionTimeUs;
+static timeUs_t checkFuncMovingSumExecutionTimeUs;
+static timeUs_t checkFuncMovingSumDeltaTimeUs;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
 {

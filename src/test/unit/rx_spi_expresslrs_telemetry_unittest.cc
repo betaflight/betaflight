@@ -97,7 +97,7 @@ static void testSetDataToTransmit(uint8_t payloadSize, uint8_t *payload)
     setTelemetryDataToTransmit(payloadSize, payload);
 
     for (int j = 0; j <= maxPackageIndex; j++) {
-        nextPackageIndex = getCurrentTelemetryPayload(data);
+        nextPackageIndex = getCurrentTelemetryPayload(data, ELRS_TELEMETRY_BYTES_PER_CALL);
         if (j != maxPackageIndex) {
             EXPECT_EQ(1 + j, nextPackageIndex);
         } else {

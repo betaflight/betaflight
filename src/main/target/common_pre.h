@@ -54,7 +54,11 @@
   line by passing ENABLE_X_FEATURE=0, unlike USE_ flags which can only be enabled or left undefined.
   This allows for more granular control during builds without modifying source files.
 
-  For backward compatibility, USE_ flags will continue to be supported in this file (common_pre.h)
+  This is especially beneficial for CI builds and custom user builds where certain features may need
+  to be turned off without editing code. It also assists in debugging and testing by allowing features
+  to be toggled on/off easily.
+
+  For backward compatibility, USE_ flags will continue to be supported in the file (common_post.h)
   only. When a USE_X_FEATURE is defined, it will automatically set ENABLE_X_FEATURE=1. Source code
   should transition to using #if ENABLE_X_FEATURE guards instead of #ifdef USE_X_FEATURE.
 
@@ -106,7 +110,6 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -137,6 +140,7 @@
 #define USE_ACCGYRO_BMI270
 #define USE_GYRO_SPI_ICM42605
 #define USE_ACCGYRO_ICM42622P
+#define USE_ACCGYRO_ICM42686P
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACCGYRO_ICM45686
 #define USE_ACCGYRO_ICM45605
@@ -302,6 +306,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
 #endif // TARGET_FLASH_SIZE >= 1024
@@ -339,6 +344,7 @@
 #ifndef CONTROL_RATE_PROFILE_COUNT
 #define CONTROL_RATE_PROFILE_COUNT 4 // or maybe 6
 #endif
+#define BATTERY_PROFILE_COUNT 3
 
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
@@ -401,7 +407,6 @@
 #define USE_RX_MSP_OVERRIDE
 #define USE_RX_LINK_UPLINK_POWER
 
-#define USE_AIRMODE_LPF
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
@@ -429,11 +434,8 @@
 
 #endif // !defined(CORE_BUILD)
 
-#ifdef USE_GPS
-#define USE_GPS_NMEA
-#define USE_GPS_UBLOX
-#define USE_GPS_RESCUE
-#endif // USE_GPS
+// Note: USE_GPS secondary defines (USE_GPS_NMEA, USE_GPS_UBLOX, USE_GPS_RESCUE)
+// are in common_post.h because SITL defines USE_GPS in target.h (after common_pre.h).
 
 #if (defined(USE_OSD_HD) || defined(USE_OSD_SD) || defined(USE_FRSKYOSD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
@@ -462,6 +464,7 @@
 #define USE_OSD_ADJUSTMENTS
 #define USE_OSD_PROFILES
 #define USE_OSD_STICK_OVERLAY
+#define USE_OSD_CUSTOM_TEXT
 
 #if defined(USE_GPS)
 #define USE_CMS_GPS_RESCUE_MENU
@@ -529,8 +532,8 @@
 
 #endif // USE_WING
 
-#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
 
 // backwards compatibility for older config.h targets
@@ -594,4 +597,10 @@
   #else
     #define GYRO_COUNT 1
   #endif
+#endif
+
+/* ENABLE CATCH ALLS HERE */
+
+#if defined(USE_OSD_CUSTOM_TEXT) && !defined(ENABLE_OSD_CUSTOM_TEXT)
+#define ENABLE_OSD_CUSTOM_TEXT 1
 #endif

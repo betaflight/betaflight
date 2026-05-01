@@ -265,13 +265,12 @@ static void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
-    static float cosFactor = 1.0f;
-    static float sinFactor = 0.0f;
+    float cosFactor = 1.0f;
+    float sinFactor = 0.0f;
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
-        cosFactor = cos_approx(rxConfig()->fpvCamAngleDegrees * RAD);
-        sinFactor = sin_approx(rxConfig()->fpvCamAngleDegrees * RAD);
+        sincosf_approx(DEGREES_TO_RADIANS(rxConfig()->fpvCamAngleDegrees), &sinFactor, &cosFactor);
     }
 
     float roll = rawSetpoint[ROLL];
@@ -531,7 +530,7 @@ static FAST_CODE_NOINLINE void calculateFeedforward(const pidRuntime_t *pid, fli
         feedforward *= rcDeflectionAbs[axis] * pid->feedforwardTransitionInv;
     }
 
-    if (axis == gyro.gyroDebugAxis) {
+    if ((int)axis == gyro.gyroDebugAxis) {
         DEBUG_SET(DEBUG_FEEDFORWARD, 0, lrintf(setpoint));
         DEBUG_SET(DEBUG_FEEDFORWARD, 1, lrintf(setpointSpeed * 0.01f));
         DEBUG_SET(DEBUG_FEEDFORWARD, 2, lrintf(feedforwardBoost * 0.01f));

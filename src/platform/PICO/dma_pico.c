@@ -28,6 +28,7 @@
 #ifdef USE_DMA
 
 #include "drivers/dma.h"
+#include "drivers/dma_impl.h"
 
 #include "platform/dma.h"
 #include "pico/multicore.h"
@@ -135,6 +136,7 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
         dmaDescriptors[index].irqN = core ? DMA_IRQ_1_IRQn : DMA_IRQ_0_IRQn;
         irq_handler_t irq_handler = core ? dma_irq1_handler : dma_irq0_handler;
 
+        bprintf("dmaSetHandler on id %d, going to set exclusive handler [%d] for %p", identifier, dmaDescriptors[index].irqN, irq_handler);
         irq_set_exclusive_handler(dmaDescriptors[index].irqN, irq_handler);
         irq_set_enabled(dmaDescriptors[index].irqN, true);
 
@@ -149,6 +151,38 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
 
     dmaDescriptors[index].irqHandlerCallback = callback;
     dmaDescriptors[index].userParam = userParam;
+}
+
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    UNUSED(identifier);
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    UNUSED(ref);
+    return 0;
+}
+
+void dmaEnable(dmaIdentifier_e identifier)
+{
+    UNUSED(identifier);
 }
 
 #endif

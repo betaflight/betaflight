@@ -29,7 +29,6 @@
 #include "build/debug.h"
 
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/time.h"

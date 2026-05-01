@@ -30,53 +30,94 @@
 
 #include "maths.h"
 
-#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
-#if defined(VERY_FAST_MATH)
+#if defined(FAST_MATH)
+static inline float sin_poly5_r(float r)
+{
+    // Pre-scaled for u = r*(π/2)
+    const float c0 =  0x1.921f1cp0f; // 1.5707871913909912109375
+    const float c1 = -0x1.4a974p-1f; // -0.6456851959228515625
+    const float c2 =  0x1.3db294p-4f; // 7.756288349628448486328125e-2
+    float s = r * r;
+    return r * ((c2 * s + c1) * s + c0);
+}
 
-// http://lolengine.net/blog/2011/12/21/better-function-approximations
-// Chebyshev http://stackoverflow.com/questions/345085/how-do-trigonometric-functions-work/345117#345117
-// Thanks for ledvinap for making such accuracy possible! See: https://github.com/cleanflight/cleanflight/issues/940#issuecomment-110323384
-// https://github.com/Crashpilot1000/HarakiriWebstore1/blob/master/src/mw.c#L1235
-// sin_approx maximum absolute error = 2.305023e-06
-// cos_approx maximum absolute error = 2.857298e-06
-#define sinPolyCoef3 -1.666568107e-1f
-#define sinPolyCoef5  8.312366210e-3f
-#define sinPolyCoef7 -1.849218155e-4f
-#define sinPolyCoef9  0
-#else
-#define sinPolyCoef3 -1.666665710e-1f                                          // Double: -1.666665709650470145824129400050267289858e-1
-#define sinPolyCoef5  8.333017292e-3f                                          // Double:  8.333017291562218127986291618761571373087e-3
-#define sinPolyCoef7 -1.980661520e-4f                                          // Double: -1.980661520135080504411629636078917643846e-4
-#define sinPolyCoef9  2.600054768e-6f                                          // Double:  2.600054767890361277123254766503271638682e-6
-#endif
+static inline float cos_poly6_r(float r)
+{
+    const float d1 = -0x1.3bd39cp0f; // -1.2336976528167724609375
+    const float d2 =  0x1.03bp-2f; // 0.25360107421875
+    const float d3 = -0x1.4e5eecp-6f; // -2.04083733260631561279296875e-2
+    float s = r * r;
+    return ((d3 * s + d2) * s + d1) * s + 1.0f;
+}
+
+// ---- Quadrant mapping helpers ----
+// r ∈ [-0.5, 0.5], q is quadrant index (…,-1,0,1,2,3,4,…).
+static inline float sinf_quadrant_r(float r, int q)
+{
+    q &= 3;
+    if (q & 1) { // odd: use cos, sign handled below
+        float v = cos_poly6_r(r);
+        return (q & 2) ? -v : v;
+    } else {     // even: use sin
+        float v = sin_poly5_r(r);
+        return (q & 2) ? -v : v;
+    }
+}
+
+static inline float cosf_quadrant_r(float r, int q)
+{
+    q &= 3;
+    if (q & 1) { // odd: -sin, sign handled below
+        float v = -sin_poly5_r(r);
+        return (q & 2) ? -v : v;   // q=1 -> -sin, q=3 -> +sin
+    } else {     // even: cos
+        float v = cos_poly6_r(r);
+        return (q & 2) ? -v : v;   // q=2 -> -cos
+    }
+}
+
+static inline void sincosf_quadrant_r(float r, int q, float *out_s, float *out_c)
+{
+    q &= 3;
+    float sb = sin_poly5_r(r);
+    float cb = cos_poly6_r(r);
+
+    // map to base values in registers
+    float s = (q & 1) ? cb  : sb;   // odd quadrants: use cos
+    float c = (q & 1) ? -sb : cb;   // odd quadrants: cos->sin mapping
+
+    // flip signs for quadrants 2 and 3
+    if (q & 2) { s = -s; c = -c; }
+
+    *out_s = s;
+    *out_c = c;
+}
 
 float sin_approx(float x)
 {
-    // Wrap angle to 2π with range [-π π]
-    x = fmodf(x, 2.0f * M_PIf);
-    // TO DO: these 'while' functions are not put into ITCM ram with current compiler flags
-    // A simpler 'if' function works, but gets put into ITCM ram, the extra 4% overflows F7xx ITCM
-    // The while function is retained only to avoid ITCM overflow for now
-    // ideally we should use the most efficient method, since sin_approx is used a LOT
-    // if (x <= -M_PIf) x += 2.0f * M_PIf;
-    // if (x > M_PIf) x -= 2.0f * M_PIf;
-    while (x >  M_PIf) x -= (2.0f * M_PIf);   // always wrap input angle to -PI..PI
-    while (x < -M_PIf) x += (2.0f * M_PIf);
-
-    // Use axis symmetry around x = ±π/2 for polynomial outside of range [-π/2 π/2]
-    if (x > M_PIf / 2) {
-        x = M_PIf - x; // Reflect
-    } else if (x < -M_PIf / 2) {
-        x = -M_PIf - x; // Reflect
-    }
-
-    float x2 = x * x;
-    return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
+    float t = x * INV_PIO2;     // in quadrant units
+    float qf = roundf(t);       // nearest quadrant as float
+    int   q  = (int)qf;
+    float r  = t - qf;          // remainder in [-0.5, 0.5]
+    return sinf_quadrant_r(r, q);
 }
 
 float cos_approx(float x)
 {
-    return sin_approx(x + (0.5f * M_PIf));
+    float t = x * INV_PIO2;
+    float qf = roundf(t);
+    int   q  = (int)qf;
+    float r  = t - qf;          // [-0.5, 0.5]
+    return cosf_quadrant_r(r, q);
+}
+
+void sincosf_approx(float x, float *out_s, float *out_c)
+{
+    float t = x * INV_PIO2;
+    float qf = roundf(t);
+    int   q  = (int)qf;
+    float r  = t - qf;          // [-0.5, 0.5]
+    sincosf_quadrant_r(r, q, out_s, out_c);
 }
 
 // Initial implementation by Crashpilot1000 (https://github.com/Crashpilot1000/HarakiriWebstore1/blob/396715f73c6fcf859e0db0f34e12fe44bace6483/src/mw.c#L1292)

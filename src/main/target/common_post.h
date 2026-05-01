@@ -111,6 +111,7 @@
     && !defined(USE_ACC_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM40609D) \
     && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_ACC_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
@@ -136,6 +137,7 @@
     && !defined(USE_GYRO_SPI_ICM20689) \
     && !defined(USE_GYRO_SPI_ICM42605) \
     && !defined(USE_ACCGYRO_ICM42622P) \
+    && !defined(USE_ACCGYRO_ICM42686P) \
     && !defined(USE_GYRO_SPI_ICM42688P) \
     && !defined(USE_ACCGYRO_ICM45686) \
     && !defined(USE_ACCGYRO_ICM45605) \
@@ -187,6 +189,9 @@
 #ifndef USE_MAG_IST8310
 #define USE_MAG_IST8310
 #endif
+#ifndef USE_MAG_MMC560X
+#define USE_MAG_MMC560X
+#endif
 
 #endif // END MAG HW defines
 
@@ -214,7 +219,7 @@
 
 #endif // defined(USE_RX_CC2500)
 
-#if defined(CAMERA_CONTROL_PIN) && defined(USE_VTX) && !defined(USE_CAMERA_CONTROL)
+#if defined(CAMERA_CONTROL_PIN) && defined(USE_OSD_SD) && !defined(USE_CAMERA_CONTROL)
 #define USE_CAMERA_CONTROL
 #endif
 
@@ -437,7 +442,7 @@
 #endif
 #endif
 
-#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N))
+#if defined(USE_QUADSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25N) || defined(USE_FLASH_MT29F))
 #if !defined(USE_FLASH_QUADSPI)
 #define USE_FLASH_QUADSPI
 #endif
@@ -495,23 +500,22 @@
 
 // Generate USE_SPI_GYRO
 #if defined(USE_GYRO_SPI_ICM20689) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250) \
-    || defined(USE_GYRO_L3GD20) || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_ACCGYRO_ICM45686) \
-    || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_IIM42653) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X) \
-    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_IIM42652)
+    || defined(USE_GYRO_L3GD20) || defined(USE_ACCGYRO_BMI160) || defined(USE_ACCGYRO_BMI270) \
+    || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
+    || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
+    || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif
 #endif
 
-#ifndef SIMULATOR_BUILD
 #ifndef USE_ACC
 #define USE_ACC
 #endif
 
 #ifndef USE_GYRO
 #define USE_GYRO
-#endif
 #endif
 
 // CX10 is a special case of SPI RX which requires XN297
@@ -563,7 +567,39 @@
 #define USE_WS2811_SINGLE_COLOUR
 #endif
 
-#if defined(SIMULATOR_BUILD) || defined(UNIT_TEST)
+#if !defined(ENABLE_SIMULATOR)
+#define ENABLE_SIMULATOR 0
+#endif
+
+#if ENABLE_SIMULATOR
+#if !defined(ENABLE_SIMULATOR_MULTITHREAD)
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if !defined(ENABLE_SIMULATOR_IMU_SYNC)
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if !defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#else
+#if defined(ENABLE_SIMULATOR_MULTITHREAD)
+#warning ENABLE_SIMULATOR_MULTITHREAD defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_MULTITHREAD 0
+#endif
+#if defined(ENABLE_SIMULATOR_IMU_SYNC)
+#warning ENABLE_SIMULATOR_IMU_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_IMU_SYNC 0
+#endif
+#if defined(ENABLE_SIMULATOR_GYROPID_SYNC)
+#warning ENABLE_SIMULATOR_GYROPID_SYNC defined without ENABLE_SIMULATOR
+#else
+#define ENABLE_SIMULATOR_GYROPID_SYNC 0
+#endif
+#endif
+
+#if ENABLE_SIMULATOR || defined(UNIT_TEST)
 // This feature uses 'arm_math.h', which does not exist for x86.
 #undef USE_DYN_NOTCH_FILTER
 #endif
@@ -620,7 +656,14 @@
 #endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP)
+#if defined(USE_RANGEFINDER_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_RANGEFINDER_UPT1
+
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
@@ -644,6 +687,10 @@ extern uint8_t eepromData[EEPROM_SIZE];
 struct linker_symbol;
 extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
 extern struct linker_symbol __config_end;
+#ifdef FONTDATA_IN_FLASH
+extern struct linker_symbol __fontdata_start; // configured via linker script when building binaries.
+extern struct linker_symbol __fontdata_end;
+#endif
 #endif
 
 #ifndef USE_ITERM_RELAX
@@ -693,3 +740,89 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+// GPS secondary defines - here (not common_pre.h) because SITL defines
+// USE_GPS in target.h which is included after common_pre.h. USE_GPS_RESCUE
+// additionally requires USE_ACC to match the earlier "!USE_ACC undef"
+// invariant; re-apply USE_CMS_GPS_RESCUE_MENU gating afterwards.
+#ifdef USE_GPS
+#if !defined(USE_GPS_NMEA)
+#define USE_GPS_NMEA
+#endif
+#if !defined(USE_GPS_UBLOX)
+#define USE_GPS_UBLOX
+#endif
+#if !defined(USE_GPS_RESCUE) && defined(USE_ACC)
+#define USE_GPS_RESCUE
+#endif
+#endif // USE_GPS
+
+#if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
+#undef USE_CMS_GPS_RESCUE_MENU
+#endif
+
+/*****************************************************
+
+ Place any ENABLE_X_FEATURE=0 definitions here for those
+ yet to be defined, and also for any backward compatibility
+ with USE_ flags.
+
+ e.g.
+
+ #if !defined(ENABLE_X_FEATURE) && defined(USE_X_FEATURE)
+ #define ENABLE_X_FEATURE 1
+ #elif !defined(ENABLE_X_FEATURE)
+ #define ENABLE_X_FEATURE 0
+ #endif
+
+******************************************************/
+
+#if !defined(ENABLE_SERIAL_SKIP_CHECK_TX)
+#define ENABLE_SERIAL_SKIP_CHECK_TX 0
+#endif
+
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 0
+#endif
+
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 0
+#endif
+
+#if !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 0
+#endif
+
+#if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 1
+#elif !defined(ENABLE_FLIGHT_PLAN)
+#define ENABLE_FLIGHT_PLAN 0
+#endif
+
+#if !defined(ENABLE_RX_UDP)
+#define ENABLE_RX_UDP 0
+#endif
+
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 0
+#endif
+
+// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
+// stack is meaningless without a CAN peripheral to drive. Platforms that
+// compile CAN in also compile DroneCAN in by default, with the runtime PG
+// flag (dronecan_enabled) deciding whether the task is actually started.
+#if !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN ENABLE_CAN
+#endif
+
+// LCD console — runtime debug terminal that scrolls printf/trace output to
+// an attached LCD. Independent of the OSD/displayPort stack. Off by default;
+// configs opt in by setting ENABLE_LCD_CONSOLE 1 plus a panel selector
+// (LCD_CONSOLE_PANEL_STUB / _LTDC / _SSD1306_I2C / _ST7789_SPI / ...).
+// ENABLE_LCD_PRINTF_REDIRECT routes the global tfp_printf sink to the LCD
+// at boot; turn it off to keep the LCD reachable only via lcdConsolePrintf().
+#if !defined(ENABLE_LCD_CONSOLE)
+#define ENABLE_LCD_CONSOLE 0
+#endif
+#if !defined(ENABLE_LCD_PRINTF_REDIRECT)
+#define ENABLE_LCD_PRINTF_REDIRECT ENABLE_LCD_CONSOLE
+#endif

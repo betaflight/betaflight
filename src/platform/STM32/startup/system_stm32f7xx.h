@@ -36,7 +36,7 @@ extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Cloc
 extern void SystemInitOC(void);
 extern void SystemInit(void);
 extern void SystemClock_Config(void);
-extern void OverclockRebootIfNecessary(uint32_t overclockLevel);
+extern void OverclockRebootIfNecessary(uint32_t targetMhz);
 
 #ifdef __cplusplus
 }

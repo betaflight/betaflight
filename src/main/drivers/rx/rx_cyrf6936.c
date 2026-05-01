@@ -28,7 +28,6 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
-#include "drivers/io_impl.h"
 #include "drivers/rx/rx_cyrf6936.h"
 #include "drivers/rx/rx_spi.h"
 

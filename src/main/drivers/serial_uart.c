@@ -301,12 +301,7 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 
 #ifdef USE_DMA
     if (uartPort->rxDMAResource) {
-        // XXX Could be consolidated
-#ifdef USE_HAL_DRIVER
-        uint32_t rxDMAHead = __HAL_DMA_GET_COUNTER(uartPort->Handle.hdmarx);
-#else
-        uint32_t rxDMAHead = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
-#endif
+        uint32_t rxDMAHead = dmaGetDataLength(uartPort->rxDMAResource);
 
         // uartPort->rxDMAPos and rxDMAHead represent distances from the end
         // of the buffer.  They count DOWN as they advance.
@@ -343,11 +338,7 @@ static uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
          * When we queue up a DMA request, we advance the Tx buffer tail before the transfer finishes, so we must add
          * the remaining size of that in-progress transfer here instead:
          */
-#ifdef USE_HAL_DRIVER
-        bytesUsed += __HAL_DMA_GET_COUNTER(uartPort->Handle.hdmatx);
-#else
-        bytesUsed += xDMA_GetCurrDataCounter(uartPort->txDMAResource);
-#endif
+        bytesUsed += dmaGetDataLength(uartPort->txDMAResource);
 
         /*
          * If the Tx buffer is being written to very quickly, we might have advanced the head into the buffer

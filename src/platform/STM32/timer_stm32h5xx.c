@@ -32,6 +32,7 @@
 #include "stm32h5xx.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),   .inputIrq = TIM1_CC_IRQn},
@@ -39,12 +40,12 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM3,  .rcc = RCC_APB1L(TIM3),  .inputIrq = TIM3_IRQn},
     { .TIMx = TIM4,  .rcc = RCC_APB1L(TIM4),  .inputIrq = TIM4_IRQn},
     { .TIMx = TIM5,  .rcc = RCC_APB1L(TIM5),  .inputIrq = TIM5_IRQn},
-    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_DAC_IRQn},
+    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_IRQn},
     { .TIMx = TIM7,  .rcc = RCC_APB1L(TIM7),  .inputIrq = TIM7_IRQn},
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),   .inputIrq = TIM8_CC_IRQn},
-    { .TIMx = TIM12, .rcc = RCC_APB1L(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
-    { .TIMx = TIM13, .rcc = RCC_APB1L(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
-    { .TIMx = TIM14, .rcc = RCC_APB1L(TIM14), .inputIrq = TIM8_TRG_COM_TIM14_IRQn},
+    { .TIMx = TIM12, .rcc = RCC_APB1L(TIM12), .inputIrq = TIM12_IRQn},
+    { .TIMx = TIM13, .rcc = RCC_APB1L(TIM13), .inputIrq = TIM13_IRQn},
+    { .TIMx = TIM14, .rcc = RCC_APB1L(TIM14), .inputIrq = TIM14_IRQn},
     { .TIMx = TIM15, .rcc = RCC_APB2(TIM15),  .inputIrq = TIM15_IRQn},
     { .TIMx = TIM16, .rcc = RCC_APB2(TIM16),  .inputIrq = TIM16_IRQn},
     { .TIMx = TIM17, .rcc = RCC_APB2(TIM17),  .inputIrq = TIM17_IRQn},
@@ -154,11 +155,11 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 // Port H
 
-    DEF_TIM(TIM1, CHN3, PH6, 0, 0, 0), // AF1 (ADDED)
+    DEF_TIM(TIM1, CH3N, PH6, 0, 0, 0), // AF1
     DEF_TIM(TIM1, CH3, PH7, 0, 0, 0),
-    DEF_TIM(TIM1, CHN2, PH8, 0, 0, 0),
+    DEF_TIM(TIM1, CH2N, PH8, 0, 0, 0),
     DEF_TIM(TIM1, CH2, PH9, 0, 0, 0),
-    DEF_TIM(TIM1, CHN1, PH10, 0, 0, 0),
+    DEF_TIM(TIM1, CH1N, PH10, 0, 0, 0),
     DEF_TIM(TIM1, CH1, PH11, 0, 0, 0),
 
     DEF_TIM(TIM12, CH1, PH6, 0, 0, 0), // AF2 (ADDED)
@@ -188,7 +189,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 #endif
 
 
-uint32_t timerClock(const TIM_TypeDef *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
     int timpre;
     uint32_t pclk;
@@ -197,36 +198,37 @@ uint32_t timerClock(const TIM_TypeDef *tim)
     // This function is used to calculate the timer clock frequency.
     // RM0481 (Rev 3) Table
 
-
-    RCC_ClkInitTypeDef  clkConfig, uint32_t fLatency
-    HAL_RCC_GetClockConfig(&clkConfig, &fLatency);
-
-    if ((uintptr_t)tim >= APB2PERIPH_BASE ) { // APB2
+    if ((uintptr_t)tim >= APB2PERIPH_BASE) { // APB2
         pclk = HAL_RCC_GetPCLK2Freq();
-        ppre = clkConfig.APB2CLKDivider;
-    } else {  // all other timers are on APB1
+        ppre = (RCC->CFGR2 & RCC_CFGR2_PPRE2) >> RCC_CFGR2_PPRE2_Pos;
+    } else { // all other timers are on APB1
         pclk = HAL_RCC_GetPCLK1Freq();
-        ppre = clkConfig.APB1CLKDivider;
+        ppre = (RCC->CFGR2 & RCC_CFGR2_PPRE1) >> RCC_CFGR2_PPRE1_Pos;
     }
-    timpre = (RCC->CFGR & RCC_CFGR_TIMPRE) ? 1 : 0;
+
+    timpre = (RCC->CFGR1 & RCC_CFGR1_TIMPRE) ? 1 : 0;
+
 #define PC(m) (0x80 | (m))  // multiply pclk
 #define HC(m) (0x00 | (m))  // multiply hclk
-        static const uint8_t timpreTab[2][8] = { //  see RM0481 TIMPRE: timers clocks prescaler selection
+    static const uint8_t timpreTab[2][8] = { //  see RM0481 TIMPRE: timers clocks prescaler selection
         //  1      1      1      1      2      4      8      16
         { HC(1), HC(1), HC(1), HC(1), HC(1), PC(2), PC(2), PC(2) }, // TIMPRE = 0
-        { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }     // TIMPRE = 1
-      }
+        { PC(2), PC(2), PC(2), PC(2), PC(2), PC(2), PC(4), PC(4) }  // TIMPRE = 1
+    };
 #undef PC
 #undef HC
-     int flagMult = timpreTab[timpre][ppre];
 
-     if (flagMult & 0x80) { // PCLK based
+    int flagMult = timpreTab[timpre][ppre];
+
+    if (flagMult & 0x80) { // PCLK based
         return pclk * (flagMult & 0x7f);
-     } else {
-         return HAL_RCC_GetHCLKFreq() *  (flagMult & 0x7f);
-     }
+    } else {
+        return HAL_RCC_GetHCLKFreq() * (flagMult & 0x7f);
+    }
+}
 
-    return pclk * periphToKernel[timpre][ppre];
-
+uint32_t timerClock(const timerHardware_t *timHw)
+{
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

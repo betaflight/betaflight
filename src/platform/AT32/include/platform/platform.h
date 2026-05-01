@@ -28,7 +28,6 @@
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
-#define I2C_TypeDef         i2c_type
 #define I2C_HandleTypeDef   i2c_handle_type
 #define GPIO_TypeDef        gpio_type
 #define GPIO_InitTypeDef    gpio_init_type
@@ -37,20 +36,22 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define DMA_TypeDef         dma_type
 #define DMA_InitTypeDef     dma_init_type
 #define DMA_Channel_TypeDef dma_channel_type
-#define SPI_TypeDef         spi_type
+// SPI_TypeDef alias removed: use spiResource_t* in generic code, cast to spi_type* in platform code
 #define ADC_TypeDef         adc_type
-#define USART_TypeDef       usart_type
 #define TIM_OCInitTypeDef   tmr_output_config_type
 #define TIM_ICInitTypeDef   tmr_input_config_type
 #define TIM_OCStructInit    tmr_output_default_para_init
 #define TIM_Cmd             tmr_counter_enable
+
+// AT32 timer channels are 1-based sequential (not shifted by 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
 #define TIM_CtrlPWMOutputs  tmr_output_enable
 #define TIM_TimeBaseInit    tmr_base_init
 #define TIM_ARRPreloadConfig tmr_period_buffer_enable
 #define SystemCoreClock     system_core_clock
 #define EXTI_TypeDef        exint_type
 #define EXTI_InitTypeDef    exint_init_type
-#define USART_TypeDef       usart_type
 
 // Chip Unique ID on F43X
 #define U_ID_0 (*(uint32_t*)0x1ffff7e8)
@@ -70,6 +71,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
 
 #define ADC_INTERNAL_VBAT4_ENABLED 0
+
+#define GPIO_PIN_RESET 0
 
 /* AT32F4 we need to specify the ADC device for each channel */
 #define PLATFORM_TRAIT_ADC_DEVICE 1
@@ -156,8 +159,8 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #define SPI_TRAIT_AF_PIN        1
 #define UARTHARDWARE_MAX_PINS   5
 
-#define UART_REG_RXD(base) ((base)->dt)
-#define UART_REG_TXD(base) ((base)->dt)
+#define UART_REG_RXD(base) (((usart_type *)(base))->dt)
+#define UART_REG_TXD(base) (((usart_type *)(base))->dt)
 
 #define DMA_TRAIT_MUX 1
 
@@ -170,3 +173,9 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 #if defined(AT32F435)
 #define DMA_CHANREQ_STRING "Request"
 #endif
+
+// NVIC priority utility macros
+#define NVIC_PRIORITY_GROUPING NVIC_PRIORITY_GROUP_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)&((0x0f>>(7-(NVIC_PRIORITY_GROUPING)))<<4))>>4)

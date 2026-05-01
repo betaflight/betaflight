@@ -197,7 +197,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .d_max_advance = 20,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
-        .transient_throttle_limit = 0,
         .profileName = { 0 },
         .dyn_idle_min_rpm = 0,
         .dyn_idle_p_gain = 50,
@@ -918,31 +917,6 @@ STATIC_UNIT_TESTED void applyItermRelax(const int axis, const float iterm,
 }
 #endif
 
-#ifdef USE_AIRMODE_LPF
-void pidUpdateAirmodeLpf(float currentOffset)
-{
-    if (pidRuntime.airmodeThrottleOffsetLimit == 0.0f) {
-        return;
-    }
-
-    float offsetHpf = currentOffset * 2.5f;
-    offsetHpf = offsetHpf - pt1FilterApply(&pidRuntime.airmodeThrottleLpf2, offsetHpf);
-
-    // During high frequency oscillation 2 * currentOffset averages to the offset required to avoid mirroring of the waveform
-    pt1FilterApply(&pidRuntime.airmodeThrottleLpf1, offsetHpf);
-    // Bring offset up immediately so the filter only applies to the decline
-    if (currentOffset * pidRuntime.airmodeThrottleLpf1.state >= 0 && fabsf(currentOffset) > pidRuntime.airmodeThrottleLpf1.state) {
-        pidRuntime.airmodeThrottleLpf1.state = currentOffset;
-    }
-    pidRuntime.airmodeThrottleLpf1.state = constrainf(pidRuntime.airmodeThrottleLpf1.state, -pidRuntime.airmodeThrottleOffsetLimit, pidRuntime.airmodeThrottleOffsetLimit);
-}
-
-float pidGetAirmodeThrottleOffset(void)
-{
-    return pidRuntime.airmodeThrottleLpf1.state;
-}
-#endif
-
 static FAST_CODE_NOINLINE void disarmOnImpact(void)
 {
     // if, being armed, and after takeoff...
@@ -1234,9 +1208,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // input / excitation shaping
     float chirpFiltered  = phaseCompApply(&pidRuntime.chirpFilter, chirp);
 
-    // ToDo: check if this can be reconstructed offline for rotating filter and if so, remove the debug
-    // fit (0...2*pi) into int16_t (-32768 to 32767)
+    // debug channels for offline system identification / autotune analysis
+    // 0: sinarg phase (0…2π scaled to ±32k) — enables offline chirp signal reconstruction
+    // 1: active chirp axis (0 = roll, 1 = pitch, 2 = yaw, -1 = inactive)
+    // 2: instantaneous chirp frequency in deci-Hz — maps time to frequency for spectral analysis
+    // 3: raw chirp excitation × 1000 (before phase comp filter) — reference signal for cross-correlation
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
+    DEBUG_SET(DEBUG_CHIRP, 1, FLIGHT_MODE(CHIRP_MODE) ? chirpAxis : -1);
+    DEBUG_SET(DEBUG_CHIRP, 2, lrintf(10.0f * pidRuntime.chirp.fchirp));
+    DEBUG_SET(DEBUG_CHIRP, 3, lrintf(1.0e3f * chirp));
 
 #endif // USE_CHIRP
 
@@ -1426,7 +1406,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
                 dMaxMultiplier = pt2FilterApply(&pidRuntime.dMaxLowpass[axis], dMaxMultiplier);
                 // limit the gain to the fraction that DMax is greater than Min
                 dMaxMultiplier = MIN(dMaxMultiplier, pidRuntime.dMaxPercent[axis]);
-                if (debugMode == DEBUG_D_MAX && axis == gyro.gyroDebugAxis) {
+                if (debugMode == DEBUG_D_MAX && (int)axis == gyro.gyroDebugAxis) {
                     DEBUG_SET(DEBUG_D_MAX, 0, lrintf(dMaxGyroFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 1, lrintf(dMaxSetpointFactor * 100));
                     DEBUG_SET(DEBUG_D_MAX, 2, lrintf(pidRuntime.pidCoefficient[axis].Kd * dMaxMultiplier * 10 / DTERM_SCALE)); // effective Kd after Dmax boost

@@ -20,4 +20,14 @@
 
 #pragma once
 
+#include "drivers/timer.h"
+
+// Polarity constants for pwmICConfig (platform-neutral)
+#define TIMER_POLARITY_RISING   0
+#define TIMER_POLARITY_FALLING  1
+
+// Enable/disable a timer capture compare channel
+void timerChannelEnable(const timerHardware_t *timHw);
+void timerChannelDisable(const timerHardware_t *timHw);
+
 void timerInitTarget(void);

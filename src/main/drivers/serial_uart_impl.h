@@ -103,7 +103,7 @@ typedef struct uartPinDef_s {
 
 typedef struct uartHardware_s {
     serialPortIdentifier_e identifier;
-    USART_TypeDef* reg;
+    usartResource_t *reg;
 
 #ifdef USE_DMA
     dmaResource_t *txDMAResource;
@@ -163,7 +163,7 @@ typedef struct uartDevice_s {
 #if UART_TRAIT_PINSWAP
     bool pinSwap;
 #endif
-    txPinState_t txPinState;
+    volatile txPinState_t txPinState;
 } uartDevice_t;
 
 extern uartDevice_t uartDevice[UARTDEV_COUNT];  // indexed by uartDeviceIdx_e;

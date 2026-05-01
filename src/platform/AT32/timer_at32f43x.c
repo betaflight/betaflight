@@ -30,6 +30,7 @@
 #include "drivers/io.h"
 #include "platform/rcc.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TMR1,  .rcc = RCC_APB2(TMR1),  .inputIrq = TMR1_CH_IRQn },
@@ -196,9 +197,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
   };
 #endif
 
-uint32_t timerClock(const tmr_type *tim)
+uint32_t timerClock(const timerHardware_t *timHw)
 {
-    UNUSED(tim);
-    return system_core_clock;
+    return timerClockFromInstance(timHw->tim);
 }
 #endif

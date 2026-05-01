@@ -81,6 +81,9 @@ struct {
     // Macronix MX25L25635E
     // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7331/MX25L25635E,%203V,%20256Mb,%20v1.3.pdf
     { 0xC22019, 80, 50, 512, 256 },
+    // Macronix MX25L12845G
+    // Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/8740/MX25L12845G,%203V,%20128Mb,%20v1.8.pdf
+    { 0xC22018, 120, 50, 256, 256 },
     // Micron M25P16
     // Datasheet: https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/m25p/m25p16.pdf
     { 0x202015, 25, 20, 32, 256 },
@@ -139,9 +142,24 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // BOYAMICRO BY25Q64
+    { 0x684017, 108, 54, 128, 256 },// BY25Q64
+    // Datasheet: https://www.boyamicro.com/storage/upload/pdf/BY25Q64ES.pdf
     // XMC XM25QH256B
     // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
     { 0x206019, 166, 80, 8192, 16 },
+    // GigaDevice GD25Q16E
+    // Datasheet: https://download.gigadevice.com/Datasheet/DS-00473-GD25Q16E-Rev1.3.pdf
+    { 0xC84015, 104, 50, 32, 256 },
+    // Zetta ZD25WQ32CEIGR
+    // Datasheet: http://en.zettadevice.com/uploads/files/1009/WQ32C/1665301640977617c282766299.pdf
+    { 0xBA6016, 104, 50, 64, 256 },
+    // GD25Q128
+    // Datasheet: https://download.gigadevice.com/Datasheet/DS-00480-GD25Q128E-Rev1.4.pdf
+    { 0xC84018, 104, 80, 4096, 16 },
+    // Boyamicro BY25Q128ES
+    // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
+    { 0x684018, 104, 50, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

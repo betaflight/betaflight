@@ -31,11 +31,13 @@
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
+#include "platform/dma.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
+#include "platform/timer.h"
 #if defined(STM32F4)
 #include "stm32f4xx.h"
 #endif
@@ -86,7 +88,7 @@ void pwmDshotRequestTelemetry(unsigned index)
     }
 }
 
-uint8_t getTimerIndex(TIM_TypeDef *timer)
+uint8_t getTimerIndex(void *timer)
 {
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         if (dmaMotorTimers[i].timer == timer) {
@@ -240,11 +242,11 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 #endif
 
 #ifdef USE_FULL_LL_DRIVER
-            LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
+            LL_EX_TIM_DisableIT((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #elif defined(AT32F435)
-            tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+            tmr_dma_request_enable((tmr_type *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
 #else
-            TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
+            TIM_DMACmd((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif
 
             uint16_t rawValue;

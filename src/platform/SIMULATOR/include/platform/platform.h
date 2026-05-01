@@ -21,6 +21,8 @@
 
 #pragma once
 
+#define ENABLE_SIMULATOR 1
+
 #define IOCFG_OUT_PP        0
 #define IOCFG_OUT_OD        0
 #define IOCFG_AF_PP         0
@@ -41,3 +43,10 @@
 #define GYRO_COUNT 1 // 1 Gyro
 
 typedef void* ADC_TypeDef; // Dummy definition for ADC_TypeDef
+
+// NVIC priority utility macros
+#define NVIC_PriorityGroup_2 0x500
+#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))

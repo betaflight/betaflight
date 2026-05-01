@@ -23,6 +23,13 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
+
+GPIO_TypeDef* IO_GPIO(IO_t io)
+{
+    const ioRec_t *ioRec = IO_Rec(io);
+    return (GPIO_TypeDef *)ioRec->gpio;
+}
 
 #if DEFIO_PORT_USED_COUNT > 0
 static const uint16_t ioDefUsedMask[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_USED_LIST };
@@ -42,7 +49,7 @@ void IOInitGlobal(void)
     for (unsigned port = 0; port < ARRAYLEN(ioDefUsedMask); port++) {
         for (unsigned pin = 0; pin < sizeof(ioDefUsedMask[0]) * 8; pin++) {
             if (ioDefUsedMask[port] & (1 << pin)) {
-                ioRec->gpio = (GPIO_TypeDef *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
+                ioRec->gpio = (gpioResource_t *)(GPIOA_BASE + (port << 10));   // ports are 0x400 apart
                 ioRec->pin = 1 << pin;
                 ioRec++;
             }

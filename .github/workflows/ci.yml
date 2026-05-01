@@ -17,77 +17,60 @@ jobs:
     name: Setup
     runs-on: ubuntu-latest
     outputs:
-      targets: ${{ steps.get-targets.outputs.targets }}
+      sdk-config: ${{ steps.sdk-config.outputs.matrix }}
+      tools-cache-key: ${{ steps.tools-key.outputs.key }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          submodules: recursive
 
-      - name: Cache build toolchain
-        uses: actions/cache@v4
-        id: cache-toolchain
-        with:
-          path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
 
-      - name: Download and install toolchain
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make arm_sdk_install
-
-      - name: Build pico tool and install
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        run: make picotool_install
+      - name: Compute tools cache key
+        id: tools-key
+        run: echo "key=${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}" >> $GITHUB_OUTPUT
 
       - name: Hydrate configuration
-        id: get-config
         run: make configs
 
-      - name: Get all official build targets
-        id: get-targets
-        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
+      - name: Build SDK pipeline config
+        id: sdk-config
+        run: |
+          # Get grouped targets (sdk:target1 target2 ...)
+          grouped=$(make targets-ci-grouped-print)
+          declare -A sdk_targets
+          while IFS=: read -r sdk targets; do
+            sdk_targets[$sdk]=$(echo "$targets" | jq -R -c 'split(" ")')
+          done <<< "$grouped"
 
-  build:
-    name: Build
+          # Get all registered SDKs + none
+          all_sdks="$(make platform-sdk-list-print) none"
+
+          # Build matrix include array
+          json="["
+          first=true
+          for sdk in $all_sdks; do
+            targets=${sdk_targets[$sdk]:-'["None"]'}
+            $first || json="$json,"
+            json="$json{\"sdk\":\"$sdk\",\"targets\":$(echo "$targets" | jq -R -c .)}"
+            first=false
+          done
+          json="$json]"
+          echo "matrix=$json" >> "$GITHUB_OUTPUT"
+
+  sdk-pipeline:
+    name: ${{ matrix.sdk }}
     needs: setup
-    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        target: ${{ fromJson(needs.setup.outputs.targets) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          submodules: recursive
-
-      - name: Fetch toolchain from cache
-        uses: actions/cache@v4
-        id: cache-toolchain
-        with:
-          path: tools
-          key: ${{ runner.os }}-${{ hashFiles('mk/tools.mk') }}
-
-      - name: Hydrate configuration
-        id: get-config
-        run: make configs
-
-      - name: Build target (without revision)
-        if: inputs.release_build == true
-        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
-
-      - name: Build target (with revision)
-        if: inputs.release_build == false
-        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
-
-      - name: Publish build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.target }}
-          path: |
-            obj/*.hex
-            obj/*.uf2
-            obj/*_${{ matrix.target }}*
-          retention-days: 60
+        include: ${{ fromJson(needs.setup.outputs.sdk-config) }}
+    uses: ./.github/workflows/ci-sdk.yml
+    with:
+      sdk: ${{ matrix.sdk }}
+      targets: ${{ matrix.targets }}
+      tools-cache-key: ${{ needs.setup.outputs.tools-cache-key }}
+      release_build: ${{ inputs.release_build }}
 
   test:
     name: Test
@@ -106,12 +89,12 @@ jobs:
 
   result:
     name: Complete
-    needs: [build, test]
+    needs: [sdk-pipeline, test]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check build matrix result
-        if: ${{ needs.build.result != 'success' }}
+      - name: Check SDK pipeline result
+        if: ${{ needs.sdk-pipeline.result != 'success' }}
         run: exit 1
 
       - name: Check test result
