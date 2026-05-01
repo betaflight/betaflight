@@ -47,6 +47,22 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+// Initialise the .dmaram_data and .dmaram_bss linker-defined sections.
+// Mirrors what initialiseDmaMemorySections()/initialiseD2MemorySections()
+// do on H5/H7: the standard startup loop only covers .data/.bss, so any
+// initialised data placed in .dmaram_data (DMA_DATA macro) or zero-init
+// state in .dmaram_bss (DMA_DATA_ZERO_INIT) needs an explicit copy/zero.
+static void initialiseDmaMemorySections(void)
+{
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
+
 // Switch the system clock from the reset-default HSIDIV3 (48 MHz) to the
 // HSIS source running at the full HSI rate (144 MHz). Done before HAL_Init
 // so the SysTick reload it computes from SystemCoreClock matches the
@@ -94,6 +110,11 @@ static void systemClockTo144MHz(void)
 
 void systemInit(void)
 {
+    // Copy .dmaram_data from flash and zero .dmaram_bss before anything
+    // that might touch DMA_DATA-placed variables (the standard Reset_Handler
+    // .data/.bss copy/clear loop doesn't cover these sections).
+    initialiseDmaMemorySections();
+
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
