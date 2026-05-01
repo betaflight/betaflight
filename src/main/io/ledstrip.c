@@ -169,7 +169,7 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
         color.h = scaleRange(freq, VTX_HUE_START_FREQ, VTX_HUE_STOP_FREQ, 0, VTX_HUE_MAX);
         // scale Hue from 0 (red) to VTX_HUE_MAX, linearly across frequency range
         if (color.h < 165) {
-    color.h *= 0.9;
+    color.h = (color.h * 9) / 10;
     // warm up the yellow, pull cyan a bit further from blue, and keep a decent green
 }
         return color;
