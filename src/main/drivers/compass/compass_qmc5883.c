@@ -126,14 +126,11 @@
 
 // Status register bits
 #define QMC5883P_STATUS_DATA_READY     0x01
-#define QMC5883P_STATUS_DATA_OVERRUN   0x02
+#define QMC5883P_STATUS_OVL            0x02  // magnetic field overflow (exceeds range), NOT data register locking
 
 // Special configuration registers and values
 #define QMC5883P_REG_XYZ_UNLOCK        0x29
 #define QMC5883P_XYZ_SIGN_CONFIG       0x06
-
-// Unlock register for data overrun recovery (uses Z_MSB register)
-#define QMC5883P_REG_DATA_UNLOCK       QMC5883P_REG_DATA_OUTPUT_Z_MSB
 
 // Default configuration for Betaflight
 #define QMC5883P_DEFAULT_CONF1         (QMC5883P_MODE_CONTINUOUS | QMC5883P_ODR_100HZ | QMC5883P_RNG_8G | QMC5883P_OSR1_8)
@@ -172,9 +169,9 @@ static const qmc_descriptor_t qmc5883p_desc = {
     .i2c_address = QMC5883P_I2C_ADDRESS,
     .reg_status = QMC5883P_REG_STATUS,
     .reg_data = QMC5883P_REG_DATA_OUTPUT_X,
-    .reg_data_unlock = QMC5883P_REG_DATA_UNLOCK,
+    .reg_data_unlock = 0,                       // P has no data register locking
     .status_data_ready_mask = QMC5883P_STATUS_DATA_READY,
-    .status_data_overrun_mask = QMC5883P_STATUS_DATA_OVERRUN,
+    .status_data_overrun_mask = 0,              // P has no DOR bit; bit 1 is OVL (magnetic overflow), not data lock
     .default_odr_hz = 100,
 };
 
