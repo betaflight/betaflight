@@ -80,6 +80,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM4, CH3, PB8, 0, 0, 0),
     DEF_TIM(TIM4, CH4, PB9, 0, 0, 0),
 #endif
+    DEF_TIM(TIM2, CH3, PB10, 0, 0, 0),
+    DEF_TIM(TIM2, CH4, PB11, 0, 0, 0),
 // Port C
 #if !defined(STM32C562xx)
     DEF_TIM(TIM3, CH1, PC6, 0, 0, 0),
