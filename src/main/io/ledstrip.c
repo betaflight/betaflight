@@ -182,7 +182,7 @@ PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG,
 
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
-    ledStripConfig->ledstrip_visual_beeper = 0;
+    ledStripConfig->ledstrip_visual_beeper = 1;
 #ifdef USE_LED_STRIP_STATUS_MODE
     ledStripConfig->ledstrip_profile = LED_PROFILE_STATUS;
 #else
