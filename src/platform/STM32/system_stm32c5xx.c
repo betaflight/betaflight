@@ -255,6 +255,27 @@ void systemInit(void)
     // call it here instead -- by this point .data is live.
     HAL_Init();
 
+    // ICACHE is intentionally left at reset default (disabled) on STM32C5.
+    //
+    // Despite the name, ICACHE on Cortex-M33 sits on the C-AHB code bus
+    // and caches *anything* fetched through it -- not only instructions.
+    // SRAM accessed via the code-region alias (addresses below 0x2000_0000)
+    // and const data in flash both go through ICACHE; the system-bus alias
+    // (0x2000_xxxx) bypasses it. ICACHE has only one maintenance op (full
+    // invalidate), so per-region exclusion via MPU is the only knob.
+    //
+    // Enabling it here without an audit risks:
+    //   - stale reads from DMA buffers reached via the code-region alias
+    //     (DMA writes are not snooped by ICACHE);
+    //   - stale flash reads from regions that change at runtime (option
+    //     bytes after a write, OTP, anything reprogrammed by a bootloader
+    //     path).
+    //
+    // Before turning this on a future change must (a) confirm SRAM access
+    // always uses the system-bus alias, (b) add MPU non-cacheable regions
+    // for OTP and any runtime-rewritten flash per ST guidance, and
+    // (c) audit DMA buffer access patterns.
+
     // Configure NVIC preempt/priority groups (CMSIS direct, HAL2 has no wrapper)
     NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
