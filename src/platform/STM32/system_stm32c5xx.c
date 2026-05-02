@@ -63,49 +63,174 @@ static void initialiseDmaMemorySections(void)
     memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
 }
 
-// Switch the system clock from the reset-default HSIDIV3 (48 MHz) to the
-// HSIS source running at the full HSI rate (144 MHz). Done before HAL_Init
-// so the SysTick reload it computes from SystemCoreClock matches the
-// running HCLK. We don't need PSI/PLL here: HSI is always on after reset
-// and HSIS taps it directly, so the only step is to bump flash latency,
-// switch SWS, and set the bus prescalers to 1.
-static void systemClockTo144MHz(void)
+// Bus prescalers for HCLK/PCLK1/2/3 once SYSCLK is at 144 MHz.
+// HCLK = SYSCLK, PCLK1/2/3 = HCLK so SPI1/USART1/etc. all see 144 MHz.
+static const hal_rcc_bus_clk_config_t busConfig144MHz = {
+    .hclk_prescaler  = HAL_RCC_HCLK_PRESCALER1,
+    .pclk1_prescaler = HAL_RCC_PCLK_PRESCALER1,
+    .pclk2_prescaler = HAL_RCC_PCLK_PRESCALER1,
+    .pclk3_prescaler = HAL_RCC_PCLK_PRESCALER1,
+};
+
+// Bounded count timeout for clock-ready waits called before HAL_Init().
+// HAL's RCC_WaitForTimeout uses HAL_GetTick(), and HAL_GetTick() returns
+// uwTick which only advances under SysTick IRQ -- set up by HAL_Init().
+// During systemClockTo144MHz() that hasn't run yet, so a HAL clock-wait
+// against a flag that never asserts (e.g. a missing HSE clock) hangs the
+// CPU forever. Each iteration of the polling loops below is a few cycles
+// at the boot SYSCLK of HSIDIV3 (48 MHz); 200000 iters is comfortably
+// > 20 ms which is well above worst-case startup for any of these stages.
+#define CLOCK_READY_TIMEOUT_ITERS 200000U
+
+#define WAIT_FOR_CLOCK_READY(ready_expr) \
+    do { \
+        uint32_t timeout = CLOCK_READY_TIMEOUT_ITERS; \
+        while (!(ready_expr)) { \
+            if (--timeout == 0) { \
+                return false; \
+            } \
+        } \
+    } while (0)
+
+// Map the configured HSE crystal frequency (HSE_VALUE, in Hz, derived from
+// SYSTEM_HSE_MHZ in the per-config config.h via mk/config.mk) to the PSI
+// reference selector. PSI only accepts a fixed set of input frequencies.
+// HSE_VALUE == 0 means "no HSE configured" -- skip the HSE/PSI path
+// entirely and boot from HSIS.
+#if HSE_VALUE == 0
+  #define STM32C5_HAS_HSE_PSI 0
+#elif HSE_VALUE == 8000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_8MHZ
+#elif HSE_VALUE == 16000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_16MHZ
+#elif HSE_VALUE == 24000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_24MHZ
+#elif HSE_VALUE == 25000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_25MHZ
+#elif HSE_VALUE == 32000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_32MHZ
+#elif HSE_VALUE == 48000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_48MHZ
+#elif HSE_VALUE == 50000000UL
+  #define STM32C5_HAS_HSE_PSI 1
+  #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_50MHZ
+#else
+  #error "STM32C5: HSE_VALUE must be 0 or one of 8, 16, 24, 25, 32, 48, 50 MHz -- set SYSTEM_HSE_MHZ in config.h"
+#endif
+
+#if STM32C5_HAS_HSE_PSI
+// Try to bring SYSCLK up to 144 MHz from HSE via PSI. The HSE crystal
+// frequency comes from SYSTEM_HSE_MHZ in the per-config config.h
+// (defaulted via the build's HSE_VALUE flag); this routine drives HSE in
+// crystal mode through OSC_IN/OSC_OUT. Returns true on success; on any
+// failure SYSCLK is left on its previous source so the caller can fall
+// back to HSI.
+static bool systemClockTo144MHzFromHSE(void)
 {
-    // 144 MHz needs 4 wait states on the C5 flash interface.
+    // Configure HSE for crystal mode and start it. We bypass
+    // HAL_RCC_HSE_Enable here because its internal timeout uses
+    // HAL_GetTick() which doesn't advance until HAL_Init() runs, so a
+    // missing HSE clock (or a slow crystal) would hang the CPU
+    // indefinitely instead of falling through to the HSI fallback.
+    // Explicitly clear any prior bypass/digital settings -- the chip may
+    // be in a non-reset state if we're being re-entered after a soft
+    // reset.
+    LL_RCC_HSE_DisableBypass();
+    LL_RCC_HSE_SetClockMode(LL_RCC_HSE_ANALOG_MODE);
+    LL_RCC_HSE_Enable();
+    WAIT_FOR_CLOCK_READY(LL_RCC_HSE_IsReady() != 0);
+
+    // PSI takes the configured HSE reference and produces a fixed 144 MHz output.
+    hal_rcc_psi_config_t psiConfig = {
+        .psi_source = HAL_RCC_PSI_SRC_HSE,
+        .psi_ref    = STM32C5_PSI_HSE_REF,
+        .psi_out    = HAL_RCC_PSI_OUT_144MHZ,
+    };
+    if (HAL_RCC_PSI_SetConfig(&psiConfig) != HAL_OK) {
+        return false;
+    }
+
+    // PSIS_Enable also waits via HAL_GetTick; bypass with LL + bounded poll
+    // for the same reason as HSE above.
+    LL_RCC_PSIS_Enable();
+    WAIT_FOR_CLOCK_READY(LL_RCC_PSIS_IsReady() != 0);
+
+    // 144 MHz needs 4 wait states on the C5 flash interface. Set before the
+    // SYSCLK switch so the increase in latency precedes the increase in core
+    // frequency.
+    HAL_FLASH_ITF_SetLatency(HAL_FLASH, HAL_FLASH_ITF_LATENCY_4);
+
+    // SetSYSCLKSource also uses HAL_GetTick; bypass.
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PSIS);
+    WAIT_FOR_CLOCK_READY(LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PSIS);
+
+    // Programming delay must follow the SYSCLK switch when running fast.
+    HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
+
+    return HAL_RCC_SetBusClockConfig(&busConfig144MHz) == HAL_OK;
+}
+#endif // STM32C5_HAS_HSE_PSI
+
+// HSI path: SYSCLK from HSIS (HSI tap, 144 MHz). Either the unconditional
+// path when HSE/PSI isn't configured (HSE_VALUE == 0) or the fallback when
+// HSE doesn't come up. Uses LL + bounded waits for the same reason the
+// HSE path does -- HAL_GetTick() doesn't advance until HAL_Init() runs,
+// so any wait loop tied to it would never time out. Returns true on
+// success; on failure SYSCLK is left wherever it ended up so the CPU
+// can still reach HAL_Init at the boot HSIDIV3 (48 MHz).
+static bool systemClockTo144MHzFromHSI(void)
+{
     HAL_FLASH_ITF_SetLatency(HAL_FLASH, HAL_FLASH_ITF_LATENCY_4);
 
     // Make sure HSIS is enabled; on reset HSI is on but HSIS gating depends
     // on the boot ROM. Enable + wait-ready before switching.
-    if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
-        HAL_RCC_HSIS_Enable();
-        while (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
-        }
+    if (LL_RCC_HSIS_IsReady() == 0) {
+        LL_RCC_HSIS_Enable();
+        WAIT_FOR_CLOCK_READY(LL_RCC_HSIS_IsReady() != 0);
+    }
+
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSIS);
+    WAIT_FOR_CLOCK_READY(LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_HSIS);
+
+    HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
+
+    return HAL_RCC_SetBusClockConfig(&busConfig144MHz) == HAL_OK;
+}
+
+// Switch the system clock from the reset-default HSIDIV3 (48 MHz) to 144 MHz.
+// Preferred path is HSE routed through PSI (HSE frequency configured via
+// SYSTEM_HSE_MHZ in config.h); falls back to HSIS (the HSI direct tap) if
+// HSE doesn't come up or HSE/PSI is unconfigured (HSE_VALUE == 0). Done
+// before HAL_Init so the SysTick reload it computes from SystemCoreClock
+// matches the running HCLK. If both paths fail SYSCLK stays at HSIDIV3
+// (48 MHz, degraded but boots).
+static void systemClockTo144MHz(void)
+{
+#if STM32C5_HAS_HSE_PSI
+    if (systemClockTo144MHzFromHSE()) {
+        // HSE+PSI succeeded.
+    } else
+#endif
+    {
+        (void)systemClockTo144MHzFromHSI();
     }
 
     // HSIK feeds the peripheral kernel-clock muxes (CCIPR*.xxxSEL). It is
     // gated independently from HSI/HSIS via RCC_CR1_HSIKON and is OFF
-    // after reset, so any peripheral selecting HSIK sees no clock until
-    // it's enabled here. Divider stays at the reset default (DIV_1) so
-    // HSIK == 144 MHz.
+    // after reset, and is independent of SYSCLK source -- so it must be
+    // enabled regardless of which path SYSCLK took above. Divider stays at
+    // the reset default (DIV_1) so HSIK == 144 MHz.
     if (LL_RCC_HSIK_IsReady() == 0) {
         LL_RCC_HSIK_Enable();
         while (LL_RCC_HSIK_IsReady() == 0) {
         }
     }
-
-    HAL_RCC_SetSYSCLKSource(HAL_RCC_SYSCLK_SRC_HSIS);
-
-    // Programming delay must follow the SYSCLK switch when running fast.
-    HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
-
-    // HCLK = SYSCLK, PCLK1/2/3 = HCLK so SPI1/USART1/etc. all see 144 MHz.
-    hal_rcc_bus_clk_config_t busConfig = {
-        .hclk_prescaler  = HAL_RCC_HCLK_PRESCALER1,
-        .pclk1_prescaler = HAL_RCC_PCLK_PRESCALER1,
-        .pclk2_prescaler = HAL_RCC_PCLK_PRESCALER1,
-        .pclk3_prescaler = HAL_RCC_PCLK_PRESCALER1,
-    };
-    HAL_RCC_SetBusClockConfig(&busConfig);
 }
 
 void systemInit(void)
