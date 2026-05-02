@@ -587,11 +587,10 @@ ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSIO
 $(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
-COMMON_FLAGS += -fblocks
 ifndef CYGWIN
-ifneq ($(OSFAMILY), macosx)
-LDFLAGS	     += -lBlocksRuntime
-endif # !macosx
+ifeq ($(OSFAMILY), macosx)
+COMMON_FLAGS += -fblocks
+endif
 endif # !CYGWIN
 
 else ifeq ($(shell $(CC) -v 2>&1 | grep -q "gcc version" && echo "gcc"),gcc)
