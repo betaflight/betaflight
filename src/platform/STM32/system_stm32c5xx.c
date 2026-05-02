@@ -95,24 +95,36 @@ static const hal_rcc_bus_clk_config_t busConfig144MHz = {
 // Map the configured HSE crystal frequency (HSE_VALUE, in Hz, derived from
 // SYSTEM_HSE_MHZ in the per-config config.h via mk/config.mk) to the PSI
 // reference selector. PSI only accepts a fixed set of input frequencies.
-#if HSE_VALUE == 8000000UL
+// HSE_VALUE == 0 means "no HSE configured" -- skip the HSE/PSI path
+// entirely and boot from HSIS.
+#if HSE_VALUE == 0
+  #define STM32C5_HAS_HSE_PSI 0
+#elif HSE_VALUE == 8000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_8MHZ
 #elif HSE_VALUE == 16000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_16MHZ
 #elif HSE_VALUE == 24000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_24MHZ
 #elif HSE_VALUE == 25000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_25MHZ
 #elif HSE_VALUE == 32000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_32MHZ
 #elif HSE_VALUE == 48000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_48MHZ
 #elif HSE_VALUE == 50000000UL
+  #define STM32C5_HAS_HSE_PSI 1
   #define STM32C5_PSI_HSE_REF HAL_RCC_PSI_REF_50MHZ
 #else
-  #error "STM32C5: HSE_VALUE must be 8, 16, 24, 25, 32, 48, or 50 MHz to drive PSI -- set SYSTEM_HSE_MHZ in config.h"
+  #error "STM32C5: HSE_VALUE must be 0 or one of 8, 16, 24, 25, 32, 48, 50 MHz -- set SYSTEM_HSE_MHZ in config.h"
 #endif
 
+#if STM32C5_HAS_HSE_PSI
 // Try to bring SYSCLK up to 144 MHz from HSE via PSI. The HSE crystal
 // frequency comes from SYSTEM_HSE_MHZ in the per-config config.h
 // (defaulted via the build's HSE_VALUE flag); this routine drives HSE in
@@ -163,38 +175,50 @@ static bool systemClockTo144MHzFromHSE(void)
 
     return HAL_RCC_SetBusClockConfig(&busConfig144MHz) == HAL_OK;
 }
+#endif // STM32C5_HAS_HSE_PSI
 
-// HSI fallback path: SYSCLK from HSIS (HSI tap, 144 MHz). Used when HSE
-// can't be brought up -- e.g. the board has no crystal populated, or the
-// crystal/MCO routing isn't wired through to OSC_IN.
-static void systemClockTo144MHzFromHSI(void)
+// HSI path: SYSCLK from HSIS (HSI tap, 144 MHz). Either the unconditional
+// path when HSE/PSI isn't configured (HSE_VALUE == 0) or the fallback when
+// HSE doesn't come up. Uses LL + bounded waits for the same reason the
+// HSE path does -- HAL_GetTick() doesn't advance until HAL_Init() runs,
+// so any wait loop tied to it would never time out. Returns true on
+// success; on failure SYSCLK is left wherever it ended up so the CPU
+// can still reach HAL_Init at the boot HSIDIV3 (48 MHz).
+static bool systemClockTo144MHzFromHSI(void)
 {
     HAL_FLASH_ITF_SetLatency(HAL_FLASH, HAL_FLASH_ITF_LATENCY_4);
 
     // Make sure HSIS is enabled; on reset HSI is on but HSIS gating depends
     // on the boot ROM. Enable + wait-ready before switching.
-    if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
-        HAL_RCC_HSIS_Enable();
-        while (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
-        }
+    if (LL_RCC_HSIS_IsReady() == 0) {
+        LL_RCC_HSIS_Enable();
+        WAIT_FOR_CLOCK_READY(LL_RCC_HSIS_IsReady() != 0);
     }
 
-    HAL_RCC_SetSYSCLKSource(HAL_RCC_SYSCLK_SRC_HSIS);
+    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSIS);
+    WAIT_FOR_CLOCK_READY(LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_HSIS);
 
     HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
 
-    HAL_RCC_SetBusClockConfig(&busConfig144MHz);
+    return HAL_RCC_SetBusClockConfig(&busConfig144MHz) == HAL_OK;
 }
 
 // Switch the system clock from the reset-default HSIDIV3 (48 MHz) to 144 MHz.
 // Preferred path is HSE routed through PSI (HSE frequency configured via
 // SYSTEM_HSE_MHZ in config.h); falls back to HSIS (the HSI direct tap) if
-// HSE doesn't come up. Done before HAL_Init so the SysTick reload it
-// computes from SystemCoreClock matches the running HCLK.
+// HSE doesn't come up or HSE/PSI is unconfigured (HSE_VALUE == 0). Done
+// before HAL_Init so the SysTick reload it computes from SystemCoreClock
+// matches the running HCLK. If both paths fail SYSCLK stays at HSIDIV3
+// (48 MHz, degraded but boots).
 static void systemClockTo144MHz(void)
 {
-    if (!systemClockTo144MHzFromHSE()) {
-        systemClockTo144MHzFromHSI();
+#if STM32C5_HAS_HSE_PSI
+    if (systemClockTo144MHzFromHSE()) {
+        // HSE+PSI succeeded.
+    } else
+#endif
+    {
+        (void)systemClockTo144MHzFromHSI();
     }
 
     // HSIK feeds the peripheral kernel-clock muxes (CCIPR*.xxxSEL). It is
