@@ -27,6 +27,7 @@
 #include "platform.h"
 
 #include "stm32c5xx_hal_flash.h"
+#include "stm32c5xx_ll_rcc.h"
 
 /* Global flash handle for compat shims (HAL_FLASH_Unlock/Lock/Program/Erase) */
 hal_flash_handle_t hflash_compat;
@@ -46,10 +47,88 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+// Initialise the .dmaram_data and .dmaram_bss linker-defined sections.
+// Mirrors what initialiseDmaMemorySections()/initialiseD2MemorySections()
+// do on H5/H7: the standard startup loop only covers .data/.bss, so any
+// initialised data placed in .dmaram_data (DMA_DATA macro) or zero-init
+// state in .dmaram_bss (DMA_DATA_ZERO_INIT) needs an explicit copy/zero.
+static void initialiseDmaMemorySections(void)
+{
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
+
+// Switch the system clock from the reset-default HSIDIV3 (48 MHz) to the
+// HSIS source running at the full HSI rate (144 MHz). Done before HAL_Init
+// so the SysTick reload it computes from SystemCoreClock matches the
+// running HCLK. We don't need PSI/PLL here: HSI is always on after reset
+// and HSIS taps it directly, so the only step is to bump flash latency,
+// switch SWS, and set the bus prescalers to 1.
+static void systemClockTo144MHz(void)
+{
+    // 144 MHz needs 4 wait states on the C5 flash interface.
+    HAL_FLASH_ITF_SetLatency(HAL_FLASH, HAL_FLASH_ITF_LATENCY_4);
+
+    // Make sure HSIS is enabled; on reset HSI is on but HSIS gating depends
+    // on the boot ROM. Enable + wait-ready before switching.
+    if (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
+        HAL_RCC_HSIS_Enable();
+        while (HAL_RCC_HSIS_IsReady() != HAL_RCC_OSC_READY) {
+        }
+    }
+
+    // HSIK feeds the peripheral kernel-clock muxes (CCIPR*.xxxSEL). It is
+    // gated independently from HSI/HSIS via RCC_CR1_HSIKON and is OFF
+    // after reset, so any peripheral selecting HSIK sees no clock until
+    // it's enabled here. Divider stays at the reset default (DIV_1) so
+    // HSIK == 144 MHz.
+    if (LL_RCC_HSIK_IsReady() == 0) {
+        LL_RCC_HSIK_Enable();
+        while (LL_RCC_HSIK_IsReady() == 0) {
+        }
+    }
+
+    HAL_RCC_SetSYSCLKSource(HAL_RCC_SYSCLK_SRC_HSIS);
+
+    // Programming delay must follow the SYSCLK switch when running fast.
+    HAL_FLASH_ITF_SetProgrammingDelay(HAL_FLASH, HAL_FLASH_ITF_PROGRAM_DELAY_2);
+
+    // HCLK = SYSCLK, PCLK1/2/3 = HCLK so SPI1/USART1/etc. all see 144 MHz.
+    hal_rcc_bus_clk_config_t busConfig = {
+        .hclk_prescaler  = HAL_RCC_HCLK_PRESCALER1,
+        .pclk1_prescaler = HAL_RCC_PCLK_PRESCALER1,
+        .pclk2_prescaler = HAL_RCC_PCLK_PRESCALER1,
+        .pclk3_prescaler = HAL_RCC_PCLK_PRESCALER1,
+    };
+    HAL_RCC_SetBusClockConfig(&busConfig);
+}
+
 void systemInit(void)
 {
+    // Copy .dmaram_data from flash and zero .dmaram_bss before anything
+    // that might touch DMA_DATA-placed variables (the standard Reset_Handler
+    // .data/.bss copy/clear loop doesn't cover these sections).
+    initialiseDmaMemorySections();
+
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
+
+    // Bump SYSCLK from HSIDIV3 (48 MHz) to HSIS (144 MHz) before HAL_Init
+    // so SysTick is configured against the final HCLK.
+    systemClockTo144MHz();
+
+    // Bring up the HAL tick (SysTick at HAL_TICK_FREQ_DEFAULT = 1 kHz) so
+    // micros()/delay() advance. HAL_Init also sets the SysTick clock source
+    // to the CPU internal clock and configures NVIC priority grouping for
+    // the HAL stack. Other STM32 platforms call this from the startup
+    // SystemInit(), but on C5 .data is initialised after SystemInit so we
+    // call it here instead -- by this point .data is live.
+    HAL_Init();
 
     // Configure NVIC preempt/priority groups (CMSIS direct, HAL2 has no wrapper)
     NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);

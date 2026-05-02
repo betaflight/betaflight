@@ -81,7 +81,10 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOC) },
     { RCC_AHB2(GPIOD) },
     { RCC_AHB2(GPIOE) },
+    // STM32C562 lacks GPIOF
+#if !defined(STM32C562xx)
     { RCC_AHB2(GPIOF) },
+#endif
 };
 #elif defined(STM32H5)
 const struct ioPortDef_s ioPortDefs[] = {

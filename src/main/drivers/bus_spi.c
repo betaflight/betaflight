@@ -416,6 +416,9 @@ uint8_t spiGetRegisteredDeviceCount(void)
 
 uint8_t spiGetExtDeviceCount(const extDevice_t *dev)
 {
+    if (!dev || !dev->bus) {
+        return 0;
+    }
     return dev->bus->deviceCount;
 }
 

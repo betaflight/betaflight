@@ -151,7 +151,7 @@
 #define STM32F4
 #endif
 
-#elif defined(STM32C591xx)
+#elif defined(STM32C591xx) || defined(STM32C562xx)
 #include "stm32c5xx.h"
 #include "stm32c5xx_hal.h"
 // HAL2: module headers must be included explicitly (hal_conf.h only defines enables)
@@ -693,7 +693,15 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_CHANREQ_STRING "Request"
 
+#if defined(STM32C5)
+// STM32C5 has no internal VBAT/4 channel. The shared adc_impl table
+// has a placeholder slot pointing at the VREFINT channel which would
+// otherwise duplicate the VREFINT entry, throw the DMA dest-buffer
+// offset off by one, and corrupt the VREFINT/TEMPSENSOR readings.
+#define ADC_INTERNAL_VBAT4_ENABLED 0
+#else
 #define ADC_INTERNAL_VBAT4_ENABLED 1
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
