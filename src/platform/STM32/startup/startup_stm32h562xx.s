@@ -58,12 +58,15 @@ defined in linker script */
 Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
-  
-  bl persistentObjectInit
-/* Call the clock system initialization function.*/
-  bl  SystemInit
 
-/* Copy the data segment initializers from flash to SRAM */
+  bl persistentObjectInit
+
+/* Copy the data segment initializers from flash to SRAM. Must run BEFORE
+ * SystemInit because SystemInit calls HAL_Init -> HAL_InitTick, which
+ * reads uwTickFreq from .data. With uwTickFreq still holding garbage RAM,
+ * the SysTick reload computed at 250 MHz overflows the 24-bit register
+ * and HAL_RCC_ClockConfig returns HAL_ERROR. Matches the H7 startup order.
+ */
   ldr r0, =_sdata
   ldr r1, =_edata
   ldr r2, =_sidata
@@ -94,6 +97,8 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
 
+/* Call the clock system initialization function. */
+  bl  SystemInit
 
 /* Call static constructors */
 /*  bl __libc_init_array */

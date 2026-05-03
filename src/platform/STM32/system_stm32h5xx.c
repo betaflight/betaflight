@@ -46,6 +46,12 @@ void systemInit(void)
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
+    // The PLL has been live since startup/system_stm32h5xx.c::SystemInit(),
+    // but the C runtime restored SystemCoreClock from its 64 MHz .data
+    // initialiser after that early call. Refresh the global here so any
+    // later code (CLI, USB CDC prescaler, etc.) sees the real SYSCLK.
+    SystemCoreClockUpdate();
+
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 

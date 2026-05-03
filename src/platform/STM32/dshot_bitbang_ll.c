@@ -408,12 +408,12 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState)
     //xDMA_Cmd(bbPort->dmaResource, NewState);
 
     if (NewState == ENABLE) {
-#if defined(USE_DMA_REGISTER_CACHE) && defined(STM32C5)
-        // STM32C5 LPDMA single-shot mode does not auto-rearm: each completed
-        // transfer leaves CBR1 = 0 and CSAR advanced past the buffer, so the
-        // next bare CCR.EN write transfers nothing. Reload the cached regs
-        // (CBR1/CSAR/CDAR/CTR1/CTR2/CCR) before re-enabling so each frame
-        // restarts from the original buffer head.
+#if defined(USE_DMA_REGISTER_CACHE) && (defined(STM32C5) || defined(STM32H5))
+        // C5 LPDMA / H5 GPDMA in single-shot mode do not auto-rearm: each
+        // completed transfer leaves CBR1 = 0 and CSAR advanced past the
+        // buffer, so the next bare CCR.EN write transfers nothing. Reload
+        // the cached regs (CBR1/CSAR/CDAR/CTR1/CTR2/CCR) before re-enabling
+        // so each frame restarts from the original buffer head.
         bbLoadDMARegs(bbPort->dmaResource,
                       bbPort->direction == DSHOT_BITBANG_DIRECTION_OUTPUT
                           ? &bbPort->dmaRegOutput

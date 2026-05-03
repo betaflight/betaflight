@@ -417,7 +417,7 @@
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
-#if defined(STM32F4) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
