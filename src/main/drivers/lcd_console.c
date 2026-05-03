@@ -25,9 +25,13 @@
 
 // Compile-time check: ENABLE_LCD_CONSOLE requires exactly one panel selector
 // to be defined. Without one, lcdPanelGet() is undefined and the link fails
-// with a less obvious message. Add new backends to this list as they land.
-#if !defined(LCD_CONSOLE_PANEL_STUB)
-#error "ENABLE_LCD_CONSOLE is set but no LCD_CONSOLE_PANEL_<NAME> selector is defined. See drivers/lcd_panel/."
+// with a less obvious message; with more than one, the duplicate definitions
+// of lcdPanelGet() collide at link time. Add new backends to this list as
+// they land.
+#if (defined(LCD_CONSOLE_PANEL_STUB) \
+   + defined(LCD_CONSOLE_PANEL_LTDC) \
+   + defined(LCD_CONSOLE_PANEL_SSD1306_I2C)) != 1
+#error "ENABLE_LCD_CONSOLE requires exactly one LCD_CONSOLE_PANEL_<NAME> selector to be defined. See drivers/lcd_panel/ or src/platform/."
 #endif
 
 #include <string.h>
@@ -209,6 +213,14 @@ bool lcdConsoleIsBusy(void)
         return false;
     }
     return panel->vtable->isBusy(panel);
+}
+
+const uint8_t *lcdConsoleRow(uint16_t row)
+{
+    if (!initialised || row >= ROWS) {
+        return NULL;
+    }
+    return &grid[row][0];
 }
 
 #endif // ENABLE_LCD_CONSOLE
