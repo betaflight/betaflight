@@ -270,8 +270,18 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
 #ifdef USE_AIRPLANE_SAS
-        .psas_stick_gain = { 100, 100, 100 },  // Percent control output {roll, pitch, yaw}
-        .psas_damping_gain = { 50, 200, 200 }, // percent control range addition by 1 degree per second angle rate * 1000
+        // Percent control output by pilot stick deflection
+        .psas_stick_gain = {
+            [FD_ROLL] = 100,
+            [FD_PITCH] = 100,
+            [FD_YAW] = 100,
+        },
+        // Percent control range addition by 1 degree per second angle rate * 1000
+        .psas_damping_gain = {
+            [FD_ROLL] = 50,
+            [FD_PITCH] = 200,
+            [FD_YAW] = 200,
+        },
         .psas_pitch_damping_filter_freq = 30,  // pitch damping filter cut freq 0.3Hz (Tf=0.531s)
         .psas_accel_z_filter_freq = 30,        // accel Z filter cut freq Hz * 10, 3Hz
         .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *10
@@ -283,7 +293,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_pitch_accel_max = 40,            // maximal positive Z accel value *10
         .psas_pitch_accel_min = 40,            // maximal negative Z accel value *10
         .psas_wing_load = 0,                   // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2, i think. My wings value is 260
-        .psas_air_density = 1225,              // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+        .psas_air_density = 1225,              // The current atmosphere air density [g/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
         .psas_lift_c_limit = 10,               // Limit aerodinamics lift force coefficient value *10
         .psas_aoa_limiter_gain = 0,            // elevator speed for 0.1 lift force coef difference in %/sec
         .psas_lift_coef_filter_freq = 50,      // aoa limiter lift coef filter cut freq 5Hz * 10

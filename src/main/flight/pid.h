@@ -333,8 +333,8 @@ typedef struct pidProfile_s {
     uint8_t chirp_time_seconds;             // excitation time
 
 #ifdef USE_AIRPLANE_SAS
-    uint8_t psas_stick_gain[XYZ_AXIS_COUNT];    // Percent control output
-    uint16_t psas_damping_gain[XYZ_AXIS_COUNT]; // percent control range addition by 1 degree per second angle rate * 1000
+    uint8_t psas_stick_gain[XYZ_AXIS_COUNT];    // Percent control output by pilot stick deflection
+    uint16_t psas_damping_gain[XYZ_AXIS_COUNT]; // Percent control range addition by 1 degree per second angle rate * 1000
     uint16_t psas_pitch_damping_filter_freq;    // pitch damping filter cut freq Hz * 100
     uint8_t psas_accel_z_filter_freq;           // accel Z filter cut freq Hz * 10
     uint16_t psas_pitch_stability_gain;         // percent control range addition by 1g accel z change *10
@@ -346,7 +346,7 @@ typedef struct pidProfile_s {
     uint8_t psas_accel_y_filter_freq;           // accel Y filter cut freq Hz * 10
     uint16_t psas_yaw_stability_gain;           // percent control by 1g Y accel change *10
     uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 * 10. Set yours plane proper value to use lift coef estimation, AoA limiter, roll to yaw cross link
-    uint16_t psas_air_density;                  // The current atmosphere air density [mg/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+    uint16_t psas_air_density;                  // The current atmosphere air density [g/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
     uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *10
     uint8_t psas_aoa_limiter_gain;              // elevator speed for 0.1 lift force coef difference in %/sec
     uint8_t psas_lift_coef_filter_freq;         // aoa limiter lift coef filter cut freq Hz * 10
