@@ -139,6 +139,18 @@ bool failsafeIsActive(void) // real or BOXFAILSAFE induced stage 2 failsafe is c
     return failsafeState.active;
 }
 
+// Returns the failsafe procedure to run on RX-loss stage 2.
+// When BOXFAILSAFELAND is mapped and active, the configured procedure is
+// overridden to AUTO_LANDING so pilots can disable GPS Rescue from the radio
+// (e.g. when flying indoors). The switch state is sampled at stage 2 entry.
+failsafeProcedure_e getEffectiveFailsafeProcedure(void)
+{
+    if (IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)) {
+        return FAILSAFE_PROCEDURE_AUTO_LANDING;
+    }
+    return failsafeConfig()->failsafe_procedure;
+}
+
 void failsafeStartMonitoring(void)
 {
     failsafeState.monitoring = true;
@@ -282,7 +294,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     } else if (!receivingRxData) {
                         if (millis() > failsafeState.throttleLowPeriod
 #ifdef USE_GPS_RESCUE
-                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
+                            && getEffectiveFailsafeProcedure() != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
                             ) {
                             //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
@@ -317,7 +329,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else {
                     failsafeState.active = true;
                     failsafeState.events++;
-                    switch (failsafeConfig()->failsafe_procedure) {
+                    switch (getEffectiveFailsafeProcedure()) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -336,6 +348,8 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             break;
 #endif
+                        case FAILSAFE_PROCEDURE_COUNT:
+                            break;
                     }
                     if (failsafeState.boxFailsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;

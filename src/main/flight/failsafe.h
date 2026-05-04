@@ -101,6 +101,7 @@ void failsafeUpdateState(void);
 void failsafeCheckDataFailurePeriod(void);
 
 failsafePhase_e failsafePhase(void);
+failsafeProcedure_e getEffectiveFailsafeProcedure(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
