@@ -2627,8 +2627,25 @@ static bool UBLOX_parse_gps(void)
 
 static bool gpsNewFrameUBLOX(uint8_t data)
 {
-    bool newPositionDataReceived = false;
     ubloxParsingAlmostDone = false;
+
+    // Fast path for payload content — this is the hot loop state, hit once per payload byte (up to 392 times for NAV-SAT).
+    // Handling it before the switch avoids the jump table lookup for the vast majority of bytes in a message.
+    if (ubxFrameParseState == UBX_PARSE_PAYLOAD_CONTENT) {
+        ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);   // Accumulate both checksums.
+        if (ubxFrameParsePayloadCounter < UBLOX_PAYLOAD_SIZE) {
+            // Only add bytes to the buffer if we haven't reached the max supported payload size.
+            // Note that we still read & checksum every byte so the checksum calculates correctly.
+            ubxRcvMsgPayload.rawBytes[ubxFrameParsePayloadCounter] = data;
+        }
+        if (++ubxFrameParsePayloadCounter >= ubxRcvMsgPayloadLength) {
+            // All bytes for payload length processed.
+            ubxFrameParseState = UBX_PARSE_CHECKSUM_A;
+        }
+        return false;
+    }
+
+    bool newPositionDataReceived = false;
 
     switch (ubxFrameParseState) {
     case UBX_PARSE_PREAMBLE_SYNC_1:
@@ -2693,18 +2710,7 @@ static bool gpsNewFrameUBLOX(uint8_t data)
         ubxFrameParseState = UBX_PARSE_PAYLOAD_CONTENT;
         break;
     case UBX_PARSE_PAYLOAD_CONTENT:
-        ubxRcvMsgChecksumB += (ubxRcvMsgChecksumA += data);   // Accumulate both checksums.
-        if (ubxFrameParsePayloadCounter < UBLOX_PAYLOAD_SIZE) {
-            // Only add bytes to the buffer if we haven't reached the max supported payload size.
-            // Note that we still read & checksum every byte so the checksum calculates correctly.
-            ubxRcvMsgPayload.rawBytes[ubxFrameParsePayloadCounter] = data;
-        }
-        if (++ubxFrameParsePayloadCounter >= ubxRcvMsgPayloadLength) {
-            // All bytes for payload length processed.
-            ubxFrameParseState = UBX_PARSE_CHECKSUM_A;
-            break;
-        }
-        // More payload content left, stay in this state.
+        // Handled by the fast path above; this case is unreachable but kept for enum completeness.
         break;
     case UBX_PARSE_CHECKSUM_A:
         if (ubxRcvMsgChecksumA == data) {
