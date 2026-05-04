@@ -140,15 +140,20 @@ bool failsafeIsActive(void) // real or BOXFAILSAFE induced stage 2 failsafe is c
 }
 
 // Returns the failsafe procedure to run on RX-loss stage 2.
-// When BOXFAILSAFELAND is mapped and active, the configured procedure is
-// overridden to AUTO_LANDING so pilots can disable GPS Rescue from the radio
-// (e.g. when flying indoors). The switch state is sampled at stage 2 entry.
+// While failsafe is active, returns the value latched at stage 2 entry so that
+// flipping BOXFAILSAFELAND mid-failsafe does not desync the state machine from
+// the GPS_RESCUE_MODE flight flag in core.c.
+// Outside an active failsafe, BOXFAILSAFELAND overrides the configured
+// procedure to AUTO_LANDING so pilots can disable GPS Rescue from the radio.
 failsafeProcedure_e getEffectiveFailsafeProcedure(void)
 {
+    if (failsafeState.active) {
+        return failsafeState.activeProcedure;
+    }
     if (IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)) {
         return FAILSAFE_PROCEDURE_AUTO_LANDING;
     }
-    return failsafeConfig()->failsafe_procedure;
+    return (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
 }
 
 void failsafeStartMonitoring(void)
@@ -329,7 +334,12 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else {
                     failsafeState.active = true;
                     failsafeState.events++;
-                    switch (getEffectiveFailsafeProcedure()) {
+                    // Latch the procedure at stage 2 entry so that toggling BOXFAILSAFELAND mid-failsafe
+                    // cannot desync the state machine from core.c's GPS_RESCUE_MODE flight-flag gating.
+                    failsafeState.activeProcedure = IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)
+                        ? FAILSAFE_PROCEDURE_AUTO_LANDING
+                        : (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
+                    switch (failsafeState.activeProcedure) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -349,6 +359,11 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             break;
 #endif
                         case FAILSAFE_PROCEDURE_COUNT:
+                        default:
+                            // unreachable in practice (config is clamped) but reprocessState is set
+                            // unconditionally below, so guarantee a terminal phase to avoid spinning
+                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                            failsafeState.phase = FAILSAFE_LANDED;
                             break;
                     }
                     if (failsafeState.boxFailsafeSwitchWasOn) {

@@ -775,7 +775,14 @@ TEST(FlightFailsafeTest, TestFailsafeLandOverrideRedirectsGpsRescueToLanding)
     EXPECT_TRUE(failsafeIsActive());
     EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
 
+    // releasing the override switch mid-failsafe must NOT change the active procedure;
+    // the helper must keep returning the value latched at stage 2 entry
     deactivateBoxFailsafe();
+    failsafeUpdateState();
+
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(FAILSAFE_PROCEDURE_AUTO_LANDING, getEffectiveFailsafeProcedure());
 }
 
 // STUBS
