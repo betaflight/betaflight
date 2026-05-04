@@ -289,6 +289,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     if (failsafeState.boxFailsafeSwitchWasOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
                         // Failsafe switch is configured as KILL switch and is switched ON
                         failsafeState.active = true;
+                        // KILL bypasses procedure dispatch and goes straight to LANDED;
+                        // overwrite the latch so getEffectiveFailsafeProcedure() cannot
+                        // return a stale GPS_RESCUE value carried over from a prior failsafe.
+                        failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
                         failsafeState.events++;
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                         failsafeState.phase = FAILSAFE_LANDED;
@@ -305,6 +309,9 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
                             //  protects against false arming when the Tx is powered up after the quad
                             failsafeState.active = true;
+                            // JustDisarm also bypasses procedure dispatch; overwrite the latch
+                            // for the same reason as the KILL path above.
+                            failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
                             failsafeState.events++;
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDED;

@@ -723,6 +723,7 @@ TEST(FlightFailsafeTest, TestEffectiveFailsafeProcedureRespectsOverrideBox)
 {
     // given GPS Rescue configured and override switch OFF
     configureFailsafe();
+    failsafeInit();
     failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
     deactivateBoxFailsafe();
 
