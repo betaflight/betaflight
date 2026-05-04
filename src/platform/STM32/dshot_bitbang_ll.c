@@ -252,9 +252,13 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->inputARR;
 
-    bbDMA_Cmd(bbPort, ENABLE);
-
+    // Set direction before bbDMA_Cmd: on H5/C5 single-shot DMA, bbDMA_Cmd
+    // reloads the cached register set selected by bbPort->direction. If we
+    // enable while direction is still OUTPUT it overwrites the dmaRegInput
+    // we just loaded with the dmaRegOutput regs.
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
+
+    bbDMA_Cmd(bbPort, ENABLE);
 }
 #endif
 

@@ -42,7 +42,8 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *pcdHandle)
          * isolation before clocking the peripheral, otherwise the FS
          * transceiver stays unpowered and the host sees DPPU but fails
          * descriptor exchange ("Unknown USB Device, Device Descriptor Request
-         * Failed"). PWR clock is already enabled by SystemClock_Config.
+         * Failed"). PWR has no RCC enable bit on H5 (it is always-clocked),
+         * so PWREx access here needs no __HAL_RCC_PWR_CLK_ENABLE().
          */
         HAL_PWREx_EnableUSBVoltageDetector();
         HAL_PWREx_EnableVddUSB();

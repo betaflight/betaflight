@@ -220,6 +220,9 @@ __attribute__((weak))
 void SystemClock_Config(void)
 {
     // Voltage scale 0: required headroom for the 250 MHz domain.
+    // (PWR has no RCC enable bit on H5 — RM0481 §8 lists no PWREN — so
+    // __HAL_RCC_PWR_CLK_ENABLE() is unnecessary and the H5 HAL does not
+    // export it. PWR is always-clocked.)
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
     while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) { }
 
