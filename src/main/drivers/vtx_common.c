@@ -82,8 +82,12 @@ void vtxCommonSetBandAndChannel(vtxDevice_t *vtxDevice, uint8_t band, uint8_t ch
     if (freq != 0) {
         selectedChannel = channel;
         selectedBand = band;
-        vtxDevice->vTable->setBandAndChannel(vtxDevice, band, channel);
-        if (!vtxTableIsFactoryBand[band - 1]) {
+        bool isSmartAudio = (vtxDevice->vTable->getDeviceType(vtxDevice) == VTXDEV_SMARTAUDIO);
+        bool isFactoryBand = vtxTableIsFactoryBand[band - 1];
+        if (!isSmartAudio || isFactoryBand) {
+            vtxDevice->vTable->setBandAndChannel(vtxDevice, band, channel);
+        }
+        if (!isFactoryBand) {
             vtxDevice->vTable->setFrequency(vtxDevice, freq);
         }
     }
