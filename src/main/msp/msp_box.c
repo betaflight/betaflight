@@ -262,7 +262,9 @@ void initActiveBoxIds(void)
 #endif
 
     BME(BOXFAILSAFE);
+#ifdef USE_GPS_RESCUE
     BME(BOXFAILSAFELAND);
+#endif
 
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         BME(BOXPASSTHRU);

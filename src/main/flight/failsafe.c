@@ -114,6 +114,7 @@ void failsafeReset(void)
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.boxFailsafeSwitchWasOn = false;
+    failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
 }
 
 void failsafeInit(void)
@@ -145,14 +146,18 @@ bool failsafeIsActive(void) // real or BOXFAILSAFE induced stage 2 failsafe is c
 // the GPS_RESCUE_MODE flight flag in core.c.
 // Outside an active failsafe, BOXFAILSAFELAND overrides the configured
 // procedure to AUTO_LANDING so pilots can disable GPS Rescue from the radio.
+// The override only exists on USE_GPS_RESCUE builds; otherwise it would silently
+// reroute DROP_IT to AUTO_LANDING with no GPS-rescue alternative to suppress.
 failsafeProcedure_e getEffectiveFailsafeProcedure(void)
 {
     if (failsafeState.active) {
         return failsafeState.activeProcedure;
     }
+#ifdef USE_GPS_RESCUE
     if (IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)) {
         return FAILSAFE_PROCEDURE_AUTO_LANDING;
     }
+#endif
     return (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
 }
 
@@ -343,9 +348,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     failsafeState.events++;
                     // Latch the procedure at stage 2 entry so that toggling BOXFAILSAFELAND mid-failsafe
                     // cannot desync the state machine from core.c's GPS_RESCUE_MODE flight-flag gating.
+#ifdef USE_GPS_RESCUE
                     failsafeState.activeProcedure = IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)
                         ? FAILSAFE_PROCEDURE_AUTO_LANDING
                         : (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
+#else
+                    failsafeState.activeProcedure = (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
+#endif
                     switch (failsafeState.activeProcedure) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             //  Enter Stage 2 with settings for landing mode
