@@ -123,6 +123,9 @@
     && !defined(USE_ACC_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+
+    && !defined(USE_ACCGYRO_SCS3302) \
+    && !defined(USE_ACCGYRO_SCS3304) \
     && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
@@ -150,6 +153,9 @@
     && !defined(USE_GYRO_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+
+    && !defined(USE_ACCGYRO_SCS3302) \
+    && !defined(USE_ACCGYRO_SCS3304) \
     && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif
@@ -504,7 +510,8 @@
     || defined(USE_GYRO_SPI_ICM42605) || defined(USE_ACCGYRO_ICM42622P) || defined(USE_ACCGYRO_ICM42686P) || defined(USE_GYRO_SPI_ICM42688P) \
     || defined(USE_ACCGYRO_ICM40609D) || defined(USE_ACCGYRO_ICM45605) || defined(USE_ACCGYRO_ICM45686) \
     || defined(USE_ACCGYRO_IIM42652) || defined(USE_ACCGYRO_IIM42653) \
-    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X)
+    || defined(USE_ACCGYRO_LSM6DSV16X) || defined(USE_ACCGYRO_LSM6DSO) || defined(USE_ACCGYRO_LSM6DSK320X) \
+	|| defined(USE_ACCGYRO_SCS3302)|| defined(USE_ACCGYRO_SCS3304)
 #ifndef USE_SPI_GYRO
 #define USE_SPI_GYRO
 #endif

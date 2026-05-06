@@ -318,6 +318,9 @@ COMMON_SRC += \
             drivers/accgyro/accgyro_spi_mpu6000.c \
             drivers/accgyro/accgyro_spi_mpu6500.c \
             drivers/accgyro/accgyro_spi_mpu9250.c \
+            drivers/accgyro/accgyro_spi_scs3302.c \
+            drivers/accgyro/accgyro_spi_scs3304.c \
+            drivers/accgyro/accgyro_spi_scs3304_init.c \
             drivers/accgyro/accgyro_virtual.c \
             BoschSensortec/BMI270-Sensor-API/bmi270_maximum_fifo.c \
             drivers/barometer/barometer_2smpb_02b.c \
@@ -398,6 +401,8 @@ SIZE_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
+            drivers/accgyro/accgyro_spi_scs3302.c \
+            drivers/accgyro/accgyro_spi_scs3304_init.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
             drivers/barometer/barometer_ms5611.c \
@@ -423,7 +428,9 @@ SPEED_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_spi_bmi160.c \
             drivers/accgyro/accgyro_spi_bmi270.c \
-            drivers/accgyro/accgyro_spi_lsm6dso.c
+            drivers/accgyro/accgyro_spi_lsm6dso.c \
+            drivers/accgyro/accgyro_spi_scs3302.c \
+            drivers/accgyro/accgyro_spi_scs3304.c
 
 endif
 
