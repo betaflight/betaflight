@@ -107,9 +107,12 @@ void HAL_PCD_DisconnectCallback(hal_pcd_handle_t *hpcd)
 
 USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
 {
-    /* Cross-link handles: USBD ↔ PCD via user data pointer */
-    HAL_PCD_SetUserData(&hpcd_USB_DRD_FS, pdev);
-    pdev->pData = &hpcd_USB_DRD_FS;
+    /* Select HSI/3 (= 48 MHz from the 144 MHz HSI) as the CK48 source
+     * before enabling the USB peripheral clock. Reset value is 0 which
+     * leaves CK48 unsourced; without this Windows enumerates the device
+     * but cannot read its descriptors. RCC->CR1 already has HSIDIV3ON
+     * enabled out of reset on STM32C5. */
+    LL_RCC_SetCK48ClockSource(LL_RCC_CK48_CLKSOURCE_HSIDIV3);
 
     /* Enable USB and GPIO clocks */
     HAL_RCC_GPIOA_EnableClock();
@@ -127,15 +130,23 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
     LL_GPIO_SetAFPin_8_15(GPIOA, LL_GPIO_PIN_11, LL_GPIO_AF_13);
     LL_GPIO_SetAFPin_8_15(GPIOA, LL_GPIO_PIN_12, LL_GPIO_AF_13);
 
-    /* Enable USB interrupt */
-    NVIC_SetPriority(USB_DRD_FS_IRQn,
-                     NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 6, 0));
-    NVIC_EnableIRQ(USB_DRD_FS_IRQn);
-
-    /* Init PCD handle and register driver */
+    /* Init PCD handle and register driver. Must run before SetUserData --
+     * HAL_PCD_Init() unconditionally clears hpcd->p_user_data, so binding
+     * pdev earlier just gets wiped. */
     if (HAL_PCD_Init(&hpcd_USB_DRD_FS, HAL_PCD_DRD_FS) != HAL_OK) {
         Error_Handler();
     }
+
+    /* Cross-link handles now that the PCD struct is settled. */
+    HAL_PCD_SetUserData(&hpcd_USB_DRD_FS, pdev);
+    pdev->pData = &hpcd_USB_DRD_FS;
+
+    /* Enable USB interrupt only after the PCD handle is fully populated;
+     * earlier USB events would otherwise dereference a half-initialised
+     * driver. */
+    NVIC_SetPriority(USB_DRD_FS_IRQn,
+                     NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 6, 0));
+    NVIC_EnableIRQ(USB_DRD_FS_IRQn);
 
     /* Configure the PCD peripheral */
     hal_pcd_config_t pcdConfig = {
