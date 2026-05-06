@@ -89,24 +89,24 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     TIM_OCStruct.TIM_Pulse = 10; // Duty doesn't matter, but too value small would make monitor output invalid
 
-    TIM_Cmd(bbPort->timhw->tim, DISABLE);
+    TIM_Cmd((TIM_TypeDef *)bbPort->timhw->tim, DISABLE);
 
-    timerOCInit(timhw->tim, timhw->channel, &TIM_OCStruct);
+    timerOCInit((TIM_TypeDef *)timhw->tim, timhw->channel, &TIM_OCStruct);
 
-    timerOCPreloadConfig(timhw->tim, timhw->channel, TIM_OCPreload_Enable);
+    // timerOCPreloadConfig(timhw->tim, timhw->channel, TIM_OCPreload_Enable);
 
 #ifdef DEBUG_MONITOR_PACER
     if (timhw->tag) {
         IO_t io = IOGetByTag(timhw->tag);
         IOConfigGPIOAF(io, IOCFG_AF_PP, timhw->alternateFunction);
         IOInit(io, OWNER_DSHOT_BITBANG, 0);
-        TIM_CtrlPWMOutputs(timhw->tim, ENABLE);
+        TIM_CtrlPWMOutputs((TIM_TypeDef *)timhw->tim, ENABLE);
     }
 #endif
 
     // Enable and keep it running
 
-    TIM_Cmd(bbPort->timhw->tim, ENABLE);
+    TIM_Cmd((TIM_TypeDef *)bbPort->timhw->tim, ENABLE);
 }
 
 #ifdef USE_DMA_REGISTER_CACHE
@@ -385,8 +385,8 @@ void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
     init->TIM_ClockDivision = TIM_CKD_DIV1;
     init->TIM_CounterMode = TIM_CounterMode_Up;
     init->TIM_Period = period;
-    TIM_TimeBaseInit(bbPort->timhw->tim, init);
-    TIM_ARRPreloadConfig(bbPort->timhw->tim, ENABLE);
+    TIM_TimeBaseInit((TIM_TypeDef *)bbPort->timhw->tim, init);
+    TIM_ARRPreloadConfig((TIM_TypeDef *)bbPort->timhw->tim, ENABLE);
 }
 
 void bbTIM_DMACmd(void* TIMx, uint16_t TIM_DMASource, FunctionalState NewState)

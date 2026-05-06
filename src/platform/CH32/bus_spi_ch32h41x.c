@@ -76,6 +76,7 @@ void spiInitDevice(spiDevice_e device)
         return;
     }
 
+    SPI_TypeDef *dev = (SPI_TypeDef *)spi->dev;
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
@@ -89,16 +90,17 @@ void spiInitDevice(spiDevice_e device)
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
 
     // Init SPI hardware
-    SPI_Cmd(spi->dev, DISABLE);
-    SPI_I2S_DeInit(spi->dev);
+    SPI_Cmd(dev, DISABLE);
+    SPI_I2S_DeInit(dev);
 
-    SPI_I2S_DMACmd(spi->dev, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, DISABLE);
-    SPI_Init(spi->dev, &defaultInit);
-    SPI_Cmd(spi->dev, ENABLE);
+    SPI_I2S_DMACmd(dev, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, DISABLE);
+    SPI_Init(dev, &defaultInit);
+    SPI_Cmd(dev, ENABLE);
 }
 
 void spiInternalResetDescriptors(busDevice_t *bus)
 {
+     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
     //init default TX DMA
@@ -107,7 +109,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     // dmaInitTx->DMA_Channel = bus->dmaTx->channel;
     dmaInitTx->DMA_DIR = DMA_DIR_PeripheralDST;
     dmaInitTx->DMA_Mode = DMA_Mode_Normal;
-    dmaInitTx->DMA_PeripheralBaseAddr = (uint32_t)&bus->busType_u.spi.instance->DATAR;
+    dmaInitTx->DMA_PeripheralBaseAddr = (uint32_t)&instance->DATAR;
     dmaInitTx->DMA_Priority = DMA_Priority_Low;
     dmaInitTx->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     dmaInitTx->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
@@ -121,7 +123,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
         // dmaInitRx->DMA_Channel = bus->dmaRx->channel;
         dmaInitRx->DMA_DIR = DMA_DIR_PeripheralSRC;
         dmaInitRx->DMA_Mode = DMA_Mode_Normal;
-        dmaInitRx->DMA_PeripheralBaseAddr = (uint32_t)&bus->busType_u.spi.instance->DATAR;
+        dmaInitRx->DMA_PeripheralBaseAddr = (uint32_t)&instance->DATAR;
         dmaInitRx->DMA_Priority = DMA_Priority_Medium;
         dmaInitRx->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
         dmaInitRx->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
@@ -141,8 +143,9 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
 }
 
-FAST_CODE bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+FAST_CODE bool spiInternalReadWriteBufPolled(spiResource_t *spiInstance, const uint8_t *txData, uint8_t *rxData, int len)
 {
+    SPI_TypeDef *instance = (SPI_TypeDef *)spiInstance;
     uint8_t b;
 
     while (len--) {
@@ -259,7 +262,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
 
         /* Enable the SPI DMA Tx & Rx requests */
-        SPI_I2S_DMACmd(dev->bus->busType_u.spi.instance, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, ENABLE);
+        SPI_I2S_DMACmd((SPI_TypeDef *)dev->bus->busType_u.spi.instance, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, ENABLE);
     } else {
         // Use the correct callback argument
         dmaTx->userParam = (uint32_t)dev;
@@ -286,7 +289,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
         DMA_Cmd(streamRegsTx, ENABLE);
 
         /* Enable the SPI DMA Tx request */
-        SPI_I2S_DMACmd(dev->bus->busType_u.spi.instance, SPI_I2S_DMAReq_Tx, ENABLE);
+        SPI_I2S_DMACmd((SPI_TypeDef *)dev->bus->busType_u.spi.instance, SPI_I2S_DMAReq_Tx, ENABLE);
     }
 }
 
@@ -294,7 +297,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 {
     dmaChannelDescriptor_t *dmaTx = dev->bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = dev->bus->dmaRx;
-    SPI_TypeDef *instance = dev->bus->busType_u.spi.instance;
+    SPI_TypeDef *instance = (SPI_TypeDef *)dev->bus->busType_u.spi.instance;
     DMA_ARCH_TYPE *streamRegsTx = (DMA_ARCH_TYPE *)dmaTx->ref;
 
     if (dmaRx) {
@@ -328,7 +331,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
+    SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     bool dmaSafe = dev->useDMA;
     uint32_t xferLen = 0;
     uint32_t segmentCount = 0;
@@ -339,7 +342,7 @@ void spiSequenceStart(const extDevice_t *dev)
 
     // Switch bus speed
     if (dev->busType_u.spi.speed != bus->busType_u.spi.speed) {
-        spiSetDivisorBRreg(bus->busType_u.spi.instance, dev->busType_u.spi.speed);
+        spiSetDivisorBRreg(instance, dev->busType_u.spi.speed);
         bus->busType_u.spi.speed = dev->busType_u.spi.speed;
     }
 

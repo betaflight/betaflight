@@ -203,21 +203,9 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
   };
 #endif
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 uint32_t timerClock(const timerHardware_t *timHw)
 {
     UNUSED(timHw);
-=======
-uint32_t timerClock(const TIM_TypeDef *tim)
-{
-    UNUSED(tim);
->>>>>>> 1b9653a92 (dshot 8K,uart4 MSP+DisplayPort function is OK)
-=======
-uint32_t timerClock(const timerHardware_t *timHw)
-{
-    UNUSED(timHw);
->>>>>>> cdcdf52d6 (update CH32 drivers for rebase)
     return HCLKClock;
 }
 #endif

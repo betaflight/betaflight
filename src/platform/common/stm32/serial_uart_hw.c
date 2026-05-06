@@ -78,6 +78,9 @@ static void enableRxIrq(const uartHardware_t *hardware)
             .NVIC_IRQChannelCmd = ENABLE,
         };
         NVIC_Init(&nvicInit);
+#elif defined(CH32H4)
+        NVIC_SetPriority(hardware->irqn,hardware->rxPriority);
+        NVIC_EnableIRQ(hardware->irqn);        
 #else
 # error "Unhandled MCU type"
 #endif
@@ -150,6 +153,8 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             pushPull ? GPIO_OUTPUT_PUSH_PULL : GPIO_OUTPUT_OPEN_DRAIN,
             ((const gpio_pull_type[]){GPIO_PULL_NONE, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull]
         );
+#elif defined(CH32H4)
+        const ioConfig_t ioCfg = IOCFG_AF_PP;        
 #elif defined(STM32F4)
         // UART inverter is not supproted on F4, but keep it in line with other CPUs
         // External inverter in bidir mode would be quite problematic anyway

@@ -96,7 +96,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
         .identifier = SERIAL_PORT_USART1,
-        .reg = USART1,
+        .reg = (usartResource_t *)USART1,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART1_RX,
         .rxDMAResource = (dmaResource_t *)UART1_RX_DMA_CHANNEL,
@@ -129,7 +129,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2
     {
         .identifier = SERIAL_PORT_USART2,
-        .reg = USART2,
+        .reg = (usartResource_t *)USART2,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART2_RX,
         .rxDMAResource = (dmaResource_t *)UART2_RX_DMA_CHANNEL,
@@ -158,7 +158,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3
     {
         .identifier = SERIAL_PORT_USART3,
-        .reg = USART3,
+        .reg = (usartResource_t *)USART3,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART3_RX,
         .rxDMAResource = (dmaResource_t *)UART3_RX_DMA_CHANNEL,
@@ -191,7 +191,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4
     {
         .identifier = SERIAL_PORT_UART4,
-        .reg = USART4,
+        .reg = (usartResource_t *)USART4,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART4_RX,
         .rxDMAResource = (dmaResource_t *)UART4_RX_DMA_CHANNEL,
@@ -220,7 +220,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5
     {
         .identifier = SERIAL_PORT_UART5,
-        .reg = USART5,
+        .reg = (usartResource_t *)USART5,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART5_RX,
         .rxDMAResource = (dmaResource_t *)UART5_RX_DMA_CHANNEL,
@@ -249,7 +249,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6
     {
         .identifier = SERIAL_PORT_USART6,
-        .reg = USART6,
+        .reg = (usartResource_t *)USART6,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART6_RX,
         .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_CHANNEL,
@@ -284,7 +284,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART7
     {
         .identifier = SERIAL_PORT_UART7,
-        .reg = USART7,
+        .reg = (usartResource_t *)USART7,
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART7_RX,
         .rxDMAResource = (dmaResource_t *)UART7_RX_DMA_CHANNEL,
@@ -315,7 +315,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART8
     {
         .identifier = SERIAL_PORT_UART8,
-        .reg = USART8, //USE UART8 FOR PIN CONFIG
+        .reg = (usartResource_t *)USART8, //USE UART8 FOR PIN CONFIG
 #ifdef USE_DMA
         .rxDMAMuxId = DMAMUX_DMAREQ_ID_USART8_RX,
         .rxDMAResource = (dmaResource_t *)UART8_RX_DMA_CHANNEL,

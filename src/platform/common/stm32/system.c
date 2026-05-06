@@ -35,6 +35,38 @@
 
 #include "drivers/system.h"
 
+#ifdef CH32H4
+
+#ifndef V5_V3_CLOCK_RATE
+#define V5_V3_CLOCK_RATE  2
+#endif
+
+    uint32_t __get_MCYCLE(void)
+    {
+        uint32_t result;
+
+        asm volatile ( "csrr %0," "mcycle" : "=r"(result) : );
+        return (result);
+    }
+
+    void __set_MCYCLE(uint32_t value)
+    {
+        asm volatile ("csrw mcycle, %0" : : "r" (value) );
+    }
+
+    void __set_MCOUNT_INHIBIT(uint32_t value)
+    {
+        asm volatile ("csrw mucounteren, %0" : : "r" (value) );
+    }
+
+    uint32_t __get_MCOUNT_INHIBIT(void)
+    {
+        uint32_t result;
+        asm volatile ( "csrr %0," "mucounteren" : "=r"(result) : );
+        return (result);
+    }    
+#endif
+
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(X32M7) 
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
@@ -56,6 +88,18 @@ static uint32_t cpuClockFrequency = 0;
 
 void cycleCounterInit(void)
 {
+#ifdef CH32H4
+    cpuClockFrequency =  HCLKClock;       
+    
+    usTicks = HCLKClock / 1000000;
+    usTicksInv = 1e6f / cpuClockFrequency;    
+
+      //only can operate under M mode
+    __set_MCOUNT_INHIBIT(0x5);  //disable mcycle
+    __set_MCYCLE(0);          
+    __set_MCOUNT_INHIBIT(0x0);  //enable mcycle
+#else
+
 #if defined(USE_HAL_DRIVER)
 #if defined(CORE_CM4)
     // M4 core on dual-core H755/H757 runs at HCLK (after HPRE division)
@@ -92,12 +136,88 @@ void cycleCounterInit(void)
 
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#endif    
 }
 
 // SysTick
 
 static volatile int sysTickPending = 0;
 
+#if defined(CH32H415)
+
+uint32_t __get_MEPC(void)
+{
+  uint32_t result;
+
+  asm volatile ( "csrr %0," "mepc" : "=r" (result) );
+  return (result);
+}
+
+__FAST_INTERRUPT
+void SysTick1_Handler(void)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        sysTickUptime++;
+        sysTickValStamp = SysTick1->CNT;
+        sysTickPending = 0;
+        SysTick0->ISR &= ~(1<<1);   //clear Systick1 int
+    }
+}
+
+// Return system uptime in microseconds (rollover in 70minutes)
+
+MMFLASH_CODE_NOINLINE uint32_t microsISR(void)
+{
+    volatile uint32_t ms, pending, cycle_cnt;
+
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        cycle_cnt = SysTick1->CNT;
+
+        //H41x, Systick1 count flag at Systick0->ISR bit1
+        if (SysTick0->ISR & (1<<1)) {
+            // Update pending.
+            // Record it for multiple calls within the same rollover period
+            // (Will be cleared when serviced).
+            // Note that multiple rollovers are not considered.
+
+            sysTickPending = 1;
+
+            // Read VAL again to ensure the value is read after the rollover.
+
+            cycle_cnt = SysTick1->CNT;
+        }
+
+        ms = sysTickUptime;
+        pending = sysTickPending;
+    }
+
+    return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+}
+
+uint32_t micros(void)
+{
+    register uint32_t ms, cycle_cnt;
+
+    // Call microsISR() in interrupt and elevated (non-zero) BASEPRI context
+    if((PFIC->GISR & 0xFF) || (__get_BASEPRI())){
+         return microsISR();
+    }
+
+    do {
+        ms = sysTickUptime;
+        cycle_cnt = SysTick1->CNT;
+    } while (ms != sysTickUptime || cycle_cnt > sysTickValStamp);
+
+    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+}
+
+//machine cycle == Systemcoreclock  
+uint32_t getCycleCounter(void)  
+{
+    return __get_MCYCLE( );
+}
+
+#else
 void SysTick_Handler(void)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
@@ -164,6 +284,38 @@ uint32_t getCycleCounter(void)
     return DWT->CYCCNT;
 }
 
+#endif
+
+#ifdef CH32H415
+//cyclecount = V5_V3_CLOCK_RATE * Systick_CLK
+int32_t clockCyclesToMicros(int32_t clockCycles)
+{
+    return clockCycles / usTicks / V5_V3_CLOCK_RATE;
+}
+
+float clockCyclesToMicrosf(int32_t clockCycles)
+{
+    return clockCycles * usTicksInv / V5_V3_CLOCK_RATE;
+}
+
+// Note that this conversion is signed as this is used for periods rather than absolute timestamps
+int32_t clockCyclesTo10thMicros(int32_t clockCycles)
+{
+    return 10 * clockCycles / (int32_t)usTicks / V5_V3_CLOCK_RATE;
+}
+
+// Note that this conversion is signed as this is used for periods rather than absolute timestamps
+int32_t clockCyclesTo100thMicros(int32_t clockCycles)
+{
+    return 100 * clockCycles / (int32_t)usTicks / V5_V3_CLOCK_RATE;
+}
+
+uint32_t clockMicrosToCycles(uint32_t micros)
+{
+    return micros * usTicks * V5_V3_CLOCK_RATE;
+}
+#else
+
 int32_t clockCyclesToMicros(int32_t clockCycles)
 {
     return clockCycles / usTicks;
@@ -190,6 +342,8 @@ uint32_t clockMicrosToCycles(uint32_t micros)
 {
     return micros * usTicks;
 }
+
+#endif
 
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
@@ -328,3 +482,77 @@ void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }
+<<<<<<< HEAD
+=======
+
+const mcuTypeInfo_t *getMcuTypeInfo(void)
+{
+    static const mcuTypeInfo_t info[] = {
+#if defined(STM32H743xx)
+        { .id = MCU_TYPE_H743_REV_UNKNOWN, .name = "STM32H743 (Rev Unknown)" },
+        { .id = MCU_TYPE_H743_REV_Y, .name = "STM32H743 (Rev.Y)" },
+        { .id = MCU_TYPE_H743_REV_X, .name = "STM32H743 (Rev.X)" },
+        { .id = MCU_TYPE_H743_REV_V, .name = "STM32H743 (Rev.V)" },
+#elif defined(STM32F40_41xxx)
+        { .id = MCU_TYPE_F40X, .name = "STM32F40X" },
+#elif defined(STM32F411xE)
+        { .id = MCU_TYPE_F411, .name = "STM32F411" },
+#elif defined(STM32F446xx)
+        { .id = MCU_TYPE_F446, .name = "STM32F446" },
+#elif defined(STM32F722xx)
+        { .id = MCU_TYPE_F722, .name = "STM32F722" },
+#elif defined(STM32F745xx)
+        { .id = MCU_TYPE_F745, .name = "STM32F745" },
+#elif defined(STM32F746xx)
+        { .id = MCU_TYPE_F746, .name = "STM32F746" },
+#elif defined(STM32F765xx)
+        { .id = MCU_TYPE_F765, .name = "STM32F765" },
+#elif defined(STM32H563xx)
+        { .id = MCU_TYPE_H563, .name = "STM32H563" },
+#elif defined(STM32H750xx)
+        { .id = MCU_TYPE_H750, .name = "STM32H750" },
+#elif defined(STM32H730xx)
+        { .id = MCU_TYPE_H730, .name = "STM32H730" },
+#elif defined(STM32H735xx)
+        { .id = MCU_TYPE_H735, .name = "STM32H735" },
+#elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+        { .id = MCU_TYPE_H7A3, .name = "STM32H7A3" },
+#elif defined(STM32H723xx) || defined(STM32H725xx)
+        { .id = MCU_TYPE_H723_725, .name = "STM32H723/H725" },
+#elif defined(STM32G474xx)
+        { .id = MCU_TYPE_G474, .name = "STM32G474" },
+#elif defined(AT32F435G)
+        { .id = MCU_TYPE_AT32F435G, .name = "AT32F435G" },
+#elif defined(AT32F435M)
+        { .id = MCU_TYPE_AT32F435M, .name = "AT32F435M" },
+#elif defined(APM32F405)
+        { .id = MCU_TYPE_APM32F405, .name = "APM32F405" },
+#elif defined(APM32F407)
+        { .id = MCU_TYPE_APM32F407, .name = "APM32F407" },
+#elif defined(STM32N657xx)
+        { .id = MCU_TYPE_N657, .name = "STM32N657" },
+#elif defined(CH32H415)
+        { .id = MCU_TYPE_CH32H415, .name = "CH32H415" },
+#else
+#error MCU Type info not defined for STM (or clone)
+#endif
+    };
+    unsigned revision = 0;
+#if defined(STM32H743xx)
+    switch (HAL_GetREVID()) {
+    case REV_ID_Y:
+        revision = 1;
+        break;
+    case REV_ID_X:
+        revision = 2;
+        break;
+    case REV_ID_V:
+        revision = 3;
+        break;
+    default:
+        revision = 0;
+    }
+#endif
+    return info + revision;
+}
+>>>>>>> 00f411e36 (add ch32)

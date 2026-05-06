@@ -44,6 +44,19 @@
 
 #include "pg/vcd.h"
 
+#if defined(CH32H415) && defined(USE_INTERNAL_OSD)
+/*
+    The H415's on-chip OSD communicates with data 
+    via hardware semaphores and IPC interrupts.
+    DP_TF_BUF_ADDR:Shared data buffer（ON Chip SRAM）
+ */
+#define DP_TF_BUF_ADDR    0x20120100
+#define DP_TF_BUF_LEN     (16*1024)
+uint8_t *pDPbuf = (uint8_t *)(DP_TF_BUF_ADDR);
+volatile uint32_t dp_buff_pos = 0;
+//uint32_t dp_frame_cnt;
+#endif
+
 static displayPort_t mspDisplayPort;
 static serialPortIdentifier_e displayPortSerial;
 
@@ -58,7 +71,40 @@ typedef struct displayPortMspCommand_s {
 static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
     UNUSED(displayPort);
-
+	#if defined(CH32H415) && defined(USE_INTERNAL_OSD)
+    volatile int move_cnt = 0;
+    while(HSEM_GetOneSemTakenState(HSEM_ID0) == ENABLE){
+        move_cnt++;
+        if(move_cnt > (350*30))
+        {
+            break;
+        }
+    }
+	if(move_cnt < (350*30) ){
+		HSEM_FastTake(HSEM_ID0);
+		pDPbuf[dp_buff_pos++] = (uint8_t)(len>>8);
+		if(dp_buff_pos >= DP_TF_BUF_LEN)
+		{
+			dp_buff_pos = 0;
+		}
+		pDPbuf[dp_buff_pos++] = (uint8_t)(len);
+		if(dp_buff_pos >= DP_TF_BUF_LEN)
+		{
+			dp_buff_pos = 0;
+		}
+		move_cnt = 0;
+		while(move_cnt < len)
+		{
+			pDPbuf[dp_buff_pos++] = buf[move_cnt++];
+			if(dp_buff_pos >= DP_TF_BUF_LEN)
+			{
+				dp_buff_pos = 0;
+			}
+		}
+		HSEM_ReleaseOneSem(HSEM_ID0, 0);
+	}
+	IPC_WriteMSG(IPC_MSG3, dp_buff_pos);
+	#endif
     return mspSerialPush(displayPortSerial, cmd, buf, len, MSP_DIRECTION_REPLY, MSP_V1);
 }
 
@@ -240,7 +286,10 @@ static const displayPortVTable_t mspDisplayPortVTable = {
 displayPort_t *displayPortMspInit(void)
 {
     displayInit(&mspDisplayPort, &mspDisplayPortVTable, DISPLAYPORT_DEVICE_TYPE_MSP);
-
+#if defined(CH32H415) && defined(USE_INTERNAL_OSD)
+	pDPbuf = (uint8_t *)(DP_TF_BUF_ADDR);
+	dp_buff_pos = 0;
+#endif
     if (displayPortProfileMsp()->useDeviceBlink) {
         mspDisplayPort.useDeviceBlink = true;
     }

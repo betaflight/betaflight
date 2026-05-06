@@ -154,7 +154,7 @@
         @upopt   USE_DSHOT_DMAR  timeup dma channel index
 */
 #define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
-    tim,                                                                \
+    (timerResource_t *)tim,                                                                \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \

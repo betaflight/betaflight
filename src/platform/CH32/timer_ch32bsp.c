@@ -86,7 +86,7 @@ timerInfo_t timerInfo[USED_TIMER_COUNT];
 // return index of timer in timer table. Lowest timer has index 0
 #define TIMER_INDEX(i) BITCOUNT((TIM_N(i) - 1) & USED_TIMERS)
 
-static uint8_t lookupTimerIndex(const void *tim)
+static uint8_t lookupTimerIndex(const timerResource_t *tim)
 {
     const TIM_TypeDef *tim_ptr = (const TIM_TypeDef *)tim;
 #define _CASE_SHF 10 // amount we can safely shift timer address to the right. gcc will throw error if some timers overlap

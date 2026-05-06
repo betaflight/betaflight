@@ -23,6 +23,8 @@
 #include <stdint.h>
 
 #if !defined(UNIT_TEST)
+
+#ifndef RISC_V
 // BASEPRI manipulation functions
 // only set_BASEPRI is implemented in device library. It does always create memory barrier
 // missing versions are implemented here
@@ -38,6 +40,30 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
 {
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
+
+#else 
+
+#if defined(CH32H4) 
+
+#define PFIC_ITHRESDR_ADDR    (0xE000E040)
+#define PFIC_ITHRESDR         *((volatile uint32_t *)PFIC_ITHRESDR_ADDR)
+
+__attribute__( ( always_inline ) ) static inline void __set_BASEPRI_nb(uint32_t basePri)
+{
+    PFIC_ITHRESDR = basePri & 0xF0;
+    asm("fence");
+}
+
+__attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint32_t basePri)
+{
+    uint32_t cur_tmp = PFIC_ITHRESDR & 0xF0;
+    if(cur_tmp < (basePri & 0xF0)) PFIC_ITHRESDR = basePri & 0xF0;
+    asm("fence");
+}
+
+#endif
+
+#endif
 
 #endif
 
@@ -84,6 +110,8 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 }
 
 #else
+
+#ifndef RISC_V
 // ARM BASEPRI manipulation
 
 // restore BASEPRI (called as cleanup function), with global memory barrier
@@ -111,6 +139,47 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
     __set_BASEPRI_MAX_nb(prio);
     return 1;
 }
+
+#else
+// restore BASEPRI (called as cleanup function), with global memory barrier
+static inline void __basepriRestoreMem(uint8_t *val)
+{
+    PFIC_ITHRESDR = (*val) & 0xF0;
+    asm("fence");
+}
+
+// set BASEPRI_MAX, with global memory barrier, returns true
+static inline uint8_t __basepriSetMemRetVal(uint8_t prio)
+{
+    // __set_BASEPRI_MAX(prio);
+        
+    uint32_t cur_tmp = PFIC_ITHRESDR & 0xF0;
+    if(cur_tmp < (prio & 0xF0)) PFIC_ITHRESDR = prio & 0xF0;
+    asm("fence");
+    return 1;
+}
+
+// restore BASEPRI (called as cleanup function), no memory barrier
+static inline void __basepriRestore(uint8_t *val)
+{
+    __set_BASEPRI_nb(*val);
+}
+
+// set BASEPRI_MAX, no memory barrier, returns true
+static inline uint8_t __basepriSetRetVal(uint8_t prio)
+{
+    __set_BASEPRI_MAX_nb(prio);
+    return 1;
+}
+
+static inline uint32_t  __get_BASEPRI(void)
+{
+    uint32_t val = PFIC_ITHRESDR & 0xF0;
+    asm("fence");
+    return val;
+}
+
+#endif
 
 #endif
 

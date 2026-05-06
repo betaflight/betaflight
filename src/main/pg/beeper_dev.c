@@ -31,10 +31,18 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DEV_CONFIG, 0);
 
 #ifdef BEEPER_INVERTED
+#ifdef CH32H415
 #define IS_OPEN_DRAIN   false
+#else
+#define IS_OPEN_DRAIN   false
+#endif
 #define IS_INVERTED     true
 #else
+#ifdef CH32H415
+#define IS_OPEN_DRAIN   false
+#else
 #define IS_OPEN_DRAIN   true
+#endif
 #define IS_INVERTED     false
 #endif
 
