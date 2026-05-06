@@ -36,7 +36,7 @@
 
 // NULL filter
 
-float nullFilterApply(filter_t *filter, float input)
+FAST_CODE float nullFilterApply(filter_t *filter, float input)
 {
     UNUSED(filter);
     return input;
@@ -236,10 +236,13 @@ FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, u
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
+FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *__restrict filter, float input)
 {
+    const float b0 = filter->b0, b1 = filter->b1, b2 = filter->b2;
+    const float a1 = filter->a1, a2 = filter->a2;
+
     /* compute result */
-    const float result = filter->b0 * input + filter->b1 * filter->x1 + filter->b2 * filter->x2 - filter->a1 * filter->y1 - filter->a2 * filter->y2;
+    const float result = b0 * input + b1 * filter->x1 + b2 * filter->x2 - a1 * filter->y1 - a2 * filter->y2;
 
     /* shift x1 to x2, input to x1 */
     filter->x2 = filter->x1;
@@ -253,22 +256,26 @@ FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 }
 
 /* Computes a biquadFilter_t filter in df1 and crossfades input with output */
-FAST_CODE float biquadFilterApplyDF1Weighted(biquadFilter_t* filter, float input)
+FAST_CODE float biquadFilterApplyDF1Weighted(biquadFilter_t *__restrict filter, float input)
 {
     // compute result
     const float result = biquadFilterApplyDF1(filter, input);
 
     // crossfading of input and output to turn filter on/off gradually
-    return filter->weight * result + (1 - filter->weight) * input;
+    const float w = filter->weight;
+    return w * result + (1.0f - w) * input;
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
+FAST_CODE float biquadFilterApply(biquadFilter_t *__restrict filter, float input)
 {
-    const float result = filter->b0 * input + filter->x1;
+    const float b0 = filter->b0, b1 = filter->b1, b2 = filter->b2;
+    const float a1 = filter->a1, a2 = filter->a2;
 
-    filter->x1 = filter->b1 * input - filter->a1 * result + filter->x2;
-    filter->x2 = filter->b2 * input - filter->a2 * result;
+    const float result = b0 * input + filter->x1;
+
+    filter->x1 = b1 * input - a1 * result + filter->x2;
+    filter->x2 = b2 * input - a2 * result;
 
     return result;
 }

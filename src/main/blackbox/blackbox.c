@@ -1618,6 +1618,14 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_YAW_LOWPASS_HZ, "%d",         currentPidProfile->yaw_lowpass_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH_HZ, "%d",         currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_NOTCH_CUTOFF, "%d",     currentPidProfile->dterm_notch_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_prediff_hz", "%d",                currentPidProfile->dterm_prediff_hz);
+        BLACKBOX_PRINT_HEADER_LINE("adaptive_dterm_lpf", "%d",              currentPidProfile->adaptive_dterm_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("adaptive_dterm_lpf_hz", "%d,%d,%d",     currentPidProfile->adaptive_dterm_lpf_min_hz,
+                                                                            currentPidProfile->adaptive_dterm_lpf_max_hz,
+                                                                            currentPidProfile->adaptive_dterm_lpf_start_hz);
+        BLACKBOX_PRINT_HEADER_LINE("adaptive_dterm_lpf_update", "%d,%d,%d", currentPidProfile->adaptive_dterm_lpf_update_ms,
+                                                                            currentPidProfile->adaptive_dterm_lpf_step_hz,
+                                                                            currentPidProfile->adaptive_dterm_lpf_learn_delay_s);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ITERM_WINDUP, "%d",           currentPidProfile->itermWindup);
 #if defined(USE_ITERM_RELAX)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ITERM_RELAX, "%d",            currentPidProfile->iterm_relax);

@@ -622,6 +622,8 @@ static void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "RTH";
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         flightMode = "PASS";
+    } else if (FLIGHT_MODE(BRAKING_MODE)) {
+        flightMode = "BRK";
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         flightMode = "ANGL";
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {

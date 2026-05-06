@@ -1221,6 +1221,14 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_DTERM_LPF2_STATIC_HZ,  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf2_static_hz) },
     { PARAM_NAME_DTERM_NOTCH_HZ,        VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_notch_hz) },
     { PARAM_NAME_DTERM_NOTCH_CUTOFF,    VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_notch_cutoff) },
+    { "dterm_prediff_hz",               VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_prediff_hz) },
+    { "adaptive_dterm_lpf",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf) },
+    { "adaptive_dterm_lpf_min_hz",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_min_hz) },
+    { "adaptive_dterm_lpf_max_hz",      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_max_hz) },
+    { "adaptive_dterm_lpf_start_hz",    VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_start_hz) },
+    { "adaptive_dterm_lpf_update_ms",   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 5000 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_update_ms) },
+    { "adaptive_dterm_lpf_step_hz",     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 20 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_step_hz) },
+    { "adaptive_dterm_lpf_learn_delay_s", VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, adaptive_dterm_lpf_learn_delay_s) },
 #if defined(USE_BATTERY_VOLTAGE_SAG_COMPENSATION)
     { PARAM_NAME_VBAT_SAG_COMPENSATION, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, vbat_sag_compensation) },
 #endif

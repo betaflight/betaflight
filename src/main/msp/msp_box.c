@@ -93,6 +93,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { .boxId = BOXPIDAUDIO, .boxName = "PID AUDIO", .permanentId = 44 },
     { .boxId = BOXPARALYZE, .boxName = "PARALYZE", .permanentId = 45 },
     { .boxId = BOXGPSRESCUE, .boxName = "GPS RESCUE", .permanentId = 46 },
+    { .boxId = BOXBRAKING, .boxName = "BRAKING", .permanentId = 57 },
     { .boxId = BOXACROTRAINER, .boxName = "ACRO TRAINER", .permanentId = 47 },
     { .boxId = BOXVTXCONTROLDISABLE, .boxName = "VTX CONTROL DISABLE", .permanentId = 48},
     { .boxId = BOXLAUNCHCONTROL, .boxName = "LAUNCH CONTROL", .permanentId = 49 },
@@ -223,6 +224,9 @@ void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         BME(BOXANGLE);
         BME(BOXHORIZON);
+        if (!isFixedWing()) {
+            BME(BOXBRAKING);
+        }
 #ifdef USE_ALTITUDE_HOLD
         BME(BOXALTHOLD);
 #endif
