@@ -655,10 +655,18 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f));                   //!< Angle Feedforward Rate (roll) [unit:0.1dps]
         DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f));                       //!< Current Angle (roll) [unit:0.1deg]
 
+        DEBUG_SET(DEBUG_CHIRP, 1, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 2, lrintf(angleTarget * 10.0f));  // target angle
+
+
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));  //!< Angle Target (roll) [unit:0.1deg]
         DEBUG_SET(DEBUG_ANGLE_TARGET, 1, lrintf(sinAngle * 10.0f));     //!< Earth Reference Sine (roll) [unit:0.1]
         // debug ANGLE_TARGET 2 is yaw attenuation
         DEBUG_SET(DEBUG_ANGLE_TARGET, 3, lrintf(currentAngle * 10.0f));  //!< Current Angle (roll) [unit:0.1deg]
+    }
+    else if (axis == FD_PITCH) {
+        DEBUG_SET(DEBUG_CHIRP, 3, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 4, lrintf(angleTarget * 10.0f));  // target angle
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f));  //!< [index:0..2] Current Angle ({roll|pitch|yaw}) [unit:0.1deg]
@@ -1216,6 +1224,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
 #if defined(USE_ACC)
         pidRuntime.axisInAngleMode[axis] = false;
+#ifdef USE_CHIRP
+        currentPidSetpoint += currentChirp;
+#endif // USE_CHIRP
         if (axis < FD_YAW) {
             if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
                 pidRuntime.axisInAngleMode[axis] = true;
@@ -1268,9 +1279,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
-#ifdef USE_CHIRP
-        currentPidSetpoint += currentChirp;
-#endif // USE_CHIRP
+
         float errorRate = currentPidSetpoint - gyroRate; // r - y
 #if defined(USE_ACC)
         handleCrashRecovery(
