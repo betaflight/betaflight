@@ -205,7 +205,7 @@ void adaptiveFilterUpdate(float throttle, float setpointRate, float gyroError, f
         DEBUG_SET(DEBUG_ADAPTIVE_DTERM_LPF, 0, 0);
         DEBUG_SET(DEBUG_ADAPTIVE_DTERM_LPF, 1, 0);
         DEBUG_SET(DEBUG_ADAPTIVE_DTERM_LPF, 2, 0);
-        DEBUG_SET(DEBUG_ADAPTIVE_DTERM_LPF, 3, ADAPTIVE_STATE_CONFIG);
+        DEBUG_SET(DEBUG_ADAPTIVE_DTERM_LPF, 3, (ADAPTIVE_FREEZE_NONE << 8) | ADAPTIVE_STATE_CONFIG);
         return;
     }
 
@@ -229,6 +229,9 @@ void adaptiveFilterUpdate(float throttle, float setpointRate, float gyroError, f
             adArmedAtUs = 0;
             adCurrentCutoff = adStartHz;
             adNoiseEnergy = 0.0f;
+            adNoiseDiffSqAccum = 0.0f;
+            adNoiseDiffSqCount = 0;
+            adLastUpdateUs = 0;
             for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
                 adPrevDterm[i] = 0.0f;
                 adPrevDtermValid[i] = false;
@@ -269,7 +272,7 @@ void adaptiveFilterUpdate(float throttle, float setpointRate, float gyroError, f
 
     const uint32_t elapsedMs = cmpTimeUs(now, adLastUpdateUs) / 1000;
     if (elapsedMs < adUpdateMs) {
-        adState = frozen ? ADAPTIVE_STATE_FROZEN : adState;
+        adState = frozen ? ADAPTIVE_STATE_FROZEN : ADAPTIVE_STATE_HOLD;
         return;
     }
     adLastUpdateUs = now;

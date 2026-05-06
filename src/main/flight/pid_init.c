@@ -139,6 +139,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.dtermLowpassApplyFn = nullFilterApply;
         pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
         pidRuntime.ptermYawLowpassApplyFn = nullFilterApply;
+        pidRuntime.dtermPreDiffEnabled = false;
         return;
     }
 

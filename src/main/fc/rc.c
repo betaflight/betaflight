@@ -673,7 +673,13 @@ FAST_CODE void processRcCommand(void)
 
         // FPV camera angle mixing changes the final roll/yaw setpoint pair, so it
         // must happen before feedforward is derived from rawSetpoint.
-        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
+        if (rxConfig()->fpvCamAngleDegrees
+            && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)
+            && !FLIGHT_MODE(HEADFREE_MODE)
+#ifdef USE_GPS_RESCUE
+            && !FLIGHT_MODE(GPS_RESCUE_MODE)
+#endif
+        ) {
             scaleRawSetpointToFpvCamAngle();
         }
 
