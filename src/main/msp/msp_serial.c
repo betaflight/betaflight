@@ -532,10 +532,8 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             continue;
         }
 
-        // There are bytes incoming - abort pending request once on new activity burst.
-        // This must be outside the inner loop so that characters within the same burst
-        // (e.g. '#' followed by '\r') do not cancel the CLI pending request that '#' sets.
-        // Matches the pre-PR-13940 behaviour where pending was cleared once per task tick.
+        // Abort pending request once per activity burst, not per byte.
+        // Prevents multi-byte sequences (e.g. '#\r') from cancelling CLI entry.
         if (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
             mspPort->lastActivityMs = millis();
             mspPort->pendingRequest = MSP_PENDING_NONE;
