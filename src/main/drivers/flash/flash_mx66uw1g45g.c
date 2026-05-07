@@ -164,8 +164,9 @@ MMFLASH_CODE static int mx66uw1g45g_readBytes(flashDevice_t *fdevice, uint32_t a
     if (address >= fdevice->geometry.totalSize) {
         return 0;
     }
-    if (address + length > fdevice->geometry.totalSize) {
-        length = fdevice->geometry.totalSize - address;
+    const uint32_t remaining = fdevice->geometry.totalSize - address;
+    if (length > remaining) {
+        length = remaining;
     }
 
     memcpy(buffer, (const void *)(uintptr_t)(MX66UW1G45G_MEMORY_MAPPED_BASE + address), length);
