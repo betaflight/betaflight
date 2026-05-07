@@ -625,13 +625,11 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_CHIRP, 4, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 5, lrintf(angleTarget * 10.0f));  // target angle
 
-
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));
         DEBUG_SET(DEBUG_ANGLE_TARGET, 1, lrintf(sinAngle * 10.0f)); // modification factor from earthRef
         // debug ANGLE_TARGET 2 is yaw attenuation
         DEBUG_SET(DEBUG_ANGLE_TARGET, 3, lrintf(currentAngle * 10.0f)); // angle returned
-    }
-    else if (axis == FD_PITCH) {
+    } else if (axis == FD_PITCH) {
         DEBUG_SET(DEBUG_CHIRP, 6, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 7, lrintf(angleTarget * 10.0f));  // target angle
     }
