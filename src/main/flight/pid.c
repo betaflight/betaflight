@@ -624,6 +624,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
         DEBUG_SET(DEBUG_CHIRP, 4, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 5, lrintf(angleTarget * 10.0f));  // target angle
+        DEBUG_SET(DEBUG_CHIRP, 6, 0);  // current angle pitch set to zero
+        DEBUG_SET(DEBUG_CHIRP, 7, 0);  // target angle pitch set to zero
 
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));
         DEBUG_SET(DEBUG_ANGLE_TARGET, 1, lrintf(sinAngle * 10.0f)); // modification factor from earthRef
@@ -632,6 +634,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
     } else if (axis == FD_PITCH) {
         DEBUG_SET(DEBUG_CHIRP, 6, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 7, lrintf(angleTarget * 10.0f));  // target angle
+        DEBUG_SET(DEBUG_CHIRP, 4, 0);   // current angle roll set to zero
+        DEBUG_SET(DEBUG_CHIRP, 5, 0);  // target angle roll set to zero
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f)); // current angle
