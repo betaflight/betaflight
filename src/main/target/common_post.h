@@ -123,7 +123,6 @@
     && !defined(USE_ACC_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
-
     && !defined(USE_ACCGYRO_SCS3302) \
     && !defined(USE_ACCGYRO_SCS3304) \
     && !defined(USE_VIRTUAL_ACC)
@@ -153,7 +152,6 @@
     && !defined(USE_GYRO_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
-
     && !defined(USE_ACCGYRO_SCS3302) \
     && !defined(USE_ACCGYRO_SCS3304) \
     && !defined(USE_VIRTUAL_GYRO)
