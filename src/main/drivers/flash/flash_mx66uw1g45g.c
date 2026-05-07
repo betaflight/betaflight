@@ -49,6 +49,7 @@
 #include "drivers/flash/flash.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_mx66uw1g45g.h"
+#include "drivers/system.h"
 
 // Geometry: 1Gbit / 128 MiB, 4 KiB sectors, 256 B pages.
 #define MX66UW1G45G_PAGE_SIZE           256U
@@ -103,16 +104,23 @@ MMFLASH_CODE static bool mx66uw1g45g_waitForReady(flashDevice_t *fdevice)
     return true;
 }
 
+// Phase 1 is memory-mapped read only. Any write or erase attempt is a
+// programming error in the caller (e.g. enabling USE_FLASHFS or
+// CONFIG_IN_EXTERNAL_FLASH on a board that uses this chip) and is reported via
+// failureMode rather than silently no-op'ing — silent stubs would let flashfs
+// loop forever waiting for progress.
+
 MMFLASH_CODE static void mx66uw1g45g_eraseSector(flashDevice_t *fdevice, uint32_t address)
 {
     UNUSED(fdevice);
     UNUSED(address);
-    // Phase 1: write/erase not implemented. Requires 8-line OPI primitives.
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }
 
 static void mx66uw1g45g_eraseCompletely(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }
 
 MMFLASH_CODE static void mx66uw1g45g_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
@@ -123,12 +131,11 @@ MMFLASH_CODE static void mx66uw1g45g_pageProgramBegin(flashDevice_t *fdevice, ui
 
 MMFLASH_CODE static uint32_t mx66uw1g45g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
 {
+    UNUSED(fdevice);
     UNUSED(buffers);
     UNUSED(bufferSizes);
     UNUSED(bufferCount);
-    if (fdevice->callback) {
-        fdevice->callback(0);
-    }
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
     return 0;
 }
 
@@ -139,13 +146,12 @@ MMFLASH_CODE static void mx66uw1g45g_pageProgramFinish(flashDevice_t *fdevice)
 
 MMFLASH_CODE static void mx66uw1g45g_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
+    UNUSED(fdevice);
     UNUSED(address);
     UNUSED(data);
     UNUSED(length);
-    fdevice->callback = callback;
-    if (callback) {
-        callback(0);
-    }
+    UNUSED(callback);
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }
 
 MMFLASH_CODE static void mx66uw1g45g_flush(flashDevice_t *fdevice)

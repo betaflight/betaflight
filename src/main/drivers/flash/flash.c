@@ -118,6 +118,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #if defined(OCTOSPI_FLASH_CHIP_MX66UW1G45G) && defined(USE_FLASH_MX66UW1G45G)
     if (!detected && memoryMappedModeEnabledOnBoot) {
         if (mx66uw1g45g_identify(&flashDevice, MX66UW1G45G_JEDEC_ID)) {
+            flashDevice.geometry.jedecId = MX66UW1G45G_JEDEC_ID;
             detected = true;
         }
     }
@@ -130,7 +131,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 
         do {
 #ifdef USE_OCTOSPI_EXPERIMENTAL
-            if (!memoryMappedMode) {
+            if (!memoryMappedModeEnabledOnBoot) {
                 octoSpiSetDivisor(instance, OCTOSPI_CLOCK_INITIALISATION);
             }
 #endif
@@ -164,9 +165,7 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #endif
 
             for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
-#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25M02G)
                 uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
-#endif
 
                 if (offset == 0) {
 #if defined(USE_FLASH_W25Q128FV)
@@ -197,6 +196,10 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
 #endif
                     }
 #endif
+                }
+
+                if (detected) {
+                    flashDevice.geometry.jedecId = jedecID;
                 }
             }
             phase++;
