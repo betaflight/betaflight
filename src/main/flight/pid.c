@@ -622,8 +622,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f)); // feedforward amount in degrees
         DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f)); // angle returned
 
-        DEBUG_SET(DEBUG_CHIRP, 1, lrintf(currentAngle * 10.0f)); // angle returned
-        DEBUG_SET(DEBUG_CHIRP, 2, lrintf(angleTarget * 10.0f));  // target angle
+        DEBUG_SET(DEBUG_CHIRP, 4, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 5, lrintf(angleTarget * 10.0f));  // target angle
 
 
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));
@@ -632,8 +632,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_ANGLE_TARGET, 3, lrintf(currentAngle * 10.0f)); // angle returned
     }
     else if (axis == FD_PITCH) {
-        DEBUG_SET(DEBUG_CHIRP, 3, lrintf(currentAngle * 10.0f)); // angle returned
-        DEBUG_SET(DEBUG_CHIRP, 4, lrintf(angleTarget * 10.0f));  // target angle
+        DEBUG_SET(DEBUG_CHIRP, 6, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 7, lrintf(angleTarget * 10.0f));  // target angle
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f)); // current angle
@@ -1244,11 +1244,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
+#ifdef USE_CHIRP    // in case chirp mode is active
+        currentPidSetpoint += currentChirp;     // add chirp signal for system identification
+#endif // USE_CHIRP
+
 #if defined(USE_ACC)
         pidRuntime.axisInAngleMode[axis] = false;
-#ifdef USE_CHIRP
-        currentPidSetpoint += currentChirp;
-#endif // USE_CHIRP
+
         if (axis < FD_YAW) {
             if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
                 pidRuntime.axisInAngleMode[axis] = true;
