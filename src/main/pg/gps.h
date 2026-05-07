@@ -35,6 +35,7 @@ typedef struct gpsConfig_s {
     uint8_t gps_ublox_acquire_model;
     uint8_t gps_ublox_flight_model;
     uint8_t gps_update_rate_hz;
+    uint8_t gps_keep_nav_sat_after_arm;
     bool gps_ublox_use_galileo;
     bool gps_set_home_point_once;
     bool gps_use_3d_speed;

@@ -49,6 +49,7 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbas_integrity = false,
     .gps_ublox_utc_standard = UBLOX_UTC_STANDARD_AUTO,
     .gps_ublox_enable_ana = false,
+    .gps_keep_nav_sat_after_arm = false,
     .nmeaCustomCommands = "",
 );
 

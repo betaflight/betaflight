@@ -6086,6 +6086,11 @@ static void cliStatus(const char *cmdName, char *cmdline)
         }
 #ifdef USE_GPS_UBLOX
         cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+        if (gpsConfig()->gps_keep_nav_sat_after_arm == false) {
+            cliPrint("UBX_NAV_SAT messages will be off after arm, ");
+        } else {
+            cliPrint("UBX_NAV_SAT messages will be on after arm, ");
+        }
 #endif
     } else {
         cliPrint("NOT ENABLED");

@@ -2929,7 +2929,7 @@ void GPS_reset_home_position(void)
 
 #ifdef USE_GPS_UBLOX
     // disable Sat Info requests on arming
-    if (gpsConfig()->provider == GPS_UBLOX) {
+    if (gpsConfig()->provider == GPS_UBLOX && gpsConfig()->gps_keep_nav_sat_after_arm == false) {
         setSatInfoMessageRate(0);
     }
 #endif
