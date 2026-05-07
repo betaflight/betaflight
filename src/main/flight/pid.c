@@ -1244,8 +1244,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
-#ifdef USE_CHIRP    // in case chirp mode is active
-        currentPidSetpoint += currentChirp;     // add chirp signal for system identification
+#ifdef USE_CHIRP    // when chirp support is compiled in
+        currentPidSetpoint += currentChirp;     // add current chirp contribution for system identification (zero when inactive)
 #endif // USE_CHIRP
 
 #if defined(USE_ACC)
