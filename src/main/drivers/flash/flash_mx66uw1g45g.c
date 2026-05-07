@@ -125,8 +125,10 @@ static void mx66uw1g45g_eraseCompletely(flashDevice_t *fdevice)
 
 MMFLASH_CODE static void mx66uw1g45g_pageProgramBegin(flashDevice_t *fdevice, uint32_t address, void (*callback)(uintptr_t arg))
 {
-    fdevice->callback = callback;
-    fdevice->currentWriteAddress = address;
+    UNUSED(fdevice);
+    UNUSED(address);
+    UNUSED(callback);
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }
 
 MMFLASH_CODE static uint32_t mx66uw1g45g_pageProgramContinue(flashDevice_t *fdevice, uint8_t const **buffers, const uint32_t *bufferSizes, uint32_t bufferCount)
@@ -142,6 +144,7 @@ MMFLASH_CODE static uint32_t mx66uw1g45g_pageProgramContinue(flashDevice_t *fdev
 MMFLASH_CODE static void mx66uw1g45g_pageProgramFinish(flashDevice_t *fdevice)
 {
     UNUSED(fdevice);
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }
 
 MMFLASH_CODE static void mx66uw1g45g_pageProgram(flashDevice_t *fdevice, uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
