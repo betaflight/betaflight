@@ -3632,12 +3632,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             if (sbufBytesRemaining(src) >= 4) {
                 blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
             }
-            // Added in MSP API 1.49: ring-mode flash mode. We accept the value
-            // unconditionally so configurators on hosts without the new field don't
-            // accidentally clobber it; readers that don't know about the field will
-            // still send only up through fields_disabled_mask.
+            // Added in MSP API 1.49: ring-mode flash mode. Validate against the enum
+            // upper bound so a malformed client can't persist an invalid value into PG.
             if (sbufBytesRemaining(src) >= 1) {
-                blackboxConfigMutable()->flash_mode = sbufReadU8(src);
+                const uint8_t flashMode = sbufReadU8(src);
+                if (flashMode <= BLACKBOX_FLASH_MODE_RING) {
+                    blackboxConfigMutable()->flash_mode = flashMode;
+                }
             }
         }
         break;
