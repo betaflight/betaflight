@@ -370,6 +370,9 @@ static void validateAndFixConfig(void)
             failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
         }
 #endif
+        if (failsafeConfig()->failsafe_procedure >= FAILSAFE_PROCEDURE_COUNT) {
+            failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
+        }
 
         if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
             removeModeActivationCondition(BOXGPSRESCUE);
