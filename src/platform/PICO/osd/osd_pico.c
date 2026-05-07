@@ -123,7 +123,6 @@ uint32_t dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8;
 static int badX;
 static int badY;
 static int badC = -1;
-static int ddc=0;
 
 static uint16_t us_per_vsync;
 #endif
@@ -428,7 +427,10 @@ int osdPioCountHSyncs(void)
 
 static void vsync_callback_debug(void)
 {
+    static int ddc;
+    static int ddcc;
     ++ddc;
+    ++ddcc;
 
 #define NN 50
 
@@ -468,14 +470,15 @@ static void vsync_callback_debug(void)
         static int printq = 0;
         if (++printq == 3) {
             printq = 0;
-            bprintf("%d completed %d, ave us (duty cycle) per vsync render %d (%.1f), "
-                    "start ave %.1f max %.1f, end ave %.1f max %.1f "
+            bprintf("%d renders %d (vsyncs %d), duty %.1f%%. Ave us / render %d, "
+                    "offsets: start %.1f max %.1f, end %.1f max %.1f "
                     "max %.1f [%d %d %d %d %d %d]",
-                    ddc, tusr,
-                    renderTot/(NN*150), ((double)renderTot)/(NN*(150*us_per_vsync/100)),
-                    ((double)renderStartCycles)/(NN*150), ((double)renderStartCyclesMax)/(150),
-                    ((double)renderEndCycles)/(NN*150), ((double)renderEndCyclesMax)/(150),
-                    (double)(((float)maxcycles) / 150), dd1/150,dd2/150,dd3/150,dd6,dd7,dd8
+                    ddc, tusr, ddcc,
+                    ((double)renderTot)/(NN*(mpc*us_per_vsync/100)),
+                    renderTot/(tusr*mpc),
+                    ((double)renderStartCycles)/(tusr*mpc), ((double)renderStartCyclesMax)/(mpc),
+                    ((double)renderEndCycles)/(tusr*mpc), ((double)renderEndCyclesMax)/(mpc),
+                    (double)(((float)maxcycles) / mpc), dd1/mpc,dd2/mpc,dd3/mpc,dd6,dd7,dd8
                    );
 
             if (badC != -1) {
@@ -491,6 +494,7 @@ static void vsync_callback_debug(void)
         }
 
         dd1 = dd2 = dd3 = dd4 = dd5 = dd6 = dd7 = dd8 = 0;
+        ddcc = 0;
 
         renderStartCycles = 0; renderEndCycles = 0;
         renderStartCyclesMax = 0; renderEndCyclesMax = 0;
