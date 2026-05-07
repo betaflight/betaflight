@@ -30,11 +30,7 @@
 
 #include "sensors/gyro.h"
 
-/* See datasheet
- *
- *     https://www.st.com/content/ccc/resource/technical/document/datasheet/group3/47/03/b2/44/47/32/4b/76/DM00741844/files/DM00741844.pdf/jcr:content/translations/en.DM00741844.pdf
- *
- */
+
 
 // 10 MHz max SPI frequency
 #define SCS3302_MAX_SPI_CLK_HZ 10000000
