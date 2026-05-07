@@ -526,13 +526,15 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             continue;
         }
 
-        // whilst port is idle, poll incoming until portState changes or no more bytes
-        while (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
-
-            // There are bytes incoming - abort pending request
+        // Abort pending request once per activity burst, not per byte.
+        // Prevents multi-byte sequences (e.g. '#\r') from cancelling CLI entry.
+        if (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
             mspPort->lastActivityMs = millis();
             mspPort->pendingRequest = MSP_PENDING_NONE;
+        }
 
+        // whilst port is idle, poll incoming until portState changes or no more bytes
+        while (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
             const uint8_t c = serialRead(mspPort->port);
             if (c == '$') {
                 mspPort->portState = PORT_MSP_PACKET;
