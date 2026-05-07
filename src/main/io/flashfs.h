@@ -20,11 +20,20 @@
 
 #pragma once
 
+// In ring-log mode, sustained writes are interrupted by ~30-50 ms NOR sector erases
+// (chip can't program while erasing). The RAM write buffer must be large enough to absorb
+// one worst-case erase at the maximum allowed sample rate (~200 KB/s × 50 ms ≈ 10 KB);
+// we round up to 16 KB for headroom. Linear mode never sees mid-flight erases so its
+// 128-byte buffer is sufficient. The bump only applies on targets compiling in ring mode.
+#ifdef USE_BLACKBOX_RING_LOG
+#define FLASHFS_WRITE_BUFFER_SIZE 16384
+#define FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN 256
+#else
 #define FLASHFS_WRITE_BUFFER_SIZE 128
-#define FLASHFS_WRITE_BUFFER_USABLE (FLASHFS_WRITE_BUFFER_SIZE - 1)
-
-// Automatically trigger a flush when this much data is in the buffer
 #define FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN 64
+#endif
+
+#define FLASHFS_WRITE_BUFFER_USABLE (FLASHFS_WRITE_BUFFER_SIZE - 1)
 
 void flashfsEraseCompletely(void);
 void flashfsEraseRange(uint32_t start, uint32_t end);

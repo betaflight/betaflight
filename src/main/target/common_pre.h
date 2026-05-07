@@ -240,6 +240,20 @@
 #endif
 #define USE_BLACKBOX
 
+// Ring-mode onboard-flash blackbox logging. Adds a circular-buffer write mode for the
+// onboard SPI flash that overwrites the oldest data once the chip is full.
+//
+// Requires:
+//   - ~8 KB extra static RAM (enlarged flashfs write buffer, sized to absorb sector
+//     erase stalls on NOR flash — see flashfs.h)
+//   - ~2-3 KB extra program flash
+//
+// Enabled by default only on STM32F7 / STM32H7 (Cortex-M7 with plenty of SRAM).
+// F4 and smaller targets have to opt in explicitly via cloud build option.
+#if defined(STM32F7) || defined(STM32H7)
+#define USE_BLACKBOX_RING_LOG
+#endif
+
 #if TARGET_FLASH_SIZE >= 1024
 
 #if defined(USE_SERIALRX)

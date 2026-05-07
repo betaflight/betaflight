@@ -26,10 +26,13 @@
 #include "emfat.h"
 #include "emfat_file.h"
 
+#include "common/maths.h"
 #include "common/printf.h"
 #include "common/strtol.h"
 #include "common/time.h"
 #include "common/utils.h"
+
+#include "blackbox/blackbox.h"
 
 #include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
@@ -37,6 +40,7 @@
 #include "drivers/usb_msc.h"
 
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 
 #include "pg/flash.h"
 
@@ -253,6 +257,39 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
     flashfsReadAbs(offset, dest, size);
 }
 
+#ifdef USE_FLASHFS
+// Ring-mode read callback. Each log appears as one virtual file whose contents are
+// header || data. user_data carries the log index passed to flashfsLogRead().
+static void bblog_ring_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
+{
+    uint32_t logIndex = (uint32_t)(uintptr_t)entry->user_data;
+    flashfsLogRead(logIndex, offset, dest, size);
+}
+
+// Ring-mode read callback for the combined "all logs" virtual file. Walks each log's
+// virtual span in order, mapping `offset` into the right log + intra-log offset.
+static void bblog_ring_read_all_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
+{
+    UNUSED(entry);
+    uint32_t pos = 0;
+    uint32_t logCount = flashfsLogGetLogCount();
+    for (uint32_t i = 0; i < logCount && size > 0; i++) {
+        const flashfsLogInfo_t *info = flashfsLogGetInfo(i);
+        if (!info) break;
+        uint32_t logEnd = pos + info->totalSize;
+        if (offset < logEnd) {
+            uint32_t inLog = offset - pos;
+            uint32_t take = MIN((uint32_t)size, info->totalSize - inLog);
+            flashfsLogRead(i, inLog, dest, take);
+            dest += take;
+            offset += take;
+            size -= take;
+        }
+        pos = logEnd;
+    }
+}
+#endif
+
 static const emfat_entry_t entriesPredefined[] =
 {
     // name           dir    attr         lvl offset  size             max_size        user                time  read               write
@@ -433,25 +470,58 @@ void emfat_init_files(void)
 #ifdef USE_FLASHFS
     flashInit(flashConfig());
     flashfsInit();
+    flashfsLogInit();
     LED0_OFF;
 
-    flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
+    if (blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
+            && flashfsLogDetectFormat() == FLASHFS_FLASH_FORMAT_RING) {
+        // Ring-mode path: each log is a virtual file synthesized from the metadata table.
+        const uint32_t ringLogCount = flashfsLogGetLogCount();
+        uint32_t totalSize = 0;
+        for (uint32_t i = 0; i < ringLogCount && i < EMFAT_MAX_LOG_ENTRY; i++) {
+            const flashfsLogInfo_t *info = flashfsLogGetInfo(i);
+            if (!info) break;
+            emfat_add_log(&entries[entryIndex], i, 0 /* offset unused */, info->totalSize);
+            entries[entryIndex].readcb = bblog_ring_read_proc;
+            entries[entryIndex].user_data = (long)(uintptr_t)i;
+            totalSize += info->totalSize;
+            entryIndex++;
+        }
 
-    // Detect and create entries for each individual log
-    const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
+        if (ringLogCount > 0) {
+            // Combined "all logs" virtual file.
+            entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
+            entry = &entries[entryIndex];
+            entry->curr_size = totalSize;
+            entry->max_size = totalSize;
+            entry->readcb = bblog_ring_read_all_proc;
+            emfat_set_entry_cma(entry);
+            ++entryIndex;
+        }
 
-    entryIndex += logCount;
+        // Approximate used space for the padding-file calculation below. With ring mode
+        // we don't have a concept of "used flash" the way linear does; use total log size.
+        flashfsUsedSpace = totalSize;
+    } else {
+        // Linear path — unchanged from before this feature.
+        flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
 
-    if (logCount > 0) {
-        // Create the all logs entry that represents all used flash space to
-        // allow downloading the entire log in one file
-        entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
-        entry = &entries[entryIndex];
-        entry->curr_size = flashfsUsedSpace;
-        entry->max_size = entry->curr_size;
-        // This entry has timestamps corresponding to when the filesystem is mounted
-        emfat_set_entry_cma(entry);
-        ++entryIndex;
+        // Detect and create entries for each individual log
+        const int logCount = emfat_find_log(&entries[PREDEFINED_ENTRY_COUNT], EMFAT_MAX_LOG_ENTRY, flashfsUsedSpace);
+
+        entryIndex += logCount;
+
+        if (logCount > 0) {
+            // Create the all logs entry that represents all used flash space to
+            // allow downloading the entire log in one file
+            entries[entryIndex] = entriesPredefined[PREDEFINED_ENTRY_COUNT];
+            entry = &entries[entryIndex];
+            entry->curr_size = flashfsUsedSpace;
+            entry->max_size = entry->curr_size;
+            // This entry has timestamps corresponding to when the filesystem is mounted
+            emfat_set_entry_cma(entry);
+            ++entryIndex;
+        }
     }
 #endif // USE_FLASHFS
 

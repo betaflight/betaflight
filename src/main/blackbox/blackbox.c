@@ -72,6 +72,9 @@
 #include "flight/imu.h"
 
 #include "io/beeper.h"
+#ifdef USE_FLASHFS
+#include "io/flashfs_log.h"
+#endif
 #include "io/gps.h"
 #include "io/serial.h"
 
@@ -104,14 +107,15 @@ void checkFlashStop(void);
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 5);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .fields_disabled_mask = 0, // default log all fields
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .flash_mode = BLACKBOX_FLASH_MODE_LINEAR
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -633,6 +637,14 @@ static void blackboxSetState(blackboxState_e newState)
         break;
     case BLACKBOX_STATE_RUNNING:
         blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
+#ifdef USE_FLASHFS
+        // For ring-mode flash logging, mark the end of the header phase. The blackbox writer
+        // will now route subsequent bytes through the data section (with wrap + eviction).
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
+                && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING) {
+            flashfsLogFinishHeader();
+        }
+#endif
 #ifdef USE_FLASH_TEST_PRBS
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
@@ -1066,6 +1078,17 @@ void blackboxValidateConfig(void)
     default:
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
+
+#ifdef USE_BLACKBOX_RING_LOG
+    // Ring-mode flash logging clamps sample_rate to ≥ 1/4. NOR sector-erase rate (~133
+    // KB/s) can't sustain higher sample rates without dropping frames; we silently clamp
+    // here so the user sees a working log instead of a heavily-gapped one.
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
+            && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
+            && blackboxConfig()->sample_rate < BLACKBOX_RATE_QUARTER) {
+        blackboxConfigMutable()->sample_rate = BLACKBOX_RATE_QUARTER;
+    }
+#endif
 }
 
 static void blackboxResetIterationTimers(void)

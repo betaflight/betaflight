@@ -71,8 +71,10 @@ static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
  * The tail is advanced once a write is complete up to the location behind head. The tail is advanced
  * by a callback from the FLASH write routine. This prevents data being overwritten whilst a write is in progress.
  */
-static uint8_t bufferHead = 0;
-static volatile uint8_t bufferTail = 0;
+// Type-wide enough to index FLASHFS_WRITE_BUFFER_SIZE; bumped from uint8_t when the
+// buffer was 128 B to uint16_t now that USE_BLACKBOX_RING_LOG can grow it to 16 KB.
+static uint16_t bufferHead = 0;
+static volatile uint16_t bufferTail = 0;
 
 /* Track if there is new data to write. Until the contents of the buffer have been completely
  * written flashfsFlushAsync() will be repeatedly called. The tail pointer is only updated
