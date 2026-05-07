@@ -81,11 +81,11 @@
 // flash erase. At log start we sync-erase POOL_TARGET_SECTORS sectors ahead; during
 // flight we kick off async erases (chip background) to keep the pool full.
 //
-// Sustained writer rate vs erase rate determines whether the pool depletes:
-//   - 1/8 sample rate (~100 KB/s)  ≤ NOR erase rate (~133 KB/s) → pool stable
-//   - 1/4 sample rate (~200 KB/s)  > NOR erase rate              → pool slowly drains;
-//     drop guard takes over and the log shows occasional gaps. (Validated config
-//     refuses sample rates faster than 1/4 in ring mode — see blackboxValidateConfig.)
+// Sustained writer rate vs erase rate determines whether the pool depletes. NOR erase
+// is ~80-133 KB/s; at ~80 B/frame the chip can sustain ~1000-1660 frames/sec. The
+// validated-config Hz cap (BLACKBOX_RING_MAX_FRAME_HZ = 1000) keeps the writer
+// nominally below the chip's erase rate. Worst-case erase outliers can still briefly
+// drain the pool — the drop guard takes over and the log shows a small gap.
 #define POOL_TARGET_SECTORS 4
 
 // Magic numbers identifying our on-flash records.
@@ -928,8 +928,8 @@ void flashfsLogWriteDataByte(uint8_t b)
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
-    // This is the "writer faster than erase" backstop — rate validation should normally
-    // prevent it, but it can happen during sustained 1/4 logging.
+    // This is the "writer faster than erase" backstop — the Hz-based rate validation
+    // should normally prevent it, but it can fire under worst-case erase-time outliers.
     if (active.dataWriteHead == eraseHead) {
         bbDataDrops++;
         return;

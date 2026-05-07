@@ -1080,20 +1080,35 @@ void blackboxValidateConfig(void)
     }
 
 #ifdef USE_BLACKBOX_RING_LOG
-    // Ring-mode flash logging clamps sample_rate to ≥ 1/4. NOR sector-erase rate (~133
-    // KB/s) can't sustain higher sample rates without dropping frames; we silently clamp
-    // here so the user sees a working log instead of a heavily-gapped one.
+    // Ring-mode flash logging is bandwidth-limited by NOR sector erase throughput
+    // (~4 KB / 30-50 ms ≈ 80-133 KB/s). At ~80 B/frame typical, that's ~1000-1660
+    // frames/sec the chip can sustain. We cap the effective frame rate at
+    // BLACKBOX_RING_MAX_FRAME_HZ — chosen with margin for worst-case erase times.
+    //
+    // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the
+    // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop the clamp
+    // forces 1/8, at 4 kHz pidloop it allows 1/4, at 2 kHz it allows 1/2, etc.
+    #define BLACKBOX_RING_MAX_FRAME_HZ 1000
     if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
             && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
-            && blackboxConfig()->sample_rate < BLACKBOX_RATE_QUARTER) {
-        blackboxConfigMutable()->sample_rate = BLACKBOX_RATE_QUARTER;
-        // blackboxPInterval was already derived in blackboxInit() from the pre-clamp
-        // sample_rate. Recompute it here so the upcoming logging session uses the new
-        // (slower) rate; otherwise the first ring-mode session after a config change
-        // still runs at the unsupported rate and falls into the drop path.
-        blackboxPInterval = 1 << blackboxConfig()->sample_rate;
-        if (blackboxPInterval > blackboxIInterval) {
-            blackboxPInterval = 0;
+            && targetPidLooptime > 0) {
+        const uint32_t pidHz = 1000000U / targetPidLooptime;
+        uint8_t sr = blackboxConfig()->sample_rate;
+        // Bump sample_rate (slower) until the resulting frame rate is at or below the
+        // cap. Stops at BLACKBOX_RATE_16TH (the slowest available rate).
+        while (sr < BLACKBOX_RATE_16TH && (pidHz >> sr) > BLACKBOX_RING_MAX_FRAME_HZ) {
+            sr++;
+        }
+        if (sr != blackboxConfig()->sample_rate) {
+            blackboxConfigMutable()->sample_rate = sr;
+            // blackboxPInterval was already derived in blackboxInit() from the pre-clamp
+            // sample_rate. Recompute it here so the upcoming logging session uses the new
+            // (slower) rate; otherwise the first ring-mode session after a config change
+            // still runs at the unsupported rate and falls into the drop path.
+            blackboxPInterval = 1 << sr;
+            if (blackboxPInterval > blackboxIInterval) {
+                blackboxPInterval = 0;
+            }
         }
     }
 #endif
