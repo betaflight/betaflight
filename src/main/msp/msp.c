@@ -95,6 +95,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -1842,6 +1843,14 @@ case MSP_NAME:
         sbufWriteU8(dst, blackboxConfig()->sample_rate);
         // Added in MSP API 1.45
         sbufWriteU32(dst, blackboxConfig()->fields_disabled_mask);
+        // Added in MSP API 1.49: flash ring-mode params. flash_mode is the configured
+        // mode (LINEAR=0, RING=1); flash_format is what's actually on the chip
+        // (EMPTY=0, LINEAR=1, RING=2, UNKNOWN=3). Configurator compares the two to
+        // decide whether switching modes requires a flash erase first. When ring-log
+        // support isn't compiled in, flashfsLogDetectFormat() is stubbed to return
+        // UNKNOWN.
+        sbufWriteU8(dst, blackboxConfig()->flash_mode);
+        sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormat());
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1851,6 +1860,9 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         // Added in MSP API 1.45
         sbufWriteU32(dst, 0);
+        // Added in MSP API 1.49
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 3); // FLASHFS_FLASH_FORMAT_UNKNOWN
 #endif
         break;
 
@@ -3619,6 +3631,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             // Added in MSP API 1.45
             if (sbufBytesRemaining(src) >= 4) {
                 blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
+            }
+            // Added in MSP API 1.49: ring-mode flash mode. We accept the value
+            // unconditionally so configurators on hosts without the new field don't
+            // accidentally clobber it; readers that don't know about the field will
+            // still send only up through fields_disabled_mask.
+            if (sbufBytesRemaining(src) >= 1) {
+                blackboxConfigMutable()->flash_mode = sbufReadU8(src);
             }
         }
         break;
