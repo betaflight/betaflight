@@ -268,6 +268,13 @@ static void bblog_ring_read_proc(uint8_t *dest, int size, uint32_t offset, emfat
 
 // Ring-mode read callback for the combined "all logs" virtual file. Walks each log's
 // virtual span in order, mapping `offset` into the right log + intra-log offset.
+//
+// This rescans the log table from index 0 on every MSC read call (no cached cursor),
+// giving O(N) per call and O(N²) over a sequential read of the full virtual file.
+// Acceptable here because N is bounded by FLASHFS_LOG_MAX_LOGS=64, MSC reads happen
+// only when the host enumerates the virtual filesystem, and flashfsLogGetInfo() /
+// flashfsLogGetLogCount() are simple in-RAM lookups (no flash I/O). Worth revisiting
+// only if the log cap grows substantially.
 static void bblog_ring_read_all_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {
     UNUSED(entry);
@@ -473,8 +480,11 @@ void emfat_init_files(void)
     flashfsLogInit();
     LED0_OFF;
 
-    if (blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
-            && flashfsLogDetectFormat() == FLASHFS_FLASH_FORMAT_RING) {
+    // MSC is a read path: branch on what's actually on flash, not on the configured
+    // mode. The user might have switched `blackbox_flash_mode` back to LINEAR before
+    // erasing — we should still expose the ring-format logs that exist on the chip.
+    // (The writer path enforces mode/format match separately.)
+    if (flashfsLogDetectFormat() == FLASHFS_FLASH_FORMAT_RING) {
         // Ring-mode path: each log is a virtual file synthesized from the metadata table.
         const uint32_t ringLogCount = flashfsLogGetLogCount();
         uint32_t totalSize = 0;

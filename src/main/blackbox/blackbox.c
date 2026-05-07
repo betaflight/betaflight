@@ -1087,6 +1087,14 @@ void blackboxValidateConfig(void)
             && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
             && blackboxConfig()->sample_rate < BLACKBOX_RATE_QUARTER) {
         blackboxConfigMutable()->sample_rate = BLACKBOX_RATE_QUARTER;
+        // blackboxPInterval was already derived in blackboxInit() from the pre-clamp
+        // sample_rate. Recompute it here so the upcoming logging session uses the new
+        // (slower) rate; otherwise the first ring-mode session after a config change
+        // still runs at the unsupported rate and falls into the drop path.
+        blackboxPInterval = 1 << blackboxConfig()->sample_rate;
+        if (blackboxPInterval > blackboxIInterval) {
+            blackboxPInterval = 0;
+        }
     }
 #endif
 }

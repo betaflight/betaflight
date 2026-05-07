@@ -464,6 +464,21 @@ static void buildLogTableByScan(void)
 
         if (t.logId >= nextLogId) nextLogId = t.logId + 1;
     }
+
+    // Sort by logId (ascending) so MSC presents logs in chronological order. Physical
+    // sector order is meaningless after the ring has wrapped; without this sort, log
+    // numbering and the combined _ALL.BBL file would come back scrambled after a reboot.
+    // logTableCount is bounded by FLASHFS_LOG_MAX_LOGS=64 so a simple insertion sort is
+    // fine and keeps code minimal.
+    for (uint32_t i = 1; i < logTableCount; i++) {
+        flashfsLogInfo_t key = logTable[i];
+        int32_t j = (int32_t)i - 1;
+        while (j >= 0 && logTable[j].logId > key.logId) {
+            logTable[j + 1] = logTable[j];
+            j--;
+        }
+        logTable[j + 1] = key;
+    }
 }
 
 // Determine the next data write head from the latest log's trailer (highest logId).
@@ -645,12 +660,21 @@ static void recoverFromBuffer(void)
 
     if (addr >= geom.dataSectionEnd) addr = 0;
 
+    uint32_t bytesNeeded = sizeof(flashfsLogTrailer_t) + headerLen;
+
+    // Same end-of-ring spill check as flashfsLogEndLog: the writes below are linear,
+    // so if trailer + header would extend past dataSectionEnd we must wrap addr to 0
+    // before writing.
+    if (addr + bytesNeeded > geom.dataSectionEnd) {
+        addr = 0;
+    }
+
     // We know `addr` is sector-aligned and erased. Make sure we have enough contiguous
     // erased space for trailer + header. Erase additional sectors synchronously as needed.
     eraseHead = addr + geom.sectorSize;
     if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
     pendingEraseAddr = PENDING_ERASE_NONE;
-    ensureErasedSpace(addr, sizeof(flashfsLogTrailer_t) + headerLen);
+    ensureErasedSpace(addr, bytesNeeded);
 
     writeTrailer(addr, pre.logId, pre.dataStart, headerLen);
     copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
@@ -685,10 +709,15 @@ void flashfsLogInit(void)
         recoverFromBuffer();    // safe no-op if buffer is empty
         buildLogTableByScan();
         dataWriteHead = computeWriteHeadFromTable();
+        // We don't know the actual erased frontier from a cold boot — the ring is full
+        // of arbitrary contents. Pin eraseHead to dataWriteHead so the next log start
+        // sync-erases a fresh pool from the writer's position.
+        eraseHead = dataWriteHead;
         moduleSafeForLogging = true;
         break;
     case FLASHFS_FLASH_FORMAT_EMPTY:
         dataWriteHead = 0;
+        eraseHead = 0;
         moduleSafeForLogging = true;
         break;
     case FLASHFS_FLASH_FORMAT_LINEAR:
@@ -816,12 +845,13 @@ bool flashfsLogBeginLog(void)
         pendingEraseAddr = PENDING_ERASE_NONE;
     }
 
-    // If eraseHead is "behind" dataWriteHead by more than half the ring (e.g., stale
-    // from boot, where eraseHead was just initialized to 0), reset it to the writer
-    // position. Otherwise keep any pre-erased space we already have.
-    if (ringSpaceFreeAhead(dataWriteHead) > geom.dataSectionEnd / 2) {
-        eraseHead = dataWriteHead;
-    }
+    // We can't reliably trust eraseHead inherited from a prior flight: any heuristic
+    // ("is it close enough to dataWriteHead?") risks misjudging a stale value and
+    // leaving the writer to program non-erased sectors. Always pin eraseHead to the
+    // writer position and let ensureErasedSpace fill the pool from scratch. The cost
+    // is ~POOL_TARGET_SECTORS extra erases per log start (a few tens of ms on top of
+    // the buffer-area erase that already runs here) — acceptable for safety.
+    eraseHead = dataWriteHead;
     ensureErasedSpace(dataWriteHead, POOL_TARGET_SECTORS * geom.sectorSize);
 
     memset(&active, 0, sizeof(active));
@@ -938,12 +968,22 @@ void flashfsLogEndLog(void)
     if (trailerAddr >= geom.dataSectionEnd) trailerAddr = 0;
 
     uint32_t headerLen = active.bufferHeaderOffset;
+    uint32_t bytesNeeded = sizeof(flashfsLogTrailer_t) + headerLen;
+
+    // The trailer write and header copy below are LINEAR (no ring wrap), but the
+    // trailer's chosen position may be close enough to the end of the ring that
+    // trailer + header would spill into the reserved buffer area. Detect this and
+    // wrap trailerAddr to 0 — the partial sector at the end of the ring is left
+    // unused. (The just-closed log's data range is unaffected: it spans
+    // [dataStart, trailerAddr) in ring order.)
+    if (trailerAddr + bytesNeeded > geom.dataSectionEnd) {
+        trailerAddr = 0;
+    }
 
     // Make sure there's enough contiguous erased space at trailerAddr for the trailer
     // record + the full header text. The pool we keep ahead during flight covers the
     // common case; if header is bigger than the remaining pool, sync-erase the extras
     // here. Disarm is non-realtime so blocking is fine.
-    uint32_t bytesNeeded = sizeof(flashfsLogTrailer_t) + headerLen;
     ensureErasedSpace(trailerAddr, bytesNeeded);
 
     writeTrailer(trailerAddr, active.logId, active.dataStart, headerLen);
