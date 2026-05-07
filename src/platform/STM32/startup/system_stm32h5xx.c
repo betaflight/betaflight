@@ -187,6 +187,8 @@
   * @{
   */
 
+void SystemClock_Config(void); // Forward
+
 /**
   * @}
   */
@@ -194,6 +196,119 @@
 /** @addtogroup STM32H5xx_System_Private_Functions
   * @{
   */
+
+// H5 default clock tree: drive SYSCLK from HSE × PLL1 to the H5's 250 MHz
+// peak and run HCLK / APB1 / APB2 / APB3 at the full SYSCLK (all max 250 MHz
+// per RM0481 §6.6). USB FS keeps its own 48 MHz reference from HSI48 +
+// CRS-against-SOF so it is independent of the system clock domain.
+//
+// PLL1 math at HSE_VALUE = 25 MHz:
+//   M = 5  → 5 MHz reference (PLL1_VCIRANGE_2: 4-8 MHz)
+//   N = 100 → 500 MHz VCO    (PLL1_VCORANGE_WIDE: 192-836 MHz)
+//   P = 2   → SYSCLK = 250 MHz
+//   Q = 4   → 125 MHz (free for SAI / SDMMC; USB is fed from HSI48)
+//   R = 2   → 250 MHz
+//
+// Voltage scale 0 covers up to 250 MHz; flash latency at VOS0 / 250 MHz is
+// 5 WS (RM0481 §7.5 Table 39).
+//
+// If HSE fails to start (e.g. development board with crystal removed or
+// damaged) the function falls back to HSI 64 MHz at VOS0, leaving the rest
+// of the platform usable for diagnostics. Override this function from a
+// per-board file if a non-25 MHz HSE or non-default PLL ratio is required.
+__attribute__((weak))
+void SystemClock_Config(void)
+{
+    // Voltage scale 0: required headroom for the 250 MHz domain.
+    // (PWR has no RCC enable bit on H5 — RM0481 §8 lists no PWREN — so
+    // __HAL_RCC_PWR_CLK_ENABLE() is unnecessary and the H5 HAL does not
+    // export it. PWR is always-clocked.)
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) { }
+
+    // Flash high-frequency mode for the 225-250 MHz CPU range at VOS0.
+    // RM0481 §7.5 Table 39 requires WRHIGHFREQ=10 to be set BEFORE the
+    // CPU is taken above 225 MHz; HAL_RCC_ClockConfig() programs LATENCY
+    // but never touches WRHIGHFREQ.
+    MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
+
+    RCC_OscInitTypeDef oscInit = {0};
+    oscInit.OscillatorType   = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI48;
+    oscInit.HSEState         = RCC_HSE_ON;
+    oscInit.HSI48State       = RCC_HSI48_ON;
+    oscInit.PLL.PLLState     = RCC_PLL_ON;
+    oscInit.PLL.PLLSource    = RCC_PLL1_SOURCE_HSE;
+    oscInit.PLL.PLLM         = 5;
+    oscInit.PLL.PLLN         = 100;
+    oscInit.PLL.PLLP         = 2;
+    oscInit.PLL.PLLQ         = 4;
+    oscInit.PLL.PLLR         = 2;
+    oscInit.PLL.PLLRGE       = RCC_PLL1_VCIRANGE_2;
+    oscInit.PLL.PLLVCOSEL    = RCC_PLL1_VCORANGE_WIDE;
+    oscInit.PLL.PLLFRACN     = 0;
+
+    HAL_StatusTypeDef status = HAL_RCC_OscConfig(&oscInit);
+
+    if (status == HAL_OK) {
+        RCC_ClkInitTypeDef clkInit = {0};
+        clkInit.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
+                                 RCC_CLOCKTYPE_PCLK3;
+        clkInit.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+        clkInit.AHBCLKDivider  = RCC_HCLK_DIV1;
+        clkInit.APB1CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB2CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB3CLKDivider = RCC_HCLK_DIV1;
+        if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_5) != HAL_OK) {
+            while (1) { }
+        }
+    } else {
+        // HSE did not lock. Fall back to HSI 64 MHz so the platform stays
+        // diagnosable (1 WS at VOS0 covers HSI64 per Table 39).
+        RCC_OscInitTypeDef hsi = {0};
+        hsi.OscillatorType      = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
+        hsi.HSIState            = RCC_HSI_ON;
+        hsi.HSIDiv              = RCC_HSI_DIV1;
+        hsi.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+        hsi.HSI48State          = RCC_HSI48_ON;
+        hsi.PLL.PLLState        = RCC_PLL_NONE;
+        if (HAL_RCC_OscConfig(&hsi) != HAL_OK) {
+            while (1) { }
+        }
+
+        RCC_ClkInitTypeDef clkInit = {0};
+        clkInit.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
+                                 RCC_CLOCKTYPE_PCLK3;
+        clkInit.SYSCLKSource   = RCC_SYSCLKSOURCE_HSI;
+        clkInit.AHBCLKDivider  = RCC_HCLK_DIV1;
+        clkInit.APB1CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB2CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB3CLKDivider = RCC_HCLK_DIV1;
+        if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_1) != HAL_OK) {
+            while (1) { }
+        }
+    }
+
+    RCC_PeriphCLKInitTypeDef pclkInit = {0};
+    pclkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+    pclkInit.UsbClockSelection    = RCC_USBCLKSOURCE_HSI48;
+    if (HAL_RCCEx_PeriphCLKConfig(&pclkInit) != HAL_OK) {
+        while (1) { }
+    }
+
+    // Discipline HSI48 against the USB SOF every 1 ms.
+    __HAL_RCC_CRS_CLK_ENABLE();
+    RCC_CRSInitTypeDef crsInit = {
+        .Prescaler             = RCC_CRS_SYNC_DIV1,
+        .Source                = RCC_CRS_SYNC_SOURCE_USB,
+        .Polarity              = RCC_CRS_SYNC_POLARITY_RISING,
+        .ReloadValue           = RCC_CRS_RELOADVALUE_DEFAULT,
+        .ErrorLimitValue       = RCC_CRS_ERRORLIMIT_DEFAULT,
+        .HSI48CalibrationValue = RCC_CRS_HSI48CALIBRATION_DEFAULT,
+    };
+    HAL_RCCEx_CRSConfig(&crsInit);
+}
 
 /**
   * @brief  Setup the microcontroller system.
@@ -290,6 +405,13 @@ void SystemInit(void)
     /* Lock the FLASH Option Control Register access */
     FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
   }
+
+#ifdef USE_HAL_DRIVER
+  HAL_Init();
+#endif
+
+  SystemClock_Config();
+  SystemCoreClockUpdate();
 
   initialiseDmaMemorySections();
 

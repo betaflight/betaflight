@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight RP2350B"
+#define USBD_PRODUCT_STRING     "Betaflight - RP2350B"
 #endif
 
 #ifdef PICO_TRACE

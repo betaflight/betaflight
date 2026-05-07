@@ -22,35 +22,23 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "A407"
+#define TARGET_BOARD_IDENTIFIER "SC56"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - APM32F407"
-#endif
-
-#ifndef APM32F407
-#define APM32F407
+#define USBD_PRODUCT_STRING     "Betaflight STM32C562"
 #endif
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
-#define USE_I2C_DEVICE_3
 
 #define USE_VCP
-
-#define USE_SOFTSERIAL
-
-#define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_UART6
-
-#define USE_INVERTER
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -61,28 +49,18 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
-#define TARGET_IO_PORTF 0xffff
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-#define USE_DSHOT_BITBAND
-
-#define USE_BEEPER
-
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
-#define USE_SPI_DMA_ENABLE_EARLY
-
-#define USE_USB_DETECT
-
-#define USE_ESCSERIAL
 
 #define USE_ADC
-
 #define USE_EXTI
 
-#define USE_PID_DENOM_CHECK
-#define USE_PID_DENOM_OVERCLOCK_LEVEL 2
+#undef USE_TRANSPONDER
 
-#define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors
+#define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
+
+#define EEPROM_SIZE     4096

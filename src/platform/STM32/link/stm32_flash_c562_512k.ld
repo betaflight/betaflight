@@ -1,23 +1,11 @@
 /*
 *****************************************************************************
 **
-**  File        : STM32N657XX_LRUN.ld
+**  File        : stm32_flash_c562_512k.ld
 **
-**  Abstract    : Linker script for STM32N657xx Device
-**                Load from external XSPI flash, Run from internal SRAM.
-**
-**                AXISRAM1   1024K  @ 0x24000000
-**                AXISRAM2   1024K  @ 0x24100000
-**                AXISRAM3    448K  @ 0x24200000
-**                AXISRAM4    448K  @ 0x24270000
-**                AXISRAM5    448K  @ 0x242E0000
-**                AXISRAM6    448K  @ 0x24350000
-**                AHBSRAM1     16K  @ 0x28000000
-**                AHBSRAM2     16K  @ 0x28004000
-**                BKPSRAM       8K  @ 0x2C000000
-**
-**  Boot from external XSPI flash at 0x70000000.
-**  All firmware code is copied to RAM at startup for performance.
+**              : Linker script for STM32C562xx devices
+**                      512Kbytes FLASH
+**                      128Kbytes RAM (SRAM1 64K + SRAM2 64K, contiguous)
 **
 *****************************************************************************
 */
@@ -26,42 +14,27 @@
 ENTRY(Reset_Handler)
 
 /*
-0x24000000 to 0x240FFFFF  1024K AXI SRAM1, firmware code + data + bss + stack
-0x24100000 to 0x241FFFFF  1024K AXI SRAM2
-0x24200000 to 0x2426FFFF   448K AXI SRAM3
-0x24270000 to 0x242DFFFF   448K AXI SRAM4
-0x242E0000 to 0x2434FFFF   448K AXI SRAM5
-0x24350000 to 0x243BFFFF   448K AXI SRAM6
-0x28000000 to 0x28003FFF    16K AHB SRAM1
-0x28004000 to 0x28007FFF    16K AHB SRAM2
-0x2C000000 to 0x2C001FFF     8K Backup SRAM
+0x20000000 to 0x2001FFFF  128K SRAM (SRAM1 64K + SRAM2 64K)
 
-0x70000000 to 0x701FFFFF  2048K External XSPI flash
-0x70000000 to 0x7001FFFF   128K isr vector, startup bootstrap (XIP)
-0x70020000 to 0x7003FFFF   128K config storage
-0x70040000 to 0x701FFFFF  1792K firmware LMA (copied to RAM at boot)
+0x08000000 to 0x0807FFFF  512K full flash,
+0x08000000 to 0x08003FFF   16K isr vector, startup code,
+0x08004000 to 0x08007FFF   16K config, // 2 sectors of 8K
+0x08008000 to 0x0807FFFF  480K firmware,
 */
 
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x70000000, LENGTH = 128K
-    FLASH_CONFIG (r)  : ORIGIN = 0x70020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x70040000, LENGTH = 1792K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
+    FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
+    FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
 
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K
-
-    D2_RAM (rwx)      : ORIGIN = 0x24100000, LENGTH = 1024K /* AXISRAM2 */
-    AXISRAM3 (rwx)    : ORIGIN = 0x24200000, LENGTH = 448K  /* LCD framebuffer landing zone */
-
+    RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 128K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
 REGION_ALIAS("STACKRAM", RAM)
 REGION_ALIAS("FASTRAM", RAM)
-
-/* Entry Point */
-ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM) - 8; /* Reserve 2 x 4bytes for info across reset */
@@ -74,36 +47,22 @@ __config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 _Min_Heap_Size = 0;      /* required amount of heap  */
 _Min_Stack_Size = 0x800; /* required amount of stack */
 
-/* Stack start for N6 startup assembly */
-_sstack = _estack - _Min_Stack_Size;
-
 /* Define output sections */
 SECTIONS
 {
-  /*
-   * ISR vector table and startup bootstrap in XSPI flash.
-   * Reset_Handler executes from here (XIP) before copying firmware to RAM.
-   */
+  /* The startup code goes first into FLASH */
   .isr_vector :
   {
     . = ALIGN(512);
     PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
-    *(.text.Reset_Handler)
-    *(.text.Default_Handler)
     . = ALIGN(4);
   } >FLASH
 
-  /*
-   * Firmware code and read-only data.
-   * Stored in FLASH1 (LMA), copied to and executed from RAM (VMA).
-   */
-  _sitext = LOADADDR(.text);
-
+  /* The program code and other data goes into FLASH */
   .text :
   {
     . = ALIGN(4);
-    _stext = .;        /* start of text in RAM */
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -116,18 +75,19 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
-  } >RAM AT >FLASH1
+    _etext = .;        /* define a global symbols at end of code */
+  } >FLASH1
 
   .ARM.extab   :
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } >RAM AT >FLASH1
+  } >FLASH1
 
   .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >RAM AT >FLASH1
+  } >FLASH1
 
   .pg_registry :
   {
@@ -135,39 +95,28 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >RAM AT >FLASH1
+  } >FLASH1
 
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >RAM AT >FLASH1
+  } >FLASH1
+
+  /* used by the startup to initialize data */
+  _sidata = LOADADDR(.data);
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
     . = ALIGN(4);
+    _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
 
     . = ALIGN(4);
-  } >RAM AT >FLASH1
-
-  /*
-   * All code already runs from RAM, so .ram_code merges into the same
-   * region.  Keep the section so MMFLASH_CODE attributed functions still link.
-   */
-  ram_code = LOADADDR(.ram_code);  /* LMA in FLASH1 for initialiseMemorySections() */
-  .ram_code :
-  {
-    . = ALIGN(4);
-    ram_code_start = .;
-    *(.ram_code)
-    *(.ram_code*)
-    . = ALIGN(4);
-    ram_code_end = .;
-    _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
+    _edata = .;        /* define a global symbol at data end */
   } >RAM AT >FLASH1
 
   /* Uninitialized data section */
@@ -207,12 +156,12 @@ SECTIONS
   .fastram_data :
   {
     . = ALIGN(4);
-    _sfastram_data = .;        /* create a global symbol at data start */
-    *(.fastram_data)           /* .data sections */
-    *(.fastram_data*)          /* .data* sections */
+    _sfastram_data = .;
+    *(.fastram_data)
+    *(.fastram_data*)
 
     . = ALIGN(4);
-    _efastram_data = .;        /* define a global symbol at data end */
+    _efastram_data = .;
   } >FASTRAM AT >FLASH1
 
   . = ALIGN(4);
@@ -237,11 +186,11 @@ SECTIONS
     PROVIDE(dmaram_start = .);
     _sdmaram = .;
     _dmaram_start__ = _sdmaram;
-    _sdmaram_data = .;        /* create a global symbol at data start */
-    *(.dmaram_data)           /* .data sections */
-    *(.dmaram_data*)          /* .data* sections */
+    _sdmaram_data = .;
+    *(.dmaram_data)
+    *(.dmaram_data*)
     . = ALIGN(32);
-    _edmaram_data = .;        /* define a global symbol at data end */
+    _edmaram_data = .;
   } >RAM AT >FLASH1
 
   . = ALIGN(32);
@@ -264,43 +213,6 @@ SECTIONS
     _edmaram = .;
     _dmaram_end__ = _edmaram;
   } >RAM
-
-  .DMA_RW_D2 (NOLOAD) :
-  {
-    . = ALIGN(32);
-    PROVIDE(dmarw_start = .);
-    _sdmarw = .;
-    _dmarw_start__ = _sdmarw;
-    KEEP(*(.DMA_RW))
-    PROVIDE(dmarw_end = .);
-    _edmarw = .;
-    _dmarw_end__ = _edmarw;
-  } >D2_RAM
-
-  .DMA_RW_AXI (NOLOAD) :
-  {
-    . = ALIGN(32);
-    PROVIDE(dmarwaxi_start = .);
-    _sdmarwaxi = .;
-    _dmarwaxi_start__ = _sdmarwaxi;
-    KEEP(*(.DMA_RW_AXI))
-    PROVIDE(dmarwaxi_end = .);
-    _edmarwaxi = .;
-    _dmarwaxi_end__ = _edmarwaxi;
-  } >RAM
-
-  /* LCD framebuffer landing zone — sized for 800x480 L8 (~376KB), with
-   * room to spare in the 448KB AXISRAM3 region. Backends opt in via
-   * __attribute__((section(".lcdbuffer"))). */
-  .lcdbuffer (NOLOAD) :
-  {
-    . = ALIGN(32);
-    _slcdbuffer = .;
-    KEEP(*(.lcdbuffer))
-    KEEP(*(.lcdbuffer*))
-    . = ALIGN(32);
-    _elcdbuffer = .;
-  } >AXISRAM3
 
   .persistent_data (NOLOAD) :
   {

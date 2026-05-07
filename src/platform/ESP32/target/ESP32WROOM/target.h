@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight ESP32-WROOM"
+#define USBD_PRODUCT_STRING     "Betaflight - ESP32-WROOM"
 #endif
 
 #define USE_UART0

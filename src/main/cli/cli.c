@@ -77,6 +77,7 @@ bool cliMode = false;
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/lcd_console.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
@@ -3922,6 +3923,46 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
+
+#if ENABLE_LCD_CONSOLE
+static void cliLcd(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    cliPrintLinef("LCD console grid (%u cols x %u rows):",
+                  (unsigned)LCD_CONSOLE_COLS, (unsigned)LCD_CONSOLE_ROWS);
+
+    // Top border, then each row framed by '|', then bottom border.
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+
+    for (uint16_t r = 0; r < LCD_CONSOLE_ROWS; r++) {
+        const uint8_t *row = lcdConsoleRow(r);
+        cliWrite('|');
+        if (row) {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                const uint8_t ch = row[c];
+                cliWrite((ch >= 0x20 && ch <= 0x7E) ? ch : ' ');
+            }
+        } else {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                cliWrite(' ');
+            }
+        }
+        cliPrintLine("|");
+    }
+
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+}
+#endif // ENABLE_LCD_CONSOLE
 
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
@@ -8069,6 +8110,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if ENABLE_LCD_CONSOLE
+    CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
+#endif
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif

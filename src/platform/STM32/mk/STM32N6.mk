@@ -27,12 +27,15 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_gpio.c \
             stm32n6xx_hal_i2c.c \
             stm32n6xx_hal_i2c_ex.c \
+            stm32n6xx_hal_ltdc.c \
+            stm32n6xx_hal_ltdc_ex.c \
             stm32n6xx_hal_pcd.c \
             stm32n6xx_hal_pcd_ex.c \
             stm32n6xx_hal_pwr.c \
             stm32n6xx_hal_pwr_ex.c \
             stm32n6xx_hal_rcc.c \
             stm32n6xx_hal_rcc_ex.c \
+            stm32n6xx_hal_rif.c \
             stm32n6xx_hal_rng_ex.c \
             stm32n6xx_hal_rtc.c \
             stm32n6xx_hal_rtc_ex.c \

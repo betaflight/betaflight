@@ -61,3 +61,9 @@ void lcdConsoleFlush(void);
 // True while the panel still has pending bus/DMA traffic. Used by the L1
 // virtual serialPort_t to honour isSerialTransmitBufferEmpty.
 bool lcdConsoleIsBusy(void);
+
+// Read-only pointer to a row of LCD_CONSOLE_COLS cells in the L2 grid,
+// or NULL if `row` is out of range or the layer hasn't been initialised.
+// Used by diagnostic surfaces (e.g. the `lcd` CLI command) to inspect what
+// the console currently holds without coupling to the panel backend.
+const uint8_t *lcdConsoleRow(uint16_t row);

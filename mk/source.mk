@@ -105,7 +105,9 @@ COMMON_SRC = \
             drivers/io.c \
             drivers/io_preinit.c \
             drivers/lcd_console.c \
+            drivers/lcd_panel/lcd_panel_font_5x7.c \
             drivers/lcd_panel/lcd_panel_stub.c \
+            drivers/lcd_panel/ssd1306_i2c.c \
             drivers/light_led.c \
             drivers/motor.c \
             drivers/pinio.c \

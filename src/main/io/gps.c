@@ -2338,18 +2338,114 @@ uint32_t gpsDateTimeToEpoch(const gpsDateTime_t *dt)
     return (uint32_t)dateTimeToUnixSeconds(dt->year, dt->month, dt->day, dt->hour, dt->min, dt->sec);
 }
 
-// Apply nanosecond correction to seconds/millis with proper borrow/carry
-static void applyNanoCorrection(int64_t *unixSeconds, uint16_t *millis, int32_t nano)
+// NAV-PVT already carries UTC calendar fields; only the nanosecond correction can
+// require a one-second calendar adjustment.
+static bool gpsDateTimeIsLeapYear(uint16_t year)
 {
-    int32_t nanoMs = nano / 1000000;
-    if (nanoMs < 0) {
-        *millis = (uint16_t)(nanoMs + 1000);
-        (*unixSeconds)--;
-    } else if (nanoMs >= 1000) {
-        *millis = (uint16_t)(nanoMs - 1000);
-        (*unixSeconds)++;
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+}
+
+static uint8_t gpsDateTimeDaysInMonth(uint16_t year, uint8_t month)
+{
+    static const uint8_t daysInMonth[] = {
+        31, 28, 31, 30, 31, 30,
+        31, 31, 30, 31, 30, 31
+    };
+
+    if (month == 2 && gpsDateTimeIsLeapYear(year)) {
+        return 29;
+    }
+
+    return daysInMonth[month - 1];
+}
+
+static void gpsDateTimeAddOneSecond(gpsDateTime_t *dt)
+{
+    if (++dt->sec <= 59) {
+        return;
+    }
+
+    dt->sec = 0;
+    if (++dt->min <= 59) {
+        return;
+    }
+
+    dt->min = 0;
+    if (++dt->hour <= 23) {
+        return;
+    }
+
+    dt->hour = 0;
+    if (++dt->day <= gpsDateTimeDaysInMonth(dt->year, dt->month)) {
+        return;
+    }
+
+    dt->day = 1;
+    if (++dt->month <= 12) {
+        return;
+    }
+
+    dt->month = 1;
+    dt->year++;
+}
+
+static void gpsDateTimeSubtractOneSecond(gpsDateTime_t *dt)
+{
+    if (dt->sec > 0) {
+        dt->sec--;
+        return;
+    }
+
+    dt->sec = 59;
+    if (dt->min > 0) {
+        dt->min--;
+        return;
+    }
+
+    dt->min = 59;
+    if (dt->hour > 0) {
+        dt->hour--;
+        return;
+    }
+
+    dt->hour = 23;
+    if (dt->day > 1) {
+        dt->day--;
+        return;
+    }
+
+    if (dt->month > 1) {
+        dt->month--;
     } else {
-        *millis = (uint16_t)nanoMs;
+        dt->month = 12;
+        dt->year--;
+    }
+    dt->day = gpsDateTimeDaysInMonth(dt->year, dt->month);
+}
+
+static void gpsDateTimeFromNavPvt(gpsDateTime_t *dt, const ubxNavPvt_t *navPvt)
+{
+    dt->valid = (navPvt->valid & NAV_VALID_DATE) && (navPvt->valid & NAV_VALID_TIME);
+    if (!dt->valid) {
+        return;
+    }
+
+    dt->year = navPvt->year;
+    dt->month = navPvt->month;
+    dt->day = navPvt->day;
+    dt->hour = navPvt->hour;
+    dt->min = navPvt->min;
+    dt->sec = navPvt->sec;
+
+    const int32_t nanoMs = navPvt->nano / 1000000;
+    if (nanoMs < 0) {
+        dt->millis = (uint16_t)(nanoMs + 1000);
+        gpsDateTimeSubtractOneSecond(dt);
+    } else if (nanoMs >= 1000) {
+        dt->millis = (uint16_t)(nanoMs - 1000);
+        gpsDateTimeAddOneSecond(dt);
+    } else {
+        dt->millis = (uint16_t)nanoMs;
     }
 }
 
@@ -2416,17 +2512,8 @@ static bool UBLOX_parse_gps(void)
         gpsSol.velned.velE = (int16_t)(ubxRcvMsgPayload.ubxNavPvt.velE / 10); // cm/s
         gpsSol.velned.velD = (int16_t)(ubxRcvMsgPayload.ubxNavPvt.velD / 10); // cm/s
         ubxHaveNewSpeed = true;
-        // Store GPS date/time for telemetry, applying nano correction per u-blox spec
-        // (nano can be negative when integer time fields are rounded up)
-        gpsSol.dateTime.valid = (ubxRcvMsgPayload.ubxNavPvt.valid & NAV_VALID_DATE) && (ubxRcvMsgPayload.ubxNavPvt.valid & NAV_VALID_TIME);
-        if (gpsSol.dateTime.valid) {
-            int64_t utcSeconds = dateTimeToUnixSeconds(
-                ubxRcvMsgPayload.ubxNavPvt.year, ubxRcvMsgPayload.ubxNavPvt.month, ubxRcvMsgPayload.ubxNavPvt.day,
-                ubxRcvMsgPayload.ubxNavPvt.hour, ubxRcvMsgPayload.ubxNavPvt.min, ubxRcvMsgPayload.ubxNavPvt.sec);
-            uint16_t millis = 0;
-            applyNanoCorrection(&utcSeconds, &millis, ubxRcvMsgPayload.ubxNavPvt.nano);
-            unixSecondsToDateTime(&gpsSol.dateTime, utcSeconds, millis);
-        }
+        // Store GPS date/time for telemetry, applying nano correction per u-blox spec.
+        gpsDateTimeFromNavPvt(&gpsSol.dateTime, &ubxRcvMsgPayload.ubxNavPvt);
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
 #ifdef USE_DASHBOARD

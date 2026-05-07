@@ -61,9 +61,11 @@ void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL2_RCC_CLK(AHB2, NOSUFFIX, mask, NewState);
         break;
 
+#if !defined(STM32C562xx)
     case RCC_AHB4:
         __HAL2_RCC_CLK(AHB4, NOSUFFIX, mask, NewState);
         break;
+#endif
 
     case RCC_APB1L:
         __HAL2_RCC_CLK(APB1L, NOSUFFIX, mask, NewState);
@@ -106,9 +108,11 @@ void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState)
         __HAL2_RCC_RESET(AHB2, NOSUFFIX, mask, NewState);
         break;
 
+#if !defined(STM32C562xx)
     case RCC_AHB4:
         __HAL2_RCC_RESET(AHB4, NOSUFFIX, mask, NewState);
         break;
+#endif
 
     case RCC_APB1L:
         __HAL2_RCC_RESET(APB1L, NOSUFFIX, mask, NewState);
