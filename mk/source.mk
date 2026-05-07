@@ -374,6 +374,7 @@ FLASH_SRC += \
             drivers/flash/flash.c \
             drivers/flash/flash_m25p16.c \
             drivers/flash/flash_mt29f.c \
+            drivers/flash/flash_mx66uw1g45g.c \
             drivers/flash/flash_w25m.c \
             drivers/flash/flash_w25n.c \
             drivers/flash/flash_w25q128fv.c \

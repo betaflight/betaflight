@@ -32,6 +32,7 @@
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
 #include "drivers/flash/flash_mt29f.h"
+#include "drivers/flash/flash_mx66uw1g45g.h"
 #include "drivers/flash/flash_w25n.h"
 #include "drivers/flash/flash_w25q128fv.h"
 #include "drivers/flash/flash_w25m.h"
@@ -108,89 +109,105 @@ MMFLASH_CODE_NOINLINE static bool flashOctoSpiInit(const flashConfig_t *flashCon
     flashDevice.io.handle.octoSpi = instance;
     flashDevice.io.mode = FLASHIO_OCTOSPI;
 
-    if (memoryMappedModeEnabledOnBoot) {
-        flashMemoryMappedModeDisable();
+    // Build-time-selected chips that cannot be JEDEC-probed via 1/4-line RDID
+    // (e.g., flashes configured by the bootloader in 8-line OPI mode). These
+    // are selected via OCTOSPI_FLASH_CHIP=<name> in the per-config config.mk,
+    // which emits the corresponding OCTOSPI_FLASH_CHIP_<name> marker. Run
+    // before disabling memory-mapped mode so the bootloader's setup is
+    // preserved and the chip stays addressable.
+#if defined(OCTOSPI_FLASH_CHIP_MX66UW1G45G) && defined(USE_FLASH_MX66UW1G45G)
+    if (!detected && memoryMappedModeEnabledOnBoot) {
+        if (mx66uw1g45g_identify(&flashDevice, MX66UW1G45G_JEDEC_ID)) {
+            detected = true;
+        }
     }
+#endif
 
-    do {
+    if (!detected) {
+        if (memoryMappedModeEnabledOnBoot) {
+            flashMemoryMappedModeDisable();
+        }
+
+        do {
 #ifdef USE_OCTOSPI_EXPERIMENTAL
-        if (!memoryMappedMode) {
-            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_INITIALISATION);
-        }
+            if (!memoryMappedMode) {
+                octoSpiSetDivisor(instance, OCTOSPI_CLOCK_INITIALISATION);
+            }
 #endif
-        // for the memory-mapped use-case, we rely on the bootloader to have already selected the correct speed for the flash chip.
+            // for the memory-mapped use-case, we rely on the bootloader to have already selected the correct speed for the flash chip.
 
-        // 3 bytes for what we need, but some IC's need 8 dummy cycles after the instruction, so read 4 and make two attempts to
-        // assemble the chip id from the response.
-        uint8_t readIdResponse[4];
+            // 3 bytes for what we need, but some IC's need 8 dummy cycles after the instruction, so read 4 and make two attempts to
+            // assemble the chip id from the response.
+            uint8_t readIdResponse[4];
 
-        bool status = false;
-        switch (phase) {
-        case TRY_1LINE:
-            status = octoSpiReceive1LINE(instance, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
-            break;
-        case TRY_4LINE:
-            status = octoSpiReceive4LINES(instance, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
-            break;
-        default:
-            break;
-        }
-
-        if (!status) {
-            phase++;
-            continue;
-        }
-
-#ifdef USE_OCTOSPI_EXPERIMENTAL
-        if (!memoryMappedModeEnabledOnBoot) {
-            octoSpiSetDivisor(instance, OCTOSPI_CLOCK_ULTRAFAST);
-        }
-#endif
-
-        for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
-#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25M02G)
-            uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
-#endif
-
-            if (offset == 0) {
-#if defined(USE_FLASH_W25Q128FV)
-                if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
-                    detected = true;
-                }
-#endif
+            bool status = false;
+            switch (phase) {
+            case TRY_1LINE:
+                status = octoSpiReceive1LINE(instance, FLASH_INSTRUCTION_RDID, 0, readIdResponse, 4);
+                break;
+            case TRY_4LINE:
+                status = octoSpiReceive4LINES(instance, FLASH_INSTRUCTION_RDID, 2, readIdResponse, 3);
+                break;
+            default:
+                break;
             }
 
-            if (offset == 1) {
+            if (!status) {
+                phase++;
+                continue;
+            }
+
 #ifdef USE_OCTOSPI_EXPERIMENTAL
-                if (!memoryMappedModeEnabledOnBoot) {
-                    // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
-#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K)
-                    if (!detected && w25n_identify(&flashDevice, jedecID)) {
+            if (!memoryMappedModeEnabledOnBoot) {
+                octoSpiSetDivisor(instance, OCTOSPI_CLOCK_ULTRAFAST);
+            }
+#endif
+
+            for (uint8_t offset = 0; offset <= 1 && !detected; offset++) {
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_W25M02G)
+                uint32_t jedecID = (readIdResponse[offset + 0] << 16) | (readIdResponse[offset + 1] << 8) | (readIdResponse[offset + 2]);
+#endif
+
+                if (offset == 0) {
+#if defined(USE_FLASH_W25Q128FV)
+                    if (!detected && w25q128fv_identify(&flashDevice, jedecID)) {
                         detected = true;
                     }
+#endif
+                }
+
+                if (offset == 1) {
+#ifdef USE_OCTOSPI_EXPERIMENTAL
+                    if (!memoryMappedModeEnabledOnBoot) {
+                        // These flash chips DO NOT support memory mapped mode; suitable flash read commands must be available.
+#if defined(USE_FLASH_W25N01G) || defined(USE_FLASH_W25N02K)
+                        if (!detected && w25n_identify(&flashDevice, jedecID)) {
+                            detected = true;
+                        }
 #endif
 #if defined(USE_FLASH_W25M02G)
-                    if (!detected && w25m_identify(&flashDevice, jedecID)) {
-                        detected = true;
-                    }
+                        if (!detected && w25m_identify(&flashDevice, jedecID)) {
+                            detected = true;
+                        }
 #endif
 #if defined(USE_FLASH_MT29F)
-                    if (!detected && mt29f_identify(&flashDevice, jedecID)) {
-                        detected = true;
+                        if (!detected && mt29f_identify(&flashDevice, jedecID)) {
+                            detected = true;
+                        }
+#endif
                     }
 #endif
                 }
-#endif
             }
+            phase++;
+        } while (phase != BAIL && !detected);
+
+        if (memoryMappedModeEnabledOnBoot) {
+            flashMemoryMappedModeEnable();
         }
-        phase++;
-    } while (phase != BAIL && !detected);
-
-    if (memoryMappedModeEnabledOnBoot) {
-        flashMemoryMappedModeEnable();
     }
-    return detected;
 
+    return detected;
 }
 #endif // USE_FLASH_OCTOSPI
 
