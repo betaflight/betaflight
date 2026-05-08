@@ -277,7 +277,6 @@ void fbOsdClearScreen(void)
 void fbOsdRefreshAll(void)
 {
     fbOsdReInitIfRequired(true);
-    while (fbOsdDrawScreen()) ; // Call draw function until transfer is completed.
 }
 
 bool fbOsdBufferInUse(void)
