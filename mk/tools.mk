@@ -26,28 +26,26 @@ GCC_REQUIRED_VERSION ?= 13.3.1
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-# source: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
+# source: https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases
+XPACK_VERSION := 13.3.1-1.1
 ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-x86_64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = 0601a9588bc5b9c99ad2b56133b7f118
+  ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-linux-x64.tar.gz
+  DL_CHECKSUM = 006c89337eced277fdf4c1c3bf3aebe55c85e8d52cba8d412009717fb781b959
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-x86_64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = 4bb141e44b831635fde4e8139d470f1f
+  ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-darwin-x64.tar.gz
+  DL_CHECKSUM = afd69764478275ee3e5b9a12d61250ae348a79a4d1fa767e5fa2762ae8b77b2a
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-arm64)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-arm64-arm-none-eabi.tar.xz
-  DL_CHECKSUM = f1c18320bb3121fa89dca11399273f4e
+  ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-darwin-arm64.tar.gz
+  DL_CHECKSUM = e37c379cbc423353902aada84b2b4d5a9316c2c8746c9608e69c8ac23e654aa3
 else ifeq ($(OSFAMILY), windows)
-  ARM_SDK_URL := https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi.zip
-  DL_CHECKSUM = 39d9882ca0eb475e81170ae826c1435d
+  ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-win32-x64.zip
+  DL_CHECKSUM = 49cda1bf01215f3df0613972d21f9fec3eb79dca82506365e7da2ff74b921733
 else
   $(error No toolchain URL defined for $(OSFAMILY)-$(ARCHFAMILY))
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
-# remove compression suffixes
-ARM_SDK_DIR := $(TOOLS_DIR)/$(patsubst %.zip,%, 	\
-			    $(patsubst %.tar.xz,%, 	\
-			    $(notdir $(ARM_SDK_URL))))
+ARM_SDK_DIR := $(TOOLS_DIR)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)
 
 SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/.installed
 
@@ -62,7 +60,7 @@ arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
 
 $(SDK_INSTALL_MARKER): $(DL_DIR)/$(ARM_SDK_FILE)
         # verify ckecksum first
-	@checksum=$$(md5sum "$<" | awk '{print $$1}'); \
+	@checksum=$$(sha256sum "$<" | awk '{print $$1}'); \
 	if [ "$$checksum" != "$(DL_CHECKSUM)" ]; then \
 		echo "$@ Checksum mismatch! Expected $(DL_CHECKSUM), got $$checksum."; \
 		exit 1; \
