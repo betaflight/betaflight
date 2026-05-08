@@ -29,6 +29,11 @@
 
 #include "drivers/system.h"
 
+#if ENABLE_LCD_CONSOLE && ENABLE_LCD_PRINTF_REDIRECT
+#include "common/printf_serial.h"
+#include "drivers/serial_lcd_console.h"
+#endif
+
 #include "fc/init.h"
 
 #ifdef USE_MULTICORE
@@ -63,6 +68,18 @@ int main(int argc, char * argv[])
 
     // Do basic system initialisation including multicore support if applicable
     systemInit();
+
+#if ENABLE_LCD_CONSOLE && ENABLE_LCD_PRINTF_REDIRECT
+    // Route the global tfp_printf sink to the LCD console so boot-time and
+    // runtime debug output appears on the panel. CLI sessions still capture
+    // printf for their duration via cliEnter()'s setPrintfSerialPort().
+    {
+        struct serialPort_s *lcdPort = lcdConsoleSerialOpen();
+        if (lcdPort) {
+            setPrintfSerialPort(lcdPort);
+        }
+    }
+#endif
 
 #ifdef USE_MULTICORE
     // Perform early initialisation prior to USB

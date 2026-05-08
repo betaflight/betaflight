@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight ESP32S3"
+#define USBD_PRODUCT_STRING     "Betaflight - ESP32S3"
 #endif
 
 #define USE_UART0

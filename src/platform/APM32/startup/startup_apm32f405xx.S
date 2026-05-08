@@ -142,7 +142,7 @@ LoopMarkHeapStack:
  str     r1,[r0]
 
 /* Call the clock system intitialization function.*/
-/* Done in system_stm32f4xx.c */
+/* Done in system_apm32f4xx.c */
  bl  SystemInit
 
 /* Call the application's entry point.*/

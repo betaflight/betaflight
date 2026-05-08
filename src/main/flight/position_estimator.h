@@ -25,6 +25,8 @@
 #include "common/vector.h"
 #include "common/time.h"
 
+#include "io/gps.h"
+
 // Unified position estimate from Kalman-filter sensor fusion.
 // All values in local ENU (East-North-Up) centimeters, zeroed at arm point.
 typedef struct positionEstimate3d_s {
@@ -55,3 +57,7 @@ float positionEstimatorGetTrustXY(void);
 // Reset (e.g. on arm/disarm)
 void positionEstimatorResetZ(void);
 void positionEstimatorResetXY(void);
+
+// Returns the GPS location captured when XY estimation became active (arm point).
+// Returns false if no GPS origin has been captured yet.
+bool positionEstimatorGetGpsOrigin(gpsLocation_t *out);

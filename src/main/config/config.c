@@ -233,11 +233,11 @@ static void validateAndFixConfig(void)
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);
-    if ((gpsConfig()->provider == GPS_MSP || gpsConfig()->provider == GPS_VIRTUAL) && gpsSerial) {
+    if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && gpsSerial) {
         serialRemovePort(gpsSerial->identifier);
     }
 
-    if (gpsConfig()->provider != GPS_MSP && gpsConfig()->provider != GPS_VIRTUAL && !gpsSerial) {
+    if (!GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider) && !gpsSerial) {
         featureDisableImmediate(FEATURE_GPS);
     }
 #endif
@@ -314,31 +314,46 @@ static void validateAndFixConfig(void)
     }
 #endif // USE_ACC
 
-    if (!(featureIsConfigured(FEATURE_RX_PARALLEL_PWM) || featureIsConfigured(FEATURE_RX_PPM) || featureIsConfigured(FEATURE_RX_SERIAL) || featureIsConfigured(FEATURE_RX_MSP) || featureIsConfigured(FEATURE_RX_SPI))) {
+    bool hasConfiguredRxFeature =
+        featureIsConfigured(FEATURE_RX_PARALLEL_PWM) ||
+        featureIsConfigured(FEATURE_RX_PPM) ||
+        featureIsConfigured(FEATURE_RX_SERIAL) ||
+        featureIsConfigured(FEATURE_RX_MSP) ||
+        featureIsConfigured(FEATURE_RX_SPI);
+#if ENABLE_RX_UDP
+    hasConfiguredRxFeature = hasConfiguredRxFeature || featureIsConfigured(FEATURE_RX_UDP);
+#endif
+    if (!hasConfiguredRxFeature) {
         featureEnableImmediate(DEFAULT_RX_FEATURE);
     }
 
     if (featureIsConfigured(FEATURE_RX_PPM)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
     if (featureIsConfigured(FEATURE_RX_MSP)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
     if (featureIsConfigured(FEATURE_RX_SERIAL)) {
-        featureDisableImmediate(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
 
 #ifdef USE_RX_SPI
     if (featureIsConfigured(FEATURE_RX_SPI)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP | FEATURE_RX_UDP);
     }
 #endif // USE_RX_SPI
 
     if (featureIsConfigured(FEATURE_RX_PARALLEL_PWM)) {
-        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI | FEATURE_RX_UDP);
     }
+
+#if ENABLE_RX_UDP
+    if (featureIsConfigured(FEATURE_RX_UDP)) {
+        featureDisableImmediate(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+    }
+#endif // ENABLE_RX_UDP
 
 #if defined(USE_ADC)
     if (featureIsConfigured(FEATURE_RSSI_ADC)) {
@@ -365,6 +380,9 @@ static void validateAndFixConfig(void)
             failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
         }
 #endif
+        if (failsafeConfig()->failsafe_procedure >= FAILSAFE_PROCEDURE_COUNT) {
+            failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;
+        }
 
         if (isModeActivationConditionPresent(BOXGPSRESCUE)) {
             removeModeActivationCondition(BOXGPSRESCUE);

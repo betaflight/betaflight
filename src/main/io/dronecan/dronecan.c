@@ -40,9 +40,10 @@
 
 #include "pg/dronecan.h"
 
-// Forward declaration; implemented in dronecan_node.c.
+// Forward declarations; implemented in dronecan_node.c / dronecan_gnss.c.
 void dronecanNodeInit(void);
 void dronecanNodeUpdate(timeUs_t currentTimeUs);
+void dronecanGnssInit(void);
 
 //-----------------------------------------------------------------------------
 // Memory pool
@@ -256,6 +257,9 @@ void dronecanInit(void)
     // Wire the node-level publishers/responders (registers the GetNodeInfo
     // subscriber against our table before the first frame can arrive).
     dronecanNodeInit();
+    // Install the GNSS Fix2 subscriber so a DroneCAN GPS module's broadcasts
+    // land in our cache as soon as the transport is live.
+    dronecanGnssInit();
 
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
 

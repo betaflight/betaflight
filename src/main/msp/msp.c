@@ -1988,6 +1988,20 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
+        // Added in MSP API 1.48
+#if defined(USE_RPM_FILTER)
+        sbufWriteU16(dst, rpmFilterConfig()->rpm_filter_fade_range_hz);
+        sbufWriteU16(dst, rpmFilterConfig()->rpm_filter_q);
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+            sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_weights[i]);
+        }
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+            sbufWriteU8(dst, 0);
+        }
+#endif
         break;
 
     case MSP_PID_ADVANCED:
@@ -3331,6 +3345,38 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             dynNotchConfigMutable()->dyn_notch_count = i;
 #else
             sbufReadU8(src);
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 7) {
+            // Added in MSP API 1.48
+#if defined(USE_RPM_FILTER)
+            {
+                const uint16_t fadeRangeHz = sbufReadU16(src);
+                const uint16_t q = sbufReadU16(src);
+                uint8_t weights[RPM_FILTER_HARMONICS_MAX];
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    weights[j] = sbufReadU8(src);
+                }
+                if (q < 250 || q > 3000 || fadeRangeHz > 1000) {
+                    return MSP_RESULT_ERROR;
+                }
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    if (weights[j] > 100) {
+                        return MSP_RESULT_ERROR;
+                    }
+                }
+                rpmFilterConfigMutable()->rpm_filter_fade_range_hz = fadeRangeHz;
+                rpmFilterConfigMutable()->rpm_filter_q = q;
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    rpmFilterConfigMutable()->rpm_filter_weights[j] = weights[j];
+                }
+            }
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                sbufReadU8(src);
+            }
 #endif
         }
 
