@@ -37,6 +37,9 @@ else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-x86_64)
 else ifeq ($(OSFAMILY)-$(ARCHFAMILY), macosx-arm64)
   ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-darwin-arm64.tar.gz
   DL_CHECKSUM = e37c379cbc423353902aada84b2b4d5a9316c2c8746c9608e69c8ac23e654aa3
+else ifeq ($(OSFAMILY)-$(ARCHFAMILY), linux-arm64)
+  ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-linux-arm64.tar.gz
+  DL_CHECKSUM = 34fa25d7dcd57bfdd3aeff5c595eac20dbf21a2d84b72e6c2db3bc67d556a1af
 else ifeq ($(OSFAMILY), windows)
   ARM_SDK_URL := https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$(XPACK_VERSION)/xpack-arm-none-eabi-gcc-$(XPACK_VERSION)-win32-x64.zip
   DL_CHECKSUM = 49cda1bf01215f3df0613972d21f9fec3eb79dca82506365e7da2ff74b921733
