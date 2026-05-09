@@ -522,6 +522,12 @@ void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
     if ((endAddress & (pageSize - 1)) != 0) {
         return; // misconfigured caller; refuse to enable rather than corrupt later
     }
+    // Range sanity: refuse to enable if the ring is empty (start >= end) or
+    // would extend past the end of the partition. Either case would silently
+    // mis-fold the writer's tailAddress and could land writes in the wrong
+    // physical region.
+    if (startAddress >= endAddress) return;
+    if (endAddress > flashfsSize) return;
     // Drain any in-flight page program before swapping wrap addresses, so any
     // already-submitted write completes its callback against the OLD wrap config.
     // If we updated wrapStartAddress / wrapEndAddress while the chip was still

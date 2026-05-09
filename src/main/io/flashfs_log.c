@@ -482,7 +482,21 @@ static bool readTrailerAt(uint32_t addr, flashfsLogTrailer_t *out)
     }
     if (out->magic != LOG_TRAILER_MAGIC) return false;
     uint16_t expected = crcRecord(out, 8, sizeof(*out)); // skip magic + crc + reserved
-    return out->crc == expected;
+    if (out->crc != expected) return false;
+
+    // Geometry sanity. A valid trailer points at a header that lives in the data
+    // ring, immediately after the trailer itself. Reject anything whose claimed
+    // dataStart or headerLength would put header bytes outside the ring or have
+    // them collide with the trailer record. Without this guard, an unlucky bit
+    // pattern that happens to match the magic AND happens to CRC clean could feed
+    // garbage offsets into latestTrailerWriteHead / computeWriteHeadFromTable /
+    // flashfsLogRead and corrupt the log table.
+    if (out->dataStart >= geom.dataSectionEnd) return false;
+    if (out->headerLength == 0 || out->headerLength > geom.bufferAreaSize - sizeof(flashfsBufferPreamble_t)) return false;
+    const uint32_t headerEnd = addr + sizeof(*out) + out->headerLength;
+    if (headerEnd > geom.dataSectionEnd) return false;
+
+    return true;
 }
 
 static void writeTrailer(uint32_t addr, uint32_t logId, uint32_t dataStart, uint32_t headerLength)
