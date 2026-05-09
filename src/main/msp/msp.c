@@ -3666,9 +3666,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #else
                 const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
 #endif
-                if (flashMode <= maxFlashMode) {
-                    blackboxConfigMutable()->flash_mode = flashMode;
+                if (flashMode > maxFlashMode) {
+                    // Match other MSP validation paths: return ERROR rather than
+                    // silently ACKing a value the firmware can't honour, so the
+                    // configurator can surface the rejection to the user.
+                    return MSP_RESULT_ERROR;
                 }
+                blackboxConfigMutable()->flash_mode = flashMode;
             }
         }
         break;

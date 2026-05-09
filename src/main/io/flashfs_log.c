@@ -1192,9 +1192,10 @@ void flashfsLogWriteDataByte(uint8_t b)
     // recent ring-size-worth of data). Instead, flashfsLogEndLog reads the flag at
     // close to compute the trailer's dataStart so the reader sees the currently-
     // readable window rather than the stale original session-start pointer.
+    bool wrappedThisCall = false;
     if (active.dataWriteHead >= geom.dataSectionEnd) {
         active.dataWriteHead -= geom.dataSectionEnd;
-        active.lapped = true;
+        wrappedThisCall = true;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
@@ -1214,6 +1215,14 @@ void flashfsLogWriteDataByte(uint8_t b)
 
     flashfsWriteByte(b);
     active.dataWriteHead++;
+    // Only commit the lap event after a byte has actually been written post-wrap.
+    // Setting it before the drop checks would mark the session "lapped" even when
+    // every wrapped byte got dropped, leading flashfsLogEndLog to compute a
+    // post-trailer dataStart that points at stale flash content from previous
+    // flights instead of this session's intact pre-wrap data.
+    if (wrappedThisCall) {
+        active.lapped = true;
+    }
 }
 
 void flashfsLogWriteData(const uint8_t *data, uint32_t length)
