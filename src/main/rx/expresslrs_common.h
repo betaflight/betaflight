@@ -112,7 +112,7 @@ typedef enum {
     TLM_RATIO_DISARMED, // TLM_RATIO_STD when disarmed, TLM_RATIO_NO_TLM when armed
 } elrsTlmRatio_e;
 
-typedef enum : uint8_t
+typedef enum 
 {
     // RATE_MODULATION_BAND_RATE_MODE for ELRS V4
     RATE_LORA_900_25HZ = 0,

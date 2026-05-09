@@ -96,7 +96,7 @@ static void usbd_class_event_notify_handler(uint8_t busid, uint8_t event,
                                             void *arg);
 
 static void usbd_print_setup(struct usb_setup_packet *setup) {
-  UNUSED(setup);
+  (void)setup;
   USB_LOG_INFO("Setup: "
                "bmRequestType 0x%02x, bRequest 0x%02x, wValue 0x%04x, wIndex "
                "0x%04x, wLength 0x%04x\r\n",

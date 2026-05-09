@@ -110,4 +110,30 @@ void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callbac
     NVIC_SetPriority(dmaDescriptors[index].irqN, priority);
     NVIC_EnableIRQ(dmaDescriptors[index].irqN);
 }
+
+int dmaGetHandlerCount(void)
+{
+    return DMA_LAST_HANDLER;
+}
+
+int dmaGetDeviceNumber(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_NO(identifier);
+}
+
+int dmaGetDeviceIndex(dmaIdentifier_e identifier)
+{
+    return DMA_DEVICE_INDEX(identifier);
+}
+
+const char *dmaGetDisplayString(void)
+{
+    return DMA_OUTPUT_STRING;
+}
+
+uint32_t dmaGetDataLength(dmaResource_t *ref)
+{
+    return DMA_GetCurrDataCounter((DMA_ARCH_TYPE *)ref);
+}
+
 #endif

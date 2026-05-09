@@ -174,7 +174,7 @@ void compassPreInit(void)
 }
 
 #if !ENABLE_SIMULATOR
-static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
+static bool compassDetect(magDev_t *magDev, sensor_align_e *alignment)
 {
     *alignment = MAG_ALIGN;
 

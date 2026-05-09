@@ -379,6 +379,19 @@ typedef volatile unsigned char *PUINT8V;
 
 #define __IO volatile /* defines 'read / write' permissions */
 
+#ifndef uint8_t 
+typedef  unsigned char  uint8_t;
+#endif
+
+#ifndef uint16_t 
+typedef  unsigned short int  uint16_t;
+#endif
+
+#ifndef uint32_t 
+typedef  long unsigned int  uint32_t;
+#endif
+
+
 typedef struct
 {
     __IO uint8_t CONTROL;     /* 0x40030000 */

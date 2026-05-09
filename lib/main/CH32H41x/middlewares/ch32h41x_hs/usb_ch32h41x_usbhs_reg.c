@@ -4,6 +4,11 @@
 /**
  * @brief   Related register macro
  */
+
+#ifndef UNUSED
+#define UNUSED(x)                        (void)x
+#endif
+
 #define USB_BASE 0x40030000u
 #define CH32H41x_USBHS_DEV ((USBHSD_TypeDef *)USB_BASE)
 
@@ -140,6 +145,7 @@ int usb_dc_deinit(uint8_t busid) {
  * @retval           >=0 success otherwise failure
  */
 int usbd_set_address(uint8_t busid, const uint8_t address) {
+  UNUSED(busid);
   if (address == 0) {
     CH32H41x_USBHS_DEV->DEV_AD = (CH32H41x_USBHS_DEV->DEV_AD & 0x80) | address;
   }
@@ -152,7 +158,10 @@ int usbd_set_remote_wakeup(uint8_t busid) {
   return -1;
 }
 
-uint8_t usbd_get_port_speed(uint8_t busid) { return USB_SPEED_HIGH; }
+uint8_t usbd_get_port_speed(uint8_t busid) { 
+  UNUSED(busid);
+  return USB_SPEED_HIGH; 
+}
 
 /**
  * @brief            Open endpoint
@@ -161,6 +170,7 @@ uint8_t usbd_get_port_speed(uint8_t busid) { return USB_SPEED_HIGH; }
  * @retval           >=0 success otherwise failure
  */
 int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep) {
+  UNUSED(busid);
   uint8_t epid = USB_EP_GET_IDX(ep->bEndpointAddress);
   if (epid > (CONFIG_USBDEV_EP_NUM - 1)) {
     /**
@@ -196,6 +206,7 @@ int usbd_ep_open(uint8_t busid, const struct usb_endpoint_descriptor *ep) {
  * @retval           >=0 success otherwise failure
  */
 int usbd_ep_close(uint8_t busid, const uint8_t ep) {
+  UNUSED(busid);
   uint8_t epid = USB_EP_GET_IDX(ep);
   if (USB_EP_DIR_IS_IN(ep)) {
     usb_dc_cfg.ep_in[epid].ep_enable = false;
@@ -212,6 +223,7 @@ int usbd_ep_close(uint8_t busid, const uint8_t ep) {
  * @retval           >=0 success otherwise failure
  */
 int usbd_ep_set_stall(uint8_t busid, const uint8_t ep) {
+  UNUSED(busid);
   uint8_t ep_idx = USB_EP_GET_IDX(ep);
   if (USB_EP_DIR_IS_OUT(ep)) {
     if (ep_idx == 0) {
@@ -240,6 +252,7 @@ int usbd_ep_set_stall(uint8_t busid, const uint8_t ep) {
  * @retval           >=0 success otherwise failure
  */
 int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep) {
+  UNUSED(busid);
   uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
   if (USB_EP_DIR_IS_OUT(ep)) {
@@ -258,6 +271,8 @@ int usbd_ep_clear_stall(uint8_t busid, const uint8_t ep) {
  * @retval           >=0 success otherwise failure
  */
 int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled) {
+  UNUSED(busid);
+  UNUSED(stalled);
   if (USB_EP_DIR_IS_OUT(ep)) {
   } else {
   }
@@ -283,6 +298,7 @@ int usbd_ep_is_stalled(uint8_t busid, const uint8_t ep, uint8_t *stalled) {
  */
 int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data,
                         uint32_t data_len) {
+  UNUSED(busid);
   uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
   if (!data && data_len) {
@@ -340,6 +356,7 @@ int usbd_ep_start_write(uint8_t busid, const uint8_t ep, const uint8_t *data,
  */
 int usbd_ep_start_read(uint8_t busid, const uint8_t ep, uint8_t *data,
                        uint32_t data_len) {
+  UNUSED(busid);                      
   uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
   if (!data && data_len) {
@@ -519,6 +536,7 @@ static inline void usb_trans_end_process(void) {
  * @retval           None
  */
 void USBD_IRQHandler(uint8_t busid) {
+  UNUSED(busid);
   volatile uint8_t intflag = 0;
   intflag = CH32H41x_USBHS_DEV->INT_FG;
 

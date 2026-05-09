@@ -1,6 +1,10 @@
 #include "cdc_vcp_ch32h41x.h"
 #include "ch32h417.h"
 
+#ifndef UNUSED
+#define UNUSED(x)                        (void)x
+#endif
+
 struct cdc_line_coding cdc_vcp_line_coding = {
     .dwDTERate = 115200, .bDataBits = 8, .bCharFormat = 0, .bParityType = 0};
 
@@ -175,6 +179,7 @@ void cdc_acm_init(uint8_t busid, uintptr_t reg_base) {
 void usbd_cdc_acm_set_line_coding(uint8_t busid, uint8_t intf,
                                   struct cdc_line_coding *line_coding) {
   (void)busid;
+  (void)intf;
   cdc_vcp_line_coding.bCharFormat = line_coding->bCharFormat;
   cdc_vcp_line_coding.bDataBits = line_coding->bDataBits;
   cdc_vcp_line_coding.bParityType = line_coding->bParityType;
@@ -212,6 +217,7 @@ uint16_t usb_vcp_rx_available(void) {
 // }
 
 uint16_t usb_vcp_get_rx_data(uint8_t busid, uint8_t *buffer, uint32_t len) {
+ (void)busid;
   uint32_t count = 0;
 
   count = usb_vcp_rx_available();
