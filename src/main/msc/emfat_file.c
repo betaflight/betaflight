@@ -484,7 +484,12 @@ void emfat_init_files(void)
     // mode. The user might have switched `blackbox_flash_mode` back to LINEAR before
     // erasing — we should still expose the ring-format logs that exist on the chip.
     // (The writer path enforces mode/format match separately.)
-    if (flashfsLogDetectFormat() == FLASHFS_FLASH_FORMAT_RING) {
+    //
+    // Use the always-compiled flashfsLogDetectFormatFromFlash() so a linear-only build
+    // (without USE_BLACKBOX_RING_LOG) still recognises ring-formatted flash and exposes
+    // the existing logs read-only. flashfsLogDetectFormat() is a stub returning UNKNOWN
+    // in that build and would cause MSC to silently hide everything.
+    if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
         // Ring-mode path: each log is a virtual file synthesized from the metadata table.
         const uint32_t ringLogCount = flashfsLogGetLogCount();
         uint32_t totalSize = 0;

@@ -570,8 +570,26 @@ static void buildLogTableByScan(void)
             latestTrailerWriteHeadValid = true;
         }
 
-        if (logTableCount >= FLASHFS_LOG_MAX_LOGS) continue;
-        flashfsLogInfo_t *info = &logTable[logTableCount++];
+        // Pick the destination slot. While the table has room, append. Once at the
+        // cap, replace the entry with the smallest logId only if this new trailer
+        // is newer — that way we always end up with the most-recent 64 trailers
+        // regardless of physical scan order. Plain `continue` would silently lose
+        // newer flights and keep older ones whose ranges were already overwritten.
+        flashfsLogInfo_t *info = NULL;
+        if (logTableCount < FLASHFS_LOG_MAX_LOGS) {
+            info = &logTable[logTableCount++];
+        } else {
+            uint32_t smallestIdx = 0;
+            for (uint32_t i = 1; i < FLASHFS_LOG_MAX_LOGS; i++) {
+                if (logTable[i].logId < logTable[smallestIdx].logId) smallestIdx = i;
+            }
+            if (t.logId > logTable[smallestIdx].logId) {
+                info = &logTable[smallestIdx];
+            } else {
+                continue;
+            }
+        }
+
         info->logId = t.logId;
         info->headerOffset = addr + sizeof(t); // header text follows trailer
         info->headerLength = t.headerLength;

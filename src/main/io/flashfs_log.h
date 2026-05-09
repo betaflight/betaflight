@@ -32,9 +32,10 @@
  *                          ^ sector-aligned          ^ sector-aligned
  *
  *   Each log finds its end at the trailer that follows its data. The trailer is a small
- *   16-byte record with magic + CRC + header_length + data_start, sector-aligned so the
- *   MSC enumeration scan only has to read one offset per sector. The header text follows
- *   the trailer (header at the END of the log, as you specified).
+ *   20-byte record (`flashfsLogTrailer_t`: magic, CRC, reserved, logId, dataStart,
+ *   headerLength), sector-aligned so the MSC enumeration scan only has to read one
+ *   offset per sector. The header text follows the trailer (header at the END of the
+ *   log, as you specified).
  *
  * - Active header buffer: a small reserved region (default 4 sectors / 16 KB) that holds
  *   the in-flight log's header until commit. After clean log close the buffer is erased,
