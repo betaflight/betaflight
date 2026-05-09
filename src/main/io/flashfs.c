@@ -497,6 +497,16 @@ void flashfsFlushSync(void)
     // flashfsClearRing's wrap-config swap, etc — all could leave residual writes to
     // complete under post-call state). Loop until the buffer is empty.
     while (!flashfsBufferIsEmpty()) {
+        // Block until the previous page's DMA-TC callback has fired and advanced
+        // bufferTail. flashIsReady() inside flashfsWriteBuffers(sync=true) only
+        // gates on the chip's BUSY flag — the write callback (which mutates
+        // bufferTail / sets dataWritten) is queued at TC IRQ and may not have run
+        // yet. Without this gate, the next iteration captures (buffer, size) via
+        // flashfsGetDirtyDataBuffers() using a stale bufferTail and re-programs
+        // bytes that were just drained. flashfsFlushAsync already uses this same
+        // guard via flashfsNewData().
+        while (!flashfsNewData()) { /* spin until prior write callback fired */ }
+
         uint8_t const * buffers[2];
         uint32_t bufferSizes[2];
         int bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);

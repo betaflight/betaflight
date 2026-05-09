@@ -137,7 +137,11 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     // Sector-aligned trailer magic scan. Trailers persist across clean closes and
     // across erase-pool wraps, so this is the durable signature that cleanly-closed
     // ring volumes have when offset 0 and the buffer area both happen to be erased.
-    for (uint32_t addr = fg->sectorSize; addr + sizeof(uint32_t) <= bufferAreaStart; addr += fg->sectorSize) {
+    // Start at addr 0: a ring wrap can place a trailer at offset 0 of the data
+    // section (when the previous log's tail aligned exactly at dataSectionEnd).
+    // The probe at the top already rejected LINEAR_FORMAT_PROBE_TEXT, so a
+    // LOG_TRAILER_MAGIC at 0 is unambiguously ring.
+    for (uint32_t addr = 0; addr + sizeof(uint32_t) <= bufferAreaStart; addr += fg->sectorSize) {
         uint32_t magic = 0;
         if (flashfsReadAbs(addr, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
                 && magic == LOG_TRAILER_MAGIC) {
@@ -708,12 +712,22 @@ static void buildLogTableByScan(void)
     // entry whose footprint overlaps a newer one's footprint.
     for (uint32_t newer = logTableCount; newer-- > 1; ) {
         const uint32_t newerStart = logTable[newer].dataStart;
-        const uint32_t newerEnd   = logTable[newer].headerOffset + logTable[newer].headerLength;
+        // Mirror flashfsLogEndLog's footprint: the close path advances the write head
+        // to the next sector boundary after the header, so any older log whose data
+        // range falls inside that alignment slack was clobbered too. Use the aligned
+        // post-header boundary here so boot-time eviction matches close-time eviction
+        // — otherwise an older log surviving only in the slack reappears as a phantom
+        // MSC entry pointing at bytes that now belong to the newer log.
+        uint32_t newerEnd = alignUpToSector(logTable[newer].headerOffset + logTable[newer].headerLength);
+        if (newerEnd >= geom.dataSectionEnd) newerEnd = 0;
+        // If the newer log occupies the entire ring (start == aligned end after wrap),
+        // every older entry is by definition inside its footprint.
+        const bool newerFullRing = (newerStart == newerEnd);
         for (uint32_t older = 0; older < newer; older++) {
             if (!logTable[older].valid) continue;
             const uint32_t olderStart = logTable[older].dataStart;
             const uint32_t olderEnd   = logTable[older].headerOffset + logTable[older].headerLength;
-            if (ringRangesOverlap(newerStart, newerEnd, olderStart, olderEnd)) {
+            if (newerFullRing || ringRangesOverlap(newerStart, newerEnd, olderStart, olderEnd)) {
                 logTable[older].valid = false;
             }
         }
@@ -1259,14 +1273,14 @@ void flashfsLogEndLog(void)
 {
     if (!active.isOpen) return;
 
-    // Disable ring wrap before the close path's mixed-address writes (trailer/header
-    // copy into the data ring; buffer-area erase). The trailer/header write block is
-    // explicitly bounded by the wrap-to-0 logic below so it never spans dataSectionEnd
-    // — leaving the ring active here would be redundant at best and a footgun for
-    // future maintenance.
-    flashfsClearRing();
-
+    // Drain the in-RAM write buffer FIRST while ring wrap is still active — any bytes
+    // pending from the just-closed session may need to wrap, and clearing the ring
+    // before flushing would force them down the linear-overflow path (drop). After the
+    // flush the buffer is empty, so the close-path's mixed-address writes (trailer +
+    // header copy + buffer-area erase) can safely run linear: those writes are
+    // explicitly bounded by the wrap-to-0 logic below so they never span dataSectionEnd.
     flashfsFlushSync();
+    flashfsClearRing();
 
     // Sector-align the trailer position so MSC enumeration finds it without scanning
     // every byte. The bytes between the active.dataWriteHead and the aligned position
@@ -1402,10 +1416,11 @@ void flashfsLogAbortLog(void)
 {
     if (!active.isOpen) return;
 
-    // Match flashfsLogEndLog: ring wrap goes back off as soon as the session ends.
-    flashfsClearRing();
-
+    // Match flashfsLogEndLog: drain pending bytes (which may need to wrap) BEFORE
+    // disabling ring wrap — clearing the ring first would push wrap-needing bytes down
+    // the linear-overflow drop path.
     flashfsFlushSync();
+    flashfsClearRing();
 
     // If the writer made it past the header phase, an uncommitted preamble exists at
     // bufferAreaStart. Mark it committed BEFORE erasing the buffer area: a power loss

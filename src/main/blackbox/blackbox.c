@@ -1096,6 +1096,14 @@ void blackboxValidateConfig(void)
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
 
+    // Refresh the per-session encoding scale so it tracks blackbox_high_resolution
+    // edits made while logging was stopped. blackboxInit() set this once at boot;
+    // without re-reading the config here, a toggle would update the header line
+    // (printed at session start) but loadMainState() would keep encoding with the
+    // stale scale until reboot, producing logs whose advertised resolution does
+    // not match the encoded values.
+    blackboxHighResolutionScale = blackboxConfig()->high_resolution ? 10.0f : 1.0f;
+
     // Recompute blackboxPInterval from the persisted sample_rate every time.
     // blackboxInit() already set it once at boot, but a prior ring-mode session
     // may have overwritten it with a clamped value (slower than persisted) — if
