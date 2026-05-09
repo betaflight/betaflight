@@ -522,6 +522,11 @@ void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
     if ((endAddress & (pageSize - 1)) != 0) {
         return; // misconfigured caller; refuse to enable rather than corrupt later
     }
+    // Drain any in-flight page program before swapping wrap addresses, so any
+    // already-submitted write completes its callback against the OLD wrap config.
+    // If we updated wrapStartAddress / wrapEndAddress while the chip was still
+    // busy, the post-write tailAddress fold could mix old and new bounds.
+    flashfsFlushSync();
     wrapStartAddress = startAddress;
     wrapEndAddress = endAddress;
 }
@@ -531,6 +536,9 @@ void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
  */
 void flashfsClearRing(void)
 {
+    // Same drain rationale as flashfsSetRing — let any in-flight write finish
+    // under the old (ring-enabled) wrap config before exposing the disabled state.
+    flashfsFlushSync();
     wrapStartAddress = 0;
     wrapEndAddress = UINT32_MAX;
 }

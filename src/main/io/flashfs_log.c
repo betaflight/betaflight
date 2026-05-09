@@ -263,6 +263,7 @@ static struct {
     bool      isOpen;
     bool      headerPhase;
     bool      lapped;              // dataWriteHead has wrapped past dataSectionEnd at least once this session
+    bool      lappedPersisted;     // markBufferLapped() has flipped the preamble's lapped marker for this session
     uint32_t  logId;
     uint32_t  dataStart;
     uint32_t  dataWriteHead;       // mirrors module-level dataWriteHead during the flight
@@ -357,6 +358,13 @@ static int readBytes(uint32_t addr, uint8_t *dest, uint32_t length)
 static void eraseSectorSync(uint32_t addr)
 {
     flashfsFlushSync();
+    // Most callers (eraseBufferArea on close, ensureErasedSpace at log start) come
+    // through paths that already drain via flashfsFlushSync, but a previous async
+    // erase tick can still be in flight. Wait for the chip before submitting the
+    // new erase command; NOR parts ignore commands while BUSY is asserted, which
+    // would silently no-op the erase and leave a non-erased sector that the
+    // subsequent program would land on.
+    while (!flashIsReady());
     flashEraseSector(addr);
     while (!flashIsReady());
 }
@@ -507,9 +515,14 @@ static bool bufferIsCommitted(const flashfsBufferPreamble_t *p)
 // to compute the CRC, avoiding a large RAM scratch buffer.
 static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uint32_t headerLength)
 {
+    // .reserved is initialised to 0xFFFF rather than 0 so it can be 1→0 flipped
+    // in place on first ring-wrap (markBufferLapped) — recovery uses it to know
+    // the writer has lapped past the original dataStart. NOR can only program
+    // 1 bits to 0; the all-ones initial value is what makes the in-place update
+    // possible.
     flashfsBufferPreamble_t p = {
         .magic = BUFFER_PREAMBLE_MAGIC,
-        .reserved = 0,
+        .reserved = 0xFFFF,
         .logId = logId,
         .dataStart = dataStart,
         .headerLengthAndCommit = (headerLength & 0x00FFFFFFu) | 0xFF000000u,
@@ -543,6 +556,30 @@ static void markBufferCommitted(void)
     if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) return;
     p.headerLengthAndCommit &= 0x00FFFFFFu; // clear the high byte to 0x00
     writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
+}
+
+// Flip the preamble's reserved field from 0xFFFF to 0x0000 in place. Called once
+// per session, from the non-realtime flush path, the first time the writer wraps
+// past dataSectionEnd. recoverFromBuffer reads the field — if it sees 0x0000, the
+// session lapped and the original preamble.dataStart no longer points at intact
+// data. The CRC in the preamble does NOT cover this field (it's over logId,
+// dataStart, headerLength, headerText), so flipping it doesn't invalidate the
+// commit signal.
+//
+// writeBytesSync seeks flashfs's tail to bufferAreaStart for the write — but the
+// data writer is mid-session expecting the tail to stay in the data ring at
+// active.dataWriteHead. We seek back after the preamble update so subsequent
+// data bytes land where they should.
+static void markBufferLapped(void)
+{
+    flashfsBufferPreamble_t p;
+    if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) return;
+    if (p.reserved == 0) return; // already lapped
+    p.reserved = 0;
+    writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
+    if (active.isOpen && !active.headerPhase) {
+        flashfsSeekAbs(active.dataWriteHead);
+    }
 }
 
 // =============================================================================
@@ -877,10 +914,31 @@ static void recoverFromBuffer(void)
     }
     ensureErasedSpace(addr, bytesNeeded);
 
-    writeTrailer(addr, pre.logId, pre.dataStart, headerLen);
+    // Mirror flashfsLogEndLog's lapped-aware dataStart selection. If the in-flight
+    // session lapped before the crash, pre.dataStart points at flash that the
+    // writer has since overwritten — the readable range is the whole ring minus
+    // the trailer + header sectors we're about to write, so set the trailer's
+    // dataStart to the post-header position (sector-aligned past addr + sizeof
+    // trailer + headerLen). The "lapped" signal comes from the preamble's
+    // reserved field (set 0xFFFF on log start, flipped to 0 by markBufferLapped
+    // in flashfsLogFlushAsync the first time the writer wraps).
+    uint32_t recoveredDataStart;
+    if (pre.reserved == 0) {
+        uint32_t afterHeader = addr + sizeof(flashfsLogTrailer_t) + headerLen;
+        recoveredDataStart = alignUpToSector(afterHeader);
+        if (recoveredDataStart >= geom.dataSectionEnd) recoveredDataStart = 0;
+    } else {
+        recoveredDataStart = pre.dataStart;
+    }
+
+    // Copy the header BEFORE writing the trailer (same ordering rule as
+    // flashfsLogEndLog: the trailer is the commit signal). A power loss partway
+    // through the copy leaves no trailer — recovery on the NEXT boot will fall
+    // back to the gap path again.
     copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                     addr + sizeof(flashfsLogTrailer_t),
                     headerLen);
+    writeTrailer(addr, pre.logId, recoveredDataStart, headerLen);
     markBufferCommitted();
     eraseBufferArea();
 }
@@ -1178,7 +1236,19 @@ void flashfsLogWriteData(const uint8_t *data, uint32_t length)
 }
 
 uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferFreeSpace(); }
-bool flashfsLogFlushAsync(bool force)            { return flashfsFlushAsync(force); }
+
+// Called from the blackbox task (non-realtime) — never the PID-loop hot path.
+// We piggy-back the lapped-flag persistence here so the eventual recovery path
+// can detect a multi-lap session. Doing the in-place preamble write from this
+// non-realtime context keeps the hot path free of any flash bookkeeping I/O.
+bool flashfsLogFlushAsync(bool force)
+{
+    if (active.isOpen && active.lapped && !active.lappedPersisted) {
+        markBufferLapped();
+        active.lappedPersisted = true;
+    }
+    return flashfsFlushAsync(force);
+}
 void flashfsLogFlushSync(void)                   { flashfsFlushSync(); }
 
 void flashfsLogEndLog(void)
