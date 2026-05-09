@@ -101,6 +101,25 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     for (size_t i = 0; i < sizeof(probe); i++) {
         if (probe[i] != 0xFF) return FLASHFS_FLASH_FORMAT_RING;
     }
+    // Offset 0 is erased. That can also describe a "buffer-only" ring state: power
+    // dropped after flashfsLogFinishHeader() wrote the active log's preamble into the
+    // buffer area, but before the first data byte landed in sector 0. The buffer
+    // preamble is recoverable on next ring-build boot, so a linear-only downgrade
+    // must NOT overwrite the chip in this state. Check the buffer-area magic as a
+    // secondary signal.
+    const flashGeometry_t *fg = flashfsGetGeometry();
+    if (fg && fg->sectorSize > 0) {
+        const uint32_t partitionSize = flashfsGetSize();
+        const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
+        if (bufferAreaSize < partitionSize) {
+            const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
+            uint32_t magic = 0;
+            if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
+                    && magic == BUFFER_PREAMBLE_MAGIC) {
+                return FLASHFS_FLASH_FORMAT_RING;
+            }
+        }
+    }
     return FLASHFS_FLASH_FORMAT_EMPTY;
 }
 
@@ -514,10 +533,16 @@ static void markBufferCommitted(void)
 // Scan every sector in the data section. Read the first sizeof(trailer) bytes of each
 // sector and check for the trailer magic. Each match describes one log.
 
+static uint32_t latestTrailerWriteHead = 0;
+static bool latestTrailerWriteHeadValid = false;
+
 static void buildLogTableByScan(void)
 {
     logTableCount = 0;
     nextLogId = 1;
+    latestTrailerWriteHead = 0;
+    latestTrailerWriteHeadValid = false;
+    uint32_t latestLogId = 0;
 
     for (uint32_t addr = 0; addr + geom.sectorSize <= geom.dataSectionEnd; addr += geom.sectorSize) {
         flashfsLogTrailer_t t;
@@ -527,7 +552,22 @@ static void buildLogTableByScan(void)
         // table is full — otherwise the next ring-wrap-eviction-aware close would
         // re-use a stale id below the on-flash maximum, breaking sort/eviction
         // assumptions ("table is sorted ascending by logId, append in order").
+        //
+        // Also separately track the highest-logId trailer's post-header write head,
+        // because computeWriteHeadFromTable() needs to recover the writer position
+        // even when there are more than FLASHFS_LOG_MAX_LOGS trailers on flash —
+        // scanning logTable[] alone would pick a "latest" that has been truncated
+        // out, rewinding dataWriteHead to an older log end and overlapping recent
+        // logs on the next session.
         if (t.logId >= nextLogId) nextLogId = t.logId + 1;
+        if (!latestTrailerWriteHeadValid || t.logId > latestLogId) {
+            latestLogId = t.logId;
+            uint32_t afterHeader = addr + sizeof(t) + t.headerLength;
+            uint32_t writeHead = alignUpToSector(afterHeader);
+            if (writeHead >= geom.dataSectionEnd) writeHead = 0;
+            latestTrailerWriteHead = writeHead;
+            latestTrailerWriteHeadValid = true;
+        }
 
         if (logTableCount >= FLASHFS_LOG_MAX_LOGS) continue;
         flashfsLogInfo_t *info = &logTable[logTableCount++];
@@ -568,22 +608,12 @@ static void buildLogTableByScan(void)
 // On a fresh chip with no logs, returns 0.
 static uint32_t computeWriteHeadFromTable(void)
 {
-    uint32_t latestEnd = 0;
-    uint32_t latestLogId = 0;
-    bool found = false;
-    for (uint32_t i = 0; i < logTableCount; i++) {
-        const flashfsLogInfo_t *info = &logTable[i];
-        if (!info->valid) continue;
-        if (!found || info->logId > latestLogId) {
-            latestLogId = info->logId;
-            // After log close, write head sits at sector-aligned position past header.
-            uint32_t after = info->headerOffset + info->headerLength;
-            latestEnd = alignUpToSector(after);
-            if (latestEnd >= geom.dataSectionEnd) latestEnd = 0;
-            found = true;
-        }
-    }
-    return found ? latestEnd : 0;
+    // buildLogTableByScan() captured the post-header write position of the
+    // highest-logId trailer it observed across the WHOLE flash, regardless of
+    // FLASHFS_LOG_MAX_LOGS truncation. Use that instead of re-scanning logTable[]
+    // — on a wrapped chip with > 64 logs, the in-RAM table is missing the truly
+    // latest entries and would rewind dataWriteHead to an older log end.
+    return latestTrailerWriteHeadValid ? latestTrailerWriteHead : 0;
 }
 
 // =============================================================================
