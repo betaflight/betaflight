@@ -1191,7 +1191,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_CHIRP
 
-    static int chirpAxis = 0;
+    static flight_dynamics_index_t chirpAxis = FD_ROLL;
     static bool shouldChirpAxisToggle = false;
 
     float chirp = 0.0f;
