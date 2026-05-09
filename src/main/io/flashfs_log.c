@@ -57,6 +57,8 @@
 
 #include "platform.h"
 
+#if defined(USE_FLASHFS)
+
 #include "drivers/flash/flash.h"
 
 #include "io/flashfs.h"
@@ -1088,9 +1090,10 @@ void flashfsLogWriteHeaderByte(uint8_t b)
         // buffer; if it does, the resulting log will be missing some header lines.
         return;
     }
-    // Goes through flashfs's existing 128-byte circular write buffer with auto-flush
-    // every 64 bytes. Identical bandwidth profile to a normal blackbox header write
-    // in linear mode.
+    // Goes through flashfs's existing circular write buffer (sized 16 KB on
+    // USE_BLACKBOX_RING_LOG builds, with FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN = 256 B
+    // page-aligned auto-flush — see flashfs.h). Header writes hit the same buffer
+    // as data writes; identical bandwidth profile to a linear-mode header write.
     flashfsWriteByte(b);
     active.bufferHeaderOffset++;
 }
@@ -1330,3 +1333,5 @@ void flashfsLogAbortLog(void)
 }
 
 #endif // USE_BLACKBOX_RING_LOG
+
+#endif // USE_FLASHFS

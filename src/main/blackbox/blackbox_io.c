@@ -498,7 +498,10 @@ bool isBlackboxErased(void)
 {
     switch (blackboxConfig()->device) {
     case BLACKBOX_DEVICE_FLASH:
-        return flashfsIsReady();
+        // Mirror the readiness predicate used by blackboxDeviceBeginLog: in ring mode
+        // the ring-aware flashfsLogIsReady() answers correctly (also accounts for the
+        // ring-format-mismatch refusal); linear mode falls back to flashfsIsReady().
+        return blackboxFlashUsesRingMode() ? flashfsLogIsReady() : flashfsIsReady();
         break;
     default:
     //not supported
@@ -787,7 +790,8 @@ bool isBlackboxDeviceWorking(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        return flashfsIsReady();
+        // Same predicate split as isBlackboxErased / blackboxDeviceBeginLog.
+        return blackboxFlashUsesRingMode() ? flashfsLogIsReady() : flashfsIsReady();
 #endif
 
 #ifdef USE_BLACKBOX_VIRTUAL

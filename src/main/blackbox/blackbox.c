@@ -1118,14 +1118,16 @@ void blackboxValidateConfig(void)
         }
         if (sr != blackboxConfig()->sample_rate) {
             blackboxConfigMutable()->sample_rate = sr;
-            // blackboxPInterval was already derived in blackboxInit() from the pre-clamp
-            // sample_rate. Recompute it here so the upcoming logging session uses the new
-            // (slower) rate; otherwise the first ring-mode session after a config change
-            // still runs at the unsupported rate and falls into the drop path.
-            blackboxPInterval = 1 << sr;
-            if (blackboxPInterval > blackboxIInterval) {
-                blackboxPInterval = 0;
-            }
+        }
+        // Always recompute blackboxPInterval from the (possibly clamped) sr, even if
+        // sr matched the persisted value. blackboxInit() derived blackboxPInterval
+        // before this clamp ran, but it can also be stale from a prior session that
+        // last ran at a different rate; recomputing unconditionally here keeps the
+        // ring writer's cadence in sync with sample_rate every time the validator
+        // runs.
+        blackboxPInterval = 1 << sr;
+        if (blackboxPInterval > blackboxIInterval) {
+            blackboxPInterval = 0;
         }
     }
 #endif

@@ -75,7 +75,18 @@ typedef enum {
 // by linear-only builds (without USE_BLACKBOX_RING_LOG) to refuse writing on top
 // of a ring-formatted chip — protects the data of a user who just downgraded
 // from a ring-capable build.
+//
+// Compiles to a real implementation only on builds with USE_FLASHFS (the probe
+// depends on flashfs / flash-driver helpers that aren't defined otherwise). On
+// targets without onboard flash at all (SITL, F4 cloud builds without flash,
+// etc.) the inline stub returns UNKNOWN.
+#if defined(USE_FLASHFS)
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void);
+#else
+static inline flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void) {
+    return FLASHFS_FLASH_FORMAT_UNKNOWN;
+}
+#endif
 
 // Per-log info, populated by scanning the data ring at boot, exposed to MSC/emfat.
 typedef struct {

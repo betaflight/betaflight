@@ -1853,13 +1853,17 @@ case MSP_NAME:
         // still report a real format value — otherwise the configurator wouldn't
         // see ring-formatted flash on a downgraded firmware and couldn't warn the
         // user before starting writes.
-        // Clamp the persisted flash_mode in the readback so we don't claim RING
-        // on a build that compiled out USE_BLACKBOX_RING_LOG. blackbox_io hard-
-        // disables ring there (blackboxFlashUsesRingMode() returns false), so
-        // exposing a stored RING value would put the configurator in the same
-        // impossible state the setter prevents — UI thinks ring is active while
-        // the firmware writes linear-only. Mirrors the setter-side clamp.
+        // Clamp the persisted flash_mode in the readback before serializing.
+        // First defence: never emit a value past the highest supported mode in
+        // any build — protects against a corrupted PG value reaching the wire.
+        // Second defence: on builds without USE_BLACKBOX_RING_LOG, blackbox_io
+        // hard-disables ring at runtime, so claiming RING here would put the
+        // configurator in the same impossible state the setter prevents (UI
+        // thinks ring is active while firmware writes linear-only).
         uint8_t reportedFlashMode = blackboxConfig()->flash_mode;
+        if (reportedFlashMode > BLACKBOX_FLASH_MODE_RING) {
+            reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+        }
 #ifndef USE_BLACKBOX_RING_LOG
         if (reportedFlashMode > BLACKBOX_FLASH_MODE_LINEAR) {
             reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
