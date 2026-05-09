@@ -1116,15 +1116,14 @@ void blackboxValidateConfig(void)
         while (sr < BLACKBOX_RATE_16TH && (pidHz >> sr) > BLACKBOX_RING_MAX_FRAME_HZ) {
             sr++;
         }
-        if (sr != blackboxConfig()->sample_rate) {
-            blackboxConfigMutable()->sample_rate = sr;
-        }
-        // Always recompute blackboxPInterval from the (possibly clamped) sr, even if
-        // sr matched the persisted value. blackboxInit() derived blackboxPInterval
-        // before this clamp ran, but it can also be stale from a prior session that
-        // last ran at a different rate; recomputing unconditionally here keeps the
-        // ring writer's cadence in sync with sample_rate every time the validator
-        // runs.
+        // sr is intentionally a runtime-only clamp — drive blackboxPInterval from
+        // it but DO NOT write back to blackboxConfig()->sample_rate. The cap is a
+        // function of pidHz, which can change between sessions (rate profile
+        // switch, looptime change). Persisting the clamp would lock the user's
+        // sample_rate to the slowest value any session needed: a later session at
+        // a lower PID rate (where the cap allows a faster rate) would never
+        // recover the user's original choice. Recomputing fresh from the
+        // persisted value every time keeps the cap adaptive.
         blackboxPInterval = 1 << sr;
         if (blackboxPInterval > blackboxIInterval) {
             blackboxPInterval = 0;

@@ -1380,6 +1380,18 @@ void flashfsLogAbortLog(void)
 
     flashfsFlushSync();
 
+    // If the writer made it past the header phase, an uncommitted preamble exists at
+    // bufferAreaStart. Mark it committed BEFORE erasing the buffer area: a power loss
+    // in the window between the (synchronous) preamble update and the first sector
+    // erase would otherwise leave recoverFromBuffer() with a valid uncommitted
+    // preamble and no trailer, sending it down the gap-scan path to synthesize a
+    // phantom log for the session the caller explicitly aborted. With the commit bit
+    // flipped, recoverFromBuffer takes its committed-fast-path (just erase the buffer
+    // area, no reconstruction) — the correct semantics for an abort.
+    if (!active.headerPhase) {
+        markBufferCommitted();
+    }
+
     dataWriteHead = alignUpToSector(active.dataWriteHead);
     if (dataWriteHead >= geom.dataSectionEnd) dataWriteHead = 0;
 
