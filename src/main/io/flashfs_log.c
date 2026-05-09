@@ -188,11 +188,44 @@ static uint32_t bbDataDrops = 0;
 static struct {
     bool      isOpen;
     bool      headerPhase;
+    bool      wrapPending;         // hot path hit dataSectionEnd; flushAsync will perform the seek
     uint32_t  logId;
     uint32_t  dataStart;
     uint32_t  dataWriteHead;       // mirrors module-level dataWriteHead during the flight
     uint32_t  bufferHeaderOffset;  // bytes written into header buffer so far
 } active;
+
+// Wrap-aware ring-range overlap test. Each range is [start, end) in a ring of size
+// geom.dataSectionEnd. If end <= start the range wraps and covers
+// [start, dataSectionEnd) ∪ [0, end). Returns true iff the two ranges share any byte.
+static bool ringRangesOverlap(uint32_t aStart, uint32_t aEnd, uint32_t bStart, uint32_t bEnd)
+{
+    // Decompose each into 1-2 linear sub-ranges, then test all pairs.
+    uint32_t aSubs[2][2];
+    int aN = 0;
+    if (aStart < aEnd) {
+        aSubs[aN][0] = aStart; aSubs[aN][1] = aEnd; aN++;
+    } else if (aStart > aEnd) {
+        aSubs[aN][0] = aStart; aSubs[aN][1] = geom.dataSectionEnd; aN++;
+        aSubs[aN][0] = 0; aSubs[aN][1] = aEnd; aN++;
+    } // start == end: empty range, no sub-ranges
+    uint32_t bSubs[2][2];
+    int bN = 0;
+    if (bStart < bEnd) {
+        bSubs[bN][0] = bStart; bSubs[bN][1] = bEnd; bN++;
+    } else if (bStart > bEnd) {
+        bSubs[bN][0] = bStart; bSubs[bN][1] = geom.dataSectionEnd; bN++;
+        bSubs[bN][0] = 0; bSubs[bN][1] = bEnd; bN++;
+    }
+    for (int i = 0; i < aN; i++) {
+        for (int j = 0; j < bN; j++) {
+            const uint32_t lo = aSubs[i][0] > bSubs[j][0] ? aSubs[i][0] : bSubs[j][0];
+            const uint32_t hi = aSubs[i][1] < bSubs[j][1] ? aSubs[i][1] : bSubs[j][1];
+            if (lo < hi) return true;
+        }
+    }
+    return false;
+}
 
 // =============================================================================
 // CRC helpers
@@ -951,13 +984,17 @@ void flashfsLogWriteDataByte(uint8_t b)
     // The actual erase happens in the chip's background; CPU continues immediately.
     eraseTick();
 
-    // Wrap at end of data ring. flashfsSeekAbs() flushes any buffered bytes to the
-    // current end of the ring before redirecting the tail to 0; this can briefly block
-    // (~tens of ms in the worst case if chip is mid-erase). Wrap happens at most once
-    // per ring loop (~14 MB), so the amortized cost is negligible.
-    if (active.dataWriteHead >= geom.dataSectionEnd) {
-        active.dataWriteHead = 0;
-        flashfsSeekAbs(0);
+    // Wrap at end of data ring. The actual seek (flashfsSeekAbs(0)) implies a
+    // synchronous flush which can stall for tens of ms if the chip is mid-erase —
+    // unacceptable on the PID-loop hot path. Defer the seek to flashfsLogFlushAsync()
+    // which runs from the blackbox task (non-realtime). In the meantime drop bytes
+    // (~hundreds total over the typical sub-millisecond gap until the next flush
+    // tick); wrap fires at most once per ~14 MB ring, so this loss is negligible
+    // compared to the full session and is already accounted for by bbDataDrops.
+    if (active.wrapPending || active.dataWriteHead >= geom.dataSectionEnd) {
+        active.wrapPending = true;
+        bbDataDrops++;
+        return;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
@@ -985,7 +1022,20 @@ void flashfsLogWriteData(const uint8_t *data, uint32_t length)
 }
 
 uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferFreeSpace(); }
-bool flashfsLogFlushAsync(bool force)            { return flashfsFlushAsync(force); }
+
+// Called from the blackbox task (non-realtime), not the PID-loop hot path. This is
+// where the deferred ring-wrap seek actually runs — the hot path drops bytes while
+// active.wrapPending is set; we land the buffered tail at end-of-ring and redirect
+// to 0 here so subsequent hot-path writes resume into the start of the ring.
+bool flashfsLogFlushAsync(bool force)
+{
+    if (active.isOpen && active.wrapPending) {
+        flashfsSeekAbs(0);
+        active.dataWriteHead = 0;
+        active.wrapPending = false;
+    }
+    return flashfsFlushAsync(force);
+}
 void flashfsLogFlushSync(void)                   { flashfsFlushSync(); }
 
 void flashfsLogEndLog(void)
@@ -1044,23 +1094,49 @@ void flashfsLogEndLog(void)
     eraseBufferArea();
 
     // Add the just-closed log to the in-RAM table so MSC sees it without a rescan.
-    if (logTableCount < FLASHFS_LOG_MAX_LOGS) {
-        flashfsLogInfo_t *info = &logTable[logTableCount++];
-        info->logId = active.logId;
-        info->headerOffset = trailerAddr + sizeof(flashfsLogTrailer_t);
-        info->headerLength = headerLen;
-        info->dataStart = active.dataStart;
-        info->dataEnd = trailerAddr;
-        info->valid = true;
-        info->wasOpen = false;
-        uint32_t dataLen;
-        if (info->dataEnd >= info->dataStart) {
-            dataLen = info->dataEnd - info->dataStart;
-        } else {
-            dataLen = (geom.dataSectionEnd - info->dataStart) + info->dataEnd;
+    //
+    // The new log occupies the ring range [dataStart, afterHeader). After a ring wrap,
+    // any older logs whose footprints overlap that range have had their on-flash bytes
+    // clobbered — keeping them in the table would expose phantom files via MSC pointing
+    // at stale or rewritten data. Evict them. Separately, if the table is at its hard
+    // cap (FLASHFS_LOG_MAX_LOGS) we used to silently stop appending, which made every
+    // log past the 64th invisible until reboot — drop the oldest entry to keep the
+    // newest one reachable.
+    const uint32_t newStart = active.dataStart;
+    const uint32_t newEnd = afterHeader;
+    uint32_t kept = 0;
+    for (uint32_t i = 0; i < logTableCount; i++) {
+        const uint32_t entryStart = logTable[i].dataStart;
+        const uint32_t entryEnd = logTable[i].headerOffset + logTable[i].headerLength;
+        if (!ringRangesOverlap(newStart, newEnd, entryStart, entryEnd)) {
+            if (kept != i) logTable[kept] = logTable[i];
+            kept++;
         }
-        info->totalSize = info->headerLength + dataLen;
     }
+    logTableCount = kept;
+
+    if (logTableCount >= FLASHFS_LOG_MAX_LOGS) {
+        // Drop the oldest (logTable[0] — the table is sorted by logId ascending at boot
+        // and append-in-order at runtime, so [0] is always the oldest survivor).
+        memmove(&logTable[0], &logTable[1], sizeof(logTable[0]) * (FLASHFS_LOG_MAX_LOGS - 1));
+        logTableCount = FLASHFS_LOG_MAX_LOGS - 1;
+    }
+
+    flashfsLogInfo_t *info = &logTable[logTableCount++];
+    info->logId = active.logId;
+    info->headerOffset = trailerAddr + sizeof(flashfsLogTrailer_t);
+    info->headerLength = headerLen;
+    info->dataStart = active.dataStart;
+    info->dataEnd = trailerAddr;
+    info->valid = true;
+    info->wasOpen = false;
+    uint32_t dataLen;
+    if (info->dataEnd >= info->dataStart) {
+        dataLen = info->dataEnd - info->dataStart;
+    } else {
+        dataLen = (geom.dataSectionEnd - info->dataStart) + info->dataEnd;
+    }
+    info->totalSize = info->headerLength + dataLen;
 
     memset(&active, 0, sizeof(active));
 }
