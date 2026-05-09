@@ -1846,11 +1846,15 @@ case MSP_NAME:
         // Added in MSP API 1.49: flash ring-mode params. flash_mode is the configured
         // mode (LINEAR=0, RING=1); flash_format is what's actually on the chip
         // (EMPTY=0, LINEAR=1, RING=2, UNKNOWN=3). Configurator compares the two to
-        // decide whether switching modes requires a flash erase first. When ring-log
-        // support isn't compiled in, flashfsLogDetectFormat() is stubbed to return
-        // UNKNOWN.
+        // decide whether switching modes requires a flash erase first.
+        //
+        // Use the always-compiled flashfsLogDetectFormatFromFlash() rather than
+        // flashfsLogDetectFormat() so linear-only builds (without USE_BLACKBOX_RING_LOG)
+        // still report a real format value — otherwise the configurator wouldn't
+        // see ring-formatted flash on a downgraded firmware and couldn't warn the
+        // user before starting writes.
         sbufWriteU8(dst, blackboxConfig()->flash_mode);
-        sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormat());
+        sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormatFromFlash());
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);

@@ -63,31 +63,45 @@
 #include "io/flashfs_log.h"
 
 // Number of trailing sectors of the partition reserved for the active log's header
-// preamble + text. The first 4 bytes of this area carry BUFFER_PREAMBLE_MAGIC, which
-// is what the always-available format detector below uses to recognise a ring-format
-// chip in linear-only builds (so they refuse to overwrite ring data).
+// preamble + text. Used both by the ring-mode infrastructure below and (indirectly,
+// via the geometry-based detector logic) by always-compiled probes.
 #define HDR_BUFFER_SECTORS 4
 #define BUFFER_PREAMBLE_MAGIC 0x42424C42u  // "BBLB"  (Betaflight Blackbox Log Buffer)
 
+// Linear-format probe text. A linear-formatted chip always begins with the first
+// log's header text at offset 0 (which always starts "H Product"). Defined here so
+// the always-compiled detector can use it without the ring-mode code being present.
+static const char LINEAR_FORMAT_PROBE_TEXT[] = "H Product";
+#define LINEAR_FORMAT_PROBE_TEXT_LEN (sizeof(LINEAR_FORMAT_PROBE_TEXT) - 1)
+
 // Self-contained format probe — does not depend on the rest of the flashfs_log
-// module. Reads 4 bytes at the buffer-area offset and reports RING if the magic
-// matches, otherwise UNKNOWN. Linear/empty distinction is left to the ring build's
-// richer probe; non-ring callers only need to know "is the chip already in ring
-// format?" for the safeguard in blackboxDeviceBeginLog.
+// module. Reads 16 bytes at offset 0 and classifies the chip:
+//   - "H Product..." prefix → LINEAR (legacy linear-mode log starts here)
+//   - all 0xFF → EMPTY (freshly erased; either mode may proceed)
+//   - else → RING (data present that doesn't look like a linear header — assume
+//     ring-format until the user explicitly erases. Garbage chips end up classified
+//     as RING too, which is the safe answer for the linear safeguard's purpose.)
+//
+// We deliberately don't probe BUFFER_PREAMBLE_MAGIC here even though it would be
+// the cleanest signature: eraseBufferArea() wipes that magic on every clean log
+// close, so a cleanly-closed ring volume would falsely look UNKNOWN. The offset-0
+// probe persists across clean closes (the data sectors aren't touched by close
+// processing), and after a full ring wrap any data in sector 0 is overwritten
+// ring-mode log content rather than 0xFF — still classified as RING by the
+// "not linear, not erased" branch.
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 {
-    const flashGeometry_t *fg = flashfsGetGeometry();
-    if (!fg || fg->sectorSize == 0) return FLASHFS_FLASH_FORMAT_UNKNOWN;
-    const uint32_t partitionSize = flashfsGetSize();
-    const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
-    if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
-    const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
-
-    uint32_t magic = 0;
-    if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)) {
-        if (magic == BUFFER_PREAMBLE_MAGIC) return FLASHFS_FLASH_FORMAT_RING;
+    uint8_t probe[16];
+    if (flashfsReadAbs(0, probe, sizeof(probe)) != (int)sizeof(probe)) {
+        return FLASHFS_FLASH_FORMAT_UNKNOWN;
     }
-    return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    if (memcmp(probe, LINEAR_FORMAT_PROBE_TEXT, LINEAR_FORMAT_PROBE_TEXT_LEN) == 0) {
+        return FLASHFS_FLASH_FORMAT_LINEAR;
+    }
+    for (size_t i = 0; i < sizeof(probe); i++) {
+        if (probe[i] != 0xFF) return FLASHFS_FLASH_FORMAT_RING;
+    }
+    return FLASHFS_FLASH_FORMAT_EMPTY;
 }
 
 #ifdef USE_BLACKBOX_RING_LOG
@@ -118,10 +132,6 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 // Magic number identifying our on-flash trailer records (paired with
 // BUFFER_PREAMBLE_MAGIC defined above).
 #define LOG_TRAILER_MAGIC     0x4C424c54u  // "TLBL"  (Trailer Log BLackbox)
-
-// Linear-mode probe text (start of a legacy blackbox log header).
-static const char LINEAR_FORMAT_PROBE[] = "H Product";
-#define LINEAR_FORMAT_PROBE_LEN (sizeof(LINEAR_FORMAT_PROBE) - 1)
 
 // =============================================================================
 // On-flash record formats (16 bytes each)
@@ -513,7 +523,13 @@ static void buildLogTableByScan(void)
         flashfsLogTrailer_t t;
         if (!readTrailerAt(addr, &t)) continue;
 
-        if (logTableCount >= FLASHFS_LOG_MAX_LOGS) break;
+        // Always update nextLogId from every trailer encountered, even after the
+        // table is full — otherwise the next ring-wrap-eviction-aware close would
+        // re-use a stale id below the on-flash maximum, breaking sort/eviction
+        // assumptions ("table is sorted ascending by logId, append in order").
+        if (t.logId >= nextLogId) nextLogId = t.logId + 1;
+
+        if (logTableCount >= FLASHFS_LOG_MAX_LOGS) continue;
         flashfsLogInfo_t *info = &logTable[logTableCount++];
         info->logId = t.logId;
         info->headerOffset = addr + sizeof(t); // header text follows trailer
@@ -530,8 +546,6 @@ static void buildLogTableByScan(void)
             dataLen = (geom.dataSectionEnd - info->dataStart) + info->dataEnd;
         }
         info->totalSize = info->headerLength + dataLen;
-
-        if (t.logId >= nextLogId) nextLogId = t.logId + 1;
     }
 
     // Sort by logId (ascending) so MSC presents logs in chronological order. Physical
@@ -590,7 +604,7 @@ static flashfsFlashFormat_e probeFormat(void)
 
     // Linear: byte 0 starts with "H Product" (legacy format always begins with the
     // first log's header text at offset 0).
-    if (memcmp(probe, LINEAR_FORMAT_PROBE, LINEAR_FORMAT_PROBE_LEN) == 0) {
+    if (memcmp(probe, LINEAR_FORMAT_PROBE_TEXT, LINEAR_FORMAT_PROBE_TEXT_LEN) == 0) {
         return FLASHFS_FLASH_FORMAT_LINEAR;
     }
 

@@ -102,6 +102,14 @@ static uint32_t tailAddress = 0;
 static uint32_t wrapStartAddress = 0;
 static uint32_t wrapEndAddress = UINT32_MAX;
 
+// Captured wrap end at the moment of the first wrap fire. Once non-zero, the ring has
+// looped back to its start at least once and every byte in [wrapStartAddress, this)
+// holds log data. flashfsGetOffset() uses it to keep its "bytes stored" contract
+// monotonic across the wrap (callers like MSP_DATAFLASH_SUMMARY would otherwise see
+// the value collapse to ~0 once tailAddress folds back). Cleared on full-erase, not
+// on flashfsClearRing — leaving a ring-mode session doesn't un-fill the chip.
+static uint32_t ringFullSize = 0;
+
 #ifdef USE_FLASH_TEST_PRBS
 // Write an incrementing sequence of bytes instead of the requested data and verify
 static DMA_DATA uint8_t checkFlashBuffer[FLASHFS_WRITE_BUFFER_SIZE];
@@ -195,6 +203,10 @@ void flashfsEraseCompletely(void)
     flashfsClearBuffer();
 
     flashfsSetTailAddress(0);
+
+    // Chip is being wiped — any prior ring-wrap signal no longer reflects on-flash
+    // state. Reset so flashfsGetOffset() reports 0 again.
+    ringFullSize = 0;
 }
 
 /**
@@ -317,6 +329,7 @@ static void flashfsWriteCallback(uintptr_t arg)
     if (tailAddress >= wrapStartAddress && tailAddress < wrapEndAddress
             && newTail >= wrapEndAddress) {
         newTail = wrapStartAddress + (newTail - wrapEndAddress);
+        if (ringFullSize == 0) ringFullSize = wrapEndAddress;
     }
 
     flashfsSetTailAddress(newTail);
@@ -403,6 +416,16 @@ static bool flashfsNewData(void)
  */
 uint32_t flashfsGetOffset(void)
 {
+    // Once the ring has wrapped, every byte in [wrapStartAddress, ringFullSize)
+    // holds log data. tailAddress has folded back to the ring start, so falling
+    // through to "tailAddress + buffered" would collapse the reported "bytes
+    // stored" to ~0 and break callers like MSP_DATAFLASH_SUMMARY / OSD storage
+    // gauge. Report the full ring size instead — the chip is, for practical
+    // purposes, full of log data.
+    if (ringFullSize != 0) {
+        return ringFullSize;
+    }
+
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
 
