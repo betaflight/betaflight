@@ -3633,10 +3633,18 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
             }
             // Added in MSP API 1.49: ring-mode flash mode. Validate against the enum
-            // upper bound so a malformed client can't persist an invalid value into PG.
+            // upper bound — and against what this build actually supports, so we don't
+            // accept a value the firmware can't honor (e.g. RING when this target wasn't
+            // compiled with USE_BLACKBOX_RING_LOG; the runtime would silently fall back
+            // to linear and MSP readback would advertise a mode that does nothing).
             if (sbufBytesRemaining(src) >= 1) {
                 const uint8_t flashMode = sbufReadU8(src);
-                if (flashMode <= BLACKBOX_FLASH_MODE_RING) {
+#ifdef USE_BLACKBOX_RING_LOG
+                const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_RING;
+#else
+                const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+#endif
+                if (flashMode <= maxFlashMode) {
                     blackboxConfigMutable()->flash_mode = flashMode;
                 }
             }

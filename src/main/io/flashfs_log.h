@@ -75,7 +75,7 @@ typedef struct {
     uint32_t headerOffset;     // physical flash offset where header text begins
     uint32_t headerLength;
     uint32_t dataStart;        // physical flash offset where this log's data begins
-    uint32_t dataEnd;          // physical flash offset where this log's data ends (= headerOffset - 16)
+    uint32_t dataEnd;          // physical flash offset where this log's data ends (= headerOffset - sizeof(flashfsLogTrailer_t), currently 20)
     uint32_t totalSize;        // headerLength + (dataEnd - dataStart) accounting for ring wrap
     bool     valid;
     bool     wasOpen;          // recovered from power loss (no clean trailer; header copied from buffer)

@@ -893,8 +893,17 @@ blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes)
              * The write doesn't currently fit in the buffer, so try to make room for it. Our flushing here means
              * that the Blackbox header writing code doesn't have to guess about the best time to ask flashfs to
              * flush, and doesn't stall waiting for a flush that would otherwise not automatically be called.
+             *
+             * Route through the ring backend in ring mode so the erase-frontier housekeeping
+             * runs on the same backpressure path that header writes hit when the RAM buffer
+             * is tight. Today the ring helper just delegates to flashfsFlushAsync, but the
+             * indirection lets future ring-specific work hook in here without another fix-up.
              */
-            flashfsFlushAsync(true);
+            if (blackboxFlashUsesRingMode()) {
+                flashfsLogFlushAsync(true);
+            } else {
+                flashfsFlushAsync(true);
+            }
         }
         return BLACKBOX_RESERVE_TEMPORARY_FAILURE;
 #endif // USE_FLASHFS
