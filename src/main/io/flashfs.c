@@ -88,6 +88,20 @@ static volatile bool dataWritten = true;
 // The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
 
+// Optional ring-mode wrap. When wrapEndAddress != UINT32_MAX, sequential writes whose
+// tailAddress is inside [wrapStartAddress, wrapEndAddress) will have their post-write
+// tailAddress folded back to the start of the ring once it reaches wrapEndAddress.
+// Linear mode leaves these at their disabled defaults so the wrap branch in the write
+// callback is never taken. Set/cleared by USE_BLACKBOX_RING_LOG via the public
+// flashfsSetRing()/flashfsClearRing() API.
+//
+// The "started inside the ring" gate matters because the same flashfs instance is also
+// used to write into the header buffer area (which sits past wrapEndAddress in linear
+// flash address space). Writes positioned outside the ring must advance linearly, not
+// wrap.
+static uint32_t wrapStartAddress = 0;
+static uint32_t wrapEndAddress = UINT32_MAX;
+
 #ifdef USE_FLASH_TEST_PRBS
 // Write an incrementing sequence of bytes instead of the requested data and verify
 static DMA_DATA uint8_t checkFlashBuffer[FLASHFS_WRITE_BUFFER_SIZE];
@@ -292,8 +306,20 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
  */
 static void flashfsWriteCallback(uintptr_t arg)
 {
-    // Advance the cursor in the file system to match the bytes we wrote
-    flashfsSetTailAddress(tailAddress + arg);
+    uint32_t newTail = tailAddress + arg;
+
+    // Ring-mode wrap. Only applies if the write *started* inside the configured ring;
+    // writes positioned past the ring (e.g. into the header buffer area) advance
+    // linearly. wrapEndAddress is asserted page-aligned in flashfsSetRing(), and
+    // flashPageProgramBegin bounds writes at page boundaries, so a single page write
+    // can land at most at wrapEndAddress (never strictly past it). The math here
+    // tolerates overshoot defensively.
+    if (tailAddress >= wrapStartAddress && tailAddress < wrapEndAddress
+            && newTail >= wrapEndAddress) {
+        newTail = wrapStartAddress + (newTail - wrapEndAddress);
+    }
+
+    flashfsSetTailAddress(newTail);
 
     // Free bytes in the ring buffer
     flashfsAdvanceTailInBuffer(arg);
@@ -440,6 +466,37 @@ void flashfsFlushSync(void)
     }
 
     while (!flashIsReady());
+}
+
+/**
+ * Configure ring-mode wrap. After this, sequential writes whose tail is inside the
+ * ring [startAddress, endAddress) will fold their post-write tail back to startAddress
+ * once it reaches endAddress, instead of advancing past it. Writes positioned outside
+ * the ring (e.g. into the header buffer area) are unaffected.
+ *
+ * endAddress must be page-aligned so a single page write can land at it but never
+ * cross it; this is checked at runtime.
+ */
+void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
+{
+    // endAddress must be page-aligned, otherwise a page-program could span the wrap
+    // boundary and overshoot into the post-ring region (e.g. the header buffer area)
+    // before the wrap callback fires.
+    const uint32_t pageSize = flashGeometry->pageSize;
+    if ((endAddress & (pageSize - 1)) != 0) {
+        return; // misconfigured caller; refuse to enable rather than corrupt later
+    }
+    wrapStartAddress = startAddress;
+    wrapEndAddress = endAddress;
+}
+
+/**
+ * Disable ring-mode wrap. Writes resume linear advancement.
+ */
+void flashfsClearRing(void)
+{
+    wrapStartAddress = 0;
+    wrapEndAddress = UINT32_MAX;
 }
 
 /**

@@ -188,7 +188,6 @@ static uint32_t bbDataDrops = 0;
 static struct {
     bool      isOpen;
     bool      headerPhase;
-    bool      wrapPending;         // hot path hit dataSectionEnd; flushAsync will perform the seek
     uint32_t  logId;
     uint32_t  dataStart;
     uint32_t  dataWriteHead;       // mirrors module-level dataWriteHead during the flight
@@ -768,6 +767,16 @@ void flashfsLogInit(void)
     computeGeometry();
     if (geom.partitionSize == 0 || geom.sectorSize == 0 || geom.dataSectionEnd == 0) return;
 
+    // Note: ring wrap is enabled per-session in flashfsLogBeginLog and disabled in
+    // End/Abort. We deliberately do NOT enable it here because the same flashfs
+    // instance is used by linear-mode blackbox in builds where USE_BLACKBOX_RING_LOG
+    // is compiled in but the user has BLACKBOX_FLASH_MODE_LINEAR configured at
+    // runtime — enabling the wrap globally would cause those linear writes to loop
+    // back over the start of the chip when they reach dataSectionEnd, corrupting
+    // earlier linear logs. Recovery writes done below use writeBytesSync at explicit
+    // addresses bounded by the trailer wrap-to-0 logic, so they never need the ring
+    // wrap to be active.
+
     detectedFormat = probeFormat();
 
     switch (detectedFormat) {
@@ -973,6 +982,12 @@ void flashfsLogFinishHeader(void)
     active.headerPhase = false;
     // Position flashfs's tail at the data write head for the upcoming data writes.
     flashfsSeekAbs(active.dataWriteHead);
+
+    // Enable ring wrap for the data writer — from here on, sequential writes that
+    // hit dataSectionEnd loop back to 0 inside flashfs without us needing to seek
+    // from the hot path. Disabled again in flashfsLogEndLog / flashfsLogAbortLog so
+    // post-session writes (recovery, mode-switch to linear, etc.) advance linearly.
+    flashfsSetRing(0, geom.dataSectionEnd);
 }
 
 void flashfsLogWriteDataByte(uint8_t b)
@@ -984,17 +999,13 @@ void flashfsLogWriteDataByte(uint8_t b)
     // The actual erase happens in the chip's background; CPU continues immediately.
     eraseTick();
 
-    // Wrap at end of data ring. The actual seek (flashfsSeekAbs(0)) implies a
-    // synchronous flush which can stall for tens of ms if the chip is mid-erase —
-    // unacceptable on the PID-loop hot path. Defer the seek to flashfsLogFlushAsync()
-    // which runs from the blackbox task (non-realtime). In the meantime drop bytes
-    // (~hundreds total over the typical sub-millisecond gap until the next flush
-    // tick); wrap fires at most once per ~14 MB ring, so this loss is negligible
-    // compared to the full session and is already accounted for by bbDataDrops.
-    if (active.wrapPending || active.dataWriteHead >= geom.dataSectionEnd) {
-        active.wrapPending = true;
-        bbDataDrops++;
-        return;
+    // Wrap at end of data ring. flashfs is configured (via flashfsSetRing in
+    // flashfsLogFinishHeader) to wrap its own tailAddress automatically, so we
+    // only need to mirror the wrap in our local dataWriteHead — no seek, no flush,
+    // no stall. The wrap fires at most every ~14 MB so the branch is essentially
+    // free under prediction.
+    if (active.dataWriteHead >= geom.dataSectionEnd) {
+        active.dataWriteHead -= geom.dataSectionEnd;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
@@ -1022,25 +1033,19 @@ void flashfsLogWriteData(const uint8_t *data, uint32_t length)
 }
 
 uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferFreeSpace(); }
-
-// Called from the blackbox task (non-realtime), not the PID-loop hot path. This is
-// where the deferred ring-wrap seek actually runs — the hot path drops bytes while
-// active.wrapPending is set; we land the buffered tail at end-of-ring and redirect
-// to 0 here so subsequent hot-path writes resume into the start of the ring.
-bool flashfsLogFlushAsync(bool force)
-{
-    if (active.isOpen && active.wrapPending) {
-        flashfsSeekAbs(0);
-        active.dataWriteHead = 0;
-        active.wrapPending = false;
-    }
-    return flashfsFlushAsync(force);
-}
+bool flashfsLogFlushAsync(bool force)            { return flashfsFlushAsync(force); }
 void flashfsLogFlushSync(void)                   { flashfsFlushSync(); }
 
 void flashfsLogEndLog(void)
 {
     if (!active.isOpen) return;
+
+    // Disable ring wrap before the close path's mixed-address writes (trailer/header
+    // copy into the data ring; buffer-area erase). The trailer/header write block is
+    // explicitly bounded by the wrap-to-0 logic below so it never spans dataSectionEnd
+    // — leaving the ring active here would be redundant at best and a footgun for
+    // future maintenance.
+    flashfsClearRing();
 
     flashfsFlushSync();
 
@@ -1152,6 +1157,9 @@ void flashfsLogEndLog(void)
 void flashfsLogAbortLog(void)
 {
     if (!active.isOpen) return;
+
+    // Match flashfsLogEndLog: ring wrap goes back off as soon as the session ends.
+    flashfsClearRing();
 
     flashfsFlushSync();
 

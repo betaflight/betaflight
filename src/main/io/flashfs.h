@@ -48,6 +48,13 @@ const struct flashGeometry_s* flashfsGetGeometry(void);
 
 void flashfsSeekAbs(uint32_t offset);
 
+// Ring-mode wrap. When enabled, sequential writes that started inside the configured
+// ring [startAddress, endAddress) loop their post-write tail back to startAddress
+// once it reaches endAddress, instead of advancing linearly past it. Default is
+// disabled; linear-mode callers should never enable it. endAddress must be page-aligned.
+void flashfsSetRing(uint32_t startAddress, uint32_t endAddress);
+void flashfsClearRing(void);
+
 void flashfsWriteByte(uint8_t byte);
 void flashfsWrite(const uint8_t *data, unsigned int len, bool sync);
 
