@@ -469,7 +469,7 @@
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
@@ -487,7 +487,7 @@
 #endif
 #endif
 
-#if defined(USE_OCTOSPI) && defined(USE_FLASH_W25Q128FV)
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G))
 #if !defined(USE_FLASH_OCTOSPI)
 #define USE_FLASH_OCTOSPI
 #endif
