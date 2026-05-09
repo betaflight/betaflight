@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight GD32H757"
+#define USBD_PRODUCT_STRING     "Betaflight - GD32H757"
 #endif
 
 #ifndef GD32H757
@@ -93,11 +93,17 @@
 #ifndef USE_SDCARD_SDIO
 #define USE_SDCARD_SPI
 #endif
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
 #endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
-#define USE_SPI_DMA_ENABLE_EARLY
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_USB_DETECT
 
@@ -109,6 +115,8 @@
 #endif
 
 #define USE_EXTI
+
+// #define USE_TIMER_UP_CONFIG  //TODO
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000) // 4K sectors
 

@@ -3,7 +3,7 @@
   .cpu cortex-m7
   .fpu fpv5-sp-d16
   .thumb
-  
+
 .global  Default_Handler
 
 /* necessary symbols defined in linker script to initialize data */
@@ -40,7 +40,7 @@ CopyData:
   ldr r3, [r3, r1]
   str r3, [r0, r1]
   adds r1, r1, #4
-    
+
 DataInit:
   ldr r0, =_sdata
   ldr r3, =_edata

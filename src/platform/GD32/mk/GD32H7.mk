@@ -2,6 +2,10 @@
 # GD32H7 Make file include
 #
 
+# Auto-hydrate GD32H7 submodule when building GD32H7 targets
+PLATFORM_SDK := gd32h7
+PLATFORM_SDK_STAMP := $(GD32H7_SDK_STAMP)
+
 ifeq ($(DEBUG_HARDFAULTS),H7)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
@@ -23,8 +27,6 @@ STDPERIPH_SRC   = \
             gd32h7xx_i2c.c \
             gd32h7xx_ipa.c \
             gd32h7xx_misc.c \
-            gd32h7xx_ospi.c \
-            gd32h7xx_ospim.c \
             gd32h7xx_pmu.c \
             gd32h7xx_rcu.c \
             gd32h7xx_rtc.c \
@@ -149,11 +151,10 @@ MCU_COMMON_SRC = \
             GD32/adc_gd32h7xx.c \
             GD32/audio_gd32h7xx.c \
             GD32/bus_i2c_gd32h7xx.c \
-            GD32/bus_spi_gd32h7xx.c \
-            GD32/bus_ospi_gd32h7xx.c \
+            GD32/bus_spi_gd32.c \
             GD32/camera_control_gd32.c \
             GD32/debug.c \
-            GD32/dma_gd32h7xx.c \
+            GD32/dma_gd32.c \
             GD32/dma_reqmap_mcu.c \
             GD32/dshot_bitbang.c \
             GD32/dshot_bitbang_stdperiph.c \
@@ -197,7 +198,8 @@ MSC_SRC = \
             msc/emfat.c \
             msc/emfat_file.c \
             msc/usbd_storage_sd_spi.c \
-            msc/usbd_storage_sdio.c
+            msc/usbd_storage_sdio.c \
+            common/stm32/msc_sdio_storage.c
 
 
 INCLUDE_DIRS += $(PLATFORM_DIR)/common/stm32
@@ -212,13 +214,16 @@ MCU_COMMON_SRC += \
             common/stm32/mco.c \
             common/stm32/io_impl.c \
             common/stm32/pwm_output_beeper.c \
+            common/stm32/rx_pwm_hw.c \
             common/stm32/pwm_output_dshot_shared.c \
             common/stm32/serial_uart_hw.c \
             common/stm32/serial_uart_pinconfig.c \
             common/stm32/system.c \
             common/stm32/ledstrip_ws2811_stm32.c \
             common/stm32/debug_pin.c \
-            common/stm32/adc_impl.c
+            common/stm32/adc_impl.c \
+            common/stm32/expresslrs_driver_hw.c \
+            common/stm32/fault_handlers.c
 
 SPEED_OPTIMISED_SRC += \
             common/stm32/system.c \

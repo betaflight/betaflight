@@ -30,8 +30,6 @@
 #define U_ID_1 (*(uint32_t*)0x1fff7a14)
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
 
-#define GPIO_PIN_RESET 0
-
 #ifndef GD32F4
 #define GD32F4
 #endif
@@ -54,9 +52,9 @@
 
 #ifdef GD32F4
 
-#define SPI_TRAIT_AF_PORT       1
-#define I2CDEV_COUNT            3
-#define UART_TRAIT_AF_PORT      1
+#define SPI_TRAIT_AF_PORT         1
+#define I2CDEV_COUNT              3
+#define UART_TRAIT_AF_PORT        1
 
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
@@ -70,6 +68,9 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+
+#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
+#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
 
 #endif // GD32F4
 
@@ -90,13 +91,17 @@
 #define USE_DYN_NOTCH_FILTER
 #define USE_ADC_INTERNAL
 #define USE_USB_CDC_HID
-#define USE_DMA_SPEC
-#define USE_PERSISTENT_OBJECTS
-#define USE_DMA_RAM
 #define USE_USB_MSC
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
+#define USE_DMA_SPEC
+#define USE_PERSISTENT_OBJECTS
+#define USE_DMA_RAM
 #define USE_LATE_TASK_STATISTICS
+
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
+
 #endif // GD32H7
 
 #define PLATFORM_TRAIT_ADC_DEVICE   1
@@ -107,6 +112,8 @@
 #define SERIAL_TRAIT_PIN_CONFIG     1
 #define UART_TRAIT_BIDIR_PP_PREPEND 1
 #define DMA_TRAIT_CHANNEL           1
+
+#define GPIO_PIN_RESET              0
 
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
 #define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
@@ -177,6 +184,10 @@ typedef struct EXTI_InitTypeDef    EXTI_InitTypeDef;
 #define DMA1_CH6_BASE        (DMA1 + 0xA0)
 #define DMA1_CH7_BASE        (DMA1 + 0xB8)
 
+// GD32 timer channels are 0-based sequential (not shifted by 2)
+#define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x))
+#define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x))
+
 extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 
 #define USE_ADC_DEVICE_0
@@ -193,26 +204,31 @@ extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 
 #define DEFAULT_CPU_OVERCLOCK 0
 
-#if defined(GD32H7)
-#define FAST_IRQ_HANDLER FAST_CODE
-#else
+#if defined(GD32F4)
 #define FAST_IRQ_HANDLER
+#elif defined(GD32H7)
+#define FAST_IRQ_HANDLER FAST_CODE
 #endif
 
-#if defined(GD32H7)
-#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
-#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
-#define STATIC_DMA_DATA_AUTO        static DMA_DATA
-#else
+#if defined(GD32F4)
 // F4 can't DMA to/from TCM (tightly-coupled memory) SRAM (where the stack lives)
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO        static
+#elif defined(GD32H7)
+#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
+#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
+#define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
 #if defined(GD32F4) || defined(GD32H7)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
+#endif
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT  __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA            __attribute__ ((section(".fastram_data"), aligned(4)))
 #endif
 
 #ifdef USE_DMA_RAM
@@ -307,14 +323,6 @@ extern uint8_t _dmaram_end__;
 #define USE_TX_IRQ_HANDLER
 #endif
 
-#if defined(GD32H7)
-#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
-#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
-#else
-#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
-#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
-#endif
-
 // all pins on given uart use same AF
 
 
@@ -358,7 +366,6 @@ extern uint8_t _dmaram_end__;
 
 #if defined(GD32H7)
 #define DMA_CHANREQ_STRING "Request"
-// #define ADC_INTERNAL_VBAT4_ENABLED 1
 #endif
 
 #ifdef USE_ITCM_RAM
@@ -366,8 +373,8 @@ extern uint8_t _dmaram_end__;
 #define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
 #else
 #define FAST_CODE                   __attribute__((section(".tcm_code")))
-// #define FAST_CODE
 #endif
+
 // If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
 // cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM but if FAST_CODE_PREF is not
 // defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
@@ -375,13 +382,6 @@ extern uint8_t _dmaram_end__;
 
 #define FAST_CODE_NOINLINE          __attribute__((section(".tcm_code"))) NOINLINE
 #endif // USE_ITCM_RAM
-
-
-#ifdef USE_FAST_DATA
-#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
-#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
-#endif // USE_FAST_DATA
-
 
 // We need to redefine ADC0, ADC1, etc.,
 // in the GD firmware library to be compatible with
@@ -403,28 +403,28 @@ extern uint8_t _dmaram_end__;
 #undef ADC2
 #define ADC2       ((ADC_TypeDef*)GD_ADC2)
 
-#define GD_SPI0    ((SPI_TypeDef*)(SPI_BASE + 0x0000F800U))
-#define GD_SPI1    ((SPI_TypeDef*)SPI_BASE)
-#define GD_SPI2    ((SPI_TypeDef*)(SPI_BASE + 0x00000400U))
-#define GD_SPI3    ((SPI_TypeDef*)(SPI_BASE + 0x0000FC00U))
-#define GD_SPI4    ((SPI_TypeDef*)(SPI_BASE + 0x00011800U))
-#if defined(GD32H7)
-#define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00010000U))
-#else
-#define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00011C00U))
-#endif
-#undef SPI0
-#define SPI0       ((SPI_TypeDef*)GD_SPI0)
-#undef SPI1
-#define SPI1       ((SPI_TypeDef*)GD_SPI1)
-#undef SPI2
-#define SPI2       ((SPI_TypeDef*)GD_SPI2)
-#undef SPI3
-#define SPI3       ((SPI_TypeDef*)GD_SPI3)
-#undef SPI4
-#define SPI4       ((SPI_TypeDef*)GD_SPI4)
-#undef SPI5
-#define SPI5       ((SPI_TypeDef*)GD_SPI5)
+// #define GD_SPI0    ((SPI_TypeDef*)(SPI_BASE + 0x0000F800U))
+// #define GD_SPI1    ((SPI_TypeDef*)SPI_BASE)
+// #define GD_SPI2    ((SPI_TypeDef*)(SPI_BASE + 0x00000400U))
+// #define GD_SPI3    ((SPI_TypeDef*)(SPI_BASE + 0x0000FC00U))
+// #define GD_SPI4    ((SPI_TypeDef*)(SPI_BASE + 0x00011800U))
+// #if defined(GD32H7)
+// #define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00010000U))
+// #else
+// #define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00011C00U))
+// #endif
+// #undef SPI0
+// #define SPI0       ((SPI_TypeDef*)GD_SPI0)
+// #undef SPI1
+// #define SPI1       ((SPI_TypeDef*)GD_SPI1)
+// #undef SPI2
+// #define SPI2       ((SPI_TypeDef*)GD_SPI2)
+// #undef SPI3
+// #define SPI3       ((SPI_TypeDef*)GD_SPI3)
+// #undef SPI4
+// #define SPI4       ((SPI_TypeDef*)GD_SPI4)
+// #undef SPI5
+// #define SPI5       ((SPI_TypeDef*)GD_SPI5)
 
 #if defined(GD32H7)
 #define GD_OCTOSPI1    ((OCTOSPI_TypeDef*)OSPI_BASE)

@@ -229,7 +229,7 @@ the following macro SEL_PMU_SMPS_MODE.
 //#define SEL_PMU_SMPS_MODE   PMU_BYPASS
 #endif
 
-#define SEL_PMU_SMPS_MODE   PMU_BYPASS
+// #define SEL_PMU_SMPS_MODE   PMU_BYPASS
 
 #define SEL_IRC64MDIV       0x00U
 #define SEL_HXTAL           0x01U
