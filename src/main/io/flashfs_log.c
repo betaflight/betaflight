@@ -51,30 +51,57 @@
  * a mismatch between the configured mode and the on-flash content.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
+
+#include "drivers/flash/flash.h"
+
+#include "io/flashfs.h"
+#include "io/flashfs_log.h"
+
+// Number of trailing sectors of the partition reserved for the active log's header
+// preamble + text. The first 4 bytes of this area carry BUFFER_PREAMBLE_MAGIC, which
+// is what the always-available format detector below uses to recognise a ring-format
+// chip in linear-only builds (so they refuse to overwrite ring data).
+#define HDR_BUFFER_SECTORS 4
+#define BUFFER_PREAMBLE_MAGIC 0x42424C42u  // "BBLB"  (Betaflight Blackbox Log Buffer)
+
+// Self-contained format probe — does not depend on the rest of the flashfs_log
+// module. Reads 4 bytes at the buffer-area offset and reports RING if the magic
+// matches, otherwise UNKNOWN. Linear/empty distinction is left to the ring build's
+// richer probe; non-ring callers only need to know "is the chip already in ring
+// format?" for the safeguard in blackboxDeviceBeginLog.
+flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
+{
+    const flashGeometry_t *fg = flashfsGetGeometry();
+    if (!fg || fg->sectorSize == 0) return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    const uint32_t partitionSize = flashfsGetSize();
+    const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
+    if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
+
+    uint32_t magic = 0;
+    if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)) {
+        if (magic == BUFFER_PREAMBLE_MAGIC) return FLASHFS_FLASH_FORMAT_RING;
+    }
+    return FLASHFS_FLASH_FORMAT_UNKNOWN;
+}
 
 #ifdef USE_BLACKBOX_RING_LOG
 
 #include "build/debug.h"
 #include "common/crc.h"
 #include "common/maths.h"
-#include "drivers/flash/flash.h"
-
-#include "io/flashfs.h"
-#include "io/flashfs_log.h"
 
 // =============================================================================
 // Layout constants
 // =============================================================================
 
-// Active header buffer size in sectors. Must be large enough to hold the largest
-// possible blackbox header (sysinfo block, field defs, GPS headers, etc.). Headers
-// observed in the wild range 6–10 KB; 16 KB gives generous margin.
-#define HDR_BUFFER_SECTORS 4
+// HDR_BUFFER_SECTORS and BUFFER_PREAMBLE_MAGIC are defined above this #ifdef so
+// the always-compiled flashfsLogDetectFormatFromFlash() can use them.
 
 // Erase-ahead pool size in sectors. The writer always operates at least this many
 // sectors behind the leading edge of erased space, so per-byte writes never block on
@@ -88,8 +115,8 @@
 // drain the pool — the drop guard takes over and the log shows a small gap.
 #define POOL_TARGET_SECTORS 4
 
-// Magic numbers identifying our on-flash records.
-#define BUFFER_PREAMBLE_MAGIC 0x42424C42u  // "BBLB"  (Betaflight Blackbox Log Buffer)
+// Magic number identifying our on-flash trailer records (paired with
+// BUFFER_PREAMBLE_MAGIC defined above).
 #define LOG_TRAILER_MAGIC     0x4C424c54u  // "TLBL"  (Trailer Log BLackbox)
 
 // Linear-mode probe text (start of a legacy blackbox log header).

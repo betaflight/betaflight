@@ -428,8 +428,14 @@ bool blackboxDeviceOpen(void)
             if (isBlackboxDeviceFull()) {
                 return false;
             }
-            // Refuse to write linear data over an existing ring-format chip.
-            if (flashfsLogDetectFormat() == FLASHFS_FLASH_FORMAT_RING) {
+            // Refuse to write linear data over an existing ring-format chip. Use
+            // the always-compiled detector — flashfsLogDetectFormat() is only
+            // populated when USE_BLACKBOX_RING_LOG is built in (it's a stub that
+            // returns UNKNOWN otherwise), so a downgrade to a linear-only build
+            // would otherwise let writes proceed straight onto ring data. The
+            // FromFlash variant compiles in any build and looks for the
+            // BUFFER_PREAMBLE_MAGIC at the buffer-area location.
+            if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
                 return false;
             }
         }

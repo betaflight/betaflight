@@ -69,6 +69,13 @@ typedef enum {
     FLASHFS_FLASH_FORMAT_UNKNOWN = 3,  // Garbage / partially erased.
 } flashfsFlashFormat_e;
 
+// Always-available probe: returns FLASHFS_FLASH_FORMAT_RING if the partition
+// currently holds ring-format data, FLASHFS_FLASH_FORMAT_UNKNOWN otherwise. Used
+// by linear-only builds (without USE_BLACKBOX_RING_LOG) to refuse writing on top
+// of a ring-formatted chip — protects the data of a user who just downgraded
+// from a ring-capable build.
+flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void);
+
 // Per-log info, populated by scanning the data ring at boot, exposed to MSC/emfat.
 typedef struct {
     uint32_t logId;
