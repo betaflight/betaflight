@@ -1104,20 +1104,16 @@ void flashfsLogWriteDataByte(uint8_t b)
     // only need to mirror the wrap in our local dataWriteHead — no seek, no flush,
     // no stall. The wrap fires at most every ~14 MB so the branch is essentially
     // free under prediction.
+    //
+    // active.lapped is set the first time a session crosses dataSectionEnd. It does
+    // NOT cause the writer to drop bytes — multi-lap sessions are an explicit
+    // feature (long flights with the chip acting as a sliding window over the most
+    // recent ring-size-worth of data). Instead, flashfsLogEndLog reads the flag at
+    // close to compute the trailer's dataStart so the reader sees the currently-
+    // readable window rather than the stale original session-start pointer.
     if (active.dataWriteHead >= geom.dataSectionEnd) {
         active.dataWriteHead -= geom.dataSectionEnd;
         active.lapped = true;
-    }
-
-    // Drop once the active log has lapped itself. active.dataStart never moves, so
-    // a session that writes more than dataSectionEnd would otherwise overwrite the
-    // start of the same open log on each subsequent byte — destroying the data its
-    // own trailer.dataStart points at. A single log is therefore capped at one full
-    // ring; if the user wants more they need to close and start a new one. The
-    // bbDataDrops counter surfaces the loss in diagnostics.
-    if (active.lapped && active.dataWriteHead >= active.dataStart) {
-        bbDataDrops++;
-        return;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
@@ -1198,12 +1194,27 @@ void flashfsLogEndLog(void)
     copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                     trailerAddr + sizeof(flashfsLogTrailer_t),
                     headerLen);
-    writeTrailer(trailerAddr, active.logId, active.dataStart, headerLen);
 
     // Update module-level write head to sector-aligned position past the header.
     uint32_t afterHeader = trailerAddr + sizeof(flashfsLogTrailer_t) + headerLen;
     dataWriteHead = alignUpToSector(afterHeader);
     if (dataWriteHead >= geom.dataSectionEnd) dataWriteHead = 0;
+
+    // Trailer's dataStart describes where the *currently readable* range begins.
+    //
+    // For non-lapped sessions that's just the original active.dataStart — everything
+    // the writer wrote in this session is intact, and the read range is the linear
+    // span [dataStart, trailerAddr).
+    //
+    // For lapped sessions (writer wrapped past dataSectionEnd at least once), the
+    // original active.dataStart byte has been overwritten by later session data, so
+    // it's the wrong pointer to expose. The intact range is the whole ring minus
+    // the trailer + header sectors we just wrote. Set dataStart to the first byte
+    // past the post-close write head so the reader walks ring-wraps from there
+    // back around to trailerAddr — the last ringSize-headerLen-trailerLen bytes
+    // the writer produced.
+    const uint32_t logDataStart = active.lapped ? dataWriteHead : active.dataStart;
+    writeTrailer(trailerAddr, active.logId, logDataStart, headerLen);
 
     // Mark committed in the buffer (so a power loss during the buffer erase below leaves
     // the recovery path with an unambiguous "already committed" signal), then erase.
@@ -1212,14 +1223,15 @@ void flashfsLogEndLog(void)
 
     // Add the just-closed log to the in-RAM table so MSC sees it without a rescan.
     //
-    // The new log occupies the ring range [dataStart, afterHeader). After a ring wrap,
-    // any older logs whose footprints overlap that range have had their on-flash bytes
-    // clobbered — keeping them in the table would expose phantom files via MSC pointing
-    // at stale or rewritten data. Evict them. Separately, if the table is at its hard
-    // cap (FLASHFS_LOG_MAX_LOGS) we used to silently stop appending, which made every
-    // log past the 64th invisible until reboot — drop the oldest entry to keep the
-    // newest one reachable.
-    const uint32_t newStart = active.dataStart;
+    // The new log occupies the ring range [logDataStart, trailerAddr) (with wrap on
+    // lapped sessions, where logDataStart > trailerAddr). After a ring wrap, any
+    // older logs whose footprints overlap that range have had their on-flash bytes
+    // clobbered — keeping them in the table would expose phantom files via MSC
+    // pointing at stale or rewritten data. Evict them. Separately, if the table is
+    // at its hard cap (FLASHFS_LOG_MAX_LOGS) we used to silently stop appending,
+    // which made every log past the 64th invisible until reboot — drop the oldest
+    // entry to keep the newest one reachable.
+    const uint32_t newStart = logDataStart;
     const uint32_t newEnd = afterHeader;
     uint32_t kept = 0;
     for (uint32_t i = 0; i < logTableCount; i++) {
@@ -1243,7 +1255,7 @@ void flashfsLogEndLog(void)
     info->logId = active.logId;
     info->headerOffset = trailerAddr + sizeof(flashfsLogTrailer_t);
     info->headerLength = headerLen;
-    info->dataStart = active.dataStart;
+    info->dataStart = logDataStart;
     info->dataEnd = trailerAddr;
     info->valid = true;
     info->wasOpen = false;
