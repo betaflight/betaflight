@@ -500,8 +500,14 @@ bool isBlackboxErased(void)
     case BLACKBOX_DEVICE_FLASH:
         // Mirror the readiness predicate used by blackboxDeviceBeginLog: in ring mode
         // the ring-aware flashfsLogIsReady() answers correctly (also accounts for the
-        // ring-format-mismatch refusal); linear mode falls back to flashfsIsReady().
-        return blackboxFlashUsesRingMode() ? flashfsLogIsReady() : flashfsIsReady();
+        // ring-format-mismatch refusal); linear mode falls back to flashfsIsReady() —
+        // and additionally rejects when the chip currently holds ring-format data, so
+        // status doesn't claim "ready" right before blackboxDeviceBeginLog refuses
+        // the linear write because the chip would clobber an existing ring volume.
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogIsReady();
+        }
+        return flashfsIsReady() && flashfsLogDetectFormatFromFlash() != FLASHFS_FLASH_FORMAT_RING;
         break;
     default:
     //not supported
@@ -790,8 +796,13 @@ bool isBlackboxDeviceWorking(void)
 
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        // Same predicate split as isBlackboxErased / blackboxDeviceBeginLog.
-        return blackboxFlashUsesRingMode() ? flashfsLogIsReady() : flashfsIsReady();
+        // Same predicate split as isBlackboxErased / blackboxDeviceBeginLog —
+        // including the linear-mode refusal when the chip is ring-formatted, so
+        // "device working" matches what blackboxDeviceBeginLog would actually permit.
+        if (blackboxFlashUsesRingMode()) {
+            return flashfsLogIsReady();
+        }
+        return flashfsIsReady() && flashfsLogDetectFormatFromFlash() != FLASHFS_FLASH_FORMAT_RING;
 #endif
 
 #ifdef USE_BLACKBOX_VIRTUAL

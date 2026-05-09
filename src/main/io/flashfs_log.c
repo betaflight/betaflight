@@ -743,40 +743,12 @@ flashfsFlashFormat_e flashfsLogDetectFormat(void)
 
 static flashfsFlashFormat_e probeFormat(void)
 {
-    uint8_t probe[16];
-    if (readBytes(0, probe, sizeof(probe)) != (int)sizeof(probe)) {
-        return FLASHFS_FLASH_FORMAT_UNKNOWN;
-    }
-
-    // Linear: byte 0 starts with "H Product" (legacy format always begins with the
-    // first log's header text at offset 0).
-    if (memcmp(probe, LINEAR_FORMAT_PROBE_TEXT, LINEAR_FORMAT_PROBE_TEXT_LEN) == 0) {
-        return FLASHFS_FLASH_FORMAT_LINEAR;
-    }
-
-    // Empty: first 16 bytes of data section all 0xFF AND buffer area all 0xFF (sampled).
-    // The bufEmpty default is `false` so that a flash read failure is conservatively
-    // treated as "not empty" rather than triggering an erase-the-chip prompt.
-    bool dataEmpty = true;
-    for (size_t i = 0; i < sizeof(probe); i++) {
-        if (probe[i] != 0xFF) { dataEmpty = false; break; }
-    }
-    uint8_t bufProbe[16];
-    bool bufEmpty = false;
-    if (readBytes(geom.bufferAreaStart, bufProbe, sizeof(bufProbe)) == (int)sizeof(bufProbe)) {
-        bufEmpty = true;
-        for (size_t i = 0; i < sizeof(bufProbe); i++) {
-            if (bufProbe[i] != 0xFF) { bufEmpty = false; break; }
-        }
-    }
-    if (dataEmpty && bufEmpty) return FLASHFS_FLASH_FORMAT_EMPTY;
-
-    // Anything that's neither linear nor empty is treated as RING. False positives are
-    // benign: the init flow will scan the data section for trailers; if none are found
-    // (e.g. random garbage from another use), the log table starts empty and the next
-    // log's writes overwrite the garbage. The user sees an empty MSC mount until they
-    // log a flight.
-    return FLASHFS_FLASH_FORMAT_RING;
+    // Reuse the always-compiled detector. It's the only path that includes the
+    // durable trailer-magic scan, which is what catches a cleanly closed wrapped
+    // ring whose offset 0 and header buffer happen to both be erased — without
+    // that, init would see EMPTY here and reset dataWriteHead to 0, overwriting
+    // existing logs on the next session.
+    return flashfsLogDetectFormatFromFlash();
 }
 
 // =============================================================================
