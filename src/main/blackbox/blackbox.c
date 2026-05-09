@@ -1096,6 +1096,21 @@ void blackboxValidateConfig(void)
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
 
+    // Recompute blackboxPInterval from the persisted sample_rate every time.
+    // blackboxInit() already set it once at boot, but a prior ring-mode session
+    // may have overwritten it with a clamped value (slower than persisted) — if
+    // the user then switches to LINEAR mode (or the ring clamp no longer fires
+    // because pidHz dropped), the stale clamped interval would carry into the
+    // new session. Always start from the persisted rate; the ring clamp below
+    // overwrites only when it actually applies.
+    {
+        const uint8_t sr = blackboxConfig()->sample_rate;
+        blackboxPInterval = 1 << sr;
+        if (blackboxPInterval > blackboxIInterval) {
+            blackboxPInterval = 0;
+        }
+    }
+
 #ifdef USE_BLACKBOX_RING_LOG
     // Ring-mode flash logging is bandwidth-limited by NOR sector erase throughput
     // (~4 KB / 30-50 ms ≈ 80-133 KB/s). At ~80 B/frame typical, that's ~1000-1660
@@ -1120,10 +1135,7 @@ void blackboxValidateConfig(void)
         // it but DO NOT write back to blackboxConfig()->sample_rate. The cap is a
         // function of pidHz, which can change between sessions (rate profile
         // switch, looptime change). Persisting the clamp would lock the user's
-        // sample_rate to the slowest value any session needed: a later session at
-        // a lower PID rate (where the cap allows a faster rate) would never
-        // recover the user's original choice. Recomputing fresh from the
-        // persisted value every time keeps the cap adaptive.
+        // sample_rate to the slowest value any session needed.
         blackboxPInterval = 1 << sr;
         if (blackboxPInterval > blackboxIInterval) {
             blackboxPInterval = 0;

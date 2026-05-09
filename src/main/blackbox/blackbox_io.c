@@ -435,7 +435,12 @@ bool blackboxDeviceOpen(void)
             // would otherwise let writes proceed straight onto ring data. The
             // FromFlash variant compiles in any build and looks for the
             // BUFFER_PREAMBLE_MAGIC at the buffer-area location.
-            if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
+            // Refuse linear writes unless the chip is genuinely empty or already
+            // linear-formatted. UNKNOWN (chip has data without a ring signature —
+            // could be garbage from another use, partial data, etc.) is also
+            // treated as "don't overwrite" until the user explicitly erases.
+            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+            if (fmt != FLASHFS_FLASH_FORMAT_EMPTY && fmt != FLASHFS_FLASH_FORMAT_LINEAR) {
                 return false;
             }
         }
@@ -507,7 +512,11 @@ bool isBlackboxErased(void)
         if (blackboxFlashUsesRingMode()) {
             return flashfsLogIsReady();
         }
-        return flashfsIsReady() && flashfsLogDetectFormatFromFlash() != FLASHFS_FLASH_FORMAT_RING;
+        {
+            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+            return flashfsIsReady()
+                && (fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR);
+        }
         break;
     default:
     //not supported
@@ -802,7 +811,11 @@ bool isBlackboxDeviceWorking(void)
         if (blackboxFlashUsesRingMode()) {
             return flashfsLogIsReady();
         }
-        return flashfsIsReady() && flashfsLogDetectFormatFromFlash() != FLASHFS_FLASH_FORMAT_RING;
+        {
+            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+            return flashfsIsReady()
+                && (fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR);
+        }
 #endif
 
 #ifdef USE_BLACKBOX_VIRTUAL

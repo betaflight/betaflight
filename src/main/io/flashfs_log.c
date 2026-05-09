@@ -106,11 +106,17 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     if (memcmp(probe, LINEAR_FORMAT_PROBE_TEXT, LINEAR_FORMAT_PROBE_TEXT_LEN) == 0) {
         return FLASHFS_FLASH_FORMAT_LINEAR;
     }
+
+    // Track whether sector 0 was fully erased — only a fully-erased chip can
+    // ultimately classify as EMPTY. Non-erased data without a ring signature is
+    // UNKNOWN (caller decides whether that's safe to overwrite); we no longer
+    // assume "any non-erased prefix" means ring, which falsely classified
+    // garbage / partial linear / orphan-from-other-use chips.
+    bool offset0Erased = true;
     for (size_t i = 0; i < sizeof(probe); i++) {
-        if (probe[i] != 0xFF) return FLASHFS_FLASH_FORMAT_RING;
+        if (probe[i] != 0xFF) { offset0Erased = false; break; }
     }
 
-    // Offset 0 is erased. Need a more thorough check before deciding EMPTY.
     const flashGeometry_t *fg = flashGetGeometry();
     if (!fg || fg->sectorSize == 0) return FLASHFS_FLASH_FORMAT_UNKNOWN;
     const uint32_t partitionSize = flashfsGetSize();
@@ -139,7 +145,10 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
         }
     }
 
-    return FLASHFS_FLASH_FORMAT_EMPTY;
+    // No ring signature found anywhere. EMPTY only if the chip looks fully erased
+    // (sector 0 was 0xFF — we already checked above); otherwise UNKNOWN, which
+    // signals callers to refuse destructive writes until the user erases.
+    return offset0Erased ? FLASHFS_FLASH_FORMAT_EMPTY : FLASHFS_FLASH_FORMAT_UNKNOWN;
 }
 
 #ifdef USE_BLACKBOX_RING_LOG
@@ -1333,13 +1342,22 @@ void flashfsLogEndLog(void)
     // at its hard cap (FLASHFS_LOG_MAX_LOGS) we used to silently stop appending,
     // which made every log past the 64th invisible until reboot — drop the oldest
     // entry to keep the newest one reachable.
+    // Use the sector-aligned post-close write head as the new log's footprint end:
+    // the bytes between afterHeader and dataWriteHead (the alignUpToSector slack)
+    // are abandoned but still inside the new log's claimed range from the next
+    // session's perspective, so older entries overlapping that slack should be
+    // evicted too. For lapped sessions where dataWriteHead == logDataStart (a
+    // full-ring footprint after wrap), every other entry is by definition
+    // overlapping — handle that explicitly.
     const uint32_t newStart = logDataStart;
-    const uint32_t newEnd = afterHeader;
+    const uint32_t newEnd = dataWriteHead;
+    const bool newFullRing = active.lapped && newStart == newEnd;
     uint32_t kept = 0;
     for (uint32_t i = 0; i < logTableCount; i++) {
         const uint32_t entryStart = logTable[i].dataStart;
         const uint32_t entryEnd = logTable[i].headerOffset + logTable[i].headerLength;
-        if (!ringRangesOverlap(newStart, newEnd, entryStart, entryEnd)) {
+        const bool overlaps = newFullRing || ringRangesOverlap(newStart, newEnd, entryStart, entryEnd);
+        if (!overlaps) {
             if (kept != i) logTable[kept] = logTable[i];
             kept++;
         }

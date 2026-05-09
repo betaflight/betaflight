@@ -3630,9 +3630,16 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfigMutable()->device = sbufReadU8(src);
+            // Parse the entire request into locals first, validate, THEN apply.
+            // The handler had been mutating live config (device, sample_rate,
+            // fields_disabled_mask) before reaching the trailing flash_mode field
+            // — a malformed flash_mode would return MSP_RESULT_ERROR after those
+            // fields had already changed, leaving the live config in an
+            // inconsistent partial state.
+            const uint8_t newDevice = sbufReadU8(src);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
+
             uint16_t pRatio = 0;
             if (sbufBytesRemaining(src) >= 2) {
                 // p_ratio specified, so use it directly
@@ -3642,37 +3649,56 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 pRatio = blackboxCalculatePDenom(rateNum, rateDenom);
             }
 
+            uint8_t newSampleRate;
             if (sbufBytesRemaining(src) >= 1) {
                 // sample_rate specified, so use it directly
-                blackboxConfigMutable()->sample_rate = sbufReadU8(src);
+                newSampleRate = sbufReadU8(src);
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
-                blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
+                newSampleRate = blackboxCalculateSampleRate(pRatio);
             }
 
             // Added in MSP API 1.45
+            bool haveFieldsDisabledMask = false;
+            uint32_t newFieldsDisabledMask = 0;
             if (sbufBytesRemaining(src) >= 4) {
-                blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
+                newFieldsDisabledMask = sbufReadU32(src);
+                haveFieldsDisabledMask = true;
             }
+
             // Added in MSP API 1.49: ring-mode flash mode. Validate against the enum
             // upper bound — and against what this build actually supports, so we don't
-            // accept a value the firmware can't honor (e.g. RING when this target wasn't
-            // compiled with USE_BLACKBOX_RING_LOG; the runtime would silently fall back
-            // to linear and MSP readback would advertise a mode that does nothing).
+            // accept a value the firmware can't honor (e.g. RING when this target
+            // wasn't compiled with USE_BLACKBOX_RING_LOG; the runtime would silently
+            // fall back to linear and MSP readback would advertise a mode that does
+            // nothing).
+            bool haveFlashMode = false;
+            uint8_t newFlashMode = 0;
             if (sbufBytesRemaining(src) >= 1) {
-                const uint8_t flashMode = sbufReadU8(src);
+                newFlashMode = sbufReadU8(src);
 #ifdef USE_BLACKBOX_RING_LOG
                 const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_RING;
 #else
                 const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
 #endif
-                if (flashMode > maxFlashMode) {
+                if (newFlashMode > maxFlashMode) {
                     // Match other MSP validation paths: return ERROR rather than
                     // silently ACKing a value the firmware can't honour, so the
-                    // configurator can surface the rejection to the user.
+                    // configurator can surface the rejection to the user. No live
+                    // config has been mutated yet at this point.
                     return MSP_RESULT_ERROR;
                 }
-                blackboxConfigMutable()->flash_mode = flashMode;
+                haveFlashMode = true;
+            }
+
+            // All fields validated — commit atomically.
+            blackboxConfigMutable()->device = newDevice;
+            blackboxConfigMutable()->sample_rate = newSampleRate;
+            if (haveFieldsDisabledMask) {
+                blackboxConfigMutable()->fields_disabled_mask = newFieldsDisabledMask;
+            }
+            if (haveFlashMode) {
+                blackboxConfigMutable()->flash_mode = newFlashMode;
             }
         }
         break;
