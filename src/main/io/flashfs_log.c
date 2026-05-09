@@ -650,11 +650,24 @@ static void recoverFromBuffer(void)
             eraseBufferArea();
             return;
         }
-        uint8_t probe[16];
-        readBytes(addr, probe, sizeof(probe));
+        // Validate the whole sector — recovery then advances eraseHead past it on
+        // the assumption that everything inside is 0xFF. A 16-byte probe was not
+        // enough: a used sector that happens to start with 16 erased bytes (e.g. a
+        // small log fragment) would be falsely accepted as the gap, and the next
+        // trailer/header write would land on non-erased NOR.
         bool isErased = true;
-        for (size_t i = 0; i < sizeof(probe); i++) {
-            if (probe[i] != 0xFF) { isErased = false; break; }
+        for (uint32_t off = 0; off < geom.sectorSize && isErased; off += CHUNK_SIZE) {
+            const uint32_t chunk = MIN(geom.sectorSize - off, (uint32_t)CHUNK_SIZE);
+            if (readBytes(addr + off, chunkBuf, chunk) != (int)chunk) {
+                isErased = false;
+                break;
+            }
+            for (uint32_t i = 0; i < chunk; i++) {
+                if (chunkBuf[i] != 0xFF) {
+                    isErased = false;
+                    break;
+                }
+            }
         }
         if (isErased) { foundGap = true; break; }
         addr += geom.sectorSize;
