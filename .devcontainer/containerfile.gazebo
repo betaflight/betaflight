@@ -1,0 +1,106 @@
+# Gazebo Harmonic + Betaflight SITL simulation container
+# Provides a complete simulation environment for testing Betaflight firmware
+# without physical hardware.
+#
+# Communication:
+#   SITL ←→ Gazebo via UDP (ports 9002/9003)
+#   SITL ←→ Configurator via TCP/WebSocket (port 5761/6761)
+#   SITL ←→ RC input via UDP (port 9004)
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    locales \
+    git \
+    ca-certificates \
+    curl \
+    wget \
+    sudo \
+    bash \
+    bash-completion \
+    nano \
+    btop \
+    build-essential \
+    cmake \
+    pkg-config \
+    clang-18 \
+    python3 \
+    python3-pip \
+    python3-websockify \
+    && rm -rf /var/lib/apt/lists/*
+
+# Generate locale
+RUN sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+# Install cppzmq before Gazebo repo (needed for gz-transport linking)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends cppzmq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Gazebo Harmonic from OSRF packages
+RUN curl -fsSL https://packages.osrfoundation.org/gazebo.gpg | \
+    dd of=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable noble main" | \
+    tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gz-harmonic \
+    libgz-sim8-dev \
+    libgz-plugin2-dev \
+    libgz-math7-dev \
+    libgz-transport13-dev \
+    libgz-msgs10-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Betaflight firmware build dependencies (for SITL target)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python-is-python3 \
+    libblocksruntime-dev \
+    xxd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set clang alternatives
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+
+# Reuse Ubuntu's default user (UID/GID 1000) or create devpod
+ARG USERNAME=devpod
+
+RUN if id -u 1000 >/dev/null 2>&1; then \
+        EXISTING=$(id -nu 1000) && \
+        usermod -l $USERNAME -d /home/$USERNAME -m $EXISTING 2>/dev/null || true && \
+        groupmod -n $USERNAME $(id -gn 1000) 2>/dev/null || true; \
+    else \
+        groupadd --gid 1000 $USERNAME && \
+        useradd --uid 1000 --gid 1000 -m $USERNAME --shell /bin/bash; \
+    fi && \
+    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER $USERNAME
+
+# Clone and build the Betaflight Gazebo bridge plugin
+RUN git clone --branch gz https://github.com/betaflight/aeroloop_gazebo.git /home/$USERNAME/aeroloop_gazebo && \
+    cd /home/$USERNAME/aeroloop_gazebo/plugins && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j$(nproc)
+
+# Set Gazebo environment for aeroloop models and plugins
+ENV SDF_PATH="/home/$USERNAME/aeroloop_gazebo/models"
+ENV GZ_SIM_RESOURCE_PATH="/home/$USERNAME/aeroloop_gazebo/worlds"
+ENV GZ_SIM_SYSTEM_PLUGIN_PATH="/home/$USERNAME/aeroloop_gazebo/plugins/build"
+
+WORKDIR /workspace
+
+# Default: start bash (user launches SITL + Gazebo manually)
+CMD [ "bash" ]

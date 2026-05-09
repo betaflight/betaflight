@@ -242,3 +242,68 @@ You can then build and flash the firmware as usual:
         Transitioning to dfuMANIFEST state
 
 ```
+
+## Gazebo SITL Simulation
+
+A separate container is provided for running Betaflight SITL with [Gazebo Harmonic](https://gazebosim.org/) simulation.
+This allows testing firmware changes without physical hardware.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Gazebo Container                                   │
+│                                                     │
+│  ┌──────────────┐  UDP 9002/9003  ┌──────────────┐  │
+│  │   Gazebo      │◄──────────────►│ Betaflight   │  │
+│  │   Harmonic    │  motor/sensor  │ SITL (.elf)  │  │
+│  │   + Bridge    │                │              │  │
+│  └──────────────┘                └──────┬───────┘  │
+│                                         │ TCP 5761 │
+└─────────────────────────────────────────┼──────────┘
+                                          │
+                              ┌───────────▼──────────┐
+                              │  Betaflight App      │
+                              │  ws://localhost:6761  │
+                              └──────────────────────┘
+```
+
+### Building the Gazebo container
+
+```bash
+docker build -t bf-dev-gazebo -f .devcontainer/containerfile.gazebo .devcontainer/
+```
+
+### Running a simulation
+
+```bash
+# Start the container with host networking (for UDP ports)
+docker run -it --rm \
+  --network=host \
+  -v "$(pwd)":/workspace \
+  bf-dev-gazebo
+
+# Inside the container — build SITL
+make TARGET=SITL
+
+# Terminal 1: Start SITL
+./obj/main/betaflight_SITL.elf 127.0.0.1
+
+# Terminal 2: Start Gazebo with the demo world
+gz sim -r ~/aeroloop_gazebo/worlds/betaloop_iris_betaflight_demo_harmonic.sdf
+
+# Terminal 3: Start WebSocket proxy for the Betaflight App
+websockify 127.0.0.1:6761 127.0.0.1:5761
+```
+
+Then connect the Betaflight App to `ws://127.0.0.1:6761`.
+
+### Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 9002 | UDP | SITL → Gazebo (motor commands) |
+| 9003 | UDP | Gazebo → SITL (sensor data) |
+| 9004 | UDP | External → SITL (RC input) |
+| 5761 | TCP | SITL UART1 (MSP serial proxy) |
+| 6761 | TCP | WebSocket proxy for Betaflight App |
