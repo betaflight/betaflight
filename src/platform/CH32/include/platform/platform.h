@@ -198,8 +198,8 @@
 #define SPI_TRAIT_AF_PIN        1
 #define UARTHARDWARE_MAX_PINS   5
 
-#define UART_REG_RXD(base) ((base)->DATAR)
-#define UART_REG_TXD(base) ((base)->DATAR)
+#define UART_REG_RXD(base) (((USART_TypeDef *)(base))->DATAR)
+#define UART_REG_TXD(base) (((USART_TypeDef *)(base))->DATAR)
 
 #define DMA_TRAIT_MUX 1
 // #define DMA_TRAIT_CHANNEL 1

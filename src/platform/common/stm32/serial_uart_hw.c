@@ -154,6 +154,8 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             ((const gpio_pull_type[]){GPIO_PULL_NONE, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull]
         );
 #elif defined(CH32H4)
+        (void) pushPull;
+        (void) pull;
         const ioConfig_t ioCfg = IOCFG_AF_PP;        
 #elif defined(STM32F4)
         // UART inverter is not supproted on F4, but keep it in line with other CPUs
@@ -317,7 +319,7 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
 {
 #if defined(USE_HAL_DRIVER)
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
-#elif defined(USE_ATBSP_DRIVER)
+#elif defined(USE_ATBSP_DRIVER) 
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
 #elif defined(X32M7)
     USART_ConfigInt((USART_TypeDef *)uartPort->USARTx, USART_INT_TXDE, ENABLE);

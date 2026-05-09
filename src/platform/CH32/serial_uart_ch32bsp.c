@@ -38,10 +38,8 @@
 #include "common/utils.h"
 #include "drivers/inverter.h"
 #include "drivers/nvic.h"
-#include "platform/rcc.h"
-
-#include "drivers/dma.h"
 #include "platform/dma.h"
+#include "platform/rcc.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -51,9 +49,9 @@
 
 void uartReconfigure(uartPort_t *uartPort)
 {
-    // usart_enable(uartPort->USARTx, FALSE);
+    USART_TypeDef *USARTx = (USART_TypeDef *)uartPort->USARTx;
     USART_InitTypeDef USART_InitStructure;
-    USART_Cmd(uartPort->USARTx, DISABLE);
+    USART_Cmd(USARTx, DISABLE);
     //init
     USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
     
@@ -73,16 +71,16 @@ void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX)
         USART_InitStructure.USART_Mode |= USART_Mode_Tx;
 
-    USART_Init(uartPort->USARTx, &USART_InitStructure);
+    USART_Init(USARTx, &USART_InitStructure);
     // config external pin inverter (no internal pin inversion available)
     uartConfigureExternalPinInversion(uartPort);
 
     if (uartPort->port.options & SERIAL_BIDIR)
-        USART_HalfDuplexCmd(uartPort->USARTx, ENABLE);
+        USART_HalfDuplexCmd(USARTx, ENABLE);
     else
-        USART_HalfDuplexCmd(uartPort->USARTx, DISABLE);
+        USART_HalfDuplexCmd(USARTx, DISABLE);
 
-    USART_Cmd(uartPort->USARTx, ENABLE);
+    USART_Cmd(USARTx, ENABLE);
 
 
     // Receive DMA or IRQ
@@ -107,14 +105,14 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_DeInit(uartPort->rxDMAResource);
             xDMA_Init(uartPort->rxDMAResource, &DMA_InitStructure);
             xDMA_Cmd(uartPort->rxDMAResource, ENABLE);
-            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Rx, ENABLE);
+            USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);
             uartPort->rxDMAPos = xDMA_GetCurrDataCounter(uartPort->rxDMAResource);
         } else 
  #endif       
         {
-            USART_ClearITPendingBit(uartPort->USARTx, USART_IT_RXNE);
-            USART_ITConfig(uartPort->USARTx, USART_IT_RXNE, ENABLE);
-            USART_ITConfig(uartPort->USARTx, USART_IT_IDLE, ENABLE);
+            USART_ClearITPendingBit(USARTx, USART_IT_RXNE);
+            USART_ITConfig(USARTx, USART_IT_RXNE, ENABLE);
+            USART_ITConfig(USARTx, USART_IT_IDLE, ENABLE);
         }
     }
 
@@ -139,17 +137,17 @@ void uartReconfigure(uartPort_t *uartPort)
             xDMA_Init(uartPort->txDMAResource, &DMA_InitStructure);
             xDMA_ITConfig(uartPort->txDMAResource, DMA_IT_TC, ENABLE);
             xDMA_SetCurrDataCounter(uartPort->txDMAResource, 0);
-            USART_DMACmd(uartPort->USARTx, USART_DMAReq_Tx, ENABLE);
+            USART_DMACmd(USARTx, USART_DMAReq_Tx, ENABLE);
 
         } else 
   #endif      
         {
-            USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
+            USART_ITConfig(USARTx, USART_IT_TXE, ENABLE);
         }
-       USART_ITConfig(uartPort->USARTx, USART_IT_TC, ENABLE);
+       USART_ITConfig(USARTx, USART_IT_TC, ENABLE);
     }
     // TODO: usart_enable is called twice
-   USART_Cmd(uartPort->USARTx, ENABLE); 
+   USART_Cmd(USARTx, ENABLE); 
 }
 
 bool checkUsartTxOutput(uartPort_t *s)
@@ -167,7 +165,7 @@ bool checkUsartTxOutput(uartPort_t *s)
 
             // Enable the UART transmitter
             // usart_transmitter_enable(s->USARTx, true);
-            SET_BIT(s->USARTx->CTLR1, USART_CTLR1_TE);
+            SET_BIT(((USART_TypeDef *)s->USARTx)->CTLR1, USART_CTLR1_TE);
             return true;
         } else {
             // TX line is pulled low so don't enable USART TX
@@ -186,7 +184,7 @@ void uartTxMonitor(uartPort_t *s)
         IO_t txIO = IOGetByTag(uart->tx.pin);
 
         // Disable the UART transmitter
-        CLEAR_BIT(s->USARTx->CTLR1, USART_CTLR1_TE);
+        CLEAR_BIT(((USART_TypeDef *)s->USARTx)->CTLR1, USART_CTLR1_TE);
         // Switch TX to an input with pullup so it's state can be monitored
         uart->txPinState = TX_PIN_MONITOR;
         IOConfigGPIO(txIO, IOCFG_IPU);
@@ -264,44 +262,45 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
-    if (!s->rxDMAResource && (USART_GetFlagStatus(s->USARTx, USART_FLAG_RXNE) == SET)) {
+    USART_TypeDef *USARTx = (USART_TypeDef *)s->USARTx;
+    if (!s->rxDMAResource && (USART_GetFlagStatus(USARTx, USART_FLAG_RXNE) == SET)) {
         if (s->port.rxCallback) {
-            s->port.rxCallback(s->USARTx->DATAR, s->port.rxCallbackData);
+            s->port.rxCallback(USARTx->DATAR, s->port.rxCallbackData);
         } else {
-            s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DATAR;
+            s->port.rxBuffer[s->port.rxBufferHead] = USARTx->DATAR;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
     }
 
     // UART transmission completed
-    if ((USART_GetFlagStatus(s->USARTx, USART_FLAG_TC) != RESET)) {
-        USART_ClearFlag(s->USARTx, USART_FLAG_TC);
+    if ((USART_GetFlagStatus(USARTx, USART_FLAG_TC) != RESET)) {
+        USART_ClearFlag(USARTx, USART_FLAG_TC);
 
         // Switch TX to an input with pull-up so it's state can be monitored
         uartTxMonitor(s);
     }
 
-    if (!s->txDMAResource && (USART_GetFlagStatus(s->USARTx, USART_FLAG_TXE) == SET)) {
+    if (!s->txDMAResource && (USART_GetFlagStatus(USARTx, USART_FLAG_TXE) == SET)) {
         if (s->port.txBufferTail != s->port.txBufferHead) { 
-            USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
+            USART_SendData(USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
-            USART_ITConfig(s->USARTx, USART_IT_TXE, DISABLE);
+            USART_ITConfig(USARTx, USART_IT_TXE, DISABLE);
         }
     }
 
-    if (USART_GetFlagStatus(s->USARTx, USART_FLAG_ORE) == SET) {
-        USART_ClearFlag(s->USARTx, USART_FLAG_ORE); //clear by read DATAR?
-        (void) s->USARTx->STATR;
-        (void) s->USARTx->DATAR;
+    if (USART_GetFlagStatus(USARTx, USART_FLAG_ORE) == SET) {
+        USART_ClearFlag(USARTx, USART_FLAG_ORE); //clear by read DATAR?
+        (void) USARTx->STATR;
+        (void) USARTx->DATAR;
     }
 
-    if (USART_GetFlagStatus(s->USARTx, USART_FLAG_IDLE) == SET) {
+    if (USART_GetFlagStatus(USARTx, USART_FLAG_IDLE) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
-        (void) s->USARTx->STATR;
-        (void) s->USARTx->DATAR;
+        (void) USARTx->STATR;
+        (void) USARTx->DATAR;
     }
 }
 #endif // USE_UART

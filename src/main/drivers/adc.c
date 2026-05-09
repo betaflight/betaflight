@@ -69,7 +69,8 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
     uint32_t tmp;    
     
     tmp =  *(volatile uint32_t * )0x08000018;   //refrence EVT   
-
+    (void) tmp;
+    (void) vrefValue;
     Refer_Volt = (int32_t)((*(uint32_t *)0x1FFFF76C) & 0x0000FFFF);
     Refer_Temper = (int32_t)(((*(uint32_t *)0x1FFFF76C) >> 16) & 0x0000FFFF);
     // Temper = Refer_Temper - (((int32_t)((tempAdcValue * vrefValue) / TEMPSENSOR_CAL_VREFANALOG) - Refer_Volt) * 10    + (k >> 1)) / k;

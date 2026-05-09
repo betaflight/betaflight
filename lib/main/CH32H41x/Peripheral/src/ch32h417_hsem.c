@@ -83,7 +83,7 @@ FunctionalState HSEM_GetOneSemTakenState(HSEM_ID_TypeDef HSEM_ID)
 {
     FunctionalState status = DISABLE;
 
-    if( (HSEM->RX[HSEM_ID] & (1 << 31)) == (1 << 31))
+    if( (HSEM->RX[HSEM_ID] & (1u << 31)) == (1u << 31))
     {
         status = ENABLE;
     }

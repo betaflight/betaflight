@@ -210,7 +210,7 @@ void spiInitBusDMA(void)
 #endif
 
                 dmaEnable(dmaTxIdentifier);
-#if defined(USE_ATBSP_DRIVER)
+#if defined(USE_ATBSP_DRIVER) || defined(USE_CHBSP_DRIVER)
                 dmaMuxEnable(dmaTxIdentifier,dmaTxChannelSpec->dmaMuxId);
 #endif
                 break;
@@ -248,7 +248,7 @@ void spiInitBusDMA(void)
 #endif
 
                 dmaEnable(dmaRxIdentifier);
-#if defined(USE_ATBSP_DRIVER)
+#if defined(USE_ATBSP_DRIVER) || defined(USE_CHBSP_DRIVER)
                 dmaMuxEnable(dmaRxIdentifier,dmaRxChannelSpec->dmaMuxId);
 #endif
                 break;

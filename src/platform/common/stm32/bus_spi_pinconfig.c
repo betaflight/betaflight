@@ -957,7 +957,7 @@ const spiHardware_t spiHardware[] = {
 #ifdef CH32H4
    {
         .device = SPIDEV_1,
-        .reg = SPI1,
+        .reg = (spiResource_t *)SPI1,
         .sckPins = {
             { DEFIO_TAG_E(PA5),  GPIO_AF5},
             { DEFIO_TAG_E(PB3),  GPIO_AF5},
@@ -980,7 +980,7 @@ const spiHardware_t spiHardware[] = {
     },
     {
         .device = SPIDEV_2,
-        .reg = SPI2,
+        .reg = (spiResource_t *)SPI2,
         .sckPins = {
              { DEFIO_TAG_E(PD3),  GPIO_AF5},
              { DEFIO_TAG_E(PA12), GPIO_AF5},
@@ -1002,7 +1002,7 @@ const spiHardware_t spiHardware[] = {
     },
     {
         .device = SPIDEV_3,
-        .reg = SPI3,
+        .reg = (spiResource_t *)SPI3,
         .sckPins = {
             { DEFIO_TAG_E(PC10), GPIO_AF6},
             { DEFIO_TAG_E(PA14), GPIO_AF1},
@@ -1024,7 +1024,7 @@ const spiHardware_t spiHardware[] = {
     },
     {
         .device = SPIDEV_4,
-        .reg = SPI4,
+        .reg = (spiResource_t *)SPI4,
         .sckPins = {
             { DEFIO_TAG_E(PE12),  GPIO_AF5},
             { DEFIO_TAG_E(PE2),   GPIO_AF5},

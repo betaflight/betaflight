@@ -208,7 +208,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig,
         // margin of safety is 4 periods when unsynced
         const unsigned pwmRateHz = useContinuousUpdate ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
-        const uint32_t clock = timerClock(timerHardware->tim);
+        const uint32_t clock = timerClock(timerHardware);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;

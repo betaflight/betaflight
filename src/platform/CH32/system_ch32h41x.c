@@ -154,7 +154,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
 bool isMPUSoftReset(void)
 {
-    if (cachedRccCsrValue & RCC_SFTRSTF)
+    if (cachedResetFlags & RCC_SFTRSTF)
         return true;
     else
         return false;
@@ -201,7 +201,7 @@ void systemInit(void)
     checkForBootLoaderRequest();
 
     // cache RCC->CSR value to use it in isMPUSoftReset() and others
-    cachedRccCsrValue = RCC->RSTSCKR;
+    cachedResetFlags = RCC->RSTSCKR;
 
     RCC_HBPeriphClockCmd(    \
         RCC_HBPeriph_USBHS |  \

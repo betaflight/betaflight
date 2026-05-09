@@ -54,7 +54,7 @@ void ECDC_Init(ECDC_InitTypeDef *ECDC_InitStruct)
     }
 
     ECDC_KeyExCmd(ENABLE);
-    for(int i = 0; i < (HCLKClock / SystemClock + 1) * 64 * (((ECDC->CTRL >> 4) & 0x7) == 0 ? (1) : (((ECDC->CTRL >> 4) & 0x7))); i++)
+    for(uint32_t i = 0; i < (HCLKClock / SystemClock + 1) * 64 * (((ECDC->CTRL >> 4) & 0x7) == 0 ? (1) : (((ECDC->CTRL >> 4) & 0x7))); i++)
     {
         __asm volatile ("\tnop");
     }
