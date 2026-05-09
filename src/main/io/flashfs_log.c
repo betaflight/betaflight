@@ -107,7 +107,7 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     // preamble is recoverable on next ring-build boot, so a linear-only downgrade
     // must NOT overwrite the chip in this state. Check the buffer-area magic as a
     // secondary signal.
-    const flashGeometry_t *fg = flashfsGetGeometry();
+    const flashGeometry_t *fg = flashGetGeometry();
     if (fg && fg->sectorSize > 0) {
         const uint32_t partitionSize = flashfsGetSize();
         const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
@@ -244,6 +244,7 @@ static uint32_t bbDataDrops = 0;
 static struct {
     bool      isOpen;
     bool      headerPhase;
+    bool      lapped;              // dataWriteHead has wrapped past dataSectionEnd at least once this session
     uint32_t  logId;
     uint32_t  dataStart;
     uint32_t  dataWriteHead;       // mirrors module-level dataWriteHead during the flight
@@ -602,6 +603,34 @@ static void buildLogTableByScan(void)
         }
         logTable[j + 1] = key;
     }
+
+    // Replay the same wrap-aware overlap eviction that flashfsLogEndLog() runs at
+    // close. Without this, an older trailer whose data/header range was clobbered
+    // by a newer wrapped log would still be exposed via MSC after reboot, surfacing
+    // a phantom file pointing at bytes that now belong to a different log. Walk
+    // newest → oldest (table is sorted ascending by logId) and evict any older
+    // entry whose footprint overlaps a newer one's footprint.
+    for (uint32_t newer = logTableCount; newer-- > 1; ) {
+        const uint32_t newerStart = logTable[newer].dataStart;
+        const uint32_t newerEnd   = logTable[newer].headerOffset + logTable[newer].headerLength;
+        for (uint32_t older = 0; older < newer; older++) {
+            if (!logTable[older].valid) continue;
+            const uint32_t olderStart = logTable[older].dataStart;
+            const uint32_t olderEnd   = logTable[older].headerOffset + logTable[older].headerLength;
+            if (ringRangesOverlap(newerStart, newerEnd, olderStart, olderEnd)) {
+                logTable[older].valid = false;
+            }
+        }
+    }
+    // Compact: drop the entries we just marked invalid.
+    uint32_t kept = 0;
+    for (uint32_t i = 0; i < logTableCount; i++) {
+        if (logTable[i].valid) {
+            if (kept != i) logTable[kept] = logTable[i];
+            kept++;
+        }
+    }
+    logTableCount = kept;
 }
 
 // Determine the next data write head from the latest log's trailer (highest logId).
@@ -1077,6 +1106,18 @@ void flashfsLogWriteDataByte(uint8_t b)
     // free under prediction.
     if (active.dataWriteHead >= geom.dataSectionEnd) {
         active.dataWriteHead -= geom.dataSectionEnd;
+        active.lapped = true;
+    }
+
+    // Drop once the active log has lapped itself. active.dataStart never moves, so
+    // a session that writes more than dataSectionEnd would otherwise overwrite the
+    // start of the same open log on each subsequent byte — destroying the data its
+    // own trailer.dataStart points at. A single log is therefore capped at one full
+    // ring; if the user wants more they need to close and start a new one. The
+    // bbDataDrops counter surfaces the loss in diagnostics.
+    if (active.lapped && active.dataWriteHead >= active.dataStart) {
+        bbDataDrops++;
+        return;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.

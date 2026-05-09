@@ -1853,7 +1853,19 @@ case MSP_NAME:
         // still report a real format value — otherwise the configurator wouldn't
         // see ring-formatted flash on a downgraded firmware and couldn't warn the
         // user before starting writes.
-        sbufWriteU8(dst, blackboxConfig()->flash_mode);
+        // Clamp the persisted flash_mode in the readback so we don't claim RING
+        // on a build that compiled out USE_BLACKBOX_RING_LOG. blackbox_io hard-
+        // disables ring there (blackboxFlashUsesRingMode() returns false), so
+        // exposing a stored RING value would put the configurator in the same
+        // impossible state the setter prevents — UI thinks ring is active while
+        // the firmware writes linear-only. Mirrors the setter-side clamp.
+        uint8_t reportedFlashMode = blackboxConfig()->flash_mode;
+#ifndef USE_BLACKBOX_RING_LOG
+        if (reportedFlashMode > BLACKBOX_FLASH_MODE_LINEAR) {
+            reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+        }
+#endif
+        sbufWriteU8(dst, reportedFlashMode);
         sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormatFromFlash());
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
