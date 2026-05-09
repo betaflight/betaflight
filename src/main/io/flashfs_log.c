@@ -665,15 +665,25 @@ static void recoverFromBuffer(void)
     // Same end-of-ring spill check as flashfsLogEndLog: the writes below are linear,
     // so if trailer + header would extend past dataSectionEnd we must wrap addr to 0
     // before writing.
+    bool wrappedToFit = false;
     if (addr + bytesNeeded > geom.dataSectionEnd) {
         addr = 0;
+        wrappedToFit = true;
     }
 
-    // We know `addr` is sector-aligned and erased. Make sure we have enough contiguous
-    // erased space for trailer + header. Erase additional sectors synchronously as needed.
-    eraseHead = addr + geom.sectorSize;
-    if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
+    // Reset the erase frontier ahead of `addr` for the upcoming linear write. The
+    // gap-scan loop only verified the original (pre-wrap) `addr` was erased — if we
+    // wrapped to 0 to fit the trailer+header, sector 0 is whatever stale data was
+    // there pre-power-loss, not the verified gap, so pin eraseHead to addr and let
+    // ensureErasedSpace sync-erase the needed sectors from scratch. Otherwise the
+    // verified gap covers one sector, so start eraseHead one sector ahead.
     pendingEraseAddr = PENDING_ERASE_NONE;
+    if (wrappedToFit) {
+        eraseHead = addr;
+    } else {
+        eraseHead = addr + geom.sectorSize;
+        if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
+    }
     ensureErasedSpace(addr, bytesNeeded);
 
     writeTrailer(addr, pre.logId, pre.dataStart, headerLen);
@@ -1021,6 +1031,28 @@ void flashfsLogEndLog(void)
         }
         info->totalSize = info->headerLength + dataLen;
     }
+
+    memset(&active, 0, sizeof(active));
+}
+
+// Caller asked to discard (e.g. blackboxDeviceEndLog(retainLog=false)). We do NOT
+// write a trailer — without one, log enumeration ignores this slot and the orphan
+// data in the ring is overwritten by the next wrap. Still need to:
+//   - flush any buffered writes so the chip is quiescent before erasing the buffer
+//   - advance dataWriteHead past the abandoned data so the next log doesn't program
+//     into already-written sectors
+//   - erase the buffer area so recoverFromBuffer() at next boot doesn't see a valid
+//     uncommitted preamble and try to reconstruct this log
+void flashfsLogAbortLog(void)
+{
+    if (!active.isOpen) return;
+
+    flashfsFlushSync();
+
+    dataWriteHead = alignUpToSector(active.dataWriteHead);
+    if (dataWriteHead >= geom.dataSectionEnd) dataWriteHead = 0;
+
+    eraseBufferArea();
 
     memset(&active, 0, sizeof(active));
 }

@@ -104,6 +104,7 @@ uint32_t flashfsLogGetWriteBufferFreeSpace(void);
 bool flashfsLogFlushAsync(bool force);
 void flashfsLogFlushSync(void);
 void flashfsLogEndLog(void);                // copy buffered header to end-of-data; erase buffer
+void flashfsLogAbortLog(void);              // discard active log: no trailer is written, orphaned data in the ring is left to be overwritten on the next wrap
 
 bool flashfsLogIsActive(void);
 bool flashfsLogIsHeaderPhase(void);
@@ -128,6 +129,7 @@ static inline uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return 0; }
 static inline bool flashfsLogFlushAsync(bool f) { (void)f; return true; }
 static inline void flashfsLogFlushSync(void) {}
 static inline void flashfsLogEndLog(void) {}
+static inline void flashfsLogAbortLog(void) {}
 static inline bool flashfsLogIsActive(void) { return false; }
 static inline bool flashfsLogIsHeaderPhase(void) { return false; }
 static inline bool flashfsLogIsReady(void) { return false; }

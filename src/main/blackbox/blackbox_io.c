@@ -699,7 +699,7 @@ bool blackboxDeviceBeginLog(void)
  */
 bool blackboxDeviceEndLog(bool retainLog)
 {
-#ifndef USE_SDCARD
+#if !defined(USE_SDCARD) && !defined(USE_BLACKBOX_RING_LOG)
     UNUSED(retainLog);
 #endif
 
@@ -727,7 +727,14 @@ bool blackboxDeviceEndLog(bool retainLog)
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         if (blackboxFlashUsesRingMode()) {
-            flashfsLogEndLog();
+            if (retainLog) {
+                flashfsLogEndLog();
+            } else {
+                // Honor discard request: don't commit a trailer for an aborted/empty
+                // session — those would otherwise be enumerated as normal logs and
+                // waste ring capacity until the next wrap overwrites them.
+                flashfsLogAbortLog();
+            }
         }
         return true;
 #endif
