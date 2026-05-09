@@ -1860,17 +1860,19 @@ case MSP_NAME:
         // hard-disables ring at runtime, so claiming RING here would put the
         // configurator in the same impossible state the setter prevents (UI
         // thinks ring is active while firmware writes linear-only).
-        uint8_t reportedFlashMode = blackboxConfig()->flash_mode;
-        if (reportedFlashMode > BLACKBOX_FLASH_MODE_RING) {
-            reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
-        }
+        {
+            uint8_t reportedFlashMode = blackboxConfig()->flash_mode;
+            if (reportedFlashMode > BLACKBOX_FLASH_MODE_RING) {
+                reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+            }
 #ifndef USE_BLACKBOX_RING_LOG
-        if (reportedFlashMode > BLACKBOX_FLASH_MODE_LINEAR) {
-            reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
-        }
+            if (reportedFlashMode > BLACKBOX_FLASH_MODE_LINEAR) {
+                reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+            }
 #endif
-        sbufWriteU8(dst, reportedFlashMode);
-        sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormatFromFlash());
+            sbufWriteU8(dst, reportedFlashMode);
+            sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormatFromFlash());
+        }
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);

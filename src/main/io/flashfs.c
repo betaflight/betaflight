@@ -488,17 +488,21 @@ bool flashfsFlushAsync(bool force)
  */
 void flashfsFlushSync(void)
 {
-    uint8_t const * buffers[2];
-    uint32_t bufferSizes[2];
-    int bufCount;
-
-    if (flashfsBufferIsEmpty()) {
-        return; // Nothing to flush
-    }
-
-    bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
-    if (bufCount) {
-        flashfsWriteBuffers(buffers, bufferSizes, bufCount, true);
+    // Each flashfsWriteBuffers() call programs at most one flash page (the underlying
+    // flashPageProgramContinue truncates buffers at the next page boundary), so a
+    // single flush only drains ~pageSize bytes — typically 256 B. With the ring-mode
+    // build's 16 KB write buffer, that left up to 64 pages still buffered after a
+    // "sync" flush, which broke callers that relied on the chip being fully drained
+    // (markBufferLapped's mid-session preamble update, flashfsSetRing /
+    // flashfsClearRing's wrap-config swap, etc — all could leave residual writes to
+    // complete under post-call state). Loop until the buffer is empty.
+    while (!flashfsBufferIsEmpty()) {
+        uint8_t const * buffers[2];
+        uint32_t bufferSizes[2];
+        int bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+        if (!bufCount) break;
+        const uint32_t written = flashfsWriteBuffers(buffers, bufferSizes, bufCount, true);
+        if (written == 0) break;  // chip refused (e.g. EOF in linear mode); avoid spin
     }
 
     while (!flashIsReady());
