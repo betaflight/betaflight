@@ -89,8 +89,11 @@ RUN if id -u 1000 >/dev/null 2>&1; then \
 USER $USERNAME
 
 # Clone and build the Betaflight Gazebo bridge plugin
+ARG AEROLOOP_REF=a6c16d2d653932a96ced279522ba39b6da15f78c
 RUN git clone --branch gz https://github.com/betaflight/aeroloop_gazebo.git /home/$USERNAME/aeroloop_gazebo && \
-    cd /home/$USERNAME/aeroloop_gazebo/plugins && \
+    cd /home/$USERNAME/aeroloop_gazebo && \
+    git checkout "$AEROLOOP_REF" && \
+    cd plugins && \
     mkdir build && cd build && \
     cmake .. && \
     make -j$(nproc)

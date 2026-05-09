@@ -250,7 +250,7 @@ This allows testing firmware changes without physical hardware.
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │  Gazebo Container                                   │
 │                                                     │
