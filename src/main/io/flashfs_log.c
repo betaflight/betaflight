@@ -67,6 +67,7 @@
 // via the geometry-based detector logic) by always-compiled probes.
 #define HDR_BUFFER_SECTORS 4
 #define BUFFER_PREAMBLE_MAGIC 0x42424C42u  // "BBLB"  (Betaflight Blackbox Log Buffer)
+#define LOG_TRAILER_MAGIC     0x4C424c54u  // "TLBL"  (Trailer Log BLackbox)
 
 // Linear-format probe text. A linear-formatted chip always begins with the first
 // log's header text at offset 0 (which always starts "H Product"). Defined here so
@@ -75,20 +76,25 @@ static const char LINEAR_FORMAT_PROBE_TEXT[] = "H Product";
 #define LINEAR_FORMAT_PROBE_TEXT_LEN (sizeof(LINEAR_FORMAT_PROBE_TEXT) - 1)
 
 // Self-contained format probe — does not depend on the rest of the flashfs_log
-// module. Reads 16 bytes at offset 0 and classifies the chip:
-//   - "H Product..." prefix → LINEAR (legacy linear-mode log starts here)
-//   - all 0xFF → EMPTY (freshly erased; either mode may proceed)
-//   - else → RING (data present that doesn't look like a linear header — assume
-//     ring-format until the user explicitly erases. Garbage chips end up classified
-//     as RING too, which is the safe answer for the linear safeguard's purpose.)
+// module. Sequence of checks, each catches a different chip state:
 //
-// We deliberately don't probe BUFFER_PREAMBLE_MAGIC here even though it would be
-// the cleanest signature: eraseBufferArea() wipes that magic on every clean log
-// close, so a cleanly-closed ring volume would falsely look UNKNOWN. The offset-0
-// probe persists across clean closes (the data sectors aren't touched by close
-// processing), and after a full ring wrap any data in sector 0 is overwritten
-// ring-mode log content rather than 0xFF — still classified as RING by the
-// "not linear, not erased" branch.
+//   1. offset 0 starts with "H Product"           → LINEAR
+//   2. offset 0 contains non-erased ring content  → RING
+//   3. buffer-area carries BUFFER_PREAMBLE_MAGIC   → RING (in-flight log, no data
+//                                                    landed in sector 0 yet)
+//   4. any sector-aligned position carries
+//      LOG_TRAILER_MAGIC                          → RING (clean-closed ring where
+//                                                    the erase pool happened to
+//                                                    wrap past sector 0 AND the
+//                                                    buffer-area was erased on
+//                                                    close — neither (2) nor (3)
+//                                                    catch this case)
+//   5. otherwise                                  → EMPTY
+//
+// (4) is the durable signature for a populated ring: trailers are never erased
+// outside of explicit user erase or being overwritten by a newer ring lap. The
+// scan is O(partition / sectorSize) reads of 4 bytes each — ~3500 reads on a
+// 14 MB chip, runs once at boot, no hot-path cost.
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 {
     uint8_t probe[16];
@@ -101,25 +107,36 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     for (size_t i = 0; i < sizeof(probe); i++) {
         if (probe[i] != 0xFF) return FLASHFS_FLASH_FORMAT_RING;
     }
-    // Offset 0 is erased. That can also describe a "buffer-only" ring state: power
-    // dropped after flashfsLogFinishHeader() wrote the active log's preamble into the
-    // buffer area, but before the first data byte landed in sector 0. The buffer
-    // preamble is recoverable on next ring-build boot, so a linear-only downgrade
-    // must NOT overwrite the chip in this state. Check the buffer-area magic as a
-    // secondary signal.
+
+    // Offset 0 is erased. Need a more thorough check before deciding EMPTY.
     const flashGeometry_t *fg = flashGetGeometry();
-    if (fg && fg->sectorSize > 0) {
-        const uint32_t partitionSize = flashfsGetSize();
-        const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
-        if (bufferAreaSize < partitionSize) {
-            const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
-            uint32_t magic = 0;
-            if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
-                    && magic == BUFFER_PREAMBLE_MAGIC) {
-                return FLASHFS_FLASH_FORMAT_RING;
-            }
+    if (!fg || fg->sectorSize == 0) return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    const uint32_t partitionSize = flashfsGetSize();
+    const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
+    if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
+
+    // Buffer-area preamble magic: catches the in-flight ring state where the
+    // active log finalised its header but no data landed in sector 0 before crash.
+    {
+        uint32_t magic = 0;
+        if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
+                && magic == BUFFER_PREAMBLE_MAGIC) {
+            return FLASHFS_FLASH_FORMAT_RING;
         }
     }
+
+    // Sector-aligned trailer magic scan. Trailers persist across clean closes and
+    // across erase-pool wraps, so this is the durable signature that cleanly-closed
+    // ring volumes have when offset 0 and the buffer area both happen to be erased.
+    for (uint32_t addr = fg->sectorSize; addr + sizeof(uint32_t) <= bufferAreaStart; addr += fg->sectorSize) {
+        uint32_t magic = 0;
+        if (flashfsReadAbs(addr, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
+                && magic == LOG_TRAILER_MAGIC) {
+            return FLASHFS_FLASH_FORMAT_RING;
+        }
+    }
+
     return FLASHFS_FLASH_FORMAT_EMPTY;
 }
 
@@ -148,9 +165,8 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 // drain the pool — the drop guard takes over and the log shows a small gap.
 #define POOL_TARGET_SECTORS 4
 
-// Magic number identifying our on-flash trailer records (paired with
-// BUFFER_PREAMBLE_MAGIC defined above).
-#define LOG_TRAILER_MAGIC     0x4C424c54u  // "TLBL"  (Trailer Log BLackbox)
+// Trailer/preamble magic constants are defined above the USE_BLACKBOX_RING_LOG
+// guard so the always-compiled detector can use them.
 
 // =============================================================================
 // On-flash record formats (16 bytes each)

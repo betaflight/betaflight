@@ -412,7 +412,20 @@ static bool flashfsNewData(void)
 }
 
 /**
- * Get the current offset of the file pointer within the volume.
+ * Get the logical used size of the volume.
+ *
+ * In linear mode this is the current write tail address plus any bytes still in
+ * the RAM buffer — effectively a "bytes ever stored" counter that callers can
+ * also treat as the next write position.
+ *
+ * In ring mode (USE_BLACKBOX_RING_LOG, after the writer has wrapped at least
+ * once and `ringFullSize` is non-zero), the physical tail address has folded
+ * back to the ring start and is no longer monotonic. To preserve the public
+ * "bytes stored" contract for callers like MSP_DATAFLASH_SUMMARY and the OSD
+ * storage gauge, this function returns `ringFullSize` (the captured ring
+ * capacity at the moment of the first wrap). Callers must NOT use the returned
+ * value as a seek offset once that branch is active — it's a usage report,
+ * not a file pointer.
  */
 uint32_t flashfsGetOffset(void)
 {
