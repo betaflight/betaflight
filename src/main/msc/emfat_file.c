@@ -491,6 +491,11 @@ void emfat_init_files(void)
         for (uint32_t i = 0; i < ringLogCount && i < EMFAT_MAX_LOG_ENTRY; i++) {
             const flashfsLogInfo_t *info = flashfsLogGetInfo(i);
             if (!info) break;
+            // Seed CMA times before emfat_add_log(): emfat_add_log() only propagates
+            // cma_time[0] into the modified/access slots; it does not initialise it.
+            // Without this, ring-mode per-log files surface zero/default timestamps.
+            // (The linear scanner does the equivalent via its own cma_time[0] seed.)
+            emfat_set_entry_cma(&entries[entryIndex]);
             emfat_add_log(&entries[entryIndex], i, 0 /* offset unused */, info->totalSize);
             entries[entryIndex].readcb = bblog_ring_read_proc;
             entries[entryIndex].user_data = (long)(uintptr_t)i;

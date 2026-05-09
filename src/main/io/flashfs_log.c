@@ -301,9 +301,19 @@ static void eraseTick(void)
     // ~30-50 ms while we continue to write into the existing pool / RAM buffer).
     // Use the active writer's position when a log is open; otherwise the module-level
     // dataWriteHead.
+    //
+    // The flashIsReady() gate is required even on this no-pending-erase path: an
+    // async page program from the data writer can still have the chip BUSY here.
+    // Most NOR parts ignore commands while BUSY, so issuing flashEraseSector() now
+    // would silently no-op while we still record pendingEraseAddr=eraseHead. The
+    // next eraseTick() would then see flashIsReady() true (program completed),
+    // declare the non-existent erase done, and advance eraseHead past a sector
+    // that was never erased. Subsequent programs into that sector would land on
+    // non-erased flash. Skipping this tick is safe — eraseTick() runs every data
+    // byte, the next call will retry.
     uint32_t writer = active.isOpen ? active.dataWriteHead : dataWriteHead;
     uint32_t spaceAhead = ringSpaceFreeAhead(writer);
-    if (spaceAhead < POOL_TARGET_SECTORS * geom.sectorSize) {
+    if (spaceAhead < POOL_TARGET_SECTORS * geom.sectorSize && flashIsReady()) {
         flashEraseSector(eraseHead);
         pendingEraseAddr = eraseHead;
     }

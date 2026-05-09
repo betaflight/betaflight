@@ -418,6 +418,13 @@ extern boxBitmask_t rcModeActivationMask;
 
 static blackboxState_e blackboxState = BLACKBOX_STATE_DISABLED;
 
+#ifdef USE_FLASHFS
+// One-shot guard for the ring-mode header/data phase handoff. Set true after
+// flashfsLogFinishHeader() runs on the initial entry into BLACKBOX_STATE_RUNNING;
+// reset to false in BLACKBOX_STATE_PREPARE_LOG_FILE for the next log session.
+static bool blackboxFlashHeaderFinalized = false;
+#endif
+
 static uint32_t blackboxLastArmingBeep = 0;
 static uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
 
@@ -619,6 +626,11 @@ static void blackboxSetState(blackboxState_e newState)
     switch (newState) {
     case BLACKBOX_STATE_PREPARE_LOG_FILE:
         blackboxLoggedAnyFrames = false;
+#ifdef USE_FLASHFS
+        // New log session: clear the one-shot flag that gates the ring-mode
+        // header-finalize transition (see BLACKBOX_STATE_RUNNING below).
+        blackboxFlashHeaderFinalized = false;
+#endif
         break;
     case BLACKBOX_STATE_SEND_HEADER:
         blackboxHeaderBudget = 0;
@@ -638,11 +650,16 @@ static void blackboxSetState(blackboxState_e newState)
     case BLACKBOX_STATE_RUNNING:
         blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
 #ifdef USE_FLASHFS
-        // For ring-mode flash logging, mark the end of the header phase. The blackbox writer
-        // will now route subsequent bytes through the data section (with wrap + eviction).
+        // For ring-mode flash logging, mark the end of the header phase exactly once
+        // per log session. Gate on a one-shot flag so the PAUSED -> RUNNING resume
+        // transition (blackbox.c BLACKBOX_STATE_PAUSED case) does not replay the
+        // header/data handoff mid-log. The flag is cleared in
+        // BLACKBOX_STATE_PREPARE_LOG_FILE for the next session.
         if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
-                && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING) {
+                && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
+                && !blackboxFlashHeaderFinalized) {
             flashfsLogFinishHeader();
+            blackboxFlashHeaderFinalized = true;
         }
 #endif
 #ifdef USE_FLASH_TEST_PRBS
