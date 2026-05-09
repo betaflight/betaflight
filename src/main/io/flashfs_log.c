@@ -1006,12 +1006,19 @@ void flashfsLogEndLog(void)
     // here. Disarm is non-realtime so blocking is fine.
     ensureErasedSpace(trailerAddr, bytesNeeded);
 
-    writeTrailer(trailerAddr, active.logId, active.dataStart, headerLen);
-    // Copy buffered header from the buffer area into the data ring (after the trailer)
-    // in chunks so we don't need a large RAM scratch.
+    // Copy buffered header into the data ring FIRST, then write the trailer. The
+    // trailer's existence is the commit signal — if it's on flash, the header is
+    // guaranteed to have been copied before it. A power loss partway through the
+    // copy leaves no trailer behind, so on next boot recoverFromBuffer() rebuilds
+    // the log from the erase-pool gap (re-copying the buffered header) instead of
+    // trusting a partially-copied on-ring header. The previous order (trailer then
+    // copy) had a window in which a valid trailer could point at a partially-
+    // programmed header that the recovery fast path would then erase from the
+    // buffer area, permanently corrupting the log's header.
     copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                     trailerAddr + sizeof(flashfsLogTrailer_t),
                     headerLen);
+    writeTrailer(trailerAddr, active.logId, active.dataStart, headerLen);
 
     // Update module-level write head to sector-aligned position past the header.
     uint32_t afterHeader = trailerAddr + sizeof(flashfsLogTrailer_t) + headerLen;
