@@ -1233,6 +1233,12 @@ bool flashfsLogBeginLog(void)
     active.dataWriteHead = dataWriteHead;
     active.bufferHeaderOffset = 0;
 
+    // Reset the diagnostic drop counter so flashfsLogGetDataDrops() reports
+    // drops for THIS session only — otherwise the value bleeds across sessions
+    // (the static is only zeroed at boot) and the counter becomes useless for
+    // tuning the rate cap on a per-flight basis.
+    bbDataDrops = 0;
+
     // Position flashfs's tail at the start of the buffer area's header-text region. From
     // here, header bytes go through the existing buffered async path (flashfsWriteByte)
     // — no per-byte sync flush.

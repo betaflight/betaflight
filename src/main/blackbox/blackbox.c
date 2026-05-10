@@ -1601,7 +1601,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->craftName);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      blackboxPInterval);
-        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         (uint16_t)(blackboxIInterval / blackboxPInterval));
+        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         (uint16_t)(blackboxPInterval ? (blackboxIInterval / blackboxPInterval) : 0));
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
@@ -2372,7 +2372,10 @@ uint8_t blackboxGetRateDenom(void)
 
 uint16_t blackboxGetPRatio(void)
 {
-    return blackboxIInterval / blackboxPInterval;
+    // blackboxPInterval can be 0 ("I-frames only" mode — set when sample_rate
+    // is too slow for the I-interval, or when ring-mode rate clamp saturates
+    // at >16 kHz pidloop). Report 0 ratio rather than dividing by zero.
+    return blackboxPInterval ? (blackboxIInterval / blackboxPInterval) : 0;
 }
 
 uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
