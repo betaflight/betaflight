@@ -826,18 +826,29 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
 // Power-loss recovery
 // =============================================================================
 
-// Recovery: scan the entire ring (with wrap) for an all-0xFF sector. Because the active
-// log maintains an erase pool ahead of the writer at all times, at least one fully-erased
-// sector exists somewhere in the ring after any in-flight power loss — even if the flight
-// wrapped the ring multiple times. That sector is the marker for "where the write head
-// was approximately".
+// Recovery: replay flashfsLogEndLog from the right address.
 //
-// Once found, write the trailer there. If the buffered header is larger than one sector,
-// erase additional sectors forward until there's enough contiguous erased space for it.
+// The close path's trailer-first ordering means power loss leaves one of three
+// on-flash states (buffer-already-committed is handled before we get here):
 //
-// Edge case: if scanning happens to hit a trailer with our logId (rare race between
-// trailer write and commit-flag flip in flashfsLogEndLog), the log was already committed
-// to data; we just need to clean up the buffer.
+//   1. Crash BEFORE writeTrailer fired (or ensureErasedSpace was still in flight):
+//      no trailer in the ring, but a pre-erased gap exists at the close target
+//      address (or — in the worst case where we never reached ensureErasedSpace —
+//      the erase pool the writer maintained ahead of itself in flight gives us
+//      at least one fully-erased sector somewhere in the ring).
+//   2. Crash mid copyChunkedSync (or after writeTrailer but before the copy started):
+//      trailer is present at the close target address; the post-trailer header bytes
+//      may be partial or absent. We re-do the close at the trailer's address — that
+//      requires re-erasing the trailer's own sector, which is fine because we
+//      immediately re-write the trailer with the same content.
+//   3. Crash after copyChunkedSync but before markBufferCommitted: trailer present,
+//      header complete, buffer uncommitted. Same handling as (2): re-doing is
+//      idempotent.
+//
+// In all three cases we walk the ring forward from pre.dataStart looking for
+// either a matching-logId trailer or a fully-erased sector — whichever appears
+// first IS the close target address. Then we replay the close path (writeTrailer,
+// copyChunkedSync, markBufferCommitted, eraseBufferArea) at that address.
 static void recoverFromBuffer(void)
 {
     flashfsBufferPreamble_t pre;
@@ -851,18 +862,23 @@ static void recoverFromBuffer(void)
         return;
     }
 
-    // Scan the whole ring for the erased gap (going forward from the pre-power dataStart,
-    // wrapping). Also detect "trailer already there" race.
     uint32_t addr = pre.dataStart;
     uint32_t scanned = 0;
-    bool foundGap = false;
+    bool found = false;
+    bool foundTrailer = false;
     while (scanned < geom.dataSectionEnd) {
         if (addr >= geom.dataSectionEnd) addr = 0;
         flashfsLogTrailer_t t;
         if (readTrailerAt(addr, &t) && t.logId == pre.logId) {
-            markBufferCommitted();
-            eraseBufferArea();
-            return;
+            // Case (2)/(3): close was attempted, trailer landed. Re-do the close
+            // here — replays writeTrailer + header copy + commit, fully idempotent.
+            // The fast path that used to commit-and-erase on a trailer sighting was
+            // a corruption source: if the crashed close had only partially copied
+            // the header, that fast path would erase the buffer's authoritative
+            // header copy and freeze the partial header on flash forever.
+            foundTrailer = true;
+            found = true;
+            break;
         }
         // Validate the whole sector — recovery then advances eraseHead past it on
         // the assumption that everything inside is 0xFF. A 16-byte probe was not
@@ -883,14 +899,19 @@ static void recoverFromBuffer(void)
                 }
             }
         }
-        if (isErased) { foundGap = true; break; }
+        if (isErased) {
+            // Case (1): no trailer reached flash, but a pre-erased gap is here.
+            found = true;
+            break;
+        }
         addr += geom.sectorSize;
         scanned += geom.sectorSize;
     }
 
-    if (!foundGap) {
-        // No erased sector exists in the ring. This shouldn't happen with a correctly
-        // operating erase pool — abandon recovery, the active log is unrecoverable.
+    if (!found) {
+        // Neither a matching trailer nor an erased sector exists in the ring.
+        // Shouldn't happen with a correctly operating erase pool — abandon
+        // recovery, the active log is unrecoverable.
         eraseBufferArea();
         return;
     }
@@ -901,21 +922,25 @@ static void recoverFromBuffer(void)
 
     // Same end-of-ring spill check as flashfsLogEndLog: the writes below are linear,
     // so if trailer + header would extend past dataSectionEnd we must wrap addr to 0
-    // before writing.
+    // before writing. (Only relevant for case (1): in cases (2)/(3) the trailer is
+    // already at a known-good address that the original close vetted.)
     bool wrappedToFit = false;
-    if (addr + bytesNeeded > geom.dataSectionEnd) {
+    if (!foundTrailer && addr + bytesNeeded > geom.dataSectionEnd) {
         addr = 0;
         wrappedToFit = true;
     }
 
-    // Reset the erase frontier ahead of `addr` for the upcoming linear write. The
-    // gap-scan loop only verified the original (pre-wrap) `addr` was erased — if we
-    // wrapped to 0 to fit the trailer+header, sector 0 is whatever stale data was
-    // there pre-power-loss, not the verified gap, so pin eraseHead to addr and let
-    // ensureErasedSpace sync-erase the needed sectors from scratch. Otherwise the
-    // verified gap covers one sector, so start eraseHead one sector ahead.
+    // Reset the erase frontier ahead of `addr` for the upcoming linear write.
+    //  - foundTrailer: the trailer's sector + following header sectors are already
+    //    pre-erased OR partially programmed. Either way ensureErasedSpace must
+    //    sync-erase from `addr` to guarantee the post-trailer copy lands on clean
+    //    flash. (The trailer itself gets re-erased and immediately re-written.)
+    //  - !foundTrailer + wrappedToFit: sector 0 is whatever stale data was there,
+    //    sync-erase from scratch.
+    //  - !foundTrailer + !wrappedToFit: the gap-scan verified `addr` is erased,
+    //    so the pool starts one sector ahead.
     pendingEraseAddr = PENDING_ERASE_NONE;
-    if (wrappedToFit) {
+    if (foundTrailer || wrappedToFit) {
         eraseHead = addr;
     } else {
         eraseHead = addr + geom.sectorSize;
@@ -940,14 +965,13 @@ static void recoverFromBuffer(void)
         recoveredDataStart = pre.dataStart;
     }
 
-    // Copy the header BEFORE writing the trailer (same ordering rule as
-    // flashfsLogEndLog: the trailer is the commit signal). A power loss partway
-    // through the copy leaves no trailer — recovery on the NEXT boot will fall
-    // back to the gap path again.
+    // Trailer-first, matching flashfsLogEndLog. If we crash again before the copy
+    // completes, the next recovery sees the trailer and converges on the same
+    // address — idempotent retry.
+    writeTrailer(addr, pre.logId, recoveredDataStart, headerLen);
     copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                     addr + sizeof(flashfsLogTrailer_t),
                     headerLen);
-    writeTrailer(addr, pre.logId, recoveredDataStart, headerLen);
     markBufferCommitted();
     eraseBufferArea();
 }
@@ -1312,39 +1336,42 @@ void flashfsLogEndLog(void)
     // here. Disarm is non-realtime so blocking is fine.
     ensureErasedSpace(trailerAddr, bytesNeeded);
 
-    // Copy buffered header into the data ring FIRST, then write the trailer. The
-    // trailer's existence is the commit signal — if it's on flash, the header is
-    // guaranteed to have been copied before it. A power loss partway through the
-    // copy leaves no trailer behind, so on next boot recoverFromBuffer() rebuilds
-    // the log from the erase-pool gap (re-copying the buffered header) instead of
-    // trusting a partially-copied on-ring header. The previous order (trailer then
-    // copy) had a window in which a valid trailer could point at a partially-
-    // programmed header that the recovery fast path would then erase from the
-    // buffer area, permanently corrupting the log's header.
-    copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
-                    trailerAddr + sizeof(flashfsLogTrailer_t),
-                    headerLen);
-
-    // Update module-level write head to sector-aligned position past the header.
+    // Compute the logDataStart and post-close write head BEFORE the trailer write.
+    //
+    // Trailer's dataStart describes where the *currently readable* range begins.
+    //   - Non-lapped sessions: just the original active.dataStart. Read range is
+    //     the linear span [dataStart, trailerAddr).
+    //   - Lapped sessions: the original active.dataStart byte has been overwritten
+    //     by later session data, so it's the wrong pointer to expose. The intact
+    //     range is the whole ring minus the trailer + header sectors we're about
+    //     to write. Set dataStart to the first byte past the post-close write head
+    //     so the reader walks ring-wraps from there back around to trailerAddr —
+    //     the last ringSize-headerLen-trailerLen bytes the writer produced.
     uint32_t afterHeader = trailerAddr + sizeof(flashfsLogTrailer_t) + headerLen;
     dataWriteHead = alignUpToSector(afterHeader);
     if (dataWriteHead >= geom.dataSectionEnd) dataWriteHead = 0;
-
-    // Trailer's dataStart describes where the *currently readable* range begins.
-    //
-    // For non-lapped sessions that's just the original active.dataStart — everything
-    // the writer wrote in this session is intact, and the read range is the linear
-    // span [dataStart, trailerAddr).
-    //
-    // For lapped sessions (writer wrapped past dataSectionEnd at least once), the
-    // original active.dataStart byte has been overwritten by later session data, so
-    // it's the wrong pointer to expose. The intact range is the whole ring minus
-    // the trailer + header sectors we just wrote. Set dataStart to the first byte
-    // past the post-close write head so the reader walks ring-wraps from there
-    // back around to trailerAddr — the last ringSize-headerLen-trailerLen bytes
-    // the writer produced.
     const uint32_t logDataStart = active.lapped ? dataWriteHead : active.dataStart;
+
+    // Write trailer FIRST, then copy the header that the trailer points at. The
+    // trailer is the on-ring "close intent" marker — its presence anywhere in the
+    // ring tells recovery exactly where the in-flight close was attempting to land
+    // its trailer + header. A power loss between writeTrailer() and the end of
+    // copyChunkedSync() leaves a complete trailer pointing at a (possibly partial)
+    // header sitting in pre-erased flash; the buffer is still uncommitted, so
+    // recovery treats this as "redo the close at this trailer's address" rather
+    // than fast-path-committing onto a partial header. See recoverFromBuffer().
+    //
+    // The previous order (header first, trailer last) was a workaround for a now-
+    // removed recovery fast path that would erase the buffer on any matching trailer
+    // sighting, including matches over a partially-copied header. With the recovery
+    // path fixed to redo the close instead of fast-pathing, trailer-first is both
+    // safer (recovery has an unambiguous landing position to resume at — no need to
+    // gap-scan past partial-copy debris) and simpler.
     writeTrailer(trailerAddr, active.logId, logDataStart, headerLen);
+
+    copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
+                    trailerAddr + sizeof(flashfsLogTrailer_t),
+                    headerLen);
 
     // Mark committed in the buffer (so a power loss during the buffer erase below leaves
     // the recovery path with an unambiguous "already committed" signal), then erase.
