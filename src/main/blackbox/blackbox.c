@@ -1144,9 +1144,18 @@ void blackboxValidateConfig(void)
         // function of pidHz, which can change between sessions (rate profile
         // switch, looptime change). Persisting the clamp would lock the user's
         // sample_rate to the slowest value any session needed.
-        blackboxPInterval = 1 << sr;
-        if (blackboxPInterval > blackboxIInterval) {
+        //
+        // Saturation: if even the slowest rate (1/16) still exceeds the cap (only
+        // possible at extreme pidloops > 16 kHz), disable P-frames entirely so we
+        // log only I-frames rather than producing a stream guaranteed to overrun
+        // the chip's erase throughput. Better degraded than corrupt.
+        if (sr == BLACKBOX_RATE_16TH && (pidHz >> sr) > BLACKBOX_RING_MAX_FRAME_HZ) {
             blackboxPInterval = 0;
+        } else {
+            blackboxPInterval = 1 << sr;
+            if (blackboxPInterval > blackboxIInterval) {
+                blackboxPInterval = 0;
+            }
         }
     }
 #endif

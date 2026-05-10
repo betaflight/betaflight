@@ -136,6 +136,7 @@ bool flashfsLogFlushAsync(bool force);
 void flashfsLogFlushSync(void);
 void flashfsLogEndLog(void);                // copy buffered header to end-of-data; erase buffer
 void flashfsLogAbortLog(void);              // discard active log: no trailer is written, orphaned data in the ring is left to be overwritten on the next wrap
+uint32_t flashfsLogGetDataDrops(void);      // diagnostic: bytes dropped by hot-path drop guard
 
 bool flashfsLogIsActive(void);
 bool flashfsLogIsHeaderPhase(void);
@@ -164,5 +165,6 @@ static inline bool flashfsLogIsActive(void) { return false; }
 static inline bool flashfsLogIsHeaderPhase(void) { return false; }
 static inline bool flashfsLogIsReady(void) { return false; }
 static inline bool flashfsLogIsFull(void) { return false; }
+static inline uint32_t flashfsLogGetDataDrops(void) { return 0; }
 
 #endif // USE_BLACKBOX_RING_LOG

@@ -988,6 +988,11 @@ static void recoverFromBuffer(void)
     //    sync-erase from scratch.
     //  - !foundTrailer + !wrappedToFit: the gap-scan verified `addr` is erased,
     //    so the pool starts one sector ahead.
+    //
+    // Defensive: pendingEraseAddr is already PENDING_ERASE_NONE on cold boot
+    // (static initializer), and recoverFromBuffer() only runs from the boot path
+    // in flashfsLogInit(). The reset is here so the function stays correct if
+    // a future caller invokes recovery from a non-init context.
     pendingEraseAddr = PENDING_ERASE_NONE;
     if (foundTrailer || wrappedToFit) {
         eraseHead = addr;
@@ -1364,6 +1369,13 @@ void flashfsLogWriteData(const uint8_t *data, uint32_t length)
 }
 
 uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferFreeSpace(); }
+
+// Diagnostic: bytes dropped on the data hot path because either the writer caught
+// the erase frontier (pool depleted under worst-case erase outliers) or the RAM
+// write buffer was full (chip mid-erase, flush couldn't drain). Monotonic per
+// session. Useful for tuning the BLACKBOX_RING_MAX_FRAME_HZ cap and confirming
+// the erase pool is keeping up on a given chip.
+uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 
 // Persist the lap marker into the buffer preamble if the writer has lapped this
 // session and the marker hasn't already been written. Called from BOTH async and
