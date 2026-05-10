@@ -96,6 +96,7 @@ const char * const lookupTableAccHardware[ACC_HARDWARE_COUNT] = {
     [ACC_LSM6DSK320X] = "LSM6DSK320X",
     [ACC_ICM42622P] = "ICM42622P",
     [ACC_ICM42686P] = "ICM42686P",
+    [ACC_LSM303AGR] = "LSM303AGR",
     [ACC_VIRTUAL] = "VIRTUAL"
 };
 

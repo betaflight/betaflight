@@ -123,6 +123,7 @@
     && !defined(USE_ACC_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+    && !defined(USE_ACC_LSM303AGR) \
     && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
@@ -150,6 +151,7 @@
     && !defined(USE_GYRO_SPI_MPU9250) \
     && !defined(USE_ACCGYRO_IIM42652) \
     && !defined(USE_ACCGYRO_IIM42653) \
+    && !defined(USE_GYRO_L3GD20) \
     && !defined(USE_VIRTUAL_GYRO)
 #error At least one USE_GYRO device definition required
 #endif

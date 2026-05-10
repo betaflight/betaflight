@@ -36,6 +36,7 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_lsm303agr.h"
 #include "drivers/accgyro/accgyro_virtual.h"
 
 #include "drivers/accgyro/accgyro_mpu6050.h"
@@ -323,6 +324,15 @@ retry:
     case ACC_LSM6DSK320X:
         if (lsm6dsk320xSpiAccDetect(dev)) {
             accHardware = ACC_LSM6DSK320X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACC_LSM303AGR
+    case ACC_LSM303AGR:
+        if (lsm303agrAccDetect(dev)) {
+            accHardware = ACC_LSM303AGR;
             break;
         }
         FALLTHROUGH;

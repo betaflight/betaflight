@@ -104,6 +104,14 @@ bool virtualGyroDetect(gyroDev_t *gyro)
 
 #ifdef USE_VIRTUAL_ACC
 
+#ifndef USE_VIRTUAL_GYRO
+#include "build/build_config.h"
+#include "common/axis.h"
+#include "common/utils.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_virtual.h"
+#endif
+
 static int16_t virtualAccData[XYZ_AXIS_COUNT];
 accDev_t *virtualAccDev;
 
