@@ -1884,7 +1884,7 @@ case MSP_NAME:
         sbufWriteU32(dst, 0);
         // Added in MSP API 1.49
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 3); // FLASHFS_FLASH_FORMAT_UNKNOWN
+        sbufWriteU8(dst, (uint8_t)FLASHFS_FLASH_FORMAT_UNKNOWN);
 #endif
         break;
 

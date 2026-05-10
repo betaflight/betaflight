@@ -1006,8 +1006,17 @@ static void recoverFromBuffer(void)
     if (!copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                          addr + sizeof(flashfsLogTrailer_t),
                          headerLen)) {
-        // Source-read failed mid-copy (rare hardware issue). Don't commit the
-        // buffer — leaving it uncommitted lets the next boot's recovery retry.
+        // Same handling as flashfsLogEndLog's failure path: erase the trailer
+        // sectors so buildLogTableByScan (running immediately after this in
+        // flashfsLogInit) doesn't surface a phantom log entry pointing at
+        // non-existent header bytes. Buffer stays uncommitted so the next boot
+        // can fall back to gap-scan.
+        uint32_t eraseAddr = addr;
+        const uint32_t eraseEnd = addr + bytesNeeded;
+        while (eraseAddr < eraseEnd) {
+            eraseSectorSync(eraseAddr);
+            eraseAddr += geom.sectorSize;
+        }
         return;
     }
     markBufferCommitted();
@@ -1452,10 +1461,24 @@ void flashfsLogEndLog(void)
     if (!copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
                          trailerAddr + sizeof(flashfsLogTrailer_t),
                          headerLen)) {
-        // Source-read of the buffered header failed mid-copy. Skip commit so the
-        // buffer stays valid + uncommitted; next boot's recovery will redo the
-        // close at the trailer we just wrote. The active.* state still gets
-        // cleared at the end of the function so the writer can move on.
+        // Source-read of the buffered header failed mid-copy. We must NOT leave
+        // the just-written trailer dangling: between this disarm and the next
+        // boot, a re-arm runs flashfsLogBeginLog → eraseBufferArea, wiping the
+        // preamble that recoverFromBuffer would otherwise use to find and redo
+        // this close. Without the preamble, the dangling trailer survives and
+        // buildLogTableByScan accepts it next boot — exposing a phantom MSC log
+        // pointing at non-existent header bytes.
+        //
+        // Erase the trailer + (partial) header sectors so neither path can see
+        // a valid trailer. The buffer stays valid + uncommitted: if recovery
+        // does run before re-arm (i.e. immediate reboot), it falls back to the
+        // gap-scan path — and our just-erased sector is the guaranteed gap.
+        uint32_t addr = trailerAddr;
+        const uint32_t end = trailerAddr + bytesNeeded;
+        while (addr < end) {
+            eraseSectorSync(addr);
+            addr += geom.sectorSize;
+        }
         memset(&active, 0, sizeof(active));
         return;
     }
