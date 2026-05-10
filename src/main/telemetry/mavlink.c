@@ -202,8 +202,9 @@ static void handlePing(const mavlink_message_t *msg)
     mavlink_ping_t ping;
     mavlink_msg_ping_decode(msg, &ping);
 
-    if ((ping.target_system != 0 && ping.target_system != MAVLINK_SYSTEM_ID) ||
-        (ping.target_component != 0 && ping.target_component != MAVLINK_COMPONENT_ID)) {
+    // PING request per spec has target_system == 0 && target_component == 0;
+    // non-zero target fields indicate a response, which we must not echo back.
+    if (ping.target_system != 0 || ping.target_component != 0) {
         return;
     }
 
@@ -221,8 +222,14 @@ static void handleTimesync(const mavlink_message_t *msg)
     mavlink_timesync_t timesync;
     mavlink_msg_timesync_decode(msg, &timesync);
 
-    // tc1 == 0 marks a request from the GCS; non-zero is a response we never solicited.
+    // tc1 == 0 marks a request; non-zero is a response we never solicited.
     if (timesync.tc1 != 0) {
+        return;
+    }
+
+    // Accept broadcast or directed-to-us; ignore requests addressed to other systems.
+    if ((timesync.target_system != 0 && timesync.target_system != MAVLINK_SYSTEM_ID) ||
+        (timesync.target_component != 0 && timesync.target_component != MAVLINK_COMPONENT_ID)) {
         return;
     }
 
@@ -257,7 +264,9 @@ static void mavlinkProcessIncoming(void)
     if (!mavlinkPortOwned || !mavlinkPort) {
         return;
     }
-    while (serialRxBytesWaiting(mavlinkPort)) {
+    // Bound the drain so a flooded link cannot starve the telemetry task.
+    uint16_t rxBudget = 64;
+    while (rxBudget-- && serialRxBytesWaiting(mavlinkPort)) {
         const uint8_t c = serialRead(mavlinkPort);
         if (mavlink_parse_char(MAVLINK_COMM_1, c, &mavRxMsg, &mavRxStatus) == MAVLINK_FRAMING_OK) {
             mavlinkDispatch(&mavRxMsg);
@@ -300,6 +309,7 @@ void configureMAVLinkTelemetryPort(void)
     // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
     lastArmingDisableFlags = 0;
     mavlinkPortOwned = true;
+    mavlink_reset_channel_status(MAVLINK_COMM_1);
     mavlinkTelemetryEnabled = true;
 }
 
