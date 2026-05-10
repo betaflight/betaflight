@@ -34,6 +34,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
@@ -96,6 +97,7 @@ static const serialPortConfig_t *portConfig;
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
+static armingDisableFlags_e lastArmingDisableFlags = 0;
 
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
@@ -119,6 +121,68 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
 static uint16_t getHeadingCentidegrees(void)
 {
     return (uint16_t)(attitude.values.yaw * 10);
+}
+
+static void mavlinkSendStatusText(uint8_t severity, const char *text)
+{
+    mavlink_msg_statustext_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        severity, text, 0, 0);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkProcessArmingStatusText(void)
+{
+    const armingDisableFlags_e flags = getArmingDisableFlags();
+    if (flags == lastArmingDisableFlags) {
+        return;
+    }
+    lastArmingDisableFlags = flags;
+
+    if (flags == 0) {
+        return;
+    }
+
+    char text[50] = "Arming disabled:";
+    size_t pos = strlen(text);
+
+    for (int bit = 0; bit < 32 && pos < sizeof(text) - 1; bit++) {
+        const armingDisableFlags_e thisFlag = (armingDisableFlags_e)(1u << bit);
+        if (!(flags & thisFlag)) {
+            continue;
+        }
+        const char *name = getArmingDisableFlagName(thisFlag);
+        if (!name) {
+            continue;
+        }
+        if (pos < sizeof(text) - 1) {
+            text[pos++] = ' ';
+        }
+        const size_t nameLen = strlen(name);
+        const size_t avail = sizeof(text) - 1 - pos;
+        const size_t copyLen = (nameLen < avail) ? nameLen : avail;
+        memcpy(text + pos, name, copyLen);
+        pos += copyLen;
+    }
+    text[pos] = '\0';
+
+    mavlinkSendStatusText(MAV_SEVERITY_NOTICE, text);
+}
+
+static void mavlinkSendSystemTime(void)
+{
+    uint64_t timeUnixUsec = 0;
+#ifdef USE_RTC_TIME
+    rtcTime_t rtcMs;
+    if (rtcHasTime() && rtcGet(&rtcMs) && rtcMs > 0) {
+        timeUnixUsec = (uint64_t)rtcMs * 1000ULL;
+    }
+#endif
+
+    mavlink_msg_system_time_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        timeUnixUsec, millis());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
 void freeMAVLinkTelemetryPort(void)
@@ -223,6 +287,8 @@ static void mavlinkSendSystemStatus(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
+    mavlinkSendSystemTime();
+
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
@@ -265,6 +331,25 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(USE_GPS)
+static void mavlinkSendHomePosition(void)
+{
+    if (!STATE(GPS_FIX_HOME)) {
+        return;
+    }
+
+    static const float identityQuat[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    mavlink_msg_home_position_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        GPS_home_llh.lat,
+        GPS_home_llh.lon,
+        GPS_home_llh.altCm * 10,
+        0.0f, 0.0f, 0.0f,
+        identityQuat,
+        0.0f, 0.0f, 0.0f,
+        micros());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 static void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
@@ -356,6 +441,8 @@ static void mavlinkSendPosition(void)
         micros());
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    mavlinkSendHomePosition();
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
@@ -693,6 +780,7 @@ void handleMAVLinkTelemetry(void)
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
+        mavlinkProcessArmingStatusText();
         lastMavlinkMessageTime = now;
     }
 }
