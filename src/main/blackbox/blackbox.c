@@ -2380,6 +2380,15 @@ uint16_t blackboxGetPRatio(void)
 
 uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
 {
+    // Reachable from MSP_SET_BLACKBOX_CONFIG with attacker-controlled pRatio,
+    // and also from a configurator round-trip if blackboxGetPRatio() returned
+    // 0 (the I-frames-only mode entered by blackboxValidateConfig's saturated
+    // ring-rate guard at >16 kHz pidloop, or any other path that sets
+    // blackboxPInterval to 0). Without this guard the inner divide is UB —
+    // hard fault on Cortex-M.
+    if (pRatio == 0 || targetPidLooptime == 0) {
+        return 0;
+    }
     return llog2(32000 / (targetPidLooptime * pRatio));
 }
 
