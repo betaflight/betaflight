@@ -143,10 +143,10 @@ static void mavlinkProcessArmingStatusText(void)
         return;
     }
 
-    char text[50] = "Arming disabled:";
+    char text[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN] = "Arming disabled:";
     size_t pos = strlen(text);
 
-    for (int bit = 0; bit < 32 && pos < sizeof(text) - 1; bit++) {
+    for (unsigned bit = 0; bit < ARMING_DISABLE_FLAGS_COUNT && pos < sizeof(text) - 1; bit++) {
         const armingDisableFlags_e thisFlag = (armingDisableFlags_e)(1u << bit);
         if (!(flags & thisFlag)) {
             continue;
@@ -155,12 +155,14 @@ static void mavlinkProcessArmingStatusText(void)
         if (!name) {
             continue;
         }
-        if (pos < sizeof(text) - 1) {
-            text[pos++] = ' ';
+        // Need room for " " + at least one char of the name; otherwise stop appending.
+        if (sizeof(text) - 1 - pos < 2) {
+            break;
         }
+        text[pos++] = ' ';
         const size_t nameLen = strlen(name);
-        const size_t avail = sizeof(text) - 1 - pos;
-        const size_t copyLen = (nameLen < avail) ? nameLen : avail;
+        const size_t maxCopy = sizeof(text) - 1 - pos;
+        const size_t copyLen = (nameLen < maxCopy) ? nameLen : maxCopy;
         memcpy(text + pos, name, copyLen);
         pos += copyLen;
     }
@@ -216,6 +218,8 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
+    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
+    lastArmingDisableFlags = 0;
     mavlinkTelemetryEnabled = true;
 }
 
@@ -745,6 +749,7 @@ void checkMAVLinkTelemetryState(void)
     if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
+            lastArmingDisableFlags = 0;
             mavlinkTelemetryEnabled = true;
             configureMAVLinkStreamRates();
         }
