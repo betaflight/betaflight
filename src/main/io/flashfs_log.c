@@ -1218,23 +1218,21 @@ bool flashfsLogBeginLog(void)
     // eraseHead may already be ahead — only erase the remainder. Up to POOL_TARGET_SECTORS
     // sector erases × ~30-50 ms each = ~120-200 ms log-start latency in the cold case.
 
-    // First reconcile any background erase that may have been pending from a previous
-    // flight (eraseTick in the data path schedules them; if a log closed without a
-    // matching tick, the variable can be stale). This is also where the wait-for-ready
-    // for that pending erase happens.
+    // Reconcile any background erase pending from a previous flight: wait for the
+    // chip to finish, then clear pendingEraseAddr. We don't compute the resulting
+    // eraseHead here because the next block overwrites it unconditionally —
+    // inheriting eraseHead from a prior flight is unsafe (any "is it close enough
+    // to dataWriteHead?" heuristic risks misjudging a stale value and letting the
+    // writer program non-erased sectors).
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
         while (!flashIsReady());
-        eraseHead = pendingEraseAddr + geom.sectorSize;
-        if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
         pendingEraseAddr = PENDING_ERASE_NONE;
     }
 
-    // We can't reliably trust eraseHead inherited from a prior flight: any heuristic
-    // ("is it close enough to dataWriteHead?") risks misjudging a stale value and
-    // leaving the writer to program non-erased sectors. Always pin eraseHead to the
-    // writer position and let ensureErasedSpace fill the pool from scratch. The cost
-    // is ~POOL_TARGET_SECTORS extra erases per log start (a few tens of ms on top of
-    // the buffer-area erase that already runs here) — acceptable for safety.
+    // Always pin eraseHead to the writer position and let ensureErasedSpace fill
+    // the pool from scratch. Costs ~POOL_TARGET_SECTORS extra erases per log start
+    // (a few tens of ms on top of the buffer-area erase that already runs here)
+    // — acceptable for safety.
     eraseHead = dataWriteHead;
     ensureErasedSpace(dataWriteHead, POOL_TARGET_SECTORS * geom.sectorSize);
 
