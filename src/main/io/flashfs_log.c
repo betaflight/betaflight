@@ -275,7 +275,8 @@ static uint32_t bbDataDrops = 0;
 static struct {
     bool      isOpen;
     bool      headerPhase;
-    bool      lapped;              // dataWriteHead has wrapped past dataSectionEnd at least once this session
+    bool      everWrapped;         // dataWriteHead has crossed dataSectionEnd at least once this session
+    bool      lapped;              // dataWriteHead has overtaken dataStart (writer is overwriting this session's earliest bytes)
     bool      lappedPersisted;     // markBufferLapped() has flipped the preamble's lapped marker for this session
     uint32_t  logId;
     uint32_t  dataStart;
@@ -543,10 +544,9 @@ static bool bufferIsCommitted(const flashfsBufferPreamble_t *p)
 static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uint32_t headerLength)
 {
     // .reserved is initialised to 0xFFFF rather than 0 so it can be 1→0 flipped
-    // in place on first ring-wrap (markBufferLapped) — recovery uses it to know
-    // the writer has lapped past the original dataStart. NOR can only program
-    // 1 bits to 0; the all-ones initial value is what makes the in-place update
-    // possible.
+    // in place when the session laps (markBufferLapped) — recovery uses it to know
+    // the writer has overtaken the original dataStart. NOR can only program 1 bits
+    // to 0; the all-ones initial value is what makes the in-place update possible.
     flashfsBufferPreamble_t p = {
         .magic = BUFFER_PREAMBLE_MAGIC,
         .reserved = 0xFFFF,
@@ -586,12 +586,12 @@ static void markBufferCommitted(void)
 }
 
 // Flip the preamble's reserved field from 0xFFFF to 0x0000 in place. Called once
-// per session, from the non-realtime flush path, the first time the writer wraps
-// past dataSectionEnd. recoverFromBuffer reads the field — if it sees 0x0000, the
-// session lapped and the original preamble.dataStart no longer points at intact
-// data. The CRC in the preamble does NOT cover this field (it's over logId,
-// dataStart, headerLength, headerText), so flipping it doesn't invalidate the
-// commit signal.
+// per session, from the non-realtime flush path, the first time active.lapped
+// transitions to true (i.e. the writer has overtaken the session's own dataStart).
+// recoverFromBuffer reads the field — if it sees 0x0000, the session lapped and
+// the original preamble.dataStart no longer points at intact data. The CRC in
+// the preamble does NOT cover this field (it's over logId, dataStart,
+// headerLength, headerText), so flipping it doesn't invalidate the commit signal.
 //
 // writeBytesSync seeks flashfs's tail to bufferAreaStart for the write — but the
 // data writer is mid-session expecting the tail to stay in the data ring at
@@ -930,7 +930,7 @@ static void recoverFromBuffer(void)
     // dataStart to the post-header position (sector-aligned past addr + sizeof
     // trailer + headerLen). The "lapped" signal comes from the preamble's
     // reserved field (set 0xFFFF on log start, flipped to 0 by markBufferLapped
-    // in flashfsLogFlushAsync the first time the writer wraps).
+    // in flashfsLogFlushAsync the first time the writer overtakes its own dataStart).
     uint32_t recoveredDataStart;
     if (pre.reserved == 0) {
         uint32_t afterHeader = addr + sizeof(flashfsLogTrailer_t) + headerLen;
@@ -1209,16 +1209,20 @@ void flashfsLogWriteDataByte(uint8_t b)
     // no stall. The wrap fires at most every ~14 MB so the branch is essentially
     // free under prediction.
     //
-    // active.lapped is set the first time a session crosses dataSectionEnd. It does
-    // NOT cause the writer to drop bytes — multi-lap sessions are an explicit
+    // active.lapped means "the writer has overtaken its own session's dataStart" —
+    // i.e. the byte at dataStart has been overwritten by later session data, so the
+    // trailer's dataStart pointer needs to shift forward (see flashfsLogEndLog). It
+    // does NOT cause the writer to drop bytes — multi-lap sessions are an explicit
     // feature (long flights with the chip acting as a sliding window over the most
-    // recent ring-size-worth of data). Instead, flashfsLogEndLog reads the flag at
-    // close to compute the trailer's dataStart so the reader sees the currently-
-    // readable window rather than the stale original session-start pointer.
-    bool wrappedThisCall = false;
+    // recent ring-size-worth of data).
+    //
+    // For sessions that start mid-ring, the first wrap-past-dataSectionEnd is NOT
+    // the lap event: writeHead progresses from 0 toward dataStart and the original
+    // dataStart byte is still intact until writeHead crosses it. Track wrap separately
+    // (everWrapped) and set lapped once both conditions hold.
     if (active.dataWriteHead >= geom.dataSectionEnd) {
         active.dataWriteHead -= geom.dataSectionEnd;
-        wrappedThisCall = true;
+        active.everWrapped = true;
     }
 
     // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
@@ -1238,12 +1242,13 @@ void flashfsLogWriteDataByte(uint8_t b)
 
     flashfsWriteByte(b);
     active.dataWriteHead++;
-    // Only commit the lap event after a byte has actually been written post-wrap.
-    // Setting it before the drop checks would mark the session "lapped" even when
-    // every wrapped byte got dropped, leading flashfsLogEndLog to compute a
-    // post-trailer dataStart that points at stale flash content from previous
-    // flights instead of this session's intact pre-wrap data.
-    if (wrappedThisCall) {
+
+    // Lap is committed only AFTER a byte successfully programs at or past dataStart
+    // post-wrap (the prior byte is the one that just overwrote dataStart). Doing the
+    // check after the drop checks ensures dropped bytes don't falsely mark the
+    // session lapped, which would make flashfsLogEndLog compute a post-trailer
+    // dataStart pointing at stale flash content from earlier flights.
+    if (!active.lapped && active.everWrapped && active.dataWriteHead > active.dataStart) {
         active.lapped = true;
     }
 }
