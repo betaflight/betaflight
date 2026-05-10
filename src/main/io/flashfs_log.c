@@ -633,16 +633,24 @@ static void markBufferCommitted(void)
 // data writer is mid-session expecting the tail to stay in the data ring at
 // active.dataWriteHead. We seek back after the preamble update so subsequent
 // data bytes land where they should.
-static void markBufferLapped(void)
+// Returns true if the marker is now (or was already) on flash, so the caller
+// can record persistence as durable. Returns false on a hardware read failure
+// — in that case the caller leaves lappedPersisted=false so the next flush
+// retries the persist. (writeBytesSync has no failure indication; once we get
+// past the read we treat the write as having happened.)
+static bool markBufferLapped(void)
 {
     flashfsBufferPreamble_t p;
-    if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) return;
-    if (p.reserved == 0) return; // already lapped
+    if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) {
+        return false;
+    }
+    if (p.reserved == 0) return true; // already lapped
     p.reserved = 0;
     writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
     if (active.isOpen && !active.headerPhase) {
         flashfsSeekAbs(active.dataWriteHead);
     }
+    return true;
 }
 
 // =============================================================================
@@ -1335,8 +1343,12 @@ uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferF
 static void persistLappedMarkerIfNeeded(void)
 {
     if (active.isOpen && active.lapped && !active.lappedPersisted) {
-        markBufferLapped();
-        active.lappedPersisted = true;
+        if (markBufferLapped()) {
+            active.lappedPersisted = true;
+        }
+        // On false (read-back failed): leave lappedPersisted=false so the next
+        // flush retries. Avoids the case where a transient hardware hiccup at
+        // the moment of lap permanently loses the persist for this session.
     }
 }
 
