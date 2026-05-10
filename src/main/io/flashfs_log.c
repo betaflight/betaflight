@@ -804,17 +804,22 @@ static uint32_t computeWriteHeadFromTable(void)
 // =============================================================================
 
 // Copy `length` bytes from `srcAddr` to `dstAddr`, chunked. Both addresses are absolute
-// flash offsets within the partition.
-static void copyChunkedSync(uint32_t srcAddr, uint32_t dstAddr, uint32_t length)
+// flash offsets within the partition. Returns true on full success, false if any
+// readBytes call returned short — the caller's commit step is then skipped so a
+// hardware read failure mid-copy doesn't get committed as durable data.
+static bool copyChunkedSync(uint32_t srcAddr, uint32_t dstAddr, uint32_t length)
 {
     while (length > 0) {
         uint32_t chunk = MIN(length, (uint32_t)CHUNK_SIZE);
-        readBytes(srcAddr, chunkBuf, chunk);
+        if (readBytes(srcAddr, chunkBuf, chunk) != (int)chunk) {
+            return false;
+        }
         writeBytesSync(dstAddr, chunkBuf, chunk);
         srcAddr += chunk;
         dstAddr += chunk;
         length -= chunk;
     }
+    return true;
 }
 
 // Read and CRC-validate the buffer preamble using streaming reads so we don't need
@@ -998,9 +1003,13 @@ static void recoverFromBuffer(void)
     // completes, the next recovery sees the trailer and converges on the same
     // address — idempotent retry.
     writeTrailer(addr, pre.logId, recoveredDataStart, headerLen);
-    copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
-                    addr + sizeof(flashfsLogTrailer_t),
-                    headerLen);
+    if (!copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
+                         addr + sizeof(flashfsLogTrailer_t),
+                         headerLen)) {
+        // Source-read failed mid-copy (rare hardware issue). Don't commit the
+        // buffer — leaving it uncommitted lets the next boot's recovery retry.
+        return;
+    }
     markBufferCommitted();
     eraseBufferArea();
 }
@@ -1440,9 +1449,16 @@ void flashfsLogEndLog(void)
     // gap-scan past partial-copy debris) and simpler.
     writeTrailer(trailerAddr, active.logId, logDataStart, headerLen);
 
-    copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
-                    trailerAddr + sizeof(flashfsLogTrailer_t),
-                    headerLen);
+    if (!copyChunkedSync(geom.bufferAreaStart + sizeof(flashfsBufferPreamble_t),
+                         trailerAddr + sizeof(flashfsLogTrailer_t),
+                         headerLen)) {
+        // Source-read of the buffered header failed mid-copy. Skip commit so the
+        // buffer stays valid + uncommitted; next boot's recovery will redo the
+        // close at the trailer we just wrote. The active.* state still gets
+        // cleared at the end of the function so the writer can move on.
+        memset(&active, 0, sizeof(active));
+        return;
+    }
 
     // Mark committed in the buffer (so a power loss during the buffer erase below leaves
     // the recovery path with an unambiguous "already committed" signal), then erase.

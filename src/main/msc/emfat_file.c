@@ -267,7 +267,13 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
 static void bblog_ring_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {
     uint32_t logIndex = (uint32_t)(uintptr_t)entry->user_data;
-    flashfsLogRead(logIndex, offset, dest, size);
+    int got = flashfsLogRead(logIndex, offset, dest, size);
+    if (got < 0) got = 0;
+    if (got < size) {
+        // Short read (truncated log or hardware hiccup). Zero-fill the tail so
+        // MSC hands the host predictable bytes instead of stale buffer content.
+        memset(dest + got, 0, size - got);
+    }
 }
 
 // Ring-mode read callback for the combined "all logs" virtual file. Walks each log's
@@ -291,7 +297,13 @@ static void bblog_ring_read_all_proc(uint8_t *dest, int size, uint32_t offset, e
         if (offset < logEnd) {
             uint32_t inLog = offset - pos;
             uint32_t take = MIN((uint32_t)size, info->totalSize - inLog);
-            flashfsLogRead(i, inLog, dest, take);
+            int got = flashfsLogRead(i, inLog, dest, take);
+            if (got < 0) got = 0;
+            if ((uint32_t)got < take) {
+                // Zero-fill the short remainder so the spliced "all logs" stream
+                // doesn't surface stale dest bytes to the host on a read failure.
+                memset(dest + got, 0, take - got);
+            }
             dest += take;
             offset += take;
             size -= take;
