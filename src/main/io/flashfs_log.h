@@ -62,7 +62,9 @@
 // Maximum number of distinct logs we expose at MSC mount. Each in-RAM entry costs ~24 B.
 #define FLASHFS_LOG_MAX_LOGS 64
 
-// Detected on-flash format. Determined by flashfsLogDetectFormat() at boot.
+// Detected on-flash format. Returned by flashfsLogDetectFormatFromFlash() — fresh
+// probe of the flash chip (no caching at module scope; the boot-time consumer in
+// flashfsLogInit holds the result locally, external callers re-probe).
 typedef enum {
     FLASHFS_FLASH_FORMAT_EMPTY   = 0,  // Erased; either mode may be used.
     FLASHFS_FLASH_FORMAT_LINEAR  = 1,  // Contains legacy/linear-mode logs.
@@ -104,7 +106,6 @@ typedef struct {
 
 // ---- Init / format ----
 void flashfsLogInit(void);
-flashfsFlashFormat_e flashfsLogDetectFormat(void);
 void flashfsLogEraseAll(void);
 
 // ---- Read API (MSC) ----
@@ -133,7 +134,6 @@ bool flashfsLogIsFull(void);
 #else // !USE_BLACKBOX_RING_LOG: inline stubs so call sites compile away cleanly.
 
 static inline void flashfsLogInit(void) {}
-static inline flashfsFlashFormat_e flashfsLogDetectFormat(void) { return FLASHFS_FLASH_FORMAT_UNKNOWN; }
 static inline void flashfsLogEraseAll(void) {}
 static inline uint32_t flashfsLogGetLogCount(void) { return 0; }
 static inline const flashfsLogInfo_t* flashfsLogGetInfo(uint32_t i) { (void)i; return 0; }

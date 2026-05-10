@@ -46,9 +46,10 @@
  *
  * Mode safety
  * -----------
- * Switching between linear and ring modes requires an erase. flashfsLogDetectFormat()
- * exposes the detected format; the writer / MSC paths refuse to operate when there's
- * a mismatch between the configured mode and the on-flash content.
+ * Switching between linear and ring modes requires an erase.
+ * flashfsLogDetectFormatFromFlash() reports what's on the chip; the writer / MSC
+ * paths refuse to operate when there's a mismatch between the configured mode and
+ * the on-flash content.
  */
 
 #include <stdbool.h>
@@ -242,7 +243,9 @@ static struct {
 // Module state.
 static bool moduleInitialized = false;
 static bool moduleSafeForLogging = false;
-static flashfsFlashFormat_e detectedFormat = FLASHFS_FLASH_FORMAT_UNKNOWN;
+// (Format is no longer cached at module scope: the only consumer is the boot-time
+// switch in flashfsLogInit; external callers fetch it fresh via
+// flashfsLogDetectFormatFromFlash, which is cheap to re-run.)
 
 // In-RAM log table (built by scanning at init/erase, refreshed when a log is closed).
 static flashfsLogInfo_t logTable[FLASHFS_LOG_MAX_LOGS];
@@ -756,25 +759,6 @@ static uint32_t computeWriteHeadFromTable(void)
 }
 
 // =============================================================================
-// Format detection
-// =============================================================================
-
-flashfsFlashFormat_e flashfsLogDetectFormat(void)
-{
-    return detectedFormat;
-}
-
-static flashfsFlashFormat_e probeFormat(void)
-{
-    // Reuse the always-compiled detector. It's the only path that includes the
-    // durable trailer-magic scan, which is what catches a cleanly closed wrapped
-    // ring whose offset 0 and header buffer happen to both be erased — without
-    // that, init would see EMPTY here and reset dataWriteHead to 0, overwriting
-    // existing logs on the next session.
-    return flashfsLogDetectFormatFromFlash();
-}
-
-// =============================================================================
 // Chunked helpers (avoid large stack/static buffers)
 // =============================================================================
 
@@ -984,7 +968,6 @@ void flashfsLogInit(void)
 {
     moduleInitialized = false;
     moduleSafeForLogging = false;
-    detectedFormat = FLASHFS_FLASH_FORMAT_UNKNOWN;
     logTableCount = 0;
     nextLogId = 1;
     dataWriteHead = 0;
@@ -1004,9 +987,8 @@ void flashfsLogInit(void)
     // addresses bounded by the trailer wrap-to-0 logic, so they never need the ring
     // wrap to be active.
 
-    detectedFormat = probeFormat();
-
-    switch (detectedFormat) {
+    const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+    switch (fmt) {
     case FLASHFS_FLASH_FORMAT_RING:
         recoverFromBuffer();    // safe no-op if buffer is empty
         buildLogTableByScan();
@@ -1046,7 +1028,6 @@ bool flashfsLogIsFull(void)
 void flashfsLogEraseAll(void)
 {
     flashfsEraseCompletely();
-    detectedFormat = FLASHFS_FLASH_FORMAT_EMPTY;
     logTableCount = 0;
     nextLogId = 1;
     dataWriteHead = 0;

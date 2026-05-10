@@ -80,6 +80,21 @@ static inline bool blackboxFlashUsesRingMode(void)
     return false;
 #endif
 }
+
+// Linear-mode safety net: refuse to write when the chip carries ring data (or any
+// other unrecognised content). Required for two scenarios on the same hardware:
+//   - Mode switch from ring → linear within the same firmware (existing ring logs
+//     would be silently overwritten otherwise).
+//   - Sidegrade from a ring-capable build to one with USE_BLACKBOX_RING_LOG turned
+//     off (e.g. an opt-out build for the same MCU family).
+// In both cases the user must erase before linear writes are allowed. The detector
+// is the always-compiled flashfsLogDetectFormatFromFlash() so this gate works even
+// in the second scenario where the ring writer's symbols are absent from the build.
+static inline bool flashChipFormatAllowsLinearWrites(void)
+{
+    const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+    return fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR;
+}
 #endif
 
 // How many bytes can we transmit per loop iteration when writing headers?
@@ -424,23 +439,8 @@ bool blackboxDeviceOpen(void)
                 return false;
             }
         } else {
-            // Linear mode: same checks as before.
-            if (isBlackboxDeviceFull()) {
-                return false;
-            }
-            // Refuse to write linear data over an existing ring-format chip. Use
-            // the always-compiled detector — flashfsLogDetectFormat() is only
-            // populated when USE_BLACKBOX_RING_LOG is built in (it's a stub that
-            // returns UNKNOWN otherwise), so a downgrade to a linear-only build
-            // would otherwise let writes proceed straight onto ring data. The
-            // FromFlash variant compiles in any build and looks for the
-            // BUFFER_PREAMBLE_MAGIC at the buffer-area location.
-            // Refuse linear writes unless the chip is genuinely empty or already
-            // linear-formatted. UNKNOWN (chip has data without a ring signature —
-            // could be garbage from another use, partial data, etc.) is also
-            // treated as "don't overwrite" until the user explicitly erases.
-            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
-            if (fmt != FLASHFS_FLASH_FORMAT_EMPTY && fmt != FLASHFS_FLASH_FORMAT_LINEAR) {
+            // Linear mode: same checks as before, plus the ring-format safety net.
+            if (isBlackboxDeviceFull() || !flashChipFormatAllowsLinearWrites()) {
                 return false;
             }
         }
@@ -512,11 +512,7 @@ bool isBlackboxErased(void)
         if (blackboxFlashUsesRingMode()) {
             return flashfsLogIsReady();
         }
-        {
-            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
-            return flashfsIsReady()
-                && (fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR);
-        }
+        return flashfsIsReady() && flashChipFormatAllowsLinearWrites();
         break;
     default:
     //not supported
@@ -811,11 +807,7 @@ bool isBlackboxDeviceWorking(void)
         if (blackboxFlashUsesRingMode()) {
             return flashfsLogIsReady();
         }
-        {
-            const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
-            return flashfsIsReady()
-                && (fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR);
-        }
+        return flashfsIsReady() && flashChipFormatAllowsLinearWrites();
 #endif
 
 #ifdef USE_BLACKBOX_VIRTUAL
