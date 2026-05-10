@@ -77,7 +77,7 @@ static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
 // wrapping the indices in flashfsAdvanceTailInBuffer / flashfsWriteByte.
 static uint16_t bufferHead = 0;
 static volatile uint16_t bufferTail = 0;
-STATIC_ASSERT(FLASHFS_WRITE_BUFFER_SIZE <= 0x10000u, flashfs_write_buffer_too_large_for_uint16_index);
+STATIC_ASSERT(FLASHFS_WRITE_BUFFER_SIZE < 0x10000u, flashfs_write_buffer_too_large_for_uint16_index);
 
 /* Track if there is new data to write. Until the contents of the buffer have been completely
  * written flashfsFlushAsync() will be repeatedly called. The tail pointer is only updated

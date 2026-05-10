@@ -653,7 +653,12 @@ static bool markBufferLapped(void)
     if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) {
         return false;
     }
-    if (p.reserved == 0) return true; // already lapped
+    // "Any non-0xFFFF" matches the recovery-side detection: if a previous
+    // markBufferLapped was interrupted mid-write, reserved may be partially
+    // cleared. Don't try to write again on top of those non-0xFF bits — NOR
+    // can only program 1→0, and the partial state is already enough to
+    // signal "lapped" to recovery.
+    if (p.reserved != 0xFFFF) return true; // already lapped (or partially)
     p.reserved = 0;
     writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
     if (active.isOpen && !active.headerPhase) {
@@ -1008,10 +1013,18 @@ static void recoverFromBuffer(void)
     // the trailer + header sectors we're about to write, so set the trailer's
     // dataStart to the post-header position (sector-aligned past addr + sizeof
     // trailer + headerLen). The "lapped" signal comes from the preamble's
-    // reserved field (set 0xFFFF on log start, flipped to 0 by markBufferLapped
-    // in flashfsLogFlushAsync the first time the writer overtakes its own dataStart).
+    // reserved field (initialised to 0xFFFF on log start, written to 0 by
+    // markBufferLapped in flashfsLogFlushAsync the first time the writer
+    // overtakes its own dataStart).
+    //
+    // Treat ANY non-0xFFFF value as "lap attempted" rather than a strict == 0
+    // check: NOR page program is not atomic on power loss, so an interrupted
+    // markBufferLapped could leave reserved with bits partially cleared (e.g.
+    // 0x00FF or 0xFF00). The strict equality check would then misclassify the
+    // partial-clear state as "not lapped" and recovery would expose stale
+    // pre-lap dataStart bytes that the writer has since overwritten.
     uint32_t recoveredDataStart;
-    if (pre.reserved == 0) {
+    if (pre.reserved != 0xFFFF) {
         uint32_t afterHeader = addr + sizeof(flashfsLogTrailer_t) + headerLen;
         recoveredDataStart = alignUpToSector(afterHeader);
         if (recoveredDataStart >= geom.dataSectionEnd) recoveredDataStart = 0;
