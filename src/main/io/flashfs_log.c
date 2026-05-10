@@ -150,10 +150,30 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
         }
     }
 
-    // No ring signature found anywhere. EMPTY only if the chip looks fully erased
-    // (sector 0 was 0xFF — we already checked above); otherwise UNKNOWN, which
-    // signals callers to refuse destructive writes until the user erases.
-    return offset0Erased ? FLASHFS_FLASH_FORMAT_EMPTY : FLASHFS_FLASH_FORMAT_UNKNOWN;
+    // No ring signature found anywhere. EMPTY requires the WHOLE first sector
+    // to be erased — the 16-byte probe at the top isn't enough on its own. A
+    // chip with non-erased data later in sector 0 (e.g. a half-completed erase
+    // that started from byte 0, or junk written by another use that didn't
+    // touch the first 16 bytes) would otherwise be misclassified as EMPTY and
+    // the linear writer would happily overwrite it. If anything later in
+    // sector 0 isn't 0xFF, fall through to UNKNOWN.
+    if (offset0Erased) {
+        uint8_t scan[64];
+        for (uint32_t addr = sizeof(probe); addr < fg->sectorSize; addr += sizeof(scan)) {
+            const uint32_t remaining = fg->sectorSize - addr;
+            const uint32_t chunk = remaining < sizeof(scan) ? remaining : sizeof(scan);
+            if (flashfsReadAbs(addr, scan, chunk) != (int)chunk) {
+                return FLASHFS_FLASH_FORMAT_UNKNOWN;
+            }
+            for (uint32_t i = 0; i < chunk; i++) {
+                if (scan[i] != 0xFF) {
+                    return FLASHFS_FLASH_FORMAT_UNKNOWN;
+                }
+            }
+        }
+        return FLASHFS_FLASH_FORMAT_EMPTY;
+    }
+    return FLASHFS_FLASH_FORMAT_UNKNOWN;
 }
 
 #ifdef USE_BLACKBOX_RING_LOG

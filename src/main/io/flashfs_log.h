@@ -72,16 +72,27 @@ typedef enum {
     FLASHFS_FLASH_FORMAT_UNKNOWN = 3,  // Garbage / partially erased.
 } flashfsFlashFormat_e;
 
-// Always-available probe: returns FLASHFS_FLASH_FORMAT_RING if the partition
-// currently holds ring-format data, FLASHFS_FLASH_FORMAT_UNKNOWN otherwise. Used
-// by linear-only builds (without USE_BLACKBOX_RING_LOG) to refuse writing on top
-// of a ring-formatted chip — protects the data of a user who just downgraded
-// from a ring-capable build.
+// Always-available probe: classifies the partition's on-flash content into one
+// of the four flashfsFlashFormat_e values:
+//   - EMPTY:   sector 0 is fully erased AND no ring signature found anywhere.
+//              Either mode may be used safely.
+//   - LINEAR:  offset 0 starts with the legacy linear-mode header marker
+//              ("H Product"). Ring writer must refuse until user erases.
+//   - RING:    the active-log preamble magic is in the buffer area, OR a
+//              sector-aligned trailer magic was found anywhere in the data
+//              section. Linear writer must refuse until user erases.
+//   - UNKNOWN: chip has data without a recognised signature (garbage from
+//              another use, partial linear data not starting at byte 0, etc.).
+//              Both writers refuse — caller must erase before writing.
+//
+// Used on the writer side as a safety net so a mode switch (or a sidegrade
+// between ring-capable and ring-disabled builds for the same MCU) refuses to
+// overwrite incompatible existing data rather than silently corrupting it.
 //
 // Compiles to a real implementation only on builds with USE_FLASHFS (the probe
 // depends on flashfs / flash-driver helpers that aren't defined otherwise). On
-// targets without onboard flash at all (SITL, F4 cloud builds without flash,
-// etc.) the inline stub returns UNKNOWN.
+// targets without onboard flash at all (SITL, etc.) the inline stub returns
+// UNKNOWN.
 #if defined(USE_FLASHFS)
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void);
 #else
