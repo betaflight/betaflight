@@ -481,7 +481,6 @@ void emfat_init_files(void)
 #ifdef USE_FLASHFS
     flashInit(flashConfig());
     flashfsInit();
-    flashfsLogInit();
     LED0_OFF;
 
     // MSC is a read path: branch on what's actually on flash, not on the configured
@@ -500,6 +499,10 @@ void emfat_init_files(void)
     // corruption.
 #ifdef USE_BLACKBOX_RING_LOG
     if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
+        // Initialize the ring-log subsystem (scans the data ring for trailers, builds
+        // the in-RAM log table) only when we know the chip is ring-formatted. Linear
+        // mounts skip the cost (a sector-scan over the whole partition).
+        flashfsLogInit();
         // Ring-mode path: each log is a virtual file synthesized from the metadata table.
         const uint32_t ringLogCount = flashfsLogGetLogCount();
         uint32_t totalSize = 0;
