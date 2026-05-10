@@ -257,9 +257,13 @@ static void bblog_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entr
     flashfsReadAbs(offset, dest, size);
 }
 
-#ifdef USE_FLASHFS
+#if defined(USE_FLASHFS) && defined(USE_BLACKBOX_RING_LOG)
 // Ring-mode read callback. Each log appears as one virtual file whose contents are
 // header || data. user_data carries the log index passed to flashfsLogRead().
+//
+// Gated on USE_BLACKBOX_RING_LOG (not just USE_FLASHFS) because the only call sites
+// — emfat_set_entry below — are themselves gated on USE_BLACKBOX_RING_LOG. Compiling
+// these on linear-only builds would trip -Werror=unused-function.
 static void bblog_ring_read_proc(uint8_t *dest, int size, uint32_t offset, emfat_entry_t *entry)
 {
     uint32_t logIndex = (uint32_t)(uintptr_t)entry->user_data;
