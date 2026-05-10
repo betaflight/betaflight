@@ -298,6 +298,14 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_msp_override_unittest_SRC := \
+		$(USER_DIR)/rx/msp.c
+
+rx_msp_override_unittest_DEFINES := \
+		USE_RX_MSP= \
+		USE_RX_MSP_OVERRIDE=
+
+
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
