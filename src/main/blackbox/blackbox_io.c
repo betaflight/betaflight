@@ -544,11 +544,11 @@ void blackboxDeviceClose(void)
         break;
 #ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
-        if (blackboxFlashUsesRingMode()) {
-            // For ring mode, the active log (if any) is closed via blackboxDeviceEndLog().
-            // No flashfsClose() needed — the log boundary is recorded explicitly in metadata.
-        } else {
-            // Some flash device, e.g., NAND devices, require explicit close to flush internally buffered data.
+        // Some flash devices (e.g. NAND) require explicit close to flush internally
+        // buffered data. Ring mode skips this: the active log (if any) is already closed
+        // via blackboxDeviceEndLog(), and the log boundary is recorded explicitly in
+        // metadata — no additional flashfsClose() needed.
+        if (!blackboxFlashUsesRingMode()) {
             flashfsClose();
         }
         break;
