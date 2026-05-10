@@ -421,6 +421,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     pidRuntime.chirpFrequencyStartHz = pidProfile->chirp_frequency_start_deci_hz / 10.0f;
     pidRuntime.chirpFrequencyEndHz = pidProfile->chirp_frequency_end_deci_hz / 10.0f;
     pidRuntime.chirpTimeSeconds = pidProfile->chirp_time_seconds;
+    pidRuntime.chirpRepeat = pidProfile->chirp_repeat;
 #endif
 
     pidRuntime.maxVelocity[FD_ROLL] = pidRuntime.maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * pidRuntime.dT;

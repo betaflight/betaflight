@@ -249,6 +249,7 @@
 #define PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ "chirp_frequency_start_deci_hz"
 #define PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ "chirp_frequency_end_deci_hz"
 #define PARAM_NAME_CHIRP_TIME_SECONDS "chirp_time_seconds"
+#define PARAM_NAME_CHIRP_REPEAT "chirp_repeat"
 
 #ifdef USE_GPS
 #define PARAM_NAME_GPS_PROVIDER "gps_provider"

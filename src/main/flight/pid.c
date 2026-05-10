@@ -124,7 +124,11 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
+#ifdef USE_CHIRP
+#define CHIRP_SETTLE_TIME_US 100000 // 100 ms
+#endif // USE_CHIRP
+
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -266,6 +270,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .chirp_repeat = 1,
     );
 }
 
@@ -1193,15 +1198,38 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     static flight_dynamics_index_t chirpAxis = FD_ROLL;
     static bool shouldChirpAxisToggle = false;
+    static bool chirpModePrev = false;
+    static uint8_t chirpRepeatsRemaining = 0;
+    static timeUs_t chirpSettleUntilUs = 0;
 
     float chirp = 0.0f;
     float sinarg = 0.0f;
-    if (FLIGHT_MODE(CHIRP_MODE)) {
+
+    const bool chirpModeNow = FLIGHT_MODE(CHIRP_MODE);
+    const bool chirpStarting = chirpModeNow && !chirpModePrev;
+    chirpModePrev = chirpModeNow;
+
+    if (chirpStarting) {
+        chirpRepeatsRemaining = (pidRuntime.chirpRepeat > 0) ? (pidRuntime.chirpRepeat - 1) : 0;
+        chirpSettleUntilUs = 0;
+    }
+    if (chirpModeNow) {
         shouldChirpAxisToggle = true;  // advance chirp axis on next !CHIRP_MODE
-        // update chirp signal
-        if (chirpUpdate(&pidRuntime.chirp)) {
-            chirp = pidRuntime.chirp.exc;
-            sinarg = pidRuntime.chirp.sinarg;
+        // let drone settle between chirp repeats
+        if (chirpSettleUntilUs != 0) {
+            if (cmpTimeUs(currentTimeUs, chirpSettleUntilUs) >= 0) {
+                chirpSettleUntilUs = 0;
+                chirpReset(&pidRuntime.chirp);
+            }
+        } else {
+            // update chirp signal
+            if (chirpUpdate(&pidRuntime.chirp)) {
+                chirp = pidRuntime.chirp.exc;
+                sinarg = pidRuntime.chirp.sinarg;
+            } else if (pidRuntime.chirp.isFinished && chirpRepeatsRemaining > 0) {
+                chirpRepeatsRemaining--;
+                chirpSettleUntilUs = currentTimeUs + CHIRP_SETTLE_TIME_US;
+            }
         }
     } else {
         if (shouldChirpAxisToggle) {
@@ -1210,6 +1238,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             chirpAxis = (++chirpAxis > FD_YAW) ? 0 : chirpAxis;
             // reset chirp signal generator
             chirpReset(&pidRuntime.chirp);
+            chirpSettleUntilUs = 0;
+            chirpRepeatsRemaining = 0;
         }
     }
 

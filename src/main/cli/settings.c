@@ -1303,6 +1303,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_CHIRP_FREQUENCY_START_DECI_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_start_deci_hz) },
     { PARAM_NAME_CHIRP_FREQUENCY_END_DECI_HZ,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_frequency_end_deci_hz) },
     { PARAM_NAME_CHIRP_TIME_SECONDS,            VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_time_seconds) },
+    { PARAM_NAME_CHIRP_REPEAT,                  VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 10 }, PG_PID_PROFILE, offsetof(pidProfile_t, chirp_repeat) },
 #endif
 
 #if defined(USE_ABSOLUTE_CONTROL)
