@@ -1292,19 +1292,33 @@ void flashfsLogWriteData(const uint8_t *data, uint32_t length)
 
 uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferFreeSpace(); }
 
-// Called from the blackbox task (non-realtime) — never the PID-loop hot path.
-// We piggy-back the lapped-flag persistence here so the eventual recovery path
-// can detect a multi-lap session. Doing the in-place preamble write from this
-// non-realtime context keeps the hot path free of any flash bookkeeping I/O.
-bool flashfsLogFlushAsync(bool force)
+// Persist the lap marker into the buffer preamble if the writer has lapped this
+// session and the marker hasn't already been written. Called from BOTH async and
+// sync flush entry points so a power-cut during the close-time sync drain can
+// still find the lapped state in recovery — without this, a session that lapped
+// after its last async flush and crashed during close would replay recovery with
+// a stale pre-lap dataStart and resurrect overwritten bytes at the front of the
+// log. Both call sites are non-realtime (blackbox task / disarm path) so the
+// flash bookkeeping I/O does not touch the PID loop hot path.
+static void persistLappedMarkerIfNeeded(void)
 {
     if (active.isOpen && active.lapped && !active.lappedPersisted) {
         markBufferLapped();
         active.lappedPersisted = true;
     }
+}
+
+bool flashfsLogFlushAsync(bool force)
+{
+    persistLappedMarkerIfNeeded();
     return flashfsFlushAsync(force);
 }
-void flashfsLogFlushSync(void)                   { flashfsFlushSync(); }
+
+void flashfsLogFlushSync(void)
+{
+    persistLappedMarkerIfNeeded();
+    flashfsFlushSync();
+}
 
 void flashfsLogEndLog(void)
 {
@@ -1316,7 +1330,12 @@ void flashfsLogEndLog(void)
     // flush the buffer is empty, so the close-path's mixed-address writes (trailer +
     // header copy + buffer-area erase) can safely run linear: those writes are
     // explicitly bounded by the wrap-to-0 logic below so they never span dataSectionEnd.
-    flashfsFlushSync();
+    //
+    // Use flashfsLogFlushSync (the wrapping variant) rather than flashfsFlushSync
+    // directly, so the lapped marker is persisted to the preamble before the drain.
+    // Without this, a power cut during this sync flush would replay recovery with
+    // a stale pre-lap dataStart on a session that lapped after its last async flush.
+    flashfsLogFlushSync();
     flashfsClearRing();
 
     // Sector-align the trailer position so MSC enumeration finds it without scanning
@@ -1458,8 +1477,11 @@ void flashfsLogAbortLog(void)
 
     // Match flashfsLogEndLog: drain pending bytes (which may need to wrap) BEFORE
     // disabling ring wrap — clearing the ring first would push wrap-needing bytes down
-    // the linear-overflow drop path.
-    flashfsFlushSync();
+    // the linear-overflow drop path. Use the wrapping flashfsLogFlushSync so the lapped
+    // marker is persisted before the drain — covers the narrow power-loss window before
+    // markBufferCommitted runs, where a gap-scan recovery would otherwise synthesize a
+    // phantom log with stale (pre-lap) dataStart.
+    flashfsLogFlushSync();
     flashfsClearRing();
 
     // If the writer made it past the header phase, an uncommitted preamble exists at
