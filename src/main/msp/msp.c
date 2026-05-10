@@ -3634,6 +3634,16 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
+            // Reject undersized payloads before the first sbufReadU8: device,
+            // rateNum, rateDenom are the minimum-required tuple. sbufReadU8 on
+            // an exhausted buffer returns 0 silently, which would let a too-short
+            // request mutate live config to (device=0, rateNum=0, rateDenom=0).
+            // Trailing fields (pRatio, sample_rate, fields_disabled_mask,
+            // flash_mode) are checked individually via sbufBytesRemaining below.
+            if (sbufBytesRemaining(src) < 3) {
+                return MSP_RESULT_ERROR;
+            }
+
             // Parse the entire request into locals first, validate, THEN apply.
             // The handler had been mutating live config (device, sample_rate,
             // fields_disabled_mask) before reaching the trailing flash_mode field
