@@ -128,6 +128,7 @@ float biquadFilterApply(biquadFilter_t *filter, float input);
 void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
 void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
 float phaseCompApply(phaseComp_t *filter, const float input);
+void phaseCompReset(phaseComp_t *filter);
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);

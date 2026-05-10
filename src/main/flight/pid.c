@@ -1204,12 +1204,15 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     float chirp = 0.0f;
     float sinarg = 0.0f;
+    float fchirp = 0.0f;
 
     const bool chirpModeNow = FLIGHT_MODE(CHIRP_MODE);
     const bool chirpStarting = chirpModeNow && !chirpModePrev;
+
     chirpModePrev = chirpModeNow;
 
     if (chirpStarting) {
+        phaseCompReset(&pidRuntime.chirpFilter);
         chirpRepeatsRemaining = (pidRuntime.chirpRepeat > 0) ? (pidRuntime.chirpRepeat - 1) : 0;
         chirpSettleUntilUs = 0;
     }
@@ -1224,8 +1227,24 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         } else {
             // update chirp signal
             if (chirpUpdate(&pidRuntime.chirp)) {
-                chirp = pidRuntime.chirp.exc;
+                const bool chirpAxisInAngleMode = (chirpAxis < FD_YAW) &&
+                                                  (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && chirpAxis == FD_ROLL));
+
+                fchirp = pidRuntime.chirp.fchirp;
                 sinarg = pidRuntime.chirp.sinarg;
+
+                /*
+                * excite axes based on flightmodes, changing flightmodes mid chirp
+                * will lead to a 90° phase shift in the excitation signal
+                */
+                if (chirpAxisInAngleMode) {
+                    chirp = sin_approx(sinarg);
+                } else {
+                    // use cosine so that the angle will oscillate around 0 (integral of gyro)
+                    chirp = cos_approx(sinarg);
+                    // frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
+                    if (fchirp < 1.0f) chirp *= fchirp;
+                }
             } else if (pidRuntime.chirp.isFinished && chirpRepeatsRemaining > 0) {
                 chirpRepeatsRemaining--;
                 chirpSettleUntilUs = currentTimeUs + CHIRP_SETTLE_TIME_US;
@@ -1240,6 +1259,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             chirpReset(&pidRuntime.chirp);
             chirpSettleUntilUs = 0;
             chirpRepeatsRemaining = 0;
+            phaseCompReset(&pidRuntime.chirpFilter);
         }
     }
 
@@ -1253,7 +1273,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // 3: raw chirp excitation × 1000 (before phase comp filter) — reference signal for cross-correlation
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
     DEBUG_SET(DEBUG_CHIRP, 1, FLIGHT_MODE(CHIRP_MODE) ? chirpAxis : -1);
-    DEBUG_SET(DEBUG_CHIRP, 2, lrintf(10.0f * pidRuntime.chirp.fchirp));
+    DEBUG_SET(DEBUG_CHIRP, 2, lrintf(10.0f * fchirp));
     DEBUG_SET(DEBUG_CHIRP, 3, lrintf(1.0e3f * chirp));
 
 #endif // USE_CHIRP
