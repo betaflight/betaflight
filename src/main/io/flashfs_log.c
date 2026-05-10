@@ -594,13 +594,19 @@ static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uin
     crc = crc16_ccitt_update(crc, &p.logId, sizeof(p.logId));
     crc = crc16_ccitt_update(crc, &p.dataStart, sizeof(p.dataStart));
     crc = crc16_ccitt_update(crc, &headerLength, sizeof(headerLength));
-    // Stream the header bytes back from the buffer area to extend the CRC.
+    // Stream the header bytes back from the buffer area to extend the CRC. Each
+    // readBytes call is checked: a short read on this path would mix stale
+    // chunkBuf bytes into the CRC, producing a preamble whose stored CRC doesn't
+    // match the on-flash header. Recovery would then reject the preamble — safe
+    // failure mode, but explicit early-return makes the abort intent obvious.
     {
         uint32_t addr = geom.bufferAreaStart + sizeof(p);
         uint32_t remaining = headerLength;
         while (remaining > 0) {
             uint32_t chunk = MIN(remaining, (uint32_t)CHUNK_SIZE);
-            readBytes(addr, chunkBuf, chunk);
+            if (readBytes(addr, chunkBuf, chunk) != (int)chunk) {
+                return; // abort — no preamble written, the in-flight log is unrecoverable
+            }
             crc = crc16_ccitt_update(crc, chunkBuf, chunk);
             addr += chunk;
             remaining -= chunk;
@@ -842,7 +848,13 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
     uint32_t remaining = hdrLen;
     while (remaining > 0) {
         uint32_t chunk = MIN(remaining, (uint32_t)CHUNK_SIZE);
-        readBytes(addr, chunkBuf, chunk);
+        if (readBytes(addr, chunkBuf, chunk) != (int)chunk) {
+            // Reject the preamble rather than mixing stale chunkBuf into the
+            // CRC. A short read here means we can't trust the on-flash header
+            // bytes either, so recovery treats this preamble as invalid and
+            // falls through to the no-recovery path.
+            return false;
+        }
         crc = crc16_ccitt_update(crc, chunkBuf, chunk);
         addr += chunk;
         remaining -= chunk;
