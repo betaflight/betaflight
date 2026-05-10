@@ -1871,7 +1871,11 @@ case MSP_NAME:
             }
 #endif
             sbufWriteU8(dst, reportedFlashMode);
-            sbufWriteU8(dst, (uint8_t)flashfsLogDetectFormatFromFlash());
+            // Cached: configurator can poll MSP_BLACKBOX_CONFIG at ~10-50 Hz, and
+            // the fresh probe is O(partition/sectorSize) — hundreds of KB/s of
+            // SPI traffic if recomputed each poll. flashfsLogInvalidateCachedFormat()
+            // is called from EraseAll and EndLog so the cache stays correct.
+            sbufWriteU8(dst, (uint8_t)flashfsLogGetCachedFormat());
         }
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported

@@ -98,6 +98,30 @@ static const char LINEAR_FORMAT_PROBE_TEXT[] = "H Product";
 // outside of explicit user erase or being overwritten by a newer ring lap. The
 // scan is O(partition / sectorSize) reads of 4 bytes each — ~3500 reads on a
 // 14 MB chip, runs once at boot, no hot-path cost.
+
+// Cache for hot pollers (MSP_BLACKBOX_CONFIG, OSD storage gauge, etc). The probe
+// is O(partition / sectorSize) so calling it on every MSP request would saturate
+// the SPI bus when the configurator is connected (~10-50 Hz polling × ~14 KB of
+// SPI reads each = up to 700 KB/s of pure metadata traffic). On-flash format
+// only changes at well-defined points: boot detection, log close, full erase.
+// Cache the result and invalidate from those points.
+static flashfsFlashFormat_e cachedFlashFormat = FLASHFS_FLASH_FORMAT_UNKNOWN;
+static bool cachedFlashFormatValid = false;
+
+void flashfsLogInvalidateCachedFormat(void)
+{
+    cachedFlashFormatValid = false;
+}
+
+flashfsFlashFormat_e flashfsLogGetCachedFormat(void)
+{
+    if (!cachedFlashFormatValid) {
+        cachedFlashFormat = flashfsLogDetectFormatFromFlash();
+        cachedFlashFormatValid = true;
+    }
+    return cachedFlashFormat;
+}
+
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 {
     uint8_t probe[16];
@@ -1044,6 +1068,11 @@ static void recoverFromBuffer(void)
         // flashfsLogInit) doesn't surface a phantom log entry pointing at
         // non-existent header bytes. Buffer stays uncommitted so the next boot
         // can fall back to gap-scan.
+        //
+        // Linear erase loop is safe (no wrap needed): bytesNeeded never spans
+        // past geom.dataSectionEnd because wrappedToFit was set above when
+        // addr + bytesNeeded would have spilled, and addr was reset to 0 in
+        // that case — so [addr, addr+bytesNeeded) stays inside the data section.
         uint32_t eraseAddr = addr;
         const uint32_t eraseEnd = addr + bytesNeeded;
         while (eraseAddr < eraseEnd) {
@@ -1131,6 +1160,7 @@ void flashfsLogEraseAll(void)
     pendingEraseAddr = PENDING_ERASE_NONE;  // any prior async erase is irrelevant now
     memset(&active, 0, sizeof(active));
     moduleSafeForLogging = true;
+    flashfsLogInvalidateCachedFormat();     // chip is now empty; next probe will return EMPTY
 }
 
 // =============================================================================
@@ -1538,6 +1568,10 @@ void flashfsLogEndLog(void)
     // the recovery path with an unambiguous "already committed" signal), then erase.
     markBufferCommitted();
     eraseBufferArea();
+
+    // Just wrote a fresh trailer. Cached format may go from EMPTY → RING — invalidate
+    // so the next MSP poll re-probes (cheap; this is a non-realtime path).
+    flashfsLogInvalidateCachedFormat();
 
     // Add the just-closed log to the in-RAM table so MSC sees it without a rescan.
     //

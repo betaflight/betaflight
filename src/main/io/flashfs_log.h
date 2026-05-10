@@ -95,10 +95,21 @@ typedef enum {
 // UNKNOWN.
 #if defined(USE_FLASHFS)
 flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void);
+// Cached variant for hot pollers (MSP_BLACKBOX_CONFIG, OSD storage gauge).
+// Lazy-evaluated on first call; result re-used until invalidated by a format-
+// changing operation (full erase, log close). The fresh probe is O(partition /
+// sectorSize) so calling it from MSP at configurator polling rates would burn
+// hundreds of KB/s of SPI bandwidth.
+flashfsFlashFormat_e flashfsLogGetCachedFormat(void);
+void flashfsLogInvalidateCachedFormat(void);
 #else
 static inline flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void) {
     return FLASHFS_FLASH_FORMAT_UNKNOWN;
 }
+static inline flashfsFlashFormat_e flashfsLogGetCachedFormat(void) {
+    return FLASHFS_FLASH_FORMAT_UNKNOWN;
+}
+static inline void flashfsLogInvalidateCachedFormat(void) {}
 #endif
 
 // Per-log info, populated by scanning the data ring at boot, exposed to MSC/emfat.
