@@ -576,8 +576,10 @@ static bool bufferIsCommitted(const flashfsBufferPreamble_t *p)
 // Write the preamble at buffer offset 0, with commit flag = uncommitted (0xFF).
 // Called at the end of the header phase. The header bytes are already on flash
 // (they were streamed there during the header phase) — we read them back in chunks
-// to compute the CRC, avoiding a large RAM scratch buffer.
-static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uint32_t headerLength)
+// to compute the CRC, avoiding a large RAM scratch buffer. Returns false on a
+// readBytes failure during CRC computation; the caller must NOT proceed into the
+// data phase in that case (no preamble on flash → recovery couldn't find the log).
+static bool writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uint32_t headerLength)
 {
     // .reserved is initialised to 0xFFFF rather than 0 so it can be 1→0 flipped
     // in place when the session laps (markBufferLapped) — recovery uses it to know
@@ -605,7 +607,7 @@ static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uin
         while (remaining > 0) {
             uint32_t chunk = MIN(remaining, (uint32_t)CHUNK_SIZE);
             if (readBytes(addr, chunkBuf, chunk) != (int)chunk) {
-                return; // abort — no preamble written, the in-flight log is unrecoverable
+                return false; // abort — no preamble written, caller must not enter data phase
             }
             crc = crc16_ccitt_update(crc, chunkBuf, chunk);
             addr += chunk;
@@ -614,6 +616,7 @@ static void writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uin
     }
     p.crc = crc;
     writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
+    return true;
 }
 
 // Bit-flip the commit flag from 0xFF to 0x00 in the high byte of headerLengthAndCommit.
@@ -1265,8 +1268,15 @@ void flashfsLogFinishHeader(void)
     flashfsFlushSync();
 
     // Compute the preamble's CRC by streaming the just-written header bytes back through
-    // chunked reads — no large RAM scratch.
-    writeBufferPreambleStreaming(active.logId, active.dataStart, headerLen);
+    // chunked reads — no large RAM scratch. If the streaming readback fails (rare hardware
+    // hiccup), abort the session: the preamble didn't make it onto flash, so a power loss
+    // during the data phase would leave recovery with no preamble to find. Treat as if
+    // BeginLog never happened — clear active state, do NOT advance to data phase, do NOT
+    // enable ring wrap.
+    if (!writeBufferPreambleStreaming(active.logId, active.dataStart, headerLen)) {
+        memset(&active, 0, sizeof(active));
+        return;
+    }
 
     active.headerPhase = false;
     // Position flashfs's tail at the data write head for the upcoming data writes.

@@ -555,13 +555,17 @@ void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
     // If we updated wrapStartAddress / wrapEndAddress while the chip was still
     // busy, the post-write tailAddress fold could mix old and new bounds.
     flashfsFlushSync();
+    // Only reset ringFullSize when the ring geometry actually changes. Re-enabling
+    // the same [start, end) range across sessions (the common case) must preserve
+    // the prior capacity so flashfsGetOffset keeps reporting "chip is full" — once
+    // the ring has wrapped at least once, every byte from start to end holds log
+    // data, regardless of which session put it there. The reset only fires when a
+    // future caller actually resizes the ring without an intervening full erase.
+    if (wrapStartAddress != startAddress || wrapEndAddress != endAddress) {
+        ringFullSize = 0;
+    }
     wrapStartAddress = startAddress;
     wrapEndAddress = endAddress;
-    // Reconfiguring the ring discards any prior captured capacity. Today's ring-log
-    // caller always erases the chip between sessions so this is benign, but resetting
-    // here keeps the contract robust to future callers that resize a non-zero ring
-    // in place (without it, flashfsGetOffset would keep reporting the old capacity).
-    ringFullSize = 0;
 }
 
 /**
