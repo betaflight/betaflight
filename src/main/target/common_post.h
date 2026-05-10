@@ -73,6 +73,31 @@
 #define FAST_DATA_ZERO_INIT
 #endif
 
+/*
+ * Active MMFLASH_* assignments — moved here from platform/platform.h
+ * because target.h is included between platform.h and common_post.h, so
+ * USE_FLASH_MEMORY_MAPPED set in target.h was invisible to platform.h's
+ * conditional. Now that target.h has been processed, USE_FLASH_MEMORY_MAPPED
+ * is reliably visible. Without this, the XSPI driver's
+ * MMFLASH_CODE_NOINLINE annotations on octoSpiDisableMemoryMappedMode /
+ * octoSpiEnableMemoryMappedMode / xspiTestEnableDisableMemoryMappedMode
+ * silently expand to nothing — those functions land in XIP .text and die
+ * the moment they disable memory-mapped mode mid-execution (next
+ * instruction fetch from disabled XSPI hangs the chip silently).
+ */
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+#if !defined(RAM_CODE)
+#define RAM_CODE                   __attribute__((section(".ram_code")))
+#endif
+#define MMFLASH_CODE               RAM_CODE
+#define MMFLASH_CODE_NOINLINE      RAM_CODE NOINLINE
+#define MMFLASH_DATA               FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
+#endif
+
 #ifndef MMFLASH_CODE
 #define MMFLASH_CODE
 #endif
@@ -870,4 +895,29 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #if !defined(ENABLE_LCD_PRINTF_REDIRECT)
 #define ENABLE_LCD_PRINTF_REDIRECT ENABLE_LCD_CONSOLE
+#endif
+
+// Bench debug CLI primitives `dxr` (read) and `dxw` (write) for poking
+// arbitrary 32-bit memory addresses from a connected terminal. Off by
+// default; configs opt in for hardware bring-up by setting
+// ENABLE_DEBUG_CLI_COMMANDS 1.
+#if !defined(ENABLE_DEBUG_CLI_COMMANDS)
+#define ENABLE_DEBUG_CLI_COMMANDS 0
+#endif
+
+// Open Bootloader contract — defaulted off; N6 target.h opts in.
+// Defines BF_OBL_IWDG_REFRESH used to keep OBL's IWDG happy.
+#if !defined(ENABLE_BF_OBL)
+#define ENABLE_BF_OBL 0
+#endif
+
+#if ENABLE_BF_OBL
+#include "platform/bf_obl_contract.h"
+#endif
+
+// Walk every GPIO pin not claimed by a peripheral and put it in a
+// known-safe state at boot. Opted out on platforms whose IO layer
+// can't yet skip restricted (e.g. RIFSC-protected) ports cleanly.
+#if !defined(ENABLE_UNUSED_PINS_INIT)
+#define ENABLE_UNUSED_PINS_INIT 1
 #endif

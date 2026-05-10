@@ -763,6 +763,7 @@ void initPhase3(void)
     pinioBoxInit(pinioBoxConfig());
 #endif
 
+
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
@@ -784,6 +785,7 @@ void initPhase3(void)
 
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
 
@@ -1068,7 +1070,9 @@ void initPhase3(void)
 
     debugInit();
 
+#if ENABLE_UNUSED_PINS_INIT
     unusedPinsInit();
+#endif
 
     tasksInit();
 
