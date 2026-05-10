@@ -485,10 +485,16 @@ void emfat_init_files(void)
     // erasing — we should still expose the ring-format logs that exist on the chip.
     // (The writer path enforces mode/format match separately.)
     //
-    // Use the always-compiled flashfsLogDetectFormatFromFlash() so a linear-only build
-    // (without USE_BLACKBOX_RING_LOG) still recognises ring-formatted flash and exposes
-    // the existing logs read-only. flashfsLogDetectFormat() is a stub returning UNKNOWN
-    // in that build and would cause MSC to silently hide everything.
+    // The ring branch is gated on USE_BLACKBOX_RING_LOG: linear-only firmware does
+    // not ship the ring read-side machinery (log table, scan, splice helpers) so
+    // attempting to enumerate ring logs would yield zero files. Downgrading from a
+    // ring-capable firmware to a linear-only one is unsupported — to recover those
+    // logs the user must reflash the ring-capable firmware, download via MSC, then
+    // erase the chip before downgrading. The always-compiled detector still earns
+    // its keep on the writer side: it lets the linear writer refuse to overwrite
+    // ring-formatted media, so the user gets a clear error rather than silent
+    // corruption.
+#ifdef USE_BLACKBOX_RING_LOG
     if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
         // Ring-mode path: each log is a virtual file synthesized from the metadata table.
         const uint32_t ringLogCount = flashfsLogGetLogCount();
@@ -522,7 +528,9 @@ void emfat_init_files(void)
         // Approximate used space for the padding-file calculation below. With ring mode
         // we don't have a concept of "used flash" the way linear does; use total log size.
         flashfsUsedSpace = totalSize;
-    } else {
+    } else
+#endif // USE_BLACKBOX_RING_LOG
+    {
         // Linear path — unchanged from before this feature.
         flashfsUsedSpace = flashfsIdentifyStartOfFreeSpace();
 
