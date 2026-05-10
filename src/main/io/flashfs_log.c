@@ -1099,35 +1099,40 @@ int flashfsLogRead(uint32_t index, uint32_t offsetInLog, uint8_t *dest, uint32_t
     int total = 0;
 
     // Header portion: virtual offsets 0..headerLength → physical [headerOffset..)
+    // Each readBytes is checked: a short or failed read terminates the call so MSC
+    // sees the actual byte count, not the requested-but-not-delivered length.
     if (offsetInLog < info->headerLength) {
         uint32_t fromHeader = MIN(length, info->headerLength - offsetInLog);
-        readBytes(info->headerOffset + offsetInLog, dest, fromHeader);
+        const int got = readBytes(info->headerOffset + offsetInLog, dest, fromHeader);
+        if (got <= 0) return total;
+        total += got;
+        if ((uint32_t)got < fromHeader) return total;
         dest += fromHeader;
         length -= fromHeader;
         offsetInLog += fromHeader;
-        total += fromHeader;
     }
 
     // Data portion: virtual offsets [headerLength .. totalSize) → data section, may wrap.
     if (length > 0) {
         uint32_t dataOffset = offsetInLog - info->headerLength;
         if (info->dataEnd >= info->dataStart) {
-            readBytes(info->dataStart + dataOffset, dest, length);
-            total += length;
+            const int got = readBytes(info->dataStart + dataOffset, dest, length);
+            if (got > 0) total += got;
         } else {
             uint32_t firstSeg = geom.dataSectionEnd - info->dataStart;
             if (dataOffset < firstSeg) {
                 uint32_t fromFirst = MIN(length, firstSeg - dataOffset);
-                readBytes(info->dataStart + dataOffset, dest, fromFirst);
+                const int got = readBytes(info->dataStart + dataOffset, dest, fromFirst);
+                if (got <= 0) return total;
+                total += got;
+                if ((uint32_t)got < fromFirst) return total;
                 dest += fromFirst;
                 length -= fromFirst;
                 dataOffset += fromFirst;
-                total += fromFirst;
             }
             if (length > 0) {
-                uint32_t inSecond = dataOffset - firstSeg;
-                readBytes(inSecond, dest, length);
-                total += length;
+                const int got = readBytes(dataOffset - firstSeg, dest, length);
+                if (got > 0) total += got;
             }
         }
     }
@@ -1318,8 +1323,15 @@ uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferF
 // still find the lapped state in recovery — without this, a session that lapped
 // after its last async flush and crashed during close would replay recovery with
 // a stale pre-lap dataStart and resurrect overwritten bytes at the front of the
-// log. Both call sites are non-realtime (blackbox task / disarm path) so the
-// flash bookkeeping I/O does not touch the PID loop hot path.
+// log.
+//
+// The actual flash write (markBufferLapped → writeBytesSync, ~60 µs on typical
+// 50 MHz SPI NOR) is sync. The async-path call site (flashfsLogFlushAsync) is
+// reached from blackboxLogIteration and so technically runs on the FC loop, but
+// the cost is paid ONCE per session at the moment lap fires (everywhere else
+// the early-return on lappedPersisted makes this a single boolean check). One
+// ~60 µs hiccup is preferred to the alternative — deferring the write would
+// re-open the recovery hole for mid-flight crashes between lap and close.
 static void persistLappedMarkerIfNeeded(void)
 {
     if (active.isOpen && active.lapped && !active.lappedPersisted) {
