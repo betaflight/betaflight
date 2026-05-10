@@ -181,6 +181,19 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 // drain the pool — the drop guard takes over and the log shows a small gap.
 #define POOL_TARGET_SECTORS 4
 
+// Number of erase-pool sectors held in reserve at all times for power-loss
+// recovery. The writer drops bytes once `headroom <= RECOVERY_RESERVED_SECTORS *
+// sectorSize` instead of at strict `writer == eraseHead`, which guarantees that
+// at any moment during a flight there are RECOVERY_RESERVED_SECTORS fully-erased
+// sectors immediately preceding eraseHead in ring order. Recovery's gap-scan is
+// therefore guaranteed to find an erased sector to land the trailer in, even if
+// the writer was at the edge of pool depletion at the moment of crash. K=1 (one
+// sector, ~4 KB) is enough for the trailer + a small header; recovery's existing
+// ensureErasedSpace() sync-erases additional sectors if the buffered header
+// needs more space. Cost: ~4 KB of the ~14 MB ring is reserved (~0.03%), and
+// drops kick in one sector earlier under transient erase-pool depletion.
+#define RECOVERY_RESERVED_SECTORS 1
+
 // Trailer/preamble magic constants are defined above the USE_BLACKBOX_RING_LOG
 // guard so the always-compiled detector can use them.
 
@@ -817,9 +830,10 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
 //
 //   1. Crash BEFORE writeTrailer fired (or ensureErasedSpace was still in flight):
 //      no trailer in the ring, but a pre-erased gap exists at the close target
-//      address (or — in the worst case where we never reached ensureErasedSpace —
-//      the erase pool the writer maintained ahead of itself in flight gives us
-//      at least one fully-erased sector somewhere in the ring).
+//      address. Even mid-flight (no close attempted), the writer's drop check
+//      reserves RECOVERY_RESERVED_SECTORS fully-erased sectors immediately
+//      preceding eraseHead at all times, so an erased gap is guaranteed to exist
+//      somewhere in the ring regardless of pool depletion at the moment of crash.
 //   2. Crash mid copyChunkedSync (or after writeTrailer but before the copy started):
 //      trailer is present at the close target address; the post-trailer header bytes
 //      may be partial or absent. We re-do the close at the trailer's address — that
@@ -894,8 +908,11 @@ static void recoverFromBuffer(void)
 
     if (!found) {
         // Neither a matching trailer nor an erased sector exists in the ring.
-        // Shouldn't happen with a correctly operating erase pool — abandon
-        // recovery, the active log is unrecoverable.
+        // Shouldn't be reachable: the writer's RECOVERY_RESERVED_SECTORS guard
+        // keeps K sectors fully erased at all times during a flight. Hitting
+        // this branch implies a deeper invariant violation (e.g. flash hardware
+        // fault, or the chip was tampered with between sessions). Abandon
+        // recovery for the active log; next session starts cleanly.
         eraseBufferArea();
         return;
     }
@@ -1230,12 +1247,22 @@ void flashfsLogWriteDataByte(uint8_t b)
         active.everWrapped = true;
     }
 
-    // If the writer has caught up to the erase frontier (pool depleted), drop the byte.
-    // This is the "writer faster than erase" backstop — the Hz-based rate validation
-    // should normally prevent it, but it can fire under worst-case erase-time outliers.
-    if (active.dataWriteHead == eraseHead) {
-        bbDataDrops++;
-        return;
+    // Erase-pool backstop with recovery reservation. Drops kick in when the writer
+    // is within RECOVERY_RESERVED_SECTORS sectors of eraseHead — leaving those K
+    // sectors fully erased at all times so that recoverFromBuffer is guaranteed to
+    // find an erased gap to land the trailer in after a power-loss crash. (Strict
+    // `writer == eraseHead` would let the pool deplete to zero, leaving no sector
+    // for recovery to use.) The Hz-based rate cap normally keeps the writer well
+    // below the chip's erase rate; this guard only fires under worst-case erase
+    // outliers.
+    {
+        const uint32_t headroom = (eraseHead >= active.dataWriteHead)
+            ? (eraseHead - active.dataWriteHead)
+            : (geom.dataSectionEnd - active.dataWriteHead) + eraseHead;
+        if (headroom <= RECOVERY_RESERVED_SECTORS * geom.sectorSize) {
+            bbDataDrops++;
+            return;
+        }
     }
 
     // RAM buffer overflow guard: while the chip is mid-erase, flushes can't drain. Drop
