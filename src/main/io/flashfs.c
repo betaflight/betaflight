@@ -329,7 +329,13 @@ static void flashfsWriteCallback(uintptr_t arg)
     if (tailAddress >= wrapStartAddress && tailAddress < wrapEndAddress
             && newTail >= wrapEndAddress) {
         newTail = wrapStartAddress + (newTail - wrapEndAddress);
-        if (ringFullSize == 0) ringFullSize = wrapEndAddress;
+        // Capture ring capacity (NOT the absolute end address) on the first wrap,
+        // so flashfsGetOffset can report a stable "bytes ever stored" once the
+        // tailAddress is no longer monotonic. With the only current caller of
+        // flashfsSetRing passing wrapStartAddress=0 the two values coincide, but
+        // the formula is still wrong in principle if a future caller passes a
+        // non-zero start.
+        if (ringFullSize == 0) ringFullSize = wrapEndAddress - wrapStartAddress;
     }
 
     flashfsSetTailAddress(newTail);
