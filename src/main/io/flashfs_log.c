@@ -259,19 +259,36 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 
 // Buffer preamble. Lives at offset 0 of the active header buffer area while a log
 // is in progress (or recovering from power loss). Erased after clean log close.
+//
+// IMMUTABLE after the single write in flashfsLogFinishHeader. Lap and commit
+// markers no longer live inside this struct — they're stored as single-byte
+// programs in distinct pages of the state sector (see HDR_BUFFER_STATE_*
+// constants below). This keeps the preamble compatible with NAND chips that
+// have on-chip ECC and forbid multiple programs to the same page region: each
+// marker becomes a fresh 1-byte program in its own page, never overlapping
+// previously programmed bytes.
 typedef struct {
     uint32_t magic;            // BUFFER_PREAMBLE_MAGIC
     uint16_t crc;              // CRC-16 over (logId, dataStart, headerLength, headerText)
-    uint16_t reserved;
+    uint16_t pad;              // unused (kept for 4-byte alignment of trailing fields)
     uint32_t logId;
     uint32_t dataStart;        // physical offset in data ring where this log started
-    // Followed by 4 more bytes:
-    uint32_t headerLengthAndCommit;
-                               // bits  0..23: header length (24-bit, plenty for ≤ 16 KB)
-                               // bits 24..31: commit flag — 0xFF = uncommitted, 0x00 = committed
+    uint32_t headerLength;     // bytes of header text immediately following this preamble
 } __attribute__((packed)) flashfsBufferPreamble_t;
 
 STATIC_ASSERT(sizeof(flashfsBufferPreamble_t) == 20, buffer_preamble_size);
+
+// Buffer area layout. HDR_BUFFER_SECTORS total sectors:
+//   Sectors [0 .. HDR_BUFFER_STATE_SECTOR-1]: preamble (offset 0, 20 bytes) +
+//       header text (immediately after).
+//   Sector HDR_BUFFER_STATE_SECTOR (last): state sector. Holds the lap and
+//       commit markers as single bytes in distinct pages, so each becomes a
+//       fresh 1-byte program in its own NAND page (no in-place rewrites, no
+//       same-page partial-program conflicts that NAND ECC can't tolerate).
+//       Rest of the sector is unused — the cost is one sector per session
+//       (~0.03% of a 128 MB chip; ~0.1% of a 16 MB chip) for portability.
+#define HDR_BUFFER_STATE_SECTOR (HDR_BUFFER_SECTORS - 1)
+#define HDR_BUFFER_HEADER_SECTORS (HDR_BUFFER_SECTORS - 1)
 
 // Sector-aligned trailer record placed in the data ring just before each log's
 // header text. The MSC enumeration scan reads the first 16 bytes of each sector
@@ -357,12 +374,10 @@ static struct {
     uint32_t         bufferHeaderOffset;  // bytes written into header buffer so far
 } active;
 
-// Module-scope state for the async lap-marker write. The DMA-based pathway needs:
-//   - A buffer that outlives the kicking-off call (DMA is in-flight after return).
-//   - An in-flight flag so subsequent eraseTick polls don't re-issue while the chip
-//     is busy programming the marker page.
-// Both are written by the DMA TC IRQ callback so must be volatile.
-static flashfsBufferPreamble_t lapMarkerPreambleBuf;
+// In-flight flag for the async lap-marker DMA write. Cleared by the DMA TC IRQ
+// callback so subsequent eraseTick polls don't re-issue while the chip is busy
+// programming the marker page. Written from IRQ context → volatile. The data
+// payload (a single 0x00 byte) is module-scope below alongside the async helper.
 static volatile bool lapMarkerInFlight = false;
 
 // Wrap-aware ring-range overlap test. Each range is [start, end) in a ring of size
@@ -443,6 +458,57 @@ static void writeBytesSync(uint32_t addr, const uint8_t *data, uint32_t length)
     flashfsSeekAbs(addr);
     flashfsWrite(data, length, true);
     flashfsFlushSync();
+}
+
+// Absolute address of the commit marker (1 byte). Lives in page 0 of the state
+// sector. Recovery reads this byte; anything != 0xFF means "log was committed".
+static uint32_t commitMarkerAddr(void)
+{
+    return geom.bufferAreaStart + HDR_BUFFER_STATE_SECTOR * geom.sectorSize;
+}
+
+// Absolute address of the lap marker (1 byte). Lives in page 1 of the state
+// sector — distinct NAND page from the commit marker so each marker is a fresh
+// 1-byte program in its own page register, no partial-program collisions.
+static uint32_t lappedMarkerAddr(void)
+{
+    return geom.bufferAreaStart + HDR_BUFFER_STATE_SECTOR * geom.sectorSize + geom.pageSize;
+}
+
+// Read one marker byte. Returns true iff the byte has been cleared (any value
+// other than 0xFF). Returns false on read failure (recovery treats this as
+// "marker not set" — the conservative redo-close path is idempotent).
+static bool readMarkerSet(uint32_t addr)
+{
+    uint8_t b = 0xFF;
+    if (readBytes(addr, &b, 1) != 1) return false;
+    return b != 0xFF;
+}
+
+// Force a synchronous PROGRAM_EXECUTE so a just-loaded partial-page write
+// becomes durable on flash. NAND drivers (W25N, MT29F) only auto-execute when
+// the page register fills to a page boundary; sub-page writes (like our 1-byte
+// markers) sit in the register until something else triggers execution. NOR's
+// flashFlush is a no-op.
+//
+// Without this, a power loss between the marker write and the next non-marker
+// flash operation could lose the marker — recovery would then misclassify the
+// log state (e.g. "not lapped" when it was, exposing pre-lap dataStart bytes
+// that the writer already overwrote).
+static void flushMarkerWrite(void)
+{
+    flashFlush();
+}
+
+// Set a marker by writing a single 0x00 byte at the marker offset, then forcing
+// a PROGRAM_EXECUTE so the write lands on flash before we return. Works on NOR
+// (writes are atomic at any granularity) and on NAND (1 byte per page, separate
+// pages → no ECC conflicts).
+static void setMarkerSync(uint32_t addr)
+{
+    static const uint8_t zero = 0;
+    writeBytesSync(addr, &zero, 1);
+    flushMarkerWrite();
 }
 
 static int readBytes(uint32_t addr, uint8_t *dest, uint32_t length)
@@ -607,7 +673,10 @@ static bool readTrailerAt(uint32_t addr, flashfsLogTrailer_t *out)
     // garbage offsets into latestTrailerWriteHead / computeWriteHeadFromTable /
     // flashfsLogRead and corrupt the log table.
     if (out->dataStart >= geom.dataSectionEnd) return false;
-    if (out->headerLength == 0 || out->headerLength > geom.bufferAreaSize - sizeof(flashfsBufferPreamble_t)) return false;
+    if (out->headerLength == 0
+            || out->headerLength > HDR_BUFFER_HEADER_SECTORS * geom.sectorSize - sizeof(flashfsBufferPreamble_t)) {
+        return false;
+    }
     const uint32_t headerEnd = addr + sizeof(*out) + out->headerLength;
     if (headerEnd > geom.dataSectionEnd) return false;
 
@@ -631,36 +700,39 @@ static void writeTrailer(uint32_t addr, uint32_t logId, uint32_t dataStart, uint
 // Buffer preamble
 // =============================================================================
 
-static bool bufferIsCommitted(const flashfsBufferPreamble_t *p)
+static bool bufferIsCommitted(void)
 {
-    // Commit flag lives in the high byte of headerLengthAndCommit. 0xFF = uncommitted
-    // (initial state after write), 0x00 = committed (bit-flipped post-write).
-    return (p->headerLengthAndCommit & 0xFF000000u) == 0;
+    // Commit marker is a single byte in page 0 of the state sector. Initial
+    // value 0xFF (erased) means "not committed yet"; anything else means a
+    // commit was attempted (possibly partial-write on power loss — recovery's
+    // "any non-0xFF means committed" check is robust either way).
+    return readMarkerSet(commitMarkerAddr());
 }
 
-// Write the preamble at buffer offset 0, with commit flag = uncommitted (0xFF).
-// Called at the end of the header phase. The header bytes are already on flash
-// (they were streamed there during the header phase) — we read them back in chunks
-// to compute the CRC, avoiding a large RAM scratch buffer. Returns false on a
-// readBytes failure during CRC computation; the caller must NOT proceed into the
-// data phase in that case (no preamble on flash → recovery couldn't find the log).
+// Write the preamble at buffer offset 0. Called at the end of the header phase.
+// The header bytes are already on flash (they were streamed there during the
+// header phase) — we read them back in chunks to compute the CRC, avoiding a
+// large RAM scratch buffer. Returns false on a readBytes failure during CRC
+// computation; the caller must NOT proceed into the data phase in that case
+// (no preamble on flash → recovery couldn't find the log).
+//
+// The preamble is written ONCE and is immutable for the lifetime of the session.
+// Lap and commit signals are recorded separately as single-byte programs in the
+// state sector (see commitMarkerAddr / lappedMarkerAddr) so NAND chips with
+// on-chip ECC stay happy — no overlapping partial programs of the same page.
 static bool writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uint32_t headerLength)
 {
-    // .reserved is initialised to 0xFFFF rather than 0 so it can be 1→0 flipped
-    // in place when the session laps (markBufferLapped) — recovery uses it to know
-    // the writer has overtaken the original dataStart. NOR can only program 1 bits
-    // to 0; the all-ones initial value is what makes the in-place update possible.
     flashfsBufferPreamble_t p = {
         .magic = BUFFER_PREAMBLE_MAGIC,
-        .reserved = 0xFFFF,
+        .pad = 0xFFFF,         // erased-flash value; ignored by recovery
         .logId = logId,
         .dataStart = dataStart,
-        .headerLengthAndCommit = (headerLength & 0x00FFFFFFu) | 0xFF000000u,
+        .headerLength = headerLength,
     };
     uint16_t crc = 0;
     crc = crc16_ccitt_update(crc, &p.logId, sizeof(p.logId));
     crc = crc16_ccitt_update(crc, &p.dataStart, sizeof(p.dataStart));
-    crc = crc16_ccitt_update(crc, &headerLength, sizeof(headerLength));
+    crc = crc16_ccitt_update(crc, &p.headerLength, sizeof(p.headerLength));
     // Stream the header bytes back from the buffer area to extend the CRC. Each
     // readBytes call is checked: a short read on this path would mix stale
     // chunkBuf bytes into the CRC, producing a preamble whose stored CRC doesn't
@@ -684,49 +756,30 @@ static bool writeBufferPreambleStreaming(uint32_t logId, uint32_t dataStart, uin
     return true;
 }
 
-// Bit-flip the commit flag from 0xFF to 0x00 in the high byte of headerLengthAndCommit.
-// We rewrite the entire preamble with the flag set; only that one byte changes value
-// (0xFF→0x00) which is a permitted 1→0 NOR flash transition.
+// Set the commit marker. One-byte program at a dedicated page in the state
+// sector, followed by an explicit flush so it's durable on flash before the
+// caller proceeds (typically into eraseBufferArea — which would otherwise wipe
+// the marker if it were still sitting unflushed in the NAND page register).
 static void markBufferCommitted(void)
 {
-    flashfsBufferPreamble_t p;
-    if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) return;
-    p.headerLengthAndCommit &= 0x00FFFFFFu; // clear the high byte to 0x00
-    writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
+    setMarkerSync(commitMarkerAddr());
 }
 
-// Flip the preamble's reserved field from 0xFFFF to 0x0000 in place. Called once
-// per session, from the non-realtime flush path, the first time active.lapped
-// transitions to true (i.e. the writer has overtaken the session's own dataStart).
-// recoverFromBuffer reads the field — if it sees 0x0000, the session lapped and
-// the original preamble.dataStart no longer points at intact data. The CRC in
-// the preamble does NOT cover this field (it's over logId, dataStart,
-// headerLength, headerText), so flipping it doesn't invalidate the commit signal.
-//
-// writeBytesSync seeks flashfs's tail to bufferAreaStart for the write — but the
-// data writer is mid-session expecting the tail to stay in the data ring at
-// active.dataWriteHead. We seek back after the preamble update so subsequent
-// data bytes land where they should.
-// Returns true if the marker is now (or was already) on flash, so the caller
-// can record persistence as durable. Returns false on a hardware read failure
-// — in that case the caller leaves lappedPersisted=false so the next flush
-// retries the persist. (writeBytesSync has no failure indication; once we get
-// past the read we treat the write as having happened.)
+// Set the lap marker. One-byte program at a different page in the state
+// sector from the commit marker, so the two markers never share a NAND page.
+// Returns true iff the marker is now (or was already) durable. Returns false
+// only on read-back failure; the caller leaves lappedPersisted=false so the
+// next flush retries.
 static bool markBufferLapped(void)
 {
-    flashfsBufferPreamble_t p;
-    if (readBytes(geom.bufferAreaStart, (uint8_t *)&p, sizeof(p)) != (int)sizeof(p)) {
-        return false;
+    if (readMarkerSet(lappedMarkerAddr())) {
+        return true; // already lapped (or partially programmed — recovery treats either as lapped)
     }
-    // "Any non-0xFFFF" matches the recovery-side detection: if a previous
-    // markBufferLapped was interrupted mid-write, reserved may be partially
-    // cleared. Don't try to write again on top of those non-0xFF bits — NOR
-    // can only program 1→0, and the partial state is already enough to
-    // signal "lapped" to recovery.
-    if (p.reserved != 0xFFFF) return true; // already lapped (or partially)
-    p.reserved = 0;
-    writeBytesSync(geom.bufferAreaStart, (const uint8_t *)&p, sizeof(p));
+    setMarkerSync(lappedMarkerAddr());
     if (active.isOpen && !active.headerPhase) {
+        // setMarkerSync routed through flashfs (which moved tailAddress to the
+        // marker offset). Seek back so the writer's next data byte lands at
+        // active.dataWriteHead, not on top of the marker sector.
         flashfsSeekAbs(active.dataWriteHead);
     }
     return true;
@@ -745,43 +798,50 @@ static void lapMarkerWriteCallback(uintptr_t arg)
 }
 
 // Async variant of markBufferLapped used by the hot-path persist trigger
-// (eraseTick → persistLappedMarkerIfReady). Kicks off the preamble update via
-// DMA and returns immediately — the CPU is free during the ~50-200 µs page
-// program, so the FC loop sees ~15-20 µs hot-path cost (one synchronous SPI
-// read + DMA setup) instead of the ~50-200 µs the sync path would block for.
+// (eraseTick → persistLappedMarkerIfReady). Kicks off the marker write via DMA
+// and returns immediately — the CPU is free during the ~50-200 µs page program,
+// so the FC loop sees ~15-20 µs hot-path cost (DMA setup) instead of the
+// ~50-200 µs the sync path would block for.
 //
-// Bypasses flashfs's write API (which would unconditionally drain the RAM
-// buffer first via flashfsFlushSync) and goes straight to the flash driver.
+// One-byte program at lappedMarkerAddr(). On NAND this loads the byte into the
+// page register; the actual PROGRAM_EXECUTE that makes it durable is triggered
+// by the W25N driver on the next pageProgramBegin to a different address. Data
+// ring writes at ~640 kHz (one per FC loop iteration × ~80 B/frame) provide
+// that trigger within ~125 µs of the lap event. The narrow window where a
+// power loss between the DMA-load callback and the next data write could lose
+// the marker is acceptable: recovery's redo path is idempotent, and the
+// trailer (written at clean disarm) carries an independent dataStart that
+// doesn't rely on the marker.
+//
 // Caller MUST have verified flashfsIsIdle() so the SPI bus is free and the
 // chip is ready to accept commands.
 //
 // Returns true on successful kick-off (or "already lapped, nothing to do");
 // false on a hardware read failure — caller leaves lappedPersisted=false so
 // the next tick retries.
+static uint8_t lapMarkerZeroByte = 0;
 static bool markBufferLappedAsync(void)
 {
     // flashReadBytes is the low-level driver call (bypasses flashfs's buffer);
-    // since the buffer area is only ever written via writeBytesSync (which also
-    // bypasses), the on-chip bytes are authoritative.
-    if (flashReadBytes(geom.bufferAreaStart, (uint8_t *)&lapMarkerPreambleBuf, sizeof(lapMarkerPreambleBuf))
-            != (int)sizeof(lapMarkerPreambleBuf)) {
+    // since the marker is only ever written via flash* primitives (no flashfs
+    // buffering), the on-chip byte is authoritative.
+    uint8_t cur = 0xFF;
+    if (flashReadBytes(lappedMarkerAddr(), &cur, 1) != 1) {
         return false;
     }
-    if (lapMarkerPreambleBuf.reserved != 0xFFFF) {
-        // Already lapped (possibly partially from an interrupted previous
-        // attempt — see "any non-0xFFFF" handling on the sync path).
+    if (cur != 0xFF) {
+        // Already lapped (possibly partially programmed from an interrupted
+        // previous attempt — recovery treats any non-0xFF as lapped).
         active.lappedPersisted = true;
         return true;
     }
-    lapMarkerPreambleBuf.reserved = 0;
-
-    // The buffer must outlive this call because flashPageProgram is async —
-    // DMA will continue transferring after we return. lapMarkerPreambleBuf is
-    // module-scope to guarantee that lifetime.
+    // The data buffer (single byte at module scope) must outlive this call
+    // because flashPageProgram is async — DMA will continue transferring after
+    // we return.
     lapMarkerInFlight = true;
-    flashPageProgram(geom.bufferAreaStart,
-                     (const uint8_t *)&lapMarkerPreambleBuf,
-                     sizeof(lapMarkerPreambleBuf),
+    flashPageProgram(lappedMarkerAddr(),
+                     &lapMarkerZeroByte,
+                     1,
                      lapMarkerWriteCallback);
     return true;
 }
@@ -964,15 +1024,16 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
     }
     if (out->magic != BUFFER_PREAMBLE_MAGIC) return false;
 
-    uint32_t hdrLen = out->headerLengthAndCommit & 0x00FFFFFFu;
-    if (hdrLen == 0 || hdrLen > geom.bufferAreaSize - sizeof(*out)) return false;
+    // Cap header at the usable header span (state sector reserved at the end).
+    const uint32_t maxHeader = HDR_BUFFER_HEADER_SECTORS * geom.sectorSize - sizeof(*out);
+    if (out->headerLength == 0 || out->headerLength > maxHeader) return false;
 
     uint16_t crc = 0;
     crc = crc16_ccitt_update(crc, &out->logId, sizeof(out->logId));
     crc = crc16_ccitt_update(crc, &out->dataStart, sizeof(out->dataStart));
-    crc = crc16_ccitt_update(crc, &hdrLen, sizeof(hdrLen));
+    crc = crc16_ccitt_update(crc, &out->headerLength, sizeof(out->headerLength));
     uint32_t addr = geom.bufferAreaStart + sizeof(*out);
-    uint32_t remaining = hdrLen;
+    uint32_t remaining = out->headerLength;
     while (remaining > 0) {
         uint32_t chunk = MIN(remaining, (uint32_t)CHUNK_SIZE);
         if (readBytes(addr, chunkBuf, chunk) != (int)chunk) {
@@ -987,7 +1048,7 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
         remaining -= chunk;
     }
     if (crc != out->crc) return false;
-    *outHeaderLen = hdrLen;
+    *outHeaderLen = out->headerLength;
     return true;
 }
 
@@ -1027,10 +1088,11 @@ static void recoverFromBuffer(void)
         return;
     }
 
-    if (bufferIsCommitted(&pre)) {
+    if (bufferIsCommitted()) {
         eraseBufferArea();
         return;
     }
+    const bool sessionLapped = readMarkerSet(lappedMarkerAddr());
 
     uint32_t addr = pre.dataStart;
     uint32_t scanned = 0;
@@ -1131,19 +1193,15 @@ static void recoverFromBuffer(void)
     // writer has since overwritten — the readable range is the whole ring minus
     // the trailer + header sectors we're about to write, so set the trailer's
     // dataStart to the post-header position (sector-aligned past addr + sizeof
-    // trailer + headerLen). The "lapped" signal comes from the preamble's
-    // reserved field (initialised to 0xFFFF on log start, written to 0 by
-    // markBufferLapped in flashfsLogFlushAsync the first time the writer
-    // overtakes its own dataStart).
-    //
-    // Treat ANY non-0xFFFF value as "lap attempted" rather than a strict == 0
-    // check: NOR page program is not atomic on power loss, so an interrupted
-    // markBufferLapped could leave reserved with bits partially cleared (e.g.
-    // 0x00FF or 0xFF00). The strict equality check would then misclassify the
-    // partial-clear state as "not lapped" and recovery would expose stale
-    // pre-lap dataStart bytes that the writer has since overwritten.
+    // trailer + headerLen). The "lapped" signal lives in a single byte at
+    // lappedMarkerAddr() (page 1 of the state sector), set on the first lap
+    // event by markBufferLapped[Async]. readMarkerSet treats ANY non-0xFF value
+    // as lapped — a power loss mid-program could leave the byte partially
+    // written (e.g. 0xF0), and the conservative interpretation is "lap
+    // attempted" so we don't expose stale pre-lap bytes via the original
+    // dataStart.
     uint32_t recoveredDataStart;
-    if (pre.reserved != 0xFFFF) {
+    if (sessionLapped) {
         uint32_t afterHeader = addr + sizeof(flashfsLogTrailer_t) + headerLen;
         recoveredDataStart = alignUpToSector(afterHeader);
         if (recoveredDataStart >= geom.dataSectionEnd) recoveredDataStart = 0;
@@ -1386,10 +1444,11 @@ void flashfsLogWriteHeaderByte(uint8_t b)
 {
     if (!active.isOpen || !active.headerPhase) return;
 
-    uint32_t maxHdr = geom.bufferAreaSize - sizeof(flashfsBufferPreamble_t);
+    uint32_t maxHdr = HDR_BUFFER_HEADER_SECTORS * geom.sectorSize - sizeof(flashfsBufferPreamble_t);
     if (active.bufferHeaderOffset >= maxHdr) {
-        // Header overflow — drop the byte silently. Should never happen with a 16 KB
-        // buffer; if it does, the resulting log will be missing some header lines.
+        // Header overflow — drop the byte silently. Should never happen with the
+        // header buffer span (~12 KB on smallest NOR sectorSize, hundreds of KB
+        // on NAND); if it does, the resulting log will be missing some header lines.
         return;
     }
     // Goes through flashfs's existing circular write buffer (sized 16 KB on
