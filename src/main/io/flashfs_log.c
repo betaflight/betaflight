@@ -1425,6 +1425,9 @@ void flashfsLogFinishHeader(void)
         return;
     }
 
+    // Cached format may flip EMPTY → RING now that a preamble is on flash.
+    flashfsLogInvalidateCachedFormat();
+
     active.headerPhase = false;
     // Position flashfs's tail at the data write head for the upcoming data writes.
     flashfsSeekAbs(active.dataWriteHead);
@@ -1797,6 +1800,11 @@ void flashfsLogAbortLog(void)
     if (dataWriteHead >= geom.dataSectionEnd) dataWriteHead = 0;
 
     eraseBufferArea();
+
+    // Buffer-area preamble was just erased / committed-then-erased. Cached
+    // format may go RING → EMPTY (or to LINEAR fallback) — invalidate so the
+    // next probe re-scans.
+    flashfsLogInvalidateCachedFormat();
 
     memset(&active, 0, sizeof(active));
 }

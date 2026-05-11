@@ -3663,6 +3663,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 pRatio = blackboxCalculatePDenom(rateNum, rateDenom);
             }
 
+            // Reject pRatio == 0: either an attacker sent it explicitly, or
+            // blackboxCalculatePDenom yielded 0 from rateNum == 0. Both paths
+            // would otherwise feed blackboxCalculateSampleRate(0), which returns
+            // its 0 divide-by-zero guard sentinel and we'd persist sample_rate=0.
+            if (pRatio == 0) {
+                return MSP_RESULT_ERROR;
+            }
+
             uint8_t newSampleRate;
             if (sbufBytesRemaining(src) >= 1) {
                 // sample_rate specified, so use it directly
