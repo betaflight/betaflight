@@ -116,6 +116,18 @@ void flashfsLogInvalidateCachedFormat(void)
 flashfsFlashFormat_e flashfsLogGetCachedFormat(void)
 {
     if (!cachedFlashFormatValid) {
+        // Don't populate the cache while a full-erase is in flight.
+        // flashfsLogEraseAll() invalidates the cache when the erase STARTS, but
+        // the erase then runs asynchronously for seconds. A call landing in
+        // that window would probe the chip mid-erase and cache whatever
+        // transient bytes the chip happens to return (partially-erased data,
+        // 0xFF from already-erased sectors, etc.) — a wrong "format" verdict
+        // that survives until the next explicit invalidation. Return UNKNOWN
+        // and leave the cache invalid; the next call after erase completes
+        // will probe a quiescent chip and cache the correct value.
+        if (flashfsIsEraseInProgress()) {
+            return FLASHFS_FLASH_FORMAT_UNKNOWN;
+        }
         cachedFlashFormat = flashfsLogDetectFormatFromFlash();
         cachedFlashFormatValid = true;
     }
