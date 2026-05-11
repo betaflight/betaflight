@@ -279,8 +279,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         // Percent control range addition by 1 degree per second angle rate * 1000
         .psas_damping_gain = {
             [FD_ROLL] = 50,
-            [FD_PITCH] = 200,
-            [FD_YAW] = 200,
+            [FD_PITCH] = 75,
+            [FD_YAW] = 75,
         },
         .psas_pitch_damping_filter_freq = 30,  // pitch damping filter cut freq 0.3Hz (Tf=0.531s)
         .psas_accel_z_filter_freq = 30,        // accel Z filter cut freq Hz * 10, 3Hz
