@@ -452,6 +452,11 @@ static uint32_t alignUpToSector(uint32_t addr)
 // Used for the trailer record and the buffer preamble. The data writer still goes
 // through flashfsWriteByte() to benefit from flashfs's existing buffering.
 
+// Forward decl: readBytes is a thin wrapper around flashfsReadAbs, defined below
+// so it lives next to the other low-level read helpers. The marker helpers that
+// follow need it before that point.
+static int readBytes(uint32_t addr, uint8_t *dest, uint32_t length);
+
 static void writeBytesSync(uint32_t addr, const uint8_t *data, uint32_t length)
 {
     flashfsFlushSync();
