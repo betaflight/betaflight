@@ -466,12 +466,18 @@ static uint32_t ringSpaceFreeAhead(uint32_t writer)
     }
 }
 
+// Forward declaration: opportunistic lap marker persist, called from eraseTick.
+// Defined further down with its sync sibling near the flush helpers.
+static void persistLappedMarkerIfReady(void);
+
 // Run the async-erase progress check + new-erase trigger. Cheap: a register read for
 // flashIsReady() and at most one flashEraseSector() call (which itself just sends the
 // command and returns; the chip then erases for ~30-50 ms in its own background while
 // we keep going).
 //
-// Called from the data write hot path. NEVER blocks.
+// Called from the data write hot path. NEVER blocks (except for the one-shot
+// lap-marker persist below — bounded to ~50-200 µs once per session at the
+// moment the chip first goes idle after a RAM-lap event).
 static void eraseTick(void)
 {
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
@@ -484,6 +490,17 @@ static void eraseTick(void)
             return; // chip still busy; can't start a new erase
         }
     }
+
+    // Squeeze the lap marker write in between page programs. eraseTick fires
+    // per data byte (~640 kHz at 8 kHz pidloop × 80 B/frame), giving us many
+    // observation points per page-program cycle — we catch the brief idle
+    // windows that the ~250 Hz async-flush polling misses entirely on busy
+    // chips. persistLappedMarkerIfReady is itself gated on flashfsIsIdle()
+    // (buffer empty AND chip ready) so it only fires when the cost is bounded
+    // to one page program. During the ~50-200 µs marker write, the writer
+    // keeps queuing bytes into the 16 KB RAM buffer — plenty of headroom to
+    // absorb the delay without dropping data.
+    persistLappedMarkerIfReady();
 
     // Pool refill: trigger an erase if we're below target. flashEraseSector is non-
     // blocking from the CPU's point of view (sends the command, returns; chip is busy
@@ -1426,26 +1443,30 @@ uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 
 // Persist the lap marker into the buffer preamble if the writer has lapped this
 // session and the marker hasn't already been written. Two variants because the
-// async-flush and sync-flush call sites have different real-time contracts:
+// hot-path and disarm call sites have different real-time contracts:
 //
-//   - The async path runs from blackboxDeviceFlush in the FC loop. It must not
-//     stall on flash I/O. markBufferLapped → writeBytesSync starts with a
-//     flashfsFlushSync (could drain ~16 KB of buffered pages = up to ~13 ms of
-//     page programs) and ends with `while (!flashIsReady())` (could be mid-
-//     sector-erase = up to 30-50 ms). Either path is a hard real-time
-//     violation at any non-trivial PID loop rate.
+//   - persistLappedMarkerIfReady: called from eraseTick (which fires per data
+//     byte — ~640 kHz under sustained writes). Gates on flashfsIsIdle()
+//     (buffer empty AND chip ready) so the only flash op that actually runs
+//     is the 20-byte preamble page program itself — bounded to ~50-200 µs,
+//     once per session. The per-byte polling rate is essential: it catches
+//     the brief idle windows between page programs (each ~50-200 µs wide)
+//     that lower-frequency polling would miss on a heavily-loaded chip.
+//     During the marker write, the writer keeps queuing bytes into the 16 KB
+//     RAM buffer — plenty of headroom to absorb the delay without dropping
+//     data. Worst case (chip genuinely never idle for a sustained period):
+//     persist is deferred to disarm via the blocking variant; the
+//     pre.reserved-based recovery contract holds.
 //
-//     The non-blocking variant gates on flashfsIsIdle() (buffer empty AND chip
-//     ready), so the only flash op that actually runs is the 20-byte preamble
-//     page program itself — bounded to ~50-200 µs, once per session. If the
-//     chip is busy or the buffer has pending pages, the persist is deferred
-//     to whichever subsequent async-flush call finds it idle.
+//     markBufferLapped → writeBytesSync without the idle gate would be a
+//     hard real-time violation: writeBytesSync starts with a flashfsFlushSync
+//     (could drain ~13 ms of buffered pages) and ends with
+//     `while (!flashIsReady())` (could be mid-sector-erase = up to 30-50 ms).
 //
-//   - The sync path runs from flashfsLogEndLog / flashfsLogAbortLog at disarm
-//     (non-realtime). Here we want to GUARANTEE the marker lands on flash
-//     before the session closes, because the close erases the buffer preamble
-//     that mid-flight recovery would otherwise use. The blocking variant calls
-//     markBufferLapped unconditionally — if the chip is busy, we wait.
+//   - persistLappedMarkerBlocking: called from flashfsLogFlushSync at disarm
+//     (non-realtime). Here we MUST guarantee the marker lands on flash before
+//     the session closes, because the close erases the buffer preamble that
+//     mid-flight recovery would otherwise use. Blocking is acceptable here.
 //
 // Both variants honor markBufferLapped's bool return: on read-back failure the
 // persisted flag stays false so a subsequent call retries.
