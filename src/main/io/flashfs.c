@@ -184,6 +184,15 @@ static bool flashfsBufferIsEmpty(void)
     return bufferTail == bufferHead;
 }
 
+// Public predicate for callers that need to know whether a sync flash transaction
+// would run quickly (no pending RAM-buffer pages to drain AND the chip is idle).
+// Used by flashfs_log's non-blocking lap-marker persist path to avoid stalling
+// the FC loop on a busy chip or a full write buffer.
+bool flashfsIsIdle(void)
+{
+    return flashfsBufferIsEmpty() && flashIsReady();
+}
+
 static void flashfsSetTailAddress(uint32_t address)
 {
     tailAddress = address;

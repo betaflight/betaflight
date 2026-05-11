@@ -69,6 +69,11 @@ void flashfsInit(void);
 bool flashfsIsSupported(void);
 
 bool flashfsIsReady(void);
+// True iff the RAM write buffer is empty AND the chip is idle — i.e. a
+// synchronous flash transaction would not block on a pending page program
+// or in-flight sector erase. For real-time callers that need to perform a
+// sync write only when the cost can be bounded to one page program.
+bool flashfsIsIdle(void);
 bool flashfsIsEOF(void);
 bool flashfsIsEraseInProgress(void);
 

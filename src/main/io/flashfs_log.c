@@ -1425,41 +1425,57 @@ uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferF
 uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 
 // Persist the lap marker into the buffer preamble if the writer has lapped this
-// session and the marker hasn't already been written. Called from BOTH async and
-// sync flush entry points so a power-cut during the close-time sync drain can
-// still find the lapped state in recovery — without this, a session that lapped
-// after its last async flush and crashed during close would replay recovery with
-// a stale pre-lap dataStart and resurrect overwritten bytes at the front of the
-// log.
+// session and the marker hasn't already been written. Two variants because the
+// async-flush and sync-flush call sites have different real-time contracts:
 //
-// The actual flash write (markBufferLapped → writeBytesSync, ~60 µs on typical
-// 50 MHz SPI NOR) is sync. The async-path call site (flashfsLogFlushAsync) is
-// reached from blackboxLogIteration and so technically runs on the FC loop, but
-// the cost is paid ONCE per session at the moment lap fires (everywhere else
-// the early-return on lappedPersisted makes this a single boolean check). One
-// ~60 µs hiccup is preferred to the alternative — deferring the write would
-// re-open the recovery hole for mid-flight crashes between lap and close.
-static void persistLappedMarkerIfNeeded(void)
+//   - The async path runs from blackboxDeviceFlush in the FC loop. It must not
+//     stall on flash I/O. markBufferLapped → writeBytesSync starts with a
+//     flashfsFlushSync (could drain ~16 KB of buffered pages = up to ~13 ms of
+//     page programs) and ends with `while (!flashIsReady())` (could be mid-
+//     sector-erase = up to 30-50 ms). Either path is a hard real-time
+//     violation at any non-trivial PID loop rate.
+//
+//     The non-blocking variant gates on flashfsIsIdle() (buffer empty AND chip
+//     ready), so the only flash op that actually runs is the 20-byte preamble
+//     page program itself — bounded to ~50-200 µs, once per session. If the
+//     chip is busy or the buffer has pending pages, the persist is deferred
+//     to whichever subsequent async-flush call finds it idle.
+//
+//   - The sync path runs from flashfsLogEndLog / flashfsLogAbortLog at disarm
+//     (non-realtime). Here we want to GUARANTEE the marker lands on flash
+//     before the session closes, because the close erases the buffer preamble
+//     that mid-flight recovery would otherwise use. The blocking variant calls
+//     markBufferLapped unconditionally — if the chip is busy, we wait.
+//
+// Both variants honor markBufferLapped's bool return: on read-back failure the
+// persisted flag stays false so a subsequent call retries.
+static void persistLappedMarkerIfReady(void)
+{
+    if (active.isOpen && active.lapped && !active.lappedPersisted && flashfsIsIdle()) {
+        if (markBufferLapped()) {
+            active.lappedPersisted = true;
+        }
+    }
+}
+
+static void persistLappedMarkerBlocking(void)
 {
     if (active.isOpen && active.lapped && !active.lappedPersisted) {
         if (markBufferLapped()) {
             active.lappedPersisted = true;
         }
-        // On false (read-back failed): leave lappedPersisted=false so the next
-        // flush retries. Avoids the case where a transient hardware hiccup at
-        // the moment of lap permanently loses the persist for this session.
     }
 }
 
 bool flashfsLogFlushAsync(bool force)
 {
-    persistLappedMarkerIfNeeded();
+    persistLappedMarkerIfReady();   // non-blocking; FC-loop safe
     return flashfsFlushAsync(force);
 }
 
 void flashfsLogFlushSync(void)
 {
-    persistLappedMarkerIfNeeded();
+    persistLappedMarkerBlocking();  // disarm path; OK to block on a busy chip
     flashfsFlushSync();
 }
 
