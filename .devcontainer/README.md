@@ -276,23 +276,40 @@ docker build -t bf-dev-gazebo -f .devcontainer/containerfile.gazebo .devcontaine
 
 ### Running a simulation
 
+The simulation requires three processes running concurrently inside the container.
+Use three separate host terminals — the first starts the container, the others attach to it.
+
+**Host terminal 1 — start the container and build SITL:**
+
 ```bash
-# Start the container with host networking (for UDP ports)
 docker run -it --rm \
+  --name bf-gazebo \
   --network=host \
   -v "$(pwd)":/workspace \
   bf-dev-gazebo
 
-# Inside the container — build SITL
+# Inside the container — build SITL (only needed once per workspace)
 make TARGET=SITL
 
-# Terminal 1: Start SITL
+# Then start SITL
 ./obj/main/betaflight_SITL.elf 127.0.0.1
+```
 
-# Terminal 2: Start Gazebo with the demo world
+**Host terminal 2 — attach and start Gazebo:**
+
+```bash
+docker exec -it bf-gazebo bash
+
+# Inside the container
 gz sim -r ~/aeroloop_gazebo/worlds/betaloop_iris_betaflight_demo_harmonic.sdf
+```
 
-# Terminal 3: Start WebSocket proxy for the Betaflight App
+**Host terminal 3 — attach and start the WebSocket proxy:**
+
+```bash
+docker exec -it bf-gazebo bash
+
+# Inside the container
 websockify 127.0.0.1:6761 127.0.0.1:5761
 ```
 
