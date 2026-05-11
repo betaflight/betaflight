@@ -160,6 +160,9 @@ struct {
     // Boyamicro BY25Q128ES
     // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
     { 0x684018, 104, 50, 256, 256 },
+    // XTX XT25F128F
+    // Datasheet: https://www.xtxtech.com/Products/info_productModel_XT25F128FSSIGT.html
+    { 0x0B4018, 96, 80, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
