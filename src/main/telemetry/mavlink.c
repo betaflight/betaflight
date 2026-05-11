@@ -116,6 +116,11 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
+static uint16_t getHeadingCentidegrees(void)
+{
+    return (uint16_t)(attitude.values.yaw * 10);
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
@@ -334,8 +339,8 @@ static void mavlinkSendPosition(void)
         gpsSol.velned.velE,
         // Ground Z Speed (Altitude), expressed as m/s * 100
         gpsSol.velned.velD,
-        // heading Current heading in degrees, in compass units (0..360, 0=north)
-        headingOrScaledMilliAmpereHoursDrawn()
+        // hdg Vehicle heading (yaw angle), 0.0..359.99 degrees in centidegrees. UINT16_MAX = unknown.
+        getHeadingCentidegrees()
     );
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
