@@ -279,12 +279,16 @@ docker build -t bf-dev-gazebo -f .devcontainer/containerfile.gazebo .devcontaine
 The simulation requires three processes running concurrently inside the container.
 Use three separate host terminals — the first starts the container, the others attach to it.
 
+> **Note:** Gazebo's GUI requires a display. On Linux the `docker run` command below forwards your host X11 socket into the container. On macOS, install [XQuartz](https://www.xquartz.org) and run `xhost +localhost` first.
+
 **Host terminal 1 — start the container and build SITL:**
 
 ```bash
 docker run -it --rm \
   --name bf-gazebo \
   --network=host \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v "$(pwd)":/workspace \
   bf-dev-gazebo
 
@@ -292,7 +296,7 @@ docker run -it --rm \
 make TARGET=SITL
 
 # Then start SITL
-./obj/main/betaflight_SITL.elf 127.0.0.1
+./obj/main/betaflight_SITL.elf
 ```
 
 **Host terminal 2 — attach and start Gazebo:**
