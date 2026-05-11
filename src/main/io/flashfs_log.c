@@ -333,16 +333,25 @@ static uint32_t bbDataDrops = 0;
 
 // Active log state. Valid only between flashfsLogBeginLog() and flashfsLogEndLog().
 static struct {
-    bool      isOpen;
-    bool      headerPhase;
-    bool      everWrapped;         // dataWriteHead has crossed dataSectionEnd at least once this session
-    bool      lapped;              // dataWriteHead has overtaken dataStart (writer is overwriting this session's earliest bytes)
-    bool      lappedPersisted;     // markBufferLapped() has flipped the preamble's lapped marker for this session
-    uint32_t  logId;
-    uint32_t  dataStart;
-    uint32_t  dataWriteHead;       // mirrors module-level dataWriteHead during the flight
-    uint32_t  bufferHeaderOffset;  // bytes written into header buffer so far
+    bool             isOpen;
+    bool             headerPhase;
+    bool             everWrapped;         // dataWriteHead has crossed dataSectionEnd at least once this session
+    bool             lapped;              // dataWriteHead has overtaken dataStart (writer is overwriting this session's earliest bytes)
+    volatile bool    lappedPersisted;     // markBufferLapped() has flipped the preamble's lapped marker for this session.
+                                          // volatile: the async path's DMA TC IRQ callback writes this from IRQ context.
+    uint32_t         logId;
+    uint32_t         dataStart;
+    uint32_t         dataWriteHead;       // mirrors module-level dataWriteHead during the flight
+    uint32_t         bufferHeaderOffset;  // bytes written into header buffer so far
 } active;
+
+// Module-scope state for the async lap-marker write. The DMA-based pathway needs:
+//   - A buffer that outlives the kicking-off call (DMA is in-flight after return).
+//   - An in-flight flag so subsequent eraseTick polls don't re-issue while the chip
+//     is busy programming the marker page.
+// Both are written by the DMA TC IRQ callback so must be volatile.
+static flashfsBufferPreamble_t lapMarkerPreambleBuf;
+static volatile bool lapMarkerInFlight = false;
 
 // Wrap-aware ring-range overlap test. Each range is [start, end) in a ring of size
 // geom.dataSectionEnd. If end <= start the range wraps and covers
@@ -475,9 +484,11 @@ static void persistLappedMarkerIfReady(void);
 // command and returns; the chip then erases for ~30-50 ms in its own background while
 // we keep going).
 //
-// Called from the data write hot path. NEVER blocks (except for the one-shot
-// lap-marker persist below — bounded to ~50-200 µs once per session at the
-// moment the chip first goes idle after a RAM-lap event).
+// Called from the data write hot path. NEVER blocks. The opportunistic
+// lap-marker persist below kicks off via DMA and returns immediately —
+// hot-path cost is ~15-20 µs (one synchronous preamble read + DMA setup),
+// once per session. The actual page program runs in the chip's background
+// while the FC loop continues.
 static void eraseTick(void)
 {
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
@@ -496,10 +507,11 @@ static void eraseTick(void)
     // observation points per page-program cycle — we catch the brief idle
     // windows that the ~250 Hz async-flush polling misses entirely on busy
     // chips. persistLappedMarkerIfReady is itself gated on flashfsIsIdle()
-    // (buffer empty AND chip ready) so it only fires when the cost is bounded
-    // to one page program. During the ~50-200 µs marker write, the writer
-    // keeps queuing bytes into the 16 KB RAM buffer — plenty of headroom to
-    // absorb the delay without dropping data.
+    // (buffer empty AND chip ready) so we only fire when the SPI bus is free.
+    // The write itself goes through markBufferLappedAsync which uses DMA +
+    // callback — hot-path cost is ~15-20 µs (preamble read + DMA setup),
+    // not the ~50-200 µs the sync path would block for. The chip's internal
+    // page program runs in background while the FC loop continues.
     persistLappedMarkerIfReady();
 
     // Pool refill: trigger an erase if we're below target. flashEraseSector is non-
@@ -705,6 +717,60 @@ static bool markBufferLapped(void)
     if (active.isOpen && !active.headerPhase) {
         flashfsSeekAbs(active.dataWriteHead);
     }
+    return true;
+}
+
+// DMA TC IRQ callback for the async lap-marker write. Runs in interrupt context;
+// touches only volatile flags. The chip is still busy programming the page for
+// another ~50-200 µs after this fires (DMA finished, internal page program in
+// progress) — flashIsReady() returns false during that window, so flashfs's
+// normal flow naturally waits until programming completes.
+static void lapMarkerWriteCallback(uintptr_t arg)
+{
+    (void)arg;
+    active.lappedPersisted = true;
+    lapMarkerInFlight = false;
+}
+
+// Async variant of markBufferLapped used by the hot-path persist trigger
+// (eraseTick → persistLappedMarkerIfReady). Kicks off the preamble update via
+// DMA and returns immediately — the CPU is free during the ~50-200 µs page
+// program, so the FC loop sees ~15-20 µs hot-path cost (one synchronous SPI
+// read + DMA setup) instead of the ~50-200 µs the sync path would block for.
+//
+// Bypasses flashfs's write API (which would unconditionally drain the RAM
+// buffer first via flashfsFlushSync) and goes straight to the flash driver.
+// Caller MUST have verified flashfsIsIdle() so the SPI bus is free and the
+// chip is ready to accept commands.
+//
+// Returns true on successful kick-off (or "already lapped, nothing to do");
+// false on a hardware read failure — caller leaves lappedPersisted=false so
+// the next tick retries.
+static bool markBufferLappedAsync(void)
+{
+    // flashReadBytes is the low-level driver call (bypasses flashfs's buffer);
+    // since the buffer area is only ever written via writeBytesSync (which also
+    // bypasses), the on-chip bytes are authoritative.
+    if (flashReadBytes(geom.bufferAreaStart, (uint8_t *)&lapMarkerPreambleBuf, sizeof(lapMarkerPreambleBuf))
+            != (int)sizeof(lapMarkerPreambleBuf)) {
+        return false;
+    }
+    if (lapMarkerPreambleBuf.reserved != 0xFFFF) {
+        // Already lapped (possibly partially from an interrupted previous
+        // attempt — see "any non-0xFFFF" handling on the sync path).
+        active.lappedPersisted = true;
+        return true;
+    }
+    lapMarkerPreambleBuf.reserved = 0;
+
+    // The buffer must outlive this call because flashPageProgram is async —
+    // DMA will continue transferring after we return. lapMarkerPreambleBuf is
+    // module-scope to guarantee that lifetime.
+    lapMarkerInFlight = true;
+    flashPageProgram(geom.bufferAreaStart,
+                     (const uint8_t *)&lapMarkerPreambleBuf,
+                     sizeof(lapMarkerPreambleBuf),
+                     lapMarkerWriteCallback);
     return true;
 }
 
@@ -1447,21 +1513,26 @@ uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 //
 //   - persistLappedMarkerIfReady: called from eraseTick (which fires per data
 //     byte — ~640 kHz under sustained writes). Gates on flashfsIsIdle()
-//     (buffer empty AND chip ready) so the only flash op that actually runs
-//     is the 20-byte preamble page program itself — bounded to ~50-200 µs,
-//     once per session. The per-byte polling rate is essential: it catches
-//     the brief idle windows between page programs (each ~50-200 µs wide)
-//     that lower-frequency polling would miss on a heavily-loaded chip.
-//     During the marker write, the writer keeps queuing bytes into the 16 KB
-//     RAM buffer — plenty of headroom to absorb the delay without dropping
-//     data. Worst case (chip genuinely never idle for a sustained period):
-//     persist is deferred to disarm via the blocking variant; the
-//     pre.reserved-based recovery contract holds.
+//     (buffer empty AND chip ready) AND uses markBufferLappedAsync — kicks off
+//     the marker write via DMA and returns. Hot-path cost is ~15-20 µs
+//     (synchronous preamble read + DMA setup), once per session. The actual
+//     ~50-200 µs page program runs in the chip's background while the FC loop
+//     continues; the DMA TC IRQ callback (lapMarkerWriteCallback) sets
+//     active.lappedPersisted=true. flashfs's normal flow naturally waits
+//     during the in-flight window because flashIsReady() returns false.
 //
-//     markBufferLapped → writeBytesSync without the idle gate would be a
-//     hard real-time violation: writeBytesSync starts with a flashfsFlushSync
-//     (could drain ~13 ms of buffered pages) and ends with
-//     `while (!flashIsReady())` (could be mid-sector-erase = up to 30-50 ms).
+//     The per-byte polling rate is essential: it catches the brief idle
+//     windows between page programs (each ~50-200 µs wide) that
+//     lower-frequency polling would miss on a heavily-loaded chip. During the
+//     marker write the writer keeps queuing bytes into the 16 KB RAM buffer
+//     which absorbs the delay without dropping data. Worst case (chip
+//     genuinely never idle for a sustained period): persist is deferred to
+//     disarm via the blocking variant.
+//
+//     The sync path's writeBytesSync would be a hard real-time violation:
+//     it starts with a flashfsFlushSync (could drain ~13 ms of buffered
+//     pages) and ends with `while (!flashIsReady())` (could be mid-sector-
+//     erase = up to 30-50 ms).
 //
 //   - persistLappedMarkerBlocking: called from flashfsLogFlushSync at disarm
 //     (non-realtime). Here we MUST guarantee the marker lands on flash before
@@ -1472,15 +1543,24 @@ uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 // persisted flag stays false so a subsequent call retries.
 static void persistLappedMarkerIfReady(void)
 {
-    if (active.isOpen && active.lapped && !active.lappedPersisted && flashfsIsIdle()) {
-        if (markBufferLapped()) {
-            active.lappedPersisted = true;
-        }
+    if (active.isOpen && active.lapped && !active.lappedPersisted
+            && !lapMarkerInFlight && flashfsIsIdle()) {
+        // Fire-and-forget: async DMA + callback sets lappedPersisted=true on
+        // completion. If markBufferLappedAsync returns false (read failure)
+        // the in-flight flag stays clear and a subsequent tick retries.
+        markBufferLappedAsync();
     }
 }
 
 static void persistLappedMarkerBlocking(void)
 {
+    // Drain any in-flight async marker write first. The DMA TC IRQ callback
+    // sets both lappedPersisted=true and lapMarkerInFlight=false atomically
+    // from the FC-loop's POV; once the spin exits the in-flight write has
+    // committed and the subsequent check below will see lappedPersisted=true
+    // and skip the redundant sync write.
+    while (lapMarkerInFlight) { /* spin until DMA TC IRQ fires */ }
+
     if (active.isOpen && active.lapped && !active.lappedPersisted) {
         if (markBufferLapped()) {
             active.lappedPersisted = true;
