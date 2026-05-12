@@ -328,6 +328,11 @@ uint32_t getFLASHSectorForEEPROM(void)
         failureMode(FAILURE_CONFIG_STORE_FAILURE);
     }
 }
+#elif defined(X32M7)
+uint32_t getFLASHSectorForEEPROM(void)
+{
+    return 0;
+}
 #endif
 
 void configUnlock(void)
@@ -338,6 +343,8 @@ void configUnlock(void)
     DAL_FLASH_Unlock();
 #elif defined(AT32F4)
     flash_unlock();
+#elif defined(X32M7)
+    // NOP - X32 SMU handles flash access internally
 #else
     FLASH_Unlock();
 #endif
@@ -351,6 +358,8 @@ void configLock(void)
         flash_lock();
 #elif defined(APM32F4)
         DAL_FLASH_Lock();
+#elif defined(X32M7)
+    // NOP - X32 SMU handles flash access internally
 #else
         FLASH_Lock();
 #endif
@@ -374,6 +383,8 @@ void configClearFlags(void)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
 #elif defined(APM32F4)
     __DAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+#elif defined(X32M7)
+    // NOP
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -534,6 +545,27 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, address, (uint32_t)buffer);
     if (status != HAL_OK) {
         return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+#elif defined(X32M7)
+    // Validate address is within the FLASH_CONFIG region (0x151C0000 - 0x151E0000)
+    if (address < 0x15020000U || address >= 0x15040000U)
+    {
+        return CONFIG_RESULT_FAILURE;
+    }
+
+    // Erase page if writing to a new page boundary
+    if (address % FLASH_PAGE_SIZE == 0) {
+        uint32_t status = SMU_EraseFlash(address);
+        if(status != FLASH_SUCCESS)
+        {
+            return CONFIG_RESULT_FAILURE;
+        }
+    }
+
+    // SMU_WriteFlash requires 3 parameters: address, source buffer, length in bytes
+    const uint32_t status = SMU_WriteFlash(address, (uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE);
+    if (status != FLASH_SUCCESS) {
+        return CONFIG_RESULT_INCOMPLETE;
     }
 #else
 #error "MCU not catered for in configWriteWord for config_streamer"

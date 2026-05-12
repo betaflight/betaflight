@@ -70,6 +70,13 @@ static void enableRxIrq(const uartHardware_t *hardware)
 #elif defined(APM32F4)
         DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         DAL_NVIC_EnableIRQ(hardware->irqn);
+#elif defined(X32M7)
+        NVIC_InitTypeDef NVIC_InitStructure;
+        NVIC_InitStructure.NVIC_IRQChannel = hardware->irqn;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(hardware->rxPriority);
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(hardware->rxPriority);
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
 #else
 # error "Unhandled MCU type"
 #endif
@@ -151,6 +158,14 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
             ((const unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
         );
+#elif defined(X32M7)
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF_PP,
+            GPIO_SLEW_RATE_FAST,
+            ((const unsigned[]){GPIO_NO_PULL, GPIO_PULL_DOWN, GPIO_PULL_UP})[pull],
+            0x00
+        );
+        UNUSED(pushPull);
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
         IOConfigGPIOAF(txIO, ioCfg, txAf);
@@ -171,7 +186,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
                 uartTxMonitor(s);
 #endif
             } else {
-#if defined(STM32F4) || defined(APM32F4)
+#if defined(STM32F4) || defined(APM32F4) || defined(X32M7)
                 // TODO: no need for pullup on TX only pin
                 const ioConfig_t ioCfg = IOCFG_AF_PP_UP;
 #else
@@ -182,7 +197,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         }
 
         if ((mode & MODE_RX) && rxIO) {
-#if defined(STM32F4) || defined(APM32F4)
+#if defined(STM32F4) || defined(APM32F4) || defined(X32M7)
             // no inversion possible on F4, always use pullup
             const ioConfig_t ioCfg = IOCFG_AF_PP_UP;
 #else
@@ -306,6 +321,8 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(X32M7)
+    USART_ConfigInt((USART_Module *)uartPort->USARTx, USART_INT_TXDE, ENABLE);
 #else
     USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif

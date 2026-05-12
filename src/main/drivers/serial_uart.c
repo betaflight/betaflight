@@ -305,11 +305,21 @@ static uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 
         // uartPort->rxDMAPos and rxDMAHead represent distances from the end
         // of the buffer.  They count DOWN as they advance.
+#if defined(X32M7)
+        // X32M7 DMA counter counts UP (bytes transferred so far, 0-based).
+        // rxDMAPos also counts UP: index of the next byte the CPU will read.
+        if (rxDMAHead >= uartPort->rxDMAPos) {
+            return rxDMAHead - uartPort->rxDMAPos;
+        } else {
+            return uartPort->port.rxBufferSize + rxDMAHead - uartPort->rxDMAPos;
+        }
+#else
         if (uartPort->rxDMAPos >= rxDMAHead) {
             return uartPort->rxDMAPos - rxDMAHead;
         } else {
             return uartPort->port.rxBufferSize + uartPort->rxDMAPos - rxDMAHead;
         }
+#endif
     }
 #endif
 
@@ -377,9 +387,15 @@ static uint8_t uartRead(serialPort_t *instance)
 
 #ifdef USE_DMA
     if (uartPort->rxDMAResource) {
+#if defined(X32M7)
+        ch = uartPort->port.rxBuffer[uartPort->rxDMAPos];
+        if (++uartPort->rxDMAPos >= uartPort->port.rxBufferSize)
+            uartPort->rxDMAPos = 0;
+#else
         ch = uartPort->port.rxBuffer[uartPort->port.rxBufferSize - uartPort->rxDMAPos];
         if (--uartPort->rxDMAPos == 0)
             uartPort->rxDMAPos = uartPort->port.rxBufferSize;
+#endif
     } else
 #endif
     {
@@ -519,11 +535,19 @@ UART_IRQHandler(USART, 3, UARTDEV_3) // USART3 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART4
+#if defined(X32M7)
+UART_IRQHandler(USART, 4, UARTDEV_4) // USART4 Rx/Tx IRQ Handler (X32M7)
+#else
 UART_IRQHandler(UART, 4, UARTDEV_4)  // UART4 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_UART5
+#if defined(X32M7)
+UART_IRQHandler(USART, 5, UARTDEV_5) // USART5 Rx/Tx IRQ Handler (X32M7)
+#else
 UART_IRQHandler(UART, 5, UARTDEV_5)  // UART5 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_UART6
@@ -531,11 +555,19 @@ UART_IRQHandler(USART, 6, UARTDEV_6) // USART6 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART7
+#if defined(X32M7)
+UART_IRQHandler(USART, 7, UARTDEV_7) // USART7 Rx/Tx IRQ Handler (X32M7)
+#else
 UART_IRQHandler(UART, 7, UARTDEV_7)  // UART7 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_UART8
+#if defined(X32M7)
+UART_IRQHandler(USART, 8, UARTDEV_8) // USART8 Rx/Tx IRQ Handler (X32M7)
+#else
 UART_IRQHandler(UART, 8, UARTDEV_8)  // UART8 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_UART9
@@ -543,7 +575,11 @@ UART_IRQHandler(UART, 9, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_UART10
+#if defined(X32M7)
+UART_IRQHandler(UART, 10, UARTDEV_10)  // UART10 Rx/Tx IRQ Handler (X32M7)
+#else
 UART_IRQHandler(USART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+#endif
 #endif
 
 #ifdef USE_LPUART1

@@ -87,7 +87,7 @@
 #ifdef USE_HAL_DRIVER
 #define BB_GPIO_PULLDOWN GPIO_PULLDOWN
 #define BB_GPIO_PULLUP   GPIO_PULLUP
-#elif defined(AT32F435)
+#elif defined(AT32F435) defined(X32M7)
 #define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
 #define BB_GPIO_PULLUP GPIO_PULL_UP
 #else
@@ -124,6 +124,20 @@ typedef struct dmaRegCache_s {
 #elif defined(STM32N6)
     // TODO: N6 HPDMA/GPDMA register cache - placeholder for future implementation
     uint32_t placeholder;
+#elif defined(X32M7)
+    uint32_t  SA;           /* (offset 0x0000) Source Address Register */
+    uint32_t  RESERVED0;
+    uint32_t  DA;           /* (offset 0x0008) Destination Address Register */
+    uint32_t  RESERVED1;
+    uint32_t  LLP;          /* (offset 0x0010) Linked List Pointer Register */
+    uint32_t  RESERVED2;
+    uint64_t  CTRL;         /* (offset 0x0018) Control Register Low */
+    uint32_t  RESERVED3[8];
+    uint64_t  CFG;          /* (offset 0x0040) Configuration Register Low */
+    uint32_t  SG;           /* (offset 0x0048) Source Gather Register */
+    uint32_t  RESERVED4;
+    uint32_t  DS;           /* (offset 0x0050) Destination Scatter Register */
+    uint32_t  RESERVED5;
 #else
 #error No MCU dependent code here
 #endif
