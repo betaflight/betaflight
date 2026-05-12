@@ -542,6 +542,9 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
     uint8_t chirpRepeat;
+    uint8_t chirpRepeatsRemaining;
+    flight_dynamics_index_t chirpAxis;
+    bool chirpSeriesIsFinished;
 #endif // USE_CHIRP
 } pidRuntime_t;
 
@@ -596,4 +599,8 @@ float pidGetPidFrequency(void);
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
+flight_dynamics_index_t pidChirpGetChirpAxis(void);
+uint8_t pidChirpGetRepeatTotal(void);
+uint8_t pidChirpGetRepeatCurrent(void);
+bool pidChirpSeriesIsFinished(void);
 #endif
