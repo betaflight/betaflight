@@ -23,6 +23,7 @@
  *
  * Author: Konstantin Sharlaimov
  */
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -383,11 +384,31 @@ static void mavlinkSendAvailableModesMonitor(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+// COMMAND_LONG params arrive as floats from an external GCS. Casting NaN/inf or
+// out-of-range values to integer types is undefined behaviour, so validate first.
+static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
+{
+    if (!isfinite(f) || f < 0.0f) {
+        return false;
+    }
+    if ((double)f > (double)maxValue) {
+        return false;
+    }
+    *out = (uint32_t)f;
+    return true;
+}
+
 static void handleRequestMessage(const mavlink_command_long_t *cmd,
     uint8_t targetSystem, uint8_t targetComponent)
 {
+    uint32_t messageId;
+    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &messageId)) {
+        mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, MAV_RESULT_DENIED, targetSystem, targetComponent);
+        return;
+    }
+
     uint8_t result;
-    switch ((uint32_t)cmd->param1) {
+    switch (messageId) {
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
         mavlinkSendAutopilotVersion();
         result = MAV_RESULT_ACCEPTED;
@@ -401,13 +422,13 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         result = MAV_RESULT_ACCEPTED;
         break;
     case MAVLINK_MSG_ID_AVAILABLE_MODES: {
-        const uint8_t modeIndex = (uint8_t)cmd->param2;
-        if (modeIndex < 1 || modeIndex > BF_MAV_MODE_COUNT) {
+        uint32_t modeIndex;
+        if (!cmdParamToUint32(cmd->param2, BF_MAV_MODE_COUNT, &modeIndex) || modeIndex < 1) {
             result = MAV_RESULT_DENIED;
-        } else {
-            mavlinkSendAvailableMode(modeIndex);
-            result = MAV_RESULT_ACCEPTED;
+            break;
         }
+        mavlinkSendAvailableMode((uint8_t)modeIndex);
+        result = MAV_RESULT_ACCEPTED;
         break;
     }
     case MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR:
@@ -433,10 +454,19 @@ static void handleCommandLong(const mavlink_message_t *msg)
     }
 
     switch (cmd.command) {
-    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
-        mavlinkSendAutopilotVersion();
+    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
+        // Spec: param1 is MAV_BOOL — 1 = send AUTOPILOT_VERSION, 0 = ignore.
+        uint32_t request;
+        if (!cmdParamToUint32(cmd.param1, 1, &request)) {
+            mavlinkSendCommandAck(cmd.command, MAV_RESULT_DENIED, msg->sysid, msg->compid);
+            break;
+        }
+        if (request == 1) {
+            mavlinkSendAutopilotVersion();
+        }
         mavlinkSendCommandAck(cmd.command, MAV_RESULT_ACCEPTED, msg->sysid, msg->compid);
         break;
+    }
     case MAV_CMD_REQUEST_MESSAGE:
         handleRequestMessage(&cmd, msg->sysid, msg->compid);
         break;
