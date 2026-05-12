@@ -104,6 +104,38 @@ static mavlink_message_t mavRxMsg;
 static mavlink_status_t mavRxStatus;
 static bool mavlinkPortOwned = false;
 
+// Betaflight-specific MAVLink custom_mode values. Stable enumeration emitted in
+// HEARTBEAT.custom_mode and advertised via AVAILABLE_MODES; consumed in T3 by
+// MAV_CMD_DO_SET_MODE handling.
+typedef enum {
+    BF_MAV_MODE_ACRO = 0,
+    BF_MAV_MODE_ANGLE,
+    BF_MAV_MODE_HORIZON,
+    BF_MAV_MODE_ALT_HOLD,
+    BF_MAV_MODE_POS_HOLD,
+    BF_MAV_MODE_AUTOPILOT,
+    BF_MAV_MODE_RTL,
+    BF_MAV_MODE_FAILSAFE,
+    BF_MAV_MODE_COUNT,
+} bfMavMode_e;
+
+typedef struct {
+    const char *name;
+    uint8_t standardMode;
+    uint32_t properties;
+} bfMavModeDescriptor_t;
+
+static const bfMavModeDescriptor_t bfMavModeDescriptors[BF_MAV_MODE_COUNT] = {
+    [BF_MAV_MODE_ACRO]      = { "Acro",      MAV_STANDARD_MODE_NON_STANDARD,  0 },
+    [BF_MAV_MODE_ANGLE]     = { "Angle",     MAV_STANDARD_MODE_NON_STANDARD,  0 },
+    [BF_MAV_MODE_HORIZON]   = { "Horizon",   MAV_STANDARD_MODE_NON_STANDARD,  0 },
+    [BF_MAV_MODE_ALT_HOLD]  = { "Alt Hold",  MAV_STANDARD_MODE_ALTITUDE_HOLD, 0 },
+    [BF_MAV_MODE_POS_HOLD]  = { "Pos Hold",  MAV_STANDARD_MODE_POSITION_HOLD, 0 },
+    [BF_MAV_MODE_AUTOPILOT] = { "Autopilot", MAV_STANDARD_MODE_MISSION,       0 },
+    [BF_MAV_MODE_RTL]       = { "RTL",       MAV_STANDARD_MODE_SAFE_RECOVERY, 0 },
+    [BF_MAV_MODE_FAILSAFE]  = { "Failsafe",  MAV_STANDARD_MODE_SAFE_RECOVERY, MAV_MODE_PROPERTY_NOT_USER_SELECTABLE },
+};
+
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
 
@@ -299,11 +331,63 @@ static void mavlinkSendComponentInformation(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-static void handleRequestMessage(uint32_t messageId,
+static uint32_t mavlinkComputeCustomMode(void)
+{
+    if (FLIGHT_MODE(FAILSAFE_MODE) || failsafeIsActive()) {
+        return BF_MAV_MODE_FAILSAFE;
+    }
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        return BF_MAV_MODE_RTL;
+    }
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        return BF_MAV_MODE_AUTOPILOT;
+    }
+    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        return BF_MAV_MODE_POS_HOLD;
+    }
+    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+        return BF_MAV_MODE_ALT_HOLD;
+    }
+    if (FLIGHT_MODE(HORIZON_MODE)) {
+        return BF_MAV_MODE_HORIZON;
+    }
+    if (FLIGHT_MODE(ANGLE_MODE)) {
+        return BF_MAV_MODE_ANGLE;
+    }
+    return BF_MAV_MODE_ACRO;
+}
+
+static void mavlinkSendAvailableMode(uint8_t modeIndex)
+{
+    if (modeIndex < 1 || modeIndex > BF_MAV_MODE_COUNT) {
+        return;
+    }
+    const uint8_t idx0 = modeIndex - 1;
+    const bfMavModeDescriptor_t *desc = &bfMavModeDescriptors[idx0];
+
+    mavlink_msg_available_modes_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        BF_MAV_MODE_COUNT,
+        modeIndex,
+        desc->standardMode,
+        idx0,
+        desc->properties,
+        desc->name);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkSendAvailableModesMonitor(void)
+{
+    mavlink_msg_available_modes_monitor_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, 1);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void handleRequestMessage(const mavlink_command_long_t *cmd,
     uint8_t targetSystem, uint8_t targetComponent)
 {
     uint8_t result;
-    switch (messageId) {
+    switch ((uint32_t)cmd->param1) {
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
         mavlinkSendAutopilotVersion();
         result = MAV_RESULT_ACCEPTED;
@@ -314,6 +398,20 @@ static void handleRequestMessage(uint32_t messageId,
         break;
     case MAVLINK_MSG_ID_COMPONENT_INFORMATION:
         mavlinkSendComponentInformation();
+        result = MAV_RESULT_ACCEPTED;
+        break;
+    case MAVLINK_MSG_ID_AVAILABLE_MODES: {
+        const uint8_t modeIndex = (uint8_t)cmd->param2;
+        if (modeIndex < 1 || modeIndex > BF_MAV_MODE_COUNT) {
+            result = MAV_RESULT_DENIED;
+        } else {
+            mavlinkSendAvailableMode(modeIndex);
+            result = MAV_RESULT_ACCEPTED;
+        }
+        break;
+    }
+    case MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR:
+        mavlinkSendAvailableModesMonitor();
         result = MAV_RESULT_ACCEPTED;
         break;
     default:
@@ -340,7 +438,7 @@ static void handleCommandLong(const mavlink_message_t *msg)
         mavlinkSendCommandAck(cmd.command, MAV_RESULT_ACCEPTED, msg->sysid, msg->compid);
         break;
     case MAV_CMD_REQUEST_MESSAGE:
-        handleRequestMessage((uint32_t)cmd.param1, msg->sysid, msg->compid);
+        handleRequestMessage(&cmd, msg->sysid, msg->compid);
         break;
     default:
         mavlinkSendCommandAck(cmd.command, MAV_RESULT_UNSUPPORTED, msg->sysid, msg->compid);
@@ -755,11 +853,8 @@ static void mavlinkSendHUDAndHeartbeat(void)
             break;
     }
 
-    // Custom mode for compatibility with APM OSDs
-    uint8_t mavCustomMode = 1;  // Acro by default
-
-    if (FLIGHT_MODE(ANGLE_MODE | HORIZON_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)) {
-        mavCustomMode = 0;      //Stabilize
+    const uint32_t mavCustomMode = mavlinkComputeCustomMode();
+    if (mavCustomMode != BF_MAV_MODE_ACRO) {
         mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
 
