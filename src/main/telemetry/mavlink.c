@@ -83,7 +83,7 @@
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
+#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_RXTX
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
@@ -98,6 +98,10 @@ static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
 static armingDisableFlags_e lastArmingDisableFlags = 0;
+
+static mavlink_message_t mavRxMsg;
+static mavlink_status_t mavRxStatus;
+static bool mavlinkPortOwned = false;
 
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
@@ -187,10 +191,94 @@ static void mavlinkSendSystemTime(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static void handleHeartbeatRx(const mavlink_message_t *msg)
+{
+    UNUSED(msg);
+    // Stub for now; later tiers will track GCS liveness and target replies by sysid/compid.
+}
+
+static void handlePing(const mavlink_message_t *msg)
+{
+    mavlink_ping_t ping;
+    mavlink_msg_ping_decode(msg, &ping);
+
+    // PING request per spec has target_system == 0 && target_component == 0;
+    // non-zero target fields indicate a response, which we must not echo back.
+    if (ping.target_system != 0 || ping.target_component != 0) {
+        return;
+    }
+
+    mavlink_msg_ping_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        ping.time_usec,
+        ping.seq,
+        msg->sysid,
+        msg->compid);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void handleTimesync(const mavlink_message_t *msg)
+{
+    mavlink_timesync_t timesync;
+    mavlink_msg_timesync_decode(msg, &timesync);
+
+    // tc1 == 0 marks a request; non-zero is a response we never solicited.
+    if (timesync.tc1 != 0) {
+        return;
+    }
+
+    // Accept broadcast or directed-to-us; ignore requests addressed to other systems.
+    if ((timesync.target_system != 0 && timesync.target_system != MAVLINK_SYSTEM_ID) ||
+        (timesync.target_component != 0 && timesync.target_component != MAVLINK_COMPONENT_ID)) {
+        return;
+    }
+
+    mavlink_msg_timesync_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        (int64_t)micros() * 1000LL,
+        timesync.ts1,
+        msg->sysid,
+        msg->compid);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkDispatch(const mavlink_message_t *msg)
+{
+    switch (msg->msgid) {
+    case MAVLINK_MSG_ID_HEARTBEAT:
+        handleHeartbeatRx(msg);
+        break;
+    case MAVLINK_MSG_ID_PING:
+        handlePing(msg);
+        break;
+    case MAVLINK_MSG_ID_TIMESYNC:
+        handleTimesync(msg);
+        break;
+    default:
+        break;
+    }
+}
+
+static void mavlinkProcessIncoming(void)
+{
+    if (!mavlinkPortOwned || !mavlinkPort) {
+        return;
+    }
+    // Bound the drain so a flooded link cannot starve the telemetry task.
+    uint16_t rxBudget = 64;
+    while (rxBudget-- && serialRxBytesWaiting(mavlinkPort)) {
+        const uint8_t c = serialRead(mavlinkPort);
+        if (mavlink_parse_char(MAVLINK_COMM_1, c, &mavRxMsg, &mavRxStatus) == MAVLINK_FRAMING_OK) {
+            mavlinkDispatch(&mavRxMsg);
+        }
+    }
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
     mavlinkPort = NULL;
+    mavlinkPortOwned = false;
     mavlinkTelemetryEnabled = false;
 }
 
@@ -220,6 +308,8 @@ void configureMAVLinkTelemetryPort(void)
 
     // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
     lastArmingDisableFlags = 0;
+    mavlinkPortOwned = true;
+    mavlink_reset_channel_status(MAVLINK_COMM_1);
     mavlinkTelemetryEnabled = true;
 }
 
@@ -750,6 +840,7 @@ void checkMAVLinkTelemetryState(void)
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
             lastArmingDisableFlags = 0;
+            mavlinkPortOwned = false;
             mavlinkTelemetryEnabled = true;
             configureMAVLinkStreamRates();
         }
@@ -774,6 +865,8 @@ void handleMAVLinkTelemetry(void)
     if (!mavlinkTelemetryEnabled || !mavlinkPort) {
         return;
     }
+
+    mavlinkProcessIncoming();
 
     bool shouldSendTelemetry = false;
     uint32_t now = micros();
