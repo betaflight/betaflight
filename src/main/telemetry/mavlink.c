@@ -75,6 +75,7 @@
 #include "telemetry/mavlink.h"
 
 #include "build/debug.h"
+#include "build/version.h"
 
 // mavlink library uses unnamed unions that causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -242,6 +243,111 @@ static void handleTimesync(const mavlink_message_t *msg)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
+static void mavlinkSendCommandAck(uint16_t command, uint8_t result,
+    uint8_t targetSystem, uint8_t targetComponent)
+{
+    mavlink_msg_command_ack_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        command, result, 0, 0, targetSystem, targetComponent);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkSendAutopilotVersion(void)
+{
+    const uint64_t capabilities = MAV_PROTOCOL_CAPABILITY_MAVLINK2;
+    const uint32_t flightSwVersion =
+        ((uint32_t)(FC_VERSION_YEAR - FC_CALVER_BASE_YEAR) << 24) |
+        ((uint32_t)FC_VERSION_MONTH << 16) |
+        ((uint32_t)FC_VERSION_PATCH_LEVEL << 8);
+
+    const uint8_t emptyCustom[8] = {0};
+    uint8_t uid2[18] = {0};
+    const uint32_t uidWords[3] = { U_ID_0, U_ID_1, U_ID_2 };
+    memcpy(uid2, uidWords, sizeof(uidWords));
+
+    mavlink_msg_autopilot_version_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        capabilities,
+        flightSwVersion,
+        0,
+        0,
+        0,
+        emptyCustom,
+        emptyCustom,
+        emptyCustom,
+        0,
+        0,
+        ((uint64_t)U_ID_0 << 32) | U_ID_1,
+        uid2);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkSendProtocolVersion(void)
+{
+    const uint8_t emptyHash[8] = {0};
+    mavlink_msg_protocol_version_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        200, 100, 200, emptyHash, emptyHash);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkSendComponentInformation(void)
+{
+    mavlink_msg_component_information_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        millis(), 0, "", 0, "");
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void handleRequestMessage(uint32_t messageId,
+    uint8_t targetSystem, uint8_t targetComponent)
+{
+    uint8_t result;
+    switch (messageId) {
+    case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
+        mavlinkSendAutopilotVersion();
+        result = MAV_RESULT_ACCEPTED;
+        break;
+    case MAVLINK_MSG_ID_PROTOCOL_VERSION:
+        mavlinkSendProtocolVersion();
+        result = MAV_RESULT_ACCEPTED;
+        break;
+    case MAVLINK_MSG_ID_COMPONENT_INFORMATION:
+        mavlinkSendComponentInformation();
+        result = MAV_RESULT_ACCEPTED;
+        break;
+    default:
+        result = MAV_RESULT_UNSUPPORTED;
+        break;
+    }
+    mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, result, targetSystem, targetComponent);
+}
+
+static void handleCommandLong(const mavlink_message_t *msg)
+{
+    mavlink_command_long_t cmd;
+    mavlink_msg_command_long_decode(msg, &cmd);
+
+    // Accept broadcast or directed-to-us; ignore commands addressed to other systems.
+    if ((cmd.target_system != 0 && cmd.target_system != MAVLINK_SYSTEM_ID) ||
+        (cmd.target_component != 0 && cmd.target_component != MAVLINK_COMPONENT_ID)) {
+        return;
+    }
+
+    switch (cmd.command) {
+    case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
+        mavlinkSendAutopilotVersion();
+        mavlinkSendCommandAck(cmd.command, MAV_RESULT_ACCEPTED, msg->sysid, msg->compid);
+        break;
+    case MAV_CMD_REQUEST_MESSAGE:
+        handleRequestMessage((uint32_t)cmd.param1, msg->sysid, msg->compid);
+        break;
+    default:
+        mavlinkSendCommandAck(cmd.command, MAV_RESULT_UNSUPPORTED, msg->sysid, msg->compid);
+        break;
+    }
+}
+
 static void mavlinkDispatch(const mavlink_message_t *msg)
 {
     switch (msg->msgid) {
@@ -253,6 +359,9 @@ static void mavlinkDispatch(const mavlink_message_t *msg)
         break;
     case MAVLINK_MSG_ID_TIMESYNC:
         handleTimesync(msg);
+        break;
+    case MAVLINK_MSG_ID_COMMAND_LONG:
+        handleCommandLong(msg);
         break;
     default:
         break;
