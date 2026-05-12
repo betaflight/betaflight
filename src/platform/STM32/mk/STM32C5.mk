@@ -88,6 +88,12 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32c591xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+else ifeq ($(TARGET_MCU),STM32C562xx)
+DEVICE_FLAGS       += -DSTM32C562xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c562_512k.ld
+STARTUP_SRC         = STM32/startup/startup_stm32c562xx.s
+MCU_FLASH_SIZE     := 512
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 else
 $(error Unknown MCU for STM32C5 target)
 endif
@@ -134,6 +140,7 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_hal2.c \
             STM32/bus_i2c_ll.c \
             STM32/bus_i2c_ll_init.c \
+            STM32/can_stm32c5xx.c \
             drivers/bus_i2c_timing.c \
             STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32c5xx.c \
@@ -147,6 +154,8 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/light_ws2811strip_hal2.c \
             STM32/startup/system_stm32c5xx.c
+
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
 
 MSC_SRC =
 

@@ -252,9 +252,13 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->inputARR;
 
-    bbDMA_Cmd(bbPort, ENABLE);
-
+    // Set direction before bbDMA_Cmd: on H5/C5 single-shot DMA, bbDMA_Cmd
+    // reloads the cached register set selected by bbPort->direction. If we
+    // enable while direction is still OUTPUT it overwrites the dmaRegInput
+    // we just loaded with the dmaRegOutput regs.
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
+
+    bbDMA_Cmd(bbPort, ENABLE);
 }
 #endif
 
@@ -408,6 +412,17 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState)
     //xDMA_Cmd(bbPort->dmaResource, NewState);
 
     if (NewState == ENABLE) {
+#if defined(USE_DMA_REGISTER_CACHE) && (defined(STM32C5) || defined(STM32H5))
+        // C5 LPDMA / H5 GPDMA in single-shot mode do not auto-rearm: each
+        // completed transfer leaves CBR1 = 0 and CSAR advanced past the
+        // buffer, so the next bare CCR.EN write transfers nothing. Reload
+        // the cached regs (CBR1/CSAR/CDAR/CTR1/CTR2/CCR) before re-enabling
+        // so each frame restarts from the original buffer head.
+        bbLoadDMARegs(bbPort->dmaResource,
+                      bbPort->direction == DSHOT_BITBANG_DIRECTION_OUTPUT
+                          ? &bbPort->dmaRegOutput
+                          : &bbPort->dmaRegInput);
+#endif
         xLL_EX_DMA_EnableResource(bbPort->dmaResource);
     } else {
         xLL_EX_DMA_DisableResource(bbPort->dmaResource);

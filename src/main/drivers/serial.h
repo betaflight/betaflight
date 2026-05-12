@@ -88,11 +88,10 @@ typedef struct serialPort_s {
     uint32_t txBufferSize;
     volatile uint8_t *rxBuffer;
     volatile uint8_t *txBuffer;
-    uint32_t rxBufferHead;
-    uint32_t rxBufferTail;
-    uint32_t txBufferHead;
-    uint32_t txBufferTail;
-
+    volatile uint32_t rxBufferHead;
+    volatile uint32_t rxBufferTail;
+    volatile uint32_t txBufferHead;
+    volatile uint32_t txBufferTail;
     serialReceiveCallbackPtr rxCallback;
     void *rxCallbackData;
 

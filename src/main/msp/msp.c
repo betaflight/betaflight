@@ -218,6 +218,10 @@ typedef enum {
 static bool vtxTableNeedsInit = false;
 #endif
 
+#ifdef USE_OSD
+static bool fontHasBeenUpdated = false;
+#endif
+
 static int mspDescriptor = 0;
 
 mspDescriptor_t mspDescriptorAlloc(void)
@@ -359,6 +363,16 @@ MAYBE_UNUSED static void configRebootUpdateCheckU8(uint8_t *parm, uint8_t value)
     *parm = value;
 }
 
+#ifdef USE_OSD
+static void fontUpdateCompletion(void)
+{
+    displayPort_t *osdDisplayPort = osdGetDisplayPort(NULL);
+    if (osdDisplayPort) {
+        displayFontUpdateCompletion(osdDisplayPort);
+    }
+}
+#endif
+
 static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
@@ -367,6 +381,13 @@ static void mspRebootFn(serialPort_t *serialPort)
 
     switch (rebootMode) {
     case MSP_REBOOT_FIRMWARE:
+#ifdef USE_OSD
+        if (fontHasBeenUpdated) {
+            fontUpdateCompletion();
+            fontHasBeenUpdated = false;
+        }
+#endif
+
         systemReset();
 
         break;
@@ -648,7 +669,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP2_MCU_INFO: {
-        sbufWriteU8(dst, getMcuTypeId());
+        sbufWriteU8(dst, MCU_TYPE_ID_PROVIDED_BY_NAME);
         sbufWritePString(dst, getMcuTypeName());
         break;
     }
@@ -713,7 +734,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteData(dst, &emptySignature, sizeof(emptySignature));
 #endif
 
-        sbufWriteU8(dst, getMcuTypeId());
+        sbufWriteU8(dst, MCU_TYPE_ID_PROVIDED_BY_NAME);
 
         // Added in API version 1.42
         sbufWriteU8(dst, systemConfig()->configurationState);
@@ -951,6 +972,12 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_MSP_DEVICE        (1 << 6)
 #define OSD_FLAGS_OSD_HARDWARE_AIRBOT_THEIA_OSD (1 << 7)
 
+#if ENABLE_FB_OSD
+// TODO allocated a new flag for FB_OSD (maybe reuse 1 << 1 ? ), and update Configurator accordingly.
+// For now, pretend to Configurator that we are max7456
+#define OSD_FLAGS_OSD_HARDWARE_FB_OSD   (1 << 4)
+#endif
+
         uint8_t osdFlags = 0;
 
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
@@ -984,6 +1011,15 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
             }
 
             break;
+#if ENABLE_FB_OSD
+        case OSD_DISPLAYPORT_DEVICE_FBOSD:
+            osdFlags |= OSD_FLAGS_OSD_HARDWARE_FB_OSD;
+            if (displayIsReady) {
+                osdFlags |= OSD_FLAGS_OSD_DEVICE_DETECTED;
+            }
+
+            break;
+#endif
         default:
             break;
         }
@@ -1951,6 +1987,20 @@ case MSP_NAME:
         sbufWriteU8(dst, dynNotchConfig()->dyn_notch_count);
 #else
         sbufWriteU8(dst, 0);
+#endif
+        // Added in MSP API 1.48
+#if defined(USE_RPM_FILTER)
+        sbufWriteU16(dst, rpmFilterConfig()->rpm_filter_fade_range_hz);
+        sbufWriteU16(dst, rpmFilterConfig()->rpm_filter_q);
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+            sbufWriteU8(dst, rpmFilterConfig()->rpm_filter_weights[i]);
+        }
+#else
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        for (int i = 0; i < RPM_FILTER_HARMONICS_MAX; i++) {
+            sbufWriteU8(dst, 0);
+        }
 #endif
         break;
 
@@ -3297,6 +3347,38 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
+        if (sbufBytesRemaining(src) >= 7) {
+            // Added in MSP API 1.48
+#if defined(USE_RPM_FILTER)
+            {
+                const uint16_t fadeRangeHz = sbufReadU16(src);
+                const uint16_t q = sbufReadU16(src);
+                uint8_t weights[RPM_FILTER_HARMONICS_MAX];
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    weights[j] = sbufReadU8(src);
+                }
+                if (q < 250 || q > 3000 || fadeRangeHz > 1000) {
+                    return MSP_RESULT_ERROR;
+                }
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    if (weights[j] > 100) {
+                        return MSP_RESULT_ERROR;
+                    }
+                }
+                rpmFilterConfigMutable()->rpm_filter_fade_range_hz = fadeRangeHz;
+                rpmFilterConfigMutable()->rpm_filter_q = q;
+                for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                    rpmFilterConfigMutable()->rpm_filter_weights[j] = weights[j];
+                }
+            }
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
+                sbufReadU8(src);
+            }
+#endif
+        }
 
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
@@ -4354,14 +4436,14 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             return MSP_RESULT_ERROR;
         }
 
-        const uint8_t requirementIndex = provider - 1;
-        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
-
         transponderConfigMutable()->provider = provider;
 
         if (provider == TRANSPONDER_NONE) {
             break;
         }
+
+        const uint8_t requirementIndex = provider - 1;
+        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
 
         if (bytesRemaining != transponderDataSize) {
             return MSP_RESULT_ERROR;
@@ -4611,6 +4693,8 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr)) {
                 return MSP_RESULT_ERROR;
             }
+
+            fontHasBeenUpdated = true;
         }
         break;
 

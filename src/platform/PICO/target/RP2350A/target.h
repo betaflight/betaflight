@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight RP2350A"
+#define USBD_PRODUCT_STRING     "Betaflight - RP2350A"
 #endif
 
 #ifdef PICO_TRACE
@@ -68,6 +68,9 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI
 
+#undef USE_DSHOT_BITBANG
+#define USE_DSHOT_TELEMETRY
+
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
@@ -79,6 +82,9 @@
 // Assume on-board flash (see linker files)
 #define CONFIG_IN_FLASH
 
+// Allow for font data in flash
+#define FONTDATA_IN_FLASH
+
 // Pico flash writes are all aligned and in batches of FLASH_PAGE_SIZE (256)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE   FLASH_PAGE_SIZE
 #define FLASH_CONFIG_BUFFER_TYPE            uint8_t
@@ -88,15 +94,27 @@
 #undef USE_DMA_SPEC // not yet required - possibly won't be used at all
 
 // 0, 1 or 2 for pio0, pio1, pio2
-// maybe these more dynamic,
-// or configurable in config.h
+// These can be predefined in config.h
 // Four state machines (sm) per pio block
+// Defaults
 // pio0 -> dshot for motors 1,2,3,4
-// pio1 -> UART2, UART3
-// pio2 -> LED STRIP
+// pio1 -> PIOUART0, PIOUART1
+// pio2 -> LED STRIP, FB_OSD
+#ifndef PIO_DSHOT_INDEX
 #define PIO_DSHOT_INDEX    0
+#endif
+
+#ifndef PIO_UART_INDEX
 #define PIO_UART_INDEX     1
+#endif
+
+#ifndef PIO_LEDSTRIP_INDEX
 #define PIO_LEDSTRIP_INDEX 2
+#endif
+
+#ifndef PIO_OSD_INDEX
+#define PIO_OSD_INDEX 2
+#endif
 
 // Various untested or unsupported elements are undefined below
 
@@ -109,7 +127,6 @@
 #undef USE_SERIALRX_GHST
 #undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
-#undef USE_SERIALRX_SBUS
 #undef USE_SERIALRX_SPEKTRUM
 #undef USE_SERIALRX_SUMD
 #undef USE_SERIALRX_SUMH
@@ -147,8 +164,6 @@
 #undef USE_MSP_UART
 #undef USE_MSP_DISPLAYPORT
 
-#undef USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
 #undef USE_ESC_SENSOR
 
 #undef USE_VTX

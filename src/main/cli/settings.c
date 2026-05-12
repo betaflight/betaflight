@@ -44,6 +44,7 @@
 #include "drivers/mco.h"
 #include "drivers/pinio.h"
 #include "drivers/sdio.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_table.h"
 
@@ -71,6 +72,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 #include "io/vtx.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
@@ -86,6 +88,8 @@
 #include "pg/beeper.h"
 #include "pg/beeper_dev.h"
 #include "pg/bus_i2c.h"
+#include "pg/can.h"
+#include "pg/dronecan.h"
 #include "pg/dashboard.h"
 #include "pg/displayport_profiles.h"
 #include "pg/dyn_notch.h"
@@ -183,7 +187,10 @@ static const char * const lookupTableAlignment[] = {
 
 #ifdef USE_GPS
 static const char * const lookupTableGpsProvider[] = {
-    "NMEA", "UBLOX", "MSP", "VIRTUAL"
+    "NMEA", "UBLOX", "MSP", "VIRTUAL",
+#if ENABLE_DRONECAN
+    "DRONECAN",
+#endif
 };
 
 static const char * const lookupTableGpsSbasMode[] = {
@@ -507,7 +514,7 @@ static const char* const lookupTableDshotBitbangedTimer[] = {
 };
 
 const char * const lookupTableOsdDisplayPortDevice[] = {
-    "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD"
+    "NONE", "AUTO", "MAX7456", "MSP", "FRSKYOSD", "FBOSD"
 };
 
 #ifdef USE_OSD
@@ -564,6 +571,12 @@ const char* const lookupTableYawType[] = {
     "RUDDER", "DIFF_THRUST",
 };
 #endif // USE_WING
+
+#ifdef USE_TRANSPONDER
+static const char * const lookupTableTransponderProvider[] = {
+    "NONE", "ILAP", "ARCITIMER", "ERLT"
+};
+#endif
 
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
@@ -708,6 +721,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableTpaSpeedType),
     LOOKUP_TABLE_ENTRY(lookupTableYawType),
 #endif // USE_WING
+#ifdef USE_TRANSPONDER
+    LOOKUP_TABLE_ENTRY(lookupTableTransponderProvider),
+#endif
 };
 
 #undef LOOKUP_TABLE_ENTRY
@@ -1486,6 +1502,12 @@ const clivalue_t valueTable[] = {
     { "ledstrip_rainbow_freq",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_freq) },
 #endif
 
+// PG_TRANSPONDER_CONFIG
+#ifdef USE_TRANSPONDER
+    { PARAM_NAME_TRANSPONDER_PROVIDER, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TRANSPONDER_PROVIDER }, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, provider) },
+    { PARAM_NAME_TRANSPONDER_DATA,     VAR_UINT8 | MASTER_VALUE | MODE_ARRAY,  .config.array.length = TRANSPONDER_DATA_LENGTH, PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, data) },
+#endif
+
 // PG_SDCARD_CONFIG
 #ifdef USE_SDCARD
     { "sdcard_detect_inverted",     VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, cardDetectInverted) },
@@ -1498,7 +1520,7 @@ const clivalue_t valueTable[] = {
     { "sdio_clk_bypass",            VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, clockBypass) },
     { "sdio_use_cache",             VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, useCache) },
     { "sdio_use_4bit_width",        VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, use4BitWidth) },
-#ifdef STM32H7
+#if ENABLE_SDIO_PIN_CONFIG
     { "sdio_device",                VAR_UINT8  | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, SDIODEV_COUNT }, PG_SDIO_CONFIG, offsetof(sdioConfig_t, device) },
 #endif
 #endif
@@ -1902,6 +1924,16 @@ const clivalue_t valueTable[] = {
     { "i2c4_pullup",    VAR_UINT8  | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_I2C_CONFIG, PG_ARRAY_ELEMENT_OFFSET(i2cConfig_t, I2CDEV_4, pullUp) },
     { "i2c4_clockspeed_khz", VAR_UINT16 | HARDWARE_VALUE, .config.minmax = { I2C_CLOCKSPEED_MIN_KHZ, I2C_CLOCKSPEED_MAX_KHZ }, PG_I2C_CONFIG, PG_ARRAY_ELEMENT_OFFSET(i2cConfig_t, I2CDEV_4, clockSpeed) },
 #endif
+#endif
+#if ENABLE_CAN
+// PG_CAN_CONFIG
+    { "can_bitrate_khz", VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 125, 1000 }, PG_CAN_CONFIG, offsetof(canConfig_t, bitrate_khz) },
+#endif
+#if ENABLE_DRONECAN
+// PG_DRONECAN_CONFIG
+    { "dronecan_enabled", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, enabled) },
+    { "dronecan_node_id", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 127 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, node_id) },
+    { "dronecan_device", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, CANDEV_COUNT }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, device) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)

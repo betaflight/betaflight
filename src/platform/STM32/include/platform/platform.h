@@ -151,7 +151,7 @@
 #define STM32F4
 #endif
 
-#elif defined(STM32C591xx)
+#elif defined(STM32C591xx) || defined(STM32C562xx)
 #include "stm32c5xx.h"
 #include "stm32c5xx_hal.h"
 // HAL2: module headers must be included explicitly (hal_conf.h only defines enables)
@@ -308,6 +308,9 @@
 #define USE_RTC_TIME
 #define USE_PERSISTENT_MSC_RTC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32G4
@@ -325,6 +328,9 @@
 #define USE_MCO_DEVICE1
 #define USE_DMA_SPEC
 #define USE_LATE_TASK_STATISTICS
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32H5
@@ -345,6 +351,10 @@
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
+// C591 has no FDCAN hardware; enable CAN only on variants that do (e.g. C593).
+#if defined(STM32C593xx) && !defined(ENABLE_CAN)
+#define ENABLE_CAN 1
+#endif
 #endif
 
 #ifdef STM32N6
@@ -407,7 +417,7 @@
 #define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
-#if defined(STM32F4) || defined(STM32H7) || defined(STM32C5) || defined(STM32N6)
+#if defined(STM32F4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
@@ -655,6 +665,12 @@ extern uint8_t _dmaram_end__;
 #define ENABLE_SDIO_INIT 0
 #endif
 
+// F4 and F7 SDIO drivers use external DMA channel allocation via dma_reqmap;
+// H5/H7/N6 SDMMC peripherals use internal DMA and do not need allocation.
+#if (defined(STM32F4) || defined(STM32F7)) && !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
+#endif
+
 // QUAD SPI
 #if defined(STM32H7) || defined(STM32N6)
 #define MAX_QUADSPI_PIN_SEL 3
@@ -677,7 +693,15 @@ extern uint8_t _dmaram_end__;
 #if defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
 #define DMA_CHANREQ_STRING "Request"
 
+#if defined(STM32C5)
+// STM32C5 has no internal VBAT/4 channel. The shared adc_impl table
+// has a placeholder slot pointing at the VREFINT channel which would
+// otherwise duplicate the VREFINT entry, throw the DMA dest-buffer
+// offset off by one, and corrupt the VREFINT/TEMPSENSOR readings.
+#define ADC_INTERNAL_VBAT4_ENABLED 0
+#else
 #define ADC_INTERNAL_VBAT4_ENABLED 1
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7)

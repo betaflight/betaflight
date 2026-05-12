@@ -168,6 +168,14 @@
 #ifndef USE_MAG_QMC5883
 #define USE_MAG_QMC5883
 #endif
+#ifdef USE_MAG_QMC5883
+#ifndef USE_MAG_QMC5883L
+#define USE_MAG_QMC5883L
+#endif
+#ifndef USE_MAG_QMC5883P
+#define USE_MAG_QMC5883P
+#endif
+#endif
 #ifndef USE_MAG_LIS2MDL
 #define USE_MAG_LIS2MDL
 #endif
@@ -194,6 +202,37 @@
 #endif
 
 #endif // END MAG HW defines
+
+#if defined(USE_RANGEFINDER)
+
+#ifndef USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_HCSR04
+#endif
+#ifndef USE_RANGEFINDER_TF
+#define USE_RANGEFINDER_TF
+#endif
+#ifndef USE_RANGEFINDER_MT
+#define USE_RANGEFINDER_MT
+#endif
+#ifndef USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_NOOPLOOP
+#endif
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
+#endif
+
+#endif // USE_RANGEFINDER
+
+#if defined(USE_OPTICALFLOW)
+
+#ifndef USE_OPTICALFLOW_MT
+#define USE_OPTICALFLOW_MT
+#endif
+#ifndef USE_OPTICALFLOW_UPT1
+#define USE_OPTICALFLOW_UPT1
+#endif
+
+#endif // USE_OPTICALFLOW
 
 #if defined(USE_RX_CC2500)
 
@@ -430,7 +469,7 @@
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
@@ -448,7 +487,7 @@
 #endif
 #endif
 
-#if defined(USE_OCTOSPI) && defined(USE_FLASH_W25Q128FV)
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G))
 #if !defined(USE_FLASH_OCTOSPI)
 #define USE_FLASH_OCTOSPI
 #endif
@@ -647,27 +686,33 @@
 #undef USED_TIMERS
 #endif
 
+// Hardware cross-deps: OF drivers need their rangefinder driver counterparts
+// (the optical flow code lives inside the rangefinder driver files)
 #if defined(USE_OPTICALFLOW_MT)
 #ifndef USE_RANGEFINDER_MT
 #define USE_RANGEFINDER_MT
 #endif
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
-#endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_UPT1)
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
 #endif
-#endif // USE_RANGEFINDER_UPT1
+#endif // USE_OPTICALFLOW_UPT1
 
+// Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
 #if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
-
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
 #endif // USE_RANGEFINDER_XXX
+
+// Bottom-up: individual opticalflow drivers → USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_OPTICALFLOW_XXX
 
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
@@ -687,6 +732,10 @@ extern uint8_t eepromData[EEPROM_SIZE];
 struct linker_symbol;
 extern struct linker_symbol __config_start;   // configured via linker script when building binaries.
 extern struct linker_symbol __config_end;
+#ifdef FONTDATA_IN_FLASH
+extern struct linker_symbol __fontdata_start; // configured via linker script when building binaries.
+extern struct linker_symbol __fontdata_end;
+#endif
 #endif
 
 #ifndef USE_ITERM_RELAX
@@ -736,6 +785,26 @@ extern struct linker_symbol __config_end;
 #endif
 #endif // USE_PINIO
 
+// GPS secondary defines - here (not common_pre.h) because SITL defines
+// USE_GPS in target.h which is included after common_pre.h. USE_GPS_RESCUE
+// additionally requires USE_ACC to match the earlier "!USE_ACC undef"
+// invariant; re-apply USE_CMS_GPS_RESCUE_MENU gating afterwards.
+#ifdef USE_GPS
+#if !defined(USE_GPS_NMEA)
+#define USE_GPS_NMEA
+#endif
+#if !defined(USE_GPS_UBLOX)
+#define USE_GPS_UBLOX
+#endif
+#if !defined(USE_GPS_RESCUE) && defined(USE_ACC)
+#define USE_GPS_RESCUE
+#endif
+#endif // USE_GPS
+
+#if (!defined(USE_GPS_RESCUE) || !defined(USE_CMS_FAILSAFE_MENU))
+#undef USE_CMS_GPS_RESCUE_MENU
+#endif
+
 /*****************************************************
 
  Place any ENABLE_X_FEATURE=0 definitions here for those
@@ -760,8 +829,45 @@ extern struct linker_symbol __config_end;
 #define ENABLE_SDIO_INIT 0
 #endif
 
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 0
+#endif
+
+#if !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 0
+#endif
+
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 0
+#endif
+
+#if !defined(ENABLE_RX_UDP)
+#define ENABLE_RX_UDP 0
+#endif
+
+#if !defined(ENABLE_CAN)
+#define ENABLE_CAN 0
+#endif
+
+// DroneCAN piggy-backs on the same hardware gate as the raw CAN driver: the
+// stack is meaningless without a CAN peripheral to drive. Platforms that
+// compile CAN in also compile DroneCAN in by default, with the runtime PG
+// flag (dronecan_enabled) deciding whether the task is actually started.
+#if !defined(ENABLE_DRONECAN)
+#define ENABLE_DRONECAN ENABLE_CAN
+#endif
+
+// LCD console — runtime debug terminal that scrolls printf/trace output to
+// an attached LCD. Independent of the OSD/displayPort stack. Off by default;
+// configs opt in by setting ENABLE_LCD_CONSOLE 1 plus a panel selector
+// (LCD_CONSOLE_PANEL_STUB / _LTDC / _SSD1306_I2C / _ST7789_SPI / ...).
+// ENABLE_LCD_PRINTF_REDIRECT routes the global tfp_printf sink to the LCD
+// at boot; turn it off to keep the LCD reachable only via lcdConsolePrintf().
+#if !defined(ENABLE_LCD_CONSOLE)
+#define ENABLE_LCD_CONSOLE 0
+#endif
+#if !defined(ENABLE_LCD_PRINTF_REDIRECT)
+#define ENABLE_LCD_PRINTF_REDIRECT ENABLE_LCD_CONSOLE
 #endif

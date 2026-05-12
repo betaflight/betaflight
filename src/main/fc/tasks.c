@@ -64,6 +64,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal_control.h"
 #include "io/gps.h"
@@ -485,6 +486,10 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [TASK_OSD_CUSTOM_TEXT] = DEFINE_TASK("OSD_CTEXT", NULL, NULL, osdCustomTextUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
+
+#if ENABLE_DRONECAN
+    [TASK_DRONECAN] = DEFINE_TASK("DRONECAN", NULL, NULL, dronecanUpdate, TASK_PERIOD_HZ(50), TASK_PRIORITY_LOW),
+#endif
 };
 
 task_t *getTask(unsigned taskId)
@@ -683,5 +688,9 @@ void tasksInit(void)
 
 #if ENABLE_OSD_CUSTOM_TEXT
     setTaskEnabled(TASK_OSD_CUSTOM_TEXT, true);
+#endif
+
+#if ENABLE_DRONECAN
+    setTaskEnabled(TASK_DRONECAN, dronecanIsInitialised());
 #endif
 }

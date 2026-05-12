@@ -402,6 +402,19 @@ void adcInit(const adcConfig_t *config)
         }
     }
 
+    /* Enable RCC clocks for any ADC device with channels assigned BEFORE
+     * touching the shared ADC_COMMON.CCR -- the common register is gated
+     * by the per-instance ADC bus clocks and writes to it silently drop
+     * if the clock is off. Done here in its own pass so we only enter
+     * the per-device init loop once everything that owns the common
+     * register block is reachable. */
+    for (int dev = 0; dev < ADCDEV_COUNT; dev++) {
+        adcDevice_t *adc = &adcDevice[dev];
+        if (adc->channelBits) {
+            RCC_ClockCmd(adc->rccADC, ENABLE);
+        }
+    }
+
 #ifdef USE_ADC_INTERNAL
     /* Enable internal measurement paths on ADC_COMMON */
     ADC_Common_TypeDef *adcCommon = ADC12_COMMON;
@@ -430,8 +443,6 @@ void adcInit(const adcConfig_t *config)
         if (!adc->channelBits) {
             continue;
         }
-
-        RCC_ClockCmd(adc->rccADC, ENABLE);
 
         int configuredAdcChannels = popcount(adc->channelBits);
 

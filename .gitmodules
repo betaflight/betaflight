@@ -37,3 +37,17 @@
 	url = https://github.com/LuckkMaker/APM32F4xx_DAL_SDK
 	ignore = dirty
 	update = none
+[submodule "lib/main/dronecan/libcanard"]
+	path = lib/main/dronecan/libcanard
+	url = https://github.com/dronecan/libcanard.git
+[submodule "lib/main/GD32H7"]
+	path = lib/main/GD32H7
+	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git
+	branch = master
+	ignore = dirty
+	update = none
+[submodule "lib/main/X32M7"]
+	path = lib/main/X32M7
+	url = https://github.com/X-CORE-LABS-PTE-LTD/X32M7_Std_SDK.git
+	ignore = dirty
+	update = none

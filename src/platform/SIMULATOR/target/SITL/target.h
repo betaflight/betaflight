@@ -31,6 +31,13 @@
 
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
+// SITL bridge selector. Configs that target legacy bridges (X-Plane,
+// RealFlight) define ENABLE_GAZEBO_BRIDGE=0 in config.h; otherwise default
+// to Gazebo so the bare TARGET=SITL build behaves like the SITL_GAZEBO config.
+#ifndef ENABLE_GAZEBO_BRIDGE
+#define ENABLE_GAZEBO_BRIDGE  1
+#endif
+
 #define ENABLE_SIMULATOR_MULTITHREAD 1
 
 #define SYSTEM_HSE_MHZ 0
@@ -94,12 +101,15 @@
 #define USE_UART7
 #define USE_UART8
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
+#define ENABLE_RX_UDP           1
+
+// DEFAULT_RX_FEATURE is picked by config/feature.h: FEATURE_RX_UDP when
+// ENABLE_RX_UDP=1 (bare SITL / Gazebo), else FEATURE_RX_MSP. Configs that want
+// MSP RX as the default (e.g. SITL_X_PLANE) override DEFAULT_RX_FEATURE.
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
-#ifdef USE_GPS
+#define USE_GPS
 #define USE_VIRTUAL_GPS
-#endif
 
 #define USE_PARAMETER_GROUPS
 

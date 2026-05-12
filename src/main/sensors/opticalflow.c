@@ -95,7 +95,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
-#ifdef USE_RANGEFINDER_MT
+#if defined(USE_OPTICALFLOW_MT) && defined(USE_RANGEFINDER_MT)
             if (mtOpticalflowDetect(dev, rangefinderConfig()->rangefinder_hardware)) {
                 opticalflowHardware = OPTICALFLOW_MT;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
@@ -103,7 +103,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 #endif
             break;
 
-#if defined(USE_RANGEFINDER_UPT1) && defined(USE_OPTICALFLOW)
+#if defined(USE_OPTICALFLOW_UPT1) && defined(USE_RANGEFINDER_UPT1)
         case OPTICALFLOW_UPT1:
             if (upt1OpticalflowDetect(dev)) {
                 opticalflowHardware = OPTICALFLOW_UPT1;
@@ -188,27 +188,33 @@ void opticalflowProcess(void) {
         static float xRotation[MAX_GYRO_SAMPLE_DELAY];
         static float yRotation[MAX_GYRO_SAMPLE_DELAY];
 
-        const uint8_t sampleDelay = opticalflow.dev.gyroSampleDelay;
+        const uint8_t sampleDelay = (uint8_t)constrain((int)opticalflow.dev.gyroSampleDelay, 1, MAX_GYRO_SAMPLE_DELAY);
         gyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
         xRotation[gyroSampleIndex] = (float)gyroGetFilteredDownsampled(X);
         yRotation[gyroSampleIndex] = -(float)gyroGetFilteredDownsampled(Y);
         delayedGyroSampleIndex = (gyroSampleIndex + 1) % sampleDelay;
+        vector2_t delayedGyroRaw = {{
+            xRotation[delayedGyroSampleIndex],
+            yRotation[delayedGyroSampleIndex]
+        }};
+        vector2_t delayedGyroRotated;
+        applySensorRotation(&delayedGyroRotated, &delayedGyroRaw);
 
         DEBUG_SET(DEBUG_OPTICALFLOW, 0, lrintf(processed.x * 1000));
         DEBUG_SET(DEBUG_OPTICALFLOW, 1, lrintf(processed.y * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(yRotation[gyroSampleIndex]) * 1000));
-        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(yRotation[delayedGyroSampleIndex]) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 2, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.x) * 1000));
+        DEBUG_SET(DEBUG_OPTICALFLOW, 3, lrintf(DEGREES_TO_RADIANS(delayedGyroRotated.y) * 1000));
 
         // Subtract the rate of body rotation (converted from dps to rad/s) from the
         // optical flow
-        processed.x -= DEGREES_TO_RADIANS(xRotation[delayedGyroSampleIndex]);
-        processed.y -= DEGREES_TO_RADIANS(yRotation[delayedGyroSampleIndex]);
+        processed.x -= DEGREES_TO_RADIANS(delayedGyroRotated.x);
+        processed.y -= DEGREES_TO_RADIANS(delayedGyroRotated.y);
 
         // For large rates of body rotation the velocity will be unreliable, so zero
-        if (fabsf(xRotation[delayedGyroSampleIndex]) > ROTATION_GYRO_LIMIT) {
+        if (fabsf(delayedGyroRotated.x) > ROTATION_GYRO_LIMIT) {
             processed.x = 0;
         }
-        if (fabsf(yRotation[delayedGyroSampleIndex]) > ROTATION_GYRO_LIMIT) {
+        if (fabsf(delayedGyroRotated.y) > ROTATION_GYRO_LIMIT) {
             processed.y = 0;
         }
         DEBUG_SET(DEBUG_OPTICALFLOW, 4, lrintf(processed.x * 1000));

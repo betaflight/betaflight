@@ -25,7 +25,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight STM32H563"
+#define USBD_PRODUCT_STRING     "Betaflight - STM32H563"
 #endif
 
 //#undef USE_PWM
@@ -81,8 +81,6 @@
 //#undef USE_MOTOR
 //#undef USE_SERVO
 
-#define USE_VIRTUAL_GYRO
-
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
 #define USE_I2C_DEVICE_3
@@ -116,20 +114,29 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
-//#define TARGET_IO_PORTG 0xffff
+#define TARGET_IO_PORTG 0xffff
 
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
 //#define USE_BEEPER
 
-#if !defined(ENABLE_SDIO_INIT)
-#define ENABLE_SDIO_INIT 1
-#endif
-
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
+#endif
+
+// Tie SDIO init/pin config to actually using SDIO. Otherwise the CLI
+// resourceTable[] keeps PG_SDIO_PIN_CONFIG entries, but pg/sdio.c is
+// gated on USE_SDCARD_SDIO so the PG never registers, and `dump`
+// faults inside printResource on a NULL pgFind() result.
+#ifdef USE_SDCARD_SDIO
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
 #endif
 
 #define USE_SPI
@@ -145,6 +152,14 @@
 //#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
+
+// CONFIG_IN_RAM bring-up needs more than the default 4 KiB to hold every PG that
+// gets compiled in for a 2 MiB flash target (VTX table alone is ~290 B). Bump to
+// 8 KiB so writeSettingsToEEPROM doesn't overrun eepromData[] and tear the
+// next-PG size field, which makes isEEPROMStructureValid() walk off the end.
+#ifndef EEPROM_SIZE
+#define EEPROM_SIZE 8192
+#endif
 
 #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
 #define USE_LED_STRIP_CACHE_MGMT

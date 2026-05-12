@@ -34,6 +34,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
@@ -82,7 +83,7 @@
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
+#define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_RXTX
 #define TELEMETRY_MAVLINK_MAXRATE 50
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 
@@ -96,6 +97,11 @@ static const serialPortConfig_t *portConfig;
 static bool mavlinkTelemetryEnabled =  false;
 static portSharing_e mavlinkPortSharing;
 static uint32_t lastMavlinkMessageTime = 0;
+static armingDisableFlags_e lastArmingDisableFlags = 0;
+
+static mavlink_message_t mavRxMsg;
+static mavlink_status_t mavRxStatus;
+static bool mavlinkPortOwned = false;
 
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
@@ -116,10 +122,163 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
+static uint16_t getHeadingCentidegrees(void)
+{
+    return (uint16_t)(attitude.values.yaw * 10);
+}
+
+static void mavlinkSendStatusText(uint8_t severity, const char *text)
+{
+    mavlink_msg_statustext_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        severity, text, 0, 0);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkProcessArmingStatusText(void)
+{
+    const armingDisableFlags_e flags = getArmingDisableFlags();
+    if (flags == lastArmingDisableFlags) {
+        return;
+    }
+    lastArmingDisableFlags = flags;
+
+    if (flags == 0) {
+        return;
+    }
+
+    char text[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN] = "Arming disabled:";
+    size_t pos = strlen(text);
+
+    for (unsigned bit = 0; bit < ARMING_DISABLE_FLAGS_COUNT && pos < sizeof(text) - 1; bit++) {
+        const armingDisableFlags_e thisFlag = (armingDisableFlags_e)(1u << bit);
+        if (!(flags & thisFlag)) {
+            continue;
+        }
+        const char *name = getArmingDisableFlagName(thisFlag);
+        if (!name) {
+            continue;
+        }
+        // Need room for " " + at least one char of the name; otherwise stop appending.
+        if (sizeof(text) - 1 - pos < 2) {
+            break;
+        }
+        text[pos++] = ' ';
+        const size_t nameLen = strlen(name);
+        const size_t maxCopy = sizeof(text) - 1 - pos;
+        const size_t copyLen = (nameLen < maxCopy) ? nameLen : maxCopy;
+        memcpy(text + pos, name, copyLen);
+        pos += copyLen;
+    }
+    text[pos] = '\0';
+
+    mavlinkSendStatusText(MAV_SEVERITY_NOTICE, text);
+}
+
+static void mavlinkSendSystemTime(void)
+{
+    uint64_t timeUnixUsec = 0;
+#ifdef USE_RTC_TIME
+    rtcTime_t rtcMs;
+    if (rtcHasTime() && rtcGet(&rtcMs) && rtcMs > 0) {
+        timeUnixUsec = (uint64_t)rtcMs * 1000ULL;
+    }
+#endif
+
+    mavlink_msg_system_time_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        timeUnixUsec, millis());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void handleHeartbeatRx(const mavlink_message_t *msg)
+{
+    UNUSED(msg);
+    // Stub for now; later tiers will track GCS liveness and target replies by sysid/compid.
+}
+
+static void handlePing(const mavlink_message_t *msg)
+{
+    mavlink_ping_t ping;
+    mavlink_msg_ping_decode(msg, &ping);
+
+    // PING request per spec has target_system == 0 && target_component == 0;
+    // non-zero target fields indicate a response, which we must not echo back.
+    if (ping.target_system != 0 || ping.target_component != 0) {
+        return;
+    }
+
+    mavlink_msg_ping_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        ping.time_usec,
+        ping.seq,
+        msg->sysid,
+        msg->compid);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void handleTimesync(const mavlink_message_t *msg)
+{
+    mavlink_timesync_t timesync;
+    mavlink_msg_timesync_decode(msg, &timesync);
+
+    // tc1 == 0 marks a request; non-zero is a response we never solicited.
+    if (timesync.tc1 != 0) {
+        return;
+    }
+
+    // Accept broadcast or directed-to-us; ignore requests addressed to other systems.
+    if ((timesync.target_system != 0 && timesync.target_system != MAVLINK_SYSTEM_ID) ||
+        (timesync.target_component != 0 && timesync.target_component != MAVLINK_COMPONENT_ID)) {
+        return;
+    }
+
+    mavlink_msg_timesync_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        (int64_t)micros() * 1000LL,
+        timesync.ts1,
+        msg->sysid,
+        msg->compid);
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
+static void mavlinkDispatch(const mavlink_message_t *msg)
+{
+    switch (msg->msgid) {
+    case MAVLINK_MSG_ID_HEARTBEAT:
+        handleHeartbeatRx(msg);
+        break;
+    case MAVLINK_MSG_ID_PING:
+        handlePing(msg);
+        break;
+    case MAVLINK_MSG_ID_TIMESYNC:
+        handleTimesync(msg);
+        break;
+    default:
+        break;
+    }
+}
+
+static void mavlinkProcessIncoming(void)
+{
+    if (!mavlinkPortOwned || !mavlinkPort) {
+        return;
+    }
+    // Bound the drain so a flooded link cannot starve the telemetry task.
+    uint16_t rxBudget = 64;
+    while (rxBudget-- && serialRxBytesWaiting(mavlinkPort)) {
+        const uint8_t c = serialRead(mavlinkPort);
+        if (mavlink_parse_char(MAVLINK_COMM_1, c, &mavRxMsg, &mavRxStatus) == MAVLINK_FRAMING_OK) {
+            mavlinkDispatch(&mavRxMsg);
+        }
+    }
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
     mavlinkPort = NULL;
+    mavlinkPortOwned = false;
     mavlinkTelemetryEnabled = false;
 }
 
@@ -147,6 +306,10 @@ void configureMAVLinkTelemetryPort(void)
         return;
     }
 
+    // Reset STATUSTEXT de-dup so the first run after link-up emits any current disable reasons.
+    lastArmingDisableFlags = 0;
+    mavlinkPortOwned = true;
+    mavlink_reset_channel_status(MAVLINK_COMM_1);
     mavlinkTelemetryEnabled = true;
 }
 
@@ -218,6 +381,8 @@ static void mavlinkSendSystemStatus(void)
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
+    mavlinkSendSystemTime();
+
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 2, transmitCounter);
@@ -260,6 +425,25 @@ static void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(USE_GPS)
+static void mavlinkSendHomePosition(void)
+{
+    if (!STATE(GPS_FIX_HOME)) {
+        return;
+    }
+
+    static const float identityQuat[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    mavlink_msg_home_position_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
+        GPS_home_llh.lat,
+        GPS_home_llh.lon,
+        GPS_home_llh.altCm * 10,
+        0.0f, 0.0f, 0.0f,
+        identityQuat,
+        0.0f, 0.0f, 0.0f,
+        micros());
+    const uint16_t msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 static void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
@@ -334,8 +518,8 @@ static void mavlinkSendPosition(void)
         gpsSol.velned.velE,
         // Ground Z Speed (Altitude), expressed as m/s * 100
         gpsSol.velned.velD,
-        // heading Current heading in degrees, in compass units (0..360, 0=north)
-        headingOrScaledMilliAmpereHoursDrawn()
+        // hdg Vehicle heading (yaw angle), 0.0..359.99 degrees in centidegrees. UINT16_MAX = unknown.
+        getHeadingCentidegrees()
     );
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
@@ -351,6 +535,8 @@ static void mavlinkSendPosition(void)
         micros());
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
+
+    mavlinkSendHomePosition();
 
     // Packets transmit counter to debug actual data rate
     static uint32_t transmitCounter = 0;
@@ -653,6 +839,8 @@ void checkMAVLinkTelemetryState(void)
     if (portConfig && telemetryCheckRxPortShared(portConfig, rxRuntimeState.serialrxProvider)) {
         if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
             mavlinkPort = telemetrySharedPort;
+            lastArmingDisableFlags = 0;
+            mavlinkPortOwned = false;
             mavlinkTelemetryEnabled = true;
             configureMAVLinkStreamRates();
         }
@@ -678,6 +866,8 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
+    mavlinkProcessIncoming();
+
     bool shouldSendTelemetry = false;
     uint32_t now = micros();
     if (isValidMavlinkTxBuffer()) {
@@ -688,6 +878,7 @@ void handleMAVLinkTelemetry(void)
 
     if (shouldSendTelemetry) {
         processMAVLinkTelemetry();
+        mavlinkProcessArmingStatusText();
         lastMavlinkMessageTime = now;
     }
 }
