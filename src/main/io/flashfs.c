@@ -190,7 +190,12 @@ static bool flashfsBufferIsEmpty(void)
 // the FC loop on a busy chip or a full write buffer.
 bool flashfsIsIdle(void)
 {
-    return flashfsBufferIsEmpty() && flashIsReady();
+    // Reuse flashfsIsReady() rather than the bare flashIsReady() so an in-flight
+    // async erase keeps idle == false. flashIsReady() can transiently return true
+    // between sector-erase commands inside flashfsEraseAsync's loop, which would
+    // otherwise let callers (notably flashfs_log's persistLappedMarkerIfReady)
+    // sneak a write in mid-erase.
+    return flashfsBufferIsEmpty() && flashfsIsReady();
 }
 
 static void flashfsSetTailAddress(uint32_t address)

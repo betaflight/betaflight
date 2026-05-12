@@ -432,6 +432,13 @@ static void computeGeometry(void)
     if (geom.partitionSize == 0) return;
     const flashGeometry_t *fg = flashGetGeometry();
     if (!fg || fg->sectorSize == 0) return;
+    // The marker layout puts commit at state-sector page 0 and lap at state-sector
+    // page 1. That requires pageSize > 0 AND pageSize < sectorSize so the lap
+    // marker stays inside the state sector. On any chip whose pageSize equals (or
+    // exceeds) sectorSize — exotic and unsupported here — the marker offsets would
+    // collide with the next region. Leave geom zeroed in that case so flashfsLogInit
+    // refuses to mark itself safe-for-logging and the writer falls back to LINEAR.
+    if (fg->pageSize == 0 || fg->pageSize >= fg->sectorSize) return;
     geom.sectorSize = fg->sectorSize;
     geom.pageSize = fg->pageSize;
     geom.bufferAreaSize = HDR_BUFFER_SECTORS * geom.sectorSize;
