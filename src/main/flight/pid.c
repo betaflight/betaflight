@@ -128,7 +128,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define CHIRP_SETTLE_TIME_US 750000 // 750 ms
 #endif // USE_CHIRP
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 12);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
