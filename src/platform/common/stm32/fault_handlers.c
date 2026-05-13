@@ -90,8 +90,47 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
 }
 
 #else
-void HardFault_Handler(void)
+__attribute__((naked)) void HardFault_Handler(void)
 {
-    systemFaultAction();
+#if ENABLE_BF_OBL
+    /* BF↔OBL bring-up debug — capture fault state to AXISRAM2 NS at
+     * 0x24100010..0x24100040 so the host can pull it via OBL's
+     * @DBGRAM DFU alt after the post-fault reset. Naked to avoid the
+     * compiler clobbering the stacked frame before we can read the
+     * faulting PC/LR/SP. */
+    __asm__ volatile (
+        "ldr   r2, =0x24100010    \n"
+        "movs  r3, #1             \n"
+        "str   r3, [r2, #0]       \n"   // flag = 1 (hard fault)
+        "ldr   r3, =0xE000ED28    \n"   // CFSR
+        "ldr   r3, [r3]           \n"
+        "str   r3, [r2, #4]       \n"
+        "ldr   r3, =0xE000ED2C    \n"   // HFSR
+        "ldr   r3, [r3]           \n"
+        "str   r3, [r2, #8]       \n"
+        "ldr   r3, =0xE000ED38    \n"   // BFAR
+        "ldr   r3, [r3]           \n"
+        "str   r3, [r2, #12]      \n"
+        "ldr   r3, =0xE000ED34    \n"   // MMFAR
+        "ldr   r3, [r3]           \n"
+        "str   r3, [r2, #16]      \n"
+        "tst   lr, #4             \n"   // MSP vs PSP from EXC_RETURN
+        "ite   eq                 \n"
+        "mrseq r0, msp            \n"
+        "mrsne r0, psp            \n"
+        "ldr   r3, [r0, #24]      \n"   // stacked PC
+        "str   r3, [r2, #20]      \n"
+        "ldr   r3, [r0, #20]      \n"   // stacked LR
+        "str   r3, [r2, #24]      \n"
+        "str   r0, [r2, #28]      \n"   // faulting SP
+        "dsb                      \n"
+        "isb                      \n"
+        ::: "r0", "r2", "r3", "memory"
+    );
+#endif
+    /* Tail-call into the C action handler (resets / blinks / etc.). */
+    __asm__ volatile (
+        "b systemFaultAction      \n"
+    );
 }
 #endif

@@ -51,6 +51,8 @@
 
 #include "platform.h"
 
+#ifdef USE_VCP
+
 #include "build/atomic.h"
 
 #include "usbd_conf.h"
@@ -547,5 +549,7 @@ void CDC_SetCtrlLineStateCb(void (*cb)(void *context, uint16_t ctrlLineState), v
     ctrlLineStateCbContext = context;
     ctrlLineStateCb = cb;
 }
+
+#endif // USE_VCP
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

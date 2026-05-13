@@ -36,18 +36,24 @@ ENTRY(Reset_Handler)
 0x28004000 to 0x28007FFF    16K AHB SRAM2
 0x2C000000 to 0x2C001FFF     8K Backup SRAM
 
-0x70000000 to 0x701FFFFF  2048K External XSPI flash
-0x70000000 to 0x7001FFFF   128K isr vector, startup bootstrap (XIP)
-0x70020000 to 0x7003FFFF   128K config storage
-0x70040000 to 0x701FFFFF  1792K firmware LMA (copied to RAM at boot)
+0x70000000 to 0x700FFFFF  1024K FSBL stub slot (signed; boot ROM verifies + loads to AXISRAM2)
+0x70100000 to 0x701FFFFF  1024K betaflight XIP (unsigned; FSBL stub jumps here)
+0x70200000 to 0x7021FFFF   128K config storage
+0x70220000 to 0x7037FFFF  1408K firmware overflow (reserved)
 */
 
-/* Specify the memory areas */
+/* Specify the memory areas.
+ *
+ * FLASH starts at 0x70100000: the chip boots through a small signed FSBL
+ * stub installed once at OctoSPI 0x70000000, which configures XSPI in
+ * memory-mapped mode then jumps here. Betaflight is unsigned (no FSBL
+ * header), so the linker base is the bare flash address.
+ */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x70000000, LENGTH = 128K
-    FLASH_CONFIG (r)  : ORIGIN = 0x70020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x70040000, LENGTH = 1792K
+    FLASH (rx)        : ORIGIN = 0x70100000, LENGTH = 1024K
+    FLASH_CONFIG (r)  : ORIGIN = 0x70200000, LENGTH = 128K
+    FLASH1 (rx)       : ORIGIN = 0x70220000, LENGTH = 1408K
 
     RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K
 
@@ -116,18 +122,20 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   .ARM.extab   :
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } >RAM AT >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >RAM AT >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   .pg_registry :
   {
@@ -135,14 +143,24 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >RAM AT >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
+  /* Pad to 4-byte boundary so the LMA of the next section stays aligned
+   * with its VMA. Without this, an odd-size .pg_resetdata payload (the
+   * KEEP'd registry blobs aren't necessarily multiples of 4) makes the
+   * linker pad the VMA via .data's leading ALIGN(4) but NOT the LMA —
+   * every .data initializer ends up shifted by 1..3 bytes when copied
+   * from flash to RAM, and global structs (e.g. USBD_CDC) read garbage.
+   * Symptom: function-pointer fields look random, dereferencing them
+   * HardFaults inside USBD_RegisterClass / USBD_LL_Init / similar. */
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >RAM AT >FLASH1
+    . = ALIGN(4);
+  } >RAM AT >FLASH
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
@@ -152,7 +170,7 @@ SECTIONS
     *(.data*)          /* .data* sections */
 
     . = ALIGN(4);
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   /*
    * All code already runs from RAM, so .ram_code merges into the same
@@ -168,7 +186,7 @@ SECTIONS
     . = ALIGN(4);
     ram_code_end = .;
     _etext = .;        /* end of all FLASH1-backed sections — startup copies _stext.._etext */
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -213,7 +231,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;        /* define a global symbol at data end */
-  } >FASTRAM AT >FLASH1
+  } >FASTRAM AT >FLASH
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
@@ -242,7 +260,7 @@ SECTIONS
     *(.dmaram_data*)          /* .data* sections */
     . = ALIGN(32);
     _edmaram_data = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :
