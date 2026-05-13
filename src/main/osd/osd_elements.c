@@ -1147,13 +1147,15 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "ALTH");
 #ifdef USE_CHIRP
     } else if (FLIGHT_MODE(CHIRP_MODE)) {
+        static const char axisChar[] = "RPY";
         if (pidChirpGetRepeatTotal() <= 1) {
             // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
             if (!pidChirpIsFinished()) {
                 strcpy(element->buff, "CHIR");
+            } else {
+                tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
             }
         } else {
-            static const char axisChar[] = "RPY";
             if (pidChirpSeriesIsFinished()) {
                 tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
             } else {
