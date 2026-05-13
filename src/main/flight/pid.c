@@ -186,7 +186,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .thrustLinearization = 0,
         .d_max = D_MAX_DEFAULT,
         .d_max_gain = 37,
-        .d_max_advance = 20,
+        .d_max_advance = 0,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .profileName = { 0 },
