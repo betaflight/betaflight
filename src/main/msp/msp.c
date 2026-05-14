@@ -3680,6 +3680,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 newSampleRate = blackboxCalculateSampleRate(pRatio);
             }
 
+            // Reject truncated optional tails: only 0, 4, or 5 trailing bytes are valid
+            // (no optionals | fields_disabled_mask | fields_disabled_mask + flash_mode).
+            // 1-3 stray bytes would otherwise let a truncated fields_disabled_mask be
+            // reinterpreted as flash_mode, and any other stray length gets silently ACKed.
+            const int remainingOptionalBytes = sbufBytesRemaining(src);
+            if (remainingOptionalBytes != 0 && remainingOptionalBytes != 4 && remainingOptionalBytes != 5) {
+                return MSP_RESULT_ERROR;
+            }
+
             // Added in MSP API 1.45
             bool haveFieldsDisabledMask = false;
             uint32_t newFieldsDisabledMask = 0;

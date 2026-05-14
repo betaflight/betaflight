@@ -801,7 +801,11 @@ static bool markBufferLapped(void)
         // active.dataWriteHead, not on top of the marker sector.
         flashfsSeekAbs(active.dataWriteHead);
     }
-    return true;
+    // Verify the marker actually landed before signalling durability. A
+    // failed read-back means the write didn't take (or we can't read it
+    // back), so leave the caller's lappedPersisted=false and let the next
+    // tick retry.
+    return readMarkerSet(lappedMarkerAddr());
 }
 
 // DMA TC IRQ callback for the async lap-marker write. Runs in interrupt context;
@@ -1512,8 +1516,12 @@ void flashfsLogFinishHeader(void)
         return;
     }
 
-    // Cached format may flip EMPTY → RING now that a preamble is on flash.
-    flashfsLogInvalidateCachedFormat();
+    // Seed the format cache directly: we just wrote a ring preamble, so RING
+    // is authoritative without re-probing. Invalidating here would force the
+    // next flashfsLogGetCachedFormat() to flush + chunked-read while the log
+    // is active.
+    cachedFlashFormat = FLASHFS_FLASH_FORMAT_RING;
+    cachedFlashFormatValid = true;
 
     active.headerPhase = false;
     // Position flashfs's tail at the data write head for the upcoming data writes.
