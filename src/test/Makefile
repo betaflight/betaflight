@@ -399,6 +399,14 @@ transponder_ir_unittest_SRC := \
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
 
+
+.PHONY: check-pg-ids
+check-pg-ids:
+	@pg=$(USER_DIR)/pg/pg_ids.h; \
+	if [ ! -f "$$pg" ]; then echo "pg_ids.h not found at $$pg"; exit 1; fi; \
+	awk -f $(TEST_DIR)/check_pg_ids.awk $$pg
+
+
 huffman_unittest_SRC := \
 		$(USER_DIR)/common/huffman.c \
 		$(USER_DIR)/common/huffman_table.c
@@ -676,7 +684,7 @@ include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 # House-keeping build targets.
 
 ## test        : Build and run the non target specific Unit Tests (default goal)
-test: $(TESTS:%=test_%)
+test: check-pg-ids $(TESTS:%=test_%)
 
 ## test-all : Build and run all Unit Tests
 test-all: $(TESTS_ALL:%=test_%)
