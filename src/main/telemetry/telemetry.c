@@ -60,35 +60,38 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 6);
+PG_REGISTER_WITH_RESET_FN(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 6);
 
-PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
-    .telemetry_inverted = false,
-    .halfDuplex = 1,
-    .gpsNoFixLatitude = 0,
-    .gpsNoFixLongitude = 0,
-    .frsky_coordinate_format = FRSKY_FORMAT_DMS,
-    .frsky_unit = UNIT_METRIC,
-    .frsky_vfas_precision = 0,
-    .hottAlarmSoundInterval = 5,
-    .pidValuesAsTelemetry = 0,
-    .report_cell_voltage = false,
-    .flysky_sensors = {
-            IBUS_SENSOR_TYPE_TEMPERATURE,
-            IBUS_SENSOR_TYPE_RPM_FLYSKY,
-            IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
-    },
-    .disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED,
-    .mavlink_mah_as_heading_divisor = 0,
-    .mavlink_min_txbuff = 35,
-    .mavlink_extended_status_rate = 2,
-    .mavlink_rc_channels_rate = 1,
-    .mavlink_position_rate = 2,
-    .mavlink_extra1_rate = 2,
-    .mavlink_extra2_rate = 2,
-    .mavlink_extra3_rate = 1,
-    .crsf_tlm_accgyro = 0,
-);
+void pgResetFn_telemetryConfig(telemetryConfig_t *telemetryConfig)
+{
+    telemetryConfig->telemetry_inverted = false;
+    telemetryConfig->halfDuplex = 1;
+    telemetryConfig->gpsNoFixLatitude = 0;
+    telemetryConfig->gpsNoFixLongitude = 0;
+    telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
+    telemetryConfig->frsky_unit = UNIT_METRIC;
+    telemetryConfig->frsky_vfas_precision = 0;
+    telemetryConfig->hottAlarmSoundInterval = 5;
+    telemetryConfig->pidValuesAsTelemetry = 0;
+    telemetryConfig->report_cell_voltage = false;
+    telemetryConfig->flysky_sensors[0] = IBUS_SENSOR_TYPE_TEMPERATURE;
+    telemetryConfig->flysky_sensors[1] = IBUS_SENSOR_TYPE_RPM_FLYSKY;
+    telemetryConfig->flysky_sensors[2] = IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE;
+    telemetryConfig->disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED;
+    telemetryConfig->mavlink_mah_as_heading_divisor = 0;
+    telemetryConfig->mavlink_min_txbuff = 35;
+    telemetryConfig->mavlink_extended_status_rate = 2;
+    telemetryConfig->mavlink_rc_channels_rate = 1;
+    telemetryConfig->mavlink_position_rate = 2;
+    telemetryConfig->mavlink_extra1_rate = 2;
+    telemetryConfig->mavlink_extra2_rate = 2;
+    telemetryConfig->mavlink_extra3_rate = 1;
+    telemetryConfig->crsf_tlm_accgyro = 0;
+    for (unsigned i = 0; i < MAX_TELEMETRY_PROVIDERS; i++) {
+        telemetryConfig->providers[i].protocol = TELEMETRY_PROTOCOL_NONE;
+        telemetryConfig->providers[i].uart = SERIAL_PORT_NONE;
+    }
+}
 
 void telemetryInit(void)
 {

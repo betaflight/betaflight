@@ -118,6 +118,7 @@ bool cliMode = false;
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/transponder_ir.h"
 #include "io/usb_msc.h"
 #include "io/vtx_control.h"
@@ -1497,6 +1498,15 @@ static void cliSerial(const char *cmdName, char *cmdline)
 
     if (validArgumentCount < 6) {
         cliShowInvalidArgumentCountError(cmdName);
+        return;
+    }
+
+    // Mirror the legacy bitmask into the per-feature PG fields.  If the
+    // requested combination cannot be represented we reject the whole
+    // command so the synthesized view and the stored functionMask stay
+    // in sync.
+    if (!serialApplyFunctionMask(portConfig.identifier, portConfig.functionMask)) {
+        cliShowParseError(cmdName);
         return;
     }
 

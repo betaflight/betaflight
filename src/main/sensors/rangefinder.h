@@ -48,6 +48,7 @@ typedef enum {
 
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
+    int8_t rangefinder_uart;  // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned. FUNCTION_LIDAR_TF/LIDAR_NL selected by rangefinder_hardware.
 } rangefinderConfig_t;
 
 PG_DECLARE(rangefinderConfig_t, rangefinderConfig);

@@ -52,6 +52,7 @@
 #include "config/config.h"
 
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 
 #include "msp/msp_serial.h"
 
@@ -426,7 +427,7 @@ const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function
     while (findSerialPortConfigState.lastIndex < ARRAYLEN(serialConfig()->portConfigs)) {
         const serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSerialPortConfigState.lastIndex++];
 
-        if (candidate->functionMask & function) {
+        if (serialSynthesizeFunctionMask(candidate->identifier) & function) {
             return candidate;
         }
     }
@@ -435,15 +436,23 @@ const serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
 {
-    if (!portConfig || (portConfig->functionMask & function) == 0) {
+    if (!portConfig) {
         return PORTSHARING_UNUSED;
     }
-    return portConfig->functionMask == function ? PORTSHARING_NOT_SHARED : PORTSHARING_SHARED;
+    const uint32_t mask = serialSynthesizeFunctionMask(portConfig->identifier);
+    if ((mask & function) == 0) {
+        return PORTSHARING_UNUSED;
+    }
+    return mask == (uint32_t)function ? PORTSHARING_NOT_SHARED : PORTSHARING_SHARED;
 }
 
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
-    return (portConfig) && (portConfig->functionMask & sharedWithFunction) && (portConfig->functionMask & functionMask);
+    if (!portConfig) {
+        return false;
+    }
+    const uint32_t mask = serialSynthesizeFunctionMask(portConfig->identifier);
+    return (mask & sharedWithFunction) && (mask & functionMask);
 }
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
