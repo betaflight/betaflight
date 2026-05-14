@@ -37,7 +37,8 @@ typedef enum {
     WAYPOINT_TYPE_FLYBY,
     WAYPOINT_TYPE_HOLD,
     WAYPOINT_TYPE_LAND,
-    WAYPOINT_TYPE_TAKEOFF
+    WAYPOINT_TYPE_TAKEOFF,
+    WAYPOINT_TYPE_COUNT
 } waypointType_e;
 
 typedef enum {

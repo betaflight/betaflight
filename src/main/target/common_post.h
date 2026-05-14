@@ -865,7 +865,10 @@ extern struct linker_symbol __fontdata_end;
 #endif
 
 #if !defined(ENABLE_TELEMETRY_MAVLINK_MISSION)
-#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN
+// flight_plan_nav.c (and the autopilot hook in fc/core.c) are gated on
+// !defined(USE_WING); the mission module reaches into those symbols, so match
+// the same shape here to keep wing builds linkable when USE_FLIGHT_PLAN lands.
+#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 1
 #else
 #define ENABLE_TELEMETRY_MAVLINK_MISSION 0

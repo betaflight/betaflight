@@ -42,6 +42,7 @@
 
 #include "pg/flight_plan.h"
 
+#include "telemetry/mavlink.h"
 #include "telemetry/mavlink_mission.h"
 
 #define MAVLINK_SYSTEM_ID 1
@@ -51,10 +52,6 @@
 #define MISSION_UPLOAD_MAX_RETRY  5
 #define MISSION_DOWNLOAD_IDLE_MS  5000
 #define MISSION_CURRENT_PERIOD_MS 1000
-
-// Provided by telemetry/mavlink.c — packs the message into the shared TX buffer
-// and writes it to the open MAVLink serial port.
-extern void mavlinkSendMessage(mavlink_message_t *msg);
 
 typedef enum {
     MISSION_IDLE,
@@ -76,6 +73,25 @@ static struct {
 } m;
 
 static mavlink_message_t txMsg;
+
+static bool targetIsUs(uint8_t target_system, uint8_t target_component)
+{
+    if (target_system && target_system != MAVLINK_SYSTEM_ID) {
+        return false;
+    }
+    if (target_component && target_component != MAVLINK_COMPONENT_ID) {
+        return false;
+    }
+    return true;
+}
+
+// During an active transfer, reject any traffic from a sysid/compid that isn't
+// the partner we started the session with. Stops a second GCS from interleaving
+// into an in-flight upload or download.
+static bool senderIsActivePartner(const mavlink_message_t *msg)
+{
+    return msg->sysid == m.partnerSys && msg->compid == m.partnerComp;
+}
 
 static void sendAck(uint8_t partnerSys, uint8_t partnerComp, uint8_t type)
 {
@@ -104,7 +120,7 @@ static void abortUpload(uint8_t result)
     m.state = MISSION_IDLE;
 }
 
-static uint8_t mapTypeToMavCmd(uint8_t type, uint16_t duration_ds, float *param1Out)
+static uint16_t mapTypeToMavCmd(uint8_t type, uint16_t duration_ds, float *param1Out)
 {
     *param1Out = 0.0f;
     switch (type) {
@@ -261,11 +277,14 @@ static void handleRequestInt(const mavlink_message_t *msg)
     mavlink_mission_request_int_t req;
     mavlink_msg_mission_request_int_decode(msg, &req);
 
+    if (!targetIsUs(req.target_system, req.target_component)) {
+        return;
+    }
     if (req.mission_type != MAV_MISSION_TYPE_MISSION) {
         sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (m.state != MISSION_SENDING) {
+    if (m.state != MISSION_SENDING || !senderIsActivePartner(msg)) {
         return;
     }
     // Allow current seq or one-back retransmit; everything else is out of sequence.
@@ -296,6 +315,9 @@ static void handleCount(const mavlink_message_t *msg)
     mavlink_mission_count_t mc;
     mavlink_msg_mission_count_decode(msg, &mc);
 
+    if (!targetIsUs(mc.target_system, mc.target_component)) {
+        return;
+    }
     if (mc.mission_type != MAV_MISSION_TYPE_MISSION) {
         sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
         return;
@@ -316,6 +338,11 @@ static void handleCount(const mavlink_message_t *msg)
         return;
     }
 
+    // MAVLink semantics: a new upload replaces any existing mission. Zero the
+    // count immediately so any consumer (CLI dump, executor on next engage)
+    // doesn't see a half-overwritten waypoint table mid-transfer.
+    flightPlanConfigMutable()->waypointCount = 0;
+
     m.state = MISSION_RECEIVING;
     m.nextSeq = 0;
     m.totalCount = mc.count;
@@ -329,13 +356,15 @@ static void handleCount(const mavlink_message_t *msg)
 
 static void handleItemInt(const mavlink_message_t *msg)
 {
-    if (m.state != MISSION_RECEIVING) {
-        return;
-    }
-
     mavlink_mission_item_int_t it;
     mavlink_msg_mission_item_int_decode(msg, &it);
 
+    if (!targetIsUs(it.target_system, it.target_component)) {
+        return;
+    }
+    if (m.state != MISSION_RECEIVING || !senderIsActivePartner(msg)) {
+        return;
+    }
     if (it.mission_type != MAV_MISSION_TYPE_MISSION) {
         abortUpload(MAV_MISSION_UNSUPPORTED);
         return;
@@ -382,6 +411,9 @@ static void handleClearAll(const mavlink_message_t *msg)
 {
     mavlink_mission_clear_all_t mc;
     mavlink_msg_mission_clear_all_decode(msg, &mc);
+    if (!targetIsUs(mc.target_system, mc.target_component)) {
+        return;
+    }
     if (mc.mission_type != MAV_MISSION_TYPE_MISSION) {
         sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
         return;
@@ -398,8 +430,12 @@ static void handleClearAll(const mavlink_message_t *msg)
 
 static void handleMissionAck(const mavlink_message_t *msg)
 {
-    UNUSED(msg);
-    if (m.state == MISSION_SENDING) {
+    mavlink_mission_ack_t ack;
+    mavlink_msg_mission_ack_decode(msg, &ack);
+    if (!targetIsUs(ack.target_system, ack.target_component)) {
+        return;
+    }
+    if (m.state == MISSION_SENDING && senderIsActivePartner(msg)) {
         m.state = MISSION_IDLE;
     }
 }
@@ -419,16 +455,14 @@ void mavMissionInit(void)
 
 bool mavMissionHandleMessage(const mavlink_message_t *msg)
 {
-    // target filter — accept broadcast or directed-to-us; same pattern as
-    // handleCommandLong() in mavlink.c. We must decode the targeting fields out
-    // of the typed payload, but the offset differs per message; keep it simple
-    // and filter inside each handler where the decode happens.
+    // Each handler decodes the typed payload and applies its own target filter
+    // via targetIsUs(); per-message session-partner enforcement also lives in
+    // the handlers that act on an active transfer.
     switch (msg->msgid) {
     case MAVLINK_MSG_ID_MISSION_REQUEST_LIST: {
         mavlink_mission_request_list_t r;
         mavlink_msg_mission_request_list_decode(msg, &r);
-        if ((r.target_system && r.target_system != MAVLINK_SYSTEM_ID) ||
-            (r.target_component && r.target_component != MAVLINK_COMPONENT_ID)) {
+        if (!targetIsUs(r.target_system, r.target_component)) {
             return true;
         }
         if (r.mission_type != MAV_MISSION_TYPE_MISSION) {
