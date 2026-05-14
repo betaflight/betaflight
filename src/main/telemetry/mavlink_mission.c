@@ -220,6 +220,10 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
+    case MAV_CMD_NAV_SPLINE_WAYPOINT:
+        // SPLINE_WAYPOINT shares the param1/x/y/z layout with NAV_WAYPOINT; the
+        // executor flies a straight line through it, which is a faithful
+        // approximation for the QGC plan-editor's curved preview.
         wp->type = WAYPOINT_TYPE_FLYBY;
         if (it->param1 > 0.0f) {
             const float ds = it->param1 * 10.0f;
@@ -241,11 +245,26 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         wp->duration = UINT16_MAX;
         break;
     case MAV_CMD_NAV_LAND:
+    case MAV_CMD_NAV_VTOL_LAND:
+        // VTOL_LAND is the multi-rotor-half of a quadplane landing; on a pure
+        // multirotor it has the same semantics as NAV_LAND.
         wp->type = WAYPOINT_TYPE_LAND;
         break;
     case MAV_CMD_NAV_TAKEOFF:
+    case MAV_CMD_NAV_VTOL_TAKEOFF:
+        // VTOL_TAKEOFF likewise collapses to NAV_TAKEOFF on a multirotor; the
+        // "transition heading" param is fixed-wing-only and ignored.
         wp->type = WAYPOINT_TYPE_TAKEOFF;
         break;
+    // Intentionally unsupported (no fit for waypoint_t or no executor support):
+    //   NAV_LAND_LOCAL / NAV_TAKEOFF_LOCAL  — local frame, also rejected by frame check
+    //   NAV_FOLLOW                          — dynamic target tracking
+    //   NAV_CONTINUE_AND_CHANGE_ALT         — no lat/lon, needs alt-only state
+    //   NAV_LOITER_TO_ALT                   — needs alt-arrival latch in executor
+    //   NAV_ROI / NAV_PATHPLANNING          — not positional waypoints
+    //   NAV_GUIDED_ENABLE / NAV_DELAY       — control/timer, not a waypoint
+    //   NAV_PAYLOAD_PLACE                   — no payload-release mechanism
+    //   NAV_SET_YAW_SPEED / NAV_FENCE_* / NAV_RALLY_POINT — different domains
     default:
         *resultOut = MAV_MISSION_UNSUPPORTED;
         return false;
