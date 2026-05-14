@@ -59,6 +59,7 @@
 // Extracted from rx/rx.c and rx/rx.h
 
 #define RX_MAPPABLE_CHANNEL_COUNT 8
+#define RCMAP_UNMAPPED_INDEX 255
 
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
