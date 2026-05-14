@@ -54,6 +54,8 @@ static struct {
     float zBiasM;               // estimator Z at engage, so waypoint Z shares the estimator baseline
 } fp;
 
+static flightPlanWaypointReachedFn reachedListener = NULL;
+
 static void onWaypointReached(void *userData);
 
 static const waypoint_t *currentWaypoint(void)
@@ -158,6 +160,10 @@ static void onWaypointReached(void *userData)
         return;
     }
 
+    if (reachedListener) {
+        reachedListener(fp.currentIndex);
+    }
+
     if (wp->type == WAYPOINT_TYPE_HOLD && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
@@ -245,6 +251,11 @@ flightPlanNavState_e flightPlanNavGetState(void)
 uint8_t flightPlanNavGetCurrentIndex(void)
 {
     return fp.currentIndex;
+}
+
+void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)
+{
+    reachedListener = fn;
 }
 
 #endif // ENABLE_FLIGHT_PLAN && !USE_WING

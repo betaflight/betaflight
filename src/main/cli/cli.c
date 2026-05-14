@@ -2563,7 +2563,7 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF"
 };
 
 static const char * const waypointPatternNames[] = {

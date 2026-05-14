@@ -864,6 +864,14 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
+#if !defined(ENABLE_TELEMETRY_MAVLINK_MISSION)
+#if defined(USE_TELEMETRY_MAVLINK) && ENABLE_FLIGHT_PLAN
+#define ENABLE_TELEMETRY_MAVLINK_MISSION 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_MISSION 0
+#endif
+#endif
+
 #if !defined(ENABLE_RX_UDP)
 #define ENABLE_RX_UDP 0
 #endif

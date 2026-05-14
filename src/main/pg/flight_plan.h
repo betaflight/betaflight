@@ -36,7 +36,8 @@ typedef enum {
     WAYPOINT_TYPE_FLYOVER = 0,
     WAYPOINT_TYPE_FLYBY,
     WAYPOINT_TYPE_HOLD,
-    WAYPOINT_TYPE_LAND
+    WAYPOINT_TYPE_LAND,
+    WAYPOINT_TYPE_TAKEOFF
 } waypointType_e;
 
 typedef enum {
