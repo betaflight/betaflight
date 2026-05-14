@@ -2002,6 +2002,12 @@ case MSP_NAME:
             sbufWriteU8(dst, 0);
         }
 #endif
+        // Added in MSP API 1.49
+#if defined(USE_DYN_LPF)
+        sbufWriteU8(dst, gyroConfig()->gyro_lpf1_dyn_expo);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
     case MSP_PID_ADVANCED:
@@ -3373,6 +3379,14 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             for (int j = 0; j < RPM_FILTER_HARMONICS_MAX; j++) {
                 sbufReadU8(src);
             }
+#endif
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            // Added in MSP API 1.49
+#if defined(USE_DYN_LPF)
+            gyroConfigMutable()->gyro_lpf1_dyn_expo = sbufReadU8(src);
+#else
+            sbufReadU8(src);
 #endif
         }
 
