@@ -113,6 +113,14 @@ void flashfsLogInvalidateCachedFormat(void)
     cachedFlashFormatValid = false;
 }
 
+#ifdef USE_BLACKBOX_RING_LOG
+// Strict ring-format detection used on ring-enabled builds. Defined inside the
+// USE_BLACKBOX_RING_LOG block below; forward-declared here so the always-compiled
+// flashfsLogDetectFormatFromFlash() can call it. Returns RING on a validated
+// signature, UNKNOWN otherwise.
+static flashfsFlashFormat_e detectRingFormatStrict(void);
+#endif
+
 flashfsFlashFormat_e flashfsLogGetCachedFormat(void)
 {
     if (!cachedFlashFormatValid) {
@@ -161,8 +169,23 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
     const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
 
-    // Buffer-area preamble magic: catches the in-flight ring state where the
-    // active log finalised its header but no data landed in sector 0 before crash.
+#ifdef USE_BLACKBOX_RING_LOG
+    // Ring-enabled build: route through full structural validators (magic +
+    // bounds + CRC). A lone 4-byte magic match by chance must not classify as
+    // RING and bypass the writer's erase gate. The strict path is defined inside
+    // the ring-log block below; it returns RING on a validated signature,
+    // UNKNOWN otherwise (and we fall through to the EMPTY/UNKNOWN logic).
+    {
+        const flashfsFlashFormat_e ringResult = detectRingFormatStrict();
+        if (ringResult == FLASHFS_FLASH_FORMAT_RING) {
+            return FLASHFS_FLASH_FORMAT_RING;
+        }
+    }
+#else
+    // Linear-only build: magic-only is acceptable because the linear writer
+    // can't act on a RING classification, and ring-mode MSC enumeration is
+    // also USE_BLACKBOX_RING_LOG-gated. The classification is still useful as
+    // a downgrade-warning signal to the configurator via MSP.
     {
         uint32_t magic = 0;
         if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
@@ -170,14 +193,6 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
             return FLASHFS_FLASH_FORMAT_RING;
         }
     }
-
-    // Sector-aligned trailer magic scan. Trailers persist across clean closes and
-    // across erase-pool wraps, so this is the durable signature that cleanly-closed
-    // ring volumes have when offset 0 and the buffer area both happen to be erased.
-    // Start at addr 0: a ring wrap can place a trailer at offset 0 of the data
-    // section (when the previous log's tail aligned exactly at dataSectionEnd).
-    // The probe at the top already rejected LINEAR_FORMAT_PROBE_TEXT, so a
-    // LOG_TRAILER_MAGIC at 0 is unambiguously ring.
     for (uint32_t addr = 0; addr + sizeof(uint32_t) <= bufferAreaStart; addr += fg->sectorSize) {
         uint32_t magic = 0;
         if (flashfsReadAbs(addr, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
@@ -185,6 +200,7 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
             return FLASHFS_FLASH_FORMAT_RING;
         }
     }
+#endif
 
     // No ring signature found anywhere. EMPTY requires the WHOLE first sector
     // to be erased — the 16-byte probe at the top isn't enough on its own. A
@@ -1075,6 +1091,43 @@ static bool readAndValidateBufferPreamble(flashfsBufferPreamble_t *out, uint32_t
     if (crc != out->crc) return false;
     *outHeaderLen = out->headerLength;
     return true;
+}
+
+// Strict ring-format detection. Called from the always-compiled
+// flashfsLogDetectFormatFromFlash() on ring-enabled builds. Routes through the
+// same validators (magic + bounds + CRC) that recovery uses so a stray 4-byte
+// magic match by chance can't classify as RING and bypass the writer's erase
+// gate. Caller decides what to do with UNKNOWN (typically: fall through to
+// EMPTY/UNKNOWN logic).
+static flashfsFlashFormat_e detectRingFormatStrict(void)
+{
+    // Idempotent; flashfsLogInit() also calls this and the detector may be
+    // invoked before init in the cached-format path.
+    computeGeometry();
+    if (geom.partitionSize == 0 || geom.sectorSize == 0 || geom.dataSectionEnd == 0) {
+        return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    }
+
+    // Buffer-area preamble: catches the in-flight ring state where the active
+    // log finalised its header but no data landed in sector 0 before crash.
+    flashfsBufferPreamble_t pre;
+    uint32_t headerLen;
+    if (readAndValidateBufferPreamble(&pre, &headerLen)) {
+        return FLASHFS_FLASH_FORMAT_RING;
+    }
+
+    // Sector-aligned trailer scan. Trailers persist across clean closes and
+    // across erase-pool wraps. readTrailerAt does magic + CRC + bounds, so an
+    // unlucky bit pattern that matches LOG_TRAILER_MAGIC alone is rejected.
+    for (uint32_t addr = 0;
+            addr + sizeof(flashfsLogTrailer_t) <= geom.dataSectionEnd;
+            addr += geom.sectorSize) {
+        flashfsLogTrailer_t t;
+        if (readTrailerAt(addr, &t)) {
+            return FLASHFS_FLASH_FORMAT_RING;
+        }
+    }
+    return FLASHFS_FLASH_FORMAT_UNKNOWN;
 }
 
 // =============================================================================

@@ -1848,11 +1848,13 @@ case MSP_NAME:
         // (EMPTY=0, LINEAR=1, RING=2, UNKNOWN=3). Configurator compares the two to
         // decide whether switching modes requires a flash erase first.
         //
-        // Use the always-compiled flashfsLogDetectFormatFromFlash() rather than
-        // flashfsLogDetectFormat() so linear-only builds (without USE_BLACKBOX_RING_LOG)
-        // still report a real format value — otherwise the configurator wouldn't
-        // see ring-formatted flash on a downgraded firmware and couldn't warn the
-        // user before starting writes.
+        // Format readback uses flashfsLogGetCachedFormat() — a cached wrapper
+        // over the always-compiled flashfsLogDetectFormatFromFlash() probe.
+        // Always-compiled detection is what lets linear-only builds (without
+        // USE_BLACKBOX_RING_LOG) still report a real format value so the
+        // configurator can warn the user about ring-formatted flash on a
+        // downgraded firmware before starting writes. The cache is invalidated
+        // from EraseAll, EndLog, and preamble write paths to stay correct.
         // Clamp the persisted flash_mode in the readback before serializing.
         // First defence: never emit a value past the highest supported mode in
         // any build — protects against a corrupted PG value reaching the wire.
