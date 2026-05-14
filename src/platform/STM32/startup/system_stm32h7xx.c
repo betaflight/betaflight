@@ -855,6 +855,23 @@ void SystemInit (void)
 
 #ifdef STM32H7
     initialiseD2MemorySections();
+
+    // Enable D2 SRAM clocks for DMA1/DMA2 access
+#if defined(STM32H743xx) || defined(STM32H750xx)
+    __HAL_RCC_D2SRAM1_CLK_ENABLE();
+    __HAL_RCC_D2SRAM2_CLK_ENABLE();
+    __HAL_RCC_D2SRAM3_CLK_ENABLE();
+#elif defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
+    __HAL_RCC_D2SRAM1_CLK_ENABLE();
+    __HAL_RCC_D2SRAM2_CLK_ENABLE();
+#endif
+
+    // Enable D3 SRAM4 clock for BDMA access (SPI6, LPUART1)
+    // On H7A3/H7B0/H7B3 variants, SRAM4 clock must be explicitly enabled.
+    // On H743/H750/H723/H725/H730/H735, SRAM4 clock is always on.
+#if defined(RCC_AHB4ENR_SRDSRAMEN)
+    __HAL_RCC_SRDSRAM_CLK_ENABLE();
+#endif
 #endif
 
     // Configure MPU
