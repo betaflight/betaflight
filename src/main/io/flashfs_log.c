@@ -164,10 +164,6 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 
     const flashGeometry_t *fg = flashGetGeometry();
     if (!fg || fg->sectorSize == 0) return FLASHFS_FLASH_FORMAT_UNKNOWN;
-    const uint32_t partitionSize = flashfsGetSize();
-    const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
-    if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
-    const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
 
 #ifdef USE_BLACKBOX_RING_LOG
     // Ring-enabled build: route through full structural validators (magic +
@@ -175,6 +171,8 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     // RING and bypass the writer's erase gate. The strict path is defined inside
     // the ring-log block below; it returns RING on a validated signature,
     // UNKNOWN otherwise (and we fall through to the EMPTY/UNKNOWN logic).
+    // computeGeometry() inside the strict path handles partition/buffer-area
+    // sizing, so we don't need local copies here.
     {
         const flashfsFlashFormat_e ringResult = detectRingFormatStrict();
         if (ringResult == FLASHFS_FLASH_FORMAT_RING) {
@@ -186,6 +184,10 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
     // can't act on a RING classification, and ring-mode MSC enumeration is
     // also USE_BLACKBOX_RING_LOG-gated. The classification is still useful as
     // a downgrade-warning signal to the configurator via MSP.
+    const uint32_t partitionSize = flashfsGetSize();
+    const uint32_t bufferAreaSize = HDR_BUFFER_SECTORS * fg->sectorSize;
+    if (bufferAreaSize >= partitionSize) return FLASHFS_FLASH_FORMAT_UNKNOWN;
+    const uint32_t bufferAreaStart = partitionSize - bufferAreaSize;
     {
         uint32_t magic = 0;
         if (flashfsReadAbs(bufferAreaStart, (uint8_t *)&magic, sizeof(magic)) == (int)sizeof(magic)
