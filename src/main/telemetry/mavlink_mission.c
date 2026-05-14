@@ -244,27 +244,54 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         wp->type = WAYPOINT_TYPE_HOLD;
         wp->duration = UINT16_MAX;
         break;
+    case MAV_CMD_NAV_LOITER_TO_ALT:
+        // Best-effort: hold at lat/lon. The "loiter until alt reached" latch
+        // needs executor work — without it the waypoint advances on arrival
+        // like any other HOLD-zero. Capability follow-up.
+        wp->type = WAYPOINT_TYPE_HOLD;
+        break;
+    case MAV_CMD_NAV_FOLLOW:
+        // Best-effort: hover at the initial target position. Dynamic vehicle
+        // following needs an updating target source the executor doesn't have
+        // today — capability follow-up.
+        wp->type = WAYPOINT_TYPE_HOLD;
+        break;
     case MAV_CMD_NAV_LAND:
     case MAV_CMD_NAV_VTOL_LAND:
+    case MAV_CMD_NAV_LAND_LOCAL:
         // VTOL_LAND is the multi-rotor-half of a quadplane landing; on a pure
-        // multirotor it has the same semantics as NAV_LAND.
+        // multirotor it has the same semantics as NAV_LAND. LAND_LOCAL is the
+        // local-frame variant — the frame check rejects actual LOCAL_NED items
+        // before we get here; the case is kept for protocol completeness in
+        // case a GCS sends LAND_LOCAL with a global frame.
+        wp->type = WAYPOINT_TYPE_LAND;
+        break;
+    case MAV_CMD_NAV_PAYLOAD_PLACE:
+        // Treated as LAND for now — descend to the named position. The actual
+        // payload-release step is a capability follow-up (no release mechanism
+        // on a Betaflight quad today).
         wp->type = WAYPOINT_TYPE_LAND;
         break;
     case MAV_CMD_NAV_TAKEOFF:
     case MAV_CMD_NAV_VTOL_TAKEOFF:
+    case MAV_CMD_NAV_TAKEOFF_LOCAL:
         // VTOL_TAKEOFF likewise collapses to NAV_TAKEOFF on a multirotor; the
         // "transition heading" param is fixed-wing-only and ignored.
+        // TAKEOFF_LOCAL is the local-frame variant — see LAND_LOCAL note.
         wp->type = WAYPOINT_TYPE_TAKEOFF;
         break;
-    // Intentionally unsupported (no fit for waypoint_t or no executor support):
-    //   NAV_LAND_LOCAL / NAV_TAKEOFF_LOCAL  — local frame, also rejected by frame check
-    //   NAV_FOLLOW                          — dynamic target tracking
-    //   NAV_CONTINUE_AND_CHANGE_ALT         — no lat/lon, needs alt-only state
-    //   NAV_LOITER_TO_ALT                   — needs alt-arrival latch in executor
-    //   NAV_ROI / NAV_PATHPLANNING          — not positional waypoints
-    //   NAV_GUIDED_ENABLE / NAV_DELAY       — control/timer, not a waypoint
-    //   NAV_PAYLOAD_PLACE                   — no payload-release mechanism
-    //   NAV_SET_YAW_SPEED / NAV_FENCE_* / NAV_RALLY_POINT — different domains
+    // Intentionally rejected — no positional mapping fits, or semantics would
+    // produce unsafe flight if force-fit into waypoint_t:
+    //   NAV_CONTINUE_AND_CHANGE_ALT  — alt-only, no lat/lon to store
+    //   NAV_ROI                      — camera target; mapping to HOLD would
+    //                                  fly the vehicle to the camera point
+    //   NAV_PATHPLANNING             — planner enable/disable, not a goal
+    //   NAV_GUIDED_ENABLE            — off-board control toggle
+    //   NAV_DELAY                    — timer, no position
+    //   NAV_SET_YAW_SPEED            — relative attitude tweak
+    //   NAV_FENCE_* / NAV_RALLY_POINT — different mission_type, rejected
+    //                                  earlier by the MISSION_TYPE_MISSION
+    //                                  filter on every handler
     default:
         *resultOut = MAV_MISSION_UNSUPPORTED;
         return false;
