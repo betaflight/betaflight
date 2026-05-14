@@ -192,8 +192,8 @@ typedef enum {
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lpf1_static_hz;          // Static Dterm lowpass 1 filter cutoff value in hz
-    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
-    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
+    uint16_t dterm_notch_hz;                // SVF dterm notch hz
+    uint16_t dterm_notch_cutoff;            // SVF dterm notch low cutoff
 
     pidf_t  pid[PID_ITEM_COUNT];
 
@@ -355,7 +355,7 @@ typedef struct pidAxisData_s {
 
 typedef union dtermLowpass_u {
     pt1Filter_t pt1Filter;
-    biquadFilter_t biquadFilter;
+    butterworthFilter_t butterworthFilter;
     pt2Filter_t pt2Filter;
     pt3Filter_t pt3Filter;
 } dtermLowpass_t;
@@ -384,7 +384,7 @@ typedef struct pidRuntime_s {
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermNotchApplyFn;
-    biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
+    notchFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
     dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpass2ApplyFn;

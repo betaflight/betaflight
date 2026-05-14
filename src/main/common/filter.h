@@ -29,16 +29,10 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 typedef enum {
     FILTER_PT1 = 0,
-    FILTER_BIQUAD,
+    FILTER_BUTTERWORTH,
     FILTER_PT2,
     FILTER_PT3,
 } lowpassFilterType_e;
-
-typedef enum {
-    FILTER_LPF,    // 2nd order Butterworth section
-    FILTER_NOTCH,
-    FILTER_BPF,
-} biquadFilterType_e;
 
 typedef struct pt1Filter_s {
     float state;
@@ -58,12 +52,36 @@ typedef struct pt3Filter_s {
     float k;
 } pt3Filter_t;
 
-/* this holds the data required to update samples thru a filter */
-typedef struct biquadFilter_s {
-    float b0, b1, b2, a1, a2;
-    float x1, x2, y1, y2;
-    float weight;
-} biquadFilter_t;
+// SVF filter in TPT form
+typedef struct butterworthFilter_s {
+    float f;
+    float a1;
+    float a2;
+    float ic1;
+    float ic2;
+} butterworthFilter_t;
+
+// SVF filter in TPT form
+// this version will have issues if you change Q on the fly
+// heavily optimized to work as a notch filter
+typedef struct notchFilter_s {
+    float a1;
+    float a2q;  // a2 * q
+    float fq;   // f / q
+    float ic1q; // State 1 scaled by q
+    float ic2;  // State 2 (unscaled)
+} notchFilter_t;
+
+// SVF filter in TPT form
+// heavily optimized to work as a notch filter with a weight
+typedef struct rpmNotch_s {
+    float f;
+    float a1;
+    float a2;
+    float wq;          // q * weight — fully precomputed notch+weight term
+    float ic1[3];
+    float ic2[3];
+} rpmNotch_t;
 
 typedef struct phaseComp_s {
     float b0, b1, a1;
@@ -117,13 +135,17 @@ float pt3FilterApply(pt3Filter_t *filter, float input);
 
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
-void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
-float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
-float biquadFilterApplyDF1Weighted(biquadFilter_t *filter, float input);
-float biquadFilterApply(biquadFilter_t *filter, float input);
+void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float dt);
+void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt);
+float butterworthFilterApply(butterworthFilter_t *filter, float input);
+
+void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q);
+void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, float Q);
+float notchApply(notchFilter_t *filter, float input);
+
+void rpmNotchInit(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);
+void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);
+void rpmNotchApply(rpmNotch_t *filter, float input[3]);
 
 void phaseCompInit(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
 void phaseCompUpdate(phaseComp_t *filter, const float centerFreq, const float centerPhase, const uint32_t looptimeUs);
