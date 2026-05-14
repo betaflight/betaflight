@@ -2,7 +2,7 @@
 # Usage: awk -f check_pg_ids.awk path/to/pg_ids.h
 # Prints duplicates and exits non-zero if any found
 
-function hexval(s,   i, c, d, lo, digits) {
+function hexval(s,   i, c, d, lo, digits, v) {
     lo = "0123456789abcdef"
     digits = tolower(s)
     v = 0
