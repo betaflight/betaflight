@@ -242,7 +242,7 @@ typedef struct pidProfile_s {
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
-    uint8_t thrustLinearization;            // Compensation factor for pid linearization
+    uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
@@ -477,7 +477,6 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
-    float throttleCompensateAmount;
 #endif
 
 #ifdef USE_FEEDFORWARD
