@@ -92,7 +92,11 @@ PCD_HandleTypeDef hpcd;
                        PCD BSP Routines
  *******************************************************************************/
 
-void OTG_HS_IRQHandler(void)
+// CubeN6 startup vector slot is named USB1_OTG_HS_IRQHandler — the older
+// OTG_HS_IRQHandler name (used by F4/F7/H7) doesn't match here, so the
+// weak Default_Handler stays installed and USB interrupts are silently
+// dropped. Use the N6 vector name explicitly.
+void USB1_OTG_HS_IRQHandler(void)
 {
     HAL_PCD_IRQHandler(&hpcd);
 }
@@ -104,31 +108,73 @@ void OTG_HS_IRQHandler(void)
  */
 void HAL_PCD_MspInit(PCD_HandleTypeDef * hpcd)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
     UNUSED(hpcd);
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    // PA11 / PA12 are dedicated USB1 OTG_HS PHY pins — the integrated PHY
+    // routes them internally, no GPIO alternate-function configuration is
+    // required (the GPIOA clock isn't needed for the PHY itself).
 
-    /**USB GPIO Configuration
-    PA11     ------> USB_DM
-    PA12     ------> USB_DP
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    // N6 USB uses integrated PHY, no GPIO AF needed for USB pins
-    UNUSED(GPIO_InitStruct);
+    // The PHY's 3.3 V independent supply has to be powered up and the
+    // voltage monitor armed before the USB core comes out of reset.
+    // Without this USB_CoreReset()'s GRSTCTL.AHBIDL poll spins forever
+    // and HAL_PCD_Init hangs. Sequence cribbed from the CubeN6 OpenBootloader
+    // USB Device example. Bounded wait so a bad USB rail disables USB
+    // cleanly instead of bricking startup.
+    HAL_PWREx_EnableVddUSBVMEN();
+    const uint32_t usb33rdyStart = HAL_GetTick();
+    while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY) == 0U) {
+        if ((HAL_GetTick() - usb33rdyStart) > 100U) {
+            // 3.3 V monitor never reported ready — give up on USB rather
+            // than hang the boot. HAL_PCD_Init will fail downstream and
+            // VCP simply won't enumerate.
+            HAL_PWREx_DisableVddUSBVMEN();
+            return;
+        }
+    }
+    HAL_PWREx_EnableVddUSB();
+
+    // Force-reset OTG_HS, the embedded HS PHY, and the PHY control block
+    // before configuring them, then select HSE/2 as the PHY reference.
+    // Sequence taken from the CubeN6 OpenBootloader USB Device sample.
+    LL_AHB5_GRP1_ForceReset(RCC_AHB5RSTR_OTG1PHYCTLRST);
+    __HAL_RCC_USB1_OTG_HS_FORCE_RESET();
+    __HAL_RCC_USB1_OTG_HS_PHY_FORCE_RESET();
+
+    LL_RCC_HSE_SelectHSEDiv2AsDiv2Clock();
+    LL_AHB5_GRP1_ReleaseReset(RCC_AHB5RSTR_OTG1PHYCTLRST);
 
     /* Peripheral clock enable */
     __HAL_RCC_USB1_OTG_HS_CLK_ENABLE();
+
+    // FSEL = 0b010 selects the 24 MHz reference the embedded HS PHY expects
+    // when fed from HSE/2 (HSE = 48 MHz on the N6570-DK). The reset value
+    // 0b001 doesn't match this clock tree.
+    USB1_HS_PHYC->USBPHYC_CR &= ~(0x7U << 0x4U);
+    USB1_HS_PHYC->USBPHYC_CR |=  (0x2U << 0x4U);
+
+    __HAL_RCC_USB1_OTG_HS_PHY_RELEASE_RESET();
+    HAL_Delay(1);
+    __HAL_RCC_USB1_OTG_HS_RELEASE_RESET();
+
     __HAL_RCC_USB1_OTG_HS_PHY_CLK_ENABLE();
 
-    /* Set USB HS Interrupt priority */
-    HAL_NVIC_SetPriority(USB1_OTG_HS_IRQn, 6, 0);
+    // The USB1 OTG_HS controller is itself a bus master (it pumps SETUP /
+    // OUT data into its RX FIFO via DMA). Without RIF master + slave
+    // attributes set, those bus transactions never land — the host sees
+    // ENUMDONE, but every SETUP times out as "Device Descriptor Request
+    // Failed" because the SETUP never reaches the controller's RX FIFO.
+    // Same shape as the SDMMC2 RIF setup — see sdio_n6xx.c.
+    //
+    // OTG1 master index = 4. RIF slave index = REG1 bit 24 (USB1 OTG_HS).
+    // The PHY pins PA11/PA12 are dedicated USB lines and don't need GPIO
+    // secure attributes — no AF / mode bits to flip.
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_RIFSC);
+    RIFSC->RIMC_ATTRx[4]      = ((uint32_t)1U << 8) | (1U << 4) | (1U << 5);  // MCID=1 + SEC + PRIV
+    RIFSC->RISC_SECCFGRx[1]  |= (1U << 24);
+    RIFSC->RISC_PRIVCFGRx[1] |= (1U << 24);
 
-    /* Enable USB HS Interrupt */
+    /* Set USB HS Interrupt priority + enable */
+    HAL_NVIC_SetPriority(USB1_OTG_HS_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(USB1_OTG_HS_IRQn);
 }
 
@@ -304,7 +350,11 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef * pdev)
     hpcd.Init.use_dedicated_ep1 = DISABLE;
     hpcd.Init.ep0_mps = EP_MPS_64;
     hpcd.Init.low_power_enable = DISABLE;
-    hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
+    // CubeN6 v1.3.0 misaligns the PHY id between modules: PCD_PHY_EMBEDDED == 2
+    // but USB_CoreInit's only accepted value is USB_OTG_HS_EMBEDDED_PHY == 3.
+    // Pass the LL value so USB_CoreInit doesn't bail at HAL_ERROR before
+    // USB_DevInit gets to program GINTMSK / FIFO sizes / endpoint masks.
+    hpcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
     hpcd.Init.Sof_enable = DISABLE;
     hpcd.Init.battery_charging_enable = DISABLE;
     hpcd.Init.speed = PCD_SPEED_FULL;
@@ -357,7 +407,11 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef * pdev)
     hpcd.Init.dma_enable = 0;
     hpcd.Init.low_power_enable = 0;
     hpcd.Init.lpm_enable = 0;
-    hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
+    // CubeN6 v1.3.0 misaligns the PHY id between modules: PCD_PHY_EMBEDDED == 2
+    // but USB_CoreInit's only accepted value is USB_OTG_HS_EMBEDDED_PHY == 3.
+    // Pass the LL value so USB_CoreInit doesn't bail at HAL_ERROR before
+    // USB_DevInit gets to program GINTMSK / FIFO sizes / endpoint masks.
+    hpcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
     hpcd.Init.Sof_enable = 0;
     hpcd.Init.speed = PCD_SPEED_HIGH;
     hpcd.Init.vbus_sensing_enable = 0;

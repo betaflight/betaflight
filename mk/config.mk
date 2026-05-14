@@ -26,6 +26,15 @@ INCLUDE_DIRS       += $(CONFIG_DIR)/configs/$(CONFIG)
 # include $(CONFIG)/config.mk if it exists
 -include $(CONFIG_DIR)/configs/$(CONFIG)/config.mk
 
+# OCTOSPI_FLASH_CHIP selects the flash chip wired to the OCTOSPI/XSPI peripheral.
+# Set in per-config config.mk (e.g. OCTOSPI_FLASH_CHIP := MX66UW1G45G). Emits both
+# USE_FLASH_<chip> (chip driver gating) and OCTOSPI_FLASH_CHIP_<chip> (build-time
+# selection marker for chips that cannot be probed via JEDEC RDID, such as those
+# operating in 8-line OPI mode).
+ifneq ($(OCTOSPI_FLASH_CHIP),)
+TARGET_FLAGS += -DUSE_FLASH_$(OCTOSPI_FLASH_CHIP) -DOCTOSPI_FLASH_CHIP_$(OCTOSPI_FLASH_CHIP)
+endif
+
 ifneq ($(wildcard $(CONFIG_HEADER_FILE)),)
 
 CONFIG_SRC :=

@@ -41,6 +41,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "platform/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
 #include "drivers/sdio.h"
@@ -76,7 +77,7 @@ typedef struct sdioPin_s {
 #define SDIO_PIN_CMD 5
 #define SDIO_PIN_COUNT  6
 
-#define SDIO_MAX_PINDEFS 2
+#define SDIO_MAX_PINDEFS 3
 
 typedef struct sdioHardware_s {
     SDMMC_TypeDef *instance;
@@ -105,14 +106,16 @@ static const sdioHardware_t sdioPinHardware[SDIODEV_COUNT] = {
         .sdioPinD3  = { PINDEF(1, PC11, 12) },
     },
     {
+        // PC0..PC5 + PE4 are the SDMMC2 routes used by the N6570-DK on-board
+        // microSD (per CubeN6 example SD/SD_ReadWrite_DMA hal_msp.c) — all AF11.
         .instance = SDMMC2,
         .irqn = SDMMC2_IRQn,
-        .sdioPinCK  = { PINDEF(2, PC1,  11), PINDEF(2, PD6,  11) },
-        .sdioPinCMD = { PINDEF(2, PA0,  11), PINDEF(2, PD7,  11) },
-        .sdioPinD0  = { PINDEF(2, PB14, 11),                     },
-        .sdioPinD1  = { PINDEF(2, PB15, 11),                     },
-        .sdioPinD2  = { PINDEF(2, PB3,  11), PINDEF(2, PG11, 11) },
-        .sdioPinD3  = { PINDEF(2, PB4,  11),                     },
+        .sdioPinCK  = { PINDEF(2, PC1,  11), PINDEF(2, PD6,  11), PINDEF(2, PC2,  11) },
+        .sdioPinCMD = { PINDEF(2, PA0,  11), PINDEF(2, PD7,  11), PINDEF(2, PC3,  11) },
+        .sdioPinD0  = { PINDEF(2, PB14, 11), PINDEF(2, PC4,  11)                      },
+        .sdioPinD1  = { PINDEF(2, PB15, 11), PINDEF(2, PC5,  11)                      },
+        .sdioPinD2  = { PINDEF(2, PB3,  11), PINDEF(2, PG11, 11), PINDEF(2, PC0,  11) },
+        .sdioPinD3  = { PINDEF(2, PB4,  11), PINDEF(2, PE4,  11)                      },
     }
 };
 
@@ -175,6 +178,61 @@ void sdioPinConfigure(void)
 #define IOCFG_SDMMC       IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #endif
 
+// The CubeN6 HAL_RIF / HAL_GPIO_ConfigPinAttributes APIs are gated on
+// CPU_IN_SECURE_STATE / CPU_AS_TRUSTED_DOMAIN, which require building with
+// -mcmse. We don't enable CMSE (no non-secure partition to call into), so
+// poke the RIFSC + GPIO_S->SECCFGR registers directly. RIFSC RIMC_ATTRx
+// layout: bits [10:8] = MCID, bit [4] = MSEC, bit [5] = MPRIV. RISC
+// SECCFGR{1..4}/PRIVCFGR{1..4} are bitmasks indexed per-peripheral.
+//
+// SDMMC1 master/peripheral indices = 2; SDMMC2 = 3.
+// SDMMC1 RISC bit = SEC21 in SECCFGR1; SDMMC2 = SEC22 in SECCFGR1.
+//
+// Until the SDMMC2 master is marked secure-priv (so its bus transactions
+// reach the GPIO clock + AHB fabric) HAL_SD_Init spin-loops on the SDMMC
+// status register. Mirror the Cube N6 STM32N6570-DK SD example to clear
+// that.
+#define SDIO_RIF_RIMC_ATTR_SEC_PRIV  (((uint32_t)1U << 8) | (1U << 4) | (1U << 5))  /* MCID=1 + MSEC + MPRIV */
+
+static void sdioRifMarkPin(IO_t io)
+{
+    if (!io) {
+        return;
+    }
+    GPIO_TypeDef *port = IO_GPIO(io);
+    const uint32_t mask = IO_Pin(io);
+    port->SECCFGR  |=  mask;     // SEC = 1
+    port->PRIVCFGR &= ~mask;     // PRIV = 0 (non-privileged access allowed)
+}
+
+static void sdioRifConfigure(uint8_t is4BitWidth)
+{
+    // RIFSC clock-enable macro is gated on CPU_IN_SECURE_STATE (CMSE only),
+    // so go straight at the LL primitive to enable the AHB3 clock.
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_RIFSC);
+
+    if (sdioHardware->instance == SDMMC1) {
+        // SDMMC1 master idx = 2, RISC SEC bit 21 in SECCFGR/PRIVCFGR[1].
+        RIFSC->RIMC_ATTRx[2]      = SDIO_RIF_RIMC_ATTR_SEC_PRIV;
+        RIFSC->RISC_SECCFGRx[1]  |= (1U << 21);
+        RIFSC->RISC_PRIVCFGRx[1] |= (1U << 21);
+    } else if (sdioHardware->instance == SDMMC2) {
+        // SDMMC2 master idx = 3, RISC SEC bit 22 in SECCFGR/PRIVCFGR[1].
+        RIFSC->RIMC_ATTRx[3]      = SDIO_RIF_RIMC_ATTR_SEC_PRIV;
+        RIFSC->RISC_SECCFGRx[1]  |= (1U << 22);
+        RIFSC->RISC_PRIVCFGRx[1] |= (1U << 22);
+    }
+
+    sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_CK].pin));
+    sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_CMD].pin));
+    sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_D0].pin));
+    if (is4BitWidth) {
+        sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_D1].pin));
+        sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_D2].pin));
+        sdioRifMarkPin(IOGetByTag(sdioPin[SDIO_PIN_D3].pin));
+    }
+}
+
 void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
 {
     UNUSED(hsd);
@@ -213,6 +271,8 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
         IOConfigGPIOAF(d2, IOCFG_SDMMC, sdioPin[SDIO_PIN_D2].af);
         IOConfigGPIOAF(d3, IOCFG_SDMMC, sdioPin[SDIO_PIN_D3].af);
     }
+
+    sdioRifConfigure(is4BitWidth);
 
     HAL_NVIC_SetPriority(sdioHardware->irqn, NVIC_PRIORITY_BASE(NVIC_PRIO_SDIO_DMA), NVIC_PRIORITY_SUB(NVIC_PRIO_SDIO_DMA));
     HAL_NVIC_EnableIRQ(sdioHardware->irqn);
@@ -286,16 +346,20 @@ static SD_Error_t SD_DoInit(void)
 
     hsd1.Instance = sdioHardware->instance;
 
+    // Match the Cube N6 STM32N6570-DK SD/SD_ReadWrite_DMA example: power-save
+    // and HW flow control disabled, ClockDiv = SDMMC_HSPEED_CLK_DIV (= 2).
+    // Power-save enabled lets the controller gate CKIN between commands and
+    // gave us spurious "card not responding" timeouts during HAL_SD_Init.
     hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-    hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_ENABLE;
+    hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     if (sdioConfig()->use4BitWidth) {
         hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
     } else {
         hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
     }
-    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
+    hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
 #if !defined(SDIO_CLOCK_DIV)
-#define SDIO_CLOCK_DIV 2  // Conservative default for N6
+#define SDIO_CLOCK_DIV SDMMC_HSPEED_CLK_DIV
 #endif
     hsd1.Init.ClockDiv = SDIO_CLOCK_DIV;
     status = HAL_SD_Init(&hsd1); // Will call HAL_SD_MspInit
