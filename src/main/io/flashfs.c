@@ -668,6 +668,30 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
         flashfsWriteByte(data[i]);
     }
 
+    // Wait for any flashfsWriteByte-triggered auto-flush to land its DMA-TC callback
+    // before we snapshot the buffer below. Without this, the snapshot can describe
+    // bytes that are currently in-flight to the chip (bufferTail hasn't advanced
+    // yet), and the subsequent flashfsWriteBuffers call programs THOSE SAME BYTES
+    // again at the post-callback tailAddress — corrupting flash with a duplicate of
+    // the just-written chunk one page-write past the intended location, and leaving
+    // bufferTail past bufferHead so every following write/flush operates on a
+    // permanently broken buffer state. This was the root cause of the ring-mode
+    // header copy producing mirrored chunks of header text instead of sequential
+    // bytes, observed first on F722 + W25Q256 NOR.
+    //
+    // For sync=true callers (writeBytesSync, CLI dataflash dump): block-wait, since
+    // they expect the data on flash by return. For sync=false callers (linear-mode
+    // blackbox hot path): just skip the end-of-call flush — flashfsFlushAsync will
+    // be called again from blackboxDeviceFlush() / the next write and will pick up
+    // the buffered bytes once the chip is idle. Dropping the flush in this case is
+    // safe because flashfsWriteByte's per-byte auto-flush already issued the
+    // primary write of the threshold-crossing data.
+    if (sync) {
+        while (!flashfsNewData()) { /* wait for prior write callback */ }
+    } else if (!flashfsNewData()) {
+        return;
+    }
+
     // There could be two dirty buffers to write out already:
     bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
     totalBufSize = bufferSizes[0] + bufferSizes[1];
