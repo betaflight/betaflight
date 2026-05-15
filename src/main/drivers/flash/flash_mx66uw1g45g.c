@@ -80,6 +80,11 @@ MMFLASH_CODE_NOINLINE bool mx66uw1g45g_identify(flashDevice_t *fdevice, uint32_t
     fdevice->geometry.sectorSize = MX66UW1G45G_SECTOR_SIZE;
     fdevice->geometry.totalSize = (uint32_t)MX66UW1G45G_SECTOR_SIZE * MX66UW1G45G_SECTORS;
 
+    // Ring-mode log rate cap. MX66UW is OPI/STR or DTR NOR with ~150-400 ms worst-
+    // case sector erase, similar to other modern NOR. 2 kHz keeps the worst-case
+    // 16 KB buffer × erase product safely on the right side.
+    fdevice->geometry.maxSustainedLogRateHz = 2000;
+
     fdevice->vTable = &mx66uw1g45g_vTable;
 
     return true;

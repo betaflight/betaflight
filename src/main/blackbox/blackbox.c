@@ -73,6 +73,7 @@
 
 #include "io/beeper.h"
 #ifdef USE_FLASHFS
+#include "io/flashfs.h"
 #include "io/flashfs_log.h"
 #endif
 #include "io/gps.h"
@@ -1120,15 +1121,20 @@ void blackboxValidateConfig(void)
     }
 
 #ifdef USE_BLACKBOX_RING_LOG
-    // Ring-mode flash logging is bandwidth-limited by NOR sector erase throughput
-    // (~4 KB / 30-50 ms ≈ 80-133 KB/s). At ~80 B/frame typical, that's ~1000-1660
-    // frames/sec the chip can sustain. We cap the effective frame rate at
-    // BLACKBOX_RING_MAX_FRAME_HZ — chosen with margin for worst-case erase times.
+    // Ring-mode flash logging is bandwidth-limited by per-erase buffer occupancy:
+    // sustained ingress X bytes/sec must satisfy X × t_erase < buffer_size, where
+    // t_erase is the worst-case sector erase time for the underlying chip. The
+    // chip's driver advertises its safe sustained rate via
+    // flashfsGetMaxSustainedLogRateHz() — derived from chip-family knowledge
+    // (sector size, datasheet erase timing, a safety margin), so a fast NOR like
+    // W25Q256 can run ~2 kHz while a slow chip / unknown chip falls back to the
+    // conservative 1 kHz default. We cap the effective frame rate at that value.
     //
     // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the
-    // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop the clamp
-    // forces 1/8, at 4 kHz pidloop it allows 1/4, at 2 kHz it allows 1/2, etc.
-    #define BLACKBOX_RING_MAX_FRAME_HZ 1000
+    // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop with a
+    // 1 kHz chip cap the clamp forces 1/8; at 4 kHz pidloop with a 2 kHz cap it
+    // allows 1/2; etc.
+    const uint32_t maxFrameHz = flashfsGetMaxSustainedLogRateHz();
     if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
             && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
             && targetPidLooptime > 0) {
@@ -1136,7 +1142,7 @@ void blackboxValidateConfig(void)
         uint8_t sr = blackboxConfig()->sample_rate;
         // Bump sample_rate (slower) until the resulting frame rate is at or below the
         // cap. Stops at BLACKBOX_RATE_16TH (the slowest available rate).
-        while (sr < BLACKBOX_RATE_16TH && (pidHz >> sr) > BLACKBOX_RING_MAX_FRAME_HZ) {
+        while (sr < BLACKBOX_RATE_16TH && (pidHz >> sr) > maxFrameHz) {
             sr++;
         }
         // sr is intentionally a runtime-only clamp — drive blackboxPInterval from
@@ -1146,10 +1152,11 @@ void blackboxValidateConfig(void)
         // sample_rate to the slowest value any session needed.
         //
         // Saturation: if even the slowest rate (1/16) still exceeds the cap (only
-        // possible at extreme pidloops > 16 kHz), disable P-frames entirely so we
-        // log only I-frames rather than producing a stream guaranteed to overrun
-        // the chip's erase throughput. Better degraded than corrupt.
-        if (sr == BLACKBOX_RATE_16TH && (pidHz >> sr) > BLACKBOX_RING_MAX_FRAME_HZ) {
+        // possible at extreme pidloops > 16 kHz with a very slow chip), disable
+        // P-frames entirely so we log only I-frames rather than producing a stream
+        // guaranteed to overrun the chip's erase throughput. Better degraded than
+        // corrupt.
+        if (sr == BLACKBOX_RATE_16TH && (pidHz >> sr) > maxFrameHz) {
             blackboxPInterval = 0;
         } else {
             blackboxPInterval = 1 << sr;

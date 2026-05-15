@@ -261,6 +261,16 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->sectorSize = geometry->pagesPerSector * geometry->pageSize;
     geometry->totalSize = geometry->sectorSize * geometry->sectors;
 
+    // Sustained ring-mode log rate for SPI-NOR chips this driver handles
+    // (Winbond W25Q, Macronix MX25L, Micron N25Q, Cypress S25FL, etc.). Worst-case
+    // sector erase on these parts is ~150-500 ms for 64 KB sectors. With the 16 KB
+    // ring-mode write buffer, sustained ingress X must satisfy X × t_erase < buffer,
+    // i.e. X < 16 KB / 0.15 s ≈ 107 KB/s. At ~30 B/frame this gives ~3500 fps; we
+    // halve for safety margin against worst-case (end-of-life) erase times and
+    // partial-buffer occupancy when an erase fires. 2 kHz is well above typical
+    // logging rates while staying comfortably inside every chip in m25p16FlashConfig.
+    geometry->maxSustainedLogRateHz = 2000;
+
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
     if (fdevice->io.mode == FLASHIO_SPI) {

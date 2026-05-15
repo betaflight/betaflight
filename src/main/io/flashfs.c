@@ -277,6 +277,19 @@ uint32_t flashfsGetSize(void)
     return flashfsSize;
 }
 
+uint16_t flashfsGetMaxSustainedLogRateHz(void)
+{
+    // Driver populates geometry.maxSustainedLogRateHz from chip-family knowledge
+    // (sector size × erase time × safety margin). 0 means the driver hasn't set
+    // a value yet — fall back to the conservative compile-time default so unknown
+    // chips don't accidentally run at an unsafe rate.
+    const flashGeometry_t *g = flashGetGeometry();
+    if (g && g->maxSustainedLogRateHz > 0) {
+        return g->maxSustainedLogRateHz;
+    }
+    return FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ;
+}
+
 static uint32_t flashfsTransmitBufferUsed(void)
 {
     if (bufferHead >= bufferTail)

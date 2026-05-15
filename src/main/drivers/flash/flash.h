@@ -46,6 +46,12 @@ typedef struct flashGeometry_s {
     uint16_t pagesPerSector;
     flashType_e flashType;
     uint32_t jedecId;
+    // Maximum sustained log-frame rate this chip can support in ring-mode blackbox
+    // without back-pressuring the writer past the RAM buffer's erase-stall capacity.
+    // Set by the driver from chip-family knowledge (sector size × erase time × safety
+    // margin); see flashfsGetMaxSustainedLogRateHz() for the consumer-side fallback
+    // when this is 0 (driver hasn't set it yet, or chip type unknown).
+    uint16_t maxSustainedLogRateHz;
 } flashGeometry_t;
 
 typedef enum {

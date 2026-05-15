@@ -359,6 +359,14 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
+    // Ring-mode log rate cap. W25N block-erase is ~2 ms (much faster than NOR), but
+    // per-page program is ~250 µs and pages are 2 KB, so sustained page-write rate
+    // is ~8 MB/s — well above ring-mode needs. The buffer-vs-erase constraint that
+    // dominates NOR doesn't apply (erases finish in 2 ms, buffer barely depletes).
+    // 2 kHz here matches the NOR cap and leaves headroom for the still-limited
+    // per-flight page-program throughput on the higher-end NAND end of the family.
+    fdevice->geometry.maxSustainedLogRateHz = 2000;
+
     const uint32_t managementStartBlock = W25N_BB_MANAGEMENT_START_BLOCK >= 0 ? W25N_BB_MANAGEMENT_START_BLOCK : fdevice->geometry.sectors + W25N_BB_MANAGEMENT_START_BLOCK;
     flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,
             managementStartBlock,

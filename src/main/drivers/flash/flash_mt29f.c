@@ -356,6 +356,11 @@ bool mt29f_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
+    // Ring-mode log rate cap — see flash_w25n.c for the NAND rationale; the MT29F
+    // family has comparable per-page program timing (~200-400 µs) and block-erase
+    // times (~1.5-2 ms). 2 kHz keeps consistent ceiling across NAND parts.
+    fdevice->geometry.maxSustainedLogRateHz = 2000;
+
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &mt29f_vTable;
 

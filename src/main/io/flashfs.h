@@ -46,6 +46,15 @@ int flashfsIdentifyStartOfFreeSpace(void);
 struct flashGeometry_s;
 const struct flashGeometry_s* flashfsGetGeometry(void);
 
+// Maximum sustained ring-mode log frame rate the underlying chip can support
+// without overrunning the RAM write buffer during the worst-case sector erase
+// stall. Reads the driver-supplied geometry.maxSustainedLogRateHz; returns a
+// conservative fallback (FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ) when the
+// driver hasn't populated it or the chip isn't supported. Consumers cap their
+// per-session frame rate at this value to avoid drops mid-flight.
+#define FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ 1000
+uint16_t flashfsGetMaxSustainedLogRateHz(void);
+
 void flashfsSeekAbs(uint32_t offset);
 
 // Ring-mode wrap. When enabled, sequential writes that started inside the configured
