@@ -261,15 +261,19 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->sectorSize = geometry->pagesPerSector * geometry->pageSize;
     geometry->totalSize = geometry->sectorSize * geometry->sectors;
 
-    // Sustained ring-mode log rate for SPI-NOR chips this driver handles
-    // (Winbond W25Q, Macronix MX25L, Micron N25Q, Cypress S25FL, etc.). Worst-case
-    // sector erase on these parts is ~150-500 ms for 64 KB sectors. With the 16 KB
-    // ring-mode write buffer, sustained ingress X must satisfy X × t_erase < buffer,
-    // i.e. X < 16 KB / 0.15 s ≈ 107 KB/s. At ~30 B/frame this gives ~3500 fps; we
-    // halve for safety margin against worst-case (end-of-life) erase times and
-    // partial-buffer occupancy when an erase fires. 2 kHz is well above typical
-    // logging rates while staying comfortably inside every chip in m25p16FlashConfig.
-    geometry->maxSustainedLogRateHz = 2000;
+    // Sustained ring-mode log rate. The m25p16 driver covers a wide span of SPI-NOR
+    // parts (Winbond W25Q, Macronix MX25L, Micron N25Q / M25P, Cypress S25FL, etc.)
+    // with very different erase-time characteristics. Use chip capacity as a proxy
+    // for generation:
+    //   ≥ 16 MB  →  modern parts (W25Q128 onward, MX25L12845G, GD25Q128, S25FL128,
+    //               W25Q256, W25Q512, MX25L25635E, XMC256, etc.) — typical sector
+    //               erase ~30-50 ms, worst-case ~150-200 ms. 16 KB buffer ÷ 50 ms
+    //               × 0.5 safety ≈ 4 kHz.
+    //   < 16 MB  →  older / smaller parts (M25P16, W25Q32/64, N25Q064, MX25L6406E,
+    //               etc.) where datasheet worst-case erase reaches 400 ms+ and the
+    //               buffer-vs-erase product collapses. Stay at the 1 kHz default
+    //               that's safe even at end-of-life timing.
+    geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 4000 : 1000;
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 

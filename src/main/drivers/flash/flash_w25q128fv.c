@@ -299,11 +299,10 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    // Ring-mode log rate cap — same sizing rationale as flash_m25p16.c. W25Q128FV
-    // is the same chip family with a QSPI host interface, so chip-side erase
-    // throughput is unchanged; the higher bus rate doesn't lift the buffer/erase
-    // bottleneck. 2 kHz keeps ample margin against worst-case erase stalls.
-    fdevice->geometry.maxSustainedLogRateHz = 2000;
+    // Ring-mode log rate cap. W25Q128FV is a 16 MB Winbond NOR with ~30-50 ms
+    // typical sector erase — same family as the m25p16 driver's ≥ 16 MB branch.
+    // 16 KB buffer ÷ 50 ms × 0.5 safety ≈ 4 kHz.
+    fdevice->geometry.maxSustainedLogRateHz = 4000;
 
     fdevice->vTable = &w25q128fv_vTable;
 
