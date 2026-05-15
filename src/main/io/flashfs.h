@@ -37,23 +37,23 @@
 //                testing on F722 + W25Q256 showed the chip's actual erase
 //                windows reach ~190 ms (well within the 60-2000 ms datasheet
 //                range, but above the 150 ms typical), so one outlier window
-//                fills 160 KB/s × 200 ms ≈ 32 KB. H7 has the SRAM headroom
-//                for that. Use FLASHFS_RING_USE_BLOCK_ERASE.
+//                fills 160 KB/s × 200 ms ≈ 32 KB. 48 KB gives ~300 ms outlier
+//                headroom for end-of-life / hot chips. H7 has the SRAM
+//                headroom for that. Use FLASHFS_RING_USE_BLOCK_ERASE.
 //
 //   F7        →  Same PID-loop rate as H7 but DTCM is much tighter (64 KB on
-//                F722; the worst-case F7 part) — the 32 KB H7 buffer fails to
-//                link on F722. Cap at 2 kHz so the buffer-vs-erase math
-//                shrinks:
+//                F722; the worst-case F7 part) — the H7 buffer fails to link
+//                on F722. Cap at 2 kHz so the buffer-vs-erase math shrinks:
 //
-//                  80 KB/s × 200 ms outlier ≈ 16 KB
+//                  80 KB/s × 300 ms outlier ≈ 24 KB
 //
-//                16 KB exactly handles the chip's observed worst-case erase
-//                window at the 2 kHz cap (zero outlier headroom — a >200 ms
-//                erase outlier on a hot or end-of-life chip would cause
-//                some drops, but the PID loop stays unaffected either way).
-//                Stay on block erase: sub-sector can't sustain 2 kHz on
-//                slower NOR (W25Q256-class sub-sector erase ~60 ms typical
-//                gives ~60 KB/s refill, less than the 80 KB/s writer).
+//                24 KB linked on F722 in earlier tests and gives ~300 ms
+//                outlier headroom on top of the ~150 ms typical block-erase
+//                window — drop-free at 2 kHz on W25Q256-class NOR even
+//                under chip-end-of-life timing. Stay on block erase:
+//                sub-sector can't sustain 2 kHz on slower NOR (W25Q256
+//                sub-sector ~60 ms typical → ~60 KB/s refill, less than
+//                the 80 KB/s writer rate).
 //
 //   F4 / G4   →  PID loop typically 4 kHz. Target P-frame rate 2 kHz (1/2
 //                divider). At 2 kHz × 40 B = 80 KB/s we can stay on the 4 KB
@@ -71,13 +71,13 @@
 // The bump only applies on targets compiling in ring mode.
 #ifdef USE_BLACKBOX_RING_LOG
 #if defined(STM32H7)
-#define FLASHFS_WRITE_BUFFER_SIZE       32768    // 32 KB
+#define FLASHFS_WRITE_BUFFER_SIZE       49152    // 48 KB
 #define FLASHFS_RING_USE_BLOCK_ERASE    1        // ring-mode pool refill uses 64 KB block erase
 #define FLASHFS_RING_MCU_CAP_HZ         4000     // H7 NOR cap (NAND bypasses, see flashfs.c)
 #elif defined(STM32F7)
-#define FLASHFS_WRITE_BUFFER_SIZE       16384    // 16 KB (32 KB fails to link on F722's 64 KB DTCM)
+#define FLASHFS_WRITE_BUFFER_SIZE       24576    // 24 KB (32 KB fails to link on F722's 64 KB DTCM)
 #define FLASHFS_RING_USE_BLOCK_ERASE    1        // block erase still preferred — sub-sector can't sustain 2 kHz on slow NOR
-#define FLASHFS_RING_MCU_CAP_HZ         2000     // F7 NOR cap — 16 KB buffer at 2 kHz fits a ~200 ms erase window exactly
+#define FLASHFS_RING_MCU_CAP_HZ         2000     // F7 NOR cap — drop-free at 2 kHz with 300 ms erase outlier headroom
 #elif defined(STM32F4) || defined(STM32G4)
 #define FLASHFS_WRITE_BUFFER_SIZE       8192     // 8 KB
 // FLASHFS_RING_USE_BLOCK_ERASE intentionally not defined — sub-sector erase

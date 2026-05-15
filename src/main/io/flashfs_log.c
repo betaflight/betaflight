@@ -603,7 +603,7 @@ static void eraseBufferArea(void)
 //   This trades a longer per-erase chip-BUSY window (~150 ms typical on NOR)
 //   for ~6× higher erase-refill bandwidth (426 KB/s vs 67 KB/s on the same
 //   chip), which is what makes the higher log-rate targets on those MCUs
-//   achievable. FLASHFS_WRITE_BUFFER_SIZE (16 KB on F7, 32 KB on H7 — F7 is
+//   achievable. FLASHFS_WRITE_BUFFER_SIZE (24 KB on F7, 48 KB on H7 — F7 is
 //   DTCM-constrained) absorbs each BUSY window at its respective cap.
 //
 //   Not set (F4/G4 / unknown builds): use the chip's sub-sector size when the
