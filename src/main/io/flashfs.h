@@ -20,13 +20,32 @@
 
 #pragma once
 
-// In ring-log mode, sustained writes are interrupted by ~30-50 ms NOR sector erases
-// (chip can't program while erasing). The RAM write buffer must be large enough to absorb
-// one worst-case erase at the maximum allowed sample rate (~200 KB/s × 50 ms ≈ 10 KB);
-// we round up to 16 KB for headroom. Linear mode never sees mid-flight erases so its
-// 128-byte buffer is sufficient. The bump only applies on targets compiling in ring mode.
+// In ring-log mode, sustained writes are interrupted by ~30-150 ms NOR erase
+// windows during which page programs can't run; the RAM buffer absorbs the
+// writer's output until the chip becomes ready again. Sizing rule:
+//
+//   buffer >= sustained_rate × typical_erase_window_ms
+//
+// The sustained rate itself is capped by the chip driver (maxSustainedLogRateHz)
+// so that erase-refill bandwidth equals writer-byte bandwidth. At the cap, one
+// typical erase window fills approximately:
+//
+//   m25p16 sub-sector, modern NOR: 60 KB/s × 60 ms  = 3.6 KB
+//   m25p16 sub-sector, older NOR:  37 KB/s × 100 ms = 3.7 KB
+//   w25q128fv block erase fallback: ~53 KB/s × 150 ms = 8 KB  (cap is buffer-bound)
+//   NAND block erase:              320 KB/s ×   2 ms = 0.6 KB
+//
+// 8 KB covers every NOR case at its respective cap, with a small headroom for
+// frame-size variability and brief erase-time outliers. Earlier the buffer was
+// 16 KB based on a 200 KB/s × 50 ms calculation that assumed an UNCAPPED writer
+// rate; the per-driver cap now binds the writer to actual chip bandwidth, so
+// the 16 KB sizing carried 2× headroom we don't need (and 8 KB of static RAM
+// is meaningful on F411 / G4-class targets).
+//
+// Linear mode never sees mid-flight erases so its 128-byte buffer is sufficient.
+// The bump only applies on targets compiling in ring mode.
 #ifdef USE_BLACKBOX_RING_LOG
-#define FLASHFS_WRITE_BUFFER_SIZE 16384
+#define FLASHFS_WRITE_BUFFER_SIZE 8192
 #define FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN 256
 #else
 #define FLASHFS_WRITE_BUFFER_SIZE 128

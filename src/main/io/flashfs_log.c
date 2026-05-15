@@ -248,11 +248,12 @@ flashfsFlashFormat_e flashfsLogDetectFormatFromFlash(void)
 // flash erase. At log start we sync-erase POOL_TARGET_SECTORS sectors ahead; during
 // flight we kick off async erases (chip background) to keep the pool full.
 //
-// Sustained writer rate vs erase rate determines whether the pool depletes. NOR erase
-// is ~80-133 KB/s; at ~80 B/frame the chip can sustain ~1000-1660 frames/sec. The
-// validated-config Hz cap (BLACKBOX_RING_MAX_FRAME_HZ = 1000) keeps the writer
-// nominally below the chip's erase rate. Worst-case erase outliers can still briefly
-// drain the pool — the drop guard takes over and the log shows a small gap.
+// Sustained writer rate vs erase rate determines whether the pool depletes. With
+// 4 KB sub-sector erase at ~60 ms typical on modern NOR, erase refill is ~67 KB/s
+// (~1500-1700 frames/sec at 40 B/frame). The per-chip cap in
+// flashfsGetMaxSustainedLogRateHz() keeps the writer nominally below the chip's
+// sustained bandwidth; worst-case erase outliers can still briefly drain the pool
+// — the drop guard takes over and the log shows a small gap.
 #define POOL_TARGET_SECTORS 4
 
 // Number of erase-pool sectors held in reserve at all times for power-loss
@@ -626,19 +627,23 @@ static void persistLappedMarkerIfReady(void);
 // Run the async-erase progress check + new-erase trigger. Never blocks: every
 // path inside this function returns in microseconds. The erase command-submit
 // is fire-and-return (flashEraseSubsector is the async wrapper — see its
-// definition in flash.c); the chip-BUSY window (~30 ms on NOR sub-sector,
+// definition in flash.c); the chip-BUSY window (~60 ms typical on NOR sub-sector,
 // ~150 ms if the driver fell back to sector erase) overlaps with continued FC
 // loop execution, and during it flashfsFlushAsync gracefully no-ops (its
-// flashIsReady() gate returns 0 bytes written instead of stalling). The RAM
-// buffer accumulates ~2.4 KB at 80 KB/s sustained over a 30 ms BUSY window,
-// well within the 16 KB buffer's drop-free headroom.
+// flashIsReady() gate returns 0 bytes written instead of stalling). The writer
+// rate is capped at the chip's sustained erase bandwidth (see flashfs.h and
+// each driver's maxSustainedLogRateHz), so the RAM buffer fills by roughly
+// (sustained_rate × erase_window) ≈ 3.6 KB per typical sub-sector erase — well
+// within the 8 KB buffer's drop-free headroom.
 //
 // Erase granularity here is eraseUnit() — the chip's sub-sector size (typically
 // 4 KB) when supported, else falls back to sectorSize (typically 64 KB). The
-// sub-sector path matters because a 150 ms BUSY window consumes ~12 KB of the
-// 16 KB buffer (near-overflow), while a 30 ms window consumes ~2.4 KB (safe);
-// the pre-fix 64 KB-sector path was what caused the 170 ms loop-time gaps we
-// measured on real hardware (every ~1 sec at sector boundaries).
+// sub-sector path matters because the per-erase BUSY window is shorter, so the
+// per-window buffer accumulation is smaller AND the chip-bandwidth-vs-buffer
+// trade-off favours the chip-bandwidth side (smaller erase = lower sustained
+// rate but lower buffer demand). The pre-fix 64 KB-sector path was what caused
+// the 170 ms loop-time gaps we measured on real hardware (every ~1 sec at
+// sector boundaries).
 //
 // Called from the data write hot path. Fast path (flashIsReady() register read,
 // ~µs) runs on most ticks; the erase-submit slow path runs only when the pool
@@ -679,10 +684,10 @@ static void eraseTick(void)
     // Pool refill: trigger an erase if we're below target. flashEraseSubsector is the
     // FIRE-AND-RETURN async wrapper — it kicks off the erase command via DMA and
     // returns once the SPI bus is drained (~10-20 µs total). The chip is then BUSY for
-    // ~30 ms (NOR sub-sector) / ~150 ms (sector fallback) in its own background while
-    // the CPU continues to service the FC loop and flashfs accumulates writes in its
-    // 16 KB RAM buffer. Use the active writer's position when a log is open; otherwise
-    // the module-level dataWriteHead.
+    // ~60 ms typical (NOR sub-sector) / ~150 ms (sector fallback) in its own background
+    // while the CPU continues to service the FC loop and flashfs accumulates writes in
+    // its RAM buffer (FLASHFS_WRITE_BUFFER_SIZE). Use the active writer's position when
+    // a log is open; otherwise the module-level dataWriteHead.
     //
     // The pendingEraseAddr / flashIsReady tracking is the completion-detection
     // protocol that the async contract requires: we record which address is being
@@ -1665,8 +1670,8 @@ void flashfsLogWriteHeaderByte(uint8_t b)
         // on NAND); if it does, the resulting log will be missing some header lines.
         return;
     }
-    // Goes through flashfs's existing circular write buffer (sized 16 KB on
-    // USE_BLACKBOX_RING_LOG builds, with FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN = 256 B
+    // Goes through flashfs's existing circular write buffer (FLASHFS_WRITE_BUFFER_SIZE
+    // on USE_BLACKBOX_RING_LOG builds, with FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN = 256 B
     // page-aligned auto-flush — see flashfs.h). Header writes hit the same buffer
     // as data writes; identical bandwidth profile to a linear-mode header write.
     flashfsWriteByte(b);
@@ -1812,8 +1817,8 @@ uint32_t flashfsLogGetWriteBufferFreeSpace(void) { return flashfsGetWriteBufferF
 // Diagnostic: bytes dropped on the data hot path because either the writer caught
 // the erase frontier (pool depleted under worst-case erase outliers) or the RAM
 // write buffer was full (chip mid-erase, flush couldn't drain). Monotonic per
-// session. Useful for tuning the BLACKBOX_RING_MAX_FRAME_HZ cap and confirming
-// the erase pool is keeping up on a given chip.
+// session. Useful for tuning the per-chip maxSustainedLogRateHz cap and
+// confirming the erase pool is keeping up on a given chip.
 uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 
 // Persist the lap marker into the buffer preamble if the writer has lapped this
@@ -1833,7 +1838,7 @@ uint32_t flashfsLogGetDataDrops(void) { return bbDataDrops; }
 //     The per-byte polling rate is essential: it catches the brief idle
 //     windows between page programs (each ~50-200 µs wide) that
 //     lower-frequency polling would miss on a heavily-loaded chip. During the
-//     marker write the writer keeps queuing bytes into the 16 KB RAM buffer
+//     marker write the writer keeps queuing bytes into the RAM write buffer
 //     which absorbs the delay without dropping data. Worst case (chip
 //     genuinely never idle for a sustained period): persist is deferred to
 //     disarm via the blocking variant.

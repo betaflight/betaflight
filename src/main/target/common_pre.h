@@ -244,8 +244,9 @@
 // onboard SPI flash that overwrites the oldest data once the chip is full.
 //
 // Requires:
-//   - ~16 KB extra static RAM (the flashfs write buffer grows from 128 B to 16 KB,
-//     sized to absorb sector erase stalls on NOR flash — see flashfs.h)
+//   - ~8 KB extra static RAM (the flashfs write buffer grows from 128 B to 8 KB,
+//     sized to absorb one typical NOR sub-sector erase window at the chip's
+//     sustained-rate cap — see flashfs.h)
 //   - ~2-3 KB extra program flash
 //
 // Enabled by default only on STM32F7 / STM32H7 (Cortex-M7 with plenty of SRAM).

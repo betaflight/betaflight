@@ -299,10 +299,19 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    // Ring-mode log rate cap. W25Q128FV is a 16 MB Winbond NOR with ~30-50 ms
-    // typical sector erase — same family as the m25p16 driver's ≥ 16 MB branch.
-    // 16 KB buffer ÷ 50 ms × 0.5 safety ≈ 4 kHz.
-    fdevice->geometry.maxSustainedLogRateHz = 4000;
+    // Ring-mode log rate cap. W25Q128FV is a 16 MB Winbond NOR on the QSPI path,
+    // which currently does NOT plumb the 4 KB sub-sector erase (the vtable has no
+    // eraseSubsector entry), so the wrapper falls back to the 64 KB block erase
+    // path — ~150 ms typical. With the 8 KB RAM write buffer, the binding
+    // constraint is buffer-vs-erase-window:
+    //
+    //   8 KB / 150 ms / 40 B/frame ≈ 1300 Hz
+    //
+    // Round down to 1000 Hz to leave headroom for frame-size variability and
+    // brief erase outliers. If/when this driver grows a sub-sector erase path
+    // (and the wrapper picks it up), this cap can be raised to ~1500 Hz to
+    // match the m25p16 ≥ 16 MB tier.
+    fdevice->geometry.maxSustainedLogRateHz = 1000;
 
     fdevice->vTable = &w25q128fv_vTable;
 

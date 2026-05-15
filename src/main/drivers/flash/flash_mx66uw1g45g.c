@@ -80,11 +80,15 @@ MMFLASH_CODE_NOINLINE bool mx66uw1g45g_identify(flashDevice_t *fdevice, uint32_t
     fdevice->geometry.sectorSize = MX66UW1G45G_SECTOR_SIZE;
     fdevice->geometry.totalSize = (uint32_t)MX66UW1G45G_SECTOR_SIZE * MX66UW1G45G_SECTORS;
 
-    // Ring-mode log rate cap. MX66UW is a 128 MB Macronix OPI NOR — same fast-NOR
-    // class as W25Q128 / W25Q256 in terms of per-sector erase timing (~30-50 ms
-    // typical). 4 kHz with ~0.5 safety margin against the 16 KB buffer / 50 ms
-    // worst-case erase product.
-    fdevice->geometry.maxSustainedLogRateHz = 4000;
+    // Ring-mode log rate cap. MX66UW is a 128 MB Macronix OPI NOR used in
+    // memory-mapped configurations on H7 targets; the eraseSector vtable entry
+    // here actually calls failureMode() (memory-mapped boot flash, not designed
+    // for runtime writes), so this driver isn't a real blackbox target. The cap
+    // is set for consistency with other fast-NOR class drivers — matching the
+    // m25p16 ≥ 16 MB tier (sustained ≈ 60 KB/s / 40 B-frame ≈ 1.5 kHz). If a
+    // future use case wires this driver up to flashfs, the writer should still
+    // observe the same actual sustained bandwidth ceiling.
+    fdevice->geometry.maxSustainedLogRateHz = 1500;
 
     fdevice->vTable = &mx66uw1g45g_vTable;
 

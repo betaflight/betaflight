@@ -1121,13 +1121,16 @@ void blackboxValidateConfig(void)
     }
 
 #ifdef USE_BLACKBOX_RING_LOG
-    // Ring-mode flash logging is bandwidth-limited by per-erase buffer occupancy:
-    // sustained ingress X bytes/sec must satisfy X × t_erase < buffer_size, where
-    // t_erase is the worst-case sector erase time for the underlying chip. The
-    // chip's driver advertises its safe sustained rate via
-    // flashfsGetMaxSustainedLogRateHz() — derived from chip-family knowledge
-    // (sector size, datasheet erase timing, a safety margin), so a fast NOR like
-    // W25Q256 can run ~2 kHz while a slow chip / unknown chip falls back to the
+    // Ring-mode flash logging is bandwidth-limited by the chip's sustained erase
+    // throughput: the writer can't average above (erase_size / erase_typical_ms),
+    // and the chip's erase + page-program paths share a single command bus, so:
+    //
+    //   sustained_byte_rate = 1 / (1/erase_byte_rate + 1/page_program_byte_rate)
+    //
+    // The chip's driver translates that bytes/sec into Hz (using a ~40 B/frame
+    // working assumption) and advertises it via flashfsGetMaxSustainedLogRateHz():
+    // ~1.5 kHz on modern ≥ 16 MB NOR with 4 KB sub-sector erase, ~1 kHz on older
+    // / smaller NOR, ~8 kHz on NAND. The unknown-chip fallback stays at the
     // conservative 1 kHz default. We cap the effective frame rate at that value.
     //
     // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the

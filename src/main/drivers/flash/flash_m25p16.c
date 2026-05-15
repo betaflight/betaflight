@@ -266,19 +266,34 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->sectorSize = geometry->pagesPerSector * geometry->pageSize;
     geometry->totalSize = geometry->sectorSize * geometry->sectors;
 
-    // Sustained ring-mode log rate. The m25p16 driver covers a wide span of SPI-NOR
-    // parts (Winbond W25Q, Macronix MX25L, Micron N25Q / M25P, Cypress S25FL, etc.)
-    // with very different erase-time characteristics. Use chip capacity as a proxy
-    // for generation:
-    //   ≥ 16 MB  →  modern parts (W25Q128 onward, MX25L12845G, GD25Q128, S25FL128,
-    //               W25Q256, W25Q512, MX25L25635E, XMC256, etc.) — typical sector
-    //               erase ~30-50 ms, worst-case ~150-200 ms. 16 KB buffer ÷ 50 ms
-    //               × 0.5 safety ≈ 4 kHz.
-    //   < 16 MB  →  older / smaller parts (M25P16, W25Q32/64, N25Q064, MX25L6406E,
-    //               etc.) where datasheet worst-case erase reaches 400 ms+ and the
-    //               buffer-vs-erase product collapses. Stay at the 1 kHz default
-    //               that's safe even at end-of-life timing.
-    geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 4000 : 1000;
+    // Sustained ring-mode log rate. Capped at the chip's sustained 4 KB sub-sector
+    // erase BANDWIDTH (since ring-mode pool refill uses sub-sector erase — see
+    // m25p16_eraseSubsector and the flashEraseSubsector wrapper). The chip is
+    // single-threaded for erase + page-program, so the true sustained rate is:
+    //
+    //   1 / (1/erase_rate + 1/page_program_rate)  bytes/sec
+    //
+    // and at ~40 B/frame avg P-frame size, that bytes/sec → Hz.
+    //
+    // The m25p16 driver covers a wide span of SPI-NOR parts (Winbond W25Q, Macronix
+    // MX25L, Micron N25Q / M25P, Cypress S25FL, etc.) with different erase-time
+    // characteristics; use chip capacity as a proxy for generation:
+    //   ≥ 16 MB →  modern parts (W25Q128 onward, MX25L12845G, GD25Q128, S25FL128,
+    //              W25Q256, W25Q512, etc.) — 4 KB sub-sector erase ~60 ms typical,
+    //              page program ~0.4 ms / 256 B. Sustained ≈ 60 KB/s ≈ 1.5 kHz
+    //              at 40 B/frame.
+    //   < 16 MB →  older / smaller parts (M25P16, W25Q32/64, N25Q064, MX25L6406E,
+    //              etc.) where sub-sector erase reaches ~100 ms typical. Sustained
+    //              ≈ 37 KB/s ≈ 900 Hz — round to 1000 Hz to match the conservative
+    //              FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ default.
+    //
+    // Earlier values (4 kHz / 1 kHz) were derived from the buffer-vs-erase-window
+    // product assuming the buffer was the binding constraint. Hardware testing
+    // showed that with the now-async erase path (see flashEraseSubsector) the
+    // FC loop is unblocked, but writer rate above sustained bandwidth causes
+    // graceful per-frame drops — not desirable, so we cap at the actual sustained
+    // bandwidth instead. See the comment block on FLASHFS_WRITE_BUFFER_SIZE.
+    geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 1500 : 1000;
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
@@ -419,11 +434,11 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
 }
 
 // 4 KB sub-sector erase. Same protocol as eraseSector but uses opcode 0x20
-// so the chip erases a 4 KB region in ~30 ms instead of the 64 KB block in
-// ~150 ms. Drivers register this in the vtable so flashEraseSubsector() can
-// pick it up; ring-mode flashfs_log uses it for on-the-fly pool refill to
-// keep the chip-BUSY window short enough for the 16 KB write buffer to
-// absorb at sustained log rates.
+// so the chip erases a 4 KB region in ~60 ms typical instead of the 64 KB
+// block in ~150 ms. Drivers register this in the vtable so flashEraseSubsector()
+// can pick it up; ring-mode flashfs_log uses it for on-the-fly pool refill so
+// the chip-BUSY window stays short enough for the RAM write buffer
+// (FLASHFS_WRITE_BUFFER_SIZE) to absorb at the chip's sustained log rate cap.
 static void m25p16_eraseSubsector(flashDevice_t *fdevice, uint32_t address)
 {
     STATIC_DMA_DATA_AUTO uint8_t subsectorErase[5] = { M25P16_INSTRUCTION_SUBSECTOR_ERASE };

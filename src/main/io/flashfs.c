@@ -71,10 +71,11 @@ static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
  * The tail is advanced once a write is complete up to the location behind head. The tail is advanced
  * by a callback from the FLASH write routine. This prevents data being overwritten whilst a write is in progress.
  */
-// Type-wide enough to index FLASHFS_WRITE_BUFFER_SIZE; bumped from uint8_t when the
-// buffer was 128 B to uint16_t now that USE_BLACKBOX_RING_LOG can grow it to 16 KB.
-// Compile-time guard so a future bump past 64 KB fails loudly instead of silently
-// wrapping the indices in flashfsAdvanceTailInBuffer / flashfsWriteByte.
+// Type-wide enough to index FLASHFS_WRITE_BUFFER_SIZE; bumped from uint8_t when
+// the buffer was 128 B to uint16_t now that USE_BLACKBOX_RING_LOG grows it to
+// several KB. Compile-time guard so a future bump past 64 KB fails loudly
+// instead of silently wrapping the indices in flashfsAdvanceTailInBuffer /
+// flashfsWriteByte.
 static uint16_t bufferHead = 0;
 static volatile uint16_t bufferTail = 0;
 STATIC_ASSERT(FLASHFS_WRITE_BUFFER_SIZE < 0x10000u, flashfs_write_buffer_too_large_for_uint16_index);
@@ -526,7 +527,7 @@ void flashfsFlushSync(void)
     // Each flashfsWriteBuffers() call programs at most one flash page (the underlying
     // flashPageProgramContinue truncates buffers at the next page boundary), so a
     // single flush only drains ~pageSize bytes — typically 256 B. With the ring-mode
-    // build's 16 KB write buffer, that left up to 64 pages still buffered after a
+    // build's multi-KB write buffer, that left many pages still buffered after a
     // "sync" flush, which broke callers that relied on the chip being fully drained
     // (markBufferLapped's mid-session preamble update, flashfsSetRing /
     // flashfsClearRing's wrap-config swap, etc — all could leave residual writes to
