@@ -623,26 +623,30 @@ static uint32_t ringSpaceFreeAhead(uint32_t writer)
 // Defined further down with its sync sibling near the flush helpers.
 static void persistLappedMarkerIfReady(void);
 
-// Run the async-erase progress check + new-erase trigger. The fast path costs a
-// single register read for flashIsReady() (a few µs); the slow path issues an
-// erase command and blocks until the chip completes it.
+// Run the async-erase progress check + new-erase trigger. Never blocks: every
+// path inside this function returns in microseconds. The erase command-submit
+// is fire-and-return (flashEraseSubsector is the async wrapper — see its
+// definition in flash.c); the chip-BUSY window (~30 ms on NOR sub-sector,
+// ~150 ms if the driver fell back to sector erase) overlaps with continued FC
+// loop execution, and during it flashfsFlushAsync gracefully no-ops (its
+// flashIsReady() gate returns 0 bytes written instead of stalling). The RAM
+// buffer accumulates ~2.4 KB at 80 KB/s sustained over a 30 ms BUSY window,
+// well within the 16 KB buffer's drop-free headroom.
 //
-// Erase granularity here is eraseUnit() — the chip's sub-sector size (typically 4 KB
-// at ~30 ms chip-BUSY) when supported, else falls back to sectorSize (typically 64 KB
-// at ~150 ms). The sub-sector path is what keeps the per-erase chip-BUSY window short
-// enough for the FC loop to absorb: flashEraseSubsector's wrapper synchronously waits
-// for the chip via flashWaitForReadyOrFail, so the erase duration directly translates
-// into FC-loop stall. Sub-sector (~30 ms) is the smallest disruption we can get without
-// reworking the flash driver layer for true command-submit-and-return semantics; full
-// sector erase (~150 ms) was the source of the loop-time jitter we measured on real
-// hardware (170 ms gaps every 1 sec at 64 KB sector boundaries pre-fix).
+// Erase granularity here is eraseUnit() — the chip's sub-sector size (typically
+// 4 KB) when supported, else falls back to sectorSize (typically 64 KB). The
+// sub-sector path matters because a 150 ms BUSY window consumes ~12 KB of the
+// 16 KB buffer (near-overflow), while a 30 ms window consumes ~2.4 KB (safe);
+// the pre-fix 64 KB-sector path was what caused the 170 ms loop-time gaps we
+// measured on real hardware (every ~1 sec at sector boundaries).
 //
-// Called from the data write hot path. Fast path runs every byte; slow path runs
-// only when the pool drops below POOL_TARGET_SECTORS * sectorSize of free space.
-// The opportunistic lap-marker persist below kicks off via DMA and returns
-// immediately — hot-path cost is ~15-20 µs (one synchronous preamble read + DMA
-// setup), once per session. The actual page program runs in the chip's
-// background while the FC loop continues.
+// Called from the data write hot path. Fast path (flashIsReady() register read,
+// ~µs) runs on most ticks; the erase-submit slow path runs only when the pool
+// drops below POOL_TARGET_SECTORS * sectorSize of free space — and even that
+// path still returns in ~10-20 µs (read-status DMA + write-enable DMA + erase
+// opcode DMA, all small SPI transfers). The opportunistic lap-marker persist
+// below kicks off via DMA and returns immediately — hot-path cost is ~15-20 µs
+// (one synchronous preamble read + DMA setup), once per session.
 static void eraseTick(void)
 {
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
@@ -672,15 +676,19 @@ static void eraseTick(void)
     // page program runs in background while the FC loop continues.
     persistLappedMarkerIfReady();
 
-    // Pool refill: trigger an erase if we're below target. flashEraseSubsector blocks
-    // the calling thread until the chip-BUSY window completes (~30 ms on NOR sub-sector,
-    // ~150 ms if the driver fell back to sectorSize). Use the active writer's position
-    // when a log is open; otherwise the module-level dataWriteHead.
+    // Pool refill: trigger an erase if we're below target. flashEraseSubsector is the
+    // FIRE-AND-RETURN async wrapper — it kicks off the erase command via DMA and
+    // returns once the SPI bus is drained (~10-20 µs total). The chip is then BUSY for
+    // ~30 ms (NOR sub-sector) / ~150 ms (sector fallback) in its own background while
+    // the CPU continues to service the FC loop and flashfs accumulates writes in its
+    // 16 KB RAM buffer. Use the active writer's position when a log is open; otherwise
+    // the module-level dataWriteHead.
     //
-    // The pendingEraseAddr / flashIsReady tracking is kept so that the design can move
-    // to a truly async wrapper later without changing the call sites — today the chip
-    // is already idle by the time this function returns, but the bookkeeping makes that
-    // observation cheap rather than required.
+    // The pendingEraseAddr / flashIsReady tracking is the completion-detection
+    // protocol that the async contract requires: we record which address is being
+    // erased, then on subsequent ticks poll flashIsReady() until the chip reports
+    // idle, at which point we advance eraseHead. Without this, we'd have no way to
+    // know when it's safe to write into the just-erased region.
     //
     // The flashIsReady() gate is required even on this no-pending-erase path: an
     // async page program from the data writer can still have the chip BUSY here.
@@ -1712,11 +1720,10 @@ void flashfsLogWriteDataByte(uint8_t b)
 {
     if (!active.isOpen || active.headerPhase) return;
 
-    // Hot path: eraseTick() does at most a flashIsReady() register read (cheap, a few
-    // µs) and, when the pool needs refilling, one flashEraseSubsector() that blocks
-    // until the chip's ~30 ms sub-sector erase completes — see eraseTick's banner for
-    // the timing rationale. The throttling below keeps the per-byte status polling
-    // cost bounded even at the highest sustained log rates.
+    // Hot path: must NOT block. eraseTick() does at most a flashIsReady() register
+    // read and (if pool below target) a flashEraseSubsector() fire-and-return DMA
+    // command-submit. Both return in microseconds; the actual chip-BUSY window
+    // happens in the background while the FC loop continues. See eraseTick's banner.
     //
     // Throttle to ~once per page write (32 bytes — 1/8 of a 256-byte page) rather than
     // every byte. Per-byte was originally chosen to maximise observation points for

@@ -516,12 +516,23 @@ MMFLASH_CODE void flashEraseSector(uint32_t address)
 
 // Sub-sector erase wrapper. Uses the driver's eraseSubsector vtable entry when
 // the driver advertises a finer-grained erase command (geometry.subsectorSize
-// non-zero), otherwise transparently falls back to eraseSector — so callers
-// can prefer the finer granularity without having to special-case every chip.
-// Like flashEraseSector this currently blocks on flashWaitForReadyOrFail() until
-// the chip finishes erasing; the BENEFIT of the sub-sector path is therefore not
-// "non-blocking" but "blocks for ~30 ms instead of ~150 ms", which is what makes
-// ring-mode flashfs_log's pool refill survivable inside the FC loop budget.
+// non-zero), otherwise transparently falls back to eraseSector.
+//
+// FIRE-AND-RETURN async semantics — UNLIKE flashEraseSector. This wrapper kicks
+// off the erase command via the bus framework's DMA pipeline (read-status →
+// write-enable → erase opcode) and returns once the SPI bus has DRAINED, not
+// once the chip has finished erasing. The chip stays busy (~30 ms for a 4 KB
+// sub-sector on typical NOR, ~150 ms for a 64 KB block-erase fallback) but the
+// CPU returns immediately and is free to keep servicing the FC loop. The caller
+// is responsible for polling flashIsReady() before the next flash operation
+// (ring-mode flashfs_log does this via its pendingEraseAddr / eraseTick gate).
+//
+// This is the deliberate design split from flashEraseSector: that one keeps the
+// blocking flashWaitForReadyOrFail() because callers like the CLI flash_erase
+// loop and config save/restore depend on synchronous completion. The hot-path
+// ring-mode pool refill cannot tolerate a single millisecond of blocking — let
+// alone the ~30-150 ms a synchronous erase costs — and that constraint is the
+// whole reason this wrapper exists as a separate entry point.
 MMFLASH_CODE void flashEraseSubsector(uint32_t address)
 {
     if (!flashDevice.vTable) return;
@@ -531,10 +542,8 @@ MMFLASH_CODE void flashEraseSubsector(uint32_t address)
     } else {
         flashDevice.vTable->eraseSector(&flashDevice, address);
     }
-
-    if (!flashWaitForReadyOrFail()) {
-        return;
-    }
+    // NO flashWaitForReadyOrFail() here — see header comment. The chip is BUSY
+    // when we return; the caller must poll flashIsReady() before the next op.
 }
 
 void flashEraseCompletely(void)

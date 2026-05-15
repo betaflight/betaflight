@@ -78,11 +78,14 @@ bool flashInit(const flashConfig_t *flashConfig);
 bool flashIsReady(void);
 bool flashWaitForReady(void);
 void flashEraseSector(uint32_t address);
-// Issue a sub-sector erase if the driver supports one (geometry.subsectorSize > 0
-// and vtable->eraseSubsector populated); falls back to flashEraseSector otherwise.
-// Address must be aligned to subsectorSize for the fine path; the fallback aligns
-// to sectorSize. Used by flashfs_log for ring-mode pool refill — see the comment
-// on flashGeometry_t.subsectorSize for the bandwidth rationale.
+// FIRE-AND-RETURN async sub-sector erase. UNLIKE flashEraseSector, this does NOT
+// wait for the chip to finish — the CPU returns once the SPI bus has drained
+// the command, with the chip still BUSY (~30 ms on NOR sub-sector / ~150 ms if
+// the driver fell back to sector erase). Callers must poll flashIsReady() before
+// the next flash op. Used by ring-mode flashfs_log for hot-path pool refill
+// where any blocking would jitter the FC loop. See the comment on
+// flashGeometry_t.subsectorSize for the bandwidth rationale, and the
+// flashEraseSubsector definition in flash.c for the async contract.
 void flashEraseSubsector(uint32_t address);
 void flashEraseCompletely(void);
 void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg));
