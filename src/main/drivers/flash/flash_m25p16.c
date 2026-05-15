@@ -276,14 +276,15 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     //
     // and at ~40 B/frame avg P-frame size, that bytes/sec → Hz.
     //
-    // The chip rate here is set assuming F7/H7 (the higher-bandwidth target)
-    // uses 64 KB block erase via the FLASHFS_RING_USE_BLOCK_ERASE path:
+    // The chip rate here is set assuming F7/H7 builds use 64 KB block erase
+    // via the FLASHFS_RING_USE_BLOCK_ERASE path:
     //   ≥ 16 MB → block erase ~150 ms typical, page program ~0.4 ms / 256 B.
-    //              Sustained ≈ 256 KB/s ≈ 6 kHz at 40 B/frame. Advertise 4 kHz
-    //              (the F7/H7 MCU cap) so the F7/H7 cap kicks in cleanly; F4
-    //              MCU cap (2 kHz) takes precedence on smaller boards.
+    //              Sustained ≈ 256 KB/s ≈ 6 kHz at 40 B/frame. Advertise
+    //              4 kHz; the actual cap is then min(chip, MCU) — 4 kHz on
+    //              H7, 2 kHz on F7 (DTCM-constrained — F7 buffer is 16 KB
+    //              vs 32 KB on H7), 2 kHz on F4.
     //   < 16 MB → older / smaller parts (M25P16, W25Q32/64, N25Q064, etc.)
-    //              with slower erases. Advertise 2 kHz to match F4 cap.
+    //              with slower erases. Advertise 2 kHz; capped by MCU below.
     //
     // The m25p16 driver covers a wide span of SPI-NOR parts (Winbond W25Q,
     // Macronix MX25L, Micron N25Q / M25P, Cypress S25FL, etc.). The size split

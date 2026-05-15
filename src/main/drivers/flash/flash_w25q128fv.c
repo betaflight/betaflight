@@ -302,7 +302,7 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     // Ring-mode log rate ceiling. W25Q128FV is a 16 MB Winbond NOR on the QSPI
     // path; advertise 4 kHz (the F7/H7 MCU target) so the consumer's MCU cap
     // (FLASHFS_RING_MCU_CAP_HZ in flashfs.h) is what actually binds. With the
-    // F7/H7 buffer at 32 KB and the FLASHFS_RING_USE_BLOCK_ERASE pool-refill
+    // F7/H7 buffer (16 KB on F7, 32 KB on H7) and the FLASHFS_RING_USE_BLOCK_ERASE pool-refill
     // path, the 64 KB block erase (~150 ms typical) produces ~426 KB/s erase
     // refill bandwidth, comfortably sustaining 4 kHz × 40 B = 160 KB/s. On F4,
     // the 2 kHz MCU cap takes precedence anyway.

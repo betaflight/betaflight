@@ -602,9 +602,9 @@ static void eraseBufferArea(void)
 //   FLASHFS_RING_USE_BLOCK_ERASE set (F7/H7 builds): always 64 KB block erase.
 //   This trades a longer per-erase chip-BUSY window (~150 ms typical on NOR)
 //   for ~6× higher erase-refill bandwidth (426 KB/s vs 67 KB/s on the same
-//   chip), which is what makes the F7/H7 4 kHz log-rate target achievable.
-//   The 24 KB write buffer (per FLASHFS_WRITE_BUFFER_SIZE) absorbs each BUSY
-//   window without dropping.
+//   chip), which is what makes the higher log-rate targets on those MCUs
+//   achievable. FLASHFS_WRITE_BUFFER_SIZE (16 KB on F7, 32 KB on H7 — F7 is
+//   DTCM-constrained) absorbs each BUSY window at its respective cap.
 //
 //   Not set (F4/G4 / unknown builds): use the chip's sub-sector size when the
 //   driver exposes one (e.g. 4 KB on Winbond NOR), else fall back to the full
@@ -652,12 +652,12 @@ static void persistLappedMarkerIfReady(void);
 //
 // Erase granularity here is eraseUnit() — controlled by the per-MCU
 // FLASHFS_RING_USE_BLOCK_ERASE flag. F7/H7 builds use the 64 KB block erase
-// path (longer BUSY window, ~6× higher sustained refill bandwidth; needs the
-// 32 KB buffer). F4 builds use the 4 KB sub-sector erase path (shorter BUSY
-// window, smaller buffer fill; fits in 8 KB). The pre-fix synchronous 64 KB
-// sector path was what caused the 170 ms loop-time gaps we measured on real
-// hardware (every ~1 sec at sector boundaries) — that's gone now thanks to
-// the fire-and-return wrappers.
+// path (longer BUSY window, ~6× higher sustained refill bandwidth; matched
+// to FLASHFS_WRITE_BUFFER_SIZE per-MCU). F4 builds use the 4 KB sub-sector
+// erase path (shorter BUSY window, smaller buffer fill; fits in 8 KB). The
+// pre-fix synchronous 64 KB sector path was what caused the 170 ms loop-time
+// gaps we measured on real hardware (every ~1 sec at sector boundaries) —
+// that's gone now thanks to the fire-and-return wrappers.
 //
 // Called from the data write hot path. Fast path (flashIsReady() register read,
 // ~µs) runs on most ticks; the erase-submit slow path runs only when the pool
@@ -725,7 +725,7 @@ static void eraseTick(void)
 #ifdef FLASHFS_RING_USE_BLOCK_ERASE
         // F7/H7 path: 64 KB block erase per call. Longer chip-BUSY window
         // (~150 ms typical) but ~6× higher erase-refill bandwidth — the
-        // 32 KB buffer is sized to absorb the window.
+        // FLASHFS_WRITE_BUFFER_SIZE is sized per-MCU to absorb the window.
         flashEraseSectorAsync(eraseHead);
 #else
         // F4 path: 4 KB sub-sector erase per call (driver-permitting; falls
