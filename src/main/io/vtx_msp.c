@@ -34,6 +34,7 @@
 
 #include "cms/cms_menu_vtx_msp.h"
 #include "common/crc.h"
+#include "common/maths.h"
 #include "config/feature.h"
 
 #include "drivers/vtx_common.h"
@@ -66,6 +67,8 @@ static uint8_t mspConfPitMode = 0;
 static bool mspVtxConfigChanged = false;
 static timeUs_t mspVtxLastTimeUs = 0;
 static bool prevLowPowerDisarmedState = false;
+static timeUs_t lastMspDisarmTimeUs = 0;
+static bool disarmTimestampValid = false;
 
 static const vtxVTable_t mspVTable; // forward
 static vtxDevice_t vtxMsp = {
@@ -73,7 +76,7 @@ static vtxDevice_t vtxMsp = {
 };
 
 STATIC_UNIT_TESTED mspVtxStatus_e mspVtxStatus = MSP_VTX_STATUS_OFFLINE;
-static uint8_t mspVtxPortIdentifier = 255;
+static serialPortIdentifier_e mspVtxPortIdentifier = SERIAL_PORT_NONE;
 
 #define MSP_VTX_REQUEST_PERIOD_US (200 * 1000) // 200ms
 
@@ -89,6 +92,99 @@ static bool isLowPowerDisarmed(void)
         (vtxSettingsConfig()->lowPowerDisarm == VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM && !ARMING_FLAG(WAS_EVER_ARMED))));
 }
 
+/**
+ * Tracks arm/disarm transitions so that lastMspDisarmTimeUs is refreshed on
+ * every new disarm event.  Uses a separate validity flag so a zero-valued
+ * timestamp (wraparound edge case) is handled correctly.  Invalidating the
+ * timestamp on arm ensures multi-cycle arm/disarm works without power cycling.
+ * Safe to call more than once per scheduler tick: the prevArmed edge gate
+ * makes repeated calls a no-op until the armed state actually changes.
+ */
+static void updateDisarmTimestamp(timeUs_t currentTimeUs)
+{
+    static bool prevArmed = false;
+    const bool armed = ARMING_FLAG(ARMED);
+    if (armed && !prevArmed) {
+        disarmTimestampValid = false;
+    } else if (!armed && !disarmTimestampValid && ARMING_FLAG(WAS_EVER_ARMED)) {
+        lastMspDisarmTimeUs = currentTimeUs;
+        disarmTimestampValid = true;
+    }
+    prevArmed = armed;
+}
+
+/**
+ * Returns true when the configured mspDisarmDelay has elapsed since disarm,
+ * or immediately if no delay is configured / no disarm timestamp is recorded.
+ * Uses cmp32() for safe 32-bit unsigned wraparound handling.
+ */
+static bool isMspDisarmDelayElapsed(const timeUs_t currentTimeUs)
+{
+    const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
+    if (delaySeconds == 0 || !disarmTimestampValid) {
+        return true;
+    }
+
+    const uint32_t delayUs = (uint32_t)delaySeconds * 1000000u;
+    return cmp32((uint32_t)currentTimeUs, (uint32_t)lastMspDisarmTimeUs) >= (int32_t)delayUs;
+}
+
+/**
+ * Delay-aware version of isLowPowerDisarmed().  Returns true only after the
+ * configured mspDisarmDelay has elapsed, keeping the VTX at full power during
+ * the delay window.
+ */
+static bool isLowPowerDisarmedWithDelay(const timeUs_t currentTimeUs)
+{
+    updateDisarmTimestamp(currentTimeUs);
+    if (!isLowPowerDisarmed()) {
+        return false;
+    }
+    return isMspDisarmDelayElapsed(currentTimeUs);
+}
+
+/**
+ * Returns true while the MSP disarm delay is active — i.e. the FC is disarmed
+ * but the configured delay has not yet elapsed.  Used by the MSP_STATUS
+ * handler to keep reporting armed status to the VTX during the delay window,
+ * which prevents digital VTX systems (e.g. DJI) from stopping video recording
+ * immediately on disarm.
+ */
+bool isMspArmedDelayActive(timeUs_t currentTimeUs)
+{
+    updateDisarmTimestamp(currentTimeUs);
+    if (ARMING_FLAG(ARMED)) {
+        return false;
+    }
+    const uint8_t delaySeconds = vtxSettingsConfig()->mspDisarmDelay;
+    if (delaySeconds == 0 || !ARMING_FLAG(WAS_EVER_ARMED)) {
+        return false;
+    }
+    return !isMspDisarmDelayElapsed(currentTimeUs);
+}
+
+/**
+ * Returns true if the given MSP descriptor is associated with the VTX MSP
+ * port (direct serial or CRSF-over-telemetry).  Used to limit the disarm
+ * delay override to MSP responses destined for the digital VTX.
+ */
+bool isVtxMspDescriptor(mspDescriptor_t descriptor)
+{
+    if (mspVtxPortIdentifier == SERIAL_PORT_NONE) {
+        return false;
+    }
+    if (getMspSerialPortDescriptor(mspVtxPortIdentifier) == descriptor) {
+        return true;
+    }
+#if defined(USE_MSP_OVER_TELEMETRY)
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_MSP);
+    if (portConfig && isCrsfPortConfig(portConfig) && getMspTelemetryDescriptor() == descriptor) {
+        return true;
+    }
+#endif
+    return false;
+}
+
 void setMspVtxDeviceStatusReady(const int descriptor)
 {
     if (mspVtxStatus != MSP_VTX_STATUS_READY && vtxTableConfig()->bands && vtxTableConfig()->channels && vtxTableConfig()->powerLevels) {
@@ -102,12 +198,16 @@ void setMspVtxDeviceStatusReady(const int descriptor)
     }
 }
 
-void prepareMspFrame(uint8_t *mspFrame)
+/**
+ * Builds a 15-byte MSP VTX configuration frame.  Uses the delay-aware
+ * low-power check so the VTX stays at full power during mspDisarmDelay.
+ */
+STATIC_UNIT_TESTED void prepareMspFrame(uint8_t *mspFrame, const timeUs_t currentTimeUs)
 {
     mspFrame[0] = VTXDEV_MSP;
     mspFrame[1] = vtxSettingsConfig()->band;
     mspFrame[2] = vtxSettingsConfig()->channel;
-    mspFrame[3] = isLowPowerDisarmed() ? 1 : vtxSettingsConfig()->power; // index based
+    mspFrame[3] = isLowPowerDisarmedWithDelay(currentTimeUs) ? 1 : vtxSettingsConfig()->power; // index based
     mspFrame[4] = mspConfPitMode;
     mspFrame[5] = vtxSettingsConfig()->freq & 0xFF;
     mspFrame[6] = (vtxSettingsConfig()->freq >> 8) & 0xFF;
@@ -186,15 +286,17 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #endif
         break;
     case MSP_VTX_STATUS_READY:
-        if (isLowPowerDisarmed() != prevLowPowerDisarmedState) {
+    {
+        const bool currLowPowerDisarmed = isLowPowerDisarmedWithDelay(currentTimeUs);
+        if (currLowPowerDisarmed != prevLowPowerDisarmedState) {
             mspVtxConfigChanged = true;
-            prevLowPowerDisarmedState = isLowPowerDisarmed();
+            prevLowPowerDisarmedState = currLowPowerDisarmed;
         }
 
         // send an update if stuff has changed with 200ms period
         if (mspVtxConfigChanged && cmp32(currentTimeUs, mspVtxLastTimeUs) >= MSP_VTX_REQUEST_PERIOD_US) {
 
-            prepareMspFrame(frame);
+            prepareMspFrame(frame, currentTimeUs);
 
             if (isCrsfPortConfig(portConfig)) {
                 mspCrsfPush(MSP_VTX_CONFIG, frame, sizeof(frame));
@@ -210,6 +312,7 @@ static void vtxMspProcess(vtxDevice_t *vtxDevice, timeUs_t currentTimeUs)
 #endif
         }
         break;
+    }
     default:
         mspVtxStatus = MSP_VTX_STATUS_OFFLINE;
         break;
