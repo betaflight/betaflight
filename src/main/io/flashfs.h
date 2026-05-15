@@ -33,11 +33,17 @@
 //                divider). To sustain 4 kHz × 40 B = 160 KB/s on a typical
 //                W25Q256-class NOR, the chip-side bandwidth has to come from
 //                64 KB BLOCK ERASE (~150 ms typical, but ~426 KB/s erase
-//                refill rate vs ~67 KB/s on a 4 KB sub-sector). One block-
-//                erase window at the cap fills ~24 KB of buffer; round to
-//                24 KB total to absorb that plus brief outliers without
-//                drops. Use FLASHFS_RING_USE_BLOCK_ERASE to switch the
-//                pool-refill path to the bigger erase.
+//                refill rate vs ~67 KB/s on a 4 KB sub-sector). Hardware
+//                testing on F722 + W25Q256 showed the chip's actual erase
+//                windows reach ~190 ms (well within the 60-2000 ms datasheet
+//                range, but above the 150 ms typical), so one outlier window
+//                fills:
+//
+//                  160 KB/s × 200 ms ≈ 32 KB
+//
+//                32 KB sized to handle outliers up to ~200 ms cleanly with
+//                the F7/H7 4 kHz cap. Use FLASHFS_RING_USE_BLOCK_ERASE to
+//                switch the pool-refill path to the bigger erase.
 //
 //   F4 / G4   →  PID loop typically 4 kHz. Target P-frame rate 2 kHz (1/2
 //                divider). At 2 kHz × 40 B = 80 KB/s we can stay on the 4 KB
@@ -55,7 +61,7 @@
 // The bump only applies on targets compiling in ring mode.
 #ifdef USE_BLACKBOX_RING_LOG
 #if defined(STM32H7) || defined(STM32F7)
-#define FLASHFS_WRITE_BUFFER_SIZE       24576    // 24 KB
+#define FLASHFS_WRITE_BUFFER_SIZE       32768    // 32 KB
 #define FLASHFS_RING_USE_BLOCK_ERASE    1        // ring-mode pool refill uses 64 KB block erase
 #define FLASHFS_RING_MCU_CAP_HZ         4000     // F7/H7 NOR cap (NAND bypasses, see flashfs.c)
 #elif defined(STM32F4) || defined(STM32G4)

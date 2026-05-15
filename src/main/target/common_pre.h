@@ -246,7 +246,7 @@
 // Requires per-MCU RAM (the flashfs write buffer grows from 128 B; size is
 // chosen to absorb one typical NOR erase window at the MCU's target log
 // rate — see the table in flashfs.h):
-//   - F7/H7: ~24 KB extra static RAM. Uses 64 KB block erase for higher
+//   - F7/H7: ~32 KB extra static RAM. Uses 64 KB block erase for higher
 //     sustained bandwidth; targets 4 kHz P-frame logging on NOR.
 //   - F4/G4: ~8 KB extra static RAM. Uses 4 KB sub-sector erase to keep the
 //     per-erase buffer fill small; targets 2 kHz P-frame logging on NOR.

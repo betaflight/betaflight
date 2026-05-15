@@ -653,7 +653,7 @@ static void persistLappedMarkerIfReady(void);
 // Erase granularity here is eraseUnit() — controlled by the per-MCU
 // FLASHFS_RING_USE_BLOCK_ERASE flag. F7/H7 builds use the 64 KB block erase
 // path (longer BUSY window, ~6× higher sustained refill bandwidth; needs the
-// 24 KB buffer). F4 builds use the 4 KB sub-sector erase path (shorter BUSY
+// 32 KB buffer). F4 builds use the 4 KB sub-sector erase path (shorter BUSY
 // window, smaller buffer fill; fits in 8 KB). The pre-fix synchronous 64 KB
 // sector path was what caused the 170 ms loop-time gaps we measured on real
 // hardware (every ~1 sec at sector boundaries) — that's gone now thanks to
@@ -725,7 +725,7 @@ static void eraseTick(void)
 #ifdef FLASHFS_RING_USE_BLOCK_ERASE
         // F7/H7 path: 64 KB block erase per call. Longer chip-BUSY window
         // (~150 ms typical) but ~6× higher erase-refill bandwidth — the
-        // 24 KB buffer is sized to absorb the window.
+        // 32 KB buffer is sized to absorb the window.
         flashEraseSectorAsync(eraseHead);
 #else
         // F4 path: 4 KB sub-sector erase per call (driver-permitting; falls
