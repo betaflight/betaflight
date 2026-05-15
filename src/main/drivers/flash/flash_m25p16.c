@@ -49,6 +49,11 @@
 #define M25P16_INSTRUCTION_PAGE_PROGRAM     0x02
 #define M25P16_INSTRUCTION_QPAGE_PROGRAM    0x32
 #define M25P16_INSTRUCTION_SECTOR_ERASE     0xD8
+// Standard 4 KB sub-sector erase across Winbond W25Q, Macronix MX25L, Micron N25Q,
+// Cypress S25FL, GigaDevice GD25Q, etc. Typical 30-60 ms vs 150-400 ms for the
+// 64 KB block erase above — used by ring-mode flashfs_log to keep chip-BUSY
+// windows short.
+#define M25P16_INSTRUCTION_SUBSECTOR_ERASE  0x20
 #define M25P16_INSTRUCTION_BULK_ERASE       0xC7
 
 #define M25P16_STATUS_FLAG_WRITE_IN_PROGRESS 0x01
@@ -279,6 +284,17 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
 
     if (fdevice->io.mode == FLASHIO_SPI) {
         fdevice->vTable = &m25p16_vTable;
+        // Advertise 4 KB sub-sector erase only on the SPI vtable — all SPI-NOR parts
+        // handled by this driver (Winbond W25Q, Macronix MX25L, Micron N25Q / M25P,
+        // Cypress S25FL, GD25Q, PUYA PY25Q, Zbit, etc.) support opcode 0x20, and the
+        // SPI vtable wires up m25p16_eraseSubsector. The QSPI vtable doesn't expose
+        // a sub-sector path yet, so leave subsectorSize=0 there — flashfs_log falls
+        // back to coarse sector erase, matching that vtable's actual capabilities.
+        // (If subsectorSize was set but eraseSubsector was NULL, flash.c's wrapper
+        // would silently fall back to the full sector erase while ring-mode's pool
+        // accounting advanced by 4 KB — corrupting recently-written data because
+        // the 64 KB block erase wipes bytes BELOW the unaligned eraseHead.)
+        geometry->subsectorSize = 4096;
     }
 #ifdef USE_QUADSPI
     else if (fdevice->io.mode == FLASHIO_QUADSPI) {
@@ -399,6 +415,35 @@ static void m25p16_eraseSector(flashDevice_t *fdevice, uint32_t address)
     spiSequence(fdevice->io.handle.dev, segments);
 
     // Block pending completion of SPI access, but the erase will be ongoing
+    spiWait(fdevice->io.handle.dev);
+}
+
+// 4 KB sub-sector erase. Same protocol as eraseSector but uses opcode 0x20
+// so the chip erases a 4 KB region in ~30 ms instead of the 64 KB block in
+// ~150 ms. Drivers register this in the vtable so flashEraseSubsector() can
+// pick it up; ring-mode flashfs_log uses it for on-the-fly pool refill to
+// keep the chip-BUSY window short enough for the 16 KB write buffer to
+// absorb at sustained log rates.
+static void m25p16_eraseSubsector(flashDevice_t *fdevice, uint32_t address)
+{
+    STATIC_DMA_DATA_AUTO uint8_t subsectorErase[5] = { M25P16_INSTRUCTION_SUBSECTOR_ERASE };
+    STATIC_DMA_DATA_AUTO uint8_t readStatus[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
+    STATIC_DMA_DATA_AUTO uint8_t readyStatus[2];
+    STATIC_DMA_DATA_AUTO uint8_t writeEnable[] = { M25P16_INSTRUCTION_WRITE_ENABLE };
+
+    busSegment_t segments[] = {
+            {.u.buffers = {readStatus, readyStatus}, sizeof(readStatus), true, m25p16_callbackReady},
+            {.u.buffers = {writeEnable, NULL}, sizeof(writeEnable), true, m25p16_callbackWriteEnable},
+            {.u.buffers = {subsectorErase, NULL}, fdevice->isLargeFlash ? 5 : 4, true, NULL},
+            {.u.link = {NULL, NULL}, 0, true, NULL},
+    };
+
+    spiWait(fdevice->io.handle.dev);
+
+    m25p16_setCommandAddress(&subsectorErase[1], address, fdevice->isLargeFlash);
+
+    spiSequence(fdevice->io.handle.dev, segments);
+
     spiWait(fdevice->io.handle.dev);
 }
 
@@ -672,6 +717,7 @@ const flashVTable_t m25p16_vTable = {
     .isReady = m25p16_isReady,
     .waitForReady = m25p16_waitForReady,
     .eraseSector = m25p16_eraseSector,
+    .eraseSubsector = m25p16_eraseSubsector,
     .eraseCompletely = m25p16_eraseCompletely,
     .pageProgramBegin = m25p16_pageProgramBegin,
     .pageProgramContinue = m25p16_pageProgramContinue,

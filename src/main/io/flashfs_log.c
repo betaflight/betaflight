@@ -339,6 +339,13 @@ static struct {
     uint32_t partitionSize;
     uint32_t sectorSize;
     uint32_t pageSize;
+    // Sub-sector erase granularity (e.g. 4 KB on Winbond NOR) when the driver
+    // exposes one — 0 when not supported. Used in eraseTick's async pool refill
+    // to keep each chip-BUSY window short (~30 ms vs ~150 ms for the 64 KB block
+    // erase) so the RAM buffer can absorb it without dropping frames. Bulk paths
+    // (log start, log close, recovery) still use the coarse sector erase since
+    // they block anyway and fewer larger erases is faster total wall time.
+    uint32_t subsectorSize;
     uint32_t dataSectionEnd;       // first byte past the data ring (== buffer area start)
     uint32_t bufferAreaStart;
     uint32_t bufferAreaSize;       // HDR_BUFFER_SECTORS * sectorSize
@@ -466,6 +473,16 @@ static void computeGeometry(void)
     if (fg->pageSize == 0 || fg->pageSize >= fg->sectorSize) return;
     geom.sectorSize = fg->sectorSize;
     geom.pageSize = fg->pageSize;
+    // Sub-sector erase is optional per-driver. When non-zero AND a multiple-divisor
+    // of sectorSize, the async pool-refill path uses it to keep chip-BUSY windows
+    // short; otherwise the path falls back to coarse sector erase.
+    if (fg->subsectorSize > 0
+        && fg->subsectorSize < fg->sectorSize
+        && (fg->sectorSize % fg->subsectorSize) == 0) {
+        geom.subsectorSize = fg->subsectorSize;
+    } else {
+        geom.subsectorSize = 0;
+    }
     geom.bufferAreaSize = HDR_BUFFER_SECTORS * geom.sectorSize;
     if (geom.bufferAreaSize >= geom.partitionSize) return;
     geom.bufferAreaStart = geom.partitionSize - geom.bufferAreaSize;
@@ -578,6 +595,18 @@ static void eraseBufferArea(void)
 // Erase pool management
 // =============================================================================
 
+// Granularity of the on-the-fly pool-refill erase, in bytes. Returns the chip's
+// sub-sector erase size when the driver exposes one (e.g. 4 KB on Winbond NOR),
+// else falls back to the full sector size. The async eraseTick uses this for
+// each pool-refill erase so the chip-BUSY window stays short and the RAM buffer
+// can absorb it; bulk sync paths (log start, log close, recovery) keep using
+// sectorSize since blocking is acceptable there and one big erase beats many
+// small ones for total wall time.
+static uint32_t eraseUnit(void)
+{
+    return geom.subsectorSize > 0 ? geom.subsectorSize : geom.sectorSize;
+}
+
 // Bytes between `writer` and `eraseHead` going forward in the ring. Returns the number
 // of erased bytes the writer can still write into without blocking. 0 means the writer
 // has caught up to the erase frontier (must drop or stall).
@@ -594,22 +623,36 @@ static uint32_t ringSpaceFreeAhead(uint32_t writer)
 // Defined further down with its sync sibling near the flush helpers.
 static void persistLappedMarkerIfReady(void);
 
-// Run the async-erase progress check + new-erase trigger. Cheap: a register read for
-// flashIsReady() and at most one flashEraseSector() call (which itself just sends the
-// command and returns; the chip then erases for ~30-50 ms in its own background while
-// we keep going).
+// Run the async-erase progress check + new-erase trigger. The fast path costs a
+// single register read for flashIsReady() (a few µs); the slow path issues an
+// erase command and blocks until the chip completes it.
 //
-// Called from the data write hot path. NEVER blocks. The opportunistic
-// lap-marker persist below kicks off via DMA and returns immediately —
-// hot-path cost is ~15-20 µs (one synchronous preamble read + DMA setup),
-// once per session. The actual page program runs in the chip's background
-// while the FC loop continues.
+// Erase granularity here is eraseUnit() — the chip's sub-sector size (typically 4 KB
+// at ~30 ms chip-BUSY) when supported, else falls back to sectorSize (typically 64 KB
+// at ~150 ms). The sub-sector path is what keeps the per-erase chip-BUSY window short
+// enough for the FC loop to absorb: flashEraseSubsector's wrapper synchronously waits
+// for the chip via flashWaitForReadyOrFail, so the erase duration directly translates
+// into FC-loop stall. Sub-sector (~30 ms) is the smallest disruption we can get without
+// reworking the flash driver layer for true command-submit-and-return semantics; full
+// sector erase (~150 ms) was the source of the loop-time jitter we measured on real
+// hardware (170 ms gaps every 1 sec at 64 KB sector boundaries pre-fix).
+//
+// Called from the data write hot path. Fast path runs every byte; slow path runs
+// only when the pool drops below POOL_TARGET_SECTORS * sectorSize of free space.
+// The opportunistic lap-marker persist below kicks off via DMA and returns
+// immediately — hot-path cost is ~15-20 µs (one synchronous preamble read + DMA
+// setup), once per session. The actual page program runs in the chip's
+// background while the FC loop continues.
 static void eraseTick(void)
 {
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
         if (flashIsReady()) {
-            // Previous erase completed.
-            eraseHead = pendingEraseAddr + geom.sectorSize;
+            // Previous erase completed. Advance by eraseUnit() — matches the
+            // granularity we issued the erase at (see the flashEraseSubsector
+            // call below). If the driver doesn't expose a sub-sector erase,
+            // both that call and eraseUnit() fall back to sectorSize, keeping
+            // these two consistent.
+            eraseHead = pendingEraseAddr + eraseUnit();
             if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
             pendingEraseAddr = PENDING_ERASE_NONE;
         } else {
@@ -629,42 +672,59 @@ static void eraseTick(void)
     // page program runs in background while the FC loop continues.
     persistLappedMarkerIfReady();
 
-    // Pool refill: trigger an erase if we're below target. flashEraseSector is non-
-    // blocking from the CPU's point of view (sends the command, returns; chip is busy
-    // ~30-50 ms while we continue to write into the existing pool / RAM buffer).
-    // Use the active writer's position when a log is open; otherwise the module-level
-    // dataWriteHead.
+    // Pool refill: trigger an erase if we're below target. flashEraseSubsector blocks
+    // the calling thread until the chip-BUSY window completes (~30 ms on NOR sub-sector,
+    // ~150 ms if the driver fell back to sectorSize). Use the active writer's position
+    // when a log is open; otherwise the module-level dataWriteHead.
+    //
+    // The pendingEraseAddr / flashIsReady tracking is kept so that the design can move
+    // to a truly async wrapper later without changing the call sites — today the chip
+    // is already idle by the time this function returns, but the bookkeeping makes that
+    // observation cheap rather than required.
     //
     // The flashIsReady() gate is required even on this no-pending-erase path: an
     // async page program from the data writer can still have the chip BUSY here.
-    // Most NOR parts ignore commands while BUSY, so issuing flashEraseSector() now
-    // would silently no-op while we still record pendingEraseAddr=eraseHead. The
-    // next eraseTick() would then see flashIsReady() true (program completed),
-    // declare the non-existent erase done, and advance eraseHead past a sector
-    // that was never erased. Subsequent programs into that sector would land on
-    // non-erased flash. Skipping this tick is safe — eraseTick() runs every data
-    // byte, the next call will retry.
+    // Most NOR parts ignore commands while BUSY, so issuing the erase now would
+    // silently no-op while we still record pendingEraseAddr=eraseHead. The next
+    // eraseTick() would then see flashIsReady() true (program completed), declare
+    // the non-existent erase done, and advance eraseHead past flash that was never
+    // erased. Subsequent programs into that range would land on non-erased flash.
+    // Skipping this tick is safe — eraseTick() runs every data byte, the next call
+    // will retry.
     uint32_t writer = active.isOpen ? active.dataWriteHead : dataWriteHead;
     uint32_t spaceAhead = ringSpaceFreeAhead(writer);
     if (spaceAhead < POOL_TARGET_SECTORS * geom.sectorSize && flashIsReady()) {
-        flashEraseSector(eraseHead);
+        flashEraseSubsector(eraseHead);
         pendingEraseAddr = eraseHead;
     }
 }
 
 // Synchronously erase one sector, advancing eraseHead. Used at log start, log close,
 // and during recovery — places where blocking is acceptable.
+//
+// eraseHead may have been advanced at sub-sector granularity by a prior eraseTick(),
+// leaving it part-way into a sector. The block-erase command erases the entire 64 KB
+// block CONTAINING the address, so the freshly-erased region ends at the next sector
+// boundary above eraseHead (not at eraseHead + sectorSize). Advancing eraseHead to
+// that boundary keeps the "everything between writer and eraseHead is 0xFF" invariant
+// tight; the sub-sector bytes BELOW eraseHead inside the erased block were already in
+// the pool (already 0xFF), so re-erasing them is a no-op data-wise.
 static void eraseOneSectorSync(void)
 {
     if (pendingEraseAddr != PENDING_ERASE_NONE) {
-        // Wait for any background erase to finish first.
+        // Wait for any background erase to finish first. The pending erase was
+        // issued by eraseTick() at eraseUnit() granularity (sub-sector if the
+        // driver supports it, else sectorSize) — match that here.
         while (!flashIsReady());
-        eraseHead = pendingEraseAddr + geom.sectorSize;
+        eraseHead = pendingEraseAddr + eraseUnit();
         if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
         pendingEraseAddr = PENDING_ERASE_NONE;
     }
     eraseSectorSync(eraseHead);
-    uint32_t newEraseHead = eraseHead + geom.sectorSize;
+    // Block erase wipes [eraseHead & ~(sectorSize-1), +sectorSize). Advance eraseHead
+    // to the end of that block, NOT eraseHead + sectorSize — the latter would
+    // over-claim by the sub-sector offset between eraseHead and the block start.
+    uint32_t newEraseHead = (eraseHead & ~(geom.sectorSize - 1)) + geom.sectorSize;
     if (newEraseHead >= geom.dataSectionEnd) newEraseHead = 0;
     eraseHead = newEraseHead;
 }
@@ -674,9 +734,11 @@ static void eraseOneSectorSync(void)
 // is called only from non-realtime paths (log close, recovery). Blocking is acceptable.
 static void ensureErasedSpace(uint32_t addr, uint32_t bytesNeeded)
 {
-    // We measure how much erased space we have starting at `addr` going forward in the ring,
-    // bounded by `eraseHead`. If insufficient, sync-erase one more sector at a time.
-    // (eraseHead is sector-aligned and either greater than addr or wrapped before it.)
+    // We measure how much erased space we have starting at `addr` going forward in the
+    // ring, bounded by `eraseHead`. If insufficient, sync-erase one more sector at a
+    // time. eraseHead may be at sub-sector granularity (eraseTick() advances by
+    // eraseUnit()) but is still monotone-increasing relative to addr in ring order, so
+    // the haveErased arithmetic is unaffected.
     while (true) {
         uint32_t haveErased;
         if (eraseHead >= addr) {
@@ -1650,9 +1712,11 @@ void flashfsLogWriteDataByte(uint8_t b)
 {
     if (!active.isOpen || active.headerPhase) return;
 
-    // Hot path: must NOT block. eraseTick() does at most a flashIsReady() register read
-    // and (if ready) a flashEraseSector() command-submit. Both return in microseconds.
-    // The actual erase happens in the chip's background; CPU continues immediately.
+    // Hot path: eraseTick() does at most a flashIsReady() register read (cheap, a few
+    // µs) and, when the pool needs refilling, one flashEraseSubsector() that blocks
+    // until the chip's ~30 ms sub-sector erase completes — see eraseTick's banner for
+    // the timing rationale. The throttling below keeps the per-byte status polling
+    // cost bounded even at the highest sustained log rates.
     //
     // Throttle to ~once per page write (32 bytes — 1/8 of a 256-byte page) rather than
     // every byte. Per-byte was originally chosen to maximise observation points for

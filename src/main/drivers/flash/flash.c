@@ -514,6 +514,29 @@ MMFLASH_CODE void flashEraseSector(uint32_t address)
     }
 }
 
+// Sub-sector erase wrapper. Uses the driver's eraseSubsector vtable entry when
+// the driver advertises a finer-grained erase command (geometry.subsectorSize
+// non-zero), otherwise transparently falls back to eraseSector — so callers
+// can prefer the finer granularity without having to special-case every chip.
+// Like flashEraseSector this currently blocks on flashWaitForReadyOrFail() until
+// the chip finishes erasing; the BENEFIT of the sub-sector path is therefore not
+// "non-blocking" but "blocks for ~30 ms instead of ~150 ms", which is what makes
+// ring-mode flashfs_log's pool refill survivable inside the FC loop budget.
+MMFLASH_CODE void flashEraseSubsector(uint32_t address)
+{
+    if (!flashDevice.vTable) return;
+    flashDevice.callback = NULL;
+    if (flashDevice.geometry.subsectorSize > 0 && flashDevice.vTable->eraseSubsector) {
+        flashDevice.vTable->eraseSubsector(&flashDevice, address);
+    } else {
+        flashDevice.vTable->eraseSector(&flashDevice, address);
+    }
+
+    if (!flashWaitForReadyOrFail()) {
+        return;
+    }
+}
+
 void flashEraseCompletely(void)
 {
     if (!flashDevice.vTable) return;

@@ -52,6 +52,15 @@ typedef struct flashGeometry_s {
     // margin); see flashfsGetMaxSustainedLogRateHz() for the consumer-side fallback
     // when this is 0 (driver hasn't set it yet, or chip type unknown).
     uint16_t maxSustainedLogRateHz;
+    // Sub-sector erase granularity, in bytes. NOR chips often expose both a coarse
+    // block erase (sectorSize, e.g. 64 KB / ~150 ms) and a finer sub-sector erase
+    // (e.g. 4 KB / ~30 ms). Linear-mode flashfs always uses the coarse path because
+    // log sessions are infrequent; ring-mode flashfs_log prefers the sub-sector erase
+    // for its on-the-fly pool refill because the chip-BUSY window during each erase
+    // is what bounds the ring-mode buffer-vs-erase product (and therefore drop-free
+    // sustained rate). Set to 0 by drivers that don't support a separate sub-sector
+    // command — consumers fall back to sectorSize.
+    uint32_t subsectorSize;
 } flashGeometry_t;
 
 typedef enum {
@@ -69,6 +78,12 @@ bool flashInit(const flashConfig_t *flashConfig);
 bool flashIsReady(void);
 bool flashWaitForReady(void);
 void flashEraseSector(uint32_t address);
+// Issue a sub-sector erase if the driver supports one (geometry.subsectorSize > 0
+// and vtable->eraseSubsector populated); falls back to flashEraseSector otherwise.
+// Address must be aligned to subsectorSize for the fine path; the fallback aligns
+// to sectorSize. Used by flashfs_log for ring-mode pool refill — see the comment
+// on flashGeometry_t.subsectorSize for the bandwidth rationale.
+void flashEraseSubsector(uint32_t address);
 void flashEraseCompletely(void);
 void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg));
 uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount);
