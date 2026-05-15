@@ -41,6 +41,14 @@
 //                headroom for end-of-life / hot chips. H7 has the SRAM
 //                headroom for that. Use FLASHFS_RING_USE_BLOCK_ERASE.
 //
+//   H7 + EXST →  H7 External-Storage builds (USE_EXST — bootloader places
+//                firmware in CODE_RAM at a fixed address) have only 64 KB of
+//                DMA-able RAM at 0x24000000 for all .dmaram_* + .DMA_RAM
+//                sections combined. The 48 KB non-EXST H7 buffer overflows
+//                this by ~17 KB (asyncfatfs cache and other DMA buffers
+//                already take ~33 KB). Fall back to the F7 tier (24 KB
+//                / 2 kHz) which fits. SPRACINGH7EXTREME is the main target.
+//
 //   F7        →  Same PID-loop rate as H7 but DTCM is much tighter (64 KB on
 //                F722; the worst-case F7 part) — the H7 buffer fails to link
 //                on F722. Cap at 2 kHz so the buffer-vs-erase math shrinks:
@@ -70,10 +78,21 @@
 // Linear mode never sees mid-flight erases so its 128-byte buffer is sufficient.
 // The bump only applies on targets compiling in ring mode.
 #ifdef USE_BLACKBOX_RING_LOG
-#if defined(STM32H7)
+#if defined(STM32H7) && !defined(USE_EXST)
 #define FLASHFS_WRITE_BUFFER_SIZE       49152    // 48 KB
 #define FLASHFS_RING_USE_BLOCK_ERASE    1        // ring-mode pool refill uses 64 KB block erase
 #define FLASHFS_RING_MCU_CAP_HZ         4000     // H7 NOR cap (NAND bypasses, see flashfs.c)
+#elif defined(STM32H7) && defined(USE_EXST)
+// H7 EXST (External Storage) builds — bootloader places firmware in CODE_RAM at
+// a fixed address, leaving only 64 KB of DMA-able RAM at 0x24000000 to hold
+// .dmaram_data + .dmaram_bss + .DMA_RAM + .DMA_RW_AXI combined. The 48 KB
+// non-EXST H7 buffer overflows this region by ~17 KB (asyncfatfs cache and
+// other DMA buffers take ~33 KB of the budget already). Fall back to the F7
+// tier (24 KB / 2 kHz) which we've verified fits inside the constrained EXST
+// RAM region. SPRACINGH7EXTREME is the main target affected.
+#define FLASHFS_WRITE_BUFFER_SIZE       24576    // 24 KB
+#define FLASHFS_RING_USE_BLOCK_ERASE    1        // block erase, same as non-EXST H7
+#define FLASHFS_RING_MCU_CAP_HZ         2000     // 2 kHz — matches the F7 tier's buffer-vs-erase math
 #elif defined(STM32F7)
 #define FLASHFS_WRITE_BUFFER_SIZE       24576    // 24 KB (32 KB fails to link on F722's 64 KB DTCM)
 #define FLASHFS_RING_USE_BLOCK_ERASE    1        // block erase still preferred — sub-sector can't sustain 2 kHz on slow NOR
