@@ -38,6 +38,11 @@ typedef enum {
     WAYPOINT_TYPE_HOLD,
     WAYPOINT_TYPE_LAND,
     WAYPOINT_TYPE_TAKEOFF,
+    // Modifier types — no positional dispatch; mutate executor state and the
+    // dispatch loop drains them onto the next positional waypoint.
+    WAYPOINT_TYPE_ALT_CHANGE,
+    WAYPOINT_TYPE_DELAY,
+    WAYPOINT_TYPE_YAW_RATE,
     WAYPOINT_TYPE_COUNT
 } waypointType_e;
 

@@ -27,6 +27,7 @@
 // positionNav is multirotor-only; flight plan execution follows suit.
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 
+#include "common/maths.h"
 #include "common/time.h"
 #include "common/vector.h"
 
@@ -44,6 +45,7 @@
 #define FP_MIN_CRUISE_MPS         1.0f
 #define FP_FLYBY_COMPLETION_MPS   2.0f
 #define FP_FLYOVER_COMPLETION_MPS 0.5f
+#define FP_DELAY_MIN_CRUISE_MPS   0.1f
 
 static struct {
     flightPlanNavState_e state;
@@ -52,6 +54,18 @@ static struct {
     uint16_t holdDurationDs;
     bool active;
     float zBiasM;               // estimator Z at engage, so waypoint Z shares the estimator baseline
+
+    // Staged modifiers — populated by drainModifiers(), consumed by the next
+    // positional dispatch. altOverride is one-shot; delay arms a timer that
+    // clamps cruise during the next leg; yawRateCapDps is stored but not yet
+    // consumed (needs autopilot yaw control to land first).
+    bool     altOverridePending;
+    int32_t  altOverrideCm;
+    uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
+    bool     delayActive;
+    uint16_t delayDurationDs;
+    timeUs_t delayEndUs;
+    float    yawRateCapDps;
 } fp;
 
 static flightPlanWaypointReachedFn reachedListener = NULL;
@@ -92,17 +106,61 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     return true;
 }
 
+// Walk fp.currentIndex past any consecutive modifier waypoints, applying their
+// effect to staged fp state. Returns the first positional waypoint, or NULL if
+// the plan ended (caller transitions to FP_NAV_COMPLETE). Bounded by
+// MAX_WAYPOINTS so a pathological all-modifier mission can't spin.
+static const waypoint_t *drainModifiers(void)
+{
+    for (uint8_t guard = 0; guard < MAX_WAYPOINTS; guard++) {
+        const waypoint_t *wp = currentWaypoint();
+        if (wp == NULL) {
+            return NULL;
+        }
+        switch (wp->type) {
+        case WAYPOINT_TYPE_ALT_CHANGE:
+            fp.altOverridePending = true;
+            fp.altOverrideCm = wp->altitude;
+            fp.altOverrideMode = wp->pattern;
+            break;
+        case WAYPOINT_TYPE_DELAY:
+            fp.delayActive = true;
+            fp.delayDurationDs = wp->duration;
+            fp.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
+            break;
+        case WAYPOINT_TYPE_YAW_RATE:
+            // Stored only. Hook point: once autopilot_multirotor.c controls
+            // yaw, call into a setter here to apply the cap.
+            fp.yawRateCapDps = (float)wp->speed;
+            break;
+        default:
+            return wp;
+        }
+        if (++fp.currentIndex >= flightPlanConfig()->waypointCount) {
+            return NULL;
+        }
+    }
+    return NULL;
+}
+
 static bool dispatchWaypoint(void)
 {
-    const waypoint_t *wp = currentWaypoint();
+    const waypoint_t *wp = drainModifiers();
     if (wp == NULL) {
         fp.state = FP_NAV_COMPLETE;
         positionNavClearTarget();
         return false;
     }
 
+    // Apply one-shot altitude override before computing the ENU target.
+    waypoint_t effective = *wp;
+    if (fp.altOverridePending) {
+        effective.altitude = fp.altOverrideCm;
+        fp.altOverridePending = false;
+    }
+
     vector3_t targetEnuM;
-    if (!computeTargetEnuM(wp, &targetEnuM)) {
+    if (!computeTargetEnuM(&effective, &targetEnuM)) {
         // No GPS origin captured yet — stay IDLE and let flightPlanNavUpdate()
         // retry once the estimator has locked in.
         fp.state = FP_NAV_IDLE;
@@ -110,17 +168,29 @@ static bool dispatchWaypoint(void)
     }
 
     const autopilotConfig_t *cfg = autopilotConfig();
-    const bool isHoldOrLand = (wp->type == WAYPOINT_TYPE_HOLD) || (wp->type == WAYPOINT_TYPE_LAND);
+    const bool isHoldOrLand = (effective.type == WAYPOINT_TYPE_HOLD) || (effective.type == WAYPOINT_TYPE_LAND);
     const float arrivalRadiusM = (isHoldOrLand ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
 
-    float cruiseMps = (wp->speed > 0) ? wp->speed * 0.01f : cfg->maxVelocity * 0.01f;
+    float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
         cruiseMps = FP_MIN_CRUISE_MPS;
     }
 
+    // DELAY: clamp cruise so traversal-time ≈ delay-seconds, scaled by the
+    // leg length the executor is about to drive. Skip when the leg is
+    // effectively zero (hold-to-hold) to avoid div-by-near-zero.
+    if (fp.delayActive) {
+        const float delaySec = fp.delayDurationDs * 0.1f;
+        const float legLenM = vector3Norm(&targetEnuM);
+        if (delaySec > 0.0f && legLenM > 0.1f) {
+            const float scaledMps = MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec);
+            cruiseMps = MIN(cruiseMps, scaledMps);
+        }
+    }
+
     // FLYBY: advance with residual velocity so we curve through.
     // FLYOVER/HOLD/LAND: require near-stop to count as arrived.
-    const float completionMps = (wp->type == WAYPOINT_TYPE_FLYBY)
+    const float completionMps = (effective.type == WAYPOINT_TYPE_FLYBY)
         ? FP_FLYBY_COMPLETION_MPS
         : FP_FLYOVER_COMPLETION_MPS;
 
@@ -128,7 +198,7 @@ static bool dispatchWaypoint(void)
                            completionMps, true, onWaypointReached, NULL);
 
     fp.state = FP_NAV_TARGETING;
-    fp.holdDurationDs = wp->duration;
+    fp.holdDurationDs = effective.duration;
     return true;
 }
 
@@ -175,18 +245,31 @@ static void onWaypointReached(void *userData)
     advanceToNext();
 }
 
+static void clearModifierState(void)
+{
+    fp.altOverridePending = false;
+    fp.altOverrideCm = 0;
+    fp.altOverrideMode = 0;
+    fp.delayActive = false;
+    fp.delayDurationDs = 0;
+    fp.delayEndUs = 0;
+    fp.yawRateCapDps = 0.0f;
+}
+
 void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
+    clearModifierState();
 }
 
 void flightPlanNavEngage(void)
 {
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
+    clearModifierState();
 
     // Capture the estimator's current Z so subsequent waypoint altitudes are
     // referenced to the same baseline the position controller uses.
@@ -227,6 +310,15 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     if (fp.state == FP_NAV_IDLE && flightPlanConfig()->waypointCount > 0) {
         dispatchWaypoint();
         return;
+    }
+
+    // DELAY-window expiry: clear the cap and re-issue the current leg at the
+    // unmodified cruise so we don't crawl for the rest of the leg.
+    if (fp.delayActive && cmpTimeUs(currentTimeUs, fp.delayEndUs) >= 0) {
+        fp.delayActive = false;
+        if (fp.state == FP_NAV_TARGETING) {
+            dispatchWaypoint();
+        }
     }
 
     if (fp.state == FP_NAV_HOLDING) {

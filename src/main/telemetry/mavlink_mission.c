@@ -120,38 +120,57 @@ static void abortUpload(uint8_t result)
     m.state = MISSION_IDLE;
 }
 
-static uint16_t mapTypeToMavCmd(uint8_t type, uint16_t duration_ds, float *param1Out)
-{
-    *param1Out = 0.0f;
-    switch (type) {
-    case WAYPOINT_TYPE_FLYOVER:
-    case WAYPOINT_TYPE_FLYBY:
-        return MAV_CMD_NAV_WAYPOINT;
-    case WAYPOINT_TYPE_HOLD:
-        *param1Out = duration_ds * 0.1f;
-        return MAV_CMD_NAV_LOITER_TIME;
-    case WAYPOINT_TYPE_LAND:
-        return MAV_CMD_NAV_LAND;
-    case WAYPOINT_TYPE_TAKEOFF:
-        return MAV_CMD_NAV_TAKEOFF;
-    default:
-        return MAV_CMD_NAV_WAYPOINT;
-    }
-}
-
 static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t seq)
 {
     const flightPlanConfig_t *plan = flightPlanConfig();
     const waypoint_t *wp = &plan->waypoints[seq];
 
+    uint16_t command;
     float param1 = 0.0f;
-    const uint16_t command = mapTypeToMavCmd(wp->type, wp->duration, &param1);
+    float param2 = 0.0f;
+    int32_t lat = wp->latitude;
+    int32_t lon = wp->longitude;
+    float zM = wp->altitude * 0.01f;
+
+    switch (wp->type) {
+    case WAYPOINT_TYPE_HOLD:
+        command = MAV_CMD_NAV_LOITER_TIME;
+        param1 = wp->duration * 0.1f;
+        break;
+    case WAYPOINT_TYPE_LAND:
+        command = MAV_CMD_NAV_LAND;
+        break;
+    case WAYPOINT_TYPE_TAKEOFF:
+        command = MAV_CMD_NAV_TAKEOFF;
+        break;
+    case WAYPOINT_TYPE_ALT_CHANGE:
+        command = MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT;
+        param1 = (float)wp->pattern;     // climb-mode round-trip
+        lat = 0; lon = 0;                // no horizontal target
+        break;
+    case WAYPOINT_TYPE_DELAY:
+        command = MAV_CMD_NAV_DELAY;
+        param1 = wp->duration * 0.1f;
+        lat = 0; lon = 0; zM = 0.0f;
+        break;
+    case WAYPOINT_TYPE_YAW_RATE:
+        command = MAV_CMD_NAV_SET_YAW_SPEED;
+        param2 = (float)wp->speed;
+        lat = 0; lon = 0; zM = 0.0f;
+        break;
+    case WAYPOINT_TYPE_FLYOVER:
+    case WAYPOINT_TYPE_FLYBY:
+    default:
+        command = MAV_CMD_NAV_WAYPOINT;
+        break;
+    }
+
     const uint8_t current = (flightPlanNavIsActive() && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
-        param1, 0.0f, 0.0f, 0.0f,
-        wp->latitude, wp->longitude, wp->altitude * 0.01f,
+        param1, param2, 0.0f, 0.0f,
+        lat, lon, zM,
         MAV_MISSION_TYPE_MISSION);
     mavlinkSendMessage(&txMsg);
 }
@@ -193,26 +212,34 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         return true;
     }
 
-    int32_t altCm;
-    if (!decodeFrameAltCm(it->frame, it->z, &altCm, resultOut)) {
-        return false;
-    }
+    // Modifier commands carry no horizontal position; the generic lat/lon range
+    // check and frame-based alt decode are skipped (with ALT_CHANGE pulling alt
+    // explicitly below). DELAY / SET_YAW_SPEED ignore all coord fields.
+    const bool isModifier = (it->command == MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT)
+                         || (it->command == MAV_CMD_NAV_DELAY)
+                         || (it->command == MAV_CMD_NAV_SET_YAW_SPEED);
 
-    if (it->x < -900000000 || it->x > 900000000) {
-        *resultOut = MAV_MISSION_INVALID_PARAM5_X;
-        return false;
-    }
-    if (it->y < -1800000000 || it->y > 1800000000) {
-        *resultOut = MAV_MISSION_INVALID_PARAM6_Y;
-        return false;
+    int32_t altCm = 0;
+    if (!isModifier) {
+        if (!decodeFrameAltCm(it->frame, it->z, &altCm, resultOut)) {
+            return false;
+        }
+        if (it->x < -900000000 || it->x > 900000000) {
+            *resultOut = MAV_MISSION_INVALID_PARAM5_X;
+            return false;
+        }
+        if (it->y < -1800000000 || it->y > 1800000000) {
+            *resultOut = MAV_MISSION_INVALID_PARAM6_Y;
+            return false;
+        }
     }
     if (!isfinite(it->param1) || !isfinite(it->param2) || !isfinite(it->param3) || !isfinite(it->param4)) {
         *resultOut = MAV_MISSION_INVALID;
         return false;
     }
 
-    wp->latitude = it->x;
-    wp->longitude = it->y;
+    wp->latitude = isModifier ? 0 : it->x;
+    wp->longitude = isModifier ? 0 : it->y;
     wp->altitude = altCm;
     wp->speed = 0;
     wp->duration = 0;
@@ -280,18 +307,55 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
         // TAKEOFF_LOCAL is the local-frame variant — see LAND_LOCAL note.
         wp->type = WAYPOINT_TYPE_TAKEOFF;
         break;
-    // Intentionally rejected — no positional mapping fits, or semantics would
-    // produce unsafe flight if force-fit into waypoint_t:
-    //   NAV_CONTINUE_AND_CHANGE_ALT  — alt-only, no lat/lon to store
-    //   NAV_ROI                      — camera target; mapping to HOLD would
-    //                                  fly the vehicle to the camera point
-    //   NAV_PATHPLANNING             — planner enable/disable, not a goal
-    //   NAV_GUIDED_ENABLE            — off-board control toggle
-    //   NAV_DELAY                    — timer, no position
-    //   NAV_SET_YAW_SPEED            — relative attitude tweak
+    case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT: {
+        // Modifier: re-targets the next positional waypoint's altitude. param1
+        // is the climb-mode (0=Neutral, 1=Climbing, 2=Descending) — preserved
+        // for round-trip but not yet enforced by the executor.
+        if (it->param1 < -0.5f || it->param1 > 2.5f) {
+            *resultOut = MAV_MISSION_INVALID_PARAM1;
+            return false;
+        }
+        int32_t modAltCm;
+        if (!decodeFrameAltCm(it->frame, it->z, &modAltCm, resultOut)) {
+            return false;
+        }
+        wp->type = WAYPOINT_TYPE_ALT_CHANGE;
+        wp->altitude = modAltCm;
+        wp->pattern = (uint8_t)lrintf(it->param1);
+        break;
+    }
+    case MAV_CMD_NAV_DELAY: {
+        // Modifier: scales cruise on the next leg so traversal ≈ delay seconds.
+        // ToD form (param1 == -1 with HH:MM:SS) is rejected — Betaflight targets
+        // don't universally have RTC.
+        if (it->param1 < 0.0f) {
+            *resultOut = MAV_MISSION_INVALID_PARAM1;
+            return false;
+        }
+        const float ds = it->param1 * 10.0f;
+        wp->type = WAYPOINT_TYPE_DELAY;
+        wp->duration = (ds >= UINT16_MAX) ? UINT16_MAX : (uint16_t)ds;
+        break;
+    }
+    case MAV_CMD_NAV_SET_YAW_SPEED:
+        // Modifier: yaw-rate cap. Stored + round-tripped now; executor
+        // consumption is gated on yaw control during AUTOPILOT_MODE landing,
+        // which is a capability follow-up. param1 (angle to adjust) and
+        // param3 (relative flag) are intentionally ignored.
+        if (it->param2 < 0.0f) {
+            *resultOut = MAV_MISSION_INVALID_PARAM2;
+            return false;
+        }
+        wp->type = WAYPOINT_TYPE_YAW_RATE;
+        wp->speed = (it->param2 >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)it->param2;
+        break;
+    // Still rejected — no positional or modifier mapping that's safe to fit:
+    //   NAV_ROI               — camera target; mapping to HOLD would fly the
+    //                           vehicle to the camera point
+    //   NAV_PATHPLANNING      — planner enable/disable, not a goal
+    //   NAV_GUIDED_ENABLE     — off-board control toggle
     //   NAV_FENCE_* / NAV_RALLY_POINT — different mission_type, rejected
-    //                                  earlier by the MISSION_TYPE_MISSION
-    //                                  filter on every handler
+    //                           earlier by the MISSION_TYPE_MISSION filter
     default:
         *resultOut = MAV_MISSION_UNSUPPORTED;
         return false;

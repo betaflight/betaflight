@@ -2563,7 +2563,8 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
 STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
@@ -2988,7 +2989,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
