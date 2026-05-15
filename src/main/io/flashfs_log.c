@@ -973,7 +973,9 @@ static void buildLogTableByScan(void)
     // sector order is meaningless after the ring has wrapped; without this sort, log
     // numbering and the combined _ALL.BBL file would come back scrambled after a reboot.
     // logTableCount is bounded by FLASHFS_LOG_MAX_LOGS=64 so a simple insertion sort is
-    // fine and keeps code minimal.
+    // fine and keeps code minimal. The insertion sort is stable, so entries with the
+    // same logId stay in input (= sector-scan) order — required for the dedup pass
+    // below to identify the highest-addressed survivor of each duplicate group.
     for (uint32_t i = 1; i < logTableCount; i++) {
         flashfsLogInfo_t key = logTable[i];
         int32_t j = (int32_t)i - 1;
@@ -982,6 +984,38 @@ static void buildLogTableByScan(void)
             j--;
         }
         logTable[j + 1] = key;
+    }
+
+    // Dedupe by logId. More than one valid trailer can exist for the same session if
+    // a close attempt commits its trailer but the header copy is interrupted (power
+    // loss mid-copy, hardware hiccup), and a subsequent boot's recovery cannot land
+    // the rewrite on the same sector and instead writes the replacement trailer
+    // elsewhere in the ring. Without dedup, both trailers surface as separate phantom
+    // log entries in MSC — the older one pointing at the partially-copied header,
+    // confusing decoders (and the user) with a duplicate "log 1" / "log 2" pair from
+    // a single flight.
+    //
+    // Preference rule: keep the highest physical trailer address. Recovery always
+    // writes the replacement at-or-past the original (the scan in recoverFromBuffer
+    // walks forward from pre.dataStart and writes at the first matching trailer or
+    // erased gap it finds), so a higher address means "more recent attempt", which
+    // is the only attempt with a complete header copy.
+    //
+    // Sector-granularity caveat: this only catches duplicates at distinct sector
+    // boundaries. Two trailers in the same sector at different page offsets aren't
+    // both visible to the scan above (it steps by sectorSize), so the dedup pass
+    // can't help with that case — it falls to writer-side correctness (see
+    // flashfsWrite / writeBytesSync).
+    {
+        uint32_t kept = 0;
+        for (uint32_t i = 0; i < logTableCount; i++) {
+            const bool nextHasSameLogId = (i + 1 < logTableCount)
+                    && (logTable[i + 1].logId == logTable[i].logId);
+            if (nextHasSameLogId) continue;  // a higher-addressed copy follows; skip this one
+            if (kept != i) logTable[kept] = logTable[i];
+            kept++;
+        }
+        logTableCount = kept;
     }
 
     // Replay the same wrap-aware overlap eviction that flashfsLogEndLog() runs at
