@@ -70,6 +70,8 @@ static void enableRxIrq(const uartHardware_t *hardware)
 #elif defined(APM32F4)
         DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         DAL_NVIC_EnableIRQ(hardware->irqn);
+#elif defined(GD32F4) || defined(GD32H7)
+        nvic_irq_enable(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
 #else
 # error "Unhandled MCU type"
 #endif
@@ -150,6 +152,20 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
             GPIO_Low_Speed,  // TODO: should use stronger drive
             pushPull ? GPIO_OType_PP : GPIO_OType_OD,
             ((const unsigned[]){GPIO_PuPd_NOPULL, GPIO_PuPd_DOWN, GPIO_PuPd_UP})[pull]
+        );
+#elif defined(GD32F4)
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF,
+            GPIO_OSPEED_2MHZ,
+            pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
+            ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
+        );
+#elif defined(GD32H7)
+        const ioConfig_t ioCfg = IO_CONFIG(
+            GPIO_MODE_AF,
+            GPIO_OSPEED_12MHZ,
+            pushPull ? GPIO_OTYPE_PP : GPIO_OTYPE_OD,
+            ((const unsigned[]){GPIO_PUPD_NONE, GPIO_PUPD_PULLDOWN, GPIO_PUPD_PULLUP})[pull]
         );
 #endif
         IOInit(txIO, ownerTxRx, ownerIndex);
@@ -306,6 +322,8 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(USE_GDBSP_DRIVER)
+    usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
     USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
