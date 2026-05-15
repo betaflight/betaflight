@@ -1346,6 +1346,13 @@ void flashfsLogInit(void)
     // wrap to be active.
 
     const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+    // Seed the format cache so the next caller (typically MSP_BLACKBOX_CONFIG or
+    // the linear-mode safety gate) doesn't pay for a second full probe. The cache
+    // is invalidated from the only paths that can change the on-flash format
+    // (flashfsLogEraseAll, flashfsLogEndLog, preamble write), so it stays
+    // authoritative for the life of the boot.
+    cachedFlashFormat = fmt;
+    cachedFlashFormatValid = true;
     switch (fmt) {
     case FLASHFS_FLASH_FORMAT_RING:
         recoverFromBuffer();    // safe no-op if buffer is empty

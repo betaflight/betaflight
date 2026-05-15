@@ -510,7 +510,7 @@ void emfat_init_files(void)
     // ring-formatted media, so the user gets a clear error rather than silent
     // corruption.
 #ifdef USE_BLACKBOX_RING_LOG
-    if (flashfsLogDetectFormatFromFlash() == FLASHFS_FLASH_FORMAT_RING) {
+    if (flashfsLogGetCachedFormat() == FLASHFS_FLASH_FORMAT_RING) {
         // Initialize the ring-log subsystem (scans the data ring for trailers, builds
         // the in-RAM log table) only when we know the chip is ring-formatted. Linear
         // mounts skip the cost (a sector-scan over the whole partition).

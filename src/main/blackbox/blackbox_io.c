@@ -87,12 +87,20 @@ static inline bool blackboxFlashUsesRingMode(void)
 //     would be silently overwritten otherwise).
 //   - Sidegrade from a ring-capable build to one with USE_BLACKBOX_RING_LOG turned
 //     off (e.g. an opt-out build for the same MCU family).
-// In both cases the user must erase before linear writes are allowed. The detector
-// is the always-compiled flashfsLogDetectFormatFromFlash() so this gate works even
-// in the second scenario where the ring writer's symbols are absent from the build.
+// In both cases the user must erase before linear writes are allowed.
+//
+// Use the cached accessor — also always-compiled on USE_FLASHFS — because the
+// uncached probe is O(partition / sectorSize) (a full trailer-magic scan, ~40 KB
+// of SPI reads on a 128 MB chip) and this predicate is called from polled status
+// paths (blackboxDeviceIsReady / blackboxDeviceIsWorking) hit by MSP at ~10-50 Hz
+// while a configurator session is open. Re-probing each call would burn ~2 MB/s
+// of SPI bandwidth competing with the actual blackbox writes. The cache is seeded
+// at boot by flashfsLogInit and invalidated from the only paths that can change
+// the on-flash format (flashfsLogEraseAll, flashfsLogEndLog, preamble write),
+// so the cached answer is authoritative.
 static inline bool flashChipFormatAllowsLinearWrites(void)
 {
-    const flashfsFlashFormat_e fmt = flashfsLogDetectFormatFromFlash();
+    const flashfsFlashFormat_e fmt = flashfsLogGetCachedFormat();
     return fmt == FLASHFS_FLASH_FORMAT_EMPTY || fmt == FLASHFS_FLASH_FORMAT_LINEAR;
 }
 #endif
