@@ -359,13 +359,16 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    // Ring-mode log rate cap. NAND is fundamentally over-provisioned vs the
-    // ring-mode write rate: block erase is ~2 ms (vs 60+ ms NOR sub-sector),
+    // Ring-mode log rate ceiling. NAND is fundamentally over-provisioned vs
+    // the ring-mode write rate: block erase is ~2 ms (vs 60+ ms NOR sub-sector),
     // per-page program is ~250 µs / 2 KB = ~8 MB/s sustained throughput, and
     // the RAM buffer / 2 ms-erase product is >> 1 MB/s. All three constraints
     // sit at MB/s = hundreds of thousands of fps at 30 B/frame — orders of
     // magnitude above the 8 kHz pidloop ceiling that naturally caps log rate
-    // from above. Set to 8 kHz so the clamp is a no-op for any practical
+    // from above. NAND is also exempt from the MCU-level cap (see
+    // FLASHFS_RING_MCU_CAP_HZ in flashfs.h and flashfsGetMaxSustainedLogRateHz)
+    // because its per-erase buffer fill is negligible regardless of MCU
+    // buffer sizing. Set to 8 kHz so the clamp is a no-op for any practical
     // pidloop / sample_rate combination on a NAND build.
     fdevice->geometry.maxSustainedLogRateHz = 8000;
 

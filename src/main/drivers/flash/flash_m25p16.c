@@ -266,34 +266,30 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     geometry->sectorSize = geometry->pagesPerSector * geometry->pageSize;
     geometry->totalSize = geometry->sectorSize * geometry->sectors;
 
-    // Sustained ring-mode log rate. Capped at the chip's sustained 4 KB sub-sector
-    // erase BANDWIDTH (since ring-mode pool refill uses sub-sector erase — see
-    // m25p16_eraseSubsector and the flashEraseSubsector wrapper). The chip is
-    // single-threaded for erase + page-program, so the true sustained rate is:
+    // Sustained ring-mode log rate. This is the chip-side ceiling; the consumer
+    // (flashfs.c's flashfsGetMaxSustainedLogRateHz) applies an MCU-level cap on
+    // top (F4: 2 kHz, F7/H7: 4 kHz — see FLASHFS_RING_MCU_CAP_HZ in flashfs.h).
+    // The chip is single-threaded for erase + page-program, so the true
+    // sustained rate is:
     //
     //   1 / (1/erase_rate + 1/page_program_rate)  bytes/sec
     //
     // and at ~40 B/frame avg P-frame size, that bytes/sec → Hz.
     //
-    // The m25p16 driver covers a wide span of SPI-NOR parts (Winbond W25Q, Macronix
-    // MX25L, Micron N25Q / M25P, Cypress S25FL, etc.) with different erase-time
-    // characteristics; use chip capacity as a proxy for generation:
-    //   ≥ 16 MB →  modern parts (W25Q128 onward, MX25L12845G, GD25Q128, S25FL128,
-    //              W25Q256, W25Q512, etc.) — 4 KB sub-sector erase ~60 ms typical,
-    //              page program ~0.4 ms / 256 B. Sustained ≈ 60 KB/s ≈ 1.5 kHz
-    //              at 40 B/frame.
-    //   < 16 MB →  older / smaller parts (M25P16, W25Q32/64, N25Q064, MX25L6406E,
-    //              etc.) where sub-sector erase reaches ~100 ms typical. Sustained
-    //              ≈ 37 KB/s ≈ 900 Hz — round to 1000 Hz to match the conservative
-    //              FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ default.
+    // The chip rate here is set assuming F7/H7 (the higher-bandwidth target)
+    // uses 64 KB block erase via the FLASHFS_RING_USE_BLOCK_ERASE path:
+    //   ≥ 16 MB → block erase ~150 ms typical, page program ~0.4 ms / 256 B.
+    //              Sustained ≈ 256 KB/s ≈ 6 kHz at 40 B/frame. Advertise 4 kHz
+    //              (the F7/H7 MCU cap) so the F7/H7 cap kicks in cleanly; F4
+    //              MCU cap (2 kHz) takes precedence on smaller boards.
+    //   < 16 MB → older / smaller parts (M25P16, W25Q32/64, N25Q064, etc.)
+    //              with slower erases. Advertise 2 kHz to match F4 cap.
     //
-    // Earlier values (4 kHz / 1 kHz) were derived from the buffer-vs-erase-window
-    // product assuming the buffer was the binding constraint. Hardware testing
-    // showed that with the now-async erase path (see flashEraseSubsector) the
-    // FC loop is unblocked, but writer rate above sustained bandwidth causes
-    // graceful per-frame drops — not desirable, so we cap at the actual sustained
-    // bandwidth instead. See the comment block on FLASHFS_WRITE_BUFFER_SIZE.
-    geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 1500 : 1000;
+    // The m25p16 driver covers a wide span of SPI-NOR parts (Winbond W25Q,
+    // Macronix MX25L, Micron N25Q / M25P, Cypress S25FL, etc.). The size split
+    // is a proxy for generation: modern parts handle the block-erase rate well,
+    // older smaller parts don't.
+    geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 4000 : 2000;
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 

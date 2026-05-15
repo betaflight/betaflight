@@ -514,6 +514,22 @@ MMFLASH_CODE void flashEraseSector(uint32_t address)
     }
 }
 
+// Fire-and-return async variant of flashEraseSector. Same vtable call (sector
+// erase, typically 64 KB on NOR / 128 KB on NAND) but without the trailing
+// flashWaitForReadyOrFail() — the chip is BUSY when this returns; the caller
+// must poll flashIsReady() before the next flash operation. Used by ring-mode
+// flashfs_log on F7/H7 builds where the buffer is sized to absorb the longer
+// chip-BUSY window in exchange for higher sustained bandwidth (~426 KB/s
+// refill rate vs ~67 KB/s on the 4 KB sub-sector path). See the comment on
+// flashEraseSubsector for the design split.
+MMFLASH_CODE void flashEraseSectorAsync(uint32_t address)
+{
+    if (!flashDevice.vTable) return;
+    flashDevice.callback = NULL;
+    flashDevice.vTable->eraseSector(&flashDevice, address);
+    // NO flashWaitForReadyOrFail() — fire-and-return.
+}
+
 // Sub-sector erase wrapper. Uses the driver's eraseSubsector vtable entry when
 // the driver advertises a finer-grained erase command (geometry.subsectorSize
 // non-zero), otherwise transparently falls back to eraseSector.

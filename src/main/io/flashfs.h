@@ -20,32 +20,53 @@
 
 #pragma once
 
-// In ring-log mode, sustained writes are interrupted by ~30-150 ms NOR erase
-// windows during which page programs can't run; the RAM buffer absorbs the
-// writer's output until the chip becomes ready again. Sizing rule:
+// In ring-log mode, sustained writes are interrupted by NOR erase windows
+// during which page programs can't run; the RAM buffer absorbs the writer's
+// output until the chip becomes ready again. Sizing rule:
 //
 //   buffer >= sustained_rate × typical_erase_window_ms
 //
-// The sustained rate itself is capped by the chip driver (maxSustainedLogRateHz)
-// so that erase-refill bandwidth equals writer-byte bandwidth. At the cap, one
-// typical erase window fills approximately:
+// Per-MCU tiering reflects (a) what PID-loop rate the target can actually run,
+// (b) how much SRAM we can spare, and (c) which erase strategy makes sense.
 //
-//   m25p16 sub-sector, modern NOR: 60 KB/s × 60 ms  = 3.6 KB
-//   m25p16 sub-sector, older NOR:  37 KB/s × 100 ms = 3.7 KB
-//   w25q128fv block erase fallback: ~53 KB/s × 150 ms = 8 KB  (cap is buffer-bound)
-//   NAND block erase:              320 KB/s ×   2 ms = 0.6 KB
+//   F7 / H7   →  PID loop typically 8 kHz. Target P-frame rate 4 kHz (1/2
+//                divider). To sustain 4 kHz × 40 B = 160 KB/s on a typical
+//                W25Q256-class NOR, the chip-side bandwidth has to come from
+//                64 KB BLOCK ERASE (~150 ms typical, but ~426 KB/s erase
+//                refill rate vs ~67 KB/s on a 4 KB sub-sector). One block-
+//                erase window at the cap fills ~24 KB of buffer; round to
+//                24 KB total to absorb that plus brief outliers without
+//                drops. Use FLASHFS_RING_USE_BLOCK_ERASE to switch the
+//                pool-refill path to the bigger erase.
 //
-// 8 KB covers every NOR case at its respective cap, with a small headroom for
-// frame-size variability and brief erase-time outliers. Earlier the buffer was
-// 16 KB based on a 200 KB/s × 50 ms calculation that assumed an UNCAPPED writer
-// rate; the per-driver cap now binds the writer to actual chip bandwidth, so
-// the 16 KB sizing carried 2× headroom we don't need (and 8 KB of static RAM
-// is meaningful on F411 / G4-class targets).
+//   F4 / G4   →  PID loop typically 4 kHz. Target P-frame rate 2 kHz (1/2
+//                divider). At 2 kHz × 40 B = 80 KB/s we can stay on the 4 KB
+//                sub-sector erase (~60 ms typical, fills ~5 KB of buffer at
+//                cap) so we keep the buffer at 8 KB. This minimises DTCM
+//                pressure on F4 boards where it's tightest.
+//
+//   NAND      →  Block erase ~2 ms; per-erase buffer fill is < 1 KB at any
+//                cap we'd configure. Driver advertises 8 kHz and
+//                flashfsGetMaxSustainedLogRateHz bypasses the MCU cap so
+//                fast NAND chips run at full PID-loop rate where the MCU
+//                can sustain it.
 //
 // Linear mode never sees mid-flight erases so its 128-byte buffer is sufficient.
 // The bump only applies on targets compiling in ring mode.
 #ifdef USE_BLACKBOX_RING_LOG
-#define FLASHFS_WRITE_BUFFER_SIZE 8192
+#if defined(STM32H7) || defined(STM32F7)
+#define FLASHFS_WRITE_BUFFER_SIZE       24576    // 24 KB
+#define FLASHFS_RING_USE_BLOCK_ERASE    1        // ring-mode pool refill uses 64 KB block erase
+#define FLASHFS_RING_MCU_CAP_HZ         4000     // F7/H7 NOR cap (NAND bypasses, see flashfs.c)
+#elif defined(STM32F4) || defined(STM32G4)
+#define FLASHFS_WRITE_BUFFER_SIZE       8192     // 8 KB
+// FLASHFS_RING_USE_BLOCK_ERASE intentionally not defined — sub-sector erase
+// keeps the per-erase buffer fill small, which matches the 8 KB sizing.
+#define FLASHFS_RING_MCU_CAP_HZ         2000     // F4/G4 NOR cap
+#else
+#define FLASHFS_WRITE_BUFFER_SIZE       8192     // 8 KB (conservative for unknown MCU)
+#define FLASHFS_RING_MCU_CAP_HZ         1000
+#endif
 #define FLASHFS_WRITE_BUFFER_AUTO_FLUSH_LEN 256
 #else
 #define FLASHFS_WRITE_BUFFER_SIZE 128

@@ -596,16 +596,32 @@ static void eraseBufferArea(void)
 // Erase pool management
 // =============================================================================
 
-// Granularity of the on-the-fly pool-refill erase, in bytes. Returns the chip's
-// sub-sector erase size when the driver exposes one (e.g. 4 KB on Winbond NOR),
-// else falls back to the full sector size. The async eraseTick uses this for
-// each pool-refill erase so the chip-BUSY window stays short and the RAM buffer
-// can absorb it; bulk sync paths (log start, log close, recovery) keep using
-// sectorSize since blocking is acceptable there and one big erase beats many
-// small ones for total wall time.
+// Granularity of the on-the-fly pool-refill erase, in bytes. The choice of
+// granularity is an MCU-level policy (see flashfs.h's per-MCU block):
+//
+//   FLASHFS_RING_USE_BLOCK_ERASE set (F7/H7 builds): always 64 KB block erase.
+//   This trades a longer per-erase chip-BUSY window (~150 ms typical on NOR)
+//   for ~6× higher erase-refill bandwidth (426 KB/s vs 67 KB/s on the same
+//   chip), which is what makes the F7/H7 4 kHz log-rate target achievable.
+//   The 24 KB write buffer (per FLASHFS_WRITE_BUFFER_SIZE) absorbs each BUSY
+//   window without dropping.
+//
+//   Not set (F4/G4 / unknown builds): use the chip's sub-sector size when the
+//   driver exposes one (e.g. 4 KB on Winbond NOR), else fall back to the full
+//   sector size. Shorter chip-BUSY windows mean a smaller buffer is enough,
+//   matching the 8 KB FLASHFS_WRITE_BUFFER_SIZE on F4. The 2 kHz F4 cap is
+//   within the sub-sector path's sustained bandwidth on typical NOR.
+//
+// Bulk sync paths (log start, log close, recovery) keep using sectorSize
+// since blocking is acceptable there and one big erase beats many small ones
+// for total wall time.
 static uint32_t eraseUnit(void)
 {
+#ifdef FLASHFS_RING_USE_BLOCK_ERASE
+    return geom.sectorSize;
+#else
     return geom.subsectorSize > 0 ? geom.subsectorSize : geom.sectorSize;
+#endif
 }
 
 // Bytes between `writer` and `eraseHead` going forward in the ring. Returns the number
@@ -626,24 +642,22 @@ static void persistLappedMarkerIfReady(void);
 
 // Run the async-erase progress check + new-erase trigger. Never blocks: every
 // path inside this function returns in microseconds. The erase command-submit
-// is fire-and-return (flashEraseSubsector is the async wrapper — see its
-// definition in flash.c); the chip-BUSY window (~60 ms typical on NOR sub-sector,
-// ~150 ms if the driver fell back to sector erase) overlaps with continued FC
-// loop execution, and during it flashfsFlushAsync gracefully no-ops (its
+// is fire-and-return (both flashEraseSubsector and flashEraseSectorAsync are
+// async wrappers — see flash.c); the chip-BUSY window overlaps with continued
+// FC loop execution, and during it flashfsFlushAsync gracefully no-ops (its
 // flashIsReady() gate returns 0 bytes written instead of stalling). The writer
-// rate is capped at the chip's sustained erase bandwidth (see flashfs.h and
-// each driver's maxSustainedLogRateHz), so the RAM buffer fills by roughly
-// (sustained_rate × erase_window) ≈ 3.6 KB per typical sub-sector erase — well
-// within the 8 KB buffer's drop-free headroom.
+// rate is capped (see flashfsGetMaxSustainedLogRateHz in flashfs.c and the
+// per-MCU FLASHFS_RING_MCU_CAP_HZ in flashfs.h) so the RAM buffer never
+// overflows during a typical erase window.
 //
-// Erase granularity here is eraseUnit() — the chip's sub-sector size (typically
-// 4 KB) when supported, else falls back to sectorSize (typically 64 KB). The
-// sub-sector path matters because the per-erase BUSY window is shorter, so the
-// per-window buffer accumulation is smaller AND the chip-bandwidth-vs-buffer
-// trade-off favours the chip-bandwidth side (smaller erase = lower sustained
-// rate but lower buffer demand). The pre-fix 64 KB-sector path was what caused
-// the 170 ms loop-time gaps we measured on real hardware (every ~1 sec at
-// sector boundaries).
+// Erase granularity here is eraseUnit() — controlled by the per-MCU
+// FLASHFS_RING_USE_BLOCK_ERASE flag. F7/H7 builds use the 64 KB block erase
+// path (longer BUSY window, ~6× higher sustained refill bandwidth; needs the
+// 24 KB buffer). F4 builds use the 4 KB sub-sector erase path (shorter BUSY
+// window, smaller buffer fill; fits in 8 KB). The pre-fix synchronous 64 KB
+// sector path was what caused the 170 ms loop-time gaps we measured on real
+// hardware (every ~1 sec at sector boundaries) — that's gone now thanks to
+// the fire-and-return wrappers.
 //
 // Called from the data write hot path. Fast path (flashIsReady() register read,
 // ~µs) runs on most ticks; the erase-submit slow path runs only when the pool
@@ -681,13 +695,14 @@ static void eraseTick(void)
     // page program runs in background while the FC loop continues.
     persistLappedMarkerIfReady();
 
-    // Pool refill: trigger an erase if we're below target. flashEraseSubsector is the
-    // FIRE-AND-RETURN async wrapper — it kicks off the erase command via DMA and
-    // returns once the SPI bus is drained (~10-20 µs total). The chip is then BUSY for
-    // ~60 ms typical (NOR sub-sector) / ~150 ms (sector fallback) in its own background
-    // while the CPU continues to service the FC loop and flashfs accumulates writes in
-    // its RAM buffer (FLASHFS_WRITE_BUFFER_SIZE). Use the active writer's position when
-    // a log is open; otherwise the module-level dataWriteHead.
+    // Pool refill: trigger an erase if we're below target. Both flashEraseSubsector
+    // and flashEraseSectorAsync are FIRE-AND-RETURN — they kick off the erase command
+    // via DMA and return once the SPI bus is drained (~10-20 µs total). The chip is
+    // then BUSY in its own background (~60 ms typical for the F4 sub-sector path,
+    // ~150 ms for the F7/H7 block-erase path) while the CPU continues to service the
+    // FC loop and flashfs accumulates writes in its RAM buffer (FLASHFS_WRITE_BUFFER_SIZE,
+    // sized per-MCU to absorb one such window at the cap). Use the active writer's
+    // position when a log is open; otherwise the module-level dataWriteHead.
     //
     // The pendingEraseAddr / flashIsReady tracking is the completion-detection
     // protocol that the async contract requires: we record which address is being
@@ -707,7 +722,17 @@ static void eraseTick(void)
     uint32_t writer = active.isOpen ? active.dataWriteHead : dataWriteHead;
     uint32_t spaceAhead = ringSpaceFreeAhead(writer);
     if (spaceAhead < POOL_TARGET_SECTORS * geom.sectorSize && flashIsReady()) {
+#ifdef FLASHFS_RING_USE_BLOCK_ERASE
+        // F7/H7 path: 64 KB block erase per call. Longer chip-BUSY window
+        // (~150 ms typical) but ~6× higher erase-refill bandwidth — the
+        // 24 KB buffer is sized to absorb the window.
+        flashEraseSectorAsync(eraseHead);
+#else
+        // F4 path: 4 KB sub-sector erase per call (driver-permitting; falls
+        // back to sector erase if the chip doesn't expose sub-sector). Short
+        // chip-BUSY window keeps the 8 KB buffer drop-free.
         flashEraseSubsector(eraseHead);
+#endif
         pendingEraseAddr = eraseHead;
     }
 }

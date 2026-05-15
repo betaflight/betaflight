@@ -80,13 +80,19 @@ bool flashWaitForReady(void);
 void flashEraseSector(uint32_t address);
 // FIRE-AND-RETURN async sub-sector erase. UNLIKE flashEraseSector, this does NOT
 // wait for the chip to finish — the CPU returns once the SPI bus has drained
-// the command, with the chip still BUSY (~30 ms on NOR sub-sector / ~150 ms if
-// the driver fell back to sector erase). Callers must poll flashIsReady() before
-// the next flash op. Used by ring-mode flashfs_log for hot-path pool refill
-// where any blocking would jitter the FC loop. See the comment on
-// flashGeometry_t.subsectorSize for the bandwidth rationale, and the
-// flashEraseSubsector definition in flash.c for the async contract.
+// the command, with the chip still BUSY (~30-60 ms on NOR sub-sector / ~150 ms
+// if the driver fell back to sector erase). Callers must poll flashIsReady()
+// before the next flash op. Used by ring-mode flashfs_log on F4 builds for
+// hot-path pool refill where any blocking would jitter the FC loop. See the
+// comment on flashGeometry_t.subsectorSize for the bandwidth rationale, and
+// the flashEraseSubsector definition in flash.c for the async contract.
 void flashEraseSubsector(uint32_t address);
+// FIRE-AND-RETURN async sector (64 KB on NOR, ~128 KB on NAND) erase. Same
+// async contract as flashEraseSubsector. Used by ring-mode flashfs_log on
+// F7/H7 builds where the bigger buffer can absorb the longer (~150 ms) BUSY
+// window in exchange for ~6× higher sustained erase bandwidth — which is what
+// makes the 4 kHz log-rate target achievable on those chips.
+void flashEraseSectorAsync(uint32_t address);
 void flashEraseCompletely(void);
 void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg));
 uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount);

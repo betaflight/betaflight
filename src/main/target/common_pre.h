@@ -243,11 +243,16 @@
 // Ring-mode onboard-flash blackbox logging. Adds a circular-buffer write mode for the
 // onboard SPI flash that overwrites the oldest data once the chip is full.
 //
-// Requires:
-//   - ~8 KB extra static RAM (the flashfs write buffer grows from 128 B to 8 KB,
-//     sized to absorb one typical NOR sub-sector erase window at the chip's
-//     sustained-rate cap — see flashfs.h)
-//   - ~2-3 KB extra program flash
+// Requires per-MCU RAM (the flashfs write buffer grows from 128 B; size is
+// chosen to absorb one typical NOR erase window at the MCU's target log
+// rate — see the table in flashfs.h):
+//   - F7/H7: ~24 KB extra static RAM. Uses 64 KB block erase for higher
+//     sustained bandwidth; targets 4 kHz P-frame logging on NOR.
+//   - F4/G4: ~8 KB extra static RAM. Uses 4 KB sub-sector erase to keep the
+//     per-erase buffer fill small; targets 2 kHz P-frame logging on NOR.
+//   - Fast flash chips (NAND) bypass the MCU cap and run at the chip's
+//     advertised ceiling (typically 8 kHz, naturally clamped by PID loop).
+//   - ~2-3 KB extra program flash on top of either RAM tier.
 //
 // Enabled by default only on STM32F7 / STM32H7 (Cortex-M7 with plenty of SRAM).
 // F4 and smaller targets have to opt in explicitly via cloud build option.

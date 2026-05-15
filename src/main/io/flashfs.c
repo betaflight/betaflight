@@ -285,10 +285,25 @@ uint16_t flashfsGetMaxSustainedLogRateHz(void)
     // a value yet — fall back to the conservative compile-time default so unknown
     // chips don't accidentally run at an unsafe rate.
     const flashGeometry_t *g = flashGetGeometry();
-    if (g && g->maxSustainedLogRateHz > 0) {
-        return g->maxSustainedLogRateHz;
+    const uint16_t driverCap = (g && g->maxSustainedLogRateHz > 0)
+        ? g->maxSustainedLogRateHz
+        : FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ;
+
+#if defined(FLASHFS_RING_MCU_CAP_HZ) && (FLASHFS_RING_MCU_CAP_HZ > 0)
+    // Apply the MCU-level cap (see flashfs.h for the per-MCU table) to NOR
+    // chips only. The MCU cap reflects (a) the target board's PID-loop budget
+    // and (b) the buffer-size choice for that MCU. NAND chips have such fast
+    // block erase (~2 ms) that the per-erase buffer fill is < 1 KB at any
+    // realistic cap, so the MCU cap doesn't bind — let fast NAND run at the
+    // chip's full advertised rate (typically 8 kHz, naturally clamped by the
+    // PID-loop rate above).
+    if (g && g->flashType == FLASH_TYPE_NAND) {
+        return driverCap;
     }
-    return FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ;
+    return (driverCap < FLASHFS_RING_MCU_CAP_HZ) ? driverCap : FLASHFS_RING_MCU_CAP_HZ;
+#else
+    return driverCap;
+#endif
 }
 
 static uint32_t flashfsTransmitBufferUsed(void)

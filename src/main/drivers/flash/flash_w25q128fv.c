@@ -299,19 +299,14 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     fdevice->geometry.sectorSize = fdevice->geometry.pagesPerSector * fdevice->geometry.pageSize;
     fdevice->geometry.totalSize = fdevice->geometry.sectorSize * fdevice->geometry.sectors;
 
-    // Ring-mode log rate cap. W25Q128FV is a 16 MB Winbond NOR on the QSPI path,
-    // which currently does NOT plumb the 4 KB sub-sector erase (the vtable has no
-    // eraseSubsector entry), so the wrapper falls back to the 64 KB block erase
-    // path — ~150 ms typical. With the 8 KB RAM write buffer, the binding
-    // constraint is buffer-vs-erase-window:
-    //
-    //   8 KB / 150 ms / 40 B/frame ≈ 1300 Hz
-    //
-    // Round down to 1000 Hz to leave headroom for frame-size variability and
-    // brief erase outliers. If/when this driver grows a sub-sector erase path
-    // (and the wrapper picks it up), this cap can be raised to ~1500 Hz to
-    // match the m25p16 ≥ 16 MB tier.
-    fdevice->geometry.maxSustainedLogRateHz = 1000;
+    // Ring-mode log rate ceiling. W25Q128FV is a 16 MB Winbond NOR on the QSPI
+    // path; advertise 4 kHz (the F7/H7 MCU target) so the consumer's MCU cap
+    // (FLASHFS_RING_MCU_CAP_HZ in flashfs.h) is what actually binds. With the
+    // F7/H7 buffer at 24 KB and the FLASHFS_RING_USE_BLOCK_ERASE pool-refill
+    // path, the 64 KB block erase (~150 ms typical) produces ~426 KB/s erase
+    // refill bandwidth, comfortably sustaining 4 kHz × 40 B = 160 KB/s. On F4,
+    // the 2 kHz MCU cap takes precedence anyway.
+    fdevice->geometry.maxSustainedLogRateHz = 4000;
 
     fdevice->vTable = &w25q128fv_vTable;
 

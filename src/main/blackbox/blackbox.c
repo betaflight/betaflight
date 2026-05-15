@@ -1122,16 +1122,16 @@ void blackboxValidateConfig(void)
 
 #ifdef USE_BLACKBOX_RING_LOG
     // Ring-mode flash logging is bandwidth-limited by the chip's sustained erase
-    // throughput: the writer can't average above (erase_size / erase_typical_ms),
-    // and the chip's erase + page-program paths share a single command bus, so:
+    // throughput AND by the per-MCU buffer + erase-strategy choice (see flashfs.h):
     //
     //   sustained_byte_rate = 1 / (1/erase_byte_rate + 1/page_program_byte_rate)
     //
-    // The chip's driver translates that bytes/sec into Hz (using a ~40 B/frame
-    // working assumption) and advertises it via flashfsGetMaxSustainedLogRateHz():
-    // ~1.5 kHz on modern ≥ 16 MB NOR with 4 KB sub-sector erase, ~1 kHz on older
-    // / smaller NOR, ~8 kHz on NAND. The unknown-chip fallback stays at the
-    // conservative 1 kHz default. We cap the effective frame rate at that value.
+    // flashfsGetMaxSustainedLogRateHz() returns the MIN of the driver's chip-side
+    // ceiling and the MCU-level cap (FLASHFS_RING_MCU_CAP_HZ): 2 kHz on F4/G4
+    // (8 KB buffer, sub-sector erase) and 4 kHz on F7/H7 (24 KB buffer, block
+    // erase) for typical NOR. Fast NAND chips bypass the MCU cap entirely and
+    // run at their full advertised rate, since their ~2 ms block erase makes
+    // the per-erase buffer fill negligible regardless of MCU buffer size.
     //
     // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the
     // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop with a
