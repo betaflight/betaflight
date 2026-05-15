@@ -1373,7 +1373,7 @@ case MSP_NAME:
         int16_t w = lrintf(imuAttitudeQuaternion.w * q_scale);
         int16_t x = lrintf(imuAttitudeQuaternion.x * q_scale);
         int16_t y = lrintf(imuAttitudeQuaternion.y * q_scale);
-        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale); 
+        int16_t z = lrintf(imuAttitudeQuaternion.z * q_scale);
         // Write their bit representation as uint16_t
         sbufWriteU16(dst, *(uint16_t*)&w);
         sbufWriteU16(dst, *(uint16_t*)&x);
@@ -1381,7 +1381,37 @@ case MSP_NAME:
         sbufWriteU16(dst, *(uint16_t*)&z);
         break;
     }
-
+#ifdef USE_AIRPLANE_SAS
+    case MSP_PSAS_CONFIG:
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[0]);
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[1]);
+        sbufWriteU8(dst, currentPidProfile->psas_stick_gain[2]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[0]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[1]);
+        sbufWriteU16(dst, currentPidProfile->psas_damping_gain[2]);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_damping_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_accel_z_filter_freq);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_stability_gain);
+        sbufWriteU16(dst, currentPidProfile->psas_pitch_accel_p_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_i_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_max);
+        sbufWriteU8(dst, currentPidProfile->psas_pitch_accel_min);
+        sbufWriteU16(dst, currentPidProfile->psas_yaw_damping_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_accel_y_filter_freq);
+        sbufWriteU16(dst, currentPidProfile->psas_yaw_stability_gain);
+        sbufWriteU16(dst, currentPidProfile->psas_wing_load);
+        sbufWriteU16(dst, currentPidProfile->psas_air_density);
+        sbufWriteU8(dst, currentPidProfile->psas_lift_c_limit);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_gain);
+        sbufWriteU8(dst, currentPidProfile->psas_lift_coef_filter_freq);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_forecast_time);
+        sbufWriteU8(dst, currentPidProfile->psas_aoa_limiter_tau_return);
+        sbufWriteU16(dst, currentPidProfile->psas_servo_time);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_start);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_stop);
+        sbufWriteU8(dst, currentPidProfile->psas_roll_to_yaw_link);
+        break;
+#endif
     case MSP_ALTITUDE:
         sbufWriteU32(dst, getEstimatedAltitudeCm());
 #ifdef USE_VARIO
@@ -4402,6 +4432,38 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         profile->consumptionWarningPercentage = consumptionWarnPct;
         break;
     }
+
+#ifdef USE_AIRPLANE_SAS
+    case MSP_SET_PSAS_CONFIG:
+        currentPidProfile->psas_stick_gain[0] = sbufReadU8(src);
+        currentPidProfile->psas_stick_gain[1] = sbufReadU8(src);
+        currentPidProfile->psas_stick_gain[2] = sbufReadU8(src);
+        currentPidProfile->psas_damping_gain[0] = sbufReadU16(src);
+        currentPidProfile->psas_damping_gain[1] = sbufReadU16(src);
+        currentPidProfile->psas_damping_gain[2] = sbufReadU16(src);
+        currentPidProfile->psas_pitch_damping_filter_freq = sbufReadU16(src);
+        currentPidProfile->psas_accel_z_filter_freq = sbufReadU8(src);
+        currentPidProfile->psas_pitch_stability_gain = sbufReadU16(src);
+        currentPidProfile->psas_pitch_accel_p_gain = sbufReadU16(src);
+        currentPidProfile->psas_pitch_accel_i_gain = sbufReadU8(src);
+        currentPidProfile->psas_pitch_accel_max = sbufReadU8(src);
+        currentPidProfile->psas_pitch_accel_min = sbufReadU8(src);
+        currentPidProfile->psas_yaw_damping_filter_freq = sbufReadU16(src);
+        currentPidProfile->psas_accel_y_filter_freq = sbufReadU8(src);
+        currentPidProfile->psas_yaw_stability_gain = sbufReadU16(src);
+        currentPidProfile->psas_wing_load = sbufReadU16(src);
+        currentPidProfile->psas_air_density = sbufReadU16(src);
+        currentPidProfile->psas_lift_c_limit = sbufReadU8(src);
+        currentPidProfile->psas_aoa_limiter_gain = sbufReadU8(src);
+        currentPidProfile->psas_lift_coef_filter_freq = sbufReadU8(src);
+        currentPidProfile->psas_aoa_limiter_forecast_time = sbufReadU8(src);
+        currentPidProfile->psas_aoa_limiter_tau_return = sbufReadU8(src);
+        currentPidProfile->psas_servo_time = sbufReadU16(src);
+        currentPidProfile->psas_roll_yaw_clift_start = sbufReadU8(src);
+        currentPidProfile->psas_roll_yaw_clift_stop = sbufReadU8(src);
+        currentPidProfile->psas_roll_to_yaw_link = sbufReadU8(src);
+        break;
+#endif
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

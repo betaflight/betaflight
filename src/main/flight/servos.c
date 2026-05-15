@@ -55,6 +55,8 @@
 
 #include "rx/rx.h"
 
+#include "flight/airplane_sas.h"
+
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
@@ -445,7 +447,15 @@ void servoMixer(void)
         input[INPUT_STABILIZED_ROLL] = rcCommand[ROLL];
         input[INPUT_STABILIZED_PITCH] = rcCommand[PITCH];
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
-    } else {
+    }
+#ifdef USE_AIRPLANE_SAS
+    else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+        input[INPUT_STABILIZED_ROLL] = psasData.roll.Sum / 100.0f * 500.0f;
+        input[INPUT_STABILIZED_PITCH] = psasData.pitch.Sum / 100.0f * 500.0f;
+        input[INPUT_STABILIZED_YAW] = psasData.yaw.Sum / 100.0f * 500.0f;
+    }
+#endif
+    else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
         input[INPUT_STABILIZED_ROLL] = pidData[FD_ROLL].Sum * PID_SERVO_MIXER_SCALING;
         input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING;
