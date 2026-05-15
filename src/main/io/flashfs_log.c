@@ -1653,7 +1653,23 @@ void flashfsLogWriteDataByte(uint8_t b)
     // Hot path: must NOT block. eraseTick() does at most a flashIsReady() register read
     // and (if ready) a flashEraseSector() command-submit. Both return in microseconds.
     // The actual erase happens in the chip's background; CPU continues immediately.
-    eraseTick();
+    //
+    // Throttle to ~once per page write (32 bytes — 1/8 of a 256-byte page) rather than
+    // every byte. Per-byte was originally chosen to maximise observation points for
+    // the lap-marker persist, but at the high data rates the 4 kHz NOR cap unlocks
+    // (~120 KB/s = 30k calls/sec at 30 B/frame), the cumulative SPI status-poll cost
+    // inside flashIsReady() during sector-erase windows starts dominating FC CPU
+    // (observed: 95% CPU spikes correlated with logging at 4 kHz P-frame rate).
+    //
+    // 32 B is the sweet spot: a sector-erase window is ~30-50 ms, during which ~3500-
+    // 6000 bytes pass through the writer at peak rate. Firing eraseTick every 32 B
+    // gives ~100-180 observation points per erase — far more than needed for both
+    // erase-completion polling and lap-marker squeeze-in. SPI bus contention drops
+    // 32×.
+    static uint8_t eraseTickThrottle = 0;
+    if ((++eraseTickThrottle & 0x1F) == 0) {
+        eraseTick();
+    }
 
     // Wrap at end of data ring. flashfs is configured (via flashfsSetRing in
     // flashfsLogFinishHeader) to wrap its own tailAddress automatically, so we
