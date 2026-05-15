@@ -1409,6 +1409,22 @@ void flashfsLogInit(void)
         moduleSafeForLogging = false;
         break;
     }
+
+    // Reset flashfs's tailAddress to the post-init data-ring write head. flashfsInit
+    // (which ran before us) seeded tailAddress via flashfsIdentifyStartOfFreeSpace() —
+    // a linear-mode-only heuristic that scans for the first non-LINEAR_FORMAT_PROBE_TEXT
+    // sector. On a ring-formatted chip that returns garbage (the data ring is full of
+    // binary frames, not the linear preamble), and on top of that recoverFromBuffer
+    // above may have left tailAddress in the buffer area (physical end of chip) from
+    // its markBufferCommitted + eraseBufferArea. Either path leaves flashfsGetOffset()
+    // reporting the wrong value, which makes the configurator see the chip as full and
+    // save-to-file dump the whole 32 MB. Anchor tailAddress to dataWriteHead so usage
+    // accounting reflects the actual data-ring extent. Skip for UNKNOWN/LINEAR formats
+    // (writer is disabled there, so dataWriteHead is meaningless — leave the linear-mode
+    // tailAddress flashfsInit set).
+    if (moduleSafeForLogging) {
+        flashfsSeekAbs(dataWriteHead);
+    }
     moduleInitialized = true;
 }
 
@@ -1912,6 +1928,20 @@ void flashfsLogEndLog(void)
     // the recovery path with an unambiguous "already committed" signal), then erase.
     markBufferCommitted();
     eraseBufferArea();
+
+    // Reset flashfs's tailAddress to the post-close data-ring write head. The
+    // markBufferCommitted + eraseBufferArea sequence above leaves tailAddress
+    // somewhere in the buffer area (physical end of the chip), because that's
+    // where the last byte was programmed. flashfsGetOffset() would then return
+    // chip-end-of-buffer-area, making MSP_DATAFLASH_SUMMARY / OSD storage gauge
+    // / configurator save-to-file all think the chip is full — and dump all
+    // 32 MB in the save case — even after a single 2 MB log session. Pointing
+    // tailAddress at dataWriteHead makes flashfsGetOffset() report the actual
+    // logical extent of log data on the chip. Safe to call at this point: the
+    // buffer is empty (eraseBufferArea drained it), there are no pending
+    // writes, and we've already flashfsClearRing'd above so the linear-mode
+    // wrap config is inactive.
+    flashfsSeekAbs(dataWriteHead);
 
     // Just wrote a fresh trailer. Cached format may go from EMPTY → RING — invalidate
     // so the next MSP poll re-probes (cheap; this is a non-realtime path).
