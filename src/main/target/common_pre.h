@@ -256,8 +256,10 @@
 //                logging on NOR. (Bigger H7 buffer fails to link on F722's
 //                64 KB DTCM — F7 caps lower with a 2 kHz × 300 ms = 24 KB
 //                buffer that fits and gives the same outlier headroom.)
-//   - F4/G4: ~8 KB extra static RAM. Uses 4 KB sub-sector erase to keep the
-//            per-erase buffer fill small; targets 2 kHz P-frame logging on NOR.
+//   - F4/G4:     ~8 KB extra static RAM. Uses 4 KB sub-sector erase to keep
+//                the per-erase buffer fill small; targets 1 kHz P-frame
+//                logging on NOR (chip-bandwidth-limited — slower G4 boards'
+//                NOR can't sustain 2 kHz drop-free with sub-sector erase).
 //   - Fast flash chips (NAND) bypass the MCU cap and run at the chip's
 //     advertised ceiling (typically 8 kHz, naturally clamped by PID loop).
 //   - ~2-3 KB extra program flash on top of either RAM tier.

@@ -282,7 +282,8 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     //              Sustained ≈ 256 KB/s ≈ 6 kHz at 40 B/frame. Advertise
     //              4 kHz; the actual cap is then min(chip, MCU) — 4 kHz on
     //              H7, 2 kHz on F7 (DTCM-constrained — F7 buffer is 24 KB
-    //              vs 48 KB on H7), 2 kHz on F4.
+    //              vs 48 KB on H7), 1 kHz on F4/G4 (chip-bandwidth-limited
+    //              on sub-sector erase path).
     //   < 16 MB → older / smaller parts (M25P16, W25Q32/64, N25Q064, etc.)
     //              with slower erases. Advertise 2 kHz; capped by MCU below.
     //

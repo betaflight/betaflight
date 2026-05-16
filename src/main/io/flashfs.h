@@ -63,11 +63,19 @@
 //                sub-sector ~60 ms typical → ~60 KB/s refill, less than
 //                the 80 KB/s writer rate).
 //
-//   F4 / G4   →  PID loop typically 4 kHz. Target P-frame rate 2 kHz (1/2
-//                divider). At 2 kHz × 40 B = 80 KB/s we can stay on the 4 KB
-//                sub-sector erase (~60 ms typical, fills ~5 KB of buffer at
-//                cap) so we keep the buffer at 8 KB. This minimises DTCM
-//                pressure on F4 boards where it's tightest.
+//   F4 / G4   →  PID loop typically 4 kHz. Target P-frame rate 1 kHz. The
+//                2 kHz target we originally aimed at proved chip-limited on
+//                W25Q256-class NOR (sub-sector erase ~80 ms typical on the
+//                G4 board we tested → ~50 KB/s sustained refill, less than
+//                the 80 KB/s a 2 kHz × 40 B writer needs). Result was 30 %
+//                graceful drops + a visible cycle-time bimodality (write
+//                vs drop paths in flashfsLogWriteDataByte have different
+//                costs). 1 kHz × 40 B = 40 KB/s sits comfortably below
+//                sustained even on slower chips, so every cycle takes the
+//                write path → no bimodality, no drops. Sub-sector erase
+//                still appropriate (4 KB / 80 ms = 50 KB/s easily covers
+//                40 KB/s); 8 KB buffer plenty for typical erase fill
+//                (40 × 0.08 = 3.2 KB) + outliers.
 //
 //   NAND      →  Block erase ~2 ms; per-erase buffer fill is < 1 KB at any
 //                cap we'd configure. Driver advertises 8 kHz and
@@ -101,7 +109,7 @@
 #define FLASHFS_WRITE_BUFFER_SIZE       8192     // 8 KB
 // FLASHFS_RING_USE_BLOCK_ERASE intentionally not defined — sub-sector erase
 // keeps the per-erase buffer fill small, which matches the 8 KB sizing.
-#define FLASHFS_RING_MCU_CAP_HZ         2000     // F4/G4 NOR cap
+#define FLASHFS_RING_MCU_CAP_HZ         1000     // F4/G4 NOR cap — drop-free on slow NOR (sub-sector ~80 ms = 50 KB/s sustained vs 40 KB/s writer)
 #else
 #define FLASHFS_WRITE_BUFFER_SIZE       8192     // 8 KB (conservative for unknown MCU)
 #define FLASHFS_RING_MCU_CAP_HZ         1000

@@ -1127,12 +1127,13 @@ void blackboxValidateConfig(void)
     //   sustained_byte_rate = 1 / (1/erase_byte_rate + 1/page_program_byte_rate)
     //
     // flashfsGetMaxSustainedLogRateHz() returns the MIN of the driver's chip-side
-    // ceiling and the MCU-level cap (FLASHFS_RING_MCU_CAP_HZ): 2 kHz on F4/G4
-    // (8 KB buffer, sub-sector erase), 2 kHz on F7 (24 KB buffer, block erase
-    // — F722 DTCM is tight), 4 kHz on H7 (48 KB buffer, block erase) for
-    // typical NOR. Fast NAND chips bypass the MCU cap entirely and
-    // run at their full advertised rate, since their ~2 ms block erase makes
-    // the per-erase buffer fill negligible regardless of MCU buffer size.
+    // ceiling and the MCU-level cap (FLASHFS_RING_MCU_CAP_HZ): 1 kHz on F4/G4
+    // (8 KB buffer, sub-sector erase — slower chips can't sustain 2 kHz drop-free),
+    // 2 kHz on F7 (24 KB buffer, block erase — F722 DTCM is tight), 4 kHz on H7
+    // (48 KB buffer, block erase) for typical NOR. Fast NAND chips bypass the
+    // MCU cap entirely and run at their full advertised rate, since their ~2 ms
+    // block erase makes the per-erase buffer fill negligible regardless of MCU
+    // buffer size.
     //
     // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the
     // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop with a
