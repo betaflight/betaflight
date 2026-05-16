@@ -1,0 +1,24 @@
+name: Manual Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Firmware
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/home/betaflight betaflight/betaflight-build make TARGET=SPEEDYBEEF405V3
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: betaflight-speedybee
+          path: obj/*.hex
