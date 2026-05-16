@@ -109,6 +109,7 @@ COMMON_SRC = \
             drivers/lcd_panel/lcd_panel_stub.c \
             drivers/lcd_panel/ssd1306_i2c.c \
             drivers/light_led.c \
+            drivers/brushed_reverse.c \
             drivers/motor.c \
             drivers/pinio.c \
             drivers/pin_pull_up_down.c \

@@ -47,6 +47,7 @@
 #include "drivers/dshot_command.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
+#include "drivers/brushed_reverse.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -288,7 +289,7 @@ void updateArmingStatus(void)
 
 #ifdef USE_DSHOT
 // --- handle crashFlip behaviours while armed ---
-if (crashFlipModeActive) {
+if (isMotorProtocolDshot() && crashFlipModeActive) {
     if (!IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
         // Pilot has reverted the crash flip switch while crashflip is active and craft is  armed
         if (!mixerConfig()->crashflip_auto_rearm) {
@@ -306,6 +307,21 @@ if (crashFlipModeActive) {
     }
 }
 #endif // USE_DSHOT
+
+#if defined(USE_BRUSHED_FLIPOVERAFTERCRASH)
+        // For brushed reverse-pin targets: if crashflip was active at arming time and the
+        // pilot now turns the switch off while still armed, restore normal direction.
+        if (crashFlipModeActive && !IS_RC_MODE_ACTIVE(BOXCRASHFLIP)) {
+            if (!mixerConfig()->crashflip_auto_rearm) {
+                setArmingDisabled(ARMING_DISABLED_CRASHFLIP);
+                clearWasLastDisarmUserRequested();
+                disarm(DISARM_REASON_CRASHFLIP);
+            } else {
+                brushedReverseSetReversed(false);
+                crashFlipModeActive = false;
+            }
+        }
+#endif
     } else {
         // arming switch on, but not yet armed; currently DISARMED
         // identify things that should delay, or prevent, arming, then arm
@@ -538,6 +554,9 @@ void disarm(flightLogDisarmReason_e reason)
 #ifdef USE_DSHOT
         setMotorSpinDirection(DSHOT_CMD_SPIN_DIRECTION_NORMAL);
 #endif
+#if defined(USE_BRUSHED_FLIPOVERAFTERCRASH)
+        brushedReverseSetReversed(false);
+#endif
 
         // make disarming beeps, but not if ARMING_DISABLED (RUNAWAY_TAKEOFF or CRASH_DETECTED)
         if (!(getArmingDisableFlags() & (ARMING_DISABLED_RUNAWAY_TAKEOFF | ARMING_DISABLED_CRASH_DETECTED))) {
@@ -596,6 +615,15 @@ if (isMotorProtocolDshot()) {
     setMotorSpinDirection(crashFlipModeActive ? DSHOT_CMD_SPIN_DIRECTION_REVERSED : DSHOT_CMD_SPIN_DIRECTION_NORMAL);
 }
 #endif // USE_DSHOT
+
+#if defined(USE_BRUSHED_FLIPOVERAFTERCRASH)
+        // For brushed reverse-pin targets, crashflip direction is implemented by a GPIO,
+        // and crashFlipModeActive must be set here (mixer uses it).
+        if (!isMotorProtocolDshot()) {
+            crashFlipModeActive = IS_RC_MODE_ACTIVE(BOXCRASHFLIP);
+            brushedReverseSetReversed(crashFlipModeActive);
+        }
+#endif
 
 #ifdef USE_LAUNCH_CONTROL
         if (!crashFlipModeActive && (canUseLaunchControl() || (tryingToArm == ARMING_DELAYED_LAUNCH_CONTROL))) {
