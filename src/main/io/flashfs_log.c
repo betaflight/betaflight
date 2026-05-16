@@ -61,6 +61,7 @@
 #if defined(USE_FLASHFS)
 
 #include "drivers/flash/flash.h"
+#include "drivers/time.h"   // micros() + timeUs_t for eraseTick's timing-skip fast path
 
 #include "io/flashfs.h"
 #include "io/flashfs_log.h"
@@ -382,6 +383,22 @@ static uint32_t eraseHead = 0;
 #define PENDING_ERASE_NONE 0xFFFFFFFFu
 static uint32_t pendingEraseAddr = PENDING_ERASE_NONE;
 
+// Wall-clock timestamp (µs) when we issued the in-flight erase. Used by eraseTick to
+// skip status-register SPI polls during the chip's provably-busy window — saves CPU
+// on slower MCUs (G4, F411) where each flashIsReady() call costs ~10-25 µs and the
+// cumulative per-byte poll cost was disturbing the PID scheduler. See eraseTick's
+// banner for the FAST PATH A / B structure.
+static timeUs_t eraseIssuedAtUs = 0;
+// Lower bound on chip-BUSY time for the erase granularity in use. Set well below the
+// FASTEST typical erase across the chip family for this strategy, so we never miss a
+// completion — fast chips just rejoin the polling rhythm right after this window. The
+// next poll after the window catches completion within ~one throttle period.
+#ifdef FLASHFS_RING_USE_BLOCK_ERASE
+#define FLASHFS_RING_ERASE_MIN_DURATION_US 50000u  // 50 ms — well under 100 ms block typical
+#else
+#define FLASHFS_RING_ERASE_MIN_DURATION_US 20000u  // 20 ms — well under 25-60 ms sub-sector typical
+#endif
+
 // Counter (diagnostic only) of bytes dropped because the writer outran the erase pool
 // or the RAM buffer filled. Surfaces in DEBUG_BLACKBOX_OUTPUT-style logs if needed.
 static uint32_t bbDataDrops = 0;
@@ -650,91 +667,100 @@ static void persistLappedMarkerIfReady(void);
 // per-MCU FLASHFS_RING_MCU_CAP_HZ in flashfs.h) so the RAM buffer never
 // overflows during a typical erase window.
 //
-// Erase granularity here is eraseUnit() — controlled by the per-MCU
+// Erase granularity is eraseUnit() — controlled by the per-MCU
 // FLASHFS_RING_USE_BLOCK_ERASE flag. F7/H7 builds use the 64 KB block erase
 // path (longer BUSY window, ~6× higher sustained refill bandwidth; matched
 // to FLASHFS_WRITE_BUFFER_SIZE per-MCU). F4 builds use the 4 KB sub-sector
-// erase path (shorter BUSY window, smaller buffer fill; fits in 8 KB). The
-// pre-fix synchronous 64 KB sector path was what caused the 170 ms loop-time
-// gaps we measured on real hardware (every ~1 sec at sector boundaries) —
-// that's gone now thanks to the fire-and-return wrappers.
+// erase path (shorter BUSY window, smaller buffer fill; fits in 8 KB).
 //
-// Called from the data write hot path. Fast path (flashIsReady() register read,
-// ~µs) runs on most ticks; the erase-submit slow path runs only when the pool
-// drops below POOL_TARGET_SECTORS * sectorSize of free space — and even that
-// path still returns in ~10-20 µs (read-status DMA + write-enable DMA + erase
-// opcode DMA, all small SPI transfers). The opportunistic lap-marker persist
-// below kicks off via DMA and returns immediately — hot-path cost is ~15-20 µs
-// (one synchronous preamble read + DMA setup), once per session.
+// Two fast paths skip SPI status-register polls in the regimes where the
+// answer is knowable without asking the chip:
+//
+//   FAST PATH A (pending erase, chip provably busy):
+//     If we issued the erase less than FLASHFS_RING_ERASE_MIN_DURATION_US ago,
+//     the chip CANNOT have completed yet (timestamp is monotonic, min-duration
+//     is set conservatively below the fastest typical for the strategy). Skip
+//     the poll. After the window, fall through to the actual flashIsReady()
+//     check. This removes most of the SPI polls during the chip-busy window,
+//     which on slower MCUs (G4 / F411) was the dominant per-byte cost (~14 µs
+//     per call on G4, ~25 µs on F411).
+//
+//   FAST PATH B (no pending erase, pool well-stocked):
+//     If pool >= POOL_TARGET_SECTORS * sectorSize and no erase is pending,
+//     there is literally nothing to do — no chip op to check, no erase to
+//     issue. Return immediately. This handles steady-state idle ticks at zero
+//     SPI cost.
+//
+// Slow path runs only when (a) we're past the min-duration window and need to
+// actually poll completion, or (b) pool has dipped and we need to issue. Both
+// are bounded events per erase cycle, so net SPI poll rate is small even
+// without aggressive throttling at the call site.
+//
+// Lap-marker persist (persistLappedMarkerIfReady, called unconditionally at
+// entry) is the one remaining per-tick chip touch — but it's cheap when not
+// lapped or already persisted (two RAM flag checks short-circuit before any
+// SPI), and only does an SPI poll during the transient post-lap-pre-persist
+// window of any one session.
 static void eraseTick(void)
 {
-    if (pendingEraseAddr != PENDING_ERASE_NONE) {
-        if (flashIsReady()) {
-            // Previous erase completed. Advance by eraseUnit() — matches the
-            // granularity we issued the erase at (see the flashEraseSubsector
-            // call below). If the driver doesn't expose a sub-sector erase,
-            // both that call and eraseUnit() fall back to sectorSize, keeping
-            // these two consistent.
-            eraseHead = pendingEraseAddr + eraseUnit();
-            if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
-            pendingEraseAddr = PENDING_ERASE_NONE;
-        } else {
-            return; // chip still busy; can't start a new erase
-        }
-    }
-
-    // Squeeze the lap marker write in between page programs. eraseTick fires
-    // per data byte (~640 kHz at 8 kHz pidloop × 80 B/frame), giving us many
-    // observation points per page-program cycle — we catch the brief idle
-    // windows that the ~250 Hz async-flush polling misses entirely on busy
-    // chips. persistLappedMarkerIfReady is itself gated on flashfsIsIdle()
-    // (buffer empty AND chip ready) so we only fire when the SPI bus is free.
-    // The write itself goes through markBufferLappedAsync which uses DMA +
-    // callback — hot-path cost is ~15-20 µs (preamble read + DMA setup),
-    // not the ~50-200 µs the sync path would block for. The chip's internal
-    // page program runs in background while the FC loop continues.
+    // Lap-marker first: opportunistic one-shot per session. Cheap when not in
+    // the active "lapped but not persisted" window.
     persistLappedMarkerIfReady();
 
-    // Pool refill: trigger an erase if we're below target. Both flashEraseSubsector
-    // and flashEraseSectorAsync are FIRE-AND-RETURN — they kick off the erase command
-    // via DMA and return once the SPI bus is drained (~10-20 µs total). The chip is
-    // then BUSY in its own background (~60 ms typical for the F4 sub-sector path,
-    // ~150 ms for the F7/H7 block-erase path) while the CPU continues to service the
-    // FC loop and flashfs accumulates writes in its RAM buffer (FLASHFS_WRITE_BUFFER_SIZE,
-    // sized per-MCU to absorb one such window at the cap). Use the active writer's
-    // position when a log is open; otherwise the module-level dataWriteHead.
-    //
-    // The pendingEraseAddr / flashIsReady tracking is the completion-detection
-    // protocol that the async contract requires: we record which address is being
-    // erased, then on subsequent ticks poll flashIsReady() until the chip reports
-    // idle, at which point we advance eraseHead. Without this, we'd have no way to
-    // know when it's safe to write into the just-erased region.
-    //
-    // The flashIsReady() gate is required even on this no-pending-erase path: an
-    // async page program from the data writer can still have the chip BUSY here.
-    // Most NOR parts ignore commands while BUSY, so issuing the erase now would
-    // silently no-op while we still record pendingEraseAddr=eraseHead. The next
-    // eraseTick() would then see flashIsReady() true (program completed), declare
-    // the non-existent erase done, and advance eraseHead past flash that was never
-    // erased. Subsequent programs into that range would land on non-erased flash.
-    // Skipping this tick is safe — eraseTick() runs every data byte, the next call
-    // will retry.
-    uint32_t writer = active.isOpen ? active.dataWriteHead : dataWriteHead;
-    uint32_t spaceAhead = ringSpaceFreeAhead(writer);
-    if (spaceAhead < POOL_TARGET_SECTORS * geom.sectorSize && flashIsReady()) {
-#ifdef FLASHFS_RING_USE_BLOCK_ERASE
-        // F7/H7 path: 64 KB block erase per call. Longer chip-BUSY window
-        // (~150 ms typical) but ~6× higher erase-refill bandwidth — the
-        // FLASHFS_WRITE_BUFFER_SIZE is sized per-MCU to absorb the window.
-        flashEraseSectorAsync(eraseHead);
-#else
-        // F4 path: 4 KB sub-sector erase per call (driver-permitting; falls
-        // back to sector erase if the chip doesn't expose sub-sector). Short
-        // chip-BUSY window keeps the 8 KB buffer drop-free.
-        flashEraseSubsector(eraseHead);
-#endif
-        pendingEraseAddr = eraseHead;
+    if (pendingEraseAddr != PENDING_ERASE_NONE) {
+        // FAST PATH A: chip is provably still busy — skip the SPI poll.
+        // timeUs_t is uint32_t; unsigned subtract handles micros() wraparound
+        // correctly (~71 minute period) provided no single erase spans the
+        // wrap, which would require >100 ms erases combined with adverse
+        // timing — far outside even worst-case datasheet timings.
+        if ((timeUs_t)(micros() - eraseIssuedAtUs) < FLASHFS_RING_ERASE_MIN_DURATION_US) {
+            return;
+        }
+        if (!flashIsReady()) {
+            return; // past min window but chip still busy; retry next tick
+        }
+        // Erase completed. Advance by eraseUnit() — matches the granularity
+        // we issued the erase at (see the flashEraseSubsector / flashEraseSectorAsync
+        // calls below). If the driver doesn't expose a sub-sector erase, both
+        // that call and eraseUnit() fall back to sectorSize, keeping these
+        // two consistent.
+        eraseHead = pendingEraseAddr + eraseUnit();
+        if (eraseHead >= geom.dataSectionEnd) eraseHead = 0;
+        pendingEraseAddr = PENDING_ERASE_NONE;
+        // Fall through — pool may already be dipping, may want to issue next.
     }
+
+    // FAST PATH B: no pending erase + pool stocked = nothing to do.
+    uint32_t writer = active.isOpen ? active.dataWriteHead : dataWriteHead;
+    if (ringSpaceFreeAhead(writer) >= POOL_TARGET_SECTORS * geom.sectorSize) {
+        return;
+    }
+
+    // SLOW PATH: pool has dipped below the trigger. Issue a new erase if the
+    // chip is ready. The flashIsReady() gate is required: an async page program
+    // from the data writer can still have the chip BUSY here. Most NOR parts
+    // ignore commands while BUSY, so issuing the erase now would silently no-op
+    // while we still record pendingEraseAddr=eraseHead. The next eraseTick()
+    // would then see flashIsReady() true (program completed), declare the non-
+    // existent erase done, and advance eraseHead past flash that was never
+    // erased. Subsequent programs into that range would land on non-erased
+    // flash. Skipping this tick is safe — the next call will retry.
+    if (!flashIsReady()) {
+        return;
+    }
+#ifdef FLASHFS_RING_USE_BLOCK_ERASE
+    // F7/H7 path: 64 KB block erase. Longer chip-BUSY window (~150 ms typical)
+    // but ~6× higher erase-refill bandwidth — FLASHFS_WRITE_BUFFER_SIZE is
+    // sized per-MCU to absorb the window.
+    flashEraseSectorAsync(eraseHead);
+#else
+    // F4 path: 4 KB sub-sector erase (driver-permitting; falls back to sector
+    // erase if the chip doesn't expose sub-sector). Short chip-BUSY window
+    // keeps the 8 KB buffer drop-free.
+    flashEraseSubsector(eraseHead);
+#endif
+    pendingEraseAddr = eraseHead;
+    eraseIssuedAtUs = micros();
 }
 
 // Synchronously erase one sector, advancing eraseHead. Used at log start, log close,
@@ -1750,25 +1776,23 @@ void flashfsLogWriteDataByte(uint8_t b)
 {
     if (!active.isOpen || active.headerPhase) return;
 
-    // Hot path: must NOT block. eraseTick() does at most a flashIsReady() register
-    // read and (if pool below target) a flashEraseSubsector() fire-and-return DMA
-    // command-submit. Both return in microseconds; the actual chip-BUSY window
-    // happens in the background while the FC loop continues. See eraseTick's banner.
+    // Hot path: must NOT block. eraseTick() does at most a few RAM checks plus, at
+    // most, one flashIsReady() register read or one fire-and-return erase command-
+    // submit; both return in microseconds. The actual chip-BUSY window happens in
+    // the background while the FC loop continues. See eraseTick's banner for the
+    // FAST PATH A / B structure that suppresses redundant SPI polls.
     //
-    // Throttle to ~once per page write (32 bytes — 1/8 of a 256-byte page) rather than
-    // every byte. Per-byte was originally chosen to maximise observation points for
-    // the lap-marker persist, but at the high data rates the 4 kHz NOR cap unlocks
-    // (~120 KB/s = 30k calls/sec at 30 B/frame), the cumulative SPI status-poll cost
-    // inside flashIsReady() during sector-erase windows starts dominating FC CPU
-    // (observed: 95% CPU spikes correlated with logging at 4 kHz P-frame rate).
+    // Throttle to 1-in-128 bytes (vs the previous 1-in-32). At 2 kHz × 40 B = 80 KB/s
+    // sustained, that's ~625 calls/sec = one tick every 1.6 ms. Erase windows are
+    // 30-150 ms; we still get 20-90 observation points per erase, plenty for both
+    // erase-completion polling and the lap-marker idle-window detection.
     //
-    // 32 B is the sweet spot: a sector-erase window is ~30-50 ms, during which ~3500-
-    // 6000 bytes pass through the writer at peak rate. Firing eraseTick every 32 B
-    // gives ~100-180 observation points per erase — far more than needed for both
-    // erase-completion polling and lap-marker squeeze-in. SPI bus contention drops
-    // 32×.
+    // The looser throttle is safe because eraseTick's fast paths already make most
+    // ticks effectively free — bumping the throttle just halves the trivial
+    // overhead on the per-byte path on slower MCUs (G4, F411) where it was visible
+    // in cycle-time measurements before this change.
     static uint8_t eraseTickThrottle = 0;
-    if ((++eraseTickThrottle & 0x1F) == 0) {
+    if ((++eraseTickThrottle & 0x7F) == 0) {
         eraseTick();
     }
 
