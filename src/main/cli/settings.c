@@ -1719,6 +1719,7 @@ const clivalue_t valueTable[] = {
     { "osd_wp_next_number_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_WP_NEXT_NUMBER]) },
     { "osd_wp_eta_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_WP_ETA]) },
 #endif // USE_GPS && ENABLE_FLIGHT_PLAN
+    { "osd_compass_style",          VAR_UINT8   | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1 }, PG_OSD_CONFIG, offsetof(osdConfig_t, osd_compass_style) },
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG
