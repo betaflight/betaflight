@@ -80,6 +80,16 @@ MMFLASH_CODE_NOINLINE bool mx66uw1g45g_identify(flashDevice_t *fdevice, uint32_t
     fdevice->geometry.sectorSize = MX66UW1G45G_SECTOR_SIZE;
     fdevice->geometry.totalSize = (uint32_t)MX66UW1G45G_SECTOR_SIZE * MX66UW1G45G_SECTORS;
 
+    // Ring-mode log rate ceiling. MX66UW is a 128 MB Macronix OPI NOR used in
+    // memory-mapped configurations on H7 targets; the eraseSector vtable entry
+    // here actually calls failureMode() (memory-mapped boot flash, not designed
+    // for runtime writes), so this driver isn't a real blackbox target. The
+    // value is set to match the F7/H7 MCU cap (4 kHz) for consistency with
+    // other fast-NOR drivers — the actual cap is the MCU-side
+    // FLASHFS_RING_MCU_CAP_HZ. If a future use case wires this driver up to
+    // flashfs, the writer will observe the same MCU-derived ceiling.
+    fdevice->geometry.maxSustainedLogRateHz = 4000;
+
     fdevice->vTable = &mx66uw1g45g_vTable;
 
     return true;

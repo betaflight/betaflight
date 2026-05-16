@@ -379,7 +379,8 @@ FLASH_SRC += \
             drivers/flash/flash_w25m.c \
             drivers/flash/flash_w25n.c \
             drivers/flash/flash_w25q128fv.c \
-            io/flashfs.c
+            io/flashfs.c \
+            io/flashfs_log.c
 
 SDCARD_SRC += \
             drivers/sdcard.c \

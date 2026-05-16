@@ -465,19 +465,33 @@ static bool flashDeviceInit(const flashConfig_t *flashConfig)
     return haveFlash;
 }
 
+// When chip detection failed at boot (FCs built with USE_FLASH_CHIP but no flash
+// soldered, or a probe that returns 0xFF from RDID), flashDevice.vTable stays NULL.
+// Higher layers gate most calls on flashfsIsSupported(), but a few callers still
+// reach the wrappers (e.g. flash_erase CLI, MSC mount, recovery probes); without
+// these guards every such call dereferences NULL and hard-faults. Defaults are
+// chosen so callers that *do* slip through degrade safely:
+//   - isReady / waitForReady → true (so `while (!flashIsReady())` exits instead
+//     of hanging; subsequent reads/writes are no-ops anyway).
+//   - readBytes → 0 (zero bytes read; matches the short-read failure path that
+//     existing callers already handle).
+//   - erase / program → no-op (and invoke the completion callback with 0 so
+//     async waiters don't deadlock).
 MMFLASH_CODE bool flashIsReady(void)
 {
+    if (!flashDevice.vTable) return true;
     return flashDevice.vTable->isReady(&flashDevice);
 }
 
 MMFLASH_CODE bool flashWaitForReady(void)
 {
+    if (!flashDevice.vTable) return true;
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
 static bool flashWaitForReadyOrFail(void)
 {
-    if (!flashDevice.vTable->waitForReady) {
+    if (!flashDevice.vTable || !flashDevice.vTable->waitForReady) {
         return true;
     }
 
@@ -491,6 +505,7 @@ static bool flashWaitForReadyOrFail(void)
 
 MMFLASH_CODE void flashEraseSector(uint32_t address)
 {
+    if (!flashDevice.vTable) return;
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseSector(&flashDevice, address);
 
@@ -499,8 +514,57 @@ MMFLASH_CODE void flashEraseSector(uint32_t address)
     }
 }
 
+// Fire-and-return async variant of flashEraseSector. Same vtable call (sector
+// erase, typically 64 KB on NOR / 128 KB on NAND) but without the trailing
+// flashWaitForReadyOrFail() — the chip is BUSY when this returns; the caller
+// must poll flashIsReady() before the next flash operation. Used by ring-mode
+// flashfs_log on F7/H7 builds where the buffer is sized to absorb the longer
+// chip-BUSY window in exchange for higher sustained bandwidth (~426 KB/s
+// refill rate vs ~67 KB/s on the 4 KB sub-sector path). See the comment on
+// flashEraseSubsector for the design split.
+MMFLASH_CODE void flashEraseSectorAsync(uint32_t address)
+{
+    if (!flashDevice.vTable) return;
+    flashDevice.callback = NULL;
+    flashDevice.vTable->eraseSector(&flashDevice, address);
+    // NO flashWaitForReadyOrFail() — fire-and-return.
+}
+
+// Sub-sector erase wrapper. Uses the driver's eraseSubsector vtable entry when
+// the driver advertises a finer-grained erase command (geometry.subsectorSize
+// non-zero), otherwise transparently falls back to eraseSector.
+//
+// FIRE-AND-RETURN async semantics — UNLIKE flashEraseSector. This wrapper kicks
+// off the erase command via the bus framework's DMA pipeline (read-status →
+// write-enable → erase opcode) and returns once the SPI bus has DRAINED, not
+// once the chip has finished erasing. The chip stays busy (~30 ms for a 4 KB
+// sub-sector on typical NOR, ~150 ms for a 64 KB block-erase fallback) but the
+// CPU returns immediately and is free to keep servicing the FC loop. The caller
+// is responsible for polling flashIsReady() before the next flash operation
+// (ring-mode flashfs_log does this via its pendingEraseAddr / eraseTick gate).
+//
+// This is the deliberate design split from flashEraseSector: that one keeps the
+// blocking flashWaitForReadyOrFail() because callers like the CLI flash_erase
+// loop and config save/restore depend on synchronous completion. The hot-path
+// ring-mode pool refill cannot tolerate a single millisecond of blocking — let
+// alone the ~30-150 ms a synchronous erase costs — and that constraint is the
+// whole reason this wrapper exists as a separate entry point.
+MMFLASH_CODE void flashEraseSubsector(uint32_t address)
+{
+    if (!flashDevice.vTable) return;
+    flashDevice.callback = NULL;
+    if (flashDevice.geometry.subsectorSize > 0 && flashDevice.vTable->eraseSubsector) {
+        flashDevice.vTable->eraseSubsector(&flashDevice, address);
+    } else {
+        flashDevice.vTable->eraseSector(&flashDevice, address);
+    }
+    // NO flashWaitForReadyOrFail() here — see header comment. The chip is BUSY
+    // when we return; the caller must poll flashIsReady() before the next op.
+}
+
 void flashEraseCompletely(void)
 {
+    if (!flashDevice.vTable) return;
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
 
@@ -514,11 +578,17 @@ void flashEraseCompletely(void)
  */
 MMFLASH_CODE void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg))
 {
+    if (!flashDevice.vTable) {
+        if (callback) callback(0);
+        return;
+    }
     flashDevice.vTable->pageProgramBegin(&flashDevice, address, callback);
 }
 
 MMFLASH_CODE uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount)
 {
+    if (!flashDevice.vTable) return 0;
+
     uint32_t maxBytesToWrite = flashDevice.geometry.pageSize - (flashDevice.currentWriteAddress % flashDevice.geometry.pageSize);
 
     if (bufferCount == 0) {
@@ -540,22 +610,29 @@ MMFLASH_CODE uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t
 
 MMFLASH_CODE void flashPageProgramFinish(void)
 {
+    if (!flashDevice.vTable) return;
     flashDevice.vTable->pageProgramFinish(&flashDevice);
 }
 
 MMFLASH_CODE void flashPageProgram(uint32_t address, const uint8_t *data, uint32_t length, void (*callback)(uintptr_t arg))
 {
+    if (!flashDevice.vTable) {
+        if (callback) callback(0);
+        return;
+    }
     flashDevice.vTable->pageProgram(&flashDevice, address, data, length, callback);
 }
 
 MMFLASH_CODE int flashReadBytes(uint32_t address, uint8_t *buffer, uint32_t length)
 {
+    if (!flashDevice.vTable) return 0;
     flashDevice.callback = NULL;
     return flashDevice.vTable->readBytes(&flashDevice, address, buffer, length);
 }
 
 MMFLASH_CODE void flashFlush(void)
 {
+    if (!flashDevice.vTable) return;
     if (flashDevice.vTable->flush) {
         flashDevice.vTable->flush(&flashDevice);
 

@@ -72,6 +72,10 @@
 #include "flight/imu.h"
 
 #include "io/beeper.h"
+#ifdef USE_FLASHFS
+#include "io/flashfs.h"
+#include "io/flashfs_log.h"
+#endif
 #include "io/gps.h"
 #include "io/serial.h"
 
@@ -104,14 +108,15 @@ void checkFlashStop(void);
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 5);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .fields_disabled_mask = 0, // default log all fields
     .sample_rate = BLACKBOX_RATE_QUARTER,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .mode = BLACKBOX_MODE_NORMAL,
-    .high_resolution = false
+    .high_resolution = false,
+    .flash_mode = BLACKBOX_FLASH_MODE_LINEAR
 );
 
 STATIC_ASSERT((sizeof(blackboxConfig()->fields_disabled_mask) * 8) >= FLIGHT_LOG_FIELD_SELECT_COUNT, too_many_flight_log_fields_selections);
@@ -414,6 +419,13 @@ extern boxBitmask_t rcModeActivationMask;
 
 static blackboxState_e blackboxState = BLACKBOX_STATE_DISABLED;
 
+#ifdef USE_FLASHFS
+// One-shot guard for the ring-mode header/data phase handoff. Set true after
+// flashfsLogFinishHeader() runs on the initial entry into BLACKBOX_STATE_RUNNING;
+// reset to false in BLACKBOX_STATE_PREPARE_LOG_FILE for the next log session.
+static bool blackboxFlashHeaderFinalized = false;
+#endif
+
 static uint32_t blackboxLastArmingBeep = 0;
 static uint32_t blackboxLastFlightModeFlags = 0; // New event tracking of flight modes
 
@@ -615,6 +627,11 @@ static void blackboxSetState(blackboxState_e newState)
     switch (newState) {
     case BLACKBOX_STATE_PREPARE_LOG_FILE:
         blackboxLoggedAnyFrames = false;
+#ifdef USE_FLASHFS
+        // New log session: clear the one-shot flag that gates the ring-mode
+        // header-finalize transition (see BLACKBOX_STATE_RUNNING below).
+        blackboxFlashHeaderFinalized = false;
+#endif
         break;
     case BLACKBOX_STATE_SEND_HEADER:
         blackboxHeaderBudget = 0;
@@ -633,6 +650,19 @@ static void blackboxSetState(blackboxState_e newState)
         break;
     case BLACKBOX_STATE_RUNNING:
         blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
+#ifdef USE_FLASHFS
+        // For ring-mode flash logging, mark the end of the header phase exactly once
+        // per log session. Gate on a one-shot flag so the PAUSED -> RUNNING resume
+        // transition (blackbox.c BLACKBOX_STATE_PAUSED case) does not replay the
+        // header/data handoff mid-log. The flag is cleared in
+        // BLACKBOX_STATE_PREPARE_LOG_FILE for the next session.
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
+                && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
+                && !blackboxFlashHeaderFinalized) {
+            flashfsLogFinishHeader();
+            blackboxFlashHeaderFinalized = true;
+        }
+#endif
 #ifdef USE_FLASH_TEST_PRBS
         // Start writing a known pattern as the running state is entered
         checkFlashStart();
@@ -1066,6 +1096,81 @@ void blackboxValidateConfig(void)
     default:
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
+
+    // Refresh the per-session encoding scale so it tracks blackbox_high_resolution
+    // edits made while logging was stopped. blackboxInit() set this once at boot;
+    // without re-reading the config here, a toggle would update the header line
+    // (printed at session start) but loadMainState() would keep encoding with the
+    // stale scale until reboot, producing logs whose advertised resolution does
+    // not match the encoded values.
+    blackboxHighResolutionScale = blackboxConfig()->high_resolution ? 10.0f : 1.0f;
+
+    // Recompute blackboxPInterval from the persisted sample_rate every time.
+    // blackboxInit() already set it once at boot, but a prior ring-mode session
+    // may have overwritten it with a clamped value (slower than persisted) — if
+    // the user then switches to LINEAR mode (or the ring clamp no longer fires
+    // because pidHz dropped), the stale clamped interval would carry into the
+    // new session. Always start from the persisted rate; the ring clamp below
+    // overwrites only when it actually applies.
+    {
+        const uint8_t sr = blackboxConfig()->sample_rate;
+        blackboxPInterval = 1 << sr;
+        if (blackboxPInterval > blackboxIInterval) {
+            blackboxPInterval = 0;
+        }
+    }
+
+#ifdef USE_BLACKBOX_RING_LOG
+    // Ring-mode flash logging is bandwidth-limited by the chip's sustained erase
+    // throughput AND by the per-MCU buffer + erase-strategy choice (see flashfs.h):
+    //
+    //   sustained_byte_rate = 1 / (1/erase_byte_rate + 1/page_program_byte_rate)
+    //
+    // flashfsGetMaxSustainedLogRateHz() returns the MIN of the driver's chip-side
+    // ceiling and the MCU-level cap (FLASHFS_RING_MCU_CAP_HZ): 1 kHz on F4/G4
+    // (8 KB buffer, sub-sector erase — slower chips can't sustain 2 kHz drop-free),
+    // 2 kHz on F7 (24 KB buffer, block erase — F722 DTCM is tight), 4 kHz on H7
+    // (48 KB buffer, block erase) for typical NOR. Fast NAND chips bypass the
+    // MCU cap entirely and run at their full advertised rate, since their ~2 ms
+    // block erase makes the per-erase buffer fill negligible regardless of MCU
+    // buffer size.
+    //
+    // Capping in Hz (rather than as a fixed sample-rate divisor like 1/4) means the
+    // clamp adapts correctly to different PID loop rates: at 8 kHz pidloop with a
+    // 1 kHz chip cap the clamp forces 1/8; at 4 kHz pidloop with a 2 kHz cap it
+    // allows 1/2; etc.
+    const uint32_t maxFrameHz = flashfsGetMaxSustainedLogRateHz();
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH
+            && blackboxConfig()->flash_mode == BLACKBOX_FLASH_MODE_RING
+            && targetPidLooptime > 0) {
+        const uint32_t pidHz = 1000000U / targetPidLooptime;
+        uint8_t sr = blackboxConfig()->sample_rate;
+        // Bump sample_rate (slower) until the resulting frame rate is at or below the
+        // cap. Stops at BLACKBOX_RATE_16TH (the slowest available rate).
+        while (sr < BLACKBOX_RATE_16TH && (pidHz >> sr) > maxFrameHz) {
+            sr++;
+        }
+        // sr is intentionally a runtime-only clamp — drive blackboxPInterval from
+        // it but DO NOT write back to blackboxConfig()->sample_rate. The cap is a
+        // function of pidHz, which can change between sessions (rate profile
+        // switch, looptime change). Persisting the clamp would lock the user's
+        // sample_rate to the slowest value any session needed.
+        //
+        // Saturation: if even the slowest rate (1/16) still exceeds the cap (only
+        // possible at extreme pidloops > 16 kHz with a very slow chip), disable
+        // P-frames entirely so we log only I-frames rather than producing a stream
+        // guaranteed to overrun the chip's erase throughput. Better degraded than
+        // corrupt.
+        if (sr == BLACKBOX_RATE_16TH && (pidHz >> sr) > maxFrameHz) {
+            blackboxPInterval = 0;
+        } else {
+            blackboxPInterval = 1 << sr;
+            if (blackboxPInterval > blackboxIInterval) {
+                blackboxPInterval = 0;
+            }
+        }
+    }
+#endif
 }
 
 static void blackboxResetIterationTimers(void)
@@ -1508,7 +1613,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->craftName);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d",                      blackboxPInterval);
-        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         (uint16_t)(blackboxIInterval / blackboxPInterval));
+        BLACKBOX_PRINT_HEADER_LINE("P ratio", "%d",                         (uint16_t)(blackboxPInterval ? (blackboxIInterval / blackboxPInterval) : 0));
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
@@ -2279,11 +2384,23 @@ uint8_t blackboxGetRateDenom(void)
 
 uint16_t blackboxGetPRatio(void)
 {
-    return blackboxIInterval / blackboxPInterval;
+    // blackboxPInterval can be 0 ("I-frames only" mode — set when sample_rate
+    // is too slow for the I-interval, or when ring-mode rate clamp saturates
+    // at >16 kHz pidloop). Report 0 ratio rather than dividing by zero.
+    return blackboxPInterval ? (blackboxIInterval / blackboxPInterval) : 0;
 }
 
 uint8_t blackboxCalculateSampleRate(uint16_t pRatio)
 {
+    // Reachable from MSP_SET_BLACKBOX_CONFIG with attacker-controlled pRatio,
+    // and also from a configurator round-trip if blackboxGetPRatio() returned
+    // 0 (the I-frames-only mode entered by blackboxValidateConfig's saturated
+    // ring-rate guard at >16 kHz pidloop, or any other path that sets
+    // blackboxPInterval to 0). Without this guard the inner divide is UB —
+    // hard fault on Cortex-M.
+    if (pRatio == 0 || targetPidLooptime == 0) {
+        return 0;
+    }
     return llog2(32000 / (targetPidLooptime * pRatio));
 }
 

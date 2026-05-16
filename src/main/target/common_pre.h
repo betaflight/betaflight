@@ -240,6 +240,36 @@
 #endif
 #define USE_BLACKBOX
 
+// Ring-mode onboard-flash blackbox logging. Adds a circular-buffer write mode for the
+// onboard SPI flash that overwrites the oldest data once the chip is full.
+//
+// Requires per-MCU RAM (the flashfs write buffer grows from 128 B; size is
+// chosen to absorb one typical NOR erase window at the MCU's target log
+// rate — see the table in flashfs.h):
+//   - H7:        ~48 KB extra static RAM. Block erase; targets 4 kHz P-frame
+//                logging on NOR drop-free with ~300 ms erase-outlier headroom.
+//   - H7 + EXST: ~24 KB extra static RAM. Block erase; targets 2 kHz like F7.
+//                EXST (bootloader-loaded firmware) builds have a constrained
+//                64 KB DMA-able RAM region that can't fit the full 48 KB
+//                buffer alongside other DMA buffers.
+//   - F7:        ~24 KB extra static RAM. Block erase; targets 2 kHz P-frame
+//                logging on NOR. (Bigger H7 buffer fails to link on F722's
+//                64 KB DTCM — F7 caps lower with a 2 kHz × 300 ms = 24 KB
+//                buffer that fits and gives the same outlier headroom.)
+//   - F4/G4:     ~8 KB extra static RAM. Uses 4 KB sub-sector erase to keep
+//                the per-erase buffer fill small; targets 1 kHz P-frame
+//                logging on NOR (chip-bandwidth-limited — slower G4 boards'
+//                NOR can't sustain 2 kHz drop-free with sub-sector erase).
+//   - Fast flash chips (NAND) bypass the MCU cap and run at the chip's
+//     advertised ceiling (typically 8 kHz, naturally clamped by PID loop).
+//   - ~2-3 KB extra program flash on top of either RAM tier.
+//
+// Enabled by default only on STM32F7 / STM32H7 (Cortex-M7 with plenty of SRAM).
+// F4 and smaller targets have to opt in explicitly via cloud build option.
+#if defined(STM32F7) || defined(STM32H7)
+#define USE_BLACKBOX_RING_LOG
+#endif
+
 #if TARGET_FLASH_SIZE >= 1024
 
 #if defined(USE_SERIALRX)
