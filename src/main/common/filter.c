@@ -313,6 +313,12 @@ FAST_CODE float phaseCompApply(phaseComp_t *filter, const float input)
     return result;
 }
 
+FAST_CODE void phaseCompReset(phaseComp_t *filter)
+{
+    filter->x1 = 0.0f;
+    filter->y1 = 0.0f;
+}
+
 // Slew filter with limit
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)

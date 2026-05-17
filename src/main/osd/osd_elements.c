@@ -1145,17 +1145,33 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "POSH");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         strcpy(element->buff, "ALTH");
+#ifdef USE_CHIRP
+    } else if (FLIGHT_MODE(CHIRP_MODE)) {
+        static const char axisChar[] = "RPY";
+        if (pidChirpGetRepeatTotal() <= 1) {
+            // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
+            if (!pidChirpIsFinished()) {
+                strcpy(element->buff, "CHIR");
+            } else {
+                tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
+            }
+        } else {
+            if (pidChirpSeriesIsFinished()) {
+                tfp_sprintf(element->buff, "%cFIN", axisChar[pidChirpGetChirpAxis()]);
+            } else {
+                tfp_sprintf(element->buff, "%c%u/%u",
+                            axisChar[pidChirpGetChirpAxis()],
+                            pidChirpGetRepeatCurrent(),
+                            pidChirpGetRepeatTotal());
+            }
+        }
+#endif
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
         strcpy(element->buff, "ANGL");
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         strcpy(element->buff, "HOR ");
     } else if (IS_RC_MODE_ACTIVE(BOXACROTRAINER)) {
         strcpy(element->buff, "ATRN");
-#ifdef USE_CHIRP
-    // the additional check for pidChirpIsFinished() is to have visual feedback for user that don't have warnings enabled in their goggles
-    } else if (FLIGHT_MODE(CHIRP_MODE) && !pidChirpIsFinished()) {
-        strcpy(element->buff, "CHIR");
-#endif
     } else if (isAirmodeEnabled()) {
         strcpy(element->buff, "AIR ");
     } else {

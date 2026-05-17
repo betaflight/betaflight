@@ -327,6 +327,7 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+    uint8_t chirp_repeat;                   // number of repeats per axis
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -527,6 +528,10 @@ typedef struct pidRuntime_s {
     float chirpFrequencyStartHz;
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
+    uint8_t chirpRepeat;
+    uint8_t chirpRepeatsRemaining;
+    flight_dynamics_index_t chirpAxis;
+    bool chirpSeriesIsFinished;
 #endif // USE_CHIRP
 } pidRuntime_t;
 
@@ -580,4 +585,8 @@ float pidGetPidFrequency(void);
 float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, uint8_t expo);
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
+flight_dynamics_index_t pidChirpGetChirpAxis(void);
+uint8_t pidChirpGetRepeatTotal(void);
+uint8_t pidChirpGetRepeatCurrent(void);
+bool pidChirpSeriesIsFinished(void);
 #endif

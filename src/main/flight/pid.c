@@ -120,6 +120,10 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
+#ifdef USE_CHIRP
+#define CHIRP_SETTLE_TIME_US 750000 // 750 ms
+#endif // USE_CHIRP
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 11);
 
 void resetPidProfile(pidProfile_t *pidProfile)
@@ -258,6 +262,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .chirp_repeat = 1,
     );
 }
 
@@ -611,10 +616,18 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f)); // feedforward amount in degrees
         DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f)); // angle returned
 
+        DEBUG_SET(DEBUG_CHIRP, 4, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 5, lrintf(angleTarget * 10.0f));  // target angle
+        DEBUG_SET(DEBUG_CHIRP, 6, 0);  // current angle pitch set to zero
+        DEBUG_SET(DEBUG_CHIRP, 7, 0);  // target angle pitch set to zero
+
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));
         DEBUG_SET(DEBUG_ANGLE_TARGET, 1, lrintf(sinAngle * 10.0f)); // modification factor from earthRef
         // debug ANGLE_TARGET 2 is yaw attenuation
         DEBUG_SET(DEBUG_ANGLE_TARGET, 3, lrintf(currentAngle * 10.0f)); // angle returned
+    } else if (axis == FD_PITCH) {
+        DEBUG_SET(DEBUG_CHIRP, 6, lrintf(currentAngle * 10.0f)); // angle returned
+        DEBUG_SET(DEBUG_CHIRP, 7, lrintf(angleTarget * 10.0f));  // target angle
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f)); // current angle
@@ -1075,6 +1088,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
     UNUSED(pidProfile);
     UNUSED(currentTimeUs);
+    levelMode_e levelMode = LEVEL_MODE_OFF;
 #endif
 
     // Anti Gravity
@@ -1119,25 +1133,75 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_CHIRP
 
-    static int chirpAxis = 0;
     static bool shouldChirpAxisToggle = false;
+    static bool chirpModePrev = false;
+    static timeUs_t chirpSettleUntilUs = 0;
 
     float chirp = 0.0f;
     float sinarg = 0.0f;
-    if (FLIGHT_MODE(CHIRP_MODE)) {
+    float fchirp = 0.0f;
+
+    const bool chirpModeNow = FLIGHT_MODE(CHIRP_MODE);
+    const bool chirpStarting = chirpModeNow && !chirpModePrev;
+
+    chirpModePrev = chirpModeNow;
+
+    if (chirpStarting) {
+        phaseCompReset(&pidRuntime.chirpFilter);
+        pidRuntime.chirpRepeatsRemaining = (pidRuntime.chirpRepeat > 0) ? (pidRuntime.chirpRepeat - 1) : 0;
+        pidRuntime.chirpSeriesIsFinished = false;
+        chirpSettleUntilUs = 0;
+    }
+    if (chirpModeNow) {
         shouldChirpAxisToggle = true;  // advance chirp axis on next !CHIRP_MODE
-        // update chirp signal
-        if (chirpUpdate(&pidRuntime.chirp)) {
-            chirp = pidRuntime.chirp.exc;
-            sinarg = pidRuntime.chirp.sinarg;
+        // let drone settle between chirp repeats
+        if (chirpSettleUntilUs != 0) {
+            if (cmpTimeUs(currentTimeUs, chirpSettleUntilUs) >= 0) {
+                chirpSettleUntilUs = 0;
+                chirpReset(&pidRuntime.chirp);
+                phaseCompReset(&pidRuntime.chirpFilter);
+            }
+        } else {
+            // update chirp signal
+            if (chirpUpdate(&pidRuntime.chirp)) {
+                const bool chirpAxisInAngleMode = (pidRuntime.chirpAxis < FD_YAW) &&
+                                                  (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && pidRuntime.chirpAxis == FD_ROLL));
+
+                fchirp = pidRuntime.chirp.fchirp;
+                sinarg = pidRuntime.chirp.sinarg;
+
+                /*
+                * excite axes based on flightmodes, changing flightmodes mid chirp
+                * will lead to a 90° phase shift in the excitation signal
+                */
+                if (chirpAxisInAngleMode) {
+                    chirp = sin_approx(sinarg);
+                } else {
+                    // use cosine so that the angle will oscillate around 0 (integral of gyro)
+                    chirp = cos_approx(sinarg);
+                    // frequencies below 1 Hz will lead to the same angle magnitude as at 1 Hz (integral of gyro)
+                    if (fchirp < 1.0f) chirp *= fchirp;
+                }
+            } else if (pidRuntime.chirp.isFinished) {
+                if (pidRuntime.chirpRepeatsRemaining > 0) {
+                    pidRuntime.chirpRepeatsRemaining--;
+                    chirpSettleUntilUs = currentTimeUs + CHIRP_SETTLE_TIME_US;
+                } else {
+                    pidRuntime.chirpSeriesIsFinished = true;
+                }
+            }
         }
     } else {
         if (shouldChirpAxisToggle) {
             // toggle chirp signal logic and increment to next axis for next run
             shouldChirpAxisToggle = false;
-            chirpAxis = (++chirpAxis > FD_YAW) ? 0 : chirpAxis;
+            pidRuntime.chirpAxis = (++pidRuntime.chirpAxis > FD_YAW) ? 0 : pidRuntime.chirpAxis;
             // reset chirp signal generator
             chirpReset(&pidRuntime.chirp);
+            chirpSettleUntilUs = 0;
+            pidRuntime.chirpRepeatsRemaining = 0;
+            pidRuntime.chirpSeriesIsFinished = false;
+            phaseCompReset(&pidRuntime.chirpFilter);
         }
     }
 
@@ -1150,8 +1214,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // 2: instantaneous chirp frequency in deci-Hz — maps time to frequency for spectral analysis
     // 3: raw chirp excitation × 1000 (before phase comp filter) — reference signal for cross-correlation
     DEBUG_SET(DEBUG_CHIRP, 0, lrintf(5.0e3f * sinarg));
-    DEBUG_SET(DEBUG_CHIRP, 1, FLIGHT_MODE(CHIRP_MODE) ? chirpAxis : -1);
-    DEBUG_SET(DEBUG_CHIRP, 2, lrintf(10.0f * pidRuntime.chirp.fchirp));
+    DEBUG_SET(DEBUG_CHIRP, 1, FLIGHT_MODE(CHIRP_MODE) ? (int)pidRuntime.chirpAxis : -1);
+    DEBUG_SET(DEBUG_CHIRP, 2, lrintf(10.0f * fchirp));
     DEBUG_SET(DEBUG_CHIRP, 3, lrintf(1.0e3f * chirp));
 
 #endif // USE_CHIRP
@@ -1161,7 +1225,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_CHIRP
         float currentChirp = 0.0f;
-        if(axis == chirpAxis){
+        if(axis == pidRuntime.chirpAxis){
             currentChirp = pidRuntime.chirpAmplitude[axis] * chirpFiltered;
         }
 #endif // USE_CHIRP
@@ -1172,8 +1236,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         // When Race Mode is active PITCH control is also GYRO based in level or horizon mode
+#ifdef USE_CHIRP    // when chirp support is compiled in
+        currentPidSetpoint += currentChirp;     // add current chirp contribution for system identification (zero when inactive)
+#endif // USE_CHIRP
+
 #if defined(USE_ACC)
         pidRuntime.axisInAngleMode[axis] = false;
+
         if (axis < FD_YAW) {
             if (levelMode == LEVEL_MODE_RP || (levelMode == LEVEL_MODE_R && axis == FD_ROLL)) {
                 pidRuntime.axisInAngleMode[axis] = true;
@@ -1226,9 +1295,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
-#ifdef USE_CHIRP
-        currentPidSetpoint += currentChirp;
-#endif // USE_CHIRP
+
         float errorRate = currentPidSetpoint - gyroRate; // r - y
 #if defined(USE_ACC)
         handleCrashRecovery(
@@ -1553,5 +1620,25 @@ float pidGetPidFrequency(void)
 bool  pidChirpIsFinished(void)
 {
     return pidRuntime.chirp.isFinished;
+}
+
+flight_dynamics_index_t pidChirpGetChirpAxis(void)
+{
+    return pidRuntime.chirpAxis;
+}
+
+uint8_t pidChirpGetRepeatTotal(void)
+{
+    return pidRuntime.chirpRepeat;
+}
+
+uint8_t pidChirpGetRepeatCurrent(void)
+{
+    return pidRuntime.chirpRepeat - pidRuntime.chirpRepeatsRemaining;
+}
+
+bool pidChirpSeriesIsFinished(void)
+{
+    return pidRuntime.chirpSeriesIsFinished;
 }
 #endif

@@ -27,7 +27,7 @@
 typedef struct chirp_s {
     float f0, Ts, beta, k0, k1;
     uint32_t count, N;
-    float exc, fchirp, sinarg;
+    float fchirp, sinarg;
     bool isFinished;
 } chirp_t;
 
