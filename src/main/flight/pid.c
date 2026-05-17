@@ -1152,6 +1152,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #else
     UNUSED(pidProfile);
     UNUSED(currentTimeUs);
+    levelMode_e levelMode = LEVEL_MODE_OFF;
 #endif
 
     // Anti Gravity
