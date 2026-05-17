@@ -30,11 +30,27 @@ INCLUDE "pico_rp2350_memory.ld"
 
 ENTRY(_entry_point)
 
+/* Split code/rodata from RAM-resident sections into separate PT_LOAD segments.
+ * The `data` segment carries the load images of RAM-resident sections
+ * (.text, .data, .tdata, .scratch_x, .scratch_y) -- some of which contain
+ * executable code that runs from SRAM after copy. Explicit FLAGS(6) marks the
+ * load-time view as R+W (not RWX), silencing ld's `--warn-rwx-segments`
+ * while leaving runtime execution from RAM unaffected (Cortex-M has no W^X
+ * enforcement). Two text PHDRs are needed because flash-resident code/data
+ * lives both before and after the data-segment load images: one PT_LOAD per
+ * non-contiguous flash chunk so the UF2 converter sees no LMA overlap. */
+PHDRS
+{
+    text1 PT_LOAD FLAGS(5);  /* R+X -- early FLASH code/rodata */
+    data  PT_LOAD FLAGS(6);  /* R+W -- load images of RAM-resident sections */
+    text2 PT_LOAD FLAGS(5);  /* R+X -- late FLASH (flash_end + pg registry) */
+}
+
 SECTIONS
 {
     .flash_begin : {
         __flash_binary_start = .;
-    } > FLASH
+    } > FLASH :text1
 
     /* The bootrom will enter the image at the point indicated in your
        IMAGE_DEF, which is usually the reset handler of your vector table.
@@ -59,7 +75,7 @@ SECTIONS
         */config/*(*.text*)
         */pg/*(*.text*)
         . = ALIGN(4);
-    } > FLASH
+    } > FLASH :text1
 
     /* Note the boot2 section is optional, and should be discarded if there is
        no reference to it *inside* the binary, as it is not called by the
@@ -77,7 +93,7 @@ SECTIONS
         __boot2_start__ = .;
         *(.boot2)
         __boot2_end__ = .;
-    } > FLASH
+    } > FLASH :text1
 
     ASSERT(__boot2_end__ - __boot2_start__ <= 256,
         "ERROR: Pico second stage bootloader must be no more than 256 bytes in size")
@@ -90,18 +106,18 @@ SECTIONS
         */config/*(*.rodata*)
         */pg/*(*.rodata*)
         . = ALIGN(4);
-    } > FLASH
+    } > FLASH :text1
 
     .ARM.extab :
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > FLASH
+    } > FLASH :text1
 
     __exidx_start = .;
     .ARM.exidx :
     {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > FLASH
+    } > FLASH :text1
     __exidx_end = .;
 
     /* Machine inspectable binary information */
@@ -111,7 +127,7 @@ SECTIONS
     {
         KEEP(*(.binary_info.keep.*))
         *(.binary_info.*)
-    } > FLASH
+    } > FLASH :text1
     __binary_info_end = .;
     . = ALIGN(4);
 
@@ -146,7 +162,7 @@ SECTIONS
         *(.eh_frame*)
         . = ALIGN(4);
         __ram_text_end__ = .;
-    } > RAM AT> FLASH
+    } > RAM AT> FLASH :data
     __ram_text_source__ = LOADADDR(.text);
     . = ALIGN(4);
 
@@ -196,14 +212,14 @@ SECTIONS
 
         *(.jcr)
         . = ALIGN(4);
-    } > RAM AT> FLASH
+    } > RAM AT> FLASH :data
 
     .tdata : {
         . = ALIGN(4);
         *(.tdata .tdata.* .gnu.linkonce.td.*)
         /* All data end */
         __tdata_end = .;
-    } > RAM AT> FLASH
+    } > RAM AT> FLASH :data
     PROVIDE(__data_end__ = .);
 
     /* __etext is (for backwards compatibility) the name of the .data init source pointer (...) */
@@ -219,7 +235,7 @@ SECTIONS
         __tls_end = .;
     } > RAM
 
-    .bss : {
+    .bss (NOLOAD) : {
         . = ALIGN(4);
         __tbss_end = .;
 
@@ -247,7 +263,7 @@ SECTIONS
         *(.scratch_x.*)
         . = ALIGN(4);
         __scratch_x_end__ = .;
-    } > SCRATCH_X AT > FLASH
+    } > SCRATCH_X AT > FLASH :data
     __scratch_x_source__ = LOADADDR(.scratch_x);
 
     .scratch_y : {
@@ -255,7 +271,7 @@ SECTIONS
         *(.scratch_y.*)
         . = ALIGN(4);
         __scratch_y_end__ = .;
-    } > SCRATCH_Y AT > FLASH /*=0xa5a5a5a5*/ /* BF: TODO want to fill with STACK_FILL_CHAR to allow stack check - this doesn't seem to do it */
+    } > SCRATCH_Y AT > FLASH :data /*=0xa5a5a5a5*/ /* BF: TODO want to fill with STACK_FILL_CHAR to allow stack check - this doesn't seem to do it */
     __scratch_y_source__ = LOADADDR(.scratch_y);
 
     /* .stack*_dummy section doesn't contains any symbols. It is only
@@ -282,7 +298,7 @@ SECTIONS
     .flash_end : {
         KEEP(*(.embedded_end_block*))
         PROVIDE(__flash_binary_end = .);
-    } > FLASH =0xaa
+    } > FLASH :text2 =0xaa
 
 
     /* Base address where the config is stored. */
@@ -299,14 +315,14 @@ SECTIONS
       KEEP (*(.pg_registry))
       KEEP (*(SORT(.pg_registry.*)))
       PROVIDE_HIDDEN (__pg_registry_end = .);
-    } >FLASH
+    } >FLASH :text2
 
     .pg_resetdata :
     {
       PROVIDE_HIDDEN (__pg_resetdata_start = .);
       KEEP (*(.pg_resetdata))
       PROVIDE_HIDDEN (__pg_resetdata_end = .);
-    } >FLASH
+    } >FLASH :text2
 
 
     /* stack limit is poorly named, but historically is maximum heap ptr */
