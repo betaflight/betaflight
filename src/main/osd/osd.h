@@ -214,6 +214,8 @@ typedef enum {
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
 
+    OSD_GPS_MGRS,               // Military Grid Reference System position string
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

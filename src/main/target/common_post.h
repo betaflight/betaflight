@@ -786,6 +786,7 @@ extern struct linker_symbol __fontdata_end;
 #ifndef USE_GPS
 #undef USE_GPS_PLUS_CODES
 #undef USE_GPS_LAP_TIMER
+#undef USE_GPS_MGRS
 #endif
 
 #ifdef USE_GPS_LAP_TIMER

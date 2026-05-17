@@ -187,6 +187,11 @@
 #include "olc.h"
 #endif
 
+#ifdef USE_GPS_MGRS
+// located in lib/main/mgrs
+#include "mgrs.h"
+#endif
+
 #define AH_SYMBOL_COUNT 9
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
@@ -1242,6 +1247,31 @@ static void osdElementGpsCoordinate(osdElementParms_t *element)
     }
 }
 
+#ifdef USE_GPS_MGRS
+// MGRS reference, eg "33UVT 12345 67890". Easier to radio back than decimal
+// degrees when recovering a downed aircraft because each group is short and
+// chunks the position into a 100 km cell + 1 km square + 1 m offset on a
+// printed military grid map. Only displayed once a fix has ever been
+// acquired; before that we show a placeholder of the same width so the
+// surrounding OSD layout doesn't reflow on first lock.
+static void osdElementGpsMgrs(osdElementParms_t *element)
+{
+    if (STATE(GPS_FIX_EVER)) {
+        // gpsSol.llh.lat / lon are already int32 scaled by 1e7, exactly the
+        // form mgrsEncode expects, so no conversion needed.
+        mgrsEncode(gpsSol.llh.lat, gpsSol.llh.lon, MGRS_PRECISION_MAX, element->buff);
+    } else {
+        memcpy(element->buff, "----- ----- -----", 17);
+        element->buff[17] = '\0';
+    }
+    if (STATE(GPS_FIX_EVER) && !STATE(GPS_FIX)) {
+        SET_BLINK(element->item); // had a fix, lost it — blink to flag stale data
+    } else {
+        CLR_BLINK(element->item);
+    }
+}
+#endif // USE_GPS_MGRS
+
 static void osdElementGpsSats(osdElementParms_t *element)
 {
     if ((STATE(GPS_FIX) == 0) || (gpsSol.numSat < GPS_MIN_SAT_COUNT) ) {
@@ -2038,6 +2068,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
+#ifdef USE_GPS_MGRS
+    [OSD_GPS_MGRS]                = osdElementGpsMgrs,
+#endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
     [OSD_DEBUG2]                  = osdElementDebug2,
@@ -2196,6 +2229,9 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+#ifdef USE_GPS_MGRS
+        osdAddActiveElement(OSD_GPS_MGRS);
+#endif
     }
 #endif // GPS
 
