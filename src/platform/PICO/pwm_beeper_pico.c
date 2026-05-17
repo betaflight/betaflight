@@ -46,7 +46,8 @@ void pwmWriteBeeper(bool on)
 
 void pwmToggleBeeper(void)
 {
-    pwmWriteBeeper(!beeperEnabled);
+    beeperEnabled = !beeperEnabled;
+    pwmWriteBeeper(beeperEnabled);
 }
 
 void beeperPwmInit(const ioTag_t tag, uint16_t frequency)

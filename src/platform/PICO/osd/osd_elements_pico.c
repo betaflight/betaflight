@@ -41,6 +41,7 @@
 #include "osd_pico_internal.h"
 #include "font_betaflight.h"
 #include "osd_element_ah.h"
+#include "osd_element_compassbar.h"
 
 // Current format for font data stored in memory is based on 12x18 glyphs.
 #define FONTDATA_CHAR_WIDTH  12
@@ -65,6 +66,7 @@ void setBackgroundItemsPending(void)
 }
 
 static void renderCharAtAligned(uint8_t ch, int px, int py);
+static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows);
 
 #ifdef OSD_FB_PICO_PIXEL_MODE
 
@@ -124,8 +126,13 @@ static const radioControls_t radioModes[4] = {
 };
 
 // Stick overlay size
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+static const int stickWidth = 60;
+static const int stickHeight = 60;
+#else
 static const int stickWidth = 86;
 static const int stickHeight = 86;
+#endif
 
 static void cacheStickBackgroundInfo(info_stick_t *infoPtr, uint8_t x, uint8_t y)
 {
@@ -139,8 +146,8 @@ static void cacheStickInfo(info_stick_t *infoPtr, rc_alias_e vert, rc_alias_e ho
     UNUSED(vert);
     UNUSED(horiz);
     float tr = micros()*(6.283f/1000000.0f / 3);
-    infoPtr->xStick = (int16_t)(infoPtr->xLeft + stickWidth/2 * (1 + cosf(tr)));
-    infoPtr->yStick = (int16_t)(infoPtr->yTop + stickHeight/2 * (1 + sinf(tr)));
+    infoPtr->xStick = (int16_t)(infoPtr->xLeft + (stickWidth/2 - 3) * (1 + cosf(tr)) + 3);
+    infoPtr->yStick = (int16_t)(infoPtr->yTop + (stickHeight/2 - 3) * (1 + sinf(tr)) + 3);
 #else
 
     const float cursorX = constrainf(rcData[horiz], PWM_RANGE_MIN, PWM_RANGE_MAX);
@@ -270,31 +277,85 @@ static bool renderSidebarsUntil(uint32_t limit_micros)
     return false;
 }
 
+static int renderSticksBackgroundNext(info_stick_t *infoStick, int16_t xMid, int16_t yMid, int subState)
+{
+    // Draw horizontal, vertical bars, and small lines at the end of those bars.
+    switch (subState) {
+    case 0:
+        iterLineInit(infoStick->xLeft, yMid, infoStick->xLeft + stickWidth, yMid);
+        subState++;
+        break;
+
+    case 1:
+        if (iterLineNext()) {
+            iterLineInit(xMid, infoStick->yTop, xMid, infoStick->yTop + stickHeight);
+            subState++;
+        }
+
+        break;
+
+    case 2:
+        if (iterLineNext()) {
+            iterLineInit(infoStick->xLeft, yMid - 2, infoStick->xLeft, yMid + 2);
+            subState++;
+        }
+
+        break;
+
+    case 3:
+        if (iterLineNext()) {
+            iterLineInit(infoStick->xLeft + stickWidth, yMid - 2, infoStick->xLeft + stickWidth, yMid + 2);
+            subState++;
+        }
+
+        break;
+
+    case 4:
+        if (iterLineNext()) {
+            iterLineInit(xMid - 2, infoStick->yTop, xMid + 2, infoStick->yTop);
+            subState++;
+        }
+
+        break;
+
+    case 5:
+        if (iterLineNext()) {
+            iterLineInit(xMid - 2, infoStick->yTop + stickHeight, xMid + 2, infoStick->yTop + stickHeight);
+            subState++;
+        }
+
+        break;
+
+    case 6:
+        if (iterLineNext()) {
+            subState = -1;
+        }
+
+        break;
+    }
+
+    return subState;
+}
+
 bool renderSticksBackgroundUntil(uint32_t limit_micros)
 {
-    static int subState;
+    static int subState = 0;
 
+    int16_t xMid = infoStickLeft.xLeft + stickWidth / 2;
+    int16_t yMid = infoStickLeft.yTop + stickHeight / 2;
     while (bgStickLeftState == bgItemPendingRender && cmpTimeUs(limit_micros, micros()) > 0) {
-        int xMid = infoStickLeft.xLeft + stickWidth / 2;
-        int yMid = infoStickLeft.yTop + stickHeight / 2;
-        if (subState == 0) {
-            dhLine(infoStickLeft.xLeft, yMid, stickWidth);
-            subState++;
-        } else {
-            dvLine(xMid, infoStickLeft.yTop, stickHeight);
+        subState = renderSticksBackgroundNext(&infoStickLeft, xMid, yMid, subState);
+        if (subState < 0) {
             subState = 0;
             bgStickLeftState = bgItemComplete; // This won't get retriggered unless config/profile changes.
         }
     }
 
+    xMid = infoStickRight.xLeft + stickWidth / 2;
+    yMid = infoStickRight.yTop + stickHeight / 2;
     while (bgStickRightState == bgItemPendingRender && cmpTimeUs(limit_micros, micros()) > 0) {
-        int xMid = infoStickRight.xLeft + stickWidth / 2;
-        int yMid = infoStickRight.yTop + stickHeight / 2;
-        if (subState == 0) {
-            dhLine(infoStickRight.xLeft, yMid, stickWidth);
-            subState++;
-        } else {
-            dvLine(xMid, infoStickRight.yTop, stickHeight);
+        subState = renderSticksBackgroundNext(&infoStickRight, xMid, yMid, subState);
+        if (subState < 0) {
             subState = 0;
             bgStickRightState = bgItemComplete;
         }
@@ -306,30 +367,18 @@ bool renderSticksBackgroundUntil(uint32_t limit_micros)
 static void plotBlob(int x, int y)
 {
     plot(x-2, y-2, 2);
-    plot(x-1, y-2, 2);
-    plot(x, y-2, 2);
-    plot(x+1, y-2, 2);
     plot(x+2, y-2, 2);
-    plot(x-2, y-1, 2);
-    plot(x-2, y, 2);
-    plot(x-2, y+1, 2);
     plot(x-2, y+2, 2);
-    plot(x-1, y+2, 2);
-    plot(x, y+2, 2);
-    plot(x+1, y+2, 2);
     plot(x+2, y+2, 2);
-    plot(x+2, y+1, 2);
-    plot(x+2, y, 2);
-    plot(x+2, y-1, 2);
-
-    plot(x-1, y-1, 1);
-    plot(x-1, y, 1);
-    plot(x-1, y+1, 1);
-    plot(x, y+1, 1);
-    plot(x+1, y+1, 1);
-    plot(x+1, y, 1);
-    plot(x+1, y-1, 1);
-    plot(x, y-1, 1);
+    plot(x-1, y-1, 2);
+    plot(x+1, y-1, 2);
+    plot(x,   y,   2);
+    plot(x-1, y+1, 2);
+    plot(x+1, y+1, 2);
+    plot(x,   y-1, 2);
+    plot(x-1, y,   2);
+    plot(x+1, y,   2);
+    plot(x,   y+1, 2);
 }
 
 bool renderStickLeftUntil(uint32_t limit_micros)
@@ -358,6 +407,10 @@ static void renderCharAt(uint8_t ch, int px, int py)
         return;
     }
 
+    if (px < 0 || py < 0 || px + PICO_OSD_GLYPH_WIDTH > fb_nx || py + PICO_OSD_GLYPH_HEIGHT > fb_ny) {
+        return;
+    }
+
     int xBitShift = 2 * (px % 4); // sub-byte (bit) offset
     if (xBitShift == 0) {
         // Byte-aligned.
@@ -368,15 +421,26 @@ static void renderCharAt(uint8_t ch, int px, int py)
         uint8_t mask1 = 0xff << xBitShift;
         uint8_t mask2 = ~mask1;
 
-        // TODO Note currently only supports OSD_BYTES_PER_CHAR == 2,
-        // can add support here for OSD_BYTES_PER_CHAR == 3
         for (int j=0; j<PICO_OSD_GLYPH_HEIGHT; ++j) {
+#if OSD_BYTES_PER_CHAR == 2
             uint32_t fontBits = (*((uint16_t *)fontp)) << xBitShift;
-            fontp+= 3;
+            fontp += 3;
             bufPtr[0] = (bufPtr[0] & mask2) | fontBits;
             bufPtr[1] = fontBits >> 8;
             bufPtr[2] = (bufPtr[2] & mask1) | fontBits >> 16;
             bufPtr += PICO_OSD_BUF_WIDTH;
+#elif OSD_BYTES_PER_CHAR == 3
+            uint32_t fontBits = fontp[2];
+            fontBits = fontBits << 8 | fontp[1];
+            fontBits = fontBits << 8 | fontp[0];
+            fontBits <<= xBitShift;
+            fontp += 3;
+            bufPtr[0] = (bufPtr[0] & mask2) | fontBits;
+            bufPtr[1] = fontBits >> 8;
+            bufPtr[2] = fontBits >> 16;
+            bufPtr[3] = (bufPtr[3] & mask1) | fontBits >> 24;
+            bufPtr += PICO_OSD_BUF_WIDTH;
+#endif
         }
     }
 }
@@ -402,8 +466,28 @@ static bool drawBackgroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemP
     }
 }
 
+#ifdef DEBUG_OSD_TEST_GPS
+#include "fc/runtime_config.h"
+#include "io/gps.h"
+#include "sensors/sensors.h"
+static void enforceSensorGPS(void)
+{
+    sensorsSet(SENSOR_GPS);
+#ifdef USE_GPS
+    float tr = micros()*(6.283f/1000000.0f / 64);
+    gpsSol.llh.lon = cosf(tr) * 1.5f * GPS_DEGREES_DIVIDER;
+    gpsSol.llh.lat = sinf(tr) * 1.5f * GPS_DEGREES_DIVIDER;
+    gpsSol.llh.altCm = (0.8f + sinf(tr)) * 8000;
+#endif
+}
+#endif
+
 static bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPosY)
 {
+#ifdef DEBUG_OSD_TEST_GPS
+    ENABLE_STATE(GPS_FIX_EVER | GPS_FIX);
+    enforceSensorGPS();
+#endif
     switch (item) {
     // Cache information for rendering an osd item later on.
     case OSD_ARTIFICIAL_HORIZON:
@@ -425,6 +509,10 @@ static bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemP
         cacheStickRightInfo();
         return true;
 
+    case OSD_COMPASS_BAR:
+        cacheCompassBarInfo(elemPosX, elemPosY);
+        return true;
+
     default:
         // Not handled here
         return false;
@@ -432,6 +520,74 @@ static bool drawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemP
 }
 #endif // #ifdef OSD_FB_PICO_PIXEL_MODE
 
+bool logoVisible;
+static bool renderLogoComplete = true;
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+    uint16_t fontStart;
+    uint8_t cols;
+    uint8_t rows;
+} info_logo_t;
+
+static info_logo_t infoLogo;
+
+void cacheLogoInfo(uint16_t midX, uint16_t midY, uint16_t fontOffset, uint8_t logoCols, uint8_t logoRows)
+{
+    logoVisible = true;
+    infoLogo.x = midX * PICO_OSD_CHAR_WIDTH - logoCols * 6; // subtract half column width times standard char width (12)
+    infoLogo.y = midY * PICO_OSD_CHAR_HEIGHT - (logoRows + 1) * 18; // subtract 1+rows times standard char height (18)
+    infoLogo.fontStart = fontOffset;
+    infoLogo.cols = logoCols;
+    infoLogo.rows = logoRows;
+    renderLogoComplete = false;
+    bprintf("* cacheLogoInfo %d %d %d %d %d", infoLogo.fontStart, infoLogo.x, infoLogo.y, infoLogo.cols, infoLogo.rows);
+}
+
+static bool renderLogoUntil(uint32_t limit_micros)
+{
+    static int16_t fontIndex = -1;
+    static int16_t currentX;
+    static int16_t currentY;
+
+    if (fontIndex < 0) {
+        fontIndex = infoLogo.fontStart;
+        currentX = 0;
+        currentY = 0;
+    }
+
+    while (currentY < infoLogo.rows) {
+        // Logo is from standard 12x18 font data (3 bytes per char width).
+        int cyRow = infoLogo.y + currentY * 18;
+
+        while (cmpTimeUs(limit_micros, micros()) > 0 && currentX < infoLogo.cols) {
+            renderCharAtAlignedEx(fontIndex, infoLogo.x + currentX * 12, cyRow, 3, 18);
+            fontIndex++;
+            currentX++;
+        }
+
+        if (currentX < infoLogo.cols) {
+            // timed out
+            break;
+        }
+
+        // completed a char line
+        currentX = 0;
+        currentY++;
+    }
+
+    if (currentY == infoLogo.rows) {
+        // Reached the end, reset.
+        fontIndex = -1;
+        renderLogoComplete = true;
+    }
+
+    return renderLogoComplete;
+}
+
+//#undef OSD_FB_PICO_POSTPROCESS
+//#define OSD_FB_PICO_POSTPROCESS 6
 #if OSD_FB_PICO_POSTPROCESS
 static bool postProcessComplete = true;
 
@@ -581,21 +737,57 @@ bool osdPioDrawForegroundItem(osd_items_e item, uint8_t elemPosX, uint8_t elemPo
 
 static bool renderCharsComplete = true;
 
+#ifdef DEBUG_OSD_TEST_SMALLFONT
+static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows)
+{
+    // NOTE only supports bpc == 2 or 3 (width in bytes per char)
+    // NOTE renderCharAtAligned assumes that the character at px, py willl fit into the frame buffer.
+    const uint8_t *fontp = &fontData[ch * FONTDATA_BYTES_PER_CHAR];
+    uint8_t *bufPtr = osdBufferA + py * PICO_OSD_BUF_WIDTH + (px / 4);
+    if (bpc == 2) {
+        for (int j=0; j<rows; ++j) {
+            *((uint16_t *)bufPtr) = *((uint16_t *)fontp);
+            fontp += 3;
+            bufPtr += PICO_OSD_BUF_WIDTH;
+        }
+    } else {
+        for (int j=0; j<rows; ++j) {
+            *((uint16_t *)bufPtr) = *((uint16_t *)fontp);
+            fontp += 2;
+            bufPtr[2] = *fontp++;
+            bufPtr += PICO_OSD_BUF_WIDTH;
+        }
+    }
+}
+
 static void renderCharAtAligned(uint8_t ch, int px, int py)
 {
+    renderCharAtAlignedEx(ch, px, py, 2, PICO_OSD_GLYPH_HEIGHT);
+}
+
+#else // DEBUG_OSD_TEST_SMALLFONT
+
+static void renderCharAtAligned(uint8_t ch, int px, int py)
+{
+    // NOTE renderCharAtAligned assumes that the character at px, py willl fit into the frame buffer.
     const uint8_t *fontp = &fontData[ch * FONTDATA_BYTES_PER_CHAR];
     uint8_t *bufPtr = osdBufferA + py * PICO_OSD_BUF_WIDTH + (px / 4);
     for (int j=0; j<PICO_OSD_GLYPH_HEIGHT; ++j) {
-        bufPtr[0] = *fontp++;
-        bufPtr[1] = *fontp++;
-#if OSD_BYTES_PER_CHAR > 2
+        *((uint16_t *)bufPtr) = *((uint16_t *)fontp); fontp += 2;
         bufPtr[2] = *fontp++;
-#else
-        fontp++;
-#endif
         bufPtr += PICO_OSD_BUF_WIDTH;
     }
 }
+
+static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows)
+{
+    // not SMALLFONT, always bpc = 3, rows = 18 (PICO_OSD_GLYPH_HEIGHT)
+    UNUSED(bpc);
+    UNUSED(rows);
+    renderCharAtAligned(ch, px, py);
+}
+
+#endif // DEBUG_OSD_TEST_SMALLFONT
 
 bool renderCharsUntil(uint32_t limit_micros)
 {
@@ -669,6 +861,10 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     if (firstOfVsync) {
         firstOfVsync = false;
         renderCharsComplete = false;
+        if (logoVisible) {
+            renderLogoComplete = false;
+        }
+
 #if OSD_FB_PICO_POSTPROCESS
         postProcessComplete = false;
 #endif
@@ -704,11 +900,14 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
         (renderAHComplete || renderAHUntil(limit_micros)) &&
         (renderCharsComplete || renderCharsUntil(limit_micros)) &&
         (renderStickLeftComplete || renderStickLeftUntil(limit_micros)) &&
+        (renderCompassBarComplete || renderCompassBarUntil(limit_micros)) &&
         (renderStickRightComplete || renderStickRightUntil(limit_micros));
 #else
     // Not in pixel mode, render chars only.
     bool complete = renderCharsComplete || renderCharsUntil(limit_micros);
 #endif
+
+    complete = complete && (!logoVisible || renderLogoComplete || renderLogoUntil(limit_micros));
 
 #if OSD_FB_PICO_POSTPROCESS
     // Testing a post-process operation on the foreground buffer

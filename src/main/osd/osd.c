@@ -469,7 +469,12 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
 static void osdDrawLogo(int x, int y, displayPortSeverity_e fontSel)
 {
     // display logo and help
-    int fontOffset = 160;
+    int fontOffset = SYM_LOGO_START;
+
+    if (displayWriteLogo(osdDisplayPort, fontOffset, SYM_END_OF_FONT, OSD_LOGO_COLS, OSD_LOGO_ROWS)) {
+        return; // Display port driver has built-in support for drawing logo from font
+    }
+
     for (int row = 0; row < OSD_LOGO_ROWS; row++) {
         for (int column = 0; column < OSD_LOGO_COLS; column++) {
             if (fontOffset <= SYM_END_OF_FONT)

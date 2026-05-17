@@ -145,6 +145,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .drawOsdItem = NULL,
     .redrawBackground = NULL,
     .fontUpdateCompletion = NULL,
+    .writeLogo = NULL,
 };
 
 displayPort_t *displayPortTestInit(void)

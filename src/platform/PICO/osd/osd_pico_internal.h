@@ -44,6 +44,8 @@
 #define PICO_OSD_CHAR_HEIGHT 18
 #endif
 
+STATIC_ASSERT(OSD_BYTES_PER_CHAR == 2 || OSD_BYTES_PER_CHAR == 3, pico_bytes_per_char_unsupported);
+
 // chars OSD_SD_ROWS x OSD_SD_COLS (30 x 16)
 // 360 / 8 = 45 x 288
 // 2 bits per pixel
@@ -83,7 +85,6 @@ STATIC_ASSERT(PICO_OSD_BUF_HEIGHT_PAL == 288, pico_pal_lines_failed);
 #define OSD_DRAWSCREEN_TIME_LIMIT_US 20
 #endif
 
-
 extern bool transferredSinceVSync;
 
 extern const int fb_nx;
@@ -115,6 +116,9 @@ void selectBackgroundBuffer(void);
 void selectForegroundBuffer(void);
 void setBackgroundItemsPending(void);
 
+extern bool logoVisible;
+void cacheLogoInfo(uint16_t midX, uint16_t midY, uint16_t fontOffset, uint8_t logoCols, uint8_t logoRows);
+
 #ifdef OSD_FB_PICO_PIXEL_MODE
 void plot(int x, int y, int c);
 void hLine(int x, int y, int count, int col);
@@ -123,10 +127,15 @@ void dvLine(int x, int y, int count);
 
 void iterLineInit(int x1, int y1, int x2, int y2);
 bool iterLineNext(void);
+bool iterDashedLineNext(void);
 bool iterDLineNext(void);
-bool iterQLineNext(void);
 bool iterDashedDLineNext(void);
-bool iterDashedQLineNext(void);
+
+void iterRectInit(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+bool iterBlackFillRectNext(void);
+
+void renderStringInit(const char *str, uint16_t initX, uint16_t y, int charAdvance);
+bool renderStringNext(void);
 #endif // OSD_FB_PICO_PIXEL_MODE
 
 // trace / debugging
