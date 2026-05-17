@@ -1223,6 +1223,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             if (cmpTimeUs(currentTimeUs, chirpSettleUntilUs) >= 0) {
                 chirpSettleUntilUs = 0;
                 chirpReset(&pidRuntime.chirp);
+                phaseCompReset(&pidRuntime.chirpFilter);
             }
         } else {
             // update chirp signal
