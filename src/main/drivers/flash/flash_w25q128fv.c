@@ -308,14 +308,14 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     // the 2 kHz MCU cap takes precedence anyway.
     fdevice->geometry.maxSustainedLogRateHz = 4000;
 
-    // Erase timing-skip floor for ring-mode (see eraseTick in flashfs_log.c).
-    // W25Q128FV: 4 KB sub-sector ~25 ms typical → safe min 10 ms; 64 KB block
-    // ~100 ms typical → safe min 30 ms. This QSPI vtable currently doesn't
-    // expose a sub-sector path (eraseSubsector NULL → wrapper falls back to
-    // block erase), so subsectorEraseMinMs goes unused in practice but is
-    // populated for completeness.
-    fdevice->geometry.subsectorEraseMinMs = 10;
-    fdevice->geometry.sectorEraseMinMs    = 30;
+    // Erase timing-skip window for ring-mode (see eraseTick in flashfs_log.c).
+    // W25Q128FV: 4 KB sub-sector ~25 ms typical; 64 KB block ~100 ms typical.
+    // This QSPI vtable currently doesn't expose a sub-sector path
+    // (eraseSubsector NULL → wrapper falls back to block erase), so
+    // subsectorEraseTypicalMs goes unused in practice but is populated for
+    // completeness.
+    fdevice->geometry.subsectorEraseTypicalMs = 25;
+    fdevice->geometry.sectorEraseTypicalMs    = 100;
 
     fdevice->vTable = &w25q128fv_vTable;
 

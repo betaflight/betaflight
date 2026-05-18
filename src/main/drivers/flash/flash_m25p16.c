@@ -293,23 +293,25 @@ bool m25p16_identify(flashDevice_t *fdevice, uint32_t jedecID)
     // older smaller parts don't.
     geometry->maxSustainedLogRateHz = (geometry->totalSize >= 16U * 1024U * 1024U) ? 4000 : 2000;
 
-    // Conservative lower bounds on chip-BUSY time for the timing-skip in ring-
-    // mode's eraseTick (see flashfs_log.c). Set well below the chip's datasheet
-    // typical so we never miss a real completion — fast chips just rejoin the
-    // polling rhythm right after this window. The same size-as-proxy split used
-    // above for maxSustainedLogRateHz applies here.
+    // Typical chip-BUSY times for the timing-skip in ring-mode's eraseTick
+    // (see flashfs_log.c). Set close to the chip's datasheet typical so we
+    // skip SPI polls during the busy window; chips that happen to complete
+    // faster just sit idle until the window expires — fine, because the
+    // buffer + pool absorb hundreds of ms of detection latency before any
+    // drop pressure. The same size-as-proxy split used above for
+    // maxSustainedLogRateHz applies here.
     //   ≥ 16 MB modern NOR (W25Q128 onward, MX25L12845G, etc.):
-    //     - 4 KB sub-sector typical 25-60 ms → safe min 10 ms
-    //     - 64 KB block typical 100-150 ms  → safe min 30 ms
+    //     - 4 KB sub-sector ~25-60 ms typical → set 25 ms (W25Q128-class typ)
+    //     - 64 KB block ~100-150 ms typical    → set 100 ms (W25Q128-class typ)
     //   <  16 MB older / smaller parts (W25Q64/32, M25P16, N25Q064, ...):
-    //     - 4 KB sub-sector typical 50-100 ms → safe min 20 ms
-    //     - 64 KB block typical 150-600 ms     → safe min 50 ms
+    //     - 4 KB sub-sector ~50-100 ms typical → set 50 ms
+    //     - 64 KB block ~150-600 ms typical    → set 150 ms (Winbond-class typ)
     if (geometry->totalSize >= 16U * 1024U * 1024U) {
-        geometry->subsectorEraseMinMs = 10;
-        geometry->sectorEraseMinMs    = 30;
+        geometry->subsectorEraseTypicalMs = 25;
+        geometry->sectorEraseTypicalMs    = 100;
     } else {
-        geometry->subsectorEraseMinMs = 20;
-        geometry->sectorEraseMinMs    = 50;
+        geometry->subsectorEraseTypicalMs = 50;
+        geometry->sectorEraseTypicalMs    = 150;
     }
 
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be

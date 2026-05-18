@@ -372,12 +372,13 @@ bool w25n_identify(flashDevice_t *fdevice, uint32_t jedecID)
     // pidloop / sample_rate combination on a NAND build.
     fdevice->geometry.maxSustainedLogRateHz = 8000;
 
-    // Erase timing-skip floor for ring-mode (see eraseTick in flashfs_log.c).
-    // W25N01GV block erase is ~2 ms typical, ~10 ms max. Set 1 ms so the
-    // timing-skip is ~half of typical — never miss a real completion. NAND
-    // has no sub-sector erase path; leave subsectorEraseMinMs = 0 so the
-    // consumer falls back to sectorEraseMinMs.
-    fdevice->geometry.sectorEraseMinMs = 1;
+    // Erase timing-skip window for ring-mode (see eraseTick in flashfs_log.c).
+    // W25N01GV block erase ~2 ms typical, ~10 ms max. NAND has no sub-sector
+    // erase path; leave subsectorEraseTypicalMs = 0 so the consumer falls back
+    // to sectorEraseTypicalMs. Critical to populate this on NAND — the
+    // NOR-derived compile-time fallback (50 ms) would waste ~25× the actual
+    // erase cycle on SPI polls otherwise.
+    fdevice->geometry.sectorEraseTypicalMs = 2;
 
     const uint32_t managementStartBlock = W25N_BB_MANAGEMENT_START_BLOCK >= 0 ? W25N_BB_MANAGEMENT_START_BLOCK : fdevice->geometry.sectors + W25N_BB_MANAGEMENT_START_BLOCK;
     flashPartitionSet(FLASH_PARTITION_TYPE_BADBLOCK_MANAGEMENT,

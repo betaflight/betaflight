@@ -61,19 +61,24 @@ typedef struct flashGeometry_s {
     // sustained rate). Set to 0 by drivers that don't support a separate sub-sector
     // command — consumers fall back to sectorSize.
     uint32_t subsectorSize;
-    // Conservative lower bound on chip-BUSY time after a sub-sector erase, in
-    // milliseconds. Used by ring-mode flashfs_log's eraseTick to skip SPI status
-    // polls during the chip's provably-busy window — set well BELOW the chip's
-    // datasheet typical (e.g. half of typical) so we never miss a real completion.
-    // 0 means the driver doesn't characterise sub-sector timing (consumer falls
-    // back to sectorEraseMinMs or a compile-time default).
-    uint16_t subsectorEraseMinMs;
-    // Conservative lower bound on chip-BUSY time after a sector/block erase, in
-    // milliseconds. Same semantics as subsectorEraseMinMs. Set this in every
-    // driver (even when sub-sector isn't supported) so the consumer always has
-    // a usable value. Particularly important on NAND (block erase ~2 ms — the
-    // NOR-derived compile-time defaults are 20-50× too large here).
-    uint16_t sectorEraseMinMs;
+    // Typical chip-BUSY time after a sub-sector erase, in milliseconds. Used by
+    // ring-mode flashfs_log's eraseTick as the timing-skip window: don't poll
+    // the status register before this elapsed. Match the chip's datasheet
+    // typical (or a touch below, if you want to be conservative). Fast chips
+    // that complete sooner just sit idle until the window expires — fine,
+    // because the RAM buffer + erase pool are sized to absorb hundreds of ms
+    // of detection latency before any drop pressure. Setting this aggressively
+    // (near typical) saves SPI polls per erase cycle. 0 means the driver
+    // doesn't characterise sub-sector timing (consumer falls back to
+    // sectorEraseTypicalMs or a compile-time default).
+    uint16_t subsectorEraseTypicalMs;
+    // Typical chip-BUSY time after a sector/block erase, in milliseconds. Same
+    // semantics as subsectorEraseTypicalMs. Set this in every driver (even when
+    // sub-sector isn't supported) so the consumer always has a usable value.
+    // Particularly important on NAND (block erase ~2 ms — the NOR-derived
+    // compile-time defaults are 50× too large here, which would waste nearly
+    // an entire NAND erase cycle's worth of CPU on SPI polls).
+    uint16_t sectorEraseTypicalMs;
 } flashGeometry_t;
 
 typedef enum {
