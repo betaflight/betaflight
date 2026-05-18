@@ -61,6 +61,19 @@ typedef struct flashGeometry_s {
     // sustained rate). Set to 0 by drivers that don't support a separate sub-sector
     // command — consumers fall back to sectorSize.
     uint32_t subsectorSize;
+    // Conservative lower bound on chip-BUSY time after a sub-sector erase, in
+    // milliseconds. Used by ring-mode flashfs_log's eraseTick to skip SPI status
+    // polls during the chip's provably-busy window — set well BELOW the chip's
+    // datasheet typical (e.g. half of typical) so we never miss a real completion.
+    // 0 means the driver doesn't characterise sub-sector timing (consumer falls
+    // back to sectorEraseMinMs or a compile-time default).
+    uint16_t subsectorEraseMinMs;
+    // Conservative lower bound on chip-BUSY time after a sector/block erase, in
+    // milliseconds. Same semantics as subsectorEraseMinMs. Set this in every
+    // driver (even when sub-sector isn't supported) so the consumer always has
+    // a usable value. Particularly important on NAND (block erase ~2 ms — the
+    // NOR-derived compile-time defaults are 20-50× too large here).
+    uint16_t sectorEraseMinMs;
 } flashGeometry_t;
 
 typedef enum {

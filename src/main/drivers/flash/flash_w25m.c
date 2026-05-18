@@ -164,10 +164,13 @@ bool w25m_identify(flashDevice_t *fdevice, uint32_t jedecID)
     fdevice->geometry.sectorSize = dieDevice[0].geometry.sectorSize;
     fdevice->geometry.pagesPerSector = dieDevice[0].geometry.pagesPerSector;
     fdevice->geometry.pageSize = dieDevice[0].geometry.pageSize;
-    // Inherit the per-die max sustained log rate. Both dice are the same chip
-    // family, so dieDevice[0]'s value reflects what's safe per-die; the W25M
-    // package just multiplexes between them, it doesn't change per-die timing.
+    // Inherit the per-die max sustained log rate and erase-timing floors. Both
+    // dice are the same chip family, so dieDevice[0]'s values reflect what's
+    // safe per-die; the W25M package just multiplexes between them, it doesn't
+    // change per-die timing.
     fdevice->geometry.maxSustainedLogRateHz = dieDevice[0].geometry.maxSustainedLogRateHz;
+    fdevice->geometry.subsectorEraseMinMs   = dieDevice[0].geometry.subsectorEraseMinMs;
+    fdevice->geometry.sectorEraseMinMs      = dieDevice[0].geometry.sectorEraseMinMs;
     dieSize = dieDevice[0].geometry.totalSize;
     fdevice->geometry.totalSize = dieSize * dieCount;
     fdevice->vTable = &w25m_vTable;

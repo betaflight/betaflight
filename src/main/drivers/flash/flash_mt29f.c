@@ -362,6 +362,10 @@ bool mt29f_identify(flashDevice_t *fdevice, uint32_t jedecID)
     // ceiling).
     fdevice->geometry.maxSustainedLogRateHz = 8000;
 
+    // Erase timing-skip floor. MT29F block erase ~1.5-2 ms typical → 1 ms is
+    // a safe lower bound. No sub-sector path on NAND.
+    fdevice->geometry.sectorEraseMinMs = 1;
+
     fdevice->couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
     fdevice->vTable = &mt29f_vTable;
 

@@ -90,6 +90,14 @@ MMFLASH_CODE_NOINLINE bool mx66uw1g45g_identify(flashDevice_t *fdevice, uint32_t
     // flashfs, the writer will observe the same MCU-derived ceiling.
     fdevice->geometry.maxSustainedLogRateHz = 4000;
 
+    // Erase timing-skip floor. MX66UW typical sector erase ~100-150 ms; safe
+    // min 30 ms. Sub-sector ~30 ms typical → safe min 10 ms. These are unused
+    // in practice on this driver (eraseSector returns failureMode — it's a
+    // memory-mapped boot flash, not a runtime write target) but populated for
+    // consistency with the other fast-NOR drivers.
+    fdevice->geometry.subsectorEraseMinMs = 10;
+    fdevice->geometry.sectorEraseMinMs    = 30;
+
     fdevice->vTable = &mx66uw1g45g_vTable;
 
     return true;

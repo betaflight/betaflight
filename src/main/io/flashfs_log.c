@@ -348,6 +348,13 @@ static struct {
     // (log start, log close, recovery) still use the coarse sector erase since
     // they block anyway and fewer larger erases is faster total wall time.
     uint32_t subsectorSize;
+    // Per-chip lower bound on chip-BUSY time after the erase strategy we use
+    // (sub-sector on F4/G4, block on F7/H7), in microseconds. Populated from
+    // flashGeometry_t.{subsector,sector}EraseMinMs at init. eraseTick's FAST
+    // PATH A skips SPI status polls until this elapsed. Falls back to
+    // FLASHFS_RING_ERASE_MIN_DURATION_US_FALLBACK when the driver doesn't
+    // report a chip-specific value.
+    uint32_t eraseMinDurationUs;
     uint32_t dataSectionEnd;       // first byte past the data ring (== buffer area start)
     uint32_t bufferAreaStart;
     uint32_t bufferAreaSize;       // HDR_BUFFER_SECTORS * sectorSize
@@ -389,14 +396,18 @@ static uint32_t pendingEraseAddr = PENDING_ERASE_NONE;
 // cumulative per-byte poll cost was disturbing the PID scheduler. See eraseTick's
 // banner for the FAST PATH A / B structure.
 static timeUs_t eraseIssuedAtUs = 0;
-// Lower bound on chip-BUSY time for the erase granularity in use. Set well below the
-// FASTEST typical erase across the chip family for this strategy, so we never miss a
-// completion — fast chips just rejoin the polling rhythm right after this window. The
-// next poll after the window catches completion within ~one throttle period.
+
+// Compile-time fallback for the timing-skip window when the chip driver doesn't
+// report its own characterised value via flashGeometry_t.subsectorEraseMinMs /
+// sectorEraseMinMs. Sized conservatively for typical NOR (50 ms block / 20 ms
+// sub-sector — well below datasheet typicals for those paths). Drivers that DO
+// populate the geometry fields override this at init time (see computeGeometry);
+// in particular NAND chips report ~1 ms so the timing-skip doesn't waste 20-50 ms
+// of chip-idle time waiting for a ~2 ms NAND erase that's already done.
 #ifdef FLASHFS_RING_USE_BLOCK_ERASE
-#define FLASHFS_RING_ERASE_MIN_DURATION_US 50000u  // 50 ms — well under 100 ms block typical
+#define FLASHFS_RING_ERASE_MIN_DURATION_US_FALLBACK 50000u  // 50 ms
 #else
-#define FLASHFS_RING_ERASE_MIN_DURATION_US 20000u  // 20 ms — well under 25-60 ms sub-sector typical
+#define FLASHFS_RING_ERASE_MIN_DURATION_US_FALLBACK 20000u  // 20 ms
 #endif
 
 // Counter (diagnostic only) of bytes dropped because the writer outran the erase pool
@@ -500,6 +511,25 @@ static void computeGeometry(void)
         geom.subsectorSize = fg->subsectorSize;
     } else {
         geom.subsectorSize = 0;
+    }
+    // Pick the driver-reported timing-skip floor for the erase strategy we're
+    // going to use (per FLASHFS_RING_USE_BLOCK_ERASE). Critical on NAND, where
+    // a NOR-sized fallback (~50 ms) wastes nearly all of every erase cycle —
+    // NAND block erase is ~2 ms typical, so a 1 ms driver-reported floor lets
+    // us detect completion within a single throttle period instead of after
+    // 50 ms. Falls back to the compile-time default for drivers that don't
+    // report a value.
+    {
+#ifdef FLASHFS_RING_USE_BLOCK_ERASE
+        const uint16_t minMs = fg->sectorEraseMinMs;
+#else
+        const uint16_t minMs = fg->subsectorEraseMinMs > 0
+                             ? fg->subsectorEraseMinMs
+                             : fg->sectorEraseMinMs;
+#endif
+        geom.eraseMinDurationUs = (minMs > 0)
+            ? (uint32_t)minMs * 1000u
+            : FLASHFS_RING_ERASE_MIN_DURATION_US_FALLBACK;
     }
     geom.bufferAreaSize = HDR_BUFFER_SECTORS * geom.sectorSize;
     if (geom.bufferAreaSize >= geom.partitionSize) return;
@@ -677,13 +707,17 @@ static void persistLappedMarkerIfReady(void);
 // answer is knowable without asking the chip:
 //
 //   FAST PATH A (pending erase, chip provably busy):
-//     If we issued the erase less than FLASHFS_RING_ERASE_MIN_DURATION_US ago,
-//     the chip CANNOT have completed yet (timestamp is monotonic, min-duration
-//     is set conservatively below the fastest typical for the strategy). Skip
-//     the poll. After the window, fall through to the actual flashIsReady()
+//     If we issued the erase less than `geom.eraseMinDurationUs` ago, the chip
+//     CANNOT have completed yet (timestamp is monotonic, min-duration is set
+//     by the chip driver via flashGeometry_t.{subsector,sector}EraseMinMs to
+//     a conservative value below the chip's datasheet typical). Skip the
+//     poll. After the window, fall through to the actual flashIsReady()
 //     check. This removes most of the SPI polls during the chip-busy window,
 //     which on slower MCUs (G4 / F411) was the dominant per-byte cost (~14 µs
-//     per call on G4, ~25 µs on F411).
+//     per call on G4, ~25 µs on F411). NAND drivers report ~1 ms here (vs
+//     NOR's 20-50 ms) since NAND block erase is ~2 ms typical — without the
+//     driver-supplied value, the NOR-sized fallback would waste nearly the
+//     whole NAND erase cycle.
 //
 //   FAST PATH B (no pending erase, pool well-stocked):
 //     If pool >= POOL_TARGET_SECTORS * sectorSize and no erase is pending,
@@ -713,7 +747,7 @@ static void eraseTick(void)
         // correctly (~71 minute period) provided no single erase spans the
         // wrap, which would require >100 ms erases combined with adverse
         // timing — far outside even worst-case datasheet timings.
-        if ((timeUs_t)(micros() - eraseIssuedAtUs) < FLASHFS_RING_ERASE_MIN_DURATION_US) {
+        if ((timeUs_t)(micros() - eraseIssuedAtUs) < geom.eraseMinDurationUs) {
             return;
         }
         if (!flashIsReady()) {
