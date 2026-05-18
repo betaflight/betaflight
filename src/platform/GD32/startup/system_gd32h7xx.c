@@ -87,11 +87,7 @@
 #define PLL0Q        (2U - 1U)
 #define PLL0R        (2U - 1U)
 #else
-#define PLL0PSC       4U
-#define PLL0N        (100U - 1U)
-#define PLL0P        (1U - 1U)
-#define PLL0Q        (2U - 1U)
-#define PLL0R        (2U - 1U)
+#error "Please select the HSE value when build the target, such as \"make target HSE_VALUE=8000000\""
 #endif
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_200M_PLL0_HXTAL;
 static void system_clock_200m_hxtal(void);
@@ -123,11 +119,7 @@ static void system_clock_200m_hxtal(void);
 #define PLL0Q        (2U - 1U)
 #define PLL0R        (2U - 1U)
 #else
-#define PLL0PSC       4U
-#define PLL0N        (200U - 1U)
-#define PLL0P        (1U - 1U)
-#define PLL0Q        (2U - 1U)
-#define PLL0R        (2U - 1U)
+#error "Please select the HSE value when build the target, such as \"make target HSE_VALUE=8000000\""
 #endif
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_400M_PLL0_HXTAL;
 static void system_clock_400m_hxtal(void);
@@ -159,11 +151,7 @@ static void system_clock_400m_hxtal(void);
 #define PLL0Q        (2U - 1U)
 #define PLL0R        (2U - 1U)
 #else
-#define PLL0PSC       4U
-#define PLL0N        (240U - 1U)
-#define PLL0P        (1U - 1U)
-#define PLL0Q        (2U - 1U)
-#define PLL0R        (2U - 1U)
+#error "Please select the HSE value when build the target, such as \"make target HSE_VALUE=8000000\""
 #endif
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_480M_PLL0_HXTAL;
 static void system_clock_480m_hxtal(void);
@@ -195,11 +183,7 @@ static void system_clock_480m_hxtal(void);
 #define PLL0Q        (2U - 1U)
 #define PLL0R        (2U - 1U)
 #else
-#define PLL0PSC       2U
-#define PLL0N        (150U - 1U)
-#define PLL0P        (1U - 1U)
-#define PLL0Q        (2U - 1U)
-#define PLL0R        (2U - 1U)
+#error "Please select the HSE value when build the target, such as \"make target HSE_VALUE=8000000\""
 #endif
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_600M_PLL0_HXTAL;
 static void system_clock_600m_hxtal(void);

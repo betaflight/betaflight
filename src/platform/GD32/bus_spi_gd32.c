@@ -71,16 +71,13 @@ static spi_parameter_struct defaultInit = {
 
 static uint32_t spiDivisorToBRbits(const uint32_t instance, uint16_t divisor)
 {
-#if defined(GD32H7)
-    // GD32H7 SPI3 may be on different clock domains requiring adjustment.
-    if (instance == SPI3) {
-        divisor /= 2; // Safe for divisor == 0 or 1
-    }
-#else
+#if defined(GD32F4)
     // SPI1 and SPI2 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
     if (instance == SPI1 || instance == SPI2) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
+#else
+    (void)instance;
 #endif
 
     divisor = constrain(divisor, 2, 256);
