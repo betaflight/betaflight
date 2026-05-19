@@ -263,10 +263,64 @@ void systemInit(void)
             seccfg[i]  = 0U;
             privcfg[i] = 0U;
         }
+        /* RIMC_ATTRx bit layout (per RM0486 + stm32n657xx.h):
+         *   bits 4-6 = MCID (3-bit master compartment ID — keep 0 = default)
+         *   bit 8    = MSEC  (master secure)
+         *   bit 9    = MPRIV (master privileged)
+         * The previous (1<<4)|(1<<5)|(1<<8) set MCID=3, MSEC=1, MPRIV=0 which
+         * landed DMA-class masters in compartment 3 and silently dropped
+         * hardware request signals from CID=0 peripherals to them. Set
+         * MSEC=1, MPRIV=1, MCID=0 so all bus masters share the slave
+         * compartment. CMSIS shows N6 has 13 RIMC_ATTRx registers.
+         */
         for (unsigned i = 0; i < 13U; i++) {
-            rimc[i] = ((1U << 8) | (1U << 4) | (1U << 5));
+            rimc[i] = (1U << 9) | (1U << 8);   /* MPRIV | MSEC */
         }
+    }
 
+    /* GPDMA1/HPDMA1 channel security + privilege attributes.
+     *
+     * On N6, each GPDMA channel has its own per-channel security
+     * (SECCFGR.SECx) and privilege (PRIVCFGR.PRIVx) bits — separate from
+     * the master-side RIMC_ATTR. Writes to SECCFGR can only land via the
+     * SECURE alias (NS-alias writes silently drop in NS world, same
+     * pattern as TAMP/RIFSC).
+     *
+     * Without setting these, bus transactions issued by GPDMA channels
+     * carry NS+unpriv attributes. The boot ROM's RISAF setup admits the
+     * CPU's NS+priv transactions but rejects DMA NS+unpriv, so DMA writes
+     * to AXISRAM complete-with-TCF but the data never lands.
+     * Empirical: a software-triggered GPDMA1 M2M transfer reported TCF=1
+     * and CBR1=0 but the destination buffer kept its CPU-written sentinel.
+     * Marking the channel secure + privileged + source/dest secure (per
+     * the CubeN6 TIM_DMA reference) unblocks the writes.
+     *
+     * Apply to all 16 channels of GPDMA1 + HPDMA1 so any future DMA user
+     * (SPI, ADC continuous, DShot, etc.) inherits the right attributes.
+     * Per-channel SSEC/DSEC must still be set in CTR1 at init time — see
+     * stm32n6xx_ll_ex.h::LL_EX_DMA_Init.
+     */
+    {
+        /* Enable GPDMA1 + HPDMA1 clocks BEFORE writing SECCFGR/PRIVCFGR
+         * (writes to a clock-gated peripheral silently drop).
+         * AHB1ENSR @ 0x0A50, AHB5ENSR @ 0x0A60 — "set" registers.
+         * S-alias bases: RCC = 0x56028000. CMSIS RCC->AHB1ENSR routes
+         * through NS alias which RIFSC may drop; use hardcoded S-alias.
+         */
+        *(volatile uint32_t *)0x56028A50UL = (1UL << 4);     /* AHB1ENSR.GPDMA1ENS */
+        *(volatile uint32_t *)0x56028A60UL = (1UL << 0);     /* AHB5ENSR.HPDMA1ENS */
+        (void)*(volatile uint32_t *)0x56028250UL;            /* AHB1ENR readback to flush */
+
+        /* GPDMA1 base S = 0x50021000, HPDMA1 base S = 0x50028000 */
+        *(volatile uint32_t *)(0x50021000UL + 0x00) = 0x0000FFFFUL;   /* GPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x50021000UL + 0x04) = 0x0000FFFFUL;   /* GPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x50021000UL + 0x00);
+    }
+
+    /* GPIO bank clocks + GPIO SECCFGR open (NS-accessible).
+     * Was previously part of the RIFSC block above; kept here as its own
+     * block since it can run after the GPDMA channel-attr writes. */
+    {
         SET_BIT(RCC->AHB4ENSR,
             RCC_AHB4ENR_GPIOAEN_Msk | RCC_AHB4ENR_GPIOBEN_Msk |
             RCC_AHB4ENR_GPIOCEN_Msk | RCC_AHB4ENR_GPIODEN_Msk |

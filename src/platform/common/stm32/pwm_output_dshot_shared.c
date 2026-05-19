@@ -142,7 +142,12 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         motor->timer->timerDmaSources |= motor->timerDmaSource;
 
 #ifdef USE_FULL_LL_DRIVER
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+        /* GPDMA BNDT is in bytes, not transfers; SrcDataWidth = WORD here */
+        xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize * 4);
+#else
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
+#endif
         xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);

@@ -384,6 +384,14 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.DestDataWidth = LL_DMA_DEST_DATAWIDTH_WORD;
     DMAINIT.Priority = LL_DMA_HIGH_PRIORITY;
     DMAINIT.Mode = LL_DMA_NORMAL;
+    /* GPDMA1 has two AHB/AXI master ports. Source (DMA buffer in AXISRAM)
+     * needs PORT1 = AXI to reach AXISRAM; destination (TIM1 peripheral
+     * register) needs PORT0 = AHB. Default LL_DMA_StructInit leaves both
+     * at PORT0, which can't reach AXISRAM — source reads return 0 silently
+     * and writes to peripherals on the AXI side don't land either.
+     * Pattern from CubeN6 TIM_DMA reference. */
+    DMAINIT.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT1;
+    DMAINIT.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
 #else
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
