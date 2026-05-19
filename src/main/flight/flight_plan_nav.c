@@ -152,11 +152,14 @@ static bool dispatchWaypoint(void)
         return false;
     }
 
-    // Apply one-shot altitude override before computing the ENU target.
+    // Apply the staged altitude override before computing the ENU target.
+    // The override sticks for the whole leg — cleared in advanceToNext() once
+    // we move on — so a retry from FP_NAV_IDLE (estimator origin not ready
+    // yet) or a delay-expiry re-dispatch (cruise restore) both keep the
+    // overridden altitude in place.
     waypoint_t effective = *wp;
     if (fp.altOverridePending) {
         effective.altitude = fp.altOverrideCm;
-        fp.altOverridePending = false;
     }
 
     vector3_t targetEnuM;
@@ -177,11 +180,19 @@ static bool dispatchWaypoint(void)
     }
 
     // DELAY: clamp cruise so traversal-time ≈ delay-seconds, scaled by the
-    // leg length the executor is about to drive. Skip when the leg is
-    // effectively zero (hold-to-hold) to avoid div-by-near-zero.
+    // *remaining* leg (current position → target). targetEnuM is origin →
+    // target, so subtracting the current ENU estimate gives the leg vector
+    // the position controller is actually going to drive. Skip when the
+    // remaining leg is effectively zero to avoid div-by-near-zero.
     if (fp.delayActive) {
         const float delaySec = fp.delayDurationDs * 0.1f;
-        const float legLenM = vector3Norm(&targetEnuM);
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        const vector3_t legVec = {
+            .x = targetEnuM.x - est->position.x * 0.01f,
+            .y = targetEnuM.y - est->position.y * 0.01f,
+            .z = targetEnuM.z - est->position.z * 0.01f,
+        };
+        const float legLenM = vector3Norm(&legVec);
         if (delaySec > 0.0f && legLenM > 0.1f) {
             const float scaledMps = MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec);
             cruiseMps = MIN(cruiseMps, scaledMps);
@@ -204,6 +215,11 @@ static bool dispatchWaypoint(void)
 
 static void advanceToNext(void)
 {
+    // The leg that's ending consumed any staged altitude override; clear it
+    // before the next drainModifiers() pass so a new override (or none) is
+    // staged cleanly for the upcoming leg.
+    fp.altOverridePending = false;
+
     if (fp.currentIndex + 1 >= flightPlanConfig()->waypointCount) {
         fp.state = FP_NAV_COMPLETE;
         positionNavClearTarget();
