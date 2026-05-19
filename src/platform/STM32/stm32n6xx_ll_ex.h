@@ -69,13 +69,12 @@ __STATIC_INLINE uint32_t LL_EX_DMA_Init(DMA_Channel_TypeDef *DMAx_Channely, LL_D
     DMA_TypeDef *DMA = LL_EX_DMA_Channel_to_DMA(DMAx_Channely);
     const uint32_t Channel = LL_EX_DMA_Channel_to_Channel(DMAx_Channely);
     const uint32_t status = LL_DMA_Init(DMA, Channel, DMA_InitStruct);
-    /* N6 GPDMA per-channel security: SSEC (CTR1 bit 15) + DSEC (bit 31).
-     * Without these the channel issues NS bus transactions which the
-     * boot-ROM RISAF setup rejects against AXISRAM, even with master-side
-     * RIMC and channel-level SECCFGR set. Pair with system_stm32n6xx.c's
-     * GPDMA1/HPDMA1 SECCFGR + PRIVCFGR writes.
-     */
-    DMAx_Channely->CTR1 |= ((1UL << 15) | (1UL << 31));
+    /* N6 GPDMA per-channel security: source + destination must issue
+     * SECURE bus transactions, otherwise the boot-ROM RISAF setup
+     * rejects them against AXISRAM even with master-side RIMC and the
+     * channel-level SECCFGR open. Pair with system_stm32n6xx.c's
+     * GPDMA1/HPDMA1 SECCFGR + PRIVCFGR writes. */
+    DMAx_Channely->CTR1 |= (DMA_CTR1_SSEC | DMA_CTR1_DSEC);
     return status;
 }
 

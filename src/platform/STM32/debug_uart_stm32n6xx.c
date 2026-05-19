@@ -34,6 +34,16 @@
 #define DEBUG_UART_BAUD 115200U
 #endif
 
+#if (DEBUG_UART_PIN > 15U)
+#error "DEBUG_UART_PIN must be in range 0..15"
+#endif
+#if (DEBUG_UART_AF > 15U)
+#error "DEBUG_UART_AF must be in range 0..15"
+#endif
+#if (DEBUG_UART_BAUD == 0U)
+#error "DEBUG_UART_BAUD must be non-zero"
+#endif
+
 // BF's SystemClock_Config and OBL both land at PCLK1 = 200 MHz after the
 // PLL1 IC matrix is up; PCLK1 briefly drops to ~32 MHz during the HSI
 // park inside SystemClock_Config, so bytes sent in that window will show
