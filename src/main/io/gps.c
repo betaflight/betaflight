@@ -525,29 +525,6 @@ static uint8_t ubloxAddValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key,
     return 4 + len;
 }
 
-// the following lines are not being used, because we are not currently sending ubloxValGet messages
-#if 0
-static size_t ubloxAddValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, size_t offset) {
-    const uint8_t zeroes[8] = {0};
-
-    return ubloxAddValSet(tx_buffer, key, zeroes, offset);
-}
-
-static size_t ubloxValGet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, ubloxValLayer_e layer)
-{
-    tx_buffer->header.preamble1 = PREAMBLE1;
-    tx_buffer->header.preamble2 = PREAMBLE2;
-    tx_buffer->header.msg_class = CLASS_CFG;
-    tx_buffer->header.msg_id = MSG_CFG_VALGET;
-
-    tx_buffer->payload.cfg_valget.version = 1;
-    tx_buffer->payload.cfg_valget.layer = layer;
-    tx_buffer->payload.cfg_valget.position = 0;
-
-    return ubloxAddValGet(tx_buffer, key, 0);
-}
-#endif // not used
-
 static uint8_t ubloxValSet(ubxMessage_t * tx_buffer, ubxValGetSetBytes_e key, uint8_t * payload, ubloxValLayer_e layer)
 {
     memset(&tx_buffer->payload.cfg_valset, 0, sizeof(ubxCfgValSet_t));
