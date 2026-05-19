@@ -148,6 +148,13 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+            /* GPDMA has no auto-reload of CSAR. Each frame must rewind
+             * the source pointer to the start of the burst buffer before
+             * the channel is re-enabled. */
+            xLL_EX_DMA_SetMemoryAddress(dmaMotorTimers[i].dmaBurstRef,
+                                        (uint32_t)dmaMotorTimers[i].dmaBurstBuffer);
+#endif
             xLL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
             xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
@@ -362,12 +369,21 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     LL_DMA_StructInit(&DMAINIT);
 #if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+    const uint32_t dshotBufferSize = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE);
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
         DMAINIT.Request = dmaChannel;
         DMAINIT.DestAddress = (uint32_t)&((TIM_TypeDef *)timerHardware->tim)->DMAR;
         DMAINIT.SrcAddress = (uint32_t)motor->timer->dmaBurstBuffer;
+        /* TIM burst-DMA: TIM emits DBL+1 = 4 DMA requests per update
+         * event (one per register in the CCR1..CCR4 burst window) and
+         * the GPDMA channel responds with a single word transfer per
+         * request. BNDT in source bytes therefore covers the whole
+         * 4-channel buffer: bit-periods * 4 CCRs * 4 bytes/word.
+         * Pre-N6 stream DMAs counted transfer events; bufferSize * 4
+         * was correct there but undersizes the GPDMA case by 4x. */
+        DMAINIT.BlkDataLength = dshotBufferSize * 4 * 4;
     } else
 #endif
     {
@@ -375,9 +391,10 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DMAINIT.Request = dmaChannel;
         DMAINIT.DestAddress = (uint32_t)timerChCCR(timerHardware);
         DMAINIT.SrcAddress = (uint32_t)motor->dmaBuffer;
+        /* Per-channel DMA: one word per TIM CCx event → one CCR write. */
+        DMAINIT.BlkDataLength = dshotBufferSize * 4;
     }
     DMAINIT.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    DMAINIT.BlkDataLength = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE) * 4;
     DMAINIT.SrcIncMode = LL_DMA_SRC_INCREMENT;
     DMAINIT.DestIncMode = LL_DMA_DEST_FIXED;
     DMAINIT.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_WORD;
