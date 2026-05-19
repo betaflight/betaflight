@@ -171,7 +171,7 @@ uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H5) || defined(STM32C5)
+#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx) || defined(STM32H5) || defined(STM32C5)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -205,7 +205,7 @@ bank operation mode. The code assumes dual bank operation, in which case the
 FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 */
 
-#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
+#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
 #define FLASH_PAGE_PER_BANK 8
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define FLASH_PAGE_PER_BANK 128

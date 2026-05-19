@@ -48,7 +48,7 @@
 #define STM32G4
 #endif
 
-#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx) || defined(STM32H757xx)
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "system_stm32h7xx.h"
@@ -65,15 +65,41 @@
 #include "stm32h7xx_ll_ex.h"
 
 // Chip Unique ID on H7
+// M4 core cannot access system memory where UID is stored
+#ifndef CORE_CM4
 #define U_ID_0 (*(uint32_t*)UID_BASE)
 #define U_ID_1 (*(uint32_t*)(UID_BASE + 4))
 #define U_ID_2 (*(uint32_t*)(UID_BASE + 8))
+#else
+#define U_ID_0 0
+#define U_ID_1 0
+#define U_ID_2 0
+#endif
 
 #define SPI_TRAIT_AF_PIN 1
 #define I2C_TRAIT_AF_PIN 1
 
 #ifndef STM32H7
 #define STM32H7
+#endif
+
+// M4 core on dual-core H7 (H745/H747/H755/H757) has no cache
+#if defined(CORE_CM4)
+#define SCB_EnableICache()      ((void)0)
+#define SCB_DisableICache()     ((void)0)
+#define SCB_EnableDCache()      ((void)0)
+#define SCB_DisableDCache()     ((void)0)
+#define SCB_InvalidateDCache_by_Addr(addr, size)  ((void)0)
+#define SCB_CleanDCache_by_Addr(addr, size)       ((void)0)
+// Map single-core reset flag to M4's reset flag for dual-core
+#define RCC_RSR_SFTRSTF         RCC_RSR_SFT2RSTF
+#endif
+
+// On dual-core H7 (H745/H747/H755/H757), the single-core RCC_RSR_SFTRSTF
+// symbol does not exist; M7's reset flag is RCC_RSR_SFT1RSTF. Map it here so
+// shared code that checks the soft-reset flag works on the M7 side too.
+#if defined(CORE_CM7) && defined(STM32H757xx)
+#define RCC_RSR_SFTRSTF         RCC_RSR_SFT1RSTF
 #endif
 
 #elif defined(STM32H563xx) || defined(STM32H562xx)
@@ -287,16 +313,21 @@
 
 #ifdef STM32H7
 
-#ifdef USE_DSHOT
+// M4 core (dual-core H7) has no cache or ITCM
+#if defined(USE_DSHOT) && !defined(CORE_CM4)
 #define USE_DSHOT_CACHE_MGMT
 #endif
 
+#ifndef CORE_CM4
 #define USE_ITCM_RAM
+#endif
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
+#ifndef CORE_CM4
 #define USE_ADC_INTERNAL
+#endif
 #define USE_USB_CDC_HID
 #define USE_DMA_SPEC
 #define USE_PERSISTENT_OBJECTS
@@ -507,7 +538,7 @@ extern uint8_t _dmaram_end__;
 
 #endif
 
-#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
+#if defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H5) || defined(STM32C5)
