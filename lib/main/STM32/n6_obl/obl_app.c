@@ -28,6 +28,7 @@ bool obl_recovery_mode;
 
 extern void obl_dfu_apply_mode(bool recovery);
 extern volatile bool dfu_leave_pending;
+extern volatile uint32_t dfu_last_write_tick;
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* Time for the host's final GET_STATUS to return dfuMANIFEST-WAIT-RESET
@@ -35,6 +36,14 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
  * "File downloaded successfully" once the manifest poll loop completes
  * within ~250 ms; 400 ms is generous. */
 #define DFU_LEAVE_DRAIN_MS  400U
+
+/* Auto-reboot after this many ms of write inactivity once at least one
+ * data block has landed. dfu-util without --reset finishes the download
+ * and exits without triggering manifest, so we infer "host is done" from
+ * a stretch of silence. 1500 ms is comfortably above the gap between
+ * dfu-util's per-block transfers (~ms) and below any reasonable interactive
+ * wait. */
+#define DFU_IDLE_REBOOT_MS  1500U
 
 static __attribute__((noreturn)) void run_obl_loop(bool recovery)
 {
@@ -52,7 +61,12 @@ static __attribute__((noreturn)) void run_obl_loop(bool recovery)
     while (1) {
         OpenBootloader_ProtocolDetection();
 
-        if (dfu_leave_pending) {
+        const bool leave_request = dfu_leave_pending;
+        const uint32_t last_tick = dfu_last_write_tick;
+        const bool idle_complete = (last_tick != 0U)
+            && ((HAL_GetTick() - last_tick) >= DFU_IDLE_REBOOT_MS);
+
+        if (leave_request || idle_complete) {
             HAL_Delay(DFU_LEAVE_DRAIN_MS);
             (void)USBD_Stop(&hUsbDeviceFS);
             (void)USBD_DeInit(&hUsbDeviceFS);

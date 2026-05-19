@@ -27,6 +27,7 @@
 #include "platform.h"
 
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/debug_uart.h"
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
@@ -120,6 +121,12 @@ extern uint32_t isr_vector_table_base;
 
 void systemInit(void)
 {
+    // Bring the optional bare-metal trace UART up first thing so any
+    // wedge in the rest of systemInit / clock-config can still emit a
+    // byte to /dev/ttyUSBx. Compiles out when ENABLE_DEBUG_UART=0.
+    debugUartInit();
+    debugUartPuts("\r\nBF systemInit\r\n");
+
     // Debug subsystem clock + APB3 bus clock + DBGMCU.CR all configured
     // via the secure alias. RCC and DBGMCU are RIFSC-gated and an
     // NS-tagged transaction (which the CMSIS RCC->... and DBGMCU->...
@@ -240,21 +247,24 @@ void systemInit(void)
     HAL_Init();
 
     // Open-everything RIFSC + GPIO config for OPEN-lifecycle dev silicon.
-    // BF runs as secure-privileged without -mcmse, so HAL macros emit NS
-    // alias addresses; SECCFGR/PRIVCFGR=0 lets those accesses through and
-    // RIMC master attributes mark every RIF-tracked master as MCID=1 +
-    // SEC + PRIV (LTDC/GPDMA/HPDMA/OTG/SDMMC/etc.). Production builds
-    // should replace this with the per-driver granular model.
+    // RIFSC slave/master and GPIO SECCFGR writes must go via the SECURE
+    // alias (0x5xxxxxxx). Without -mcmse the CMSIS macros RIFSC->... and
+    // gpios[i]->SECCFGR resolve to the NS alias (0x4xxxxxxx) and RIF
+    // silently drops NS-world writes to security-config registers — same
+    // precedent as TAMP. Hardcoded S-alias addresses match what OBL does.
     {
         SET_BIT(RCC->AHB3ENSR, RCC_AHB3ENR_RIFSCEN_Msk);
         (void)RCC->AHB3ENR;
 
+        volatile uint32_t * const seccfg  = (volatile uint32_t *)0x54024010UL;
+        volatile uint32_t * const privcfg = (volatile uint32_t *)0x54024030UL;
+        volatile uint32_t * const rimc    = (volatile uint32_t *)0x54024C10UL;
         for (unsigned i = 0; i < 6U; i++) {
-            RIFSC->RISC_SECCFGRx[i]  = 0U;
-            RIFSC->RISC_PRIVCFGRx[i] = 0U;
+            seccfg[i]  = 0U;
+            privcfg[i] = 0U;
         }
         for (unsigned i = 0; i < 13U; i++) {
-            RIFSC->RIMC_ATTRx[i] = ((1U << 8) | (1U << 4) | (1U << 5));
+            rimc[i] = ((1U << 8) | (1U << 4) | (1U << 5));
         }
 
         SET_BIT(RCC->AHB4ENSR,
@@ -266,12 +276,15 @@ void systemInit(void)
             RCC_AHB4ENR_GPIOPEN_Msk | RCC_AHB4ENR_GPIOQEN_Msk);
         (void)RCC->AHB4ENR;
 
-        GPIO_TypeDef * const gpios[] = {
-            GPIOA, GPIOB, GPIOC, GPIOD, GPIOE, GPIOF,
-            GPIOG, GPIOH, GPION, GPIOO, GPIOP, GPIOQ,
+        // GPIOA_S..GPIOQ_S at 0x56020000 + bank * 0x400 (with the I..M gap
+        // skipped: H is at 0x56021C00, N at 0x56023400). SECCFGR offset 0x30.
+        static const uintptr_t gpio_s_bases[] = {
+            0x56020000UL, 0x56020400UL, 0x56020800UL, 0x56020C00UL,
+            0x56021000UL, 0x56021400UL, 0x56021800UL, 0x56021C00UL,
+            0x56023400UL, 0x56023800UL, 0x56023C00UL, 0x56024000UL,
         };
-        for (unsigned i = 0; i < sizeof(gpios) / sizeof(gpios[0]); i++) {
-            gpios[i]->SECCFGR = 0x00000000U;
+        for (unsigned i = 0; i < sizeof(gpio_s_bases) / sizeof(gpio_s_bases[0]); i++) {
+            *(volatile uint32_t *)(gpio_s_bases[i] + 0x30UL) = 0U;
         }
     }
 
@@ -325,9 +338,20 @@ static void SystemClock_Config(void)
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-    // Power supply / voltage scaling: SMPS step-down disabled (VCORE supplied
-    // externally on the DK), VOS0 for full-frequency operation.
-    if (HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY) != HAL_OK) {
+    // Power supply selector. Default on-chip SMPS (custom N6 boards); set
+    // ENABLE_N6_PWR_EXTERNAL=1 in config.h for boards that feed VCORE
+    // externally (N6570-DK). Selecting the wrong mode browns out / hangs
+    // the chip in HAL_PWREx_ConfigSupply polling ACTVOSRDY.
+#ifndef ENABLE_N6_PWR_EXTERNAL
+#define ENABLE_N6_PWR_EXTERNAL 0
+#endif
+    if (HAL_PWREx_ConfigSupply(
+#if ENABLE_N6_PWR_EXTERNAL
+            PWR_EXTERNAL_SOURCE_SUPPLY
+#else
+            PWR_SMPS_SUPPLY
+#endif
+        ) != HAL_OK) {
         while (1);
     }
     if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE0) != HAL_OK) {
@@ -417,7 +441,8 @@ static void SystemClock_Config(void)
                                              | RCC_PERIPHCLK_ADC
                                              | RCC_PERIPHCLK_SDMMC1
                                              | RCC_PERIPHCLK_SDMMC2
-                                             | RCC_PERIPHCLK_USART1;
+                                             | RCC_PERIPHCLK_USART1
+                                             | RCC_PERIPHCLK_SPI1;
     PeriphClkInitStruct.UsbPhy1ClockSelection    = RCC_USBPHY1CLKSOURCE_HSE_DIV2;
     PeriphClkInitStruct.UsbOtgHs1ClockSelection  = RCC_USBOTGHS1CLKSOURCE_OTGPHY1;
     PeriphClkInitStruct.AdcClockSelection        = RCC_ADCCLKSOURCE_HCLK;
@@ -427,6 +452,7 @@ static void SystemClock_Config(void)
     // USART1 kernel: pick HSI (64 MHz, stable, decoupled from bus clocks) so
     // ST-LINK V3 VCOM bring-up works regardless of how PCLK2 is scaled.
     PeriphClkInitStruct.Usart1ClockSelection     = RCC_USART1CLKSOURCE_HSI;
+    PeriphClkInitStruct.Spi1ClockSelection       = RCC_SPI1CLKSOURCE_PCLK2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
         while (1);
     }

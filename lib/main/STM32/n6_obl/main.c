@@ -167,6 +167,16 @@ int main(void)
         Error_Handler();
     }
 
+#ifdef OBL_FORCE_RECOVERY
+    /* Bring-up only: SWD-loaded OBL used to refresh nor0 0x0. Skip the
+     * magic check so we always enter Recovery, exposing nor0 from 0x0
+     * for OBL+BF reinstall. The committed signed OBL has this flag
+     * undefined. */
+    (void)nor0_has_valid_obl;
+    OBL_run_dfu_recovery();
+    /* unreachable */
+#endif
+
     if (!nor0_has_valid_obl()) {
         OBL_run_dfu_recovery();
         /* unreachable */

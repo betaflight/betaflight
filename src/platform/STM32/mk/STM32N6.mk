@@ -182,6 +182,7 @@ MCU_COMMON_SRC = \
             STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
+            STM32/debug_uart_stm32n6xx.c \
             STM32/timer_hal.c \
             STM32/timer_stm32n6xx.c \
             drivers/adc.c \
