@@ -58,6 +58,9 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 
+#include "drivers/accgyro/accgyro_spi_scs3302.h"
+#include "drivers/accgyro/accgyro_spi_scs3304.h"
+
 #include "drivers/accgyro/gyro_sync.h"
 
 #include "fc/runtime_config.h"
@@ -331,6 +334,9 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
         gyroSensor->gyroDev.gyroHasOverflowProtection = false;
         break;
 
+    case GYRO_SCS3302:
+    case GYRO_SCS3304:
+
     default:
         gyroSensor->gyroDev.gyroHasOverflowProtection = false;  // default catch for newly added gyros until proven to be unaffected
         break;
@@ -537,6 +543,24 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
     case GYRO_ICM40609D:
         if (icm40609SpiGyroDetect(dev)) {
             gyroHardware = GYRO_ICM40609D;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_SCS3302
+    case GYRO_SCS3302:
+        if (scs3302SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_SCS3302;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_SCS3304
+    case GYRO_SCS3304:
+        if (scs3304SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_SCS3304;
             break;
         }
         FALLTHROUGH;
