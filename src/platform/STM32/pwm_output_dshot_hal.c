@@ -401,14 +401,18 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.DestDataWidth = LL_DMA_DEST_DATAWIDTH_WORD;
     DMAINIT.Priority = LL_DMA_HIGH_PRIORITY;
     DMAINIT.Mode = LL_DMA_NORMAL;
-    /* GPDMA1 has two AHB/AXI master ports. Source (DMA buffer in AXISRAM)
-     * needs PORT1 = AXI to reach AXISRAM; destination (TIM1 peripheral
-     * register) needs PORT0 = AHB. Default LL_DMA_StructInit leaves both
-     * at PORT0, which can't reach AXISRAM — source reads return 0 silently
-     * and writes to peripherals on the AXI side don't land either.
-     * Pattern from CubeN6 TIM_DMA reference. */
+#if defined(STM32N6) || defined(STM32H5)
+    /* N6/H5 GPDMA1 has two AHB/AXI master ports. Source (DMA buffer in
+     * AXISRAM) needs PORT1 = AXI to reach AXISRAM; destination (TIM
+     * peripheral register) needs PORT0 = AHB. Default LL_DMA_StructInit
+     * leaves both at PORT0, which can't reach AXISRAM — source reads
+     * return 0 silently and writes to peripherals on the AXI side don't
+     * land either. Pattern from CubeN6 TIM_DMA reference. C5's HAL2
+     * compat shim exposes LL_DMA without these fields/enums; its single
+     * GPDMA master serves both sides so the defaults work. */
     DMAINIT.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT1;
     DMAINIT.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
+#endif
 #else
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
