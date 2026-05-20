@@ -198,6 +198,21 @@ void imuInit(void)
 #endif
 }
 
+bool imuIsHeadingValid(void)
+{
+#ifdef USE_MAG
+    if (sensors(SENSOR_MAG) && compassIsHealthy()) {
+        return true;
+    }
+#endif
+#ifdef USE_GPS
+    if (canUseGPSHeading) {
+        return true;
+    }
+#endif
+    return false;
+}
+
 #if defined(USE_ACC)
 static float invSqrt(float x)
 {
@@ -428,17 +443,14 @@ static float imuCalcGroundspeedGain(float dt)
     // 4. attenuate heading correction by pitch angle, will be zero if flat or negative (ie flying tail first)
     // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
     // but not if a wing, because they typically are flat when flying.
-    // need to test if anything special is needed for pitch with wings, for now do nothing.
+    // In position hold the autopilot controls pitch independently of forward flight intent,
+    // so do not suppress based on pitch angle - speed-based scaling already limits the contribution.
     float pitchSuppression = 1.0f;
-    if (!isWing) {
+    if (!isWing && !FLIGHT_MODE(POS_HOLD_MODE)) {
         const float pitchAngle = attitude.values.pitch * .1f; // degrees, negative is backwards
         pitchSuppression = pitchAngle / 45.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
         pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
     }
-
-    // NOTE : these suppressions make sense with normal pilot inputs and normal flight
-    // Flying straight ahead for 1s at > 3m/s at pitch of say 22.5 degrees returns a final multiplier of 5
-    // They are not used in GPS Rescue, and probably should be bypassed in position hold, and other situations when we know we are still
 
     return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
 }
@@ -672,11 +684,15 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     imuDebug_GPS_RESCUE_HEADING();
 #endif
 
-    // *** GoC based error estimate ***
+    // *** GPS COG based heading error estimate ***
+    // Computed regardless of mag presence: when a mag is also healthy both sources
+    // contribute simultaneously (their errors are summed in imuMahonyAHRSupdate).
+    // groundspeedGain naturally weights the COG contribution (near-zero when hovering,
+    // larger at speed), so the mag dominates at low speed and GPS COG supplements at
+    // higher speed.  GPS rescue overrides groundspeedGain with its own schedule.
     float cogErr = 0;
 #if defined(USE_GPS)
-    if (!useMag
-        && sensors(SENSOR_GPS)
+    if (sensors(SENSOR_GPS)
         && STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
         static bool gpsHeadingInitialized = false;  // TODO - remove
         if (gpsHeadingInitialized) {
@@ -700,8 +716,12 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
             updateGpsHeadingUsable(groundspeedGain, imuCourseError, dt);
 
         } else if (gpsSol.groundSpeed > GPS_COG_MIN_GROUNDSPEED) {
-            // Reset the reference and reinitialize quaternion factors when GPS groundspeed > GPS_COG_MIN_GROUNDSPEED
-            imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+            if (!useMag) {
+                // Only reinitialize the quaternion from GPS COG when no mag is providing
+                // yaw reference.  When a mag is healthy it has already established yaw;
+                // overwriting it with an initial COG value would degrade accuracy.
+                imuComputeQuaternionFromRPY(&qP, attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+            }
             gpsHeadingInitialized = true;
         }
     }
