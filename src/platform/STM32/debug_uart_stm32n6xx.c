@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+
 #include "platform.h"
 
 #if ENABLE_DEBUG_UART
@@ -79,6 +81,12 @@ static void enableUartClock(USART_TypeDef *uart)
     else if (uart == USART10) { __HAL_RCC_USART10_CLK_ENABLE(); }
 }
 
+// debugUartInit flips this true once it has a non-zero kernel clock and
+// has programmed BRR. Without that, debugUartPutc would spin forever on
+// TXE if the UART never makes progress (e.g. an instance outside the
+// cascade above, or HAL_RCCEx_GetPeriphCLKFreq returned 0).
+static volatile bool debugUartReady = false;
+
 // N6 UART instances can be sourced from different kernel clocks via CCIPR
 // (USART1 is on HSI by default in BF's SystemClock_Config; others on PCLK1
 // or PCLK2). Query the actual selected source so BRR is correct regardless
@@ -126,6 +134,12 @@ void debugUartInit(void)
     gpio->AFR[afr_idx] = afr;
 
     const uint32_t pclk = uartKernelClock(uart);
+    if (pclk == 0U) {
+        // Unknown instance or kernel clock not configured — bail without
+        // touching CR1, so puts() short-circuits below instead of
+        // spinning forever waiting for a TXE that never arrives.
+        return;
+    }
 
     uart->CR1 = 0;
     uart->CR2 = 0;
@@ -134,10 +148,14 @@ void debugUartInit(void)
     uart->CR1 = USART_CR1_UE | USART_CR1_TE;
     __DSB();
     __ISB();
+    debugUartReady = true;
 }
 
 void debugUartPutc(char c)
 {
+    if (!debugUartReady) {
+        return;
+    }
     USART_TypeDef * const uart = DEBUG_UART;
     while (!(uart->ISR & (1UL << 7))) {}   // TXE / TXFNF
     uart->TDR = (uint8_t)c;
