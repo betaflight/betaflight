@@ -44,14 +44,6 @@
 #error "DEBUG_UART_BAUD must be non-zero"
 #endif
 
-// BF's SystemClock_Config and OBL both land at PCLK1 = 200 MHz after the
-// PLL1 IC matrix is up; PCLK1 briefly drops to ~32 MHz during the HSI
-// park inside SystemClock_Config, so bytes sent in that window will show
-// as garbage on the host. Acceptable for bring-up tracing.
-#define DEBUG_UART_PCLK_HZ 200000000UL
-#define DEBUG_UART_BRR_VAL \
-    ((DEBUG_UART_PCLK_HZ + (DEBUG_UART_BAUD / 2U)) / DEBUG_UART_BAUD)
-
 // Compile-time-resolvable pointer-equality cascade so the compiler keeps
 // only the branch matching the per-config DEBUG_UART_GPIO / DEBUG_UART.
 // Using the HAL clock-enable macros keeps the RCC bit-mapping authoritative
@@ -87,6 +79,26 @@ static void enableUartClock(USART_TypeDef *uart)
     else if (uart == USART10) { __HAL_RCC_USART10_CLK_ENABLE(); }
 }
 
+// N6 UART instances can be sourced from different kernel clocks via CCIPR
+// (USART1 is on HSI by default in BF's SystemClock_Config; others on PCLK1
+// or PCLK2). Query the actual selected source so BRR is correct regardless
+// of which instance the per-board config picks.
+static uint32_t uartKernelClock(USART_TypeDef *uart)
+{
+    uint64_t sel = 0;
+    if      (uart == USART1)  { sel = RCC_PERIPHCLK_USART1;  }
+    else if (uart == USART2)  { sel = RCC_PERIPHCLK_USART2;  }
+    else if (uart == USART3)  { sel = RCC_PERIPHCLK_USART3;  }
+    else if (uart == UART4)   { sel = RCC_PERIPHCLK_UART4;   }
+    else if (uart == UART5)   { sel = RCC_PERIPHCLK_UART5;   }
+    else if (uart == USART6)  { sel = RCC_PERIPHCLK_USART6;  }
+    else if (uart == UART7)   { sel = RCC_PERIPHCLK_UART7;   }
+    else if (uart == UART8)   { sel = RCC_PERIPHCLK_UART8;   }
+    else if (uart == UART9)   { sel = RCC_PERIPHCLK_UART9;   }
+    else if (uart == USART10) { sel = RCC_PERIPHCLK_USART10; }
+    return sel ? HAL_RCCEx_GetPeriphCLKFreq(sel) : 0U;
+}
+
 void debugUartInit(void)
 {
     GPIO_TypeDef * const gpio = DEBUG_UART_GPIO;
@@ -113,10 +125,12 @@ void debugUartInit(void)
     afr |=  ((uint32_t)DEBUG_UART_AF << afr_shift);
     gpio->AFR[afr_idx] = afr;
 
+    const uint32_t pclk = uartKernelClock(uart);
+
     uart->CR1 = 0;
     uart->CR2 = 0;
     uart->CR3 = 0;
-    uart->BRR = DEBUG_UART_BRR_VAL;
+    uart->BRR = (pclk + (DEBUG_UART_BAUD / 2U)) / DEBUG_UART_BAUD;
     uart->CR1 = USART_CR1_UE | USART_CR1_TE;
     __DSB();
     __ISB();
