@@ -356,7 +356,19 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else
 #endif
     {
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+        /* On GPDMA the CCxIF level-sensitive request stays asserted
+         * after each transfer, so a CCxDE-triggered channel races
+         * through the whole DShot frame in microseconds — by the time
+         * the next UEV latches preload to active, the trailing zero
+         * has already overwritten the bit value and the pin never
+         * pulses. Use the update event (UEV / UDE) instead: it's
+         * edge-triggered, so the channel gets exactly one transfer
+         * per TIM cycle, matching the DShot bit period. */
+        motor->timerDmaSource = TIM_DIER_UDE;
+#else
         motor->timerDmaSource = timerDmaSource(timerHardware->channel);
+#endif
         motor->timer->timerDmaSources &= ~motor->timerDmaSource;
     }
 
@@ -388,10 +400,16 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
     {
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
-        DMAINIT.Request = dmaChannel;
+        /* Use the timer's UP-event request as the trigger source — see
+         * the comment near motor->timerDmaSource assignment above for
+         * why we can't use the per-channel CCxDE on N6/H5/C5 GPDMA.
+         * Each motor's channel responds independently to TIMx_UP and
+         * writes to its own CCRx. timerHardware->dmaTimUPChannel is
+         * the per-timer GPDMA request ID (e.g. LL_GPDMA1_REQUEST_TIM1_UP). */
+        DMAINIT.Request = timerHardware->dmaTimUPChannel;
         DMAINIT.DestAddress = (uint32_t)timerChCCR(timerHardware);
         DMAINIT.SrcAddress = (uint32_t)motor->dmaBuffer;
-        /* Per-channel DMA: one word per TIM CCx event → one CCR write. */
+        /* Per-channel DMA: one word per TIM UEV → one CCR write. */
         DMAINIT.BlkDataLength = dshotBufferSize * 4;
     }
     DMAINIT.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
