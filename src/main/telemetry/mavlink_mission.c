@@ -181,10 +181,15 @@ static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t 
         *resultOut = MAV_MISSION_INVALID_PARAM7;
         return false;
     }
+    // The _INT frame variants were superseded in MAVLink 2024-03 by their
+    // non-_INT counterparts as synonymous aliases; accept either form so a
+    // modern GCS using the post-2024-03 names still round-trips.
     switch (frame) {
+    case MAV_FRAME_GLOBAL:
     case MAV_FRAME_GLOBAL_INT:
         *altCmOut = (int32_t)(z * 100.0f);
         return true;
+    case MAV_FRAME_GLOBAL_RELATIVE_ALT:
     case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
         if (!STATE(GPS_FIX_HOME)) {
             *resultOut = MAV_MISSION_INVALID;
