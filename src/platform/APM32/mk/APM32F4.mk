@@ -121,9 +121,9 @@ INCLUDE_DIRS += \
         $(TARGET_PLATFORM_DIR)/startup \
         $(PLATFORM_DIR)/common/stm32 \
         $(STDPERIPH_DIR)/Include \
-        $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCORE_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCDC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBMSC_DIR)/Inc \
         $(CMSIS_DIR)/Geehy/APM32F4xx/Include \
         $(TARGET_PLATFORM_DIR)/usb/vcp \
         $(TARGET_PLATFORM_DIR)/usb/msc \
