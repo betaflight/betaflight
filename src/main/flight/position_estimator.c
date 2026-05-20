@@ -668,6 +668,23 @@ float positionEstimatorGetTrustXY(void)
     return estimate.trustXY;
 }
 
+bool positionEstimatorIsGPSContributing(void)
+{
+    // GPS contributes XY measurements only when a fix is present and the
+    // configured source does not exclude it.  Used by pos_hold to decide
+    // whether a valid heading is required before allowing position control.
+#if defined(USE_GPS) && defined(USE_POSITION_HOLD) && !defined(USE_WING)
+    if (posHoldConfig()->positionSource == POSHOLD_SOURCE_OPTICALFLOW_ONLY) {
+        return false;
+    }
+#endif
+#ifdef USE_GPS
+    return sensors(SENSOR_GPS) && STATE(GPS_FIX);
+#else
+    return false;
+#endif
+}
+
 void positionEstimatorResetZ(void)
 {
     kalmanInit(&kfZ, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
