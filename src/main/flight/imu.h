@@ -93,3 +93,4 @@ void imuSetHasNewData(uint32_t dt);
 bool imuQuaternionHeadfreeOffsetSet(void);
 void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool isUpright(void);
+bool imuIsHeadingValid(void);
