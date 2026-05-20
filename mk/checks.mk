@@ -39,20 +39,21 @@ check-platform-included:
 # Catches a common branch-switch trap: a directory was promoted to a submodule on
 # one branch, but the working tree still has the old embedded files from an earlier
 # branch (or vice versa). The build then fails with cryptic header/source errors.
-# We flag any path listed in .gitmodules that exists as a directory but is missing
-# both a submodule .git marker and a registered gitlink. Tells the user to clean
-# the path and re-hydrate.
+# We flag any path listed in .gitmodules that exists as a non-empty directory but
+# is missing the submodule .git marker — i.e. it has content that doesn't belong
+# to a hydrated submodule. Tells the user to clean the path and re-hydrate.
 check-stale-submodule-paths:
-	$(V1) git config --file .gitmodules --get-regexp '\.path$$' 2>/dev/null | awk '{print $$2}' | \
-	while read p; do \
+	$(V1) SENTINEL=$$(mktemp); $(RM) $$SENTINEL; \
+	git config --file .gitmodules --get-regexp '\.path$$' 2>/dev/null | awk '{print $$2}' | \
+	while IFS= read -r p; do \
 		[ -d "$$p" ] || continue; \
 		[ -e "$$p/.git" ] && continue; \
 		[ -z "$$(ls -A "$$p" 2>/dev/null)" ] && continue; \
 		echo "STALE: $$p contains files but is not a hydrated submodule on this branch"; \
-		echo "  fix: rm -rf $$p && git submodule update --init -- $$p"; \
-		echo "stale" > .stale-submodule-check; \
+		echo "  fix: rm -rf $$p && git submodule update --init --checkout --recursive -- $$p"; \
+		echo "stale" > $$SENTINEL; \
 	done; \
-	if [ -f .stale-submodule-check ]; then \
-		$(RM) .stale-submodule-check; \
+	if [ -f $$SENTINEL ]; then \
+		$(RM) $$SENTINEL; \
 		exit 1; \
 	fi
