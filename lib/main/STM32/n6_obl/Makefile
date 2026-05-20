@@ -27,12 +27,12 @@ SIZE    := $(PREFIX)size
 
 OBL_FLASH_DRIVER ?= mx66uw1g45g
 
-HAL_DIR     := $(ROOT)/lib/main/STM32N6/Drivers/STM32N6xx_HAL_Driver
-CMSIS_ST    := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
-CMSIS       := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Include
-OBL_MW      := $(ROOT)/lib/main/STM32N6/Middlewares/ST/OpenBootloader
+HAL_DIR     := $(ROOT)/lib/modules/STM32N6/Drivers/STM32N6xx_HAL_Driver
+CMSIS_ST    := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
+CMSIS       := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Include
+OBL_MW      := $(ROOT)/lib/modules/STM32N6/Middlewares/ST/OpenBootloader
 OBL_USBLIB  := $(OBL_MW)/STM32_USB_Device_Library
-OBL_PROJ    := $(ROOT)/lib/main/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader
+OBL_PROJ    := $(ROOT)/lib/modules/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader
 
 INCLUDES := \
     -I. \

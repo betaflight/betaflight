@@ -332,7 +332,7 @@ breakpad_clean:
 
 # Platform-specific tools
 # Each platform tools.mk appends to PLATFORM_SDKS and defines per-SDK properties:
-#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/main/pico-sdk)
+#   PLATFORM_SDK_<name>_SUBMODULE  - submodule path (e.g. lib/modules/pico-sdk)
 #   PLATFORM_SDK_<name>_HYDRATE   - make target to hydrate the SDK
 #   PLATFORM_SDK_<name>_TOOLS     - make targets to install required toolchains and tools
 #

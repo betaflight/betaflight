@@ -1,6 +1,7 @@
 checks: check-target-independence \
 	check-fastdata-usage-correctness \
-	check-platform-included
+	check-platform-included \
+	check-stale-submodule-paths
 
 check-target-independence:
 	$(V1) for test_target in $(VALID_TARGETS); do \
@@ -32,5 +33,26 @@ check-platform-included:
 	if [ "$$(echo $${PLATFORM_NOT_INCLUDED} | grep -v -e '^$$' | wc -l)" -ne 0 ]; then \
 		echo "The following compilation units do not include the required target specific configuration provided by 'platform.h':"; \
 		echo "$${PLATFORM_NOT_INCLUDED}"; \
+		exit 1; \
+	fi
+
+# Catches a common branch-switch trap: a directory was promoted to a submodule on
+# one branch, but the working tree still has the old embedded files from an earlier
+# branch (or vice versa). The build then fails with cryptic header/source errors.
+# We flag any path listed in .gitmodules that exists as a directory but is missing
+# both a submodule .git marker and a registered gitlink. Tells the user to clean
+# the path and re-hydrate.
+check-stale-submodule-paths:
+	$(V1) git config --file .gitmodules --get-regexp '\.path$$' 2>/dev/null | awk '{print $$2}' | \
+	while read p; do \
+		[ -d "$$p" ] || continue; \
+		[ -e "$$p/.git" ] && continue; \
+		[ -z "$$(ls -A "$$p" 2>/dev/null)" ] && continue; \
+		echo "STALE: $$p contains files but is not a hydrated submodule on this branch"; \
+		echo "  fix: rm -rf $$p && git submodule update --init -- $$p"; \
+		echo "stale" > .stale-submodule-check; \
+	done; \
+	if [ -f .stale-submodule-check ]; then \
+		$(RM) .stale-submodule-check; \
 		exit 1; \
 	fi
