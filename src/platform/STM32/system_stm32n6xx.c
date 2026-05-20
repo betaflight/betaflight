@@ -311,17 +311,17 @@ void systemInit(void)
         *(volatile uint32_t *)0x56028A60UL = (1UL << 0);     /* AHB5ENSR.HPDMA1ENS */
         (void)*(volatile uint32_t *)0x56028250UL;            /* AHB1ENR readback to flush */
 
-        /* GPDMA1 base S = 0x50021000, HPDMA1 base S = 0x50028000.
-         * Open SECCFGR + PRIVCFGR on both — the clocks are on for both,
-         * so any user of HPDMA1 needs the same channel-attribute openings
-         * as GPDMA1 or its NS transactions silently drop. */
+        /* GPDMA1 base S = 0x50021000 (AHB1), HPDMA1 base S = 0x58020000
+         * (AHB5). Open SECCFGR + PRIVCFGR on both — clocks are on for
+         * both, so any user of HPDMA1 needs the same channel-attribute
+         * openings as GPDMA1 or its NS transactions silently drop. */
         *(volatile uint32_t *)(0x50021000UL + 0x00) = 0x0000FFFFUL;   /* GPDMA1->SECCFGR */
         *(volatile uint32_t *)(0x50021000UL + 0x04) = 0x0000FFFFUL;   /* GPDMA1->PRIVCFGR */
         (void)*(volatile uint32_t *)(0x50021000UL + 0x00);
 
-        *(volatile uint32_t *)(0x50028000UL + 0x00) = 0x0000FFFFUL;   /* HPDMA1->SECCFGR */
-        *(volatile uint32_t *)(0x50028000UL + 0x04) = 0x0000FFFFUL;   /* HPDMA1->PRIVCFGR */
-        (void)*(volatile uint32_t *)(0x50028000UL + 0x00);
+        *(volatile uint32_t *)(0x58020000UL + 0x00) = 0x0000FFFFUL;   /* HPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x58020000UL + 0x04) = 0x0000FFFFUL;   /* HPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x58020000UL + 0x00);
     }
 
     /* GPIO bank clocks + GPIO SECCFGR open (NS-accessible).
