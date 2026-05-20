@@ -70,7 +70,10 @@ static bool sensorsOk(void)
     // frame, so a heading error cancels. GPS-assisted hold is not: GPS
     // provides absolute ENU measurements and a bad yaw in the body-frame
     // correction rotation will cause a flyaway.
-    const bool needsHeading = (posHoldConfig()->positionSource != POSHOLD_SOURCE_OPTICALFLOW_ONLY);
+    // Use the runtime GPS state (fix present + config allows GPS) rather than
+    // the configured source alone, so AUTO mode with no GPS hardware correctly
+    // skips the heading check and does not block optical-flow-only hold.
+    const bool needsHeading = positionEstimatorIsGPSContributing();
     return positionEstimatorIsValidXY() && (!needsHeading || imuIsHeadingValid());
 }
 
