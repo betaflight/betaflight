@@ -99,19 +99,28 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB2(GPIOI) },
 };
 #elif defined(STM32N6)
+// Index by IO_GPIOPortIdx() -- (GPIO_BASE - GPIOA_BASE) >> 10. The N6 GPIO
+// blocks are still on a 1 KiB stride, but ports I..M don't exist (the bank
+// jumps from H@idx 7 straight to N@idx 13), so those slots stay zero and
+// are never reached because no DEFIO_TAG__PI..PM are produced (target.h
+// doesn't enable TARGET_IO_PORTI..M).
+//
+// Ports P (idx 15) and Q (idx 16) overflow the 4-bit port nibble in
+// ioTag_t and are intentionally not exposed: flight-controller boards
+// almost never reach for the largest pin-count packages, so widening
+// ioTag_t to uint16_t isn't worth the cross-cutting churn.
 const struct ioPortDef_s ioPortDefs[] = {
-    { RCC_AHB4(GPIOA) },
-    { RCC_AHB4(GPIOB) },
-    { RCC_AHB4(GPIOC) },
-    { RCC_AHB4(GPIOD) },
-    { RCC_AHB4(GPIOE) },
-    { RCC_AHB4(GPIOF) },
-    { RCC_AHB4(GPIOG) },
-    { RCC_AHB4(GPIOH) },
-    { RCC_AHB4(GPION) },
-    { RCC_AHB4(GPIOO) },
-    { RCC_AHB4(GPIOP) },
-    { RCC_AHB4(GPIOQ) },
+    [0]  = { RCC_AHB4(GPIOA) },
+    [1]  = { RCC_AHB4(GPIOB) },
+    [2]  = { RCC_AHB4(GPIOC) },
+    [3]  = { RCC_AHB4(GPIOD) },
+    [4]  = { RCC_AHB4(GPIOE) },
+    [5]  = { RCC_AHB4(GPIOF) },
+    [6]  = { RCC_AHB4(GPIOG) },
+    [7]  = { RCC_AHB4(GPIOH) },
+    // [8..12] reserved (I..M absent on N6)
+    [13] = { RCC_AHB4(GPION) },
+    [14] = { RCC_AHB4(GPIOO) },
 };
 #else
 # error "IO PortDefs not defined for MCU"

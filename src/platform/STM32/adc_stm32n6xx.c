@@ -177,6 +177,14 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     if (HAL_ADCEx_Calibration_Start(hadc, ADC_SINGLE_ENDED) != HAL_OK) {
       errorHandler();
     }
+
+    // CubeN6's HAL_ADCEx_Calibration_Start leaves ADEN=1, but
+    // HAL_ADC_ConfigChannel refuses to run while ADEN=1. Disable here so
+    // the per-channel configuration in adcInit succeeds; HAL_ADC_Start_DMA
+    // re-enables the ADC at the end of init.
+    if (ADC_Disable(hadc) != HAL_OK) {
+      errorHandler();
+    }
 }
 
 static int adcFindTagMapEntry(ioTag_t tag)
@@ -367,6 +375,22 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
+        // Resolve DMA spec before consuming dmaBufferIndex slots or
+        // touching adcOperatingConfig[].dmaIndex — bailing out after
+        // those assignments leaves the start loop packing later ADCs
+        // at the front of adcConversionBuffer while the dmaIndex
+        // mappings still point past the gap, mis-routing samples.
+#ifdef USE_DMA_SPEC
+        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        if (!dmaSpec) {
+            // No DMA configured for this ADC device; deactivate it so the
+            // Start_DMA loop below skips it (otherwise HAL_ADC_Start_DMA
+            // dereferences a NULL DmaHandle.Instance).
+            adc->channelBits = 0;
+            continue;
+        }
+#endif
+
         RCC_ClockCmd(adc->rccADC, ENABLE);
 
         int configuredAdcChannels = popcount(adc->channelBits);
@@ -406,10 +430,10 @@ void adcInit(const adcConfig_t *config)
         // Configure DMA for this ADC peripheral
 
 #ifdef USE_DMA_SPEC
-        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+
         dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 

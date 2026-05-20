@@ -116,11 +116,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA10), GPIO_AF7_USART1 },
             { DEFIO_TAG_E(PB7),  GPIO_AF7_USART1 },
             { DEFIO_TAG_E(PB15), GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PE6),  GPIO_AF7_USART1 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA9),  GPIO_AF7_USART1 },
             { DEFIO_TAG_E(PB6),  GPIO_AF7_USART1 },
             { DEFIO_TAG_E(PB14), GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PE5),  GPIO_AF7_USART1 },
         },
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
