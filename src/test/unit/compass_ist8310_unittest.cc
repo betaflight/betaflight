@@ -121,33 +121,30 @@ void IORelease() {}
 } // extern "C"
 
 // ---------------------------------------------------------------------------
-// Tests
+// Helpers
 //
-// IMPORTANT: ist8310Read uses static local variables for its state machine.
-// State persists across calls within the same process. Tests in this file
-// are designed to run sequentially, with each test picking up from the state
-// left by the previous one. The state machine starts in STATE_CHECK_STATUS.
-//
-// The initial state after ist8310Init triggers a single measurement, so the
-// first call to ist8310Read enters STATE_CHECK_STATUS with status=0, retries=0.
+// ist8310Read uses static local variables for its state machine. State
+// persists across calls within the same process. syncToCheckStatusBaseline()
+// drives the state machine through a full cycle until it returns true
+// (STATE_TRIGGER_MEASUREMENT succeeded), which resets state to
+// STATE_CHECK_STATUS with status=0 and retries=0. Each state-machine test
+// calls this at the top so tests are order-independent.
 // ---------------------------------------------------------------------------
 
-class Ist8310ReadTest : public ::testing::Test {
-protected:
-    magDev_t mag;
-    busDevice_t bus;
-    int16_t magData[3];
-    sensorMagReadFuncPtr readFn;
-
-    void SetUp() override {
+static void syncToCheckStatusBaseline(magDev_t *mag, int16_t *magData)
+{
+    for (int i = 0; i < 20; i++) {
         resetMocks();
-        memset(&mag, 0, sizeof(mag));
-        memset(&bus, 0, sizeof(bus));
-        bus.busType = BUS_TYPE_I2C;
-        mag.dev.bus = &bus;
-        memset(magData, 0, sizeof(magData));
+        mock_busReadRegisterBufferStart_ret = true;
+        mock_busReadRegisterBufferStart_buf[0] = 0x01; // DRDY set when polled
+        mock_busWriteRegisterStart_ret = true;
+        if (mag->read(mag, magData)) {
+            resetMocks();
+            return;
+        }
     }
-};
+    FAIL() << "Unable to synchronize IST8310 state machine to CHECK_STATUS baseline";
+}
 
 // ---------------------------------------------------------------------------
 // Test: ist8310Detect sets up function pointers and default I2C address
@@ -235,9 +232,6 @@ TEST(Ist8310DetectTest, DetectPreservesExistingAddress)
 // ---------------------------------------------------------------------------
 TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
 {
-    // Obtain read function pointer (this also calls ist8310Detect which
-    // resets nothing about the static state, but the statics start at
-    // STATE_CHECK_STATUS with status=0 on first use)
     magDev_t mag;
     memset(&mag, 0, sizeof(mag));
     busDevice_t bus;
@@ -250,7 +244,7 @@ TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
     ASSERT_NE(nullptr, mag.read);
 
     int16_t magData[3] = {0, 0, 0};
-    resetMocks();
+    syncToCheckStatusBaseline(&mag, magData);
 
     // --- Call 1: STATE_CHECK_STATUS, status=0, retries=0 ---
     // Should poll STAT1 register. We simulate DRDY not set yet.
@@ -322,14 +316,9 @@ TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
 
 // ---------------------------------------------------------------------------
 // Test: DRDY timeout triggers re-measurement
-//
-// Continues from state left by previous test (STATE_CHECK_STATUS, status=0).
-// We poll IST8310_DRDY_MAX_RETRIES+1 times without DRDY, then expect
-// transition to STATE_TRIGGER_MEASUREMENT.
 // ---------------------------------------------------------------------------
 TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
 {
-    // Need to get the read fn again (statics persist from previous test)
     magDev_t mag;
     memset(&mag, 0, sizeof(mag));
     busDevice_t bus;
@@ -341,10 +330,7 @@ TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
     ASSERT_TRUE(detected);
 
     int16_t magData[3] = {0, 0, 0};
-
-    // The previous test ended with STATE_TRIGGER_MEASUREMENT returning true,
-    // which set state = STATE_CHECK_STATUS, status = 0, retries = 0.
-    // Now we simulate DRDY never becoming set for > IST8310_DRDY_MAX_RETRIES polls.
+    syncToCheckStatusBaseline(&mag, magData);
 
     // Poll 16 times (retries 0..15, timeout at retries > 15 = 16th call)
     for (int i = 0; i <= 15; i++) {
@@ -390,10 +376,9 @@ TEST(Ist8310StateMachineTest, TriggerWriteFailureRetries)
     ASSERT_TRUE(ist8310Detect(&mag));
 
     int16_t magData[3] = {0, 0, 0};
+    syncToCheckStatusBaseline(&mag, magData);
 
-    // Previous test left us in STATE_CHECK_STATUS with status=0.
-    // We need to get to STATE_TRIGGER_MEASUREMENT. Fast-forward via DRDY ready path.
-
+    // Drive state machine to STATE_TRIGGER_MEASUREMENT via DRDY ready path.
     // Poll once to read status (DRDY set)
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = 0x01; // DRDY
@@ -438,8 +423,8 @@ TEST(Ist8310StateMachineTest, NegativeMagDataConversion)
     ASSERT_TRUE(ist8310Detect(&mag));
 
     int16_t magData[3] = {0, 0, 0};
+    syncToCheckStatusBaseline(&mag, magData);
 
-    // Previous test left us in STATE_CHECK_STATUS, status=0.
     // Poll status with DRDY set
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = 0x01;
@@ -523,13 +508,8 @@ TEST(Ist8310StateMachineTest, DataReadStartFailureStaysInCheckStatus)
     ASSERT_TRUE(ist8310Detect(&mag));
 
     int16_t magData[3] = {0, 0, 0};
+    syncToCheckStatusBaseline(&mag, magData);
 
-    // Finish any leftover state from previous test - trigger measurement
-    resetMocks();
-    mock_busWriteRegisterStart_ret = true;
-    mag.read(&mag, magData);
-
-    // Now in STATE_CHECK_STATUS, status=0.
     // Poll status, get DRDY
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = 0x01;
