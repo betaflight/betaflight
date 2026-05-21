@@ -82,6 +82,10 @@
 
 #define GRAVITY_CMSS        980.665f
 
+#define GPS_DOP_SCALE       0.01f
+#define GPS_DOP_MIN_VALID   100         // DOP is stored * 100; values below 1.0 are unset/unrealistic
+#define GPS_DOP_UNKNOWN_R_SCALE 100.0f  // Treat unknown DOP as 10x stddev, 100x variance
+
 // Timeout: if no measurement for this long, mark invalid
 #define MEASUREMENT_TIMEOUT_US  2000000  // 2 seconds
 
@@ -292,14 +296,21 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
 }
 
 #ifdef USE_GPS
-// GPS measurement noise scaled by pDOP
-static float gpsR(float baseR)
+// GPS measurement noise scaled by DOP. Unknown/unrealistically low DOP must not
+// be treated as excellent GPS, otherwise GPS can dominate optical-flow fusion.
+static float gpsR(float baseR, uint16_t dop)
 {
-    float pdop = gpsSol.dop.pdop * 0.01f;  // pDOP * 100 stored, so /100 to real value
-    if (pdop < 1.0f) {
-        pdop = 1.0f;
+    if (dop < GPS_DOP_MIN_VALID) {
+        return baseR * GPS_DOP_UNKNOWN_R_SCALE;
     }
-    return baseR * pdop * pdop;
+
+    const float dopScale = dop * GPS_DOP_SCALE;
+    return baseR * dopScale * dopScale;
+}
+
+static uint16_t gpsDopOrFallback(uint16_t preferredDop, uint16_t fallbackDop)
+{
+    return (preferredDop >= GPS_DOP_MIN_VALID) ? preferredDop : fallbackDop;
 }
 #endif
 
@@ -357,12 +368,13 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         GPS_distance2d(&gpsSol.llh, &armLocationGps, &gpsDistCm);
         // gpsDistCm: X = East-West (lon), Y = North-South (lat) relative to arm position
 
-        const float rPos = gpsR(R_GPS_POS_BASE);
+        const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
+        const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
         kalmanUpdatePosition(&kfX, gpsDistCm.x, rPos);
         kalmanUpdatePosition(&kfY, gpsDistCm.y, rPos);
 
         // GPS velocity (NED from UBX) -> ENU
-        const float rVel = gpsR(R_GPS_VEL_BASE);
+        const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);
         kalmanUpdateVelocity(&kfX, (float)gpsSol.velned.velE, rVel);
         kalmanUpdateVelocity(&kfY, (float)gpsSol.velned.velN, rVel);
 
@@ -379,7 +391,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // Use altitude_prefer_baro to scale GPS altitude R:
         // altitude_prefer_baro=100 means strongly prefer baro, so GPS R should be higher
         const float baroPreference = positionConfig()->altitude_prefer_baro * 0.01f;
-        const float gpsAltR = gpsR(R_GPS_ALT_BASE) * (1.0f + baroPreference * 2.0f);
+        const uint16_t altDop = gpsDopOrFallback(gpsSol.dop.vdop, gpsSol.dop.pdop);
+        const float gpsAltR = gpsR(R_GPS_ALT_BASE, altDop) * (1.0f + baroPreference * 2.0f);
 
         const float gpsRelativeAltCm = gpsSol.llh.altCm - gpsAltOffsetCm;
         kalmanUpdatePosition(&kfZ, gpsRelativeAltCm, gpsAltR);
