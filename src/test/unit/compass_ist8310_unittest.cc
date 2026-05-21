@@ -1,0 +1,560 @@
+/*
+ * This file is part of Betaflight.
+ *
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <stdint.h>
+#include <string.h>
+
+extern "C" {
+
+#include "platform.h"
+#include "target.h"
+#include "drivers/compass/compass.h"
+#include "drivers/compass/compass_ist8310.h"
+#include "drivers/bus.h"
+
+}
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+// ---------------------------------------------------------------------------
+// Mock infrastructure for bus operations
+// ---------------------------------------------------------------------------
+
+// Controls what busReadRegisterBuffer returns (used by deviceDetect)
+static bool mock_busReadRegisterBuffer_ret = true;
+static uint8_t mock_busReadRegisterBuffer_value = 0x10; // IST8310_REG_WAI_VALID
+
+// Controls what busReadRegisterBufferStart returns and writes into the buffer
+static bool mock_busReadRegisterBufferStart_ret = true;
+static uint8_t mock_busReadRegisterBufferStart_reg = 0;
+static uint8_t mock_busReadRegisterBufferStart_buf[8];
+static uint8_t mock_busReadRegisterBufferStart_len = 0;
+
+// Controls what busWriteRegisterStart returns
+static bool mock_busWriteRegisterStart_ret = true;
+static uint8_t mock_busWriteRegisterStart_lastReg = 0;
+static uint8_t mock_busWriteRegisterStart_lastVal = 0;
+
+// Call counters
+static int busReadRegisterBufferStart_callCount = 0;
+static int busWriteRegisterStart_callCount = 0;
+
+static void resetMocks(void)
+{
+    mock_busReadRegisterBuffer_ret = true;
+    mock_busReadRegisterBuffer_value = 0x10;
+    mock_busReadRegisterBufferStart_ret = true;
+    mock_busReadRegisterBufferStart_reg = 0;
+    memset(mock_busReadRegisterBufferStart_buf, 0, sizeof(mock_busReadRegisterBufferStart_buf));
+    mock_busReadRegisterBufferStart_len = 0;
+    mock_busWriteRegisterStart_ret = true;
+    mock_busWriteRegisterStart_lastReg = 0;
+    mock_busWriteRegisterStart_lastVal = 0;
+    busReadRegisterBufferStart_callCount = 0;
+    busWriteRegisterStart_callCount = 0;
+}
+
+extern "C" {
+
+void delay(uint32_t) {}
+bool busBusy(const extDevice_t*, bool*) { return false; }
+
+bool busReadRegisterBuffer(const extDevice_t*, uint8_t, uint8_t *buf, uint8_t len)
+{
+    if (buf && len > 0) {
+        buf[0] = mock_busReadRegisterBuffer_value;
+    }
+    return mock_busReadRegisterBuffer_ret;
+}
+
+bool busReadRegisterBufferStart(const extDevice_t*, uint8_t reg, uint8_t *buf, uint8_t len)
+{
+    busReadRegisterBufferStart_callCount++;
+    mock_busReadRegisterBufferStart_reg = reg;
+    mock_busReadRegisterBufferStart_len = len;
+    if (buf && len > 0) {
+        // Simulate async completion: copy prepared data into caller's buffer
+        memcpy(buf, mock_busReadRegisterBufferStart_buf, len);
+    }
+    return mock_busReadRegisterBufferStart_ret;
+}
+
+bool busWriteRegister(const extDevice_t*, uint8_t, uint8_t) { return true; }
+
+bool busWriteRegisterStart(const extDevice_t*, uint8_t reg, uint8_t val)
+{
+    busWriteRegisterStart_callCount++;
+    mock_busWriteRegisterStart_lastReg = reg;
+    mock_busWriteRegisterStart_lastVal = val;
+    return mock_busWriteRegisterStart_ret;
+}
+
+void busDeviceRegister(const extDevice_t*) {}
+
+uint16_t spiCalculateDivider() { return 2; }
+void spiSetClkDivisor() {}
+void ioPreinitByIO() {}
+void IOConfigGPIO() {}
+void IOHi() {}
+void IOInit() {}
+void IORelease() {}
+
+} // extern "C"
+
+// ---------------------------------------------------------------------------
+// Tests
+//
+// IMPORTANT: ist8310Read uses static local variables for its state machine.
+// State persists across calls within the same process. Tests in this file
+// are designed to run sequentially, with each test picking up from the state
+// left by the previous one. The state machine starts in STATE_CHECK_STATUS.
+//
+// The initial state after ist8310Init triggers a single measurement, so the
+// first call to ist8310Read enters STATE_CHECK_STATUS with status=0, retries=0.
+// ---------------------------------------------------------------------------
+
+class Ist8310ReadTest : public ::testing::Test {
+protected:
+    magDev_t mag;
+    busDevice_t bus;
+    int16_t magData[3];
+    sensorMagReadFuncPtr readFn;
+
+    void SetUp() override {
+        resetMocks();
+        memset(&mag, 0, sizeof(mag));
+        memset(&bus, 0, sizeof(bus));
+        bus.busType = BUS_TYPE_I2C;
+        mag.dev.bus = &bus;
+        memset(magData, 0, sizeof(magData));
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Test: ist8310Detect sets up function pointers and default I2C address
+// ---------------------------------------------------------------------------
+TEST(Ist8310DetectTest, DetectSuccess)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mag.dev.busType_u.i2c.address = 0;
+
+    mock_busReadRegisterBuffer_value = 0x10; // IST8310_REG_WAI_VALID
+    mock_busReadRegisterBuffer_ret = true;
+
+    bool result = ist8310Detect(&mag);
+    EXPECT_TRUE(result);
+    EXPECT_NE(nullptr, mag.init);
+    EXPECT_NE(nullptr, mag.read);
+    EXPECT_EQ(0x0E, mag.dev.busType_u.i2c.address);
+}
+
+TEST(Ist8310DetectTest, DetectFailWrongWAI)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+
+    mock_busReadRegisterBuffer_value = 0xFF; // wrong WAI
+    mock_busReadRegisterBuffer_ret = true;
+
+    bool result = ist8310Detect(&mag);
+    EXPECT_FALSE(result);
+}
+
+TEST(Ist8310DetectTest, DetectFailBusError)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+
+    mock_busReadRegisterBuffer_value = 0x10;
+    mock_busReadRegisterBuffer_ret = false; // bus error
+
+    bool result = ist8310Detect(&mag);
+    EXPECT_FALSE(result);
+}
+
+TEST(Ist8310DetectTest, DetectPreservesExistingAddress)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mag.dev.busType_u.i2c.address = 0x0D; // custom address
+
+    mock_busReadRegisterBuffer_value = 0x10;
+    mock_busReadRegisterBuffer_ret = true;
+
+    ist8310Detect(&mag);
+    EXPECT_EQ(0x0D, mag.dev.busType_u.i2c.address);
+}
+
+// ---------------------------------------------------------------------------
+// Full state machine integration test
+//
+// Because ist8310Read uses static locals, we exercise the entire state machine
+// in a single test, calling read repeatedly and verifying transitions.
+//
+// State machine flow:
+//   STATE_CHECK_STATUS (status=0) -> polls STAT1 -> returns false
+//   STATE_CHECK_STATUS (status has DRDY) -> starts data read -> STATE_READ_DATA, returns false
+//   STATE_READ_DATA -> parses mag data -> STATE_TRIGGER_MEASUREMENT, returns false
+//   STATE_TRIGGER_MEASUREMENT -> writes CNTRL1 -> STATE_CHECK_STATUS, returns true
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
+{
+    // Obtain read function pointer (this also calls ist8310Detect which
+    // resets nothing about the static state, but the statics start at
+    // STATE_CHECK_STATUS with status=0 on first use)
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = 0x10;
+    bool detected = ist8310Detect(&mag);
+    ASSERT_TRUE(detected);
+    ASSERT_NE(nullptr, mag.read);
+
+    int16_t magData[3] = {0, 0, 0};
+    resetMocks();
+
+    // --- Call 1: STATE_CHECK_STATUS, status=0, retries=0 ---
+    // Should poll STAT1 register. We simulate DRDY not set yet.
+    mock_busReadRegisterBufferStart_buf[0] = 0x00; // DRDY not set
+    mock_busReadRegisterBufferStart_ret = true;
+
+    bool result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(1, busReadRegisterBufferStart_callCount);
+    // Verified it polled STAT1 (reg 0x02)
+    EXPECT_EQ(0x02, mock_busReadRegisterBufferStart_reg);
+
+    // --- Call 2: STATE_CHECK_STATUS, status now has DRDY set ---
+    // The mock wrote 0x00 into status in call 1. But our mock copies the
+    // prepared buffer immediately, so status was set to 0x00.
+    // We now prepare DRDY=1 for the next poll.
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x01; // DRDY set
+    mock_busReadRegisterBufferStart_ret = true;
+
+    result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Still in CHECK_STATUS, polled STAT1 again (status was 0 from last call)
+    EXPECT_EQ(1, busReadRegisterBufferStart_callCount);
+
+    // --- Call 3: STATE_CHECK_STATUS, status=0x01 (DRDY set from previous read) ---
+    // Now status has DRDY. Should start reading data registers.
+    resetMocks();
+    // Prepare 6 bytes of mag data in the read buffer:
+    // X = 0x0100 = 256, Y = 0x0200 = 512, Z = 0x0300 = 768 (little-endian)
+    mock_busReadRegisterBufferStart_buf[0] = 0x00; // X low
+    mock_busReadRegisterBufferStart_buf[1] = 0x01; // X high
+    mock_busReadRegisterBufferStart_buf[2] = 0x00; // Y low
+    mock_busReadRegisterBufferStart_buf[3] = 0x02; // Y high
+    mock_busReadRegisterBufferStart_buf[4] = 0x00; // Z low
+    mock_busReadRegisterBufferStart_buf[5] = 0x03; // Z high
+    mock_busReadRegisterBufferStart_ret = true;
+
+    result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Should have started reading data register (reg 0x03)
+    EXPECT_EQ(0x03, mock_busReadRegisterBufferStart_reg);
+    EXPECT_EQ(6, mock_busReadRegisterBufferStart_len);
+
+    // --- Call 4: STATE_READ_DATA ---
+    // Should parse the buffer and transition to STATE_TRIGGER_MEASUREMENT
+    resetMocks();
+    result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Verify mag data conversion: raw * LSB2FSV(3)
+    // X = 256 * 3 = 768
+    EXPECT_EQ(768, magData[0]);
+    // Y = -(512) * 3 = -1536 (Y axis inverted)
+    EXPECT_EQ(-1536, magData[1]);
+    // Z = 768 * 3 = 2304
+    EXPECT_EQ(2304, magData[2]);
+
+    // --- Call 5: STATE_TRIGGER_MEASUREMENT ---
+    // Should write CNTRL1 register and return true
+    resetMocks();
+    mock_busWriteRegisterStart_ret = true;
+
+    result = mag.read(&mag, magData);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(1, busWriteRegisterStart_callCount);
+    EXPECT_EQ(0x0A, mock_busWriteRegisterStart_lastReg); // IST8310_REG_CNTRL1
+    EXPECT_EQ(0x01, mock_busWriteRegisterStart_lastVal);  // IST8310_ODR_SINGLE
+}
+
+// ---------------------------------------------------------------------------
+// Test: DRDY timeout triggers re-measurement
+//
+// Continues from state left by previous test (STATE_CHECK_STATUS, status=0).
+// We poll IST8310_DRDY_MAX_RETRIES+1 times without DRDY, then expect
+// transition to STATE_TRIGGER_MEASUREMENT.
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
+{
+    // Need to get the read fn again (statics persist from previous test)
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = 0x10;
+    bool detected = ist8310Detect(&mag);
+    ASSERT_TRUE(detected);
+
+    int16_t magData[3] = {0, 0, 0};
+
+    // The previous test ended with STATE_TRIGGER_MEASUREMENT returning true,
+    // which set state = STATE_CHECK_STATUS, status = 0, retries = 0.
+    // Now we simulate DRDY never becoming set for > IST8310_DRDY_MAX_RETRIES polls.
+
+    // Poll 16 times (retries 0..15, timeout at retries > 15 = 16th call)
+    for (int i = 0; i <= 15; i++) {
+        resetMocks();
+        mock_busReadRegisterBufferStart_buf[0] = 0x00; // DRDY never set
+        mock_busReadRegisterBufferStart_ret = true;
+
+        bool result = mag.read(&mag, magData);
+        EXPECT_FALSE(result);
+    }
+
+    // 17th call: retries (now 16) > IST8310_DRDY_MAX_RETRIES (15) => timeout
+    // Should transition to STATE_TRIGGER_MEASUREMENT
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x00;
+
+    bool result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Now in STATE_TRIGGER_MEASUREMENT
+
+    // Next call should write the trigger register
+    resetMocks();
+    mock_busWriteRegisterStart_ret = true;
+
+    result = mag.read(&mag, magData);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(0x0A, mock_busWriteRegisterStart_lastReg);
+    EXPECT_EQ(0x01, mock_busWriteRegisterStart_lastVal);
+}
+
+// ---------------------------------------------------------------------------
+// Test: busWriteRegisterStart failure in TRIGGER state keeps retrying
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, TriggerWriteFailureRetries)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = 0x10;
+    ASSERT_TRUE(ist8310Detect(&mag));
+
+    int16_t magData[3] = {0, 0, 0};
+
+    // Previous test left us in STATE_CHECK_STATUS with status=0.
+    // We need to get to STATE_TRIGGER_MEASUREMENT. Fast-forward via DRDY ready path.
+
+    // Poll once to read status (DRDY set)
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x01; // DRDY
+    mag.read(&mag, magData);
+
+    // Now status=0x01, next call starts data read
+    resetMocks();
+    mock_busReadRegisterBufferStart_ret = true;
+    mag.read(&mag, magData);
+
+    // STATE_READ_DATA - parse data
+    resetMocks();
+    mag.read(&mag, magData);
+
+    // Now in STATE_TRIGGER_MEASUREMENT. Simulate write failure.
+    resetMocks();
+    mock_busWriteRegisterStart_ret = false;
+
+    bool result = mag.read(&mag, magData);
+    EXPECT_FALSE(result); // write failed, stays in TRIGGER state
+
+    // Try again with success
+    resetMocks();
+    mock_busWriteRegisterStart_ret = true;
+
+    result = mag.read(&mag, magData);
+    EXPECT_TRUE(result); // now succeeds
+}
+
+// ---------------------------------------------------------------------------
+// Test: Data conversion with negative values
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, NegativeMagDataConversion)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = 0x10;
+    ASSERT_TRUE(ist8310Detect(&mag));
+
+    int16_t magData[3] = {0, 0, 0};
+
+    // Previous test left us in STATE_CHECK_STATUS, status=0.
+    // Poll status with DRDY set
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x01;
+    mag.read(&mag, magData);
+
+    // Start data read with negative values:
+    // X = 0xFFFE = -2 as int16_t, Y = 0x8000 = -32768, Z = 0xFF00 = -256
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0xFE; // X low
+    mock_busReadRegisterBufferStart_buf[1] = 0xFF; // X high
+    mock_busReadRegisterBufferStart_buf[2] = 0x00; // Y low
+    mock_busReadRegisterBufferStart_buf[3] = 0x80; // Y high
+    mock_busReadRegisterBufferStart_buf[4] = 0x00; // Z low
+    mock_busReadRegisterBufferStart_buf[5] = 0xFF; // Z high
+    mag.read(&mag, magData);
+
+    // Parse data in STATE_READ_DATA
+    resetMocks();
+    mag.read(&mag, magData);
+
+    // X = -2 * 3 = -6
+    EXPECT_EQ(-6, magData[0]);
+    // Y = -(-32768) * 3 = but note int16_t overflow: -(-32768) overflows to
+    // -32768 in int16_t, but the negation happens on int level.
+    // -(int16_t)(0x8000) = -((-32768)) = 32768, * 3 = 98304
+    // Actually: (int16_t)(0x8000) = -32768, then negated = 32768, * 3 = 98304
+    // But magData is int16_t, and 98304 overflows. The multiplication result
+    // is stored as int before truncation to int16_t array.
+    // Wait - magData[Y] = -(int16_t)(...) * LSB2FSV = 32768 * 3 = 98304
+    // This will be truncated when stored to int16_t.
+    // Actually let me re-check: magData[Y] is int16_t, and the expression
+    // -(int16_t)(0x8000) * 3 in C is computed as int: -(-32768) * 3 = 32768 * 3 = 98304
+    // Stored to int16_t: 98304 & 0xFFFF = 0x8000 = -32768 (implementation-defined, but typical)
+    // This is actually an overflow edge case. Let's use a more normal negative value.
+
+    // Clean up state - trigger measurement
+    resetMocks();
+    mock_busWriteRegisterStart_ret = true;
+    mag.read(&mag, magData);
+
+    // Now re-do with sane negative values
+    // Poll status
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x01;
+    mag.read(&mag, magData);
+
+    // X = 0xFFFE = -2, Y = 0xFFFD = -3, Z = 0xFFFC = -4
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0xFE;
+    mock_busReadRegisterBufferStart_buf[1] = 0xFF;
+    mock_busReadRegisterBufferStart_buf[2] = 0xFD;
+    mock_busReadRegisterBufferStart_buf[3] = 0xFF;
+    mock_busReadRegisterBufferStart_buf[4] = 0xFC;
+    mock_busReadRegisterBufferStart_buf[5] = 0xFF;
+    mag.read(&mag, magData);
+
+    // Parse
+    resetMocks();
+    mag.read(&mag, magData);
+
+    // X = -2 * 3 = -6
+    EXPECT_EQ(-6, magData[0]);
+    // Y = -(-3) * 3 = 9 (Y inverted)
+    EXPECT_EQ(9, magData[1]);
+    // Z = -4 * 3 = -12
+    EXPECT_EQ(-12, magData[2]);
+}
+
+// ---------------------------------------------------------------------------
+// Test: busReadRegisterBufferStart failure in CHECK_STATUS when DRDY is set
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, DataReadStartFailureStaysInCheckStatus)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = 0x10;
+    ASSERT_TRUE(ist8310Detect(&mag));
+
+    int16_t magData[3] = {0, 0, 0};
+
+    // Finish any leftover state from previous test - trigger measurement
+    resetMocks();
+    mock_busWriteRegisterStart_ret = true;
+    mag.read(&mag, magData);
+
+    // Now in STATE_CHECK_STATUS, status=0.
+    // Poll status, get DRDY
+    resetMocks();
+    mock_busReadRegisterBufferStart_buf[0] = 0x01;
+    mag.read(&mag, magData);
+
+    // Next call: status has DRDY, but busReadRegisterBufferStart fails
+    resetMocks();
+    mock_busReadRegisterBufferStart_ret = false;
+
+    bool result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Should stay in STATE_CHECK_STATUS, will retry on next call
+
+    // Now succeed
+    resetMocks();
+    mock_busReadRegisterBufferStart_ret = true;
+    mock_busReadRegisterBufferStart_buf[0] = 0x01;
+    mock_busReadRegisterBufferStart_buf[1] = 0x00;
+    mock_busReadRegisterBufferStart_buf[2] = 0x01;
+    mock_busReadRegisterBufferStart_buf[3] = 0x00;
+    mock_busReadRegisterBufferStart_buf[4] = 0x01;
+    mock_busReadRegisterBufferStart_buf[5] = 0x00;
+
+    result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    // Should have transitioned to STATE_READ_DATA
+    EXPECT_EQ(0x03, mock_busReadRegisterBufferStart_reg);
+}
