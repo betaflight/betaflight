@@ -135,6 +135,15 @@ static uint16_t USB_DFU_If_Erase(uint32_t Add)
 static uint32_t dfuse_addr_ptr_normal   = 0x70100000U;
 static uint32_t dfuse_addr_ptr_recovery = 0x70000000U;
 
+/* Auto-reboot watchdog for DFU downloads. dfu-util without --reset does
+ * not send the protocol's DFU_DETACH / manifest-leave trigger, so
+ * DFU_Leave (which sets dfu_leave_pending) never runs and the chip sits
+ * in DFU forever. Stamp the tick each time we accept a real data block;
+ * run_obl_loop in obl_app.c watches for idleness after the first write
+ * and triggers NVIC_SystemReset on its own. 0 means "no download seen
+ * yet"; obl_app.c only consults the value once it's non-zero. */
+volatile uint32_t dfu_last_write_tick;
+
 static uint32_t dfuse_get_base(void)
 {
     return obl_recovery_mode ? dfuse_addr_ptr_recovery : dfuse_addr_ptr_normal;
@@ -203,6 +212,12 @@ static uint16_t USB_DFU_If_Write(uint8_t *pSrc, uint32_t alt, uint32_t Len, uint
     const uint32_t offset = addr - EXT_MEMORY_START_ADDRESS;
     if (!flash_program(offset, pSrc, Len)) {
         return 1U;
+    }
+    /* Refresh the auto-reboot timestamp; run_obl_loop reboots if no
+     * further writes arrive within DFU_IDLE_REBOOT_MS. */
+    dfu_last_write_tick = HAL_GetTick();
+    if (dfu_last_write_tick == 0U) {
+        dfu_last_write_tick = 1U;
     }
     return 0U;
 }

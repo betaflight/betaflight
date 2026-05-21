@@ -60,7 +60,7 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 
 // For H7, DMA buffer is placed in a dedicated segment for coherency management
 // XXX Do we need any special qualifier for AT32?
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(STM32N6)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
 #elif defined(STM32G4)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_W

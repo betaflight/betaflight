@@ -66,6 +66,13 @@ ifdef OBL_FORCE_DFU
 DEFINES += -DOBL_FORCE_DFU
 endif
 
+# Bring-up override: make OBL_FORCE_RECOVERY=1 to build an OBL that
+# always enters Recovery mode (exposes nor0 from 0x70000000 so OBL+BF
+# can be reinstalled). RAM-load only — never sign and flash this.
+ifdef OBL_FORCE_RECOVERY
+DEFINES += -DOBL_FORCE_RECOVERY
+endif
+
 ARCH_FLAGS := -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
 
 CFLAGS := \
