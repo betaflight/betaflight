@@ -33,7 +33,7 @@
 
 #include "rx/expresslrs_telemetry.h"
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
 #define ELRS_OTA_VERSION_ID 3
 #else
 #define ELRS_OTA_VERSION_ID 4
@@ -205,7 +205,7 @@ typedef struct elrsFhssConfig_s {
     uint8_t freqCount;
 } elrsFhssConfig_t;
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
 
 typedef struct {
     uint8_t uplink_RSSI_1:7,

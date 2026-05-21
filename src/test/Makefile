@@ -511,6 +511,19 @@ rx_spi_expresslrs_unittest_DEFINES := \
 		USE_RX_SX1280= \
 		USE_RX_SX127X= \
 
+rx_spi_expresslrs_v4_unittest_SRC := \
+        $(USER_DIR)/pg/rx_spi_expresslrs.c \
+		$(USER_DIR)/rx/expresslrs_common.c \
+		$(USER_DIR)/rx/expresslrs.c \
+		$(USER_DIR)/build/atomic.c \
+
+rx_spi_expresslrs_v4_unittest_DEFINES := \
+		USE_RX_SPI= \
+		USE_RX_EXPRESSLRS= \
+		USE_RX_SX1280= \
+		USE_RX_SX127X= \
+		USE_ELRSV4= \
+
 rx_spi_expresslrs_telemetry_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
