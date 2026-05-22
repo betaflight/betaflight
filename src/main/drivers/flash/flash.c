@@ -475,13 +475,26 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
-static bool flashWaitForReadyOrFail(void)
+MMFLASH_CODE static bool flashWaitForReadyOrFail(void)
 {
     if (!flashDevice.vTable->waitForReady) {
         return true;
     }
 
     if (!flashDevice.vTable->waitForReady(&flashDevice)) {
+#ifdef USE_FLASH_MEMORY_MAPPED
+        // failureMode lives in XIP. When this trips from a save/erase
+        // loop inside the MMFLASH window, the call to failureMode would
+        // fault. Re-engage memory-mapped mode (best-effort — the chip
+        // may already be in a bad state) so the failure handler is
+        // reachable. Gated on the runtime boot state so the non-MM
+        // experimental path (flashOctoSpiInit under
+        // USE_OCTOSPI_EXPERIMENTAL) does not reconfigure the
+        // controller or unmask IRQs when MM was never enabled.
+        if (isMemoryMappedModeEnabledOnBoot()) {
+            flashMemoryMappedModeEnable();
+        }
+#endif
         failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
         return false;
     }
@@ -591,7 +604,7 @@ const flashGeometry_t *flashGetGeometry(void)
 
 static void flashConfigurePartitions(void)
 {
-#if defined(FIRMWARE_SIZE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(USE_FLASHFS)
+#if defined(FIRMWARE_SIZE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(USE_FLASHFS)
     const flashGeometry_t *flashGeometry = flashGetGeometry();
     if (flashGeometry->totalSize == 0) {
         return;
