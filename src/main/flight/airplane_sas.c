@@ -115,6 +115,7 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
         }
     } else {
         isLiftCoefValid = false;
+        liftCoefLast = 0.0f;
         validLiftCoefTime = 0.0f;
     }
 }
