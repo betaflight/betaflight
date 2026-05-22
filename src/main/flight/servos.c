@@ -55,7 +55,9 @@
 
 #include "rx/rx.h"
 
+#ifdef USE_AIRPLANE_SAS
 #include "flight/airplane_sas.h"
+#endif
 
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 

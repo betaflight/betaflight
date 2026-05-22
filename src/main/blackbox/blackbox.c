@@ -2109,7 +2109,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPidProfile->psas_roll_yaw_clift_start);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPidProfile->psas_roll_yaw_clift_stop);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPidProfile->psas_roll_to_yaw_link);
-#endif // USE_WING
+#endif // USE_AIRPLANE_SAS
 
         default:
             return true;
