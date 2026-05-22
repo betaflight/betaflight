@@ -970,7 +970,7 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
 #ifdef USE_AIRPLANE_SAS
 static uint8_t temp_psas_stick_gain[XYZ_AXIS_COUNT];
 static uint16_t temp_psas_damping_gain[XYZ_AXIS_COUNT];
-static uint16_t ;
+static uint16_t temp_psas_pitch_stability_gain;
 static uint16_t temp_psas_yaw_stability_gain;
 static uint16_t temp_psas_pitch_accel_p_gain;
 static uint8_t temp_psas_pitch_accel_i_gain;
@@ -1021,7 +1021,7 @@ static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *sel
     UNUSED(pDisp);
     UNUSED(self);
 
-    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    pidProfile_t *pidProfile = currentPidProfile;
     for (uint8_t i = 0; i < 3; i++) {
         pidProfile->psas_stick_gain[i] = temp_psas_stick_gain[i];
         pidProfile->psas_damping_gain[i] = temp_psas_damping_gain[i];
