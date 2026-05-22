@@ -396,6 +396,22 @@ TEST(CrossFireTest, TestCrsfDataReceive)
     EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
 }
 
+TEST(CrossFireTest, TestOversizedFrameLengthIsRejected)
+{
+    memset(&crsfFrame, 0, sizeof(crsfFrame));
+    crsfFrameDone = false;
+    dummyTimeUs += 10000;
+
+    crsfDataReceive(CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    crsfDataReceive(CRSF_FRAME_SIZE_MAX);
+    crsfDataReceive(CRSF_FRAMETYPE_RC_CHANNELS_PACKED);
+    for (int ii = 0; ii < CRSF_FRAME_SIZE_MAX - 3; ++ii) {
+        crsfDataReceive(0);
+    }
+
+    EXPECT_FALSE(crsfFrameDone);
+}
+
 // STUBS
 
 extern "C" {
