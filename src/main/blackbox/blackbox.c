@@ -658,6 +658,7 @@ static void writeIntraframe(void)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
 
+    blackboxEnableCrc();
     blackboxWrite('I');
 
     blackboxWriteUnsignedVB(blackboxIteration);
@@ -793,6 +794,8 @@ static void writeIntraframe(void)
     }
 #endif
 
+    blackboxWriteCrc();
+
     //Rotate our history buffers:
 
     //The current state becomes the new "before" state
@@ -824,6 +827,7 @@ static void writeInterframe(void)
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
     blackboxMainState_t *blackboxLast = blackboxHistory[1];
 
+    blackboxEnableCrc();
     blackboxWrite('P');
 
     //No need to store iteration count since its delta is always 1
@@ -971,6 +975,8 @@ static void writeInterframe(void)
         }
     }
 #endif
+
+    blackboxWriteCrc();
 
     //Rotate our history buffers
     blackboxHistory[2] = blackboxHistory[1];

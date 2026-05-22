@@ -44,6 +44,10 @@ void blackboxOpen(void);
 void blackboxWrite(uint8_t value);
 int blackboxWriteString(const char *s);
 
+void blackboxEnableCrc(void);
+void blackboxDisableCrc(void);
+void blackboxWriteCrc(void);
+
 void blackboxDeviceFlush(void);
 bool blackboxDeviceFlushForce(void);
 bool blackboxDeviceFlushForceComplete(void);

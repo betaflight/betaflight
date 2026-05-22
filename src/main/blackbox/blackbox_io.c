@@ -46,6 +46,7 @@
 #include "blackbox_io.h"
 
 #include "common/maths.h"
+#include "common/crc.h"
 
 #include "flight/pid.h"
 
@@ -110,8 +111,31 @@ static uint16_t bbRateMax;
 static uint32_t bbDrops;
 #endif
 
+bool blackboxCrcEnabled = false;
+uint8_t blackboxCrc = 0;
+
+void blackboxEnableCrc(void)
+{
+    blackboxCrc = 0;
+    blackboxCrcEnabled = true;
+}
+
+void blackboxDisableCrc(void)
+{
+    blackboxCrcEnabled = false;
+}
+
+void blackboxWriteCrc(void)
+{
+    blackboxCrcEnabled = false;
+    blackboxWrite(blackboxCrc);
+}
+
 void blackboxWrite(uint8_t value)
 {
+    if (blackboxCrcEnabled) {
+        blackboxCrc = crc8_dvb_s2(blackboxCrc, value);
+    }
 #ifdef DEBUG_BB_OUTPUT
     bbBits += 8;
 #endif
