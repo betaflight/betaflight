@@ -533,6 +533,7 @@ MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiResource_t *inst
     xspiRestoreMemoryMappedModeConfiguration(instance);
 }
 
+__attribute__((unused))
 static MMFLASH_CODE_NOINLINE void xspiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
     octoSpiResource_t *instance = octoSpi->dev;
@@ -855,9 +856,29 @@ void octoSpiInitDevice(octoSpiDevice_e device)
         // Bootloader has already configured the IO, clocks and peripherals.
         xspiBackupMemoryMappedModeConfiguration((XSPI_TypeDef *)octoSpi->dev);
 
-        xspiTestEnableDisableMemoryMappedMode(octoSpi);
+        // The test-disable-then-reenable was an optimistic sanity check —
+        // on the N6 + MX66UW1G45G XIP path the re-enable hits some chip-
+        // state edge case that leaves memory-mapped mode dead. Once the
+        // controller drops the mem-map config, subsequent fetches from
+        // 0x70xxxxxx fault, the resulting BusFault re-enters via a vector-
+        // table read at 0x70100000 (also dead), double-fault → LOCKUP.
+        // The legitimate disable/enable pairs in flashOctoSpiInit etc.
+        // don't trigger this — they wrap actual chip work between the
+        // toggles, giving the chip time to settle. The pure
+        // disable-immediately-enable-no-work-in-between is what trips it.
+        // Skip the test; if the legitimate paths fail later we'll see it
+        // there with a clearer diagnostic.
+        // xspiTestEnableDisableMemoryMappedMode(octoSpi);
     } else {
+#ifdef N6_RAM_ONLY_BUILD
+        // Dev iteration via OpenOCD `gdb load` skips the boot ROM, so XSPI2
+        // is in its post-reset (indirect-write) state instead of memory-mapped.
+        // The XSPI flash isn't reachable in this build — leave the controller
+        // alone and continue firmware bring-up.
+        (void)octoSpi;
+#else
         failureMode(FAILURE_DEVELOPER); // trying to use this implementation when memory mapped mode is not already enabled by a bootloader
+#endif
     }
 }
 

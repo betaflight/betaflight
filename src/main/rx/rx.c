@@ -321,8 +321,10 @@ static bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntime
 void rxInit(void)
 {
 #if ENABLE_RX_UDP
-    rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
-#else
+    if (featureIsEnabled(FEATURE_RX_UDP)) {
+        rxRuntimeState.rxProvider = RX_PROVIDER_UDP;
+    } else
+#endif
     if (featureIsEnabled(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeState.rxProvider = RX_PROVIDER_PARALLEL_PWM;
     } else if (featureIsEnabled(FEATURE_RX_PPM)) {
@@ -336,7 +338,6 @@ void rxInit(void)
     } else {
         rxRuntimeState.rxProvider = RX_PROVIDER_NONE;
     }
-#endif
     rxRuntimeState.serialrxProvider = rxConfig()->serialrx_provider;
     rxRuntimeState.rcReadRawFn = nullReadRawRC;
     rxRuntimeState.rcFrameStatusFn = nullFrameStatus;

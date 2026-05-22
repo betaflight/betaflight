@@ -77,6 +77,7 @@ bool cliMode = false;
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/lcd_console.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
@@ -234,6 +235,7 @@ static const char * const mixerNames[] = {
 #define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
     _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_RX_UDP, "RX_UDP"),
     _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
     _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
     _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
@@ -3922,6 +3924,46 @@ static void cliMcuId(const char *cmdName, char *cmdline)
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
 
+#if ENABLE_LCD_CONSOLE
+static void cliLcd(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    cliPrintLinef("LCD console grid (%u cols x %u rows):",
+                  (unsigned)LCD_CONSOLE_COLS, (unsigned)LCD_CONSOLE_ROWS);
+
+    // Top border, then each row framed by '|', then bottom border.
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+
+    for (uint16_t r = 0; r < LCD_CONSOLE_ROWS; r++) {
+        const uint8_t *row = lcdConsoleRow(r);
+        cliWrite('|');
+        if (row) {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                const uint8_t ch = row[c];
+                cliWrite((ch >= 0x20 && ch <= 0x7E) ? ch : ' ');
+            }
+        } else {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                cliWrite(' ');
+            }
+        }
+        cliPrintLine("|");
+    }
+
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+}
+#endif // ENABLE_LCD_CONSOLE
+
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
     headingStr = cliPrintSectionHeading(dumpMask, false, headingStr);
@@ -6231,6 +6273,81 @@ static void cliVersion(const char *cmdName, char *cmdline)
     printVersion(true);
 }
 
+#if ENABLE_DEBUG_CLI_COMMANDS
+// `dxr <hex-addr> [count]` — read `count` 32-bit words from `<hex-addr>`.
+// Defaults to 1 word, capped at 64. Address is forced to 4-byte alignment.
+// No fault protection: hand it valid peripheral or SRAM addresses only.
+static void cliMemRead(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    uint32_t count = 1U;
+    if (*p) {
+        end = p;
+        count = (uint32_t)strtoul(p, &end, 0);
+        if (end == p) {
+            cliPrintErrorLinef(cmdName, "invalid count");
+            return;
+        }
+    }
+    if (count == 0U) count = 1U;
+    if (count > 64U) count = 64U;
+    addr &= ~3U;
+
+    for (uint32_t i = 0; i < count; i++) {
+        const uint32_t a = addr + i * 4U;
+        const uint32_t v = *(volatile uint32_t *)a;
+        cliPrintLinef("%08x: %08x", a, v);
+        cliWriterFlush();
+    }
+}
+
+// `dxw <hex-addr> <hex-value>` — write a single 32-bit word and read it
+// back. Reports both the written and observed values so the caller can
+// see writes that were silently dropped (e.g. RIFSC after the boot ROM
+// finishes its handoff).
+static void cliMemWrite(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr value required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "value required");
+        return;
+    }
+    end = p;
+    uint32_t value = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid value");
+        return;
+    }
+    addr &= ~3U;
+
+    *(volatile uint32_t *)addr = value;
+    const uint32_t readback = *(volatile uint32_t *)addr;
+    cliPrintLinef("%08x: %08x (was written %08x)", addr, readback, value);
+}
+#endif // ENABLE_DEBUG_CLI_COMMANDS
+
 static void cliEnv(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -8041,6 +8158,12 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
+#if ENABLE_DEBUG_CLI_COMMANDS
+    CLI_COMMAND_DEF("dxr", "read 32-bit words from memory",
+        "<hex-addr> [count]", cliMemRead),
+    CLI_COMMAND_DEF("dxw", "write a 32-bit word to memory",
+        "<hex-addr> <hex-value>", cliMemWrite),
+#endif
     CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", "[prefix]", cliEnv),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
@@ -8068,6 +8191,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if ENABLE_LCD_CONSOLE
+    CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
+#endif
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif

@@ -142,6 +142,9 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // BOYAMICRO BY25Q64
+    { 0x684017, 108, 54, 128, 256 },// BY25Q64
+    // Datasheet: https://www.boyamicro.com/storage/upload/pdf/BY25Q64ES.pdf
     // XMC XM25QH256B
     // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
     { 0x206019, 166, 80, 8192, 16 },
@@ -157,6 +160,9 @@ struct {
     // Boyamicro BY25Q128ES
     // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
     { 0x684018, 104, 50, 256, 256 },
+    // XTX XT25F128F
+    // Datasheet: https://www.xtxtech.com/Products/info_productModel_XT25F128FSSIGT.html
+    { 0x0B4018, 96, 80, 256, 256 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

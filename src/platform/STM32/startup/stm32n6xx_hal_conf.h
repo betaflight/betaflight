@@ -30,6 +30,10 @@
 #define HAL_TIM_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
 #define HAL_USART_MODULE_ENABLED
+// LTDC + RIF enabled for the LCD console subsystem; --gc-sections drops the
+// driver code in builds that don't reference it.
+#define HAL_LTDC_MODULE_ENABLED
+#define HAL_RIF_MODULE_ENABLED
 
 /* ########################## Oscillator Values adaptation ####################*/
 #if !defined  (HSE_VALUE)
@@ -184,6 +188,14 @@
 #ifdef HAL_USART_MODULE_ENABLED
 #include "stm32n6xx_hal_usart.h"
 #endif /* HAL_USART_MODULE_ENABLED */
+
+#ifdef HAL_LTDC_MODULE_ENABLED
+#include "stm32n6xx_hal_ltdc.h"
+#endif /* HAL_LTDC_MODULE_ENABLED */
+
+#ifdef HAL_RIF_MODULE_ENABLED
+#include "stm32n6xx_hal_rif.h"
+#endif /* HAL_RIF_MODULE_ENABLED */
 
 /* Exported macros -----------------------------------------------------------*/
 #ifdef  USE_FULL_ASSERT

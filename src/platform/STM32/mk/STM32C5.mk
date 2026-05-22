@@ -16,7 +16,7 @@ endif
 #   stm32c5xx_drivers/ll/           - LL .h headers (header-only)
 #   arch/cmsis/CMSIS/Core/Include/  - CMSIS Core headers
 
-STM32C5_LIB     := $(LIB_MAIN_DIR)/STM32C5
+STM32C5_LIB     := $(LIB_MODULES_DIR)/STM32C5
 
 #STDPERIPH
 STDPERIPH_DIR   = $(STM32C5_LIB)/stm32c5xx_drivers/hal
@@ -87,6 +87,12 @@ DEVICE_FLAGS       += -DSTM32C591xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32c591xx.s
 MCU_FLASH_SIZE     := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+else ifeq ($(TARGET_MCU),STM32C562xx)
+DEVICE_FLAGS       += -DSTM32C562xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c562_512k.ld
+STARTUP_SRC         = STM32/startup/startup_stm32c562xx.s
+MCU_FLASH_SIZE     := 512
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 else
 $(error Unknown MCU for STM32C5 target)

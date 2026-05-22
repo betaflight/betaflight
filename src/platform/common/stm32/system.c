@@ -323,4 +323,3 @@ void unusedPinsInit(void)
 {
     IOTraversePins(unusedPinInit);
 }
-

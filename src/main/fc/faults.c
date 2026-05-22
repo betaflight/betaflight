@@ -34,7 +34,11 @@
 
 #include "faults.h"
 
-void systemFaultAction(void)
+/* `used` keeps LTO from dropping the symbol. The only callers reach this
+ * function via inline-asm `b systemFaultAction` in HardFault_Handler /
+ * MemManage_Handler / BusFault_Handler / UsageFault_Handler in
+ * platform/common/stm32/fault_handlers.c, which LTO can't see. */
+__attribute__((used)) void systemFaultAction(void)
 {
     LED0_ON;
     LED1_ON;

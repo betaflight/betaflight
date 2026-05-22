@@ -95,7 +95,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 
     switch (opticalflowHardwareToUse) {
         case OPTICALFLOW_MT:
-#ifdef USE_RANGEFINDER_MT
+#if defined(USE_OPTICALFLOW_MT) && defined(USE_RANGEFINDER_MT)
             if (mtOpticalflowDetect(dev, rangefinderConfig()->rangefinder_hardware)) {
                 opticalflowHardware = OPTICALFLOW_MT;
                 rescheduleTask(TASK_OPTICALFLOW, TASK_PERIOD_MS(dev->delayMs));
@@ -103,7 +103,7 @@ static bool opticalflowDetect(opticalflowDev_t * dev, uint8_t opticalflowHardwar
 #endif
             break;
 
-#if defined(USE_RANGEFINDER_UPT1) && defined(USE_OPTICALFLOW)
+#if defined(USE_OPTICALFLOW_UPT1) && defined(USE_RANGEFINDER_UPT1)
         case OPTICALFLOW_UPT1:
             if (upt1OpticalflowDetect(dev)) {
                 opticalflowHardware = OPTICALFLOW_UPT1;

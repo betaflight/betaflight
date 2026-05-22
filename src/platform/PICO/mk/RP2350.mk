@@ -46,7 +46,7 @@ ifeq ($(DEBUG_HARDFAULTS),PICO)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
-SDK_DIR         = $(LIB_MAIN_DIR)/pico-sdk/src
+SDK_DIR         = $(LIB_MODULES_DIR)/pico-sdk/src
 
 #CMSIS
 CMSIS_DIR      := $(SDK_DIR)/rp2_common/cmsis/stub/CMSIS
@@ -106,7 +106,7 @@ PICO_LIB_SRC = \
             rp2_common/pico_stdlib/stdlib.c \
             rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
-TINY_USB_SRC_DIR = $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
+TINY_USB_SRC_DIR = $(LIB_MODULES_DIR)/pico-sdk/lib/tinyusb/src
 TINYUSB_SRC := \
             $(TINY_USB_SRC_DIR)/tusb.c \
             $(TINY_USB_SRC_DIR)/class/cdc/cdc_device.c \
@@ -370,7 +370,7 @@ SYS_INCLUDE_DIRS = \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/pico_platform/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_regs/include \
             $(SDK_DIR)/$(TARGET_MCU_LIB_LOWER)/hardware_structs/include \
-            $(LIB_MAIN_DIR)/pico-sdk/lib/tinyusb/src
+            $(LIB_MODULES_DIR)/pico-sdk/lib/tinyusb/src
 
 SYS_INCLUDE_DIRS += \
             $(SDK_DIR)/rp2350/boot_stage2/include
@@ -583,6 +583,7 @@ MCU_COMMON_SRC = \
             PICO/pwm_motor_pico.c \
             PICO/pwm_servo_pico.c \
             PICO/pwm_beeper_pico.c \
+            PICO/gyro_clkin_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \
             PICO/uart/serial_uart_pico.c \

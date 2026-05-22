@@ -26,6 +26,14 @@
 #include "config.h"
 #endif
 
+// USB product name: prefer BOARD_NAME from config.h; otherwise fall back to
+// the target-specific USBD_PRODUCT_STRING defined in target.h.
+#if defined(BOARD_NAME) && !defined(USBD_PRODUCT_STRING)
+#define USBD_PRODUCT_STRINGIFY_(x) #x
+#define USBD_PRODUCT_STRINGIFY(x) USBD_PRODUCT_STRINGIFY_(x)
+#define USBD_PRODUCT_STRING "Betaflight - " USBD_PRODUCT_STRINGIFY(BOARD_NAME)
+#endif
+
 #include "target/common_pre.h"
 
 // MCU specific platform from platform/X

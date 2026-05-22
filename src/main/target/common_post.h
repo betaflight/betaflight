@@ -73,6 +73,31 @@
 #define FAST_DATA_ZERO_INIT
 #endif
 
+/*
+ * Active MMFLASH_* assignments — moved here from platform/platform.h
+ * because target.h is included between platform.h and common_post.h, so
+ * USE_FLASH_MEMORY_MAPPED set in target.h was invisible to platform.h's
+ * conditional. Now that target.h has been processed, USE_FLASH_MEMORY_MAPPED
+ * is reliably visible. Without this, the XSPI driver's
+ * MMFLASH_CODE_NOINLINE annotations on octoSpiDisableMemoryMappedMode /
+ * octoSpiEnableMemoryMappedMode / xspiTestEnableDisableMemoryMappedMode
+ * silently expand to nothing — those functions land in XIP .text and die
+ * the moment they disable memory-mapped mode mid-execution (next
+ * instruction fetch from disabled XSPI hangs the chip silently).
+ */
+#if defined(USE_FLASH_MEMORY_MAPPED)
+#if !defined(USE_RAM_CODE)
+#define USE_RAM_CODE
+#endif
+#if !defined(RAM_CODE)
+#define RAM_CODE                   __attribute__((section(".ram_code")))
+#endif
+#define MMFLASH_CODE               RAM_CODE
+#define MMFLASH_CODE_NOINLINE      RAM_CODE NOINLINE
+#define MMFLASH_DATA               FAST_DATA
+#define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
+#endif
+
 #ifndef MMFLASH_CODE
 #define MMFLASH_CODE
 #endif
@@ -168,6 +193,14 @@
 #ifndef USE_MAG_QMC5883
 #define USE_MAG_QMC5883
 #endif
+#ifdef USE_MAG_QMC5883
+#ifndef USE_MAG_QMC5883L
+#define USE_MAG_QMC5883L
+#endif
+#ifndef USE_MAG_QMC5883P
+#define USE_MAG_QMC5883P
+#endif
+#endif
 #ifndef USE_MAG_LIS2MDL
 #define USE_MAG_LIS2MDL
 #endif
@@ -194,6 +227,37 @@
 #endif
 
 #endif // END MAG HW defines
+
+#if defined(USE_RANGEFINDER)
+
+#ifndef USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_HCSR04
+#endif
+#ifndef USE_RANGEFINDER_TF
+#define USE_RANGEFINDER_TF
+#endif
+#ifndef USE_RANGEFINDER_MT
+#define USE_RANGEFINDER_MT
+#endif
+#ifndef USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_NOOPLOOP
+#endif
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
+#endif
+
+#endif // USE_RANGEFINDER
+
+#if defined(USE_OPTICALFLOW)
+
+#ifndef USE_OPTICALFLOW_MT
+#define USE_OPTICALFLOW_MT
+#endif
+#ifndef USE_OPTICALFLOW_UPT1
+#define USE_OPTICALFLOW_UPT1
+#endif
+
+#endif // USE_OPTICALFLOW
 
 #if defined(USE_RX_CC2500)
 
@@ -430,7 +494,7 @@
 #define USE_FLASH_W25M
 #endif
 
-#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV)
+#if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25M) || defined(USE_FLASH_W25N) || defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G)
 #if !defined(USE_FLASH_CHIP)
 #define USE_FLASH_CHIP
 #endif
@@ -448,7 +512,7 @@
 #endif
 #endif
 
-#if defined(USE_OCTOSPI) && defined(USE_FLASH_W25Q128FV)
+#if defined(USE_OCTOSPI) && (defined(USE_FLASH_W25Q128FV) || defined(USE_FLASH_MX66UW1G45G))
 #if !defined(USE_FLASH_OCTOSPI)
 #define USE_FLASH_OCTOSPI
 #endif
@@ -647,27 +711,33 @@
 #undef USED_TIMERS
 #endif
 
+// Hardware cross-deps: OF drivers need their rangefinder driver counterparts
+// (the optical flow code lives inside the rangefinder driver files)
 #if defined(USE_OPTICALFLOW_MT)
 #ifndef USE_RANGEFINDER_MT
 #define USE_RANGEFINDER_MT
 #endif
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
-#endif
 #endif // USE_OPTICALFLOW_MT
 
-#if defined(USE_RANGEFINDER_UPT1)
-#ifndef USE_OPTICALFLOW
-#define USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_RANGEFINDER_UPT1
+#define USE_RANGEFINDER_UPT1
 #endif
-#endif // USE_RANGEFINDER_UPT1
+#endif // USE_OPTICALFLOW_UPT1
 
+// Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
 #if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
-
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif
 #endif // USE_RANGEFINDER_XXX
+
+// Bottom-up: individual opticalflow drivers → USE_OPTICALFLOW
+#if defined(USE_OPTICALFLOW_MT) || defined(USE_OPTICALFLOW_UPT1)
+#ifndef USE_OPTICALFLOW
+#define USE_OPTICALFLOW
+#endif
+#endif // USE_OPTICALFLOW_XXX
 
 #ifndef USE_GPS_RESCUE
 #undef USE_CMS_GPS_RESCUE_MENU
@@ -691,10 +761,6 @@ extern struct linker_symbol __config_end;
 extern struct linker_symbol __fontdata_start; // configured via linker script when building binaries.
 extern struct linker_symbol __fontdata_end;
 #endif
-#endif
-
-#ifndef USE_ITERM_RELAX
-#undef USE_ABSOLUTE_CONTROL
 #endif
 
 #if defined(USE_RX_EXPRESSLRS)
@@ -812,4 +878,42 @@ extern struct linker_symbol __fontdata_end;
 // flag (dronecan_enabled) deciding whether the task is actually started.
 #if !defined(ENABLE_DRONECAN)
 #define ENABLE_DRONECAN ENABLE_CAN
+#endif
+
+// LCD console — runtime debug terminal that scrolls printf/trace output to
+// an attached LCD. Independent of the OSD/displayPort stack. Off by default;
+// configs opt in by setting ENABLE_LCD_CONSOLE 1 plus a panel selector
+// (LCD_CONSOLE_PANEL_STUB / _LTDC / _SSD1306_I2C / _ST7789_SPI / ...).
+// ENABLE_LCD_PRINTF_REDIRECT routes the global tfp_printf sink to the LCD
+// at boot; turn it off to keep the LCD reachable only via lcdConsolePrintf().
+#if !defined(ENABLE_LCD_CONSOLE)
+#define ENABLE_LCD_CONSOLE 0
+#endif
+#if !defined(ENABLE_LCD_PRINTF_REDIRECT)
+#define ENABLE_LCD_PRINTF_REDIRECT ENABLE_LCD_CONSOLE
+#endif
+
+// Bench debug CLI primitives `dxr` (read) and `dxw` (write) for poking
+// arbitrary 32-bit memory addresses from a connected terminal. Off by
+// default; configs opt in for hardware bring-up by setting
+// ENABLE_DEBUG_CLI_COMMANDS 1.
+#if !defined(ENABLE_DEBUG_CLI_COMMANDS)
+#define ENABLE_DEBUG_CLI_COMMANDS 0
+#endif
+
+// Open Bootloader contract — defaulted off; N6 target.h opts in.
+// Defines BF_OBL_IWDG_REFRESH used to keep OBL's IWDG happy.
+#if !defined(ENABLE_BF_OBL)
+#define ENABLE_BF_OBL 0
+#endif
+
+#if ENABLE_BF_OBL
+#include "platform/bf_obl_contract.h"
+#endif
+
+// Walk every GPIO pin not claimed by a peripheral and put it in a
+// known-safe state at boot. Opted out on platforms whose IO layer
+// can't yet skip restricted (e.g. RIFSC-protected) ports cleanly.
+#if !defined(ENABLE_UNUSED_PINS_INIT)
+#define ENABLE_UNUSED_PINS_INIT 1
 #endif

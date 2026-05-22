@@ -38,6 +38,18 @@
 #define UAVCAN_GET_NODE_INFO_ID         1U
 #define UAVCAN_GET_NODE_INFO_SIGNATURE  0xee468a8121c46a9eULL
 
+// uavcan.equipment.gnss.Fix2 — broadcast GNSS solution (position, velocity,
+// fix state). Superset of the legacy Fix message; most CAN GNSS modules
+// publish this variant.
+#define UAVCAN_GNSS_FIX2_ID             1063U
+#define UAVCAN_GNSS_FIX2_SIGNATURE      0xca41e928aebcb2d9ULL
+
+// Fix2.status enum values.
+#define UAVCAN_GNSS_FIX2_STATUS_NO_FIX      0U
+#define UAVCAN_GNSS_FIX2_STATUS_TIME_ONLY   1U
+#define UAVCAN_GNSS_FIX2_STATUS_2D_FIX      2U
+#define UAVCAN_GNSS_FIX2_STATUS_3D_FIX      3U
+
 // NodeStatus.health
 #define UAVCAN_NODE_HEALTH_OK           0U
 #define UAVCAN_NODE_HEALTH_WARNING      1U

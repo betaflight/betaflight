@@ -7,8 +7,8 @@ PLATFORM_SDK := apm32f4
 PLATFORM_SDK_STAMP := $(APM32F4_SDK_STAMP)
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/APM32F4/Libraries/Device
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
+CMSIS_DIR      := $(LIB_MODULES_DIR)/APM32F4/Libraries/Device
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
 STDPERIPH_SRC   = \
         apm32f4xx_dal_adc.c \
         apm32f4xx_dal_adc_ex.c \
@@ -113,7 +113,7 @@ DEVICE_STDPERIPH_SRC := \
         $(USBCDC_SRC) \
         $(USBMSC_SRC)
 #CMSIS
-VPATH := $(VPATH):$(LIB_MAIN_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
+VPATH := $(VPATH):$(LIB_MODULES_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS += \
         $(TARGET_PLATFORM_DIR) \
@@ -121,9 +121,9 @@ INCLUDE_DIRS += \
         $(TARGET_PLATFORM_DIR)/startup \
         $(PLATFORM_DIR)/common/stm32 \
         $(STDPERIPH_DIR)/Include \
-        $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCORE_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCDC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBMSC_DIR)/Inc \
         $(CMSIS_DIR)/Geehy/APM32F4xx/Include \
         $(TARGET_PLATFORM_DIR)/usb/vcp \
         $(TARGET_PLATFORM_DIR)/usb/msc \
@@ -146,6 +146,18 @@ else ifeq ($(TARGET_MCU),APM32F407xx)
 DEVICE_FLAGS    += -DAPM32F407xx
 LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f407.ld
 STARTUP_SRC     = APM32/startup/startup_apm32f407xx.S
+MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),APM32F425xx)
+DEVICE_FLAGS    += -DAPM32F425xx
+LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f425.ld
+STARTUP_SRC     = APM32/startup/startup_apm32f425xx.S
+MCU_FLASH_SIZE  := 1024
+
+else ifeq ($(TARGET_MCU),APM32F427xx)
+DEVICE_FLAGS    += -DAPM32F427xx
+LD_SCRIPT       = $(LINKER_DIR)/apm32_flash_f427.ld
+STARTUP_SRC     = APM32/startup/startup_apm32f427xx.S
 MCU_FLASH_SIZE  := 1024
 else
 $(error TARGET_MCU [$(TARGET_MCU)] is not supported)

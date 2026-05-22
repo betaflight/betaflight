@@ -3,40 +3,51 @@
 	url = https://github.com/betaflight/config.git
 	branch = master
 	ignore = dirty
-[submodule "lib/main/pico-sdk"]
-	path = lib/main/pico-sdk
+[submodule "lib/modules/pico-sdk"]
+	path = lib/modules/pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk.git
 	branch = master
 	ignore = dirty
 	update = none
-[submodule "lib/main/STM32N6"]
-	path = lib/main/STM32N6
+[submodule "lib/modules/STM32N6"]
+	path = lib/modules/STM32N6
 	url = https://github.com/STMicroelectronics/STM32CubeN6
 	branch = main
 	ignore = dirty
 	update = none
-[submodule "lib/main/STM32C5"]
-	path = lib/main/STM32C5
+[submodule "lib/modules/STM32C5"]
+	path = lib/modules/STM32C5
 	url = https://github.com/STMicroelectronics/STM32CubeC5
 	branch = main
 	ignore = dirty
 	update = none
-[submodule "lib/main/esp-idf"]
-	path = lib/main/esp-idf
+[submodule "lib/modules/esp-idf"]
+	path = lib/modules/esp-idf
 	url = https://github.com/espressif/esp-idf.git
 	branch = release/v5.4
 	ignore = dirty
 	update = none
-[submodule "lib/main/STM32H5"]
-	path = lib/main/STM32H5
+[submodule "lib/modules/STM32H5"]
+	path = lib/modules/STM32H5
 	url = https://github.com/STMicroelectronics/STM32CubeH5
 	ignore = dirty
 	update = none
-[submodule "lib/main/APM32F4"]
-	path = lib/main/APM32F4
+[submodule "lib/modules/APM32F4"]
+	path = lib/modules/APM32F4
 	url = https://github.com/LuckkMaker/APM32F4xx_DAL_SDK
 	ignore = dirty
 	update = none
-[submodule "lib/main/dronecan/libcanard"]
-	path = lib/main/dronecan/libcanard
+[submodule "lib/modules/dronecan/libcanard"]
+	path = lib/modules/dronecan/libcanard
 	url = https://github.com/dronecan/libcanard.git
+[submodule "lib/modules/GD32H7"]
+	path = lib/modules/GD32H7
+	url = https://github.com/GD32-MCU-IOT/GD32H7xx_Firmware.git
+	branch = master
+	ignore = dirty
+	update = none
+[submodule "lib/modules/X32M7"]
+	path = lib/modules/X32M7
+	url = https://github.com/X-CORE-LABS-PTE-LTD/X32M7_Std_SDK.git
+	ignore = dirty
+	update = none

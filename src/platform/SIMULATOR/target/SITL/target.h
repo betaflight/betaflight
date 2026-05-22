@@ -103,7 +103,9 @@
 
 #define ENABLE_RX_UDP           1
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_MSP
+// DEFAULT_RX_FEATURE is picked by config/feature.h: FEATURE_RX_UDP when
+// ENABLE_RX_UDP=1 (bare SITL / Gazebo), else FEATURE_RX_MSP. Configs that want
+// MSP RX as the default (e.g. SITL_X_PLANE) override DEFAULT_RX_FEATURE.
 #define DEFAULT_FEATURES        (FEATURE_GPS | FEATURE_TELEMETRY)
 
 #define USE_GPS

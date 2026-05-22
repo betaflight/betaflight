@@ -119,6 +119,16 @@ void spiInitDevice(spiDevice_e device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
+#ifdef STM32C5
+    if (dev == SPI1) {
+        LL_RCC_SetSPIClockSource(LL_RCC_SPI1_CLKSOURCE_HSIK);
+    } else if (dev == SPI2) {
+        LL_RCC_SetSPIClockSource(LL_RCC_SPI2_CLKSOURCE_HSIK);
+    } else if (dev == SPI3) {
+        LL_RCC_SetSPIClockSource(LL_RCC_SPI3_CLKSOURCE_HSIK);
+    }
+#endif
+
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_SDI, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_SDO, RESOURCE_INDEX(device));
@@ -135,6 +145,18 @@ void spiInitDevice(spiDevice_e device)
 
     LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_THRESHOLD_1_DATA);
     LL_SPI_Init(dev, &defaultInit);
+
+#ifdef STM32C5
+    // Master + NSS_SOFT requires CR1.SSI=1; otherwise the peripheral reads
+    // its internal NSS as low, raises a mode fault, and atomically clears
+    // CFG2.MASTER (silently dropping to slave mode -- driver then hangs
+    // waiting for RXP). The compat-shim LL_SPI_Init in stm32c5xx_hal2_compat.h
+    // skips the SSI write that LL_SPI_SetConfig would do, so set it here
+    // and re-arm MASTER in case a prior MODF cleared it.
+    dev->IFCR = SPI_IFCR_MODFC;
+    dev->CR1 |= SPI_CR1_SSI;
+    dev->CFG2 |= SPI_CFG2_MASTER;
+#endif
 }
 
 // Helper: get the DMA_Channel_TypeDef* from a dmaChannelDescriptor
