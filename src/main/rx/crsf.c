@@ -534,29 +534,30 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
             // get the channel resolution settings
             uint8_t channelBits;
             uint16_t channelMask;
+            float subsetChannelScale;
             uint8_t channelRes = configByte & CRSF_SUBSET_RC_RES_CONFIGURATION_MASK;
             configByte >>= CRSF_SUBSET_RC_RES_CONFIGURATION_BITS;
             switch (channelRes) {
             case CRSF_SUBSET_RC_RES_CONF_10B:
                 channelBits = CRSF_SUBSET_RC_RES_BITS_10B;
                 channelMask = CRSF_SUBSET_RC_RES_MASK_10B;
-                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_10B;
+                subsetChannelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_10B;
                 break;
             default:
             case CRSF_SUBSET_RC_RES_CONF_11B:
                 channelBits = CRSF_SUBSET_RC_RES_BITS_11B;
                 channelMask = CRSF_SUBSET_RC_RES_MASK_11B;
-                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_11B;
+                subsetChannelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_11B;
                 break;
             case CRSF_SUBSET_RC_RES_CONF_12B:
                 channelBits = CRSF_SUBSET_RC_RES_BITS_12B;
                 channelMask = CRSF_SUBSET_RC_RES_MASK_12B;
-                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_12B;
+                subsetChannelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_12B;
                 break;
             case CRSF_SUBSET_RC_RES_CONF_13B:
                 channelBits = CRSF_SUBSET_RC_RES_BITS_13B;
                 channelMask = CRSF_SUBSET_RC_RES_MASK_13B;
-                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_13B;
+                subsetChannelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_13B;
                 break;
             }
 
@@ -564,12 +565,18 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
             configByte >>= CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS;
 
             // calculate the number of channels packed
-            uint8_t numOfChannels = ((crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1) * 8) / channelBits;
+            const int packedChannelDataLength = crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1;
+            const uint8_t numOfChannels = packedChannelDataLength > 0 ? (packedChannelDataLength * 8) / channelBits : 0;
+            if (numOfChannels == 0 || startChannel >= CRSF_MAX_CHANNEL) {
+                return RX_FRAME_DROPPED;
+            }
+            const uint8_t channelsToProcess = MIN(numOfChannels, CRSF_MAX_CHANNEL - startChannel);
+            channelScale = subsetChannelScale;
 
             // unpack the channel data
             uint8_t bitsMerged = 0;
             uint32_t readValue = 0;
-            for (uint8_t n = 0; n < numOfChannels; n++) {
+            for (uint8_t n = 0; n < channelsToProcess; n++) {
                 while (bitsMerged < channelBits) {
                     uint8_t readByte = payload[readByteIndex++];
                     readValue |= ((uint32_t) readByte) << bitsMerged;
