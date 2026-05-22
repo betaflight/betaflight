@@ -29,9 +29,7 @@
 #include "drivers/dshot.h"
 #include "pg/motor.h"
 
-#if !defined(STM32N6)
 #define USE_DMA_REGISTER_CACHE
-#endif
 
 #define DEBUG_COUNT_INTERRUPT
 #define DEBUG_MONITOR_PACER
@@ -114,16 +112,13 @@ typedef struct dmaRegCache_s {
     uint32_t NDATA;
     uint32_t PADDR;
     uint32_t M0ADDR;
-#elif defined(STM32H5) || defined(STM32C5)
+#elif defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     uint32_t CCR;
     uint32_t CTR1;
     uint32_t CTR2;
     uint32_t CBR1;
     uint32_t CSAR;
     uint32_t CDAR;
-#elif defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA register cache - placeholder for future implementation
-    uint32_t placeholder;
 #else
 #error No MCU dependent code here
 #endif

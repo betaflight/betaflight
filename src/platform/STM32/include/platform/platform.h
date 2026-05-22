@@ -368,6 +368,11 @@
 #define USE_DMA_RAM
 #define USE_RTC_TIME
 #define USE_LATE_TASK_STATISTICS
+#ifdef USE_DSHOT
+/* AXISRAM is cacheable; DMA reads bypass the M55 D-cache so the DShot
+ * output/input buffers must be cleaned/invalidated each frame. */
+#define USE_DSHOT_CACHE_MGMT
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)

@@ -196,7 +196,7 @@ static uint8_t mspBuffer[ELRS_MSP_BUFFER_SIZE];
 
 static void setRssiChannelData(uint16_t *rcData)
 {
-#ifndef USE_ELRSV3
+#ifdef USE_ELRSV4
     // In ELRS V4, Arm (ch5) is copied to ch14 to mimic the behavior of the fullres modes which have it as an extra channel
     rcData[ELRS_ARM_V4_CHANNEL] = rcData[ELRS_ARM_V3_CHANNEL];
 #endif
@@ -281,7 +281,7 @@ static void unpackChannelDataHybridWide(uint16_t *rcData, volatile elrsOtaPacket
     } else {
         uint8_t bins;
         uint16_t switchValue;
-    #ifdef USE_ELRSV3
+    #ifndef USE_ELRSV4
         // ELRS V3 switched between 6 and 7 bit mode depending on TLM ratio
         // ELRS V4 always uses 6 bit mode
         if (currTlmDenom < 2 || currTlmDenom > 4) {
@@ -364,7 +364,7 @@ static void setRfLinkRate(const uint8_t index)
     telemBurstValid = false;
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-  #ifdef USE_ELRSV3
+  #ifndef USE_ELRSV4
     rxSetRfMode((uint8_t)receiver.modParams->enumRate);
   #else
     rxSetRfMode((uint8_t)receiver.modParams->v4Rate);
@@ -434,7 +434,7 @@ static void expressLrsSendTelemResp(void)
     if (nextTelemetryType == ELRS_TELEMETRY_TYPE_LINK || !isTelemetrySenderActive()) {
 
         otaPkt.type = ELRS_TLM_PACKET;
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_LINK;
         otaPkt.tlm_dl.ul_link_stats.stats.mspConfirm = mspConfirm;
 #else
@@ -460,7 +460,7 @@ static void expressLrsSendTelemResp(void)
             nextTelemetryType = ELRS_TELEMETRY_TYPE_LINK;
         }
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
         otaPkt.type = ELRS_TLM_PACKET;
         otaPkt.tlm_dl.type = ELRS_TELEMETRY_TYPE_DATA;
 #else
@@ -470,7 +470,7 @@ static void expressLrsSendTelemResp(void)
         otaPkt.tlm_dl.packageIndex = getCurrentTelemetryPayload(otaPkt.tlm_dl.payload, sizeof(otaPkt.tlm_dl.payload));
     }
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     uint8_t nonceValidator = 0;
 #else
     // This is a hack because this implementation sends telemetry right after a packet is received
@@ -655,7 +655,7 @@ static void OtaUpdateCrcInitFromUid(void)
 {
     if (receiver.inBindingMode) {
         // Binding mode uses 0 for ELRS V3 or the version for ELRS V4
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
         crcInitializer = 0;
 #else
         crcInitializer = ELRS_OTA_VERSION_ID;
@@ -663,7 +663,7 @@ static void OtaUpdateCrcInitFromUid(void)
     } else {
         crcInitializer = (receiver.UID[4] << 8) | receiver.UID[5];
         // The version is XORed to the low byte for ELRS V3 or the high byte for ELRS V4
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
         crcInitializer ^= ELRS_OTA_VERSION_ID;
 #else
         // shift OTA_VERSION_ID to the high byte to leave room for
@@ -708,11 +708,11 @@ static void processRFMspPacket(volatile elrsOtaPacket_t const * const otaPktPtr)
         return;
     }
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     bool currentMspConfirmValue = getCurrentMspConfirm();
 #endif
     receiveMspData(otaPktPtr->msp_ul.packageIndex, otaPktPtr->msp_ul.payload);
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     // If the confirm value flipped, then send a linkstats next to send the new confirm bit
     if (currentMspConfirmValue != getCurrentMspConfirm()) {
         nextTelemetryType = ELRS_TELEMETRY_TYPE_LINK;
@@ -738,7 +738,7 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
 {
     // Verify the first two of three bytes of the binding ID, which should always match
     if (
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
         otaPktPtr->sync.UID3 != receiver.UID[3] ||
 #endif
         otaPktPtr->sync.UID4 != receiver.UID[4]) {
@@ -789,7 +789,7 @@ static bool processRFSyncPacket(volatile elrsOtaPacket_t const * const otaPktPtr
 static bool validatePacketCrcStd(volatile elrsOtaPacket_t * const otaPktPtr)
 {
     uint16_t const inCRC = ((uint16_t) otaPktPtr->crcHigh << 8) + otaPktPtr->crcLow;
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     // For smHybrid the CRC only has the packet type in byte 0
     // For smWide the FHSS slot is added to the CRC in byte 0 on PACKET_TYPE_RCDATAs
     if (otaPktPtr->type == ELRS_RC_DATA_PACKET && receiver.switchMode == SM_WIDE) {
@@ -828,7 +828,7 @@ rx_spi_received_e processRFPacket(volatile uint8_t *payload, uint32_t timeStampU
         if (receiver.connectionState == ELRS_CONNECTED && connectionHasModelMatch) {
             if (receiver.switchMode == SM_WIDE) {
                 wideSwitchIndex = hybridWideNonceToSwitchIndex(receiver.nonceRX);
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
                 // In ELRS V3 WIDE mode the confrm bit is only in every packet in 1:2 or 1:4 TLM ratio
                 // In ELRS V4 the confirm bit is in every RC_DATA packet
                 bool telemInEveryPacket = (currTlmDenom > 1) && (currTlmDenom < 8);

@@ -3,12 +3,12 @@
 
 # Register SDK for CI caching and hydration
 PLATFORM_SDKS += esp_idf
-PLATFORM_SDK_esp_idf_SUBMODULE := lib/main/esp-idf
+PLATFORM_SDK_esp_idf_SUBMODULE := lib/modules/esp-idf
 PLATFORM_SDK_esp_idf_HYDRATE   := esp_sdk
 PLATFORM_SDK_esp_idf_TOOLS     := esp_tools_install
 PLATFORM_SDK_esp_idf_CC_INSTALL := esp_tools_install
 
-ESP_IDF_PATH    ?= $(ROOT_DIR)/lib/main/esp-idf
+ESP_IDF_PATH    ?= $(ROOT_DIR)/lib/modules/esp-idf
 IDF_TOOLS_PATH  ?= $(TOOLS_DIR)/espressif
 export IDF_TOOLS_PATH
 
@@ -31,7 +31,7 @@ esp_sdk: $(ESP_IDF_STAMP)
 # Auto-hydrate esp-idf when needed as a build dependency
 $(ESP_IDF_STAMP):
 	@echo "Hydrating esp-idf submodule"
-	$(V1) git submodule update --init --checkout -- lib/main/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
+	$(V1) git submodule update --init --checkout -- lib/modules/esp-idf || { echo "Failed to update esp-idf"; exit 1; }
 	@echo "esp-idf ready"
 
 ## esp_tools_install  : Install ESP32 toolchain via esp-idf

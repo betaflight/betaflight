@@ -60,7 +60,7 @@ hardware switches.
   workflow; current ST tooling works.
 - **`OpenBootloader_STM32N6570-DK-trusted.stm32`** — ST's signed
   OpenBootloader image. Ships in CubeN6 at
-  `lib/main/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader/Binaries/NOR_Binary/`.
+  `lib/modules/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader/Binaries/NOR_Binary/`.
 - **`MX66UW1G45G_STM32N6570-DK.bin`** — XSPI flash driver matching the
   on-board MX66UW1G45G. Same directory in CubeN6.
 - The two binaries you want in nor0:
