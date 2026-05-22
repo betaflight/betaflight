@@ -11,10 +11,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS
+CMSIS_DIR      := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32n6xx_hal_adc.c \
             stm32n6xx_hal_adc_ex.c \
@@ -75,7 +75,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src:$(LIB_MAIN_DIR)/STM32N6/Utilities/Fonts
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src:$(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
@@ -84,10 +84,10 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
-                   $(LIB_MAIN_DIR)/STM32N6/Utilities/Fonts \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
+                   $(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -199,7 +199,7 @@ SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/DSP
+DSP_LIB := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM55
 
 OPTIMISE_DEFAULT    := -Os

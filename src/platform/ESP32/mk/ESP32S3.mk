@@ -11,7 +11,7 @@ PLATFORM_SDK := esp_idf
 PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 
 # ESP-IDF location (when submodule is hydrated)
-ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
+ESP_IDF_DIR = $(LIB_MODULES_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32-S3 toolchain
 # ESP_TOOLS_BIN is resolved in tools.mk; reuse it here
@@ -106,7 +106,7 @@ MCU_COMMON_SRC = \
             ESP32/periph_regs_esp32.c
 
 # ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)
-# Paths are relative to LIB_MAIN_DIR (lib/main) since that's in VPATH
+# Paths are relative to LIB_MODULES_DIR (lib/modules) since that's in VPATH
 DEVICE_STDPERIPH_SRC = \
             esp-idf/components/soc/esp32s3/gpio_periph.c \
             esp-idf/components/soc/esp32s3/i2c_periph.c \

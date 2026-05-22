@@ -24,9 +24,9 @@ LD      := $(PREFIX)gcc
 OBJCOPY := $(PREFIX)objcopy
 SIZE    := $(PREFIX)size
 
-HAL_DIR  := $(ROOT)/lib/main/STM32N6/Drivers/STM32N6xx_HAL_Driver
-CMSIS_ST := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
-CMSIS    := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Include
+HAL_DIR  := $(ROOT)/lib/modules/STM32N6/Drivers/STM32N6xx_HAL_Driver
+CMSIS_ST := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
+CMSIS    := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Include
 
 INCLUDES := \
     -I. \
