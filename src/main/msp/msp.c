@@ -4457,8 +4457,8 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         currentPidProfile->psas_aoa_limiter_gain = sbufReadU8(src);
         currentPidProfile->psas_lift_coef_filter_freq = sbufReadU8(src);
         currentPidProfile->psas_aoa_limiter_forecast_time = sbufReadU8(src);
-        currentPidProfile->psas_aoa_limiter_tau_return = sbufReadU8(src);
-        currentPidProfile->psas_servo_time = sbufReadU16(src);
+        currentPidProfile->psas_aoa_limiter_tau_return = MAX(sbufReadU8(src), 1);
+        currentPidProfile->psas_servo_time = MAX(sbufReadU16(src), 5);
         currentPidProfile->psas_roll_yaw_clift_start = sbufReadU8(src);
         currentPidProfile->psas_roll_yaw_clift_stop = sbufReadU8(src);
         currentPidProfile->psas_roll_to_yaw_link = sbufReadU8(src);
