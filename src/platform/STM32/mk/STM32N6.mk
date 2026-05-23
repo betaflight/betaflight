@@ -46,6 +46,7 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_tim_ex.c \
             stm32n6xx_hal_uart.c \
             stm32n6xx_hal_uart_ex.c \
+            stm32n6xx_hal_xspi.c \
             stm32n6xx_ll_dma.c \
             stm32n6xx_ll_exti.c \
             stm32n6xx_ll_i2c.c \
