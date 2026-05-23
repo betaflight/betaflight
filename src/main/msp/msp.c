@@ -2035,11 +2035,7 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
 #endif
-#if defined(USE_ABSOLUTE_CONTROL)
-        sbufWriteU8(dst, currentPidProfile->abs_control_gain);
-#else
-        sbufWriteU8(dst, 0);
-#endif
+        sbufWriteU8(dst, 0); // was abs_control_gain
 #if defined(USE_THROTTLE_BOOST)
         sbufWriteU8(dst, currentPidProfile->throttle_boost);
 #else
@@ -3426,11 +3422,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
             sbufReadU8(src);
 #endif
-#if defined(USE_ABSOLUTE_CONTROL)
-            currentPidProfile->abs_control_gain = sbufReadU8(src);
-#else
-            sbufReadU8(src);
-#endif
+            sbufReadU8(src); // was abs_control_gain
 #if defined(USE_THROTTLE_BOOST)
             currentPidProfile->throttle_boost = sbufReadU8(src);
 #else

@@ -138,6 +138,14 @@ static void taskMain(timeUs_t currentTimeUs)
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
+#if ENABLE_BF_OBL
+    // OBL arms IWDG before jumping to BF. Refresh it from TASK_SERIAL —
+    // the scheduler exempts TASK_SERIAL from the time-budget check, so
+    // it's the one task we can rely on to be picked at its nominal rate.
+    // If the scheduler itself wedges, IWDG fires and OBL routes the next
+    // boot to DFU.
+    BF_OBL_IWDG_REFRESH();
+#endif
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)
@@ -490,6 +498,7 @@ task_attribute_t task_attributes[TASK_COUNT] = {
 #if ENABLE_DRONECAN
     [TASK_DRONECAN] = DEFINE_TASK("DRONECAN", NULL, NULL, dronecanUpdate, TASK_PERIOD_HZ(50), TASK_PRIORITY_LOW),
 #endif
+
 };
 
 task_t *getTask(unsigned taskId)

@@ -97,7 +97,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART0,
         .reg = (usartResource_t *)USART0,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART0_RX,
         .rxDMAResource = (dmaResource_t *)UART0_RX_DMA_CH_BASE,
@@ -116,19 +116,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB14), GPIO_AF_4 },
             { DEFIO_TAG_E(PF4),  GPIO_AF_4 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI4,
-        .txDMAChannel = DMA_SUBPERI4,
-#ifdef USE_UART0_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH5},
-#endif
-#ifdef USE_UART0_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH7},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB3) }, { DEFIO_TAG_E(PB7) }, },
-        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PA15) }, { DEFIO_TAG_E(PB6) }, },
-        .af = GPIO_AF_7,
-#endif // GD32H7
+
         .rcc = RCC_APB2(USART0),
         .irqn = USART0_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART0_TXDMA,
@@ -144,7 +132,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_USART1,
         .reg = (usartResource_t *)USART1,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART1_RX,
         .rxDMAResource = (dmaResource_t *)UART1_RX_DMA_CH_BASE,
@@ -159,19 +147,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA2),  GPIO_AF_7 },
             { DEFIO_TAG_E(PD5),  GPIO_AF_7 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI4,
-        .txDMAChannel = DMA_SUBPERI4,
-#ifdef USE_UART1_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH5},
-#endif
-#ifdef USE_UART1_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH6},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
-        .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
-        .af = GPIO_AF_7,
-#endif // GD32H7
+
         .rcc = RCC_APB1(USART1),
         .irqn = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
@@ -187,7 +163,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_USART2,
         .reg = (usartResource_t *)USART2,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART2_RX,
         .rxDMAResource = (dmaResource_t *)UART2_RX_DMA_CH_BASE,
@@ -204,19 +180,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC10),  GPIO_AF_7 },
             { DEFIO_TAG_E(PD8),   GPIO_AF_7 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI4,
-        .txDMAChannel = DMA_SUBPERI4,
-#ifdef USE_UART2_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH1},
-#endif
-#ifdef USE_UART2_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH3},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
-        .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
-        .af = GPIO_AF_7,
-#endif // GD32H7
+
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
@@ -232,7 +196,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART3,
         .reg = (usartResource_t *)UART3,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART3_RX,
         .rxDMAResource = (dmaResource_t *)UART3_RX_DMA_CH_BASE,
@@ -253,19 +217,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC10),  GPIO_AF_8 },
             { DEFIO_TAG_E(PD1),   GPIO_AF_8 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI4,
-        .txDMAChannel = DMA_SUBPERI4,
-#ifdef USE_UART3_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH2},
-#endif
-#ifdef USE_UART3_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH4},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PA1) }, { DEFIO_TAG_E(PC11) } },
-        .txPins = { { DEFIO_TAG_E(PA0) }, { DEFIO_TAG_E(PC10) } },
-        .af = GPIO_AF_8,
-#endif // GD32H7
+
         .rcc = RCC_APB1(UART3),
         .irqn = UART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
@@ -281,7 +233,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART4,
         .reg = (usartResource_t *)UART4,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART4_RX,
         .rxDMAResource = (dmaResource_t *)UART4_RX_DMA_CH_BASE,
@@ -298,19 +250,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB13), GPIO_AF_14 },
             { DEFIO_TAG_E(PC12), GPIO_AF_8 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI4,
-        .txDMAChannel = DMA_SUBPERI4,
-#ifdef USE_UART4_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH0},
-#endif
-#ifdef USE_UART4_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH7},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PD2) } },
-        .txPins = { { DEFIO_TAG_E(PC12) } },
-        .af = GPIO_AF_8,
-#endif // GD32H7
+
         .rcc = RCC_APB1(UART4),
         .irqn = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
@@ -326,7 +266,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART5,
         .reg = (usartResource_t *)USART5,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_USART5_RX,
         .rxDMAResource = (dmaResource_t *)UART5_RX_DMA_CH_BASE,
@@ -341,19 +281,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC6),  GPIO_AF_7 },
             { DEFIO_TAG_E(PG14),  GPIO_AF_7 },
         },
-#else
-        .rxDMAChannel = DMA_SUBPERI5,
-        .txDMAChannel = DMA_SUBPERI5,
-#ifdef USE_UART5_RX_DMA
-        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH1},
-#endif
-#ifdef USE_UART5_TX_DMA
-        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH6},
-#endif
-        .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
-        .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
-        .af = GPIO_AF_8,
-#endif // GD32H7
+
         .rcc = RCC_APB2(USART5),
         .irqn = USART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
@@ -369,7 +297,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART6,
         .reg = (usartResource_t *)UART6,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART6_RX,
         .rxDMAResource = (dmaResource_t *)UART6_RX_DMA_CH_BASE,
@@ -388,7 +316,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PE8),  GPIO_AF_7 },
             { DEFIO_TAG_E(PF7),  GPIO_AF_7 },
         },
-#endif // GD32H7
+
         .rcc = RCC_APB1(UART6),
         .irqn = UART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
@@ -404,7 +332,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     {
         .identifier = SERIAL_PORT_UART7,
         .reg = (usartResource_t *)UART7,
-#if defined(GD32H7)
+
 #ifdef USE_DMA
         .rxDMAChannel = DMA_REQUEST_UART7_RX,
         .rxDMAResource = (dmaResource_t *)UART7_RX_DMA_CH_BASE,
@@ -417,7 +345,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPins = {
             { DEFIO_TAG_E(PE1),  GPIO_AF_8 },
         },
-#endif // GD32H7
+
         .rcc = RCC_APB1(UART7),
         .irqn = UART7_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART7_TXDMA,
@@ -438,10 +366,9 @@ bool checkUsartTxOutput(uartPort_t *s)
     if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
         if (IORead(txIO)) {
             uart->txPinState = TX_PIN_ACTIVE;
-#if defined(GD32H7)
-#else
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
-#endif
+
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
+
             usart_transmit_config((uint32_t)s->USARTx, USART_TRANSMIT_ENABLE);
 
             return true;
@@ -514,6 +441,7 @@ void uartIrqHandler(uartPort_t *s)
 
     if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_TC) == SET) {
         uartTxMonitor(s);
+
         usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_TC);
     }
 
@@ -526,20 +454,16 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_ERR_ORERR) == SET) {
-        usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_ERR_ORERR);
+    if (usart_flag_get((uint32_t)s->USARTx, USART_FLAG_ORERR) == SET) {
+        usart_flag_clear((uint32_t)s->USARTx, USART_FLAG_ORERR);
     }
 
     if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_IDLE) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
-#if defined(GD32H7)
+
         usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_IDLE);
-#else
-        USART_STAT0((uint32_t)s->USARTx);
-        USART_DATA((uint32_t)s->USARTx);
-#endif
     }
 
 }

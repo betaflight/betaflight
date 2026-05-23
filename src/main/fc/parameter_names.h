@@ -117,7 +117,6 @@
 #define PARAM_NAME_THROTTLE_BOOST "throttle_boost"
 #define PARAM_NAME_THROTTLE_BOOST_CUTOFF "throttle_boost_cutoff"
 #define PARAM_NAME_THRUST_LINEARIZATION "thrust_linear"
-#define PARAM_NAME_ABS_CONTROL_GAIN "abs_control_gain"
 #define PARAM_NAME_USE_INTEGRATED_YAW "use_integrated_yaw"
 #define PARAM_NAME_D_MAX_GAIN "d_max_gain"
 #define PARAM_NAME_D_MAX_ADVANCE "d_max_advance"
@@ -173,8 +172,8 @@
 #define PARAM_NAME_AP_POSITION_I "ap_position_i"
 #define PARAM_NAME_AP_POSITION_II "ap_position_ii"
 #define PARAM_NAME_AP_POSITION_D "ap_position_d"
-#define PARAM_NAME_AP_POSITION_A "ap_position_a"
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
+#define PARAM_NAME_AP_STOP_THRESHOLD "ap_stop_threshold"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
 
 // Velocity-based position control with drag compensation
