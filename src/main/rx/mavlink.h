@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define MAVLINK_COMM_NUM_BUFFERS 1
+#define MAVLINK_COMM_NUM_BUFFERS 2
 #define RSSI_DBM_MIN (-130)
 #define RSSI_DBM_MAX 0
 

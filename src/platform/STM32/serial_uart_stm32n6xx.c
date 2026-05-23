@@ -114,13 +114,15 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA10), GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB7),  GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB15), GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PE6),  GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PF12), GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PG8),  GPIO_AF4_USART1 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA9),  GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB6),  GPIO_AF7_USART1 },
-            { DEFIO_TAG_E(PB14), GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PC4),  GPIO_AF4_USART1 },
+            { DEFIO_TAG_E(PE5),  GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PF13), GPIO_AF4_USART1 },
         },
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -144,12 +146,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART2_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA3), GPIO_AF7_USART2 },
-            { DEFIO_TAG_E(PD6), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PC2), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PF6), GPIO_AF7_USART2 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA2), GPIO_AF7_USART2 },
             { DEFIO_TAG_E(PD5), GPIO_AF7_USART2 },
+            { DEFIO_TAG_E(PG3), GPIO_AF7_USART2 },
         },
         .rcc = RCC_APB1(USART2),
         .irqn = USART2_IRQn,
@@ -205,17 +208,17 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA1),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PB8),  GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PA11), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PC11), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PD0),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PH14), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PH9),  GPIO_AF8_UART4 },
         },
         .txPins = {
             { DEFIO_TAG_E(PA0),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PB9),  GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PA12), GPIO_AF8_UART4 },
+            { DEFIO_TAG_E(PC1),  GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PC10), GPIO_AF8_UART4 },
             { DEFIO_TAG_E(PD1),  GPIO_AF8_UART4 },
-            { DEFIO_TAG_E(PH13), GPIO_AF8_UART4 },
         },
         .rcc = RCC_APB1(UART4),
         .irqn = UART4_IRQn,
@@ -241,12 +244,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxPins = {
             { DEFIO_TAG_E(PB5),  GPIO_AF11_UART5 },
             { DEFIO_TAG_E(PB12), GPIO_AF11_UART5 },
-            { DEFIO_TAG_E(PD2),  GPIO_AF11_UART5 },
+            { DEFIO_TAG_E(PH2),  GPIO_AF11_UART5 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PB6),  GPIO_AF11_UART5 },
-            { DEFIO_TAG_E(PB13), GPIO_AF11_UART5 },
             { DEFIO_TAG_E(PC12), GPIO_AF11_UART5 },
+            { DEFIO_TAG_E(PE5),  GPIO_AF11_UART5 },
+            { DEFIO_TAG_E(PE6),  GPIO_AF11_UART5 },
+            { DEFIO_TAG_E(PG10), GPIO_AF11_UART5 },
         },
         .rcc = RCC_APB1(UART5),
         .irqn = UART5_IRQn,
@@ -270,8 +274,10 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART6_TX_DMA_STREAM,
 #endif
         .rxPins = {
+            { DEFIO_TAG_E(PA4), GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PB8), GPIO_AF7_USART6 },
             { DEFIO_TAG_E(PC7), GPIO_AF7_USART6 },
-            { DEFIO_TAG_E(PG9), GPIO_AF7_USART6 },
+            { DEFIO_TAG_E(PC9), GPIO_AF7_USART6 },
         },
         .txPins = {
             { DEFIO_TAG_E(PC6),  GPIO_AF7_USART6 },
@@ -299,16 +305,19 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART7_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PA8), GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PB3), GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PE7), GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PF6), GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PA3),  GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PA8),  GPIO_AF10_UART7 },
+            { DEFIO_TAG_E(PC0),  GPIO_AF10_UART7 },
+            { DEFIO_TAG_E(PE7),  GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PF10), GPIO_AF8_UART7 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA15), GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PB4),  GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PA15), GPIO_AF10_UART7 },
+            { DEFIO_TAG_E(PB4),  GPIO_AF10_UART7 },
             { DEFIO_TAG_E(PE8),  GPIO_AF8_UART7 },
-            { DEFIO_TAG_E(PF7),  GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PG12), GPIO_AF10_UART7 },
+            { DEFIO_TAG_E(PH3),  GPIO_AF8_UART7 },
+            { DEFIO_TAG_E(PH4),  GPIO_AF8_UART7 },
         },
         .rcc = RCC_APB1(UART7),
         .irqn = UART7_IRQn,
@@ -359,10 +368,12 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART9_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PD14), GPIO_AF7_UART9 },
+            { DEFIO_TAG_E(PF1), GPIO_AF7_UART9 },
+            { DEFIO_TAG_E(PG0), GPIO_AF7_UART9 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PD15), GPIO_AF7_UART9 },
+            { DEFIO_TAG_E(PF0), GPIO_AF7_UART9 },
+            { DEFIO_TAG_E(PF8), GPIO_AF7_UART9 },
         },
         .rcc = RCC_APB2(UART9),
         .irqn = UART9_IRQn,
@@ -386,10 +397,13 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txDMAResource = (dmaResource_t *)UART10_TX_DMA_STREAM,
 #endif
         .rxPins = {
-            { DEFIO_TAG_E(PE2), GPIO_AF6_USART10 },
+            { DEFIO_TAG_E(PD3),  GPIO_AF6_USART10 },
+            { DEFIO_TAG_E(PD14), GPIO_AF6_USART10 },
+            { DEFIO_TAG_E(PE4),  GPIO_AF6_USART10 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PE3), GPIO_AF6_USART10 },
+            { DEFIO_TAG_E(PB9),  GPIO_AF6_USART10 },
+            { DEFIO_TAG_E(PD15), GPIO_AF6_USART10 },
         },
         .rcc = RCC_APB2(USART10),
         .irqn = USART10_IRQn,
@@ -414,11 +428,11 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PA10), GPIO_AF3_LPUART1 },
-            { DEFIO_TAG_E(PB7),  GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PE6),  GPIO_AF3_LPUART1 },
         },
         .txPins = {
-            { DEFIO_TAG_E(PA9),  GPIO_AF3_LPUART1 },
-            { DEFIO_TAG_E(PB6),  GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PA9), GPIO_AF3_LPUART1 },
+            { DEFIO_TAG_E(PE5), GPIO_AF3_LPUART1 },
         },
         .rcc = RCC_APB4(LPUART1),
         .irqn = LPUART1_IRQn,

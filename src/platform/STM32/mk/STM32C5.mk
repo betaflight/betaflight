@@ -16,7 +16,7 @@ endif
 #   stm32c5xx_drivers/ll/           - LL .h headers (header-only)
 #   arch/cmsis/CMSIS/Core/Include/  - CMSIS Core headers
 
-STM32C5_LIB     := $(LIB_MAIN_DIR)/STM32C5
+STM32C5_LIB     := $(LIB_MODULES_DIR)/STM32C5
 
 #STDPERIPH
 STDPERIPH_DIR   = $(STM32C5_LIB)/stm32c5xx_drivers/hal

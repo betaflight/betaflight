@@ -57,6 +57,15 @@
 // 6 - Roll angle command * 100
 // 7 - Pitch angle command * 100
 
+// DEBUG_AUTOPILOT_STOP
+// 0 - distance from position-hold target (cm)
+// 1 - horizontal speed (cm/s)
+// 2 - sticks active
+// 3 - nav active
+// 4 - position held
+// 6 - Roll angle command * 100
+// 7 - Pitch angle command * 100
+
 #ifndef POSHOLD_TASK_RATE_HZ
 #define POSHOLD_TASK_RATE_HZ 100
 #endif
@@ -81,9 +90,6 @@
 #define POSITION_D_SCALE       0.00011f
 
 #define POSITION_IWINDUP_LIMIT 250.0f
-// Horizontal speed below this (cm/s) ends braking and snaps hold point; fusion noise may need 5–20.
-#define SETTLING_VELOCITY_THRESHOLD 5.0f
-
 #define UPSAMPLING_CUTOFF_HZ   5.0f
 
 static pidCoefficient_t positionPidCoeffs;
@@ -159,6 +165,28 @@ static void initPositionAccelLpf(void)
 static inline float sanityCheckDistance(const float speedCmS)
 {
     return fmaxf(1000.0f, speedCmS * 2.0f);
+}
+
+static void capturePositionHoldTarget(const positionEstimate3d_t *est)
+{
+    isPositionHeld = true;
+    targetPosition.x = est->position.x;
+    targetPosition.y = est->position.y;
+    targetPosition.z = est->position.z;
+    ap.sanityCheckDistance = sanityCheckDistance(1000.0f);
+}
+
+static void resetPositionStopState(const positionEstimate3d_t *est)
+{
+    // Prevent a sharp spike on D
+    previousVelocity[EF_EAST] = est->velocity.x;
+    previousVelocity[EF_NORTH] = est->velocity.y;
+
+    // Reset the D filter
+    initPositionAccelLpf();
+
+    // Reset the angle filter
+    resetUpsampleFilters();
 }
 
 void resetPositionControl(unsigned taskRateHz)
@@ -345,6 +373,13 @@ bool positionControl(void)
     const float speedXY  = sqrtf(velEast * velEast + velNorth * velNorth);
     const float velocities[EF_AXIS_COUNT] = { velEast, velNorth };
 
+    const bool capturedPositionHold = !navActive && !ap.sticksActive && !isPositionHeld
+        && speedXY < autopilotConfig()->stopThreshold;
+    if (capturedPositionHold) {
+        capturePositionHoldTarget(est);
+        resetPositionStopState(est);
+    }
+
     vector2_t pidSumEF = {{ 0, 0 }};
     float distanceCm = 0.0f;
     float errorEast = 0.0f;
@@ -421,7 +456,7 @@ bool positionControl(void)
         }
     }
 
-    // Handle sticks and hold capture
+    // Handle sticks and rotate the autopilot output to body frame.
     vector2_t anglesBF;
 
     if (ap.sticksActive) {
@@ -437,30 +472,26 @@ bool positionControl(void)
             ap.sanityCheckDistance = sanityCheckDistance(speedXY);
         }
     } else {
-        if (!navActive) {
-            if (!isPositionHeld) {
-                if (speedXY < SETTLING_VELOCITY_THRESHOLD) {
-                    isPositionHeld = true;
-                    targetPosition.x = est->position.x;
-                    targetPosition.y = est->position.y;
-                    targetPosition.z = est->position.z;
-                    ap.sanityCheckDistance = sanityCheckDistance(1000.0f);
-                }
-            }
-        }
-
         // Rotate ENU PID output to body frame
         const float angle = DECIDEGREES_TO_RADIANS(attitude.values.yaw - 900);
         vector2_t pidBodyFrame;
         vector2Rotate(&pidBodyFrame, &pidSumEF, angle);
-            anglesBF.v[AI_ROLL]  = -pidBodyFrame.y;
-            anglesBF.v[AI_PITCH] = -pidBodyFrame.x;
+        anglesBF.v[AI_ROLL]  = -pidBodyFrame.y;
+        anglesBF.v[AI_PITCH] = -pidBodyFrame.x;
 
         const float mag = vector2Norm(&anglesBF);
         if (mag > ap.maxAngle && mag > 0.0f) {
             vector2Scale(&anglesBF, &anglesBF, ap.maxAngle / mag);
         }
     }
+
+    const float stopDistanceEast = est->position.x - targetPosition.x;
+    const float stopDistanceNorth = est->position.y - targetPosition.y;
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(sqrtf(stopDistanceEast * stopDistanceEast + stopDistanceNorth * stopDistanceNorth)));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(speedXY));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, ap.sticksActive ? 1 : 0);
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, navActive ? 1 : 0);
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, isPositionHeld ? 1 : 0);
 
     ap.pidSumBF = anglesBF;
 
@@ -470,6 +501,8 @@ bool positionControl(void)
 
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(autopilotAngle[X] * 100));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, lrintf(autopilotAngle[Y] * 100));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, lrintf(autopilotAngle[X] * 100));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(autopilotAngle[Y] * 100));
 
     return true;
 }

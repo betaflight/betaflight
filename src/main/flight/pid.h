@@ -232,10 +232,6 @@ typedef struct pidProfile_s {
     uint8_t acro_trainer_debug_axis;        // The axis for which record debugging values are captured 0=roll, 1=pitch
     uint8_t acro_trainer_gain;              // The strength of the limiting. Raising may reduce overshoot but also lead to oscillation around the angle limit
     uint16_t acro_trainer_lookahead_ms;     // The lookahead window in milliseconds used to reduce overshoot
-    uint8_t abs_control_gain;               // How strongly should the absolute accumulated error be corrected for
-    uint8_t abs_control_limit;              // Limit to the correction
-    uint8_t abs_control_error_limit;        // Limit to the accumulated error
-    uint8_t abs_control_cutoff;             // Cutoff frequency for path estimation in abs control
     uint8_t dterm_lpf2_type;                // Filter type for 2nd dterm lowpass
     uint16_t dterm_lpf1_dyn_min_hz;         // Dterm lowpass filter 1 min hz when in dynamic mode
     uint16_t dterm_lpf1_dyn_max_hz;         // Dterm lowpass filter 1 max hz when in dynamic mode
@@ -443,15 +439,6 @@ typedef struct pidRuntime_s {
     uint8_t itermRelaxCutoff;
 #endif
 
-#ifdef USE_ABSOLUTE_CONTROL
-    float acCutoff;
-    float acGain;
-    float acLimit;
-    float acErrorLimit;
-    pt1Filter_t acLpf[XYZ_AXIS_COUNT];
-    float oldSetpointCorrection[XYZ_AXIS_COUNT];
-#endif
-
 #ifdef USE_D_MAX
     pt2Filter_t dMaxRange[XYZ_AXIS_COUNT];
     pt2Filter_t dMaxLowpass[XYZ_AXIS_COUNT];
@@ -578,7 +565,6 @@ float pidCompensateThrustLinearization(float throttle);
 extern float axisError[XYZ_AXIS_COUNT];
 void applyItermRelax(const int axis, const float iterm,
     const float gyroRate, float *itermErrorRate, float *currentPidSetpoint);
-void applyAbsoluteControl(const int axis, const float gyroRate, float *currentPidSetpoint, float *itermErrorRate);
 void rotateItermAndAxisError();
 float pidLevel(int axis, const pidProfile_t *pidProfile,
     const rollAndPitchTrims_t *angleTrim, float rawSetpoint, float horizonLevelStrength);

@@ -57,9 +57,9 @@
 #endif
 #elif defined(STM32N6)
 #ifdef USE_ADC_INTERNAL
-#define ADC_TAG_MAP_COUNT 19
+#define ADC_TAG_MAP_COUNT 24
 #else
-#define ADC_TAG_MAP_COUNT 16
+#define ADC_TAG_MAP_COUNT 21
 #endif
 #elif defined(APM32F4)
 #define ADC_TAG_MAP_COUNT 16
