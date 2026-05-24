@@ -444,48 +444,7 @@ TEST(Ist8310StateMachineTest, NegativeMagDataConversion)
     mock_busReadRegisterBufferStart_buf[0] = IST8310_DRDY_MASK;
     mag.read(&mag, magData);
 
-    // Start data read with negative values:
-    // X = 0xFFFE = -2 as int16_t, Y = 0x8000 = -32768, Z = 0xFF00 = -256
-    resetMocks();
-    mock_busReadRegisterBufferStart_buf[0] = 0xFE; // X low
-    mock_busReadRegisterBufferStart_buf[1] = 0xFF; // X high
-    mock_busReadRegisterBufferStart_buf[2] = 0x00; // Y low
-    mock_busReadRegisterBufferStart_buf[3] = 0x80; // Y high
-    mock_busReadRegisterBufferStart_buf[4] = 0x00; // Z low
-    mock_busReadRegisterBufferStart_buf[5] = 0xFF; // Z high
-    mag.read(&mag, magData);
-
-    // Parse data in STATE_READ_DATA
-    resetMocks();
-    mag.read(&mag, magData);
-
-    // X = -2 * 3 = -6
-    EXPECT_EQ(-6, magData[0]);
-    // Y = -(-32768) * 3 = but note int16_t overflow: -(-32768) overflows to
-    // -32768 in int16_t, but the negation happens on int level.
-    // -(int16_t)(0x8000) = -((-32768)) = 32768, * 3 = 98304
-    // Actually: (int16_t)(0x8000) = -32768, then negated = 32768, * 3 = 98304
-    // But magData is int16_t, and 98304 overflows. The multiplication result
-    // is stored as int before truncation to int16_t array.
-    // Wait - magData[Y] = -(int16_t)(...) * LSB2FSV = 32768 * 3 = 98304
-    // This will be truncated when stored to int16_t.
-    // Actually let me re-check: magData[Y] is int16_t, and the expression
-    // -(int16_t)(0x8000) * 3 in C is computed as int: -(-32768) * 3 = 32768 * 3 = 98304
-    // Stored to int16_t: 98304 & 0xFFFF = 0x8000 = -32768 (implementation-defined, but typical)
-    // This is actually an overflow edge case. Let's use a more normal negative value.
-
-    // Clean up state - trigger measurement
-    resetMocks();
-    mock_busWriteRegisterStart_ret = true;
-    mag.read(&mag, magData);
-
-    // Now re-do with sane negative values
-    // Poll status
-    resetMocks();
-    mock_busReadRegisterBufferStart_buf[0] = IST8310_DRDY_MASK;
-    mag.read(&mag, magData);
-
-    // X = 0xFFFE = -2, Y = 0xFFFD = -3, Z = 0xFFFC = -4
+    // Start data read: X = 0xFFFE = -2, Y = 0xFFFD = -3, Z = 0xFFFC = -4
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = 0xFE;
     mock_busReadRegisterBufferStart_buf[1] = 0xFF;
@@ -495,7 +454,7 @@ TEST(Ist8310StateMachineTest, NegativeMagDataConversion)
     mock_busReadRegisterBufferStart_buf[5] = 0xFF;
     mag.read(&mag, magData);
 
-    // Parse
+    // Parse data in STATE_READ_DATA
     resetMocks();
     mag.read(&mag, magData);
 
