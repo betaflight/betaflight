@@ -243,8 +243,8 @@ TEST(Ist8310DetectTest, DetectPreservesExistingAddress)
 // State machine flow:
 //   STATE_CHECK_STATUS (status=0) -> polls STAT1 -> returns false
 //   STATE_CHECK_STATUS (status has DRDY) -> starts data read -> STATE_READ_DATA, returns false
-//   STATE_READ_DATA -> parses mag data -> STATE_TRIGGER_MEASUREMENT, returns false
-//   STATE_TRIGGER_MEASUREMENT -> writes CNTRL1 -> STATE_CHECK_STATUS, returns true
+//   STATE_READ_DATA -> parses mag data + writes CNTRL1 -> STATE_CHECK_STATUS, returns true
+//   STATE_TRIGGER_MEASUREMENT -> only entered on a failed CNTRL1 start; retries the write
 // ---------------------------------------------------------------------------
 TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
 {
@@ -304,10 +304,15 @@ TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
     EXPECT_EQ(IST8310_DATA_BUF_LEN, mock_busReadRegisterBufferStart_len);
 
     // --- Call 4: STATE_READ_DATA ---
-    // Should parse the buffer and transition to STATE_TRIGGER_MEASUREMENT
+    // Parses buffer AND fires CNTRL1 trigger in the same tick. Returns true
+    // to signal sample-ready so the caller doesn't lose a measurement cycle.
     resetMocks();
+    mock_busWriteRegisterStart_ret = true;
     result = mag.read(&mag, magData);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(1, busWriteRegisterStart_callCount);
+    EXPECT_EQ(IST8310_REG_CNTRL1, mock_busWriteRegisterStart_lastReg);
+    EXPECT_EQ(IST8310_ODR_SINGLE, mock_busWriteRegisterStart_lastVal);
     // Verify mag data conversion: raw * LSB2FSV(3)
     // X = 256 * 3 = 768
     EXPECT_EQ(768, magData[0]);
@@ -315,17 +320,6 @@ TEST(Ist8310StateMachineTest, FullCycleDRDYReady)
     EXPECT_EQ(-1536, magData[1]);
     // Z = 768 * 3 = 2304
     EXPECT_EQ(2304, magData[2]);
-
-    // --- Call 5: STATE_TRIGGER_MEASUREMENT ---
-    // Should write CNTRL1 register and return true
-    resetMocks();
-    mock_busWriteRegisterStart_ret = true;
-
-    result = mag.read(&mag, magData);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(1, busWriteRegisterStart_callCount);
-    EXPECT_EQ(IST8310_REG_CNTRL1, mock_busWriteRegisterStart_lastReg);
-    EXPECT_EQ(IST8310_ODR_SINGLE, mock_busWriteRegisterStart_lastVal);
 }
 
 // ---------------------------------------------------------------------------
@@ -439,7 +433,7 @@ TEST(Ist8310StateMachineTest, TriggerWriteFailureRetries)
     int16_t magData[3] = {0, 0, 0};
     syncToCheckStatusBaseline(&mag, magData);
 
-    // Drive state machine to STATE_TRIGGER_MEASUREMENT via DRDY ready path.
+    // Drive state machine to STATE_READ_DATA via DRDY ready path.
     // Poll once to read status (DRDY set)
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = IST8310_DRDY_MASK; // DRDY
@@ -450,23 +444,29 @@ TEST(Ist8310StateMachineTest, TriggerWriteFailureRetries)
     mock_busReadRegisterBufferStart_ret = true;
     mag.read(&mag, magData);
 
-    // STATE_READ_DATA - parse data
-    resetMocks();
-    mag.read(&mag, magData);
-
-    // Now in STATE_TRIGGER_MEASUREMENT. Simulate write failure.
+    // STATE_READ_DATA: parses AND attempts CNTRL1 write in the same tick.
+    // Simulate write start failure — should fall back to STATE_TRIGGER_MEASUREMENT
+    // and return false (sample not yet acknowledged to caller).
     resetMocks();
     mock_busWriteRegisterStart_ret = false;
-
     bool result = mag.read(&mag, magData);
-    EXPECT_FALSE(result); // write failed, stays in TRIGGER state
+    EXPECT_FALSE(result);
+    EXPECT_EQ(1, busWriteRegisterStart_callCount);
 
-    // Try again with success
+    // STATE_TRIGGER_MEASUREMENT: retry, still fails
+    resetMocks();
+    mock_busWriteRegisterStart_ret = false;
+    result = mag.read(&mag, magData);
+    EXPECT_FALSE(result);
+    EXPECT_EQ(1, busWriteRegisterStart_callCount);
+
+    // Retry succeeds — sample is now acknowledged
     resetMocks();
     mock_busWriteRegisterStart_ret = true;
-
     result = mag.read(&mag, magData);
-    EXPECT_TRUE(result); // now succeeds
+    EXPECT_TRUE(result);
+    EXPECT_EQ(IST8310_REG_CNTRL1, mock_busWriteRegisterStart_lastReg);
+    EXPECT_EQ(IST8310_ODR_SINGLE, mock_busWriteRegisterStart_lastVal);
 }
 
 // ---------------------------------------------------------------------------

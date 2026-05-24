@@ -176,11 +176,20 @@ static bool ist8310Read(magDev_t *magDev, int16_t *magData)
             magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * LSB2FSV;
             magData[Z] =  (int16_t)(buf[5] << 8 | buf[4]) * LSB2FSV;
 
+            // Fire the next single-shot trigger in the same tick so the caller
+            // gets the sample without an extra recheck cycle. If the write
+            // can't be started, fall through to STATE_TRIGGER_MEASUREMENT and
+            // retry next tick (data stays in magData until then).
+            if (busWriteRegisterStart(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE)) {
+                state = STATE_CHECK_STATUS;
+                status = 0;
+                return true;
+            }
             state = STATE_TRIGGER_MEASUREMENT;
             return false;
 
         case STATE_TRIGGER_MEASUREMENT:
-            // Trigger next single measurement
+            // Retry the trigger after STATE_READ_DATA couldn't start it
             if (busWriteRegisterStart(dev, IST8310_REG_CNTRL1, IST8310_ODR_SINGLE)) {
                 state = STATE_CHECK_STATUS;
                 status = 0;
