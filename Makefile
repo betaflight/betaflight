@@ -718,9 +718,9 @@ $(AUTOHYDRATE_STAMPS):
 # scan: just stat the first .c prereq the .d declares.
 .PHONY: clean-stale-deps
 clean-stale-deps:
-	$(V1) if [ -d $(OBJECT_DIR) ]; then \
-	    find $(OBJECT_DIR) -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
-	        src=$$(grep -oE '[^[:space:]]+\.c\b' "$$dfile" 2>/dev/null | head -1); \
+	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
+	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
+	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
 	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
 	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
 	            $(RM) "$$dfile"; \
