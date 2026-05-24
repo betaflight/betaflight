@@ -492,20 +492,41 @@ void pidAcroTrainerInit(void)
 #endif // USE_ACRO_TRAINER
 
 #ifdef USE_THRUST_LINEARIZATION
+// Compensate motor command for a non-linear (~quadratic) motor thrust response.
+// Uses a 2nd-order Taylor expansion of ArduPilot's MOT_THST_EXPO model:
+//   c(x) = x * (1 + e * (1-x) * (1 + e * (1-2x)))
+// where e = thrustLinearization (0..1.5, scaled from the 0..150 CLI value).
+// This matches the small-e Taylor series of (1-e)*m + e*m^2 to second order,
+// so thrust_linear ≈ MOT_THST_EXPO * 100 and ArduPilot's per-prop recommendations
+// (≈55 for 5", ≈65 for 10", ≈75 for 20"+) port directly.
+//
+// The 2nd-order term flips sign at x=0.5, dropping the curve's slope at full
+// throttle from 1.0 to (1 - e + e^2). This prevents the current cubic shape
+// from going tangent to identity at x=1 and softens the motor's natural
+// steepening near the top of the throttle range.
+//
+// Cost: 4 mults, 2 adds, 2 subs per motor (no sqrt). Called per-motor per loop.
+float pidApplyThrustLinearization(float motorOutput)
+{
+    const float e = pidRuntime.thrustLinearization;
+    const float inv = 1.0f - motorOutput;
+    motorOutput *= 1.0f + e * inv * (1.0f + e * (inv - motorOutput));
+    return motorOutput;
+}
+
+// Inverse of the curve above, applied to base throttle so hover throttle is
+// preserved when thrust linearization is active. Expanding c⁻¹(y) as a Taylor
+// series in e gives c⁻¹(y) = y - e·y·(1-y) + 0·e² + O(e³): the e² coefficient
+// vanishes by algebraic cancellation, so this two-term expression is accurate
+// to second order in e — matching the forward — and is cheaper than dividing
+// by the full forward multiplier.
 float pidCompensateThrustLinearization(float throttle)
 {
     if (pidRuntime.thrustLinearization != 0.0f) {
-        // for whoops where a lot of TL is needed, allow more throttle boost
-        const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * sq(throttleReversed);
+        const float e = pidRuntime.thrustLinearization;
+        throttle *= 1.0f - e * (1.0f - throttle);
     }
     return throttle;
-}
-
-float pidApplyThrustLinearization(float motorOutput)
-{
-    motorOutput *= 1.0f + pidRuntime.thrustLinearization * sq(1.0f - motorOutput);
-    return motorOutput;
 }
 #endif
 
