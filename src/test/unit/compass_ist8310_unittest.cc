@@ -376,6 +376,53 @@ TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
 }
 
 // ---------------------------------------------------------------------------
+// Test: a STAT1 poll start that fails (bus busy) must NOT consume a retry,
+// otherwise a stuck bus fast-paths the driver into a bogus timeout without
+// ever talking to the chip.
+// ---------------------------------------------------------------------------
+TEST(Ist8310StateMachineTest, FailedPollStartDoesNotConsumeRetry)
+{
+    magDev_t mag;
+    memset(&mag, 0, sizeof(mag));
+    busDevice_t bus;
+    memset(&bus, 0, sizeof(bus));
+    bus.busType = BUS_TYPE_I2C;
+    mag.dev.bus = &bus;
+    mock_busReadRegisterBuffer_value = IST8310_REG_WAI_VALID;
+    ASSERT_TRUE(ist8310Detect(&mag));
+
+    int16_t magData[3] = {0, 0, 0};
+    syncToCheckStatusBaseline(&mag, magData);
+
+    // Bus is stuck — every poll start fails. Call the read path well past
+    // IST8310_DRDY_MAX_RETRIES. None of these may transition to TRIGGER.
+    for (int i = 0; i < 30; i++) {
+        resetMocks();
+        mock_busReadRegisterBufferStart_ret = false;
+        mock_busReadRegisterBufferStart_buf[0] = 0x00;
+
+        bool result = mag.read(&mag, magData);
+        EXPECT_FALSE(result);
+        EXPECT_EQ(0, busWriteRegisterStart_callCount)
+            << "Failed poll starts incorrectly advanced the retry counter "
+               "and triggered a measurement re-arm at iteration " << i;
+    }
+
+    // Bus recovers and a poll succeeds with DRDY set — should arm a data read
+    // on the following call (not a re-trigger, which would prove the retry
+    // counter was incorrectly bumped to the limit).
+    resetMocks();
+    mock_busReadRegisterBufferStart_ret = true;
+    mock_busReadRegisterBufferStart_buf[0] = IST8310_DRDY_MASK;
+    mag.read(&mag, magData);
+
+    resetMocks();
+    mock_busReadRegisterBufferStart_ret = true;
+    mag.read(&mag, magData);
+    EXPECT_EQ(IST8310_REG_DATA, mock_busReadRegisterBufferStart_reg);
+}
+
+// ---------------------------------------------------------------------------
 // Test: busWriteRegisterStart failure in TRIGGER state keeps retrying
 // ---------------------------------------------------------------------------
 TEST(Ist8310StateMachineTest, TriggerWriteFailureRetries)
