@@ -332,8 +332,8 @@ TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
     int16_t magData[3] = {0, 0, 0};
     syncToCheckStatusBaseline(&mag, magData);
 
-    // Poll 16 times (retries 0..15, timeout at retries > 15 = 16th call)
-    for (int i = 0; i <= 15; i++) {
+    // Poll 15 times (retries 0..14, timeout at retries >= 15 = 16th call)
+    for (int i = 0; i < 15; i++) {
         resetMocks();
         mock_busReadRegisterBufferStart_buf[0] = 0x00; // DRDY never set
         mock_busReadRegisterBufferStart_ret = true;
@@ -342,7 +342,7 @@ TEST(Ist8310StateMachineTest, DRDYTimeoutRetriggersMeasurement)
         EXPECT_FALSE(result);
     }
 
-    // 17th call: retries (now 16) > IST8310_DRDY_MAX_RETRIES (15) => timeout
+    // 16th call: retries (now 15) >= IST8310_DRDY_MAX_RETRIES (15) => timeout
     // Should transition to STATE_TRIGGER_MEASUREMENT
     resetMocks();
     mock_busReadRegisterBufferStart_buf[0] = 0x00;

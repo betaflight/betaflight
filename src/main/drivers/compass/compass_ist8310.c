@@ -159,7 +159,7 @@ static bool ist8310Read(magDev_t *magDev, int16_t *magData)
                     state = STATE_READ_DATA;
                     retries = 0;
                 }
-            } else if (retries++ > IST8310_DRDY_MAX_RETRIES) {
+            } else if (retries++ >= IST8310_DRDY_MAX_RETRIES) {
                 // Timeout — re-trigger measurement to recover from stuck state
                 state = STATE_TRIGGER_MEASUREMENT;
                 retries = 0;
