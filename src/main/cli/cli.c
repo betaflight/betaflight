@@ -1106,6 +1106,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2139,7 +2142,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2178,7 +2183,9 @@ static void cliColor(const char *cmdName, char *cmdline)
         const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
