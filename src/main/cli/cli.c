@@ -2181,7 +2181,7 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (!ptr) {
                 cliShowInvalidArgumentCountError(cmdName);
