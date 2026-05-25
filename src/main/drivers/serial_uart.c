@@ -102,6 +102,26 @@ UART_BUFFERS(9);
 UART_BUFFERS(10);
 #endif
 
+#ifdef USE_UART11
+UART_BUFFERS(11);
+#endif
+
+#ifdef USE_UART12
+UART_BUFFERS(12);
+#endif
+
+#ifdef USE_UART13
+UART_BUFFERS(13);
+#endif
+
+#ifdef USE_UART14
+UART_BUFFERS(14);
+#endif
+
+#ifdef USE_UART15
+UART_BUFFERS(15);
+#endif
+
 #ifdef USE_LPUART1
 UART_BUFFERS(Lp1);  // TODO - maybe some other naming scheme ?
 #endif
@@ -199,6 +219,21 @@ uartDeviceIdx_e uartDeviceIdxFromIdentifier(serialPortIdentifier_e identifier)
 #endif
 #ifdef USE_UART10
         _R(SERIAL_PORT_USART10, UARTDEV_10),
+#endif
+#ifdef USE_UART11
+        _R(SERIAL_PORT_UART11, UARTDEV_11),
+#endif
+#ifdef USE_UART12
+        _R(SERIAL_PORT_UART12, UARTDEV_12),
+#endif
+#ifdef USE_UART13
+        _R(SERIAL_PORT_UART13, UARTDEV_13),
+#endif
+#ifdef USE_UART14
+        _R(SERIAL_PORT_UART14, UARTDEV_14),
+#endif
+#ifdef USE_UART15
+        _R(SERIAL_PORT_UART15, UARTDEV_15),
 #endif
     };
 #undef _R
@@ -583,6 +618,26 @@ UART_IRQHandler(UART, 9, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
 
 #ifdef USE_UART10
 UART_IRQHandler(USART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART11
+UART_IRQHandler(UART, 11, UARTDEV_11) // UART11 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART12
+UART_IRQHandler(UART, 12, UARTDEV_12) // UART12 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART13
+UART_IRQHandler(UART, 13, UARTDEV_13) // UART13 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART14
+UART_IRQHandler(UART, 14, UARTDEV_14) // UART14 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART15
+UART_IRQHandler(UART, 15, UARTDEV_15) // UART15 Rx/Tx IRQ Handler
 #endif
 
 #ifdef USE_LPUART1
