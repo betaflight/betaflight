@@ -122,7 +122,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef * hpcd)
     /* Enable USB HS Interrupt */
     HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 
-#elif defined(STM32H743xx) || defined(STM32H750xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
 
     if (hpcd->Instance == USB_OTG_FS)
     {
@@ -305,7 +305,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef * hpcd)
 
         __HAL_RCC_GPIOA_CLK_DISABLE();
     }
-#elif defined(STM32H743xx) || defined(STM32H750xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
     if (hpcd->Instance == USB2_OTG_FS)
     {
         /* Disable USB FS Clocks */
@@ -491,7 +491,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef * pdev)
     /* Set LL Driver parameters */
 #if defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H730xx) || defined(STM32H735xx)
     hpcd.Instance = USB1_OTG_HS;
-#elif defined(STM32H743xx) || defined(STM32H750xx)
+#elif defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H757xx)
     hpcd.Instance = USB2_OTG_FS;
 #else
 #error Unknown MCU type

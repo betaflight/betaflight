@@ -252,6 +252,25 @@ uartDevice_t *uartDeviceFromIdentifier(serialPortIdentifier_e identifier)
     return deviceIdx != UARTDEV_INVALID ? &uartDevice[deviceIdx] : NULL;
 }
 
+static portMode_e uartSanitizeMode(const uartDevice_t *uartDevice, portMode_e mode, portOptions_e options)
+{
+    if (!uartDevice->tx.pin) {
+        mode &= ~MODE_TX;
+    }
+
+    if (!uartDevice->rx.pin && !((options & SERIAL_BIDIR) && uartDevice->tx.pin)) {
+        mode &= ~MODE_RX;
+    }
+
+    return mode;
+}
+
+static bool uartCanWrite(const uartPort_t *uartPort)
+{
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    return (uartPort->port.mode & MODE_TX) && uartDevice->tx.pin;
+}
+
 serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackPtr rxCallback, void *rxCallbackData, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     uartDevice_t *uartDevice = uartDeviceFromIdentifier(identifier);
@@ -260,6 +279,7 @@ serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackP
     }
     // fill identifier early, so initialization code can use it
     uartDevice->port.port.identifier = identifier;
+    mode = uartSanitizeMode(uartDevice, mode, options);
 
     uartPort_t *uartPort = serialUART(uartDevice, baudRate, mode, options);
     if (!uartPort) {
@@ -284,6 +304,8 @@ serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackP
 static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
+    uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    uartPort->port.mode = uartSanitizeMode(uartDevice, uartPort->port.mode, uartPort->port.options);
     uartPort->port.baudRate = baudRate;
     uartReconfigure(uartPort);
 }
@@ -291,7 +313,8 @@ static void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 static void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
-    uartPort->port.mode = mode;
+    uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    uartPort->port.mode = uartSanitizeMode(uartDevice, mode, uartPort->port.options);
     uartReconfigure(uartPort);
 }
 
@@ -398,6 +421,10 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
 
+    if (!uartCanWrite(uartPort)) {
+        return;
+    }
+
     // Check if the TX line is being pulled low by an unpowered peripheral
     if (uartPort->checkUsartTxOutput && !uartPort->checkUsartTxOutput(uartPort)) {
         // TX line is being pulled low, so don't transmit
@@ -426,6 +453,10 @@ static void uartBeginWrite(serialPort_t *instance)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
 
+    if (!uartCanWrite(uartPort)) {
+        return;
+    }
+
     // Check if the TX line is being pulled low by an unpowered peripheral
     if (uartPort->checkUsartTxOutput) {
         uartPort->checkUsartTxOutput(uartPort);
@@ -437,6 +468,10 @@ static void uartWriteBuf(serialPort_t *instance, const void *data, int count)
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
     const uint8_t *bytePtr = (const uint8_t*)data;
+
+    if (!uartCanWrite(uartPort)) {
+        return;
+    }
 
     // Test if checkUsartTxOutput() detected TX line being pulled low by an unpowered peripheral
     if (uart->txPinState == TX_PIN_MONITOR) {
@@ -464,6 +499,10 @@ static void uartEndWrite(serialPort_t *instance)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartDevice_t *uart = container_of(uartPort, uartDevice_t, port);
+
+    if (!uartCanWrite(uartPort)) {
+        return;
+    }
 
     // Check if the TX line is being pulled low by an unpowered peripheral
     if (uart->txPinState == TX_PIN_MONITOR) {

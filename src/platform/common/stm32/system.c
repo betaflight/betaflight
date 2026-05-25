@@ -57,7 +57,12 @@ static uint32_t cpuClockFrequency = 0;
 void cycleCounterInit(void)
 {
 #if defined(USE_HAL_DRIVER)
+#if defined(CORE_CM4)
+    // M4 core on dual-core H755/H757 runs at HCLK (after HPRE division)
+    cpuClockFrequency = HAL_RCC_GetHCLKFreq();
+#else
     cpuClockFrequency = HAL_RCC_GetSysClockFreq();
+#endif
 #elif defined(USE_ATBSP_DRIVER)
     crm_clocks_freq_type clocks;
     crm_clocks_freq_get(&clocks);
