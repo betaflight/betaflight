@@ -48,6 +48,12 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+static inline bool uartCanTx(const uartPort_t *uartPort)
+{
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    return (uartPort->port.mode & MODE_TX) && uartDevice->tx.pin;
+}
+
 static void usartConfigurePinInversion(uartPort_t *uartPort)
 {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
@@ -82,6 +88,8 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 
 void uartReconfigure(uartPort_t *uartPort)
 {
+    const bool canTx = uartCanTx(uartPort);
+
     HAL_UART_DeInit(&uartPort->Handle);
     uartPort->Handle.Init.BaudRate = uartPort->port.baudRate;
     // according to the stm32 documentation wordlen has to be 9 for parity bits
@@ -100,7 +108,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
     if (uartPort->port.mode & MODE_RX)
         uartPort->Handle.Init.Mode |= UART_MODE_RX;
-    if (uartPort->port.mode & MODE_TX)
+    if (canTx)
         uartPort->Handle.Init.Mode |= UART_MODE_TX;
 
     usartConfigurePinInversion(uartPort);
@@ -171,7 +179,7 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 
     // Transmit DMA or IRQ
-    if (uartPort->port.mode & MODE_TX) {
+    if (canTx) {
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
             uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
@@ -263,6 +271,11 @@ void uartTxMonitor(uartPort_t *s)
 void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (!uartCanTx(s)) {
+            s->txDMAEmpty = true;
+            return;
+        }
+
         if (IS_DMA_ENABLED(s->txDMAResource)) {
             // DMA is already in progress
             return;
@@ -332,9 +345,14 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 }
 #endif
 
+// NOSONAR cognitive complexity: this handler is a flat sequence of independent
+// USART flag-clear branches; extracting per-event helpers would add ITCM call overhead
+// for a FAST_IRQ_HANDLER and obscure the linear flag-handling structure.
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
     UART_HandleTypeDef *huart = &s->Handle;
+    const bool canTx = uartCanTx(s);
+
     /* UART in mode Receiver ---------------------------------------------------*/
     if ((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET)) {
         uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t) 0xff);
@@ -373,8 +391,28 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
+    // When the port has no usable TX pin (RX-only, pinless, or half-duplex without TX),
+    // the TC flag stays asserted (TX peripheral disabled or never fed data), which
+    // would cause uartIrqHandler to re-enter continuously and starve thread-mode tasks.
+    // Disable TXE/TC interrupts and clear the residual TC flag so the IRQ stops re-firing.
+    //
+    // This clear-path is load-bearing on HAL because __HAL_UART_GET_IT(UART_IT_TC) below
+    // reads only ISR.TC (no CR1.TCIE enable-bit check), unlike LL_USART_IsEnabledIT_TC
+    // in master's LL variant which gates on both flag and enable. Without this clear,
+    // the TC branch would re-execute even after the TCIE bit is cleared. Backport of
+    // master commit 81f88b5bf (#15218).
+    //
+    // CR1 is mutated only from IRQ context at NVIC_PRIO_SERIALUART or higher elsewhere
+    // in this driver; the non-atomic RMW via CLEAR_BIT is safe at this priority level.
+    if (!canTx) {
+        CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE | USART_CR1_TCIE);
+        if (__HAL_UART_GET_IT(huart, UART_IT_TC)) {
+            __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
+        }
+    }
+
     // UART transmission completed
-    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
+    if (canTx && (__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
 
         // Switch TX to an input with pull-up so it's state can be monitored
@@ -387,7 +425,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
     }
 
-    if (
+    if (canTx &&
 #ifdef USE_DMA
         !s->txDMAResource &&
 #endif
