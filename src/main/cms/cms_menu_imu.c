@@ -1054,8 +1054,8 @@ static OSD_Entry cmsx_menuPsasEntries[] =
 
     { "-- DAMPING --", OME_Label, NULL, NULL},
     { "ROLL", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_ROLL], 0, 255, 1 }},
-    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_PITCH], 0, 1000, 10 }},
-    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_YAW], 0, 1000, 10 }},
+    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_PITCH], 0, 500, 10 }},
+    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_YAW], 0, 500, 10 }},
 
     { "-- STABILITY --", OME_Label, NULL, NULL},
     { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_pitch_stability_gain, 0, 300, 1 }},
