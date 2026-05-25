@@ -22,6 +22,12 @@ MEMORY
     /* Loaded region: signed FSBL slot in AXISRAM2 secure. Boot ROM lands
      * the .stm32 payload here. */
     RAM (rwx) : ORIGIN = 0x34180400, LENGTH = 480K
+
+    /* AXISRAM1 secure reserve. RISAF2 region 1 marks the bottom 64 KiB
+     * of AXISRAM1 as S-only; this declaration reserves the address
+     * space so any future OBL code wanting S-state scratch can point
+     * here (and BF's linker excludes it). Currently unused. */
+    AXISRAM1_S (rwx) : ORIGIN = 0x34000000, LENGTH = 64K
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);

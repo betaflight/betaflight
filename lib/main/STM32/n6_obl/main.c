@@ -1,6 +1,6 @@
 /*
- * Betaflight N6 OpenBootloader — entry, boot decision, and DFU
- * trampoline.
+ * Betaflight N6 OpenBootloader — entry, boot decision, and BXNS
+ * hand-off trampoline.
  *
  * Loaded by the boot ROM into AXISRAM2 secure at 0x34180400 from XSPI
  * nor0 0x0 on cold boot, or via USB DFU @FSBL alt during recovery.
@@ -13,19 +13,21 @@
  *     WWDGRSTF set                      → previous BF crashed → DFU
  *   - BF vector table at 0x70100000
  *     invalid                           → DFU
- *   - otherwise                         → arm IWDG, jump to BF
+ *   - otherwise                         → arm IWDG, BXNS to BF in NS
  *
  * The DFU loop itself is supplied by the OBL middleware (CubeN6
  * OpenBootloader, pulled in via Makefile VPATH and re-entered via
  * obl_app.c::OBL_run_dfu_*). This file owns the boot decision, IWDG
- * arming, and the BF jump trampoline.
+ * arming, and the BF jump trampoline. OBL is built with -mcmse so the
+ * CMSIS peripheral pointers (RCC, RIFSC, GPIOx, DBGMCU, RISAF*, …)
+ * resolve to their secure-alias bases automatically.
  */
 
+#include <arm_cmse.h>
 #include <string.h>
 
 #include "main.h"
 #include "flash_iface.h"
-#include "platform/bf_obl_contract.h"
 
 /* ---------- Layout constants ---------- */
 #define XSPI_NOR_BASE               0x70000000U
@@ -104,18 +106,30 @@ static void iwdg_start(void)
 
 /* ---------- Jump trampoline ---------- */
 
+/* All-8-CIDs read + write enable for RISAF region CIDCFGR. Equivalent to
+ * RDENC0_Msk | RDENC1_Msk | ... | RDENC7_Msk | WRENC0_Msk | ... | WRENC7_Msk
+ * but kept as a single hex literal because the OR'd form is noisy. */
+#define RISAF_CIDCFGR_ALL_CIDS_RW   0x00FF00FFUL
+
+/* Configure one base region of a RISAF instance. `region` is 0-indexed
+ * (the CMSIS RISAF_TypeDef exposes the per-region structs as REG[0..14]).
+ * Per RM §7.5: write STARTR/ENDR/CIDCFGR before CFGR so BREN gates the
+ * region atomically. CIDCFGR opens RDENC[0..7] and WRENC[0..7]. */
+static inline void risaf_region_config(RISAF_TypeDef *risaf, uint32_t region,
+                                       uint32_t start, uint32_t end,
+                                       bool sec)
+{
+    risaf->REG[region].STARTR  = start;
+    risaf->REG[region].ENDR    = end;
+    risaf->REG[region].CIDCFGR = RISAF_CIDCFGR_ALL_CIDS_RW;
+    risaf->REG[region].CFGR    = (sec ? RISAF_REGx_CFGR_SEC_Msk : 0UL)
+                               | RISAF_REGx_CFGR_BREN_Msk;
+}
+
 static __attribute__((noreturn)) void jump_to_bf(void)
 {
     const uint32_t bf_sp = *(volatile uint32_t *)(BF_VECTOR_BASE);
     const uint32_t bf_pc = *(volatile uint32_t *)(BF_VECTOR_BASE + 4U);
-
-    /* @DBGRAM markers, host-readable via DFU alt 1:
-     *   0x08  jump-trampoline reached
-     *   0x0C  bf_sp captured at jump
-     *   0x40  bf_pc captured at jump */
-    *(volatile uint32_t *)0x24100008U = 0x0B100000U;
-    *(volatile uint32_t *)0x2410000CU = bf_sp;
-    *(volatile uint32_t *)0x24100040U = bf_pc;
 
     HAL_SuspendTick();
     __disable_irq();
@@ -124,14 +138,167 @@ static __attribute__((noreturn)) void jump_to_bf(void)
     SCB_DisableICache();
     SCB_DisableDCache();
 
-    SCB->VTOR = BF_VECTOR_BASE;
+    /* === Hand off to BF in NS state ===========================
+     *
+     * BF runs as a Non-Secure application; OBL is the only S-state
+     * code on the device. RISAFs must be programmed so the NS CPU
+     * can reach BF's data (AXISRAM1), code (XSPI memory-mapped),
+     * and other AXI-side resources before BXNS. Boot-ROM default
+     * leaves every RISAF region disabled, which per RM §3.5.7 means
+     * "Locations outside any enabled region belong to the secure
+     * OS" — so without explicit opens, NS access is silently RAZ.
+     *
+     * Order matters: RISAFs are configured AFTER OBL's last XSPI
+     * read (bf_sp/bf_pc above) so OBL's S-state reads still see the
+     * boot-ROM permissive default. Once XSPI's RISAF6/12 regions
+     * are flipped to NS, OBL itself can no longer read XSPI; only
+     * BF (NS) can. AXISRAM2 (where OBL lives) is deliberately not
+     * covered by any RISAF6 region — it stays at the default
+     * "secure OS only" so OBL keeps fetching its own instructions
+     * up to and including the BXNS. */
+
+    /* RISAF peripheral clock — boot ROM leaves AHB3ENR.RISAFEN=0, which
+     * makes every access to RISAF register space stall the bus. */
+    RCC->AHB3ENSR = RCC_AHB3ENSR_RISAFENS;
+    (void)RCC->AHB3ENR;
+
+    /* AXISRAM1 + AXISRAM3..6 clocks — boot ROM only clocks AXISRAM2
+     * (where OBL itself runs). The NS BF lives in AXISRAM1 (data+stack)
+     * and AXISRAM3..6 (D2_RAM); without these clocks enabled, any
+     * NS access to 0x24010000+ or 0x24200000+ bus-faults (IBUSERR on
+     * fetch, BFAR-valid on data). Idempotent with the SystemInit set. */
+    RCC->MEMENSR = RCC_MEMENSR_AXISRAM1ENS | RCC_MEMENSR_AXISRAM2ENS
+                 | RCC_MEMENSR_AXISRAM3ENS | RCC_MEMENSR_AXISRAM4ENS
+                 | RCC_MEMENSR_AXISRAM5ENS | RCC_MEMENSR_AXISRAM6ENS;
+    (void)RCC->MEMENR;
+
+    /* RISAF2 (AXISRAM1, slave, aperture-relative offsets):
+     *   Region 0 (RM "Region 1")  S, 0x00000..0x0FFFF (64 KiB) — OBL
+     *                              reserve, paired with the AXISRAM1_S
+     *                              declaration in the OBL linker.
+     *   Region 1 (RM "Region 2") NS, 0x10000..0xFFFFF (960 KiB) — BF
+     *                              data+stack. */
+    risaf_region_config(RISAF2, 0U, 0x00000000UL, 0x0000FFFFUL, true);
+    risaf_region_config(RISAF2, 1U, 0x00010000UL, 0x000FFFFFUL, false);
+
+    /* RISAF3 (AXISRAM2, slave) — only the bottom 4 KiB is exposed NS
+     * for any host-side exchange buffer at 0x24100000. OBL itself runs
+     * at offset 0x80400+ which stays outside this region and therefore
+     * stays at the boot-ROM "secure-only" default. */
+    risaf_region_config(RISAF3, 0U, 0x00000000UL, 0x00000FFFUL, false);
+
+    /* RISAF6 (CPU master AXI, aperture is the full 4 GiB address map,
+     * absolute addresses). Each enabled region grants NS access; the
+     * rest of the 4 GiB stays at boot-ROM "secure-only" so OBL's
+     * S-state instruction fetch from AXISRAM2 secure (0x34xxxxxx)
+     * keeps working all the way through to the BXNS itself.
+     *   R1 NS  AXISRAM1                 (0x24000000..0x240FFFFF)
+     *   R2 NS  AXISRAM2 NS alias        (0x24100000..0x241FFFFF)
+     *   R3 NS  AXISRAM3..6              (0x24200000..0x243BFFFF)
+     *   R4 NS  AHB/APB NS peripherals   (0x40000000..0x4FFFFFFF)
+     *   R5 NS  XSPI mem-mapped slot     (0x70000000..0x7FFFFFFF) */
+    risaf_region_config(RISAF6, 0U, 0x24000000UL, 0x240FFFFFUL, false);
+    risaf_region_config(RISAF6, 1U, 0x24100000UL, 0x241FFFFFUL, false);
+    risaf_region_config(RISAF6, 2U, 0x24200000UL, 0x243BFFFFUL, false);
+    risaf_region_config(RISAF6, 3U, 0x40000000UL, 0x4FFFFFFFUL, false);
+    risaf_region_config(RISAF6, 4U, 0x70000000UL, 0x7FFFFFFFUL, false);
+
+    /* RISAF12 (XSPI2, slave, aperture-relative — 256 MiB).
+     * Per RM0486 Table 1, the address slot at 0x70000000 is "XSPI2"
+     * (the XSPI2 controller's memory-mapped region). Per Table 24,
+     * XSPI2 is protected by RISAF12. (XSPI1 at 0x90000000 → RISAF11,
+     * XSPI3 at 0x80000000 → RISAF13 — neither is in use here.) */
+    risaf_region_config(RISAF12, 0U, 0x00000000UL, 0x0FFFFFFFUL, false);
+
+    /* === Per-CPU TrustZone setup for the NS application ====
+     *
+     * NSACR (S-only): grant NS code access to FPU coprocessor banks
+     * (CP10 + CP11). Without this, BF's first FPU instruction in
+     * NS state takes a NOCP UsageFault. Already set permissively in
+     * SystemInit; restated here as the "tight" CP10/CP11 mask before
+     * hand-off.
+     *
+     * CPACR_NS: NS-bank CPACR is at reset value (FPU access disabled
+     * for NS). BF's __libc_init_array runs before systemInit and may
+     * emit FPU instructions (newlib helpers, struct passing). Enable
+     * CP10/CP11 in the NS bank now so the early NS code can run.
+     *
+     * AIRCR.BFHFNMINS: route BusFault, HardFault, and NMI to NS state
+     * so BF handles its own faults. AIRCR writes need VECTKEY (0x05FA
+     * in [31:16]). PRIS stays 0 (do not lower NS priorities). */
+    SCB->NSACR    = SCB_NSACR_CP10_Msk | SCB_NSACR_CP11_Msk;
+    SCB_NS->CPACR = (3UL << 20) | (3UL << 22);  /* CP10/CP11 full access in NS bank */
+    {
+        const uint32_t aircr_keep = SCB->AIRCR & ~SCB_AIRCR_VECTKEY_Msk;
+        SCB->AIRCR = (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
+                   | aircr_keep
+                   | SCB_AIRCR_BFHFNMINS_Msk;
+    }
+
+    /* SAU (Security Attribution Unit) — REQUIRED for BXNS to NS code.
+     * Per RM0486 §3.5.1: "at reset, the SAU unilaterally determines that
+     * the entire memory is secure." Without SAU regions defining NS,
+     * BXNS to 0x7010xxxx (BF Reset_Handler in XSPI mem-mapped slot)
+     * resolves the destination as S → SecureFault.
+     *
+     * Per-region NS instead of ALLNS=1: with explicit regions, addresses
+     * outside any region stay S-default — which is what OBL needs for
+     * its S-state accesses at 0x34xxxxxx, 0x50xxxxxx, 0x54xxxxxx etc.
+     * ALLNS=1 would override SAU's default-S, potentially demoting OBL's
+     * own S-classified regions toward NS — risky.
+     *
+     *   Region 0: AXISRAM (0x24000000..0x243FFFFF) NS
+     *   Region 1: AHB/APB NS-alias peripherals (0x40000000..0x4FFFFFFF) NS
+     *   Region 2: XSPI memory-mapped (0x70000000..0x7FFFFFFF) NS — BF code
+     *
+     * RBAR/RLAR are 32-byte granularity (low 5 bits ignored). */
+    {
+        const struct { uint32_t base; uint32_t limit; } regs[] = {
+            { 0x24000000UL, 0x243FFFE0UL },
+            { 0x40000000UL, 0x4FFFFFE0UL },
+            { 0x70000000UL, 0x7FFFFFE0UL },
+        };
+        for (uint32_t i = 0; i < (uint32_t)(sizeof(regs) / sizeof(regs[0])); i++) {
+            SAU->RNR  = i;
+            SAU->RBAR = regs[i].base;
+            SAU->RLAR = regs[i].limit | SAU_RLAR_ENABLE_Msk;
+        }
+        SAU->CTRL = SAU_CTRL_ENABLE_Msk;
+        __DSB();
+        __ISB();
+    }
+
+    /* NS VTOR — point BF at its vector table at the XIP slot base. */
+    SCB_NS->VTOR = BF_VECTOR_BASE;
     __DSB();
     __ISB();
-    __set_MSP(bf_sp);
-    /* Re-enable IRQs so BF inherits PRIMASK=0 — its startup_*.s relies
-     * on this for SysTick / HAL_Delay during HAL_Init. */
-    __enable_irq();
-    ((void (*)(void))bf_pc)();
+
+    /* Clear every NVIC IRQ enable + pending bit before the hand-off so
+     * no S-side leftover interrupt fires the instant the NS app does
+     * `__enable_irq()` (BF's own startup clears these again, but doing it
+     * here protects the transition window). */
+    for (uint32_t i = 0; i < (uint32_t)(sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0])); i++) {
+        NVIC->ICER[i] = 0xFFFFFFFFUL;
+        NVIC->ICPR[i] = 0xFFFFFFFFUL;
+    }
+    __DSB();
+    __ISB();
+
+    /* CMSIS-compliant ARMv8-M S→NS hand-off.
+     *
+     * `cmse_nonsecure_call` on the function-pointer type makes the
+     * compiler emit the proper BXNS-style branch *and* the AAPCS-CMSE
+     * register-clearing prologue (zero R0-R3 / R12 / FPSCR caller-saved
+     * state, so no Secure data leaks into the NS app). The function-
+     * pointer cast also implicitly clears the LSB of the target so the
+     * branch always transitions S → NS (with LSB=1 BXNS stays in S and
+     * would SecureFault on the NS-attributed XSPI fetch). __TZ_set_MSP_NS
+     * installs BF's stack pointer in the NS bank. */
+    __TZ_set_MSP_NS(bf_sp);
+
+    typedef void __attribute__((cmse_nonsecure_call)) (*ns_reset_fn)(void);
+    const ns_reset_fn bf_reset = (ns_reset_fn)(bf_pc & ~1UL);
+    bf_reset();
 
     while (1) {
         __NOP();
@@ -142,18 +309,12 @@ static __attribute__((noreturn)) void jump_to_bf(void)
 
 int main(void)
 {
-    /* Bring-up marker in the @DBGRAM buffer (AXISRAM2 NS at 0x24100000):
-     * 0x04 = OBL main() ran. */
-    *(volatile uint32_t *)0x24100004U = 0xCAFEBABEU;
-
     /* RCC->RSR must be sampled before HAL_Init / SystemClock_Config touch
      * RCC — HAL_RCC_DeInit (called from System_DeInit during
      * SystemClock_Config) writes RMVF and erases the IWDGRSTF / LCKRSTF /
-     * WWDGRSTF flags the boot decision below depends on. Mirror to
-     * @DBGRAM 0x88 and clear here so the boot decision sees a stable
-     * snapshot. */
+     * WWDGRSTF flags the boot decision below depends on. Snapshot the
+     * value here and clear so subsequent boots see a stable state. */
     const uint32_t saved_rsr = RCC->RSR;
-    *(volatile uint32_t *)0x24100088U = saved_rsr;
     RCC->RSR = RCC_RSR_RMVF;
     (void)RCC->RSR;
 
@@ -180,68 +341,6 @@ int main(void)
     if (!nor0_has_valid_obl()) {
         OBL_run_dfu_recovery();
         /* unreachable */
-    }
-
-    /* @DBGRAM diagnostic snapshot, host-readable via DFU alt 1:
-     *   0x80        bf_sp from BF vector
-     *   0x84        bf_pc from BF vector
-     *   0x88        saved_rsr (mirrored at top of main, not rewritten here)
-     *   0x8C        bf vector check_fail bits
-     *   0x90..0x9C  DBGMCU IDCODE / CR (S) / SR (offset 0xFC) / CR (NS)
-     *   0xA0..0xD0  XSPI reads at 14 offsets across nor0
-     *   0xD8..0xEC  RISAF2 (AXISRAM2) CR / IASR / REG[0]
-     *   0xF0        AXISRAM2 NS write/read self-probe readback
-     *   0x110       AXISRAM2 NS probe write target (0xDEADBEEF) */
-    {
-        const uint32_t bf_sp = *(volatile uint32_t *)BF_VECTOR_BASE;
-        const uint32_t bf_pc = *(volatile uint32_t *)(BF_VECTOR_BASE + 4U);
-        uint32_t check_fail = 0;
-        if ((bf_sp & 0xF8000000U) != 0x20000000U) check_fail |= 0x1U;
-        if ((bf_pc & 0xFFF00000U) != BF_VECTOR_BASE) check_fail |= 0x2U;
-        if ((bf_pc & 1U) == 0U) check_fail |= 0x4U;
-        *(volatile uint32_t *)0x24100080U = bf_sp;
-        *(volatile uint32_t *)0x24100084U = bf_pc;
-        *(volatile uint32_t *)0x2410008CU = check_fail;
-
-        /* DBGMCU readbacks: IDCODE (0x00 read-only chip ID — non-zero
-         * iff APB3 bus to DBGMCU is clocked), CR via S and NS aliases
-         * (bit 20 = DBGCLKEN), SR (offset 0xFC; bits 16/17 = AP0/AP1
-         * enable). */
-        *(volatile uint32_t *)0x24100090U = *(volatile uint32_t *)0x54001000UL;
-        *(volatile uint32_t *)0x24100094U = *(volatile uint32_t *)0x54001004UL;
-        *(volatile uint32_t *)0x24100098U = *(volatile uint32_t *)0x540010FCUL;
-        *(volatile uint32_t *)0x2410009CU = *(volatile uint32_t *)0x44001004UL;
-
-        /* XSPI read probe across nor0: A0/A4 OBL header, A8/AC mid- and
-         * end-of-OBL-slot, B0..D0 14 points into and past BF flash. */
-        *(volatile uint32_t *)0x241000A0U = *(volatile uint32_t *)0x70000000UL;
-        *(volatile uint32_t *)0x241000A4U = *(volatile uint32_t *)0x70000004UL;
-        *(volatile uint32_t *)0x241000A8U = *(volatile uint32_t *)0x70080000UL;
-        *(volatile uint32_t *)0x241000ACU = *(volatile uint32_t *)0x700FFFFCUL;
-        *(volatile uint32_t *)0x241000B0U = *(volatile uint32_t *)0x70100000UL;
-        *(volatile uint32_t *)0x241000B4U = *(volatile uint32_t *)0x70100100UL;
-        *(volatile uint32_t *)0x241000B8U = *(volatile uint32_t *)0x70100400UL;
-        *(volatile uint32_t *)0x241000BCU = *(volatile uint32_t *)0x70110000UL;
-        *(volatile uint32_t *)0x241000C0U = *(volatile uint32_t *)0x70200000UL;
-        *(volatile uint32_t *)0x241000C4U = *(volatile uint32_t *)0x70400000UL;
-        *(volatile uint32_t *)0x241000C8U = *(volatile uint32_t *)0x70800000UL;
-        *(volatile uint32_t *)0x241000CCU = *(volatile uint32_t *)0x71000000UL;
-        *(volatile uint32_t *)0x241000D0U = *(volatile uint32_t *)0x71800000UL;
-
-        /* RISAF2 (AXISRAM2 region controller, secure base 0x54027000):
-         * CR / IASR / REG[0] CFGR/STARTR/ENDR/CIDCFGR. */
-        *(volatile uint32_t *)0x241000D8U = *(volatile uint32_t *)0x54027000UL;
-        *(volatile uint32_t *)0x241000DCU = *(volatile uint32_t *)0x54027008UL;
-        *(volatile uint32_t *)0x241000E0U = *(volatile uint32_t *)0x54027040UL;
-        *(volatile uint32_t *)0x241000E4U = *(volatile uint32_t *)0x54027044UL;
-        *(volatile uint32_t *)0x241000E8U = *(volatile uint32_t *)0x54027048UL;
-        *(volatile uint32_t *)0x241000ECU = *(volatile uint32_t *)0x5402704CUL;
-
-        /* AXISRAM2 NS write/read round-trip probe: write 0xDEADBEEF to
-         * 0x24100110, read back into 0xF0. Full 32-bit readback proves
-         * the NS path preserves all bytes. */
-        *(volatile uint32_t *)0x24100110U = 0xDEADBEEFU;
-        *(volatile uint32_t *)0x241000F0U = *(volatile uint32_t *)0x24100110U;
     }
 
     /* Reset-cause boot decision. RCC->RSR is the only on-chip primitive
@@ -296,10 +395,10 @@ static void SystemClock_Config(void)
 
     /* Re-assert DBGMCU.CR after the clock-tree reconfig — the brief
      * debug-clock outage during the CPU-clock switch can drop the
-     * bits. Same value/aliases as in SystemInit. */
-    *(volatile uint32_t *)0x54001004UL = (1UL << 20)
-                                       | (1UL <<  0)
-                                       | (1UL <<  1)
-                                       | (1UL <<  2);
-    (void)*(volatile uint32_t *)0x54001004UL;
+     * bits. Same value as in SystemInit. */
+    DBGMCU->CR = DBGMCU_CR_DBGCLKEN
+               | DBGMCU_CR_DBG_SLEEP
+               | DBGMCU_CR_DBG_STOP
+               | DBGMCU_CR_DBG_STANDBY;
+    (void)DBGMCU->CR;
 }

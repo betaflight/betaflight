@@ -54,7 +54,6 @@ INCLUDES := \
     -I$(OBL_PROJ)/USB_Device/App \
     -I$(OBL_PROJ)/USB_Device/Target
 
-# Match betaflight main build: NS aliases (no -mcmse, no CPU_IN_SECURE_STATE).
 DEFINES := \
     -DSTM32N657xx \
     -DUSE_HAL_DRIVER \
@@ -73,7 +72,13 @@ ifdef OBL_FORCE_RECOVERY
 DEFINES += -DOBL_FORCE_RECOVERY
 endif
 
-ARCH_FLAGS := -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
+# OBL is the only S-state code on the device, so build it with the Cortex-M
+# Security Extensions enabled. -mcmse sets __ARM_FEATURE_CMSE=3, which makes
+# the ST CMSIS headers select the secure-alias peripheral base addresses
+# (RCC, RIFSC, GPIOx, DBGMCU, TAMP, PWR, RTC, EXTI, GPDMA1, HPDMA1, ...). All
+# peripheral access in OBL therefore goes through the S aliases naturally
+# via the CMSIS struct pointers instead of hand-coded addresses.
+ARCH_FLAGS := -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16 -mcmse
 
 CFLAGS := \
     $(ARCH_FLAGS) \
