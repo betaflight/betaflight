@@ -128,9 +128,9 @@ unsigned long strtoul(const char * str, char ** endptr, int base)
 {
     return _strto_l(str, endptr, base, 0);
 }
-#endif
 
 int atoi(const char *str)
 {
     return strtol(str, NULL, 10);
 }
+#endif
