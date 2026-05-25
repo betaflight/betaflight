@@ -120,8 +120,8 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
     }
 }
 
-//The astatic accel Z controller by stick position
-static float FAST_CODE_NOINLINE updateAstaticAccelZController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
+// Accel Z (G load) error integrator with weak P-term: stick → desired G, I-term eliminates offset (astatic).
+static float FAST_CODE_NOINLINE updateAccelZHoldingController(const pidProfile_t *pidProfile, float pitchStick, float accelZ)
 {
     float deltaAccP = 0.0f;
     const float servoVelocityLimit = 100.0f / (pidProfile->psas_servo_time * 0.001f); // Limit servo velocity %/s. The psas_servo_time can not be zero - the CLI minimum value is 5.
@@ -262,7 +262,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Else, if the lift coefficent (angle of attack) value is normal then hold required G load (accel z) value.
     psasData.pitch.accelP = 0.0f;
     if (isEnabledAccelZController && !isLimitAoA) {
-        psasData.pitch.accelP = updateAstaticAccelZController(pidProfile, pitchStick, accelZ);
+        psasData.pitch.accelP = updateAccelZHoldingController(pidProfile, pitchStick, accelZ);
         psasData.pitch.Sum += psasData.pitch.accelP;
     }
 

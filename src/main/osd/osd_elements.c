@@ -483,8 +483,8 @@ bool osdFormatRtcDateTime(char *buffer)
     }
 
     switch (activeElement.type) {
-    case OSD_ELEMENT_TYPE_3: 
-        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds); 
+    case OSD_ELEMENT_TYPE_3:
+        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds);
         break;
     case OSD_ELEMENT_TYPE_2:
         tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
@@ -1128,10 +1128,11 @@ static void osdElementFlymode(osdElementParms_t *element)
     // Note that flight mode display has precedence in what to display.
     //  1. FS
     //  2. GPS RESCUE
-    //  3. PASSTHRU, PSAS
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  5. AIR
-    //  6. ACRO
+    //  3. PASSTHRU,
+    //  4. PSAS
+    //  5. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
+    //  6. AIR
+    //  7. ACRO
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
