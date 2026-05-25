@@ -82,8 +82,8 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #if !(defined(DEFAULT_BARO_SPI_BMP388) || defined(DEFAULT_BARO_BMP388) || defined(DEFAULT_BARO_SPI_BMP280) || \
     defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || \
     defined(DEFAULT_BARO_BMP085) || defined(DEFAULT_BARO_SPI_LPS) || defined(DEFAULT_BARO_SPI_QMP6988) || \
-    defined(DEFAULT_BARO_QMP6988)) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310) || \
-    defined(DEFAULT_BARO_LPS22DF) || defined(DEFAULT_BARO_SPI_LPS22DF)
+    defined(DEFAULT_BARO_QMP6988) || defined(DEFAULT_BARO_DPS310) || defined(DEFAULT_BARO_SPI_DPS310) || \
+    defined(DEFAULT_BARO_LPS22DF) || defined(DEFAULT_BARO_SPI_LPS22DF))
 
 #if defined(USE_BARO_DPS310) || defined(USE_BARO_SPI_DPS310)
 #if defined(USE_BARO_SPI_DPS310)
