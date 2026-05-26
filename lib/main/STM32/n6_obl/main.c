@@ -1,5 +1,5 @@
 /*
- * Betaflight N6 OpenBootloader — entry, boot decision, and BXNS
+ * Betaflight N6 OpenBootloader — entry, boot decision, and S→NS
  * hand-off trampoline.
  *
  * Loaded by the boot ROM into AXISRAM2 secure at 0x34180400 from XSPI
@@ -142,31 +142,33 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      *
      * BF runs as a Non-Secure application; OBL is the only S-state
      * code on the device. RISAFs must be programmed so the NS CPU
-     * can reach BF's data (AXISRAM1), code (XSPI memory-mapped),
-     * and other AXI-side resources before BXNS. Boot-ROM default
-     * leaves every RISAF region disabled, which per RM §3.5.7 means
-     * "Locations outside any enabled region belong to the secure
-     * OS" — so without explicit opens, NS access is silently RAZ.
+     * can reach BF's data (AXISRAM1) and code (XSPI memory-mapped)
+     * before BXNS. Boot-ROM default leaves every RISAF region
+     * disabled, which per RM §3.5.7 means "Locations outside any
+     * enabled region belong to the secure OS" — so without explicit
+     * opens, NS access is silently RAZ.
      *
      * Order matters: RISAFs are configured AFTER OBL's last XSPI
      * read (bf_sp/bf_pc above) so OBL's S-state reads still see the
-     * boot-ROM permissive default. Once XSPI's RISAF6/12 regions
-     * are flipped to NS, OBL itself can no longer read XSPI; only
-     * BF (NS) can. AXISRAM2 (where OBL lives) is deliberately not
-     * covered by any RISAF6 region — it stays at the default
-     * "secure OS only" so OBL keeps fetching its own instructions
-     * up to and including the BXNS. */
+     * boot-ROM permissive default. Once XSPI's RISAF12 region is
+     * flipped to NS, OBL itself can no longer read XSPI; only BF
+     * (NS) can. AXISRAM2 (where OBL lives) is left at the boot-ROM
+     * default (secure-only) so OBL keeps executing through the BXNS.
+     *
+     * RISAF6 is deliberately not programmed — ST's
+     * Template_Isolation_XIP reference for the equivalent topology
+     * (FSBL → AppliSecure → AppliNS in XSPI) leaves it alone too. */
 
-    /* RISAF peripheral clock — boot ROM leaves AHB3ENR.RISAFEN=0, which
-     * makes every access to RISAF register space stall the bus. */
+    /* RISAF peripheral clock — boot ROM leaves AHB3ENR.RISAFEN=0,
+     * which makes every access to RISAF register space stall the bus. */
     RCC->AHB3ENSR = RCC_AHB3ENSR_RISAFENS;
     (void)RCC->AHB3ENR;
 
     /* AXISRAM1 + AXISRAM3..6 clocks — boot ROM only clocks AXISRAM2
      * (where OBL itself runs). The NS BF lives in AXISRAM1 (data+stack)
-     * and AXISRAM3..6 (D2_RAM); without these clocks enabled, any
-     * NS access to 0x24010000+ or 0x24200000+ bus-faults (IBUSERR on
-     * fetch, BFAR-valid on data). Idempotent with the SystemInit set. */
+     * and AXISRAM3..6 (D2_RAM); without these clocks enabled, any NS
+     * access to 0x24010000+ or 0x24200000+ bus-faults. Idempotent with
+     * the SystemInit set. */
     RCC->MEMENSR = RCC_MEMENSR_AXISRAM1ENS | RCC_MEMENSR_AXISRAM2ENS
                  | RCC_MEMENSR_AXISRAM3ENS | RCC_MEMENSR_AXISRAM4ENS
                  | RCC_MEMENSR_AXISRAM5ENS | RCC_MEMENSR_AXISRAM6ENS;
@@ -181,78 +183,60 @@ static __attribute__((noreturn)) void jump_to_bf(void)
     risaf_region_config(RISAF2, 0U, 0x00000000UL, 0x0000FFFFUL, true);
     risaf_region_config(RISAF2, 1U, 0x00010000UL, 0x000FFFFFUL, false);
 
-    /* RISAF3 (AXISRAM2, slave) — only the bottom 4 KiB is exposed NS
-     * for any host-side exchange buffer at 0x24100000. OBL itself runs
-     * at offset 0x80400+ which stays outside this region and therefore
-     * stays at the boot-ROM "secure-only" default. */
-    risaf_region_config(RISAF3, 0U, 0x00000000UL, 0x00000FFFUL, false);
-
-    /* RISAF6 (CPU master AXI, aperture is the full 4 GiB address map,
-     * absolute addresses). Each enabled region grants NS access; the
-     * rest of the 4 GiB stays at boot-ROM "secure-only" so OBL's
-     * S-state instruction fetch from AXISRAM2 secure (0x34xxxxxx)
-     * keeps working all the way through to the BXNS itself.
-     *   R1 NS  AXISRAM1                 (0x24000000..0x240FFFFF)
-     *   R2 NS  AXISRAM2 NS alias        (0x24100000..0x241FFFFF)
-     *   R3 NS  AXISRAM3..6              (0x24200000..0x243BFFFF)
-     *   R4 NS  AHB/APB NS peripherals   (0x40000000..0x4FFFFFFF)
-     *   R5 NS  XSPI mem-mapped slot     (0x70000000..0x7FFFFFFF) */
-    risaf_region_config(RISAF6, 0U, 0x24000000UL, 0x240FFFFFUL, false);
-    risaf_region_config(RISAF6, 1U, 0x24100000UL, 0x241FFFFFUL, false);
-    risaf_region_config(RISAF6, 2U, 0x24200000UL, 0x243BFFFFUL, false);
-    risaf_region_config(RISAF6, 3U, 0x40000000UL, 0x4FFFFFFFUL, false);
-    risaf_region_config(RISAF6, 4U, 0x70000000UL, 0x7FFFFFFFUL, false);
-
     /* RISAF12 (XSPI2, slave, aperture-relative — 256 MiB).
-     * Per RM0486 Table 1, the address slot at 0x70000000 is "XSPI2"
-     * (the XSPI2 controller's memory-mapped region). Per Table 24,
-     * XSPI2 is protected by RISAF12. (XSPI1 at 0x90000000 → RISAF11,
-     * XSPI3 at 0x80000000 → RISAF13 — neither is in use here.) */
+     * Per RM0486 Table 24, XSPI2 is protected by RISAF12. The OBL
+     * doesn't live in XSPI at run time (boot ROM copied it to AXISRAM2
+     * S), so we expose the entire aperture as NS for the BF app. */
     risaf_region_config(RISAF12, 0U, 0x00000000UL, 0x0FFFFFFFUL, false);
 
     /* === Per-CPU TrustZone setup for the NS application ====
      *
      * NSACR (S-only): grant NS code access to FPU coprocessor banks
-     * (CP10 + CP11). Without this, BF's first FPU instruction in
-     * NS state takes a NOCP UsageFault. Already set permissively in
-     * SystemInit; restated here as the "tight" CP10/CP11 mask before
-     * hand-off.
+     * (CP10 + CP11). Without this, BF's first FPU instruction in NS
+     * state takes a NOCP UsageFault.
      *
      * CPACR_NS: NS-bank CPACR is at reset value (FPU access disabled
-     * for NS). BF's __libc_init_array runs before systemInit and may
-     * emit FPU instructions (newlib helpers, struct passing). Enable
-     * CP10/CP11 in the NS bank now so the early NS code can run.
+     * for NS). BF's __libc_init_array runs before its own systemInit
+     * and may emit FPU instructions (newlib helpers, struct passing).
+     * Enable CP10/CP11 in the NS bank now so the early NS code can run.
      *
-     * AIRCR.BFHFNMINS: route BusFault, HardFault, and NMI to NS state
-     * so BF handles its own faults. AIRCR writes need VECTKEY (0x05FA
-     * in [31:16]). PRIS stays 0 (do not lower NS priorities). */
+     * AIRCR.BFHFNMINS is left at the boot-ROM default (0) so faults
+     * remain S-routed during the hand-off — matches the ST
+     * Template_Isolation_XIP reference (partition file
+     * SCB_AIRCR_BFHFNMINS_VAL = 0). The NS app can route faults to
+     * itself later if it needs to. */
     SCB->NSACR    = SCB_NSACR_CP10_Msk | SCB_NSACR_CP11_Msk;
     SCB_NS->CPACR = (3UL << 20) | (3UL << 22);  /* CP10/CP11 full access in NS bank */
-    {
-        const uint32_t aircr_keep = SCB->AIRCR & ~SCB_AIRCR_VECTKEY_Msk;
-        SCB->AIRCR = (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
-                   | aircr_keep
-                   | SCB_AIRCR_BFHFNMINS_Msk;
-    }
 
     /* SAU (Security Attribution Unit) — REQUIRED for BXNS to NS code.
-     * Per RM0486 §3.5.1: "at reset, the SAU unilaterally determines that
-     * the entire memory is secure." Without SAU regions defining NS,
-     * BXNS to 0x7010xxxx (BF Reset_Handler in XSPI mem-mapped slot)
-     * resolves the destination as S → SecureFault.
+     * Per RM0486 §3.5.1: "at reset, the SAU unilaterally determines
+     * that the entire memory is secure." Without SAU regions defining
+     * NS, BXNS to 0x7010xxxx resolves the destination as S → SecureFault.
      *
      * Per-region NS instead of ALLNS=1: with explicit regions, addresses
      * outside any region stay S-default — which is what OBL needs for
      * its S-state accesses at 0x34xxxxxx, 0x50xxxxxx, 0x54xxxxxx etc.
-     * ALLNS=1 would override SAU's default-S, potentially demoting OBL's
-     * own S-classified regions toward NS — risky.
      *
      *   Region 0: AXISRAM (0x24000000..0x243FFFFF) NS
      *   Region 1: AHB/APB NS-alias peripherals (0x40000000..0x4FFFFFFF) NS
      *   Region 2: XSPI memory-mapped (0x70000000..0x7FFFFFFF) NS — BF code
      *
-     * RBAR/RLAR are 32-byte granularity (low 5 bits ignored). */
+     * RBAR/RLAR are 32-byte granularity (low 5 bits ignored).
+     *
+     * Per UM3234 the boot ROM also configures SAU. Disable the unit and
+     * clear every region (RLAR.ENABLE=0) before programming ours,
+     * otherwise leftover boot-ROM regions ≥ 3 keep their classification
+     * and can shadow what we configure. */
     {
+        SAU->CTRL = 0;
+        for (uint32_t i = 0; i < 8U; i++) {
+            SAU->RNR  = i;
+            SAU->RBAR = 0;
+            SAU->RLAR = 0;
+        }
+        __DSB();
+        __ISB();
+
         const struct { uint32_t base; uint32_t limit; } regs[] = {
             { 0x24000000UL, 0x243FFFE0UL },
             { 0x40000000UL, 0x4FFFFFE0UL },
@@ -275,8 +259,8 @@ static __attribute__((noreturn)) void jump_to_bf(void)
 
     /* Clear every NVIC IRQ enable + pending bit before the hand-off so
      * no S-side leftover interrupt fires the instant the NS app does
-     * `__enable_irq()` (BF's own startup clears these again, but doing it
-     * here protects the transition window). */
+     * `__enable_irq()`. BF's own startup clears these again; doing it
+     * here protects the transition window. */
     for (uint32_t i = 0; i < (uint32_t)(sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0])); i++) {
         NVIC->ICER[i] = 0xFFFFFFFFUL;
         NVIC->ICPR[i] = 0xFFFFFFFFUL;
@@ -292,8 +276,8 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      * state, so no Secure data leaks into the NS app). The function-
      * pointer cast also implicitly clears the LSB of the target so the
      * branch always transitions S → NS (with LSB=1 BXNS stays in S and
-     * would SecureFault on the NS-attributed XSPI fetch). __TZ_set_MSP_NS
-     * installs BF's stack pointer in the NS bank. */
+     * would SecureFault on the NS-attributed XSPI fetch).
+     * __TZ_set_MSP_NS installs BF's stack pointer in the NS bank. */
     __TZ_set_MSP_NS(bf_sp);
 
     typedef void __attribute__((cmse_nonsecure_call)) (*ns_reset_fn)(void);
