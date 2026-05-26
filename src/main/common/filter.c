@@ -177,12 +177,12 @@ void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float 
 
 FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt)
 {
-    #define BUTTERWORTH_Q 1.41421356237f // Q is always set to this value, we can remove Q
+    const float butterworth_q = 1.41421356237f; // Q is always set to this value, we can remove Q
     float sn, cs;
     sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
 
     const float f = sn / cs;
-    const float inv_denom = 1.0f / (1.0f + f * (f + BUTTERWORTH_Q));
+    const float inv_denom = 1.0f / (1.0f + f * (f + butterworth_q));
     filter->a1 = inv_denom;
     filter->a2 = f * inv_denom;
     filter->f = f;

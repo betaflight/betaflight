@@ -109,7 +109,7 @@ static inline void sincosf_quadrant_r(float r, int q, float *restrict out_s, flo
 float sin_approx(float x)
 {
     int q; // quadrant index
-    float r; // remainder in [-0.5,]
+    float r; // remainder in [-0.5, 0,5]
     range_reduce(x, &r, &q);
     return sinf_quadrant_r(r, q);
 }

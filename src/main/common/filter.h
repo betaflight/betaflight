@@ -63,6 +63,7 @@ typedef struct butterworthFilter_s {
 
 // SVF filter in TPT form
 // this version will have issues if you change Q on the fly
+// Q must remain constant across updates as Q is baked into ic1q
 // heavily optimized to work as a notch filter
 typedef struct notchFilter_s {
     float a1;
