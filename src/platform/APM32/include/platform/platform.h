@@ -34,6 +34,7 @@
 #include "apm32f4xx_ddl_tmr.h"
 #include "apm32f4xx_ddl_system.h"
 #include "apm32f4xx_ddl_adc.h"
+#include "apm32f4xx_ddl_usart.h"
 
 #include "apm32f4xx_ddl_ex.h"
 
@@ -73,6 +74,10 @@
 #define LL_EX_DMA_GetDataLength     DDL_EX_DMA_GetDataLength
 #define LL_EX_DMA_SetDataLength     DDL_EX_DMA_SetDataLength
 #define LL_EX_DMA_EnableIT_TC       DDL_EX_DMA_EnableIT_TC
+#define LL_EX_DMA_SetMemoryAddress  DDL_EX_DMA_SetMemoryAddress
+#define LL_EX_DMA_SetPeriphAddress  DDL_EX_DMA_SetPeriphAddress
+
+#define LL_USART_EnableIT_TXE       DDL_USART_EnableIT_TXE
 
 #define TIM_TypeDef                 TMR_TypeDef
 #define TIM_HandleTypeDef           TMR_HandleTypeDef
@@ -96,7 +101,8 @@
 
 #endif // APM32F4
 
-#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || \
+    defined(APM32F425xx) || defined(APM32F427xx)
 #define USE_FAST_DATA
 
 // Chip Unique ID on APM32F405
@@ -122,6 +128,10 @@
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
 
+#if !defined(ENABLE_SDIO_EXTERNAL_DMA)
+#define ENABLE_SDIO_EXTERNAL_DMA 1
+#endif
+
 #define USE_OVERCLOCK
 #define ENABLE_OVERCLOCK_192_MHZ 1
 #define ENABLE_OVERCLOCK_216_MHZ 1
@@ -130,7 +140,11 @@
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 
+#if defined(APM32F425xx) || defined(APM32F427xx)
+#define DEFAULT_CPU_OVERCLOCK 3  // 240MHz Support Dshot600
+#else
 #define DEFAULT_CPU_OVERCLOCK 0
+#endif
 #define PLATFORM_TRAIT_CONFIG_HSE 1
 
 #define FAST_IRQ_HANDLER

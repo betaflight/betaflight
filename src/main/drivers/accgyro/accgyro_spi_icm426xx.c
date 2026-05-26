@@ -39,8 +39,8 @@
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
+#include "drivers/gyro_clkin.h"
 #include "drivers/io.h"
-#include "drivers/pwm_output.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -189,7 +189,10 @@ static void setUserBank(const extDevice_t *dev, const uint8_t user_bank)
 }
 
 #if defined(USE_GYRO_CLKIN)
-static pwmOutputPort_t pwmGyroClk = {0};
+static struct {
+    bool enabled;
+    IO_t io;
+} gyroClkInState = {0};
 
 static int findByExtDevice(const extDevice_t *dev) {
    for (int i = 0; i < GYRO_COUNT; i++) {
@@ -212,34 +215,17 @@ static bool initExternalClock(const extDevice_t *dev)
 
     const ioTag_t tag = gyroDeviceConfig(cfg)->clkIn;
     const IO_t io = IOGetByTag(tag);
-    if (pwmGyroClk.enabled) {
-       // pwm is already taken, but test for shared clkIn pin
-       return pwmGyroClk.io == io;
+    if (gyroClkInState.enabled) {
+       // CLKIN is already running for an earlier gyro; only succeed if it's the same pin
+       return gyroClkInState.io == io;
     }
 
-    const timerHardware_t *timer = timerAllocate(tag, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
-    if (!timer) {
-        // Error handling: failed to allocate timer
+    if (!gyroClkInInit(tag, ICM426XX_CLKIN_FREQ, RESOURCE_INDEX(cfg))) {
         return false;
     }
 
-    pwmGyroClk.io = io;
-    pwmGyroClk.enabled = true;
-
-    IOInit(io, OWNER_GYRO_CLKIN, RESOURCE_INDEX(cfg));
-    IOConfigGPIOAF(io, IOCFG_AF_PP, timer->alternateFunction);
-
-    const uint32_t clock = timerClock(timer);  // Get the timer clock frequency
-    const uint16_t period = clock / ICM426XX_CLKIN_FREQ;
-
-    // Calculate duty cycle value for 50%
-    const uint16_t value = period / 2;
-
-    // Configure PWM output
-    pwmOutputConfig(&pwmGyroClk.channel, timer, clock, period - 1, value - 1, 0);
-
-    // Set CCR value
-    pwmWriteChannel(&pwmGyroClk.channel, value - 1);
+    gyroClkInState.io = io;
+    gyroClkInState.enabled = true;
 
     return true;
 }

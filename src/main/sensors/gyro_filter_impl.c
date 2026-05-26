@@ -83,5 +83,8 @@ static FAST_CODE void GYRO_FILTER_FUNCTION_NAME(void)
 
         gyro.gyroADCf[axis] = gyroADCf;
     }
+
+    GYRO_FILTER_DEBUG_SET(DEBUG_GYRO_SAMPLE, 4, getAverageSystemLoadPercent());
+
     gyro.sampleCount = 0;
 }

@@ -28,7 +28,9 @@
 
 #ifndef DEFAULT_RX_FEATURE
 
-#if defined(USE_SERIALRX)
+#if ENABLE_RX_UDP
+#define DEFAULT_RX_FEATURE FEATURE_RX_UDP
+#elif defined(USE_SERIALRX)
 #define DEFAULT_RX_FEATURE FEATURE_RX_SERIAL
 #elif defined(USE_RX_MSP)
 #define DEFAULT_RX_FEATURE FEATURE_RX_MSP
@@ -44,6 +46,7 @@
 //  cli/cli.c:featureNames
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
+    FEATURE_RX_UDP = 1 << 1,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
     FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,

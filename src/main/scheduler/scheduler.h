@@ -137,7 +137,7 @@ typedef enum {
 #ifdef USE_OPTICALFLOW
     TASK_OPTICALFLOW,
 #endif
-#if defined(USE_BARO) || defined(USE_GPS)
+#if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
     TASK_ALTITUDE,
 #endif
 #ifdef USE_DASHBOARD
@@ -193,6 +193,9 @@ typedef enum {
 #endif
 #if ENABLE_OSD_CUSTOM_TEXT
     TASK_OSD_CUSTOM_TEXT,
+#endif
+#if ENABLE_DRONECAN
+    TASK_DRONECAN,
 #endif
 
     /* Count of real tasks */

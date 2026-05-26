@@ -30,6 +30,7 @@
 typedef enum {
     OPTICALFLOW_NONE = 0,
     OPTICALFLOW_MT = 1,
+    OPTICALFLOW_UPT1 = 2,
     OPTICALFLOW_HARDWARE_COUNT
 } opticalflowType_e;
 
@@ -55,3 +56,4 @@ bool opticalflowInit(void);
 void opticalflowUpdate(void);
 bool isOpticalflowHealthy(void);
 void opticalflowProcess(void);
+const opticalflow_t * getOpticalFlowData(void);

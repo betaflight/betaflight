@@ -487,7 +487,7 @@ FAST_CODE void gyroUpdate(void)
 
 #define GYRO_FILTER_FUNCTION_NAME filterGyroDebug
 #define GYRO_FILTER_DEBUG_SET DEBUG_SET
-#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == (int)gyro.gyroDebugAxis) DEBUG_SET(mode, index, value)
+#define GYRO_FILTER_AXIS_DEBUG_SET(axis, mode, index, value) if (axis == gyro.gyroDebugAxis) DEBUG_SET(mode, index, value)
 #include "gyro_filter_impl.c"
 #undef GYRO_FILTER_FUNCTION_NAME
 #undef GYRO_FILTER_DEBUG_SET

@@ -196,7 +196,7 @@ void fhssGenSequence(const uint32_t uidSeed, const elrsFreqDomain_e dom)
     fhssConfig = &fhssConfigs[dom];
     seqCount = (256 / MAX(fhssConfig->freqCount, 1)) * fhssConfig->freqCount;
     syncChannel = (fhssConfig->freqCount / 2)
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     + 1
 #endif
     ;
@@ -372,7 +372,7 @@ uint8_t hybridWideNonceToSwitchIndex(const uint8_t nonce)
 uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
 {
     switch (airRate) {
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     case 0:
         return 0;
     case 1:
@@ -397,7 +397,7 @@ uint8_t airRateIndexToIndex900(uint8_t airRate, uint8_t currentIndex)
 uint8_t airRateIndexToIndex24(uint8_t airRate, uint8_t currentIndex)
 {
     switch (airRate) {
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     case 0:  // F1000
         return 0;
     case 1:  // F500

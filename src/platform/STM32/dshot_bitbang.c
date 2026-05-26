@@ -79,6 +79,12 @@
 #elif defined(STM32G4)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
 #define BB_INPUT_BUFFER_ATTRIBUTE  FAST_DATA_ZERO_INIT
+#elif defined(STM32H5)
+#define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
+#define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
+#elif defined(STM32C5)
+#define BB_OUTPUT_BUFFER_ATTRIBUTE
+#define BB_INPUT_BUFFER_ATTRIBUTE
 #elif defined(STM32N6)
 #define BB_OUTPUT_BUFFER_ATTRIBUTE DMA_RAM
 #define BB_INPUT_BUFFER_ATTRIBUTE  DMA_RAM
@@ -105,7 +111,7 @@ const timerHardware_t bbTimerHardware[] = {
     DEF_TIM(TIM1,  CH3, NONE,   0, 1),
     DEF_TIM(TIM1,  CH4, NONE,   0, 0),
 
-#elif defined(STM32G4) || defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     // XXX TODO: STM32G4, STM32H7, and STM32N6 can use any timer for pacing
 
     // DMA request numbers are duplicated for TIM1 and TIM8:
@@ -756,6 +762,14 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         const timerHardware_t *timerHardware = timerGetConfiguredByTag(motorConfig->ioTags[reorderedMotorIndex]);
         const IO_t io = IOGetByTag(motorConfig->ioTags[reorderedMotorIndex]);
 
+        if (timerHardware == NULL) {
+            /* not enough motors initialised for the mixer or a break in the motors */
+            device->vTable = NULL;
+            dshotMotorCount = 0;
+            bbStatus = DSHOT_BITBANG_STATUS_MOTOR_PIN_CONFLICT;
+            return false;
+        }
+
         uint8_t output = motorConfig->motorInversion ?  timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output;
         bbPuPdMode = (output & TIMER_OUTPUT_INVERTED) ? BB_GPIO_PULLDOWN : BB_GPIO_PULLUP;
 
@@ -780,7 +794,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].output = output;
 #if defined(STM32F4)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, bbPuPdMode);
-#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(STM32N6)
+#elif defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_LOW, bbPuPdMode);
 #endif
 

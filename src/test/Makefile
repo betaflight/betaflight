@@ -430,11 +430,48 @@ pid_unittest_SRC :=  \
 pid_unittest_DEFINES := \
 		USE_ITERM_RELAX= \
 		USE_RC_SMOOTHING_FILTER= \
-		USE_ABSOLUTE_CONTROL= \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 
+position_rescue_geometry_unittest_SRC := \
+		$(USER_DIR)/common/maths.c
+
+
+poshold_unittest_SRC := \
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+position_estimator_unittest_SRC := \
+		$(USER_DIR)/flight/position_estimator.c \
+		$(USER_DIR)/flight/position_filter.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+position_estimator_unittest_DEFINES := \
+		USE_GPS= \
+		USE_BARO= \
+		USE_RANGEFINDER=
+
+position_nav_unittest_SRC := \
+		$(USER_DIR)/flight/position_nav.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_nav_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
@@ -473,6 +510,19 @@ rx_spi_expresslrs_unittest_DEFINES := \
 		USE_RX_EXPRESSLRS= \
 		USE_RX_SX1280= \
 		USE_RX_SX127X= \
+
+rx_spi_expresslrs_v4_unittest_SRC := \
+        $(USER_DIR)/pg/rx_spi_expresslrs.c \
+		$(USER_DIR)/rx/expresslrs_common.c \
+		$(USER_DIR)/rx/expresslrs.c \
+		$(USER_DIR)/build/atomic.c \
+
+rx_spi_expresslrs_v4_unittest_DEFINES := \
+		USE_RX_SPI= \
+		USE_RX_EXPRESSLRS= \
+		USE_RX_SX1280= \
+		USE_RX_SX127X= \
+		USE_ELRSV4= \
 
 rx_spi_expresslrs_telemetry_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
@@ -549,7 +599,7 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 18
+CC_VERSION_CHECK_MAX := 21
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator

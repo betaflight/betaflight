@@ -51,6 +51,8 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
+#include "drivers/can/can.h"
+#include "drivers/can/can_impl.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
@@ -96,6 +98,9 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_nav.h"
+#endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
@@ -108,9 +113,11 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_fb_osd.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
@@ -147,6 +154,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/bus_quadspi.h"
+#include "pg/can.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
@@ -263,6 +271,17 @@ static void configureOctoSPIBusses(void)
 #endif
 #endif
 }
+
+#if ENABLE_CAN
+static void configureCANBusses(void)
+{
+    canPinConfigure(canPinConfig(0));
+    const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
+    canInit(CANDEV_1, bitrate);
+    canInit(CANDEV_2, bitrate);
+    canInit(CANDEV_3, bitrate);
+}
+#endif
 
 #ifdef USE_SDCARD
 static void sdCardAndFSInit(void)
@@ -665,6 +684,14 @@ void initPhase3(void)
 
 #endif // TARGET_BUS_INIT
 
+#if ENABLE_CAN && !defined(TARGET_BUS_INIT)
+    configureCANBusses();
+#endif
+
+#if ENABLE_DRONECAN
+    dronecanInit();
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -736,6 +763,7 @@ void initPhase3(void)
     pinioBoxInit(pinioBoxConfig());
 #endif
 
+
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
@@ -757,6 +785,7 @@ void initPhase3(void)
 
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
 
@@ -837,6 +866,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    flightPlanNavInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -940,6 +972,15 @@ void initPhase3(void)
             FALLTHROUGH;
 #endif
 
+#if ENABLE_FB_OSD
+        case OSD_DISPLAYPORT_DEVICE_FBOSD:
+            if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
 #if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
         case OSD_DISPLAYPORT_DEVICE_MSP:
             osdDisplayPort = displayPortMspInit();
@@ -1029,7 +1070,9 @@ void initPhase3(void)
 
     debugInit();
 
+#if ENABLE_UNUSED_PINS_INIT
     unusedPinsInit();
+#endif
 
     tasksInit();
 

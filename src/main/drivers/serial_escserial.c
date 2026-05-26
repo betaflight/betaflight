@@ -34,6 +34,7 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/nvic.h"
+#include "drivers/motor.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
@@ -716,9 +717,8 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
     else if (mode==PROTOCOL_KISSALL) {
         escSerial->outputCount = 0;
         memset(&escOutputs, 0, sizeof(escOutputs));
-        pwmOutputPort_t *pwmMotors = pwmGetMotors();
         for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-            if (pwmMotors[i].enabled && pwmMotors[i].io != IO_NONE) {
+            if (motorIsMotorEnabled(i) && motorGetIo(i) != IO_NONE) {
                 const ioTag_t tag = motorConfig->ioTags[i];
                 if (tag != IO_TAG_NONE) {
                     const timerHardware_t *timerHardware = timerAllocate(tag, OWNER_MOTOR, 0);
@@ -727,7 +727,7 @@ static serialPort_t *openEscSerial(const motorDevConfig_t *motorConfig, escSeria
                         // this prevents a null-pointer dereference in __HAL_TIM_CLEAR_FLAG called by timerChannelClearFlag and similar accesses of timerHandle without the Instance being configured first.
                         timerConfigure(timerHardware, 0xffff, 1);
                         escSerialOutputPortConfig(timerHardware);
-                        escOutputs[escSerial->outputCount].io = pwmMotors[i].io;
+                        escOutputs[escSerial->outputCount].io = motorGetIo(i);
                         if (timerHardware->output & TIMER_OUTPUT_INVERTED) {
                             escOutputs[escSerial->outputCount].inverted = 1;
                         }

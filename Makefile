@@ -65,10 +65,37 @@ ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 PLATFORM_DIR	:= $(ROOT)/src/platform
 SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
+LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
+
+# Auto-hydrate submodules from .gitmodules that are not marked
+# `update = none`. Currently that's `src/config` (board configs) and
+# `lib/modules/dronecan/libcanard` (DroneCAN transport). Heavy vendor
+# SDKs (pico-sdk, esp-idf, STM32H5/N6/C5, APM32F4) keep `update = none`
+# and stay opt-in through their platform-SDK hydration targets.
+AUTOHYDRATE_SUBMODULES := $(shell \
+    git config --file .gitmodules -l 2>/dev/null | \
+    awk -F '=' '/^submodule\..*\.path=/ { \
+                    name=$$1; sub(/^submodule\./,"",name); sub(/\.path$$/,"",name); \
+                    paths[name]=$$2 \
+                } \
+                /^submodule\..*\.update=/ { \
+                    name=$$1; sub(/^submodule\./,"",name); sub(/\.update$$/,"",name); \
+                    updates[name]=$$2 \
+                } \
+                END { for (n in paths) if (updates[n] != "none") print paths[n] }' )
+AUTOHYDRATE_STAMPS := $(addsuffix /.git,$(AUTOHYDRATE_SUBMODULES))
+
+# MCU .mk files opt in to the DroneCAN source fan-out with
+#   LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
+# The hydration above is independent — it keeps the submodule present on
+# every target; the LIB_SUBMODULES check in mk/dronecan.mk is what decides
+# whether to actually compile the sources.
+LIB_SUBMODULES  :=
+DRONECAN_LIB_DIR := lib/modules/dronecan/libcanard
 
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 
@@ -144,7 +171,7 @@ DFUSE-PACK  := src/utils/dfuse-pack.py
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
 
 # Search path for sources
-VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
+VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(LIB_MODULES_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
@@ -156,7 +183,7 @@ include $(MAKE_SCRIPT_DIR)/config.mk
 HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
-CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
+CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF SITL_X_PLANE
 CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)))
 PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
@@ -231,6 +258,11 @@ SPEED_OPTIMISED_SRC :=
 SIZE_OPTIMISED_SRC  :=
 
 include $(TARGET_PLATFORM_DIR)/mk/$(TARGET_MCU_FAMILY).mk
+
+# Feature source lists that fan out from the MCU's LIB_SUBMODULES opt-in.
+# Sourced after the MCU .mk so each feature file can check what the
+# platform asked for.
+include $(MAKE_SCRIPT_DIR)/dronecan.mk
 
 # Validate the platform toolchain is available
 include $(MAKE_SCRIPT_DIR)/tools_check.mk
@@ -330,6 +362,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
+              -D'__MCU_NAME__="$(TARGET_MCU)"' \
               -D'__REVISION__="$(REVISION)"' \
               -D'__FC_VERSION__="$(FC_VER)"' \
               $(CONFIG_REVISION_DEFINE) \
@@ -517,7 +550,7 @@ define compile_file
 endef
 
 ## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
-paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(PLATFORM_DIR)/
+paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(LIB_MODULES_DIR)/ $(PLATFORM_DIR)/
 subst_paths_for = $(foreach path,$(paths),$(filter-out $(1),$(subst $(path),,$(1))))
 subst_paths = $(strip $(if $(call subst_paths_for,$(1)), $(call subst_paths_for,$(1)), $(1)))
 
@@ -667,20 +700,49 @@ $(TARGETS_ZIP):
 zip: $(TARGET_HEX)
 	$(V1) zip $(TARGET_ZIP) $(TARGET_HEX)
 
+# Stamp rule for any submodule listed in $(AUTOHYDRATE_SUBMODULES) (i.e.
+# any .gitmodules entry that doesn't have `update = none`). The stamp is
+# the submodule's `.git` pointer, which exists only after a successful
+# `git submodule update --init`, so Make treats it as up-to-date on
+# subsequent runs — hydration stays idempotent and cheap.
+$(AUTOHYDRATE_STAMPS):
+	@echo "Hydrating submodule: $(@:/.git=)"
+	$(V1) git submodule update --init -- "$(@:/.git=)" \
+	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
+
+# Drop .d files whose recorded source path no longer exists. The most
+# common trigger is pulling across a source-move commit (e.g. promoting
+# an embedded vendor tree to a submodule) — gcc's -MMD pinned the .o to
+# the previous path, and make then bails with "No rule to make target
+# <old-path>" before the compiler ever runs to regenerate the .d. Cheap
+# scan: just stat the first .c prereq the .d declares.
+.PHONY: clean-stale-deps
+clean-stale-deps:
+	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
+	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
+	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
+	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
+	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
+	            $(RM) "$$dfile"; \
+	        fi; \
+	    done; \
+	fi
+
 .PHONY: binary
-binary:
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex:
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2:
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(TARGET_EXE)
+exe: $(AUTOHYDRATE_STAMPS) clean-stale-deps
+	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
 .PHONY: fwo
@@ -760,6 +822,45 @@ targets:
 
 targets-ci-print:
 	@echo $(CI_TARGETS)
+
+## targets-ci-grouped-print : print CI targets grouped by SDK (one "sdk:target1 target2 ..." per line)
+targets-ci-grouped-print:
+	@( \
+		for f in $(PLATFORM_DIR)/*/mk/*.mk; do \
+			family=$$(basename "$$f" .mk); \
+			sdk=$$(grep -m1 '^PLATFORM_SDK[[:space:]]*:=' "$$f" 2>/dev/null | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$sdk" ] && echo "FAMILY $$family $$sdk"; \
+		done; \
+		for f in $(PLATFORM_DIR)/*/target/*/target.mk; do \
+			target=$$(basename "$$(dirname "$$f")"); \
+			family=$$(grep -m1 'TARGET_MCU_FAMILY[[:space:]]*:=' "$$f" | sed 's/.*:=[[:space:]]*//'); \
+			[ -n "$$family" ] && echo "TARGET $$target $$family"; \
+		done; \
+		for t in $(CI_TARGETS); do \
+			config_h="$(CONFIG_DIR)/configs/$$t/config.h"; \
+			if [ -f "$$config_h" ]; then \
+				mcu=$$(grep -m1 'FC_TARGET_MCU' "$$config_h" | awk '{print $$NF}'); \
+				echo "CONFIG $$t $$mcu"; \
+			fi; \
+		done; \
+		for t in $(CI_TARGETS); do echo "CI $$t"; done \
+	) | awk ' \
+		/^FAMILY/ { family_sdk[$$2] = $$3 } \
+		/^TARGET/ { target_family[$$2] = $$3 } \
+		/^CONFIG/ { config_target[$$2] = $$3 } \
+		/^CI/ { \
+			t = $$2; \
+			family = target_family[t]; \
+			if (family == "") { mcu = config_target[t]; family = target_family[mcu] } \
+			sdk = family_sdk[family]; \
+			if (sdk == "") { \
+				printf("Unable to resolve PLATFORM_SDK for CI target %s (family=%s)\n", t, family) > "/dev/stderr"; \
+				exit 1; \
+			} \
+			grouped[sdk] = grouped[sdk] ? grouped[sdk] " " t : t \
+		} \
+		END { for (sdk in grouped) print sdk ":" grouped[sdk] } \
+	'
 
 ## target-mcu        : print the MCU type of the target
 target-mcu:

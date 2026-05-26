@@ -110,7 +110,6 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -304,6 +303,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
 #endif // TARGET_FLASH_SIZE >= 1024
@@ -408,7 +408,6 @@
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
-#define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
 #define USE_ESC_SENSOR_TELEMETRY
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
@@ -431,11 +430,8 @@
 
 #endif // !defined(CORE_BUILD)
 
-#ifdef USE_GPS
-#define USE_GPS_NMEA
-#define USE_GPS_UBLOX
-#define USE_GPS_RESCUE
-#endif // USE_GPS
+// Note: USE_GPS secondary defines (USE_GPS_NMEA, USE_GPS_UBLOX, USE_GPS_RESCUE)
+// are in common_post.h because SITL defines USE_GPS in target.h (after common_pre.h).
 
 #if (defined(USE_OSD_HD) || defined(USE_OSD_SD) || defined(USE_FRSKYOSD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
@@ -526,14 +522,13 @@
 
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
-#undef USE_ABSOLUTE_CONTROL
 #undef USE_INTEGRATED_YAW_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
 
-#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#error "USE_POSITION_HOLD requires USE_GPS to be defined"
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
 
 // backwards compatibility for older config.h targets

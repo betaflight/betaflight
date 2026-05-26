@@ -108,7 +108,6 @@ typedef struct
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)>>4)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))
 
-#define MCU_TYPE_ID   99
 #define MCU_TYPE_NAME "UNIT_TEST"
 
 #include "target.h"

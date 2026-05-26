@@ -166,6 +166,23 @@ void uartPinConfigure_pio(const serialPinConfig_t *pSerialPinConfig)
     bprintf("pico uartPinConfigure pio%d pin min, max = %d, %d; setting gpio base to %d", PIO_NUM(uartPio), pinIndexMin, pinIndexMax, uartPioBase);
 }
 
+void uartSelectFunction_pio(uartPort_t *s, uint32_t gpio)
+{
+    // Select the correct gpio function type on the given gpio pin.
+    UNUSED(s);
+    pio_gpio_init(uartPio, gpio);
+}
+
+bool isTxComplete_pio(uartPort_t *s)
+{
+    const serialPortIdentifier_e identifier = s->port.identifier;
+    pioDetails_t *uartPioDetailsPtr = UART_PIO_DETAILS_PTR(identifier);
+    uint sm_tx = uartPioDetailsPtr->sm_tx;
+
+    // Test that the FIFO is empty, and we have returned to the blocking PULL instruction.
+    return pio_sm_is_tx_fifo_empty(uartPio, sm_tx) && pio_sm_get_pc(uartPio, sm_tx) == tx_await_offset + txProgram_offset;
+}
+
 static bool ensurePioProgram(PIO pio, const pio_program_t *program, bool isTx)
 {
     // The GPIO base must be set before adding the program.
@@ -214,8 +231,8 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
         }
     }
 
-    // Is TX enabled?
-    if (*enableRegPtr & pioDetailsPtr->tx_intr_bit) {
+    // Is TX enabled and does irq status indicate TX fifo not full?
+    if (*enableRegPtr & pioDetailsPtr->tx_intr_bit && *statusRegPtr & pioDetailsPtr->tx_intr_bit) {
         uint sm_tx = pioDetailsPtr->sm_tx;
         while (!pio_sm_is_tx_fifo_full(uartPio, sm_tx)) {
             if (s->port.txBufferTail != s->port.txBufferHead) {
@@ -224,8 +241,6 @@ static void uartPioIrqHandler(uartPort_t *s, pioDetails_t *pioDetailsPtr)
                 pio_sm_put(uartPio, sm_tx, s->port.txBuffer[s->port.txBufferTail]);
                 s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
             } else {
-                // Done sending the buffer, clear the pio TX interrupt enable
-                //bprintf("uart pio done put %d, disabling tx interrupt",c);
                 int irqn_index = PIO_IRQ_INDEX(pioDetailsPtr->irqn);
                 pio_interrupt_source_t irqSourceTX = pio_get_tx_fifo_not_full_interrupt_source(sm_tx);
                 pio_set_irqn_source_enabled(uartPio, irqn_index, irqSourceTX, false);
@@ -255,12 +270,17 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
                     const pioUartHardware_t *hardware, serialPortIdentifier_e identifier, IO_t txIO, IO_t rxIO)
 {
     // Set up details for state machine, will be finalised in uartReconfigure.
-    if (options != 0) {
-        bprintf("*** non-default options not yet supported for UART PIO");
+    if ((options & SERIAL_STOPBITS_2) != 0) {
+        bprintf("*** option SERIAL_STOPBITS_2 not yet supported for UART PIO ***");
         return false;
     }
 
-    // mode and baudrate are captured on the uartPort in uartOpen, and can be addressed in uartReconfigure
+    if ((options & SERIAL_PARITY_EVEN) != 0) {
+        bprintf("*** option SERIAL_PARITY_EVEN not yet supported for UART PIO ***");
+        return false;
+    }
+
+    // mode and baudrate are captured on the uartPort in uartOpen, and are addressed in uartReconfigure
     UNUSED(mode);
     UNUSED(baudRate);
 
@@ -289,6 +309,7 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
         uartPioDetailsPtr->txPin = txPin;
         uartPioDetailsPtr->sm_tx = pio_sm_tx;
         uartPioDetailsPtr->tx_intr_bit = txnfullbit[pio_sm_tx];
+        uartSelectFunction_pio(s, txPin);
     }
 
     if (rxIO) {
@@ -350,10 +371,12 @@ void uartReconfigure_pio(uartPort_t *s)
     bprintf("uartReconfigure_pio init rx, tx programs, pins %d, %d, (requested) baudrate %d",
             uartPioDetailsPtr->rxPin, uartPioDetailsPtr->txPin, s->port.baudRate);
     uart_rx_program_init(uartPio, sm_rx, rxProgram_offset, uartPioDetailsPtr->rxPin, s->port.baudRate);
-    uart_tx_program_init(uartPio, sm_tx, txProgram_offset, uartPioDetailsPtr->txPin, s->port.baudRate);
+    uartDevice_t *uartDev = uartDeviceFromIdentifier(identifier);
+    IO_t txIO = IOGetByTag(uartDev->tx.pin);
+    if (txIO) {
+        uart_tx_program_init(uartPio, sm_tx, txProgram_offset, uartPioDetailsPtr->txPin, s->port.baudRate);
+    }
 
-    // TODO PIO format currently restricted to 8n1, no h/w flow control
-    // TODO make use of s->port.options
     uartConfigureExternalPinInversion(s);
 
     // Start receiving if MODE_RX

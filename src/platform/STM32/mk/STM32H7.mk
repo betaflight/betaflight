@@ -31,8 +31,6 @@ STDPERIPH_SRC   = \
             stm32h7xx_hal_fmac.c \
             stm32h7xx_hal_gfxmmu.c \
             stm32h7xx_hal_gpio.c \
-            stm32h7xx_hal_i2c.c \
-            stm32h7xx_hal_i2c_ex.c \
             stm32h7xx_hal_ospi.c \
             stm32h7xx_hal_otfdec.c \
             stm32h7xx_hal_pcd.c \
@@ -55,8 +53,11 @@ STDPERIPH_SRC   = \
             stm32h7xx_ll_crs.c \
             stm32h7xx_ll_dma.c \
             stm32h7xx_ll_fmac.c \
+            stm32h7xx_ll_i2c.c \
             stm32h7xx_ll_sdmmc.c \
             stm32h7xx_ll_spi.c \
+            stm32h7xx_ll_usart.c \
+            stm32h7xx_ll_rcc.c \
             stm32h7xx_ll_tim.c \
             stm32h7xx_ll_usb.c
 
@@ -262,6 +263,17 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 endif
 
+else ifeq ($(TARGET_MCU),STM32H757xx)
+# STM32H757 dual-core: Betaflight runs standalone on the M7 core, M4 is
+# left halted in its default boot-blocked state.
+DEVICE_FLAGS       += -DSTM32H757xx -DCORE_CM7
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h757_m7.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h757xx_m7.s
+MCU_FLASH_SIZE     := 1536
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ARCH_FLAGS          = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16
+
 else
 $(error Unknown MCU for H7 target)
 endif
@@ -290,11 +302,12 @@ MCU_COMMON_SRC = \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32h7xx.c \
             STM32/audio_stm32h7xx.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
             STM32/bus_spi_ll.c \
             STM32/bus_quadspi_hal.c \
             STM32/bus_octospi_stm32h7xx.c \
+            STM32/can_stm32h7xx.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
             STM32/dma_stm32h7xx.c \
@@ -309,7 +322,7 @@ MCU_COMMON_SRC = \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
             STM32/sdio_h7xx.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
             STM32/serial_uart_stm32h7xx.c \
             STM32/system_stm32h7xx.c \
             STM32/timer_hal.c \
@@ -319,6 +332,8 @@ MCU_COMMON_SRC = \
             drivers/adc.c \
             drivers/serial_escserial.c \
             STM32/startup/system_stm32h7xx.c
+
+LIB_SUBMODULES += $(DRONECAN_LIB_DIR)
 
 MSC_SRC = \
             STM32/usb_msc_hal.c \
@@ -336,11 +351,13 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
-DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+DEVICE_FLAGS += -DARM_MATH_CM7
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

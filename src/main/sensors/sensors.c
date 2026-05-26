@@ -37,6 +37,7 @@
 #include "sensors/opticalflow.h"
 #include "sensors/sensors.h"
 
+// Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with gyroHardware_e
 const char * const lookupTableGyroHardware[GYRO_HARDWARE_COUNT] = {
     [GYRO_NONE] = "NONE",
@@ -123,12 +124,13 @@ const char * const lookupTableMagHardware[MAG_HARDWARE_COUNT] = {
     [MAG_HMC5883] = "HMC5883",
     [MAG_AK8975] = "AK8975",
     [MAG_AK8963] = "AK8963",
-    [MAG_QMC5883] = "QMC5883",
+    [MAG_QMC5883L] = "QMC5883L",
     [MAG_LIS2MDL] = "LIS2MDL",
     [MAG_LIS3MDL] = "LIS3MDL",
     [MAG_MPU925X_AK8963] = "MPU925X_AK8963",
     [MAG_IST8310] = "IST8310",
-    [MAG_MMC560X] = "MMC560X"
+    [MAG_MMC560X] = "MMC560X",
+    [MAG_QMC5883P] = "QMC5883P"
 };
 
 // sync with rangefinderType_e
@@ -147,13 +149,15 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
     [RANGEFINDER_NOOPLOOP_F2PH] = "NOOPLOOP_F2PH",
     [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
     [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
-    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI"
+    [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI",
+    [RANGEFINDER_UPT1] = "UPT1"
 };
 
 // sync with opticalflowType_e
 const char * const lookupTableOpticalflowHardware[OPTICALFLOW_HARDWARE_COUNT] = {
     [OPTICALFLOW_NONE] = "NONE",
-    [OPTICALFLOW_MT] = "MT"
+    [OPTICALFLOW_MT] = "MT",
+    [OPTICALFLOW_UPT1] = "UPT1"
 };
 
 static const char * const sensorTypeNames[] = {

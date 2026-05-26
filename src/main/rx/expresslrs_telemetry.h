@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     #define ELRS_TELEMETRY_SHIFT 2
 #else
     #define ELRS_TELEMETRY_SHIFT 1

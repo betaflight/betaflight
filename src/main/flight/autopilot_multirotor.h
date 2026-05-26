@@ -17,19 +17,30 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "common/axis.h"
+
 #ifndef USE_WING
 
-#include "io/gps.h"
+#define AP_HOVER_THROTTLE_DEFAULT 1275U
 
 extern float autopilotAngle[RP_AXIS_COUNT]; // NOTE: ANGLES ARE IN CENTIDEGREES
 
 void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
-void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
+void resetPositionControl(unsigned taskRateHz);
 void posControlOutput(void);
 bool positionControl(void);
-void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
+// targetAltitudeVelCmS: climb-rate feedforward (cm/s) — stick in alt hold, rescue ascent/descent rates.
+// velLimitCmS: |vertical velocity command| cap (cm/s); use 0 for default (1500 cm/s).
+void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
+
+uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
+void autopilotCaptureHoverThrottleForAltHold(void);
+void autopilotClearAltHoldHoverThrottle(void);
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

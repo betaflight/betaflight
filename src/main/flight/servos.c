@@ -275,12 +275,30 @@ static void servoConfigureOutput(void)
     }
 }
 
+// check if any servo has individual channel forwarding configured
+static bool hasIndividualServoForwarding(void)
+{
+    for (int index = 0; index < MAX_SUPPORTED_SERVOS; index++) {
+        const uint8_t channelToForwardFrom = servoParams(index)->forwardFromChannel;
+        if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void servosInit(void)
 {
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[getMixerMode()].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
     if (featureIsEnabled(FEATURE_SERVO_TILT) || featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
+        useServo = 1;
+    }
+
+    // enable servos if any individual channel forwarding is configured
+    if (hasIndividualServoForwarding()) {
         useServo = 1;
     }
 
@@ -522,6 +540,8 @@ static void servoTable(void)
     */
 
     default:
+        // run servo mixer for all other frame types (e.g. quads with individual servo forwarding)
+        servoMixer();
         break;
     }
 
@@ -564,6 +584,7 @@ void servosFilterInit(void)
     }
 
 }
+
 static void filterServos(void)
 {
 #if defined(MIXER_DEBUG)

@@ -161,7 +161,7 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 3);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -507,8 +507,8 @@ static void osdCompleteInitialization(void)
     }
     displayWrite(osdDisplayPort, midCol + 12 - version_str_len, midRow, DISPLAYPORT_SEVERITY_NORMAL, version_str_buf);
 
-    #ifdef USE_CMS
-    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
+#ifdef USE_CMS
+    displayWrite(osdDisplayPort, midCol - 8, midRow + 2, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
 #endif
@@ -1382,6 +1382,12 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
                 osdUpdateDueUs = currentTimeUs + OSD_UPDATE_INTERVAL_US;
             }
         }
+    }
+
+    // Early check for displayPort blocking OSD action, avoids repeated calls to main task function (osdUpdate)
+    // and avoids scheduler issues with spikes in task duration.
+    if ((osdState == OSD_STATE_CHECK || osdState == OSD_STATE_TRANSFER) && displayIsTransferInProgress(osdDisplayPort)) {
+        return false;
     }
 
     return (osdState != OSD_STATE_IDLE);

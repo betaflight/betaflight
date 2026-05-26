@@ -91,23 +91,32 @@ const adcTagMap_t adcTagMap[] = {
 
 #endif // USE_ADC_INTERNAL
 
-    // STM32N6 ADC pin mappings (ADC1 and ADC2)
+    // STM32N6 ADC pin mappings (ADC1 and ADC2).
+    // Source: DS14791 Rev 9 Table 18 "Pin description" (positive single-
+    // ended inputs ADCx_INPy). Only TT_a / TT_at / A-typed pins carry an
+    // analogue switch — all other ports (PB0/PB1, PC0..PC5, PA3/PA4/PA7,
+    // etc.) do NOT route to the ADC on N6 and must not appear here.
     { DEFIO_TAG_E__PA0,  ADC_DEVICES_12,  ADC_CHANNEL_0,   0 },
     { DEFIO_TAG_E__PA1,  ADC_DEVICES_12,  ADC_CHANNEL_1,   1 },
-    { DEFIO_TAG_E__PA2,  ADC_DEVICES_12,  ADC_CHANNEL_2,   2 },
-    { DEFIO_TAG_E__PA3,  ADC_DEVICES_12,  ADC_CHANNEL_3,   3 },
-    { DEFIO_TAG_E__PA4,  ADC_DEVICES_12,  ADC_CHANNEL_4,   4 },
-    { DEFIO_TAG_E__PA5,  ADC_DEVICES_12,  ADC_CHANNEL_5,   5 },
-    { DEFIO_TAG_E__PA6,  ADC_DEVICES_12,  ADC_CHANNEL_6,   6 },
-    { DEFIO_TAG_E__PA7,  ADC_DEVICES_12,  ADC_CHANNEL_7,   7 },
-    { DEFIO_TAG_E__PB0,  ADC_DEVICES_12,  ADC_CHANNEL_8,   8 },
-    { DEFIO_TAG_E__PB1,  ADC_DEVICES_12,  ADC_CHANNEL_9,   9 },
-    { DEFIO_TAG_E__PC0,  ADC_DEVICES_12,  ADC_CHANNEL_10, 10 },
-    { DEFIO_TAG_E__PC1,  ADC_DEVICES_12,  ADC_CHANNEL_11, 11 },
-    { DEFIO_TAG_E__PC2,  ADC_DEVICES_12,  ADC_CHANNEL_12, 12 },
-    { DEFIO_TAG_E__PC3,  ADC_DEVICES_12,  ADC_CHANNEL_13, 13 },
-    { DEFIO_TAG_E__PC4,  ADC_DEVICES_12,  ADC_CHANNEL_14, 14 },
-    { DEFIO_TAG_E__PC5,  ADC_DEVICES_12,  ADC_CHANNEL_15, 15 },
+    { DEFIO_TAG_E__PA2,  ADC_DEVICES_12,  ADC_CHANNEL_14, 14 },
+    { DEFIO_TAG_E__PA5,  ADC_DEVICES_2,   ADC_CHANNEL_18, 18 },
+    { DEFIO_TAG_E__PA6,  ADC_DEVICES_12,  ADC_CHANNEL_3,   3 },
+    { DEFIO_TAG_E__PA8,  ADC_DEVICES_12,  ADC_CHANNEL_5,   5 },
+    { DEFIO_TAG_E__PA9,  ADC_DEVICES_12,  ADC_CHANNEL_10, 10 },
+    { DEFIO_TAG_E__PA10, ADC_DEVICES_12,  ADC_CHANNEL_11, 11 },
+    { DEFIO_TAG_E__PA11, ADC_DEVICES_12,  ADC_CHANNEL_12, 12 },
+    { DEFIO_TAG_E__PA12, ADC_DEVICES_12,  ADC_CHANNEL_13, 13 },
+    { DEFIO_TAG_E__PB10, ADC_DEVICES_12,  ADC_CHANNEL_8,   8 },
+    { DEFIO_TAG_E__PB11, ADC_DEVICES_12,  ADC_CHANNEL_4,   4 },
+    { DEFIO_TAG_E__PF3,  ADC_DEVICES_1,   ADC_CHANNEL_16, 16 },
+    { DEFIO_TAG_E__PF4,  ADC_DEVICES_1,   ADC_CHANNEL_18, 18 },
+    { DEFIO_TAG_E__PF6,  ADC_DEVICES_12,  ADC_CHANNEL_15, 15 },
+    { DEFIO_TAG_E__PF7,  ADC_DEVICES_12,  ADC_CHANNEL_9,   9 },
+    { DEFIO_TAG_E__PF11, ADC_DEVICES_1,   ADC_CHANNEL_2,   2 },
+    { DEFIO_TAG_E__PF12, ADC_DEVICES_1,   ADC_CHANNEL_6,   6 },
+    { DEFIO_TAG_E__PF13, ADC_DEVICES_2,   ADC_CHANNEL_2,   2 },
+    { DEFIO_TAG_E__PF14, ADC_DEVICES_2,   ADC_CHANNEL_6,   6 },
+    { DEFIO_TAG_E__PG15, ADC_DEVICES_12,  ADC_CHANNEL_7,   7 },
 };
 
 // Translate rank number x to ADC_REGULAR_RANK_x (Note that array index is 0-origin)
@@ -175,6 +184,14 @@ static void adcInitDevice(adcDevice_t *adcdev, int channelCount)
     // Execute calibration
 
     if (HAL_ADCEx_Calibration_Start(hadc, ADC_SINGLE_ENDED) != HAL_OK) {
+      errorHandler();
+    }
+
+    // CubeN6's HAL_ADCEx_Calibration_Start leaves ADEN=1, but
+    // HAL_ADC_ConfigChannel refuses to run while ADEN=1. Disable here so
+    // the per-channel configuration in adcInit succeeds; HAL_ADC_Start_DMA
+    // re-enables the ADC at the end of init.
+    if (ADC_Disable(hadc) != HAL_OK) {
       errorHandler();
     }
 }
@@ -367,6 +384,22 @@ void adcInit(const adcConfig_t *config)
             continue;
         }
 
+        // Resolve DMA spec before consuming dmaBufferIndex slots or
+        // touching adcOperatingConfig[].dmaIndex — bailing out after
+        // those assignments leaves the start loop packing later ADCs
+        // at the front of adcConversionBuffer while the dmaIndex
+        // mappings still point past the gap, mis-routing samples.
+#ifdef USE_DMA_SPEC
+        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+        if (!dmaSpec) {
+            // No DMA configured for this ADC device; deactivate it so the
+            // Start_DMA loop below skips it (otherwise HAL_ADC_Start_DMA
+            // dereferences a NULL DmaHandle.Instance).
+            adc->channelBits = 0;
+            continue;
+        }
+#endif
+
         RCC_ClockCmd(adc->rccADC, ENABLE);
 
         int configuredAdcChannels = popcount(adc->channelBits);
@@ -406,10 +439,10 @@ void adcInit(const adcConfig_t *config)
         // Configure DMA for this ADC peripheral
 
 #ifdef USE_DMA_SPEC
-        const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
+
         dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
 
-        if (!dmaSpec || !dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
+        if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
             return;
         }
 

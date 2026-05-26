@@ -254,16 +254,3 @@ void unusedPinsInit(void)
     IOTraversePins(unusedPinInit);
 }
 
-const mcuTypeInfo_t *getMcuTypeInfo(void)
-{
-    static const mcuTypeInfo_t info = {
-#if defined(RP2350A)
-        .id = MCU_TYPE_RP2350A, .name = "RP2350A"
-#elif defined(RP2350B)
-        .id = MCU_TYPE_RP2350B, .name = "RP2350B"
-#else
-#error MCU Type info not defined for PICO / variant
-#endif
-    };
-    return &info;
-}

@@ -89,7 +89,7 @@ extern void OverclockRebootIfNecessary(uint32_t targetMhz);
 extern void systemClockSetHSEValue(uint32_t frequency);
 extern int SystemSYSCLKSource(void);
 extern int SystemPLLSource(void);
-extern void DAL_ErrorHandler(void);
+extern void Error_Handler(void);
 extern void DAL_SysClkConfig(void);
 
 /**
