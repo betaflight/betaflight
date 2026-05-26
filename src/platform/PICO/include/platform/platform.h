@@ -30,6 +30,7 @@
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
 #include "hardware/uart.h"
+#include "pico_trace.h"
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
