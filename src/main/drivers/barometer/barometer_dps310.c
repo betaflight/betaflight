@@ -174,13 +174,13 @@ static bool deviceConfigure(const extDevice_t *dev)
     // 1. Read the pressure calibration coefficients (c00, c10, c20, c30, c01, c11, and c21, c31, c40) from the Calibration Coefficient register.
     //   Note: The coefficients read from the coefficient register are 2's complement numbers.
     // Do the read of the coefficients in multiple parts, as the chip will return a read failure when trying to read all at once over I2C.
-    unsigned coefficientLength = chipId[0] == SPL07_003_CHIP_ID ? 22 : 18;
-    uint8_t coef[coefficientLength];
+    const unsigned coefficientLength = (chipId[0] == SPL07_003_CHIP_ID) ? 22 : 18;
+    uint8_t coef[22]; // fixed max size; SPL07-003 needs 22, DPS310 needs 18
 
 #define READ_LENGTH 9
 
-    for (unsigned i = 0; i < sizeof(coef); ) {
-        int chunk = MIN((unsigned)READ_LENGTH, (sizeof(coef) - i));
+    for (unsigned i = 0; i < coefficientLength; ) {
+        int chunk = MIN((unsigned)READ_LENGTH, (coefficientLength - i));
         if (!busReadBuf(dev, DPS310_REG_COEF + i,  coef + i, chunk)) {
             return false;
         }
