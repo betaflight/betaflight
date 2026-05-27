@@ -103,6 +103,21 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_UART10
     SERIAL_PORT_USART10,
 #endif
+#ifdef USE_UART11
+    SERIAL_PORT_UART11,
+#endif
+#ifdef USE_UART12
+    SERIAL_PORT_UART12,
+#endif
+#ifdef USE_UART13
+    SERIAL_PORT_UART13,
+#endif
+#ifdef USE_UART14
+    SERIAL_PORT_UART14,
+#endif
+#ifdef USE_UART15
+    SERIAL_PORT_UART15,
+#endif
 #ifdef USE_SOFTSERIAL1
     SERIAL_PORT_SOFTSERIAL1,
 #endif
@@ -180,6 +195,21 @@ const char* serialPortNames[SERIAL_PORT_COUNT] = {
 #endif
 #ifdef USE_UART10
     "UART10",
+#endif
+#ifdef USE_UART11
+    "UART11",
+#endif
+#ifdef USE_UART12
+    "UART12",
+#endif
+#ifdef USE_UART13
+    "UART13",
+#endif
+#ifdef USE_UART14
+    "UART14",
+#endif
+#ifdef USE_UART15
+    "UART15",
 #endif
 #ifdef USE_SOFTSERIAL1
     "SOFT1",

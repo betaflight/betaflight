@@ -69,19 +69,32 @@
 //
 // USE_OCTOSPI + FLASH_OCTOSPI_INSTANCE are always needed so
 // memoryMappedModeInit() can verify XSPI2->CR.FMODE on boot. The other
-// flags below drive flashInit / octoSpiInitDevice, which BF doesn't
-// require for the bring-up XIP scenario (config in RAM, no flashfs):
-// the FSBL stub leaves XSPI memory-mapped, BF runs XIP, XSPI never
-// needs to be poked again. A per-config #define BF_N6_NO_FLASH_CHIP
-// (set in src/config/.../config.h) skips the chip-driver path which
-// otherwise probes the wrong JEDEC ID and bus-faults the chip.
+// flags below drive flashInit / octoSpiInitDevice. Boards without a
+// flash chip wired (synthetic / DK-only configs) set
+// #define BF_N6_NO_FLASH_CHIP in their per-config config.h to skip the
+// chip-driver path.
+//
+// MX66UW1G45G is the boot flash on the reference ST DK and OPENN657V1.
+// For CONFIG_IN_MEMORY_MAPPED_FLASH to work the per-config also needs
+// OCTOSPI_FLASH_CHIP := MX66UW1G45G in its config.mk — that emits
+// OCTOSPI_FLASH_CHIP_MX66UW1G45G for the build-time chip dispatch in
+// flash.c (the chip can't answer 1/4-line RDID when the bootloader
+// leaves it in OPI mode, so it bypasses JEDEC probing).
 #define USE_OCTOSPI
 #define USE_FLASH_MEMORY_MAPPED
 #define FLASH_OCTOSPI_INSTANCE  XSPI2
 
 #ifndef BF_N6_NO_FLASH_CHIP
 #define USE_OCTOSPI_DEVICE_1
-#define USE_FLASH_W25Q128FV
+// Default the chip selection to MX66 only if the per-config hasn't
+// already picked one. USE_FLASH_CHIP isn't yet set at this point
+// (common_post.h derives it later from the chip-specific defines),
+// so the gate has to be against the other OCTOSPI-class chip macros
+// directly — letting a per-config opt into a different chip (e.g.
+// USE_FLASH_W25Q128FV) without also having to set BF_N6_NO_FLASH_CHIP.
+#if !defined(USE_FLASH_MX66UW1G45G) && !defined(USE_FLASH_W25Q128FV)
+#define USE_FLASH_MX66UW1G45G
+#endif
 #define USE_FLASH_CHIP
 #endif
 

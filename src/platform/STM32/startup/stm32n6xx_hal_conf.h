@@ -30,6 +30,11 @@
 #define HAL_TIM_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
 #define HAL_USART_MODULE_ENABLED
+// XSPI enabled for the MX66UW1G45G flash driver used by
+// CONFIG_IN_MEMORY_MAPPED_FLASH. Linker pulls hal_xspi/hal text into
+// .ram_code so HAL_XSPI_Command/_Receive/_Transmit are callable while
+// memory-mapped mode is disabled.
+#define HAL_XSPI_MODULE_ENABLED
 // LTDC + RIF enabled for the LCD console subsystem; --gc-sections drops the
 // driver code in builds that don't reference it.
 #define HAL_LTDC_MODULE_ENABLED
@@ -188,6 +193,10 @@
 #ifdef HAL_USART_MODULE_ENABLED
 #include "stm32n6xx_hal_usart.h"
 #endif /* HAL_USART_MODULE_ENABLED */
+
+#ifdef HAL_XSPI_MODULE_ENABLED
+#include "stm32n6xx_hal_xspi.h"
+#endif /* HAL_XSPI_MODULE_ENABLED */
 
 #ifdef HAL_LTDC_MODULE_ENABLED
 #include "stm32n6xx_hal_ltdc.h"

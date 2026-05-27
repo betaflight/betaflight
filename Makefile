@@ -710,20 +710,38 @@ $(AUTOHYDRATE_STAMPS):
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
+# Drop .d files whose recorded source path no longer exists. The most
+# common trigger is pulling across a source-move commit (e.g. promoting
+# an embedded vendor tree to a submodule) — gcc's -MMD pinned the .o to
+# the previous path, and make then bails with "No rule to make target
+# <old-path>" before the compiler ever runs to regenerate the .d. Cheap
+# scan: just stat the first .c prereq the .d declares.
+.PHONY: clean-stale-deps
+clean-stale-deps:
+	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
+	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
+	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
+	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
+	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
+	            $(RM) "$$dfile"; \
+	        fi; \
+	    done; \
+	fi
+
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(AUTOHYDRATE_STAMPS)
+exe: $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
