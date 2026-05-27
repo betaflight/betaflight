@@ -35,7 +35,7 @@
 
 #include "drivers/system.h"
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(X32M7) 
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
 // "E1.2.11  LAR, Lock Access Register"
@@ -78,7 +78,7 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32H7) || defined(AT32F4)
+#if defined(STM32H7) || defined(AT32F4) || defined(X32M7) 
     ITM->LAR = DWT_LAR_UNLOCK_VALUE;
 #elif defined(STM32F7)
     DWT->LAR = DWT_LAR_UNLOCK_VALUE;

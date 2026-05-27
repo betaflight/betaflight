@@ -32,7 +32,7 @@ typedef struct uartPort_s {
     dmaResource_t *txDMAResource;
     uint32_t rxDMAChannel;
     uint32_t txDMAChannel;
-#if defined(USE_ATBSP_DRIVER)
+#if defined(USE_ATBSP_DRIVER) || defined(X32M7)
     uint32_t rxDMAMuxId;
     uint32_t txDMAMuxId;
 #endif

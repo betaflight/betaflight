@@ -330,10 +330,50 @@ uint32_t getFLASHSectorForEEPROM(void)
 }
 #endif
 
+#if defined(X32M7)
+#define X32_FLASH_ERASE_SIZE FLASH_PAGE_SIZE
+
+static bool x32ConfigAddressIsValid(uintptr_t address, size_t length)
+{
+    const uintptr_t configStart = (uintptr_t)&__config_start;
+    const uintptr_t configEnd = (uintptr_t)&__config_end;
+
+    return length <= (UINTPTR_MAX - address) &&
+        address >= configStart &&
+        (address + length) <= configEnd;
+}
+
+static configStreamerResult_e x32FlashStatusToConfigResult(uint32_t status)
+{
+    switch (status) {
+    case FLASH_SUCCESS:
+        return CONFIG_RESULT_SUCCESS;
+    case FLASH_BUS_ADDR_ERROR:
+    case FLASH_LOGIC_ADDR_ERROR:
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    case FLASH_FAILED:
+        return CONFIG_RESULT_INCOMPLETE;
+    default:
+        return CONFIG_RESULT_FAILURE;
+    }
+}
+
+static configStreamerResult_e x32EraseFlashIfNeeded(uintptr_t address)
+{
+    if ((address % X32_FLASH_ERASE_SIZE) != 0) {
+        return CONFIG_RESULT_SUCCESS;
+    }
+
+    return x32FlashStatusToConfigResult(SMU_EraseFlash((uint32_t)address));
+}
+#endif
+
 void configUnlock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
     HAL_FLASH_Unlock();
+#elif defined(X32M7)
+    // NOP
 #elif defined(APM32F4)
     DAL_FLASH_Unlock();
 #elif defined(AT32F4)
@@ -347,6 +387,8 @@ void configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
+#elif defined(X32M7)
+        // NOP
 #elif defined(AT32F4)
         flash_lock();
 #elif defined(APM32F4)
@@ -374,6 +416,8 @@ void configClearFlags(void)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
 #elif defined(APM32F4)
     __DAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+#elif defined(X32M7)
+    // SMU flash operations return status directly.
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -502,6 +546,19 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     if (status != DAL_OK) {
         return CONFIG_RESULT_ADDRESS_INVALID;
     }
+#elif defined(X32M7)
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+
+    if (!x32ConfigAddressIsValid(address, CONFIG_STREAMER_BUFFER_SIZE) || (address % sizeof(uint32_t)) != 0) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+
+    const configStreamerResult_e eraseResult = x32EraseFlashIfNeeded(address);
+    if (eraseResult != CONFIG_RESULT_SUCCESS) {
+        return eraseResult;
+    }
+
+    return x32FlashStatusToConfigResult(SMU_WriteFlash((uint32_t)address, (uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE));
 #elif defined(STM32F4)
     if (address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
