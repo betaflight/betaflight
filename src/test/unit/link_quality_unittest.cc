@@ -114,7 +114,7 @@ extern "C" {
 
     uint16_t updateLinkQualitySamples(uint16_t value);
 
-    extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
+    extern uint16_t applyRxChannelRangeConfiguraton(int sample, const scaleRangef_t *range);
 }
 void setDefaultSimulationState()
 {

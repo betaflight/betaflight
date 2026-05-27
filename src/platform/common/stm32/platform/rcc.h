@@ -79,6 +79,27 @@ enum rcc_reg {
     RCC_AHB3,
     RCC_APB2,
     RCC_APB1,
+#elif defined(X32M7)
+    RCC_AHB1_1,
+    RCC_AHB1_2,
+    RCC_AHB1_3,
+    RCC_AHB1_4,
+    RCC_AHB2_1,
+    RCC_AHB2_2,
+    RCC_AHB5_1,
+    RCC_AHB5_2,
+    RCC_AHB9_1,
+    RCC_APB1_1,
+    RCC_APB1_2,
+    RCC_APB1_3,
+    RCC_APB1_4,
+    RCC_APB1_5,
+    RCC_APB2_1,
+    RCC_APB2_2,
+    RCC_APB2_3,
+    RCC_APB2_4,
+    RCC_APB5_1,
+    RCC_APB5_2,
 #elif defined(GD32F4)
     RCC_AHB1,
     RCC_AHB2,
@@ -169,21 +190,42 @@ enum rcc_reg {
 #define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCM_APB2CLKEN_ ## periph ## EN)
 #define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCM_APB1CLKEN_ ## periph ## EN)
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCM_AHB1CLKEN_ ## periph ## EN)
+#elif defined(X32M7)
+#define RCC_AHB1_1(periph) RCC_ENCODE(RCC_AHB1_1, RCC_AHB1_PERIPHEN_M7_ ## periph)
+#define RCC_AHB1_2(periph) RCC_ENCODE(RCC_AHB1_2, RCC_AHB1_PERIPHEN_M7_ ## periph)
+#define RCC_AHB1_3(periph) RCC_ENCODE(RCC_AHB1_3, RCC_AHB1_PERIPHEN_M7_ ## periph)
+#define RCC_AHB1_4(periph) RCC_ENCODE(RCC_AHB1_4, RCC_AHB1_PERIPHEN_M7_ ## periph)
+#define RCC_AHB2_1(periph) RCC_ENCODE(RCC_AHB2_1, RCC_AHB2_PERIPHEN_M7_ ## periph)
+#define RCC_AHB2_2(periph) RCC_ENCODE(RCC_AHB2_2, RCC_AHB2_PERIPHEN_M7_ ## periph)
+#define RCC_AHB5_1(periph) RCC_ENCODE(RCC_AHB5_1, RCC_AHB5_PERIPHEN_M7_ ## periph)
+#define RCC_AHB5_2(periph) RCC_ENCODE(RCC_AHB5_2, RCC_AHB5_PERIPHEN_M7_ ## periph)
+#define RCC_AHB9_1(periph) RCC_ENCODE(RCC_AHB9_1, RCC_AHB9_PERIPHEN_M7_ ## periph)
+#define RCC_APB1_1(periph) RCC_ENCODE(RCC_APB1_1, RCC_APB1_PERIPHEN_M7_ ## periph)
+#define RCC_APB1_2(periph) RCC_ENCODE(RCC_APB1_2, RCC_APB1_PERIPHEN_M7_ ## periph)
+#define RCC_APB1_3(periph) RCC_ENCODE(RCC_APB1_3, RCC_APB1_PERIPHEN_M7_ ## periph)
+#define RCC_APB1_4(periph) RCC_ENCODE(RCC_APB1_4, RCC_APB1_PERIPHEN_M7_ ## periph)
+#define RCC_APB1_5(periph) RCC_ENCODE(RCC_APB1_5, RCC_APB1_PERIPHEN_M7_ ## periph)
+#define RCC_APB2_1(periph) RCC_ENCODE(RCC_APB2_1, RCC_APB2_PERIPHEN_M7_ ## periph)
+#define RCC_APB2_2(periph) RCC_ENCODE(RCC_APB2_2, RCC_APB2_PERIPHEN_M7_ ## periph)
+#define RCC_APB2_3(periph) RCC_ENCODE(RCC_APB2_3, RCC_APB2_PERIPHEN_M7_ ## periph)
+#define RCC_APB2_4(periph) RCC_ENCODE(RCC_APB2_4, RCC_APB2_PERIPHEN_M7_ ## periph)
+#define RCC_APB5_1(periph) RCC_ENCODE(RCC_APB5_1, RCC_APB5_PERIPHEN_M7_ ## periph)
+#define RCC_APB5_2(periph) RCC_ENCODE(RCC_APB5_2, RCC_APB5_PERIPHEN_M7_ ## periph)
 #elif defined(GD32F4)
-#define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCU_AHB1EN_ ## periph ## EN)
-#define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCU_AHB2EN_ ## periph ## EN)
-#define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3, RCU_AHB3EN_ ## periph ## EN)
-#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCU_APB2EN_ ## periph ## EN)
-#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCU_APB1EN_ ## periph ## EN)
+#define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, (uint32_t)RCU_AHB1EN_ ## periph ## EN)
+#define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, (uint32_t)RCU_AHB2EN_ ## periph ## EN)
+#define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3, (uint32_t)RCU_AHB3EN_ ## periph ## EN)
+#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, (uint32_t)RCU_APB2EN_ ## periph ## EN)
+#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, (uint32_t)RCU_APB1EN_ ## periph ## EN)
 #elif defined(GD32H7)
-#define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCU_AHB1EN_ ## periph ## EN)
-#define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, RCU_AHB2EN_ ## periph ## EN)
-#define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3, RCU_AHB3EN_ ## periph ## EN)
-#define RCC_AHB4(periph) RCC_ENCODE(RCC_AHB4, RCU_AHB4EN_ ## periph ## EN)
-#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCU_APB1EN_ ## periph ## EN)
-#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCU_APB2EN_ ## periph ## EN)
-#define RCC_APB3(periph) RCC_ENCODE(RCC_APB3, RCU_APB3EN_ ## periph ## EN)
-#define RCC_APB4(periph) RCC_ENCODE(RCC_APB4, RCU_APB4EN_ ## periph ## EN)
+#define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, (uint32_t)RCU_AHB1EN_ ## periph ## EN)
+#define RCC_AHB2(periph) RCC_ENCODE(RCC_AHB2, (uint32_t)RCU_AHB2EN_ ## periph ## EN)
+#define RCC_AHB3(periph) RCC_ENCODE(RCC_AHB3, (uint32_t)RCU_AHB3EN_ ## periph ## EN)
+#define RCC_AHB4(periph) RCC_ENCODE(RCC_AHB4, (uint32_t)RCU_AHB4EN_ ## periph ## EN)
+#define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, (uint32_t)RCU_APB1EN_ ## periph ## EN)
+#define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, (uint32_t)RCU_APB2EN_ ## periph ## EN)
+#define RCC_APB3(periph) RCC_ENCODE(RCC_APB3, (uint32_t)RCU_APB3EN_ ## periph ## EN)
+#define RCC_APB4(periph) RCC_ENCODE(RCC_APB4, (uint32_t)RCU_APB4EN_ ## periph ## EN)
 #endif
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState);

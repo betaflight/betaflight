@@ -89,6 +89,12 @@ spiDevice_e spiDeviceByInstance(const spiResource_t *instance)
     }
 #endif
 
+#ifdef USE_SPI_DEVICE_7
+    if (instance == (const spiResource_t *)SPI7) {
+        return SPIDEV_7;
+    }
+#endif
+
     return SPIINVALID;
 }
 
@@ -128,6 +134,10 @@ bool spiInit(spiDevice_e device)
 
 #if !defined(USE_SPI_DEVICE_6)
     case SPIDEV_6:
+#endif
+
+#if !defined(USE_SPI_DEVICE_7)
+    case SPIDEV_7:
 #endif
         return false;
     default:
