@@ -174,20 +174,38 @@ static __attribute__((noreturn)) void jump_to_bf(void)
                  | RCC_MEMENSR_AXISRAM5ENS | RCC_MEMENSR_AXISRAM6ENS;
     (void)RCC->MEMENR;
 
-    /* RISAF2 (AXISRAM1, slave, aperture-relative offsets):
-     *   Region 0 (RM "Region 1")  S, 0x00000..0x0FFFF (64 KiB) — OBL
-     *                              reserve, paired with the AXISRAM1_S
-     *                              declaration in the OBL linker.
-     *   Region 1 (RM "Region 2") NS, 0x10000..0xFFFFF (960 KiB) — BF
-     *                              data+stack. */
-    risaf_region_config(RISAF2, 0U, 0x00000000UL, 0x0000FFFFUL, true);
-    risaf_region_config(RISAF2, 1U, 0x00010000UL, 0x000FFFFFUL, false);
-
-    /* RISAF12 (XSPI2, slave, aperture-relative — 256 MiB).
-     * Per RM0486 Table 24, XSPI2 is protected by RISAF12. The OBL
-     * doesn't live in XSPI at run time (boot ROM copied it to AXISRAM2
-     * S), so we expose the entire aperture as NS for the BF app. */
-    risaf_region_config(RISAF12, 0U, 0x00000000UL, 0x0FFFFFFFUL, false);
+    /* Slave-side RISAFs — open the resources BF (NS) needs.
+     *
+     * Boot-ROM default: every RISAF region disabled. RM §3.5.7 says a
+     * memory location covered by a RISAF but outside any enabled region
+     * "belongs to the secure OS", i.e., NS access bus-faults. So every
+     * slave-RISAF-protected bank BF touches needs an explicit NS region.
+     *
+     * RISAF2  (AXISRAM1, 1 MiB):   full bank NS — BF data/bss/stack.
+     * RISAF12 (XSPI2, 256 MiB):    region covers offsets 0x100000..end
+     *                              NS, leaving the OBL slot at offsets
+     *                              0x00000..0xFFFFF uncovered. Per RM
+     *                              §3.5.7 an uncovered range defaults
+     *                              to S-only, so accidental NS deref of
+     *                              0x70000000..0x700FFFFF bus-faults
+     *                              instead of returning OBL image bytes.
+     *                              Matches the ST Template_Isolation_XIP
+     *                              pattern (FSBL slot implicit-S, app
+     *                              slot explicit-NS).
+     *
+     * Intentionally NOT programmed:
+     * - RISAF3 (AXISRAM2, 1 MiB): left at boot-ROM default (S-only).
+     *   OBL is the only consumer of AXISRAM2 (it runs from the high
+     *   half at 0x34180400), and BF doesn't claim any AXISRAM2 NS view.
+     * - AXISRAM3..6 (NPURAM0..3, 0x24200000..0x243BFFFF, 1792 KiB):
+     *   no slave RISAF exists for this range (CMSIS/HAL RIF_AWARE table
+     *   only ties RISAF4/5 to IAC IDs, not memory banks; the bank
+     *   security is gated by RIFSC->RISC_SECCFGRx[5] bits 17..20, which
+     *   system_stm32n6xx_obl.c already clears in its RIFSC open loop).
+     *   NS access to D2_RAM (LCD framebuffer) should therefore work
+     *   once enabled — verify when LCD bring-up resumes. */
+    risaf_region_config(RISAF2,  0U, 0x00000000UL, 0x000FFFFFUL, false);
+    risaf_region_config(RISAF12, 0U, 0x00100000UL, 0x0FFFFFFFUL, false);
 
     /* === Per-CPU TrustZone setup for the NS application ====
      *
@@ -217,15 +235,23 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      * outside any region stay S-default — which is what OBL needs for
      * its S-state accesses at 0x34xxxxxx, 0x50xxxxxx, 0x54xxxxxx etc.
      *
-     *   Region 0: AXISRAM (0x24000000..0x243FFFFF) NS
-     *   Region 1: AHB/APB NS-alias peripherals (0x40000000..0x4FFFFFFF) NS
-     *   Region 2: XSPI memory-mapped (0x70000000..0x7FFFFFFF) NS — BF code
+     *   Region 0: AXISRAM1 (0x24000000..0x240FFFFF) NS — BF main RAM
+     *   Region 1: AHB/APB NS-alias peripherals (0x40000000..0x4FFFFFFF)
+     *   Region 2: XSPI memory-mapped (0x70100000..0x7FFFFFFF) NS — skip
+     *             the OBL slot at 0x70000000..0x700FFFFF so a stray NS
+     *             deref of an OBL address is rejected by the SAU before
+     *             it reaches the bus (matches the RISAF12 region split).
+     *   Region 3: AXISRAM3..6 (0x24200000..0x243BFFFF) NS — D2_RAM /
+     *             LCD framebuffer. AXISRAM2 NS (0x24100000..0x241FFFFF)
+     *             is intentionally NOT covered: nothing in BF uses it,
+     *             and leaving it outside any SAU region means a stray
+     *             NS access bus-faults instead of reaching the bank.
      *
      * RBAR/RLAR are 32-byte granularity (low 5 bits ignored).
      *
      * Per UM3234 the boot ROM also configures SAU. Disable the unit and
      * clear every region (RLAR.ENABLE=0) before programming ours,
-     * otherwise leftover boot-ROM regions ≥ 3 keep their classification
+     * otherwise leftover boot-ROM regions ≥ 4 keep their classification
      * and can shadow what we configure. */
     {
         SAU->CTRL = 0;
@@ -238,9 +264,10 @@ static __attribute__((noreturn)) void jump_to_bf(void)
         __ISB();
 
         const struct { uint32_t base; uint32_t limit; } regs[] = {
-            { 0x24000000UL, 0x243FFFE0UL },
-            { 0x40000000UL, 0x4FFFFFE0UL },
-            { 0x70000000UL, 0x7FFFFFE0UL },
+            { 0x24000000UL, 0x240FFFE0UL },   /* AXISRAM1            */
+            { 0x40000000UL, 0x4FFFFFE0UL },   /* NS peripherals      */
+            { 0x70100000UL, 0x7FFFFFE0UL },   /* XSPI (excl. OBL)    */
+            { 0x24200000UL, 0x243BFFE0UL },   /* AXISRAM3..6 / D2RAM */
         };
         for (uint32_t i = 0; i < (uint32_t)(sizeof(regs) / sizeof(regs[0])); i++) {
             SAU->RNR  = i;
@@ -264,6 +291,20 @@ static __attribute__((noreturn)) void jump_to_bf(void)
     for (uint32_t i = 0; i < (uint32_t)(sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0])); i++) {
         NVIC->ICER[i] = 0xFFFFFFFFUL;
         NVIC->ICPR[i] = 0xFFFFFFFFUL;
+    }
+    __DSB();
+    __ISB();
+
+    /* Re-target every external IRQ to NS so BF can enable/handle them
+     * through the NS NVIC bank. Reset default is ITNS = 0 (all IRQs
+     * Secure-targeted), which would route every peripheral IRQ (USB,
+     * GPDMA, EXTI, TIMx, …) into S handlers OBL doesn't implement —
+     * typically a tight Default_Handler loop. With NS-targeted IRQs the
+     * NVIC banks the configuration registers to the NS bank so BF's
+     * NVIC_EnableIRQ / SetPriority / SetTargetState calls land where
+     * the IRQ actually fires. */
+    for (uint32_t i = 0; i < (uint32_t)(sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0])); i++) {
+        NVIC->ITNS[i] = 0xFFFFFFFFUL;
     }
     __DSB();
     __ISB();

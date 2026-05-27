@@ -185,9 +185,9 @@ BIN := obl.bin
 SIGNING_TOOL ?= STM32_SigningTool_CLI
 SIGNED_BLOB  := prebuilt/obl_$(OBL_FLASH_DRIVER)_signed.stm32
 
-# Boot ROM @FSBL DFU alt cap empirically ~485 KiB. Build fails loudly if
-# the OBL output exceeds the safe budget.
-OBL_SIZE_LIMIT := 491520     # 480 KiB, matches linker LENGTH
+# Build fails loudly if the OBL output exceeds the linker-declared RAM
+# region. Matches LENGTH in STM32N657XX_OBL.ld.
+OBL_SIZE_LIMIT := 65536      # 64 KiB
 
 .PHONY: all signed size_check clean
 all: $(BIN) size_check
