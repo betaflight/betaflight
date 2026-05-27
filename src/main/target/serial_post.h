@@ -39,7 +39,7 @@ All <type><n>_(RX|TX)_PINS are normalized too:
  - if port is not enable, both will be undefined, possibly with warning
   - pass -DWARN_UNUSED_SERIAL_PORT to compiler to check pin defined without corresponding port being enabled.
 
-Generated on 2025-09-16
+Generated on 2026-05-27
 
 Configuration used:
 {   'LPUART': {'depends': {'UART'}, 'ids': [1]},
@@ -51,7 +51,7 @@ Configuration used:
                       'ids': [1, 2],
                       'use_enables_all': True},
     'UART': {   'first_index': True,
-                'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                'ids': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                 'inverter': True},
     'VCP': {'no_pins': True, 'singleton': True}}
 */
@@ -991,4 +991,3 @@ Configuration used:
 #if !defined(USE_VCP) && (SERIAL_VCP_COUNT)
 # define USE_VCP
 #endif
-

@@ -73,6 +73,9 @@ adcDevice_t adcDevice[ADCDEV_COUNT];
 
 #define ADC_DEVICE_FOR_INTERNAL ADC_DEVICES_3
 
+#define ADC_BUF_LENGTH ADC_SOURCE_COUNT
+#define ADC_BUF_BYTES (ADC_BUF_LENGTH * sizeof(uint16_t))
+
 const adcTagMap_t adcTagMap[] = {
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_VREFINT    0
@@ -508,6 +511,9 @@ void adcInit(const adcConfig_t *config)
 */
 void adcGetChannelValues(void)
 {
+#ifdef __DCACHE_PRESENT
+    X32_INVALIDATE_DCACHE_BY_ADDR((uint32_t*)adcConversionBuffer, ADC_BUF_BYTES);
+#endif  
     for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
         if (adcOperatingConfig[i].enabled) {
             adcValues[adcOperatingConfig[i].dmaIndex] = adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
