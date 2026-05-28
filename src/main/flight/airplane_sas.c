@@ -92,7 +92,7 @@ void psasInit(const pidProfile_t *pidProfile)
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
 }
 
-static void psasTerminate()
+static void psasTerminate(void)
 {
     memset(&psasData, 0, sizeof(psasData));
     isActivePSAS = false;
@@ -247,7 +247,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     psasData.pitch.pilot = pitchStick * psasRuntime.stick_gain[FD_PITCH];
 
     // Plane pitch damping improvement
-    float gyroPitch = gyro.gyroADCf[FD_PITCH];
+    float gyroPitch = !gyroOverflowDetected() ? gyro.gyroADCf[FD_PITCH] : 0.0f;
     if (pidProfile->psas_pitch_damping_filter_freq != 0) {
         float gyroPitchLow = pt1FilterApply(&psasPitchDampingLowpass, gyroPitch);
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
@@ -317,7 +317,11 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     // Plane roll damping improvement
     // On the positive roll gyro rotation (on the right side direction) it needs to turn plane on the left, therefore it needs to use negative sign
-    psasData.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * (psasRuntime.damping_gain[FD_ROLL]);
+    if (!gyroOverflowDetected()) {
+        psasData.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * (psasRuntime.damping_gain[FD_ROLL]);
+    } else {
+        psasData.roll.damping = 0.0f;
+    }
 
     psasData.roll.Sum = psasData.roll.pilot + psasData.roll.damping;
     psasData.roll.Sum = constrainf(psasData.roll.Sum, -100.0f, 100.0f);
@@ -329,7 +333,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * (psasRuntime.stick_gain[FD_YAW]);
 
     // Plane yaw damping improvement
-    float gyroYaw = gyro.gyroADCf[FD_YAW];
+    float gyroYaw = !gyroOverflowDetected() ? gyro.gyroADCf[FD_YAW] : 0.0f;
     if (pidProfile->psas_yaw_damping_filter_freq != 0) {
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
         gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
@@ -366,20 +370,16 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
 {
     bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
     if (isPSAS) {
-        const bool psasUnsafe =
-            !pidRuntime.pidStabilisationEnabled ||
-            gyroOverflowDetected();
-        if (psasUnsafe) {
-            memset(&psasData, 0, sizeof(psasData));
-            isActivePSAS = false;
-            return true;
-        }
-
         if (!isActivePSAS) {
             isActivePSAS = true;
         }
 
-        psasUpdate(pidProfile);
+        if (pidRuntime.pidStabilisationEnabled) {
+            psasUpdate(pidProfile);
+        } else {
+            memset(&psasData, 0, sizeof(psasData));
+        }
+
         return true;
     } else if (isActivePSAS) {
         psasTerminate();
