@@ -627,18 +627,22 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
         DEBUG_SET(DEBUG_ANGLE_MODE, 2, lrintf(angleFeedforward * 10.0f)); // feedforward amount in degrees
         DEBUG_SET(DEBUG_ANGLE_MODE, 3, lrintf(currentAngle * 10.0f)); // angle returned
 
+#ifdef USE_CHIRP
         DEBUG_SET(DEBUG_CHIRP, 4, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 5, lrintf(angleTarget * 10.0f));  // target angle
         DEBUG_SET(DEBUG_CHIRP, 6, 0);  // current angle pitch set to zero
         DEBUG_SET(DEBUG_CHIRP, 7, 0);  // target angle pitch set to zero
+#endif // USE_CHIRP
 
         DEBUG_SET(DEBUG_ANGLE_TARGET, 0, lrintf(angleTarget * 10.0f));
         DEBUG_SET(DEBUG_ANGLE_TARGET, 1, lrintf(sinAngle * 10.0f)); // modification factor from earthRef
         // debug ANGLE_TARGET 2 is yaw attenuation
         DEBUG_SET(DEBUG_ANGLE_TARGET, 3, lrintf(currentAngle * 10.0f)); // angle returned
+#ifdef USE_CHIRP
     } else if (axis == FD_PITCH) {
         DEBUG_SET(DEBUG_CHIRP, 6, lrintf(currentAngle * 10.0f)); // angle returned
         DEBUG_SET(DEBUG_CHIRP, 7, lrintf(angleTarget * 10.0f));  // target angle
+#endif // USE_CHIRP
     }
 
     DEBUG_SET(DEBUG_CURRENT_ANGLE, axis, lrintf(currentAngle * 10.0f)); // current angle
@@ -1259,7 +1263,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         if (shouldChirpAxisToggle) {
             // toggle chirp signal logic and increment to next axis for next run
             shouldChirpAxisToggle = false;
-            pidRuntime.chirpAxis = (++pidRuntime.chirpAxis > FD_YAW) ? 0 : pidRuntime.chirpAxis;
+            pidRuntime.chirpAxis = (++pidRuntime.chirpAxis > FD_YAW) ? FD_ROLL : pidRuntime.chirpAxis;
             // reset chirp signal generator
             chirpReset(&pidRuntime.chirp);
             chirpSettleUntilUs = 0;
