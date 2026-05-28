@@ -44,19 +44,19 @@
 FAST_DATA_ZERO_INIT psas_data_t psasData;
 FAST_DATA_ZERO_INIT psasRuntime_t psasRuntime;
 
-static bool isReadyPSAS;
-static pt1Filter_t psasPitchDampingLowpass;
-static pt1Filter_t psasYawDampingLowpass;
-static pt1Filter_t psasLiftCoefLowpass;
-static pt1Filter_t psasAccelZLowpass;
-static pt1Filter_t psasAccelYLowpass;
-
+static bool isActivePSAS = false;
 static bool isLiftCoefValid = false;
 static float validLiftCoefTime = 0.0f;
 
 static bool isEnabledAccelZController = false;
 static bool isEnabledLiftCoefEstimation = false;
 static bool isEnabledAoALimiter = false;
+
+static pt1Filter_t psasPitchDampingLowpass;
+static pt1Filter_t psasYawDampingLowpass;
+static pt1Filter_t psasLiftCoefLowpass;
+static pt1Filter_t psasAccelZLowpass;
+static pt1Filter_t psasAccelYLowpass;
 
 void psasInit(const pidProfile_t *pidProfile)
 {
@@ -87,12 +87,25 @@ void psasInit(const pidProfile_t *pidProfile)
     psasRuntime.roll_yaw_clift_stop = pidProfile->psas_roll_yaw_clift_stop * 0.1f;
     psasRuntime.roll_to_yaw_link = pidProfile->psas_roll_to_yaw_link * 0.1f;
 
-    isReadyPSAS = false;
-    isLiftCoefValid = false;
-    validLiftCoefTime = 0.0f;
     isEnabledAccelZController = sensors(SENSOR_ACC) && pidProfile->psas_pitch_accel_i_gain != 0; // Enable controller for non zero I. The P (psas_pitch_accel_p_gain) is an additional option
     isEnabledLiftCoefEstimation = sensors(SENSOR_ACC) && sensors(SENSOR_GPS) && pidProfile->psas_wing_load != 0;
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
+}
+
+static void psasTerminate()
+{
+    memset(&psasData, 0, sizeof(psasData));
+    isActivePSAS = false;
+    isLiftCoefValid = false;
+    validLiftCoefTime = 0.0f;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        pidData[axis].P = 0;
+        pidData[axis].I = 0;
+        pidData[axis].D = 0;
+        pidData[axis].F = 0;
+        pidData[axis].S = 0;
+        pidData[axis].Sum = 0;
+    }
 }
 
 static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
@@ -358,29 +371,18 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
             gyroOverflowDetected();
         if (psasUnsafe) {
             memset(&psasData, 0, sizeof(psasData));
-            isReadyPSAS = false;
+            isActivePSAS = false;
             return true;
         }
 
-        // Clear all PID values and reset the all PSAS filters by first PSAS run
-        if (!isReadyPSAS) {
-            psasInit(pidProfile);
-            memset(&psasData, 0, sizeof(psasData));
-            isReadyPSAS = true;
+        if (!isActivePSAS) {
+            isActivePSAS = true;
         }
 
         psasUpdate(pidProfile);
         return true;
-    } else if (isReadyPSAS) {      // Clear the all PID values after PSAS work
-        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-            pidData[axis].P = 0;
-            pidData[axis].I = 0;
-            pidData[axis].D = 0;
-            pidData[axis].F = 0;
-            pidData[axis].S = 0;
-            pidData[axis].Sum = 0;
-        }
-        isReadyPSAS = false;
+    } else if (isActivePSAS) {
+        psasTerminate();
         return false;
     }
     return false;
