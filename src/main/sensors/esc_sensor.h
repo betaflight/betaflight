@@ -48,9 +48,12 @@ void escSensorProcess(timeUs_t currentTime);
 
 #define ESC_SENSOR_COMBINED 255
 
-escSensorData_t *getEscSensorData(uint8_t motorNumber);
-
 void startEscDataRead(uint8_t *frameBuffer, uint8_t frameLength);
 uint8_t getNumberEscBytesRead(void);
 
 uint8_t calculateCrc8(const uint8_t *Buf, const uint8_t BufLen);
+
+const escSensorData_t *escSensorGetDataArray(void);
+void escSensorCopyData(uint8_t motor, escSensorData_t *out);
+bool escSensorIsCombinedDataDirty(void);
+void escSensorClearCombinedDataDirty(void);

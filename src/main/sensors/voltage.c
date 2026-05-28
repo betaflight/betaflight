@@ -44,7 +44,8 @@
 
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
-#include "sensors/esc_sensor.h"
+
+#include "telemetry/motor_sensor.h"
 
 #include "voltage.h"
 
@@ -271,9 +272,9 @@ void voltageMeterESCInit(void)
 void voltageMeterESCRefresh(void)
 {
 #ifdef USE_ESC_SENSOR
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
     if (escData) {
-        voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
+        voltageMeterESCState.voltageUnfiltered = (escData->dataAge <= ESC_BATTERY_AGE_MAX) ? escData->voltage : 0;
         voltageMeterESCState.voltageDisplayFiltered = pt1FilterApply(&voltageMeterESCState.displayFilter, voltageMeterESCState.voltageUnfiltered);
     }
 #endif
@@ -285,9 +286,9 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
     UNUSED(motorNumber);
     voltageMeterReset(voltageMeter);
 #else
-    escSensorData_t *escData = getEscSensorData(motorNumber);
-    if (escData) {
-        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage : 0;
+    escSensorData_t *escData = getMotorSensorData(motorNumber, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+        voltageMeter->unfiltered = escData->voltage;
         voltageMeter->displayFiltered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
     } else {
         voltageMeterReset(voltageMeter);

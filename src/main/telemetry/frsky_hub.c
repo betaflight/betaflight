@@ -75,6 +75,7 @@
 #endif
 
 #include "frsky_hub.h"
+#include "telemetry/motor_sensor.h"
 
 static serialPort_t *frSkyHubPort = NULL;
 static const serialPortConfig_t *portConfig = NULL;
@@ -190,9 +191,9 @@ static void sendThrottleOrBatterySizeAsRpm(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData) {
-        data = escData->dataAge < ESC_DATA_INVALID ? lrintf(erpmToRpm(escData->rpm) / 10.0f) : 0;
+    escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+    if (escData && escData->dataAge < ESC_DATA_INVALID) {
+        data = lrintf(erpmToRpm(escData->rpm) / 10.0f);
     }
 #else
     if (ARMING_FLAG(ARMED)) {
@@ -214,9 +215,9 @@ static void sendTemperature1(void)
 {
     int16_t data = 0;
 #if defined(USE_ESC_SENSOR_TELEMETRY)
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData) {
-        data = escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0;
+    escSensorData_t *escData = getMotorSensorData(ESC_SENSOR_COMBINED, MOTOR_SENSOR_SOURCE_ESC_SENSOR);
+    if (escData && escData->dataAge < ESC_DATA_INVALID) {
+        data = escData->temperature;
     }
 #elif defined(USE_BARO)
     data = lrintf(baro.temperature / 100.0f); // Airmamaf
