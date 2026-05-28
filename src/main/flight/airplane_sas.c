@@ -118,7 +118,7 @@ static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidPro
     if (ARMING_FLAG(ARMED) &&
         STATE(GPS_FIX) &&
         gpsSol.numSat > GPS_MIN_SAT_COUNT) {
-        const float speedThreshold = 2.5f;    // GPS speed threshold (m/s)
+        const float speedThreshold = 1.5f;    // GPS speed threshold (m/s)
         float speed = 0.01f * gpsSol.speed3d;
         if (speed > speedThreshold) {
             const float airSpeedPressure = psasRuntime.air_density * sq(speed) / 2.0f;
