@@ -46,8 +46,6 @@
 #define USE_UART1
 #define USE_PIOUART0
 #define USE_PIOUART1
-#define UART_RX_BUFFER_SIZE 1024
-#define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 12
 #define UART_TRAIT_AF_PORT 1
 
@@ -124,6 +122,10 @@
 #define PIO_OSD_INDEX 2
 #endif
 
+#ifdef REMOVE_MSP_DISPLAYPORT
+#undef USE_MSP_DISPLAYPORT
+#endif
+
 // Various untested or unsupported elements are undefined below
 
 #undef USE_RX_SPI
@@ -169,4 +171,3 @@
 #undef USE_ESC_SENSOR
 
 #undef USE_RPM_LIMIT
-#undef USE_OSD_HD

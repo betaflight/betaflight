@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "platform/dma.h"
 #include "common/maths.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
@@ -73,12 +74,17 @@ static int osd_en_gpio;
 static int osd_sync_gpio;
 static int osdPioBase;
 
-__attribute__((aligned(4))) static uint32_t osdBufferBackgroundW[PICO_OSD_BUF_LENGTH/4];
 __attribute__((aligned(4))) static uint32_t osdBuffer1W[PICO_OSD_BUF_LENGTH/4];
 __attribute__((aligned(4))) static uint32_t osdBuffer2W[PICO_OSD_BUF_LENGTH/4];
-uint8_t *osdBufferBackground = (uint8_t *)osdBufferBackgroundW;
 uint8_t *osdBufferA = (uint8_t *)osdBuffer1W;
 static uint8_t *osdBufferB = (uint8_t *)osdBuffer2W;
+
+#ifdef PICO_OSD_USE_BACKGROUND_BUFFER
+__attribute__((aligned(4))) static uint32_t osdBufferBackgroundW[PICO_OSD_BUF_LENGTH/4];
+uint8_t *osdBufferBackground = (uint8_t *)osdBufferBackgroundW;
+#else
+uint8_t *osdBufferBackground = NULL;
+#endif
 
 static const uint32_t zero;
 //static const uint32_t zero = 0xaaaaaaaa;
@@ -117,7 +123,6 @@ uint32_t dd1,dd2,dd3,dd4,dd5,dd6,dd7,dd8;
 static int badX;
 static int badY;
 static int badC = -1;
-static int ddc=0;
 
 static uint16_t us_per_vsync;
 #endif
@@ -160,6 +165,7 @@ void osdPioClearCharBuffer(void)
 {
     memset(osdCharBuffer, 0x20, OSD_CHAR_BUFFER_LENGTH);
     memset(osdCharLineInUse, 0, OSD_SD_ROWS);
+    logoVisible = false;
 }
 
 bool osdPioBufferAvailable(void)
@@ -183,7 +189,11 @@ bool plotToBackground;
 
 void selectBackgroundBuffer(void)
 {
+#ifdef PICO_OSD_USE_BACKGROUND_BUFFER
     plotToBackground = true;
+#else
+    plotToBackground = false;
+#endif
 }
 
 void selectForegroundBuffer(void)
@@ -228,6 +238,8 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
     }
 
     // Set up for outputs from PIO
+    gpio_set_slew_rate(osd_w_gpio, GPIO_SLEW_RATE_FAST);
+    gpio_set_slew_rate(osd_en_gpio, GPIO_SLEW_RATE_FAST);
     gpio_put(osd_w_gpio, false);
     gpio_put(osd_en_gpio, false);
     pio_gpio_init(osdPio, osd_w_gpio);
@@ -309,7 +321,9 @@ static bool osd_init_device(bool isPAL, int displayLines, int transferWords)
     channel_config_set_chain_to(&config_zero_to_bg, dma_chan_bufB_to_fifo); // DMA to PIO fifo starts immediately on completion of clearing buf1
 
     config_bg_to_bufA = config_zero_to_bg; // Copy bg to bufA, also chains to bufB->fifo.
+#ifdef PICO_OSD_USE_BACKGROUND_BUFFER
     channel_config_set_read_increment(&config_bg_to_bufA, true); // increment when copying from the background buffer.
+#endif
     bprintf("OSD config_bg_to_bufA %08x, config_zero_to_bg %08x", config_bg_to_bufA, config_zero_to_bg);
 
     return true;
@@ -413,7 +427,10 @@ int osdPioCountHSyncs(void)
 
 static void vsync_callback_debug(void)
 {
+    static int ddc;
+    static int ddcc;
     ++ddc;
+    ++ddcc;
 
 #define NN 50
 
@@ -453,14 +470,15 @@ static void vsync_callback_debug(void)
         static int printq = 0;
         if (++printq == 3) {
             printq = 0;
-            bprintf("%d completed %d, ave us (duty cycle) per vsync render %d (%.1f), "
-                    "start ave %.1f max %.1f, end ave %.1f max %.1f "
+            bprintf("%d renders %d (vsyncs %d), duty %.1f%%. Ave us / render %d, "
+                    "offsets: start %.1f max %.1f, end %.1f max %.1f "
                     "max %.1f [%d %d %d %d %d %d]",
-                    ddc, tusr,
-                    renderTot/(NN*150), ((double)renderTot)/(NN*(150*us_per_vsync/100)),
-                    ((double)renderStartCycles)/(NN*150), ((double)renderStartCyclesMax)/(150),
-                    ((double)renderEndCycles)/(NN*150), ((double)renderEndCyclesMax)/(150),
-                    (double)(((float)maxcycles) / 150), dd1/150,dd2/150,dd3/150,dd6,dd7,dd8
+                    ddc, tusr, ddcc,
+                    ((double)renderTot)/(NN*(mpc*us_per_vsync/100)),
+                    renderTot/(tusr*mpc),
+                    ((double)renderStartCycles)/(tusr*mpc), ((double)renderStartCyclesMax)/(mpc),
+                    ((double)renderEndCycles)/(tusr*mpc), ((double)renderEndCyclesMax)/(mpc),
+                    (double)(((float)maxcycles) / mpc), dd1/mpc,dd2/mpc,dd3/mpc,dd6,dd7,dd8
                    );
 
             if (badC != -1) {
@@ -476,6 +494,7 @@ static void vsync_callback_debug(void)
         }
 
         dd1 = dd2 = dd3 = dd4 = dd5 = dd6 = dd7 = dd8 = 0;
+        ddcc = 0;
 
         renderStartCycles = 0; renderEndCycles = 0;
         renderStartCyclesMax = 0; renderEndCyclesMax = 0;
@@ -553,6 +572,7 @@ static void vsync_callback(void)
     // Reset the address for DMA that incremented, read from the current osdBufferB.
     dma_channel_set_read_addr(dma_chan_bufB_to_fifo, osdBufferB, false);
 
+#ifdef PICO_OSD_USE_BACKGROUND_BUFFER
     if (dmaClearBackgroundBuffer) {
         dma_channel_configure(
             dma_chan_bg_to_bufA,    // Take over this dma channel for purpose of clearing the background buffer
@@ -573,6 +593,20 @@ static void vsync_callback(void)
             false                   // Don't start immediately
         );
     }
+#else
+    dmaClearBackgroundBuffer = false;
+    setBackgroundItemsPending();
+    if (flipThisVSync) {
+        dma_channel_configure(
+            dma_chan_bg_to_bufA,
+            &config_bg_to_bufA,     // Config (don't increment read address)
+            osdBufferA,             // Write address
+            &zero,                  // Read address
+            fb_words,               // Number of transfers
+            false                   // Don't start immediately
+        );
+    }
+#endif
 
     if (dmaClearBackgroundBuffer || flipThisVSync) {
         // Start DMA for bg->osdBufferA (effectively clears screen buffer)
@@ -656,7 +690,7 @@ void plot(int x, int y, int c)
 
 void plot(int x, int y, int c)
 {
-    // c =  0 -> transparent (no overlay)   W=any EN=0
+    // c =  0 -> transparent (no overlay)   W=0   EN=0   [currently also W=1 EN=0, but reserve that for possible other usage]
     // c =  1 -> black                      W=0   EN=1
     // c =  2 -> white                      W=1   EN=1
     uint32_t c1 = getCycleCounter();
@@ -712,17 +746,18 @@ void dvLine(int x, int y, int count)
 // (only keeps track of one pixel counter, delta etc.)
 
 typedef struct {
-    int count;
-    int maxCount;
-    float delta;
-    bool shallow;
+    // ic counts up by 1
+    // ic <= x < maxIc for shallow
+    // ic <= y < maxIc for !shallow
     int ic;
+    int maxIc;
+    float delta;
     float fc;
+    bool shallow;
 } iterLineData_t;
 
 static void iterLineDataInit(iterLineData_t *data, int x1, int y1, int x2, int y2)
 {
-    data->count = 0;
     int dx = x2 - x1;
     int dy = y2 - y1;
     bool shallow = ABS(dx) > ABS(dy);
@@ -732,22 +767,22 @@ static void iterLineDataInit(iterLineData_t *data, int x1, int y1, int x2, int y
         if (x1 < x2) {
             data->ic = x1;
             data->fc = (float)y1 + 0.5f;
-            data->maxCount = x2 - x1 + 1;
+            data->maxIc = x2 + 1;
         } else {
             data->ic = x2;
             data->fc = (float)y2 + 0.5f;
-            data->maxCount = x1 - x2 + 1;
+            data->maxIc = x1 + 1;
         }
     } else {
         data->delta = dy == 0 ? 0.0f : (float)dx / dy; // cope with case of a single point.
         if (y1 < y2) {
             data->fc = (float)x1 + 0.5f;
             data->ic = y1;
-            data->maxCount = y2 - y1 + 1;
+            data->maxIc = y2 + 1;
         } else {
             data->fc = (float)x2 + 0.5f;
             data->ic = y2;
-            data->maxCount = y1 - y2 + 1;
+            data->maxIc = y1 + 1;
         }
     }
 }
@@ -762,8 +797,8 @@ void iterLineInit(int x1, int y1, int x2, int y2)
 
 static bool iterHLineNext(void)
 {
-    // NB only white pixels here...
-    int remaining = iterLineData.maxCount - iterLineData.count;
+    // NB only draws white pixels
+    int remaining = iterLineData.maxIc - iterLineData.ic;
     int todo = MIN(remaining, 16);  // do up to 16 pixels per call
     uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
 
@@ -791,11 +826,96 @@ static bool iterHLineNext(void)
         x++; todo--;
     }
 
-    iterLineData.count += x - iterLineData.ic;
     iterLineData.ic = x;
-    return iterLineData.count >= iterLineData.maxCount;
+    return iterLineData.ic >= iterLineData.maxIc;
 }
 
+static bool iterBlackFillHLineNext(void)
+{
+    const uint32_t col = 0x2;
+    const uint32_t cByte = 0xaa;
+
+    int remaining = iterLineData.maxIc - iterLineData.ic;
+    int todo = MIN(remaining, 16);  // do up to 16 pixels per call
+    uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
+
+    // suppose y is in range
+    uint8_t *pRow = plotBuffer + PICO_OSD_BUF_WIDTH * (int)iterLineData.fc;
+    int x = iterLineData.ic;
+
+    // Handle unaligned start (partial first byte)
+    while (todo > 0 && (x & 3) != 0) {
+        int shift = (x & 3) * 2;
+        pRow[x/4] |= col << shift;
+        x++; todo--;
+    }
+
+    // Handle full bytes (4 pixels each)
+    while (todo >= 4) {
+        pRow[x/4] |= cByte;
+        x += 4; todo -= 4;
+    }
+
+    // Handle unaligned end (partial last byte)
+    while (todo > 0) {
+        int shift = (x & 3) * 2;
+        pRow[x/4] |= col << shift;
+        x++; todo--;
+    }
+
+    iterLineData.ic = x;
+    return iterLineData.ic >= iterLineData.maxIc;
+}
+
+typedef struct {
+    int16_t x1;
+    int16_t y1;
+    int16_t x2;
+    int16_t y2;
+} iterRectData_t;
+
+static iterRectData_t iterRectData;
+
+static void iterRectDataInit(iterRectData_t * data, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+    if (x1 < x2) {
+        data->x1 = MAX(0, x1);
+        data->x2 = x2;
+    } else {
+        data->x1 = MAX(0, x2);
+        data->x2 = x1;
+    }
+
+    if(y1 < y2) {
+        data->y1 = MAX(0, y1);
+        data->y2 = y2;
+    } else {
+        data->y1 = MAX(0, y2);
+        data->y2 = y1;
+    }
+}
+
+void iterRectInit(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+    iterRectDataInit(&iterRectData, x1, y1, x2, y2);
+}
+
+bool iterBlackFillRectNext(void)
+{
+    static bool lineInProgress;
+
+    if (!lineInProgress) {
+        iterLineInit(iterRectData.x1, iterRectData.y1, iterRectData.x2, iterRectData.y1);
+        lineInProgress = true;
+    }
+
+    if (iterBlackFillHLineNext()) {
+        iterRectData.y1++;
+        lineInProgress = false;
+    }
+
+    return iterRectData.y1 > iterRectData.y2;
+}
 
 bool iterLineNext(void)
 {
@@ -803,141 +923,117 @@ bool iterLineNext(void)
         return iterHLineNext();
     }
 
-    int mintodo = 4;
-    while (mintodo > 0 && iterLineData.count < iterLineData.maxCount) {
+#ifdef OSD_FB_PICO_POSTPROCESS
+    int mintodo = 5;
+#else
+    int mintodo = 3;
+#endif
+    while (mintodo > 0 && iterLineData.ic < iterLineData.maxIc) {
 
         if (iterLineData.shallow) {
             plot(iterLineData.ic, iterLineData.fc, 2);
 #ifndef OSD_FB_PICO_POSTPROCESS
             plot(iterLineData.ic, iterLineData.fc + 1, 1);
 #endif
-            iterLineData.ic++;
-            iterLineData.fc += iterLineData.delta;
         } else {
             plot(iterLineData.fc, iterLineData.ic, 2);
 #ifndef OSD_FB_PICO_POSTPROCESS
             plot(iterLineData.fc + 1, iterLineData.ic, 1);
 #endif
-            iterLineData.ic++;
-            iterLineData.fc += iterLineData.delta;
         }
 
-        iterLineData.count++;
+        iterLineData.ic++;
+        iterLineData.fc += iterLineData.delta;
         mintodo--;
     }
 
-    return iterLineData.count >= iterLineData.maxCount;
+    return iterLineData.ic >= iterLineData.maxIc;
+}
+
+bool iterDashedLineNext(void)
+{
+    int mintodo = 2;
+    while (mintodo > 0 && iterLineData.ic < iterLineData.maxIc) {
+        if (((iterLineData.maxIc - iterLineData.ic) % 8) < 5) {
+            if (iterLineData.shallow) {
+                plot(iterLineData.ic, iterLineData.fc, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+                plot(iterLineData.ic, iterLineData.fc + 1, 1);
+#endif
+            }
+            else {
+                plot(iterLineData.fc, iterLineData.ic, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+                plot(iterLineData.fc + 1, iterLineData.ic, 1);
+#endif
+            }
+        }
+
+        iterLineData.ic++;
+        iterLineData.fc += iterLineData.delta;
+        mintodo--;
+    }
+
+    return iterLineData.ic >= iterLineData.maxIc;
 }
 
 bool iterDLineNext(void)
 {
-    if (iterLineData.count >= iterLineData.maxCount) {
-        return true; // all done.
-    }
-
-    if (iterLineData.shallow) {
-        plot(iterLineData.ic, iterLineData.fc, 2);
-        plot(iterLineData.ic, iterLineData.fc + 1, 1);
-        iterLineData.ic++;
-        iterLineData.fc += iterLineData.delta;
-    } else {
-        plot(iterLineData.fc, iterLineData.ic, 2);
-        plot(iterLineData.fc + 1, iterLineData.ic, 1);
-        iterLineData.ic++;
-        iterLineData.fc += iterLineData.delta;
-    }
-
-    iterLineData.count++;
-    return false;
-}
-
-bool iterQLineNext(void)
-{
     int mintodo = 2;
-    while (mintodo > 0 && iterLineData.count < iterLineData.maxCount) {
-#ifdef OSD_FB_PICO_POSTPROCESS
+    while (mintodo > 0 && iterLineData.ic < iterLineData.maxIc) {
         if (iterLineData.shallow) {
             plot(iterLineData.ic, iterLineData.fc, 2);
             plot(iterLineData.ic, iterLineData.fc + 1, 2);
-        } else {
-            plot(iterLineData.fc, iterLineData.ic, 2);
-            plot(iterLineData.fc + 1, iterLineData.ic, 2);
-        }
-
-        iterLineData.ic++;
-        iterLineData.fc += iterLineData.delta;
-#else
-        if (iterLineData.shallow) {
-            plot(iterLineData.ic, iterLineData.fc, 2);
-            plot(iterLineData.ic, iterLineData.fc + 1, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
             plot(iterLineData.ic, iterLineData.fc + 2, 1);
             plot(iterLineData.ic, iterLineData.fc - 1, 1);
-            iterLineData.ic++;
-            iterLineData.fc += iterLineData.delta;
+#endif
         } else {
             plot(iterLineData.fc, iterLineData.ic, 2);
             plot(iterLineData.fc + 1, iterLineData.ic, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
             plot(iterLineData.fc + 2, iterLineData.ic, 1);
             plot(iterLineData.fc - 1, iterLineData.ic, 1);
-            iterLineData.ic++;
-            iterLineData.fc += iterLineData.delta;
-        }
 #endif
-        iterLineData.count++;
+        }
+
+        iterLineData.ic++;
+        iterLineData.fc += iterLineData.delta;
         mintodo--;
     }
 
-    return iterLineData.count >= iterLineData.maxCount;
+    return iterLineData.ic >= iterLineData.maxIc;
 }
 
 bool iterDashedDLineNext(void)
 {
-    if (iterLineData.count >= iterLineData.maxCount) {
-        return true; // all done.
+    int mintodo = 2;
+    while (mintodo > 0 && iterLineData.ic < iterLineData.maxIc) {
+        if (((iterLineData.maxIc - iterLineData.ic) % 8) < 5) {
+            if (iterLineData.shallow) {
+                plot(iterLineData.ic, iterLineData.fc, 2);
+                plot(iterLineData.ic, iterLineData.fc + 1, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+                plot(iterLineData.ic, iterLineData.fc + 2, 1);
+                plot(iterLineData.ic, iterLineData.fc - 1, 1);
+#endif
+            }
+            else {
+                plot(iterLineData.fc, iterLineData.ic, 2);
+                plot(iterLineData.fc + 1, iterLineData.ic, 2);
+#ifndef OSD_FB_PICO_POSTPROCESS
+                plot(iterLineData.fc + 2, iterLineData.ic, 1);
+                plot(iterLineData.fc - 1, iterLineData.ic, 1);
+#endif
+            }
+        }
+
+        iterLineData.ic++;
+        iterLineData.fc += iterLineData.delta;
+        mintodo--;
     }
 
-    if ((iterLineData.count % 16) < 9) {
-        if (iterLineData.shallow) {
-            plot(iterLineData.ic, iterLineData.fc, 2);
-            plot(iterLineData.ic, iterLineData.fc + 1, 1);
-        }
-        else {
-            plot(iterLineData.fc, iterLineData.ic, 2);
-            plot(iterLineData.fc + 1, iterLineData.ic, 1);
-        }
-    }
-
-    iterLineData.ic++;
-    iterLineData.fc += iterLineData.delta;
-    iterLineData.count++;
-    return false;
-}
-
-bool iterDashedQLineNext(void)
-{
-    if (iterLineData.count >= iterLineData.maxCount) {
-        return true; // all done.
-    }
-
-    if ((iterLineData.count % 16) < 9) {
-        if (iterLineData.shallow) {
-            plot(iterLineData.ic, iterLineData.fc, 2);
-            plot(iterLineData.ic, iterLineData.fc + 1, 2);
-            plot(iterLineData.ic, iterLineData.fc + 2, 1);
-            plot(iterLineData.ic, iterLineData.fc - 1, 1);
-        }
-        else {
-            plot(iterLineData.fc, iterLineData.ic, 2);
-            plot(iterLineData.fc + 1, iterLineData.ic, 2);
-            plot(iterLineData.fc + 2, iterLineData.ic, 1);
-            plot(iterLineData.fc - 1, iterLineData.ic, 1);
-        }
-    }
-
-    iterLineData.ic++;
-    iterLineData.fc += iterLineData.delta;
-    iterLineData.count++;
-    return false;
+    return iterLineData.ic >= iterLineData.maxIc;
 }
 
 #endif // OSD_FB_PICO_PIXEL_MODE

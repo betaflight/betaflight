@@ -264,6 +264,11 @@ void fbOsdWriteChar(uint8_t x, uint8_t y, uint8_t attr, uint8_t c)
     osdPioWriteChar(x, y, c);
 }
 
+void fbOsdWriteLogo(uint16_t midX, uint16_t midY, uint16_t fontOffset, uint8_t logoCols, uint8_t logoRows)
+{
+    cacheLogoInfo(midX, midY, fontOffset, logoCols, logoRows);
+}
+
 void fbOsdClearScreen(void)
 {
     osdPioClearCharBuffer();
@@ -272,7 +277,6 @@ void fbOsdClearScreen(void)
 void fbOsdRefreshAll(void)
 {
     fbOsdReInitIfRequired(true);
-    while (fbOsdDrawScreen()) ; // Call draw function until transfer is completed.
 }
 
 bool fbOsdBufferInUse(void)
