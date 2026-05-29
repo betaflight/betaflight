@@ -48,6 +48,26 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+static inline bool uartCanTx(const uartPort_t *uartPort)
+{
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    return (uartPort->port.mode & MODE_TX) && uartDevice->tx.pin;
+}
+
+// Disable every UART IT-enable bit before HAL_UART_DeInit / re-init. HAL clears
+// CR1/CR3 during DeInit, but the window between entering DeInit and that clear
+// is interruptable; a pending IRQ that fires while CR1.UE is being torn down
+// can re-enter uartIrqHandler with stale ISR flags. Pre-clearing the IT-enable
+// bits combined with the per-branch CR1/CR3 IT-enable gating in uartIrqHandler
+// closes that window. Caller must hold the NVIC line for this UART disabled.
+static inline void uartDisableIrqSources(uartPort_t *uartPort)
+{
+    CLEAR_BIT(uartPort->USARTx->CR1,
+              USART_CR1_PEIE | USART_CR1_RXNEIE | USART_CR1_IDLEIE |
+              USART_CR1_TXEIE | USART_CR1_TCIE);
+    CLEAR_BIT(uartPort->USARTx->CR3, USART_CR3_EIE);
+}
+
 static void usartConfigurePinInversion(uartPort_t *uartPort)
 {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
@@ -82,6 +102,21 @@ static void uartConfigurePinSwap(uartPort_t *uartPort)
 
 void uartReconfigure(uartPort_t *uartPort)
 {
+    const uartDevice_t *uartDevice = container_of(uartPort, uartDevice_t, port);
+    const IRQn_Type irqn = (IRQn_Type)uartDevice->hardware->irqn;
+    const bool irqWasEnabled = NVIC_GetEnableIRQ(irqn) != 0;
+    const bool canTx = uartCanTx(uartPort);
+
+    // Quiesce the UART IRQ line before tearing down the peripheral. HAL_UART_DeInit
+    // clears CR1.UE early but leaves the IT-enable bits set for a few instructions;
+    // a UART IRQ taken during that window with stale TXE/TC ISR flags is what
+    // causes the reconfigure-time freeze on H7 + real GPS (see #15218 follow-up).
+    HAL_NVIC_DisableIRQ(irqn);
+    uartDisableIrqSources(uartPort);
+    HAL_NVIC_ClearPendingIRQ(irqn);
+    __DSB();
+    __ISB();
+
     HAL_UART_DeInit(&uartPort->Handle);
     uartPort->Handle.Init.BaudRate = uartPort->port.baudRate;
     // according to the stm32 documentation wordlen has to be 9 for parity bits
@@ -100,7 +135,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
     if (uartPort->port.mode & MODE_RX)
         uartPort->Handle.Init.Mode |= UART_MODE_RX;
-    if (uartPort->port.mode & MODE_TX)
+    if (canTx)
         uartPort->Handle.Init.Mode |= UART_MODE_TX;
 
     usartConfigurePinInversion(uartPort);
@@ -171,7 +206,7 @@ void uartReconfigure(uartPort_t *uartPort)
     }
 
     // Transmit DMA or IRQ
-    if (uartPort->port.mode & MODE_TX) {
+    if (canTx) {
 #ifdef USE_DMA
         if (uartPort->txDMAResource) {
             uartPort->txDMAHandle.Instance = (DMA_ARCH_TYPE *)uartPort->txDMAResource;
@@ -214,7 +249,11 @@ void uartReconfigure(uartPort_t *uartPort)
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_TCIE);
         }
     }
-    return;
+
+    if (irqWasEnabled) {
+        HAL_NVIC_ClearPendingIRQ(irqn);
+        HAL_NVIC_EnableIRQ(irqn);
+    }
 }
 
 bool checkUsartTxOutput(uartPort_t *s)
@@ -263,6 +302,11 @@ void uartTxMonitor(uartPort_t *s)
 void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
+        if (!uartCanTx(s)) {
+            s->txDMAEmpty = true;
+            return;
+        }
+
         if (IS_DMA_ENABLED(s->txDMAResource)) {
             // DMA is already in progress
             return;
@@ -332,11 +376,27 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
 }
 #endif
 
+// NOSONAR cognitive complexity: this handler is a flat sequence of independent
+// USART flag-clear branches; extracting per-event helpers would add ITCM call overhead
+// for a FAST_IRQ_HANDLER and obscure the linear flag-handling structure.
+//
+// Every branch is double-gated: the cached cr1/cr3 IT-enable bits AND the ISR flag.
+// HAL's __HAL_UART_GET_IT reads only the ISR (no enable-bit check), unlike master's
+// LL handler which uses LL_USART_IsEnabledIT_* + LL_USART_IsActiveFlag_*. Without
+// the explicit cr1/cr3 gate, an IRQ taken with stale ISR flags after the IT-enable
+// bits are cleared (e.g. mid-reconfigure on a port with valid TX pin) re-fires the
+// branch and storms the handler. Caching cr1/cr3 at entry preserves the original
+// behaviour where the RXNE path disables PEIE/EIE for subsequent IRQs without
+// affecting flag-handling on the current invocation.
 FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 {
     UART_HandleTypeDef *huart = &s->Handle;
+    const bool canTx = uartCanTx(s);
+    const uint32_t cr1 = huart->Instance->CR1;
+    const uint32_t cr3 = huart->Instance->CR3;
+
     /* UART in mode Receiver ---------------------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET)) {
+    if ((cr1 & USART_CR1_RXNEIE) && (__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET)) {
         uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t) 0xff);
 
         if (s->port.rxCallback) {
@@ -354,27 +414,39 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET)) {
+    if ((cr1 & USART_CR1_PEIE) && (__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_PEF);
     }
 
     /* UART frame error interrupt occurred --------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET)) {
+    if ((cr3 & USART_CR3_EIE) && (__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_FEF);
     }
 
     /* UART noise error interrupt occurred --------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET)) {
+    if ((cr3 & USART_CR3_EIE) && (__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_NEF);
     }
 
     /* UART Over-Run interrupt occurred -----------------------------------------*/
-    if ((__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
+    if ((cr3 & USART_CR3_EIE) && (__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
+    // Pinless / RX-only / half-duplex-without-TX defence-in-depth: TC stays asserted
+    // when the TX peripheral never sends, and the per-branch TCIE gate alone won't
+    // catch a port that was opened with canTx==false but somehow has TCIE set in
+    // cached cr1 (race against another writer). Clearing TXEIE/TCIE here is
+    // idempotent and ensures the storm cannot re-arm.
+    if (!canTx) {
+        CLEAR_BIT(huart->Instance->CR1, USART_CR1_TXEIE | USART_CR1_TCIE);
+        if (__HAL_UART_GET_IT(huart, UART_IT_TC)) {
+            __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
+        }
+    }
+
     // UART transmission completed
-    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
+    if (canTx && (cr1 & USART_CR1_TCIE) && (__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
 
         // Switch TX to an input with pull-up so it's state can be monitored
@@ -387,10 +459,11 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
 #endif
     }
 
-    if (
+    if (canTx &&
 #ifdef USE_DMA
         !s->txDMAResource &&
 #endif
+        (cr1 & USART_CR1_TXEIE) &&
         (__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET)) {
         /* Check that a Tx process is ongoing */
         if (s->port.txBufferTail == s->port.txBufferHead) {
@@ -407,8 +480,7 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     // UART reception idle detected
-
-    if (__HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
+    if ((cr1 & USART_CR1_IDLEIE) && __HAL_UART_GET_IT(huart, UART_IT_IDLE)) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
