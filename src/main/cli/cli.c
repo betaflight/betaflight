@@ -6168,6 +6168,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6186,8 +6188,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6212,9 +6214,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6223,6 +6230,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)
