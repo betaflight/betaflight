@@ -516,10 +516,6 @@ void flashEraseCompletely(void)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
-
-    if (!flashWaitForReadyOrFail()) {
-        return;
-    }
 }
 
 /* The callback, if provided, will receive the totoal number of bytes transfered

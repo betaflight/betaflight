@@ -58,6 +58,7 @@ static const flashGeometry_t *flashGeometry = NULL;
 static uint32_t flashfsSize = 0;
 static flashfsState_e flashfsState = FLASHFS_IDLE;
 static flashSector_t eraseSectorCurrent = 0;
+static bool eraseOperationIsChipErase = false;
 
 static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
 
@@ -165,13 +166,18 @@ static void flashfsSetTailAddress(uint32_t address)
 void flashfsEraseCompletely(void)
 {
     if (flashGeometry->sectors > 0 && flashPartitionCount() > 0) {
-        // if there's a single FLASHFS partition and it uses the entire flash then do a full erase
-        const bool doFullErase = (flashPartitionCount() == 1) && (FLASH_PARTITION_SECTOR_COUNT(flashPartition) == flashGeometry->sectors);
+        // If there's a single FLASHFS partition and it uses the entire NOR flash then do a full erase.
+        const bool doFullErase = flashGeometry->flashType == FLASH_TYPE_NOR
+            && (flashPartitionCount() == 1)
+            && (FLASH_PARTITION_SECTOR_COUNT(flashPartition) == flashGeometry->sectors);
         if (doFullErase) {
             flashEraseCompletely();
+            eraseOperationIsChipErase = true;
+            flashfsState = FLASHFS_ERASING;
         } else {
             // start asynchronous erase of all sectors
             eraseSectorCurrent = flashPartition->startSector;
+            eraseOperationIsChipErase = false;
             flashfsState = FLASHFS_ERASING;
         }
     }
@@ -215,11 +221,6 @@ bool flashfsIsReady(void)
     // Check for flash chip existence first, then check if idle and ready.
 
     return (flashfsIsSupported() && (flashfsState == FLASHFS_IDLE) && flashIsReady());
-}
-
-bool flashfsIsEraseInProgress(void)
-{
-    return flashfsState == FLASHFS_ERASING;
 }
 
 bool flashfsIsSupported(void)
@@ -446,7 +447,16 @@ void flashfsFlushSync(void)
 void flashfsEraseAsync(void)
 {
     if (flashfsState == FLASHFS_ERASING) {
-        if ((flashfsIsSupported() && flashIsReady())) {
+        if (eraseOperationIsChipErase) {
+            if (flashIsReady()) {
+                eraseOperationIsChipErase = false;
+                flashfsState = FLASHFS_IDLE;
+                LED1_OFF;
+            }
+            return;
+        }
+
+        if (flashIsReady()) {
             if (eraseSectorCurrent <= flashPartition->endSector) {
                 // Erase sector
                 uint32_t sectorAddress = eraseSectorCurrent * flashGeometry->sectorSize;
@@ -673,6 +683,10 @@ void flashfsInit(void)
 bool flashfsVerifyEntireFlash(void)
 {
     flashfsEraseCompletely();
+
+    while (!flashfsIsReady()) {
+        flashfsEraseAsync();
+    }
 
     uint32_t address = 0;
     flashfsSeekAbs(address);
