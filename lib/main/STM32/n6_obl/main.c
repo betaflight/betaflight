@@ -181,7 +181,11 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      * "belongs to the secure OS", i.e., NS access bus-faults. So every
      * slave-RISAF-protected bank BF touches needs an explicit NS region.
      *
-     * RISAF2  (AXISRAM1, 1 MiB):   full bank NS — BF data/bss/stack.
+     * RISAF3  (AXISRAM2, 1 MiB):   region offset 0x91000..0xFFFFF NS
+     *                              (= 0x24191000..0x241FFFFF, 444 KiB)
+     *                              — BF's data/bss/stack/.ram_code. The
+     *                              low half stays uncovered → S-only →
+     *                              OBL's RAM at 0x34180400+ is protected.
      * RISAF12 (XSPI2, 256 MiB):    region covers offsets 0x100000..end
      *                              NS, leaving the OBL slot at offsets
      *                              0x00000..0xFFFFF uncovered. Per RM
@@ -189,22 +193,33 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      *                              to S-only, so accidental NS deref of
      *                              0x70000000..0x700FFFFF bus-faults
      *                              instead of returning OBL image bytes.
-     *                              Matches the ST Template_Isolation_XIP
-     *                              pattern (FSBL slot implicit-S, app
-     *                              slot explicit-NS).
      *
      * Intentionally NOT programmed:
-     * - RISAF3 (AXISRAM2, 1 MiB): left at boot-ROM default (S-only).
-     *   OBL is the only consumer of AXISRAM2 (it runs from the high
-     *   half at 0x34180400), and BF doesn't claim any AXISRAM2 NS view.
+     * - RISAF2 (AXISRAM1, 1 MiB): NS access to this bank silently RAZ's
+     *   despite a correctly-programmed RISAF2 region 0 — root cause
+     *   unknown after exhaustive diagnostic (boot-ROM RISAF2 left at
+     *   default, RIFSC SEC bits clear, IASR clean, CIDCFGR opens CID 1
+     *   which the M55 presents). Empirical workaround: BF moved to
+     *   AXISRAM2 high half (above OBL's 64 KiB block) via RISAF3, which
+     *   matches the ST template pattern of "S app in AXISRAM1, NS app
+     *   in AXISRAM2".
      * - AXISRAM3..6 (NPURAM0..3, 0x24200000..0x243BFFFF, 1792 KiB):
-     *   no slave RISAF exists for this range (CMSIS/HAL RIF_AWARE table
-     *   only ties RISAF4/5 to IAC IDs, not memory banks; the bank
-     *   security is gated by RIFSC->RISC_SECCFGRx[5] bits 17..20, which
-     *   system_stm32n6xx_obl.c already clears in its RIFSC open loop).
-     *   NS access to D2_RAM (LCD framebuffer) should therefore work
-     *   once enabled — verify when LCD bring-up resumes. */
-    risaf_region_config(RISAF2,  0U, 0x00000000UL, 0x000FFFFFUL, false);
+     *   no slave RISAF exists for this range; bank security is gated by
+     *   RIFSC->RISC_SECCFGRx[5] bits 17..20, which system_stm32n6xx_obl.c
+     *   clears in its RIFSC open loop. NS access works once enabled. */
+    /* RISAF3 region 0 (AXISRAM2 NS slice for BF's data/bss/stack/.ram_code).
+     * BF lives in AXISRAM2 above the 64 KiB OBL block — RAM origin at
+     * 0x24191000, length 444 KiB. RISAF3 granularity is 4 KiB so the
+     * region is offset 0x91000..0xFFFFF (relative to AXISRAM2 base
+     * 0x24100000). The lower half of AXISRAM2 (offsets 0x00000..0x90FFF,
+     * which includes OBL's secure RAM) stays outside any enabled region
+     * and defaults to S-only per RM §3.5.7 — protecting OBL from any
+     * stray BF NS reach into its address space.
+     *
+     * RISAF2 (AXISRAM1) and RISAF6 are intentionally not programmed —
+     * BF doesn't use AXISRAM1 in this layout, and RISAF6 matches the
+     * ST Template_Isolation_XIP reference. */
+    risaf_region_config(RISAF3,  0U, 0x00091000UL, 0x000FFFFFUL, false);
     risaf_region_config(RISAF12, 0U, 0x00100000UL, 0x0FFFFFFFUL, false);
 
     /* === Per-CPU TrustZone setup for the NS application ====
@@ -264,7 +279,11 @@ static __attribute__((noreturn)) void jump_to_bf(void)
         __ISB();
 
         const struct { uint32_t base; uint32_t limit; } regs[] = {
-            { 0x24000000UL, 0x240FFFE0UL },   /* AXISRAM1            */
+            /* BF RAM lives in AXISRAM2 NS above OBL's 64 KiB block.
+             * AXISRAM2 lower half + OBL's secure region stays outside
+             * any SAU region → SAU-S by default, blocking any stray
+             * NS deref of OBL's address space. */
+            { 0x24191000UL, 0x241FFFE0UL },   /* AXISRAM2 high (BF)  */
             { 0x40000000UL, 0x4FFFFFE0UL },   /* NS peripherals      */
             { 0x70100000UL, 0x7FFFFFE0UL },   /* XSPI (excl. OBL)    */
             { 0x24200000UL, 0x243BFFE0UL },   /* AXISRAM3..6 / D2RAM */

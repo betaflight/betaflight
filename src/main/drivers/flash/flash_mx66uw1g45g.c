@@ -61,7 +61,13 @@
 #define MX66UW1G45G_MEMORY_MAPPED_BASE  0x70000000U
 #endif
 
-static const flashVTable_t mx66uw1g45g_vTable;
+/* MMFLASH_DATA + const interact badly in GCC 13.3 — `const` strips the
+ * section attribute and the vTable lands in .rodata at XIP. When the
+ * flash MM-mode is disabled (loadEEPROMFromExternalFlash et al.) the
+ * vTable becomes unreadable and any flash op hangs. Drop the const so
+ * the variable actually goes to .fastram_data and stays accessible
+ * while MM is off. */
+static flashVTable_t mx66uw1g45g_vTable;
 
 MMFLASH_CODE_NOINLINE bool mx66uw1g45g_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
@@ -177,12 +183,12 @@ MMFLASH_CODE static int mx66uw1g45g_readBytes(flashDevice_t *fdevice, uint32_t a
     return (int)length;
 }
 
-static const flashGeometry_t *mx66uw1g45g_getGeometry(flashDevice_t *fdevice)
+MMFLASH_CODE_NOINLINE static const flashGeometry_t *mx66uw1g45g_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }
 
-MMFLASH_DATA static const flashVTable_t mx66uw1g45g_vTable = {
+MMFLASH_DATA static flashVTable_t mx66uw1g45g_vTable = {
     .configure = mx66uw1g45g_configure,
     .isReady = mx66uw1g45g_isReady,
     .waitForReady = mx66uw1g45g_waitForReady,

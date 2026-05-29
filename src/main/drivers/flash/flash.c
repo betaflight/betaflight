@@ -475,7 +475,7 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
-static bool flashWaitForReadyOrFail(void)
+static MMFLASH_CODE bool flashWaitForReadyOrFail(void)
 {
     if (!flashDevice.vTable->waitForReady) {
         return true;
@@ -591,7 +591,7 @@ const flashGeometry_t *flashGetGeometry(void)
 
 static void flashConfigurePartitions(void)
 {
-#if defined(FIRMWARE_SIZE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(USE_FLASHFS)
+#if defined(FIRMWARE_SIZE) || defined(CONFIG_IN_EXTERNAL_FLASH) || defined(CONFIG_IN_MEMORY_MAPPED_FLASH) || defined(USE_FLASHFS)
     const flashGeometry_t *flashGeometry = flashGetGeometry();
     if (flashGeometry->totalSize == 0) {
         return;

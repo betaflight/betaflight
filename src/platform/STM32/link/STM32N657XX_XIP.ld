@@ -44,12 +44,10 @@ MEMORY
     FLASH_CONFIG (r)  : ORIGIN = 0x70200000, LENGTH = 128K
     FLASH1 (rx)       : ORIGIN = 0x70220000, LENGTH = 1408K
 
-    RAM (rwx)         : ORIGIN = 0x24000000, LENGTH = 1024K   /* AXISRAM1 */
-    /* AXISRAM2 NS — first 512 bytes carved out as a debug exchange
-     * buffer for the BF↔OBL bring-up contract. OBL's @DBGRAM DFU alt
-     * exposes this address so the host can pull markers BF wrote on
-     * its way through init / fault. NOLOAD so startup doesn't zero it. */
-    DBG_RAM (rw)      : ORIGIN = 0x24100000, LENGTH = 512
+    /* BF lives in AXISRAM2 NS, above the 64 KiB OBL block. OBL occupies
+     * 0x34180400..0x34190400 (S alias) = 0x24180400..0x24190400 (NS alias);
+     * BF takes the 444 KiB above that, 4 KiB-aligned for RISAF3 granularity. */
+    RAM (rwx)         : ORIGIN = 0x24191000, LENGTH = 444K    /* AXISRAM2 high */
     /* AXISRAM3..6 contiguous (0x24200000 - 0x243BFFFF), used as a single
      * region for the LCD framebuffer (DMA_RW_D2 NOLOAD) when LCD enabled. */
     D2_RAM (rwx)      : ORIGIN = 0x24200000, LENGTH = 1792K
@@ -280,14 +278,6 @@ SECTIONS
     _edmarwaxi = .;
     _dmarwaxi_end__ = _edmarwaxi;
   } >RAM
-
-  /* BF↔OBL debug exchange buffer (AXISRAM2 NS, 512 B). NOLOAD so
-   * startup doesn't zero it; the OBL maps the same address through
-   * its @DBGRAM DFU alt. See platform/bf_obl_contract.h. */
-  .bf_obl_dbg (NOLOAD) :
-  {
-    KEEP(*(.bf_obl_dbg))
-  } >DBG_RAM
 
   .persistent_data (NOLOAD) :
   {
