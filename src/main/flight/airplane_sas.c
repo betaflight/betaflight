@@ -30,6 +30,7 @@
 
 #include "fc/rc.h"
 #include "fc/runtime_config.h"
+#include "fc/rc_modes.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -282,7 +283,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
-    if (isEnabledAoALimiter) {
+    if (isEnabledAoALimiter && IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
         isLimitAoA = updateAngleOfAttackLimiter(liftCoef, liftCoefVelocity);
     }
 
