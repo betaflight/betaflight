@@ -171,19 +171,19 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq)
 /* sets up a biquad filter as a 2nd order butterworth LPF */
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
 {
-    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF, 1.0f);
+    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
 }
 
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
 {
-    biquadFilterUpdate(filter, filterFreq, refreshRate, Q, filterType, weight);
+    biquadFilterUpdate(filter, filterFreq, refreshRate, Q, filterType);
 
     // zero initial samples
     filter->x1 = filter->x2 = 0;
     filter->y1 = filter->y2 = 0;
 }
 
-FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)
+FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
 {
     // setup variables
     const float omega = 2.0f * M_PIf * filterFreq * refreshRate * 0.000001f;
@@ -225,14 +225,11 @@ FAST_CODE void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint
     filter->b2 /= a0;
     filter->a1 /= a0;
     filter->a2 /= a0;
-
-    // update weight
-    filter->weight = weight;
 }
 
 FAST_CODE void biquadFilterUpdateLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
 {
-    biquadFilterUpdate(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF, 1.0f);
+    biquadFilterUpdate(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
@@ -252,16 +249,6 @@ FAST_CODE float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
     return result;
 }
 
-/* Computes a biquadFilter_t filter in df1 and crossfades input with output */
-FAST_CODE float biquadFilterApplyDF1Weighted(biquadFilter_t* filter, float input)
-{
-    // compute result
-    const float result = biquadFilterApplyDF1(filter, input);
-
-    // crossfading of input and output to turn filter on/off gradually
-    return filter->weight * result + (1 - filter->weight) * input;
-}
-
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
 FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
 {
@@ -271,6 +258,62 @@ FAST_CODE float biquadFilterApply(biquadFilter_t *filter, float input)
     filter->x2 = filter->b2 * input - filter->a2 * result;
 
     return result;
+}
+
+void rpmNotchInit(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight)
+{
+    rpmNotchUpdate(filter, filterFreq, dt, Q, weight);
+
+    // zero initial samples
+    for (int i = 0; i < 3; i++) {
+        filter->x1[i] = 0;
+        filter->x2[i] = 0;
+        filter->y1[i] = 0;
+        filter->y2[i] = 0;
+    }
+}
+
+FAST_CODE void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight)
+{
+    // setup variables
+    const float omega = 2.0f * M_PIf * filterFreq * dt;
+    float sn, cs;
+    sincosf_approx(omega, &sn, &cs);
+    const float alpha = sn / (2.0f * Q);
+    const float a0inv = 1.0f / (1 + alpha);
+
+    filter->b0 = 1.0f * a0inv;
+    filter->b1 = -2.0f * cs * a0inv;
+    filter->b2 = filter->b0;
+    filter->a1 = filter->b1;
+    filter->a2 = (1.0f - alpha) * a0inv;
+
+    float weightRecip = 1.0f - weight;
+
+    filter->b0 = weight * filter->b0 + weightRecip;
+    filter->b1 = weight * filter->b1 + weightRecip * filter->a1;
+    filter->b2 = weight * filter->b2 + weightRecip * filter->a2;
+}
+
+// Computes a biquad filter in df1 and crossfades input with output
+FAST_CODE void rpmNotchApply(rpmNotch_t* filter, float input[3])
+{
+    float output[3];
+    for (int i = 0; i < 3; i++) {
+        /* compute result */
+        output[i] = filter->b0 * input[i] + filter->b1 * filter->x1[i] + filter->b2 * filter->x2[i] - filter->a1 * filter->y1[i] - filter->a2 * filter->y2[i];
+
+        /* shift x1 to x2, input to x1 */
+        filter->x2[i] = filter->x1[i];
+        filter->x1[i] = input[i];
+
+        /* shift y1 to y2, result to y1 */
+        filter->y2[i] = filter->y1[i];
+        filter->y1[i] = output[i];
+
+        /* update the input to be filtered */
+        input[i] = output[i];
+    }
 }
 
 // Phase Compensator (Lead-Lag-Compensator)

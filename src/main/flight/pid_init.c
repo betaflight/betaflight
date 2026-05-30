@@ -38,7 +38,6 @@
 #include "fc/rc.h"
 
 #include "flight/pid.h"
-#include "flight/rpm_filter.h"
 
 #include "pg/motor.h"
 
@@ -158,7 +157,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            biquadFilterInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH, 1.0f);
+            biquadFilterInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
     } else {
         pidRuntime.dtermNotchApplyFn = nullFilterApply;
@@ -366,9 +365,6 @@ void pidInit(const pidProfile_t *pidProfile)
     pidSetTargetLooptime(gyro.targetLooptime); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
-#ifdef USE_RPM_FILTER
-    rpmFilterInit(rpmFilterConfig(), gyro.targetLooptime);
-#endif
 #ifdef USE_ADVANCED_TPA
     tpaCurveInit(pidProfile);
 #endif
