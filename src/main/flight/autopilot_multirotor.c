@@ -284,7 +284,9 @@ void autopilotClearAltHoldHoverThrottle(void)
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
 {
-    const float vz = getAltitudeDerivativeControl();
+    // Use the altitude_d_lpf-filtered vertical velocity for the inner damping loop;
+    // the raw Kalman velocity is too noisy at the task rate and causes throttle hunting.
+    const float vz = getAltitudeDerivative();
     const float altitudeErrorCm = targetAltitudeCm - getAltitudeCmControl();
 
     // increase inner-loop P when |vz| is high (same shaping as legacy D boost)
