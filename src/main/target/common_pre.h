@@ -527,10 +527,6 @@
 
 #endif // USE_WING
 
-#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
-#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
-#endif
-
 // backwards compatibility for older config.h targets
 #ifndef GYRO_CONFIG_USE_GYRO_1
 #define GYRO_CONFIG_USE_GYRO_1 0

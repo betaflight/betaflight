@@ -864,6 +864,10 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
+#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
+#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
+#endif
+
 #if !defined(ENABLE_TELEMETRY_MAVLINK_MISSION)
 // flight_plan_nav.c (and the autopilot hook in fc/core.c) are gated on
 // !defined(USE_WING); the mission module reaches into those symbols, so match
