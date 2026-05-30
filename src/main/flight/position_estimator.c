@@ -66,7 +66,7 @@
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
 #define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0f
+#define Q_ACCEL_Z           20000.0 // defgault 20000.0f -  700.0f is too low  - lower value favours faster acc changes
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
@@ -75,8 +75,9 @@
 // Measurement noise base values (R)
 #define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
 #define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      40000.0f    // cm^2 at pDOP=1.0
-#define R_BARO_ALT          2500.0f     // cm^2
+#define R_GPS_ALT_BASE      60000.0f    // cm^2 at pDOP=1.0 was 40000.0f,  moreimmune to transients
+//#define R_BARO_ALT          2500.0f     // cm^2
+#define R_BARO_ALT          1500.0f   // cm^2 down from 2500.0f but well above gps.
 #define R_RANGEFINDER_ALT   100.0f      // cm^2
 #define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
 
@@ -158,7 +159,7 @@ static bool positionEstimatorWantXYFusion(void)
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
 // only GPS is available) so a single alpha suffices.
-#define CROSS_CAL_ALPHA  0.005f
+#define CROSS_CAL_ALPHA     0.0001f    // Down from 0.005f
 
 typedef struct {
     float rawReading;
@@ -292,7 +293,7 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
     // NED -> ENU, subtract gravity (NED gravity = [0,0,+1g]), convert G -> cm/s^2
     *accelEast  =  accEF_NED.y * GRAVITY_CMSS;
     *accelNorth =  accEF_NED.x * GRAVITY_CMSS;
-    *accelUp    = -(accEF_NED.z - 1.0f) * GRAVITY_CMSS;
+    *accelUp    = (accEF_NED.z - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
