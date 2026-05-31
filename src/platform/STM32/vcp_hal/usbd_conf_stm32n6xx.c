@@ -108,73 +108,85 @@ void USB1_OTG_HS_IRQHandler(void)
  */
 void HAL_PCD_MspInit(PCD_HandleTypeDef * hpcd)
 {
-    UNUSED(hpcd);
+    if (hpcd->Instance != USB1_OTG_HS) {
+        return;
+    }
 
-    // PA11 / PA12 are dedicated USB1 OTG_HS PHY pins — the integrated PHY
-    // routes them internally, no GPIO alternate-function configuration is
-    // required (the GPIOA clock isn't needed for the PHY itself).
+    /* PWR peripheral clock — required before any PWR register access.
+     * BF's NS handoff loses any clock state the boot ROM left, so enable
+     * explicitly. */
+    SET_BIT(RCC->AHB4ENSR, RCC_AHB4ENSR_PWRENS);
+    (void)RCC->AHB4ENR;
 
-    // The PHY's 3.3 V independent supply has to be powered up and the
-    // voltage monitor armed before the USB core comes out of reset.
-    // Without this USB_CoreReset()'s GRSTCTL.AHBIDL poll spins forever
-    // and HAL_PCD_Init hangs. Sequence cribbed from the CubeN6 OpenBootloader
-    // USB Device example. Bounded wait so a bad USB rail disables USB
-    // cleanly instead of bricking startup.
+    /* VDD33USB independent USB voltage monitor — arm and wait until READY.
+     * (CubeMX reference inverts the poll condition and exits immediately;
+     * OBL's working sequence waits until ready, matching the bit semantics
+     * documented in RM0486.) Bound the poll so a missing flag can't hang
+     * boot — VDD33USB asserts within microseconds in practice. */
     HAL_PWREx_EnableVddUSBVMEN();
-    const uint32_t usb33rdyStart = HAL_GetTick();
-    while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY) == 0U) {
-        if ((HAL_GetTick() - usb33rdyStart) > 100U) {
-            // 3.3 V monitor never reported ready — give up on USB rather
-            // than hang the boot. HAL_PCD_Init will fail downstream and
-            // VCP simply won't enumerate.
-            HAL_PWREx_DisableVddUSBVMEN();
-            return;
+    {
+        const uint32_t start = HAL_GetTick();
+        while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY) == 0U) {
+            if ((HAL_GetTick() - start) > 10U) {
+                return; // VDD33USB not ready — abort MSP init, USB will fail to enumerate
+            }
         }
     }
     HAL_PWREx_EnableVddUSB();
 
-    // Force-reset OTG_HS, the embedded HS PHY, and the PHY control block
-    // before configuring them, then select HSE/2 as the PHY reference.
-    // Sequence taken from the CubeN6 OpenBootloader USB Device sample.
-    LL_AHB5_GRP1_ForceReset(RCC_AHB5RSTR_OTG1PHYCTLRST);
+    /* USB1 OTG HS controller + PHY1 ref clocks from HSE direct (HSE/2 OSC
+     * tap = 24 MHz). Matches the bf_n6_ref/OBL working DFU clock setup. */
+    {
+        RCC_PeriphCLKInitTypeDef pclk = {0};
+        pclk.PeriphClockSelection    = RCC_PERIPHCLK_USBOTGHS1;
+        pclk.UsbOtgHs1ClockSelection = RCC_USBOTGHS1CLKSOURCE_HSE_DIRECT;
+        if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+            return;
+        }
+
+        pclk.PeriphClockSelection  = RCC_PERIPHCLK_USBPHY1;
+        pclk.UsbPhy1ClockSelection = RCC_USBPHY1CLKSOURCE_HSE_DIRECT;
+        if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+            return;
+        }
+    }
+
+    /* GPIOA clock — PA11/PA12 are dedicated DP/DM pins. CubeMX reference
+     * enables this even though the integrated PHY internally routes them. */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /* Force-reset OTG_HS, the embedded HS PHY, and the PHY control block.
+     * Magic 0x00800000 = RCC_AHB5RSTR_OTG1PHYCTLRST per the CubeMX-generated
+     * reference. */
+    LL_AHB5_GRP1_ForceReset(0x00800000UL);
     __HAL_RCC_USB1_OTG_HS_FORCE_RESET();
     __HAL_RCC_USB1_OTG_HS_PHY_FORCE_RESET();
 
     LL_RCC_HSE_SelectHSEDiv2AsDiv2Clock();
-    LL_AHB5_GRP1_ReleaseReset(RCC_AHB5RSTR_OTG1PHYCTLRST);
+    LL_AHB5_GRP1_ReleaseReset(0x00800000UL);
 
-    /* Peripheral clock enable */
+    /* Peripheral clock enable + settling delay before PHYC_CR access. */
     __HAL_RCC_USB1_OTG_HS_CLK_ENABLE();
+    HAL_Delay(1);
 
-    // FSEL = 0b010 selects the 24 MHz reference the embedded HS PHY expects
-    // when fed from HSE/2 (HSE = 48 MHz on the N6570-DK). The reset value
-    // 0b001 doesn't match this clock tree.
+    /* USBPHYC_CR — full PHY bring-up word per the CubeMX-generated reference
+     * for this part. The clearing mask wipes the existing FSEL field; the OR
+     * sets:
+     *   bit 16 = PHY POWERDOWN release (active-high control of PHY's LDOs)
+     *   bits 4..6 (FSEL) = 0b010 → 24 MHz reference clock select
+     *   bit 2 = PHY common-block enable
+     *   bit 0 = PHY enable
+     * Without bits 16/2/0 set, the HAL_PCD_Init's USB_CoreReset poll on
+     * GRSTCTL.AHBIDL never completes — the PHY hands no clock to the core. */
     USB1_HS_PHYC->USBPHYC_CR &= ~(0x7U << 0x4U);
-    USB1_HS_PHYC->USBPHYC_CR |=  (0x2U << 0x4U);
+    USB1_HS_PHYC->USBPHYC_CR |= (0x1U << 16) | (0x2U << 4) | (0x1U << 2) | 0x1U;
 
     __HAL_RCC_USB1_OTG_HS_PHY_RELEASE_RESET();
     HAL_Delay(1);
     __HAL_RCC_USB1_OTG_HS_RELEASE_RESET();
-
     __HAL_RCC_USB1_OTG_HS_PHY_CLK_ENABLE();
 
-    // The USB1 OTG_HS controller is itself a bus master (it pumps SETUP /
-    // OUT data into its RX FIFO via DMA). Without RIF master + slave
-    // attributes set, those bus transactions never land — the host sees
-    // ENUMDONE, but every SETUP times out as "Device Descriptor Request
-    // Failed" because the SETUP never reaches the controller's RX FIFO.
-    // Same shape as the SDMMC2 RIF setup — see sdio_n6xx.c.
-    //
-    // OTG1 master index = 4. RIF slave index = REG1 bit 24 (USB1 OTG_HS).
-    // The PHY pins PA11/PA12 are dedicated USB lines and don't need GPIO
-    // secure attributes — no AF / mode bits to flip.
-    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_RIFSC);
-    RIFSC->RIMC_ATTRx[4]      = ((uint32_t)1U << 8) | (1U << 4) | (1U << 5);  // MCID=1 + SEC + PRIV
-    RIFSC->RISC_SECCFGRx[1]  |= (1U << 24);
-    RIFSC->RISC_PRIVCFGRx[1] |= (1U << 24);
-
-    /* Set USB HS Interrupt priority + enable */
-    HAL_NVIC_SetPriority(USB1_OTG_HS_IRQn, 6, 0);
+    HAL_NVIC_SetPriority(USB1_OTG_HS_IRQn, 7, 0);
     HAL_NVIC_EnableIRQ(USB1_OTG_HS_IRQn);
 }
 

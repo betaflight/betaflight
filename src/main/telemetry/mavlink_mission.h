@@ -21,16 +21,22 @@
 
 #pragma once
 
-#ifdef PICO_TRACE
-#define bprintf tprintf
-#else
-#define bprintf(fmt,...)
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/time.h"
+
+#if ENABLE_TELEMETRY_MAVLINK_MISSION
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#include "common/mavlink.h"
+#pragma GCC diagnostic pop
+
+void mavMissionInit(void);
+bool mavMissionHandleMessage(const mavlink_message_t *msg);
+void mavMissionUpdate(timeMs_t nowMs);
+
 #endif
-
-void schedulerIgnoreTaskExecTime(void);
-
-#define tprintf(fmt,...) do {                        \
-        schedulerIgnoreTaskExecTime();               \
-        stdio_printf(fmt "\n", ## __VA_ARGS__);      \
-    } while (0)
-

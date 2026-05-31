@@ -63,10 +63,43 @@ hardware switches.
   `lib/modules/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader/Binaries/NOR_Binary/`.
 - **`MX66UW1G45G_STM32N6570-DK.bin`** — XSPI flash driver matching the
   on-board MX66UW1G45G. Same directory in CubeN6.
-- The two binaries you want in nor0:
+- The binaries you want in nor0:
   - `obl_mx66uw1g45g_signed.stm32` — our OBL, output of
     `make -C lib/main/STM32/n6_obl signed`.
-  - `betaflight_<version>_STM32N657_<config>.bin` — your BF build.
+  - Optionally `betaflight_<version>_STM32N657_<config>.bin` — your BF
+    build, if you're flashing OBL + BF together. Skip when you want
+    only the OBL written and the BF slot zeroed (next section).
+
+## Recovery image variants
+
+| Variant                | What lands in nor0                                           | When to use |
+|------------------------|--------------------------------------------------------------|-------------|
+| **OBL + BF combined**  | OBL at `0x0..0x87A0`, zeros to `0x100000`, BF at `0x100000+` | Normal flash after both binaries are ready. |
+| **OBL only, BF erased**| OBL at `0x0..0x87A0`, zeros from end-of-OBL through `0x200000` | After an OBL change that may make BF crash on first boot (e.g. when OBL now transfers to BF in NS state). The empty BF slot fails OBL's vector-table validity check, so the next boot lands straight in OBL DFU recovery — no IWDG round-trip needed. |
+
+### Combined image construction (OBL + BF)
+
+```bash
+cp lib/main/STM32/n6_obl/prebuilt/obl_mx66uw1g45g_signed.stm32 /tmp/obl_bf_combined.bin
+truncate -s 1048576 /tmp/obl_bf_combined.bin
+cat obj/betaflight_*_OPENN657V1.bin >> /tmp/obl_bf_combined.bin
+```
+
+Layout to use: `lib/main/STM32/n6_fsbl/FlashLayout_OBL.tsv`.
+
+### OBL-only image construction (BF slot erased)
+
+```bash
+install -m 0644 lib/main/STM32/n6_obl/prebuilt/obl_mx66uw1g45g_signed.stm32 \
+    lib/main/STM32/n6_obl/prebuilt/obl_only_combined.bin
+truncate -s 2097152 lib/main/STM32/n6_obl/prebuilt/obl_only_combined.bin
+```
+
+The 2 MiB size covers both the 1 MiB OBL slot and the 1 MiB BF slot with
+a single contiguous write at nor0 offset 0; everything past the OBL
+payload is zero from `truncate`, so the BF slot lands erased.
+
+Layout to use: `lib/main/STM32/n6_fsbl/FlashLayout_OBL_only.tsv`.
 
 ## TSV layout
 
@@ -108,7 +141,8 @@ Columns:
    ```
    Bus xxx Device xxx: ID 0483:df11 STMicroelectronics STM Device in DFU Mode
    ```
-4. Run CubeProg against the TSV:
+4. Run CubeProg against the TSV (substitute `FlashLayout_OBL_only.tsv`
+   if you want OBL written and the BF slot erased):
 
    ```bash
    ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI \

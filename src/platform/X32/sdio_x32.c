@@ -940,10 +940,10 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     // if ((uint32_t)buffer & 0x1f) {
     //     return SD_ADDR_MISALIGNED;
     // }
-
+#ifdef __DCACHE_PRESENT
     // Ensure the data is flushed to main memory
-    //SCB_CleanDCache_by_Addr(buffer, NumberOfBlocks * BlockSize);
-
+    X32_CLEAN_DCACHE_BY_ADDR(buffer, NumberOfBlocks * BlockSize);
+#endif
     Status_card status;
 
     card.card_workmode.dma = SDMMC_SDMA;
@@ -991,9 +991,9 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
     }
 
     SD_Handle.RXCplt = 0;
-
-    //uint32_t alignedAddr = (uint32_t)sdReadParameters.buffer &  ~0x1F;
-    //SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr, sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize + ((uint32_t)sdReadParameters.buffer - alignedAddr));
+#ifdef __DCACHE_PRESENT
+    X32_INVALIDATE_DCACHE_BY_ADDR(sdReadParameters.buffer, sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize);
+#endif
 
     return ErrorState;
 }

@@ -144,7 +144,7 @@ SECTIONS
         *(.dmaram_data*)
         . = ALIGN(32);
         _edmaram_data = .;
-    } > AHB_SRAM AT > FLASH
+    } > AXI_SRAM AT > FLASH
 
     .dmaram_bss (NOLOAD) :
     {
@@ -159,7 +159,7 @@ SECTIONS
         _edmaram_bss = .;
         __dmaram_bss_end__ = _edmaram_bss;
         _dmaram_end__ = .;
-    } > AHB_SRAM
+    } > AXI_SRAM
 
     _sfastram_idata = LOADADDR(.fastram_data);
 
