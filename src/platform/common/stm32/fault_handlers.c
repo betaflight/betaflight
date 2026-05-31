@@ -90,45 +90,113 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
 }
 
 #else
-__attribute__((naked)) void HardFault_Handler(void)
+
+#if defined(STM32C5)
+/* C5 fault frame capture: each configurable-fault handler writes its
+ * flag + CFSR/HFSR/BFAR/MMFAR/stacked-PC/LR/SP to faultCaptureBuf,
+ * then tail-branches to systemFaultAction. systemInit enables the
+ * MemManage/BusFault/UsageFault handlers via SHCSR so the original
+ * fault doesn't escalate to HardFault with CFSR cleared.
+ *
+ * Buffer layout (read via SWD after halting in the blink loop):
+ *   [0] flag (1=HardFault, 2=MemManage, 3=BusFault, 4=UsageFault)
+ *   [1] CFSR
+ *   [2] HFSR
+ *   [3] BFAR
+ *   [4] MMFAR
+ *   [5] stacked PC
+ *   [6] stacked LR
+ *   [7] faulting SP
+ *
+ * Naked so no prologue/epilogue clobbers the fault frame. Trailing
+ * `.ltorg` forces a local literal pool — without it, the four
+ * handlers share one pool that exceeds the PC-relative range. */
+volatile uint32_t faultCaptureBuf[8] __attribute__((used));
+
+#define FAULT_HANDLER_ASM(FLAG) \
+    __asm__ volatile (                                    \
+        "ldr   r2, =faultCaptureBuf \n"                   \
+        "movs  r3, #" #FLAG "       \n"                   \
+        "str   r3, [r2, #0]         \n"                   \
+        "ldr   r3, =0xE000ED28      \n"                   \
+        "ldr   r3, [r3]             \n"                   \
+        "str   r3, [r2, #4]         \n"                   \
+        "ldr   r3, =0xE000ED2C      \n"                   \
+        "ldr   r3, [r3]             \n"                   \
+        "str   r3, [r2, #8]         \n"                   \
+        "ldr   r3, =0xE000ED38      \n"                   \
+        "ldr   r3, [r3]             \n"                   \
+        "str   r3, [r2, #12]        \n"                   \
+        "ldr   r3, =0xE000ED34      \n"                   \
+        "ldr   r3, [r3]             \n"                   \
+        "str   r3, [r2, #16]        \n"                   \
+        "tst   lr, #4               \n"                   \
+        "ite   eq                   \n"                   \
+        "mrseq r0, msp              \n"                   \
+        "mrsne r0, psp              \n"                   \
+        "ldr   r3, [r0, #24]        \n"                   \
+        "str   r3, [r2, #20]        \n"                   \
+        "ldr   r3, [r0, #20]        \n"                   \
+        "str   r3, [r2, #24]        \n"                   \
+        "str   r0, [r2, #28]        \n"                   \
+        "dsb                        \n"                   \
+        "isb                        \n"                   \
+        "b     systemFaultAction    \n"                   \
+        ".ltorg                     \n"                   \
+        ::: "r0", "r2", "r3", "memory"                    \
+    )
+
+__attribute__((naked, used)) void MemManage_Handler(void)
 {
-#if ENABLE_BF_OBL
-    /* BF↔OBL bring-up debug — capture fault state to AXISRAM2 NS at
-     * 0x24100010..0x24100040 so the host can pull it via OBL's
-     * @DBGRAM DFU alt after the post-fault reset. Naked to avoid the
-     * compiler clobbering the stacked frame before we can read the
-     * faulting PC/LR/SP. */
+    FAULT_HANDLER_ASM(2);
+}
+
+__attribute__((naked, used)) void BusFault_Handler(void)
+{
+    FAULT_HANDLER_ASM(3);
+}
+
+__attribute__((naked, used)) void UsageFault_Handler(void)
+{
+    FAULT_HANDLER_ASM(4);
+}
+#endif
+
+__attribute__((naked, used)) void HardFault_Handler(void)
+{
+#if defined(STM32C5)
+    FAULT_HANDLER_ASM(1);
+#elif ENABLE_BF_OBL
     __asm__ volatile (
         "ldr   r2, =0x24100010    \n"
         "movs  r3, #1             \n"
-        "str   r3, [r2, #0]       \n"   // flag = 1 (hard fault)
-        "ldr   r3, =0xE000ED28    \n"   // CFSR
+        "str   r3, [r2, #0]       \n"
+        "ldr   r3, =0xE000ED28    \n"
         "ldr   r3, [r3]           \n"
         "str   r3, [r2, #4]       \n"
-        "ldr   r3, =0xE000ED2C    \n"   // HFSR
+        "ldr   r3, =0xE000ED2C    \n"
         "ldr   r3, [r3]           \n"
         "str   r3, [r2, #8]       \n"
-        "ldr   r3, =0xE000ED38    \n"   // BFAR
+        "ldr   r3, =0xE000ED38    \n"
         "ldr   r3, [r3]           \n"
         "str   r3, [r2, #12]      \n"
-        "ldr   r3, =0xE000ED34    \n"   // MMFAR
+        "ldr   r3, =0xE000ED34    \n"
         "ldr   r3, [r3]           \n"
         "str   r3, [r2, #16]      \n"
-        "tst   lr, #4             \n"   // MSP vs PSP from EXC_RETURN
+        "tst   lr, #4             \n"
         "ite   eq                 \n"
         "mrseq r0, msp            \n"
         "mrsne r0, psp            \n"
-        "ldr   r3, [r0, #24]      \n"   // stacked PC
+        "ldr   r3, [r0, #24]      \n"
         "str   r3, [r2, #20]      \n"
-        "ldr   r3, [r0, #20]      \n"   // stacked LR
+        "ldr   r3, [r0, #20]      \n"
         "str   r3, [r2, #24]      \n"
-        "str   r0, [r2, #28]      \n"   // faulting SP
+        "str   r0, [r2, #28]      \n"
         "dsb                      \n"
         "isb                      \n"
         ::: "r0", "r2", "r3", "memory"
     );
 #endif
-    /* Tail-call into the C action handler (resets / blinks / etc.). */
     __asm__ volatile (
         "b systemFaultAction      \n"
     );

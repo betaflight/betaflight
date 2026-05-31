@@ -240,6 +240,13 @@ void systemInit(void)
     // .data/.bss copy/clear loop doesn't cover these sections).
     initialiseDmaMemorySections();
 
+    // Route MemManage/BusFault/UsageFault to their specific handlers
+    // instead of escalating straight to HardFault. CFSR/MMFAR/BFAR
+    // survive into the handler so fault_handlers.c can capture them.
+    SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk
+                | SCB_SHCSR_BUSFAULTENA_Msk
+                | SCB_SHCSR_USGFAULTENA_Msk;
+
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
