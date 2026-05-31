@@ -98,12 +98,9 @@ static MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
     int bytesRead = 0;
 
     bool success = false;
-    /* Don't disable MM mode for reads. On N6 with CONFIG_IN_MEMORY_MAPPED_FLASH
-     * the chip-driver readBytes (e.g. mx66uw1g45g_readBytes) reads through
-     * the XSPI memory-mapped aperture at 0x70000000+. Disabling MM puts the
-     * XSPI controller in indirect mode and reads from that aperture stall.
-     * MM-disable is required for erases / page-program (which need indirect
-     * XSPI commands), but reads can stay in MM mode. */
+#ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
+    flashMemoryMappedModeDisable();
+#endif
     do {
         bytesRead = flashReadBytes(flashStartAddress + totalBytesRead, &eepromData[totalBytesRead], EEPROM_SIZE - totalBytesRead);
         if (bytesRead > 0) {
@@ -111,6 +108,9 @@ static MMFLASH_CODE bool loadEEPROMFromExternalFlash(void)
             success = (totalBytesRead == EEPROM_SIZE);
         }
     } while (!success && bytesRead > 0);
+#ifdef CONFIG_IN_MEMORY_MAPPED_FLASH
+    flashMemoryMappedModeEnable();
+#endif
 
     return success;
 }

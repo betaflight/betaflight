@@ -364,6 +364,7 @@ void systemInit(void)
 
     // Spin PLL1 up off HSE, route IC1 → CPU at 600 MHz, USBPHY1 ← HSE/2.
     SystemClock_Config();
+    debugUartInit();   // re-init UART since clocks changed
 
     // Re-assert APB3 bus clock + DBGMCU.CR via NS aliases after the
     // clock-tree reconfig. HAL_RCC_OscConfig / HAL_RCC_ClockConfig may
