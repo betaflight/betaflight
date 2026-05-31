@@ -121,10 +121,16 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef * hpcd)
     /* VDD33USB independent USB voltage monitor — arm and wait until READY.
      * (CubeMX reference inverts the poll condition and exits immediately;
      * OBL's working sequence waits until ready, matching the bit semantics
-     * documented in RM0486.) */
+     * documented in RM0486.) Bound the poll so a missing flag can't hang
+     * boot — VDD33USB asserts within microseconds in practice. */
     HAL_PWREx_EnableVddUSBVMEN();
-    while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY) == 0U) {
-        ;
+    {
+        const uint32_t start = HAL_GetTick();
+        while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY) == 0U) {
+            if ((HAL_GetTick() - start) > 10U) {
+                return; // VDD33USB not ready — abort MSP init, USB will fail to enumerate
+            }
+        }
     }
     HAL_PWREx_EnableVddUSB();
 
@@ -134,11 +140,15 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef * hpcd)
         RCC_PeriphCLKInitTypeDef pclk = {0};
         pclk.PeriphClockSelection    = RCC_PERIPHCLK_USBOTGHS1;
         pclk.UsbOtgHs1ClockSelection = RCC_USBOTGHS1CLKSOURCE_HSE_DIRECT;
-        (void)HAL_RCCEx_PeriphCLKConfig(&pclk);
+        if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+            return;
+        }
 
         pclk.PeriphClockSelection  = RCC_PERIPHCLK_USBPHY1;
         pclk.UsbPhy1ClockSelection = RCC_USBPHY1CLKSOURCE_HSE_DIRECT;
-        (void)HAL_RCCEx_PeriphCLKConfig(&pclk);
+        if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+            return;
+        }
     }
 
     /* GPIOA clock — PA11/PA12 are dedicated DP/DM pins. CubeMX reference
