@@ -64,6 +64,14 @@ static void i2cRecoverFromISRError(I2C_TypeDef *I2Cx, i2cState_t *state)
     // Reset CR2 to clear stale transfer configuration
     I2Cx->CR2 = 0;
 
+    // PE-cycle to clear sticky ISR.BUSY=1 left after a NACK. CR2=0 alone
+    // doesn't drop BUSY; without this the next transaction sees BUSY high
+    // and stalls. Bounded NOP delay between Disable+Enable — polling
+    // LL_I2C_IsEnabled() can hang in IRQ context.
+    LL_I2C_Disable(I2Cx);
+    for (volatile int i = 0; i < 64; i++) { __NOP(); }
+    LL_I2C_Enable(I2Cx);
+
     state->error = true;
     state->busy = false;
     i2cErrorCount++;
@@ -88,6 +96,12 @@ static void i2cEVIRQHandler(i2cDevice_e device)
             LL_I2C_TransmitData8(I2Cx, *state->write_p++);
             state->bytes--;
         }
+        // Must disable IT_TX once the last byte has shifted out — TXIS
+        // keeps re-asserting otherwise and the IRQ tail-chains forever
+        // until IWDG fires.
+        if (state->bytes == 0) {
+            LL_I2C_DisableIT_TX(I2Cx);
+        }
         return;
     }
 
@@ -96,6 +110,9 @@ static void i2cEVIRQHandler(i2cDevice_e device)
         if (state->reading && state->bytes > 0) {
             *state->read_p++ = LL_I2C_ReceiveData8(I2Cx);
             state->bytes--;
+        }
+        if (state->bytes == 0) {
+            LL_I2C_DisableIT_RX(I2Cx);
         }
         return;
     }
@@ -127,6 +144,16 @@ static void i2cEVIRQHandler(i2cDevice_e device)
         state->busy = false;
         return;
     }
+
+    // Catch-all: no flag matched but the IRQ fired. Disable every IT to
+    // break out of any tail-chain we don't recognise; the transaction
+    // state machine will time out cleanly from the foreground.
+    LL_I2C_DisableIT_TX(I2Cx);
+    LL_I2C_DisableIT_RX(I2Cx);
+    LL_I2C_DisableIT_TC(I2Cx);
+    LL_I2C_DisableIT_STOP(I2Cx);
+    LL_I2C_DisableIT_NACK(I2Cx);
+    LL_I2C_DisableIT_ERR(I2Cx);
 }
 
 // I2C error IRQ handler
