@@ -485,6 +485,16 @@ static void readSchedulerLocals(task_t *selectedTask, uint8_t selectedTaskDynami
 
 FAST_CODE void scheduler(void)
 {
+#if ENABLE_BF_OBL
+    // Refresh OBL's IWDG at scheduler entry. If a single task wedges,
+    // scheduler() doesn't return and IWDG fires after the OBL timeout —
+    // which sends OBL into DFU on the next boot, so a bad BF doesn't
+    // brick the chip. Capped at 120 s of uptime so a chronically wedged
+    // BF auto-recovers to OBL DFU without manual NRST.
+    if (millis() < 120000U) {
+        IWDG->KR = 0x0000AAAAU;
+    }
+#endif
     static uint32_t checkCycles = 0;
     static uint32_t scheduleCount = 0;
 #if defined(USE_LATE_TASK_STATISTICS)

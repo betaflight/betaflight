@@ -42,6 +42,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 #include "drivers/stack_check.h"
+#include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
@@ -139,13 +140,14 @@ static void taskMain(timeUs_t currentTimeUs)
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
-    // OBL arms IWDG before jumping to BF. Refresh it from TASK_SERIAL —
-    // the scheduler exempts TASK_SERIAL from the time-budget check, so
-    // it's the one task we can rely on to be picked at its nominal rate.
-    // If the scheduler itself wedges, IWDG fires and OBL routes the next
-    // boot to DFU.
-    BF_OBL_IWDG_REFRESH();
+    // Refresh OBL's IWDG. Scheduler entry also refreshes; this covers
+    // gaps if scheduler has long task-selection cycles. Capped at 120 s
+    // so a chronically hung BF auto-recovers to OBL DFU.
+    if (millis() < 120000U) {
+        BF_OBL_IWDG_REFRESH();
+    }
 #endif
+
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)
@@ -603,7 +605,15 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_BARO
+#if defined(STM32N6) && ENABLE_BF_OBL
+    /* N6 BMP280 over I2C wedges scheduler within ~10 s of BF runtime
+     * (the I2C BUSY-after-NACK pattern that the existing recovery code
+     * doesn't fully escape from). Disable TASK_BARO until the I2C
+     * driver recovery path is fixed for the baro state machine. */
+    setTaskEnabled(TASK_BARO, false);
+#else
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
+#endif
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)

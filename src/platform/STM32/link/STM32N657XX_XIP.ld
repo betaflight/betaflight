@@ -115,6 +115,33 @@ SECTIONS
     __exidx_end = .;
   } >FLASH
 
+  /* C runtime init/fini arrays. Without these sections, the linker
+   * default placement of __preinit_array_start/end and __init_array_start/end
+   * symbols can leave start != end with garbage data in between, which
+   * __libc_init_array dereferences as function pointers and BL-jumps to
+   * garbage → SecureFault → IWDG. Defining empty sections forces start ==
+   * end so __libc_init_array is a clean no-op. */
+  .preinit_array :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array*))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  } >FLASH
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT(.init_array.*)))
+    KEEP (*(.init_array*))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } >FLASH
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(.fini_array*))
+    KEEP (*(SORT(.fini_array.*)))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  } >FLASH
+
   .pg_registry :
   {
     PROVIDE_HIDDEN (__pg_registry_start = .);

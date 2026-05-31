@@ -233,13 +233,17 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      * and may emit FPU instructions (newlib helpers, struct passing).
      * Enable CP10/CP11 in the NS bank now so the early NS code can run.
      *
-     * AIRCR.BFHFNMINS is left at the boot-ROM default (0) so faults
-     * remain S-routed during the hand-off — matches the ST
-     * Template_Isolation_XIP reference (partition file
-     * SCB_AIRCR_BFHFNMINS_VAL = 0). The NS app can route faults to
-     * itself later if it needs to. */
+     * AIRCR.BFHFNMINS: set to 1 so NS HardFault / BusFault / NMI route to
+     * NS handlers. Required for BF to diagnose its own faults via NS
+     * HardFault_Handler. Without this NS faults route to S where OBL has
+     * only Default_Handler (infinite loop) — chip wedges silently. */
     SCB->NSACR    = SCB_NSACR_CP10_Msk | SCB_NSACR_CP11_Msk;
     SCB_NS->CPACR = (3UL << 20) | (3UL << 22);  /* CP10/CP11 full access in NS bank */
+    SCB->AIRCR = (SCB->AIRCR & ~(SCB_AIRCR_VECTKEY_Msk | SCB_AIRCR_BFHFNMINS_Msk))
+                 | (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
+                 | SCB_AIRCR_BFHFNMINS_Msk;
+    __DSB();
+    __ISB();
 
     /* SAU (Security Attribution Unit) — REQUIRED for BXNS to NS code.
      * Per RM0486 §3.5.1: "at reset, the SAU unilaterally determines
@@ -325,6 +329,17 @@ static __attribute__((noreturn)) void jump_to_bf(void)
     for (uint32_t i = 0; i < (uint32_t)(sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0])); i++) {
         NVIC->ITNS[i] = 0xFFFFFFFFUL;
     }
+
+    /* SysTick is a system exception, not an external IRQ — NVIC->ITNS
+     * doesn't cover it. Its NS/S target lives in ICSR.STTNS (bit 24,
+     * Secure-only writable). Without this, BF's NS SysTick fires the
+     * Secure-side SysTick exception, which OBL doesn't implement, so the
+     * exception pends in S forever (NS-side ICSR shows PENDSTSET=1 +
+     * VECTPENDING=15 with VECTACTIVE=0) and BF's NS handler never runs —
+     * uwTick / sysTickUptime stay at 0 and the first HAL_Delay /
+     * delay() call after the BF init that doesn't poll hardware directly
+     * hangs forever. */
+    SCB->ICSR |= SCB_ICSR_STTNS_Msk;
     __DSB();
     __ISB();
 
@@ -339,6 +354,18 @@ static __attribute__((noreturn)) void jump_to_bf(void)
      * would SecureFault on the NS-attributed XSPI fetch).
      * __TZ_set_MSP_NS installs BF's stack pointer in the NS bank. */
     __TZ_set_MSP_NS(bf_sp);
+
+    /* Clear S PRIMASK / FAULTMASK before BXNS. The __disable_irq() above
+     * leaves PRIMASK_S=1; empirically the Cortex-M55 keeps NS exceptions
+     * (SysTick, PendSV, peripheral IRQs targeted NS via ITNS) pending in
+     * the NS-bank ICSR but never delivers them while PRIMASK_S is set —
+     * even though Armv8-M masks are nominally banked per Security state.
+     * Re-enable S-side IRQs so NS exception delivery works post-BXNS. */
+    __enable_irq();
+    __set_FAULTMASK(0);
+    __set_BASEPRI(0);
+    __DSB();
+    __ISB();
 
     typedef void __attribute__((cmse_nonsecure_call)) (*ns_reset_fn)(void);
     const ns_reset_fn bf_reset = (ns_reset_fn)(bf_pc & ~1UL);
