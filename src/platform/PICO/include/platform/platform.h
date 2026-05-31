@@ -21,8 +21,8 @@
 
 #pragma once
 
+// pico sdk header includes
 #include "RP2350.h"
-
 #include "pico.h"
 #include "pico/stdlib.h"
 #include "hardware/dma.h"
@@ -31,6 +31,11 @@
 #include "hardware/spi.h"
 #include "hardware/uart.h"
 #include "pico_trace.h"
+
+// Revert MAX, MIN definitions because they are unsafe for general use (double evaluations).
+// Code that requires MAX, MIN should include common/maths.h
+#undef MAX
+#undef MIN
 
 #define NVIC_PriorityGroup_2         0x500
 #define PLATFORM_NO_LIBC             0
