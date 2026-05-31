@@ -540,8 +540,8 @@ static void showTasksPage(void)
     for (taskId_e taskId = 0; taskId < TASK_COUNT; ++taskId) {
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled && taskId != TASK_SERIAL) {// don't waste a line of the display showing serial taskInfo
-            const int maxLoad = taskInfo.maxLoad10thPct;
-            const int averageLoad = taskInfo.movingAverageLoad10thPct;
+            const int maxLoad = taskInfo.maxLoad10thPct / 10;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct / 10;
             tfp_sprintf(lineBuffer, format, taskId, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10, maxLoad, averageLoad);
             padLineBuffer();
             i2c_OLED_set_line(dev, rowIndex++);
