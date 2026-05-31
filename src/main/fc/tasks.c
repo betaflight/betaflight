@@ -139,8 +139,10 @@ static void taskMain(timeUs_t currentTimeUs)
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
-    // Refresh OBL's IWDG. Scheduler entry also refreshes; this covers
-    // gaps if scheduler has long task-selection cycles.
+    // OBL armed IWDG before BXNS; refresh from TASK_SERIAL — the
+    // scheduler exempts TASK_SERIAL from the time-budget check so it
+    // always runs at its nominal rate. If scheduler itself wedges,
+    // refresh stops, IWDG fires and OBL routes the next boot to DFU.
     BF_OBL_IWDG_REFRESH();
 #endif
 
