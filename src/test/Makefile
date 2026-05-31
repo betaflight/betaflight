@@ -66,6 +66,12 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
+compass_ist8310_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ist8310.c
+
+compass_ist8310_unittest_DEFINES := \
+                USE_MAG_IST8310=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
