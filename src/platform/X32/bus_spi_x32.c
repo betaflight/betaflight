@@ -73,9 +73,8 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t *descriptor)
 #ifdef __DCACHE_PRESENT
     if (bus->curSegment->u.buffers.rxData) {
         X32_INVALIDATE_DCACHE_BY_ADDR(
-            (uint32_t *)((uint32_t)bus->curSegment->u.buffers.rxData & ~CACHE_LINE_MASK),
-            (((uint32_t)bus->curSegment->u.buffers.rxData & CACHE_LINE_MASK) +
-             bus->curSegment->len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);
+            bus->curSegment->u.buffers.rxData,
+            bus->curSegment->len);
     }
 #endif
 
@@ -403,6 +402,10 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
     DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
     if (segment->u.buffers.txData) {
+#ifdef __DCACHE_PRESENT
+    // Flush the D cache to ensure the data to be written is in main memory
+        X32_CLEAN_DCACHE_BY_ADDR(segment->u.buffers.txData, segment->len);
+#endif // __DCACHE_PRESENT
         dmaInitTx->SrcAddr = (uint32_t)segment->u.buffers.txData;
         dmaInitTx->SrcAddrCountMode = DMA_CH_ADDRESS_COUNT_MODE_INCREMENT;
     } else {

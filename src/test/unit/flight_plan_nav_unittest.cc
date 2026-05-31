@@ -116,6 +116,15 @@ float positionEstimatorGetAltitudeCm(void)
     return 0.0f;
 }
 
+const positionEstimate3d_t *positionEstimatorGetEstimate(void)
+{
+    // Treat the vehicle as parked at the ENU origin for unit-test purposes;
+    // matches the pre-delay-leg-vector behaviour where the leg length was the
+    // full target distance from the origin.
+    static const positionEstimate3d_t stubEstimate = {};
+    return &stubEstimate;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.
