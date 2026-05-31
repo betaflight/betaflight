@@ -13,7 +13,10 @@
 **                memcpy + jump phase for boot.
 **
 **                Layout:
-**                  AXISRAM1   1024K  @ 0x24000000  data/bss/heap/stack/DMA/ram_code
+**                  AXISRAM2 high 444K @ 0x24191000  data/bss/heap/stack/DMA/ram_code
+**                                                   (NS alias; above the
+**                                                   64 KiB OBL block at
+**                                                   0x24180400..0x24190400)
 **                  AXISRAM3..6 1792K @ 0x24200000  contiguous (LCD framebuffer)
 **                  XSPI flash 0x70100000+         vectors + text + rodata
 **                                                  + LMA for copied data
