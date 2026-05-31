@@ -33,6 +33,7 @@
 #define USE_BARO
 #define USE_GPS
 #define USE_GPS_NMEA
+#define GPS_DISABLE_NMEA
 #define USE_GPS_UBLOX
 #define USE_DASHBOARD
 #define USE_SERIALRX

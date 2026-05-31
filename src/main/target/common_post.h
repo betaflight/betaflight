@@ -811,7 +811,7 @@ extern struct linker_symbol __fontdata_end;
 // additionally requires USE_ACC to match the earlier "!USE_ACC undef"
 // invariant; re-apply USE_CMS_GPS_RESCUE_MENU gating afterwards.
 #ifdef USE_GPS
-#if !defined(USE_GPS_NMEA)
+#if !defined(USE_GPS_NMEA) && !defined(GPS_DISABLE_NMEA)
 #define USE_GPS_NMEA
 #endif
 #if !defined(USE_GPS_UBLOX)
