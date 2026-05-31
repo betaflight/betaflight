@@ -603,15 +603,7 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_BARO
-#if defined(STM32N6) && ENABLE_BF_OBL
-    /* N6 BMP280 over I2C wedges scheduler within ~10 s of BF runtime
-     * (the I2C BUSY-after-NACK pattern that the existing recovery code
-     * doesn't fully escape from). Disable TASK_BARO until the I2C
-     * driver recovery path is fixed for the baro state machine. */
-    setTaskEnabled(TASK_BARO, false);
-#else
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
-#endif
 #endif
 
 #if defined(USE_BARO) || defined(USE_GPS) || defined(USE_RANGEFINDER)
