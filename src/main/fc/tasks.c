@@ -139,13 +139,13 @@ static void taskMain(timeUs_t currentTimeUs)
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
-    // OBL arms IWDG before jumping to BF. Refresh it from TASK_SERIAL —
-    // the scheduler exempts TASK_SERIAL from the time-budget check, so
-    // it's the one task we can rely on to be picked at its nominal rate.
-    // If the scheduler itself wedges, IWDG fires and OBL routes the next
-    // boot to DFU.
+    // OBL armed IWDG before BXNS; refresh from TASK_SERIAL — the
+    // scheduler exempts TASK_SERIAL from the time-budget check so it
+    // always runs at its nominal rate. If scheduler itself wedges,
+    // refresh stops, IWDG fires and OBL routes the next boot to DFU.
     BF_OBL_IWDG_REFRESH();
 #endif
+
     UNUSED(currentTimeUs);
 
 #if defined(USE_VCP)

@@ -90,34 +90,6 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
-/* BF↔OBL bring-up debug — earliest markers. AXISRAM2 NS at the
- * @DBGRAM buffer base. OBL exposes 0x24100000..0x241001FF. Writes
- * at MULTIPLE offsets so we can see which (if any) survive — the OLD
- * BF's write of 0xBFD00001 to offset 0 produced 0x00000001 in the
- * buffer, suggesting either RIFSC NS-access truncation or the boot
- * ROM clobbering offset 0 specifically.
- *
- *   0x24100000  CABA0001  Reset_Handler entered (offset 0 — clobber test)
- *   0x24100080  CABA0001  ditto, mid-buffer
- *   0x24100100  CABA0001  ditto, second half (proven OBL-write area)
- *   0x24100104  CABA0002  after AXISRAM clock enable
- *   0x24100108  CABA0003  after .text copy
- *   0x2410010C  CABA0004  after .bss zero
- *   0x24100110  CABA0005  after __libc_init_array, just before main()
- *   0x24100120  bf_pc     literal address of Reset_Handler (=PC self)
- */
-  ldr   r3, =0xCABA0001
-  ldr   r2, =0x24100000
-  str   r3, [r2]
-  ldr   r2, =0x24100080
-  str   r3, [r2]
-  ldr   r2, =0x24100100
-  str   r3, [r2]
-  /* Self-PC: load PC into r2 then store. Tells us where BF actually
-   * is executing from when this runs. */
-  mov   r2, pc
-  ldr   r3, =0x24100120
-  str   r2, [r3]
   dsb
   isb
 
@@ -133,11 +105,6 @@ Reset_Handler:
   str   r3, [r2]
   dsb
   isb
-
-/* Marker: post-AXISRAM-clock-enable. */
-  ldr   r2, =0x24100104
-  ldr   r3, =0xCABA0002
-  str   r3, [r2]
 
 /* Copy firmware code from XSPI flash to RAM (.text, .rodata, .pg_registry, etc.) */
   ldr r0, =_stext
@@ -156,11 +123,6 @@ LoopCopyTextInit:
   cmp r4, r1
   bcc CopyTextInit
 
-/* Marker: post-.text-copy. */
-  ldr   r2, =0x24100108
-  ldr   r3, =0xCABA0003
-  str   r3, [r2]
-
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -175,18 +137,11 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
 
-/* Marker: post-.bss-zero. */
-  ldr   r2, =0x2410010C
-  ldr   r3, =0xCABA0004
-  str   r3, [r2]
-
-/* Call static constructors */
-  bl __libc_init_array
-
-/* Marker: post-libc-init, pre-main. */
-  ldr   r2, =0x24100110
-  ldr   r3, =0xCABA0005
-  str   r3, [r2]
+/* __libc_init_array intentionally skipped — even with .preinit_array /
+ * .init_array sections defined so start==end, calling __libc_init_array
+ * hangs BF on N6 (root cause not yet pinned; _init body is a clean `bx lr`
+ * and the veneer to AXISRAM2 high is RISAF3-allowed). BF has no C++
+ * constructors and uses no preinit hooks, so skipping the call is safe. */
 
 /* Call the application's entry point.*/
   bl main
