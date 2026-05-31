@@ -29,7 +29,7 @@ typedef float (*filterApplyFnPtr)(filter_t *filter, float input);
 
 typedef enum {
     FILTER_PT1 = 0,
-    FILTER_BUTTERWORTH,
+    FILTER_SVF,
     FILTER_PT2,
     FILTER_PT3,
 } lowpassFilterType_e;
@@ -53,25 +53,27 @@ typedef struct pt3Filter_s {
 } pt3Filter_t;
 
 // SVF filter in TPT form
-typedef struct butterworthFilter_s {
+// heavily optimized to work as a lowpass filter
+// Q is always 0.7071 or butterworth
+typedef struct svfLowpassFilter_s {
     float f;
     float a1;
     float a2;
     float ic1;
     float ic2;
-} butterworthFilter_t;
+} svfLowpassFilter_t;
 
 // SVF filter in TPT form
 // this version will have issues if you change Q on the fly
 // Q must remain constant across updates as Q is baked into ic1q
 // heavily optimized to work as a notch filter
-typedef struct notchFilter_s {
+typedef struct svfNotchFilter_s {
     float a1;
     float a2q;  // a2 * q
     float fq;   // f / q
     float ic1q; // State 1 scaled by q
     float ic2;  // State 2 (unscaled)
-} notchFilter_t;
+} svfNotchFilter_t;
 
 // SVF filter in TPT form
 // heavily optimized to work as a notch filter with a weight
@@ -136,13 +138,13 @@ float pt3FilterApply(pt3Filter_t *filter, float input);
 
 float filterGetNotchQ(float centerFreq, float cutoffFreq);
 
-void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float dt);
-void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt);
-float butterworthFilterApply(butterworthFilter_t *filter, float input);
+void svfLowpassFilterInit(svfLowpassFilter_t *filter, float filterFreq, float dt);
+void svfLowpassFilterUpdate(svfLowpassFilter_t *filter, float filterFreq, float dt);
+float svfLowpassFilterApply(svfLowpassFilter_t *filter, float input);
 
-void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q);
-void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, float Q);
-float notchApply(notchFilter_t *filter, float input);
+void svfNotchInit(svfNotchFilter_t *filter, float filterFreq, float dt, float Q);
+void svfNotchUpdate(svfNotchFilter_t *filter, float filterFreq, float dt, float Q);
+float svfNotchApply(svfNotchFilter_t *filter, float input);
 
 void rpmNotchInit(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);
 void rpmNotchUpdate(rpmNotch_t *filter, float filterFreq, float dt, float Q, float weight);

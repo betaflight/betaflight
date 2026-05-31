@@ -573,13 +573,13 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
-static butterworthFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
+static svfLowpassFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 
 void servosFilterInit(void)
 {
     if (servoConfig()->servo_lowpass_freq) {
         for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            butterworthFilterInit(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f);
+            svfLowpassFilterInit(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime * 1e-6f);
         }
     }
 
@@ -592,7 +592,7 @@ static void filterServos(void)
 #endif
     if (servoConfig()->servo_lowpass_freq) {
         for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = lrintf(butterworthFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
+            servo[servoIdx] = lrintf(svfLowpassFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoParams(servoIdx)->min, servoParams(servoIdx)->max);
         }

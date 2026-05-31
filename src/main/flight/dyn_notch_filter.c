@@ -125,7 +125,7 @@ typedef struct dynNotch_s {
     float centerFreq[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
 
     float dt;
-    notchFilter_t notch[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
+    svfNotchFilter_t notch[XYZ_AXIS_COUNT][DYN_NOTCH_COUNT_MAX];
 
 } dynNotch_t;
 
@@ -198,7 +198,7 @@ void dynNotchInit(const dynNotchConfig_t *config, const float dt)
         for (int p = 0; p < dynNotch.count; p++) {
             // any init value is fine, but evenly spreading centerFreqs across frequency range makes notches stick to peaks quicker
             dynNotch.centerFreq[axis][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
-            notchInit(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dt, dynNotch.q);
+            svfNotchInit(&dynNotch.notch[axis][p], dynNotch.centerFreq[axis][p], dt, dynNotch.q);
         }
     }
 }
@@ -390,7 +390,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
             for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
                 if (peaks[p].bin != 0 && peaks[p].value > sdftNoiseThreshold) {
-                    notchUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.dt, dynNotch.q);
+                    svfNotchUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.dt, dynNotch.q);
                 }
             }
 
@@ -406,7 +406,7 @@ static FAST_CODE_NOINLINE void dynNotchProcess(void)
 FAST_CODE float dynNotchFilter(const int axis, float value)
 {
     for (int p = 0; p < dynNotch.count; p++) {
-        value = notchApply(&dynNotch.notch[axis][p], value);
+        value = svfNotchApply(&dynNotch.notch[axis][p], value);
     }
 
     return value;

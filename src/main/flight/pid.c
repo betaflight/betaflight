@@ -1518,9 +1518,9 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BUTTERWORTH:
+        case DYN_LPF_SVF:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                butterworthFilterUpdate(&pidRuntime.dtermLowpass[axis].butterworthFilter, cutoffFreq, pidRuntime.dT);
+                svfLowpassFilterUpdate(&pidRuntime.dtermLowpass[axis].svfLowpassFilter, cutoffFreq, pidRuntime.dT);
             }
             break;
         case DYN_LPF_PT2:

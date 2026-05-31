@@ -689,9 +689,9 @@ void dynLpfGyroUpdate(float throttle)
                 pt1FilterUpdateCutoff(&gyro.lowpassFilter[axis].pt1FilterState, pt1FilterGain(cutoffFreq, gyroDt));
             }
             break;
-        case DYN_LPF_BUTTERWORTH:
+        case DYN_LPF_SVF:
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                butterworthFilterUpdate(&gyro.lowpassFilter[axis].butterworthFilterState, cutoffFreq, gyroDt);
+                svfLowpassFilterUpdate(&gyro.lowpassFilter[axis].svfLowpassFilterState, cutoffFreq, gyroDt);
             }
             break;
         case  DYN_LPF_PT2:

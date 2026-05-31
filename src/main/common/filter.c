@@ -166,30 +166,30 @@ float filterGetNotchQ(float centerFreq, float cutoffFreq)
     return centerFreq * cutoffFreq / (centerFreq * centerFreq - cutoffFreq * cutoffFreq);
 }
 
-void butterworthFilterInit(butterworthFilter_t *filter, float filterFreq, float dt)
+void svfLowpassFilterInit(svfLowpassFilter_t *filter, float filterFreq, float dt)
 {
-    butterworthFilterUpdate(filter, filterFreq, dt);
+    svfLowpassFilterUpdate(filter, filterFreq, dt);
 
     // zero initial samples
     filter->ic2 = 0.0f;
     filter->ic1 = 0.0f;
 }
 
-FAST_CODE void butterworthFilterUpdate(butterworthFilter_t *filter, float filterFreq, float dt)
+FAST_CODE void svfLowpassFilterUpdate(svfLowpassFilter_t *filter, float filterFreq, float dt)
 {
-    const float butterworth_q = 1.41421356237f; // Q is always set to this value, we can remove Q
+    const float inv_butterworth_q = 1.41421356237f; // Q is always set to this value, we can remove Q
     float sn, cs;
     sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
 
     const float f = sn / cs;
-    const float inv_denom = 1.0f / (1.0f + f * (f + butterworth_q));
+    const float inv_denom = 1.0f / (1.0f + f * (f + inv_butterworth_q));
     filter->a1 = inv_denom;
     filter->a2 = f * inv_denom;
     filter->f = f;
 }
 
 // Computes a SVF filter in TPT form on a sample
-FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
+FAST_CODE float svfLowpassFilterApply(svfLowpassFilter_t *filter, float input)
 {
     const float a1 = filter->a1;
     const float a2 = filter->a2;
@@ -207,15 +207,15 @@ FAST_CODE float butterworthFilterApply(butterworthFilter_t *filter, float input)
     return v2;
 }
 
-void notchInit(notchFilter_t *filter, float filterFreq, float dt, float Q)
+void svfNotchInit(svfNotchFilter_t *filter, float filterFreq, float dt, float Q)
 {
-    notchUpdate(filter, filterFreq, dt, Q);
+    svfNotchUpdate(filter, filterFreq, dt, Q);
 
     filter->ic1q = 0.0f; // State 1 scaled by q
     filter->ic2 = 0.0f;  // State 2 (unscaled)
 }
 
-FAST_CODE void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, float Q)
+FAST_CODE void svfNotchUpdate(svfNotchFilter_t *filter, float filterFreq, float dt, float Q)
 {
     float sn, cs;
     sincosf_approx(M_PIf * filterFreq * dt, &sn, &cs);
@@ -229,7 +229,7 @@ FAST_CODE void notchUpdate(notchFilter_t *filter, float filterFreq, float dt, fl
     filter->fq  = f * Q; // Division replaced by multiplication
 }
 
-FAST_CODE float notchApply(notchFilter_t *filter, float input)
+FAST_CODE float svfNotchApply(svfNotchFilter_t *filter, float input)
 {
     const float a1  = filter->a1;
     const float a2q = filter->a2q;

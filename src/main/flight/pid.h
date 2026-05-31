@@ -355,7 +355,7 @@ typedef struct pidAxisData_s {
 
 typedef union dtermLowpass_u {
     pt1Filter_t pt1Filter;
-    butterworthFilter_t butterworthFilter;
+    svfLowpassFilter_t svfLowpassFilter;
     pt2Filter_t pt2Filter;
     pt3Filter_t pt3Filter;
 } dtermLowpass_t;
@@ -384,7 +384,7 @@ typedef struct pidRuntime_s {
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermNotchApplyFn;
-    notchFilter_t dtermNotch[XYZ_AXIS_COUNT];
+    svfNotchFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
     dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpass2ApplyFn;

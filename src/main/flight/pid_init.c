@@ -155,10 +155,10 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 
     if (dTermNotchHz != 0 && pidProfile->dterm_notch_cutoff != 0) {
-        pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)notchApply;
+        pidRuntime.dtermNotchApplyFn = (filterApplyFnPtr)svfNotchApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-            notchInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, pidRuntime.dT, notchQ);
+            svfNotchInit(&pidRuntime.dtermNotch[axis], dTermNotchHz, pidRuntime.dT, notchQ);
         }
     } else {
         pidRuntime.dtermNotchApplyFn = nullFilterApply;
@@ -181,11 +181,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 pt1FilterInit(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(dterm_lpf1_init_hz, pidRuntime.dT));
             }
             break;
-        case FILTER_BUTTERWORTH:
+        case FILTER_SVF:
             if (dterm_lpf1_init_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)butterworthFilterApply;
+                pidRuntime.dtermLowpassApplyFn = (filterApplyFnPtr)svfLowpassFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    butterworthFilterInit(&pidRuntime.dtermLowpass[axis].butterworthFilter, dterm_lpf1_init_hz, pidRuntime.dT);
+                    svfLowpassFilterInit(&pidRuntime.dtermLowpass[axis].svfLowpassFilter, dterm_lpf1_init_hz, pidRuntime.dT);
                 }
             } else {
                 pidRuntime.dtermLowpassApplyFn = nullFilterApply;
@@ -220,11 +220,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
                 pt1FilterInit(&pidRuntime.dtermLowpass2[axis].pt1Filter, pt1FilterGain(pidProfile->dterm_lpf2_static_hz, pidRuntime.dT));
             }
             break;
-        case FILTER_BUTTERWORTH:
+        case FILTER_SVF:
             if (pidProfile->dterm_lpf2_static_hz < pidFrequencyNyquist) {
-                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)butterworthFilterApply;
+                pidRuntime.dtermLowpass2ApplyFn = (filterApplyFnPtr)svfLowpassFilterApply;
                 for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                    butterworthFilterInit(&pidRuntime.dtermLowpass2[axis].butterworthFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
+                    svfLowpassFilterInit(&pidRuntime.dtermLowpass2[axis].svfLowpassFilter, pidProfile->dterm_lpf2_static_hz, pidRuntime.dT);
                 }
             } else {
                 pidRuntime.dtermLowpass2ApplyFn = nullFilterApply;
@@ -452,8 +452,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         case FILTER_PT1:
             pidRuntime.dynLpfFilter = DYN_LPF_PT1;
             break;
-        case FILTER_BUTTERWORTH:
-            pidRuntime.dynLpfFilter = DYN_LPF_BUTTERWORTH;
+        case FILTER_SVF:
+            pidRuntime.dynLpfFilter = DYN_LPF_SVF;
             break;
         case FILTER_PT2:
             pidRuntime.dynLpfFilter = DYN_LPF_PT2;
