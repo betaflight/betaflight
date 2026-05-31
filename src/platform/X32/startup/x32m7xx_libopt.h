@@ -23,7 +23,6 @@
 #ifndef X32M7XX_LIBOPT_H
 #define X32M7XX_LIBOPT_H
 
-#if defined (X32M7XX) 
 #include "x32m7xx.h"
 #include "misc.h"
 #include "x32m7xx_rcc.h"
@@ -50,7 +49,5 @@
 #include "x32m7xx_xspi.h"
 #include "x32m7xx_xspi_v2.h"
 #include "x32m7xx_usart.h"
-#endif
-
 
 #endif /* X32M7XX_LIBOPT_H */
