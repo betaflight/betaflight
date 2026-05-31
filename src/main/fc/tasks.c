@@ -42,7 +42,6 @@
 #include "drivers/serial.h"
 #include "drivers/serial_usb_vcp.h"
 #include "drivers/stack_check.h"
-#include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
 #include "drivers/vtx_common.h"
@@ -141,11 +140,8 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 {
 #if ENABLE_BF_OBL
     // Refresh OBL's IWDG. Scheduler entry also refreshes; this covers
-    // gaps if scheduler has long task-selection cycles. Capped at 120 s
-    // so a chronically hung BF auto-recovers to OBL DFU.
-    if (millis() < 120000U) {
-        BF_OBL_IWDG_REFRESH();
-    }
+    // gaps if scheduler has long task-selection cycles.
+    BF_OBL_IWDG_REFRESH();
 #endif
 
     UNUSED(currentTimeUs);
