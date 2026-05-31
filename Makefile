@@ -67,6 +67,7 @@ SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
 LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
+SRC_MANIFEST    := $(OBJECT_DIR)/.src_manifest
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
@@ -716,36 +717,38 @@ $(AUTOHYDRATE_STAMPS):
 # the previous path, and make then bails with "No rule to make target
 # <old-path>" before the compiler ever runs to regenerate the .d. Cheap
 # scan: just stat the first .c prereq the .d declares.
-.PHONY: clean-stale-deps
-clean-stale-deps:
-	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
-	    stale=$$(find "$(OBJECT_DIR)" -name '*.d' \
-	        -exec awk 'FNR==1{found=0} !found{ for(i=1;i<=NF;i++) if($$i~/\.c$$/) { print FILENAME"\t"$$i; found=1; break } }' {} + 2>/dev/null | \
-	        while IFS=$$'\t' read -r dfile src; do \
-	            [ ! -f "$$src" ] && echo "$$dfile"; \
-	        done); \
-	    if [ -n "$$stale" ]; then \
-	        echo "$$stale" | while IFS= read -r f; do \
-	            echo "Removing stale dependency file: $$f"; \
-	        done; \
-	        printf '%s\0' $$stale | xargs -0 $(RM); \
+.PHONY: validate-deps
+validate-deps: | $(OBJECT_DIR)
+	$(V1) new="$(sort $(C_SOURCES))"; \
+	if [ -f "$(SRC_MANIFEST)" ]; then \
+	    old=$$(cat "$(SRC_MANIFEST)"); \
+	    if [ "$$old" != "$$new" ]; then \
+	        removed=$$(printf '%s\n' $$old | sort > /tmp/_bf_old.$$$$; \
+	                   printf '%s\n' $$new | sort > /tmp/_bf_new.$$$$; \
+	                   comm -23 /tmp/_bf_old.$$$$ /tmp/_bf_new.$$$$; \
+	                   rm -f /tmp/_bf_old.$$$$ /tmp/_bf_new.$$$$); \
+	        if [ -n "$$removed" ]; then \
+	            echo "Sources removed — clearing stale dependency files"; \
+	            find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
+	        fi; \
 	    fi; \
-	fi
+	fi; \
+	printf '%s\n' $$new > "$(SRC_MANIFEST)"
 
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(AUTOHYDRATE_STAMPS) clean-stale-deps
+exe: $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware
