@@ -475,13 +475,26 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
-static MMFLASH_CODE bool flashWaitForReadyOrFail(void)
+MMFLASH_CODE static bool flashWaitForReadyOrFail(void)
 {
     if (!flashDevice.vTable->waitForReady) {
         return true;
     }
 
     if (!flashDevice.vTable->waitForReady(&flashDevice)) {
+#ifdef USE_FLASH_MEMORY_MAPPED
+        // failureMode lives in XIP. When this trips from a save/erase
+        // loop inside the MMFLASH window, the call to failureMode would
+        // fault. Re-engage memory-mapped mode (best-effort — the chip
+        // may already be in a bad state) so the failure handler is
+        // reachable. Gated on the runtime boot state so the non-MM
+        // experimental path (flashOctoSpiInit under
+        // USE_OCTOSPI_EXPERIMENTAL) does not reconfigure the
+        // controller or unmask IRQs when MM was never enabled.
+        if (isMemoryMappedModeEnabledOnBoot()) {
+            flashMemoryMappedModeEnable();
+        }
+#endif
         failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
         return false;
     }

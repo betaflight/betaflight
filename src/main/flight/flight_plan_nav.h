@@ -52,3 +52,9 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs);
 bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
+
+// Single observer slot for "waypoint reached" — invoked with the index of the
+// waypoint that was just reached, before any HOLD timer or advance. Pass NULL
+// to detach. Used by telemetry/mavlink_mission to emit MISSION_ITEM_REACHED.
+typedef void (*flightPlanWaypointReachedFn)(uint8_t index);
+void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn);

@@ -70,6 +70,14 @@ static void enableRxIrq(const uartHardware_t *hardware)
 #elif defined(APM32F4)
         DAL_NVIC_SetPriority(hardware->irqn, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         DAL_NVIC_EnableIRQ(hardware->irqn);
+#elif defined(X32M7)
+        NVIC_InitType nvicInit = {
+            .NVIC_IRQChannel = hardware->irqn,
+            .NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(hardware->rxPriority),
+            .NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(hardware->rxPriority),
+            .NVIC_IRQChannelCmd = ENABLE,
+        };
+        NVIC_Init(&nvicInit);
 #else
 # error "Unhandled MCU type"
 #endif
@@ -128,8 +136,7 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
         const bool pushPull = serialOptions_pushPull(options);
         // pull direction
         const serialPullMode_t pull = serialOptions_pull(options);
-#if defined(STM32F7) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(APM32F4)
-        // Note: APM32F4 is different from STM32F4 here
+#if defined(STM32F7) || defined(STM32H5) || defined(STM32C5) || defined(STM32H7) || defined(STM32G4) || defined(STM32N6) || defined(APM32F4) || defined(X32M7)
         const ioConfig_t ioCfg = IO_CONFIG(
             pushPull ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
             GPIO_SPEED_FREQ_HIGH,
@@ -306,6 +313,8 @@ void uartEnableTxInterrupt(uartPort_t *uartPort)
     LL_USART_EnableIT_TXE((USART_TypeDef *)uartPort->USARTx);
 #elif defined(USE_ATBSP_DRIVER)
     usart_interrupt_enable((usart_type *)uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(X32M7)
+    USART_ConfigInt((USART_TypeDef *)uartPort->USARTx, USART_INT_TXDE, ENABLE);
 #else
     USART_ITConfig((USART_TypeDef *)uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif

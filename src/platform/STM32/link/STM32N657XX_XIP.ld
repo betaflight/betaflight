@@ -95,10 +95,10 @@ SECTIONS
   .text :
   {
     . = ALIGN(4);
-    *(.text)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .text*)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .rodata)
-    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o) .rodata*)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .text)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .text*)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .rodata)
+    *(EXCLUDE_FILE(*system_stm32n6xx.o *stm32n6xx_hal_rcc.o *stm32n6xx_hal_rcc_ex.o *stm32n6xx_hal_xspi.o *stm32n6xx_hal.o) .rodata*)
     *(.glue_7)
     *(.glue_7t)
     *(.eh_frame)
@@ -176,11 +176,20 @@ SECTIONS
     _stext = .;
     ram_code_start = .;
     /* Clock-switch code path. Whole-file matched (file-prefixed
-     * pattern claims every .text* input section from these .o
-     * files) — paired with the EXCLUDE_FILE in .text above. */
-    *system_stm32n6xx.o(.text* .rodata*)
-    *stm32n6xx_hal_rcc.o(.text* .rodata*)
-    *stm32n6xx_hal_rcc_ex.o(.text* .rodata*)
+     * pattern claims every .text/.rodata input section from these
+     * .o files, including the bare `.text` that GCC still emits
+     * even with -ffunction-sections) — paired with the EXCLUDE_FILE
+     * in .text above. */
+    *system_stm32n6xx.o(.text .text* .rodata*)
+    *stm32n6xx_hal_rcc.o(.text .text* .rodata*)
+    *stm32n6xx_hal_rcc_ex.o(.text .text* .rodata*)
+    /* HAL XSPI primitives + HAL_GetTick. flash_mx66uw1g45g.c calls
+     * HAL_XSPI_Command / _Receive / _Transmit while memory-mapped
+     * mode is disabled — must live in AXISRAM, not XIP. EXCLUDE_FILE
+     * above strips them from the .text/.rodata regions so the linker
+     * lets us re-bind them here. */
+    *stm32n6xx_hal_xspi.o(.text .text* .rodata*)
+    *stm32n6xx_hal.o(.text .text* .rodata*)
     *(.ram_code)
     *(.ram_code*)
     . = ALIGN(32);

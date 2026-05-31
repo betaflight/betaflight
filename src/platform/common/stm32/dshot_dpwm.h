@@ -60,7 +60,7 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 
 // For H7, DMA buffer is placed in a dedicated segment for coherency management
 // XXX Do we need any special qualifier for AT32?
-#if defined(STM32H7) || defined(STM32N6)
+#if defined(STM32H7) || defined(STM32N6) || defined(X32M7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
 #elif defined(STM32G4)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_W
@@ -70,7 +70,7 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 #define DSHOT_DMA_BUFFER_ATTRIBUTE /* Empty */
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6) || defined(AT32F435) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(STM32N6) || defined(AT32F435) || defined(APM32F4) || defined(X32M7)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t

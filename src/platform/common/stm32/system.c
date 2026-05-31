@@ -35,7 +35,7 @@
 
 #include "drivers/system.h"
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(X32M7) 
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
 // "E1.2.11  LAR, Lock Access Register"
@@ -57,7 +57,12 @@ static uint32_t cpuClockFrequency = 0;
 void cycleCounterInit(void)
 {
 #if defined(USE_HAL_DRIVER)
+#if defined(CORE_CM4)
+    // M4 core on dual-core H755/H757 runs at HCLK (after HPRE division)
+    cpuClockFrequency = HAL_RCC_GetHCLKFreq();
+#else
     cpuClockFrequency = HAL_RCC_GetSysClockFreq();
+#endif
 #elif defined(USE_ATBSP_DRIVER)
     crm_clocks_freq_type clocks;
     crm_clocks_freq_get(&clocks);
@@ -73,7 +78,7 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32H7) || defined(AT32F4)
+#if defined(STM32H7) || defined(AT32F4) || defined(X32M7) 
     ITM->LAR = DWT_LAR_UNLOCK_VALUE;
 #elif defined(STM32F7)
     DWT->LAR = DWT_LAR_UNLOCK_VALUE;

@@ -29,6 +29,16 @@ void checkMAVLinkTelemetryState(void);
 void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);
 
+// Forward-typedef so consumers can hold pointers without dragging in
+// common/mavlink.h (which carries -Wpedantic-noisy unnamed unions).
+typedef struct __mavlink_message mavlink_message_t;
+
+// Pack a fully-formed mavlink_message_t into the shared TX buffer and write it
+// to the open MAVLink serial port. Implemented in telemetry/mavlink.c; shared
+// with telemetry/mavlink_mission.c so the mission module reuses the same
+// buffer/port path.
+void mavlinkSendMessage(mavlink_message_t *msg);
+
 typedef struct mavlinkTelemetryStream_s {
     uint8_t rate;
     timeMs_t updateTime;
