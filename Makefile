@@ -719,13 +719,17 @@ $(AUTOHYDRATE_STAMPS):
 .PHONY: clean-stale-deps
 clean-stale-deps:
 	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
-	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
-	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
-	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
-	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
-	            $(RM) "$$dfile"; \
-	        fi; \
-	    done; \
+	    stale=$$(find "$(OBJECT_DIR)" -name '*.d' \
+	        -exec awk 'FNR==1{found=0} !found{ for(i=1;i<=NF;i++) if($$i~/\.c$$/) { print FILENAME"\t"$$i; found=1; break } }' {} + 2>/dev/null | \
+	        while IFS=$$'\t' read -r dfile src; do \
+	            [ ! -f "$$src" ] && echo "$$dfile"; \
+	        done); \
+	    if [ -n "$$stale" ]; then \
+	        echo "$$stale" | while IFS= read -r f; do \
+	            echo "Removing stale dependency file: $$f"; \
+	        done; \
+	        printf '%s\0' $$stale | xargs -0 $(RM); \
+	    fi; \
 	fi
 
 .PHONY: binary
