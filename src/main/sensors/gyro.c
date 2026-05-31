@@ -690,6 +690,7 @@ void dynLpfGyroUpdate(float throttle)
             }
             break;
         case DYN_LPF_SVF:
+            cutoffFreq = MIN(cutoffFreq, 0.475f / gyroDt); // constrain to be below the nyquist
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
                 svfLowpassFilterUpdate(&gyro.lowpassFilter[axis].svfLowpassFilterState, cutoffFreq, gyroDt);
             }
