@@ -45,6 +45,7 @@
 #include "common/printf.h"
 #include "drivers/flash/flash.h"
 #include "drivers/light_led.h"
+#include "drivers/time.h"
 
 #include "io/flashfs.h"
 
@@ -448,7 +449,7 @@ void flashfsEraseAsync(void)
 {
     if (flashfsState == FLASHFS_ERASING) {
         if (eraseOperationIsChipErase) {
-            if (flashIsReady()) {
+            if (flashIsReadyOrFail()) {
                 eraseOperationIsChipErase = false;
                 flashfsState = FLASHFS_IDLE;
                 LED1_OFF;
@@ -686,6 +687,7 @@ bool flashfsVerifyEntireFlash(void)
 
     while (!flashfsIsReady()) {
         flashfsEraseAsync();
+        delay(100);
     }
 
     uint32_t address = 0;
