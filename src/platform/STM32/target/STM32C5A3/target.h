@@ -65,6 +65,6 @@
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
 // 8 KiB matches STM32H5 — handles the default PG set plus virtual
-// sensors during bring-up. Must agree with the size literal in
-// stm32_flash_c5xx_1m.ld's __config_end.
+// sensors during bring-up. Must fit within the FLASH_CONFIG partition
+// defined in stm32_flash_c5xx_1m.ld (128 KiB at 0x08020000).
 #define EEPROM_SIZE     8192
