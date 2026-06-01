@@ -49,11 +49,9 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
-  bl persistentObjectInit
-/* Call the clock system initialization function.*/
-  bl  SystemInit
-
-/* Copy the data segment initializers from flash to SRAM */
+/* Copy the data segment initializers from flash to SRAM. Must run
+ * before any C call so global state referenced by SystemInit /
+ * persistentObjectInit / HAL_* is real, not stack-garbage. */
   ldr r0, =_sdata
   ldr r1, =_edata
   ldr r2, =_sidata
@@ -70,7 +68,7 @@ LoopCopyDataInit:
   cmp r4, r1
   bcc CopyDataInit
 
-/* Zero fill the bss segment. */
+/* Zero fill the bss segment. Same reason as the .data copy above. */
   ldr r2, =_sbss
   ldr r4, =_ebss
   movs r3, #0
@@ -83,6 +81,10 @@ FillZerobss:
 LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
+
+  bl persistentObjectInit
+/* Call the clock system initialization function.*/
+  bl  SystemInit
 
 /* Call the application's entry point.*/
   bl main
