@@ -705,6 +705,7 @@ static inline void LL_SPI_DeInit(SPI_TypeDef *SPIx)
 #define GPIO_AF5_SPI2    HAL_GPIO_AF5_SPI2
 #define GPIO_AF5_SPI3    HAL_GPIO_AF5_SPI3
 #define GPIO_AF6_SPI3    HAL_GPIO_AF6_SPI3
+#define GPIO_AF7_SPI3    HAL_GPIO_AF7_SPI3
 
 /* --------------------------------------------------------------------------
  * LL_TIM_DeInit: not available in HAL2 LL. Use HAL version.
