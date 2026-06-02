@@ -160,6 +160,15 @@ struct {
     // Boyamicro BY25Q128ES
     // Datasheet: https://www.lcsc.com/datasheet/C49023667.pdf
     { 0x684018, 104, 50, 256, 256 },
+    // FMSH FM25Q64A
+    // Datasheet: https://www.fmsh.com/nvm/FM25Q64AI3_ds_eng.pdf
+    { 0xA14017, 80, 66, 128, 256 },
+    // FMSH FM25Q128A
+    // Datasheet: https://www.fmsh.com/nvm/FM25Q128A_ds_eng.pdf
+    { 0xA14018, 80, 50, 256, 256 },
+    // FMSH FM25Q256
+    // Datasheet: https://www.fmsh.com/65eecc76-e5cc-265f-bb24-3bed4f4bd25f/
+    { 0xA14019, 80, 50, 512, 256 },
     // XTX XT25F128F
     // Datasheet: https://www.xtxtech.com/Products/info_productModel_XT25F128FSSIGT.html
     { 0x0B4018, 96, 80, 256, 256 },
