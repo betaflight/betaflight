@@ -289,10 +289,12 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
     vector3_t accEF_NED;
     matrixVectorMul(&accEF_NED, &rMat, &accBF);
 
-    // NED -> ENU, subtract gravity (NED gravity = [0,0,+1g]), convert G -> cm/s^2
+    // NED -> ENU, remove the 1g gravity reaction from the measured Z, convert G -> cm/s^2.
+    // accADC reports specific force, so a stationary craft reads +1g on Z; subtracting it
+    // yields the true linear vertical acceleration with Up positive (matches velocity/D sign).
     *accelEast  =  accEF_NED.y * GRAVITY_CMSS;
     *accelNorth =  accEF_NED.x * GRAVITY_CMSS;
-    *accelUp    = -(accEF_NED.z - 1.0f) * GRAVITY_CMSS;
+    *accelUp    = (accEF_NED.z - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
