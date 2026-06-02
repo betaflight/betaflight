@@ -473,7 +473,7 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
             result = MAV_RESULT_DENIED;
             break;
         }
-        mavlinkSendMessageInterval(cmd->param2);
+        mavlinkSendMessageInterval(msgId);
         result = MAV_RESULT_ACCEPTED;
         break;
     default:
