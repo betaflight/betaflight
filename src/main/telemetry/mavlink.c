@@ -1225,7 +1225,7 @@ static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterva
 
 // Set intervalMs update interval for MAVLink message
 // If intervalMs == 0, then set default value from config
-// If intervalMs == INT32_MAX, then switch off message send
+// If intervalMs == UINT32_MAX, then switch off message send
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
 {
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
