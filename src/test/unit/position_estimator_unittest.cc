@@ -87,11 +87,14 @@ protected:
         memset(&gpsSol, 0, sizeof(gpsSol));
         memset(debug, 0, sizeof(debug));
 
-        // Identity rotation and 1G reciprocal scale so zero accel stays zero.
+        // Identity rotation and 1G reciprocal scale. A level, stationary craft
+        // measures +1g specific force on Z, which the estimator subtracts to get
+        // zero linear vertical acceleration (no spurious bias into the Kalman).
         rMat.m[0][0] = 1.0f;
         rMat.m[1][1] = 1.0f;
         rMat.m[2][2] = 1.0f;
         acc.dev.acc_1G_rec = 1.0f;
+        acc.accADC.z = 1.0f;
 
         enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
         rfHealthy = true;
