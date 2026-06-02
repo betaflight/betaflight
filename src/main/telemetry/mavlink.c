@@ -1179,6 +1179,9 @@ static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterva
 
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
 {
+    if (intervalMs == 0) {
+        intervalMs = UINT32_MAX;
+    }
     if (intervalMs >= MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
         for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
             if (mavTelemetryOutputMessages[i].id == messageId) {
