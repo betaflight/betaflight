@@ -22,6 +22,8 @@
 
 #include "common/time.h"
 
+#define MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS 20
+
 void initMAVLinkTelemetry(void);
 void handleMAVLinkTelemetry(void);
 void checkMAVLinkTelemetryState(void);
@@ -40,7 +42,7 @@ typedef struct __mavlink_message mavlink_message_t;
 void mavlinkSendMessage(mavlink_message_t *msg);
 
 typedef struct mavlinkTelemetryOutputMessage_s {
-    const uint8_t id;
+    const uint32_t id;
     const uint8_t stream;
     timeMs_t updateInterval;
     timeMs_t updateTime;

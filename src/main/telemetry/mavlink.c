@@ -456,6 +456,15 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
     mavlinkSendCommandAck(MAV_CMD_REQUEST_MESSAGE, result, targetSystem, targetComponent);
 }
 
+static bool setMessageUpdateInterval(uint32_t id, uint32_t intervalMs);
+static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t targetSystem, uint8_t targetComponent)
+{
+    uint32_t msgId = cmd->param1;
+    uint32_t intervalMs = cmd->param2 / 1000;
+    bool result = setMessageUpdateInterval(msgId, intervalMs);
+    mavlinkSendCommandAck(cmd->command, result ? MAV_RESULT_ACCEPTED : MAV_RESULT_UNSUPPORTED, targetSystem, targetComponent);
+}
+
 static void handleCommandLong(const mavlink_message_t *msg)
 {
     mavlink_command_long_t cmd;
@@ -483,6 +492,9 @@ static void handleCommandLong(const mavlink_message_t *msg)
     }
     case MAV_CMD_REQUEST_MESSAGE:
         handleRequestMessage(&cmd, msg->sysid, msg->compid);
+        break;
+    case MAV_CMD_SET_MESSAGE_INTERVAL:
+        handleSetMessageInterval(&cmd, msg->sysid, msg->compid);
         break;
     default:
         mavlinkSendCommandAck(cmd.command, MAV_RESULT_UNSUPPORTED, msg->sysid, msg->compid);
@@ -1034,14 +1046,14 @@ static void mavlinkSendBatteryStatus(void)
 */
 static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_SYS_STATUS,
         .stream = MAV_DATA_STREAM_EXTENDED_STATUS,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendSystemStatus,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_RC_CHANNELS_RAW,
         .stream = MAV_DATA_STREAM_RC_CHANNELS,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
@@ -1049,28 +1061,28 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
     },
 #ifdef USE_GPS
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_GPS_RAW_INT,
         .stream = MAV_DATA_STREAM_POSITION,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendGpsRaw,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
         .stream = MAV_DATA_STREAM_POSITION,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendGpsGlobalPosition,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_GPS_GLOBAL_ORIGIN,
         .stream = MAV_DATA_STREAM_POSITION,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendGpsGlobalOrigin,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_HOME_POSITION,
         .stream = MAV_DATA_STREAM_POSITION,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
@@ -1078,28 +1090,28 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
     },
 #endif
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_ATTITUDE,
         .stream = MAV_DATA_STREAM_EXTRA1,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendAttitude,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_HEARTBEAT,
         .stream = MAV_DATA_STREAM_EXTRA2,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendHeartbeat,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_VFR_HUD,
         .stream = MAV_DATA_STREAM_EXTRA2,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
         .sendMessageFunc = mavlinkSendHUD,
     },
     {
-        .id = 0,
+        .id = MAVLINK_MSG_ID_BATTERY_STATUS,
         .stream = MAV_DATA_STREAM_EXTRA3,
         .updateInterval = UINT32_MAX,
         .updateTime = 0,
@@ -1135,6 +1147,19 @@ static void configureMAVLinkOutputMessagesIntervals(void)
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
         }
     }
+}
+
+static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
+{
+    if (intervalMs >= MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+        for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
+            if (mavTelemetryOutputMessages[i].id == messageId) {
+                mavTelemetryOutputMessages[i].updateInterval = intervalMs;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 static void processMAVLinkTelemetry(void)
