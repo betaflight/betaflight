@@ -1159,7 +1159,11 @@ static void configureMAVLinkOutputMessagesIntervals(void)
         }
 
         if (rate != 0) {
-            mavTelemetryOutputMessages[i].updateInterval = 1000 / rate;
+            uint32_t interval = 1000 / rate;
+            if (interval < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+                interval = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
+            }
+            mavTelemetryOutputMessages[i].updateInterval = interval;
             // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
         }
