@@ -412,6 +412,19 @@ static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
     return true;
 }
 
+static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval);
+static void mavlinkSendMessageInterval(uint32_t messageId)
+{
+    uint16_t msgLength;
+    uint32_t updateInterval;
+
+    bool result = getMessageUpdateInterval(messageId, &updateInterval);
+    msgLength = mavlink_msg_message_interval_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, messageId, result ? (int32_t)(updateInterval) * 1000 : -1);
+
+    mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
+    mavlinkSerialWrite(mavBuffer, msgLength);
+}
+
 static void handleRequestMessage(const mavlink_command_long_t *cmd,
     uint8_t targetSystem, uint8_t targetComponent)
 {
@@ -447,6 +460,10 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
     }
     case MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR:
         mavlinkSendAvailableModesMonitor();
+        result = MAV_RESULT_ACCEPTED;
+        break;
+    case MAVLINK_MSG_ID_MESSAGE_INTERVAL:
+        mavlinkSendMessageInterval(cmd->param2);
         result = MAV_RESULT_ACCEPTED;
         break;
     default:
@@ -1147,6 +1164,17 @@ static void configureMAVLinkOutputMessagesIntervals(void)
             mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
         }
     }
+}
+
+static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval)
+{
+    for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
+        if (mavTelemetryOutputMessages[i].id == messageId) {
+            *updateInterval = mavTelemetryOutputMessages[i].updateInterval;
+            return *updateInterval != UINT32_MAX;
+        }
+    }
+    return false;
 }
 
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
