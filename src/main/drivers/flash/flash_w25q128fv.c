@@ -48,6 +48,7 @@
 #define JEDEC_ID_WINBOND_W25Q16JV_SPI           0xEF4015
 #define JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI       0xEF7015
 #define JEDEC_ID_BOYAMICRO_BY25Q128ES_SPI       0x684018
+#define JEDEC_ID_FMSH_FM25Q128A_SPI             0xA14018
 
 // Device size parameters
 #define W25Q128FV_PAGE_SIZE         2048
@@ -272,6 +273,7 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
     case JEDEC_ID_WINBOND_W25Q128FV_QUADSPI:
     case JEDEC_ID_WINBOND_W25Q128JV_QUADSPI:
     case JEDEC_ID_BOYAMICRO_BY25Q128ES_SPI:
+    case JEDEC_ID_FMSH_FM25Q128A_SPI:  
         fdevice->geometry.sectors           = 256;
         fdevice->geometry.pagesPerSector    = 256;
         fdevice->geometry.pageSize          = 256;
