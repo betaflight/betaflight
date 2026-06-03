@@ -483,6 +483,7 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
 {
     uint32_t msgId;
     uint32_t intervalMs;
+    bool success = false;
 
     if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &msgId)) {
         mavlinkSendCommandAck(cmd->command, MAV_RESULT_DENIED, targetSystem, targetComponent);
@@ -490,12 +491,15 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
     }
 
     if (cmd->param2 < 0.0f) {
-        mavlinkSendCommandAck(cmd->command, MAV_RESULT_UNSUPPORTED, targetSystem, targetComponent);
-        return;
+        // Set default value
+        success = setMessageUpdateInterval(msgId, 0);
+    } else {
+        intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
+        if (intervalMs == 0) {
+            intervalMs = UINT32_MAX; // Switch send message off
+        }
+        success = setMessageUpdateInterval(msgId, intervalMs);
     }
-
-    intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
-    bool success = setMessageUpdateInterval(msgId, intervalMs);
     mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
 }
 
@@ -1154,36 +1158,52 @@ static mavlinkTelemetryOutputMessage_t mavTelemetryOutputMessages[] = {
 };
 #define TELEMETRIES_OUTPUT_MESSAGES_COUNT ARRAYLEN(mavTelemetryOutputMessages)
 
+static uint32_t getConfigStreamUpdateInterval(uint8_t stream) {
+    uint32_t rate = 0;
+    uint32_t updateInterval;
+
+    switch (stream) {
+    case MAV_DATA_STREAM_EXTENDED_STATUS:
+        rate = telemetryConfig()->mavlink_extended_status_rate;
+        break;
+    case MAV_DATA_STREAM_RC_CHANNELS:
+        rate = telemetryConfig()->mavlink_rc_channels_rate;
+        break;
+    case MAV_DATA_STREAM_EXTRA1:
+        rate = telemetryConfig()->mavlink_extra1_rate;
+        break;
+    case MAV_DATA_STREAM_EXTRA2:
+        rate = telemetryConfig()->mavlink_extra2_rate;
+        break;
+    case MAV_DATA_STREAM_EXTRA3:
+        rate = telemetryConfig()->mavlink_extra3_rate;
+        break;
+    case MAV_DATA_STREAM_POSITION:
+        rate = telemetryConfig()->mavlink_position_rate;
+        break;
+    }
+
+    if (rate != 0) {
+        updateInterval = 1000 / rate;
+        if (updateInterval < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+            updateInterval = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
+        }
+    } else {
+        updateInterval = UINT32_MAX;
+    }
+
+    return updateInterval;
+}
+
 static void configureMAVLinkOutputMessagesIntervals(void)
 {
     // Seed timers to avoid burst on enable
     timeMs_t nowMs = millis();
 
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-        int rate = 0;
-        if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_EXTENDED_STATUS) {
-            rate = telemetryConfig()->mavlink_extended_status_rate;
-        } else if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_RC_CHANNELS) {
-            rate = telemetryConfig()->mavlink_rc_channels_rate;
-        } else if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_EXTRA1) {
-            rate = telemetryConfig()->mavlink_extra1_rate;
-        } else if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_EXTRA2) {
-            rate = telemetryConfig()->mavlink_extra2_rate;
-        } else if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_EXTRA3) {
-            rate = telemetryConfig()->mavlink_extra3_rate;
-        } else if (mavTelemetryOutputMessages[i].stream == MAV_DATA_STREAM_POSITION) {
-            rate = telemetryConfig()->mavlink_position_rate;
-        }
-
-        if (rate != 0) {
-            uint32_t interval = 1000 / rate;
-            if (interval < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
-                interval = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
-            }
-            mavTelemetryOutputMessages[i].updateInterval = interval;
-            // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
-            mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
-        }
+        mavTelemetryOutputMessages[i].updateInterval = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
+        // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
+        mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
     }
 }
 
@@ -1198,17 +1218,21 @@ static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterva
     return false;
 }
 
+// Set intervalMs update interval for MAVLink message
+// If intervalMs == 0, then set default value from config
+// If intervalMs == INT32_MAX, then switch off message send
 static bool setMessageUpdateInterval(uint32_t messageId, uint32_t intervalMs)
 {
-    if (intervalMs == 0) {
-        intervalMs = UINT32_MAX;
-    }
-    if (intervalMs >= MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
-        for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
-            if (mavTelemetryOutputMessages[i].id == messageId) {
-                mavTelemetryOutputMessages[i].updateInterval = intervalMs;
-                return true;
+    for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
+        if (mavTelemetryOutputMessages[i].id == messageId) {
+            if (intervalMs == 0) { // Set default value
+                intervalMs = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
             }
+            if(intervalMs < MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS) {
+                intervalMs = MIN_MAVLINK_TELEMETRY_UPDATE_INTERVAL_MS;
+            }
+            mavTelemetryOutputMessages[i].updateInterval = intervalMs;
+            return true;
         }
     }
     return false;
