@@ -170,11 +170,6 @@ static int16_t headingOrScaledMilliAmpereHoursDrawn(void)
     return DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
-static uint16_t getHeadingCentidegrees(void)
-{
-    return (uint16_t)(attitude.values.yaw * 10);
-}
-
 static void mavlinkSendStatusText(uint8_t severity, const char *text)
 {
     mavlink_msg_statustext_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
@@ -802,6 +797,11 @@ static void mavlinkSendGpsRaw(void)
     static uint32_t transmitCounter = 0;
     DEBUG_SET(DEBUG_MAVLINK_TELEMETRY, 4, transmitCounter);
     transmitCounter = (transmitCounter + 1) % 100;
+}
+
+static uint16_t getHeadingCentidegrees(void)
+{
+    return (uint16_t)(attitude.values.yaw * 10);
 }
 
 static void mavlinkSendGpsGlobalPosition(void)
