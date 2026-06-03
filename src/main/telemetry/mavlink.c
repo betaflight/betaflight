@@ -412,16 +412,18 @@ static bool cmdParamToUint32(float f, uint32_t maxValue, uint32_t *out)
     return true;
 }
 
-static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval);
+static uint8_t getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval);
 static void mavlinkSendMessageInterval(uint32_t messageId)
 {
     uint16_t msgLength;
     uint32_t updateIntervalMs;
-    int32_t updateIntervalUs = -1;
+    int32_t updateIntervalUs = -1; // message not supported
 
-    bool result = getMessageUpdateInterval(messageId, &updateIntervalMs);
-    if (result) {
+    uint8_t result = getMessageUpdateInterval(messageId, &updateIntervalMs);
+    if (result == 0) {
         updateIntervalUs = updateIntervalMs * 1000 <= INT32_MAX ? (int32_t)(updateIntervalMs * 1000) : INT32_MAX;
+    } else if (result == 2) {
+        updateIntervalUs = 0; // message disabled
     }
 
     msgLength = mavlink_msg_message_interval_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, messageId, updateIntervalUs);
@@ -1223,15 +1225,18 @@ static void configureMAVLinkOutputMessagesIntervals(void)
     }
 }
 
-static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval)
+// return value 0 - Ok
+// return value 1 - message not found
+// return value 2 - message disabled
+static uint8_t getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterval)
 {
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
         if (mavTelemetryOutputMessages[i].id == messageId) {
             *updateInterval = mavTelemetryOutputMessages[i].updateInterval;
-            return *updateInterval != UINT32_MAX;
+            return (*updateInterval != UINT32_MAX) ? 0 : 2;
         }
     }
-    return false;
+    return 1;
 }
 
 // Set intervalMs update interval for MAVLink message
