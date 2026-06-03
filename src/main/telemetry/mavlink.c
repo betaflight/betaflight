@@ -463,6 +463,11 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
         result = MAV_RESULT_ACCEPTED;
         break;
     case MAVLINK_MSG_ID_MESSAGE_INTERVAL:
+        uint32_t msgId;
+        if (!cmdParamToUint32(cmd->param2, UINT32_MAX, &msgId)) {
+            result = MAV_RESULT_DENIED;
+            break;
+        }
         mavlinkSendMessageInterval(cmd->param2);
         result = MAV_RESULT_ACCEPTED;
         break;
@@ -476,10 +481,22 @@ static void handleRequestMessage(const mavlink_command_long_t *cmd,
 static bool setMessageUpdateInterval(uint32_t id, uint32_t intervalMs);
 static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t targetSystem, uint8_t targetComponent)
 {
-    uint32_t msgId = cmd->param1;
-    uint32_t intervalMs = cmd->param2 / 1000;
-    bool result = setMessageUpdateInterval(msgId, intervalMs);
-    mavlinkSendCommandAck(cmd->command, result ? MAV_RESULT_ACCEPTED : MAV_RESULT_UNSUPPORTED, targetSystem, targetComponent);
+    uint32_t msgId;
+    uint32_t intervalMs;
+
+    if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &msgId)) {
+        mavlinkSendCommandAck(cmd->command, MAV_RESULT_DENIED, targetSystem, targetComponent);
+        return;
+    }
+
+    if (cmd->param2 < 0.0f) {
+        mavlinkSendCommandAck(cmd->command, MAV_RESULT_UNSUPPORTED, targetSystem, targetComponent);
+        return;
+    }
+
+    intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
+    bool success = setMessageUpdateInterval(msgId, intervalMs);
+    mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
 }
 
 static void handleCommandLong(const mavlink_message_t *msg)
