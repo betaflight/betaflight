@@ -416,10 +416,15 @@ static bool getMessageUpdateInterval(uint32_t messageId, uint32_t *updateInterva
 static void mavlinkSendMessageInterval(uint32_t messageId)
 {
     uint16_t msgLength;
-    uint32_t updateInterval;
+    uint32_t updateIntervalMs;
+    int32_t updateIntervalUs = -1;
 
-    bool result = getMessageUpdateInterval(messageId, &updateInterval);
-    msgLength = mavlink_msg_message_interval_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, messageId, result ? (int32_t)(updateInterval) * 1000 : -1);
+    bool result = getMessageUpdateInterval(messageId, &updateIntervalMs);
+    if (result) {
+        updateIntervalUs = updateIntervalMs * 1000 <= INT32_MAX ? (int32_t)(updateIntervalMs * 1000) : INT32_MAX;
+    }
+
+    msgLength = mavlink_msg_message_interval_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg, messageId, updateIntervalUs);
 
     mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
