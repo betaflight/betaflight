@@ -744,8 +744,9 @@ static void mavlinkSendGpsRaw(void)
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
 
-    if (!sensors(SENSOR_GPS))
+    if (!sensors(SENSOR_GPS)) {
         return;
+    }
 
     if (!STATE(GPS_FIX)) {
         gpsFixType = 1;
@@ -805,6 +806,10 @@ static void mavlinkSendGpsGlobalPosition(void)
 {
     uint16_t msgLength;
 
+    if (!sensors(SENSOR_GPS)) {
+        return;
+    }
+
     // Global position
     mavlink_msg_global_position_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
@@ -833,6 +838,10 @@ static void mavlinkSendGpsGlobalPosition(void)
 static void mavlinkSendGpsGlobalOrigin(void)
 {
     uint16_t msgLength;
+
+    if (!sensors(SENSOR_GPS)) {
+        return;
+    }
 
     mavlink_msg_gps_global_origin_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &mavMsg,
         // Latitude (WGS84), expressed as * 1E7
