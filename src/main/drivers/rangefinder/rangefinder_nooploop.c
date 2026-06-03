@@ -235,12 +235,12 @@ bool nooploopDetect(rangefinderDev_t *dev, rangefinderType_e rfType)
         return false;
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR_NL);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_LIDAR);
     if (!portConfig) {
         return false;
     }
 
-    nooploopSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR_NL, NULL, NULL, NOOPLOOP_BAUDRATE, MODE_RXTX, 0);
+    nooploopSerialPort = openSerialPort(portConfig->identifier, FUNCTION_LIDAR, NULL, NULL, NOOPLOOP_BAUDRATE, MODE_RXTX, 0);
     if (nooploopSerialPort == NULL) {
         return false;
     }

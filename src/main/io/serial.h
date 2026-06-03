@@ -48,12 +48,11 @@ typedef enum {
     FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
     FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
     FUNCTION_RCDEVICE            = (1 << 14), // 16384
-    FUNCTION_LIDAR_TF            = (1 << 15), // 32768
+    FUNCTION_LIDAR               = (1 << 15), // 32768 - unified serial rangefinder bit (was FUNCTION_LIDAR_TF); the driver is selected via rangefinder_hardware
     FUNCTION_FRSKY_OSD           = (1 << 16), // 65536
     FUNCTION_VTX_MSP             = (1 << 17), // 131072
     FUNCTION_GIMBAL              = (1 << 18), // 262144
-    FUNCTION_LIDAR_NL            = (1 << 19), // 524288
-    FUNCTION_OSD_CUSTOM_TEXT     = (1 << 20), // 1048576
+    FUNCTION_OSD_CUSTOM_TEXT     = (1 << 19), // 524288 - moved into the bit freed by consolidating the serial LIDAR functions (was 1 << 20)
 } serialPortFunction_e;
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY_HUB | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
