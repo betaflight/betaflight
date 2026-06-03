@@ -248,6 +248,7 @@ COMMON_SRC = \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/rangefinder/rangefinder_hcsr04.c \
+            drivers/rangefinder/rangefinder_sp10m01.c \
             drivers/rangefinder/rangefinder_lidartf.c \
             drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/rangefinder/rangefinder_nooploop.c \

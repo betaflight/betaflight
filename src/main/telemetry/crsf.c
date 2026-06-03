@@ -77,7 +77,7 @@
 
 #include "crsf.h"
 
-#define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz -- all telemetry frames are inserted in this timeslice
+#define CRSF_CYCLETIME_US                   20000 // 10ms, 100 Hz -- all telemetry frames are inserted in this timeslice
 #define CRSF_DEVICEINFO_VERSION             0x01
 #define CRSF_DEVICEINFO_PARAMETER_COUNT     0
 
@@ -111,7 +111,7 @@ static mspBuffer_t mspRxBuffer;
 
 #if defined(USE_CRSF_V3)
 
-#define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 20000U // 20ms
+#define CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US 4000U // 2ms
 
 #if defined(USE_CRSF_CMS_TELEMETRY)
 #define CRSF_LINK_TYPE_CHECK_US 250000 // 250 ms

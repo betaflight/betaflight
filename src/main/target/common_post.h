@@ -229,7 +229,9 @@
 #endif // END MAG HW defines
 
 #if defined(USE_RANGEFINDER)
-
+#ifdef USE_RANGEFINDER_SP10M01
+#define USE_RANGEFINDER_SP10M01
+#endif
 #ifndef USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_HCSR04
 #endif
@@ -726,7 +728,7 @@
 #endif // USE_OPTICALFLOW_UPT1
 
 // Bottom-up: individual rangefinder drivers → USE_RANGEFINDER
-#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1)
+#if defined(USE_RANGEFINDER_HCSR04) || defined(USE_RANGEFINDER_TF) || defined(USE_RANGEFINDER_MT) || defined(USE_RANGEFINDER_NOOPLOOP) || defined(USE_RANGEFINDER_UPT1) || defined(USE_RANGEFINDER_SP10M01)
 #ifndef USE_RANGEFINDER
 #define USE_RANGEFINDER
 #endif

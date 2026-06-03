@@ -44,6 +44,8 @@
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "drivers/rangefinder/rangefinder_nooploop.h"
 #include "drivers/rangefinder/rangefinder_upt1.h"
+#include "drivers/rangefinder/rangefinder_sp10m01.h"
+
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -100,6 +102,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
 
     switch (rangefinderHardwareToUse) {
+    case RANGEFINDER_SP10M01:
+#ifdef USE_RANGEFINDER_SP10M01
+            if (rangefinderSP10M01Detect(dev)) {
+                rangefinderHardware = RANGEFINDER_SP10M01;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(dev->delayMs));
+            }
+            break;
+#endif
+
         case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04
             {
