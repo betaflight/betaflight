@@ -487,7 +487,7 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
     if (cmd->param2 < 0.0f) {
         // Disable message per MAVLink spec (param2 < 0 means disable)
         success = setMessageUpdateInterval(msgId, UINT32_MAX);
-    } if (cmd->param2 == 0.0f) {
+    } else if (cmd->param2 == 0.0f) {
         // param2 == 0 means "request default rate" per MAVLink spec
         success = setMessageUpdateInterval(msgId, 0);
     } else {
