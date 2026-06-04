@@ -491,7 +491,7 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
         // param2 == 0 means "request default rate" per MAVLink spec
         success = setMessageUpdateInterval(msgId, 0);
     } else {
-        uint32_t intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
+        uint32_t intervalMs = (cmd->param2 >= 1000.0f) ? (uint32_t)(cmd->param2 / 1000.0f) : 1;
         success = setMessageUpdateInterval(msgId, intervalMs);
     }
     mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
