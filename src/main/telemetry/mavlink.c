@@ -477,7 +477,6 @@ static bool setMessageUpdateInterval(uint32_t id, uint32_t intervalMs);
 static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t targetSystem, uint8_t targetComponent)
 {
     uint32_t msgId;
-    uint32_t intervalMs;
     bool success = false;
 
     if (!cmdParamToUint32(cmd->param1, UINT32_MAX, &msgId)) {
@@ -488,14 +487,12 @@ static void handleSetMessageInterval(const mavlink_command_long_t *cmd, uint8_t 
     if (cmd->param2 < 0.0f) {
         // Disable message per MAVLink spec (param2 < 0 means disable)
         success = setMessageUpdateInterval(msgId, UINT32_MAX);
+    } if (cmd->param2 == 0.0f) {
+        // param2 == 0 means "request default rate" per MAVLink spec
+        success = setMessageUpdateInterval(msgId, 0);
     } else {
-        intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
-        if (intervalMs == 0) {
-            // param2 == 0 means "request default rate" per MAVLink spec
-            success = setMessageUpdateInterval(msgId, 0);
-        } else {
-            success = setMessageUpdateInterval(msgId, intervalMs);
-        }
+        uint32_t intervalMs = (uint32_t)(cmd->param2 / 1000.0f);
+        success = setMessageUpdateInterval(msgId, intervalMs);
     }
     mavlinkSendCommandAck(cmd->command, success ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, targetSystem, targetComponent);
 }
