@@ -831,7 +831,7 @@ static void mavlinkSendGpsGlobalOrigin(void)
 {
     uint16_t msgLength;
 
-    if (!sensors(SENSOR_GPS)) {
+    if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX_HOME)) {
         return;
     }
 
