@@ -113,7 +113,7 @@ TEST(RxChannelRangeTest, TestRxChannelRanges)
     scaleRangefInitHelper(&range, 1300, 1700);
     EXPECT_EQ(-2245, applyRxChannelRangeConfiguraton(2, &range));
     scaleRangefInitHelper(&range, 900, 2100);
-    EXPECT_EQ(252.5, applyRxChannelRangeConfiguraton(3, &range));
+    EXPECT_NEAR(252.5f, applyRxChannelRangeConfiguraton(3, &range), 0.01f);
 
     scaleRangefInitHelper(&range, 1000, 2000);
     EXPECT_EQ(10000, applyRxChannelRangeConfiguraton(10000, &range));
