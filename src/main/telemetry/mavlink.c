@@ -1211,7 +1211,9 @@ static void configureMAVLinkOutputMessagesIntervals(void)
     for (uint16_t i = 0; i < TELEMETRIES_OUTPUT_MESSAGES_COUNT; i++) {
         mavTelemetryOutputMessages[i].updateInterval = getConfigStreamUpdateInterval(mavTelemetryOutputMessages[i].stream);
         // Phase offset (3*i) staggers transmissions across ~15ms to reduce TX buffer spikes
-        mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
+        if (mavTelemetryOutputMessages[i].updateInterval != UINT32_MAX) {
+            mavTelemetryOutputMessages[i].updateTime =  nowMs + mavTelemetryOutputMessages[i].updateInterval + 3 * i;
+        }
     }
 }
 
