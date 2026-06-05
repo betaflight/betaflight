@@ -70,17 +70,12 @@
 #define POSHOLD_TASK_RATE_HZ 100
 #endif
 
+#define ALTITUDE_P_SCALE       0.04f     // (cm/s) / (cm) per altitudeP unit
+#define ALTITUDE_I_SCALE       0.0008f // scale on altitudeI for outer integral (cm/s bias / accumulated from pos err)
 #define ALTITUDE_D_SCALE       0.005f
 #define ALTITUDE_F_SCALE       0.005f
-
-// Cascaded alt hold: outer loop altitude (P+I) -> vz cmd; inner loop velocity (P+I) -> throttle.
-// CLI altitudeP/I/D/F map to outer P, outer+inner I split, inner P (velocity), and feedforward gain on vz pilot input.
-#define ALTITUDE_OUTER_P_SCALE       0.04f     // (cm/s) / (cm) per altitudeP unit
-#define ALTITUDE_OUTER_I_SCALE       0.0008f // scale on altitudeI for outer integral (cm/s bias / accumulated from pos err)
-#define ALTITUDE_INNER_I_SCALE       0.00012f // scale on altitudeI for inner integral (throttle, similar order to legacy ALTITUDE_I_SCALE)
 #define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
-#define ALTITUDE_OUTER_IWINDUP_CM_S      150.0f
-#define ALTITUDE_INNER_IWINDUP_THROTTLE  200.0f
+#define ALTITUDE_I_LIMIT      150.0f
 #define ALTITUDE_FF_KF_REF               (30.0f * ALTITUDE_F_SCALE) // "100%" feedforward when altitudeF CLI = 30
 
 // Using optical flow PID scales as the unified set
@@ -94,10 +89,9 @@
 
 static pidCoefficient_t positionPidCoeffs;
 
-static float altitudeOuterKp;
-static float altitudeOuterKi;
-static float altitudeInnerKp;
-static float altitudeInnerKi;
+static float altitudeKp;
+static float altitudeKi;
+static float altitudeKd;
 static float altitudeFfKfNorm; // scales pilot / rescue vz feedforward vs CLI altitudeF (1.0 at F=30)
 
 // When autopilot hoverThrottle PG is 0, altitude hold captures rcCommand[THROTTLE] on mode entry.
@@ -105,8 +99,7 @@ static float altitudeFfKfNorm; // scales pilot / rescue vz feedforward vs CLI al
 #define AP_HOVER_THROTTLE_CAPTURE_MAX 1700U
 static uint16_t altHoldCapturedHoverPwm;
 
-static float altitudePosIntegral = 0.0f; // outer I: integral of altitude error -> vz bias (cm/s)
-static float altitudeVelIntegral = 0.0f; // inner I: integral of velocity error -> throttle (us offset scale)
+static float altitudeI = 0.0f; // integral of altitude error -> vz bias (cm/s)
 static float throttleOut = 0.0f;
 
 // Per-axis position PID state (earth frame)
@@ -227,10 +220,9 @@ void autopilotInit(void)
     ap.sticksActive = false;
     ap.maxAngle = cfg->maxAngle;
 
-    altitudeOuterKp = cfg->altitudeP * ALTITUDE_OUTER_P_SCALE;
-    altitudeOuterKi = cfg->altitudeI * ALTITUDE_OUTER_I_SCALE;
-    altitudeInnerKp = cfg->altitudeD * ALTITUDE_D_SCALE;
-    altitudeInnerKi = cfg->altitudeI * ALTITUDE_INNER_I_SCALE;
+    altitudeKp = cfg->altitudeP * ALTITUDE_P_SCALE;
+    altitudeKi = cfg->altitudeI * ALTITUDE_I_SCALE;
+    altitudeKd = cfg->altitudeD * ALTITUDE_D_SCALE;
     if (cfg->altitudeF == 0) {
         altitudeFfKfNorm = 1.0f; // treat as full-rate feedforward from stick / rescue vz
     } else {
@@ -251,8 +243,7 @@ void autopilotInit(void)
 
 void resetAltitudeControl(void)
 {
-    altitudePosIntegral = 0.0f;
-    altitudeVelIntegral = 0.0f;
+    altitudeI = 0.0f;
     throttleOut = 0.0f;
 }
 
@@ -285,9 +276,17 @@ void autopilotClearAltHoldHoverThrottle(void)
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
 {
     const float vz = getAltitudeDerivativeControl();
-    const float altitudeErrorCm = targetAltitudeCm - getAltitudeCmControl();
+    const float currentAltitudeCm = getAltitudeCmControl();
+      
+    // PI controller on altitude error
+    const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
+    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
+    altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
+    altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
 
-    // increase inner-loop P when |vz| is high (same shaping as legacy D boost)
+    // altitude Derivative element derived from vertical velocity
+    
+    // increase gain when |vz| is high (same shaping as legacy D boost)
     float dBoost = 1.0f;
     {
         const float startValue = 500.0f;
@@ -297,43 +296,39 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
             dBoost = (3.0f * ratio - 2.0f) / ratio;
         }
     }
-    const float innerKp = altitudeInnerKp * dBoost;
 
-    // Outer loop: PI on altitude -> vertical velocity setpoint (cm/s)
-    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
-    altitudePosIntegral += altitudeErrorCm * altitudeOuterKi * itermRelax * taskIntervalS;
-    altitudePosIntegral = constrainf(altitudePosIntegral, -ALTITUDE_OUTER_IWINDUP_CM_S, ALTITUDE_OUTER_IWINDUP_CM_S);
 
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
-    float velCmd = targetAltitudeVelCmS * altitudeFfKfNorm;
-    velCmd += altitudeErrorCm * altitudeOuterKp + altitudePosIntegral;
-    velCmd = constrainf(velCmd, -velMax, velMax);
+    float velocityError = targetAltitudeVelCmS * altitudeFfKfNorm - vz;
+    velocityError = constrainf(velocityError, -velMax, velMax);
+    const float altitudeD = velocityError * altitudeKd * dBoost;
 
-    // Inner loop: PI on velocity -> throttle offset (legacy D gain scale: throttle per cm/s)
-    const float velErr = velCmd - vz;
-    altitudeVelIntegral += velErr * altitudeInnerKi * taskIntervalS;
-    altitudeVelIntegral = constrainf(altitudeVelIntegral, -ALTITUDE_INNER_IWINDUP_THROTTLE, ALTITUDE_INNER_IWINDUP_THROTTLE);
-
-    const float innerP = velErr * innerKp;
     const float hoverOffset = (float)autopilotGetEffectiveHoverThrottlePwm() - PWM_RANGE_MIN;
-    float throttleOffset = innerP + altitudeVelIntegral + hoverOffset;
 
+    float throttleOffset = (altitudeErrorCm * altitudeKp)
+                         + altitudeI
+                         + altitudeD
+                         + hoverOffset;
+
+    // Tilt Compensation and Hardware Saturation
     const float tiltMultiplier = 1.0f / fmaxf(getCosTiltAngle(), 0.5f);
     throttleOffset *= tiltMultiplier;
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
+    
+throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+throttleOut = constrainf(throttleOut, 0.0f, 1.0f); // <-- Corrected variable!
+
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));
-
-    newThrottle = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
-    throttleOut = constrainf(newThrottle, 0.0f, 1.0f);
-
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(targetAltitudeCm));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(velCmd));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudePosIntegral));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(innerP));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeVelIntegral));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 2, lrintf(targetAltitudeCm));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(currentAltitudeCm));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeErrorCm * altitudeKp));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeD)); // includes feedforward
+//    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(targetAltitudeVelCmS * altitudeFfKfNorm)); // feedforward
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(vz));
 }
 
 void setSticksActiveStatus(bool areSticksActive)
