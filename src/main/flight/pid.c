@@ -286,7 +286,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_pitch_accel_min = 40,            // maximal negative Z accel value *10
         .psas_wing_load = 0,                   // wing load (mass / WingArea) g/decimeter^2 * 10. The g/decimeter^2 units is more comfortable for perception, than kg/m^2.
         .psas_air_density = 1225,              // The current atmosphere air density [g/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
-        .psas_lift_c_limit = 10,               // Limit aerodinamics lift force coefficient value *10
+        .psas_lift_c_limit = 10,               // Limit aerodynamics lift force coefficient value *10
         .psas_aoa_limiter_gain = 0,            // elevator speed for 0.1 lift force coef difference in %/sec
         .psas_lift_coef_filter_freq = 50,      // aoa limiter lift coef filter cut freq 5Hz * 10
         .psas_aoa_limiter_forecast_time = 10,  // aoa limiter lift coef forecast time, 0.1s  *100

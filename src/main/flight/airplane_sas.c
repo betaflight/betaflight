@@ -19,10 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include <math.h>
 #include <string.h>
-
-#include "platform.h"
 
 #ifdef USE_AIRPLANE_SAS
 
@@ -267,7 +267,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     float accelZ = 1.0f;
     float accelZFiltered = 1.0f;
     if (sensors(SENSOR_ACC)) {
-        accelZ =  acc.accADC.z * acc.dev.acc_1G_rec;
+        accelZ = acc.accADC.z * acc.dev.acc_1G_rec;
         if (pidProfile->psas_accel_z_filter_freq != 0) {
             accelZFiltered = pt1FilterApply(&psasAccelZLowpass, accelZ);
         } else {
@@ -353,7 +353,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Plane yaw stability improvement
     float accelYFiltered = 0.0f;
     if (sensors(SENSOR_ACC)) {
-        float accelY =  acc.accADC.y * acc.dev.acc_1G_rec;
+        float accelY = acc.accADC.y * acc.dev.acc_1G_rec;
         if (pidProfile->psas_accel_y_filter_freq != 0) {
             accelYFiltered = pt1FilterApply(&psasAccelYLowpass, accelY);
         } else {
@@ -365,7 +365,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
     // On the right roll rotation it needs the nose on the right yaw rotation, therefore it needs to use negative sign
-    psasData.yaw.rollToYawCrossLink = -rollToYawCrossLinkControl(pidProfile,  psasData.roll.pilot, liftCoef);
+    psasData.yaw.rollToYawCrossLink = -rollToYawCrossLinkControl(pidProfile, psasData.roll.pilot, liftCoef);
 
     psasData.yaw.Sum = psasData.yaw.pilot + psasData.yaw.damping + psasData.yaw.stability + psasData.yaw.rollToYawCrossLink;
     psasData.yaw.Sum = constrainf(psasData.yaw.Sum, -100.0f, 100.0f);
