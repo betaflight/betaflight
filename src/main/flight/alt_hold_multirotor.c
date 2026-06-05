@@ -45,7 +45,7 @@ static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); /
 typedef struct {
     bool isActive;
     float targetAltitudeCm;
-    float maxVelocity;
+    float maxClimbRate;
     float targetVelocity;
     float deadband;
     bool allowStickAdjustment;
@@ -65,7 +65,7 @@ void altHoldInit(void)
     altHold.isActive = false;
     altHold.deadband = altHoldConfig()->deadband / 100.0f;
     altHold.allowStickAdjustment = altHoldConfig()->deadband;
-    altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
+    altHold.maxClimbRate = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
     altHoldReset();
 }
 
@@ -117,7 +117,13 @@ static void altHoldUpdateTargetAltitude(void)
             stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
         }
     }
-
+    // StickFactor should be -1 for zero throttle, 0 for hover, and +1 for full throttle
+    // It should be zero between the low and high thresholds and below THROTTLE_LOW.
+    // when throttle moves past throttle_Low, stickFactor jumps abruptly from 0 to -1 
+    // The abrupt drop causes a sharp down-going spike in targetVelocity
+    // In  altitudeHold we send zero, instead, to make the autopilot code
+    // calculate the altitude hold feedforward from the actual change in altitude, avoiding the spike
+        
     // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle
     if (failsafeIsActive()) {
         // descend at up to 10 times faster when high
@@ -128,44 +134,41 @@ static void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
-    altHold.targetVelocity = stickFactor * altHold.maxVelocity;
+    altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
 
-    // prevent stick input from moving target altitude too far away from current altitude
-    // otherwise it can be difficult to bring target altitude close to current altitude in a reasonable time
-    // using maxVelocity means the stick can bring altitude target to current within 1s
+    // prevent pilot input from moving target altitude too far away from current altitude
+    // otherwise it can be difficult to get target altitude back to current altitude in a reasonable time
+    // using maxClimbRate here  means the stick can only move the altitude target to a value that can be reached in 1s
     // this constrains the P and I response to user target changes, but not D of F responses
-    // Range is compared to distance that might be traveled in one second
-    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
+    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxClimbRate * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
 
 static void altHoldUpdate(void)
 {
-    // check if the user has changed the target altitude using sticks
+    
     if (altHoldConfig()->climbRate) {
-        altHoldUpdateTargetAltitude();
+        altHoldUpdateTargetAltitude(); // check if the user has changed the target altitude using sticks
     }
 
-    float targetAltCm = altHold.targetAltitudeCm;
-    float targetVelForAlt = altHold.targetVelocity;
+    float targetAltitudeCm = altHold.targetAltitudeCm; // altitude target
+    float targetAltitudeVelocity = altHold.targetVelocity;
 
     if (positionNavHasActiveTarget()) {
         const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
         if (navCmd->includeAltitude) {
-            targetAltCm = navCmd->targetPosEfM.z * 100.0f;
+            targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
             if (positionNavTargetReached()) {
-                // Seed hold altitude at waypoint completion so Alt Hold does not revert
-                // to the pre-nav target altitude on the next cycle.
-                altHold.targetAltitudeCm = targetAltCm;
-                targetVelForAlt = 0.0f;
+                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
+            targetAltitudeVelocity = 0.0f;
             } else {
-                targetVelForAlt = positionNavGetTargetVelocityCmS().z;
+                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
             }
         }
     }
 
-    altitudeControl(targetAltCm, taskIntervalSeconds, targetVelForAlt, altHold.maxVelocity);
+    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHold.maxClimbRate);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
