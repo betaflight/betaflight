@@ -182,7 +182,7 @@ static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(float liftCoef, float 
 
     float liftCoefDiff = 0.0f;
     float servoVelocity = 0.0f;
-    if (isLiftCoefValid) {
+    if (isLiftCoefValid && IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
         const float liftCoefForecastChange = liftCoefVelocity * psasRuntime.aoa_limiter_forecast_time;
         if (liftCoef > 0.0f) {
             if (liftCoefForecastChange > 0.0f) {
@@ -283,7 +283,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
-    if (isEnabledAoALimiter && IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
+    if (isEnabledAoALimiter) {
         isLimitAoA = updateAngleOfAttackLimiter(liftCoef, liftCoefVelocity);
     }
 
