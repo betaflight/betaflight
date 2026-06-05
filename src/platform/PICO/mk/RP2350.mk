@@ -627,5 +627,5 @@ $(PICO_LIB_TARGETS): CC_DEFAULT_OPTIMISATION := $(PICO_LIB_OPTIMISATION)
 # that can't work if build uses lto (link time optimisation has the effect of
 # breaking files up into temporary files)
 ifeq ($(RUN_FROM_RAM),1)
-OPTIMISATION_BASE     := $(filter-out -flto=auto, $(OPTIMISATION_BASE))
+LTO                   := no
 endif

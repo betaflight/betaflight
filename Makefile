@@ -211,6 +211,16 @@ EXTRA_LD_FLAGS  :=
 #
 DEBUG_MIXED = no
 
+# Link-time optimisation is enabled by default. An {mcu}.mk can set "LTO := no"
+# (e.g. for an XIP / run-from-RAM layout that relies on per-function sections)
+# to strip the LTO flags from every optimisation profile and the link.
+LTO ?= yes
+
+# Promotion of float to double is treated as an error by default. An {mcu}.mk can
+# set "DOUBLE_PROMOTION := no" to demote it to a suppressed warning
+# (-Wno-double-promotion) instead.
+DOUBLE_PROMOTION ?= yes
+
 ifeq ($(DEBUG),INFO)
 DEBUG_MIXED = yes
 endif
@@ -318,6 +328,23 @@ endif
 #
 
 #
+# Resolve per-family build toggles now that the {mcu}.mk has been included.
+#
+
+# Disabling LTO routes its flags through CFLAGS_DISABLED so they are stripped
+# from every optimisation profile (CC_*_OPTIMISATION) and from LTO_FLAGS/LD_FLAGS.
+ifeq ($(LTO),no)
+CFLAGS_DISABLED += -flto=auto -fuse-linker-plugin
+endif
+
+# Select whether double-promotion is an error (default) or a suppressed warning.
+ifeq ($(DOUBLE_PROMOTION),no)
+WARN_DOUBLE_PROMOTION := -Wno-double-promotion
+else
+WARN_DOUBLE_PROMOTION := -Wdouble-promotion
+endif
+
+#
 # Tool options.
 #
 CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
@@ -350,7 +377,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra -Werror -Wunsafe-loop-optimizations $(WARN_DOUBLE_PROMOTION) \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
