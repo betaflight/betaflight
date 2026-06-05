@@ -572,6 +572,58 @@ const struct serialPortVTable uartVTable[] = {
     }
 };
 
+
+#ifdef USE_CHBSP_DRIVER
+
+#define UART_IRQHandler(type, number, dev)                      \
+  __FAST_INTERRUPT  FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevice[(dev)].port);       \
+        uartIrqHandler(uartPort);                               \
+    }                                                           \
+/**/
+
+#ifdef USE_UART1
+UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART2
+UART_IRQHandler(USART, 2, UARTDEV_2) // USART2 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART3
+UART_IRQHandler(USART, 3, UARTDEV_3) // USART3 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART4
+UART_IRQHandler(USART, 4, UARTDEV_4)  // UART4 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART5
+UART_IRQHandler(USART, 5, UARTDEV_5)  // UART5 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART6
+UART_IRQHandler(USART, 6, UARTDEV_6) // USART6 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART7
+UART_IRQHandler(USART, 7, UARTDEV_7)  // UART7 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART8
+UART_IRQHandler(USART, 8, UARTDEV_8)  // UART8 Rx/Tx IRQ Handler
+#endif
+
+
+// #ifdef USE_LPUART1
+// UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
+// #endif
+
+
+#else
+
+
 #define UART_IRQHandler(type, number, dev)                      \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void)   \
     {                                                           \
@@ -642,6 +694,8 @@ UART_IRQHandler(UART, 15, UARTDEV_15) // UART15 Rx/Tx IRQ Handler
 
 #ifdef USE_LPUART1
 UART_IRQHandler(LPUART, 1, UARTDEV_LP1) // LPUART1 Rx/Tx IRQ Handler
+#endif
+
 #endif
 
 #endif // USE_UART
