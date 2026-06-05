@@ -96,10 +96,12 @@ static void i2cEVIRQHandler(i2cDevice_e device)
             LL_I2C_TransmitData8(I2Cx, *state->write_p++);
             state->bytes--;
         }
-        // Must disable IT_TX once the last byte has shifted out — TXIS
-        // keeps re-asserting otherwise and the IRQ tail-chains forever
-        // until IWDG fires.
-        if (state->bytes == 0) {
+        // Disable IT_TX once the last byte has shifted out (TXIS reasserts
+        // immediately otherwise and the IRQ tail-chains until IWDG fires).
+        // Also disable if this IRQ fired during a read transaction
+        // (state->writing=0); a stray IT_TX surviving a prior write would
+        // otherwise tail-chain through the SOFTEND read setup.
+        if (state->bytes == 0 || !state->writing) {
             LL_I2C_DisableIT_TX(I2Cx);
         }
         return;
@@ -394,11 +396,17 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         LL_I2C_TransmitData8(I2Cx, reg_);
     }
 
-    // Enable interrupts to handle remaining data bytes
-    LL_I2C_EnableIT_TX(I2Cx);
-    LL_I2C_EnableIT_NACK(I2Cx);
-    LL_I2C_EnableIT_STOP(I2Cx);
-    LL_I2C_EnableIT_ERR(I2Cx);
+    // Enable interrupts in a single atomic CR1 write — the LL Enable*
+    // helpers are RMW (LDR/ORR/STR). The IRQ runs at the highest NVIC
+    // priority, so a single ISR-driven Disable* between the foreground
+    // LDR and STR makes the stale STR re-set bits the IRQ just cleared,
+    // leaving stray ITs enabled that tail-chain the next transaction.
+    {
+        const uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        I2Cx->CR1 |= I2C_CR1_TXIE | I2C_CR1_NACKIE | I2C_CR1_STOPIE | I2C_CR1_ERRIE;
+        __set_PRIMASK(primask);
+    }
 
     return true;
 }
@@ -529,14 +537,15 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     state->error = false;
     state->transactionStartUs = microsISR();
 
+    uint32_t crBitsToEnable;
+
     if (reg_ == 0xFF) {
         // No register address, directly start read
         LL_I2C_HandleTransfer(I2Cx, state->addr, LL_I2C_ADDRSLAVE_7BIT,
                               len, LL_I2C_MODE_AUTOEND,
                               LL_I2C_GENERATE_START_READ);
 
-        // Enable RX interrupts
-        LL_I2C_EnableIT_RX(I2Cx);
+        crBitsToEnable = I2C_CR1_RXIE;
     } else {
         // First send register address with SOFTEND, TC interrupt will trigger restart
         LL_I2C_HandleTransfer(I2Cx, state->addr, LL_I2C_ADDRSLAVE_7BIT,
@@ -556,13 +565,20 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         }
         LL_I2C_TransmitData8(I2Cx, reg_);
 
-        // Enable TC interrupt - ISR will handle the restart and switch to RX
-        LL_I2C_EnableIT_TC(I2Cx);
+        // TC interrupt fires after slave ACKs the reg byte; ISR handles
+        // the RESTART then switches to RX interrupts for the read phase.
+        crBitsToEnable = I2C_CR1_TCIE;
     }
 
-    LL_I2C_EnableIT_NACK(I2Cx);
-    LL_I2C_EnableIT_STOP(I2Cx);
-    LL_I2C_EnableIT_ERR(I2Cx);
+    // Single atomic CR1 write — see comment in i2cWriteBuffer for why
+    // separate Enable* RMWs can race the ISR's Disable* and leave stray
+    // ITs enabled that tail-chain the next transaction.
+    {
+        const uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        I2Cx->CR1 |= crBitsToEnable | I2C_CR1_NACKIE | I2C_CR1_STOPIE | I2C_CR1_ERRIE;
+        __set_PRIMASK(primask);
+    }
 
     return true;
 }
