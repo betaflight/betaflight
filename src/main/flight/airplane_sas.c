@@ -182,33 +182,40 @@ static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(float liftCoef, float 
 
     float liftCoefDiff = 0.0f;
     float servoVelocity = 0.0f;
-    if (isLiftCoefValid && IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
-        const float liftCoefForecastChange = liftCoefVelocity * psasRuntime.aoa_limiter_forecast_time;
-        if (liftCoef > 0.0f) {
-            if (liftCoefForecastChange > 0.0f) {
-                liftCoef += liftCoefForecastChange;
-            }
-            liftCoefDiff = liftCoef - psasRuntime.lift_c_limit;
-            if (liftCoefDiff > 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * psasRuntime.aoa_limiter_gain;
-                servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
+
+    if (IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
+        if (isLiftCoefValid) {
+            psasData.pitch.aoaLimiterState = LIMITER_ON;
+            const float liftCoefForecastChange = liftCoefVelocity * psasRuntime.aoa_limiter_forecast_time;
+            if (liftCoef > 0.0f) {
+                if (liftCoefForecastChange > 0.0f) {
+                    liftCoef += liftCoefForecastChange;
+                }
+                liftCoefDiff = liftCoef - psasRuntime.lift_c_limit;
+                if (liftCoefDiff > 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * psasRuntime.aoa_limiter_gain;
+                    servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
+                }
+            } else {
+                if (liftCoefForecastChange < 0.0f) {
+                    liftCoef += liftCoefForecastChange;
+                }
+                liftCoefDiff = liftCoef + psasRuntime.lift_c_limit;
+                if (liftCoefDiff < 0.0f) {
+                    isLimitAoA = true;
+                    servoVelocity = liftCoefDiff * psasRuntime.aoa_limiter_gain;
+                    servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
+                }
             }
         } else {
-            if (liftCoefForecastChange < 0.0f) {
-                liftCoef += liftCoefForecastChange;
-            }
-            liftCoefDiff = liftCoef + psasRuntime.lift_c_limit;
-            if (liftCoefDiff < 0.0f) {
-                isLimitAoA = true;
-                servoVelocity = liftCoefDiff * psasRuntime.aoa_limiter_gain;
-                servoVelocity = constrainf(servoVelocity, -psasRuntime.servoVelocityLimit, psasRuntime.servoVelocityLimit);
-            }
+            psasData.pitch.aoaLimiterState = LIMITER_OFF;
         }
     }
 
     if (isLimitAoA) {
         psasData.pitch.I += servoVelocity * pidRuntime.dT;
+        psasData.pitch.aoaLimiterState = LIMITER_ACTIVE;
     } else if (!isEnabledAccelZController) {
         // Decay the AoA limiter I value when the limiter is off or lift coeff is not valid
         psasData.pitch.I -= psasData.pitch.I / psasRuntime.aoa_limiter_tau_return * pidRuntime.dT; // The psas_aoa_limiter_tau_return can not be zero - the CLI minimum value is 1.
@@ -283,6 +290,7 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
 
     // If the lift coefficent (angle of attack) is valid and its value is over limit, then limit value.
     bool isLimitAoA = false;
+    psasData.pitch.aoaLimiterState = LIMITER_DISABLED;
     if (isEnabledAoALimiter) {
         isLimitAoA = updateAngleOfAttackLimiter(liftCoef, liftCoefVelocity);
     }

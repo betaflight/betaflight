@@ -159,6 +159,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/airplane_sas.h"
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -1882,6 +1883,23 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_AIRPLANE_SAS
+static void osdElementAoaLimiter(osdElementParms_t *element)
+{
+    switch (psasData.pitch.aoaLimiterState) {
+    case LIMITER_OFF:
+        tfp_sprintf(element->buff, "%s", "AOA LIMITER OFF");
+    break;
+    case LIMITER_ON:
+        tfp_sprintf(element->buff, "%s", "AOA LIMITER ON");
+    break;
+    case LIMITER_ACTIVE:
+        tfp_sprintf(element->buff, "%s", "AOA LIMITER ACTIVE!");
+    break;
+    }
+}
+#endif
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -2146,6 +2164,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
+#ifdef USE_AIRPLANE_SAS
+    [OSD_AOA_LIMITER]             = osdElementAoaLimiter,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2219,6 +2240,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
+#endif
+
+#ifdef USE_AIRPLANE_SAS
+    osdAddActiveElement(OSD_AOA_LIMITER);
 #endif
 }
 

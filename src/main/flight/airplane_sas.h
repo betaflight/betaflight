@@ -23,6 +23,13 @@
 
 #include "pid.h"
 
+typedef enum {
+    LIMITER_DISABLED,
+    LIMITER_OFF,
+    LIMITER_ON,
+    LIMITER_ACTIVE,
+} psasLimiterState_e;
+
 typedef struct psas_pitch_ctrl_s {
     float pilot;
     float damping;
@@ -30,6 +37,7 @@ typedef struct psas_pitch_ctrl_s {
     float I;
     float accelP;
     float Sum;
+    psasLimiterState_e aoaLimiterState;
 } psas_pitch_ctrl_t;
 
 typedef struct psas_roll_ctrl_s {
