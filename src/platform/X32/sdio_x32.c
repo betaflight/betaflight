@@ -196,8 +196,13 @@ void SDMMC_port_config(void)
         IOConfigGPIOAF(d3, IOCFG_SDMMC, sdioPin[SDIO_PIN_D3].af);
     }
 
-    // HAL_NVIC_SetPriority(sdioHardware->irqn, NVIC_PRIORITY_BASE(NVIC_PRIO_SDIO_DMA), NVIC_PRIORITY_SUB(NVIC_PRIO_SDIO_DMA));
-    // HAL_NVIC_EnableIRQ(sdioHardware->irqn);
+    // Enable SDMMC interrupt in NVIC
+    NVIC_InitType nvicInit;
+    nvicInit.NVIC_IRQChannel = sdioHardware->irqn;
+    nvicInit.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SDIO_DMA);
+    nvicInit.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SDIO_DMA);
+    nvicInit.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&nvicInit);
 }
 
 void sdioInitialize(void)
@@ -366,7 +371,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     
     /* enable all status signal */
     SDMMC_EnableFlagStatus(card->SDHOSTx,SDHOST_AllInterruptFlags,ENABLE);
-    
+
     /* Change the detection of SD card CD pin to TEST mode, default to high */
     SDMMC_ConfigCardDetectSignal(card->SDHOSTx,SDMMC_CARDDETECT_TEST,SDMMC_CARDTESTLEVEL_HIGH);
     
@@ -609,7 +614,7 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
      
     /* This function is not necessary. Depending on the hardware and card, 
        you can decide whether to enable TX CLK delay and how much delay to use */
-    // SDMMC_EnableManualTuningOut(SDMMC1,8,ENABLE);
+    SDMMC_EnableManualTuningOut(card->SDMMCx,8,ENABLE);
     
     return status_temp;
 }
@@ -645,8 +650,8 @@ static SD_Error_t SD_DoInit(void)
         card.card_workmode.busWidth = SDMMC_BusWdith1Bit; // FIXME untested
     }
 
-    card.card_workmode.mode = SDMMC_DS; 
-    card.card_workmode.busClock_Hz = 25000000;
+    card.card_workmode.mode = SDMMC_HS; 
+    card.card_workmode.busClock_Hz = 50000000;
     card.card_workmode.dma = SDMMC_SDMA;
     card.card_workmode.operationVoltageflag = SD_OperationVoltage330V;
     SDMMC_TModeStructInit(&card.TMODE_truct);
@@ -931,28 +936,24 @@ SD_Error_t SD_GetCardStatus(SD_CardStatus_t *pCardStatus)
 SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t BlockSize, uint32_t NumberOfBlocks)
 {
     SD_Error_t ErrorState = SD_OK;
-    SD_Handle.TXCplt = 1;
 
     if (BlockSize != 512) {
         return SD_ERROR; // unsupported.
     }
 
-    // if ((uint32_t)buffer & 0x1f) {
-    //     return SD_ADDR_MISALIGNED;
-    // }
 #ifdef __DCACHE_PRESENT
-    // Ensure the data is flushed to main memory
+    // Ensure the data is flushed to main memory before SDMA reads it
     X32_CLEAN_DCACHE_BY_ADDR(buffer, NumberOfBlocks * BlockSize);
 #endif
-    Status_card status;
+
+    SD_Handle.TXCplt = 1;
 
     card.card_workmode.dma = SDMMC_SDMA;
 
-    if ((status = SD_WriteBlocks(&card, buffer, (uint32_t)WriteAddress, NumberOfBlocks)) != Status_Success) {
-        ErrorState = SD_ERROR;
+    if (SD_WriteBlocks_IT(&card, buffer, (uint32_t)WriteAddress, NumberOfBlocks) != Status_Success) {
+        SD_Handle.TXCplt = 0;
+        return SD_ERROR;
     }
-
-    SD_Handle.TXCplt = 0;
 
     return ErrorState;
 }
@@ -973,39 +974,66 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
         return SD_ERROR; // unsupported.
     }
 
-    // if ((uint32_t)buffer & 0x1f) {
-    //     return SD_ADDR_MISALIGNED;
-    // }
-
     SD_Handle.RXCplt = 1;
 
     sdReadParameters.buffer = buffer;
     sdReadParameters.BlockSize = BlockSize;
     sdReadParameters.NumberOfBlocks = NumberOfBlocks;
 
-    Status_card status;
-
     card.card_workmode.dma = SDMMC_SDMA;
-    if ((status = SD_ReadBlocks(&card, buffer, (uint32_t)ReadAddress, NumberOfBlocks)) != Status_Success) {
-        ErrorState = SD_ERROR;
-    }
 
-    SD_Handle.RXCplt = 0;
-#ifdef __DCACHE_PRESENT
-    X32_INVALIDATE_DCACHE_BY_ADDR(sdReadParameters.buffer, sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize);
-#endif
+    if (SD_ReadBlocks_IT(&card, buffer, (uint32_t)ReadAddress, NumberOfBlocks) != Status_Success) {
+        SD_Handle.RXCplt = 0;
+        return SD_ERROR;
+    }
 
     return ErrorState;
 }
 
 void SDMMC1_IRQHandler(void)
 {
-    // HAL_SD_IRQHandler(&card);
+    SD_IRQHandler(&card);
+
+    /* Handle transfer completion */
+    if (card.transferState == 2) {
+        if (SD_Handle.RXCplt) {
+            /* Read complete - invalidate D-cache to ensure CPU reads correct data */
+#ifdef __DCACHE_PRESENT
+            uint32_t alignedAddr = (uint32_t)sdReadParameters.buffer & ~0x1F;
+            X32_INVALIDATE_DCACHE_BY_ADDR(
+                (uint32_t*)alignedAddr,
+                sdReadParameters.NumberOfBlocks * sdReadParameters.BlockSize
+                    + ((uint32_t)sdReadParameters.buffer - alignedAddr));
+#endif
+            SD_Handle.RXCplt = 0;
+        }
+
+        if (SD_Handle.TXCplt) {
+            SD_Handle.TXCplt = 0;
+        }
+
+        /* transferState is consumed by blocking SD_ReadBlocks/SD_WriteBlocks
+           in sdmmc_host.c which reset it to 0 after detecting completion.
+           For IT (non-blocking) path, upper layer uses RXCplt/TXCplt flags. */
+    }
+
+    /* Handle transfer error */
+    if (card.transferState == 3) {
+        if (SD_Handle.RXCplt) {
+            SD_Handle.RXErrors++;
+            SD_Handle.RXCplt = 0;
+        }
+
+        if (SD_Handle.TXCplt) {
+            SD_Handle.TXErrors++;
+            SD_Handle.TXCplt = 0;
+        }
+    }
 }
 
 void SDMMC2_IRQHandler(void)
 {
-    // HAL_SD_IRQHandler(&card);
+    SDMMC1_IRQHandler();
 }
 
 #endif
