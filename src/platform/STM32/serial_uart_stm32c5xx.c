@@ -150,6 +150,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #endif
         .rxPins = {
             { DEFIO_TAG_E(PB11), HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PC4),  HAL_GPIO_AF7_USART3 },
             { DEFIO_TAG_E(PC11), HAL_GPIO_AF7_USART3 },
             { DEFIO_TAG_E(PD9),  HAL_GPIO_AF7_USART3 },
         },
