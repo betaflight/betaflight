@@ -1190,7 +1190,6 @@ const clivalue_t valueTable[] = {
 
 #ifdef USE_POSITION_HOLD
 #ifndef USE_WING
-    { PARAM_NAME_POS_HOLD_WITHOUT_MAG, VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, posHoldWithoutMag) },
     { PARAM_NAME_POS_HOLD_DEADBAND,    VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 50 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, deadband) },
     { "poshold_position_source",       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_POSHOLD_SOURCE }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, positionSource) },
     { "poshold_opticalflow_quality_min", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_POSHOLD_CONFIG, offsetof(posHoldConfig_t, opticalflowQualityMin) },
