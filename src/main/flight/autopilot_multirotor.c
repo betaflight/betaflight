@@ -74,7 +74,7 @@
 #define ALTITUDE_I_SCALE       0.004f
 #define ALTITUDE_D_SCALE       0.015f
 #define ALTITUDE_FF_KF_REF    30.0f
-#define ALTITUDE_F_SCALE       0.3f / ALTITUDE_FF_KF_REF // full feedforward when altitudeF CLI = 30
+#define ALTITUDE_F_SCALE       0.3f / ALTITUDE_FF_KF_REF // full feedforward scale value when altitudeF CLI = 30
 #define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
 #define ALTITUDE_I_LIMIT      150.0f
 
@@ -92,7 +92,7 @@ static pidCoefficient_t positionPidCoeffs;
 static float altitudeKp;
 static float altitudeKi;
 static float altitudeKd;
-static float altitudeKf; // normalised Kf for feedforward  via CLI ap_altitude_f (1.0 at F=30)
+static float altitudeKf;
 
 // When autopilot hoverThrottle PG is 0, altitude hold captures rcCommand[THROTTLE] on mode entry.
 #define AP_HOVER_THROTTLE_CAPTURE_MIN 1100U
@@ -223,7 +223,7 @@ void autopilotInit(void)
     altitudeKp = cfg->altitudeP * ALTITUDE_P_SCALE;
     altitudeKi = cfg->altitudeI * ALTITUDE_I_SCALE;
     altitudeKd = cfg->altitudeD * ALTITUDE_D_SCALE;
-    altitudeKf = cfg->altitudeF * ALTITUDE_F_SCALE; // normalised
+    altitudeKf = cfg->altitudeF * ALTITUDE_F_SCALE;
 
     positionPidCoeffs.Kp  = cfg->positionP  * POSITION_P_SCALE;
     positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
@@ -273,15 +273,15 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 {
     
     // PI controller on altitude error
-    const float currentAltitudeCm = getAltitudeCmControl();
+    const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
-    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
+    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
     const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
 
-    // Altitude Derivative element derived from vertical velocity
-    const float verticalVelocity = getAltitudeDerivativeControl();
+    // Altitude Derivative
+    const float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);    
     float velocityError = targetVerticalVelocity - verticalVelocity;
@@ -315,7 +315,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
     
 throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
-throttleOut = constrainf(throttleOut, 0.0f, 1.0f); // <-- Corrected variable!
+throttleOut = constrainf(throttleOut, 0.0f, 1.0f);
 
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 0, lrintf(newThrottle));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 1, lrintf(tiltMultiplier * 100));
@@ -323,7 +323,7 @@ throttleOut = constrainf(throttleOut, 0.0f, 1.0f); // <-- Corrected variable!
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 3, lrintf(currentAltitudeCm));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 4, lrintf(altitudeP));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
-    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeD)); // includes feedforward
+    DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(altitudeD)); // includes innate feedforward since is from error
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF)); // feedforward
 }
 

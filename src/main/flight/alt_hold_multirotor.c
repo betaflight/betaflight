@@ -84,22 +84,12 @@ static void altHoldProcessTransitions(void) {
         }
         altHold.isActive = false;
     }
-
-    // ** the transition out of alt hold (exiting altHold) may be rough.  Some notes... **
-    // The original PR had a gradual transition from hold throttle to pilot control throttle
-    // using !(altHoldRequested && altHold.isActive) to run an exit function
-    // a cross-fade factor was sent to mixer.c based on time since the flight mode request was terminated
-    // it was removed primarily to simplify this PR
-
-    // hence in this PR's the user's throttle needs to be close to the hover throttle value on exiting altHold
-    // its not so bad because the 'target adjustment' by throttle requires that
-    // user throttle must be not more than half way out from hover for a stable hold
 }
 
 static void altHoldUpdateTargetAltitude(void)
 {
     // User can adjust the target altitude with throttle, but only when
-    // - throttle is outside deadband, and
+    // - throttle is outside the deadband region, and
     // - throttle is not low (zero), and
     // - deadband is not configured to zero
 
@@ -117,13 +107,14 @@ static void altHoldUpdateTargetAltitude(void)
             stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
         }
     }
-    // StickFactor should be -1 for zero throttle, 0 for hover, and +1 for full throttle
-    // It should be zero between the low and high thresholds and below THROTTLE_LOW.
-    // when throttle moves past throttle_Low, stickFactor jumps abruptly from 0 to -1 
-    // The abrupt drop causes a sharp down-going spike in targetVelocity
-    // In  altitudeHold we send zero, instead, to make the autopilot code
-    // calculate the altitude hold feedforward from the actual change in altitude, avoiding the spike
-        
+    // StickFactor is a multiplier for maxClimbRate, based on throttle position, that sets the ascend or descend velocity
+    // is zero at zero throttle and within the deadband, meaning no requested change in altitude
+    // below the lower deadband limit, it is negative, changing from 0 to -1, or full descend speed, reached just above zero throttle
+    // conversely, as throttle moves above the upper deadband limit, StickFactor increased from 0 to 1 at full throttle
+    // when throttle is moved quickly upwards from being fully down, it passes through the maximum descent rate range, leading to a negative glitch.
+    // a similar downgoing glitch occurs when exiting upwards from zero throttle
+    // these glitches are minimised  when these transitions are quick
+            
     // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle
     if (failsafeIsActive()) {
         // descend at up to 10 times faster when high
@@ -136,9 +127,9 @@ static void altHoldUpdateTargetAltitude(void)
     }
     altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
 
-    // prevent pilot input from moving target altitude too far away from current altitude
-    // otherwise it can be difficult to get target altitude back to current altitude in a reasonable time
-    // using maxClimbRate here  means the stick can only move the altitude target to a value that can be reached in 1s
+    // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
+    // that it might be difficult to get back to a similar target altitude in a reasonable time.
+    // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
     // this constrains the P and I response to user target changes, but not D of F responses
     if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxClimbRate * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
@@ -149,10 +140,10 @@ static void altHoldUpdate(void)
 {
     
     if (altHoldConfig()->climbRate) {
-        altHoldUpdateTargetAltitude(); // check if the user has changed the target altitude using sticks
+        altHoldUpdateTargetAltitude(); // check if the pilot has changed the target altitude using sticks
     }
 
-    float targetAltitudeCm = altHold.targetAltitudeCm; // altitude target
+    float targetAltitudeCm = altHold.targetAltitudeCm; 
     float targetAltitudeVelocity = altHold.targetVelocity;
 
     if (positionNavHasActiveTarget()) {
