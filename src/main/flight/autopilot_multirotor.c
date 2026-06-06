@@ -71,12 +71,12 @@
 #endif
 
 #define ALTITUDE_P_SCALE       0.02f
-#define ALTITUDE_I_SCALE       0.002f
-#define ALTITUDE_D_SCALE       0.01f
-#define ALTITUDE_F_SCALE       0.0001f
+#define ALTITUDE_I_SCALE       0.004f
+#define ALTITUDE_D_SCALE       0.015f
+#define ALTITUDE_FF_KF_REF    30.0f
+#define ALTITUDE_F_SCALE       0.3f / ALTITUDE_FF_KF_REF // full feedforward when altitudeF CLI = 30
 #define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
 #define ALTITUDE_I_LIMIT      150.0f
-#define ALTITUDE_FF_KF_REF               (30.0f * ALTITUDE_F_SCALE) // "100%" feedforward when altitudeF CLI = 30
 
 // Using optical flow PID scales as the unified set
 #define POSITION_P_SCALE       0.0033f
@@ -92,7 +92,7 @@ static pidCoefficient_t positionPidCoeffs;
 static float altitudeKp;
 static float altitudeKi;
 static float altitudeKd;
-static float altitudeKfNorm; // normalised Kf for feedforward  via CLI ap_altitude_f (1.0 at F=30)
+static float altitudeKf; // normalised Kf for feedforward  via CLI ap_altitude_f (1.0 at F=30)
 
 // When autopilot hoverThrottle PG is 0, altitude hold captures rcCommand[THROTTLE] on mode entry.
 #define AP_HOVER_THROTTLE_CAPTURE_MIN 1100U
@@ -223,7 +223,7 @@ void autopilotInit(void)
     altitudeKp = cfg->altitudeP * ALTITUDE_P_SCALE;
     altitudeKi = cfg->altitudeI * ALTITUDE_I_SCALE;
     altitudeKd = cfg->altitudeD * ALTITUDE_D_SCALE;
-    altitudeKfNorm = (cfg->altitudeF * ALTITUDE_F_SCALE) / ALTITUDE_FF_KF_REF;
+    altitudeKf = cfg->altitudeF * ALTITUDE_F_SCALE; // normalised
 
     positionPidCoeffs.Kp  = cfg->positionP  * POSITION_P_SCALE;
     positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
@@ -296,7 +296,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     }
 
     const float altitudeD = velocityError * altitudeKd * dBoost;
-    const float altitudeF = targetVerticalVelocity * altitudeKfNorm;
+    const float altitudeF = targetVerticalVelocity * altitudeKf;
     
 
     const float hoverOffset = (float)autopilotGetEffectiveHoverThrottlePwm() - PWM_RANGE_MIN;
