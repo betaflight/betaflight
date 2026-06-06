@@ -858,6 +858,14 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_SDIO_EXTERNAL_DMA 0
 #endif
 
+// STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
+// option bit. Default on so a BF crash never strands the board without
+// DFU recovery — set this to 0 in config.h for boards that wire BOOT0
+// to VDD/float, where forcing BOOT_SEL=1 would land in DFU on every boot.
+#if !defined(ENABLE_BOOT0_PIN_SELECT)
+#define ENABLE_BOOT0_PIN_SELECT 1
+#endif
+
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
