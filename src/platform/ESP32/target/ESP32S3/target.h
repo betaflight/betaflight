@@ -62,8 +62,11 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI
 
-// Default blackbox to serial; SD card available as an option
+// Default blackbox to serial; SD card available as an option. Guarded
+// so per-board configs can override via the config.h include path.
+#ifndef DEFAULT_BLACKBOX_DEVICE
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+#endif
 
 // Config stored in flash partition
 #define CONFIG_IN_FLASH
