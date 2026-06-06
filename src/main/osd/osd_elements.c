@@ -1887,15 +1887,18 @@ static void osdElementSys(osdElementParms_t *element)
 static void osdElementAoaLimiter(osdElementParms_t *element)
 {
     switch (psasData.pitch.aoaLimiterState) {
+    case LIMITER_DISABLED:
+        element->drawElement = false;  // element does not need to be rendered
+        break;
     case LIMITER_OFF:
-        tfp_sprintf(element->buff, "%s", "AOA LIMITER OFF");
-    break;
+        tfp_sprintf(element->buff, "%s", "AOA LIMITER NOT READY");
+        break;
     case LIMITER_ON:
         tfp_sprintf(element->buff, "%s", "AOA LIMITER ON");
-    break;
+        break;
     case LIMITER_ACTIVE:
         tfp_sprintf(element->buff, "%s", "AOA LIMITER ACTIVE!");
-    break;
+        break;
     }
 }
 #endif
