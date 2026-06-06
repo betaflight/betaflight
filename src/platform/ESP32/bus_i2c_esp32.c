@@ -69,7 +69,7 @@ static i2c_dev_t *const i2cHwRegs[] = {
 #define ESP32_I2C_XTAL_CLK_FREQ  40000000
 #define ESP32_I2C_APB_CLK_FREQ   80000000
 
-#if defined(ESP32S3)
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
 #define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_XTAL_CLK_FREQ
 #else
 #define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_APB_CLK_FREQ

@@ -189,7 +189,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);
-        uint8_t ch = i;  // LEDC channel 0-3
+        uint8_t ch = i;  // LEDC channel 0..(PWM_MAX_MOTORS-1)
 
         esp32PwmMotors[i].io = io;
         esp32PwmMotors[i].ledcChannel = ch;
