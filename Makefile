@@ -217,7 +217,7 @@ DEBUG_MIXED = no
 LTO ?= yes
 
 # Promotion of float to double is treated as an error by default. An {mcu}.mk can
-# set "DOUBLE_PROMOTION := no" to demote it to a suppressed warning
+# set "DOUBLE_PROMOTION := no" to disable the diagnostic entirely
 # (-Wno-double-promotion) instead.
 DOUBLE_PROMOTION ?= yes
 
@@ -337,7 +337,7 @@ ifeq ($(LTO),no)
 CFLAGS_DISABLED += -flto=auto -fuse-linker-plugin
 endif
 
-# Select whether double-promotion is an error (default) or a suppressed warning.
+# Select whether double-promotion is an error (default) or disabled entirely.
 ifeq ($(DOUBLE_PROMOTION),no)
 WARN_DOUBLE_PROMOTION := -Wno-double-promotion
 else
