@@ -183,7 +183,7 @@ static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(float liftCoef, float 
     float liftCoefDiff = 0.0f;
     float servoVelocity = 0.0f;
 
-    if (IS_RC_MODE_ACTIVE(BOXAOALIMITER)) {
+    if (IS_RC_MODE_ACTIVE(BOXUSER1)) {
         if (isLiftCoefValid) {
             psasData.pitch.aoaLimiterState = LIMITER_ON;
             const float liftCoefForecastChange = liftCoefVelocity * psasRuntime.aoa_limiter_forecast_time;
