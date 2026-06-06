@@ -44,5 +44,10 @@
 #include "target/common_defaults_post.h"
 
 #if !defined(UNIT_TEST) && !ENABLE_SIMULATOR && !(USBD_DEBUG_LEVEL > 0)
+// Pre-include stdio.h so its declarations of sprintf/snprintf land before
+// the poison pragma. Toolchains like xtensa-esp-elf pull stdio.h in
+// transitively from IDF HAL headers; without this the declaration itself
+// trips the poison.
+#include <stdio.h>
 #pragma GCC poison sprintf snprintf
 #endif
