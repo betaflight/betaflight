@@ -520,7 +520,8 @@ static void mavlinkProcessIncoming(void)
     }
     // Bound the drain so a flooded link cannot starve the telemetry task.
     uint16_t rxBudget = 64;
-    while (rxBudget-- && serialRxBytesWaiting(mavlinkPort)) {
+    uint32_t rxBytesWaiting = serialRxBytesWaiting(mavlinkPort);
+    while (rxBudget-- && rxBytesWaiting-- > 0) {
         const uint8_t c = serialRead(mavlinkPort);
         if (mavlink_parse_char(MAVLINK_COMM_1, c, &mavRxMsg, &mavRxStatus) == MAVLINK_FRAMING_OK) {
             mavlinkDispatch(&mavRxMsg);
