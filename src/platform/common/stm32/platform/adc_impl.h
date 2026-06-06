@@ -88,7 +88,7 @@ typedef struct adcTagMap_s {
 
 // Encoding for adcTagMap_t.devices
 
-#if defined(USE_ADC_DEVICE_0)
+#if defined(USE_ADC_DEVICE_0) && !defined(X32M7)
 
 #define ADC_DEVICES_0   (1 << ADCDEV_0)
 #define ADC_DEVICES_1   (1 << ADCDEV_1)
