@@ -44,7 +44,9 @@
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-#define PWM_MAX_MOTORS 4
+// LEDC has 8 channels on ESP32-S3 (and on the originals via the
+// low-speed group); cap motors at 8 to fit hex/octo.
+#define PWM_MAX_MOTORS 8
 
 typedef struct {
     IO_t io;
