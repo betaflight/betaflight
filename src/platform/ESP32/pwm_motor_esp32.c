@@ -209,7 +209,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
         // LEDC output signals: LEDC_LS_SIG_OUT0_IDX + channel
         esp_rom_gpio_pad_select_gpio(pin);
         gpio_ll_output_enable(&GPIO, pin);
-        esp_rom_gpio_connect_out_signal(pin, LEDC_LS_SIG_OUT0_IDX + ch, false, false);
+        esp_rom_gpio_connect_out_signal(pin, ESP32_LEDC_LS_SIG_OUT0_IDX + ch, false, false);
 
         esp32PwmMotorCount++;
     }

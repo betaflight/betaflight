@@ -138,7 +138,7 @@ bool ws2811LedStripHardwareInit(void)
     // Connect RMT output to GPIO pin
     esp_rom_gpio_pad_select_gpio(pin);
     gpio_ll_output_enable(&GPIO, pin);
-    esp_rom_gpio_connect_out_signal(pin, RMT_SIG_OUT0_IDX + ch, false, false);
+    esp_rom_gpio_connect_out_signal(pin, ESP32_RMT_SIG_OUT0_IDX + ch, false, false);
 
     ws2812Initialized = true;
     return true;

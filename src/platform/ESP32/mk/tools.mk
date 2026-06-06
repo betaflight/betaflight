@@ -12,11 +12,19 @@ ESP_IDF_PATH    ?= $(ROOT_DIR)/lib/modules/esp-idf
 IDF_TOOLS_PATH  ?= $(TOOLS_DIR)/espressif
 export IDF_TOOLS_PATH
 
-# Resolve Xtensa compiler: prefer local install, fall back to PATH
-# The unified xtensa-esp-elf toolchain supports all ESP32 variants via target prefixes
-ESP_TOOLS_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
-ifneq ($(ESP_TOOLS_BIN),)
-  PLATFORM_SDK_esp_idf_CC := $(ESP_TOOLS_BIN)/xtensa-esp32-elf-gcc
+# Resolve toolchain bin directories: prefer local install, fall back to PATH.
+# The unified xtensa-esp-elf toolchain covers ESP32 / ESP32S3 (Xtensa cores);
+# riscv32-esp-elf covers ESP32C5 / ESP32P4 (RISC-V cores). Each platform .mk
+# selects the matching ESP_TOOLS_BIN.
+ESP_TOOLS_XTENSA_BIN := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin))
+ESP_TOOLS_RISCV_BIN  := $(firstword $(wildcard $(IDF_TOOLS_PATH)/tools/riscv32-esp-elf/*/riscv32-esp-elf/bin))
+
+# Default ESP_TOOLS_BIN preserves the Xtensa path for the existing
+# Xtensa-targeting platform .mk files; the RISC-V .mk files override it.
+ESP_TOOLS_BIN := $(ESP_TOOLS_XTENSA_BIN)
+
+ifneq ($(ESP_TOOLS_XTENSA_BIN),)
+  PLATFORM_SDK_esp_idf_CC := $(ESP_TOOLS_XTENSA_BIN)/xtensa-esp32-elf-gcc
 else
   PLATFORM_SDK_esp_idf_CC := xtensa-esp32-elf-gcc
 endif

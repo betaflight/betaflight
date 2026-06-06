@@ -98,6 +98,17 @@ extern esp32_peripheral_t esp32UartDev2;
 #define UART1 (&esp32UartDev1)
 #define UART2 (&esp32UartDev2)
 
+// LEDC channel-0 / RMT channel-0 output signal indices in the GPIO matrix.
+// Naming diverges across chips: S3 / C5 / WROOM use the un-suffixed form,
+// P4 spells everything with a _PAD_ infix.
+#if defined(ESP32P4)
+#define ESP32_LEDC_LS_SIG_OUT0_IDX LEDC_LS_SIG_OUT_PAD_OUT0_IDX
+#define ESP32_RMT_SIG_OUT0_IDX     RMT_SIG_PAD_OUT0_IDX
+#else
+#define ESP32_LEDC_LS_SIG_OUT0_IDX LEDC_LS_SIG_OUT0_IDX
+#define ESP32_RMT_SIG_OUT0_IDX     RMT_SIG_OUT0_IDX
+#endif
+
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO            static

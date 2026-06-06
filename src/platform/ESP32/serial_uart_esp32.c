@@ -84,15 +84,25 @@ static uart_dev_t *uartGetHw(int portNum)
 // At 115200 baud, 10 bit-periods ~ 87us — good for low-latency response
 #define UART_RX_TOUT_THRESHOLD  10
 
-// ESP32-S3 UART GPIO matrix signal indices
+// UART GPIO matrix signal indices and peripheral interrupt sources.
+// Per-chip signal naming differs: ESP32 / S3 use U{n}TXD_OUT_IDX,
+// P4 uses UART{n}_TXD_PAD_OUT_IDX, C5 has only UART0/UART1.
+#if defined(ESP32C5)
+static const uint8_t uartTxSignal[] = { U0TXD_OUT_IDX, U1TXD_OUT_IDX, U1TXD_OUT_IDX };
+static const uint8_t uartRxSignal[] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U1RXD_IN_IDX };
+static const int uartIntrSource[] = { ETS_UART0_INTR_SOURCE, ETS_UART1_INTR_SOURCE, ETS_UART1_INTR_SOURCE };
+#elif defined(ESP32P4)
+static const uint8_t uartTxSignal[] = { UART0_TXD_PAD_OUT_IDX, UART1_TXD_PAD_OUT_IDX, UART2_TXD_PAD_OUT_IDX };
+static const uint8_t uartRxSignal[] = { UART0_RXD_PAD_IN_IDX, UART1_RXD_PAD_IN_IDX, UART2_RXD_PAD_IN_IDX };
+static const int uartIntrSource[] = { ETS_UART0_INTR_SOURCE, ETS_UART1_INTR_SOURCE, ETS_UART2_INTR_SOURCE };
+#else
 static const uint8_t uartTxSignal[] = { U0TXD_OUT_IDX, U1TXD_OUT_IDX, U2TXD_OUT_IDX };
 static const uint8_t uartRxSignal[] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX };
+static const int uartIntrSource[] = { ETS_UART0_INTR_SOURCE, ETS_UART1_INTR_SOURCE, ETS_UART2_INTR_SOURCE };
+#endif
 
 // CPU interrupt numbers for each UART (from platform/interrupt.h)
 static const int uartCpuIntr[] = { ESP32_CPU_INTR_UART0, ESP32_CPU_INTR_UART1, ESP32_CPU_INTR_UART2 };
-
-// Peripheral interrupt sources for each UART
-static const int uartIntrSource[] = { ETS_UART0_INTR_SOURCE, ETS_UART1_INTR_SOURCE, ETS_UART2_INTR_SOURCE };
 
 // ESP32-S3 has 3 UART controllers (UART0, UART1, UART2)
 // UART buffers are defined in drivers/serial_uart.c
@@ -216,6 +226,9 @@ void uartReconfigure(uartPort_t *uartPort)
     int portNum = uartGetPortNum(uartPort->USARTx);
     uart_dev_t *hw = uartGetHw(portNum);
 
+    // IDF's uart_ll_set_baudrate macro on P4 trails off into a
+    // __DECLARE_RCC_ATOMIC_ENV reference; pre-declare it as a no-op.
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
     uart_ll_set_baudrate(hw, uartPort->port.baudRate, ESP32_APB_CLK_FREQ);
 
     const bool twoStop = uartPort->port.options & SERIAL_STOPBITS_2;

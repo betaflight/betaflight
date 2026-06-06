@@ -33,7 +33,7 @@
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 
-#if defined(ESP32S3)
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "hal/systimer_ll.h"
@@ -72,18 +72,26 @@ void systemInit(void)
 {
     cycleCounterInit();
 
-#if defined(ESP32S3)
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
     // Initialize systimer - should already be running from ROM bootloader,
     // but enable clock and counter 0 to be safe
     systimer_ll_enable_clock(&SYSTIMER, true);
     systimer_ll_enable_counter(&SYSTIMER, 0, true);
+#endif
 
-    // Read 6-byte MAC address from eFuse into systemUniqueId
+    // Read 6-byte MAC address from eFuse into systemUniqueId. Register
+    // names diverge across chips.
+#if defined(ESP32S3)
     uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SPI_SYS_0_REG);
     uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SPI_SYS_1_REG);
+#elif defined(ESP32C5)
+    uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SYS0_REG);
+    uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SYS1_REG);
+#elif defined(ESP32P4)
+    uint32_t mac0 = REG_READ(EFUSE_RD_MAC_SYS_0_REG);
+    uint32_t mac1 = REG_READ(EFUSE_RD_MAC_SYS_1_REG);
 #else
-    // Original ESP32 uses CCOUNT for timing — already running from reset
-    // Read 6-byte MAC address from eFuse (different register names on ESP32)
+    // Original ESP32 (LX6) eFuse layout
     uint32_t mac0 = REG_READ(EFUSE_BLK0_RDATA1_REG);
     uint32_t mac1 = REG_READ(EFUSE_BLK0_RDATA2_REG);
 #endif
@@ -107,8 +115,10 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
 STATIC_ASSERT(sizeof(timeMs_t) == sizeof(uint32_t), timeMs_t_is_32_bit_failed);
 STATIC_ASSERT(sizeof(timeUs_t) == sizeof(uint32_t), timeUs_t_is_32_bit_failed);
 
-#if defined(ESP32S3)
-// ESP32-S3 systimer runs at 16 MHz (XTAL_CLK), each tick = 62.5 ns
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
+// S3 / C5 / P4 systimer ticks at the XTAL frequency. The exact rate
+// (16 MHz on S3, similar on C5/P4) wants verifying when the C5/P4
+// driver port lands.
 #define SYSTIMER_TICKS_PER_US  16
 
 timeUs_t micros(void)
@@ -176,7 +186,13 @@ void delay(uint32_t ms)
 uint32_t getCycleCounter(void)
 {
     uint32_t val;
+#if defined(ESP32C5) || defined(ESP32P4)
+    // RISC-V cycle CSR
+    __asm__ __volatile__("csrr %0, mcycle" : "=r"(val));
+#else
+    // Xtensa cycle counter
     __asm__ __volatile__("rsr.ccount %0" : "=r"(val));
+#endif
     return val;
 }
 
