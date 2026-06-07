@@ -101,6 +101,7 @@ MCU_COMMON_SRC = \
             AT32/dshot_bitbang.c \
             AT32/dshot_bitbang_stdperiph.c \
             AT32/exti_at32.c \
+            AT32/gyro_clkin_at32.c \
             AT32/io_at32.c \
             AT32/light_ws2811strip_at32f43x.c \
             AT32/persistent_at32bsp.c \

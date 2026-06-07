@@ -1106,6 +1106,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2139,7 +2142,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2176,9 +2181,11 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
@@ -2563,8 +2570,10 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
+STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
     "ORBIT", "FIGURE8"
@@ -2987,7 +2996,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
@@ -6168,6 +6177,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6186,8 +6197,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6212,9 +6223,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6223,6 +6239,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)

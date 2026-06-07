@@ -127,26 +127,25 @@ void systemInit(void)
     debugUartInit();
     debugUartPuts("\r\nBF systemInit\r\n");
 
-    // Debug subsystem clock + APB3 bus clock + DBGMCU.CR all configured
-    // via the secure alias. RCC and DBGMCU are RIFSC-gated and an
-    // NS-tagged transaction (which the CMSIS RCC->... and DBGMCU->...
-    // macros emit in this no-mcmse build) gets dropped silently — the
-    // bits read back as not set, the debug clock never enables, and
-    // SWD attach to a running BF fails AP1 examination ("Failed to
-    // read memory at 0xE000ED00"). Use the same secure-alias addresses
-    // OBL writes (system_stm32n6xx_obl.c).
-    //   RCC_S->MISCENSR  @ 0x56028A48 bit 0  — DBGENS
-    //   RCC_S->BUSENSR   @ 0x56028A44 bit 10 — APB3ENS
-    //   DBGMCU_S->CR     @ 0x54001004        — DBGCLKEN + DBG_SLEEP/STOP/STANDBY
-    *(volatile uint32_t *)0x56028A48UL = 1UL;
-    (void)*(volatile uint32_t *)0x56028248UL;
-    *(volatile uint32_t *)0x56028A44UL = (1UL << 10);
-    (void)*(volatile uint32_t *)0x56028244UL;
-    *(volatile uint32_t *)0x54001004UL = (1UL << 20)
+    // Debug subsystem clock + APB3 bus clock + DBGMCU.CR — write via
+    // NS aliases. BF runs Non-Secure post-BXNS so S-alias addresses
+    // (0x5xxxxxxx) are in IDAU's forced-Secure quadrant and any access
+    // SecureFaults. The NS aliases (0x4xxxxxxx) classify NS via SAU
+    // region 1 (NS peripherals); RIFSC has the relevant SEC bits clear
+    // (boot ROM + OBL leave them 0), so the NS writes commit. OBL has
+    // already configured these — these writes are idempotent.
+    //   RCC->MISCENSR  @ 0x46028A48 bit 0  — DBGENS
+    //   RCC->BUSENSR   @ 0x46028A44 bit 10 — APB3ENS
+    //   DBGMCU->CR     @ 0x44001004        — DBGCLKEN + DBG_SLEEP/STOP/STANDBY
+    *(volatile uint32_t *)0x46028A48UL = 1UL;
+    (void)*(volatile uint32_t *)0x46028248UL;
+    *(volatile uint32_t *)0x46028A44UL = (1UL << 10);
+    (void)*(volatile uint32_t *)0x46028244UL;
+    *(volatile uint32_t *)0x44001004UL = (1UL << 20)
                                        | (1UL <<  0)
                                        | (1UL <<  1)
                                        | (1UL <<  2);
-    (void)*(volatile uint32_t *)0x54001004UL;
+    (void)*(volatile uint32_t *)0x44001004UL;
 
     // Vector table redirect first, so a pending IRQ enabled below routes
     // through our handlers (not whatever the boot ROM / FSBL had).
@@ -247,18 +246,18 @@ void systemInit(void)
     HAL_Init();
 
     // Open-everything RIFSC + GPIO config for OPEN-lifecycle dev silicon.
-    // RIFSC slave/master and GPIO SECCFGR writes must go via the SECURE
-    // alias (0x5xxxxxxx). Without -mcmse the CMSIS macros RIFSC->... and
-    // gpios[i]->SECCFGR resolve to the NS alias (0x4xxxxxxx) and RIF
-    // silently drops NS-world writes to security-config registers — same
-    // precedent as TAMP. Hardcoded S-alias addresses match what OBL does.
+    // BF runs Non-Secure post-BXNS so S-alias writes (0x5xxxxxxx) hit
+    // IDAU's forced-Secure quadrant and SecureFault. Use the NS aliases
+    // (0x4xxxxxxx); RIFSC's relevant SEC bits are clear (boot ROM + OBL
+    // leave them 0), so NS-alias writes commit. Redundant with OBL's
+    // RIFSC opens, kept here as defensive idempotents.
     {
         SET_BIT(RCC->AHB3ENSR, RCC_AHB3ENR_RIFSCEN_Msk);
         (void)RCC->AHB3ENR;
 
-        volatile uint32_t * const seccfg  = (volatile uint32_t *)0x54024010UL;
-        volatile uint32_t * const privcfg = (volatile uint32_t *)0x54024030UL;
-        volatile uint32_t * const rimc    = (volatile uint32_t *)0x54024C10UL;
+        volatile uint32_t * const seccfg  = (volatile uint32_t *)0x44024010UL;
+        volatile uint32_t * const privcfg = (volatile uint32_t *)0x44024030UL;
+        volatile uint32_t * const rimc    = (volatile uint32_t *)0x44024C10UL;
         for (unsigned i = 0; i < 6U; i++) {
             seccfg[i]  = 0U;
             privcfg[i] = 0U;
@@ -301,27 +300,22 @@ void systemInit(void)
      * stm32n6xx_ll_ex.h::LL_EX_DMA_Init.
      */
     {
-        /* Enable GPDMA1 + HPDMA1 clocks BEFORE writing SECCFGR/PRIVCFGR
-         * (writes to a clock-gated peripheral silently drop).
-         * AHB1ENSR @ 0x0A50, AHB5ENSR @ 0x0A60 — "set" registers.
-         * S-alias bases: RCC = 0x56028000. CMSIS RCC->AHB1ENSR routes
-         * through NS alias which RIFSC may drop; use hardcoded S-alias.
+        /* Enable GPDMA1 + HPDMA1 clocks BEFORE writing SECCFGR/PRIVCFGR.
+         * RCC NS-alias base 0x46028000, AHB1ENSR @ +0xA50, AHB5ENSR @ +0xA60.
          */
-        *(volatile uint32_t *)0x56028A50UL = (1UL << 4);     /* AHB1ENSR.GPDMA1ENS */
-        *(volatile uint32_t *)0x56028A60UL = (1UL << 0);     /* AHB5ENSR.HPDMA1ENS */
-        (void)*(volatile uint32_t *)0x56028250UL;            /* AHB1ENR readback to flush */
+        *(volatile uint32_t *)0x46028A50UL = (1UL << 4);     /* AHB1ENSR.GPDMA1ENS */
+        *(volatile uint32_t *)0x46028A60UL = (1UL << 0);     /* AHB5ENSR.HPDMA1ENS */
+        (void)*(volatile uint32_t *)0x46028250UL;            /* AHB1ENR readback to flush */
 
-        /* GPDMA1 base S = 0x50021000 (AHB1), HPDMA1 base S = 0x58020000
-         * (AHB5). Open SECCFGR + PRIVCFGR on both — clocks are on for
-         * both, so any user of HPDMA1 needs the same channel-attribute
-         * openings as GPDMA1 or its NS transactions silently drop. */
-        *(volatile uint32_t *)(0x50021000UL + 0x00) = 0x0000FFFFUL;   /* GPDMA1->SECCFGR */
-        *(volatile uint32_t *)(0x50021000UL + 0x04) = 0x0000FFFFUL;   /* GPDMA1->PRIVCFGR */
-        (void)*(volatile uint32_t *)(0x50021000UL + 0x00);
+        /* GPDMA1 NS-alias base = 0x40021000 (AHB1), HPDMA1 NS-alias base
+         * = 0x48020000 (AHB5). Open SECCFGR + PRIVCFGR on both. */
+        *(volatile uint32_t *)(0x40021000UL + 0x00) = 0x0000FFFFUL;   /* GPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x40021000UL + 0x04) = 0x0000FFFFUL;   /* GPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x40021000UL + 0x00);
 
-        *(volatile uint32_t *)(0x58020000UL + 0x00) = 0x0000FFFFUL;   /* HPDMA1->SECCFGR */
-        *(volatile uint32_t *)(0x58020000UL + 0x04) = 0x0000FFFFUL;   /* HPDMA1->PRIVCFGR */
-        (void)*(volatile uint32_t *)(0x58020000UL + 0x00);
+        *(volatile uint32_t *)(0x48020000UL + 0x00) = 0x0000FFFFUL;   /* HPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x48020000UL + 0x04) = 0x0000FFFFUL;   /* HPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x48020000UL + 0x00);
     }
 
     /* GPIO bank clocks + GPIO SECCFGR open (NS-accessible).
@@ -337,15 +331,15 @@ void systemInit(void)
             RCC_AHB4ENR_GPIOPEN_Msk | RCC_AHB4ENR_GPIOQEN_Msk);
         (void)RCC->AHB4ENR;
 
-        // GPIOA_S..GPIOQ_S at 0x56020000 + bank * 0x400 (with the I..M gap
-        // skipped: H is at 0x56021C00, N at 0x56023400). SECCFGR offset 0x30.
-        static const uintptr_t gpio_s_bases[] = {
-            0x56020000UL, 0x56020400UL, 0x56020800UL, 0x56020C00UL,
-            0x56021000UL, 0x56021400UL, 0x56021800UL, 0x56021C00UL,
-            0x56023400UL, 0x56023800UL, 0x56023C00UL, 0x56024000UL,
+        // GPIOA_NS..GPIOQ_NS at 0x46020000 + bank * 0x400 (with the I..M gap
+        // skipped: H is at 0x46021C00, N at 0x46023400). SECCFGR offset 0x30.
+        static const uintptr_t gpio_ns_bases[] = {
+            0x46020000UL, 0x46020400UL, 0x46020800UL, 0x46020C00UL,
+            0x46021000UL, 0x46021400UL, 0x46021800UL, 0x46021C00UL,
+            0x46023400UL, 0x46023800UL, 0x46023C00UL, 0x46024000UL,
         };
-        for (unsigned i = 0; i < sizeof(gpio_s_bases) / sizeof(gpio_s_bases[0]); i++) {
-            *(volatile uint32_t *)(gpio_s_bases[i] + 0x30UL) = 0U;
+        for (unsigned i = 0; i < sizeof(gpio_ns_bases) / sizeof(gpio_ns_bases[0]); i++) {
+            *(volatile uint32_t *)(gpio_ns_bases[i] + 0x30UL) = 0U;
         }
     }
 
@@ -370,19 +364,20 @@ void systemInit(void)
 
     // Spin PLL1 up off HSE, route IC1 → CPU at 600 MHz, USBPHY1 ← HSE/2.
     SystemClock_Config();
+    debugUartInit();   // re-init UART since clocks changed
 
-    // Re-assert APB3 bus clock + DBGMCU.CR via the secure alias after the
-    // clock-tree reconfig. HAL_RCC_OscConfig / HAL_RCC_ClockConfig drop
-    // bus-enable bits while they retune PLL1 and switch the CPU/SYSCLK
-    // source; without this post-config re-assert DBGCLKEN is gone by
-    // the time SWD tries to attach to a running BF.
-    *(volatile uint32_t *)0x56028A44UL = (1UL << 10);   // APB3ENS
-    (void)*(volatile uint32_t *)0x56028244UL;
-    *(volatile uint32_t *)0x54001004UL = (1UL << 20)    // DBGCLKEN
+    // Re-assert APB3 bus clock + DBGMCU.CR via NS aliases after the
+    // clock-tree reconfig. HAL_RCC_OscConfig / HAL_RCC_ClockConfig may
+    // drop bus-enable bits while they retune PLL1 / switch CPU/SYSCLK;
+    // without this post-config re-assert DBGCLKEN is gone by the time
+    // SWD tries to attach to a running BF.
+    *(volatile uint32_t *)0x46028A44UL = (1UL << 10);   // APB3ENS
+    (void)*(volatile uint32_t *)0x46028244UL;
+    *(volatile uint32_t *)0x44001004UL = (1UL << 20)    // DBGCLKEN
                                        | (1UL <<  0)    // DBG_SLEEP
                                        | (1UL <<  1)    // DBG_STOP
                                        | (1UL <<  2);   // DBG_STANDBY
-    (void)*(volatile uint32_t *)0x54001004UL;
+    (void)*(volatile uint32_t *)0x44001004UL;
 
     // Init cycle counter — depends on SystemCoreClock being current
     // (HAL_RCC_ClockConfig calls SystemCoreClockUpdate internally).

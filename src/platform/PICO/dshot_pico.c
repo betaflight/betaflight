@@ -241,7 +241,7 @@ static void dshotUpdateComplete(void)
     pio_set_sm_mask_enabled(dshotPio, motorMask, true);
 
 #ifdef PICO_TRACE
-    if (cuc % 65536 == 1) {
+    if (cuc % 262144 == 1) {
         bprintf("update complete %d, per motor %d of which ready %d nr wait %d nr other %d",
                 cuc, cucm, cucrts, cucwait, cucother);
         cucm = 0; cucrts = 0; cucwait = 0; cucother = 0;

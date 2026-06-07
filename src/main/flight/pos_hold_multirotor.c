@@ -65,9 +65,16 @@ static void posHoldCheckSticks(void)
 
 static bool sensorsOk(void)
 {
-    // Source-agnostic: the estimator determines validity based on which
-    // sensors are available and the user's source settings.
-    return positionEstimatorIsValidXY();
+    // Optical flow position hold is heading-agnostic: the same yaw is used
+    // to project flow into ENU and to rotate the correction back to body
+    // frame, so a heading error cancels. GPS-assisted hold is not: GPS
+    // provides absolute ENU measurements and a bad yaw in the body-frame
+    // correction rotation will cause a flyaway.
+    // Use the runtime GPS state (fix present + config allows GPS) rather than
+    // the configured source alone, so AUTO mode with no GPS hardware correctly
+    // skips the heading check and does not block optical-flow-only hold.
+    const bool needsHeading = positionEstimatorIsGPSContributing();
+    return positionEstimatorIsValidXY() && (!needsHeading || imuIsHeadingValid());
 }
 
 void updatePosHold(timeUs_t currentTimeUs) {

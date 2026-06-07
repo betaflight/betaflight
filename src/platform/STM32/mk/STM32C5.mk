@@ -88,6 +88,12 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32c591xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+else ifeq ($(TARGET_MCU),STM32C5A3xx)
+DEVICE_FLAGS       += -DSTM32C5A3xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32c5a3xx.s
+MCU_FLASH_SIZE     := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 else ifeq ($(TARGET_MCU),STM32C562xx)
 DEVICE_FLAGS       += -DSTM32C562xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c562_512k.ld

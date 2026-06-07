@@ -92,6 +92,7 @@ protected:
         rMat.m[1][1] = 1.0f;
         rMat.m[2][2] = 1.0f;
         acc.dev.acc_1G_rec = 1.0f;
+        acc.accADC.z = 1.0f;
 
         enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
         rfHealthy = true;
