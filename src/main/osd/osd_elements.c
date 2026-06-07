@@ -1890,7 +1890,7 @@ static void osdElementAoaLimiter(osdElementParms_t *element)
     case LIMITER_DISABLED:
         element->drawElement = false;  // element does not need to be rendered
         break;
-    case LIMITER_OFF:
+    case LIMITER_NOT_READY:
         tfp_sprintf(element->buff, "%s", "AOA LIM NOT READY");
         break;
     case LIMITER_ON:

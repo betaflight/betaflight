@@ -25,7 +25,7 @@
 
 typedef enum {
     LIMITER_DISABLED,
-    LIMITER_OFF,
+    LIMITER_NOT_READY,
     LIMITER_ON,
     LIMITER_ACTIVE,
 } psasLimiterState_e;

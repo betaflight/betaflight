@@ -209,7 +209,7 @@ static bool FAST_CODE_NOINLINE updateAngleOfAttackLimiter(float liftCoef, float 
                 }
             }
         } else {
-            psasData.pitch.aoaLimiterState = LIMITER_OFF;
+            psasData.pitch.aoaLimiterState = LIMITER_NOT_READY;
         }
     }
 
