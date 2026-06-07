@@ -59,6 +59,9 @@
 #include "io/gps.h"
 #endif
 
+#if defined(USE_POSITION_HOLD)
+#include "pg/autopilot.h"
+#endif
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
 #include "pg/pos_hold.h"
 #endif
@@ -67,20 +70,19 @@
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
 #define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0 // lower value favours faster acc changes, 700.0f is too low
+#define Q_ACCEL_Z           20000.0f // lower value favours faster acc changes, 700.0f is too low
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
 #define INITIAL_VEL_VAR     10000.0f    // (cm/s)^2
 
 // Measurement noise base values (R)
-#define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
-#define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
-//#define R_BARO_ALT          2500.0f     // cm^2
-#define R_BARO_ALT          1500.0f   // cm^2 lower value favours rapid baro changes
-#define R_RANGEFINDER_ALT   100.0f      // cm^2
-#define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
+#define R_GPS_POS_BASE       500.0f      // cm^2 at pDOP=1.0
+#define R_GPS_VEL_BASE       100.0f      // (cm/s)^2 at pDOP=1.0 //  low value to tightly track GPS but allow some acc influence
+#define R_GPS_ALT_BASE     60000.0f      // cm^2 at pDOP=1.0, higher favours other sensors over GPS
+#define R_BARO_ALT          1500.0f     // cm^2 lower value favours rapid baro changes
+#define R_RANGEFINDER_ALT    100.0f     // cm^2
+#define R_OPTICALFLOW_VEL    400.0f     // (cm/s)^2 at max quality
 
 #define GRAVITY_CMSS        980.665f
 
@@ -179,6 +181,7 @@ static positionKalman_t kfUp;
 static positionEstimate3d_t estimate;
 
 static bool xyEnabled = false;
+static float qaccelXY = Q_ACCEL_XY; // value to use for QAccel
 
 static timeUs_t lastXYMeasurementUs = 0;
 static timeUs_t lastZMeasurementUs = 0;
@@ -220,10 +223,14 @@ static void initZCalEntries(void)
 
 void positionEstimatorInit(void)
 {
-    kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-    kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-    kalmanInit(&kfUp, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
 
+#if defined(USE_POSITION_HOLD)
+    qaccelXY = Q_ACCEL_XY * ((autopilotConfig()->positionA > 1) ?  (30.0f / autopilotConfig()->positionA ) : 15.0f);
+    // when user reduces positionA, , they want more accelerometer influence (up to 15x more), and vice versa
+#endif
+    kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
+    kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
+    kalmanInit(&kfUp, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
     estimate.position = (vector3_t){{0, 0, 0}};
     estimate.velocity = (vector3_t){{0, 0, 0}};
     estimate.trustXY = 0.0f;
@@ -257,8 +264,8 @@ void positionEstimatorInit(void)
 void positionEstimatorEnableXY(bool enable)
 {
     if (enable && !xyEnabled) {
-        kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-        kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
+        kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
+        kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
         estimate.position.v[ENU_E] = 0.0f;
         estimate.position.v[ENU_N] = 0.0f;
         estimate.velocity.v[ENU_E] = 0.0f;
