@@ -65,21 +65,20 @@
 // Accelerometer process noise in (cm/s^2)^2.
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
-#define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0 // lower value favours faster acc changes, 700.0f is too low
+#define Q_ACCEL_XY         1000000.0f // increased 20x from 50000 to track GPS better
+#define Q_ACCEL_Z           20000.0f // lower value favours faster acc changes, 700.0f is too low
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
 #define INITIAL_VEL_VAR     10000.0f    // (cm/s)^2
 
 // Measurement noise base values (R)
-#define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
-#define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
-//#define R_BARO_ALT          2500.0f     // cm^2
+#define R_GPS_POS_BASE       500.0f    // cm^2 at pDOP=1.0 // decreased from 10000
+#define R_GPS_VEL_BASE       500.0f     // (cm/s)^2 at pDOP=1.0 // ** decreased from 2500
+#define R_GPS_ALT_BASE     60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
 #define R_BARO_ALT          1500.0f   // cm^2 lower value favours rapid baro changes
-#define R_RANGEFINDER_ALT   100.0f      // cm^2
-#define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
+#define R_RANGEFINDER_ALT    100.0f      // cm^2
+#define R_OPTICALFLOW_VEL    400.0f      // (cm/s)^2 at max quality
 
 #define GRAVITY_CMSS        980.665f
 
@@ -159,7 +158,7 @@ static bool positionEstimatorWantXYFusion(void)
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
 // only GPS is available) so a single alpha suffices.
-#define CROSS_CAL_ALPHA     0.0001f    // Down from 0.005f
+#define CROSS_CAL_ALPHA  0.0001f
 
 typedef struct {
     float rawReading;
