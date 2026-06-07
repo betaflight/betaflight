@@ -560,6 +560,8 @@ TEST_F(OsdTest, TestRtcDateTimeVariantsUseTimezoneOffset)
     // then
     // the time-only variant uses local time
     EXPECT_STREQ("00:30:15", buffer);
+
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_1);
 }
 
 /*
