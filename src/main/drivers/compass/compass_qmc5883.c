@@ -275,7 +275,9 @@ static bool qmc5883Read(magDev_t *magDev, int16_t *magData)
 
             magData[X] = rawX;
             magData[Y] = rawY;
-            magData[Z] = rawZ;
+            // HA588 variant (common on iFlight Blitz modules) has inverted Z axis
+            // vs standard QMC5883L. Negate Z to match physical chip orientation.
+            magData[Z] = desc->variant == QMC_VARIANT_L ? -rawZ : rawZ;
 
             state = STATE_WAIT_DRDY;
             status = 0;
