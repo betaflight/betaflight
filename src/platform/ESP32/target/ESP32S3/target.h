@@ -58,12 +58,9 @@
 #undef USE_FLASH_CHIP
 #undef USE_RCC
 
-// SD card over SPI for blackbox logging (runtime-configured pins)
-#define USE_SDCARD
-#define USE_SDCARD_SPI
+// Per-board config.h opts into USE_SDCARD / USE_SDCARD_SPI when the
+// board carries an SPI SD socket; target.h stays MCU-shape only.
 
-// Default blackbox to serial; SD card available as an option. Guarded
-// so per-board configs can override via the config.h include path.
 #ifndef DEFAULT_BLACKBOX_DEVICE
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
