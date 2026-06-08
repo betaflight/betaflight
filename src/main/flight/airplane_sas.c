@@ -89,7 +89,7 @@ void psasInit(const pidProfile_t *pidProfile)
     psasRuntime.roll_to_yaw_link = pidProfile->psas_roll_to_yaw_link * 0.1f;
 
     isEnabledAccelZController = sensors(SENSOR_ACC) && pidProfile->psas_pitch_accel_i_gain != 0; // Enable controller for non zero I. The P (psas_pitch_accel_p_gain) is an additional option
-    isEnabledLiftCoefEstimation = sensors(SENSOR_ACC) && sensors(SENSOR_GPS) && pidProfile->psas_wing_load != 0;
+    isEnabledLiftCoefEstimation = sensors(SENSOR_ACC) && pidProfile->psas_wing_load != 0;
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
 }
 
