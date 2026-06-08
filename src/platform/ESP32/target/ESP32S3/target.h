@@ -138,6 +138,15 @@
 #define LED_STRIP_PIN           PA48
 #define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
 
+// PWM motor outputs (LEDC-driven), 4 motors for a quad. No DShot ESCs on the
+// board yet, so default to standard PWM; DShot stays available and selectable
+// via motor_pwm_protocol. Wiring (ESP32-S3 GPIO): M1=38, M2=39, M3=40, M4=41.
+#define DEFAULT_MOTOR_PROTOCOL  MOTOR_PROTOCOL_PWM
+#define MOTOR1_PIN              PA38
+#define MOTOR2_PIN              PA39
+#define MOTOR3_PIN              PA40
+#define MOTOR4_PIN              PA41
+
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG
 #undef USE_MAG_HMC5883

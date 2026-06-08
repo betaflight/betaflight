@@ -126,10 +126,24 @@ static IO_t pwmMotorGetIO(unsigned index)
 
 static void pwmMotorRequestTelemetry(unsigned index) { UNUSED(index); }
 
+// Standard PWM works in microseconds, so the external (1000-2000us) value maps
+// straight through. These MUST be non-NULL: motorConvertFromExternal() (used by
+// the CLI `motor` command and the mixer) calls them via the vtable with no NULL
+// guard, so a NULL here faults the FC the moment a motor is driven.
+static float pwmMotorConvertFromExternal(uint16_t externalValue)
+{
+    return (float)externalValue;
+}
+
+static uint16_t pwmMotorConvertToExternal(float motorValue)
+{
+    return (uint16_t)motorValue;
+}
+
 static const motorVTable_t pwmMotorVTable = {
     .postInit = pwmMotorPostInit,
-    .convertExternalToMotor = NULL,
-    .convertMotorToExternal = NULL,
+    .convertExternalToMotor = pwmMotorConvertFromExternal,
+    .convertMotorToExternal = pwmMotorConvertToExternal,
     .enable = pwmMotorEnable,
     .disable = pwmMotorDisable,
     .isMotorEnabled = pwmMotorIsEnabled,
@@ -152,6 +166,11 @@ static void ledcInit(void)
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
     ledc_ll_enable_bus_clock(true);
     ledc_ll_enable_reset_reg(false);
+
+    // Select the low-speed timer clock source (80MHz APB). Without this the LS
+    // timers have no source selected, so the dividers computed against APB are
+    // wrong and the duty never latches.
+    ledc_ll_set_slow_clk_sel(&LEDC, LEDC_SLOW_CLK_APB);
 
     ledcInitialized = true;
 }
