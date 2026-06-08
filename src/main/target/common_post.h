@@ -903,6 +903,15 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_DRONECAN ENABLE_CAN
 #endif
 
+// First-cut probe for SPA06-003 (Goertek) over STM32C5 I3C1 in legacy-I2C
+// mode. When set, the probe runs once after baroInit() to confirm I3C bring-up
+// on PC10/PC11 by reading the SPA06 CHIP_ID (reg 0x0D) at address 0x77/0x76.
+// Result lives in `spa06ProbeChipId` / `spa06ProbeStatus` (SWD-readable). Off
+// by default; opt in from the board config.
+#if !defined(ENABLE_BARO_SPA06_PROBE)
+#define ENABLE_BARO_SPA06_PROBE 0
+#endif
+
 // LCD console — runtime debug terminal that scrolls printf/trace output to
 // an attached LCD. Independent of the OSD/displayPort stack. Off by default;
 // configs opt in by setting ENABLE_LCD_CONSOLE 1 plus a panel selector
