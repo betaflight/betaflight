@@ -140,12 +140,13 @@
 
 // PWM motor outputs (LEDC-driven), 4 motors for a quad. No DShot ESCs on the
 // board yet, so default to standard PWM; DShot stays available and selectable
-// via motor_pwm_protocol. Wiring (ESP32-S3 GPIO): M1=38, M2=39, M3=40, M4=41.
+// via motor_pwm_protocol. Wiring (ESP32-S3 GPIO): M1=4, M2=5, M3=6, M4=7.
+// Kept clear of the dedicated JTAG pins (GPIO39-42) so on-target debugging works.
 #define DEFAULT_MOTOR_PROTOCOL  MOTOR_PROTOCOL_PWM
-#define MOTOR1_PIN              PA38
-#define MOTOR2_PIN              PA39
-#define MOTOR3_PIN              PA40
-#define MOTOR4_PIN              PA41
+#define MOTOR1_PIN              PA4
+#define MOTOR2_PIN              PA5
+#define MOTOR3_PIN              PA6
+#define MOTOR4_PIN              PA7
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG
