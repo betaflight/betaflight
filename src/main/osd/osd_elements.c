@@ -1891,13 +1891,13 @@ static void osdElementAoaLimiter(osdElementParms_t *element)
         element->drawElement = false;  // element does not need to be rendered
         break;
     case LIMITER_NOT_READY:
-        tfp_sprintf(element->buff, "%s", "AOA LIM NOT READY");
+        tfp_sprintf(element->buff, "%s", "AOA N/R");
         break;
     case LIMITER_ON:
-        tfp_sprintf(element->buff, "%s", "AOA LIM ON");
+        tfp_sprintf(element->buff, "%s", "AOA ON");
         break;
     case LIMITER_ACTIVE:
-        tfp_sprintf(element->buff, "%s", "AOA LIM ACTIVE!");
+        tfp_sprintf(element->buff, "%s", "AOA!!!");
         break;
     }
 }
