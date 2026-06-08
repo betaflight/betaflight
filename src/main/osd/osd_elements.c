@@ -1129,11 +1129,12 @@ static void osdElementFlymode(osdElementParms_t *element)
     // Note that flight mode display has precedence in what to display.
     //  1. FS
     //  2. GPS RESCUE
-    //  3. PASSTHRU,
-    //  4. PSAS
-    //  5. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  6. AIR
-    //  7. ACRO
+    //  3. HEADFREE_MODE
+    //  4. PASSTHRU,
+    //  5. PSAS
+    //  6. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
+    //  7. AIR
+    //  8. ACRO
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
