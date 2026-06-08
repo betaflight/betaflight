@@ -29,6 +29,25 @@ else
   PLATFORM_SDK_esp_idf_CC := xtensa-esp32-elf-gcc
 endif
 
+# esptool, from the IDF python environment, used to wrap the linked ELF into a
+# bootable ESP-IDF application image (flashed at the app partition offset).
+ESP_PYTHON      := $(firstword $(wildcard $(IDF_TOOLS_PATH)/python_env/*/bin/python))
+ESP_ESPTOOL     := $(firstword $(wildcard $(IDF_TOOLS_PATH)/python_env/*/bin/esptool.py))
+
+# Image parameters. ESP_CHIP and ESP_FLASH_SIZE are derived (deferred) from the
+# per-target values, which are set later than this file is included.
+ESP_FLASH_MODE  ?= dio
+ESP_FLASH_FREQ  ?= 80m
+ESP_CHIP         = $(shell echo $(TARGET_MCU_FAMILY) | tr '[:upper:]' '[:lower:]')
+ESP_FLASH_SIZE   = $(shell expr $(MCU_FLASH_SIZE) / 1024)MB
+
+# elf2image command used by the top-level $(TARGET_BIN) rule. Each ESP32 MCU .mk
+# opts in by setting BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE); doing it there (not
+# here) keeps it scoped to ESP32 builds, since this file is included for all.
+ESP_ELF2IMAGE    = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image \
+                   --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) \
+                   --flash_size $(ESP_FLASH_SIZE) --output $@ $<
+
 # Stamp file indicating esp-idf has been hydrated
 ESP_IDF_STAMP := $(ESP_IDF_PATH)/.git
 
