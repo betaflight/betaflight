@@ -65,11 +65,12 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-// Config stored in flash partition
-#define CONFIG_IN_FLASH
-
-#define FLASH_CONFIG_STREAMER_BUFFER_SIZE   256
-#define FLASH_CONFIG_BUFFER_TYPE            uint8_t
+// Config in RAM for initial bring-up (no persistence across reboots).
+// The memory-mapped flash-config path (CONFIG_IN_FLASH) reads/writes via the
+// __config_start mapped address, which on ESP32-S3 needs a byte-accessible
+// DROM-window partition mapped by the bootloader; revisit for persistence.
+#define CONFIG_IN_RAM
+#define EEPROM_SIZE 32768
 
 /* DMA Settings */
 #undef USE_DMA_SPEC
@@ -114,6 +115,28 @@
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
+
+// IMU: InvenSense MPU-9250 on SPI device 0 (FSPI). Wiring on the lonely binary
+// (ESP32-S3 GPIO): SCK=GPIO12, MISO=GPIO13, MOSI=GPIO11, CS=GPIO10, INT=GPIO9.
+// (USE_VIRTUAL_GYRO/ACC can be re-enabled instead for sensorless bring-up.)
+#define USE_GYRO
+#define USE_ACC
+#define USE_GYRO_SPI_MPU9250
+#define USE_ACC_SPI_MPU9250
+
+#define SPI0_SCK_PIN            PA12
+#define SPI0_SDI_PIN            PA13   // MISO
+#define SPI0_SDO_PIN            PA11   // MOSI
+
+#define GYRO_1_SPI_INSTANCE     SPI0
+#define GYRO_1_CS_PIN           PA10
+#define GYRO_1_EXTI_PIN         PA9
+#define GYRO_1_ALIGN            CW0_DEG
+
+// WS2812 addressable LED on GPIO48, used as a single status LED. The LED-strip
+// feature is enabled by default so it acts as a status indicator out of reset.
+#define LED_STRIP_PIN           PA48
+#define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG

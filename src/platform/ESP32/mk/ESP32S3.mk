@@ -54,7 +54,7 @@ MCU_FLASH_SIZE := 8192
 
 LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
 
-STARTUP_SRC =
+STARTUP_SRC = ESP32/start_esp32s3.S
 
 # ROM linker scripts that provide symbols for ROM functions (esp_rom_delay_us, etc.)
 ESP_ROM_LD_DIR = $(ESP_IDF_DIR)/components/esp_rom/esp32s3/ld
@@ -83,6 +83,7 @@ MCU_COMMON_SRC = \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \
             drivers/adc.c \
+            ESP32/app_desc_esp32.c \
             ESP32/adc_esp32.c \
             ESP32/bus_i2c_esp32.c \
             drivers/bus_spi_config.c \
