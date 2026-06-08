@@ -63,4 +63,4 @@
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
-#define EEPROM_SIZE     4096
+#define EEPROM_SIZE     8192
