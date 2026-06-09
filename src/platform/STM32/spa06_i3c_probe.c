@@ -81,12 +81,17 @@ static void spa06ProbeI3cInit(void)
     //    CubeMX-generated I3C1 init helper for the C562 platform.
     LL_I3C_SetMode(I3C1, LL_I3C_MODE_CONTROLLER);
     LL_I3C_DisableArbitrationHeader(I3C1);          // suppress 7'h7E ARB header
-    // Very slow I2C bus (~50 kHz OD on PCLK1=144 MHz). Wider SCL low/high
-    // duty so marginal pull-ups can pull SDA high cleanly between bytes.
-    // TIMINGR0: SCL OD high = 0xFF clocks, SCL OD low = 0xFF clocks, no I3C
-    // push-pull use. Empirical bring-up value -- can tighten once a chip ACKs.
-    LL_I3C_ConfigClockWaveForm(I3C1, 0x00FFFFFFU);
-    LL_I3C_SetBusCharacteristic(I3C1, 0x1D00FFU);
+    // TIMINGR0 layout (LSB first byte):
+    //   [ 7: 0] SCLL_PP    - I3C push-pull SCL low  (unused here, must be > 0)
+    //   [15: 8] SCLH_I3C   - I3C SCL high           (unused here, must be > 0)
+    //   [23:16] SCLL_OD    - legacy-I2C / open-drain SCL low duration
+    //   [31:24] SCLH_I2C   - legacy-I2C SCL high duration
+    // Earlier guesses left SCLH_I2C = 0, so SCL never actually went high and
+    // the slave saw no clock pulses -> ANACK on every transaction. At
+    // 144 MHz PCLK1, SCLL_OD = SCLH_I2C = 0xF0 (240 cycles, ~1.67 us each)
+    // yields ~300 kHz I2C with comfortable rise/fall margin.
+    LL_I3C_ConfigClockWaveForm(I3C1, 0xF0F00505U);
+    LL_I3C_SetBusCharacteristic(I3C1, 0x1D008EU);
     LL_I3C_ConfigCtrlFifo(I3C1,
                           LL_I3C_RXFIFO_THRESHOLD_1_2,
                           LL_I3C_TXFIFO_THRESHOLD_1_2,

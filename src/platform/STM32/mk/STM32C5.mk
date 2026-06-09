@@ -146,6 +146,7 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_hal2.c \
             STM32/bus_i2c_ll.c \
             STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_i3c.c \
             STM32/spa06_i3c_probe.c \
             STM32/can_stm32c5xx.c \
             drivers/bus_i2c_timing.c \
