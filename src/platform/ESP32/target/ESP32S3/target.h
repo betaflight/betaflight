@@ -130,13 +130,16 @@
 
 #define GYRO_1_SPI_INSTANCE     SPI0
 #define GYRO_1_CS_PIN           PA10
-// Gyro data-ready EXTI (GPIO9) is left unconfigured for now: the gyro runs in
-// polled mode. The MPU drives INT cleanly at 8kHz, but the ESP32 bare-metal
-// interrupt-entry path does not yet survive a peripheral IRQ (this is the first
-// hardware interrupt the port takes - USB VCP is polled), so enabling the EXTI
-// here storms the CPU and stalls gyro init. Re-enable once the IRQ path is fixed.
-// #define GYRO_1_EXTI_PIN      PA9
+// Gyro data-ready EXTI (GPIO9). The MPU drives INT at 8kHz; the gyro runs in
+// hardware-timed DMA mode (GYRO_EXTI_INT_DMA) - the EXTI ISR kicks an SPI-DMA
+// read and the GDMA-completion ISR flags data-ready.
+#define GYRO_1_EXTI_PIN         PA9
 #define GYRO_1_ALIGN            CW0_DEG
+
+// Run the PID loop at gyro_rate/4 (2kHz with the 8kHz MPU). The per-iteration
+// cost on this port is high, so attempting a 1:1 (8kHz) PID loop overloads the
+// scheduler; decimating to 2kHz keeps it within budget.
+#define DEFAULT_PID_PROCESS_DENOM 4
 
 // WS2812 addressable LED on GPIO48, used as a single status LED. The LED-strip
 // feature is enabled by default so it acts as a status indicator out of reset.
