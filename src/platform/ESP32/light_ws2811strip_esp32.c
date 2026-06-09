@@ -125,6 +125,20 @@ bool ws2811LedStripHardwareInit(void)
 
     // Enable direct memory access (non-FIFO mode)
     rmt_ll_enable_mem_access_nonfifo(&RMT, true);
+    rmt_ll_mem_force_power_on(&RMT);
+
+    // Select and enable the RMT group clock. DShot's RMT init does this too, but
+    // with PWM motors DShot never runs, so the LED strip must source the group
+    // clock itself - otherwise the channel divider has no input and no waveform
+    // is generated (the WS2812 then shows its uncontrolled power-on state).
+    // Pick an ~80MHz source for the bit-period timing: APB on ESP32 / S3,
+    // PLL_F80M (IDF default) on C5 / P4 which dropped APB.
+#if defined(ESP32C5) || defined(ESP32P4)
+    rmt_ll_set_group_clock_src(&RMT, 0, RMT_CLK_SRC_DEFAULT, 1, 0, 0);
+#else
+    rmt_ll_set_group_clock_src(&RMT, 0, RMT_CLK_SRC_APB, 1, 0, 0);
+#endif
+    rmt_ll_enable_group_clock(&RMT, true);
 
     uint8_t ch = ws2812RmtChannel;
     uint32_t pin = IO_Pin(ledStripIO);
