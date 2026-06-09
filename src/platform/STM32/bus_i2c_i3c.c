@@ -82,24 +82,18 @@ void i2cInit(i2cDevice_e device)
     LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_I3C1);
     LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_I3C1);
 
-    // GPIO: PC10 = SCL (AF4), PC11 = SDA (AF4), both open-drain (external
-    // pull-ups required, BF policy for I2C buses). Use raw LL calls -- the
-    // working probe set HIGH speed; BF's IOCFG_AF_OD uses LOW which is OK
-    // electrically but matches what the verified-good probe does. Claim
-    // ownership via IOInit so unusedPinsInit doesn't revert the pads.
+    // SCL/SDA pins come from I3C_AS_I2C_SCL_PIN / I3C_AS_I2C_SDA_PIN. AF4 is
+    // I3C1 on the STM32C5 AF table. Open-drain, HIGH slew rate; external
+    // pull-ups required (BF policy for I2C buses). Claim ownership via
+    // IOInit so unusedPinsInit doesn't revert the pads.
     const IO_t scl = IOGetByTag(IO_TAG(I3C_AS_I2C_SCL_PIN));
     const IO_t sda = IOGetByTag(IO_TAG(I3C_AS_I2C_SDA_PIN));
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(0));
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(0));
 
-    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
-    LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_10, LL_GPIO_SPEED_FREQ_HIGH);
-    LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_11, LL_GPIO_SPEED_FREQ_HIGH);
-    LL_GPIO_SetPinOutputType(GPIOC, LL_GPIO_PIN_10 | LL_GPIO_PIN_11, LL_GPIO_OUTPUT_OPENDRAIN);
-    LL_GPIO_SetAFPin_8_15(GPIOC, LL_GPIO_PIN_10, LL_GPIO_AF_4);
-    LL_GPIO_SetAFPin_8_15(GPIOC, LL_GPIO_PIN_11, LL_GPIO_AF_4);
-    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_10, LL_GPIO_MODE_ALTERNATE);
-    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_11, LL_GPIO_MODE_ALTERNATE);
+    const ioConfig_t af_od_high = IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_HIGH, GPIO_NOPULL);
+    IOConfigGPIOAF(scl, af_od_high, LL_GPIO_AF_4);
+    IOConfigGPIOAF(sda, af_od_high, LL_GPIO_AF_4);
 
     // Controller mode, arbitration header suppressed (we're talking to plain
     // I2C slaves that don't speak I3C's broadcast 7'h7E).
@@ -228,19 +222,19 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
                                    LL_I3C_CONTROLLER_MTYPE_LEGACY_I2C,
                                    LL_I3C_GENERATE_RESTART);
     uint32_t guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard--) { }
-    if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
+    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
         i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
-        i2cI3cLastFail = 0xA1E0;
+        i2cI3cLastFail = 0xA1E0 | (guard ? 0 : 1);
         i2cErrorCount++; i3cClearAllEventFlags(); return false;
     }
     LL_I3C_TransmitData8(I3C1, reg);
 
     guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard--) { }
-    if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
+    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
         i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
-        i2cI3cLastFail = 0xA2E0;
+        i2cI3cLastFail = 0xA2E0 | (guard ? 0 : 1);
         i2cErrorCount++; i3cClearAllEventFlags(); return false;
     }
     i3cClearAllEventFlags();
@@ -253,8 +247,8 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
 
     for (uint8_t i = 0; i < len; i++) {
         guard = I3C_AS_I2C_GUARD_LOOPS;
-        while (!LL_I3C_IsActiveFlag_RXFNE(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard--) { }
-        if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        while (!LL_I3C_IsActiveFlag_RXFNE(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+        if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
             i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
             i2cI3cLastFail = 0xA3E0 | i;
             i2cErrorCount++; i3cClearAllEventFlags(); return false;
@@ -263,7 +257,12 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr, uint8_t reg, uint8_t len, u
     }
 
     guard = I3C_AS_I2C_GUARD_LOOPS;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && guard--) { }
+    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { i3cWaitOrError(&guard); }
+    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        i2cI3cLastEvr = I3C1->EVR; i2cI3cLastSer = I3C1->SER;
+        i2cI3cLastFail = 0xA4E0 | (guard ? 0 : 1);
+        i2cErrorCount++; i3cClearAllEventFlags(); return false;
+    }
     i2cI3cLastFail = 0x0000;
     i3cClearAllEventFlags();
     return true;

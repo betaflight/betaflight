@@ -531,9 +531,10 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 state = BARO_STATE_PRESSURE_START;
             } else {
                 state = BARO_STATE_TEMPERATURE_START;
-                // Pace cycle restart so cycles complete no faster than
-                // TASK_BARO_RATE_HZ. Floors at 1ms so unrelated state
-                // transitions keep their existing snappy timing.
+                // Pace cycle restart so the full cycle completes no faster
+                // than TASK_BARO_RATE_HZ. Pacing only bites when the natural
+                // cycle would be faster than the target; otherwise sleepTime
+                // is left at the default 1ms set above.
                 const timeUs_t targetCycleUs = 1000000U / TASK_BARO_RATE_HZ;
                 const timeUs_t cycleElapsedUs = currentTimeUs - cycleStartUs;
                 if (cycleElapsedUs < targetCycleUs) {

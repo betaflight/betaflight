@@ -112,7 +112,6 @@ static bool spa06ProbeWriteReg(uint8_t addr, uint8_t reg, uint8_t value, bool st
     // (no value, restart), pass value=0 and stop=false; chip ignores the second
     // byte if the FIFO already starts a restart -- but typical SPA06 read
     // protocol uses just one byte (reg address), then restart + read.
-    (void)value;
     uint32_t bytes = stop ? 2 : 1;
     LL_I3C_ControllerHandleMessage(I3C1,
                                    addr,
@@ -120,20 +119,32 @@ static bool spa06ProbeWriteReg(uint8_t addr, uint8_t reg, uint8_t value, bool st
                                    LL_I3C_DIRECTION_WRITE,
                                    LL_I3C_CONTROLLER_MTYPE_LEGACY_I2C,
                                    stop ? LL_I3C_GENERATE_STOP : LL_I3C_GENERATE_RESTART);
-    // Push register byte
-    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1));
+    // Push register byte (bounded wait)
+    uint32_t guard = 100000;
+    while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { guard--; }
+    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        spa06ProbeEvr = I3C1->EVR; spa06ProbeSer = I3C1->SER;
+        I3C1->CEVR = I3C1->EVR;
+        return false;
+    }
     LL_I3C_TransmitData8(I3C1, reg);
     if (stop) {
-        while (!LL_I3C_IsActiveFlag_TXFNF(I3C1));
+        guard = 100000;
+        while (!LL_I3C_IsActiveFlag_TXFNF(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { guard--; }
+        if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+            spa06ProbeEvr = I3C1->EVR; spa06ProbeSer = I3C1->SER;
+            I3C1->CEVR = I3C1->EVR;
+            return false;
+        }
         LL_I3C_TransmitData8(I3C1, value);
     }
     // Wait for frame complete or error
-    uint32_t guard = 100000;
-    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard--);
+    guard = 100000;
+    while (!LL_I3C_IsActiveFlag_FC(I3C1) && !LL_I3C_IsActiveFlag_ERR(I3C1) && guard) { guard--; }
     spa06ProbeEvr = I3C1->EVR;
     spa06ProbeSer = I3C1->SER;
-    if (LL_I3C_IsActiveFlag_ERR(I3C1)) {
-        I3C1->CEVR = I3C1->EVR;  // clear all flags
+    if (!guard || LL_I3C_IsActiveFlag_ERR(I3C1)) {
+        I3C1->CEVR = I3C1->EVR;
         return false;
     }
     I3C1->CEVR = I3C1->EVR;

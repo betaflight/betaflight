@@ -82,7 +82,7 @@ bool sensorsAutodetect(void)
     baroInit();
 #endif
 
-#if ENABLE_BARO_SPA06_PROBE
+#if defined(STM32C5) && ENABLE_BARO_SPA06_PROBE
     extern void spa06ProbeRun(void);
     spa06ProbeRun();
 #endif
