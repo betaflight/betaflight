@@ -43,6 +43,16 @@
 
 #include "esp_rom_sys.h"
 #include "soc/efuse_reg.h"
+
+// FORCE_DOWNLOAD_BOOT lives in the always-on (RTC/LP) domain; its register
+// differs per variant.
+#if defined(ESP32S3)
+#include "soc/rtc_cntl_reg.h"
+#elif defined(ESP32C5)
+#include "soc/lp_aon_reg.h"
+#elif defined(ESP32P4)
+#include "soc/lp_system_reg.h"
+#endif
 #include "soc/soc.h"
 
 // Both ESP32 and ESP32-S3 run at 240 MHz by default
@@ -109,6 +119,21 @@ void systemReset(void)
 void systemResetToBootloader(bootloaderRequestType_e requestType)
 {
     UNUSED(requestType);
+
+    // Request the mask-ROM USB/UART download mode on the next boot, then reset.
+    // FORCE_DOWNLOAD_BOOT is in the always-on (RTC/LP) power domain so it
+    // survives the system reset; the ROM first-stage reads it and enters
+    // download mode (esptool/DFU over the native USB) instead of loading the
+    // app - the ESP32 equivalent of jumping to the STM32 system DFU. The host
+    // flashing tool issues a full reset afterwards, which clears the bit.
+#if defined(ESP32S3)
+    REG_SET_BIT(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+#elif defined(ESP32C5)
+    REG_SET_BIT(LP_AON_SYS_CFG_REG, LP_AON_FORCE_DOWNLOAD_BOOT);
+#elif defined(ESP32P4)
+    REG_SET_BIT(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_FORCE_DOWNLOAD_BOOT);
+#endif
+
     systemReset();
 }
 
