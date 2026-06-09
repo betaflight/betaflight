@@ -711,29 +711,24 @@ $(AUTOHYDRATE_STAMPS):
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
-# Drop .d files whose recorded source path no longer exists. The most
-# common trigger is pulling across a source-move commit (e.g. promoting
-# an embedded vendor tree to a submodule) — gcc's -MMD pinned the .o to
-# the previous path, and make then bails with "No rule to make target
-# <old-path>" before the compiler ever runs to regenerate the .d. Cheap
-# scan: just stat the first .c prereq the .d declares.
+# Drop .d files when a source is removed (deleted, moved, or promoted to
+# a submodule). gcc's -MMD pins the .o to the old path; without cleanup
+# make bails with "No rule to make target <old-path>". A manifest of all
+# compiled sources is written to $(SRC_MANIFEST); on each build we compare
+# the current source list against it. If any sources were removed all .d
+# files are deleted so gcc can regenerate them cleanly. If nothing changed
+# the cost is a single cmp call.
 .PHONY: validate-deps
-validate-deps: | $(OBJECT_DIR)
-	$(V1) new="$(sort $(C_SOURCES))"; \
-	if [ -f "$(SRC_MANIFEST)" ]; then \
-	    old=$$(cat "$(SRC_MANIFEST)"); \
-	    if [ "$$old" != "$$new" ]; then \
-	        removed=$$(printf '%s\n' $$old | sort > /tmp/_bf_old.$$$$; \
-	                   printf '%s\n' $$new | sort > /tmp/_bf_new.$$$$; \
-	                   comm -23 /tmp/_bf_old.$$$$ /tmp/_bf_new.$$$$; \
-	                   rm -f /tmp/_bf_old.$$$$ /tmp/_bf_new.$$$$); \
-	        if [ -n "$$removed" ]; then \
-	            echo "Sources removed — clearing stale dependency files"; \
-	            find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
-	        fi; \
+validate-deps:
+	$(V1) mkdir -p "$(OBJECT_DIR)"; \
+	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
+	if [ -f "$(SRC_MANIFEST)" ] && ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
+	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
+	        echo "Sources removed — clearing stale dependency files"; \
+	        find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
 	    fi; \
 	fi; \
-	printf '%s\n' $$new > "$(SRC_MANIFEST)"
+	mv -f "$(SRC_MANIFEST).new" "$(SRC_MANIFEST)"
 
 .PHONY: binary
 binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
