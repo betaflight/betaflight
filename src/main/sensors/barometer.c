@@ -261,10 +261,16 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
         FALLTHROUGH;
 
     case BARO_DPS310:
+    case BARO_SPA06_003:
 #if defined(USE_BARO_DPS310) || defined(USE_BARO_SPI_DPS310)
         {
             if (baroDPS310Detect(baroDev)) {
                 baroHardware = BARO_DPS310;
+#ifdef USE_BARO_SPA06_003
+                if (baroDPS310IsSPL07_003()) {
+                    baroHardware = BARO_SPA06_003;
+                }
+#endif
                 break;
             }
         }
