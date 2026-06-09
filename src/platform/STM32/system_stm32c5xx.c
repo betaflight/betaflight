@@ -262,6 +262,25 @@ void systemInit(void)
     // call it here instead -- by this point .data is live.
     HAL_Init();
 
+#if ENABLE_BOOT0_PIN_SELECT
+    // FLASH_OPTSR.BOOT_SEL defaults to 0, which makes the BOOT0 *pin*
+    // inert and forces the boot source to come from the BOOT0 *bit* in
+    // OPTSR. A BF crash before USB-VCP enumerates then leaves no DFU
+    // recovery path short of an SWD mass-erase. Flip BOOT_SEL to 1
+    // once so the BOOT0 button drives boot mode from the next reset on.
+    if (HAL_FLASH_ITF_OB_GetBootSelection(HAL_FLASH) != HAL_FLASH_ITF_OB_BOOT_PIN) {
+        HAL_FLASH_ITF_Unlock(HAL_FLASH);
+        HAL_FLASH_ITF_OB_Unlock(HAL_FLASH);
+        if (HAL_FLASH_ITF_OB_SetBootSelection(HAL_FLASH, HAL_FLASH_ITF_OB_BOOT_PIN) == HAL_OK
+            && HAL_FLASH_ITF_OB_Program(HAL_FLASH) == HAL_OK) {
+            // C5 has no OBL_LAUNCH; OPTSR_CUR only reloads on chip reset.
+            NVIC_SystemReset();
+        }
+        HAL_FLASH_ITF_OB_Lock(HAL_FLASH);
+        HAL_FLASH_ITF_Lock(HAL_FLASH);
+    }
+#endif
+
     // ICACHE is intentionally left at reset default (disabled) on STM32C5.
     //
     // Despite the name, ICACHE on Cortex-M33 sits on the C-AHB code bus

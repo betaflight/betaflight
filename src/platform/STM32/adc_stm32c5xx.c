@@ -394,6 +394,20 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[i].adcChannel = adcTagMap[map].channel;
         adcOperatingConfig[i].enabled = true;
 
+#ifdef USE_ADC_INTERNAL
+        // C5 quirk: TEMPSENSOR / VREFINT physically share ADC channels 12 / 13
+        // with the external PC2 / PC3 pads. CCR.TSEN / VREFEN are a global mux
+        // that route both ADC1 and ADC2's channel 12 / 13 either to the
+        // internal sensor or to the pad -- not both in a single sequence. We
+        // keep the continuous DMA scan as externals-only (TSEN / VREFEN
+        // cleared) and time-multiplex the internals via a short single-shot
+        // scan in adcInternalStartConversion. Skip the internal sources here
+        // so they don't get a rank in the continuous SQR.
+        if (i >= ADC_EXTERNAL_COUNT) {
+            continue;
+        }
+#endif
+
         adcDevice[dev].channelBits |= (1 << adcTagMap[map].channelOrdinal);
 
         if (adcOperatingConfig[i].tag) {
@@ -416,21 +430,10 @@ void adcInit(const adcConfig_t *config)
     }
 
 #ifdef USE_ADC_INTERNAL
-    /* Enable internal measurement paths on ADC_COMMON */
-    ADC_Common_TypeDef *adcCommon = ADC12_COMMON;
-    uint32_t intPaths = 0;
-    for (unsigned i = ADC_EXTERNAL_COUNT; i < ADC_SOURCE_COUNT; i++) {
-        if (!adcOperatingConfig[i].enabled) continue;
-        uint32_t ch = adcOperatingConfig[i].adcChannel;
-        if (ch == LL_ADC_CHANNEL_VREFINT)    intPaths |= LL_ADC_PATH_INTERNAL_VREFINT;
-        if (ch == LL_ADC_CHANNEL_TEMPSENSOR) intPaths |= LL_ADC_PATH_INTERNAL_TEMPSENSOR;
-    }
-    if (intPaths) {
-        LL_ADC_SetCommonPathInternalChAdd(adcCommon, intPaths);
-        /* Stabilisation delay for TEMPSENSOR (~120 µs) */
-        volatile uint32_t wait = SystemCoreClock / 8000;
-        while (wait--) {}
-    }
+    // Internal channels are not enabled in the continuous DMA scan on C5; they
+    // share physical channels 12 / 13 with PC2 / PC3 and are sampled
+    // separately by adcInternalStartConversion which toggles CCR.TSEN /
+    // VREFEN per scan. Nothing to do here at init.
 #endif
 
     /* Configure each active ADC device */
@@ -526,6 +529,19 @@ void adcGetChannelValues(void)
 
 #ifdef USE_ADC_INTERNAL
 
+// Time-multiplexed internal sensor scan. TEMPSENSOR and VREFINT share their
+// physical ADC channels (12 and 13) with PC2 and PC3 on STM32C5, so they
+// can't live in the continuous DMA scan alongside CURRENT / RSSI. Instead we
+// flip-flop: the regular sequence stays on externals (TSEN / VREFEN cleared),
+// and adcInternalStartConversion pauses it briefly, toggles TSEN / VREFEN on,
+// runs a single-shot 2-rank scan of TEMPSENSOR + VREFINT with the DMA path
+// disabled, reads DR directly, restores state, then resumes the continuous
+// external scan. Called from TASK_ADC_INTERNAL at 1 Hz so the ~300 us
+// reconfigure + 2 conversions cost is negligible.
+
+static volatile uint16_t internalTempRaw = 0;
+static volatile uint16_t internalVrefRaw = 0;
+
 bool adcInternalIsBusy(void)
 {
     return false;
@@ -533,20 +549,72 @@ bool adcInternalIsBusy(void)
 
 void adcInternalStartConversion(void)
 {
-    return;
+    ADC_TypeDef *adc = ADC1;
+    ADC_Common_TypeDef *adcCommon = ADC12_COMMON;
+
+    if (!adcDevice[0].channelBits) {
+        return;     // ADC1 was never initialised on this build
+    }
+
+    // Pause the continuous external scan
+    LL_ADC_REG_StopConversion(adc);
+    while (LL_ADC_REG_IsConversionOngoing(adc)) {}
+
+    // Save state so we can restore the external scan afterwards.
+    const uint32_t savedSQR1 = adc->SQR1;
+    const uint32_t savedCFGR1 = adc->CFGR1;
+    const uint32_t savedCCR = adcCommon->CCR;
+
+    // Route channels 12 / 13 to the internal sensors. TEMPSENSOR needs
+    // ~120 us to stabilise after VREFEN / TSEN go high.
+    adcCommon->CCR = savedCCR | LL_ADC_PATH_INTERNAL_TEMPSENSOR | LL_ADC_PATH_INTERNAL_VREFINT;
+    {
+        volatile uint32_t wait = SystemCoreClock / 8000;
+        while (wait--) {}
+    }
+
+    // Long sampling for the high-impedance internal sources.
+    LL_ADC_SetChannelSamplingTime(adc, LL_ADC_CHANNEL_TEMPSENSOR, LL_ADC_SAMPLINGTIME_289CYCLES);
+    LL_ADC_SetChannelSamplingTime(adc, LL_ADC_CHANNEL_VREFINT,    LL_ADC_SAMPLINGTIME_289CYCLES);
+
+    // 2-rank single-shot sequence: SQ1 = channel 12 (TEMPSENSOR),
+    // SQ2 = channel 13 (VREFINT). SQR1.LEN = ranks - 1 = 1.
+    adc->SQR1 = (1U) | (12U << 6) | (13U << 12);
+
+    // Switch off DMA and continuous mode for this scan -- we'll poll DR.
+    adc->CFGR1 = savedCFGR1 & ~(ADC_CFGR1_DMNGT | ADC_CFGR1_CONT);
+
+    // Clear any stale flags and kick the conversion off.
+    adc->ISR = ADC_ISR_EOS | ADC_ISR_EOC | ADC_ISR_EOSMP;
+    LL_ADC_REG_StartConversion(adc);
+
+    // Two conversions, two reads. ReadConversionData also clears EOC.
+    while (!LL_ADC_IsActiveFlag_EOC(adc)) {}
+    internalTempRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
+    while (!LL_ADC_IsActiveFlag_EOC(adc)) {}
+    internalVrefRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
+    while (!LL_ADC_IsActiveFlag_EOS(adc)) {}
+    adc->ISR = ADC_ISR_EOS;
+
+    // Restore continuous external scan.
+    adc->CFGR1 = savedCFGR1;
+    adc->SQR1 = savedSQR1;
+    adcCommon->CCR = savedCCR;
+
+    LL_ADC_REG_StartConversion(adc);
 }
 
 uint16_t adcInternalRead(adcSource_e source)
 {
     switch (source) {
-    case ADC_VREFINT:
     case ADC_TEMPSENSOR:
+        return internalTempRaw;
+    case ADC_VREFINT:
+        return internalVrefRaw;
 #if ADC_INTERNAL_VBAT4_ENABLED
     case ADC_VBAT4:
+        return 0;       // C5 has no VBAT/4 channel
 #endif
-        ;
-        const unsigned dmaIndex = adcOperatingConfig[source].dmaIndex;
-        return dmaIndex < ADC_BUF_LENGTH ? adcConversionBuffer[dmaIndex] : 0;
     default:
         return 0;
     }

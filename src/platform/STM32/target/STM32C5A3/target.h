@@ -68,3 +68,11 @@
 // sensors during bring-up. Must fit within the FLASH_CONFIG partition
 // defined in stm32_flash_c5xx_1m.ld (128 KiB at 0x08020000).
 #define EEPROM_SIZE     8192
+
+#ifndef DEFAULT_PID_PROCESS_DENOM
+#define DEFAULT_PID_PROCESS_DENOM       4
+#endif
+
+#ifndef TASK_BARO_RATE_HZ
+#define TASK_BARO_RATE_HZ               20
+#endif
