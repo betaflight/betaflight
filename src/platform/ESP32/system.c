@@ -78,9 +78,20 @@ void cycleCounterInit(void)
     usTicksInv = 1e6f / SystemCoreClock;
 }
 
+#ifdef USE_MULTICORE
+#include "platform/multicore.h"
+#endif
+
 void systemInit(void)
 {
     cycleCounterInit();
+
+#ifdef USE_MULTICORE
+    // Bring up core 1 (APP_CPU) and its command loop. Core 0 owns the FC and all
+    // interrupts/peripherals; core 1 is available as a compute-offload helper via
+    // multicoreExecute()/multicoreExecuteBlocking().
+    multicoreStart();
+#endif
 
 #if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
     // Initialize systimer - should already be running from ROM bootloader,

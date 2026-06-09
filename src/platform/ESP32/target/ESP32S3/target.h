@@ -51,6 +51,13 @@
 
 #define USE_VCP
 
+// Dual-core: turn on the multicore API. Core 0 runs the FC and owns all
+// interrupts/peripherals; core 1 (APP_CPU) is a compute-offload helper reached
+// via multicoreExecute(). We do NOT define ENABLE_MULTICORE_INIT (the RP2350
+// run-init-on-core1 policy): on ESP32 ets_isr_attach binds handlers to the
+// calling core, so running init on core 1 would misroute our core-0 interrupts.
+#define USE_MULTICORE
+
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER

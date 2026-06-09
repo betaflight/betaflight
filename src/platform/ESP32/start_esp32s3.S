@@ -129,3 +129,33 @@ _start:
 .Lhang:
     j       .Lhang
     .size _start, . - _start
+
+/*
+ * APP_CPU (core 1) entry. The ROM jumps here (address set via
+ * ets_set_appcpu_boot_addr) once core 0 has unstalled and clock/reset-released
+ * the core. Core 0 has already enabled the shared instruction cache, so IROM is
+ * reachable; this stub only needs to install core 1's own stack and call the C
+ * entry. Lives in IRAM alongside _start.
+ */
+    .section .iram1.core1, "ax", @progbits
+    .balign 4
+    .global esp32Core1Entry
+    .type esp32Core1Entry, @function
+esp32Core1Entry:
+    entry   a1, 32
+    j       .Lc1_code
+
+    .balign 4
+.LP_c1_sp:   .word core1StackTop      /* address of the uint32_t holding SP top */
+.LP_c1_main: .word esp32Core1Main
+
+.Lc1_code:
+    l32r    a3, .LP_c1_sp
+    l32i    a3, a3, 0                 /* a3 = core1 stack top address */
+    movi    a4, -16
+    and     a1, a3, a4                /* SP = 16-byte aligned stack top */
+    l32r    a8, .LP_c1_main
+    callx4  a8                        /* esp32Core1Main() - never returns */
+.Lc1_hang:
+    j       .Lc1_hang
+    .size esp32Core1Entry, . - esp32Core1Entry
