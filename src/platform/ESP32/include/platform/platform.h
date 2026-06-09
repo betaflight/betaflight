@@ -26,6 +26,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+// The ESP-IDF HAL headers pull <stdio.h> in transitively (xtensa-esp-elf and the
+// RISC-V ESP variants), so the shared platform.h must pre-include it before the
+// sprintf/snprintf poison pragma, otherwise the later transitive declaration
+// trips the poison. Opt into that pre-include here; other platforms don't need it.
+#define ENABLE_STDIO_PREINCLUDE
+
 // CMSIS compatibility layer for non-ARM ESP32
 // These provide the types and functions expected by shared Betaflight code.
 #ifndef __ASM
