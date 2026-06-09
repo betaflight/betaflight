@@ -65,3 +65,11 @@
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
 #define EEPROM_SIZE     8192
+
+#ifndef DEFAULT_PID_PROCESS_DENOM
+#define DEFAULT_PID_PROCESS_DENOM       4
+#endif
+
+#ifndef TASK_BARO_RATE_HZ
+#define TASK_BARO_RATE_HZ               20
+#endif
