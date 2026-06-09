@@ -130,7 +130,12 @@
 
 #define GYRO_1_SPI_INSTANCE     SPI0
 #define GYRO_1_CS_PIN           PA10
-#define GYRO_1_EXTI_PIN         PA9
+// Gyro data-ready EXTI (GPIO9) is left unconfigured for now: the gyro runs in
+// polled mode. The MPU drives INT cleanly at 8kHz, but the ESP32 bare-metal
+// interrupt-entry path does not yet survive a peripheral IRQ (this is the first
+// hardware interrupt the port takes - USB VCP is polled), so enabling the EXTI
+// here storms the CPU and stalls gyro init. Re-enable once the IRQ path is fixed.
+// #define GYRO_1_EXTI_PIN      PA9
 #define GYRO_1_ALIGN            CW0_DEG
 
 // WS2812 addressable LED on GPIO48, used as a single status LED. The LED-strip
