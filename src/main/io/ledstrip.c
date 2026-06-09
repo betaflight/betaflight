@@ -263,6 +263,11 @@ PG_REGISTER_WITH_RESET_FN(ledStripStatusModeConfig_t, ledStripStatusModeConfig, 
 void pgResetFn_ledStripStatusModeConfig(ledStripStatusModeConfig_t *ledStripStatusModeConfig)
 {
     memset(ledStripStatusModeConfig->ledConfigs, 0, LED_STRIP_MAX_LENGTH * sizeof(ledConfig_t));
+#ifdef LED_STRIP_DEFAULT_LED0
+    // A target may seed a default LED (e.g. a single onboard status LED) so the
+    // strip drives the hardware out of reset, before any user-configured layout.
+    ledStripStatusModeConfig->ledConfigs[0] = LED_STRIP_DEFAULT_LED0;
+#endif
     // copy hsv colors as default
     memset(ledStripStatusModeConfig->colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
     STATIC_ASSERT(LED_CONFIGURABLE_COLOR_COUNT >= ARRAYLEN(hsv), LED_CONFIGURABLE_COLOR_COUNT_invalid);

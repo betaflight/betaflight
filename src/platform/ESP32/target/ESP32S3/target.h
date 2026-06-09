@@ -144,6 +144,11 @@
 #define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
 // A single WS2812 as a status indicator is glaring at full output; dim it.
 #define LED_STRIP_DEFAULT_BRIGHTNESS 20
+// Seed one onboard status LED so the WS2812 is actively driven out of reset
+// (arm state: green disarmed / blue armed, blinking on warnings) rather than
+// sitting at its uncontrolled bright-white power-on state. DEFINE_LED and the
+// LED enums resolve in ledstrip.c, where this macro is expanded.
+#define LED_STRIP_DEFAULT_LED0  DEFINE_LED(0, 0, 0, 0, LED_FUNCTION_ARM_STATE, LED_FLAG_OVERLAY(LED_OVERLAY_WARNING))
 
 // PWM motor outputs (LEDC-driven), 4 motors for a quad. No DShot ESCs on the
 // board yet, so default to standard PWM; DShot stays available and selectable
