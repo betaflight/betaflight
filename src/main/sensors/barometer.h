@@ -55,7 +55,9 @@ typedef struct barometerConfig_s {
 
 PG_DECLARE(barometerConfig_t, barometerConfig);
 
+#ifndef TASK_BARO_RATE_HZ
 #define TASK_BARO_RATE_HZ 40                // Will be overwritten by the baro device driver
+#endif
 
 typedef struct baro_s {
     baroDev_t dev;

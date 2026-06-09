@@ -438,6 +438,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
 {
     static timeUs_t baroStateDurationUs[BARO_STATE_COUNT];
     static barometerState_e state = BARO_STATE_PRESSURE_START;
+    static timeUs_t cycleStartUs = 0;
     barometerState_e oldState = state;
     timeUs_t executeTimeUs;
     timeUs_t sleepTime = 1000; // Wait 1ms between states
@@ -453,6 +454,7 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
     switch (state) {
         default:
         case BARO_STATE_TEMPERATURE_START:
+            cycleStartUs = currentTimeUs;
             baro.dev.start_ut(&baro.dev);
             state = BARO_STATE_TEMPERATURE_READ;
             sleepTime = baro.dev.ut_delay;
@@ -529,6 +531,14 @@ uint32_t baroUpdate(timeUs_t currentTimeUs)
                 state = BARO_STATE_PRESSURE_START;
             } else {
                 state = BARO_STATE_TEMPERATURE_START;
+                // Pace cycle restart so cycles complete no faster than
+                // TASK_BARO_RATE_HZ. Floors at 1ms so unrelated state
+                // transitions keep their existing snappy timing.
+                const timeUs_t targetCycleUs = 1000000U / TASK_BARO_RATE_HZ;
+                const timeUs_t cycleElapsedUs = currentTimeUs - cycleStartUs;
+                if (cycleElapsedUs < targetCycleUs) {
+                    sleepTime = targetCycleUs - cycleElapsedUs;
+                }
             }
             break;
     }
