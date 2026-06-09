@@ -41,6 +41,16 @@ volatile uint32_t spa06ProbeGpioAfrh  __attribute__((used));
 volatile uint32_t spa06ProbeI3cCfgr   __attribute__((used));
 // Bitmap of 7-bit I2C addresses that ACKed an address-only ping. 128 bits.
 volatile uint32_t spa06ProbeAckMap[4] __attribute__((used));
+// GPIO continuity test results. byte layout per slot:
+//   bit 0 = SCL state, bit 1 = SDA state
+// One slot per test step (see comments in spa06ProbeGpioCheck).
+volatile uint32_t spa06ProbeGpio __attribute__((used));
+// Bit-bang I2C address-scan map. Same layout as spa06ProbeAckMap. Independent
+// of the I3C peripheral so we can tell the bus side apart from the peripheral
+// side: if bit-bang ACKs an address but I3C doesn't, the I3C peripheral
+// config is wrong; if neither ACKs anything, the chip itself isn't there or
+// not powered.
+volatile uint32_t spa06ProbeBbAckMap[4] __attribute__((used));
 
 static void spa06ProbeI3cInit(void)
 {
@@ -172,9 +182,246 @@ static bool spa06ProbePing(uint8_t addr)
     return ack;
 }
 
+// Wire-side continuity check before bringing I3C up. Configure PC10/PC11 as
+// plain GPIO (input pull-up first, then floating-input, then output) and look
+// at what the pads read. The 32-bit result encodes four steps:
+//   bits  3:0   step 0 - input pull-up   : bit0 = SCL idle, bit1 = SDA idle
+//   bits  7:4   step 1 - input floating  : bit0 = SCL, bit1 = SDA
+//   bits 11:8   step 2 - SCL drive low   : SCL should be 0, SDA still 1
+//   bits 15:12  step 3 - SDA drive low   : SCL high (released), SDA should be 0
+// External I2C pull-ups will hold the lines HIGH in the floating step; if
+// they read LOW with no pull-up, the bus has no pull-up resistors and the
+// chip can never assert ACK (ACK is the slave pulling SDA low against the
+// bus pull-up). If a pin can't be pulled low by the MCU at all, it's not
+// physically routed to PC10/PC11 the way we think it is.
+static void spa06ProbeGpioCheck(void)
+{
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+
+    uint32_t result = 0;
+
+    // Step 0: input + pull-up. Both lines should read 1.
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_10, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_11, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_10, LL_GPIO_PULL_UP);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_11, LL_GPIO_PULL_UP);
+    for (volatile int i = 0; i < 1000; i++) { __NOP(); }
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_10)) result |= (1U << 0);
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_11)) result |= (1U << 1);
+
+    // Step 1: floating input. If the bus has an external pull-up the line
+    // stays HIGH; with no external pull-up the line floats and likely reads
+    // 0 (unless there's residual charge).
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_10, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_11, LL_GPIO_PULL_NO);
+    for (volatile int i = 0; i < 10000; i++) { __NOP(); }
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_10)) result |= (1U << 4);
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_11)) result |= (1U << 5);
+
+    // Step 2: drive SCL (PC10) LOW as open-drain output, SDA stays floating.
+    LL_GPIO_SetPinOutputType(GPIOC, LL_GPIO_PIN_10, LL_GPIO_OUTPUT_OPENDRAIN);
+    LL_GPIO_ResetOutputPin(GPIOC, LL_GPIO_PIN_10);  // drive low
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_10, LL_GPIO_MODE_OUTPUT);
+    for (volatile int i = 0; i < 1000; i++) { __NOP(); }
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_10)) result |= (1U << 8);
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_11)) result |= (1U << 9);
+    // Release SCL (back to input pull-up so it can float high)
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_10, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_10, LL_GPIO_PULL_UP);
+
+    // Step 3: drive SDA (PC11) LOW open-drain.
+    LL_GPIO_SetPinOutputType(GPIOC, LL_GPIO_PIN_11, LL_GPIO_OUTPUT_OPENDRAIN);
+    LL_GPIO_ResetOutputPin(GPIOC, LL_GPIO_PIN_11);
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_11, LL_GPIO_MODE_OUTPUT);
+    for (volatile int i = 0; i < 1000; i++) { __NOP(); }
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_10)) result |= (1U << 12);
+    if (LL_GPIO_IsInputPinSet(GPIOC, LL_GPIO_PIN_11)) result |= (1U << 13);
+
+    // Release both pins back to inputs floating so the I3C init can take
+    // them over cleanly.
+    LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_11, LL_GPIO_MODE_INPUT);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_11, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_10, LL_GPIO_PULL_NO);
+
+    spa06ProbeGpio = result;
+}
+
+// ---- GPIO bit-bang I2C, independent of the I3C peripheral ----------------
+//
+// PC10 = SCL, PC11 = SDA. Both open-drain with external pull-ups (verified
+// by spa06ProbeGpioCheck). To "drive low" the pin is set as MODE_OUTPUT with
+// OTYPE=OPENDRAIN and ODR=0; to "release" (let the bus pull high) the pin is
+// set back to MODE_INPUT (floating, external pull-ups take over).
+
+#define BB_SCL_PIN  LL_GPIO_PIN_10
+#define BB_SDA_PIN  LL_GPIO_PIN_11
+
+static inline void bbDelay(void)
+{
+    // ~5 us at 144 MHz CPU -- yields ~100 kHz I2C, plenty of margin.
+    for (volatile int i = 0; i < 720; i++) { __NOP(); }
+}
+
+static inline void bbSclLow(void)
+{
+    LL_GPIO_ResetOutputPin(GPIOC, BB_SCL_PIN);
+    LL_GPIO_SetPinMode(GPIOC, BB_SCL_PIN, LL_GPIO_MODE_OUTPUT);
+}
+static inline void bbSclRelease(void)
+{
+    LL_GPIO_SetPinMode(GPIOC, BB_SCL_PIN, LL_GPIO_MODE_INPUT);
+}
+static inline void bbSdaLow(void)
+{
+    LL_GPIO_ResetOutputPin(GPIOC, BB_SDA_PIN);
+    LL_GPIO_SetPinMode(GPIOC, BB_SDA_PIN, LL_GPIO_MODE_OUTPUT);
+}
+static inline void bbSdaRelease(void)
+{
+    LL_GPIO_SetPinMode(GPIOC, BB_SDA_PIN, LL_GPIO_MODE_INPUT);
+}
+static inline int bbSdaRead(void)
+{
+    return LL_GPIO_IsInputPinSet(GPIOC, BB_SDA_PIN);
+}
+
+static void bbI2cInit(void)
+{
+    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOC);
+    // Open-drain output type, no internal pull (use external pull-ups).
+    LL_GPIO_SetPinOutputType(GPIOC, BB_SCL_PIN | BB_SDA_PIN, LL_GPIO_OUTPUT_OPENDRAIN);
+    LL_GPIO_SetPinPull(GPIOC, BB_SCL_PIN, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinPull(GPIOC, BB_SDA_PIN, LL_GPIO_PULL_NO);
+    LL_GPIO_SetPinSpeed(GPIOC, BB_SCL_PIN, LL_GPIO_SPEED_FREQ_HIGH);
+    LL_GPIO_SetPinSpeed(GPIOC, BB_SDA_PIN, LL_GPIO_SPEED_FREQ_HIGH);
+    // Idle: both lines released (pulled high externally).
+    bbSclRelease();
+    bbSdaRelease();
+    bbDelay();
+}
+
+static void bbStart(void)
+{
+    bbSdaRelease(); bbSclRelease(); bbDelay();
+    bbSdaLow();     bbDelay();
+    bbSclLow();     bbDelay();
+}
+
+static void bbStop(void)
+{
+    bbSdaLow();     bbDelay();
+    bbSclRelease(); bbDelay();
+    bbSdaRelease(); bbDelay();
+}
+
+// Shift out one byte MSB first; sample the ACK on the 9th SCL pulse. Returns
+// 1 if ACK (slave pulled SDA low), 0 if NACK.
+static int bbWriteByte(uint8_t b)
+{
+    for (int i = 7; i >= 0; i--) {
+        if (b & (1 << i)) {
+            bbSdaRelease();
+        } else {
+            bbSdaLow();
+        }
+        bbDelay();
+        bbSclRelease(); bbDelay();
+        bbSclLow();     bbDelay();
+    }
+    // ACK slot: release SDA so the slave can drive it.
+    bbSdaRelease(); bbDelay();
+    bbSclRelease(); bbDelay();
+    const int ack = (bbSdaRead() == 0) ? 1 : 0;
+    bbSclLow();     bbDelay();
+    return ack;
+}
+
+// Address-only ping: START + write address byte + STOP. Returns ACK status.
+static int bbPing(uint8_t addr7)
+{
+    bbStart();
+    const int ack = bbWriteByte((uint8_t)(addr7 << 1));     // R/W=0 (write)
+    bbStop();
+    return ack;
+}
+
+// Read one byte, send NACK (no more reads coming) + STOP.
+static uint8_t bbReadByteNack(void)
+{
+    uint8_t v = 0;
+    bbSdaRelease();
+    for (int i = 7; i >= 0; i--) {
+        bbDelay();
+        bbSclRelease(); bbDelay();
+        if (bbSdaRead()) v |= (1 << i);
+        bbSclLow();
+    }
+    // NACK: keep SDA released (high) during the 9th clock.
+    bbSdaRelease(); bbDelay();
+    bbSclRelease(); bbDelay();
+    bbSclLow();     bbDelay();
+    return v;
+}
+
+volatile uint8_t spa06ProbeBbReadStep __attribute__((used));
+
+// I2C read register: S addr W reg Sr addr R data NACK P
+static int bbReadReg(uint8_t addr7, uint8_t reg, uint8_t *out)
+{
+    spa06ProbeBbReadStep = 0x10;
+    bbStart();
+    spa06ProbeBbReadStep = 0x11;
+    if (!bbWriteByte((uint8_t)(addr7 << 1))) { spa06ProbeBbReadStep = 0xE1; bbStop(); return 0; }
+    spa06ProbeBbReadStep = 0x12;
+    if (!bbWriteByte(reg))                    { spa06ProbeBbReadStep = 0xE2; bbStop(); return 0; }
+    spa06ProbeBbReadStep = 0x13;
+    // Repeated start
+    bbSdaRelease(); bbDelay();
+    bbSclRelease(); bbDelay();
+    bbSdaLow();     bbDelay();
+    bbSclLow();     bbDelay();
+    spa06ProbeBbReadStep = 0x14;
+    if (!bbWriteByte((uint8_t)((addr7 << 1) | 1))) { spa06ProbeBbReadStep = 0xE3; bbStop(); return 0; }
+    spa06ProbeBbReadStep = 0x15;
+    *out = bbReadByteNack();
+    spa06ProbeBbReadStep = 0x16;
+    bbStop();
+    spa06ProbeBbReadStep = 0x17;
+    return 1;
+}
+
+volatile uint8_t spa06ProbeBbChipId __attribute__((used));
+volatile uint8_t spa06ProbeBbProdRev __attribute__((used));
+
+static void spa06ProbeBbScan(void)
+{
+    bbI2cInit();
+    for (uint8_t a = 0x08; a < 0x78; a++) {
+        if (bbPing(a)) {
+            spa06ProbeBbAckMap[a / 32] |= (1U << (a % 32));
+        }
+    }
+    // If 0x76 ACKed, read CHIP_ID (reg 0x0D). SPA06-003 = 0x11.
+    if (spa06ProbeBbAckMap[3] & (1U << 22)) {
+        uint8_t v = 0;
+        if (bbReadReg(0x76, 0x0D, &v)) {
+            spa06ProbeBbProdRev = v;
+            spa06ProbeBbChipId  = v & 0x0F;
+        }
+    } else if (spa06ProbeBbAckMap[3] & (1U << 23)) {
+        uint8_t v = 0;
+        if (bbReadReg(0x77, 0x0D, &v)) {
+            spa06ProbeBbProdRev = v;
+            spa06ProbeBbChipId  = v & 0x0F;
+        }
+    }
+}
+
 void spa06ProbeRun(void)
 {
     spa06ProbeStatus = 0xAA000000U;
+    spa06ProbeGpioCheck();
+    spa06ProbeBbScan();
     spa06ProbeI3cInit();
     delay(2);
 
