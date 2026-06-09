@@ -142,6 +142,8 @@
 // feature is enabled by default so it acts as a status indicator out of reset.
 #define LED_STRIP_PIN           PA48
 #define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
+// A single WS2812 as a status indicator is glaring at full output; dim it.
+#define LED_STRIP_DEFAULT_BRIGHTNESS 20
 
 // PWM motor outputs (LEDC-driven), 4 motors for a quad. No DShot ESCs on the
 // board yet, so default to standard PWM; DShot stays available and selectable
