@@ -9,8 +9,8 @@ DEFAULT_OUTPUT := bin
 # Emit a bootable ESP-IDF application image (via esptool elf2image) instead of a
 # raw objcopy dump, which with the split IROM/DROM layout would be enormous,
 # then assemble a single full-flash image (bootloader + partition table + app)
-# for one-step flashing. See tools.mk / bin/README.md.
-ESP_BOOTLOADER_BIN = $(TARGET_PLATFORM_DIR)/bin/bootloader_esp32s3.bin
+# for one-step flashing. The bootloader is built from source by default; see
+# tools.mk (ESP_BOOTLOADER_FROM_SOURCE) and bin/README.md.
 BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE) && $(ESP_FLASH_IMAGE_CMD)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets

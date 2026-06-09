@@ -48,20 +48,47 @@ ESP_ELF2IMAGE    = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image \
                    --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) \
                    --flash_size $(ESP_FLASH_SIZE) --output $@ $<
 
-# Full-flash image assembly. Generate the partition table from the in-tree CSV
-# (IDF gen_esp32part.py), then merge the vendored bootloader (0x0), the table
-# (0x8000) and the app ($@, at ESP_APP_OFFSET) into one image flashable in a
-# single esptool write_flash at 0x0. A per-MCU .mk opts in by chaining
-# ESP_FLASH_IMAGE_CMD after ESP_ELF2IMAGE in BIN_FROM_ELF_CMD, and must set
-# ESP_BOOTLOADER_BIN. All vars are expanded at recipe time, so values set in the
-# (later-included) per-MCU .mk are available.
+# Second-stage bootloader. By default it is built from source via a minimal
+# in-tree IDF project (src/platform/ESP32/bootloader) using `idf.py bootloader`;
+# set ESP_BOOTLOADER_FROM_SOURCE=no to use the committed prebuilt blob instead
+# (handy where CMake/Ninja or the full IDF aren't available). The from-source
+# build is guarded on the output existing, so it runs once per clean tree and
+# then incremental app builds skip it; `make clean` (or removing the build dir)
+# forces a rebuild.
+ESP_BOOTLOADER_FROM_SOURCE ?= yes
+ESP_BOOTLOADER_PROJ  = $(TARGET_PLATFORM_DIR)/bootloader
+ESP_PYTHON_ENV_DIR   = $(patsubst %/bin/python,%,$(ESP_PYTHON))
+
+ifeq ($(ESP_BOOTLOADER_FROM_SOURCE),yes)
+# Absolute paths: idf.py resolves -B against the CWD but -DSDKCONFIG against the
+# project dir, so a relative path would split them apart.
+ESP_BOOTLOADER_BUILD_DIR = $(abspath $(OBJECT_DIR))/esp-bootloader-$(ESP_CHIP)
+ESP_BOOTLOADER_BIN       = $(ESP_BOOTLOADER_BUILD_DIR)/bootloader/bootloader.bin
+ESP_BUILD_BOOTLOADER = [ -f $(ESP_BOOTLOADER_BIN) ] || \
+    env IDF_PATH=$(ESP_IDF_PATH) IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) \
+        IDF_PYTHON_ENV_PATH=$(ESP_PYTHON_ENV_DIR) PATH="$(ESP_TOOLS_BIN):$$PATH" \
+        $(ESP_PYTHON) $(ESP_IDF_PATH)/tools/idf.py -C $(abspath $(ESP_BOOTLOADER_PROJ)) \
+            -B $(ESP_BOOTLOADER_BUILD_DIR) -DIDF_TARGET=$(ESP_CHIP) \
+            -DSDKCONFIG=$(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig bootloader
+else
+ESP_BOOTLOADER_BIN   = $(TARGET_PLATFORM_DIR)/bin/bootloader_$(ESP_CHIP).bin
+ESP_BUILD_BOOTLOADER = true
+endif
+
+# Full-flash image assembly: ensure the bootloader exists, generate the
+# partition table from the in-tree CSV (IDF gen_esp32part.py), then merge
+# bootloader (0x0) + table (0x8000) + app ($@, at ESP_APP_OFFSET) into one image
+# flashable in a single esptool write_flash at 0x0. A per-MCU .mk opts in by
+# chaining ESP_FLASH_IMAGE_CMD after ESP_ELF2IMAGE in BIN_FROM_ELF_CMD. All vars
+# are expanded at recipe time, so values set in the per-MCU .mk are available.
 ESP_GEN_ESP32PART   = $(ESP_PYTHON) $(ESP_IDF_PATH)/components/partition_table/gen_esp32part.py
 ESP_PARTITIONS_CSV ?= $(TARGET_PLATFORM_DIR)/partitions.csv
 ESP_PARTITION_BIN   = $(OBJECT_DIR)/partition-table_$(TARGET_NAME).bin
 ESP_APP_OFFSET     ?= 0x10000
 ESP_FULL_BIN        = $(BIN_DIR)/$(TARGET_FULLNAME)_full.bin
 
-ESP_FLASH_IMAGE_CMD = $(ESP_GEN_ESP32PART) $(ESP_PARTITIONS_CSV) $(ESP_PARTITION_BIN) && \
+ESP_FLASH_IMAGE_CMD = ( $(ESP_BUILD_BOOTLOADER) ) && \
+                      $(ESP_GEN_ESP32PART) $(ESP_PARTITIONS_CSV) $(ESP_PARTITION_BIN) && \
                       $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) merge_bin --output $(ESP_FULL_BIN) \
                         --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) --flash_size $(ESP_FLASH_SIZE) \
                         0x0 $(ESP_BOOTLOADER_BIN) 0x8000 $(ESP_PARTITION_BIN) $(ESP_APP_OFFSET) $@
