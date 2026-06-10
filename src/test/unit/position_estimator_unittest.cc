@@ -63,10 +63,9 @@ bool gpsHasNewData(uint16_t *gpsStamp)
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
-    UNUSED(from);
-    UNUSED(to);
-    dest->x = 0.0f;
-    dest->y = 0.0f;
+    // Simplified (no Earth-scale projection): return integer-unit deltas so sign tests work.
+    dest->x = (float)(to->lon - from->lon);
+    dest->y = (float)(to->lat - from->lat);
 }
 }
 
@@ -136,5 +135,51 @@ TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
     // In RANGEFINDER_PREFER, recovered altitude should be pulled down toward RF value.
     EXPECT_LT(recoveredAltitude, fallbackAltitude - 5.0f);
     EXPECT_TRUE(positionEstimatorIsValidZ());
+}
+
+// Regression test: GPS_distance2d must be called as (arm, current) so that a craft
+// East of the arm position produces a positive kfX (East) position estimate.
+// The bug had the arguments reversed — (current, arm) — giving a negative East estimate.
+TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
+{
+    // Run a couple of steps so the arm location is captured from the initial gpsSol (lon=0).
+    stepEstimator(2);
+
+    // Place the craft East of the arm (positive longitude delta).
+    gpsSol.llh.lon = 100000;
+
+    // Let the Kalman filter converge toward the GPS position measurement.
+    stepEstimator(30);
+
+    EXPECT_GT(positionEstimatorGetEstimate()->position.x, 0.0f);
+}
+
+// Regression test: forward thrust when heading East must produce a positive East velocity
+// estimate.  rMat Y points West in Betaflight's earth frame, so accelEast must be
+// -accEF_NEU.y (not +accEF_NEU.y).  The bug used the wrong sign, causing the IMU
+// prediction to oppose GPS-measured East motion.
+TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
+{
+    // Run a couple of steps so XY fusion is established with the arm at origin.
+    stepEstimator(2);
+
+    // Set rMat for heading East (attitude yaw = 90 deg).
+    // Row pattern: row0 = (cosYaw, sinYaw, 0) = (0, 1, 0)
+    //              row1 = (-sinYaw, cosYaw, 0) = (-1, 0, 0)
+    memset(&rMat, 0, sizeof(rMat));
+    rMat.m[0][1] = 1.0f;
+    rMat.m[1][0] = -1.0f;
+    rMat.m[2][2] = 1.0f;
+
+    // Apply forward (East) thrust of 0.5 g alongside the steady-state gravity component.
+    acc.accADC.x = 0.5f;
+    acc.accADC.z = 1.0f;
+
+    // GPS position and velocity remain zero (craft stationary in GPS frame) so any
+    // non-zero velocity estimate is purely driven by the IMU acceleration prediction.
+    // After many steps the sign of the steady-state velocity reflects the sign of accelEast.
+    stepEstimator(100);
+
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
 }
 
