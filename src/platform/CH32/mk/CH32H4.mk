@@ -84,9 +84,28 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 
 LD_SCRIPT       = $(LINKER_DIR)/ch32h41x_v5f.ld
 
+
+LD_FLAGS     = -lm \
+              -nostartfiles \
+              --specs=nano.specs \
+              -lc \
+              -lnosys \
+              $(ARCH_FLAGS) \
+              $(LTO_FLAGS) \
+              $(DEBUG_FLAGS) \
+              -static \
+              -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+              -Wl,-L$(LINKER_DIR) \
+              -Wl,--cref \
+              -Wl,--print-memory-usage \
+              -T$(LD_SCRIPT) \
+               $(EXTRA_LD_FLAGS)
 ############################################################################
 ARCH_FLAGS      = -std=c99 -march=rv32imafc_zba_zbb_zbc_zbs_xw -mabi=ilp32f -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fmax-errors=5 -fsigned-char -fsingle-precision-constant -Wunused -Wuninitialized -lprintfloat -g
 DEVICE_FLAGS    += -DUSE_CHBSP_DRIVER -DCH32H415 -DCH32H41x -DHSE_VALUE=$(HSE_VALUE) -DCH32 -DUSE_OTG_HOST_MODE
+
+DOUBLE_PROMOTION        := no
+LTO                     := no
 
 MCU_COMMON_SRC = \
         common/stm32/system.c \

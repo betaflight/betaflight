@@ -237,9 +237,7 @@ else
 ifeq ($(DEBUG),INFO)
 DEBUG_FLAGS            = -ggdb2
 endif
-# OPTIMISATION_BASE     := -flto=auto -fuse-linker-plugin -ffast-math -fmerge-all-constants
-# OPTIMISE_DEFAULT      := -O2
-OPTIMISATION_BASE     := -fuse-linker-plugin -ffast-math -fmerge-all-constants
+OPTIMISATION_BASE     := -flto=auto -fuse-linker-plugin -ffast-math -fmerge-all-constants
 OPTIMISE_DEFAULT      := -O2
 OPTIMISE_SPEED        := -Ofast
 OPTIMISE_SIZE         := -Os
@@ -408,25 +406,6 @@ ASFLAGS     = $(ARCH_FLAGS) \
               $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               -MMD -MP
 
-# ifeq ($(LD_FLAGS),)
-# LD_FLAGS     = -lm \
-#               -nostartfiles \
-#               --specs=nano.specs \
-#               -lc \
-#               -lnosys \
-#               $(ARCH_FLAGS) \
-#               $(LTO_FLAGS) \
-#               $(DEBUG_FLAGS) \
-#               -static \
-#               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
-#               -Wl,-L$(LINKER_DIR) \
-#               -Wl,--cref \
-#               -Wl,--no-wchar-size-warning \
-#               -Wl,--print-memory-usage \
-#               -T$(LD_SCRIPT) \
-#                $(EXTRA_LD_FLAGS)
-# endif
-
 ifeq ($(LD_FLAGS),)
 LD_FLAGS     = -lm \
               -nostartfiles \
@@ -440,6 +419,7 @@ LD_FLAGS     = -lm \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
+              -Wl,--no-wchar-size-warning \
               -Wl,--print-memory-usage \
               -T$(LD_SCRIPT) \
                $(EXTRA_LD_FLAGS)
@@ -782,7 +762,7 @@ binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 .PHONY: hex
 hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
-	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_LST)
+
 .PHONY: uf2
 uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
