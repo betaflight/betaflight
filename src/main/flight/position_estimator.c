@@ -291,8 +291,8 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
     matrixVectorMul(&accEF_NEU, &rMat, &accBF);
 
     // NED -> ENU, subtract gravity (NED gravity = [0,0,+1g]), convert G -> cm/s^2
-    *accelEast  =  accEF_NEU.y * GRAVITY_CMSS;
-    *accelNorth =  accEF_NEU.x * GRAVITY_CMSS;
+    *accelEast  = -accEF_NEU.y * GRAVITY_CMSS; // rMat Y is West (NWD earth frame); East = -Y
+    *accelNorth =  accEF_NEU.x * GRAVITY_CMSS; // rMat X is North
     *accelUp    = (accEF_NEU.z - 1.0f) * GRAVITY_CMSS;
 }
 
@@ -366,8 +366,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     // XY position + velocity measurements
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;
-        GPS_distance2d(&gpsSol.llh, &armLocationGps, &gpsDistCm);
-        // gpsDistCm: X = East-West (lon), Y = North-South (lat) relative to arm position
+        GPS_distance2d(&armLocationGps, &gpsSol.llh, &gpsDistCm);
+        // gpsDistCm: X = East-West (lon), Y = North-South (lat) of craft relative to arm position
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
         const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
