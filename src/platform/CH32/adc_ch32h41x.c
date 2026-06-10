@@ -34,7 +34,6 @@
 #include "build/debug.h"
 
 #include "drivers/adc.h"
-<<<<<<< HEAD
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
@@ -63,46 +62,6 @@ const adcDevice_t adcHardware[ADCDEV_COUNT] = {
 #endif
     }
 };
-=======
-#include "drivers/dma.h"
-#include "drivers/dma_reqmap.h"
-#include "drivers/io.h"
-#include "drivers/io_impl.h"
-#include "drivers/sensor.h"
-#include "platform/rcc.h"
-
-#include "pg/adc.h"
-#include "platform/adc_impl.h"
-<<<<<<< HEAD
-<<<<<<< HEAD
-#include "platform/dma.h"
-
-#include <math.h>
-<<<<<<< HEAD
-
-=======
->>>>>>> fd9c9cdce (target based cross-compiler)
-=======
-=======
-#include "platform/dma.h"
->>>>>>> cdcdf52d6 (update CH32 drivers for rebase)
-
-#include <math.h>
-
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-const adcDevice_t adcHardware[ADCDEV_COUNT] = {{.ADCx = ADC1,
-                                                .rccADC = RCC_HB2(ADC1),
-#if !defined(USE_DMA_SPEC)
-                                                .dmaResource = NULL
-#endif
-                                               },
-                                               {.ADCx = ADC2,
-                                                .rccADC = RCC_HB2(ADC2),
-#if !defined(USE_DMA_SPEC)
-                                                .dmaResource = NULL
-#endif
-                                               }};
->>>>>>> 92b14f1fa (add ch32 target)
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
@@ -129,11 +88,6 @@ const adcTagMap_t adcTagMap[] = {
     {DEFIO_TAG_E__PB1, ADC_DEVICES_12, ADC_Channel_9},
 };
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 92b14f1fa (add ch32 target)
 static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_SOURCE_COUNT]; //ADC_SOURCE_COUNT ADC_CHANNEL_COUNT
 
 static void adcInitDevice(const adcDevice_t *adcdev, int channelCount) {
@@ -147,27 +101,6 @@ static void adcInitDevice(const adcDevice_t *adcdev, int channelCount) {
   ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
   ADC_InitStructure.ADC_NbrOfChannel = channelCount;
 
-<<<<<<< HEAD
-=======
-=======
-static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_CHANNEL_COUNT];
-=======
-static volatile DMA_DATA uint32_t adcConversionBuffer[ADC_SOURCE_COUNT]; //ADC_SOURCE_COUNT ADC_CHANNEL_COUNT
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-
-static void adcInitDevice(const adcDevice_t *adcdev, int channelCount) {
-  ADC_TypeDef *Instance = adcdev->ADCx;
-  ADC_InitTypeDef ADC_InitStructure = {0};
-
-  ADC_DeInit(Instance);
-  ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
-  ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-  ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
-  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-  ADC_InitStructure.ADC_NbrOfChannel = channelCount;
-
->>>>>>> fd9c9cdce (target based cross-compiler)
->>>>>>> 92b14f1fa (add ch32 target)
   // Multiple injected channel seems to require scan conversion mode to be
   // enabled even if main (non-injected) channel count is 1.
 #ifdef USE_ADC_INTERNAL
@@ -250,11 +183,7 @@ void adcInit(const adcConfig_t *config) {
     int dev;
 
     switch (i){
-<<<<<<< HEAD
 #ifdef USE_ADC_INTERNAL
-=======
-      #ifdef USE_ADC_INTERNAL
->>>>>>> 92b14f1fa (add ch32 target)
         case ADC_TEMPSENSOR:
           map = ADC_TAG_MAP_TEMPSENSOR;
           dev = ADCDEV_1;
@@ -263,11 +192,7 @@ void adcInit(const adcConfig_t *config) {
           map = ADC_TAG_MAP_VREFINT;
           dev = ADCDEV_1;
           break;
-<<<<<<< HEAD
 #endif
-=======
-      #endif
->>>>>>> 92b14f1fa (add ch32 target)
 
       default:
         if (!adcOperatingConfig[i].tag) {
@@ -371,12 +296,7 @@ void adcInit(const adcConfig_t *config) {
     DMA_InitTypeDef DMA_InitStructure = {0};
 
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&(adc->ADCx->RDATAR);
-<<<<<<< HEAD
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&(adcConversionBuffer[dmaBufferIndex]);
-=======
-    DMA_InitStructure.DMA_Memory0BaseAddr =
-        (uint32_t)&(adcConversionBuffer[dmaBufferIndex]);
->>>>>>> 92b14f1fa (add ch32 target)
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
     DMA_InitStructure.DMA_BufferSize = nChannelsUsed[dev];
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -423,117 +343,6 @@ void adcInit(const adcConfig_t *config) {
 #ifdef USE_ADC_INTERNAL
     ADC_TempSensorVrefintCmd(ENABLE); // only ADC1
 #endif
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-        ADC_SoftwareStartConvCmd(adc->ADCx, ENABLE);  // start sampling
-    }
-  } // for each channel
-
-  // reset all ADC instances，before init we do this;
-  // ADC_DeInit(ADC1);
-  // ADC_DeInit(ADC2);
-
-  // Common config applies equally to all two ADCs, so only apply it once
-  RCC_ADCCLKConfig(RCC_ADCCLKSource_HCLK);
-  RCC_ADCHCLKCLKAsSourceConfig(RCC_PPRE2_DIV0, RCC_HCLK_ADCPRE_DIV8);
-
-  // Enable the clock (power up the circuit)
-  // This has to be done before calling adc_common_config for reasons that are
-  // unclear NB only ADC1 will have any channels, so this loop for pedantry only
-  for (int i = 0; i < ADCDEV_COUNT; i++) {
-    if (nChannelsUsed[i] > 0) {
-      RCC_ClockCmd(adcHardware[0].rccADC, ENABLE);
-    }
-  }
-
-  // Only adc1 will have any channels assigned to it after the code above, so
-  // this can be simplified
-
-  int dmaBufferIndex = 0;
-  for (int dev = 0; dev < ADCDEV_COUNT; dev++) {
-    const adcDevice_t *adc = &adcHardware[dev];
-
-    // skip this device if it doesn't have any active channels
-    if (nChannelsUsed[dev] == 0) {
-      continue;
-    }
-
-    adcInitDevice(adc, nChannelsUsed[dev]);
-
-#ifdef USE_DMA_SPEC
-
-    // Setup the DMA channel so that data is automatically and continuously
-    // transferred from the ADC output register to the results buffer
-
-    const dmaChannelSpec_t *dmaSpec =
-        dmaGetChannelSpecByPeripheral(DMA_PERIPH_ADC, dev, config->dmaopt[dev]);
-    if (dmaSpec == NULL) {
-      return;
-    }
-
-    dmaIdentifier_e dmaIdentifier = dmaGetIdentifier(dmaSpec->ref);
-    if (!dmaAllocate(dmaIdentifier, OWNER_ADC, RESOURCE_INDEX(dev))) {
-      return;
-    }
-
-    dmaEnable(dmaIdentifier); // enables clock/power
-    xDMA_DeInit(dmaSpec->ref);
-
-    DMA_InitTypeDef DMA_InitStructure = {0};
-
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&(adc->ADCx->RDATAR);
-    DMA_InitStructure.DMA_Memory0BaseAddr =
-        (uint32_t)&(adcConversionBuffer[dmaBufferIndex]);
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-    DMA_InitStructure.DMA_BufferSize = nChannelsUsed[dev];
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-    xDMA_Init(dmaSpec->ref, &DMA_InitStructure);
-    dmaMuxEnable(dmaIdentifier, dmaSpec->dmaMuxId);
-
-    xDMA_Cmd(dmaSpec->ref, ENABLE); // means dma_channel_enable
-    ADC_DMACmd(adc->ADCx, ENABLE);
-
-#endif // end of USE_DMA_SPEC
-
-    // set each channel into the auto sequence for this ADC device
-    for (int adcChan = 0; adcChan < ADC_SOURCE_COUNT; adcChan++) {
-      // only add enabled channels for the current dev (can be simplified if we
-      // drop the pretense at handling adc2 and 3)
-      if (adcOperatingConfig[adcChan].enabled &&
-          adcOperatingConfig[adcChan].adcDevice == dev) {
-        adcOperatingConfig[adcChan].dmaIndex = dmaBufferIndex++;
-        ADC_RegularChannelConfig(
-            adc->ADCx, adcOperatingConfig[adcChan].adcChannel,
-            adcOperatingConfig[adcChan].dmaIndex +
-                1, // This is the sequence number for the adc conversion
-            adcOperatingConfig[adcChan].sampleTime);
-      }
-    }
-
-    adc->ADCx->CTLR1 |= (1 << 31);
-    ADC_Cmd(adc->ADCx, ENABLE);
-    ADC_BufferCmd(adc->ADCx, ENABLE);
-
-    // ADC_ResetCalibration(adc->ADCx);
-    // while(ADC_GetResetCalibrationStatus(adc->ADCx));
-    // ADC_StartCalibration(adc->ADCx);
-    // while(ADC_GetCalibrationStatus(adc->ADCx));
-
-    // RCC_ADCHCLKCLKAsSourceConfig(RCC_PPRE2_DIV0,RCC_HCLK_ADCPRE_DIV8);
-    ADC_LowPowerModeCmd(adc->ADCx, DISABLE);
-#ifdef USE_ADC_INTERNAL
-    ADC_TempSensorVrefintCmd(ENABLE); // only ADC1
-#endif
-=======
->>>>>>> fd9c9cdce (target based cross-compiler)
->>>>>>> 92b14f1fa (add ch32 target)
     ADC_SoftwareStartConvCmd(adc->ADCx, ENABLE); // start sampling
   }
 }
@@ -542,19 +351,7 @@ void adcInit(const adcConfig_t *config) {
  * Copies the latest ADC external channel data into adcValues defined in adc.c
  */
 void adcGetChannelValues(void) {
-<<<<<<< HEAD
   for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-  for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
-=======
-  for (int i = 0; i < ADC_CHANNEL_INTERNAL_FIRST_ID; i++) {
->>>>>>> fd9c9cdce (target based cross-compiler)
-=======
-  for (unsigned i = 0; i < ADC_EXTERNAL_COUNT; i++) {
->>>>>>> ab93a2999 (WIP CH32 platform updates)
->>>>>>> 92b14f1fa (add ch32 target)
     if (adcOperatingConfig[i].enabled) {
       adcValues[adcOperatingConfig[i].dmaIndex] =
           adcConversionBuffer[adcOperatingConfig[i].dmaIndex];
@@ -567,42 +364,24 @@ void adcGetChannelValues(void) {
 /**
  * This impl is never busy in the sense of being unable to supply data
  */
-<<<<<<< HEAD
 bool adcInternalIsBusy(void) 
 { 
     return false; 
 }
-=======
-bool adcInternalIsBusy(void) { return false; }
->>>>>>> 92b14f1fa (add ch32 target)
 
 /**
  * Nop, since the ADC is free running
  */
-<<<<<<< HEAD
 void adcInternalStartConversion(void) 
 {   
   return; 
 }
-=======
-void adcInternalStartConversion(void) { return; }
->>>>>>> 92b14f1fa (add ch32 target)
 
 /**
  * Reads a given channel from the DMA buffer
  */
-<<<<<<< HEAD
 uint16_t adcInternalRead(adcSource_e source) 
 {
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-uint16_t adcInternalRead(adcSource_e source) {
-  // const int dmaIndex = adcOperatingConfig[channel].dmaIndex;
-  // return adcConversionBuffer[dmaIndex];
->>>>>>> 92b14f1fa (add ch32 target)
     switch (source) {
     case ADC_VREFINT:
     case ADC_TEMPSENSOR:
@@ -611,80 +390,8 @@ uint16_t adcInternalRead(adcSource_e source) {
     default:
         return 0;
     }
-<<<<<<< HEAD
 }
 
 
 #endif // USE_ADC_INTERNAL
-=======
-<<<<<<< HEAD
-=======
-static uint16_t adcInternalRead(int channel) {
-  const int dmaIndex = adcOperatingConfig[channel].dmaIndex;
-  return adcConversionBuffer[dmaIndex];
->>>>>>> fd9c9cdce (target based cross-compiler)
-=======
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-}
-
-/**
- * Read the internal Vref and return raw value
- *
- * The internal Vref is 1.2V and can be used to calculate the external Vref+
- * External Vref+ determines the scale for the raw ADC readings but since it
- * is often directly connected to Vdd (approx 3.3V) it isn't accurately
- * controlled. Calculating the actual value of Vref+ by using measurements of
- * the known 1.2V internal reference can improve overall accuracy.
- *
- * @return the raw ADC reading for the internal voltage reference
- * @see adcInternalCompensateVref in src/main/drivers/adc.c
- */
-<<<<<<< HEAD
-<<<<<<< HEAD
-// uint16_t adcInternalReadVrefint(void) {
-//   const uint16_t value = adcInternalRead(ADC_VREFINT);
-
-//   return value;
-// }
-=======
-uint16_t adcInternalReadVrefint(void) {
-  const uint16_t value = adcInternalRead(ADC_VREFINT);
-
-  return value;
-}
->>>>>>> fd9c9cdce (target based cross-compiler)
-=======
-// uint16_t adcInternalReadVrefint(void) {
-//   const uint16_t value = adcInternalRead(ADC_VREFINT);
-
-//   return value;
-// }
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-
-/**
- * Read the internal temperature sensor
- *
- * @return the raw ADC reading
- */
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-// uint16_t adcInternalReadTempsensor(void) {
-//   const uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-//   return value;
-// }
-<<<<<<< HEAD
-=======
-uint16_t adcInternalReadTempsensor(void) {
-  const uint16_t value = adcInternalRead(ADC_TEMPSENSOR);
-  return value;
-}
->>>>>>> fd9c9cdce (target based cross-compiler)
-=======
->>>>>>> ab93a2999 (WIP CH32 platform updates)
-
-#endif // USE_ADC_INTERNAL
-
->>>>>>> 92b14f1fa (add ch32 target)
 #endif // USE_ADC

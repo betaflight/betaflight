@@ -210,7 +210,6 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_SLOPE                   (-4.13f /* mV/C */)
 #endif
 
-<<<<<<< HEAD
 #ifdef X32M7
 #define VREFINT_EXPECTED                   (1489U)  // The raw ADC reading at 12bit resolution expected for the 1V2 internal ref
 #define VREFINT_CAL_VREF                   (3300U)  // The nominal external Vref+ for the above reading
@@ -218,7 +217,8 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (30U)
 #define TEMPSENSOR_CAL1_V                  (1.342f)
 #define TEMPSENSOR_SLOPE                   (3.4f /* mV/C */)
-=======
+#endif
+
 #ifdef CH32H415
 #define VREFINT_EXPECTED                   (1501U)  // The raw ADC reading at 12bit resolution expected for the 1V21 internal ref
 #define VREFINT_CAL_VREF                   (3300U)  // The nominal external Vref+ for the above reading
@@ -226,5 +226,4 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.45f)
 #define TEMPSENSOR_SLOPE                   (4.3f) //  mV/C
->>>>>>> 00f411e36 (add ch32)
 #endif

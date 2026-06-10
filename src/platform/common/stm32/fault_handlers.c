@@ -169,6 +169,7 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
 }
 
 #else
+#ifndef CH32H4
 
 __attribute__((naked, used)) void HardFault_Handler(void)
 {
@@ -207,4 +208,5 @@ __attribute__((naked, used)) void HardFault_Handler(void)
         "b systemFaultAction      \n"
     );
 }
+#endif
 #endif

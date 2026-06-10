@@ -79,7 +79,6 @@ enum rcc_reg {
     RCC_AHB3,
     RCC_APB2,
     RCC_APB1,
-<<<<<<< HEAD
 #elif defined(X32M7)
     RCC_AHB1_1,
     RCC_AHB1_2,
@@ -101,12 +100,10 @@ enum rcc_reg {
     RCC_APB2_4,
     RCC_APB5_1,
     RCC_APB5_2,
-=======
 #elif defined(CH32H4)
     RCC_HB,
     RCC_HB2,
     RCC_HB1,
->>>>>>> 00f411e36 (add ch32)
 #else
     RCC_AHB,
     RCC_APB2,
@@ -182,7 +179,6 @@ enum rcc_reg {
 #define RCC_APB2(periph) RCC_ENCODE(RCC_APB2, RCM_APB2CLKEN_ ## periph ## EN)
 #define RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCM_APB1CLKEN_ ## periph ## EN)
 #define RCC_AHB1(periph) RCC_ENCODE(RCC_AHB1, RCM_AHB1CLKEN_ ## periph ## EN)
-<<<<<<< HEAD
 #elif defined(X32M7)
 #define RCC_AHB1_1(periph) RCC_ENCODE(RCC_AHB1_1, RCC_AHB1_PERIPHEN_M7_ ## periph)
 #define RCC_AHB1_2(periph) RCC_ENCODE(RCC_AHB1_2, RCC_AHB1_PERIPHEN_M7_ ## periph)
@@ -204,12 +200,10 @@ enum rcc_reg {
 #define RCC_APB2_4(periph) RCC_ENCODE(RCC_APB2_4, RCC_APB2_PERIPHEN_M7_ ## periph)
 #define RCC_APB5_1(periph) RCC_ENCODE(RCC_APB5_1, RCC_APB5_PERIPHEN_M7_ ## periph)
 #define RCC_APB5_2(periph) RCC_ENCODE(RCC_APB5_2, RCC_APB5_PERIPHEN_M7_ ## periph)
-=======
 #elif defined(CH32H4)
 #define RCC_HB(periph)  RCC_ENCODE(RCC_HB,    RCC_HBPeriph_ ## periph)
 #define RCC_HB2(periph) RCC_ENCODE(RCC_HB2,   RCC_HB2Periph_ ## periph)
 #define RCC_HB1(periph) RCC_ENCODE(RCC_HB1,   RCC_HB1Periph_ ## periph)
->>>>>>> 00f411e36 (add ch32)
 #endif
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState);
