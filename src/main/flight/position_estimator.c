@@ -286,14 +286,14 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
                          acc.accADC.y * accScale,
                          acc.accADC.z * accScale }};
 
-    // rMat rotates body -> earth NWD (North-West-Down)
-    vector3_t accEF_NWD;
-    matrixVectorMul(&accEF_NWD, &rMat, &accBF);
+    // rMat^T rotates body -> earth NED (North-East-Down)
+    vectorNED_t accEF_NED;
+    matrixTrnVectorMul(&accEF_NED.u.v, &rMat, &accBF);
 
-    // NWD -> ENU: X=North stays, Y=West negates to East, Z=Down inverts and loses 1g
-    *accelEast  = -accEF_NWD.y * GRAVITY_CMSS; // West = -East
-    *accelNorth =  accEF_NWD.x * GRAVITY_CMSS; // North unchanged
-    *accelUp    = (accEF_NWD.z - 1.0f) * GRAVITY_CMSS;
+    // NED -> ENU named outputs
+    *accelEast  =  accEF_NED.u.ef.E * GRAVITY_CMSS;
+    *accelNorth =  accEF_NED.u.ef.N * GRAVITY_CMSS;
+    *accelUp    = (accEF_NED.u.ef.D - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
