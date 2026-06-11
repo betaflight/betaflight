@@ -168,8 +168,34 @@ void hard_fault_handler_c(unsigned long *hardfault_args)
   }
 }
 
+#elif defined(CH32H4)
+
+volatile uint32_t faultCaptureBuf[5] __attribute__((used));
+
+__FAST_INTERRUPT 
+void HardFault_Handler(void)
+{
+    __asm__ volatile(                              \
+        "la    t1,   faultCaptureBuf \n"           \
+        "csrr  t0,   mcause          \n"           \
+        "sw    t0,   0(t1)           \n"           \
+        "csrr  t0,   mtval           \n"           \
+        "sw    t0,   4(t1)           \n"           \
+        "csrr  t0,   mepc            \n"           \
+        "sw    t0,   8(t1)           \n"           \
+        "csrr  t0,   mstatus         \n"           \
+        "sw    t0,   12(t1)          \n"           \
+        "mv    t0,   sp              \n"           \
+        "sw    t0,   16(t1)          \n"           \
+        "fence                       \n"           \
+        "fence.i                     \n"           \
+        "j  systemFaultAction        \n"           \
+        ::: "t0", "t1", "memory"                   \
+    );
+}
+
+
 #else
-#ifndef CH32H4
 
 __attribute__((naked, used)) void HardFault_Handler(void)
 {
@@ -208,5 +234,4 @@ __attribute__((naked, used)) void HardFault_Handler(void)
         "b systemFaultAction      \n"
     );
 }
-#endif
 #endif
