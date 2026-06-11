@@ -528,23 +528,22 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     }
 
     // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height.
-    // Flow sensor X axis measures leftward motion (positive = left); Y axis measures forward motion.
-    const float flowLeft    = flow->processedFlowRates.x * altitudeCm;
+    // Flow sensor X axis measures rightward motion; Y axis measures forward motion.
+    const float flowRight   = flow->processedFlowRates.x * altitudeCm;
     const float flowForward = flow->processedFlowRates.y * altitudeCm;
 
     // Project to the horizontal plane by removing the tilt-induced component.
     const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
     const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
-    const float velLeft    = flowLeft    * cosRoll;
+    const float velRight   = flowRight   * cosRoll;
     const float velForward = flowForward * cosPitch;
 
     // Rotate from body heading frame to ENU earth frame.
-    // Left is the negative of East when heading North, so velLeft terms are negated.
     const float yawRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cos_approx(yawRad);
     const float sinYaw = sin_approx(yawRad);
-    const float velEast  =  velForward * sinYaw - velLeft * cosYaw;
-    const float velNorth =  velForward * cosYaw + velLeft * sinYaw;
+    const float velEast  =  velForward * sinYaw - velRight * cosYaw;
+    const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
     kalmanUpdateVelocity(&kfX, velEast, flowR);
     kalmanUpdateVelocity(&kfY, velNorth, flowR);
