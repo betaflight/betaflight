@@ -155,29 +155,34 @@ TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
 }
 
 // Regression test: forward thrust when heading East must produce a positive East velocity
-// estimate.  rMat Y points West in Betaflight's earth frame, so accelEast must be
-// -accEF_NEU.y (not +accEF_NEU.y).  The bug used the wrong sign, causing the IMU
-// prediction to oppose GPS-measured East motion.
+// estimate even when the craft is rolled.  A level-only rMat does not distinguish
+// matrixVectorMul from matrixTrnVectorMul because the off-diagonal z terms vanish.
+// With roll the gravity components in body Y and Z create cross-coupling that
+// matrixVectorMul handles incorrectly (yielding zero East acceleration here) while
+// matrixTrnVectorMul correctly cancels them and recovers the full forward thrust.
 TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
 {
     // Run a couple of steps so XY fusion is established with the arm at origin.
     stepEstimator(2);
 
-    // Set rMat for heading East (attitude yaw = 90 deg).
-    // Row pattern: row0 = (cosYaw, sinYaw, 0) = (0, 1, 0)
-    //              row1 = (-sinYaw, cosYaw, 0) = (-1, 0, 0)
+    // rMat = Cbn for heading East (yaw 90 deg) + 30 deg right roll.
+    // Cbn = Cbn_roll(30) * Cbn_yaw(90):
+    //   row0 = (0,       1,        0      )
+    //   row1 = (-cos30,  0,        sin30  )
+    //   row2 = ( sin30,  0,        cos30  )
     memset(&rMat, 0, sizeof(rMat));
-    rMat.m[0][1] = 1.0f;
-    rMat.m[1][0] = -1.0f;
-    rMat.m[2][2] = 1.0f;
+    rMat.m[0][1] =  1.0f;
+    rMat.m[1][0] = -0.866f;  rMat.m[1][2] = 0.5f;
+    rMat.m[2][0] =  0.5f;    rMat.m[2][2] = 0.866f;
 
-    // Apply forward (East) thrust of 0.5 g alongside the steady-state gravity component.
+    // Forward (East) thrust of 0.5 g; gravity projects onto body Y and Z due to the roll.
     acc.accADC.x = 0.5f;
-    acc.accADC.z = 1.0f;
+    acc.accADC.y = 0.5f;    // sin(30) * 1g
+    acc.accADC.z = 0.866f;  // cos(30) * 1g
 
-    // GPS position and velocity remain zero (craft stationary in GPS frame) so any
-    // non-zero velocity estimate is purely driven by the IMU acceleration prediction.
-    // After many steps the sign of the steady-state velocity reflects the sign of accelEast.
+    // GPS position and velocity remain zero so any non-zero velocity estimate is
+    // driven purely by the IMU prediction.  The gravity cross-terms cancel exactly
+    // and only the 0.5 g forward thrust contributes to East, giving velocity.x > 0.
     stepEstimator(100);
 
     EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
