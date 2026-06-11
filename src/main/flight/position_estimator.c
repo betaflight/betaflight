@@ -527,28 +527,24 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
-    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height
-    const float vBFx = flow->processedFlowRates.x * altitudeCm;
-    const float vBFy = flow->processedFlowRates.y * altitudeCm;
+    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height.
+    // Flow sensor X axis measures leftward motion (positive = left); Y axis measures forward motion.
+    const float flowLeft    = flow->processedFlowRates.x * altitudeCm;
+    const float flowForward = flow->processedFlowRates.y * altitudeCm;
 
-    // Project body-frame velocity to earth frame using heading
-    // Flow X (roll axis) corresponds to lateral movement, flow Y (pitch axis) to longitudinal
+    // Project to the horizontal plane by removing the tilt-induced component.
+    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+    const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+    const float velLeft    = flowLeft    * cosRoll;
+    const float velForward = flowForward * cosPitch;
+
+    // Rotate from body heading frame to ENU earth frame.
+    // Left is the negative of East when heading North, so velLeft terms are negated.
     const float yawRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cos_approx(yawRad);
     const float sinYaw = sin_approx(yawRad);
-
-    // Also project through pitch/roll to horizontal plane
-    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
-    const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
-    const float vBodyX = vBFx * cosRoll;   // lateral velocity, tilt-corrected
-    const float vBodyY = vBFy * cosPitch;  // longitudinal velocity, tilt-corrected
-
-    // Rotate body-heading-frame velocity to ENU
-    // Body X (roll) = rightward, Body Y (pitch) = forward
-    // ENU East  =  bodyY * sinYaw + bodyX * cosYaw
-    // ENU North =  bodyY * cosYaw - bodyX * sinYaw
-    const float velEast  =  vBodyY * sinYaw + vBodyX * cosYaw;
-    const float velNorth =  vBodyY * cosYaw - vBodyX * sinYaw;
+    const float velEast  =  velForward * sinYaw - velLeft * cosYaw;
+    const float velNorth =  velForward * cosYaw + velLeft * sinYaw;
 
     kalmanUpdateVelocity(&kfX, velEast, flowR);
     kalmanUpdateVelocity(&kfY, velNorth, flowR);
