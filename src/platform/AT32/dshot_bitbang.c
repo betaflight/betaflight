@@ -50,8 +50,8 @@
 
 #include "pg/motor.h"
 
-// Maximum time to wait for telemetry reception to complete
-#define DSHOT_TELEMETRY_TIMEOUT 2000
+// Maximum time to wait for telemetry reception to complete (legacy; kept for reference)
+// #define DSHOT_TELEMETRY_TIMEOUT 2000
 
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
@@ -451,23 +451,20 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // Wait for telemetry reception to complete
-    bool telemetryPending;
+    // If telemetry input DMA is still running, abort it rather than busy-waiting.
+    // Skipping one telemetry frame is harmless; busy-waiting can block TASK_RX for
+    // tens of milliseconds on high-loop-rate targets (e.g. F7 at 8K with bidirDSHOT).
+    // bbUpdateComplete() handles the port still being in INPUT direction.
     bool telemetryWait = false;
-    const timeUs_t startTimeUs = micros();
 
-    do {
-        telemetryPending = false;
-        for (int i = 0; i < usedMotorPorts; i++) {
-            telemetryPending |= bbPorts[i].telemetryPending;
+    for (int i = 0; i < usedMotorPorts; i++) {
+        if (bbPorts[i].telemetryPending) {
+            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, DISABLE);
+            bbDMA_Cmd(&bbPorts[i], DISABLE);
+            bbPorts[i].telemetryPending = false;
+            telemetryWait = true;
         }
-
-        telemetryWait |= telemetryPending;
-
-        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
-            break;
-        }
-    } while (telemetryPending);
+    }
 
     if (telemetryWait) {
         DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
