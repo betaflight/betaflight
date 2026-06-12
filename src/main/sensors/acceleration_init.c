@@ -57,6 +57,10 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 
+
+#include "drivers/accgyro/accgyro_spi_scs3302.h"
+#include "drivers/accgyro/accgyro_spi_scs3304.h"
+
 #include "config/config.h"
 
 #include "drivers/bus_spi.h"
@@ -323,6 +327,24 @@ retry:
     case ACC_LSM6DSK320X:
         if (lsm6dsk320xSpiAccDetect(dev)) {
             accHardware = ACC_LSM6DSK320X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_SCS3302
+    case ACC_SCS3302:
+        if (scs3302SpiAccDetect(dev)) {
+            accHardware = ACC_SCS3302;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACCGYRO_SCS3304
+    case ACC_SCS3304:
+        if (scs3304SpiAccDetect(dev)) {
+            accHardware = ACC_SCS3304;
             break;
         }
         FALLTHROUGH;
