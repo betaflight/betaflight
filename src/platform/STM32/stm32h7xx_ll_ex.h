@@ -130,6 +130,43 @@ __STATIC_INLINE uint32_t LL_EX_DMA_GetDataLength(DMA_Stream_TypeDef* DMAx_Stream
     return LL_DMA_GetDataLength(DMA, Stream);
 }
 
+// BDMA helper functions for D3 domain channel-based DMA
+
+__STATIC_INLINE void LL_EX_BDMA_EnableResource(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_EN);
+}
+
+__STATIC_INLINE void LL_EX_BDMA_DisableResource(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    CLEAR_BIT(BDMAx_Channely->CCR, BDMA_CCR_EN);
+}
+
+__STATIC_INLINE void LL_EX_BDMA_EnableIT_TC(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    SET_BIT(BDMAx_Channely->CCR, BDMA_CCR_TCIE);
+}
+
+__STATIC_INLINE void LL_EX_BDMA_SetDataLength(BDMA_Channel_TypeDef *BDMAx_Channely, uint32_t NbData)
+{
+    BDMAx_Channely->CNDTR = NbData;
+}
+
+__STATIC_INLINE uint32_t LL_EX_BDMA_GetDataLength(BDMA_Channel_TypeDef *BDMAx_Channely)
+{
+    return BDMAx_Channely->CNDTR;
+}
+
+__STATIC_INLINE void LL_EX_BDMA_SetMemoryAddress(BDMA_Channel_TypeDef *BDMAx_Channely, uint32_t addr)
+{
+    BDMAx_Channely->CM0AR = addr;
+}
+
+__STATIC_INLINE void LL_EX_BDMA_SetPeriphAddress(BDMA_Channel_TypeDef *BDMAx_Channely, uint32_t addr)
+{
+    BDMAx_Channely->CPAR = addr;
+}
+
 __STATIC_INLINE void LL_EX_TIM_EnableIT(TIM_TypeDef *TIMx, uint32_t Sources)
 {
     SET_BIT(TIMx->DIER, Sources);
