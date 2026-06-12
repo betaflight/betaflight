@@ -208,6 +208,7 @@ typedef struct bbPort_s {
     uint32_t portInputCount;
     bool inputActive;
     volatile bool telemetryPending;
+    bool telemetryAborted;
 
     // Misc
 #ifdef DEBUG_COUNT_INTERRUPT
