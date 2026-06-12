@@ -1204,6 +1204,16 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         break;
     }
 
+    case MSP_RAW_BARO:
+#if defined(USE_BARO)
+        sbufWriteU32(dst, baro.pressure);
+        sbufWriteU32(dst, baro.temperature);
+#else
+        sbufWriteU32(dst, 0);
+        sbufWriteU32(dst, 0);
+#endif
+        break;
+
 case MSP_NAME:
         sbufWriteString(dst, pilotConfig()->craftName);
         break;
