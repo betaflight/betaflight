@@ -533,6 +533,9 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             mspPort->lastActivityMs = millis();
             const uint8_t c = serialRead(mspPort->port);
             if (c == '$') {
+                // MSP frame incoming — cancel any pending non-MSP request.
+                // Resetting only on '$' (not every byte) allows '#\r' sequences to set
+                // MSP_PENDING_CLI without the trailing '\r' wiping it.
                 mspPort->pendingRequest = MSP_PENDING_NONE;
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
@@ -542,6 +545,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                        && (mspPort->port->identifier != displayPortMspGetSerial())
 #endif
                        ) {
+                // evaluate the non-MSP data
                 if (c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
 #ifdef USE_CLI
