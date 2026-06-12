@@ -533,9 +533,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             mspPort->lastActivityMs = millis();
             const uint8_t c = serialRead(mspPort->port);
             if (c == '$') {
-                // MSP frame incoming — cancel any pending non-MSP request.
-                // Resetting here (not per-byte) allows '#\r' sequences to set
-                // MSP_PENDING_CLI without the trailing '\r' wiping it.
                 mspPort->pendingRequest = MSP_PENDING_NONE;
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
@@ -545,7 +542,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                        && (mspPort->port->identifier != displayPortMspGetSerial())
 #endif
                        ) {
-                // evaluate the non-MSP data
                 if (c == serialConfig()->reboot_character) {
                     mspPort->pendingRequest = MSP_PENDING_BOOTLOADER_ROM;
 #ifdef USE_CLI
@@ -555,6 +551,9 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                     mspPort->portState = PORT_CLI_CMD;
                     cliEnter(mspPort->port, false);
 #endif
+                } else if (mspPort->pendingRequest == MSP_PENDING_BOOTLOADER_ROM) {
+                    // unrecognized byte cancels bootloader-ROM pending; CLI pending is preserved
+                    mspPort->pendingRequest = MSP_PENDING_NONE;
                 }
             }
         }
