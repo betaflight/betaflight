@@ -238,6 +238,15 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
 
+msp_serial_unittest_SRC := \
+		$(USER_DIR)/msp/msp_serial.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
+
+msp_serial_unittest_DEFINES := \
+		USE_CLI= \
+		USE_MSP_DISPLAYPORT=
+
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
