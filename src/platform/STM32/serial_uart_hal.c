@@ -429,7 +429,12 @@ FAST_IRQ_HANDLER void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART Over-Run interrupt occurred -----------------------------------------*/
-    if ((cr3 & USART_CR3_EIE) && (__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
+    // ORE asserts the USART IRQ when CR1.RXNEIE is set even with CR3.EIE clear
+    // (RM0433/RM0410; ST HAL gates ORE on RXNEIE || EIE). Betaflight's RXNE path
+    // clears CR3.EIE on every received byte, so gating the clear on EIE alone
+    // leaves ORE permanently set -> unbounded IRQ re-entry (FC freeze on save).
+    if (((cr1 & USART_CR1_RXNEIE) || (cr3 & USART_CR3_EIE)) &&
+        (__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET)) {
         __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
