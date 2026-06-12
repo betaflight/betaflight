@@ -132,7 +132,7 @@ DEVICE_FLAGS       += -DN6_XIP_BUILD
 # into AXISRAM. Drop LTO for XIP only — clock funcs run from RAM,
 # instruction fetches survive the AXI clock transition during
 # HAL_RCC_OscConfig's HSI-park dance. Size cost is ~5-10% .text.
-OPTIMISATION_BASE   := -ffast-math -fmerge-all-constants
+LTO                 := no
 else ifeq ($(RAM_ONLY),1)
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_RAM.ld
 DEVICE_FLAGS       += -DN6_RAM_ONLY_BUILD

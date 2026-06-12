@@ -312,7 +312,6 @@
 #endif
 
 #ifdef USE_POSITION_HOLD
-#define PARAM_NAME_POS_HOLD_WITHOUT_MAG "pos_hold_without_mag"
 #define PARAM_NAME_POS_HOLD_DEADBAND "pos_hold_deadband"
 #endif
 
