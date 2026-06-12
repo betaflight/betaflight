@@ -63,10 +63,9 @@ bool gpsHasNewData(uint16_t *gpsStamp)
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
-    UNUSED(from);
-    UNUSED(to);
-    dest->x = 0.0f;
-    dest->y = 0.0f;
+    // Simplified (no Earth-scale projection): return integer-unit deltas so sign tests work.
+    dest->x = (float)(to->lon - from->lon);
+    dest->y = (float)(to->lat - from->lat);
 }
 }
 
@@ -136,5 +135,56 @@ TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
     // In RANGEFINDER_PREFER, recovered altitude should be pulled down toward RF value.
     EXPECT_LT(recoveredAltitude, fallbackAltitude - 5.0f);
     EXPECT_TRUE(positionEstimatorIsValidZ());
+}
+
+// Regression test: GPS_distance2d must be called as (arm, current) so that a craft
+// East of the arm position produces a positive kfX (East) position estimate.
+// The bug had the arguments reversed — (current, arm) — giving a negative East estimate.
+TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
+{
+    // Run a couple of steps so the arm location is captured from the initial gpsSol (lon=0).
+    stepEstimator(2);
+
+    // Place the craft East of the arm (positive longitude delta).
+    gpsSol.llh.lon = 100000;
+
+    // Let the Kalman filter converge toward the GPS position measurement.
+    stepEstimator(30);
+
+    EXPECT_GT(positionEstimatorGetEstimate()->position.x, 0.0f);
+}
+
+// Regression test: forward thrust when heading East must produce a positive East velocity
+// estimate even when the craft is rolled.  A level-only rMat does not distinguish
+// matrixVectorMul from matrixTrnVectorMul because the off-diagonal z terms vanish.
+// With roll the gravity components in body Y and Z create cross-coupling that
+// matrixVectorMul handles incorrectly (yielding zero East acceleration here) while
+// matrixTrnVectorMul correctly cancels them and recovers the full forward thrust.
+TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
+{
+    // Run a couple of steps so XY fusion is established with the arm at origin.
+    stepEstimator(2);
+
+    // rMat = Cbn for heading East (yaw 90 deg) + 30 deg right roll.
+    // Cbn = Cbn_roll(30) * Cbn_yaw(90):
+    //   row0 = (0,       1,        0      )
+    //   row1 = (-cos30,  0,        sin30  )
+    //   row2 = ( sin30,  0,        cos30  )
+    memset(&rMat, 0, sizeof(rMat));
+    rMat.m[0][1] =  1.0f;
+    rMat.m[1][0] = -0.866f;  rMat.m[1][2] = 0.5f;
+    rMat.m[2][0] =  0.5f;    rMat.m[2][2] = 0.866f;
+
+    // Forward (East) thrust of 0.5 g; gravity projects onto body Y and Z due to the roll.
+    acc.accADC.x = 0.5f;
+    acc.accADC.y = 0.5f;    // sin(30) * 1g
+    acc.accADC.z = 0.866f;  // cos(30) * 1g
+
+    // GPS position and velocity remain zero so any non-zero velocity estimate is
+    // driven purely by the IMU prediction.  The gravity cross-terms cancel exactly
+    // and only the 0.5 g forward thrust contributes to East, giving velocity.x > 0.
+    stepEstimator(100);
+
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
 }
 
