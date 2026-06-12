@@ -56,7 +56,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
-#include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#include "drivers/accgyro/accgyro_spi_lsm6dsk320x.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
 
@@ -352,9 +352,6 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
 typedef uint8_t (*gyroSpiDetectFn_t)(const extDevice_t *dev);
 
 static gyroSpiDetectFn_t gyroSpiDetectFnTable[] = {
-#ifdef USE_ACCGYRO_LSM6DSV16X
-    lsm6dsv16xSpiDetect,
-#endif
 #ifdef USE_ACCGYRO_LSM6DSK320X
     lsm6dsk320xSpiDetect,
 #endif
