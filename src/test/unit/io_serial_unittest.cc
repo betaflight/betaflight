@@ -86,4 +86,16 @@ extern "C" {
     void serialSetBaudRateCb(serialPort_t *, void (*)(serialPort_t *context, uint32_t baud), serialPort_t *) {}
 
     void pinioSet(int, bool) {}
+
+    // serial_feature_map is exercised by its own unit test; stub here so
+    // findSerialPortConfig/determinePortSharing/isSerialPortShared can link
+    // against the legacy functionMask view the io_serial tests rely on.
+    uint32_t serialSynthesizeFunctionMask(serialPortIdentifier_e identifier) {
+        for (unsigned i = 0; i < SERIAL_PORT_COUNT; i++) {
+            if (serialConfig()->portConfigs[i].identifier == identifier) {
+                return serialConfig()->portConfigs[i].functionMask;
+            }
+        }
+        return 0;
+    }
 }

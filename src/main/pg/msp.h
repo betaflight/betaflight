@@ -21,11 +21,13 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "msp/msp_serial.h"
 
 #include "pg/pg.h"
 
 typedef struct mspConfig_s {
     uint8_t halfDuplex; // allow msp to operate in half duplex mode
+    int8_t msp_uart[MAX_MSP_PORT_COUNT];  // serialPortIdentifier_e per slot; SERIAL_PORT_NONE = unused
 } mspConfig_t;
 
 PG_DECLARE(mspConfig_t, mspConfig);

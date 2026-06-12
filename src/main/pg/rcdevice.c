@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "io/serial.h"
+
 #include "pg/pg_ids.h"
 #include "pg/rcdevice.h"
 
@@ -31,4 +33,5 @@ void pgResetFn_rcdeviceConfig(rcdeviceConfig_t *rcdeviceConfig)
     rcdeviceConfig->initDeviceAttemptInterval = 1000;
     rcdeviceConfig->feature = 0;
     rcdeviceConfig->protocolVersion = 0;
+    rcdeviceConfig->rcdevice_uart = SERIAL_PORT_NONE;
 }
