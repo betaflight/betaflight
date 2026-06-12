@@ -95,6 +95,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
+#include "io/flashfs_log.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -1842,6 +1843,42 @@ case MSP_NAME:
         sbufWriteU8(dst, blackboxConfig()->sample_rate);
         // Added in MSP API 1.45
         sbufWriteU32(dst, blackboxConfig()->fields_disabled_mask);
+        // Added in MSP API 1.49: flash ring-mode params. flash_mode is the configured
+        // mode (LINEAR=0, RING=1); flash_format is what's actually on the chip
+        // (EMPTY=0, LINEAR=1, RING=2, UNKNOWN=3). Configurator compares the two to
+        // decide whether switching modes requires a flash erase first.
+        //
+        // Format readback uses flashfsLogGetCachedFormat() — a cached wrapper
+        // over the always-compiled flashfsLogDetectFormatFromFlash() probe.
+        // Always-compiled detection is what lets linear-only builds (without
+        // USE_BLACKBOX_RING_LOG) still report a real format value so the
+        // configurator can warn the user about ring-formatted flash on a
+        // downgraded firmware before starting writes. The cache is invalidated
+        // from EraseAll, EndLog, and preamble write paths to stay correct.
+        // Clamp the persisted flash_mode in the readback before serializing.
+        // First defence: never emit a value past the highest supported mode in
+        // any build — protects against a corrupted PG value reaching the wire.
+        // Second defence: on builds without USE_BLACKBOX_RING_LOG, blackbox_io
+        // hard-disables ring at runtime, so claiming RING here would put the
+        // configurator in the same impossible state the setter prevents (UI
+        // thinks ring is active while firmware writes linear-only).
+        {
+            uint8_t reportedFlashMode = blackboxConfig()->flash_mode;
+            if (reportedFlashMode > BLACKBOX_FLASH_MODE_RING) {
+                reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+            }
+#ifndef USE_BLACKBOX_RING_LOG
+            if (reportedFlashMode > BLACKBOX_FLASH_MODE_LINEAR) {
+                reportedFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+            }
+#endif
+            sbufWriteU8(dst, reportedFlashMode);
+            // Cached: configurator can poll MSP_BLACKBOX_CONFIG at ~10-50 Hz, and
+            // the fresh probe is O(partition/sectorSize) — hundreds of KB/s of
+            // SPI traffic if recomputed each poll. flashfsLogInvalidateCachedFormat()
+            // is called from EraseAll and EndLog so the cache stays correct.
+            sbufWriteU8(dst, (uint8_t)flashfsLogGetCachedFormat());
+        }
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1851,6 +1888,9 @@ case MSP_NAME:
         sbufWriteU8(dst, 0);
         // Added in MSP API 1.45
         sbufWriteU32(dst, 0);
+        // Added in MSP API 1.49
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, (uint8_t)FLASHFS_FLASH_FORMAT_UNKNOWN);
 #endif
         break;
 
@@ -3596,9 +3636,26 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfigMutable()->device = sbufReadU8(src);
+            // Reject undersized payloads before the first sbufReadU8: device,
+            // rateNum, rateDenom are the minimum-required tuple. sbufReadU8 on
+            // an exhausted buffer returns 0 silently, which would let a too-short
+            // request mutate live config to (device=0, rateNum=0, rateDenom=0).
+            // Trailing fields (pRatio, sample_rate, fields_disabled_mask,
+            // flash_mode) are checked individually via sbufBytesRemaining below.
+            if (sbufBytesRemaining(src) < 3) {
+                return MSP_RESULT_ERROR;
+            }
+
+            // Parse the entire request into locals first, validate, THEN apply.
+            // The handler had been mutating live config (device, sample_rate,
+            // fields_disabled_mask) before reaching the trailing flash_mode field
+            // — a malformed flash_mode would return MSP_RESULT_ERROR after those
+            // fields had already changed, leaving the live config in an
+            // inconsistent partial state.
+            const uint8_t newDevice = sbufReadU8(src);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
+
             uint16_t pRatio = 0;
             if (sbufBytesRemaining(src) >= 2) {
                 // p_ratio specified, so use it directly
@@ -3608,17 +3665,73 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 pRatio = blackboxCalculatePDenom(rateNum, rateDenom);
             }
 
+            // Reject pRatio == 0: either an attacker sent it explicitly, or
+            // blackboxCalculatePDenom yielded 0 from rateNum == 0. Both paths
+            // would otherwise feed blackboxCalculateSampleRate(0), which returns
+            // its 0 divide-by-zero guard sentinel and we'd persist sample_rate=0.
+            if (pRatio == 0) {
+                return MSP_RESULT_ERROR;
+            }
+
+            uint8_t newSampleRate;
             if (sbufBytesRemaining(src) >= 1) {
                 // sample_rate specified, so use it directly
-                blackboxConfigMutable()->sample_rate = sbufReadU8(src);
+                newSampleRate = sbufReadU8(src);
             } else {
                 // sample_rate not specified in MSP, so calculate it from old p_ratio
-                blackboxConfigMutable()->sample_rate = blackboxCalculateSampleRate(pRatio);
+                newSampleRate = blackboxCalculateSampleRate(pRatio);
+            }
+
+            // Reject truncated optional tails: only 0, 4, or 5 trailing bytes are valid
+            // (no optionals | fields_disabled_mask | fields_disabled_mask + flash_mode).
+            // 1-3 stray bytes would otherwise let a truncated fields_disabled_mask be
+            // reinterpreted as flash_mode, and any other stray length gets silently ACKed.
+            const int remainingOptionalBytes = sbufBytesRemaining(src);
+            if (remainingOptionalBytes != 0 && remainingOptionalBytes != 4 && remainingOptionalBytes != 5) {
+                return MSP_RESULT_ERROR;
             }
 
             // Added in MSP API 1.45
+            bool haveFieldsDisabledMask = false;
+            uint32_t newFieldsDisabledMask = 0;
             if (sbufBytesRemaining(src) >= 4) {
-                blackboxConfigMutable()->fields_disabled_mask = sbufReadU32(src);
+                newFieldsDisabledMask = sbufReadU32(src);
+                haveFieldsDisabledMask = true;
+            }
+
+            // Added in MSP API 1.49: ring-mode flash mode. Validate against the enum
+            // upper bound — and against what this build actually supports, so we don't
+            // accept a value the firmware can't honor (e.g. RING when this target
+            // wasn't compiled with USE_BLACKBOX_RING_LOG; the runtime would silently
+            // fall back to linear and MSP readback would advertise a mode that does
+            // nothing).
+            bool haveFlashMode = false;
+            uint8_t newFlashMode = 0;
+            if (sbufBytesRemaining(src) >= 1) {
+                newFlashMode = sbufReadU8(src);
+#ifdef USE_BLACKBOX_RING_LOG
+                const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_RING;
+#else
+                const uint8_t maxFlashMode = BLACKBOX_FLASH_MODE_LINEAR;
+#endif
+                if (newFlashMode > maxFlashMode) {
+                    // Match other MSP validation paths: return ERROR rather than
+                    // silently ACKing a value the firmware can't honour, so the
+                    // configurator can surface the rejection to the user. No live
+                    // config has been mutated yet at this point.
+                    return MSP_RESULT_ERROR;
+                }
+                haveFlashMode = true;
+            }
+
+            // All fields validated — commit atomically.
+            blackboxConfigMutable()->device = newDevice;
+            blackboxConfigMutable()->sample_rate = newSampleRate;
+            if (haveFieldsDisabledMask) {
+                blackboxConfigMutable()->fields_disabled_mask = newFieldsDisabledMask;
+            }
+            if (haveFlashMode) {
+                blackboxConfigMutable()->flash_mode = newFlashMode;
             }
         }
         break;
