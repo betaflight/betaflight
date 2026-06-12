@@ -872,9 +872,55 @@ static void osdElementAverageCellVoltage(osdElementParms_t *element)
     osdPrintFloat(element->buff, osdGetBatterySymbol(cellV), cellV / 100.0f, "", 2, false, SYM_VOLT);
 }
 
+static void osdGenerateCompassBarWithDegrees(const int offset, char *bar)
+{
+    // Fill with tick characters matching the standard pattern
+    for (int i = 0; i < 9; i++) {
+        bar[i] = ((offset + i) % 4 == 2) ? SYM_HEADING_DIVIDED_LINE : SYM_HEADING_LINE;
+    }
+
+    // Overlay degree labels centered at each cardinal position in the window
+    for (int i = 0; i < 9; i++) {
+        const int barPos = (offset + i) % 24;
+        if (barPos % 4 != 0) {
+            continue;
+        }
+
+        // cardinalAngle: barPos 0/16=270°, 4/20=0°, 8=90°, 12=180°
+        const int cardinalAngle = (barPos / 4 * 90 + 270) % 360;
+        const char *label;
+        int labelLen;
+        switch (cardinalAngle) {
+        case 0:   label = "0";   labelLen = 1; break;
+        case 90:  label = "90";  labelLen = 2; break;
+        case 180: label = "180"; labelLen = 3; break;
+        default:  label = "270"; labelLen = 3; break;
+        }
+
+        // Center the label around position i; out-of-bounds chars are clipped
+        const int startPos = i - (labelLen - 1) / 2;
+        for (int j = 0; j < labelLen; j++) {
+            const int pos = startPos + j;
+            if (pos >= 0 && pos < 9) {
+                bar[pos] = label[j];
+            }
+        }
+    }
+}
+
 static void osdElementCompassBar(osdElementParms_t *element)
 {
-    memcpy(element->buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
+    const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+    const int offset = osdGetHeadingIntoDiscreteDirections(heading, 16);
+
+    if (osdConfig()->osd_compass_style) {
+        // Degree style: display 0/90/180/270 instead of N/E/S/W
+        char bar[9];
+        osdGenerateCompassBarWithDegrees(offset, bar);
+        memcpy(element->buff, bar, 9);
+    } else {
+        memcpy(element->buff, compassBar + offset, 9);
+    }
     element->buff[9] = 0;
 }
 
