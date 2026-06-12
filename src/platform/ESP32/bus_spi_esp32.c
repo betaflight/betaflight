@@ -48,6 +48,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wsign-compare"
 #include "hal/spi_ll.h"
 #include "hal/gpio_ll.h"
 #ifdef USE_DMA
@@ -67,8 +68,9 @@
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-// SPI clock idle edge register differs between ESP32 and ESP32-S3
-#if defined(ESP32S3)
+// SPI clock idle edge register lives under misc.ck_idle_edge on modern
+// SoCs (S3/C5/P4) and under pin.ck_idle_edge on the original ESP32 (LX6).
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
 #define ESP32_SPI_CK_IDLE  misc.ck_idle_edge
 #else
 #define ESP32_SPI_CK_IDLE  pin.ck_idle_edge
@@ -89,7 +91,16 @@ static const struct {
     uint8_t mosiOut;
     uint8_t misoIn;
 } spiSignals[] = {
-#if defined(ESP32S3)
+#if defined(ESP32C5)
+    // ESP32-C5 exposes only FSPI as a general-purpose master; second slot
+    // is left pointing at FSPI as a placeholder until the C5 SPI port lands.
+    { FSPICLK_OUT_IDX, FSPID_OUT_IDX,    FSPIQ_IN_IDX    },  // SPI2 (FSPI)
+    { FSPICLK_OUT_IDX, FSPID_OUT_IDX,    FSPIQ_IN_IDX    },  // SPI3 placeholder
+#elif defined(ESP32P4)
+    // ESP32-P4 GPIO signals are all _PAD_ suffixed.
+    { SPI2_CK_PAD_OUT_IDX, SPI2_D_PAD_OUT_IDX, SPI2_Q_PAD_IN_IDX },  // SPI2
+    { SPI3_CK_PAD_OUT_IDX, SPI3_D_PAD_OUT_IDX, SPI3_Q_PAD_IN_IDX },  // SPI3
+#elif defined(ESP32S3)
     { FSPICLK_OUT_IDX, FSPID_OUT_IDX,    FSPIQ_IN_IDX    },  // SPI2 (FSPI)
     { SPI3_CLK_OUT_IDX, SPI3_D_OUT_IDX,  SPI3_Q_IN_IDX   },  // SPI3
 #else

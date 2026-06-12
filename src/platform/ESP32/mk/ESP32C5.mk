@@ -1,17 +1,14 @@
 #
-# ESP32-S3 Make file include
+# ESP32-C5 Make file include
 #
 # The top level Makefile adds $(MCU_COMMON_SRC) and $(DEVICE_STDPERIPH_SRC) to SRC collection.
 #
 
 DEFAULT_OUTPUT := bin
 
-# Emit a bootable ESP-IDF application image (via esptool elf2image) instead of a
-# raw objcopy dump, which with the split IROM/DROM layout would be enormous,
-# then assemble a single full-flash image (bootloader + partition table + app)
-# for one-step flashing. The bootloader is built from source by default; see
-# tools.mk (ESP_BOOTLOADER_FROM_SOURCE) and bin/README.md.
-BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE) && $(ESP_FLASH_IMAGE_CMD)
+# Emit a bootable ESP-IDF application image (via esptool elf2image) rather than
+# a raw objcopy dump.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
@@ -20,51 +17,50 @@ PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 # ESP-IDF location (when submodule is hydrated)
 ESP_IDF_DIR = $(LIB_MODULES_DIR)/esp-idf
 
-# Override ARM toolchain with Xtensa ESP32-S3 toolchain
-# ESP_TOOLS_BIN is resolved in tools.mk; reuse it here
-ifneq ($(ESP_TOOLS_BIN),)
-  ARM_SDK_PREFIX := $(ESP_TOOLS_BIN)/xtensa-esp32s3-elf-
+# Override ARM toolchain with the RISC-V ESP toolchain
+# ESP_TOOLS_RISCV_BIN is resolved in tools.mk
+ifneq ($(ESP_TOOLS_RISCV_BIN),)
+  ARM_SDK_PREFIX := $(ESP_TOOLS_RISCV_BIN)/riscv32-esp-elf-
 else
-  ARM_SDK_PREFIX := xtensa-esp32s3-elf-
+  ARM_SDK_PREFIX := riscv32-esp-elf-
 endif
 
 INCLUDE_DIRS += \
             $(TARGET_PLATFORM_DIR) \
             $(TARGET_PLATFORM_DIR)/include \
             $(ESP_IDF_DIR)/components/hal/include \
-            $(ESP_IDF_DIR)/components/hal/esp32s3/include \
+            $(ESP_IDF_DIR)/components/hal/esp32c5/include \
             $(ESP_IDF_DIR)/components/hal/platform_port/include \
-            $(ESP_IDF_DIR)/components/soc/esp32s3/include \
-            $(ESP_IDF_DIR)/components/soc/esp32s3/register \
+            $(ESP_IDF_DIR)/components/soc/esp32c5/include \
+            $(ESP_IDF_DIR)/components/soc/esp32c5/register \
             $(ESP_IDF_DIR)/components/soc/include \
             $(ESP_IDF_DIR)/components/esp_rom/include \
-            $(ESP_IDF_DIR)/components/esp_rom/esp32s3 \
+            $(ESP_IDF_DIR)/components/esp_rom/esp32c5 \
             $(ESP_IDF_DIR)/components/esp_common/include \
             $(ESP_IDF_DIR)/components/esp_hw_support/include \
             $(ESP_IDF_DIR)/components/esp_system/include \
             $(ESP_IDF_DIR)/components/log/include \
             $(ESP_IDF_DIR)/components/newlib/platform_include \
-            $(ESP_IDF_DIR)/components/xtensa/include \
-            $(ESP_IDF_DIR)/components/xtensa/esp32s3/include \
+            $(ESP_IDF_DIR)/components/riscv/include \
             $(ESP_IDF_DIR)/components/esp_timer/include \
             $(ESP_IDF_DIR)/components/freertos/config/include \
-            $(ESP_IDF_DIR)/components/freertos/config/xtensa/include
+            $(ESP_IDF_DIR)/components/freertos/config/riscv/include
 
-# Architecture flags for Xtensa LX7 (ESP32-S3)
-ARCH_FLAGS = -mlongcalls -mtext-section-literals
+# Architecture flags for RISC-V ESP32-C5 (rv32imac + Zicsr/Zifencei, ilp32 soft-float)
+ARCH_FLAGS = -march=rv32imac_zicsr_zifencei -mabi=ilp32
 
 DEVICE_FLAGS += \
-            -DESP32S3 \
+            -DESP32C5 \
             -DESP32
 
-MCU_FLASH_SIZE := 8192
+MCU_FLASH_SIZE := 4096
 
-LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
+LD_SCRIPT = $(LINKER_DIR)/esp32c5.ld
 
-STARTUP_SRC = ESP32/start_esp32s3.S
+STARTUP_SRC =
 
 # ROM linker scripts that provide symbols for ROM functions (esp_rom_delay_us, etc.)
-ESP_ROM_LD_DIR = $(ESP_IDF_DIR)/components/esp_rom/esp32s3/ld
+ESP_ROM_LD_DIR = $(ESP_IDF_DIR)/components/esp_rom/esp32c5/ld
 
 # Override default LD_FLAGS since the ARM-specific ones don't apply
 LD_FLAGS = -lm \
@@ -79,49 +75,47 @@ LD_FLAGS = -lm \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT) \
-              -T$(ESP_ROM_LD_DIR)/esp32s3.rom.ld \
-              -T$(ESP_ROM_LD_DIR)/esp32s3.rom.api.ld \
+              -T$(ESP_ROM_LD_DIR)/esp32c5.rom.ld \
+              -T$(ESP_ROM_LD_DIR)/esp32c5.rom.api.ld \
               $(EXTRA_LD_FLAGS)
 
-# Platform source files (stub implementations)
+# Platform source files. Skeleton scope: mirrors the ESP32 (WROOM)
+# driver set. Chip-specific divergences (HSPI/VSPI signals, APB I2C
+# clock, S3 peripheral struct addresses) are patched per-chip; runtime
+# behaviour still targets S3-shaped peripherals until follow-up driver
+# port work lands.
 MCU_COMMON_SRC = \
             drivers/dshot_bitbang_decode.c \
             drivers/inverter.c \
             drivers/serial_pinconfig.c \
-            drivers/usb_io.c \
             drivers/adc.c \
-            ESP32/app_desc_esp32.c \
             ESP32/adc_esp32.c \
-            ESP32/bus_i2c_esp32.c \
             drivers/bus_spi_config.c \
+            ESP32/bus_i2c_esp32.c \
             ESP32/bus_spi_esp32.c \
             ESP32/config_flash.c \
             ESP32/debug_esp32.c \
-            ESP32/dma_esp32.c \
+            ESP32/dma_stub_esp32.c \
             ESP32/dshot_esp32.c \
             ESP32/exti_esp32.c \
             ESP32/interrupt_esp32.c \
             ESP32/io_esp32.c \
-            ESP32/multicore_esp32.c \
             ESP32/persistent.c \
             ESP32/pwm_motor_esp32.c \
             ESP32/pwm_servo_esp32.c \
             ESP32/pwm_beeper_esp32.c \
             ESP32/serial_uart_esp32.c \
-            ESP32/serial_usb_vcp_esp32.c \
             ESP32/system.c \
             ESP32/light_ws2811strip_esp32.c \
             ESP32/timer_esp32.c \
             ESP32/periph_regs_esp32.c
 
-# ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)
-# Paths are relative to LIB_MODULES_DIR (lib/modules) since that's in VPATH
+# ESP-IDF SOC peripheral descriptor sources
 DEVICE_STDPERIPH_SRC = \
-            esp-idf/components/soc/esp32s3/gpio_periph.c \
-            esp-idf/components/soc/esp32s3/i2c_periph.c \
-            esp-idf/components/soc/esp32s3/uart_periph.c \
-            esp-idf/components/soc/esp32s3/ledc_periph.c \
-            esp-idf/components/soc/esp32s3/rmt_periph.c \
-            esp-idf/components/soc/esp32s3/interrupts.c
+            esp-idf/components/soc/esp32c5/gpio_periph.c \
+            esp-idf/components/soc/esp32c5/i2c_periph.c \
+            esp-idf/components/soc/esp32c5/uart_periph.c \
+            esp-idf/components/soc/esp32c5/ledc_periph.c \
+            esp-idf/components/soc/esp32c5/interrupts.c
 
 MCU_EXCLUDES =

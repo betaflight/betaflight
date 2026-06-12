@@ -499,7 +499,14 @@ $(TARGET_LST): $(TARGET_ELF)
 ifeq ($(EXST),no)
 $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+# A platform may set BIN_FROM_ELF_CMD to generate the binary from the ELF its
+# own way (e.g. ESP32 wraps it into a bootable image with esptool elf2image);
+# otherwise fall back to a plain objcopy raw dump.
+ifdef BIN_FROM_ELF_CMD
+	$(V1) $(BIN_FROM_ELF_CMD)
+else
 	$(V1) $(OBJCOPY) -O binary $< $@
+endif
 
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"

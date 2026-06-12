@@ -21,31 +21,25 @@
 
 #pragma once
 
+// Build-target skeleton for ESP32-P4 (RISC-V, dual core HP + LP, USB OTG HS).
+// Shares the WROOM-shape driver scaffolding so the build links cleanly.
+// Driver bodies still target S3 register layouts at runtime — first-light
+// will need follow-up per-driver work.
+
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "235B"
+#define TARGET_BOARD_IDENTIFIER "EP4_"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - RP2350B"
+#define USBD_PRODUCT_STRING     "Betaflight - ESP32-P4"
 #endif
-
-#ifndef RP2350B
-#define RP2350B
-#endif
-
-// USE_MULTICORE turns on the multicore API (core 1 + dispatch).
-// ENABLE_MULTICORE_INIT additionally runs the FC init phases on core 1 (the
-// RP2350 core-allocation policy); enable both for the previous behaviour.
-//#define USE_MULTICORE
-//#define ENABLE_MULTICORE_INIT
 
 #define USE_UART0
 #define USE_UART1
-#define USE_PIOUART0
-#define USE_PIOUART1
+#define USE_UART2
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
-#define UARTHARDWARE_MAX_PINS 12
+#define UARTHARDWARE_MAX_PINS 8
 #define UART_TRAIT_AF_PORT 1
 
 #define USE_SPI
@@ -53,75 +47,36 @@
 #define USE_SPI_DEVICE_0
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DMA_ENABLE_LATE
-#define MAX_SPI_PIN_SEL 6
-
-#define QUADSPIDEV_COUNT 1
+#define MAX_SPI_PIN_SEL 4
 
 #define USE_I2C
 #define I2CDEV_COUNT 2
 #define USE_I2C_DEVICE_0
 #define USE_I2C_DEVICE_1
 
-#define USE_ADC
-
-#define USE_VCP
-
-#define USE_USB_MSC
-
-#define USE_SERIALRX_SBUS
+// ESP32-P4 has USB OTG (HS + FS); USB VCP driver not yet ported.
+#undef USE_VCP
 
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
-#undef USE_TIMER
+#undef USE_FLASH
+#undef USE_FLASH_CHIP
 #undef USE_RCC
 
-// Assume on-board flash (see linker files)
+#define USE_SDCARD
+#define USE_SDCARD_SPI
+
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+
 #define CONFIG_IN_FLASH
 
-// Allow for font data in flash
-#define FONTDATA_IN_FLASH
-
-// Pico flash writes are all aligned and in batches of FLASH_PAGE_SIZE (256)
-#define FLASH_CONFIG_STREAMER_BUFFER_SIZE   FLASH_PAGE_SIZE
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE   256
 #define FLASH_CONFIG_BUFFER_TYPE            uint8_t
 
-/* DMA Settings */
-#define DMA_IRQ_CORE_NUM 1 // Use core 1 for DMA IRQs
-#undef USE_DMA_SPEC // not yet required - possibly won't be used at all
-
-#undef USE_DSHOT_BITBANG
-#define USE_DSHOT_TELEMETRY
-
-// Radio RX
-// SERIALRX CRSF supported, also TELEMETRY_CRSF
-// #undef USE_CRSF
-// #undef USE_SERIALRX_CRSF
-
-// 0, 1 or 2 for pio0, pio1, pio2
-// These can be predefined in config.h
-// Four state machines (sm) per pio block
-// Defaults
-// pio0 -> dshot for motors 1,2,3,4
-// pio1 -> PIOUART0, PIOUART1
-// pio2 -> LED STRIP, FB_OSD
-#ifndef PIO_DSHOT_INDEX
-#define PIO_DSHOT_INDEX    0
-#endif
-
-#ifndef PIO_UART_INDEX
-#define PIO_UART_INDEX     1
-#endif
-
-#ifndef PIO_LEDSTRIP_INDEX
-#define PIO_LEDSTRIP_INDEX 2
-#endif
-
-#ifndef PIO_OSD_INDEX
-#define PIO_OSD_INDEX 2
-#endif
-
-// Various untested or unsupported elements are undefined below
+// GDMA is present on P4 but the driver layer hasn't been ported.
+#undef USE_DMA
+#undef USE_DMA_SPEC
 
 #undef USE_RX_SPI
 #undef USE_RX_PWM
@@ -129,16 +84,12 @@
 #undef USE_RX_CC2500
 #undef USE_RX_EXPRESSLRS
 #undef USE_RX_SX1280
-#undef USE_SERIALRX_GHST
-#undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
-#undef USE_SERIALRX_SPEKTRUM
 #undef USE_SERIALRX_SUMD
 #undef USE_SERIALRX_SUMH
 #undef USE_SERIALRX_XBUS
-#undef USE_SERIALRX_FPORT
+#undef USE_SERIALRX_SPEKTRUM
 
-#undef USE_TELEMETRY_GHST
 #undef USE_TELEMETRY_FRSKY_HUB
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_IBUS
@@ -155,15 +106,27 @@
 #undef USE_MULTI_GYRO
 
 #undef USE_RANGEFINDER_HCSR04
+#undef USE_MAG
+#undef USE_MAG_HMC5883
+#undef USE_MAG_SPI_HMC5883
 #undef USE_VTX_RTC6705
 #undef USE_VTX_RTC6705_SOFTSPI
 #undef USE_SRXL
-#undef USE_SPEKTRUM
 #undef USE_SPEKTRUM_BIND
 
-#undef USE_SERIAL_PASSTHROUGH
+#undef USE_MSP_DISPLAYPORT
 
+#undef USE_DSHOT_BITBANG
+#undef USE_DSHOT_TELEMETRY
 #undef USE_ESC_SENSOR
+
+#undef USE_VTX
+#undef USE_VTX_TRAMP
+#undef USE_VTX_SMARTAUDIO
+#undef USE_SPEKTRUM_VTX_CONTROL
+#undef USE_VTX_COMMON
 
 #undef USE_RPM_LIMIT
 #undef USE_OSD_HD
+
+#undef USE_USB_MSC

@@ -63,7 +63,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #else
     motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     motorConfig->motorIdle = 550;
-#if !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
+#if defined(DEFAULT_MOTOR_PROTOCOL)
+    // Target forces a default protocol (e.g. PWM on a DShot-capable build);
+    // intended for the continuously-updated PWM/oneshot family.
+    motorConfig->dev.motorProtocol = DEFAULT_MOTOR_PROTOCOL;
+    motorConfig->dev.useContinuousUpdate = true;
+#elif !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_PWM;
     motorConfig->dev.useContinuousUpdate = true;
 #elif defined(USE_DSHOT) && defined(DEFAULT_MOTOR_DSHOT_SPEED)
