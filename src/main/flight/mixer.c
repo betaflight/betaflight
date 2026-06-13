@@ -65,6 +65,10 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#ifdef USE_AIRPLANE_SAS
+#include "airplane_sas.h"
+#endif
+
 #include "mixer.h"
 
 #define DYN_LPF_THROTTLE_STEPS             100
@@ -708,8 +712,16 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     }
 #endif // USE_YAW_SPIN_RECOVERY
 
-    float scaledAxisPidYaw =
-        constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
+    float scaledAxisPidYaw = 0.0f;
+#ifdef USE_AIRPLANE_SAS
+    if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+        scaledAxisPidYaw = psasData.yaw.Sum; // PSAS Yaw output [-100 ... +100]
+    } else {
+        scaledAxisPidYaw = constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
+    }
+#else
+    scaledAxisPidYaw = constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
+#endif
 
     if (!mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
