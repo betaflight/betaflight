@@ -282,6 +282,7 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
+            bbPort->telemetryPending = false;
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->inputIrq++;
 #endif
@@ -295,6 +296,7 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
             // Switch to input
 
             bbSwitchToInput(bbPort);
+            bbPort->telemetryPending = true;
 
             bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, TRUE);
         }
