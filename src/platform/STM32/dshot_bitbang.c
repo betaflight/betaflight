@@ -519,6 +519,9 @@ static bool bbTelemetryWait(void)
             bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, DISABLE);
             bbDMA_Cmd(&bbPorts[i], DISABLE);
             bbPorts[i].telemetryPending = false;
+            // Zero the buffer so decode_bb sees no edges and returns NOEDGE
+            // rather than a spurious valid GCR decode from the partial capture.
+            memset(bbPorts[i].portInputBuffer, 0, bbPorts[i].portInputCount * sizeof(uint16_t));
             telemetryWait = true;
         }
     }
