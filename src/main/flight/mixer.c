@@ -715,7 +715,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     float scaledAxisPidYaw = 0.0f;
 #ifdef USE_AIRPLANE_SAS
     if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
-        scaledAxisPidYaw = psasData.yaw.Sum; // PSAS Yaw output [-100 ... +100]
+        scaledAxisPidYaw = psasData.yaw.Sum / 100.0f * 0.5f; // PSAS Yaw output [-100 ... +100], PIDs Yaw output is around 0.5
     } else {
         scaledAxisPidYaw = constrainf(pidData[FD_YAW].Sum, -yawPidSumLimit, yawPidSumLimit) / PID_MIXER_SCALING;
     }
