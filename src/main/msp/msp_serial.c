@@ -528,17 +528,15 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             continue;
         }
 
-        // Abort pending request once per activity burst, not per byte.
-        // Prevents multi-byte sequences (e.g. '#\r') from cancelling CLI entry.
-        if (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
-            mspPort->lastActivityMs = millis();
-            mspPort->pendingRequest = MSP_PENDING_NONE;
-        }
-
         // whilst port is idle, poll incoming until portState changes or no more bytes
         while (mspPort->portState == PORT_IDLE && serialRxBytesWaiting(mspPort->port)) {
+            mspPort->lastActivityMs = millis();
             const uint8_t c = serialRead(mspPort->port);
             if (c == '$') {
+                // MSP frame incoming — cancel any pending non-MSP request.
+                // Resetting only on '$' (not every byte) allows '#\r' sequences to set
+                // MSP_PENDING_CLI without the trailing '\r' wiping it.
+                mspPort->pendingRequest = MSP_PENDING_NONE;
                 mspPort->portState = PORT_MSP_PACKET;
                 mspPort->packetState = MSP_HEADER_START;
             } else if ((evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA)
@@ -557,6 +555,9 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
                     mspPort->portState = PORT_CLI_CMD;
                     cliEnter(mspPort->port, false);
 #endif
+                } else if (mspPort->pendingRequest == MSP_PENDING_BOOTLOADER_ROM) {
+                    // unrecognized byte cancels bootloader-ROM pending; CLI pending is preserved
+                    mspPort->pendingRequest = MSP_PENDING_NONE;
                 }
             }
         }
