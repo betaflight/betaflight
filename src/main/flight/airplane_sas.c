@@ -93,22 +93,6 @@ void psasInit(const pidProfile_t *pidProfile)
     isEnabledAoALimiter = isEnabledLiftCoefEstimation && pidProfile->psas_aoa_limiter_gain != 0;
 }
 
-static void psasTerminate(void)
-{
-    memset(&psasData, 0, sizeof(psasData));
-    isActivePSAS = false;
-    isLiftCoefValid = false;
-    validLiftCoefTime = 0.0f;
-    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
-        pidData[axis].P = 0;
-        pidData[axis].I = 0;
-        pidData[axis].D = 0;
-        pidData[axis].F = 0;
-        pidData[axis].S = 0;
-        pidData[axis].Sum = 0;
-    }
-}
-
 static void FAST_CODE_NOINLINE computeLiftCoefficient(const pidProfile_t *pidProfile, float accelZ, float *liftCoef, float *liftCoefVelocity)
 {
     static float liftCoefLast = 0.0f; // liftCoefLast is full defined after timeForValid time, its first value does not matter after any re-init
@@ -380,6 +364,14 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
     bool isPSAS = isFixedWing() && FLIGHT_MODE(AIRPLANE_SAS_MODE);
     if (isPSAS) {
         if (!isActivePSAS) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+                pidData[axis].P = 0;
+                pidData[axis].I = 0;
+                pidData[axis].D = 0;
+                pidData[axis].F = 0;
+                pidData[axis].S = 0;
+                pidData[axis].Sum = 0;
+            }
             isActivePSAS = true;
         }
 
@@ -391,7 +383,10 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
 
         return true;
     } else if (isActivePSAS) {
-        psasTerminate();
+        memset(&psasData, 0, sizeof(psasData));
+        isActivePSAS = false;
+        isLiftCoefValid = false;
+        validLiftCoefTime = 0.0f;
         return false;
     }
     return false;
