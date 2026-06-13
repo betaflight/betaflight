@@ -461,8 +461,8 @@ static bool bbTelemetryWait(void)
 
     for (int i = 0; i < usedMotorPorts; i++) {
         if (bbPorts[i].telemetryPending) {
-            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, DISABLE);
-            bbDMA_Cmd(&bbPorts[i], DISABLE);
+            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, FALSE);
+            bbDMA_Cmd(&bbPorts[i], FALSE);
             bbPorts[i].telemetryPending = false;
             telemetryWait = true;
         }
