@@ -66,7 +66,7 @@
 
 // 8 KiB matches STM32H5 — handles the default PG set plus virtual
 // sensors during bring-up. Must fit within the FLASH_CONFIG partition
-// defined in stm32_flash_c5xx_1m.ld (128 KiB at 0x08020000).
+// defined in stm32_flash_c5xx_1m.ld (16 KiB at the end of flash, 0x080FC000).
 #define EEPROM_SIZE     8192
 
 #ifndef DEFAULT_PID_PROCESS_DENOM
