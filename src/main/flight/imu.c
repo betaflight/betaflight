@@ -736,7 +736,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
     const bool useAcc = imuIsAccelerometerHealthy(); // all smoothed accADC values are within 10% of 1G
     imuMahonyAHRSupdate(dt,
-                        DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
+                        DEGREES_TO_RADIANS(gyroAverage[X]), -DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, acc.accADC.x, acc.accADC.y, acc.accADC.z,
                         magErr, cogErr,
                         imuCalcKpGain(currentTimeUs, useAcc, gyroAverage));
