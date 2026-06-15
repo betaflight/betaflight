@@ -59,14 +59,28 @@ static pt1Filter_t psasLiftCoefLowpass;
 static pt1Filter_t psasAccelZLowpass;
 static pt1Filter_t psasAccelYLowpass;
 
-void psasInit(const pidProfile_t *pidProfile)
+static void psasFiltersInit(const pidProfile_t *pidProfile)
 {
     pt1FilterInit(&psasPitchDampingLowpass, pt1FilterGain(pidProfile->psas_pitch_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&psasYawDampingLowpass, pt1FilterGain(pidProfile->psas_yaw_damping_filter_freq * 0.01f, pidRuntime.dT));
     pt1FilterInit(&psasLiftCoefLowpass, pt1FilterGain(pidProfile->psas_lift_coef_filter_freq * 0.1f, pidRuntime.dT));
     pt1FilterInit(&psasAccelZLowpass, pt1FilterGain(pidProfile->psas_accel_z_filter_freq * 0.1f, pidRuntime.dT));
     pt1FilterInit(&psasAccelYLowpass, pt1FilterGain(pidProfile->psas_accel_y_filter_freq * 0.1f, pidRuntime.dT));
+}
 
+// Reset the all PSAS filters state to prevent initial issues during multiple PSAS switch On/Off
+static void psasFiltersReset(void)
+{
+    psasPitchDampingLowpass.state = 0.0f;
+    psasYawDampingLowpass.state = 0.0f;
+    psasLiftCoefLowpass.state = 0.0f;
+    psasAccelZLowpass.state = 0.0f;
+    psasAccelYLowpass.state = 0.0f;
+}
+
+void psasInit(const pidProfile_t *pidProfile)
+{
+    psasFiltersInit(pidProfile);
     for (int i=0; i < XYZ_AXIS_COUNT; i++) {
         psasRuntime.stick_gain[i] = pidProfile->psas_stick_gain[i];
         psasRuntime.damping_gain[i] = pidProfile->psas_damping_gain[i] * 0.001f;
@@ -379,11 +393,13 @@ bool FAST_CODE_NOINLINE psasHandleMode(const pidProfile_t *pidProfile)
             psasUpdate(pidProfile);
         } else {
             memset(&psasData, 0, sizeof(psasData));
+            psasFiltersReset();
         }
 
         return true;
     } else if (isActivePSAS) {
         memset(&psasData, 0, sizeof(psasData));
+        psasFiltersReset();
         isActivePSAS = false;
         isLiftCoefValid = false;
         validLiftCoefTime = 0.0f;
