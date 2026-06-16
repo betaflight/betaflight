@@ -80,6 +80,13 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 #endif // protocol selection
 #endif // brushed motors
 
+#if defined(DEFAULT_MOTOR_PWM_RATE)
+    // Board override for the motor PWM output frequency (Hz), applied on top of
+    // the protocol default above - e.g. an external ESC that reads a duty-cycle
+    // PWM throttle at a specific rate.
+    motorConfig->dev.motorPwmRate = DEFAULT_MOTOR_PWM_RATE;
+#endif
+
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->kv = 1960;
