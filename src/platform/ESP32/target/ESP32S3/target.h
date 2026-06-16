@@ -123,6 +123,14 @@
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
 
+// ---------------------------------------------------------------------------
+// Board-specific bring-up defaults for the bare "lonely binary" TARGET build
+// (make ESP32S3). For a unified board build (make CONFIG=<board>) USE_CONFIG
+// is defined and this whole block is skipped: the per-board config.h under
+// src/config/configs/ then supplies the sensors, bus pins, motors and LED.
+// ---------------------------------------------------------------------------
+#if !defined(USE_CONFIG)
+
 // IMU: InvenSense MPU-9250 on SPI device 0 (FSPI). Wiring on the lonely binary
 // (ESP32-S3 GPIO): SCK=GPIO12, MISO=GPIO13, MOSI=GPIO11, CS=GPIO10, INT=GPIO9.
 // (USE_VIRTUAL_GYRO/ACC can be re-enabled instead for sensorless bring-up.)
@@ -169,6 +177,8 @@
 #define MOTOR2_PIN              PA5
 #define MOTOR3_PIN              PA6
 #define MOTOR4_PIN              PA7
+
+#endif // !defined(USE_CONFIG)
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG
