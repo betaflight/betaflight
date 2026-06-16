@@ -177,7 +177,6 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
     sincosf_approx(imuMagneticDeclinationRad, &north_ef.y, &north_ef.x);
-    north_ef.y = -north_ef.y;
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
@@ -504,7 +503,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
 
         vector3_t mag_bf = mag.magADC;
         vector3_t mag_ef;
-        matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
+        matrixTrnVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north (rMat^T = correct body->earth)
 
         matrix33_t rMatZTrans;
         yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat.m[1][0], rMat.m[0][0]));
@@ -537,7 +536,7 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
     if (magNormSquared > 0.01f) {
         // project magnetometer reading into Earth frame
         vector3_t mag_ef;
-        matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
+        matrixTrnVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north (rMat^T = correct body->earth)
         // Normalise magnetometer measurement
         vector3Scale(&mag_ef, &mag_ef, 1.0f / sqrtf(magNormSquared));
 
