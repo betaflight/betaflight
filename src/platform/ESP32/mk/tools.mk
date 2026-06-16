@@ -61,15 +61,25 @@ ESP_PYTHON_ENV_DIR   = $(patsubst %/bin/python,%,$(ESP_PYTHON))
 
 ifeq ($(ESP_BOOTLOADER_FROM_SOURCE),yes)
 # Absolute paths: idf.py resolves -B against the CWD but -DSDKCONFIG against the
-# project dir, so a relative path would split them apart.
-ESP_BOOTLOADER_BUILD_DIR = $(abspath $(OBJECT_DIR))/esp-bootloader-$(ESP_CHIP)
+# project dir, so a relative path would split them apart. The build dir is keyed
+# by flash size as well as chip so two boards on the same chip with different
+# flash sizes (e.g. 8 MB ESP32S3 vs 4 MB CUSTS3AIO) don't share a bootloader
+# built/cached with the wrong header.
+ESP_BOOTLOADER_BUILD_DIR = $(abspath $(OBJECT_DIR))/esp-bootloader-$(ESP_CHIP)-$(ESP_FLASH_SIZE)
 ESP_BOOTLOADER_BIN       = $(ESP_BOOTLOADER_BUILD_DIR)/bootloader/bootloader.bin
+# Inject the flash size from MCU_FLASH_SIZE as an extra sdkconfig default layered
+# on top of the project's sdkconfig.defaults, so the bootloader header matches
+# the target's module. Generated into the (size-keyed) build dir, not the source
+# tree. esptool still patches the size into the merged image at merge_bin time.
 ESP_BUILD_BOOTLOADER = [ -f $(ESP_BOOTLOADER_BIN) ] || \
-    env IDF_PATH=$(ESP_IDF_PATH) IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) \
+    ( mkdir -p $(ESP_BOOTLOADER_BUILD_DIR) && \
+      echo 'CONFIG_ESPTOOLPY_FLASHSIZE_$(ESP_FLASH_SIZE)=y' > $(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig.flashsize && \
+      env IDF_PATH=$(ESP_IDF_PATH) IDF_TOOLS_PATH=$(IDF_TOOLS_PATH) \
         IDF_PYTHON_ENV_PATH=$(ESP_PYTHON_ENV_DIR) PATH="$(ESP_TOOLS_BIN):$$PATH" \
         $(ESP_PYTHON) $(ESP_IDF_PATH)/tools/idf.py -C $(abspath $(ESP_BOOTLOADER_PROJ)) \
             -B $(ESP_BOOTLOADER_BUILD_DIR) -DIDF_TARGET=$(ESP_CHIP) \
-            -DSDKCONFIG=$(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig bootloader
+            -DSDKCONFIG_DEFAULTS="$(abspath $(ESP_BOOTLOADER_PROJ))/sdkconfig.defaults;$(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig.flashsize" \
+            -DSDKCONFIG=$(ESP_BOOTLOADER_BUILD_DIR)/sdkconfig bootloader )
 else
 ESP_BOOTLOADER_BIN   = $(TARGET_PLATFORM_DIR)/bin/bootloader_$(ESP_CHIP).bin
 ESP_BUILD_BOOTLOADER = true

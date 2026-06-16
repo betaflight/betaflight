@@ -57,7 +57,9 @@ DEVICE_FLAGS += \
             -DESP32S3 \
             -DESP32
 
-MCU_FLASH_SIZE := 8192
+# Family default; target.mk / a per-board config.mk may set it first (?= so an
+# earlier override such as CUSTS3AIO's 4 MB N4R2 module is preserved).
+MCU_FLASH_SIZE ?= 8192
 
 LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
 
