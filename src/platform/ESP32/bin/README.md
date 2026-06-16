@@ -12,8 +12,9 @@ stable, and esptool patches the flash mode/size/freq into its header at flash
 time, so one binary per chip is sufficient.
 
 The build (`make ESP32S3`) generates the partition table from
-`../partitions.csv` and merges bootloader + partition table + app into a single
-`*_full.bin`, flashable in one step at `0x0`.
+`../partitions.csv` and merges bootloader + partition table + app into the single
+bootable `.bin` (via a transient `*_tmp.bin` app image that is then deleted),
+flashable in one step at `0x0`.
 
 ## Provenance / how to regenerate
 

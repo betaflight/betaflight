@@ -48,6 +48,15 @@ ESP_ELF2IMAGE    = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image \
                    --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) \
                    --flash_size $(ESP_FLASH_SIZE) --output $@ $<
 
+# Variant for MCUs that merge into a single bootable $(TARGET_BIN) (e.g. ESP32S3):
+# emit the app image to a temporary file ($@ with .bin -> _tmp.bin) that
+# ESP_FLASH_IMAGE_CMD consumes and then deletes, leaving the merged image as the
+# final .bin. Kept separate from ESP_ELF2IMAGE so app-image-only MCUs are unaffected.
+ESP_APP_TMP_BIN     = $(@:.bin=_tmp.bin)
+ESP_ELF2IMAGE_TMP   = $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) elf2image \
+                      --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) \
+                      --flash_size $(ESP_FLASH_SIZE) --output $(ESP_APP_TMP_BIN) $<
+
 # Second-stage bootloader. By default it is built from source via a minimal
 # in-tree IDF project (src/platform/ESP32/bootloader) using `idf.py bootloader`;
 # set ESP_BOOTLOADER_FROM_SOURCE=no to use the committed prebuilt blob instead
@@ -85,23 +94,24 @@ ESP_BOOTLOADER_BIN   = $(TARGET_PLATFORM_DIR)/bin/bootloader_$(ESP_CHIP).bin
 ESP_BUILD_BOOTLOADER = true
 endif
 
-# Full-flash image assembly: ensure the bootloader exists, generate the
+# Single bootable image assembly: ensure the bootloader exists, generate the
 # partition table from the in-tree CSV (IDF gen_esp32part.py), then merge
-# bootloader (0x0) + table (0x8000) + app ($@, at ESP_APP_OFFSET) into one image
-# flashable in a single esptool write_flash at 0x0. A per-MCU .mk opts in by
-# chaining ESP_FLASH_IMAGE_CMD after ESP_ELF2IMAGE in BIN_FROM_ELF_CMD. All vars
-# are expanded at recipe time, so values set in the per-MCU .mk are available.
+# bootloader (0x0) + table (0x8000) + app (the _tmp.bin from elf2image, at
+# ESP_APP_OFFSET) into the final $(TARGET_BIN) - flashable in a single esptool
+# write_flash at 0x0 - and delete the temporary app image. A per-MCU .mk opts in
+# by chaining ESP_FLASH_IMAGE_CMD after ESP_ELF2IMAGE_TMP in BIN_FROM_ELF_CMD. All
+# vars are expanded at recipe time, so values set in the per-MCU .mk are available.
 ESP_GEN_ESP32PART   = $(ESP_PYTHON) $(ESP_IDF_PATH)/components/partition_table/gen_esp32part.py
 ESP_PARTITIONS_CSV ?= $(TARGET_PLATFORM_DIR)/partitions.csv
 ESP_PARTITION_BIN   = $(OBJECT_DIR)/partition-table_$(TARGET_NAME).bin
 ESP_APP_OFFSET     ?= 0x10000
-ESP_FULL_BIN        = $(BIN_DIR)/$(TARGET_FULLNAME)_full.bin
 
 ESP_FLASH_IMAGE_CMD = ( $(ESP_BUILD_BOOTLOADER) ) && \
                       $(ESP_GEN_ESP32PART) $(ESP_PARTITIONS_CSV) $(ESP_PARTITION_BIN) && \
-                      $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) merge_bin --output $(ESP_FULL_BIN) \
+                      $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) merge_bin --output $@ \
                         --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) --flash_size $(ESP_FLASH_SIZE) \
-                        0x0 $(ESP_BOOTLOADER_BIN) 0x8000 $(ESP_PARTITION_BIN) $(ESP_APP_OFFSET) $@
+                        0x0 $(ESP_BOOTLOADER_BIN) 0x8000 $(ESP_PARTITION_BIN) $(ESP_APP_OFFSET) $(ESP_APP_TMP_BIN) && \
+                      rm -f $(ESP_APP_TMP_BIN)
 
 # Stamp file indicating esp-idf has been hydrated
 ESP_IDF_STAMP := $(ESP_IDF_PATH)/.git
