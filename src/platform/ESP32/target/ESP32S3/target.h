@@ -72,11 +72,14 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-// Config in RAM for initial bring-up (no persistence across reboots).
-// The memory-mapped flash-config path (CONFIG_IN_FLASH) reads/writes via the
-// __config_start mapped address, which on ESP32-S3 needs a byte-accessible
-// DROM-window partition mapped by the bootloader; revisit for persistence.
-#define CONFIG_IN_RAM
+// Config persisted in the on-board SPI flash. The region is mapped into the
+// byte-accessible DROM window at runtime (see ESP32/config_flash.c) so the
+// memory-mapped reads in config_eeprom.c resolve to flash; writes go through the
+// ROM SPI-flash API with the caches suspended and core 1 stalled. The streamer
+// writes 32-byte words (uint32_t-aligned), matching esp_rom_spiflash_write.
+#define CONFIG_IN_FLASH
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32
+#define FLASH_CONFIG_BUFFER_TYPE          uint32_t
 #define EEPROM_SIZE 32768
 
 /* DMA Settings */
