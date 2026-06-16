@@ -105,12 +105,15 @@ ESP_GEN_ESP32PART   = $(ESP_PYTHON) $(ESP_IDF_PATH)/components/partition_table/g
 ESP_PARTITIONS_CSV ?= $(TARGET_PLATFORM_DIR)/partitions.csv
 ESP_PARTITION_BIN   = $(OBJECT_DIR)/partition-table_$(TARGET_NAME).bin
 ESP_APP_OFFSET     ?= 0x10000
+# Secondary bootloader flash offset, matching IDF CONFIG_BOOTLOADER_OFFSET_IN_FLASH:
+# 0x1000 on ESP32/S2, 0x2000 on P4/C5, 0x0 elsewhere (S3, C2/C3/C6/H2).
+ESP_BOOTLOADER_OFFSET = $(if $(filter esp32 esp32s2,$(ESP_CHIP)),0x1000,$(if $(filter esp32p4 esp32c5,$(ESP_CHIP)),0x2000,0x0))
 
 ESP_FLASH_IMAGE_CMD = ( $(ESP_BUILD_BOOTLOADER) ) && \
                       $(ESP_GEN_ESP32PART) $(ESP_PARTITIONS_CSV) $(ESP_PARTITION_BIN) && \
                       $(ESP_PYTHON) $(ESP_ESPTOOL) --chip $(ESP_CHIP) merge_bin --output $@ \
                         --flash_mode $(ESP_FLASH_MODE) --flash_freq $(ESP_FLASH_FREQ) --flash_size $(ESP_FLASH_SIZE) \
-                        0x0 $(ESP_BOOTLOADER_BIN) 0x8000 $(ESP_PARTITION_BIN) $(ESP_APP_OFFSET) $(ESP_APP_TMP_BIN) && \
+                        $(ESP_BOOTLOADER_OFFSET) $(ESP_BOOTLOADER_BIN) 0x8000 $(ESP_PARTITION_BIN) $(ESP_APP_OFFSET) $(ESP_APP_TMP_BIN) && \
                       rm -f $(ESP_APP_TMP_BIN)
 
 # Stamp file indicating esp-idf has been hydrated

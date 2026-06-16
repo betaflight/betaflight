@@ -6,9 +6,10 @@
 
 DEFAULT_OUTPUT := bin
 
-# Emit a bootable ESP-IDF application image (via esptool elf2image) rather than
-# a raw objcopy dump.
-BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE)
+# Emit a bootable ESP-IDF application image (via esptool elf2image) into a
+# transient _tmp.bin, then merge bootloader + partition table + app into the
+# final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf

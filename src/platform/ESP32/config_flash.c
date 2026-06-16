@@ -28,6 +28,8 @@
 
 #if defined(CONFIG_IN_FLASH)
 
+#if defined(ESP32S3)
+
 #include "esp_rom_spiflash.h"
 
 #include "soc/soc.h"
@@ -183,5 +185,28 @@ CONFIG_FLASH_IRAM configStreamerResult_e configWriteWord(uintptr_t address, conf
 
     return result;
 }
+
+#else // CONFIG_IN_FLASH but not ESP32S3
+
+// Other ESP32 families are headed for CONFIG_IN_FLASH too, but the self-program
+// path (cache/MMU and flash-controller handling) is per-chip and only ESP32S3 is
+// brought up so far. Provide linkable placeholders so those targets still build
+// the same single bootable image; the real per-chip implementation lands when the
+// chip is brought up. configWriteWord reports failure rather than silently losing
+// a save, and configFlashInit is a no-op (the memory-mapped reads resolve through
+// the linker's __config_start as on other targets).
+void configUnlock(void) { }
+void configLock(void) { }
+void configClearFlags(void) { }
+void configFlashInit(void) { }
+
+configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer)
+{
+    (void)address;
+    (void)buffer;
+    return CONFIG_RESULT_FAILURE;
+}
+
+#endif // ESP32S3
 
 #endif // CONFIG_IN_FLASH
