@@ -674,7 +674,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
         ) {
         useMag = true;
-        magErr = imuCalcMagErr();
+        magErr = -imuCalcMagErr();
     }
 #endif
 
