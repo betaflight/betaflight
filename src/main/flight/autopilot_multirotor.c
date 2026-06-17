@@ -335,19 +335,19 @@ bool positionControl(void)
     positionNavUpdate(dt, est);
     const bool navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
 
-if (navActive || ap.sticksActive) {
+    if (navActive || ap.sticksActive) {
         isPositionHeld = false;
 
         if (navActive) {
             if (!wasNavActive) {
-            // things to do when starting a nav mode
+                // things to do when starting a nav mode
                 initNavMode();
             }
             const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
             targetVelocity[EF_EAST]  = tgtVel.x;
             targetVelocity[EF_NORTH] = tgtVel.y;
         } else { 
-            // sticks are active
+            // sticks are active, and while sticks are active, control is normal ANGLE mode
             targetVelocity[EF_EAST]  = getSetpointRate(FD_ROLL); // use setpoint to soften centering
             targetVelocity[EF_NORTH] =getSetpointRate(FD_PITCH);
         }
@@ -362,7 +362,7 @@ if (navActive || ap.sticksActive) {
             initialVelocity[EF_EAST]  = est->velocity.x;
             initialVelocity[EF_NORTH] = est->velocity.y;
         } else {
-            // update distance error
+            // in posHold - update distance error
             distanceError[EF_EAST]  = targetPosition.x - est->position.x;
             distanceError[EF_NORTH] = targetPosition.y - est->position.y;
 
@@ -457,12 +457,12 @@ if (navActive || ap.sticksActive) {
 
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError[AI_ROLL]));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError[AI_PITCH]));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(autopilotAngle[AI_ROLL] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(autopilotAngle[AI_PITCH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf( pidSumEF.v[AI_ROLL]*10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf( pidSumEF.v[AI_PITCH]*10));
-
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (isStopping[debugAxis ? 1 :0]));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(pidSumEF.v[AI_ROLL] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumEF.v[AI_PITCH] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (isStopping[AI_ROLL ? 1 :0]));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (isStopping[AI_PITCH ? 1 :0]));
 
     return true;
 }
@@ -477,9 +477,9 @@ float getAutopilotThrottle(void)
     return throttleOut;
 }
 
-bool isAutopilotInControl(void)
+bool isAutopilotInControl(void) // use normal angle mode stick control
+}
 {
     return !ap.sticksActive;
-}
 
 #endif // !USE_WING
