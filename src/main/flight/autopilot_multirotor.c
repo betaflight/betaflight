@@ -47,15 +47,15 @@
 #include "flight/pos_hold.h"
 #endif
 
-// DEBUG_AUTOPILOT_PID
-// 0 - P term (East) * 100
-// 1 - P term (North) * 100
-// 2 - I term (East) * 100
-// 3 - I term (North) * 100
-// 4 - II term (East) * 100
-// 5 - II term (North) * 100
-// 6 - Roll angle command * 100
-// 7 - Pitch angle command * 100
+// DEBUG_AUTOPILOT_PID each parameter on the axis set by gyro_filter_debug_axis
+// 0 - VelocityError cm/s
+// 1 - DistanceError cm
+// 2 - P term * 10 // based on distance from intended position
+// 3 - I term * 10 // integral of distance error over time
+// 4 - D term * 10 // velocity factor ( distance error derivative)
+// 5 - A term * 10 // velocity derivative factor (acceleration in distance terms)
+// 6 - PIDsum * 10
+// 7 - Status - encodes navActive+ 10, SticksActive +5, PositionHeld +3, +1 when starting,
 
 // DEBUG_AUTOPILOT_STOP
 // 0 - distance from position-hold target (cm)
@@ -82,7 +82,8 @@
 
 #define POSITION_P_SCALE       0.001f
 #define POSITION_I_SCALE      (0.1f * POSITION_P_SCALE)
-#define POSITION_D_SCALE       0.002f
+#define POSITION_D_SCALE       0.0015f
+#define POSITION_A_SCALE       0.0005f
 #define ERROR_DISTANCE_LIMIT 10000.0f // TO DO: test set to a useful value, this is 100m
 #define POSITION_I_LIMIT 10000.0f // TO DO: test and set to a useful value, this is 100m
 
@@ -110,6 +111,7 @@ static float distanceError[EF_AXIS_COUNT]; // deviation from intended position
 static float distanceErrorIntegral[EF_AXIS_COUNT]; // integral of position error
 static bool isPosHoldStarting[EF_AXIS_COUNT] = { false, false }; // to adjust pids while stopping before posHold
 static float initialVelocity[EF_AXIS_COUNT] = { 0.0f, 0.0f }; // to detect stopping
+static float previousVelocity[EF_AXIS_COUNT] = { 0.0f, 0.0f }; // for acceleration
 static float dTermRamp[EF_AXIS_COUNT] = { 1.0f, 1.0f }; // to smooth D when starting
 static bool isPositionHeld;
 static bool wasPositionHeld = false;
@@ -155,6 +157,7 @@ void autopilotInit(void)
     positionPidCoeffs.Kp  = cfg->positionP  * POSITION_P_SCALE;
     positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
     positionPidCoeffs.Kd  = cfg->positionD  * POSITION_D_SCALE;
+    positionPidCoeffs.Ka  = cfg->positionA  * POSITION_A_SCALE;
 
     initPositionAccelLpf();
     positionNavInit();
@@ -323,6 +326,7 @@ bool positionControl(void)
     float pidP[EF_AXIS_COUNT] = { 0.0f, 0.0f };
     float pidI[EF_AXIS_COUNT] = { 0.0f, 0.0f };
     float pidD[EF_AXIS_COUNT] = { 0.0f, 0.0f };
+    float pidA[EF_AXIS_COUNT] = { 0.0f, 0.0f };
     static vector2_t pidSumEF = {{ 0, 0 }};
     vector2_t anglesBF = {{ 0, 0 }};
 
@@ -338,7 +342,7 @@ bool positionControl(void)
                 // things to do when starting a nav mode
                 initNavMode();
             }
-            const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
+            const vector3_t tgtVel = positionNavGetTargetVelocityCmS(); // update target velocity
             targetVelocity[EF_EAST]  = tgtVel.x;
             targetVelocity[EF_NORTH] = tgtVel.y;
         }
@@ -347,11 +351,13 @@ bool positionControl(void)
             if (!isPositionHeld) {
                 // currently not in position hold, so start it - do these things on starting
                 capturePositionHoldTarget(est);
-                initPositionHold(); // set stopping to true for both axes, zero integrals, zero target velocity
+                initPositionHold(); // set stopping to true, zero target velocity and integrals to zero
                 ap.sanityCheckDistance = sanityCheckDistance(speedXY);
                 isPositionHeld = true;
                 initialVelocity[EF_NORTH] = est->velocity.y;
                 initialVelocity[EF_EAST]  = est->velocity.x;
+                previousVelocity[EF_NORTH] = initialVelocity[EF_NORTH]; // zero acceleration on very first run
+                previousVelocity[EF_EAST]  = initialVelocity[EF_EAST];
             } else {
                 // in posHold
                 distanceError[EF_EAST]  = targetPosition.x - est->position.x;
@@ -379,6 +385,9 @@ bool positionControl(void)
             }
         }
         velocityError[axis] = targetVelocity[axis] - velocity[axis];
+        const float accelerationRaw = (previousVelocity[axis] - velocity[axis]) * POSHOLD_TASK_RATE_HZ; // match sign of velocityError
+        previousVelocity[axis] = velocity[axis];
+         const float acceleration = pt1FilterApply(&posAccelLpf[axis], accelerationRaw);
         if (navActive) {
             distanceError[axis] += velocityError[axis] * dt;
         }  else if (!isPositionHeld) {
@@ -392,7 +401,8 @@ bool positionControl(void)
         pidP[axis] = distanceError[axis] * positionPidCoeffs.Kp;
         pidI[axis] = distanceErrorIntegral[axis] * positionPidCoeffs.Ki;
         pidD[axis] = velocityError[axis] * positionPidCoeffs.Kd * dTermRamp[axis];
-         pidSumEF.v[axis] = pidP[axis] + pidI[axis] + pidD[axis];
+        pidA[axis] = acceleration * positionPidCoeffs.Ka * dTermRamp[axis];
+         pidSumEF.v[axis] = pidP[axis] + pidI[axis] + pidD[axis]+ pidA[axis];
     } // end for loop
 
     if (ap.sticksActive && navActive) {
@@ -424,8 +434,8 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP[debugAxis]*10));   
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI[debugAxis]*10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD[debugAxis]*10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf( pidSumEF.v[debugAxis]*10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(autopilotAngle[debugAxis]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA[debugAxis]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf( pidSumEF.v[debugAxis]*10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (isPosHoldStarting[debugAxis ? 1 :0]));
 
 //    const float stopDistanceEast = est->position.x - targetPosition.x;

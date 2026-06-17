@@ -130,10 +130,10 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     attitude.values.roll  = 0;
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->positionP  = 50;
-    cfg->positionI  = 50;
-    cfg->positionII = 50;
-    cfg->positionD  = 50;
+    cfg->positionP  = 30;
+    cfg->positionI  = 30;
+    cfg->positionD  = 30;
+    cfg->positionA  = 30;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
