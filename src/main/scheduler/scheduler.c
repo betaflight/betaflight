@@ -856,3 +856,10 @@ float schedulerGetCycleTimeMultiplier(void)
 {
     return (float)clockMicrosToCycles(getTask(TASK_GYRO)->attribute->desiredPeriodUs) / desiredPeriodCycles;
 }
+
+
+void Develop_TestFunction(void)
+{
+    //This is Test Function for Testing Git
+    while(1);
+}
