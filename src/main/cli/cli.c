@@ -6955,7 +6955,6 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFA
 #undef DEFW
 
-#define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
 #if !defined(DMA_CHANREQ_STRING)
@@ -6977,6 +6976,23 @@ static void optToString(int optval, char *buf)
     }
 }
 
+// A dmaopt instance number follows the same per-platform base as the matching pin
+// resource, so `dma SPI_SDO N` agrees with `resource SPI_SCK N`. TIMUP is special:
+// its timers are numbered non-contiguously, taken straight from the platform.
+static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
+{
+    switch (peripheral) {
+    case DMA_PERIPH_SPI_SDO:
+    case DMA_PERIPH_SPI_SDI:
+        return OWNER_SPI_SCK;
+    case DMA_PERIPH_UART_TX:
+    case DMA_PERIPH_UART_RX:
+        return OWNER_SERIAL_TX;
+    default:
+        return OWNER_FREE;   // ADC/SDIO/...: no per-platform base, 1-based naming
+    }
+}
+
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -6986,7 +7002,7 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
         }
         return dispNum;
     }
-    return DMA_OPT_UI_INDEX(index);
+    return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
@@ -7002,8 +7018,8 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
         return timerGetIndexByNumber(dispNum);
     }
 
-    const int index = dispNum - 1;
-    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+    const int index = resourceInputToIndex(dmaoptResourceOwner(entry->peripheral), dispNum);
+    return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
