@@ -268,34 +268,37 @@ static void capturePositionHoldTarget(const positionEstimate3d_t *est)
     targetPosition.z = est->position.z;
 }
 
-static void resetIntegrals(void){
 
- for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
-    distanceError[i] = 0.0f; 
-    distanceErrorIntegral[i] = 0.0f;
-    isStopping[i] = true;
+static void resetDistanceErrorAndIntegral(void){
+
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        distanceError[i] = 0.0f; 
+        distanceErrorIntegral[i] = 0.0f;
     }
 }
 
-static void resetPosHoldArrayItems(void){
- for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
-    distanceError[i] = 0.0f; 
-    distanceErrorIntegral[i] = 0.0f;
-    isStopping[i] = true;
+static void initPositionHold(void){
+    initPositionAccelLpf();
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        distanceError[i] = 0.0f; 
+        distanceErrorIntegral[i] = 0.0f;
+        isStopping[i] = true;
     }
 }
 
-static void positionHoldReset(void)
+
+static void initNavMode(void)
 {
-    initPositionAccelLpf();    // Reset the acceleration filter
-    resetPosHoldArrayItems();
+    initPositionAccelLpf();
+    resetDistanceErrorAndIntegral();
 }
+
 
 void resetPositionControl(unsigned taskRateHz)
 {
     UNUSED(taskRateHz);
     ap.sticksActive = false;
-    positionHoldReset();
+    initPositionHold();
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     ap.sanityCheckDistance = sanityCheckDistance(vector2Norm((vector2_t*)&est->velocity));
     initialVelocity[EF_EAST]  = est->velocity.x;
@@ -338,7 +341,7 @@ if (navActive || ap.sticksActive) {
         if (navActive) {
             if (!wasNavActive) {
             // things to do when starting a nav mode
-                resetIntegrals();
+                initNavMode();
             }
             const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
             targetVelocity[EF_EAST]  = tgtVel.x;
@@ -349,11 +352,11 @@ if (navActive || ap.sticksActive) {
             targetVelocity[EF_NORTH] =getSetpointRate(FD_PITCH);
         }
     } else {
-        // if neither In a Nav mode, nor sticksActiver, should be in position hold
+        // if neither In a Nav mode, nor sticksActive, should be in position hold
         if (!isPositionHeld) {
-            // start position hold' do the  things to do once when starting
-            capturePositionHoldTarget(est);
-            positionHoldReset();
+            // start position hold - things to do once on starting
+                capturePositionHoldTarget(est);
+            initPositionHold();
             ap.sanityCheckDistance = sanityCheckDistance(speedXY);
             isPositionHeld = true;
             initialVelocity[EF_EAST]  = est->velocity.x;
@@ -380,7 +383,7 @@ if (navActive || ap.sticksActive) {
     if (posHoldTransition > 0.0f) {
         posHoldTransition *= 0.9f;
         if (posHoldTransition < 0.01f) {
-            posHoldTransition = 0.0f; // Clean floor cutoff
+            posHoldTransition = 0.0f; // Clean cutoff to zero
         }
     }
 
@@ -394,13 +397,12 @@ if (navActive || ap.sticksActive) {
         if (navActive) {
             distanceError[axis] += velocityError[axis] * dt;
         }  else if (!isPositionHeld){
-            // sticksActive must be true, so get target velocity from sticks
-            distanceError[axis] = 0.0f;
-            distanceErrorIntegral[axis] = 0.0f;
+            // sticksActive must be true, get target velocity from sticks, zero the distance error
+            distanceError[axis] = 0.0f; // don't accumulate distance until sticks stop
         }
-    // limit integrals and calculate pids
+        // normal situation, either nav mode or posHold, may be stopping
+        // limit integrals and calculate pids
         distanceError[axis] = constrainf(distanceError[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-
         distanceErrorIntegral[axis] += distanceError[axis] * dt * (isStopping[axis] ? 0.0f : 1.0f);
         distanceErrorIntegral[axis] = constrainf(distanceErrorIntegral[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
 
@@ -428,18 +430,8 @@ if (navActive || ap.sticksActive) {
         }
     }
 
-    const float stopDistanceEast = est->position.x - targetPosition.x;
-    const float stopDistanceNorth = est->position.y - targetPosition.y;
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(sqrtf(stopDistanceEast * stopDistanceEast + stopDistanceNorth * stopDistanceNorth)));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(speedXY));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, ap.sticksActive ? 1 : 0);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, navActive ? 1 : 0);
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, isPositionHeld ? 1 : 0);
-    autopilotAngle[X] = anglesBF.v[AI_ROLL];
-    autopilotAngle[Y] = anglesBF.v[AI_PITCH];
-
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, lrintf(autopilotAngle[X] * 100));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(autopilotAngle[Y] * 100));
+    autopilotAngle[AI_ROLL] = anglesBF.v[AI_ROLL]; // AI_ROLL is index 0
+    autopilotAngle[AI_PITCH] = anglesBF.v[AI_PITCH];
 
     const unsigned debugAxis = (gyroConfig()->gyro_filter_debug_axis == FD_PITCH) ? 1 : 0;
     // Pitch aligns with North, Roll with East
@@ -455,6 +447,21 @@ if (navActive || ap.sticksActive) {
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD[debugAxis]*10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf( pidSumEF.v[debugAxis]*10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(autopilotAngle[debugAxis]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (isStopping[debugAxis ? 1 :0]));
+
+//    const float stopDistanceEast = est->position.x - targetPosition.x;
+//    const float stopDistanceNorth = est->position.y - targetPosition.y;
+
+//    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(sqrtf(stopDistanceEast * stopDistanceEast + stopDistanceNorth * stopDistanceNorth)));
+//    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(speedXY));
+
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError[AI_ROLL]));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(velocityError[AI_PITCH]));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, lrintf(autopilotAngle[AI_ROLL] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(autopilotAngle[AI_PITCH] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf( pidSumEF.v[AI_ROLL]*10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf( pidSumEF.v[AI_PITCH]*10));
+
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (isStopping[debugAxis ? 1 :0]));
 
     return true;
