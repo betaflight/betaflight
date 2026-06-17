@@ -420,7 +420,7 @@ if (navActive || ap.sticksActive) {
         const float angle = DECIDEGREES_TO_RADIANS(attitude.values.yaw - 900);
         vector2_t pidBodyFrame;
         vector2Rotate(&pidBodyFrame, &pidSumEF, angle);
-        anglesBF.v[AI_ROLL]  = pidBodyFrame.y;
+        anglesBF.v[AI_ROLL]  = -pidBodyFrame.y;
         anglesBF.v[AI_PITCH] = pidBodyFrame.x;
         const float mag = vector2Norm(&anglesBF);
         if (mag > ap.maxAngle && mag > 0.0f) {
