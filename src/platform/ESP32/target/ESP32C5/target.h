@@ -34,18 +34,20 @@
 #define USBD_PRODUCT_STRING     "Betaflight - ESP32-C5"
 #endif
 
+// The shared drivers back only UART0/UART1 and a single general-purpose SPI
+// master on C5 today (the C5 has no UART2 controller, and only FSPI is exposed
+// as a GP master). Declaring UART2 / a second SPI device here would alias them
+// onto UART1 / FSPI in the signal maps - enable them with the C5 driver port.
 #define USE_UART0
 #define USE_UART1
-#define USE_UART2
 #define UART_RX_BUFFER_SIZE 1024
 #define UART_TX_BUFFER_SIZE 1024
 #define UARTHARDWARE_MAX_PINS 8
 #define UART_TRAIT_AF_PORT 1
 
 #define USE_SPI
-#define SPIDEV_COUNT 2
+#define SPIDEV_COUNT 1
 #define USE_SPI_DEVICE_0
-#define USE_SPI_DEVICE_1
 #define USE_SPI_DMA_ENABLE_LATE
 #define MAX_SPI_PIN_SEL 4
 
