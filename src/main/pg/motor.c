@@ -55,17 +55,9 @@ PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 3);
 
 void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 {
-#if defined(USE_BRUSHED_MOTORS)
-    motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_BRUSHED;
-    motorConfig->dev.useContinuousUpdate = true;
-    motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
-#else
-    motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-    motorConfig->motorIdle = 550;
+    // Default motor protocol: a target/config may force one via DEFAULT_MOTOR_PROTOCOL
+    // (e.g. BRUSHED, or PWM on a DShot-capable build); otherwise pick by capability.
 #if defined(DEFAULT_MOTOR_PROTOCOL)
-    // Target forces a default protocol (e.g. PWM on a DShot-capable build);
-    // intended for the continuously-updated PWM/oneshot family.
     motorConfig->dev.motorProtocol = DEFAULT_MOTOR_PROTOCOL;
     motorConfig->dev.useContinuousUpdate = true;
 #elif !defined(USE_DSHOT) && defined(USE_PWM_OUTPUT)
@@ -77,8 +69,18 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DSHOT600;
 #else
     motorConfig->dev.motorProtocol = MOTOR_PROTOCOL_DISABLED;
-#endif // protocol selection
-#endif // brushed motors
+#endif
+
+    // PWM rate and idle defaults follow from whether the chosen protocol is brushed,
+    // rather than a separate build macro.
+    if (motorConfig->dev.motorProtocol == MOTOR_PROTOCOL_BRUSHED) {
+        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->dev.useContinuousUpdate = true;
+        motorConfig->motorIdle = 700; // historical default minThrottle for brushed was 1070
+    } else {
+        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->motorIdle = 550;
+    }
 
 #if defined(DEFAULT_MOTOR_PWM_RATE)
     // Board override for the motor PWM output frequency (Hz), applied on top of
