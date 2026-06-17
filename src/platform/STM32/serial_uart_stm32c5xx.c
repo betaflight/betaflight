@@ -97,6 +97,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPins = {
             { DEFIO_TAG_E(PA9),  HAL_GPIO_AF7_USART1 },
             { DEFIO_TAG_E(PB6),  HAL_GPIO_AF7_USART1 },
+            { DEFIO_TAG_E(PA15), HAL_GPIO_AF11_USART1 },
         },
         .rcc = RCC_APB2(USART1),
         .irqn = USART1_IRQn,
@@ -153,6 +154,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PC4),  HAL_GPIO_AF7_USART3 },
             { DEFIO_TAG_E(PC11), HAL_GPIO_AF7_USART3 },
             { DEFIO_TAG_E(PD9),  HAL_GPIO_AF7_USART3 },
+            { DEFIO_TAG_E(PB1),  HAL_GPIO_AF7_USART3 },
         },
         .txPins = {
             { DEFIO_TAG_E(PB10), HAL_GPIO_AF7_USART3 },
@@ -274,6 +276,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PA15), HAL_GPIO_AF7_UART7 },
             { DEFIO_TAG_E(PB4),  HAL_GPIO_AF7_UART7 },
             { DEFIO_TAG_E(PF7),  HAL_GPIO_AF7_UART7 },
+            { DEFIO_TAG_E(PA10), HAL_GPIO_AF10_UART7 },
         },
         .rcc = RCC_APB1L(UART7),
         .irqn = UART7_IRQn,

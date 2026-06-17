@@ -858,6 +858,14 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_SDIO_EXTERNAL_DMA 0
 #endif
 
+// STM32C5: drive boot source from the BOOT0 pin rather than the BOOT0
+// option bit. Default on so a BF crash never strands the board without
+// DFU recovery — set this to 0 in config.h for boards that wire BOOT0
+// to VDD/float, where forcing BOOT_SEL=1 would land in DFU on every boot.
+#if !defined(ENABLE_BOOT0_PIN_SELECT)
+#define ENABLE_BOOT0_PIN_SELECT 1
+#endif
+
 #if defined(USE_FLIGHT_PLAN) && !defined(ENABLE_FLIGHT_PLAN)
 #define ENABLE_FLIGHT_PLAN 1
 #elif !defined(ENABLE_FLIGHT_PLAN)
@@ -893,6 +901,15 @@ extern struct linker_symbol __fontdata_end;
 // flag (dronecan_enabled) deciding whether the task is actually started.
 #if !defined(ENABLE_DRONECAN)
 #define ENABLE_DRONECAN ENABLE_CAN
+#endif
+
+// First-cut probe for SPA06-003 (Goertek) over STM32C5 I3C1 in legacy-I2C
+// mode. When set, the probe runs once after baroInit() to confirm I3C bring-up
+// on PC10/PC11 by reading the SPA06 CHIP_ID (reg 0x0D) at address 0x77/0x76.
+// Result lives in `spa06ProbeChipId` / `spa06ProbeStatus` (SWD-readable). Off
+// by default; opt in from the board config.
+#if !defined(ENABLE_BARO_SPA06_PROBE)
+#define ENABLE_BARO_SPA06_PROBE 0
 #endif
 
 // LCD console — runtime debug terminal that scrolls printf/trace output to

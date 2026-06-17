@@ -580,10 +580,13 @@ const spiHardware_t spiHardware[] = {
         .reg = (spiResource_t *)SPI3,
         .sckPins = {
             { DEFIO_TAG_E(PB3),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB7),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB9),  GPIO_AF6_SPI3 },
             { DEFIO_TAG_E(PC10), GPIO_AF6_SPI3 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PB4),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB6),  GPIO_AF6_SPI3 },
             { DEFIO_TAG_E(PC11), GPIO_AF6_SPI3 },
         },
         .mosiPins = {
