@@ -6,6 +6,10 @@
 
 DEFAULT_OUTPUT := bin
 
+# Emit a bootable ESP-IDF application image (via esptool elf2image) rather than
+# a raw objcopy dump.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE)
+
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
 PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)

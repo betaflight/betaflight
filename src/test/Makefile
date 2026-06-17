@@ -101,6 +101,17 @@ baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611= \
                 USE_BARO_SPI_MS5611=
 
+accgyro_spi_icm426xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
+
+accgyro_spi_icm426xx_unittest_DEFINES := \
+                USE_GYRO_SPI_ICM42605= \
+                USE_ACCGYRO_ICM42622P= \
+                USE_ACCGYRO_ICM42686P= \
+                USE_GYRO_SPI_ICM42688P= \
+                USE_ACCGYRO_IIM42652= \
+                USE_ACCGYRO_IIM42653=
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #

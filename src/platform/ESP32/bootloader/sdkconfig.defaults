@@ -1,0 +1,5 @@
+# Bootloader flash settings (esptool also patches these at flash time, but pin
+# them so the built bootloader header matches the Betaflight flash config).
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y

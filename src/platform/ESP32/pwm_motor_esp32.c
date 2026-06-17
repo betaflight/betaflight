@@ -40,11 +40,14 @@
 #pragma GCC diagnostic pop
 
 #include "soc/ledc_struct.h"
+#include "soc/soc_caps.h"
 #include "soc/gpio_struct.h"
 #include "esp_rom_gpio.h"
 #include "soc/gpio_sig_map.h"
 
-#define PWM_MAX_MOTORS 4
+// LEDC has 8 channels on ESP32-S3 (and on the originals via the
+// low-speed group); cap motors at 8 to fit hex/octo.
+#define PWM_MAX_MOTORS 8
 
 typedef struct {
     IO_t io;
@@ -124,10 +127,24 @@ static IO_t pwmMotorGetIO(unsigned index)
 
 static void pwmMotorRequestTelemetry(unsigned index) { UNUSED(index); }
 
+// Standard PWM works in microseconds, so the external (1000-2000us) value maps
+// straight through. These MUST be non-NULL: motorConvertFromExternal() (used by
+// the CLI `motor` command and the mixer) calls them via the vtable with no NULL
+// guard, so a NULL here faults the FC the moment a motor is driven.
+static float pwmMotorConvertFromExternal(uint16_t externalValue)
+{
+    return (float)externalValue;
+}
+
+static uint16_t pwmMotorConvertToExternal(float motorValue)
+{
+    return (uint16_t)motorValue;
+}
+
 static const motorVTable_t pwmMotorVTable = {
     .postInit = pwmMotorPostInit,
-    .convertExternalToMotor = NULL,
-    .convertMotorToExternal = NULL,
+    .convertExternalToMotor = pwmMotorConvertFromExternal,
+    .convertMotorToExternal = pwmMotorConvertToExternal,
     .enable = pwmMotorEnable,
     .disable = pwmMotorDisable,
     .isMotorEnabled = pwmMotorIsEnabled,
@@ -151,28 +168,69 @@ static void ledcInit(void)
     ledc_ll_enable_bus_clock(true);
     ledc_ll_enable_reset_reg(false);
 
+    // Select the low-speed timer clock source (80MHz APB). Without this the LS
+    // timers have no source selected, so the dividers computed against APB are
+    // wrong and the duty never latches.
+    ledc_ll_set_slow_clk_sel(&LEDC, LEDC_SLOW_CLK_APB);
+
     ledcInitialized = true;
 }
 
+// The LEDC low-speed timer is clocked from the 80MHz APB clock (see ledcInit).
+#define LEDC_APB_HZ 80000000u
+
 bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConfig, uint16_t idlePulse)
 {
+    // The written motor value is already the absolute pulse figure (1000-2000),
+    // so the disarm/idle pulse is produced by the mixer writing it each loop, not
+    // by a per-write offset. pulseOffset is derived from the protocol geometry.
+    UNUSED(idlePulse);
+
     ledcInit();
 
-    // Configure timer 0 based on protocol
     uint32_t pwmRate = motorDevConfig->motorPwmRate;
     if (pwmRate == 0) pwmRate = 490;  // Default PWM rate
 
-    // Calculate divider for desired frequency
-    // LEDC timer: freq = APB_CLK / (divider * 2^resolution)
-    // Use 16-bit resolution (65536 counts)
-    uint8_t resolution = 16;
-    uint32_t divider = 80000000 / (pwmRate * (1 << resolution));
-    if (divider < 1) { divider = 1; resolution = 14; }  // Reduce resolution for high rates
+    // Pulse geometry per protocol (seconds), mirroring the STM32 driver: a motor
+    // value of 1000-2000 maps linearly onto [sMin, sMin + sLen].
+    float sMin;
+    float sLen;
+    switch (motorDevConfig->motorProtocol) {
+    case MOTOR_PROTOCOL_ONESHOT125: sMin = 125e-6f; sLen = 125e-6f; break;
+    case MOTOR_PROTOCOL_ONESHOT42:  sMin = 42e-6f;  sLen = 42e-6f;  break;
+    case MOTOR_PROTOCOL_MULTISHOT:  sMin = 5e-6f;   sLen = 20e-6f;  break;
+    case MOTOR_PROTOCOL_BRUSHED:    sMin = 0.0f;    sLen = 1.0f / pwmRate; break;
+    case MOTOR_PROTOCOL_PWM:
+    default:                        sMin = 1e-3f;   sLen = 1e-3f;   break;
+    }
 
-    ledc_ll_set_clock_divider(&LEDC, LEDC_LOW_SPEED_MODE, 0, divider << 4);  // Q18.4 format
+    // Pick the highest duty resolution whose timer divider stays >= 1.0.
+    // freq = APB / (divider * 2^resolution); the LS timer divider register is
+    // fixed point with LEDC_LL_FRACTIONAL_BITS (8) fractional bits, so the value
+    // written is divider * 256. Resolution must not exceed the timer counter
+    // width (SOC_LEDC_TIMER_BIT_WIDTH, 14 on the S3) - the conf field is narrow
+    // and a too-large value wraps to 0, giving a 1-count period and no PWM.
+    uint8_t resolution = SOC_LEDC_TIMER_BIT_WIDTH;
+    uint32_t maxDuty = 1u << resolution;
+    uint32_t dividerQ8 = ((uint64_t)LEDC_APB_HZ << 8) / ((uint64_t)pwmRate * maxDuty);
+    while (dividerQ8 < (1u << 8) && resolution > 8) {  // divider < 1.0: drop resolution
+        resolution--;
+        maxDuty = 1u << resolution;
+        dividerQ8 = ((uint64_t)LEDC_APB_HZ << 8) / ((uint64_t)pwmRate * maxDuty);
+    }
+
+    ledc_ll_set_clock_divider(&LEDC, LEDC_LOW_SPEED_MODE, 0, dividerQ8);
     ledc_ll_set_duty_resolution(&LEDC, LEDC_LOW_SPEED_MODE, 0, resolution);
     ledc_ll_timer_rst(&LEDC, LEDC_LOW_SPEED_MODE, 0);
     ledc_ll_ls_timer_update(&LEDC, LEDC_LOW_SPEED_MODE, 0);
+    ledc_ll_timer_resume(&LEDC, LEDC_LOW_SPEED_MODE, 0);  // un-pause: the timer must run
+
+    // Duty counts per second of high time = APB / actual_divider. This is the
+    // direct analog of the STM32 timer "hz": duty = pulse_seconds * dutyHz, and
+    // since value is in microseconds, duty = value * pulseScale + pulseOffset.
+    const float dutyHz = (float)LEDC_APB_HZ * 256.0f / (float)dividerQ8;
+    const float pulseScale = sLen * dutyHz / 1000.0f;
+    const float pulseOffset = (sMin * dutyHz) - (pulseScale * 1000.0f);
 
     esp32PwmMotorCount = 0;
 
@@ -187,27 +245,34 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);
-        uint8_t ch = i;  // LEDC channel 0-3
+        uint8_t ch = i;  // LEDC channel 0..(PWM_MAX_MOTORS-1)
 
         esp32PwmMotors[i].io = io;
         esp32PwmMotors[i].ledcChannel = ch;
         esp32PwmMotors[i].enabled = false;
+        esp32PwmMotors[i].pulseScale = pulseScale;
+        esp32PwmMotors[i].pulseOffset = pulseOffset;
 
-        // Pulse scale: maps motor value to duty cycle counts
-        // For standard PWM: 1000-2000us at the given resolution
-        uint32_t maxDuty = (1 << resolution);
-        float period_us = 1000000.0f / pwmRate;
-        esp32PwmMotors[i].pulseScale = maxDuty / period_us;
-        esp32PwmMotors[i].pulseOffset = idlePulse * esp32PwmMotors[i].pulseScale;
-
-        // Bind channel to timer 0
+        // Bind channel to timer 0 and enable its output. Without sig_out_en the
+        // channel never drives its signal, and the fade params must be set for a
+        // static duty (scale 0 = no fade) or the loaded duty does not take effect.
         ledc_ll_bind_channel_timer(&LEDC, LEDC_LOW_SPEED_MODE, ch, 0);
+        ledc_ll_set_hpoint(&LEDC, LEDC_LOW_SPEED_MODE, ch, 0);
+        ledc_ll_set_duty_direction(&LEDC, LEDC_LOW_SPEED_MODE, ch, LEDC_DUTY_DIR_INCREASE);
+        ledc_ll_set_duty_num(&LEDC, LEDC_LOW_SPEED_MODE, ch, 1);
+        ledc_ll_set_duty_cycle(&LEDC, LEDC_LOW_SPEED_MODE, ch, 1);
+        ledc_ll_set_duty_scale(&LEDC, LEDC_LOW_SPEED_MODE, ch, 0);
+        ledc_ll_set_idle_level(&LEDC, LEDC_LOW_SPEED_MODE, ch, 0);
+        ledc_ll_set_sig_out_en(&LEDC, LEDC_LOW_SPEED_MODE, ch, true);
+        ledc_ll_set_duty_int_part(&LEDC, LEDC_LOW_SPEED_MODE, ch, 0);
+        ledc_ll_set_duty_start(&LEDC, LEDC_LOW_SPEED_MODE, ch);
+        ledc_ll_ls_channel_update(&LEDC, LEDC_LOW_SPEED_MODE, ch);
 
         // Connect LEDC output to GPIO
         // LEDC output signals: LEDC_LS_SIG_OUT0_IDX + channel
         esp_rom_gpio_pad_select_gpio(pin);
         gpio_ll_output_enable(&GPIO, pin);
-        esp_rom_gpio_connect_out_signal(pin, LEDC_LS_SIG_OUT0_IDX + ch, false, false);
+        esp_rom_gpio_connect_out_signal(pin, ESP32_LEDC_LS_SIG_OUT0_IDX + ch, false, false);
 
         esp32PwmMotorCount++;
     }

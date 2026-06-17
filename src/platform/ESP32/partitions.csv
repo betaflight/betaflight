@@ -1,0 +1,9 @@
+# Betaflight ESP32 partition table.
+# Generated into partition-table.bin at build time by the IDF gen_esp32part.py
+# and flashed at 0x8000. The app (Betaflight) lives in the factory partition at
+# 0x10000; keep that offset in sync with the app flash offset in the .mk files.
+#
+# Name,     Type, SubType,  Offset,    Size,      Flags
+nvs,        data, nvs,      0x9000,    0x6000,
+phy_init,   data, phy,      0xf000,    0x1000,
+factory,    app,  factory,  0x10000,   0x200000,

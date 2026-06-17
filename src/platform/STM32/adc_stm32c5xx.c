@@ -547,6 +547,10 @@ bool adcInternalIsBusy(void)
     return false;
 }
 
+// Every ADC wait below is bounded by this spin count. A stalled ADC must
+// degrade the internal-sensor reading for one cycle, never wedge the scheduler.
+#define ADC_INTERNAL_TIMEOUT_LOOPS 100000U
+
 void adcInternalStartConversion(void)
 {
     ADC_TypeDef *adc = ADC1;
@@ -556,9 +560,19 @@ void adcInternalStartConversion(void)
         return;     // ADC1 was never initialised on this build
     }
 
-    // Pause the continuous external scan
+    // Pause the continuous external scan. Every wait below is bounded so a
+    // stalled ADC degrades the internal-sensor reading for this cycle rather
+    // than wedging TASK_ADC_INTERNAL (and with it the scheduler).
     LL_ADC_REG_StopConversion(adc);
-    while (LL_ADC_REG_IsConversionOngoing(adc)) {}
+    uint32_t guard = ADC_INTERNAL_TIMEOUT_LOOPS;
+    while (LL_ADC_REG_IsConversionOngoing(adc) && guard) {
+        guard--;
+    }
+    if (!guard) {
+        // Could not pause cleanly; leave the external scan running and bail.
+        LL_ADC_REG_StartConversion(adc);
+        return;
+    }
 
     // Save state so we can restore the external scan afterwards.
     const uint32_t savedSQR1 = adc->SQR1;
@@ -588,19 +602,34 @@ void adcInternalStartConversion(void)
     adc->ISR = ADC_ISR_EOS | ADC_ISR_EOC | ADC_ISR_EOSMP;
     LL_ADC_REG_StartConversion(adc);
 
-    // Two conversions, two reads. ReadConversionData also clears EOC.
-    while (!LL_ADC_IsActiveFlag_EOC(adc)) {}
-    internalTempRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
-    while (!LL_ADC_IsActiveFlag_EOC(adc)) {}
-    internalVrefRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
-    while (!LL_ADC_IsActiveFlag_EOS(adc)) {}
-    adc->ISR = ADC_ISR_EOS;
+    // Two conversions, two reads (ReadConversionData also clears EOC), each
+    // bounded. On a timeout, skip the rest of the scan for this cycle and keep
+    // the previous sample; the restore below still runs so the external scan
+    // always resumes.
+    guard = ADC_INTERNAL_TIMEOUT_LOOPS;
+    while (!LL_ADC_IsActiveFlag_EOC(adc) && guard) {
+        guard--;
+    }
+    if (guard) {
+        internalTempRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
+        guard = ADC_INTERNAL_TIMEOUT_LOOPS;
+        while (!LL_ADC_IsActiveFlag_EOC(adc) && guard) {
+            guard--;
+        }
+    }
+    if (guard) {
+        internalVrefRaw = (uint16_t)LL_ADC_REG_ReadConversionData12(adc);
+        guard = ADC_INTERNAL_TIMEOUT_LOOPS;
+        while (!LL_ADC_IsActiveFlag_EOS(adc) && guard) {
+            guard--;
+        }
+    }
 
-    // Restore continuous external scan.
+    // Always restore the continuous external scan, even after a timeout.
+    adc->ISR = ADC_ISR_EOS;
     adc->CFGR1 = savedCFGR1;
     adc->SQR1 = savedSQR1;
     adcCommon->CCR = savedCCR;
-
     LL_ADC_REG_StartConversion(adc);
 }
 
