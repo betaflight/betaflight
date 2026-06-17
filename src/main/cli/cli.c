@@ -6580,6 +6580,65 @@ static void cliRcSmoothing(const char *cmdName, char *cmdline)
 
 #define RESOURCE_VALUE_MAX_INDEX(x) ((x) == 0 ? 1 : (x))
 
+// Base of the `resource` ordinal for a bus peripheral, matching its hardware
+// instance name: 0 on parts that number from zero (SPI0/I2C0), 1 otherwise
+// (SPI1/I2C1). Derived from the same hardware-naming signals the drivers use.
+#if defined(USE_SPI_DEVICE_0)
+#define SPI_RESOURCE_INDEX_BASE 0
+#else
+#define SPI_RESOURCE_INDEX_BASE 1
+#endif
+#if defined(USE_I2C_DEVICE_0)
+#define I2C_RESOURCE_INDEX_BASE 0
+#else
+#define I2C_RESOURCE_INDEX_BASE 1
+#endif
+
+// First ordinal the `resource` command shows/accepts for a given owner, so the
+// ordinal matches that peripheral's hardware instance name. On targets that opt in
+// (USE_RESOURCE_INDEX_FROM_ZERO) bus peripherals follow their chip numbering -
+// UART0/SPI0/I2C0 are 0-based - while logical resources (motor 1, servo 1) and
+// sensors (gyro 1) stay 1-based. Without the opt-in every resource is 1-based.
+static int resourceDisplayBase(uint8_t owner)
+{
+#if defined(USE_RESOURCE_INDEX_FROM_ZERO)
+    switch (owner) {
+    case OWNER_SERIAL_TX:
+    case OWNER_SERIAL_RX:
+#if defined(USE_INVERTER)
+    case OWNER_INVERTER:
+#endif
+        return SERIAL_UART_FIRST_INDEX;
+    case OWNER_SPI_SCK:
+    case OWNER_SPI_SDI:
+    case OWNER_SPI_SDO:
+    case OWNER_SPI_CS:
+        return SPI_RESOURCE_INDEX_BASE;
+    case OWNER_I2C_SCL:
+    case OWNER_I2C_SDA:
+        return I2C_RESOURCE_INDEX_BASE;
+#if defined(USE_PIOUART)
+    case OWNER_PIOUART_TX:
+    case OWNER_PIOUART_RX:
+        return 0;   // PIOUART instances are always named from zero
+#endif
+    default:
+        return 1;   // motors, servos, sensors, LED, beeper, ... stay 1-based
+    }
+#else
+    (void)owner;
+    return 1;
+#endif
+}
+
+// Convert a stored 1-based owner index (as recorded by IOInit, and claimed for DMA
+// and timer channels) into the ordinal the `resource` commands display, applying the
+// owner's base so `resource show` agrees with `resource`. Identity on 1-based targets.
+static int resourceDisplayIndex(uint8_t owner, int storedIndex)
+{
+    return storedIndex - 1 + resourceDisplayBase(owner);
+}
+
 typedef struct {
     const uint8_t owner;
     pgn_t pgn;
@@ -6788,16 +6847,17 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             const bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
+            const int resourceOrdinal = index + resourceDisplayBase(resourceTable[i].owner);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             if (ioTagDefault) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             } else if (defaultConfig) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
             if (ioTag) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             } else if (!(dumpMask & HIDE_UNUSED)) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
         }
     }
@@ -6808,7 +6868,7 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
     cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
-        cliPrintf(" %d", RESOURCE_INDEX(index));
+        cliPrintf(" %d", index + resourceDisplayBase(resourceTable[owner].owner));
     }
 }
 
@@ -6889,7 +6949,7 @@ static void showDma(void)
 
         cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
-            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceDisplayIndex(owner->owner, owner->index));
         } else {
             cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
@@ -7503,7 +7563,7 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->index > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), resourceDisplayIndex(timerOwner->owner, timerOwner->index));
                 } else {
                     cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
@@ -7667,7 +7727,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
+                cliPrintf(" %d", resourceDisplayIndex(ioRecs[i].owner, ioRecs[i].index));
             }
             cliPrintLinefeed();
         }
@@ -7699,14 +7759,22 @@ static void cliResource(const char *cmdName, char *cmdline)
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    int index = pch ? atoi(pch) : 0;
+    int index = 0;
 
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError(cmdName, "INDEX", 1, RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex));
+    // A leading numeric token is the resource ordinal (the dump always emits one,
+    // even for single-instance resources). Pins begin with a letter (or "NONE"),
+    // so a non-numeric token here is the pin of a single-instance resource given
+    // without an ordinal. The ordinal base (0 or 1) is per-owner, see resourceDisplayBase().
+    const bool haveIndex = pch && pch[0] >= '0' && pch[0] <= '9';
+    if (resourceTable[resourceIndex].maxIndex > 0 || haveIndex) {
+        const int base = resourceDisplayBase(resourceTable[resourceIndex].owner);
+        const int maxCount = RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex);
+        const int ordinal = haveIndex ? atoi(pch) : -1;
+        if (!haveIndex || ordinal < base || ordinal >= base + maxCount) {
+            cliShowArgumentRangeError(cmdName, "INDEX", base, base + maxCount - 1);
             return;
         }
-        index -= 1;
+        index = ordinal - base;
 
         pch = strtok_r(NULL, " ", &saveptr);
     }
@@ -7747,7 +7815,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), index + resourceDisplayBase(resourceTable[resourceIndex].owner), tag ? ioName : "NONE");
     }
 }
 #endif

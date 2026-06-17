@@ -128,6 +128,13 @@ struct quadSpiResource_s
 #define SERIAL_UART_FIRST_INDEX     0
 #define SERIAL_PIOUART_FIRST_INDEX  0
 
+// This MCU names its bus peripherals from zero (UART0, PIOUART0, SPI0, I2C0). Opt
+// the CLI `resource` command into hardware-instance ordinals so each index matches
+// the peripheral name: the bus peripherals here are 0-based (e.g. `resource
+// SERIAL_RX 1` is UART1), while logical resources (motor 1, servo 1) and sensors
+// (gyro 1) stay 1-based. See resourceDisplayBase() in cli.c.
+#define USE_RESOURCE_INDEX_FROM_ZERO
+
 extern uint32_t systemUniqueId[3];
 
 // PICOs have an 8 byte unique identifier.

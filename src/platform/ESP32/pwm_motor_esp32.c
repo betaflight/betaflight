@@ -241,7 +241,7 @@ bool motorPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorDevConf
         IO_t io = IOGetByTag(tag);
         if (!io) break;
 
-        IOInit(io, OWNER_MOTOR, i);
+        IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(i));
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);
