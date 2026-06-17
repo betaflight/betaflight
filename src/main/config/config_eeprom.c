@@ -296,7 +296,7 @@ void initEEPROM(void)
     STATIC_ASSERT(sizeof(configFooter_t) == 2, footer_size_failed);
     STATIC_ASSERT(sizeof(configRecord_t) == 6, record_size_failed);
 
-#if defined(CONFIG_IN_FLASH) && defined(ESP32)
+#if defined(ENABLE_CONFIG_FLASH_INIT)
     // Map the flash-resident config into the readable memory window before the
     // memory-mapped reads below (ensureEEPROMStructureIsValid / readEEPROM).
     configFlashInit();

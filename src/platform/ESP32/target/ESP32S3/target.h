@@ -78,6 +78,9 @@
 // ROM SPI-flash API with the caches suspended and core 1 stalled. The streamer
 // writes 32-byte words (uint32_t-aligned), matching esp_rom_spiflash_write.
 #define CONFIG_IN_FLASH
+// Capability flag consumed in src/main (config_eeprom.c / config_streamer_impl.h):
+// configFlashInit() maps the region into the readable window before mmapped reads.
+#define ENABLE_CONFIG_FLASH_INIT
 #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32
 #define FLASH_CONFIG_BUFFER_TYPE          uint32_t
 #define EEPROM_SIZE 32768

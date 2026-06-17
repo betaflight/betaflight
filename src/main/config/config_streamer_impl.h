@@ -28,8 +28,8 @@ void configLock(void);
 void configClearFlags(void);
 configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer_type_t *buffer);
 
-#if defined(CONFIG_IN_FLASH) && defined(ESP32)
-// ESP32: map the flash-resident config region into the readable memory window
-// before the first memory-mapped read (see platform/ESP32/config_flash.c).
+#if defined(ENABLE_CONFIG_FLASH_INIT)
+// Map the flash-resident config region into the readable memory window before
+// the first memory-mapped read (see platform/ESP32/config_flash.c).
 void configFlashInit(void);
 #endif
