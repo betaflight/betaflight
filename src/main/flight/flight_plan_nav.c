@@ -97,8 +97,9 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     vector2_t enuCm;
     GPS_distance2d(&origin, &wpLoc, &enuCm);
 
-    out->v[ENU_E] = enuCm.v[ENU_E] * 0.01f;  // East
-    out->v[ENU_N] = enuCm.v[ENU_N] * 0.01f;  // North
+    // enuCm is a 2-axis horizontal earth-frame vector (efAxis_e); out is 3-axis ENU.
+    out->v[ENU_E] = enuCm.v[EF_EAST] * 0.01f;
+    out->v[ENU_N] = enuCm.v[EF_NORTH] * 0.01f;
     // Waypoint altitude is AMSL (GPS frame); the estimator's Z is zeroed to
     // whichever source armed it first (baro or GPS). zBiasM is the estimator
     // reading at engage time, which aligns the target Up with the feedback Up.

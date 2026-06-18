@@ -371,13 +371,13 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;
         GPS_distance2d(&armLocationGps, &gpsSol.llh, &gpsDistCm);
-        // gpsDistCm is ENU horizontal: v[ENU_E] = East (lon), v[ENU_N] = North (lat)
-        // of the craft relative to the arm position.
+        // gpsDistCm is a 2-axis horizontal earth-frame vector (efAxis_e):
+        // v[EF_EAST] = East (lon), v[EF_NORTH] = North (lat) relative to the arm point.
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
         const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
-        kalmanUpdatePosition(&kfEast, gpsDistCm.v[ENU_E], rPos);
-        kalmanUpdatePosition(&kfNorth, gpsDistCm.v[ENU_N], rPos);
+        kalmanUpdatePosition(&kfEast, gpsDistCm.v[EF_EAST], rPos);
+        kalmanUpdatePosition(&kfNorth, gpsDistCm.v[EF_NORTH], rPos);
 
         // GPS velocity (NED from UBX) -> ENU
         const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);

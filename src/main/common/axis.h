@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/utils.h"
+
 typedef enum {
     X = 0,
     Y,
@@ -77,5 +79,12 @@ typedef enum {
     EF_EAST = 0,   // +East
     EF_NORTH = 1   // +North
 } efAxis_e;
+
+// The autopilot stores into EF_AXIS_COUNT arrays by EF_EAST/EF_NORTH while
+// reading the estimate by ENU_E/ENU_N; that is only correct because the two
+// horizontal frames share index values. Lock the invariant so a future
+// reordering of either enum fails to compile rather than silently swapping axes.
+STATIC_ASSERT((int)EF_EAST == (int)ENU_E, ef_east_must_match_enu_east);
+STATIC_ASSERT((int)EF_NORTH == (int)ENU_N, ef_north_must_match_enu_north);
 
 #define GET_DIRECTION(isReversed) ((isReversed) ? -1 : 1)

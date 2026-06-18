@@ -95,6 +95,9 @@ static float smallAngleCosZ = 0;
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 matrix33_t rMat;
+// Horizontal earth-frame heading vectors in imu.c (north_ef, cog_ef, heading_ef,
+// mag2d_ef) are vector2_t in the NWU ground plane: index NWU_N and NWU_W only.
+// NWU_U (==2) would read past a 2-element vector - do not use it on these.
 static vector2_t north_ef;
 
 #if defined(USE_ACC)
