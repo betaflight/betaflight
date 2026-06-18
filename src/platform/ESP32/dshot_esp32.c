@@ -334,7 +334,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
             break;
         }
 
-        IOInit(io, OWNER_MOTOR, i);
+        IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(i));
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);

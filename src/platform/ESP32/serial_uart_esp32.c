@@ -184,13 +184,17 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
             continue;
         }
 
-        for (unsigned pindex = 0; pindex < UARTHARDWARE_MAX_PINS; pindex++) {
-            if (cfgRx && cfgRx == hardware->rxPins[pindex].pin) {
-                uartdev->rx = hardware->rxPins[pindex];
-            }
-            if (cfgTx && cfgTx == hardware->txPins[pindex].pin) {
-                uartdev->tx = hardware->txPins[pindex];
-            }
+        // ESP32 routes UART signals through the GPIO matrix, so any GPIO can serve
+        // as a UART pin. Bind the configured pins directly rather than requiring a
+        // match against a fixed per-UART list (the STM32 alternate-function model) -
+        // otherwise a board whose UART pins differ from that list (e.g. CUSTS3AIO's
+        // UART1 on PA15/PA16 vs the table's PA17/PA18) never gets uartdev->hardware
+        // set, so serialUART() returns NULL and the port stays dead.
+        if (cfgRx) {
+            uartdev->rx.pin = cfgRx;
+        }
+        if (cfgTx) {
+            uartdev->tx.pin = cfgTx;
         }
 
         if (uartdev->rx.pin || uartdev->tx.pin) {
@@ -229,6 +233,7 @@ void uartReconfigure(uartPort_t *uartPort)
     // IDF's uart_ll_set_baudrate macro on P4 trails off into a
     // __DECLARE_RCC_ATOMIC_ENV reference; pre-declare it as a no-op.
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
+    uart_ll_set_sclk(hw, SOC_MOD_CLK_APB);
     uart_ll_set_baudrate(hw, uartPort->port.baudRate, ESP32_APB_CLK_FREQ);
 
     const bool twoStop = uartPort->port.options & SERIAL_STOPBITS_2;
@@ -373,6 +378,12 @@ uartPort_t *serialUART(uartDevice_t *uartdev, uint32_t baudRate, portMode_e mode
     int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
     uart_ll_enable_bus_clock(portNum, true);
     uart_ll_reset_register(portNum);
+
+    // Select the UART source clock (APB, matching ESP32_APB_CLK_FREQ used for the
+    // baud divisor below). Without this the clock mux is left at its reset default,
+    // so the divisor programmed for 80 MHz APB yields the wrong line rate and the
+    // port never frames RX/TX. UART0 escapes this only because the ROM sets it up.
+    uart_ll_set_sclk(hw, SOC_MOD_CLK_APB);
 
     const serialPortIdentifier_e identifier = hardware->identifier;
     const int ownerIndex = serialOwnerIndex(identifier);

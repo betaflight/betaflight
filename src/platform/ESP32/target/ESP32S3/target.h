@@ -72,11 +72,17 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-// Config in RAM for initial bring-up (no persistence across reboots).
-// The memory-mapped flash-config path (CONFIG_IN_FLASH) reads/writes via the
-// __config_start mapped address, which on ESP32-S3 needs a byte-accessible
-// DROM-window partition mapped by the bootloader; revisit for persistence.
-#define CONFIG_IN_RAM
+// Config persisted in the on-board SPI flash. The region is mapped into the
+// byte-accessible DROM window at runtime (see ESP32/config_flash.c) so the
+// memory-mapped reads in config_eeprom.c resolve to flash; writes go through the
+// ROM SPI-flash API with the caches suspended and core 1 stalled. The streamer
+// writes 32-byte words (uint32_t-aligned), matching esp_rom_spiflash_write.
+#define CONFIG_IN_FLASH
+// Capability flag consumed in src/main (config_eeprom.c / config_streamer_impl.h):
+// configFlashInit() maps the region into the readable window before mmapped reads.
+#define ENABLE_CONFIG_FLASH_INIT
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32
+#define FLASH_CONFIG_BUFFER_TYPE          uint32_t
 #define EEPROM_SIZE 32768
 
 /* DMA Settings */
@@ -122,6 +128,14 @@
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
+
+// ---------------------------------------------------------------------------
+// Board-specific bring-up defaults for the bare "lonely binary" TARGET build
+// (make ESP32S3). For a unified board build (make CONFIG=<board>) USE_CONFIG
+// is defined and this whole block is skipped: the per-board config.h under
+// src/config/configs/ then supplies the sensors, bus pins, motors and LED.
+// ---------------------------------------------------------------------------
+#if !defined(USE_CONFIG)
 
 // IMU: InvenSense MPU-9250 on SPI device 0 (FSPI). Wiring on the lonely binary
 // (ESP32-S3 GPIO): SCK=GPIO12, MISO=GPIO13, MOSI=GPIO11, CS=GPIO10, INT=GPIO9.
@@ -169,6 +183,8 @@
 #define MOTOR2_PIN              PA5
 #define MOTOR3_PIN              PA6
 #define MOTOR4_PIN              PA7
+
+#endif // !defined(USE_CONFIG)
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG
