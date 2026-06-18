@@ -25,6 +25,7 @@
 
 #include "platform.h"
 
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/maths.h"
@@ -279,21 +280,22 @@ void positionEstimatorEnableXY(bool enable)
 }
 
 // Compute earth-frame linear acceleration from IMU (gravity removed), in cm/s^2 ENU
-static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp)
+STATIC_UNIT_TESTED void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp)
 {
     const float accScale = acc.dev.acc_1G_rec;
     vector3_t accBF = {{ acc.accADC.x * accScale,
                          acc.accADC.y * accScale,
                          acc.accADC.z * accScale }};
 
-    // rMat^T rotates body -> earth NED (North-East-Down)
-    vectorNED_t accEF_NED;
-    matrixTrnVectorMul(&accEF_NED.u.v, &rMat, &accBF);
+    // rMat rotates body -> earth NWU (North-West-Up); this is the same convention
+    // used throughout imu.c (imuComputeRotationMatrix, attitude extraction, mag fusion).
+    vector3_t accEF_NWU;
+    matrixVectorMul(&accEF_NWU, &rMat, &accBF);
 
-    // NED -> ENU named outputs
-    *accelEast  =  accEF_NED.u.ef.E * GRAVITY_CMSS;
-    *accelNorth =  accEF_NED.u.ef.N * GRAVITY_CMSS;
-    *accelUp    = (accEF_NED.u.ef.D - 1.0f) * GRAVITY_CMSS;
+    // NWU -> ENU named outputs (East = -West, gravity removed from Up).
+    *accelEast  = -accEF_NWU.y * GRAVITY_CMSS;
+    *accelNorth =  accEF_NWU.x * GRAVITY_CMSS;
+    *accelUp    = (accEF_NWU.z - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
