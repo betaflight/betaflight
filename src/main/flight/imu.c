@@ -146,21 +146,25 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     imuQuaternionComputeProducts(&q, &qP);
 
-    rMat.m[0][0] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
-    rMat.m[0][1] = 2.0f * (qP.xy + -qP.wz);
-    rMat.m[0][2] = 2.0f * (qP.xz - -qP.wy);
+    // rMat is the body->earth rotation: earthVec = rMat * bodyVec, with earth in
+    // NWU. The row selects the earth axis (NWU_N/NWU_W/NWU_U), the column selects
+    // the body axis (X/Y/Z). NWU_N/W/U and X/Y/Z share index values 0/1/2, so the
+    // named form denotes the same storage as the old m[0..2][0..2] literals.
+    rMat.m[NWU_N][X] = 1.0f - 2.0f * qP.yy - 2.0f * qP.zz;
+    rMat.m[NWU_N][Y] = 2.0f * (qP.xy + -qP.wz);
+    rMat.m[NWU_N][Z] = 2.0f * (qP.xz - -qP.wy);
 
-    rMat.m[1][0] = 2.0f * (qP.xy - -qP.wz);
-    rMat.m[1][1] = 1.0f - 2.0f * qP.xx - 2.0f * qP.zz;
-    rMat.m[1][2] = 2.0f * (qP.yz + -qP.wx);
+    rMat.m[NWU_W][X] = 2.0f * (qP.xy - -qP.wz);
+    rMat.m[NWU_W][Y] = 1.0f - 2.0f * qP.xx - 2.0f * qP.zz;
+    rMat.m[NWU_W][Z] = 2.0f * (qP.yz + -qP.wx);
 
-    rMat.m[2][0] = 2.0f * (qP.xz + -qP.wy);
-    rMat.m[2][1] = 2.0f * (qP.yz - -qP.wx);
-    rMat.m[2][2] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
+    rMat.m[NWU_U][X] = 2.0f * (qP.xz + -qP.wy);
+    rMat.m[NWU_U][Y] = 2.0f * (qP.yz - -qP.wx);
+    rMat.m[NWU_U][Z] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
 #if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
-    rMat.m[1][0] = -2.0f * (qP.xy - -qP.wz);
-    rMat.m[2][0] = -2.0f * (qP.xz + -qP.wy);
+    rMat.m[NWU_W][X] = -2.0f * (qP.xy - -qP.wz);
+    rMat.m[NWU_U][X] = -2.0f * (qP.xz + -qP.wy);
 #endif
 }
 
@@ -240,10 +244,11 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     float ex = 0, ey = 0, ez = 0;
 
     // Add error from magnetometer and Cog
-    // just rotate input value to body frame
-    ex += rMat.m[Z][X] * (headingErrCog + headingErrMag);
-    ey += rMat.m[Z][Y] * (headingErrCog + headingErrMag);
-    ez += rMat.m[Z][Z] * (headingErrCog + headingErrMag);
+    // The earth-Up row (NWU_U) of rMat is earth-up expressed in the body frame,
+    // so it rotates the earth-Z heading error onto the body axes.
+    ex += rMat.m[NWU_U][X] * (headingErrCog + headingErrMag);
+    ey += rMat.m[NWU_U][Y] * (headingErrCog + headingErrMag);
+    ez += rMat.m[NWU_U][Z] * (headingErrCog + headingErrMag);
 
     DEBUG_SET(DEBUG_ATTITUDE, 3, (headingErrCog * 100));
     DEBUG_SET(DEBUG_ATTITUDE, 7, lrintf(dcmKpGain * 100.0f));
@@ -258,10 +263,11 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
         ay *= recipAccNorm;
         az *= recipAccNorm;
 
-        // Error is sum of cross product between estimated direction and measured direction of gravity
-        ex += (ay * rMat.m[2][2] - az * rMat.m[2][1]);
-        ey += (az * rMat.m[2][0] - ax * rMat.m[2][2]);
-        ez += (ax * rMat.m[2][1] - ay * rMat.m[2][0]);
+        // Error is sum of cross product between estimated direction and measured direction of gravity.
+        // The earth-Up row (NWU_U) is the estimated gravity/up direction in the body frame.
+        ex += (ay * rMat.m[NWU_U][Z] - az * rMat.m[NWU_U][Y]);
+        ey += (az * rMat.m[NWU_U][X] - ax * rMat.m[NWU_U][Z]);
+        ez += (ax * rMat.m[NWU_U][Y] - ay * rMat.m[NWU_U][X]);
     }
 
     // Compute and apply integral feedback if enabled
@@ -325,9 +331,9 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
        attitude.values.yaw = lrintf((-atan2_approx((+2.0f * (buffer.wz + buffer.xy)), (+1.0f - 2.0f * (buffer.yy + buffer.zz))) * (1800.0f / M_PIf)));
        imuAttitudeQuaternion = headfree;
     } else {
-       attitude.values.roll = lrintf(atan2_approx(rMat.m[2][1], rMat.m[2][2]) * (1800.0f / M_PIf));
-       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[2][0])) * (1800.0f / M_PIf));
-       attitude.values.yaw = lrintf((-atan2_approx(rMat.m[1][0], rMat.m[0][0]) * (1800.0f / M_PIf)));
+       attitude.values.roll = lrintf(atan2_approx(rMat.m[NWU_U][Y], rMat.m[NWU_U][Z]) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat.m[NWU_U][X])) * (1800.0f / M_PIf));
+       attitude.values.yaw = lrintf((-atan2_approx(rMat.m[NWU_W][X], rMat.m[NWU_N][X]) * (1800.0f / M_PIf)));
        imuAttitudeQuaternion = q; //using current q quaternion  for blackbox log
     }
 
@@ -472,7 +478,7 @@ STATIC_UNIT_TESTED float imuCalcCourseErr(float courseOverGround)
 
     // Compute and normalise craft earth-frame heading vector from the body X axis
     // (first column of rMat): row NWU_N is North, row NWU_W is West.
-    vector2_t heading_ef = {.v = {[NWU_N] = rMat.m[X][X], [NWU_W] = rMat.m[Y][X]}};
+    vector2_t heading_ef = {.v = {[NWU_N] = rMat.m[NWU_N][X], [NWU_W] = rMat.m[NWU_W][X]}};
     vector2Normalize(&heading_ef, &heading_ef); // XY only, normalised to magnitude 1.0
 
     // cross (vector product) = |heading| * |cog| * sin(angle) = 1 * 1 * sin(angle)
@@ -511,7 +517,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         matrixVectorMul(&mag_ef, &rMat, &mag_bf); // BF->EF true north
 
         matrix33_t rMatZTrans;
-        yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat.m[1][0], rMat.m[0][0]));
+        yawToRotationMatrixZ(&rMatZTrans, -atan2_approx(rMat.m[NWU_W][X], rMat.m[NWU_N][X]));
 
         vector3_t mag_ef_yawed;
         matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
@@ -807,12 +813,12 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
 // Positive angle - nose down, negative angle - nose up.
 float getSinPitchAngle(void)
 {
-    return -rMat.m[2][0];
+    return -rMat.m[NWU_U][X];
 }
 
 float getCosTiltAngle(void)
 {
-    return rMat.m[2][2];
+    return rMat.m[NWU_U][Z];
 }
 
 void getQuaternion(quaternion_t *quat)
