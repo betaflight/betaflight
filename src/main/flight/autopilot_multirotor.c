@@ -134,9 +134,8 @@ static autopilotState_t ap = {
 };
 static void initPositionAccelLpf(void)
 {
-    // currently position acceleration not used at present and could be removed
     const autopilotConfig_t *cfg = autopilotConfig();
-    const float cutoffHz = fmaxf(cfg->positionCutoff * 0.01f, 0.1f);
+    const float cutoffHz = fmaxf(cfg->positionCutoff * 0.1f, 1.0f); // default of 50 is 5Hz, range 1-25Hz.
     const float k = pt1FilterGain(cutoffHz, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ));
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         pt1FilterInit(&posAccelLpf[i], k);
