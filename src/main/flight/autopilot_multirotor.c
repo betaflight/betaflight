@@ -70,7 +70,7 @@
 #define POSHOLD_TASK_RATE_HZ 100
 #endif
 
-#define ALTITUDE_P_SCALE       0.01f
+#define ALTITUDE_P_SCALE       0.005f
 #define ALTITUDE_I_SCALE       0.002f
 #define ALTITUDE_D_SCALE       0.01f
 #define ALTITUDE_FF_KF_REF    30.0f
@@ -80,10 +80,10 @@
 
 // Using optical flow PID scales as the unified set
 
-#define POSITION_P_SCALE       0.001f
-#define POSITION_I_SCALE      (0.1f * POSITION_P_SCALE)
+#define POSITION_P_SCALE       0.002f
+#define POSITION_I_SCALE       0.0001f
 #define POSITION_D_SCALE       0.0015f
-#define POSITION_A_SCALE       0.0005f
+#define POSITION_A_SCALE       0.001f
 #define ERROR_DISTANCE_LIMIT 10000.0f // TO DO: test set to a useful value, this is 100m
 #define POSITION_I_LIMIT 10000.0f // TO DO: test and set to a useful value, this is 100m
 
@@ -273,13 +273,12 @@ static void resetDistanceErrorAndIntegral(void){
 
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         distanceError[i] = 0.0f; 
-        distanceErrorIntegral[i] = 0.0f;
-        dTermRamp[i] = 0.0f;
+        // distanceErrorIntegral[i] = 0.0f; // not resetting iTerm to test, holds wind opposition vector
+        dTermRamp[i] = 1.0f;
     }
 }
 
-static void initPositionHold(void){
-    initPositionAccelLpf();
+static void resetPositionHold(void){
     resetDistanceErrorAndIntegral();
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         isPosHoldStarting[i] = true;
@@ -301,7 +300,9 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sanityCheckDistance = sanityCheckDistance(vector2Norm((vector2_t*)&est->velocity));
     initialVelocity[EF_EAST]  = est->velocity.x;
     initialVelocity[EF_NORTH] = est->velocity.y;
-    initPositionHold();
+       distanceErrorIntegral[EF_EAST] = 0.0f;
+       distanceErrorIntegral[EF_NORTH] = 0.0f;
+    resetPositionHold();
     positionEstimatorEnableXY(true);
     capturePositionHoldTarget(est); 
     isPositionHeld = true; 
@@ -351,13 +352,11 @@ bool positionControl(void)
             if (!isPositionHeld) {
                 // currently not in position hold, so start it - do these things on starting
                 capturePositionHoldTarget(est);
-                initPositionHold(); // set stopping to true, zero target velocity and integrals to zero
+                resetPositionHold(); // set stopping to true, zero target velocity and integrals to zero
                 ap.sanityCheckDistance = sanityCheckDistance(speedXY);
                 isPositionHeld = true;
                 initialVelocity[EF_NORTH] = est->velocity.y;
                 initialVelocity[EF_EAST]  = est->velocity.x;
-                previousVelocity[EF_NORTH] = initialVelocity[EF_NORTH]; // zero acceleration on very first run
-                previousVelocity[EF_EAST]  = initialVelocity[EF_EAST];
             } else {
                 // in posHold
                 distanceError[EF_EAST]  = targetPosition.x - est->position.x;
@@ -374,17 +373,48 @@ bool positionControl(void)
 
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+        // handle transitions
         if (isPosHoldStarting[axis]) {
-            dTermRamp[axis] += 0.1f;
-            if (dTermRamp[axis] > 1.6f) {
+            // just starting positionhold
+            dTermRamp[axis] += (1.6f - dTermRamp[axis]) * 0.1f;
+            if (dTermRamp[axis] > 1.58f) {
                 dTermRamp[axis] = 1.6f;
             }
-            if ((initialVelocity[axis] * velocity[axis]) < 0.0f) {
+            float slowingDownFactor = 0.0f;
+            if (fabsf(initialVelocity[axis]) > 0.01f) {
+                slowingDownFactor = 1.0f - (fabsf(velocity[axis]) / fabsf(initialVelocity[axis]));
+                slowingDownFactor = constrainf(slowingDownFactor, 0.0f, 1.0f);
+            } else {
+                slowingDownFactor = 1.0f;
+            }
+
+            float originalTarget = (axis == EF_EAST) ? targetPosition.x : targetPosition.y;
+            float currentPos = (axis == EF_EAST) ? est->position.x : est->position.y;
+            float newTarget = originalTarget + (currentPos - originalTarget) * slowingDownFactor;
+
+            distanceError[axis] = newTarget - currentPos;
+            if (((initialVelocity[axis] * velocity[axis]) < 0.0f) || (fabsf(velocity[axis]) < 20.0f)) {
                 isPosHoldStarting[axis] = false;
                 dTermRamp[axis] = 1.0f;
+                // update target position to current position
+                if (axis == EF_EAST) {
+                    targetPosition.x = est->position.x;
+                } else {
+                    targetPosition.y = est->position.y;
+                }
             }
-        }
-        velocityError[axis] = targetVelocity[axis] - velocity[axis];
+        } else {
+            // stopping is complete, undo the ramped up D smoothly
+            dTermRamp[axis] += (1.0f - dTermRamp[axis]) * 0.1f;
+            if (fabsf(dTermRamp[axis] - 1.0f) < 0.01f) {
+                dTermRamp[axis] = 1.0f;
+            }
+            if (axis == EF_EAST) {
+                distanceError[EF_EAST]  = targetPosition.x - est->position.x;
+            } else {
+                distanceError[EF_NORTH] = targetPosition.y - est->position.y;
+            }
+        }        velocityError[axis] = targetVelocity[axis] - velocity[axis];
         const float accelerationRaw = (previousVelocity[axis] - velocity[axis]) * POSHOLD_TASK_RATE_HZ; // match sign of velocityError
         previousVelocity[axis] = velocity[axis];
          const float acceleration = pt1FilterApply(&posAccelLpf[axis], accelerationRaw);
@@ -401,7 +431,7 @@ bool positionControl(void)
         pidP[axis] = distanceError[axis] * positionPidCoeffs.Kp;
         pidI[axis] = distanceErrorIntegral[axis] * positionPidCoeffs.Ki;
         pidD[axis] = velocityError[axis] * positionPidCoeffs.Kd * dTermRamp[axis];
-        pidA[axis] = acceleration * positionPidCoeffs.Ka * dTermRamp[axis];
+        pidA[axis] = acceleration * positionPidCoeffs.Ka;
          pidSumEF.v[axis] = pidP[axis] + pidI[axis] + pidD[axis]+ pidA[axis];
     } // end for loop
 
