@@ -223,7 +223,9 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
         }
         value <<= len;
         value |= 1 << (len - 1);
-        oldValue = buffer[i];
+        if (i < count) {
+            oldValue = buffer[i];
+        }
         bits += len;
     }
     if (bits != 21) {
