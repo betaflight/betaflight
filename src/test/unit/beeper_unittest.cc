@@ -286,6 +286,42 @@ TEST_F(BeeperTest, DshotBeaconRxLost_ConfiguratorNotActive_Sounds)
 }
 
 // =============================================================================
+// F4: beeperUpdate() sequence-playback secondary defense
+// A sequence queued while not suppressed must still be silenced if USB
+// suppression engages before beeperUpdate() plays it (e.g. the configurator
+// reconnects during a >5s MSP polling gap).
+// =============================================================================
+
+TEST_F(BeeperTest, SequencePlayback_NotSuppressed_Sounds)
+{
+    // Positive control: queue with BEEPER_USB set but nothing engaging suppression.
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorUsbCableInserted = false;
+    simulatorMspConfiguratorActive = false;
+
+    beeper(BEEPER_RX_SET);
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
+}
+
+TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
+{
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+
+    // Queue the sequence while NOT suppressed (USB idle, configurator idle).
+    simulatorUsbCableInserted = false;
+    simulatorMspConfiguratorActive = false;
+    beeper(BEEPER_RX_SET);
+
+    // Suppression engages before the queued sequence is played out.
+    simulatorMspConfiguratorActive = true;
+
+    // beeperUpdate() must re-check suppression on the BeepOn step and stay silent.
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_FALSE(isBeeperOn());
+}
+
+// =============================================================================
 // Extern "C" stubs for unresolved symbols
 // =============================================================================
 extern "C" {
