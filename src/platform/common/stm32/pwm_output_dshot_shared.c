@@ -203,7 +203,7 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
         if (i < count) {
             int diff = buffer[i] - oldValue;
             if (bits >= 21) {
-                break;
+                break; // all bits consumed
             }
             len = (diff + 8) / 16;
             level ^= 1;
@@ -214,12 +214,12 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
             // check below handle any remaining corruption.
             len = 21 - bits;
             if (len <= 0 || level == 0) {
-                break;
+                break; // done or spurious pullup edge
             }
         }
 
         if (len <= 0) {
-            break;
+            break; // guard UB: 1 << (len-1) undefined when len <= 0
         }
         value <<= len;
         value |= 1 << (len - 1);
