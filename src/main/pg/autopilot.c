@@ -43,7 +43,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionI = 30,
     .positionD = 30,
     .positionA = 30,
-    .positionCutoff = 50,
+    .positionCutoff = 30,
     .stopThreshold = 10,
     .maxAngle = 50,
 
