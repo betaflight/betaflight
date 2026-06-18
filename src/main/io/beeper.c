@@ -443,6 +443,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        // NOTE: the two beacon paths intentionally use different USB-suppression criteria.
+        // RX_LOST is a lost-model finder, so it is silenced whenever a configurator is
+        // attached (bench environment) regardless of the BEEPER_USB flag — you never want
+        // it screaming on the desk, but it must still fire in the field with no link.
         if (activeMode == BEEPER_RX_LOST
             && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
@@ -450,6 +454,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
         }
 
         // Allow user-triggered beacon via AUX switch while the RX link is healthy.
+        // Unlike RX_LOST above, this is a deliberate user action, so it is only suppressed
+        // when the user opted in via the BEEPER_USB flag (through beeperUsbSuppressed()).
         if (IS_RC_MODE_ACTIVE(BOXBEEPERON)
             && failsafeIsReceivingRxData()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_SET))
