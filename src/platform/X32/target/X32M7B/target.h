@@ -134,6 +134,8 @@
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000U)
 
+#define AFATFS_NUM_CACHE_SECTORS 64
+
 #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
 #define USE_LED_STRIP_CACHE_MGMT
 #endif
