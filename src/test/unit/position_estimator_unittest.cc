@@ -155,7 +155,8 @@ TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
     // Let the Kalman filter converge toward the GPS position measurement.
     stepEstimator(30);
 
-    EXPECT_GT(positionEstimatorGetEstimate()->position.x, 0.0f);
+    // position is ENU; index by ENU_E so "East" is explicit rather than ".x".
+    EXPECT_GT(positionEstimatorGetEstimate()->position.v[ENU_E], 0.0f);
 }
 
 // Build rMat from roll/pitch/yaw using the exact quaternion + rotation-matrix
@@ -240,6 +241,7 @@ TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
     // driven purely by the IMU prediction.
     stepEstimator(100);
 
-    EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
+    // velocity is ENU; index by ENU_E so "East" is explicit rather than ".x".
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_E], 0.0f);
 }
 

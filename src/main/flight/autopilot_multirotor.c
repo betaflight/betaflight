@@ -102,12 +102,8 @@ static uint16_t altHoldCapturedHoverPwm;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
-// Per-axis position PID state (earth frame)
-typedef enum {
-    EF_EAST = 0,
-    EF_NORTH
-} efAxis_e;
-
+// Per-axis position PID state (earth frame). efAxis_e (EF_EAST/EF_NORTH) is
+// defined in common/axis.h alongside the other earth-frame axis enums.
 static float posIntegral[EF_AXIS_COUNT];       // I term: integral of position error
 static float posSlowIntegral[EF_AXIS_COUNT];   // II term: slow drift correction
 static float previousVelocity[EF_AXIS_COUNT];

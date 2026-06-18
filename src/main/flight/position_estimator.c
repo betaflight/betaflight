@@ -292,10 +292,11 @@ STATIC_UNIT_TESTED void getLinearAccelENU(float *accelEast, float *accelNorth, f
     vector3_t accEF_NWU;
     matrixVectorMul(&accEF_NWU, &rMat, &accBF);
 
-    // NWU -> ENU named outputs (East = -West, gravity removed from Up).
-    *accelEast  = -accEF_NWU.y * GRAVITY_CMSS;
-    *accelNorth =  accEF_NWU.x * GRAVITY_CMSS;
-    *accelUp    = (accEF_NWU.z - 1.0f) * GRAVITY_CMSS;
+    // NWU -> ENU named outputs. Indexing by NWU_W makes the East = -West sign
+    // explicit; gravity (a steady +1 g on NWU_U) is removed from Up.
+    *accelEast  = -accEF_NWU.v[NWU_W] * GRAVITY_CMSS;
+    *accelNorth =  accEF_NWU.v[NWU_N] * GRAVITY_CMSS;
+    *accelUp    = (accEF_NWU.v[NWU_U] - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
