@@ -268,28 +268,46 @@ static void capturePositionHoldTarget(const positionEstimate3d_t *est)
 }
 
 
-static void resetDistanceErrorAndIntegral(void){
-
+static void resetDistanceError(void)
+{
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         distanceError[i] = 0.0f; 
-        // distanceErrorIntegral[i] = 0.0f; // not resetting iTerm to test, holds wind opposition vector
-        dTermRamp[i] = 1.0f;
+    }
+}
+static void resetDistanceErrorIntegral(void)
+{
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        distanceErrorIntegral[i] = 0.0f; 
     }
 }
 
+
+static void seedVelocityHistory(const positionEstimate3d_t *est)
+{
+    previousVelocity[EF_EAST] = est->velocity.x;
+    previousVelocity[EF_NORTH] = est->velocity.y;
+}
+
+
 static void resetPositionHold(void){
-    resetDistanceErrorAndIntegral();
+    resetDistanceError();
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         isPosHoldStarting[i] = true;
+        dTermRamp[i] = 1.0f;
     }
 }
 
 static void initNavMode(void)
 {
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     initPositionAccelLpf();
-    resetDistanceErrorAndIntegral();
+    resetDistanceError();
+    resetDistanceErrorIntegral();
+    for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
+        isPosHoldStarting[i] = false;
+    }   
+    seedVelocityHistory(est);
 }
-
 
 void resetPositionControl(unsigned taskRateHz)
 {
@@ -297,13 +315,12 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sticksActive = false;
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     ap.sanityCheckDistance = sanityCheckDistance(vector2Norm((vector2_t*)&est->velocity));
-    initialVelocity[EF_EAST]  = est->velocity.x;
-    initialVelocity[EF_NORTH] = est->velocity.y;
-       distanceErrorIntegral[EF_EAST] = 0.0f;
-       distanceErrorIntegral[EF_NORTH] = 0.0f;
+    seedVelocityHistory(est);
+    distanceErrorIntegral[EF_EAST] = 0.0f;
+    distanceErrorIntegral[EF_NORTH] = 0.0f;
     resetPositionHold();
     positionEstimatorEnableXY(true);
-    capturePositionHoldTarget(est); 
+    capturePositionHoldTarget(est);
     isPositionHeld = true; 
 
     positionNavReset();
@@ -413,7 +430,9 @@ bool positionControl(void)
             } else {
                 distanceError[EF_NORTH] = targetPosition.y - est->position.y;
             }
-        }        velocityError[axis] = targetVelocity[axis] - velocity[axis];
+        }
+
+            velocityError[axis] = targetVelocity[axis] - velocity[axis];
         const float accelerationRaw = (previousVelocity[axis] - velocity[axis]) * POSHOLD_TASK_RATE_HZ; // match sign of velocityError
         previousVelocity[axis] = velocity[axis];
          const float acceleration = pt1FilterApply(&posAccelLpf[axis], accelerationRaw);
