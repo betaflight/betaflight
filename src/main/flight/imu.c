@@ -176,8 +176,10 @@ void imuConfigure(uint16_t throttle_correction_angle, uint8_t throttle_correctio
     imuRuntimeConfig.imuDcmKi = imuConfig()->imu_dcm_ki / 10000.0f;
     // magnetic declination has negative sign (positive clockwise when seen from top)
     const float imuMagneticDeclinationRad = DEGREES_TO_RADIANS(imuConfig()->mag_declination / 10.0f);
-    sincosf_approx(imuMagneticDeclinationRad, &north_ef.y, &north_ef.x);
-    north_ef.y = -north_ef.y;
+    // north_ef: magnetic-north reference in the horizontal earth frame (NWU).
+    // v[NWU_N] = cos(declination), v[NWU_W] = -sin(declination).
+    sincosf_approx(imuMagneticDeclinationRad, &north_ef.v[NWU_W], &north_ef.v[NWU_N]);
+    north_ef.v[NWU_W] = -north_ef.v[NWU_W];
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuConfig()->small_angle));
 
@@ -461,14 +463,16 @@ static float imuCalcGroundspeedGain(float dt)
 // return value rotation around earth Z axis, pointing in directipon of smaller error, [rad/s]
 STATIC_UNIT_TESTED float imuCalcCourseErr(float courseOverGround)
 {
-    // Compute COG heading unit vector in earth frame (ef) from scalar GPS CourseOverGround
-    // Earth frame X is pointing north and sin/cos argument is anticlockwise. (|cog_ef| == 1.0)
+    // Compute COG heading unit vector in the horizontal earth frame (NWU) from
+    // scalar GPS CourseOverGround. North is v[NWU_N]; the sin/cos argument is
+    // anticlockwise so the orthogonal component lands on West (v[NWU_W]). (|cog_ef| == 1.0)
     float sin, cos;
     sincosf_approx(-courseOverGround, &sin, &cos);
-    const vector2_t cog_ef = {.x = cos, .y = sin};
+    const vector2_t cog_ef = {.v = {[NWU_N] = cos, [NWU_W] = sin}};
 
-    // Compute and normalise craft Earth frame heading vector from body X axis
-    vector2_t heading_ef = {.x = rMat.m[X][X], .y = rMat.m[Y][X]};
+    // Compute and normalise craft earth-frame heading vector from the body X axis
+    // (first column of rMat): row NWU_N is North, row NWU_W is West.
+    vector2_t heading_ef = {.v = {[NWU_N] = rMat.m[X][X], [NWU_W] = rMat.m[Y][X]}};
     vector2Normalize(&heading_ef, &heading_ef); // XY only, normalised to magnitude 1.0
 
     // cross (vector product) = |heading| * |cog| * sin(angle) = 1 * 1 * sin(angle)
@@ -513,7 +517,7 @@ static void imuDebug_GPS_RESCUE_HEADING(void)
         matrixVectorMul(&mag_ef_yawed, &rMatZTrans, &mag_ef); // EF->EF yawed
 
         // Magnetic yaw is the angle between true north and the X axis of the body frame
-        int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.y, mag_ef_yawed.x) * (1800.0f / M_PIf)));
+        int16_t magYaw = lrintf((atan2_approx(mag_ef_yawed.v[NWU_W], mag_ef_yawed.v[NWU_N]) * (1800.0f / M_PIf)));
         if (magYaw < 0) {
             magYaw += 3600;
         }
@@ -543,7 +547,7 @@ STATIC_UNIT_TESTED float imuCalcMagErr(void)
 
         // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
         // This way magnetic field will only affect heading and wont mess roll/pitch angles
-        vector2_t mag2d_ef = {.x = mag_ef.x, .y = mag_ef.y};
+        vector2_t mag2d_ef = {.v = {[NWU_N] = mag_ef.v[NWU_N], [NWU_W] = mag_ef.v[NWU_W]}};
         // mag2d_ef - measured mag field vector in EF (2D ground plane projection)
         // north_ef - reference mag field vector heading due North in EF (2D ground plane projection).
         //              Adjusted for magnetic declination (in imuConfigure)
