@@ -46,7 +46,16 @@
 #include "drivers/bus_octospi.h"
 #include "drivers/bus_octospi_impl.h"
 
-// Provide platform-specific hardware table for STM32N6
+// Provide platform-specific hardware table for STM32N6.
+//
+// Placed in .fastram_data (AXISRAM) rather than the default
+// .rodata.octoSpiHardware (XIP). octoSpiDeviceByInstance walks this
+// table from MMFLASH_CODE while memory-mapped mode is disabled — XIP
+// reads in that window only succeed by luck of D-cache residency.
+// GCC 13.3 with -fdata-sections + const ignores a `MMFLASH_DATA const`
+// attribute on the definition, so the attribute is applied directly
+// (section() before const) to force the section choice through.
+__attribute__((section(".fastram_data"), aligned(4)))
 const octoSpiHardware_t octoSpiHardware[OCTOSPIDEV_COUNT] = {
     {
         .device = OCTOSPIDEV_1,
@@ -127,6 +136,7 @@ const octoSpiHardware_t octoSpiHardware[OCTOSPIDEV_COUNT] = {
 // XSPI does not have SIOO (Send Instruction Only Once) like OCTOSPI
 #define XSPI_SIOO_INST_EVERY_CMD         ((uint32_t)0x00000000U)
 
+__attribute__((unused))
 static MMFLASH_CODE_NOINLINE void Error_Handler(void) {
     while (1) {
         NOOP;
@@ -139,6 +149,7 @@ static MMFLASH_CODE_NOINLINE void Error_Handler(void) {
 #define __XSPI_DISABLE(__INSTANCE__)                      CLEAR_BIT((__INSTANCE__)->CR, XSPI_CR_EN)
 #define __XSPI_IS_ENABLED(__INSTANCE__)                   (READ_BIT((__INSTANCE__)->CR, XSPI_CR_EN) != 0U)
 
+__attribute__((unused))
 MMFLASH_CODE_NOINLINE static void xspiAbort(XSPI_TypeDef *instance)
 {
     SET_BIT(instance->CR, XSPI_CR_ABORT);
@@ -261,8 +272,8 @@ MMFLASH_CODE_NOINLINE static ErrorStatus xspiConfigureCommand(XSPI_TypeDef *inst
         {
           // instruction and data
 
-          MODIFY_REG(instance->CCR, (XSPI_CCR_IMODE | XSPI_CCR_IDTR | XSPI_CCR_ISIZE |
-                                  XSPI_CCR_DMODE | XSPI_CCR_DDTR),
+          MODIFY_REG(instance->CCR, (XSPI_CCR_IMODE  | XSPI_CCR_IDTR  | XSPI_CCR_ISIZE  |
+                                  XSPI_CCR_DMODE  | XSPI_CCR_DDTR),
                                  (cmd->InstructionMode | cmd->InstructionDtrMode | cmd->InstructionSize |
                                   cmd->DataMode        | cmd->DataDtrMode));
         }
@@ -270,7 +281,7 @@ MMFLASH_CODE_NOINLINE static ErrorStatus xspiConfigureCommand(XSPI_TypeDef *inst
         {
           // instruction only
 
-          MODIFY_REG(instance->CCR, (XSPI_CCR_IMODE | XSPI_CCR_IDTR | XSPI_CCR_ISIZE),
+          MODIFY_REG(instance->CCR, (XSPI_CCR_IMODE  | XSPI_CCR_IDTR  | XSPI_CCR_ISIZE),
                                  (cmd->InstructionMode | cmd->InstructionDtrMode | cmd->InstructionSize));
 
           // DHQC bit is linked with DDTR
@@ -326,8 +337,10 @@ static MMFLASH_CODE_NOINLINE ErrorStatus xspiCommand(XSPI_TypeDef *instance, XSP
     if (status == SUCCESS) {
         if (cmd->DataMode == XSPI_DATA_NONE)
         {
-            // transfer is already started, wait now.
-            xspiWaitStatusFlags(instance, XSPI_SR_TCF, SET);
+            // No-data command starts on IR/AR write — wait BUSY=RESET (not
+            // TCF=SET) to match HAL_XSPI_Command. Waiting TCF was racing
+            // with the next command's writes when BUSY hadn't drained.
+            xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
             __XSPI_CLEAR_FLAG(instance, XSPI_SR_TCF);
         }
     }
@@ -459,22 +472,31 @@ static MMFLASH_CODE_NOINLINE void xspiRestoreMemoryMappedModeConfiguration(XSPI_
 
     xspiMemoryMappedModeConfigurationRegisterBackup_t *xspiMMMCRBackup = &xspiMMMCRBackups[device];
 
-    xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
+    // Mirror HAL_XSPI_Abort: drain any in-flight indirect transfer
+    // before reprogramming the read-side command.
+    if ((READ_REG(instance->SR) & XSPI_SR_BUSY) != 0U) {
+        SET_BIT(instance->CR, XSPI_CR_ABORT);
+        xspiWaitStatusFlags(instance, XSPI_SR_TCF, SET);
+        __XSPI_CLEAR_FLAG(instance, XSPI_SR_TCF);
+        xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
+    }
+    MODIFY_REG(instance->CR, XSPI_CR_FMODE, 0U);
 
+    // Reprogram read-side CCR/IR/TCR/ABR from the boot-time backup so
+    // the memory-mapped FAST_READ_4B command is what gets emitted on
+    // AXI reads. DLR/AR have no meaning in MM mode.
     instance->ABR = xspiMMMCRBackup->ABR;
     instance->TCR = xspiMMMCRBackup->TCR;
-
-    instance->DLR = 0; // "no meaning" in MM mode.
-
+    instance->DLR = 0;
     instance->CCR = xspiMMMCRBackup->CCR;
+    instance->IR  = xspiMMMCRBackup->IR;
+    instance->AR  = 0;
 
-    instance->IR = xspiMMMCRBackup->IR;
-    instance->AR = 0; // "no meaning" in MM mode.
-
-    xspiAbort(instance);
-    xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
-
-    instance->CR = xspiMMMCRBackup->CR;
+    // Engage memory-mapped via FMODE-only MODIFY_REG, matching
+    // HAL_XSPI_MemoryMapped.
+    MODIFY_REG(instance->CR, XSPI_CR_FMODE, XSPI_FUNCTIONAL_MODE_MEMORY_MAPPED);
+    __DSB();
+    __ISB();
 }
 
 /*
@@ -496,25 +518,19 @@ MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiResource_t *ins
         failureMode(FAILURE_DEVELOPER); // likely not booted with memory mapped mode enabled, or mismatched calls to enable/disable memory map mode.
     }
 
-    xspiAbort(instance);
-    if (__XSPI_GET_FLAG(instance, XSPI_SR_BUSY) == SET) {
-
-        __XSPI_DISABLE(instance);
-        xspiAbort(instance);
+    // Mirror HAL_XSPI_Abort. Only the BUSY-set branch issues CR.ABORT;
+    // otherwise just drop FMODE to indirect-write. Waiting TCF/BUSY then
+    // clearing TCF leaves the controller in a quiet state for the next
+    // indirect command.
+    if ((READ_REG(instance->SR) & XSPI_SR_BUSY) != 0U) {
+        SET_BIT(instance->CR, XSPI_CR_ABORT);
+        xspiWaitStatusFlags(instance, XSPI_SR_TCF, SET);
+        __XSPI_CLEAR_FLAG(instance, XSPI_SR_TCF);
+        xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
     }
-    xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
-
-    uint32_t fmode = 0x0;  // b00 = indirect write, see XSPI->CR->FMODE
-    MODIFY_REG(instance->CR, XSPI_CR_FMODE, fmode);
-
-    uint32_t regval = READ_REG(instance->CR);
-    if ((regval & XSPI_CR_FMODE) != fmode) {
-        Error_Handler();
-    }
-
-    if (!__XSPI_IS_ENABLED(instance)) {
-        __XSPI_ENABLE(instance);
-    }
+    MODIFY_REG(instance->CR, XSPI_CR_FMODE, 0U);
+    __DSB();
+    __ISB();
 }
 
 /*
@@ -527,12 +543,15 @@ MMFLASH_CODE_NOINLINE void octoSpiDisableMemoryMappedMode(octoSpiResource_t *ins
 MMFLASH_CODE_NOINLINE void octoSpiEnableMemoryMappedMode(octoSpiResource_t *instance_)
 {
     XSPI_TypeDef *instance = (XSPI_TypeDef *)instance_;
-    xspiAbort(instance);
-    xspiWaitStatusFlags(instance, XSPI_SR_BUSY, RESET);
-
+    // xspiRestoreMemoryMappedModeConfiguration does its own
+    // HAL_XSPI_Abort-pattern drain (conditional on BUSY=SET) before
+    // reprogramming CCR/IR/TCR/ABR. An unconditional CR.ABORT here
+    // wedges the controller waiting BUSY=RESET when there's nothing
+    // in flight to abort.
     xspiRestoreMemoryMappedModeConfiguration(instance);
 }
 
+__attribute__((unused))
 static MMFLASH_CODE_NOINLINE void xspiTestEnableDisableMemoryMappedMode(octoSpiDevice_t *octoSpi)
 {
     octoSpiResource_t *instance = octoSpi->dev;
@@ -543,6 +562,10 @@ static MMFLASH_CODE_NOINLINE void xspiTestEnableDisableMemoryMappedMode(octoSpiD
     __enable_irq();
 }
 
+// Read from MMFLASH_CODE during MM-disabled writes — must be in AXISRAM,
+// not .rodata at XIP. Attribute is applied directly because GCC 13.3
+// strips a `MMFLASH_DATA const` decoration off when -fdata-sections fires.
+__attribute__((section(".fastram_data"), aligned(4)))
 static const uint32_t xspi_addressSizeMap[] = {
     XSPI_ADDRESS_8_BITS,
     XSPI_ADDRESS_16_BITS,
@@ -855,9 +878,29 @@ void octoSpiInitDevice(octoSpiDevice_e device)
         // Bootloader has already configured the IO, clocks and peripherals.
         xspiBackupMemoryMappedModeConfiguration((XSPI_TypeDef *)octoSpi->dev);
 
-        xspiTestEnableDisableMemoryMappedMode(octoSpi);
+        // The test-disable-then-reenable was an optimistic sanity check —
+        // on the N6 + MX66UW1G45G XIP path the re-enable hits some chip-
+        // state edge case that leaves memory-mapped mode dead. Once the
+        // controller drops the mem-map config, subsequent fetches from
+        // 0x70xxxxxx fault, the resulting BusFault re-enters via a vector-
+        // table read at 0x70100000 (also dead), double-fault → LOCKUP.
+        // The legitimate disable/enable pairs in flashOctoSpiInit etc.
+        // don't trigger this — they wrap actual chip work between the
+        // toggles, giving the chip time to settle. The pure
+        // disable-immediately-enable-no-work-in-between is what trips it.
+        // Skip the test; if the legitimate paths fail later we'll see it
+        // there with a clearer diagnostic.
+        // xspiTestEnableDisableMemoryMappedMode(octoSpi);
     } else {
+#ifdef N6_RAM_ONLY_BUILD
+        // Dev iteration via OpenOCD `gdb load` skips the boot ROM, so XSPI2
+        // is in its post-reset (indirect-write) state instead of memory-mapped.
+        // The XSPI flash isn't reachable in this build — leave the controller
+        // alone and continue firmware bring-up.
+        (void)octoSpi;
+#else
         failureMode(FAILURE_DEVELOPER); // trying to use this implementation when memory mapped mode is not already enabled by a bootloader
+#endif
     }
 }
 

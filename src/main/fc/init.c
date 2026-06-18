@@ -98,6 +98,9 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_nav.h"
+#endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
@@ -760,6 +763,7 @@ void initPhase3(void)
     pinioBoxInit(pinioBoxConfig());
 #endif
 
+
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
@@ -781,6 +785,7 @@ void initPhase3(void)
 
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
 
@@ -861,6 +866,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    flightPlanNavInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -1062,7 +1070,9 @@ void initPhase3(void)
 
     debugInit();
 
+#if ENABLE_UNUSED_PINS_INIT
     unusedPinsInit();
+#endif
 
     tasksInit();
 

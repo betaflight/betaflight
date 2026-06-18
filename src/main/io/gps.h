@@ -179,7 +179,14 @@ typedef enum {
     GPS_UBLOX,
     GPS_MSP,
     GPS_VIRTUAL,
+    GPS_DRONECAN,
 } gpsProvider_e;
+
+// Providers whose frame source is another subsystem (not a UART). These skip
+// the FUNCTION_GPS serial-port lookup in gpsInit() and must not have
+// FEATURE_GPS disabled by validateAndFixConfig() when no port is assigned.
+#define GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(provider) \
+    ((provider) == GPS_MSP || (provider) == GPS_VIRTUAL || (provider) == GPS_DRONECAN)
 
 typedef enum {
     SBAS_AUTO = 0,

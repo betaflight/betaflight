@@ -77,6 +77,7 @@ bool cliMode = false;
 #include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/lcd_console.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
@@ -234,6 +235,7 @@ static const char * const mixerNames[] = {
 #define _R(_flag, _name) [LOG2(_flag)] = _name
 static const char * const featureNames[] = {
     _R(FEATURE_RX_PPM, "RX_PPM"),
+    _R(FEATURE_RX_UDP, "RX_UDP"),
     _R(FEATURE_INFLIGHT_ACC_CAL, "INFLIGHT_ACC_CAL"),
     _R(FEATURE_RX_SERIAL, "RX_SERIAL"),
     _R(FEATURE_MOTOR_STOP, "MOTOR_STOP"),
@@ -1104,6 +1106,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2137,7 +2142,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2174,9 +2181,11 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
@@ -2561,8 +2570,10 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
+STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
     "ORBIT", "FIGURE8"
@@ -2985,7 +2996,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
@@ -3921,6 +3932,46 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 
     cliPrintLinef("mcu_id %08x%08x%08x", U_ID_0, U_ID_1, U_ID_2);
 }
+
+#if ENABLE_LCD_CONSOLE
+static void cliLcd(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    cliPrintLinef("LCD console grid (%u cols x %u rows):",
+                  (unsigned)LCD_CONSOLE_COLS, (unsigned)LCD_CONSOLE_ROWS);
+
+    // Top border, then each row framed by '|', then bottom border.
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+
+    for (uint16_t r = 0; r < LCD_CONSOLE_ROWS; r++) {
+        const uint8_t *row = lcdConsoleRow(r);
+        cliWrite('|');
+        if (row) {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                const uint8_t ch = row[c];
+                cliWrite((ch >= 0x20 && ch <= 0x7E) ? ch : ' ');
+            }
+        } else {
+            for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+                cliWrite(' ');
+            }
+        }
+        cliPrintLine("|");
+    }
+
+    cliWrite('+');
+    for (uint16_t c = 0; c < LCD_CONSOLE_COLS; c++) {
+        cliWrite('-');
+    }
+    cliPrintLine("+");
+}
+#endif // ENABLE_LCD_CONSOLE
 
 static void printFeature(dumpFlags_t dumpMask, const uint32_t mask, const uint32_t defaultMask, const char *headingStr)
 {
@@ -6126,6 +6177,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6144,8 +6197,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6170,9 +6223,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6181,6 +6239,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)
@@ -6230,6 +6290,81 @@ static void cliVersion(const char *cmdName, char *cmdline)
 
     printVersion(true);
 }
+
+#if ENABLE_DEBUG_CLI_COMMANDS
+// `dxr <hex-addr> [count]` — read `count` 32-bit words from `<hex-addr>`.
+// Defaults to 1 word, capped at 64. Address is forced to 4-byte alignment.
+// No fault protection: hand it valid peripheral or SRAM addresses only.
+static void cliMemRead(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    uint32_t count = 1U;
+    if (*p) {
+        end = p;
+        count = (uint32_t)strtoul(p, &end, 0);
+        if (end == p) {
+            cliPrintErrorLinef(cmdName, "invalid count");
+            return;
+        }
+    }
+    if (count == 0U) count = 1U;
+    if (count > 64U) count = 64U;
+    addr &= ~3U;
+
+    for (uint32_t i = 0; i < count; i++) {
+        const uint32_t a = addr + i * 4U;
+        const uint32_t v = *(volatile uint32_t *)a;
+        cliPrintLinef("%08x: %08x", a, v);
+        cliWriterFlush();
+    }
+}
+
+// `dxw <hex-addr> <hex-value>` — write a single 32-bit word and read it
+// back. Reports both the written and observed values so the caller can
+// see writes that were silently dropped (e.g. RIFSC after the boot ROM
+// finishes its handoff).
+static void cliMemWrite(const char *cmdName, char *cmdline)
+{
+    char *p = skipSpace(cmdline);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "addr value required");
+        return;
+    }
+    char *end = p;
+    uint32_t addr = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid addr");
+        return;
+    }
+    p = skipSpace(end);
+    if (!*p) {
+        cliPrintErrorLinef(cmdName, "value required");
+        return;
+    }
+    end = p;
+    uint32_t value = (uint32_t)strtoul(p, &end, 16);
+    if (end == p) {
+        cliPrintErrorLinef(cmdName, "invalid value");
+        return;
+    }
+    addr &= ~3U;
+
+    *(volatile uint32_t *)addr = value;
+    const uint32_t readback = *(volatile uint32_t *)addr;
+    cliPrintLinef("%08x: %08x (was written %08x)", addr, readback, value);
+}
+#endif // ENABLE_DEBUG_CLI_COMMANDS
 
 static void cliEnv(const char *cmdName, char *cmdline)
 {
@@ -8041,6 +8176,12 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|hardware|all] {defaults|bare}", cliDump),
+#if ENABLE_DEBUG_CLI_COMMANDS
+    CLI_COMMAND_DEF("dxr", "read 32-bit words from memory",
+        "<hex-addr> [count]", cliMemRead),
+    CLI_COMMAND_DEF("dxw", "write a 32-bit word to memory",
+        "<hex-addr> <hex-value>", cliMemWrite),
+#endif
     CLI_COMMAND_DEF("env", "show environment (version + status as NAME=VALUE)", "[prefix]", cliEnv),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
@@ -8068,6 +8209,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if ENABLE_LCD_CONSOLE
+    CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
+#endif
 #ifdef USE_LED_STRIP_STATUS_MODE
         CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif

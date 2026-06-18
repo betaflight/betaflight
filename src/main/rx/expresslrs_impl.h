@@ -22,7 +22,7 @@ typedef enum {
     ELRS_RC_DATA_PACKET = 0x00,
     ELRS_MSP_DATA_PACKET = 0x01,
     ELRS_SYNC_PACKET = 0x02,
-#ifdef USE_ELRSV3
+#ifndef USE_ELRSV4
     ELRS_TLM_PACKET = 0x03,
 #else
     ELRS_TLM_PACKET = 0x00,

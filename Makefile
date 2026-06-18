@@ -65,6 +65,7 @@ ROOT            := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 PLATFORM_DIR	:= $(ROOT)/src/platform
 SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
+LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
@@ -72,9 +73,9 @@ INCLUDE_DIRS    := $(SRC_DIR)
 
 # Auto-hydrate submodules from .gitmodules that are not marked
 # `update = none`. Currently that's `src/config` (board configs) and
-# `lib/main/dronecan/libcanard` (DroneCAN transport). Heavy vendor SDKs
-# (pico-sdk, esp-idf, STM32H5/N6/C5, APM32F4) keep `update = none` and
-# stay opt-in through their platform-SDK hydration targets.
+# `lib/modules/dronecan/libcanard` (DroneCAN transport). Heavy vendor
+# SDKs (pico-sdk, esp-idf, STM32H5/N6/C5, APM32F4) keep `update = none`
+# and stay opt-in through their platform-SDK hydration targets.
 AUTOHYDRATE_SUBMODULES := $(shell \
     git config --file .gitmodules -l 2>/dev/null | \
     awk -F '=' '/^submodule\..*\.path=/ { \
@@ -94,7 +95,7 @@ AUTOHYDRATE_STAMPS := $(addsuffix /.git,$(AUTOHYDRATE_SUBMODULES))
 # every target; the LIB_SUBMODULES check in mk/dronecan.mk is what decides
 # whether to actually compile the sources.
 LIB_SUBMODULES  :=
-DRONECAN_LIB_DIR := lib/main/dronecan/libcanard
+DRONECAN_LIB_DIR := lib/modules/dronecan/libcanard
 
 MAKE_SCRIPT_DIR := $(ROOT)/mk
 
@@ -170,7 +171,7 @@ DFUSE-PACK  := src/utils/dfuse-pack.py
 include $(MAKE_SCRIPT_DIR)/preprocess.mk
 
 # Search path for sources
-VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(PLATFORM_DIR)
+VPATH           := $(SRC_DIR):$(LIB_MAIN_DIR):$(LIB_MODULES_DIR):$(PLATFORM_DIR)
 FATFS_DIR        = $(ROOT)/lib/main/FatFS
 FATFS_SRC        = $(notdir $(wildcard $(FATFS_DIR)/*.c))
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
@@ -182,7 +183,7 @@ include $(MAKE_SCRIPT_DIR)/config.mk
 HSE_VALUE       ?= 8000000
 
 CI_EXCLUDED_TARGETS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLATFORM_DIR)/*/target/*/.exclude)))))
-CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF
+CI_COMMON_TARGETS   := STM32F4DISCOVERY CRAZYBEEF4SX1280 CRAZYBEEF4FR MATEKF405TE AIRBOTG4AIO TBS_LUCID_FC IFLIGHT_BLITZ_F722 NUCLEOF446 SPRACINGH7EXTREME SPRACINGH7RF SITL_X_PLANE
 CI_TARGETS          := $(filter-out $(CI_EXCLUDED_TARGETS), $(BASE_TARGETS) $(filter $(CI_COMMON_TARGETS), $(BASE_CONFIGS)))
 PREVIEW_TARGETS     := MATEKF411 AIKONF4V2 AIRBOTG4AIO ZEEZF7V3 FOXEERF745V4_AIO KAKUTEH7 TBS_LUCID_FC SITL SPRACINGH7EXTREME SPRACINGH7RF
 
@@ -209,6 +210,16 @@ EXTRA_LD_FLAGS  :=
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 DEBUG_MIXED = no
+
+# Link-time optimisation is enabled by default. An {mcu}.mk can set "LTO := no"
+# (e.g. for an XIP / run-from-RAM layout that relies on per-function sections)
+# to strip the LTO flags from every optimisation profile and the link.
+LTO ?= yes
+
+# Promotion of float to double is treated as an error by default. An {mcu}.mk can
+# set "DOUBLE_PROMOTION := no" to disable the diagnostic entirely
+# (-Wno-double-promotion) instead.
+DOUBLE_PROMOTION ?= yes
 
 ifeq ($(DEBUG),INFO)
 DEBUG_MIXED = yes
@@ -317,6 +328,23 @@ endif
 #
 
 #
+# Resolve per-family build toggles now that the {mcu}.mk has been included.
+#
+
+# Disabling LTO routes its flags through CFLAGS_DISABLED so they are stripped
+# from every optimisation profile (CC_*_OPTIMISATION) and from LTO_FLAGS/LD_FLAGS.
+ifeq ($(LTO),no)
+CFLAGS_DISABLED += -flto=auto -fuse-linker-plugin
+endif
+
+# Select whether double-promotion is an error (default) or disabled entirely.
+ifeq ($(DOUBLE_PROMOTION),no)
+WARN_DOUBLE_PROMOTION := -Wno-double-promotion
+else
+WARN_DOUBLE_PROMOTION := -Wdouble-promotion
+endif
+
+#
 # Tool options.
 #
 CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
@@ -349,7 +377,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra -Werror -Wunsafe-loop-optimizations $(WARN_DOUBLE_PROMOTION) \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -471,7 +499,14 @@ $(TARGET_LST): $(TARGET_ELF)
 ifeq ($(EXST),no)
 $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+# A platform may set BIN_FROM_ELF_CMD to generate the binary from the ELF its
+# own way (e.g. ESP32 wraps it into a bootable image with esptool elf2image);
+# otherwise fall back to a plain objcopy raw dump.
+ifdef BIN_FROM_ELF_CMD
+	$(V1) $(BIN_FROM_ELF_CMD)
+else
 	$(V1) $(OBJCOPY) -O binary $< $@
+endif
 
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
@@ -549,7 +584,7 @@ define compile_file
 endef
 
 ## `paths` is a list of paths that will be replaced for checking of speed, and size optimised sources
-paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(PLATFORM_DIR)/
+paths := $(SRC_DIR)/ $(LIB_MAIN_DIR)/ $(LIB_MODULES_DIR)/ $(PLATFORM_DIR)/
 subst_paths_for = $(foreach path,$(paths),$(filter-out $(1),$(subst $(path),,$(1))))
 subst_paths = $(strip $(if $(call subst_paths_for,$(1)), $(call subst_paths_for,$(1)), $(1)))
 
@@ -709,20 +744,38 @@ $(AUTOHYDRATE_STAMPS):
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
+# Drop .d files whose recorded source path no longer exists. The most
+# common trigger is pulling across a source-move commit (e.g. promoting
+# an embedded vendor tree to a submodule) — gcc's -MMD pinned the .o to
+# the previous path, and make then bails with "No rule to make target
+# <old-path>" before the compiler ever runs to regenerate the .d. Cheap
+# scan: just stat the first .c prereq the .d declares.
+.PHONY: clean-stale-deps
+clean-stale-deps:
+	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
+	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
+	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
+	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
+	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
+	            $(RM) "$$dfile"; \
+	        fi; \
+	    done; \
+	fi
+
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS)
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(AUTOHYDRATE_STAMPS)
+exe: $(AUTOHYDRATE_STAMPS) clean-stale-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware

@@ -26,6 +26,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+// The ESP-IDF HAL headers pull <stdio.h> in transitively (xtensa-esp-elf and the
+// RISC-V ESP variants), so the shared platform.h must pre-include it before the
+// sprintf/snprintf poison pragma, otherwise the later transitive declaration
+// trips the poison. Opt into that pre-include here; other platforms don't need it.
+#define ENABLE_STDIO_PREINCLUDE
+
 // CMSIS compatibility layer for non-ARM ESP32
 // These provide the types and functions expected by shared Betaflight code.
 #ifndef __ASM
@@ -97,6 +103,17 @@ extern esp32_peripheral_t esp32UartDev2;
 #define UART0 (&esp32UartDev0)
 #define UART1 (&esp32UartDev1)
 #define UART2 (&esp32UartDev2)
+
+// LEDC channel-0 / RMT channel-0 output signal indices in the GPIO matrix.
+// Naming diverges across chips: S3 / C5 / WROOM use the un-suffixed form,
+// P4 spells everything with a _PAD_ infix.
+#if defined(ESP32P4)
+#define ESP32_LEDC_LS_SIG_OUT0_IDX LEDC_LS_SIG_OUT_PAD_OUT0_IDX
+#define ESP32_RMT_SIG_OUT0_IDX     RMT_SIG_PAD_OUT0_IDX
+#else
+#define ESP32_LEDC_LS_SIG_OUT0_IDX LEDC_LS_SIG_OUT0_IDX
+#define ESP32_RMT_SIG_OUT0_IDX     RMT_SIG_OUT0_IDX
+#endif
 
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA

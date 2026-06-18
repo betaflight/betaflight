@@ -1484,14 +1484,16 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_ALARMS:
         osdUpdateAlarms();
 
-        if (resumeRefreshAt) {
-            osdState = OSD_STATE_TRANSFER;
-        } else {
-            osdState = OSD_STATE_UPDATE_CANVAS;
-        }
+        // Pass through OSD_STATE_UPDATE_CANVAS even when short circuiting (resumeRefreshAt), for stats purposes (task rate).
+        osdState = OSD_STATE_UPDATE_CANVAS;
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
+        if (resumeRefreshAt) {
+            osdState = OSD_STATE_TRANSFER;
+            break;
+        }
+
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
             displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);

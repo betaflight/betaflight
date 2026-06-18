@@ -28,23 +28,23 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 6);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 7);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
     .hoverThrottle = 1275,
     .throttleMin = 1100,
     .throttleMax = 1900,
-    .altitudeP = 15,
-    .altitudeI = 15,
-    .altitudeD = 15,
-    .altitudeF = 15,
+    .altitudeP = 30,
+    .altitudeI = 30,
+    .altitudeD = 30,
+    .altitudeF = 30,
     .positionP = 30,
     .positionI = 30,
     .positionII = 30,
     .positionD = 30,
-    .positionA = 30,
     .positionCutoff = 80,
+    .stopThreshold = 10,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation

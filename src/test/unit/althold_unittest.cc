@@ -180,7 +180,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
 
-    altitudeControl(800.0f, 0.01f, 0.0f, 100.0f);
+    altitudeControl(200.0f, 0.01f, 0.0f, 100.0f);
     const float limitedThrottle = getAutopilotThrottle();
 
     resetAltitudeControl();

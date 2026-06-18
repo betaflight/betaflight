@@ -23,17 +23,31 @@
 
 #include "platform.h"
 
+#include "drivers/light_led.h"
+#include "drivers/time.h"
+
 #ifdef USE_VCP
 #include "drivers/serial_usb_vcp.h"
 #endif
 
 #include "drivers/system.h"
 
+#if ENABLE_LCD_CONSOLE && ENABLE_LCD_PRINTF_REDIRECT
+#include "common/printf_serial.h"
+#include "drivers/serial_lcd_console.h"
+#endif
+
 #include "fc/init.h"
+
+// USE_MULTICORE turns on the multicore API and its features (core 1 + dispatch).
+// ENABLE_MULTICORE_INIT is the optional core-allocation policy (RP2350) of
+// running the FC init phases on the second core; it requires USE_MULTICORE.
+#if defined(ENABLE_MULTICORE_INIT) && !defined(USE_MULTICORE)
+#error "ENABLE_MULTICORE_INIT requires USE_MULTICORE"
+#endif
 
 #ifdef USE_MULTICORE
 #include "platform/multicore.h"
-#include "usb/usb_cdc.h"
 #endif
 
 #ifdef USE_USB_MSC
@@ -64,7 +78,7 @@ int main(int argc, char * argv[])
     // Do basic system initialisation including multicore support if applicable
     systemInit();
 
-#ifdef USE_MULTICORE
+#ifdef ENABLE_MULTICORE_INIT
     // Perform early initialisation prior to USB
     multicoreExecuteBlocking(initPhase1);
 
@@ -91,11 +105,26 @@ int main(int argc, char * argv[])
     usbVcpInit();
 #endif
 
-#ifdef USE_MULTICORE
+#ifdef ENABLE_MULTICORE_INIT
     // Now perform the final initialisation
     multicoreExecuteBlocking(initPhase3);
 #else
     initPhase3();
+#endif
+
+#if ENABLE_LCD_CONSOLE && ENABLE_LCD_PRINTF_REDIRECT
+    // Open the LCD console after every other peripheral init has
+    // finished and after USB VCP comes up. Earlier peripheral inits can
+    // touch GPIO MODER for pins on the same ports as the LTDC signals,
+    // so running LCD setup last keeps the AF mode bits intact; opening
+    // the panel last also means a wedge in panel bring-up doesn't take
+    // VCP down with it (feedback_n6_lcd_wedge.md).
+    {
+        struct serialPort_s *lcdPort = lcdConsoleSerialOpen();
+        if (lcdPort) {
+            setPrintfSerialPort(lcdPort);
+        }
+    }
 #endif
 
 #ifdef CONFIG_IN_FILE
@@ -119,6 +148,7 @@ void FAST_CODE run(void)
 {
     while (true) {
         scheduler();
+
 #if defined(RUN_LOOP_DELAY_US) && RUN_LOOP_DELAY_US > 0
         delayMicroseconds_real(RUN_LOOP_DELAY_US);
 #endif

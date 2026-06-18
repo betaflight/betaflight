@@ -139,17 +139,13 @@ static void bbLoadDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     ((DMA_ARCH_TYPE *)dmaResource)->CNDTR = dmaRegCache->CNDTR;
     ((DMA_ARCH_TYPE *)dmaResource)->CPAR = dmaRegCache->CPAR;
     ((DMA_ARCH_TYPE *)dmaResource)->CMAR = dmaRegCache->CMAR;
-#elif defined(STM32H5) || defined(STM32C5)
+#elif defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     ((DMA_ARCH_TYPE *)dmaResource)->CCR = dmaRegCache->CCR;
     ((DMA_ARCH_TYPE *)dmaResource)->CTR1 = dmaRegCache->CTR1;
     ((DMA_ARCH_TYPE *)dmaResource)->CTR2 = dmaRegCache->CTR2;
     ((DMA_ARCH_TYPE *)dmaResource)->CBR1 = dmaRegCache->CBR1;
     ((DMA_ARCH_TYPE *)dmaResource)->CSAR = dmaRegCache->CSAR;
     ((DMA_ARCH_TYPE *)dmaResource)->CDAR = dmaRegCache->CDAR;
-#elif defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
-    UNUSED(dmaResource);
-    UNUSED(dmaRegCache);
 #else
 #error MCU dependent code required
 #endif
@@ -168,17 +164,13 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
     dmaRegCache->CNDTR = ((DMA_ARCH_TYPE *)dmaResource)->CNDTR;
     dmaRegCache->CPAR = ((DMA_ARCH_TYPE *)dmaResource)->CPAR;
     dmaRegCache->CMAR = ((DMA_ARCH_TYPE *)dmaResource)->CMAR;
-#elif defined(STM32H5) || defined(STM32C5)
+#elif defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     dmaRegCache->CCR = ((DMA_ARCH_TYPE *)dmaResource)->CCR;
     dmaRegCache->CTR1 = ((DMA_ARCH_TYPE *)dmaResource)->CTR1;
     dmaRegCache->CTR2 = ((DMA_ARCH_TYPE *)dmaResource)->CTR2;
     dmaRegCache->CBR1 = ((DMA_ARCH_TYPE *)dmaResource)->CBR1;
     dmaRegCache->CSAR = ((DMA_ARCH_TYPE *)dmaResource)->CSAR;
     dmaRegCache->CDAR = ((DMA_ARCH_TYPE *)dmaResource)->CDAR;
-#elif defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA DMA register cache not yet implemented
-    UNUSED(dmaResource);
-    UNUSED(dmaRegCache);
 #else
 #error MCU dependent code required
 #endif
@@ -252,19 +244,19 @@ void bbSwitchToInput(bbPort_t *bbPort)
 
     ((TIM_TypeDef *)bbPort->timhw->tim)->ARR = bbPort->inputARR;
 
-    bbDMA_Cmd(bbPort, ENABLE);
-
+    // Set direction before bbDMA_Cmd: on H5/C5 single-shot DMA, bbDMA_Cmd
+    // reloads the cached register set selected by bbPort->direction. If we
+    // enable while direction is still OUTPUT it overwrites the dmaRegInput
+    // we just loaded with the dmaRegOutput regs.
     bbPort->direction = DSHOT_BITBANG_DIRECTION_INPUT;
+
+    bbDMA_Cmd(bbPort, ENABLE);
 }
 #endif
 
 void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 {
-#if defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA DMA preconfiguration not yet implemented
-    UNUSED(bbPort);
-    UNUSED(direction);
-#elif defined(STM32H5) || defined(STM32C5)
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     LL_DMA_InitTypeDef *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
 
     LL_DMA_StructInit(dmainit);
@@ -285,6 +277,14 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->SrcAddress = (uint32_t)bbPort->portOutputBuffer;
         dmainit->SrcDataWidth = LL_DMA_SRC_DATAWIDTH_WORD;
         dmainit->SrcIncMode = LL_DMA_SRC_INCREMENT;
+#if defined(STM32N6)
+        /* N6 GPDMA has two master ports: PORT0 = AHB (peripherals/BSRR),
+         * PORT1 = AXI (memory/AXISRAM). Source reads from AXISRAM via
+         * PORT0 silently return 0; the channel reports TCF but writes
+         * nothing. See feedback_n6_gpdma_silent_writes. */
+        dmainit->SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT1;
+        dmainit->DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
+#endif
 
 #ifdef USE_DMA_REGISTER_CACHE
         xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
@@ -302,6 +302,10 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         dmainit->DestAddress = (uint32_t)bbPort->portInputBuffer;
         dmainit->DestDataWidth = LL_DMA_DEST_DATAWIDTH_HALFWORD;
         dmainit->DestIncMode = LL_DMA_DEST_INCREMENT;
+#if defined(STM32N6)
+        dmainit->SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT0;
+        dmainit->DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT1;
+#endif
 
 #ifdef USE_DMA_REGISTER_CACHE
         xLL_EX_DMA_Init(bbPort->dmaResource, dmainit);
@@ -359,7 +363,7 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
         bbSaveDMARegs(bbPort->dmaResource, &bbPort->dmaRegInput);
 #endif
     }
-#endif // !STM32N6
+#endif // !(STM32H5 || STM32C5 || STM32N6)
 }
 
 void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
@@ -391,13 +395,10 @@ void bbDMA_ITConfig(bbPort_t *bbPort)
 
     xLL_EX_DMA_EnableIT_TC(bbPort->dmaResource);
 
-#if defined(STM32H5) || defined(STM32C5)
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_DTEIE);
 #elif defined(STM32G4)
     SET_BIT(((DMA_Channel_TypeDef *)(bbPort->dmaResource))->CCR, DMA_CCR_TCIE|DMA_CCR_TEIE);
-#elif defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA interrupt configuration not yet implemented
-    UNUSED(bbPort);
 #else
     SET_BIT(((DMA_Stream_TypeDef *)(bbPort->dmaResource))->CR, DMA_SxCR_TCIE|DMA_SxCR_TEIE);
 #endif
@@ -408,6 +409,18 @@ void bbDMA_Cmd(bbPort_t *bbPort, FunctionalState NewState)
     //xDMA_Cmd(bbPort->dmaResource, NewState);
 
     if (NewState == ENABLE) {
+#if defined(USE_DMA_REGISTER_CACHE) && (defined(STM32C5) || defined(STM32H5) || defined(STM32N6))
+        // C5 LPDMA / H5 GPDMA / N6 GPDMA in single-shot mode do not
+        // auto-rearm: each completed transfer leaves CBR1 = 0 and CSAR
+        // advanced past the buffer, so the next bare CCR.EN write
+        // transfers nothing. Reload the cached regs
+        // (CBR1/CSAR/CDAR/CTR1/CTR2/CCR) before re-enabling so each
+        // frame restarts from the original buffer head.
+        bbLoadDMARegs(bbPort->dmaResource,
+                      bbPort->direction == DSHOT_BITBANG_DIRECTION_OUTPUT
+                          ? &bbPort->dmaRegOutput
+                          : &bbPort->dmaRegInput);
+#endif
         xLL_EX_DMA_EnableResource(bbPort->dmaResource);
     } else {
         xLL_EX_DMA_DisableResource(bbPort->dmaResource);

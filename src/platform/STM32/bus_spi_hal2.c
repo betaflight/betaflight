@@ -119,6 +119,17 @@ void spiInitDevice(spiDevice_e device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
+#ifdef STM32C5
+    // STM32C5: leave SPI kernel clock at PCLK (default after reset). HSIK
+    // selection on SPI3 leaves CTSIZE pinned at TSIZE -- the peripheral
+    // never decrements the transfer counter, EOT never asserts, and the
+    // controller appears to "transmit" via FIFO drain but no SCK reaches
+    // the pad. Reproduced under SWD on ARCROBO_C562V1: with SPI3SEL=10
+    // (HSIK) a manual WHO_AM_I transaction sticks at SR=0x00020012,
+    // CTSIZE=2; flipping SPI3SEL=00 (PCLK1) on the same configuration
+    // immediately advances to SR.EOT=1.
+#endif
+
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_SDI, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_SDO, RESOURCE_INDEX(device));
@@ -130,11 +141,34 @@ void spiInitDevice(spiDevice_e device)
     LL_SPI_Disable(dev);
     LL_SPI_DeInit(dev);
 
+#ifndef STM32C5
     // Prevent glitching when SPI is disabled
     LL_SPI_EnableGPIOControl(dev);
+#else
+    // STM32C5: AFCNTR=1 (set by EnableGPIOControl) forces the SPI
+    // peripheral to drive its 4 dedicated pins including hardware NSS
+    // (PA4 for SPI1). Boards that use PA4 as a software-managed CS for
+    // an off-bus chip get the GPIO output config silently overridden,
+    // CS never toggles, and WHO_AM_I reads come back as 0x00. Leave
+    // AFCNTR cleared; BF always drives SCK/MOSI/MISO from init through
+    // shutdown so the anti-glitch protection isn't needed.
+    LL_SPI_DisableGPIOControl(dev);
+#endif
 
     LL_SPI_SetFIFOThreshold(dev, LL_SPI_FIFO_THRESHOLD_1_DATA);
     LL_SPI_Init(dev, &defaultInit);
+
+#ifdef STM32C5
+    // Master + NSS_SOFT requires CR1.SSI=1; otherwise the peripheral reads
+    // its internal NSS as low, raises a mode fault, and atomically clears
+    // CFG2.MASTER (silently dropping to slave mode -- driver then hangs
+    // waiting for RXP). The compat-shim LL_SPI_Init in stm32c5xx_hal2_compat.h
+    // skips the SSI write that LL_SPI_SetConfig would do, so set it here
+    // and re-arm MASTER in case a prior MODF cleared it.
+    dev->IFCR = SPI_IFCR_MODFC;
+    dev->CR1 |= SPI_CR1_SSI;
+    dev->CFG2 |= SPI_CFG2_MASTER;
+#endif
 }
 
 // Helper: get the DMA_Channel_TypeDef* from a dmaChannelDescriptor
