@@ -258,10 +258,10 @@ void positionEstimatorEnableXY(bool enable)
     if (enable && !xyEnabled) {
         kalmanInit(&kfX, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
         kalmanInit(&kfY, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-        estimate.position.x = 0.0f;
-        estimate.position.y = 0.0f;
-        estimate.velocity.x = 0.0f;
-        estimate.velocity.y = 0.0f;
+        estimate.position.v[ENU_E] = 0.0f;
+        estimate.position.v[ENU_N] = 0.0f;
+        estimate.velocity.v[ENU_E] = 0.0f;
+        estimate.velocity.v[ENU_N] = 0.0f;
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
@@ -370,12 +370,13 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;
         GPS_distance2d(&armLocationGps, &gpsSol.llh, &gpsDistCm);
-        // gpsDistCm: X = East-West (lon), Y = North-South (lat) of craft relative to arm position
+        // gpsDistCm is ENU horizontal: v[ENU_E] = East (lon), v[ENU_N] = North (lat)
+        // of the craft relative to the arm position.
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
         const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
-        kalmanUpdatePosition(&kfX, gpsDistCm.x, rPos);
-        kalmanUpdatePosition(&kfY, gpsDistCm.y, rPos);
+        kalmanUpdatePosition(&kfX, gpsDistCm.v[ENU_E], rPos);
+        kalmanUpdatePosition(&kfY, gpsDistCm.v[ENU_N], rPos);
 
         // GPS velocity (NED from UBX) -> ENU
         const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);
@@ -611,14 +612,14 @@ void positionEstimatorUpdate(void)
     // Calibrate drifting sensor offsets against KF estimate anchored by non-drifting sources
     crossCalibrateOffsets(zCal, CAL_Z_COUNT, kalmanGetPosition(&kfZ));
 
-    // Extract state into the unified estimate
-    estimate.position.x = kalmanGetPosition(&kfX);
-    estimate.position.y = kalmanGetPosition(&kfY);
-    estimate.position.z = kalmanGetPosition(&kfZ);
+    // Extract state into the unified estimate (kfX/kfY/kfZ are the East/North/Up filters)
+    estimate.position.v[ENU_E] = kalmanGetPosition(&kfX);
+    estimate.position.v[ENU_N] = kalmanGetPosition(&kfY);
+    estimate.position.v[ENU_U] = kalmanGetPosition(&kfZ);
 
-    estimate.velocity.x = kalmanGetVelocity(&kfX);
-    estimate.velocity.y = kalmanGetVelocity(&kfY);
-    estimate.velocity.z = kalmanGetVelocity(&kfZ);
+    estimate.velocity.v[ENU_E] = kalmanGetVelocity(&kfX);
+    estimate.velocity.v[ENU_N] = kalmanGetVelocity(&kfY);
+    estimate.velocity.v[ENU_U] = kalmanGetVelocity(&kfZ);
 
     // Validity: based on recent measurement updates
     if (xyEnabled) {
@@ -644,12 +645,12 @@ const positionEstimate3d_t *positionEstimatorGetEstimate(void)
 
 float positionEstimatorGetAltitudeCm(void)
 {
-    return estimate.position.z;
+    return estimate.position.v[ENU_U];
 }
 
 float positionEstimatorGetAltitudeDerivative(void)
 {
-    return estimate.velocity.z;
+    return estimate.velocity.v[ENU_U];
 }
 
 bool positionEstimatorIsValidXY(void)
@@ -687,8 +688,8 @@ bool positionEstimatorIsGPSContributing(void)
 void positionEstimatorResetZ(void)
 {
     kalmanInit(&kfZ, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
-    estimate.position.z = 0.0f;
-    estimate.velocity.z = 0.0f;
+    estimate.position.v[ENU_U] = 0.0f;
+    estimate.velocity.v[ENU_U] = 0.0f;
     estimate.isValidZ = false;
     lastZMeasurementUs = 0;
 #ifdef USE_GPS
@@ -712,10 +713,10 @@ void positionEstimatorResetXY(void)
 {
     kalmanInit(&kfX, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
     kalmanInit(&kfY, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-    estimate.position.x = 0.0f;
-    estimate.position.y = 0.0f;
-    estimate.velocity.x = 0.0f;
-    estimate.velocity.y = 0.0f;
+    estimate.position.v[ENU_E] = 0.0f;
+    estimate.position.v[ENU_N] = 0.0f;
+    estimate.velocity.v[ENU_E] = 0.0f;
+    estimate.velocity.v[ENU_N] = 0.0f;
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS
