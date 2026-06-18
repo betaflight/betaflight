@@ -96,8 +96,12 @@ STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits excee
 
 static bool beeperUsbSuppressed(void)
 {
+    // BEEPER_USB ("ON_USB") silences the beeper while the board is connected via USB.
+    // usbCableIsInserted() is the literal detection (valid even at boot and immune to
+    // gaps in MSP polling); mspSerialIsConfiguratorActive() is retained as a fallback
+    // for targets without a USB detect pin and for wireless MSP links.
     return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
-        && mspSerialIsConfiguratorActive();
+        && (usbCableIsInserted() || mspSerialIsConfiguratorActive());
 }
 
 /* Beeper Sound Sequences: (Square wave generation)

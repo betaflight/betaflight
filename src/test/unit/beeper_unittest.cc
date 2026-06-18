@@ -79,6 +79,7 @@ extern "C" {
     static uint8_t simulatorMotorCount = 4;
     static timeUs_t simulatorCurrentTimeUs = 10000000;  // 10 seconds after boot
     static batteryState_e simulatorBatteryState = BATTERY_OK;
+    static bool simulatorUsbCableInserted = false;
     static int dshotCommandWriteCount = 0;
     static bool beeperOnState = false;
 }
@@ -99,6 +100,7 @@ protected:
         simulatorMotorCount = 4;
         simulatorCurrentTimeUs = 10000000;
         simulatorBatteryState = BATTERY_OK;
+        simulatorUsbCableInserted = false;
         dshotCommandWriteCount = 0;
         beeperOnState = false;
 
@@ -170,6 +172,30 @@ TEST_F(BeeperTest, BeeperMute_SilencesBeeper)
 
     beeper(BEEPER_RX_SET);
     EXPECT_FALSE(isBeeperOn());
+}
+
+// F1: USB suppression must key off the physical USB cable, not only MSP activity.
+
+TEST_F(BeeperTest, BeeperUsbFlagOn_UsbInserted_ConfiguratorNotActive_BeeperSilent)
+{
+    // USB cable present but MSP idle (>5s polling gap) → must still be silenced
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorMspConfiguratorActive = false;
+    simulatorUsbCableInserted = true;
+
+    beeper(BEEPER_RX_SET);
+    EXPECT_FALSE(isBeeperOn());
+}
+
+TEST_F(BeeperTest, BeeperUsbFlagOff_UsbInserted_BeeperSounds)
+{
+    // BEEPER_USB not set → USB cable alone must not silence the beeper
+    beeperConfigMutable()->beeper_off_flags = 0;
+    simulatorUsbCableInserted = true;
+
+    beeper(BEEPER_RX_SET);
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 // =============================================================================
@@ -267,6 +293,11 @@ extern "C" {
 // -- MSP serial --
 bool mspSerialIsConfiguratorActive(void) {
     return simulatorMspConfiguratorActive;
+}
+
+// -- USB --
+bool usbCableIsInserted(void) {
+    return simulatorUsbCableInserted;
 }
 
 // -- RC modes --
