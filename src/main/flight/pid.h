@@ -192,8 +192,8 @@ typedef enum {
 typedef struct pidProfile_s {
     uint16_t yaw_lowpass_hz;                // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_lpf1_static_hz;          // Static Dterm lowpass 1 filter cutoff value in hz
-    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
-    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
+    uint16_t dterm_notch_hz;                // SVF dterm notch hz
+    uint16_t dterm_notch_cutoff;            // SVF dterm notch low cutoff
 
     pidf_t  pid[PID_ITEM_COUNT];
 
@@ -242,7 +242,7 @@ typedef struct pidProfile_s {
     uint8_t launchControlAllowTriggerReset; // Controls trigger behavior and whether the trigger can be reset
     uint8_t use_integrated_yaw;             // Selects whether the yaw pidsum should integrated
     uint8_t integrated_yaw_relax;           // Specifies how much integrated yaw should be reduced to offset the drag based yaw component
-    uint8_t thrustLinearization;            // Compensation factor for pid linearization
+    uint8_t thrustLinearization;            // Thrust curve compensation, ≈ ArduPilot MOT_THST_EXPO * 100 (0..150, default 0)
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
@@ -381,7 +381,7 @@ typedef struct pidAxisData_s {
 
 typedef union dtermLowpass_u {
     pt1Filter_t pt1Filter;
-    biquadFilter_t biquadFilter;
+    svfLowpassFilter_t svfLowpassFilter;
     pt2Filter_t pt2Filter;
     pt3Filter_t pt3Filter;
 } dtermLowpass_t;
@@ -410,7 +410,7 @@ typedef struct pidRuntime_s {
     bool pidStabilisationEnabled;
     float previousPidSetpoint[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermNotchApplyFn;
-    biquadFilter_t dtermNotch[XYZ_AXIS_COUNT];
+    svfNotchFilter_t dtermNotch[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpassApplyFn;
     dtermLowpass_t dtermLowpass[XYZ_AXIS_COUNT];
     filterApplyFnPtr dtermLowpass2ApplyFn;
@@ -503,7 +503,6 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_THRUST_LINEARIZATION
     float thrustLinearization;
-    float throttleCompensateAmount;
 #endif
 
 #ifdef USE_FEEDFORWARD

@@ -240,6 +240,13 @@ void systemInit(void)
     // .data/.bss copy/clear loop doesn't cover these sections).
     initialiseDmaMemorySections();
 
+    // Route MemManage/BusFault/UsageFault to their specific handlers
+    // instead of escalating straight to HardFault. CFSR/MMFAR/BFAR
+    // survive into the handler so fault_handlers.c can capture them.
+    SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk
+                | SCB_SHCSR_BUSFAULTENA_Msk
+                | SCB_SHCSR_USGFAULTENA_Msk;
+
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
@@ -254,6 +261,25 @@ void systemInit(void)
     // SystemInit(), but on C5 .data is initialised after SystemInit so we
     // call it here instead -- by this point .data is live.
     HAL_Init();
+
+#if ENABLE_BOOT0_PIN_SELECT
+    // FLASH_OPTSR.BOOT_SEL defaults to 0, which makes the BOOT0 *pin*
+    // inert and forces the boot source to come from the BOOT0 *bit* in
+    // OPTSR. A BF crash before USB-VCP enumerates then leaves no DFU
+    // recovery path short of an SWD mass-erase. Flip BOOT_SEL to 1
+    // once so the BOOT0 button drives boot mode from the next reset on.
+    if (HAL_FLASH_ITF_OB_GetBootSelection(HAL_FLASH) != HAL_FLASH_ITF_OB_BOOT_PIN) {
+        HAL_FLASH_ITF_Unlock(HAL_FLASH);
+        HAL_FLASH_ITF_OB_Unlock(HAL_FLASH);
+        if (HAL_FLASH_ITF_OB_SetBootSelection(HAL_FLASH, HAL_FLASH_ITF_OB_BOOT_PIN) == HAL_OK
+            && HAL_FLASH_ITF_OB_Program(HAL_FLASH) == HAL_OK) {
+            // C5 has no OBL_LAUNCH; OPTSR_CUR only reloads on chip reset.
+            NVIC_SystemReset();
+        }
+        HAL_FLASH_ITF_OB_Lock(HAL_FLASH);
+        HAL_FLASH_ITF_Lock(HAL_FLASH);
+    }
+#endif
 
     // ICACHE is intentionally left at reset default (disabled) on STM32C5.
     //

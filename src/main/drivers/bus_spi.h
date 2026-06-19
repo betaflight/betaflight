@@ -57,7 +57,8 @@ typedef enum {
     SPIDEV_3,
     SPIDEV_4,
     SPIDEV_5,
-    SPIDEV_6
+    SPIDEV_6,
+    SPIDEV_7
 } spiDevice_e;
 
 // Macros to convert between CLI bus number and spiDevice_e.

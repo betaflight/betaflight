@@ -166,7 +166,7 @@
 #define PG_DRONECAN_CONFIG          565
 
 // TODO TBC
-#define PG_DISPLAY_PORT_FBOSD_CONFIG 561
+#define PG_DISPLAY_PORT_FBOSD_CONFIG 566
 
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047

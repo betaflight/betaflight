@@ -56,6 +56,10 @@
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
 
+// Run SPI transfers over LPDMA. Allocated late (after motor timers) so DShot
+// bitbang claims its LPDMA channels first; SPI takes what remains.
+#define USE_SPI_DMA_ENABLE_LATE
+
 #define USE_ADC
 #define USE_EXTI
 
@@ -63,4 +67,14 @@
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
-#define EEPROM_SIZE     4096
+#define EEPROM_SIZE     8192
+
+#ifndef DEFAULT_PID_PROCESS_DENOM
+#define DEFAULT_PID_PROCESS_DENOM       4
+#endif
+
+// C5's bus options (I2C / I3C-as-I2C) are slow per-byte at the moment;
+// slow the baro state-machine tick from the BF default of 40 Hz to 20 Hz.
+#ifndef TASK_BARO_RATE_HZ
+#define TASK_BARO_RATE_HZ               20
+#endif

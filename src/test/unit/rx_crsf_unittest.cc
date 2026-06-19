@@ -327,6 +327,57 @@ TEST(CrossFireTest, TestCapturedSubsetData)
     EXPECT_EQ(2011, (uint16_t)crsfReadRawRC(NULL, 7));
 }
 
+TEST(CrossFireTest, TestSubsetDataIgnoresUnsupportedChannels)
+{
+    memset(&crsfFrame, 0, sizeof(crsfFrame));
+    memset(crsfChannelData, 0, sizeof(crsfChannelData));
+
+    crsfFrame.frame.deviceAddress = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    crsfFrame.frame.frameLength = 6;
+    crsfFrame.frame.type = CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED;
+    crsfFrame.frame.payload[0] = 15 |
+        (CRSF_SUBSET_RC_RES_CONF_10B << CRSF_SUBSET_RC_STARTING_CHANNEL_BITS);
+    crsfFrame.frame.payload[1] = 0x55;
+    crsfFrame.frame.payload[2] = 0xA9;
+    crsfFrame.frame.payload[3] = 0x0A;
+
+    crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
+
+    const uint8_t status = crsfFrameStatus();
+    EXPECT_EQ(RX_FRAME_COMPLETE, status);
+    EXPECT_FALSE(crsfFrameDone);
+    for (int ii = 0; ii < CRSF_MAX_CHANNEL - 1; ++ii) {
+        EXPECT_EQ(0, crsfChannelData[ii]);
+    }
+    EXPECT_EQ(0x155, crsfChannelData[15]);
+}
+
+TEST(CrossFireTest, TestSubsetDataDropsUnsupportedChannels)
+{
+    memset(&crsfFrame, 0, sizeof(crsfFrame));
+    memset(crsfChannelData, 0, sizeof(crsfChannelData));
+
+    crsfFrame.frame.deviceAddress = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    crsfFrame.frame.frameLength = 6;
+    crsfFrame.frame.type = CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED;
+    crsfFrame.frame.payload[0] = CRSF_MAX_CHANNEL |
+        (CRSF_SUBSET_RC_RES_CONF_10B << CRSF_SUBSET_RC_STARTING_CHANNEL_BITS);
+    crsfFrame.frame.payload[1] = 0x55;
+    crsfFrame.frame.payload[2] = 0xA9;
+    crsfFrame.frame.payload[3] = 0x0A;
+
+    crsfFrameDone = true;
+    memcpy(&crsfChannelDataFrame, &crsfFrame, sizeof(crsfFrame));
+
+    const uint8_t status = crsfFrameStatus();
+    EXPECT_EQ(RX_FRAME_DROPPED, status);
+    EXPECT_FALSE(crsfFrameDone);
+    for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
+        EXPECT_EQ(0, crsfChannelData[ii]);
+    }
+}
+
 TEST(CrossFireTest, TestCrsfDataReceive)
 {
     crsfFrameDone = false;

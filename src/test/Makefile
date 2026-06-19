@@ -66,6 +66,12 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
+compass_ist8310_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ist8310.c
+
+compass_ist8310_unittest_DEFINES := \
+                USE_MAG_IST8310=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
@@ -94,6 +100,17 @@ baro_ms5611_unittest_SRC := \
 baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611= \
                 USE_BARO_SPI_MS5611=
+
+accgyro_spi_icm426xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
+
+accgyro_spi_icm426xx_unittest_DEFINES := \
+                USE_GYRO_SPI_ICM42605= \
+                USE_ACCGYRO_ICM42622P= \
+                USE_ACCGYRO_ICM42686P= \
+                USE_GYRO_SPI_ICM42688P= \
+                USE_ACCGYRO_IIM42652= \
+                USE_ACCGYRO_IIM42653=
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -220,6 +237,15 @@ motor_output_unittest_SRC := \
 
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
+
+msp_serial_unittest_SRC := \
+		$(USER_DIR)/msp/msp_serial.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
+
+msp_serial_unittest_DEFINES := \
+		USE_CLI= \
+		USE_MSP_DISPLAYPORT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -398,6 +424,14 @@ transponder_ir_unittest_SRC := \
 
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
+
+
+.PHONY: check-pg-ids
+check-pg-ids:
+	@pg=$(USER_DIR)/pg/pg_ids.h; \
+	if [ ! -f "$$pg" ]; then echo "pg_ids.h not found at $$pg"; exit 1; fi; \
+	awk -f $(TEST_DIR)/check_pg_ids.awk $$pg
+
 
 huffman_unittest_SRC := \
 		$(USER_DIR)/common/huffman.c \
@@ -611,11 +645,10 @@ ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSIO
 $(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
-COMMON_FLAGS += -fblocks
 ifndef CYGWIN
-ifneq ($(OSFAMILY), macosx)
-LDFLAGS	     += -lBlocksRuntime
-endif # !macosx
+ifeq ($(OSFAMILY), macosx)
+COMMON_FLAGS += -fblocks
+endif
 endif # !CYGWIN
 
 else ifeq ($(shell $(CC) -v 2>&1 | grep -q "gcc version" && echo "gcc"),gcc)
@@ -689,7 +722,7 @@ include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 # House-keeping build targets.
 
 ## test        : Build and run the non target specific Unit Tests (default goal)
-test: $(TESTS:%=test_%)
+test: check-pg-ids $(TESTS:%=test_%)
 
 ## test-all : Build and run all Unit Tests
 test-all: $(TESTS_ALL:%=test_%)

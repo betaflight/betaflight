@@ -29,7 +29,9 @@
 #include "drivers/dshot.h"
 #include "pg/motor.h"
 
+#if !defined(X32M7)
 #define USE_DMA_REGISTER_CACHE
+#endif
 
 #define DEBUG_COUNT_INTERRUPT
 #define DEBUG_MONITOR_PACER
@@ -86,6 +88,9 @@
 #define BB_GPIO_PULLDOWN GPIO_PULLDOWN
 #define BB_GPIO_PULLUP   GPIO_PULLUP
 #elif defined(AT32F435)
+#define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
+#define BB_GPIO_PULLUP GPIO_PULL_UP
+#elif defined(X32M7)
 #define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
 #define BB_GPIO_PULLUP GPIO_PULL_UP
 #else
@@ -203,6 +208,7 @@ typedef struct bbPort_s {
     uint32_t portInputCount;
     bool inputActive;
     volatile bool telemetryPending;
+    bool telemetryAborted;
 
     // Misc
 #ifdef DEBUG_COUNT_INTERRUPT

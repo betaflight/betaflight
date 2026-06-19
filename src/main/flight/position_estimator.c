@@ -66,7 +66,7 @@
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
 #define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0f
+#define Q_ACCEL_Z           20000.0 // lower value favours faster acc changes, 700.0f is too low
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
@@ -75,8 +75,9 @@
 // Measurement noise base values (R)
 #define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
 #define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      40000.0f    // cm^2 at pDOP=1.0
-#define R_BARO_ALT          2500.0f     // cm^2
+#define R_GPS_ALT_BASE      60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
+//#define R_BARO_ALT          2500.0f     // cm^2
+#define R_BARO_ALT          1500.0f   // cm^2 lower value favours rapid baro changes
 #define R_RANGEFINDER_ALT   100.0f      // cm^2
 #define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
 
@@ -158,7 +159,7 @@ static bool positionEstimatorWantXYFusion(void)
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
 // only GPS is available) so a single alpha suffices.
-#define CROSS_CAL_ALPHA  0.005f
+#define CROSS_CAL_ALPHA     0.0001f    // Down from 0.005f
 
 typedef struct {
     float rawReading;
@@ -285,14 +286,14 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
                          acc.accADC.y * accScale,
                          acc.accADC.z * accScale }};
 
-    // rMat rotates body -> earth NED
-    vector3_t accEF_NED;
-    matrixVectorMul(&accEF_NED, &rMat, &accBF);
+    // rMat^T rotates body -> earth NED (North-East-Down)
+    vectorNED_t accEF_NED;
+    matrixTrnVectorMul(&accEF_NED.u.v, &rMat, &accBF);
 
-    // NED -> ENU, subtract gravity (NED gravity = [0,0,+1g]), convert G -> cm/s^2
-    *accelEast  =  accEF_NED.y * GRAVITY_CMSS;
-    *accelNorth =  accEF_NED.x * GRAVITY_CMSS;
-    *accelUp    = -(accEF_NED.z - 1.0f) * GRAVITY_CMSS;
+    // NED -> ENU named outputs
+    *accelEast  =  accEF_NED.u.ef.E * GRAVITY_CMSS;
+    *accelNorth =  accEF_NED.u.ef.N * GRAVITY_CMSS;
+    *accelUp    = (accEF_NED.u.ef.D - 1.0f) * GRAVITY_CMSS;
 }
 
 #ifdef USE_GPS
@@ -365,8 +366,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
     // XY position + velocity measurements
     if (xyEnabled && gpsXYAllowed && gpsArmLocationSet) {
         vector2_t gpsDistCm;
-        GPS_distance2d(&gpsSol.llh, &armLocationGps, &gpsDistCm);
-        // gpsDistCm: X = East-West (lon), Y = North-South (lat) relative to arm position
+        GPS_distance2d(&armLocationGps, &gpsSol.llh, &gpsDistCm);
+        // gpsDistCm: X = East-West (lon), Y = North-South (lat) of craft relative to arm position
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
         const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
@@ -526,28 +527,23 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
-    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height
-    const float vBFx = flow->processedFlowRates.x * altitudeCm;
-    const float vBFy = flow->processedFlowRates.y * altitudeCm;
+    // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height.
+    // Flow sensor X axis measures rightward motion; Y axis measures forward motion.
+    const float flowRight   = flow->processedFlowRates.x * altitudeCm;
+    const float flowForward = flow->processedFlowRates.y * altitudeCm;
 
-    // Project body-frame velocity to earth frame using heading
-    // Flow X (roll axis) corresponds to lateral movement, flow Y (pitch axis) to longitudinal
+    // Project to the horizontal plane by removing the tilt-induced component.
+    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
+    const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
+    const float velRight   = flowRight   * cosRoll;
+    const float velForward = flowForward * cosPitch;
+
+    // Rotate from body heading frame to ENU earth frame.
     const float yawRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cos_approx(yawRad);
     const float sinYaw = sin_approx(yawRad);
-
-    // Also project through pitch/roll to horizontal plane
-    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.pitch));
-    const float cosRoll  = cos_approx(DECIDEGREES_TO_RADIANS(attitude.values.roll));
-    const float vBodyX = vBFx * cosRoll;   // lateral velocity, tilt-corrected
-    const float vBodyY = vBFy * cosPitch;  // longitudinal velocity, tilt-corrected
-
-    // Rotate body-heading-frame velocity to ENU
-    // Body X (roll) = rightward, Body Y (pitch) = forward
-    // ENU East  =  bodyY * sinYaw + bodyX * cosYaw
-    // ENU North =  bodyY * cosYaw - bodyX * sinYaw
-    const float velEast  =  vBodyY * sinYaw + vBodyX * cosYaw;
-    const float velNorth =  vBodyY * cosYaw - vBodyX * sinYaw;
+    const float velEast  =  velForward * sinYaw - velRight * cosYaw;
+    const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
     kalmanUpdateVelocity(&kfX, velEast, flowR);
     kalmanUpdateVelocity(&kfY, velNorth, flowR);
@@ -666,6 +662,23 @@ bool positionEstimatorIsValidZ(void)
 float positionEstimatorGetTrustXY(void)
 {
     return estimate.trustXY;
+}
+
+bool positionEstimatorIsGPSContributing(void)
+{
+    // GPS contributes XY measurements only when a fix is present and the
+    // configured source does not exclude it.  Used by pos_hold to decide
+    // whether a valid heading is required before allowing position control.
+#if defined(USE_GPS) && defined(USE_POSITION_HOLD) && !defined(USE_WING)
+    if (posHoldConfig()->positionSource == POSHOLD_SOURCE_OPTICALFLOW_ONLY) {
+        return false;
+    }
+#endif
+#ifdef USE_GPS
+    return sensors(SENSOR_GPS) && STATE(GPS_FIX);
+#else
+    return false;
+#endif
 }
 
 void positionEstimatorResetZ(void)

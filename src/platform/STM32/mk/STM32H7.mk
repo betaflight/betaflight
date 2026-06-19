@@ -263,6 +263,17 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 endif
 
+else ifeq ($(TARGET_MCU),STM32H757xx)
+# STM32H757 dual-core: Betaflight runs standalone on the M7 core, M4 is
+# left halted in its default boot-blocked state.
+DEVICE_FLAGS       += -DSTM32H757xx -DCORE_CM7
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_h757_m7.ld
+STARTUP_SRC         = STM32/startup/startup_stm32h757xx_m7.s
+MCU_FLASH_SIZE     := 1536
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+
+ARCH_FLAGS          = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16
+
 else
 $(error Unknown MCU for H7 target)
 endif
@@ -345,6 +356,8 @@ SIZE_OPTIMISED_SRC += \
             drivers/serial_escserial.c
 
 DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
-DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+DEVICE_FLAGS += -DARM_MATH_CM7
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

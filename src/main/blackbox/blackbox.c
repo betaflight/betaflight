@@ -2062,7 +2062,6 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_POSITION_HOLD
 #ifndef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->posHoldWithoutMag);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->deadband);
 #endif // !USE_WING
 #endif

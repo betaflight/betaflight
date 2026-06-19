@@ -43,6 +43,12 @@
 #else
 #define ADC_TAG_MAP_COUNT 28
 #endif
+#elif defined(X32M7)
+#ifdef USE_ADC_INTERNAL
+#define ADC_TAG_MAP_COUNT 34
+#else
+#define ADC_TAG_MAP_COUNT 31
+#endif
 #elif defined(STM32G4)
 #ifdef USE_ADC_INTERNAL
 #define ADC_TAG_MAP_COUNT 49
@@ -196,4 +202,13 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.27f)
 #define TEMPSENSOR_SLOPE                   (-4.13f /* mV/C */)
+#endif
+
+#ifdef X32M7
+#define VREFINT_EXPECTED                   (1489U)  // The raw ADC reading at 12bit resolution expected for the 1V2 internal ref
+#define VREFINT_CAL_VREF                   (3300U)  // The nominal external Vref+ for the above reading
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               (30U)
+#define TEMPSENSOR_CAL1_V                  (1.342f)
+#define TEMPSENSOR_SLOPE                   (3.4f /* mV/C */)
 #endif

@@ -34,7 +34,6 @@ typedef enum {
 } posHoldSource_e;
 
 typedef struct posHoldConfig_s {
-    bool posHoldWithoutMag;
     uint8_t deadband;
     uint8_t positionSource;              // Position source selection
     uint8_t opticalflowQualityMin;       // Minimum optical flow quality threshold

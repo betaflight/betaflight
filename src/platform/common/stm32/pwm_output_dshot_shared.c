@@ -166,11 +166,18 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #endif
         xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
+#ifdef X32M7
+        xDMA_Cmd(motor->dmaRef, DISABLE);
+#endif
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
 
 // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
 #ifdef AT32F435
         xDMA_Cmd(motor->dmaRef, TRUE);
+#elif defined(X32M7)
+        xDMA_Cmd(motor->dmaRef, DISABLE);
+        xDMA_MemoryTargetConfig(motor->dmaRef, (uint32_t)motor->dmaBuffer, 0);
+        xDMA_Cmd(motor->dmaRef, ENABLE);
 #else
         xDMA_Cmd(motor->dmaRef, ENABLE);
 #endif
@@ -266,6 +273,8 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
             LL_EX_TIM_DisableIT((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #elif defined(AT32F435)
             tmr_dma_request_enable((tmr_type *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+#elif defined(X32M7)
+            TIM_EnableDma((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #else
             TIM_DMACmd((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif

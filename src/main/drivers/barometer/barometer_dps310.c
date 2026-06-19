@@ -427,4 +427,9 @@ bool baroDPS310Detect(baroDev_t *baro)
     return true;
 }
 
+bool baroDPS310IsSPL07_003(void)
+{
+    return chipId[0] == SPL07_003_CHIP_ID;
+}
+
 #endif
