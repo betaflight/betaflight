@@ -148,6 +148,7 @@ const spiHardware_t spiHardware[SPIDEV_COUNT] = {
 #endif
         },
     },
+#if SPIDEV_COUNT > 1
     {
         .device = SPIDEV_1,
         .reg = (spiResource_t *)&esp32SpiDev1,  // Maps to SPI3
@@ -176,6 +177,7 @@ const spiHardware_t spiHardware[SPIDEV_COUNT] = {
 #endif
         },
     },
+#endif // SPIDEV_COUNT > 1
 };
 
 extern busDevice_t spiBusDevice[SPIDEV_COUNT];

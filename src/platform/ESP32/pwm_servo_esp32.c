@@ -83,7 +83,7 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
         IO_t io = IOGetByTag(tag);
         if (!io) continue;
 
-        IOInit(io, OWNER_SERVO, i);
+        IOInit(io, OWNER_SERVO, RESOURCE_INDEX(i));
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);

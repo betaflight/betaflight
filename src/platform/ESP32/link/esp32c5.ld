@@ -7,18 +7,22 @@
  * ESP32-C5 memory map (from soc.h):
  *   HP SRAM:  0x40800000 - 0x40860000 (384 KB, unified IRAM/DRAM)
  *   Flash:    0x42000000 - mapped via MMU
+ *
+ * The HP SRAM is one physical block addressable as both instruction and data
+ * RAM, so it is declared as a single allocator. Two overlapping regions at the
+ * same origin (iram/dram) would let the linker place .iram.text and .data/.bss
+ * at the same VMAs and corrupt runtime state.
  */
 
 MEMORY
 {
-    iram_seg (RWX) :   org = 0x40800000, len = 384K
-    dram_seg (RW)  :   org = 0x40800000, len = 384K
-    flash_seg (RX) :   org = 0x42000000, len = 4M
+    ram_seg   (RWX) :   org = 0x40800000, len = 384K
+    flash_seg (RX)  :   org = 0x42000000, len = 4M
 }
 
 ENTRY(main)
 
-_estack = ORIGIN(dram_seg) + LENGTH(dram_seg);
+_estack = ORIGIN(ram_seg) + LENGTH(ram_seg);
 _Min_Stack_Size = 0x800;
 
 SECTIONS
@@ -29,7 +33,7 @@ SECTIONS
         *(.iram1.literal .iram1.*)
         *(.iram.text.literal .iram.text .iram.text.*)
         _iram_text_end = ABSOLUTE(.);
-    } > iram_seg
+    } > ram_seg
 
     .flash.text :
     {
@@ -67,7 +71,7 @@ SECTIONS
         *(.data .data.*)
         *(.sdata .sdata.*)
         _edata = .;
-    } > dram_seg AT > flash_seg
+    } > ram_seg AT > flash_seg
 
     .bss (NOLOAD) :
     {
@@ -76,18 +80,18 @@ SECTIONS
         *(.sbss .sbss.*)
         *(COMMON)
         _ebss = .;
-    } > dram_seg
+    } > ram_seg
 
     .noinit (NOLOAD) :
     {
         *(.noinit .noinit.*)
         *(.uninitialized_data.persistent)
-    } > dram_seg
+    } > ram_seg
 
     _end = .;
 
     _heap_start = .;
-    _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg);
+    _heap_end = ORIGIN(ram_seg) + LENGTH(ram_seg);
 
     __config_start = ORIGIN(flash_seg) + LENGTH(flash_seg) - 64K;
     __config_end = ORIGIN(flash_seg) + LENGTH(flash_seg);

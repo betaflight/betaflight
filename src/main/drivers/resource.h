@@ -139,3 +139,11 @@ const char *getOwnerName(resourceOwner_e owner);
 // NOTE: Display-only legacy constant; currently used by vtx_rtc6707_soft_spi.
 // Avoid introducing new dependencies on this in generic resource code.
 #define RESOURCE_SOFT_OFFSET    10
+
+// The `resource` CLI presents a per-owner instance ordinal that matches the
+// peripheral's hardware instance name (see resourceInputBase() in resource.c).
+// resourceIndexToInput() maps the internal 0-based index to that ordinal for
+// display; resourceInputToIndex() is the reverse, parsing a user-entered ordinal
+// back to an index. Identity on targets that number every resource from 1.
+int resourceIndexToInput(resourceOwner_e owner, int index);
+int resourceInputToIndex(resourceOwner_e owner, int input);

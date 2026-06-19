@@ -19,7 +19,14 @@
 MEMORY
 {
     iram_seg (RWX) :   org = 0x40374000, len = 0x4000
-    dram_seg (RW)  :   org = 0x3FC88000, len = 416K
+    /* End at 0x3FCEF000, NOT 0x3FCF0000 (SOC_DIRAM_DRAM_HIGH): the ROM keeps live
+     * data structures in the top of DRAM - the SPI-flash chip descriptor
+     * (g_rom_flashchip, via rom_spiflash_legacy_data @0x3FCEFFE4) and friends sit at
+     * 0x3FCEF81C..0x3FCEFFFC. _estack is the top of this region and the main stack
+     * grows down from it, so reaching 0x3FCF0000 would let the stack overwrite those
+     * ROM globals - after which esp_rom_spiflash_* read a garbage chip descriptor and
+     * hang in wait_idle (and esp_rom_spiflash_attach faults). Reserve the top 4 KB. */
+    dram_seg (RW)  :   org = 0x3FC88000, len = 0x67000
     irom_seg (RX)  :   org = 0x42000020, len = 0x800000 - 0x20
     drom_seg (R)   :   org = 0x3C000020, len = 0x800000 - 0x20
 
@@ -142,10 +149,14 @@ SECTIONS
     _heap_start = .;
     _heap_end = ORIGIN(dram_seg) + LENGTH(dram_seg);
 
-    /* Config flash storage - last 64KB of an 8MB flash (mapped IROM address).
-     * NOTE: runtime access still needs a dedicated partition; revisit. */
-    __config_start = 0x42000000 + 8M - 64K;
-    __config_end   = 0x42000000 + 8M;
+    /* Persistent config storage: 64 KB at flash offset 0x210000, immediately after
+     * the 2 MB factory app partition (same offset on the 4/8/16 MB boards). At
+     * runtime configFlashInit() (ESP32/config_flash.c) maps it into the byte-
+     * accessible DROM window through the flash MMU, so the memory-mapped reads in
+     * config_eeprom.c resolve here. It MUST be the DROM window (0x3C000000): byte
+     * reads from the IROM window (0x42000000) fault. */
+    __config_start = 0x3C000000 + 0x210000;
+    __config_end   = __config_start + 64K;
 
     /* Peripheral register mappings at fixed hardware addresses */
     .peripheral_uart0 (NOLOAD) :    { *(.peripheral_uart0) }   > periph_uart0_seg

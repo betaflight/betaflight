@@ -4,16 +4,19 @@ These are the ESP-IDF second-stage bootloaders, flashed at offset `0x0`. The
 ROM loads this bootloader, which then reads the partition table (`0x8000`) and
 loads the Betaflight app from the factory partition (`0x10000`).
 
-They are vendored as binaries rather than built here: the IDF bootloader is a
-self-contained sub-project (its own linker script, startup and ~dozens of
-sources, driven by CMake/Kconfig) and reproducing that in the Betaflight
-Makefile is not worthwhile. The bootloader is chip-specific but otherwise
-stable, and esptool patches the flash mode/size/freq into its header at flash
-time, so one binary per chip is sufficient.
+By default the build compiles the bootloader from source
+(`ESP_BOOTLOADER_FROM_SOURCE=yes`, see `../mk/tools.mk`); the binaries here are
+the opt-out fallback used when `ESP_BOOTLOADER_FROM_SOURCE=no`. The IDF
+bootloader is a self-contained sub-project (its own linker script, startup and
+~dozens of sources, driven by CMake/Kconfig), so a prebuilt blob is a handy
+alternative when you don't want to build it. The bootloader is chip-specific but
+otherwise stable, and esptool patches the flash mode/size/freq into its header at
+flash time, so one binary per chip is sufficient.
 
 The build (`make ESP32S3`) generates the partition table from
-`../partitions.csv` and merges bootloader + partition table + app into a single
-`*_full.bin`, flashable in one step at `0x0`.
+`../partitions.csv` and merges bootloader + partition table + app into the single
+bootable `.bin` (via a transient `*_tmp.bin` app image that is then deleted),
+flashable in one step at `0x0`.
 
 ## Provenance / how to regenerate
 
