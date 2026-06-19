@@ -65,21 +65,20 @@
 // Accelerometer process noise in (cm/s^2)^2.
 // Accounts for vibration, bias drift, attitude errors.
 // Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
-#define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0 // lower value favours faster acc changes, 700.0f is too low
+#define Q_ACCEL_XY         1000000.0f // increased 20x from 50000 to avoid offsets and track GPS better
+#define Q_ACCEL_Z           20000.0f // lower value favours faster acc changes, 700.0f is too low
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
 #define INITIAL_VEL_VAR     10000.0f    // (cm/s)^2
 
 // Measurement noise base values (R)
-#define R_GPS_POS_BASE      10000.0f    // cm^2 at pDOP=1.0
-#define R_GPS_VEL_BASE      2500.0f     // (cm/s)^2 at pDOP=1.0
-#define R_GPS_ALT_BASE      60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
-//#define R_BARO_ALT          2500.0f     // cm^2
+#define R_GPS_POS_BASE       500.0f    // cm^2 at pDOP=1.0 // decreased from 10000 to 500
+#define R_GPS_VEL_BASE       1000.0f     // (cm/s)^2 at pDOP=1.0 // ** decreased from 2500 to 1000
+#define R_GPS_ALT_BASE     60000.0f    // cm^2 at pDOP=1.0, favour GPS signal strongly
 #define R_BARO_ALT          1500.0f   // cm^2 lower value favours rapid baro changes
-#define R_RANGEFINDER_ALT   100.0f      // cm^2
-#define R_OPTICALFLOW_VEL   400.0f      // (cm/s)^2 at max quality
+#define R_RANGEFINDER_ALT    100.0f      // cm^2
+#define R_OPTICALFLOW_VEL    400.0f      // (cm/s)^2 at max quality
 
 #define GRAVITY_CMSS        980.665f
 
@@ -89,6 +88,11 @@
 
 // Timeout: if no measurement for this long, mark invalid
 #define MEASUREMENT_TIMEOUT_US  2000000  // 2 seconds
+
+#define ATTENUATE_ACC 1.0f
+#define ATTENUATE_GPS 1.0f
+#define ATTENUATE_NORTH 1.0f
+#define ATTENUATE_EAST 1.0f
 
 #define RANGEFINDER_MIN_ALT_CM  10
 
@@ -159,7 +163,7 @@ static bool positionEstimatorWantXYFusion(void)
 // whenever at least one non-drifting sensor is active.  The KF dynamics naturally
 // scale the effective correction rate (fast when rangefinder anchors, slow when
 // only GPS is available) so a single alpha suffices.
-#define CROSS_CAL_ALPHA     0.0001f    // Down from 0.005f
+#define CROSS_CAL_ALPHA  0.0001f
 
 typedef struct {
     float rawReading;
@@ -291,8 +295,11 @@ static void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelU
     matrixTrnVectorMul(&accEF_NED.u.v, &rMat, &accBF);
 
     // NED -> ENU named outputs
-    *accelEast  =  accEF_NED.u.ef.E * GRAVITY_CMSS;
-    *accelNorth =  accEF_NED.u.ef.N * GRAVITY_CMSS;
+//    *accelEast  =  accEF_NED.u.ef.E * GRAVITY_CMSS;
+//    *accelNorth =  accEF_NED.u.ef.N * GRAVITY_CMSS;
+
+    *accelEast  = -ATTENUATE_EAST * ATTENUATE_ACC * accEF_NED.u.ef.E * GRAVITY_CMSS;
+    *accelNorth =  ATTENUATE_NORTH * ATTENUATE_ACC * accEF_NED.u.ef.N * GRAVITY_CMSS;
     *accelUp    = (accEF_NED.u.ef.D - 1.0f) * GRAVITY_CMSS;
 }
 
@@ -370,15 +377,28 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // gpsDistCm: X = East-West (lon), Y = North-South (lat) of craft relative to arm position
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
-        const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
-        kalmanUpdatePosition(&kfX, gpsDistCm.x, rPos);
-        kalmanUpdatePosition(&kfY, gpsDistCm.y, rPos);
+
+float attenuatedGpsDistE = gpsDistCm.x * ATTENUATE_EAST  * ATTENUATE_GPS;
+float attenuatedGpsDistN = gpsDistCm.y * ATTENUATE_NORTH * ATTENUATE_GPS;
+
+
+const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
+kalmanUpdatePosition(&kfX, attenuatedGpsDistE, rPos);
+kalmanUpdatePosition(&kfY, attenuatedGpsDistN, rPos);
+
+
+float attenuatedGpsVelN = (float)gpsSol.velned.velN * ATTENUATE_NORTH * ATTENUATE_GPS;
+float attenuatedGpsVelE = (float)gpsSol.velned.velE * ATTENUATE_EAST * ATTENUATE_GPS;
+
+
 
         // GPS velocity (NED from UBX) -> ENU
         const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);
-        kalmanUpdateVelocity(&kfX, (float)gpsSol.velned.velE, rVel);
-        kalmanUpdateVelocity(&kfY, (float)gpsSol.velned.velN, rVel);
+//        kalmanUpdateVelocity(&kfX, (float)gpsSol.velned.velE, rVel);
+//        kalmanUpdateVelocity(&kfY, (float)gpsSol.velned.velN, rVel);
 
+        kalmanUpdateVelocity(&kfX, attenuatedGpsVelE, rVel);
+        kalmanUpdateVelocity(&kfY, attenuatedGpsVelN, rVel);
         lastXYMeasurementUs = nowUs;
     }
 

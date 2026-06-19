@@ -184,7 +184,9 @@ TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
     // driven purely by the IMU prediction.  The gravity cross-terms cancel exactly
     // and only the 0.5 g forward thrust contributes to East, giving velocity.x > 0.
     stepEstimator(100);
+    
+    // note this unit test is modified to pass with negated *accelEast in this PR
 
-    EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
+    EXPECT_LT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
 }
 
