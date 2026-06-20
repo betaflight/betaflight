@@ -372,3 +372,35 @@ TEST_F(FlightPlanNavTest, EngageClampsBelowMinCruiseSpeed)
     flightPlanNavEngage();
     EXPECT_GE(g_lastTarget.cruiseSpeedMps, 1.0f - 0.01f);
 }
+
+// MAVLink MISSION_SET_CURRENT — flightPlanNavSetCurrentIndex().
+TEST_F(FlightPlanNavTest, SetCurrentIndexRejectsOutOfRange)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    EXPECT_FALSE(flightPlanNavSetCurrentIndex(2));   // count is 2 -> valid 0..1
+    EXPECT_FALSE(flightPlanNavSetCurrentIndex(99));
+}
+
+TEST_F(FlightPlanNavTest, SetCurrentIndexRejectsWhenNoMission)
+{
+    EXPECT_FALSE(flightPlanNavSetCurrentIndex(0));   // empty plan: nothing to select
+}
+
+TEST_F(FlightPlanNavTest, SetCurrentIndexJumpsActiveMission)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(50, 60, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    const int dispatchesBefore = g_setTargetCalls;
+
+    EXPECT_TRUE(flightPlanNavSetCurrentIndex(2));
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    // Jumping re-dispatches the new leg immediately.
+    EXPECT_GT(g_setTargetCalls, dispatchesBefore);
+}
