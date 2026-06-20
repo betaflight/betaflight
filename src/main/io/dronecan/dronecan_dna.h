@@ -21,16 +21,18 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "platform.h"
 
-#include "pg/pg.h"
+#if ENABLE_DRONECAN_DNA
 
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
+#include "common/time.h"
 
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+// Install the dynamic node-ID allocation handler. No-op if dronecan_dna_enabled
+// is clear. Called once from dronecanInit().
+void dronecanDnaInit(void);
+
+// Drop an in-progress allocation session that has stalled past the follow-up
+// timeout. Called on the dronecan task's 1 Hz boundary.
+void dronecanDnaExpireSessions(timeUs_t currentTimeUs);
+
+#endif // ENABLE_DRONECAN_DNA

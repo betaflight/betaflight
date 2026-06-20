@@ -19,18 +19,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include <stdint.h>
+#if ENABLE_DRONECAN_DNA
 
+#include "pg/dronecan_dna.h"
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
+// Reset to all-empty (every nodeId 0). Zero-init via the default template.
+PG_REGISTER_WITH_RESET_TEMPLATE(dronecanDnaConfig_t, dronecanDnaConfig, PG_DRONECAN_DNA_CONFIG, 0);
 
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+PG_RESET_TEMPLATE(dronecanDnaConfig_t, dronecanDnaConfig, );
+
+#endif // ENABLE_DRONECAN_DNA

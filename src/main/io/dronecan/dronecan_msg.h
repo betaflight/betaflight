@@ -92,3 +92,17 @@
 #define ESC_STATUS_OFFSET_RPM               80U
 #define ESC_STATUS_OFFSET_POWER_PCT         98U
 #define ESC_STATUS_OFFSET_ESC_INDEX         105U
+
+// uavcan.protocol.dynamic_node_id.Allocation — broadcast (both request from the
+// allocatee and response from the allocator use this same message type).
+//   uint7        node_id                 @ 0  (preferred/allocated; 0 = ANY)
+//   bool         first_part_of_unique_id @ 7
+//   uint8[<=16]  unique_id               @ 8  (tail-array optimised)
+#define UAVCAN_DNA_ALLOCATION_ID            1U
+#define UAVCAN_DNA_ALLOCATION_SIGNATURE     0x0b2a812620a11d40ULL
+#define UAVCAN_DNA_OFFSET_NODE_ID           0U
+#define UAVCAN_DNA_OFFSET_FIRST_PART        7U
+#define UAVCAN_DNA_OFFSET_UNIQUE_ID         8U
+#define UAVCAN_DNA_UNIQUE_ID_LEN            16U
+#define UAVCAN_DNA_MAX_BYTES_PER_REQUEST    6U      // single-frame anonymous limit
+#define UAVCAN_DNA_FOLLOWUP_TIMEOUT_MS      500U

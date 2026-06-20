@@ -34,6 +34,7 @@ PG_RESET_TEMPLATE(dronecanConfig_t, dronecanConfig,
     .node_id = 0,
     .device = 1,
     .esc_rate_hz = 200,
+    .dna_enabled = 1,
 );
 
 #endif // ENABLE_DRONECAN

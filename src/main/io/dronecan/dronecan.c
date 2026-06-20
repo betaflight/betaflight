@@ -46,6 +46,9 @@
 #if ENABLE_DRONECAN_ESC
 #include "io/dronecan/dronecan_esc.h"
 #endif
+#if ENABLE_DRONECAN_DNA
+#include "io/dronecan/dronecan_dna.h"
+#endif
 
 // Forward declarations; implemented in dronecan_node.c / dronecan_gnss.c.
 void dronecanNodeInit(void);
@@ -272,6 +275,10 @@ void dronecanInit(void)
     // Install the esc.Status subscriber and reset the RawCommand buffer.
     dronecanEscInit();
 #endif
+#if ENABLE_DRONECAN_DNA
+    // Bring up the dynamic node-ID allocator (no-op if dna_enabled is clear).
+    dronecanDnaInit();
+#endif
 
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
 
@@ -314,6 +321,10 @@ void dronecanUpdate(timeUs_t currentTimeUs)
         dronecanLastSecondUs = currentTimeUs;
         dronecanNodeUpdate(currentTimeUs);
         canardCleanupStaleTransfers(&dronecanInstance, (uint64_t)currentTimeUs);
+#if ENABLE_DRONECAN_DNA
+        // Drop dynamic-allocation sessions that have stalled mid-handshake.
+        dronecanDnaExpireSessions(currentTimeUs);
+#endif
     }
 
     dronecanDrainTxQueue();
