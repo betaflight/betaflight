@@ -192,6 +192,45 @@ escSensorData_t *getEscSensorData(uint8_t motorNumber)
     }
 }
 
+#if ENABLE_DRONECAN_ESC
+// External telemetry feed (e.g. DroneCAN esc.Status). Lets an out-of-band
+// source publish into the same escSensorData[] store the serial KISS decoder
+// uses, so every consumer (battery, OSD, telemetry, MSP, blackbox) reads it
+// through getEscSensorData() unchanged. Values use the escSensorData_t units:
+// temperature °C, voltage 0.01V, current 0.01A, consumption mAh, rpm eRPM/100.
+void escSensorSetExternal(uint8_t motorIndex, const escSensorData_t *data)
+{
+    if (motorIndex >= MAX_SUPPORTED_MOTORS || data == NULL) {
+        return;
+    }
+    escSensorData[motorIndex] = *data;
+    escSensorData[motorIndex].dataAge = 0;
+    combinedDataNeedsUpdate = true;
+}
+
+// Mark every slot invalid. Called by the external source at init so a consumer
+// that polls before the first frame arrives sees ESC_DATA_INVALID rather than
+// a zero-filled "valid" reading.
+void escSensorExternalInit(void)
+{
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        escSensorData[i].dataAge = ESC_DATA_INVALID;
+    }
+}
+
+// Age a single slot towards ESC_DATA_INVALID. The external source calls this on
+// its own cadence for motors it hasn't heard from, mirroring increaseDataAge()
+// for the serial path.
+void escSensorExternalAge(uint8_t motorIndex)
+{
+    if (motorIndex < MAX_SUPPORTED_MOTORS
+            && escSensorData[motorIndex].dataAge < ESC_DATA_INVALID) {
+        escSensorData[motorIndex].dataAge++;
+        combinedDataNeedsUpdate = true;
+    }
+}
+#endif // ENABLE_DRONECAN_ESC
+
 // Receive ISR callback
 static void escSensorDataReceive(uint16_t c, void *data)
 {

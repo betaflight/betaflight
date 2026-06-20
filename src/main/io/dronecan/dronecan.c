@@ -34,11 +34,18 @@
 #include "common/utils.h"
 
 #include "drivers/can/can.h"
+#include "drivers/motor.h"
 #include "drivers/time.h"
+
+#include "scheduler/scheduler.h"
 
 #include "io/dronecan/dronecan.h"
 
 #include "pg/dronecan.h"
+
+#if ENABLE_DRONECAN_ESC
+#include "io/dronecan/dronecan_esc.h"
+#endif
 
 // Forward declarations; implemented in dronecan_node.c / dronecan_gnss.c.
 void dronecanNodeInit(void);
@@ -261,7 +268,22 @@ void dronecanInit(void)
     // land in our cache as soon as the transport is live.
     dronecanGnssInit();
 
+#if ENABLE_DRONECAN_ESC
+    // Install the esc.Status subscriber and reset the RawCommand buffer.
+    dronecanEscInit();
+#endif
+
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
+
+#if ENABLE_DRONECAN_ESC
+    // Commanding ESCs needs a faster cadence than the 1 Hz node housekeeping.
+    // Raise the task tick to the configured RawCommand rate when DRONECAN is
+    // the active motor protocol; otherwise the default 50 Hz is ample.
+    if (isMotorProtocolDronecan()) {
+        const uint16_t rateHz = constrain(dronecanConfig()->esc_rate_hz, 50, 500);
+        rescheduleTask(TASK_DRONECAN, TASK_PERIOD_HZ(rateHz));
+    }
+#endif
 
     dronecanStartUs = micros();
     dronecanLastSecondUs = dronecanStartUs;
@@ -280,6 +302,12 @@ void dronecanUpdate(timeUs_t currentTimeUs)
     }
 
     dronecanDrainRxRing(currentTimeUs);
+
+#if ENABLE_DRONECAN_ESC
+    // Broadcast esc.RawCommand (when commanding ESCs) and age stale telemetry.
+    // Runs every tick — this is the high-rate path the task is rescheduled for.
+    dronecanEscUpdate(currentTimeUs);
+#endif
 
     // 1 Hz boundary — publish NodeStatus and sweep stale RX transfers.
     if (cmpTimeUs(currentTimeUs, dronecanLastSecondUs) >= 1000000) {

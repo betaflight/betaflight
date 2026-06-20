@@ -62,3 +62,33 @@
 #define UAVCAN_NODE_MODE_MAINTENANCE        2U
 #define UAVCAN_NODE_MODE_SOFTWARE_UPDATE    3U
 #define UAVCAN_NODE_MODE_OFFLINE            7U
+
+// uavcan.equipment.esc.RawCommand — broadcast throttle command.
+//   saturated int14[<=20] cmd   (tail-array optimised: no length prefix on the
+//   wire; element count is inferred from the transfer payload length). Each
+//   element is a signed 14-bit value; for throttle the useful range is
+//   0..8191 (negative would request reverse on bidirectional ESCs).
+#define UAVCAN_ESC_RAWCOMMAND_ID            1030U
+#define UAVCAN_ESC_RAWCOMMAND_SIGNATURE     0x217f5c87d7ec951dULL
+#define UAVCAN_ESC_RAWCOMMAND_BITS          14U
+#define UAVCAN_ESC_RAWCOMMAND_MAX           8191    // 2^13 - 1 (positive throttle ceiling)
+#define UAVCAN_ESC_RAWCOMMAND_MAX_MOTORS    20U     // DSDL array bound
+
+// uavcan.equipment.esc.Status — broadcast ESC telemetry. Fixed layout, no TAO.
+//   uint32  error_count       @  0
+//   float16 voltage           @ 32  (volt)
+//   float16 current           @ 48  (ampere, may be negative under regen)
+//   float16 temperature       @ 64  (kelvin)
+//   int18   rpm               @ 80  (signed; negative = reverse)
+//   uint7   power_rating_pct  @ 98
+//   uint5   esc_index         @ 105 (zero-based; matches RawCommand cmd[] index)
+// Total 110 bits = 14 bytes.
+#define UAVCAN_ESC_STATUS_ID                1034U
+#define UAVCAN_ESC_STATUS_SIGNATURE         0xa9af28aea2fbb254ULL
+#define ESC_STATUS_OFFSET_ERROR_COUNT       0U
+#define ESC_STATUS_OFFSET_VOLTAGE           32U
+#define ESC_STATUS_OFFSET_CURRENT           48U
+#define ESC_STATUS_OFFSET_TEMPERATURE       64U
+#define ESC_STATUS_OFFSET_RPM               80U
+#define ESC_STATUS_OFFSET_POWER_PCT         98U
+#define ESC_STATUS_OFFSET_ESC_INDEX         105U

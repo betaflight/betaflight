@@ -29,6 +29,7 @@ typedef struct dronecanConfig_s {
     uint8_t enabled;    // 0 = off, 1 = on
     uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
     uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
+    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
 } dronecanConfig_t;
 
 PG_DECLARE(dronecanConfig_t, dronecanConfig);

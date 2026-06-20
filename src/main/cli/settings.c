@@ -314,7 +314,8 @@ static const char * const lookupTableCameraControlMode[] = {
 static const char * const lookupTablePwmProtocol[] = {
     "PWM", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
     "DSHOT150", "DSHOT300", "DSHOT600", "PROSHOT1000",
-    "DISABLED"
+    "DISABLED",
+    "DRONECAN"
 };
 
 static const char * const lookupTableLowpassType[] = {
@@ -1926,6 +1927,7 @@ const clivalue_t valueTable[] = {
     { "dronecan_enabled", VAR_UINT8 | HARDWARE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, enabled) },
     { "dronecan_node_id", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 0, 127 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, node_id) },
     { "dronecan_device", VAR_UINT8 | HARDWARE_VALUE, .config.minmaxUnsigned = { 1, CANDEV_COUNT }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, device) },
+    { "dronecan_esc_rate_hz", VAR_UINT16 | HARDWARE_VALUE, .config.minmaxUnsigned = { 50, 500 }, PG_DRONECAN_CONFIG, offsetof(dronecanConfig_t, esc_rate_hz) },
 #endif
 #ifdef USE_MCO
 #if defined(USE_MCO_DEVICE1)
