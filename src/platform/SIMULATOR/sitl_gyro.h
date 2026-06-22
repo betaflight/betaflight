@@ -34,10 +34,11 @@
 // Legacy bridges (X-Plane, RealFlight) deliver yaw with the opposite polarity
 // and therefore require Z to be negated.
 //
-// The bridge is selected at compile time by ENABLE_GAZEBO_BRIDGE but is passed
-// in as an argument so the convention lives in exactly one place (preventing the
-// silent loss of the bridge split that caused regression #15294) and so the unit
-// test can exercise both bridges.
+// This helper is bridge-agnostic: the caller selects the yaw polarity via the
+// gazeboBridge argument (sitl.c passes ENABLE_GAZEBO_BRIDGE). Keeping the mapping
+// in one place instead of an inline #if prevents the bridge split from being
+// silently dropped (regression #15294), and the explicit argument lets the unit
+// test exercise both bridges in a single binary.
 static inline void sitlGyroBodyFromSim(const double rpy[3], bool gazeboBridge,
                                        double *roll, double *pitch, double *yaw)
 {

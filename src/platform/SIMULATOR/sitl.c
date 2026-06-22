@@ -81,10 +81,10 @@
 #include "udplink.h"
 #include "sitl_gyro.h"
 
-// The bridge-specific gyro yaw sign (sitl_gyro.h) is selected by ENABLE_GAZEBO_BRIDGE,
-// so an undefined or non-boolean value would silently fall through to the legacy sign.
-// Require it to be explicitly 0 or 1 (target.h defaults it to 1) so a typo or a dropped
-// config define fails the build instead of silently inverting Gazebo yaw (see #15294).
+// ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
+// sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
+// legacy bridges. Require it to be explicitly 0 or 1 so an accidental non-boolean
+// value (which would quietly read as "Gazebo") fails the build instead (see #15294).
 STATIC_ASSERT((ENABLE_GAZEBO_BRIDGE) == 0 || (ENABLE_GAZEBO_BRIDGE) == 1,
               ENABLE_GAZEBO_BRIDGE_must_be_0_or_1);
 
