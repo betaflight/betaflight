@@ -527,6 +527,12 @@ typedef struct pidRuntime_s {
     float chirpFrequencyEndHz;
     float chirpTimeSeconds;
 #endif // USE_CHIRP
+
+    // ADRC State variables
+    float adrc_z1[XYZ_AXIS_COUNT];
+    float adrc_z2[XYZ_AXIS_COUNT];
+    float adrc_z3[XYZ_AXIS_COUNT];
+    float adrc_lastOutput[XYZ_AXIS_COUNT];
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
