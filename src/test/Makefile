@@ -372,6 +372,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
 
+sitl_gyro_unittest_SRC := \
+		$(TEST_DIR)/sitl_gyro_unittest_c.c
+
+sitl_gyro_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
+
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \

@@ -79,6 +79,14 @@
 
 #include "dyad.h"
 #include "udplink.h"
+#include "sitl_gyro.h"
+
+// The bridge-specific gyro yaw sign (sitl_gyro.h) is selected by ENABLE_GAZEBO_BRIDGE,
+// so an undefined or non-boolean value would silently fall through to the legacy sign.
+// Require it to be explicitly 0 or 1 (target.h defaults it to 1) so a typo or a dropped
+// config define fails the build instead of silently inverting Gazebo yaw (see #15294).
+STATIC_ASSERT((ENABLE_GAZEBO_BRIDGE) == 0 || (ENABLE_GAZEBO_BRIDGE) == 1,
+              ENABLE_GAZEBO_BRIDGE_must_be_0_or_1);
 
 uint32_t SystemCoreClock;
 
@@ -285,26 +293,22 @@ static void updateState(const fdm_packet* pkt)
         return;
     }
 
-#if ENABLE_GAZEBO_BRIDGE
-    // The BetaflightPlugin reads angular velocity from the IMU *sensor* entity
-    // (components::AngularVelocity on imuEntity), so the data arrives in the
-    // sensor frame. The IMU sensor pose is Rx(π) relative to the FLU link,
-    // which makes the sensor frame effectively FRD (X=fwd, Y=right, Z=down).
-    //
-    // BF gyro conventions:
-    //   Roll  = +wx_FRD (roll right)          → keep X
-    //   Pitch = -wy_FRD (BF positive = nose down, opposite to FRD) → negate Y
-    //   Yaw   = +wz_FRD (CW viewed from above)                    → keep Z
-#endif
     int16_t x,y,z;
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
     virtualAccSet(virtualAccDev, x, y, z);
 
-    x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
+    // polarity is bridge-specific (see sitlGyroBodyFromSim() for the FRD/legacy
+    // rationale); ENABLE_GAZEBO_BRIDGE selects it. Keeping the mapping in one
+    // helper prevents the bridge split from being silently dropped by edits to
+    // this function, which is what caused regression #15294.
+    double gyroRoll, gyroPitch, gyroYaw;
+    sitlGyroBodyFromSim(pkt->imu_angular_velocity_rpy, ENABLE_GAZEBO_BRIDGE, &gyroRoll, &gyroPitch, &gyroYaw);
+    x = constrain(gyroRoll  * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    y = constrain(gyroPitch * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    z = constrain(gyroYaw   * GYRO_SCALE * RAD2DEG, -32767, 32767);
     virtualGyroSet(virtualGyroDev, x, y, z);
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
