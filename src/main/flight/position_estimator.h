@@ -42,7 +42,7 @@ void positionEstimatorInit(void);
 void positionEstimatorUpdate(void);
 
 // Request XY fusion (normally automatic from armed state / sensors / modes).
-// May re-initialize kfX/kfY when transitioning to enabled; disabling stops prediction only.
+// May re-initialize kfEast/kfNorth when transitioning to enabled; disabling stops prediction only.
 void positionEstimatorEnableXY(bool enable);
 
 // Read the unified estimate

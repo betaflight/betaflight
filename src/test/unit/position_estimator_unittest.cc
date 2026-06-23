@@ -91,9 +91,9 @@ protected:
         memset(debug, 0, sizeof(debug));
 
         // Identity rotation and 1G reciprocal scale so zero accel stays zero.
-        rMat.m[0][0] = 1.0f;
-        rMat.m[1][1] = 1.0f;
-        rMat.m[2][2] = 1.0f;
+        rMat.m[NWU_N][X] = 1.0f;
+        rMat.m[NWU_W][Y] = 1.0f;
+        rMat.m[NWU_U][Z] = 1.0f;
         acc.dev.acc_1G_rec = 1.0f;
         acc.accADC.z = 1.0f;
 
@@ -142,7 +142,7 @@ TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
 }
 
 // Regression test: GPS_distance2d must be called as (arm, current) so that a craft
-// East of the arm position produces a positive kfX (East) position estimate.
+// East of the arm position produces a positive kfEast (East) position estimate.
 // The bug had the arguments reversed — (current, arm) — giving a negative East estimate.
 TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
 {
@@ -155,7 +155,8 @@ TEST_F(PositionEstimatorTest, GPSPositionEastOfArmIsPositive)
     // Let the Kalman filter converge toward the GPS position measurement.
     stepEstimator(30);
 
-    EXPECT_GT(positionEstimatorGetEstimate()->position.x, 0.0f);
+    // position is ENU; index by ENU_E so "East" is explicit rather than ".x".
+    EXPECT_GT(positionEstimatorGetEstimate()->position.v[ENU_E], 0.0f);
 }
 
 // Build rMat from roll/pitch/yaw using the exact quaternion + rotation-matrix
@@ -182,15 +183,15 @@ static void setRMatFromEuler(float rollDeg, float pitchDeg, float yawDeg)
     const float xy = q1 * q2, xz = q1 * q3, yz = q2 * q3;
     const float wx = q0 * q1, wy = q0 * q2, wz = q0 * q3;
 
-    rMat.m[0][0] = 1.0f - 2.0f * yy - 2.0f * zz;
-    rMat.m[0][1] = 2.0f * (xy - wz);
-    rMat.m[0][2] = 2.0f * (xz + wy);
-    rMat.m[1][0] = 2.0f * (xy + wz);
-    rMat.m[1][1] = 1.0f - 2.0f * xx - 2.0f * zz;
-    rMat.m[1][2] = 2.0f * (yz - wx);
-    rMat.m[2][0] = 2.0f * (xz - wy);
-    rMat.m[2][1] = 2.0f * (yz + wx);
-    rMat.m[2][2] = 1.0f - 2.0f * xx - 2.0f * yy;
+    rMat.m[NWU_N][X] = 1.0f - 2.0f * yy - 2.0f * zz;
+    rMat.m[NWU_N][Y] = 2.0f * (xy - wz);
+    rMat.m[NWU_N][Z] = 2.0f * (xz + wy);
+    rMat.m[NWU_W][X] = 2.0f * (xy + wz);
+    rMat.m[NWU_W][Y] = 1.0f - 2.0f * xx - 2.0f * zz;
+    rMat.m[NWU_W][Z] = 2.0f * (yz - wx);
+    rMat.m[NWU_U][X] = 2.0f * (xz - wy);
+    rMat.m[NWU_U][Y] = 2.0f * (yz + wx);
+    rMat.m[NWU_U][Z] = 1.0f - 2.0f * xx - 2.0f * yy;
 }
 
 // Regression test for the East-West / magnitude bug discussed in #15321 and #15339.
@@ -240,6 +241,7 @@ TEST_F(PositionEstimatorTest, EastThrustProducesPositiveEastVelocity)
     // driven purely by the IMU prediction.
     stepEstimator(100);
 
-    EXPECT_GT(positionEstimatorGetEstimate()->velocity.x, 0.0f);
+    // velocity is ENU; index by ENU_E so "East" is explicit rather than ".x".
+    EXPECT_GT(positionEstimatorGetEstimate()->velocity.v[ENU_E], 0.0f);
 }
 

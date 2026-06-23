@@ -102,12 +102,8 @@ static uint16_t altHoldCapturedHoverPwm;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
 
-// Per-axis position PID state (earth frame)
-typedef enum {
-    EF_EAST = 0,
-    EF_NORTH
-} efAxis_e;
-
+// Per-axis position PID state (earth frame). efAxis_e (EF_EAST/EF_NORTH) is
+// defined in common/axis.h alongside the other earth-frame axis enums.
 static float posIntegral[EF_AXIS_COUNT];       // I term: integral of position error
 static float posSlowIntegral[EF_AXIS_COUNT];   // II term: slow drift correction
 static float previousVelocity[EF_AXIS_COUNT];
@@ -163,17 +159,15 @@ static inline float sanityCheckDistance(const float speedCmS)
 static void capturePositionHoldTarget(const positionEstimate3d_t *est)
 {
     isPositionHeld = true;
-    targetPosition.x = est->position.x;
-    targetPosition.y = est->position.y;
-    targetPosition.z = est->position.z;
+    targetPosition = est->position;  // ENU
     ap.sanityCheckDistance = sanityCheckDistance(1000.0f);
 }
 
 static void resetPositionStopState(const positionEstimate3d_t *est)
 {
     // Prevent a sharp spike on D
-    previousVelocity[EF_EAST] = est->velocity.x;
-    previousVelocity[EF_NORTH] = est->velocity.y;
+    previousVelocity[EF_EAST] = est->velocity.v[ENU_E];
+    previousVelocity[EF_NORTH] = est->velocity.v[ENU_N];
 
     // Reset the D filter
     initPositionAccelLpf();
@@ -188,7 +182,7 @@ void resetPositionControl(unsigned taskRateHz)
 
     // Set sanity distance from current speed
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-    const float speedXY = sqrtf(est->velocity.x * est->velocity.x + est->velocity.y * est->velocity.y);
+    const float speedXY = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N]));
     ap.sanityCheckDistance = sanityCheckDistance(speedXY);
 
     // Reset PID state (velocity-only until capture)
@@ -205,9 +199,7 @@ void resetPositionControl(unsigned taskRateHz)
 
     // Enable XY estimation and set target to current position
     positionEstimatorEnableXY(true);
-    targetPosition.x = est->position.x;
-    targetPosition.y = est->position.y;
-    targetPosition.z = est->position.z;
+    targetPosition = est->position;  // ENU
     isPositionHeld = true;
 
     positionNavReset();
@@ -348,9 +340,7 @@ bool positionControl(void)
 
     // Smooth transition: nav just completed/cleared -> seed position hold target
     if (!navActive && wasNavActive) {
-        targetPosition.x = est->position.x;
-        targetPosition.y = est->position.y;
-        targetPosition.z = est->position.z;
+        targetPosition = est->position;  // ENU
         for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
             posSlowIntegral[i] = 0.0f;
         }
@@ -359,8 +349,8 @@ bool positionControl(void)
     }
     wasNavActive = navActive;
 
-    const float velEast  = est->velocity.x;
-    const float velNorth = est->velocity.y;
+    const float velEast  = est->velocity.v[ENU_E];
+    const float velNorth = est->velocity.v[ENU_N];
     const float speedXY  = sqrtf(velEast * velEast + velNorth * velNorth);
     const float velocities[EF_AXIS_COUNT] = { velEast, velNorth };
 
@@ -379,8 +369,8 @@ bool positionControl(void)
         // Nav mode: inner velocity-tracking PID
         const vector3_t tgtVel = positionNavGetTargetVelocityCmS();
         const float velErrors[EF_AXIS_COUNT] = {
-            velEast - tgtVel.x,
-            velNorth - tgtVel.y
+            velEast - tgtVel.v[ENU_E],
+            velNorth - tgtVel.v[ENU_N]
         };
 
         for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
@@ -404,8 +394,8 @@ bool positionControl(void)
             }
         }
     } else {
-        errorEast = est->position.x - targetPosition.x;
-        const float errorNorth = est->position.y - targetPosition.y;
+        errorEast = est->position.v[ENU_E] - targetPosition.v[ENU_E];
+        const float errorNorth = est->position.v[ENU_N] - targetPosition.v[ENU_N];
         distanceCm = sqrtf(errorEast * errorEast + errorNorth * errorNorth);
 
         if (distanceCm > ap.sanityCheckDistance) {
@@ -457,9 +447,7 @@ bool positionControl(void)
             for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
                 posSlowIntegral[axis] = 0.0f;
             }
-            targetPosition.x = est->position.x;
-            targetPosition.y = est->position.y;
-            targetPosition.z = est->position.z;
+            targetPosition = est->position;  // ENU
             ap.sanityCheckDistance = sanityCheckDistance(speedXY);
         }
     } else {
@@ -476,8 +464,8 @@ bool positionControl(void)
         }
     }
 
-    const float stopDistanceEast = est->position.x - targetPosition.x;
-    const float stopDistanceNorth = est->position.y - targetPosition.y;
+    const float stopDistanceEast = est->position.v[ENU_E] - targetPosition.v[ENU_E];
+    const float stopDistanceNorth = est->position.v[ENU_N] - targetPosition.v[ENU_N];
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(sqrtf(stopDistanceEast * stopDistanceEast + stopDistanceNorth * stopDistanceNorth)));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 1, lrintf(speedXY));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 2, ap.sticksActive ? 1 : 0);

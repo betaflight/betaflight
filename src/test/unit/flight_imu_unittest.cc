@@ -109,15 +109,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_FLOAT_EQ(1.0f, rMat.m[0][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[0][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][0]);
-    EXPECT_FLOAT_EQ(1.0f, rMat.m[1][1]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[1][2]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][0]);
-    EXPECT_FLOAT_EQ(0.0f, rMat.m[2][1]);
-    EXPECT_FLOAT_EQ(1.0f, rMat.m[2][2]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[NWU_N][X]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_N][Y]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_N][Z]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_W][X]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[NWU_W][Y]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_W][Z]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_U][X]);
+    EXPECT_FLOAT_EQ(0.0f, rMat.m[NWU_U][Y]);
+    EXPECT_FLOAT_EQ(1.0f, rMat.m[NWU_U][Z]);
 
     // 90 degrees around Z axis
     q.w = sqrt2over2;
@@ -127,15 +127,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(0.0f, rMat.m[0][0], TOL);
-    EXPECT_NEAR(-1.0f, rMat.m[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
-    EXPECT_NEAR(1.0f, rMat.m[1][0], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[1][1], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[2][1], TOL);
-    EXPECT_NEAR(1.0f, rMat.m[2][2], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_N][X], TOL);
+    EXPECT_NEAR(-1.0f, rMat.m[NWU_N][Y], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_N][Z], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[NWU_W][X], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_W][Y], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_W][Z], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_U][X], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_U][Y], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[NWU_U][Z], TOL);
 
     // 60 degrees around X axis
     q.w = 0.866f;
@@ -145,15 +145,15 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
 
     imuComputeRotationMatrix();
 
-    EXPECT_NEAR(1.0f, rMat.m[0][0], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[0][1], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[0][2], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[1][0], TOL);
-    EXPECT_NEAR(0.5f, rMat.m[1][1], TOL);
-    EXPECT_NEAR(-0.866f, rMat.m[1][2], TOL);
-    EXPECT_NEAR(0.0f, rMat.m[2][0], TOL);
-    EXPECT_NEAR(0.866f, rMat.m[2][1], TOL);
-    EXPECT_NEAR(0.5f, rMat.m[2][2], TOL);
+    EXPECT_NEAR(1.0f, rMat.m[NWU_N][X], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_N][Y], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_N][Z], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_W][X], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[NWU_W][Y], TOL);
+    EXPECT_NEAR(-0.866f, rMat.m[NWU_W][Z], TOL);
+    EXPECT_NEAR(0.0f, rMat.m[NWU_U][X], TOL);
+    EXPECT_NEAR(0.866f, rMat.m[NWU_U][Y], TOL);
+    EXPECT_NEAR(0.5f, rMat.m[NWU_U][Z], TOL);
 }
 
 TEST(FlightImuTest, TestUpdateEulerAngles)
@@ -169,10 +169,10 @@ TEST(FlightImuTest, TestUpdateEulerAngles)
 
     // 45 degree yaw
     memset(&rMat, 0.0, sizeof(float) * 9);
-    rMat.m[0][0] = sqrt2over2;
-    rMat.m[0][1] = sqrt2over2;
-    rMat.m[1][0] = -sqrt2over2;
-    rMat.m[1][1] = sqrt2over2;
+    rMat.m[NWU_N][X] = sqrt2over2;
+    rMat.m[NWU_N][Y] = sqrt2over2;
+    rMat.m[NWU_W][X] = -sqrt2over2;
+    rMat.m[NWU_W][Y] = sqrt2over2;
 
     imuUpdateEulerAngles();
 
@@ -201,10 +201,10 @@ TEST(FlightImuTest, TestSmallAngle)
     EXPECT_FALSE(isUpright());
 
     // given
-    rMat.m[0][0] = r1;
-    rMat.m[0][2] = r2;
-    rMat.m[2][0] = -r2;
-    rMat.m[2][2] = r1;
+    rMat.m[NWU_N][X] = r1;
+    rMat.m[NWU_N][Z] = r2;
+    rMat.m[NWU_U][X] = -r2;
+    rMat.m[NWU_U][Z] = r1;
 
     // when
     imuComputeRotationMatrix();
