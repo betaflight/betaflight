@@ -1127,7 +1127,7 @@ bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTi
     }
 
     static timeUs_t lastTelemetryCheckTimeUs = 0;
-    if (cmpTimeUs(currentTimeUs, lastTelemetryCheckTimeUs) < CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) {
+    if (cmpTimeUs(currentTimeUs, lastTelemetryCheckTimeUs) < (timeDelta_t)CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) {
         return false;
     }
 
