@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <limits.h>
 #include <algorithm>
@@ -43,7 +44,7 @@ extern "C" {
 
     rssiSource_e rssiSource;
 
-    void crsfDataReceive(uint16_t c);
+    void crsfDataReceive(uint16_t c, void *data);
     uint8_t crsfFrameCRC(void);
     uint8_t crsfFrameCmdCRC(void);
     uint8_t crsfFrameStatus(void);
@@ -233,6 +234,32 @@ typedef struct crsfRcChannelsFrame_s {
     uint8_t payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_CRC];
 } crsfRcChannelsFrame_t;
 
+static void receiveCrsfFrameBytes(const uint8_t *frame, size_t frameSize, rxRuntimeState_t *rxRuntimeState)
+{
+    for (size_t ii = 0; ii < frameSize; ++ii) {
+        crsfDataReceive(frame[ii], rxRuntimeState);
+    }
+}
+
+static size_t buildCrsfFrame(uint8_t *frame, uint8_t frameLength, uint8_t deviceAddress)
+{
+    const uint8_t type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
+    const int payloadLength = frameLength - CRSF_FRAME_LENGTH_TYPE_CRC;
+    uint8_t crc = crc8_dvb_s2(0, type);
+
+    frame[0] = deviceAddress;
+    frame[1] = frameLength;
+    frame[2] = type;
+    for (int ii = 0; ii < payloadLength; ++ii) {
+        const uint8_t payloadByte = (uint8_t)ii;
+        frame[3 + ii] = payloadByte;
+        crc = crc8_dvb_s2(crc, payloadByte);
+    }
+    frame[3 + payloadLength] = crc;
+
+    return frameLength + CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH;
+}
+
 
 TEST(CrossFireTest, TestCapturedData)
 {
@@ -383,7 +410,7 @@ TEST(CrossFireTest, TestCrsfDataReceive)
     crsfFrameDone = false;
     const uint8_t *pData = capturedData;
     for (unsigned int ii = 0; ii < sizeof(crsfRcChannelsFrame_t); ++ii) {
-        crsfDataReceive(*pData++);
+        crsfDataReceive(*pData++, NULL);
     }
     EXPECT_FALSE(crsfFrameDone); // data is not a valid rc channels frame so don't expect crsfFrameDone to be true
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
@@ -402,14 +429,82 @@ TEST(CrossFireTest, TestOversizedFrameLengthIsRejected)
     crsfFrameDone = false;
     dummyTimeUs += 10000;
 
-    crsfDataReceive(CRSF_ADDRESS_FLIGHT_CONTROLLER);
-    crsfDataReceive(CRSF_FRAME_SIZE_MAX);
-    crsfDataReceive(CRSF_FRAMETYPE_RC_CHANNELS_PACKED);
+    crsfDataReceive(CRSF_ADDRESS_FLIGHT_CONTROLLER, NULL);
+    crsfDataReceive(CRSF_FRAME_SIZE_MAX, NULL);
+    crsfDataReceive(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, NULL);
     for (int ii = 0; ii < CRSF_FRAME_SIZE_MAX - 3; ++ii) {
-        crsfDataReceive(0);
+        crsfDataReceive(0, NULL);
     }
 
     EXPECT_FALSE(crsfFrameDone);
+}
+
+TEST(CrossFireTest, TestValidFrameLengthBoundsAreReceived)
+{
+    const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
+        CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH;
+    const uint8_t validFrameLengths[] = {
+        CRSF_FRAME_LENGTH_TYPE_CRC,
+        maxValidFrameLength,
+    };
+    uint8_t frame[CRSF_FRAME_SIZE_MAX];
+
+    for (size_t ii = 0; ii < ARRAYLEN(validFrameLengths); ++ii) {
+        memset(&crsfFrame, 0, sizeof(crsfFrame));
+        crsfFrameDone = false;
+        rxRuntimeState_t rxRuntimeState = {};
+        dummyTimeUs += 10000;
+
+        const size_t frameSize = buildCrsfFrame(frame, validFrameLengths[ii], CRSF_ADDRESS_FLIGHT_CONTROLLER);
+        receiveCrsfFrameBytes(frame, frameSize, &rxRuntimeState);
+
+        EXPECT_TRUE(crsfFrameDone);
+        EXPECT_EQ(dummyTimeUs, rxRuntimeState.lastRcFrameTimeUs);
+        EXPECT_EQ(CRSF_ADDRESS_FLIGHT_CONTROLLER, crsfFrame.frame.deviceAddress);
+        EXPECT_EQ(validFrameLengths[ii], crsfFrame.frame.frameLength);
+        EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
+
+        EXPECT_EQ(crsfFrameCRC(), frame[frameSize - 1]);
+    }
+}
+
+TEST(CrossFireTest, TestInvalidFrameLengthBoundsAreRejectedAndRecover)
+{
+    const uint8_t maxValidFrameLength = CRSF_FRAME_SIZE_MAX -
+        CRSF_FRAME_LENGTH_ADDRESS - CRSF_FRAME_LENGTH_FRAMELENGTH;
+    const uint8_t invalidFrameLengths[] = {
+        0,
+        CRSF_FRAME_LENGTH_TYPE_CRC - 1,
+        (uint8_t)(maxValidFrameLength + 1),
+        CRSF_FRAME_SIZE_MAX,
+    };
+    uint8_t frame[CRSF_FRAME_SIZE_MAX];
+
+    for (size_t ii = 0; ii < ARRAYLEN(invalidFrameLengths); ++ii) {
+        memset(&crsfFrame, 0, sizeof(crsfFrame));
+        crsfFrameDone = false;
+        rxRuntimeState_t rxRuntimeState = {};
+        dummyTimeUs += 10000;
+
+        const uint8_t invalidFramePrefix[] = {
+            CRSF_ADDRESS_FLIGHT_CONTROLLER,
+            invalidFrameLengths[ii],
+            CRSF_FRAMETYPE_RC_CHANNELS_PACKED,
+        };
+        receiveCrsfFrameBytes(invalidFramePrefix, sizeof(invalidFramePrefix), &rxRuntimeState);
+
+        EXPECT_FALSE(crsfFrameDone);
+        EXPECT_EQ(0, rxRuntimeState.lastRcFrameTimeUs);
+
+        const size_t frameSize = buildCrsfFrame(frame, CRSF_FRAME_LENGTH_TYPE_CRC, CRSF_ADDRESS_FLIGHT_CONTROLLER);
+        receiveCrsfFrameBytes(frame, frameSize, &rxRuntimeState);
+
+        EXPECT_TRUE(crsfFrameDone);
+        EXPECT_EQ(dummyTimeUs, rxRuntimeState.lastRcFrameTimeUs);
+        EXPECT_EQ(CRSF_ADDRESS_FLIGHT_CONTROLLER, crsfFrame.frame.deviceAddress);
+        EXPECT_EQ(CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
+        EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
+    }
 }
 
 // STUBS

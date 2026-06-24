@@ -388,6 +388,8 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c, void *data)
     // sometimes we can receive some garbage data. So, we need to check max size for preventing buffer overrun.
     if (crsfFramePosition == CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH &&
         !crsfFrameLengthIsValid()) {
+        // Invalid declared lengths are protocol violations, not evidence of a negotiated-baud mismatch.
+        // Drop them without contributing to the CRSFv3 baud fallback error counter.
         crsfFramePosition = 0;
         return;
     }
