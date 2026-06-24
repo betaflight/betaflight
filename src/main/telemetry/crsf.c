@@ -1118,7 +1118,7 @@ FAST_CODE void crsfScheduleTelemetryResponse(void)
 // Scheduler check function for event-driven telemetry.
 // Rate-limited to CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US to prevent scheduler starvation
 // at high RC link rates (e.g. 250Hz ELRS) where crsfScheduleTelemetryResponse() fires on every frame.
-FAST_CODE bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
+bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentDeltaTimeUs);
 
