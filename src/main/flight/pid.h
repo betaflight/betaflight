@@ -352,6 +352,14 @@ typedef struct pidProfile_s {
     uint8_t psas_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *10
     uint8_t psas_roll_yaw_clift_stop;           // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
     uint8_t psas_roll_to_yaw_link;              // The maximal yaw control value to support roll rotation, % *10
+    uint8_t psas_stick_speed_enable[XYZ_AXIS_COUNT]; // Enable SPA for stick gain
+    uint8_t psas_stick_speed_scale[XYZ_AXIS_COUNT]; // SPA scale percent to stick gain
+    uint8_t psas_damping_speed_enable[XYZ_AXIS_COUNT]; // Enable SPA for damping gain
+    uint8_t psas_damping_speed_scale[XYZ_AXIS_COUNT]; // SPA scale percent to damping gain
+    uint8_t psas_pitch_stability_speed_enable;       // Enable SPA for pitch stability gain
+    uint8_t psas_pitch_stability_speed_scale;       // SPA scale percent for pitch stability gain
+    uint8_t psas_yaw_stability_speed_enable;       // Enable SPA for pitch stability gain
+    uint8_t psas_yaw_stability_speed_scale;       // SPA scale percent for yaw stability gain
 #endif
 } pidProfile_t;
 
@@ -606,3 +614,5 @@ float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, u
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
 #endif
+
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term);

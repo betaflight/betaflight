@@ -84,13 +84,17 @@ void psasInit(const pidProfile_t *pidProfile)
     for (int i=0; i < XYZ_AXIS_COUNT; i++) {
         psasRuntime.stick_gain[i] = pidProfile->psas_stick_gain[i];
         psasRuntime.damping_gain[i] = pidProfile->psas_damping_gain[i] * 0.001f;
+        psasRuntime.stick_speed_scale[i] = pidProfile->psas_stick_speed_scale[i] * 0.01f;
+        psasRuntime.damping_speed_scale[i] = pidProfile->psas_damping_speed_scale[i] * 0.01f;
     }
     psasRuntime.pitch_stability_gain = pidProfile->psas_pitch_stability_gain * 0.1f;
+    psasRuntime.pitch_stability_speed_scale = pidProfile->psas_pitch_stability_speed_scale * 0.01f;
     psasRuntime.pitch_accel_p_gain = pidProfile->psas_pitch_accel_p_gain * 0.1f;
     psasRuntime.pitch_accel_i_gain = pidProfile->psas_pitch_accel_i_gain;
     psasRuntime.pitch_accel_min = pidProfile->psas_pitch_accel_min * 0.1f;
     psasRuntime.pitch_accel_max = pidProfile->psas_pitch_accel_max * 0.1f;
     psasRuntime.yaw_stability_gain = pidProfile->psas_yaw_stability_gain * 0.1f;
+    psasRuntime.yaw_stability_speed_scale = pidProfile->psas_yaw_stability_speed_scale * 0.01f;
     psasRuntime.wing_load = pidProfile->psas_wing_load * 0.01f;
     psasRuntime.air_density = pidProfile->psas_air_density * 0.001f;
     psasRuntime.lift_c_limit = pidProfile->psas_lift_c_limit * 0.1f;
@@ -251,6 +255,9 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     const float maxRcRatePitch = MAX(getMaxRcRate(FD_PITCH), 1.0f);
     float pitchStick = getSetpointRate(FD_PITCH) / maxRcRatePitch;  // pitch stick [-1 ... +1]
     psasData.pitch.pilot = pitchStick * psasRuntime.stick_gain[FD_PITCH];
+    if (pidProfile->psas_stick_speed_enable[FD_PITCH]) {
+        psasData.pitch.pilot *= getTpaFactor(pidProfile, FD_PITCH, TERM_D) * psasRuntime.stick_speed_scale[FD_PITCH];
+    }
 
     // Plane pitch damping improvement
     float gyroPitch = !gyroOverflowDetected() ? gyro.gyroADCf[FD_PITCH] : 0.0f;
@@ -259,7 +266,10 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
         gyroPitch -= gyroPitchLow;      // Damping the pitch gyro high freq part only
     }
     // On the positive pitch gyro rotation (nose to down direction) it needs to turn nose up, therefore it needs to use negative sign
-    psasData.pitch.damping = -1.0f * gyroPitch * (psasRuntime.damping_gain[FD_PITCH]);
+    psasData.pitch.damping = -1.0f * gyroPitch * psasRuntime.damping_gain[FD_PITCH];
+    if (pidProfile->psas_damping_speed_enable[FD_PITCH]) {
+        psasData.pitch.damping *= getTpaFactor(pidProfile, FD_PITCH, TERM_D) * psasRuntime.damping_speed_scale[FD_PITCH];
+    }
 
     // Plane pitch stability improvement
     float accelZ = 1.0f;
@@ -274,6 +284,9 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     }
     // On the positive accel Z value (up direction) it needs to turn nose down, therefore it needs to use positive sign
     psasData.pitch.stability = (accelZFiltered - 1.0f) * psasRuntime.pitch_stability_gain;
+    if (pidProfile->psas_pitch_stability_speed_enable) {
+        psasData.pitch.stability *= getTpaFactor(pidProfile, FD_PITCH, TERM_D) * psasRuntime.pitch_stability_speed_scale;
+    }
 
     psasData.pitch.Sum = psasData.pitch.pilot + psasData.pitch.damping + psasData.pitch.stability;
 
@@ -320,14 +333,20 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Pilot roll control
     // The positive stick and servos deflection gives positive roll rotation (on the right side)
     const float maxRcRateRoll = MAX(getMaxRcRate(FD_ROLL), 1.0f);
-    psasData.roll.pilot = getSetpointRate(FD_ROLL) / maxRcRateRoll * (psasRuntime.stick_gain[FD_ROLL]);
+    psasData.roll.pilot = getSetpointRate(FD_ROLL) / maxRcRateRoll * psasRuntime.stick_gain[FD_ROLL];
+    if (pidProfile->psas_stick_speed_enable[FD_ROLL]) {
+        psasData.roll.pilot *= getTpaFactor(pidProfile, FD_ROLL, TERM_D) * psasRuntime.stick_speed_scale[FD_ROLL];
+    }
 
     // Plane roll damping improvement
     // On the positive roll gyro rotation (on the right side direction) it needs to turn plane on the left, therefore it needs to use negative sign
     if (!gyroOverflowDetected()) {
-        psasData.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * (psasRuntime.damping_gain[FD_ROLL]);
+        psasData.roll.damping = -1.0f * gyro.gyroADCf[FD_ROLL] * psasRuntime.damping_gain[FD_ROLL];
     } else {
         psasData.roll.damping = 0.0f;
+    }
+    if (pidProfile->psas_damping_speed_enable[FD_ROLL]) {
+        psasData.roll.damping *= getTpaFactor(pidProfile, FD_ROLL, TERM_D) * psasRuntime.damping_speed_scale[FD_ROLL];
     }
 
     psasData.roll.Sum = psasData.roll.pilot + psasData.roll.damping;
@@ -337,16 +356,22 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     // Pilot yaw control
     // The positive rudder deflection gives positive yaw rotation (the nose moves to the left side)
     const float maxRcRateYaw = MAX(getMaxRcRate(FD_YAW), 1.0f);
-    psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * (psasRuntime.stick_gain[FD_YAW]);
+    psasData.yaw.pilot = getSetpointRate(FD_YAW) / maxRcRateYaw * psasRuntime.stick_gain[FD_YAW];
+    if (pidProfile->psas_stick_speed_enable[FD_YAW]) {
+        psasData.yaw.pilot *= getTpaFactor(pidProfile, FD_YAW, TERM_D) * psasRuntime.stick_speed_scale[FD_YAW];
+    }
 
     // Plane yaw damping improvement
     float gyroYaw = !gyroOverflowDetected() ? gyro.gyroADCf[FD_YAW] : 0.0f;
     if (pidProfile->psas_yaw_damping_filter_freq != 0) {
         float gyroYawLow = pt1FilterApply(&psasYawDampingLowpass, gyroYaw);
-        gyroYaw -= gyroYawLow;      // Damping the yaw gyro high freq part only
+        gyroYaw -= gyroYawLow; // Damping the yaw gyro high freq part only
     }
     // On the positive yaw gyro rotation (left side direction) it needs to turn nose on the right, therefore it needs to use negative sign
-    psasData.yaw.damping = -gyroYaw * (psasRuntime.damping_gain[FD_YAW]);
+    psasData.yaw.damping = -gyroYaw * psasRuntime.damping_gain[FD_YAW];
+    if (pidProfile->psas_damping_speed_enable[FD_YAW]) {
+        psasData.yaw.damping *= getTpaFactor(pidProfile, FD_YAW, TERM_D) * psasRuntime.damping_speed_scale[FD_YAW];
+    }
 
     // Plane yaw stability improvement
     float accelYFiltered = 0.0f;
@@ -360,6 +385,9 @@ static void FAST_CODE_NOINLINE psasUpdate(const pidProfile_t *pidProfile)
     }
     // On the positive accel Y value (left side direction) it needs to turn nose on the right, therefore it needs to use negative sign
     psasData.yaw.stability = -accelYFiltered * psasRuntime.yaw_stability_gain;
+    if (pidProfile->psas_yaw_stability_speed_enable) {
+        psasData.yaw.stability *= getTpaFactor(pidProfile, FD_PITCH, TERM_D) * psasRuntime.yaw_stability_speed_scale;
+    }
 
     // The roll rotation to yaw channel cross link to improve roll rotation on the high angle of attack flight
     // On the right roll rotation it needs the nose on the right yaw rotation, therefore it needs to use negative sign

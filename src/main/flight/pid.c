@@ -267,18 +267,46 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [FD_PITCH] = 100,
             [FD_YAW] = 100,
         },
+        // Enable SPA for stick gain
+        .psas_stick_speed_enable = {
+            [FD_ROLL] = 0,
+            [FD_PITCH] = 0,
+            [FD_YAW] = 0,
+        },
+        // SPA scale for stick gain
+        .psas_stick_speed_scale = {
+            [FD_ROLL] = 100,
+            [FD_PITCH] = 100,
+            [FD_YAW] = 100,
+        },
         // Percent control range addition by 1 degree per second angle rate * 1000
         .psas_damping_gain = {
             [FD_ROLL] = 20,
             [FD_PITCH] = 50,
             [FD_YAW] = 50,
         },
+        // Enable SPA for damping gain
+        .psas_damping_speed_enable = {
+            [FD_ROLL] = 0,
+            [FD_PITCH] = 0,
+            [FD_YAW] = 0,
+        },
+        // SPA scale for damping gain
+        .psas_damping_speed_scale = {
+            [FD_ROLL] = 100,
+            [FD_PITCH] = 100,
+            [FD_YAW] = 100,
+        },
         .psas_pitch_damping_filter_freq = 30,  // pitch damping filter cut freq 0.3Hz (Tf=0.531s)
         .psas_accel_z_filter_freq = 30,        // accel Z filter cut freq Hz * 10, 3Hz
         .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *10
+        .psas_pitch_stability_speed_enable = 0,  // enable SPA for pitch stability gain
+        .psas_pitch_stability_speed_scale = 100, // SPA scale for pitch stability gain
         .psas_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
         .psas_accel_y_filter_freq = 10,        // accel Y filter cut freq Hz * 10, 1Hz
         .psas_yaw_stability_gain = 25,         // percent control by 1g Y accel change *10
+        .psas_yaw_stability_speed_enable = 0,    // enable SPA for yaw stability gain
+        .psas_yaw_stability_speed_scale = 100,   // SPA scale for yaw stability gain
         .psas_pitch_accel_p_gain = 0,          // elevator for 1g Z accel difference in % *10
         .psas_pitch_accel_i_gain = 0,          // elevator speed for 1g Z accel difference in %/sec
         .psas_pitch_accel_max = 40,            // maximal positive Z accel value *10
@@ -983,7 +1011,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
 
