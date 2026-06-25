@@ -438,11 +438,33 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 
 #ifdef USE_CHIRP
     // Visual info that chirp excitation is finished
-    if (pidChirpIsFinished()) {
-        tfp_sprintf(warningText, "CHIRP EXC FINISHED");
-        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
-        *blinking = true;
-        return;
+    if (pidChirpGetRepeatTotal() <= 1) {
+        if (pidChirpIsFinished()) {
+            tfp_sprintf(warningText, "CHIRP EXC FINISHED");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+    } else {
+        if (pidChirpSeriesIsFinished()) {
+            tfp_sprintf(warningText, "CHIRP %u/%u FINISHED",
+                        pidChirpGetRepeatCurrent(),
+                        pidChirpGetRepeatTotal());
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+        if (pidChirpIsFinished()) {
+            static const char axisChar[] = "RPY";
+            const uint8_t justDone = pidChirpGetRepeatCurrent() - 1;
+            tfp_sprintf(warningText, "CHIRP %c %u/%u DONE",
+                        axisChar[pidChirpGetChirpAxis()],
+                        justDone,
+                        pidChirpGetRepeatTotal());
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = false;
+            return;
+        }
     }
 #endif // USE_CHIRP
 
