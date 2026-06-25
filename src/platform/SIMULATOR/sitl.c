@@ -304,7 +304,11 @@ static void updateState(const fdm_packet* pkt)
 
     x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
     y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#if ENABLE_GAZEBO_BRIDGE
+    z = constrain(pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#else
     z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
+#endif
     virtualGyroSet(virtualGyroDev, x, y, z);
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
