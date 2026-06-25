@@ -102,8 +102,8 @@ TEST(IoSerialTest, TestPassthroughEscape)
     serialPort_t left = {}, right = {};
     right.identifier = SERIAL_PORT_UART1;   // non-USB host -> "+++" escape enabled
     hostPort = &right;
+    fakeMillis = 0;
     plusToSend = 3;
-
     // when "+++" arrives after an idle gap, then it must reboot out of passthrough
     EXPECT_THROW(serialPassthrough(&left, &right, NULL, NULL), ResetCalled);
 }
