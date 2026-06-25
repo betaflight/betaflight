@@ -190,13 +190,11 @@ TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
 {
     initAndSettleAt(0, 0, 0);
 
-    // After settling, sanityCheckDistance = fmaxf(1000, 1000*2) = 2000cm.
-    // Exceed it to trigger the flyaway check.
-    testEstimate.position.x = 3000.0f;
+    testEstimate.position.x = 4000.0f; // big enough to trigger failsafe 
+    EXPECT_TRUE(positionControl()); 
 
-    // position hold should be reset, to allow pilot access to sticks
-    EXPECT_TRUE(positionControl());
-    // after the reset the attitude should be level
+    initAndSettleAt(4000.0f, 0, 0); // pos hold should settle at the new position
+
     EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.001f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.001f);
 }

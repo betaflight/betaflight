@@ -379,8 +379,10 @@ bool positionControl(void)
                 distanceError[EF_NORTH] = targetPosition[EF_NORTH] - est->position.v[ENU_N];
                 const float errorDistanceCm = sqrtf((distanceError[EF_EAST] * distanceError[EF_EAST]) + (distanceError[EF_NORTH] * distanceError[EF_NORTH]));
                 if (errorDistanceCm > ap.sanityCheckDistance) {
-                resetPositionControl(POSHOLD_TASK_RATE_HZ);  // let pilot use sticks to bring it back -  maybe enter failsafe mode?
-                // was return(false) which meant that the pilot could not use sticks and craft was stuck current attitude, not stopping a flyaway
+                updatePositionHoldTarget(est);
+                    resetPositionControl(POSHOLD_TASK_RATE_HZ); //re-enable position hold
+                    // allows pilot use sticks to bring it back -  maybe enter failsafe mode?
+                    // was return(false) which meant that the pilot could not use sticks and craft was stuck current attitude, not stopping a flyaway
             }
         }
     }
