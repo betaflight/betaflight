@@ -296,6 +296,7 @@ TEST(VtxTest, ArmedLocksBandAndChannelButNotPower)
     // when armed
     ENABLE_ARMING_FLAG(ARMED);
     vtxUpdateActivatedChannel();
+    DISABLE_ARMING_FLAG(ARMED);  // restore global state so later/shuffled tests don't inherit it
 
     // expect — band/channel locked out, power still applied
     EXPECT_EQ(0, vtxSettingsConfig()->band);
