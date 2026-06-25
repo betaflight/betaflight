@@ -106,6 +106,7 @@ static float throttleOut = 0.0f;
 // defined in common/axis.h alongside the other earth-frame axis enums.
 
 static float targetPosition[EF_AXIS_COUNT];
+static float posHoldStartPosition[EF_AXIS_COUNT];
 static float distanceError[EF_AXIS_COUNT]; // deviation from intended position
 static float distanceErrorIntegral[EF_AXIS_COUNT]; // integral of position error
 static bool isPosHoldStarting[EF_AXIS_COUNT] = { false, false }; // to adjust pids while stopping before posHold
@@ -146,6 +147,8 @@ static void updatePositionHoldTarget(const positionEstimate3d_t *est)
 {
     targetPosition[EF_EAST]  = est->position.v[ENU_E];
     targetPosition[EF_NORTH] = est->position.v[ENU_N];
+    posHoldStartPosition[EF_EAST]  = est->position.v[ENU_E];
+    posHoldStartPosition[EF_NORTH] = est->position.v[ENU_N];
 }
 
 void autopilotInit(void)
@@ -375,10 +378,10 @@ bool positionControl(void)
                 initialVelocity[EF_NORTH]  = velocity[EF_NORTH]; 
             } else {
                 // in posHold
-                distanceError[EF_EAST]  = targetPosition[EF_EAST] - est->position.v[ENU_E];
-                distanceError[EF_NORTH] = targetPosition[EF_NORTH] - est->position.v[ENU_N];
-                const float errorDistanceCm = sqrtf((distanceError[EF_EAST] * distanceError[EF_EAST]) + (distanceError[EF_NORTH] * distanceError[EF_NORTH]));
-                if (errorDistanceCm > ap.sanityCheckDistance) {
+                const float sanityDistanceEast = posHoldStartPosition[EF_EAST] - est->position.v[ENU_E];
+                const float sanityDistanceNorth = posHoldStartPosition[EF_NORTH] - est->position.v[ENU_N];
+                const float sanityDistanceCm = sqrtf((sanityDistanceEast * sanityDistanceEast) + (sanityDistanceNorth * sanityDistanceNorth));
+                if (sanityDistanceCm > ap.sanityCheckDistance) {
                 updatePositionHoldTarget(est);
                     resetPositionControl(POSHOLD_TASK_RATE_HZ); //re-enable position hold
                     // allows pilot use sticks to bring it back -  maybe enter failsafe mode?
@@ -416,7 +419,7 @@ bool positionControl(void)
                 // finalise the target position for this axis to the current position
                 targetPosition[axis] = currentPosition;
             }
-        } else {
+        } else if (isPositionHeld) {
             // stopping is complete for this axis, undo the ramped up D smoothly
             dTermRamp[axis] += (1.0f - dTermRamp[axis]) * 0.1f;
             if (fabsf(dTermRamp[axis] - 1.0f) < 0.01f) {
