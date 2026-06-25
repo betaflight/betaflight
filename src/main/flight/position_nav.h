@@ -32,8 +32,8 @@ typedef struct positionNavCommand_s {
     bool completed;
     bool completionSignalled;
 
-    vector3_t targetPosEfM;         // target position, metres, ENU (x=east, y=north, z=up)
-    bool includeAltitude;           // when false, z is ignored for nav, arrival, and alt coupling
+    vector3_t targetPosEfM;         // target position, metres, ENU (index by ENU_E/ENU_N/ENU_U)
+    bool includeAltitude;           // when false, ENU_U is ignored for nav, arrival, and alt coupling
 
     float cruiseSpeedMps;           // maximum cruise speed (m/s)
     float acceptanceRadiusM;        // arrival zone radius (metres)

@@ -97,12 +97,13 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     vector2_t enuCm;
     GPS_distance2d(&origin, &wpLoc, &enuCm);
 
-    out->x = enuCm.x * 0.01f;
-    out->y = enuCm.y * 0.01f;
+    // enuCm is a 2-axis horizontal earth-frame vector (efAxis_e); out is 3-axis ENU.
+    out->v[ENU_E] = enuCm.v[EF_EAST] * 0.01f;
+    out->v[ENU_N] = enuCm.v[EF_NORTH] * 0.01f;
     // Waypoint altitude is AMSL (GPS frame); the estimator's Z is zeroed to
     // whichever source armed it first (baro or GPS). zBiasM is the estimator
-    // reading at engage time, which aligns the target Z with the feedback Z.
-    out->z = (wp->altitude - origin.altCm) * 0.01f + fp.zBiasM;
+    // reading at engage time, which aligns the target Up with the feedback Up.
+    out->v[ENU_U] = (wp->altitude - origin.altCm) * 0.01f + fp.zBiasM;
     return true;
 }
 
@@ -187,11 +188,11 @@ static bool dispatchWaypoint(void)
     if (fp.delayActive) {
         const float delaySec = fp.delayDurationDs * 0.1f;
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        const vector3_t legVec = {
-            .x = targetEnuM.x - est->position.x * 0.01f,
-            .y = targetEnuM.y - est->position.y * 0.01f,
-            .z = targetEnuM.z - est->position.z * 0.01f,
-        };
+        const vector3_t legVec = {.v = {
+            [ENU_E] = targetEnuM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
+            [ENU_N] = targetEnuM.v[ENU_N] - est->position.v[ENU_N] * 0.01f,
+            [ENU_U] = targetEnuM.v[ENU_U] - est->position.v[ENU_U] * 0.01f,
+        }};
         const float legLenM = vector3Norm(&legVec);
         if (delaySec > 0.0f && legLenM > 0.1f) {
             const float scaledMps = MAX(FP_DELAY_MIN_CRUISE_MPS, legLenM / delaySec);
