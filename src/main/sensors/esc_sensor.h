@@ -25,7 +25,7 @@
 typedef struct escSensorConfig_s {
     uint8_t halfDuplex;             // Set to false to listen on the TX pin for telemetry data
     uint16_t offset;                // offset consumed by the flight controller / VTX / cam / ... in milliampere
-
+    int8_t esc_sensor_uart;         // serialPortIdentifier_e; SERIAL_PORT_NONE = unassigned
 } escSensorConfig_t;
 
 PG_DECLARE(escSensorConfig_t, escSensorConfig);
