@@ -71,8 +71,14 @@ static DMA_DATA_ZERO_INIT uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
  * The tail is advanced once a write is complete up to the location behind head. The tail is advanced
  * by a callback from the FLASH write routine. This prevents data being overwritten whilst a write is in progress.
  */
-static uint8_t bufferHead = 0;
-static volatile uint8_t bufferTail = 0;
+// Type-wide enough to index FLASHFS_WRITE_BUFFER_SIZE; bumped from uint8_t when
+// the buffer was 128 B to uint16_t now that USE_BLACKBOX_RING_LOG grows it to
+// several KB. Compile-time guard so a future bump past 64 KB fails loudly
+// instead of silently wrapping the indices in flashfsAdvanceTailInBuffer /
+// flashfsWriteByte.
+static uint16_t bufferHead = 0;
+static volatile uint16_t bufferTail = 0;
+STATIC_ASSERT(FLASHFS_WRITE_BUFFER_SIZE < 0x10000u, flashfs_write_buffer_too_large_for_uint16_index);
 
 /* Track if there is new data to write. Until the contents of the buffer have been completely
  * written flashfsFlushAsync() will be repeatedly called. The tail pointer is only updated
@@ -85,6 +91,28 @@ static volatile bool dataWritten = true;
 
 // The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
+
+// Optional ring-mode wrap. When wrapEndAddress != UINT32_MAX, sequential writes whose
+// tailAddress is inside [wrapStartAddress, wrapEndAddress) will have their post-write
+// tailAddress folded back to the start of the ring once it reaches wrapEndAddress.
+// Linear mode leaves these at their disabled defaults so the wrap branch in the write
+// callback is never taken. Set/cleared by USE_BLACKBOX_RING_LOG via the public
+// flashfsSetRing()/flashfsClearRing() API.
+//
+// The "started inside the ring" gate matters because the same flashfs instance is also
+// used to write into the header buffer area (which sits past wrapEndAddress in linear
+// flash address space). Writes positioned outside the ring must advance linearly, not
+// wrap.
+static uint32_t wrapStartAddress = 0;
+static uint32_t wrapEndAddress = UINT32_MAX;
+
+// Captured wrap end at the moment of the first wrap fire. Once non-zero, the ring has
+// looped back to its start at least once and every byte in [wrapStartAddress, this)
+// holds log data. flashfsGetOffset() uses it to keep its "bytes stored" contract
+// monotonic across the wrap (callers like MSP_DATAFLASH_SUMMARY would otherwise see
+// the value collapse to ~0 once tailAddress folds back). Cleared on full-erase, not
+// on flashfsClearRing — leaving a ring-mode session doesn't un-fill the chip.
+static uint32_t ringFullSize = 0;
 
 #ifdef USE_FLASH_TEST_PRBS
 // Write an incrementing sequence of bytes instead of the requested data and verify
@@ -157,6 +185,20 @@ static bool flashfsBufferIsEmpty(void)
     return bufferTail == bufferHead;
 }
 
+// Public predicate for callers that need to know whether a sync flash transaction
+// would run quickly (no pending RAM-buffer pages to drain AND the chip is idle).
+// Used by flashfs_log's non-blocking lap-marker persist path to avoid stalling
+// the FC loop on a busy chip or a full write buffer.
+bool flashfsIsIdle(void)
+{
+    // Reuse flashfsIsReady() rather than the bare flashIsReady() so an in-flight
+    // async erase keeps idle == false. flashIsReady() can transiently return true
+    // between sector-erase commands inside flashfsEraseAsync's loop, which would
+    // otherwise let callers (notably flashfs_log's persistLappedMarkerIfReady)
+    // sneak a write in mid-erase.
+    return flashfsBufferIsEmpty() && flashfsIsReady();
+}
+
 static void flashfsSetTailAddress(uint32_t address)
 {
     tailAddress = address;
@@ -179,6 +221,10 @@ void flashfsEraseCompletely(void)
     flashfsClearBuffer();
 
     flashfsSetTailAddress(0);
+
+    // Chip is being wiped — any prior ring-wrap signal no longer reflects on-flash
+    // state. Reset so flashfsGetOffset() reports 0 again.
+    ringFullSize = 0;
 }
 
 /**
@@ -230,6 +276,34 @@ bool flashfsIsSupported(void)
 uint32_t flashfsGetSize(void)
 {
     return flashfsSize;
+}
+
+uint16_t flashfsGetMaxSustainedLogRateHz(void)
+{
+    // Driver populates geometry.maxSustainedLogRateHz from chip-family knowledge
+    // (sector size × erase time × safety margin). 0 means the driver hasn't set
+    // a value yet — fall back to the conservative compile-time default so unknown
+    // chips don't accidentally run at an unsafe rate.
+    const flashGeometry_t *g = flashGetGeometry();
+    const uint16_t driverCap = (g && g->maxSustainedLogRateHz > 0)
+        ? g->maxSustainedLogRateHz
+        : FLASHFS_DEFAULT_MAX_SUSTAINED_LOG_RATE_HZ;
+
+#if defined(FLASHFS_RING_MCU_CAP_HZ) && (FLASHFS_RING_MCU_CAP_HZ > 0)
+    // Apply the MCU-level cap (see flashfs.h for the per-MCU table) to NOR
+    // chips only. The MCU cap reflects (a) the target board's PID-loop budget
+    // and (b) the buffer-size choice for that MCU. NAND chips have such fast
+    // block erase (~2 ms) that the per-erase buffer fill is < 1 KB at any
+    // realistic cap, so the MCU cap doesn't bind — let fast NAND run at the
+    // chip's full advertised rate (typically 8 kHz, naturally clamped by the
+    // PID-loop rate above).
+    if (g && g->flashType == FLASH_TYPE_NAND) {
+        return driverCap;
+    }
+    return (driverCap < FLASHFS_RING_MCU_CAP_HZ) ? driverCap : FLASHFS_RING_MCU_CAP_HZ;
+#else
+    return driverCap;
+#endif
 }
 
 static uint32_t flashfsTransmitBufferUsed(void)
@@ -290,8 +364,26 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
  */
 static void flashfsWriteCallback(uintptr_t arg)
 {
-    // Advance the cursor in the file system to match the bytes we wrote
-    flashfsSetTailAddress(tailAddress + arg);
+    uint32_t newTail = tailAddress + arg;
+
+    // Ring-mode wrap. Only applies if the write *started* inside the configured ring;
+    // writes positioned past the ring (e.g. into the header buffer area) advance
+    // linearly. wrapEndAddress is asserted page-aligned in flashfsSetRing(), and
+    // flashPageProgramBegin bounds writes at page boundaries, so a single page write
+    // can land at most at wrapEndAddress (never strictly past it). The math here
+    // tolerates overshoot defensively.
+    if (tailAddress >= wrapStartAddress && tailAddress < wrapEndAddress
+            && newTail >= wrapEndAddress) {
+        newTail = wrapStartAddress + (newTail - wrapEndAddress);
+        // Capture ring capacity (NOT the absolute end address) on the first wrap,
+        // so flashfsGetOffset can report a stable "bytes ever stored" once the
+        // tailAddress is no longer monotonic. The capacity form (end - start) is
+        // correct for any wrapStartAddress; the current ring-log caller happens
+        // to pass start=0 so the two values coincide today.
+        if (ringFullSize == 0) ringFullSize = wrapEndAddress - wrapStartAddress;
+    }
+
+    flashfsSetTailAddress(newTail);
 
     // Free bytes in the ring buffer
     flashfsAdvanceTailInBuffer(arg);
@@ -371,10 +463,33 @@ static bool flashfsNewData(void)
 }
 
 /**
- * Get the current offset of the file pointer within the volume.
+ * Get the logical used size of the volume.
+ *
+ * In linear mode this is the current write tail address plus any bytes still in
+ * the RAM buffer — effectively a "bytes ever stored" counter that callers can
+ * also treat as the next write position.
+ *
+ * In ring mode (USE_BLACKBOX_RING_LOG, after the writer has wrapped at least
+ * once and `ringFullSize` is non-zero), the physical tail address has folded
+ * back to the ring start and is no longer monotonic. To preserve the public
+ * "bytes stored" contract for callers like MSP_DATAFLASH_SUMMARY and the OSD
+ * storage gauge, this function returns `ringFullSize` (the captured ring
+ * capacity at the moment of the first wrap). Callers must NOT use the returned
+ * value as a seek offset once that branch is active — it's a usage report,
+ * not a file pointer.
  */
 uint32_t flashfsGetOffset(void)
 {
+    // Once the ring has wrapped, every byte in [wrapStartAddress, ringFullSize)
+    // holds log data. tailAddress has folded back to the ring start, so falling
+    // through to "tailAddress + buffered" would collapse the reported "bytes
+    // stored" to ~0 and break callers like MSP_DATAFLASH_SUMMARY / OSD storage
+    // gauge. Report the full ring size instead — the chip is, for practical
+    // purposes, full of log data.
+    if (ringFullSize != 0) {
+        return ringFullSize;
+    }
+
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
 
@@ -424,20 +539,88 @@ bool flashfsFlushAsync(bool force)
  */
 void flashfsFlushSync(void)
 {
-    uint8_t const * buffers[2];
-    uint32_t bufferSizes[2];
-    int bufCount;
+    // Each flashfsWriteBuffers() call programs at most one flash page (the underlying
+    // flashPageProgramContinue truncates buffers at the next page boundary), so a
+    // single flush only drains ~pageSize bytes — typically 256 B. With the ring-mode
+    // build's multi-KB write buffer, that left many pages still buffered after a
+    // "sync" flush, which broke callers that relied on the chip being fully drained
+    // (markBufferLapped's mid-session preamble update, flashfsSetRing /
+    // flashfsClearRing's wrap-config swap, etc — all could leave residual writes to
+    // complete under post-call state). Loop until the buffer is empty.
+    while (!flashfsBufferIsEmpty()) {
+        // Block until the previous page's DMA-TC callback has fired and advanced
+        // bufferTail. flashIsReady() inside flashfsWriteBuffers(sync=true) only
+        // gates on the chip's BUSY flag — the write callback (which mutates
+        // bufferTail / sets dataWritten) is queued at TC IRQ and may not have run
+        // yet. Without this gate, the next iteration captures (buffer, size) via
+        // flashfsGetDirtyDataBuffers() using a stale bufferTail and re-programs
+        // bytes that were just drained. flashfsFlushAsync already uses this same
+        // guard via flashfsNewData().
+        while (!flashfsNewData()) { /* spin until prior write callback fired */ }
 
-    if (flashfsBufferIsEmpty()) {
-        return; // Nothing to flush
-    }
-
-    bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
-    if (bufCount) {
-        flashfsWriteBuffers(buffers, bufferSizes, bufCount, true);
+        uint8_t const * buffers[2];
+        uint32_t bufferSizes[2];
+        int bufCount = flashfsGetDirtyDataBuffers(buffers, bufferSizes);
+        if (!bufCount) break;
+        const uint32_t written = flashfsWriteBuffers(buffers, bufferSizes, bufCount, true);
+        if (written == 0) break;  // chip refused (e.g. EOF in linear mode); avoid spin
     }
 
     while (!flashIsReady());
+}
+
+/**
+ * Configure ring-mode wrap. After this, sequential writes whose tail is inside the
+ * ring [startAddress, endAddress) will fold their post-write tail back to startAddress
+ * once it reaches endAddress, instead of advancing past it. Writes positioned outside
+ * the ring (e.g. into the header buffer area) are unaffected.
+ *
+ * endAddress must be page-aligned so a single page write can land at it but never
+ * cross it; this is checked at runtime.
+ */
+void flashfsSetRing(uint32_t startAddress, uint32_t endAddress)
+{
+    // endAddress must be page-aligned, otherwise a page-program could span the wrap
+    // boundary and overshoot into the post-ring region (e.g. the header buffer area)
+    // before the wrap callback fires.
+    const uint32_t pageSize = flashGeometry->pageSize;
+    if ((endAddress & (pageSize - 1)) != 0) {
+        return; // misconfigured caller; refuse to enable rather than corrupt later
+    }
+    // Range sanity: refuse to enable if the ring is empty (start >= end) or
+    // would extend past the end of the partition. Either case would silently
+    // mis-fold the writer's tailAddress and could land writes in the wrong
+    // physical region.
+    if (startAddress >= endAddress) return;
+    if (endAddress > flashfsSize) return;
+    // Drain any in-flight page program before swapping wrap addresses, so any
+    // already-submitted write completes its callback against the OLD wrap config.
+    // If we updated wrapStartAddress / wrapEndAddress while the chip was still
+    // busy, the post-write tailAddress fold could mix old and new bounds.
+    flashfsFlushSync();
+    // Only reset ringFullSize when the ring geometry actually changes. Re-enabling
+    // the same [start, end) range across sessions (the common case) must preserve
+    // the prior capacity so flashfsGetOffset keeps reporting "chip is full" — once
+    // the ring has wrapped at least once, every byte from start to end holds log
+    // data, regardless of which session put it there. The reset only fires when a
+    // future caller actually resizes the ring without an intervening full erase.
+    if (wrapStartAddress != startAddress || wrapEndAddress != endAddress) {
+        ringFullSize = 0;
+    }
+    wrapStartAddress = startAddress;
+    wrapEndAddress = endAddress;
+}
+
+/**
+ * Disable ring-mode wrap. Writes resume linear advancement.
+ */
+void flashfsClearRing(void)
+{
+    // Same drain rationale as flashfsSetRing — let any in-flight write finish
+    // under the old (ring-enabled) wrap config before exposing the disabled state.
+    flashfsFlushSync();
+    wrapStartAddress = 0;
+    wrapEndAddress = UINT32_MAX;
 }
 
 /**
@@ -512,6 +695,30 @@ void flashfsWrite(const uint8_t *data, unsigned int len, bool sync)
     // Buffer up the data the user supplied instead of writing it right away
     for (unsigned int i = 0; i < len; i++) {
         flashfsWriteByte(data[i]);
+    }
+
+    // Wait for any flashfsWriteByte-triggered auto-flush to land its DMA-TC callback
+    // before we snapshot the buffer below. Without this, the snapshot can describe
+    // bytes that are currently in-flight to the chip (bufferTail hasn't advanced
+    // yet), and the subsequent flashfsWriteBuffers call programs THOSE SAME BYTES
+    // again at the post-callback tailAddress — corrupting flash with a duplicate of
+    // the just-written chunk one page-write past the intended location, and leaving
+    // bufferTail past bufferHead so every following write/flush operates on a
+    // permanently broken buffer state. This was the root cause of the ring-mode
+    // header copy producing mirrored chunks of header text instead of sequential
+    // bytes, observed first on F722 + W25Q256 NOR.
+    //
+    // For sync=true callers (writeBytesSync, CLI dataflash dump): block-wait, since
+    // they expect the data on flash by return. For sync=false callers (linear-mode
+    // blackbox hot path): just skip the end-of-call flush — flashfsFlushAsync will
+    // be called again from blackboxDeviceFlush() / the next write and will pick up
+    // the buffered bytes once the chip is idle. Dropping the flush in this case is
+    // safe because flashfsWriteByte's per-byte auto-flush already issued the
+    // primary write of the threshold-crossing data.
+    if (sync) {
+        while (!flashfsNewData()) { /* wait for prior write callback */ }
+    } else if (!flashfsNewData()) {
+        return;
     }
 
     // There could be two dirty buffers to write out already:
