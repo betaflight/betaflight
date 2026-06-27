@@ -7,11 +7,11 @@
 DEFAULT_OUTPUT := bin
 
 # Emit a bootable ESP-IDF application image (via esptool elf2image) instead of a
-# raw objcopy dump, which with the split IROM/DROM layout would be enormous,
-# then assemble a single full-flash image (bootloader + partition table + app)
-# for one-step flashing. The bootloader is built from source by default; see
-# tools.mk (ESP_BOOTLOADER_FROM_SOURCE) and bin/README.md.
-BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE) && $(ESP_FLASH_IMAGE_CMD)
+# raw objcopy dump, which with the split IROM/DROM layout would be enormous, into
+# a temporary _tmp.bin, then merge bootloader + partition table + app into the
+# final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp. The
+# bootloader is built from source by default; see tools.mk and bin/README.md.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
 
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
@@ -57,7 +57,9 @@ DEVICE_FLAGS += \
             -DESP32S3 \
             -DESP32
 
-MCU_FLASH_SIZE := 8192
+# Family default; target.mk / a per-board config.mk may set it first (?= so an
+# earlier override such as CUSTS3AIO's 4 MB N4R2 module is preserved).
+MCU_FLASH_SIZE ?= 8192
 
 LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
 

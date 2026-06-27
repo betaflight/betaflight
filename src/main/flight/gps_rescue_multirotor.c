@@ -517,16 +517,17 @@ static void sensorUpdate(bool newGpsData)
 
     if (useEstXY) {
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        rescueState.sensor.distanceToHomeCm = hypotf(est->position.x, est->position.y);
+        rescueState.sensor.distanceToHomeCm = hypotf(est->position.v[ENU_E], est->position.v[ENU_N]);
         rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm * 0.01f;
-        rescueState.sensor.directionToHome = rescueBearingToHomeDecideg(est->position.x, est->position.y);
-        rescueState.sensor.groundSpeedCmS = hypotf(est->velocity.x, est->velocity.y);
+        rescueState.sensor.directionToHome = rescueBearingToHomeDecideg(est->position.v[ENU_E], est->position.v[ENU_N]);
+        rescueState.sensor.groundSpeedCmS = hypotf(est->velocity.v[ENU_E], est->velocity.v[ENU_N]);
         const float distCm = rescueState.sensor.distanceToHomeCm;
         if (distCm > 10.0f) {
             const float invDist = 1.0f / distCm;
-            const float ux = -est->position.x * invDist;
-            const float uy = -est->position.y * invDist;
-            rescueState.sensor.velocityToHomeCmS = est->velocity.x * ux + est->velocity.y * uy;
+            // Unit vector from craft toward home (negated position), ENU horizontal.
+            const float uEast  = -est->position.v[ENU_E] * invDist;
+            const float uNorth = -est->position.v[ENU_N] * invDist;
+            rescueState.sensor.velocityToHomeCmS = est->velocity.v[ENU_E] * uEast + est->velocity.v[ENU_N] * uNorth;
         } else {
             rescueState.sensor.velocityToHomeCmS = 0.0f;
         }
