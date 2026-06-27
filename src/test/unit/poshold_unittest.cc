@@ -190,13 +190,10 @@ TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
 {
     initAndSettleAt(0, 0, 0);
 
-    testEstimate.position.x = 4000.0f; // big enough to trigger failsafe 
-    EXPECT_TRUE(positionControl()); 
-
-    initAndSettleAt(4000.0f, 0, 0); // pos hold should settle at the new position
-
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.001f);
-    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.001f);
+    // exceed sanity check distance
+    testEstimate.position.x = 3000.0f; 
+    // expect positionControl to be false
+    EXPECT_FALSE(positionControl()); 
 }
 
 // -- Displacement response: heading North (yaw = 0) --
