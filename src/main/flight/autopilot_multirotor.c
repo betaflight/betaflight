@@ -428,6 +428,7 @@ bool positionControl(void)
         if (ap.navActive) {
             distanceError.v[axis] += velocityError.v[axis] * dt; 
         } else if (!isPositionHeld) {
+            // sticks active
             distanceErrorIntegral.v[axis] *= 0.99f;
             distanceError.v[axis] = 0.0f;
         }

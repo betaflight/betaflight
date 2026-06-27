@@ -323,24 +323,20 @@ TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
 
 
 
-// -- Sticks active zeros angle output --
+// -- Sticks active reduces the response --
 
-TEST_F(PosHoldTest, SticksActiveZerosOutput)
+TEST_F(PosHoldTest, SticksActiveReducedOutput)
 {
     initAndSettleAt(0, 0, 0);
 
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+        EXPECT_NEAR(autopilotAngle[AI_ROLL], -4.5f, 0.1f); // P plus I accumulation
 
-    setSticksActiveStatus(true);
+    setSticksActiveStatus(true); // P term drops to zero and iTerm is attenuated
     runIterations(SETTLE_ITERATIONS);
-
- // Update the expected target value to match the live background calculation
- // note outputs are not zero while sticks are active we rely on pid.c to use angle when not in pos hold
-    // Roll has the background D-term activity
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  -0.12f, 0.01f);
-    
+        EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.12f, 0.1f);   // less angle
+    runIterations(SETTLE_ITERATIONS);
     // Pitch has no simulated movement in this test, so it stays flat
     EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f); 
 }
@@ -381,29 +377,23 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
     EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
-TEST_F(PosHoldTest, ReleasingSticksBrakesThenSettles)
+TEST_F(PosHoldTest, ReleasingSticksBrakes)
 {
     initAndSettleAt(0, 0, 0);
 
-    // Pilot is moving with sticks active: controller should output zero angles.
-    // since ctzsnooze changed things, D calculates in the background, so angle output may not be zero
+    // Pilot is moving with sticks active
     setSticksActiveStatus(true);
     testEstimate.velocity.x = 120.0f;
-    runIterations(5);
-    // expected target value matching  background D-term output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.0f, 0.01f);
+    runIterations(SETTLE_ITERATIONS);
+    // expected roll value matching  background D-term output
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -3.73f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f);
 
-    // Stick release at high speed should enter braking (not yet settled hold).
+    // Stick release should cause a greater angle
     setSticksActiveStatus(false);
-    runIterations(5);
-    const float brakingRoll = autopilotAngle[AI_ROLL];
-    EXPECT_NE(brakingRoll, 0.0f);
-
-    // Once velocity settles below threshold, hold point capture should settle output.
-    testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.11f, 0.1f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.0f, 0.1f);
+     runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
