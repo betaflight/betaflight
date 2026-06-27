@@ -491,6 +491,11 @@ if (crashFlipModeActive) {
 
 void disarm(flightLogDisarmReason_e reason)
 {
+#if ENABLE_TELEMETRY_MAVLINK_COMMANDS
+    // Drop any MAVLink-commanded mode override so it can never persist into a
+    // disarmed state and re-assert modes on the next arm.
+    rcModeClearExternalOverrides();
+#endif
 
     if (!wasLastDisarmUserRequested()) {
         // Non-user disarm, clear the user-initated flag in rc_controls.c

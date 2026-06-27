@@ -362,6 +362,21 @@ uint8_t flightPlanNavGetCurrentIndex(void)
     return fp.currentIndex;
 }
 
+bool flightPlanNavSetCurrentIndex(uint8_t index)
+{
+    if (index >= flightPlanConfig()->waypointCount) {
+        return false;
+    }
+    fp.currentIndex = index;
+    clearModifierState();
+    // If a mission is running, jump immediately to the requested waypoint.
+    if (fp.active) {
+        fp.state = FP_NAV_IDLE;
+        dispatchWaypoint();
+    }
+    return true;
+}
+
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)
 {
     reachedListener = fn;
