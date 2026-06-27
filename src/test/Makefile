@@ -66,6 +66,13 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
+beeper_unittest_SRC := \
+		$(USER_DIR)/io/beeper.c
+
+beeper_unittest_DEFINES := \
+		USE_BEEPER= \
+		USE_DSHOT=
+
 compass_ist8310_unittest_SRC := \
 		$(USER_DIR)/drivers/compass/compass_ist8310.c
 

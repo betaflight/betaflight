@@ -208,13 +208,11 @@ static const void *cmsx_StorageDevice(displayPort_t *pDisplay, const void *ptr)
 #else
       int timezoneOffsetMinutes = 0;
 #endif
-      beeper(BEEPER_USB);
       systemResetToMsc(timezoneOffsetMinutes);
       return NULL;
     } else {
       displayWrite(pDisplay, 5, 3, DISPLAYPORT_SEVERITY_INFO, "STORAGE NOT PRESENT OR FAILED TO INITIALIZE!");
       displayRedraw(pDisplay);
-      beeper(BEEPER_USB);
       return MENU_CHAIN_BACK;
     }
 }
