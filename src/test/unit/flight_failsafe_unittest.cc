@@ -103,6 +103,14 @@ void deactivateBoxFailsafe()
     rcModeUpdate(&newMask);
 }
 
+void activateBoxFailsafeLand()
+{
+    boxBitmask_t newMask;
+    memset(&newMask, 0, sizeof(newMask));
+    bitArraySet(&newMask, BOXFAILSAFELAND);
+    rcModeUpdate(&newMask);
+}
+
 //
 // Stepwise tests
 //
@@ -708,6 +716,74 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
 
     // but now arming is possible
     EXPECT_FALSE(isArmingDisabled());
+}
+
+/****************************************************************************************/
+TEST(FlightFailsafeTest, TestEffectiveFailsafeProcedureRespectsOverrideBox)
+{
+    // given GPS Rescue configured and override switch OFF
+    configureFailsafe();
+    failsafeInit();
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
+    deactivateBoxFailsafe();
+
+    // expect the configured procedure
+    EXPECT_EQ(FAILSAFE_PROCEDURE_GPS_RESCUE, getEffectiveFailsafeProcedure());
+
+    // when override switch is flipped ON
+    activateBoxFailsafeLand();
+
+    // expect override forces AUTO_LANDING
+    EXPECT_EQ(FAILSAFE_PROCEDURE_AUTO_LANDING, getEffectiveFailsafeProcedure());
+
+    // and reverting the switch restores the configured procedure
+    deactivateBoxFailsafe();
+    EXPECT_EQ(FAILSAFE_PROCEDURE_GPS_RESCUE, getEffectiveFailsafeProcedure());
+}
+
+/****************************************************************************************/
+TEST(FlightFailsafeTest, TestFailsafeLandOverrideRedirectsGpsRescueToLanding)
+{
+    // given GPS Rescue is the configured procedure but override switch is ON
+    configureFailsafe();
+    failsafeInit();
+    failsafeConfigMutable()->failsafe_procedure = FAILSAFE_PROCEDURE_GPS_RESCUE;
+    failsafeConfigMutable()->failsafe_switch_mode = FAILSAFE_SWITCH_MODE_STAGE1;
+
+    DISABLE_ARMING_FLAG(ARMED);
+    resetCallCounters();
+    failsafeStartMonitoring();
+
+    ENABLE_ARMING_FLAG(ARMED);
+    throttleStatus = THROTTLE_HIGH;
+    activateBoxFailsafeLand();
+    failsafeOnValidDataReceived();
+
+    sysTickUptime = 0;
+    failsafeUpdateState();
+
+    // simulate Rx loss for the stage 1 duration
+    sysTickUptime += (failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND);
+    failsafeOnValidDataFailed();
+    failsafeUpdateState();
+
+    // exceed stage 1 by one tick
+    sysTickUptime++;
+    failsafeOnValidDataFailed();
+    failsafeUpdateState();
+
+    // override should have routed us to LANDING, not GPS rescue
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+
+    // releasing the override switch mid-failsafe must NOT change the active procedure;
+    // the helper must keep returning the value latched at stage 2 entry
+    deactivateBoxFailsafe();
+    failsafeUpdateState();
+
+    EXPECT_TRUE(failsafeIsActive());
+    EXPECT_EQ(FAILSAFE_LANDING, failsafePhase());
+    EXPECT_EQ(FAILSAFE_PROCEDURE_AUTO_LANDING, getEffectiveFailsafeProcedure());
 }
 
 // STUBS
