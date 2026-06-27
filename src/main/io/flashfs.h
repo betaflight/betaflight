@@ -54,7 +54,5 @@ bool flashfsIsSupported(void);
 
 bool flashfsIsReady(void);
 bool flashfsIsEOF(void);
-bool flashfsIsEraseInProgress(void);
 
 bool flashfsVerifyEntireFlash(void);
-
