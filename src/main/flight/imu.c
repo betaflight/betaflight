@@ -455,6 +455,15 @@ static float imuCalcGroundspeedGain(float dt)
     // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
     // ignored for wings because they typically are flat when flying and may fly forwards at negative angles.
     // In position hold the pilot may fly backwards.
+
+    // 5. Suppress GPS correction generally when a mag is present (favour Mag)
+    float MagSuppression = 1.0f;
+#ifdef USE_MAG
+    if (sensors(SENSOR_MAG) && compassIsHealthy()) {
+        MagSuppression = 0.1f; // 10x slower than without mag, needs strong fast forward flight to adjust mag heading to gps cog
+    }
+#endif
+
     float pitchSuppression = 1.0f;
     if (!isWing) {
         const float pitchAngle = attitude.values.pitch * .1f; // degrees, negative is backwards
@@ -462,7 +471,7 @@ static float imuCalcGroundspeedGain(float dt)
         pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
     }
 
-    return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression;
+    return speedBasedGain * stickSuppression * rollSuppression * pitchSuppression * MagSuppression;
 }
 
 // *** Calculate heading error derived from IMU heading vs GPS heading ***
@@ -697,7 +706,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
 
     // *** GPS COG based heading error estimate ***
-    // Computed regardless of mag presence: when a mag is also healthy both sources
+    // When a mag is also healthy, its contribution will be corrected by GPS, but not strongly
     // contribute simultaneously (their errors are summed in imuMahonyAHRSupdate).
     // groundspeedGain naturally weights the COG contribution (near-zero when hovering,
     // larger at speed), so the mag dominates at low speed and GPS COG supplements at
