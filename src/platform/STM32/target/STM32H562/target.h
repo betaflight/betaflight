@@ -46,9 +46,9 @@
 //#undef USE_FLASH_W25Q128FV
 //#undef USE_FLASH_PY25Q128HA
 
-#undef USE_TRANSPONDER
+//#undef USE_TRANSPONDER
 //#undef USE_SDCARD
-#undef USE_LED_STRIP
+//#undef USE_LED_STRIP
 //#undef USE_SOFTSERIAL
 //#undef USE_VCP
 //#undef USE_ESCSERIAL
@@ -78,8 +78,6 @@
 //#undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 //#undef USE_MOTOR
 //#undef USE_SERVO
-
-#define USE_VIRTUAL_GYRO
 
 #define USE_I2C_DEVICE_1
 #define USE_I2C_DEVICE_2
@@ -119,34 +117,44 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-//#define USE_BEEPER
-
-#if !defined(ENABLE_SDIO_INIT)
-#define ENABLE_SDIO_INIT 1
-#endif
-#if !defined(ENABLE_SDIO_PIN_CONFIG)
-#define ENABLE_SDIO_PIN_CONFIG 1
-#endif
+#define USE_BEEPER
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
 #define USE_SDCARD_SDIO
 #endif
 
+// Tie SDIO init/pin config to actually using SDIO. Otherwise the CLI
+// resourceTable[] keeps PG_SDIO_PIN_CONFIG entries, but pg/sdio.c is
+// gated on USE_SDCARD_SDIO so the PG never registers, and `dump`
+// faults inside printResource on a NULL pgFind() result.
+#ifdef USE_SDCARD_SDIO
+#if !defined(ENABLE_SDIO_INIT)
+#define ENABLE_SDIO_INIT 1
+#endif
+#if !defined(ENABLE_SDIO_PIN_CONFIG)
+#define ENABLE_SDIO_PIN_CONFIG 1
+#endif
+#endif
+
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
 //#define USE_SPI_DMA_ENABLE_LATE
 
-//#define USE_USB_DETECT
+#define USE_USB_DETECT
 
-//#define USE_ESCSERIAL
+#define USE_ESCSERIAL
 
 #define USE_ADC
 #define USE_EXTI
-//#define USE_TIMER_UP_CONFIG
+#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
-#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
-#define USE_LED_STRIP_CACHE_MGMT
+// CONFIG_IN_RAM bring-up needs more than the default 4 KiB to hold every PG that
+// gets compiled in for a 2 MiB flash target (VTX table alone is ~290 B). Bump to
+// 8 KiB so writeSettingsToEEPROM doesn't overrun eepromData[] and tear the
+// next-PG size field, which makes isEEPROMStructureValid() walk off the end.
+#ifndef EEPROM_SIZE
+#define EEPROM_SIZE 8192
 #endif

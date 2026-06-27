@@ -46,9 +46,9 @@
 //#undef USE_FLASH_W25Q128FV
 //#undef USE_FLASH_PY25Q128HA
 
-#undef USE_TRANSPONDER
+//#undef USE_TRANSPONDER
 //#undef USE_SDCARD
-#undef USE_LED_STRIP
+//#undef USE_LED_STRIP
 //#undef USE_SOFTSERIAL
 //#undef USE_VCP
 //#undef USE_ESCSERIAL
@@ -73,8 +73,6 @@
 //#undef USE_CLI
 //#undef USE_CAMERA_CONTROL
 //#undef USE_RX_PWM
-//#undef USE_LED_STRIP
-//#undef USE_TRANSPONDER
 //#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 //#undef USE_SERIAL_4WAY_SK_BOOTLOADER
 //#undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
@@ -119,7 +117,7 @@
 #define USE_I2C
 #define I2C_FULL_RECONFIGURABILITY
 
-//#define USE_BEEPER
+#define USE_BEEPER
 
 #ifdef USE_SDCARD
 #define USE_SDCARD_SPI
@@ -143,13 +141,13 @@
 #define SPI_FULL_RECONFIGURABILITY
 #define USE_SPI_DMA_ENABLE_LATE
 
-//#define USE_USB_DETECT
+#define USE_USB_DETECT
 
-//#define USE_ESCSERIAL
+#define USE_ESCSERIAL
 
 #define USE_ADC
 #define USE_EXTI
-//#define USE_TIMER_UP_CONFIG
+#define USE_TIMER_UP_CONFIG
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x2000) // 8K sectors
 
@@ -159,8 +157,4 @@
 // next-PG size field, which makes isEEPROMStructureValid() walk off the end.
 #ifndef EEPROM_SIZE
 #define EEPROM_SIZE 8192
-#endif
-
-#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
-#define USE_LED_STRIP_CACHE_MGMT
 #endif
