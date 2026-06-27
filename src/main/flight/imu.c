@@ -451,13 +451,12 @@ static float imuCalcGroundspeedGain(float dt)
     // for wings, which can't fly sideways, it can be wider
     const float rollSuppression = (absRollAngle < rollMax) ? (rollMax - absRollAngle) / rollMax : 0.0f;
 
-    // 4. attenuate heading correction by pitch angle, will be zero if flat or negative (ie flying tail first)
+    // 4. attenuate heading correction by pitch angle, no correction if flat or negative (e.g. when pitched back to fly tail first)
     // allow faster adaptation for quads at higher pitch angles; returns 1.0 at 45 degrees
-    // but not if a wing, because they typically are flat when flying.
-    // In position hold the autopilot controls pitch independently of forward flight intent,
-    // so do not suppress based on pitch angle - speed-based scaling already limits the contribution.
+    // ignored for wings because they typically are flat when flying and may fly forwards at negative angles.
+    // In position hold the pilot may fly backwards.
     float pitchSuppression = 1.0f;
-    if (!isWing && !FLIGHT_MODE(POS_HOLD_MODE)) {
+    if (!isWing) {
         const float pitchAngle = attitude.values.pitch * .1f; // degrees, negative is backwards
         pitchSuppression = pitchAngle / 45.0f; // 1.0 at 45 degrees, 2.0 at 90 degrees
         pitchSuppression = (pitchSuppression >= 0) ? pitchSuppression : 0.0f; // zero if flat or pitched backwards
