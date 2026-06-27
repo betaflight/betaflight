@@ -159,6 +159,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/airplane_sas.h"
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -1138,11 +1139,12 @@ static void osdElementFlymode(osdElementParms_t *element)
     // Note that flight mode display has precedence in what to display.
     //  1. FS
     //  2. GPS RESCUE
-    //  3. PASSTHRU
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  5. AIR
-    //  6. ACRO
-
+    //  3. HEADFREE_MODE
+    //  4. PASSTHRU,
+    //  5. PSAS
+    //  6. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
+    //  7. AIR
+    //  8. ACRO
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1151,6 +1153,10 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
+#ifdef USE_AIRPLANE_SAS
+    } else if (FLIGHT_MODE(AIRPLANE_SAS_MODE)) {
+        strcpy(element->buff, "PSAS");
+#endif
     } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
         strcpy(element->buff, "POSH");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
@@ -1890,6 +1896,26 @@ static void osdElementSys(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_AIRPLANE_SAS
+static void osdElementAoaLimiter(osdElementParms_t *element)
+{
+    switch (psasData.pitch.aoaLimiterState) {
+    case LIMITER_DISABLED:
+        element->drawElement = false;  // element does not need to be rendered
+        break;
+    case LIMITER_NOT_READY:
+        tfp_sprintf(element->buff, "%s", "AOA N/R");
+        break;
+    case LIMITER_ON:
+        tfp_sprintf(element->buff, "%s", "AOA ON");
+        break;
+    case LIMITER_ACTIVE:
+        tfp_sprintf(element->buff, "%s", "AOA!!!");
+        break;
+    }
+}
+#endif
+
 // Define the order in which the elements are drawn.
 // Elements positioned later in the list will overlay the earlier
 // ones if their character positions overlap
@@ -2154,6 +2180,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #if ENABLE_OSD_CUSTOM_TEXT
     [OSD_CUSTOM_SERIAL_TEXT]      = osdElementCustomSerialText,
 #endif
+#ifdef USE_AIRPLANE_SAS
+    [OSD_AOA_LIMITER]             = osdElementAoaLimiter,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2227,6 +2256,10 @@ void osdAddActiveElements(void)
 
 #ifdef USE_PERSISTENT_STATS
     osdAddActiveElement(OSD_TOTAL_FLIGHTS);
+#endif
+
+#ifdef USE_AIRPLANE_SAS
+    osdAddActiveElement(OSD_AOA_LIMITER);
 #endif
 }
 
