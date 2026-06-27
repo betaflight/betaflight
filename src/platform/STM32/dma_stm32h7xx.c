@@ -53,6 +53,17 @@ dmaChannelDescriptor_t dmaDescriptors[DMA_LAST_HANDLER] = {
     DEFINE_DMA_CHANNEL(DMA2, 5, 38),
     DEFINE_DMA_CHANNEL(DMA2, 6, 48),
     DEFINE_DMA_CHANNEL(DMA2, 7, 54),
+
+    // BDMA channels 0-7 (D3 domain, for SPI6, LPUART1, etc.)
+    // BDMA flags: 4 bits per channel (GIF, TCIF, HTIF, TEIF), flagsShift = channel * 4
+    DEFINE_BDMA_CHANNEL(0,  0),
+    DEFINE_BDMA_CHANNEL(1,  4),
+    DEFINE_BDMA_CHANNEL(2,  8),
+    DEFINE_BDMA_CHANNEL(3, 12),
+    DEFINE_BDMA_CHANNEL(4, 16),
+    DEFINE_BDMA_CHANNEL(5, 20),
+    DEFINE_BDMA_CHANNEL(6, 24),
+    DEFINE_BDMA_CHANNEL(7, 28),
 };
 
 /*
@@ -75,10 +86,26 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 6, DMA2_ST6_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
+/*
+ * BDMA IRQ Handlers (D3 domain)
+ */
+DEFINE_BDMA_IRQ_HANDLER(0, BDMA_CH0_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(1, BDMA_CH1_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(2, BDMA_CH2_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(3, BDMA_CH3_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(4, BDMA_CH4_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(5, BDMA_CH5_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(6, BDMA_CH6_HANDLER)
+DEFINE_BDMA_IRQ_HANDLER(7, BDMA_CH7_HANDLER)
+
 static void enableDmaClock(int index)
 {
-    RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ? RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
-    // There seems to be no explicit control for DMAMUX1 clocking
+    if (dmaDescriptors[index].dma == (void*)BDMA) {
+        RCC_ClockCmd(RCC_AHB4(BDMA), ENABLE);
+        // DMAMUX2 shares clock with BDMA (no separate enable needed)
+    } else {
+        RCC_ClockCmd(dmaDescriptors[index].dma == DMA1 ? RCC_AHB1(DMA1) : RCC_AHB1(DMA2), ENABLE);
+    }
 }
 
 void dmaEnable(dmaIdentifier_e identifier)
@@ -122,6 +149,13 @@ const char *dmaGetDisplayString(void)
 
 uint32_t dmaGetDataLength(dmaResource_t *ref)
 {
+#if defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
+    if ((uint32_t)ref >= CD_AHB2PERIPH_BASE) {
+#else
+    if ((uint32_t)ref >= D3_AHB1PERIPH_BASE) {
+#endif
+        return ((BDMA_Channel_TypeDef *)ref)->CNDTR;
+    }
     return LL_EX_DMA_GetDataLength((DMA_ARCH_TYPE *)ref);
 }
 
