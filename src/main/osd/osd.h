@@ -383,6 +383,7 @@ typedef struct osdConfig_s {
     uint8_t osd_show_spec_prearm;
 #endif // USE_SPEC_PREARM_SCREEN
     displayPortSeverity_e arming_logo;        // font from which to display logo on arming
+    uint8_t osd_compass_style;                // 0 for characters, 1 for degrees
 } osdConfig_t;
 
 PG_DECLARE(osdConfig_t, osdConfig);
