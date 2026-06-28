@@ -37,13 +37,14 @@
 // throttle buffer (command out). Called once from dronecanInit().
 void dronecanEscInit(void);
 
-// Per-tick service from the dronecan task: broadcasts esc.RawCommand from the
-// latest motor throttles and ages telemetry slots that have gone quiet.
+// Per-tick service from the dronecan task: ages telemetry slots that have gone
+// quiet. RawCommand emission lives in updateComplete() (PID-loop context).
 void dronecanEscUpdate(timeUs_t currentTimeUs);
 
-// Called from the motor driver vtable (PID-loop context). Stores one motor's
-// normalised command [0,1] into the shared throttle buffer; the dronecan task
-// reads it and broadcasts RawCommand at its own rate. updateComplete() commits.
+// Called from the motor driver vtable (PID-loop context). write() stages one
+// motor's RawCommand-unit throttle; updateComplete() encodes the staged values
+// and, rate-gated to esc_rate_hz, broadcasts RawCommand and flushes it to the
+// CAN driver immediately — no cross-task buffer needed (cooperative scheduler).
 void dronecanEscWrite(uint8_t motorIndex, float value);
 void dronecanEscUpdateComplete(void);
 

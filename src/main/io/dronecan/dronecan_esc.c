@@ -42,6 +42,7 @@
 
 #include "flight/mixer.h"
 
+#include "pg/dronecan.h"
 #include "pg/motor.h"
 #include "pg/pg.h"
 
@@ -56,21 +57,24 @@
 //-----------------------------------------------------------------------------
 // Command out: esc.RawCommand
 //
-// motorWriteAll() runs in the PID-loop task (kHz). libcanard is not re-entrant
-// and is owned by the dronecan task, so the motor vtable can't broadcast
-// directly. Instead write()/updateComplete() stage throttles into a shared
-// buffer (seqlock-published, same pattern as dronecan_gnss.c) and the dronecan
-// task broadcasts RawCommand at its own rate.
+// motorWriteAll() runs in the PID-loop task (kHz). Betaflight's scheduler is
+// cooperative — the PID task and the dronecan task never interleave — so the
+// PID-context updateComplete() can call libcanard directly without racing the
+// dronecan task's own libcanard use (the only true concurrency is the CAN ISR,
+// which touches driver-level rings only). We therefore emit RawCommand straight
+// from updateComplete(), rate-gated to esc_rate_hz, for low and jitter-free
+// command latency that does not depend on the LOW-priority task being serviced.
 //-----------------------------------------------------------------------------
 
-// Staging array touched only by the PID task between write() calls.
+// Throttle staging, written per-motor by write() and read by the broadcast in
+// the same PID iteration — no cross-context sharing, so no seqlock needed.
 static int16_t escStaging[MAX_SUPPORTED_MOTORS];
 
-// Shared snapshot published by updateComplete(), consumed by the task.
-static int16_t escShared[MAX_SUPPORTED_MOTORS];
-static volatile uint32_t escSeq;            // odd = write in progress
-
 static uint8_t escRawCommandTransferId;
+
+// Rate gate for PID-loop emission. Period is derived from esc_rate_hz at init.
+static uint32_t escBroadcastPeriodUs;
+static timeUs_t escLastBroadcastUs;
 
 void dronecanEscWrite(uint8_t motorIndex, float value)
 {
@@ -82,42 +86,12 @@ void dronecanEscWrite(uint8_t motorIndex, float value)
     escStaging[motorIndex] = (int16_t)constrainf(value, 0, UAVCAN_ESC_RAWCOMMAND_MAX);
 }
 
-void dronecanEscUpdateComplete(void)
-{
-    // Publish the staged throttles: bump the sequence odd, copy, bump even.
-    // The compiler fences stop the stores being reordered around the counter.
-    escSeq++;
-    __asm volatile ("" ::: "memory");
-    memcpy(escShared, escStaging, sizeof(escShared));
-    __asm volatile ("" ::: "memory");
-    escSeq++;
-}
-
-// Copy the shared throttle snapshot atomically into the caller's buffer.
-static void escReadShared(int16_t out[MAX_SUPPORTED_MOTORS])
-{
-    uint32_t s1;
-    uint32_t s2;
-    do {
-        do {
-            s1 = escSeq;
-        } while (s1 & 1U);
-        __asm volatile ("" ::: "memory");
-        memcpy(out, escShared, sizeof(escShared));
-        __asm volatile ("" ::: "memory");
-        s2 = escSeq;
-    } while (s1 != s2);
-}
-
 static void broadcastRawCommand(void)
 {
     const uint8_t motorCount = getMotorCount();
     if (motorCount == 0) {
         return;
     }
-
-    int16_t cmd[MAX_SUPPORTED_MOTORS];
-    escReadShared(cmd);
 
     // Pack motorCount int14 values, MSB-first per field. TAO: no length prefix.
     // 8 motors * 14 bits = 112 bits = 14 bytes worst case.
@@ -126,7 +100,7 @@ static void broadcastRawCommand(void)
 
     uint32_t bitOffset = 0;
     for (uint8_t i = 0; i < motorCount; i++) {
-        const int16_t v = constrain(cmd[i], 0, UAVCAN_ESC_RAWCOMMAND_MAX);
+        const int16_t v = constrain(escStaging[i], 0, UAVCAN_ESC_RAWCOMMAND_MAX);
         canardEncodeScalar(payload, bitOffset, UAVCAN_ESC_RAWCOMMAND_BITS, &v);
         bitOffset += UAVCAN_ESC_RAWCOMMAND_BITS;
     }
@@ -143,6 +117,39 @@ static void broadcastRawCommand(void)
     tx.payload_len         = payloadLen;
 
     canardBroadcastObj(dronecanGetInstance(), &tx);
+}
+
+// Encode the current throttles into a RawCommand transfer and push it to the
+// driver immediately. Ungated — callers handle rate limiting / forcing.
+static void emitRawCommand(void)
+{
+    if (!dronecanIsInitialised()) {
+        return;
+    }
+    broadcastRawCommand();
+    // Flush straight to the driver so the frame rides out on this PID iteration
+    // if the bus is free; the driver's SW ring + TC interrupt absorb the rest.
+    dronecanFlushTx();
+}
+
+void dronecanEscUpdateComplete(void)
+{
+    // Only command ESCs when DRONECAN is the active motor protocol; otherwise
+    // another protocol owns the motors and we must stay off the bus.
+    if (!isMotorProtocolDronecan()) {
+        return;
+    }
+
+    // Rate-gate to esc_rate_hz. We run every PID loop (kHz) but the bus can
+    // only carry frames at the configured rate; emit the instant a period is
+    // due rather than waiting on the dronecan task tick.
+    const timeUs_t now = micros();
+    if (cmpTimeUs(now, escLastBroadcastUs) < (timeDelta_t)escBroadcastPeriodUs) {
+        return;
+    }
+    escLastBroadcastUs = now;
+
+    emitRawCommand();
 }
 
 //-----------------------------------------------------------------------------
@@ -206,9 +213,13 @@ static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
 void dronecanEscInit(void)
 {
     memset(escStaging, 0, sizeof(escStaging));
-    memset(escShared, 0, sizeof(escShared));
-    escSeq = 0;
     escRawCommandTransferId = 0;
+
+    // Derive the PID-loop emission period from the configured rate. The PG
+    // value is already range-checked elsewhere; constrain again defensively.
+    const uint16_t rateHz = constrain(dronecanConfig()->esc_rate_hz, 50, 500);
+    escBroadcastPeriodUs = 1000000U / rateHz;
+    escLastBroadcastUs = micros();
 
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         escStatusLastUs[i] = 0;
@@ -227,11 +238,8 @@ void dronecanEscInit(void)
 
 void dronecanEscUpdate(timeUs_t currentTimeUs)
 {
-    // Only command ESCs when the DRONECAN motor protocol is the active output;
-    // otherwise we'd contend with another protocol driving the same motors.
-    if (isMotorProtocolDronecan()) {
-        broadcastRawCommand();
-    }
+    // RawCommand is emitted from the PID loop (dronecanEscUpdateComplete) for
+    // low, jitter-free latency, so the task only handles telemetry here.
 
     // Age telemetry slots that have gone quiet so consumers see stale data
     // rather than a frozen last reading.
@@ -247,9 +255,10 @@ void dronecanEscUpdate(timeUs_t currentTimeUs)
 //-----------------------------------------------------------------------------
 // Motor driver (vtable) — bridges drivers/motor.c to the throttle buffer above.
 //
-// write()/updateComplete() run in the PID-loop task and only touch the staging
-// buffer + seqlock; the actual CAN broadcast happens in dronecanEscUpdate()
-// from the dronecan task, satisfying libcanard's single-context requirement.
+// write() stages throttles and updateComplete() encodes + broadcasts RawCommand,
+// both in the PID-loop task. The cooperative scheduler guarantees this never
+// interleaves with the dronecan task's libcanard use, so libcanard's
+// single-context requirement is still met.
 //-----------------------------------------------------------------------------
 
 static bool dronecanMotorEnable(void)
@@ -259,9 +268,12 @@ static bool dronecanMotorEnable(void)
 
 static void dronecanMotorDisable(void)
 {
-    // Park every motor at stop; the next task tick broadcasts zeros.
+    // Park every motor at stop and force a zero RawCommand out now (bypassing
+    // the rate gate) so the ESCs see the stop immediately rather than on the
+    // next due period.
     memset(escStaging, 0, sizeof(escStaging));
-    dronecanEscUpdateComplete();
+    escLastBroadcastUs = micros();
+    emitRawCommand();
 }
 
 static bool dronecanMotorIsEnabled(unsigned index)

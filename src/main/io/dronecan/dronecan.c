@@ -283,9 +283,10 @@ void dronecanInit(void)
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
 
 #if ENABLE_DRONECAN_ESC
-    // Commanding ESCs needs a faster cadence than the 1 Hz node housekeeping.
-    // Raise the task tick to the configured RawCommand rate when DRONECAN is
-    // the active motor protocol; otherwise the default 50 Hz is ample.
+    // RawCommand is emitted from the PID loop (see dronecan_esc.c), so the task
+    // no longer drives command timing. We still raise the tick to the ESC rate
+    // when commanding so RX telemetry servicing and the fallback TX flush keep
+    // pace with the bus; otherwise the default 50 Hz node housekeeping is ample.
     if (isMotorProtocolDronecan()) {
         const uint16_t rateHz = constrain(dronecanConfig()->esc_rate_hz, 50, 500);
         rescheduleTask(TASK_DRONECAN, TASK_PERIOD_HZ(rateHz));
@@ -342,6 +343,14 @@ bool dronecanRegisterSubscriber(const dronecanSubscriber_t *subscriber)
 CanardInstance *dronecanGetInstance(void)
 {
     return &dronecanInstance;
+}
+
+void dronecanFlushTx(void)
+{
+    if (!dronecanInitialised) {
+        return;
+    }
+    dronecanDrainTxQueue();
 }
 
 #endif // ENABLE_DRONECAN
