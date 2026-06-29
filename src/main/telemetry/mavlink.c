@@ -576,11 +576,9 @@ static void mavlinkProcessIncoming(void)
 #ifdef USE_SERIALRX_MAVLINK
 static void mavlinkProcessQueyeMessages(void)
 {
-    while (mavlinkGetNextQueyeMessage(&mavRxMsg)) {
+    uint8_t rxBudget = MAVLINK_RX_QUEUE_SIZE;
+    while (rxBudget-- && mavlinkGetNextQueyeMessage(&mavRxMsg)) {
         mavlinkDispatch(&mavRxMsg);
-    }
-    if (!mavlinkPortOwned || !mavlinkPort) {
-        return;
     }
 }
 #endif
