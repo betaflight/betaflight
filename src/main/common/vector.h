@@ -43,19 +43,10 @@ typedef union vector3_u {
     };
 } vector3_t;
 
-// NED (North-East-Down) framed vector.  The union member u allows the same
-// storage to be addressed either as a plain vector3_t (for passing to math
-// routines) or with named geographic axes (for readability at call sites).
-typedef struct {
-    union {
-        vector3_t v;
-        struct {
-            float N;  // North
-            float E;  // East
-            float D;  // Down
-        } ef;
-    } u;
-} vectorNED_t;
+// Earth-frame vectors use a plain vector3_t indexed by the axisNWU_e / axisENU_e
+// enums in common/axis.h, which name the frame, axis, and sign at each call site.
+// (The former vectorNED_t struct was removed: its .ef.N/.E/.D members claimed an
+// NED frame while rMat actually produces NWU, which caused a sign inversion.)
 
 typedef struct matrix33_s {
     float m[3][3];

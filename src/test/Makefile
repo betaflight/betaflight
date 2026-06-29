@@ -324,6 +324,14 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_msp_override_unittest_SRC := \
+		$(USER_DIR)/rx/msp.c
+
+rx_msp_override_unittest_DEFINES := \
+		USE_RX_MSP= \
+		USE_RX_MSP_OVERRIDE=
+
+
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
@@ -371,6 +379,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
+
+sitl_gyro_unittest_SRC := \
+		$(TEST_DIR)/sitl_gyro_unittest_c.c
+
+sitl_gyro_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
