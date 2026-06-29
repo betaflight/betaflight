@@ -338,7 +338,9 @@ protected:
         batteryProfilesMutable(0)->vbatmincellvoltage = 330;
         batteryProfilesMutable(0)->vbatmaxcellvoltage = 430;
         batteryProfilesMutable(0)->vbatfullcellvoltage = 410;
+        batteryProfilesMutable(0)->batteryCapacity = 0;
         currentBatteryProfile = batteryProfiles(0);
+        osdConfigMutable()->cap_alarm = 2200;
     }
 
     virtual void TearDown() {
@@ -782,6 +784,29 @@ TEST_F(OsdTest, TestAlarms)
             displayPortTestBufferIsEmpty();
         }
     }
+}
+
+TEST_F(OsdTest, TestCapacityAlarmUsesLegacyOsdAlarmWhenProfileCapacityIsUnset)
+{
+    // given
+    batteryProfilesMutable(0)->batteryCapacity = 0;
+    osdConfigMutable()->cap_alarm = 1800;
+
+    // then
+    EXPECT_EQ(1800, osdGetCapacityAlarm());
+}
+
+TEST_F(OsdTest, TestCapacityAlarmUsesCurrentBatteryProfileCapacity)
+{
+    // given
+    osdConfigMutable()->cap_alarm = 2200;
+    batteryProfilesMutable(0)->batteryCapacity = 1300;
+    batteryProfilesMutable(1)->batteryCapacity = 3000;
+    currentBatteryProfile = batteryProfiles(1);
+
+    // then
+    EXPECT_EQ(3000, osdGetCapacityAlarm());
+    currentBatteryProfile = batteryProfiles(0);
 }
 
 /*
