@@ -120,13 +120,14 @@ void spiInitDevice(spiDevice_e device)
     RCC_ResetCmd(spi->rcc, ENABLE);
 
 #ifdef STM32C5
-    if (dev == SPI1) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI1_CLKSOURCE_HSIK);
-    } else if (dev == SPI2) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI2_CLKSOURCE_HSIK);
-    } else if (dev == SPI3) {
-        LL_RCC_SetSPIClockSource(LL_RCC_SPI3_CLKSOURCE_HSIK);
-    }
+    // STM32C5: leave SPI kernel clock at PCLK (default after reset). HSIK
+    // selection on SPI3 leaves CTSIZE pinned at TSIZE -- the peripheral
+    // never decrements the transfer counter, EOT never asserts, and the
+    // controller appears to "transmit" via FIFO drain but no SCK reaches
+    // the pad. Reproduced under SWD on ARCROBO_C562V1: with SPI3SEL=10
+    // (HSIK) a manual WHO_AM_I transaction sticks at SR=0x00020012,
+    // CTSIZE=2; flipping SPI3SEL=00 (PCLK1) on the same configuration
+    // immediately advances to SR.EOT=1.
 #endif
 
     IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK, RESOURCE_INDEX(device));

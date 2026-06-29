@@ -69,7 +69,7 @@ static i2c_dev_t *const i2cHwRegs[] = {
 #define ESP32_I2C_XTAL_CLK_FREQ  40000000
 #define ESP32_I2C_APB_CLK_FREQ   80000000
 
-#if defined(ESP32S3)
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
 #define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_XTAL_CLK_FREQ
 #else
 #define ESP32_I2C_SOURCE_CLK_FREQ  ESP32_I2C_APB_CLK_FREQ
@@ -175,8 +175,9 @@ void i2cInit(i2cDevice_e device)
     i2c_ll_enable_pins_open_drain(hw, true);
     i2c_ll_enable_arbitration(hw, true);
 
-    // Enable controller clock and select clock source
-#if defined(ESP32S3)
+    // Enable controller clock and select clock source. XTAL is the only
+    // I2C source clock on S3/C5/P4; original ESP32 (LX6) routes from APB.
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
     i2c_ll_set_source_clk(hw, I2C_CLK_SRC_XTAL);
     i2c_ll_enable_controller_clock(hw, true);
 #else

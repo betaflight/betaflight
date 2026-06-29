@@ -180,6 +180,12 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
 
 PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
 
+// Default LED strip brightness (percent). A target may lower this, e.g. when a
+// single bright addressable LED is used as a status indicator.
+#ifndef LED_STRIP_DEFAULT_BRIGHTNESS
+#define LED_STRIP_DEFAULT_BRIGHTNESS 100
+#endif
+
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
     ledStripConfig->ledstrip_visual_beeper = 1;
@@ -194,7 +200,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_beacon_percent = 50;       // 50% duty cycle
     ledStripConfig->ledstrip_beacon_armed_only = false; // blink always
     ledStripConfig->ledstrip_visual_beeper_color = VISUAL_BEEPER_COLOR;
-    ledStripConfig->ledstrip_brightness = 100;
+    ledStripConfig->ledstrip_brightness = LED_STRIP_DEFAULT_BRIGHTNESS;
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
 #ifndef UNIT_TEST
@@ -257,6 +263,11 @@ PG_REGISTER_WITH_RESET_FN(ledStripStatusModeConfig_t, ledStripStatusModeConfig, 
 void pgResetFn_ledStripStatusModeConfig(ledStripStatusModeConfig_t *ledStripStatusModeConfig)
 {
     memset(ledStripStatusModeConfig->ledConfigs, 0, LED_STRIP_MAX_LENGTH * sizeof(ledConfig_t));
+#ifdef LED_STRIP_DEFAULT_LED0
+    // A target may seed a default LED (e.g. a single onboard status LED) so the
+    // strip drives the hardware out of reset, before any user-configured layout.
+    ledStripStatusModeConfig->ledConfigs[0] = LED_STRIP_DEFAULT_LED0;
+#endif
     // copy hsv colors as default
     memset(ledStripStatusModeConfig->colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
     STATIC_ASSERT(LED_CONFIGURABLE_COLOR_COUNT >= ARRAYLEN(hsv), LED_CONFIGURABLE_COLOR_COUNT_invalid);

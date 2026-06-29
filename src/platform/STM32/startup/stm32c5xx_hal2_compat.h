@@ -672,14 +672,19 @@ typedef struct {
 static inline ErrorStatus LL_SPI_Init(SPI_TypeDef *SPIx,
                                       const LL_SPI_InitTypeDef *init)
 {
-    LL_SPI_SetTransferDirection(SPIx, init->TransferDirection);
-    LL_SPI_SetMode(SPIx, init->Mode);
-    LL_SPI_SetDataWidth(SPIx, init->DataWidth);
-    LL_SPI_SetClockPolarity(SPIx, init->ClockPolarity);
-    LL_SPI_SetClockPhase(SPIx, init->ClockPhase);
-    LL_SPI_SetNSSMode(SPIx, init->NSS);
-    LL_SPI_SetBaudRatePrescaler(SPIx, init->BaudRate);
-    LL_SPI_SetTransferBitOrder(SPIx, init->BitOrder);
+    // Use LL_SPI_SetConfig (the HAL2 path) so SSI is armed BEFORE
+    // CFG2.MASTER is written. The previous per-setter sequence wrote
+    // MASTER first (via LL_SPI_SetMode) with SSM still 0, which on
+    // STM32C5 silicon raises MODF and atomically clears MASTER if
+    // the hardware NSS pin happened to read low. The downstream
+    // "re-arm MASTER" in bus_spi_hal2.c then runs on a peripheral
+    // that's already in slave mode with stale state, and the next
+    // transfer drives no SCK on the pad even though EOT asserts.
+    LL_SPI_SetConfig(SPIx,
+                     init->DataWidth | init->BaudRate,
+                     init->Mode | init->TransferDirection |
+                     init->ClockPolarity | init->ClockPhase |
+                     init->BitOrder | init->NSS);
     if (init->CRCCalculation) {
         LL_SPI_EnableCRC(SPIx);
     }
