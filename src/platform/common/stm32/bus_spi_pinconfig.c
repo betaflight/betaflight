@@ -580,14 +580,20 @@ const spiHardware_t spiHardware[] = {
         .reg = (spiResource_t *)SPI3,
         .sckPins = {
             { DEFIO_TAG_E(PB3),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB7),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB9),  GPIO_AF6_SPI3 },
             { DEFIO_TAG_E(PC10), GPIO_AF6_SPI3 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PB4),  GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PB6),  GPIO_AF6_SPI3 },
             { DEFIO_TAG_E(PC11), GPIO_AF6_SPI3 },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB5),  GPIO_AF6_SPI3 },
+            // C5 datasheet: SPI3_MOSI on PB5 is AF7, not AF6 (other STM32
+            // families route SPI3 across AF6 here; the C5 mux uses AF7 for
+            // this specific pad). PC12 stays at AF6.
+            { DEFIO_TAG_E(PB5),  GPIO_AF7_SPI3 },
             { DEFIO_TAG_E(PC12), GPIO_AF6_SPI3 },
         },
         .rcc = RCC_APB1L(SPI3),

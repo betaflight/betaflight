@@ -81,7 +81,7 @@ typedef struct {
     float returnAltitudeCm;
     float targetAltitudeCm;
     float targetAltitudeVelCmS; // vertical velocity feedforward for cascaded alt controller (cm/s)
-    float targetVelocityCmS;
+    float targetVerticalVelocityCmS;
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
     float descentDistanceM;
@@ -272,7 +272,7 @@ static void rescueAttainPosition(bool newGpsData)
 
         const float sampleIntervalNormaliseFactor = rescueState.sensor.gpsDataIntervalSeconds * 10.0f;
 
-        const float velocityError = rescueState.intent.targetVelocityCmS - rescueState.sensor.velocityToHomeCmS;
+        const float velocityError = rescueState.intent.targetVerticalVelocityCmS - rescueState.sensor.velocityToHomeCmS;
         // velocityError is in cm per second, positive means too slow.
         // NB positive pitch setpoint means nose down.
         // target velocity can be very negative leading to large error before the start, with overshoot
@@ -331,8 +331,8 @@ static void rescueAttainPosition(bool newGpsData)
     gpsRescueAngle[AI_PITCH] = pitchAdjustmentFiltered;
     // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVelocityCmS)); // target velocity to home
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVerticalVelocityCmS)); // target velocity to home
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVerticalVelocityCmS)); // target velocity to home
 }
 
 static void performSanityChecks(void)
@@ -411,7 +411,7 @@ static void performSanityChecks(void)
     if (rescueState.phase == RESCUE_FLY_HOME) {
         const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm; // cm/s
         previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
-        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
+        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVerticalVelocityCmS) ? 1 : -1;
         rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 30);
         if (rescueState.intent.secondsFailing >= 30) {
 #ifdef USE_MAG
@@ -517,16 +517,17 @@ static void sensorUpdate(bool newGpsData)
 
     if (useEstXY) {
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        rescueState.sensor.distanceToHomeCm = hypotf(est->position.x, est->position.y);
+        rescueState.sensor.distanceToHomeCm = hypotf(est->position.v[ENU_E], est->position.v[ENU_N]);
         rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm * 0.01f;
-        rescueState.sensor.directionToHome = rescueBearingToHomeDecideg(est->position.x, est->position.y);
-        rescueState.sensor.groundSpeedCmS = hypotf(est->velocity.x, est->velocity.y);
+        rescueState.sensor.directionToHome = rescueBearingToHomeDecideg(est->position.v[ENU_E], est->position.v[ENU_N]);
+        rescueState.sensor.groundSpeedCmS = hypotf(est->velocity.v[ENU_E], est->velocity.v[ENU_N]);
         const float distCm = rescueState.sensor.distanceToHomeCm;
         if (distCm > 10.0f) {
             const float invDist = 1.0f / distCm;
-            const float ux = -est->position.x * invDist;
-            const float uy = -est->position.y * invDist;
-            rescueState.sensor.velocityToHomeCmS = est->velocity.x * ux + est->velocity.y * uy;
+            // Unit vector from craft toward home (negated position), ENU horizontal.
+            const float uEast  = -est->position.v[ENU_E] * invDist;
+            const float uNorth = -est->position.v[ENU_N] * invDist;
+            rescueState.sensor.velocityToHomeCmS = est->velocity.v[ENU_E] * uEast + est->velocity.v[ENU_N] * uNorth;
         } else {
             rescueState.sensor.velocityToHomeCmS = 0.0f;
         }
@@ -685,13 +686,13 @@ static void descend(bool newGpsData)
         rescueState.intent.velocityPidCutoffModifier = 2.5f - proximityToLandingArea;
 
         // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
-        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
+        rescueState.intent.targetVerticalVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
 
         // attenuate velocity target unless pointing towards home, to minimise circling behaviour during overshoots
         if (rescueState.sensor.absErrorAngle > GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            rescueState.intent.targetVelocityCmS = 0;
+            rescueState.intent.targetVerticalVelocityCmS = 0;
         } else {
-            rescueState.intent.targetVelocityCmS *= (GPS_RESCUE_ALLOWED_YAW_RANGE - rescueState.sensor.absErrorAngle) / GPS_RESCUE_ALLOWED_YAW_RANGE;
+            rescueState.intent.targetVerticalVelocityCmS *= (GPS_RESCUE_ALLOWED_YAW_RANGE - rescueState.sensor.absErrorAngle) / GPS_RESCUE_ALLOWED_YAW_RANGE;
         }
 
         // attenuate velocity iterm towards zero as we get closer to the landing area
@@ -723,7 +724,7 @@ static void initialiseRescueValues (void)
 {
     rescueState.intent.secondsFailing = 0; // reset the sanity check timer
     rescueState.intent.yawAttenuator = 0.0f; // no yaw in the climb
-    rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS; // avoid snap from D at the start
+    rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS; // avoid snap from D at the start
     rescueState.intent.rollAngleLimitDeg = 0.0f; // no roll until flying home
     rescueState.intent.velocityPidCutoffModifier = 1.0f; // normal velocity lowpass filter cutoff
     rescueState.intent.pitchAngleLimitDeg = 0.0f; // force pitch adjustment to zero - level mode will level out
@@ -810,7 +811,7 @@ void gpsRescueUpdate(void)
         }
 
         // give velocity P and I no error that otherwise could be present due to velocity drift at the start of the rescue
-        rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
+        rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         break;
 
     case RESCUE_ROTATE:
@@ -824,7 +825,7 @@ void gpsRescueUpdate(void)
             rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
         }
         initialVelocityLow = rescueState.sensor.velocityToHomeCmS < gpsRescueConfig()->groundSpeedCmS; // used to set direction of velocity target change
-        rescueState.intent.targetVelocityCmS = rescueState.sensor.velocityToHomeCmS;
+        rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         break;
 
     case RESCUE_FLY_HOME:
@@ -833,13 +834,13 @@ void gpsRescueUpdate(void)
         }
         // velocity PIDs are now active
         // update target velocity gradually, aiming for rescueGroundspeed with a time constant of 1.0s
-        const float targetVelocityError = gpsRescueConfig()->groundSpeedCmS - rescueState.intent.targetVelocityCmS;
-        const float velocityTargetStep = taskIntervalSeconds * targetVelocityError;
+        const float targetVerticalVelocityError = gpsRescueConfig()->groundSpeedCmS - rescueState.intent.targetVerticalVelocityCmS;
+        const float velocityTargetStep = taskIntervalSeconds * targetVerticalVelocityError;
         // velocityTargetStep is positive when starting low, negative when starting high
-        const bool targetVelocityIsLow = rescueState.intent.targetVelocityCmS < gpsRescueConfig()->groundSpeedCmS;
-        if (initialVelocityLow == targetVelocityIsLow) {
+        const bool targetVerticalVelocityIsLow = rescueState.intent.targetVerticalVelocityCmS < gpsRescueConfig()->groundSpeedCmS;
+        if (initialVelocityLow == targetVerticalVelocityIsLow) {
             // also true if started faster than target velocity and target is still high
-            rescueState.intent.targetVelocityCmS += velocityTargetStep;
+            rescueState.intent.targetVerticalVelocityCmS += velocityTargetStep;
         }
 
         // slowly introduce velocity iTerm accumulation at start, goes 0 ->1 with time constant 2.0s

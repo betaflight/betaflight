@@ -101,6 +101,17 @@ baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611= \
                 USE_BARO_SPI_MS5611=
 
+accgyro_spi_icm426xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
+
+accgyro_spi_icm426xx_unittest_DEFINES := \
+                USE_GYRO_SPI_ICM42605= \
+                USE_ACCGYRO_ICM42622P= \
+                USE_ACCGYRO_ICM42686P= \
+                USE_GYRO_SPI_ICM42688P= \
+                USE_ACCGYRO_IIM42652= \
+                USE_ACCGYRO_IIM42653=
+
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
 #
@@ -227,6 +238,15 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
 
+msp_serial_unittest_SRC := \
+		$(USER_DIR)/msp/msp_serial.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
+
+msp_serial_unittest_DEFINES := \
+		USE_CLI= \
+		USE_MSP_DISPLAYPORT=
+
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
@@ -304,6 +324,14 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_msp_override_unittest_SRC := \
+		$(USER_DIR)/rx/msp.c
+
+rx_msp_override_unittest_DEFINES := \
+		USE_RX_MSP= \
+		USE_RX_MSP_OVERRIDE=
+
+
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
@@ -351,6 +379,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
+
+sitl_gyro_unittest_SRC := \
+		$(TEST_DIR)/sitl_gyro_unittest_c.c
+
+sitl_gyro_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \

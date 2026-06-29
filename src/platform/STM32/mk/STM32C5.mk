@@ -88,6 +88,12 @@ DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
 STARTUP_SRC         = STM32/startup/startup_stm32c591xx.s
 MCU_FLASH_SIZE     := 1024
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
+else ifeq ($(TARGET_MCU),STM32C5A3xx)
+DEVICE_FLAGS       += -DSTM32C5A3xx
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c5xx_1m.ld
+STARTUP_SRC         = STM32/startup/startup_stm32c5a3xx.s
+MCU_FLASH_SIZE     := 1024
+DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
 else ifeq ($(TARGET_MCU),STM32C562xx)
 DEVICE_FLAGS       += -DSTM32C562xx
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/stm32_flash_c562_512k.ld
@@ -140,6 +146,8 @@ MCU_COMMON_SRC = \
             STM32/bus_spi_hal2.c \
             STM32/bus_i2c_ll.c \
             STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_i3c.c \
+            STM32/spa06_i3c_probe.c \
             STM32/can_stm32c5xx.c \
             drivers/bus_i2c_timing.c \
             STM32/serial_uart_ll.c \
