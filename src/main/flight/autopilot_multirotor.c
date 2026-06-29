@@ -136,6 +136,7 @@ static autopilotState_t ap = {
     .sanityCheckDistance = SANITY_CHECK_DISTANCE,
     .sticksActive = false,
 };
+
 static void initPidLpfs(void)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
@@ -202,35 +203,30 @@ void autopilotClearAltHoldHoverThrottle(void)
 
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS)
 {
-    
-    // PI controller on altitude error
+
+    // PID controller on altitude error
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
     const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
-
     // Altitude Derivative
     const float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
     const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);    
     float velocityError = targetVerticalVelocity - verticalVelocity;
-
-
     float dBoost = 1.0f;
     const float boostThreshold = 500.0f; // 5m/s
-        const float absVerticalVelocity = fabsf(verticalVelocity);
-        if (absVerticalVelocity > boostThreshold) {
+    const float absVerticalVelocity = fabsf(verticalVelocity);
+    if (absVerticalVelocity > boostThreshold) {
             const float ratio = absVerticalVelocity / boostThreshold;
             dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
     }
-
     const float altitudeD = velocityError * altitudeKd * dBoost;
     const float altitudeF = targetVerticalVelocity * altitudeKf;
-    
-
     const float hoverOffset = (float)autopilotGetEffectiveHoverThrottlePwm() - PWM_RANGE_MIN;
+
 
     float throttleOffset = altitudeP
                          + altitudeI
@@ -244,7 +240,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 
     float newThrottle = PWM_RANGE_MIN + throttleOffset;
     newThrottle = constrainf(newThrottle, autopilotConfig()->throttleMin, autopilotConfig()->throttleMax);
-    
+
 throttleOut = scaleRangef(newThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 throttleOut = constrainf(throttleOut, 0.0f, 1.0f);
 
@@ -441,7 +437,7 @@ bool positionControl(void)
         pidI.v[axis] = distanceErrorIntegral.v[axis] * positionPidCoeffs.Ki;
         pidD.v[axis] = velocityError.v[axis] * positionPidCoeffs.Kd * dTermRamp.v[axis];
         pidA.v[axis] = acceleration * positionPidCoeffs.Ka;
-        
+
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis];
     } // End for loop
 
