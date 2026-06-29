@@ -573,6 +573,18 @@ static void mavlinkProcessIncoming(void)
     }
 }
 
+#ifdef USE_SERIALRX_MAVLINK
+static void mavlinkProcessQueyeMessages(void)
+{
+    while (mavlinkGetNextQueyeMessage(&mavRxMsg)) {
+        mavlinkDispatch(&mavRxMsg);
+    }
+    if (!mavlinkPortOwned || !mavlinkPort) {
+        return;
+    }
+}
+#endif
+
 void freeMAVLinkTelemetryPort(void)
 {
     closeSerialPort(mavlinkPort);
@@ -1301,7 +1313,15 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
+#ifndef USE_SERIALRX_MAVLINK
     mavlinkProcessIncoming();
+#else
+    if (telemetrySharedPort != NULL) {
+        mavlinkProcessQueyeMessages();
+    } else {
+        mavlinkProcessIncoming();
+    }
+#endif
 #if ENABLE_TELEMETRY_MAVLINK_MISSION
     mavMissionUpdate(millis());
 #endif
