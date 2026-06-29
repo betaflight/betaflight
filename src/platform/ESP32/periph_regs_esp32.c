@@ -50,7 +50,9 @@
 #include "soc/i2c_struct.h"
 #include "soc/rmt_struct.h"
 #include "soc/ledc_struct.h"
+#if !defined(ESP32C5) && !defined(ESP32P4)
 #include "soc/sens_struct.h"
+#endif
 #include "soc/reg_base.h"
 
 #if defined(ESP32S3)
@@ -58,44 +60,90 @@
 #include "soc/system_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
 #include "soc/gdma_struct.h"
+#elif defined(ESP32C5) || defined(ESP32P4)
+#include "soc/systimer_struct.h"
+#include "soc/usb_serial_jtag_struct.h"
 #else
 #include "soc/timer_group_struct.h"
 #endif
 
 #pragma GCC diagnostic pop
 
+/* RISC-V skeleton builds: no fixed-address peripheral mapping yet. The
+ * linker scripts don't carry .peripheral_* output sections, so let these
+ * shims live in .bss until a real C5/P4 driver port maps them properly. */
+#if defined(ESP32C5) || defined(ESP32P4)
+#define PERIPH_SECTION(name)
+#else
+#define PERIPH_SECTION(name) __attribute__((section(name)))
+#endif
+
 /* Each peripheral symbol is placed at the base address from reg_base.h.
  * The linker resolves e.g. &GPIO -> DR_REG_GPIO_BASE (0x60004000). */
-gpio_dev_t              GPIO                __attribute__((section(".peripheral_gpio")))         = {};
-uart_dev_t              UART0               __attribute__((section(".peripheral_uart0")))        = {};
-uart_dev_t              UART1               __attribute__((section(".peripheral_uart1")))        = {};
-uart_dev_t              UART2               __attribute__((section(".peripheral_uart2")))        = {};
-#if defined(ESP32S3)
-spi_dev_t               GPSPI2              __attribute__((section(".peripheral_spi2")))         = {};
-spi_dev_t               GPSPI3              __attribute__((section(".peripheral_spi3")))         = {};
+gpio_dev_t              GPIO                PERIPH_SECTION(".peripheral_gpio")         = {};
+uart_dev_t              UART0               PERIPH_SECTION(".peripheral_uart0")        = {};
+uart_dev_t              UART1               PERIPH_SECTION(".peripheral_uart1")        = {};
+#if !defined(ESP32C5)
+uart_dev_t              UART2               PERIPH_SECTION(".peripheral_uart2")        = {};
+#endif
+#if defined(ESP32S3) || defined(ESP32C5) || defined(ESP32P4)
+spi_dev_t               GPSPI2              PERIPH_SECTION(".peripheral_spi2")         = {};
+#if !defined(ESP32C5)
+spi_dev_t               GPSPI3              PERIPH_SECTION(".peripheral_spi3")         = {};
+#endif
 #else
 /* SPI1 is the internal flash SPI, SPI2=HSPI, SPI3=VSPI */
-spi_dev_t               SPI1                __attribute__((section(".peripheral_spi1")))         = {};
-spi_dev_t               SPI2                __attribute__((section(".peripheral_spi2")))         = {};
-spi_dev_t               SPI3                __attribute__((section(".peripheral_spi3")))         = {};
+spi_dev_t               SPI1                PERIPH_SECTION(".peripheral_spi1")         = {};
+spi_dev_t               SPI2                PERIPH_SECTION(".peripheral_spi2")         = {};
+spi_dev_t               SPI3                PERIPH_SECTION(".peripheral_spi3")         = {};
 #endif
-i2c_dev_t               I2C0                __attribute__((section(".peripheral_i2c0")))         = {};
-i2c_dev_t               I2C1                __attribute__((section(".peripheral_i2c1")))         = {};
-rmt_dev_t               RMT                 __attribute__((section(".peripheral_rmt")))          = {};
-ledc_dev_t              LEDC                __attribute__((section(".peripheral_ledc")))         = {};
-sens_dev_t              SENS                __attribute__((section(".peripheral_sens")))         = {};
+i2c_dev_t               I2C0                PERIPH_SECTION(".peripheral_i2c0")         = {};
+#if !defined(ESP32C5)
+i2c_dev_t               I2C1                PERIPH_SECTION(".peripheral_i2c1")         = {};
+#endif
+rmt_dev_t               RMT                 PERIPH_SECTION(".peripheral_rmt")          = {};
+ledc_dev_t              LEDC                PERIPH_SECTION(".peripheral_ledc")         = {};
+#if !defined(ESP32C5) && !defined(ESP32P4)
+sens_dev_t              SENS                PERIPH_SECTION(".peripheral_sens")         = {};
+#endif
 
 #if defined(ESP32S3)
-systimer_dev_t          SYSTIMER            __attribute__((section(".peripheral_systimer")))     = {};
+systimer_dev_t          SYSTIMER            PERIPH_SECTION(".peripheral_systimer")     = {};
 /* RMTMEM is 4 TX + 4 RX channels × 48 items each = 384 items × 4 bytes */
-uint32_t                RMTMEM[384]         __attribute__((section(".peripheral_rmtmem")))       = {};
-system_dev_t            SYSTEM              __attribute__((section(".peripheral_system")))       = {};
-usb_serial_jtag_dev_t   USB_SERIAL_JTAG     __attribute__((section(".peripheral_usb_serial")))  = {};
-gdma_dev_t              GDMA                __attribute__((section(".peripheral_gdma")))         = {};
+uint32_t                RMTMEM[384]         PERIPH_SECTION(".peripheral_rmtmem")       = {};
+system_dev_t            SYSTEM              PERIPH_SECTION(".peripheral_system")       = {};
+usb_serial_jtag_dev_t   USB_SERIAL_JTAG     PERIPH_SECTION(".peripheral_usb_serial")   = {};
+gdma_dev_t              GDMA                PERIPH_SECTION(".peripheral_gdma")         = {};
+#elif defined(ESP32C5) || defined(ESP32P4)
+systimer_dev_t          SYSTIMER            = {};
+usb_serial_jtag_dev_t   USB_SERIAL_JTAG     = {};
+#if defined(ESP32C5)
+#include "soc/io_mux_struct.h"
+#include "soc/pcr_struct.h"
+uart_dev_t              LP_UART             = {};
+i2c_dev_t               LP_I2C              = {};
+io_mux_dev_t            IO_MUX              = {};
+pcr_dev_t               PCR                 = {};
+/* RMT memory window — sized for a single channel since RMT isn't yet
+ * wired into BF's C5 driver path; placeholder for link only. */
+uint32_t                RMTMEM[48]          = {};
+#endif
+#if defined(ESP32P4)
+#include "soc/io_mux_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/usb_wrap_struct.h"
+io_mux_dev_t            IO_MUX              = {};
+hp_sys_clkrst_dev_t     HP_SYS_CLKRST       = {};
+usb_wrap_dev_t          USB_WRAP            = {};
+uart_dev_t              UART3               = {};
+uart_dev_t              UART4               = {};
+uart_dev_t              LP_UART             = {};
+uint32_t                RMTMEM[48]          = {};
+#endif
 #else
-timg_dev_t              TIMERG0             __attribute__((section(".peripheral_timg0")))        = {};
+timg_dev_t              TIMERG0             PERIPH_SECTION(".peripheral_timg0")        = {};
 /* ESP32 has 8 bidirectional RMT channels × 64 items each = 512 items × 4 bytes */
-uint32_t                RMTMEM[512]         __attribute__((section(".peripheral_rmtmem")))       = {};
+uint32_t                RMTMEM[512]         PERIPH_SECTION(".peripheral_rmtmem")       = {};
 #endif
 
 /* Restore platform macros */

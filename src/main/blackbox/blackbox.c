@@ -1740,8 +1740,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_ALTITUDE_F, "%d",         autopilotConfig()->altitudeF);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_P, "%d",         autopilotConfig()->positionP);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_I, "%d",         autopilotConfig()->positionI);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_II, "%d",        autopilotConfig()->positionII);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_D, "%d",         autopilotConfig()->positionD);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_A, "%d",         autopilotConfig()->positionA);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_POSITION_CUTOFF, "%d",    autopilotConfig()->positionCutoff);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_STOP_THRESHOLD, "%d",     autopilotConfig()->stopThreshold);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_AP_MAX_ANGLE, "%d",          autopilotConfig()->maxAngle);
@@ -1861,7 +1861,6 @@ static bool blackboxWriteSysinfo(void)
 
 #ifdef USE_POSITION_HOLD
 #ifndef USE_WING
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_WITHOUT_MAG, "%d", posHoldConfig()->posHoldWithoutMag);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_POS_HOLD_DEADBAND,    "%d", posHoldConfig()->deadband);
 #endif // !USE_WING
 #endif

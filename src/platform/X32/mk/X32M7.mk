@@ -106,7 +106,7 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
-DEVICE_FLAGS    = -DUSE_STDPERIPH_DRIVER -DSYSCLK_SRC=SYSCLK_USE_HSE_PLL -DUSE_USB_HS_IN_FS -DX32M7XX
+DEVICE_FLAGS    = -DUSE_STDPERIPH_DRIVER -DSYSCLK_SRC=SYSCLK_USE_HSE_PLL -DUSE_USB_HS_IN_FS -DX32M7
 
 ifeq ($(TARGET_MCU),X32M7B)
 DEVICE_FLAGS    += -DX32M7B -DTCM_SIZE_VALUE=0x03
@@ -129,24 +129,11 @@ VCP_SRC = \
             X32/usbhs/vcp/usbd_cdc_vcp.c \
             drivers/usb_io.c
 
-MCU_COMMON_SRC = \
+# Portable common/stm32 sources shared with the STM32/APM32/AT32 families.
+include $(PLATFORM_DIR)/common/stm32/mcu_common_src.mk
+
+MCU_COMMON_SRC += \
             X32/startup/soc.c \
-            common/stm32/system.c \
-            common/stm32/io_impl.c \
-            common/stm32/adc_impl.c \
-            common/stm32/bus_i2c_pinconfig.c \
-            common/stm32/config_flash.c \
-            common/stm32/debug_pin.c \
-            common/stm32/expresslrs_driver_hw.c \
-            common/stm32/fault_handlers.c \
-            common/stm32/ledstrip_ws2811_stm32.c \
-            common/stm32/pwm_output_beeper.c \
-            common/stm32/pwm_output_dshot_shared.c \
-            common/stm32/dshot_dpwm.c \
-            common/stm32/dshot_bitbang_shared.c \
-            common/stm32/serial_uart_hw.c \
-            common/stm32/serial_uart_pinconfig.c \
-            common/stm32/bus_spi_pinconfig.c \
             drivers/adc.c \
             drivers/bus_i2c_timing.c \
             drivers/bus_spi_config.c \
@@ -162,6 +149,7 @@ MCU_COMMON_SRC = \
             X32/dshot_bitbang.c \
             X32/dshot_bitbang_stdperiph.c \
             X32/exti_x32.c \
+            X32/gyro_clkin_x32.c \
             X32/io_x32.c \
             X32/light_ws2811strip_x32.c \
             X32/persistent_x32.c \

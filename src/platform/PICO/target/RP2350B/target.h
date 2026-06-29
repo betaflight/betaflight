@@ -29,18 +29,15 @@
 #define USBD_PRODUCT_STRING     "Betaflight - RP2350B"
 #endif
 
-#ifdef PICO_TRACE
-#include "pico_trace.h"
-#define bprintf tprintf
-#else
-#define bprintf(fmt,...)
-#endif
-
 #ifndef RP2350B
 #define RP2350B
 #endif
 
+// USE_MULTICORE turns on the multicore API (core 1 + dispatch).
+// ENABLE_MULTICORE_INIT additionally runs the FC init phases on core 1 (the
+// RP2350 core-allocation policy); enable both for the previous behaviour.
 //#define USE_MULTICORE
+//#define ENABLE_MULTICORE_INIT
 
 #define USE_UART0
 #define USE_UART1

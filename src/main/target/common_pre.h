@@ -67,6 +67,13 @@
 */
 
 #define USE_PARAMETER_GROUPS
+
+// SPA06-003 shares the SPL07-003 register map; the DPS310 driver handles both.
+// Placed before the CLOUD_BUILD / USE_CONFIG gates so per-board configs that
+// opt in via USE_BARO_SPA06_003 alone still pull the DPS310 driver in.
+#if defined(USE_BARO_SPA06_003) && !defined(USE_BARO_DPS310)
+#define USE_BARO_DPS310
+#endif
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
 //#pragma GCC diagnostic warning "-Wconversion"
@@ -526,10 +533,6 @@
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
-
-#if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
-#error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
-#endif
 
 // backwards compatibility for older config.h targets
 #ifndef GYRO_CONFIG_USE_GYRO_1

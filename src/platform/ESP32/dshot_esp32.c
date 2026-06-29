@@ -312,8 +312,13 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
     // Force power on the RMT memory block
     rmt_ll_mem_force_power_on(&RMT);
 
-    // Select APB clock source (80MHz) with divider=1 (no group-level division)
+    // Pick an 80 MHz-ish source for the bit-period timing. ESP32 / S3 use
+    // APB; C5 / P4 dropped APB so use PLL_F80M (the IDF default choice).
+#if defined(ESP32C5) || defined(ESP32P4)
+    rmt_ll_set_group_clock_src(&RMT, 0, RMT_CLK_SRC_DEFAULT, 1, 0, 0);
+#else
     rmt_ll_set_group_clock_src(&RMT, 0, RMT_CLK_SRC_APB, 1, 0, 0);
+#endif
     rmt_ll_enable_group_clock(&RMT, true);
 
     esp32DshotMotorCount = 0;
@@ -329,7 +334,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
             break;
         }
 
-        IOInit(io, OWNER_MOTOR, i);
+        IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(i));
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);
@@ -359,7 +364,7 @@ bool dshotPwmDevInit(motorDevice_t *device, const motorDevConfig_t *motorConfig)
         // Connect RMT TX channel output to GPIO pin via the GPIO matrix
         esp_rom_gpio_pad_select_gpio(pin);
         gpio_ll_output_enable(&GPIO, pin);
-        esp_rom_gpio_connect_out_signal(pin, RMT_SIG_OUT0_IDX + ch, false, false);
+        esp_rom_gpio_connect_out_signal(pin, ESP32_RMT_SIG_OUT0_IDX + ch, false, false);
 
         esp32DshotMotorCount++;
     }

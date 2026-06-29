@@ -113,6 +113,8 @@
 #define DMA_X32_EVENTS_FROM_FLAGS(flags) \
     ((flags) & (DMA_CH_EVENT_TRANSFER_COMPLETE | DMA_CH_EVENT_BLOCK_TRANSFER_COMPLETE | DMA_CH_EVENT_ERROR))
 
+void dmaX32StoreBlockSize(void *ref, uint32_t size);
+void dmaX32RegisterRxBuf(void *ref, void *buf, uint32_t size);
 static inline DMA_Module *dmaX32ControllerFromChannel(DMA_ARCH_TYPE *resource)
 {
     return DMA_X32_CONTROLLER_FROM_CHANNEL(resource);
@@ -165,12 +167,22 @@ static inline DMA_ChHwHsIfType dmaX32HandshakeInterfaceFromResource(DMA_ARCH_TYP
 #define DMA_CLEAR_FLAG(d, flag) DMA_ClearFlag((DMA_ARCH_TYPE *)(d)->ref, (flag))
 #define DMA_GET_FLAG_STATUS(d, flag) DMA_GetFlagStatus((DMA_ARCH_TYPE *)(d)->ref, (flag))
 
-#define xDMA_Init(dmaResource, initStruct) DMA_Init((DMA_ARCH_TYPE *)(dmaResource), initStruct)
+#define xDMA_Init(dmaResource, initStruct) do { \
+    const DMA_ChInitType *_xi = (const DMA_ChInitType *)(initStruct); \
+    dmaX32StoreBlockSize((void *)(dmaResource), _xi->BlkTfrSize); \
+    if (_xi->DstAddrCountMode == DMA_CH_ADDRESS_COUNT_MODE_INCREMENT) { \
+        dmaX32RegisterRxBuf((void *)(dmaResource), (void *)_xi->DstAddr, _xi->BlkTfrSize); \
+    } \
+    DMA_Init((DMA_ARCH_TYPE *)(dmaResource), (initStruct)); \
+} while (0)
 #define xDMA_DeInit(dmaResource) DMA_DeInit((DMA_ARCH_TYPE *)(dmaResource))
 #define xDMA_Cmd(dmaResource, newState) DMA_Cmd((DMA_ARCH_TYPE *)(dmaResource), newState)
 #define xDMA_ITConfig(dmaResource, flags, newState) DMA_ITConfig((DMA_ARCH_TYPE *)(dmaResource), flags, newState)
 #define xDMA_GetCurrDataCounter(dmaResource) DMA_GetCurrDataCounter((DMA_ARCH_TYPE *)(dmaResource))
-#define xDMA_SetCurrDataCounter(dmaResource, count) DMA_SetCurrDataCounter((DMA_ARCH_TYPE *)(dmaResource), count)
+#define xDMA_SetCurrDataCounter(dmaResource, count) do { \
+    dmaX32StoreBlockSize((void *)(dmaResource), (count)); \
+    DMA_SetCurrDataCounter((DMA_ARCH_TYPE *)(dmaResource), (count)); \
+} while (0)
 #define xDMA_GetFlagStatus(dmaResource, flags) DMA_GetFlagStatus((DMA_ARCH_TYPE *)(dmaResource), flags)
 #define xDMA_ClearFlag(dmaResource, flags) DMA_ClearFlag((DMA_ARCH_TYPE *)(dmaResource), flags)
 #define xDMA_MemoryTargetConfig(dmaResource, address, target) DMA_MemoryTargetConfig((DMA_ARCH_TYPE *)(dmaResource), address, target)

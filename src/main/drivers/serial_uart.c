@@ -312,6 +312,13 @@ serialPort_t *uartOpen(serialPortIdentifier_e identifier, serialReceiveCallbackP
     if (!uartDevice) {
         return NULL;
     }
+    // A UART can be compiled in (USE_UARTx) yet have no usable pins for the
+    // configured port - e.g. a config assigns a pin that is missing from the
+    // hardware table. uartPinConfigure() then leaves ->hardware NULL, and
+    // serialUART() would dereference it and hard fault. Bail out cleanly.
+    if (!uartDevice->hardware) {
+        return NULL;
+    }
     // fill identifier early, so initialization code can use it
     uartDevice->port.port.identifier = identifier;
     mode = uartSanitizeMode(uartDevice, mode, options);

@@ -40,17 +40,6 @@
 #define MEDIA_DESC_STR_NORMAL       "@Betaflight  /0x70100000/0100*064Kg"
 #define MEDIA_DESC_STR_RECOVERY     "@Betaflight  /0x70000000/0800*064Kg"
 
-/* @DBGRAM alt — exposes a fixed AXISRAM region OBL uses to publish
- * boot-decision diagnostics. AXISRAM survives soft reset and is
- * reachable from the DFU upload context. */
-#define DBG_DESC_STR                "@DBGRAM /0x24100000/1*512Ba"
-#define DBG_RAM_BASE                0x24100000U
-#define DBG_RAM_SIZE                0x00000200U
-
-/* Referenced from our patched usbd_dfu.c::USBD_DFU_GetUsrStringDesc
- * for the alt-1 iInterface descriptor. */
-const char obl_tamp_desc_str[] = DBG_DESC_STR;
-
 /* MX66UW1G45G program/erase windows — used by the host's DFU GET_STATUS
  * to bound the polling timeout it announces in the device-state machine.
  * Generous; real hardware completes faster but the host doesn't care
@@ -105,11 +94,6 @@ static uint16_t USB_DFU_If_DeInit(void)
 
 static uint16_t USB_DFU_If_Erase(uint32_t Add)
 {
-    /* @DBGRAM range is read-only; reject erase. */
-    if (Add >= DBG_RAM_BASE && Add < DBG_RAM_BASE + DBG_RAM_SIZE) {
-        return 1U;
-    }
-
     if (OPENBL_MEM_GetAddressArea((uint32_t)Add) == AREA_ERROR) {
         return OPENBL_USB_SendAddressNack(&hUsbDeviceFS);
     }
@@ -151,15 +135,7 @@ static uint32_t dfuse_get_base(void)
 
 static uint16_t USB_DFU_If_Write(uint8_t *pSrc, uint32_t alt, uint32_t Len, uint32_t BlockNumber)
 {
-    /* alt 1 (@DBGRAM) is read-only. DfuSe upload anchors via a
-     * DOWNLOAD wValue=0,wLength=5 SET_ADDRESS_POINTER which we can
-     * silently accept; refuse anything that looks like a data block. */
-    if (alt == 1U) {
-        if (BlockNumber < 2U) {
-            return 0U;
-        }
-        return 1U;
-    }
+    (void)alt;
 
     /* DfuSe extension commands (bcdDFUVersion=0x011A) arrive as
      * BlockNumber=0, wLength==5, command byte at pSrc[0]:
@@ -224,28 +200,7 @@ static uint16_t USB_DFU_If_Write(uint8_t *pSrc, uint32_t alt, uint32_t Len, uint
 
 static uint8_t *USB_DFU_If_Read(uint32_t alt, uint8_t *pDest, uint32_t Len, uint32_t BlockNumber)
 {
-    if (alt == 1U) {
-        /* @DBGRAM read from AXISRAM2 at DBG_RAM_BASE (0x24100000). ST
-         * DfuSe upload addressing: BlockNumber 0/1 reserved (SET_ADDR /
-         * GET_CMD), 2+ carry data at (BlockNumber - 2) * xfer_size from
-         * DBG_RAM_BASE. */
-        const uint32_t offset = (BlockNumber >= 2U)
-                              ? (BlockNumber - 2U) * USBD_DFU_XFER_SIZE
-                              : 0U;
-        if (offset >= DBG_RAM_SIZE) {
-            memset(pDest, 0, Len);
-            return pDest;
-        }
-        uint32_t copy_len = Len;
-        if (offset + copy_len > DBG_RAM_SIZE) {
-            copy_len = DBG_RAM_SIZE - offset;
-        }
-        memcpy(pDest, (const uint8_t *)(DBG_RAM_BASE + offset), copy_len);
-        if (copy_len < Len) {
-            memset(pDest + copy_len, 0, Len - copy_len);
-        }
-        return pDest;
-    }
+    (void)alt;
     /* alt 0: memcpy from XSPI memory-mapped flash, anchored at the
      * most recent DfuSe SET_ADDRESS_POINTER. flash_memmap_on() is
      * idempotent and brings the controller back from indirect mode

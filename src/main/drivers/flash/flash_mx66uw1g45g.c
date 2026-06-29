@@ -408,7 +408,7 @@ MMFLASH_CODE static int mx66uw1g45g_readBytes(flashDevice_t *fdevice, uint32_t a
     return (int)length;
 }
 
-static const flashGeometry_t *mx66uw1g45g_getGeometry(flashDevice_t *fdevice)
+MMFLASH_CODE_NOINLINE static const flashGeometry_t *mx66uw1g45g_getGeometry(flashDevice_t *fdevice)
 {
     return &fdevice->geometry;
 }
