@@ -1433,7 +1433,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_PITCH_ACCEL_MIN,            VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_pitch_accel_min) },
 
     { PARAM_NAME_PSAS_ROLL_STICK_GAIN,   VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_ROLL]) },
-    { PARAM_NAME_PSAS_ROLL_STICK_SPEED_ENABLE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_gain[FD_ROLL]) },
+    { PARAM_NAME_PSAS_ROLL_STICK_SPEED_ENABLE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_speed_enable[FD_ROLL]) },
     { PARAM_NAME_PSAS_ROLL_STICK_SPEED_SCALE,      VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 50, 150 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_stick_speed_scale[FD_ROLL]) },
     { PARAM_NAME_PSAS_ROLL_DAMPING_GAIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_gain[FD_ROLL]) },
     { PARAM_NAME_PSAS_ROLL_DAMPING_SPEED_ENABLE,     VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_damping_speed_enable[FD_ROLL]) },
