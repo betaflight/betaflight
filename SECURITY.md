@@ -6,9 +6,9 @@ repositories.
 **Please report security vulnerabilities privately — never through public
 GitHub issues, pull requests, or Discord.**
 
-- **GitHub (preferred):** use the **Security** tab → **Report a vulnerability**
-  on this repository.
-- **Email:** security@betaflight.com
+- **GitHub (preferred, where enabled):** on this repository's **Security** tab,
+  use **Report a vulnerability** if that button is shown.
+- **Email (always works):** security@betaflight.com
 
 For the full policy — scope, what to include, our disclosure timeline, and safe
 harbour — see the canonical Betaflight security policy:
