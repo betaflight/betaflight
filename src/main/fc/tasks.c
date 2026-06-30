@@ -93,6 +93,8 @@
 
 #include "scheduler/scheduler.h"
 
+#include "drivers/phoneconfig.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/adcinternal.h"
 #include "sensors/barometer.h"
@@ -397,6 +399,11 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_BEEPER] = DEFINE_TASK("BEEPER", NULL, NULL, beeperUpdate, TASK_PERIOD_HZ(100), TASK_PRIORITY_LOW),
 #endif
 
+#ifdef USE_PHONE_CONFIG
+    [TASK_PHONE_CONFIG] = DEFINE_TASK("PHONECONFIG", NULL, NULL, phoneConfigGestureUpdate, TASK_PERIOD_HZ(50), TASK_PRIORITY_LOWEST),
+    [TASK_PHONE_CONFIG_NET] = DEFINE_TASK("PHONENET", NULL, NULL, phoneConfigNetTask, TASK_PERIOD_HZ(1000), TASK_PRIORITY_LOW),
+#endif
+
 #ifdef USE_GPS
     [TASK_GPS] = DEFINE_TASK("GPS", NULL, NULL, gpsUpdate, TASK_PERIOD_HZ(TASK_GPS_RATE), TASK_PRIORITY_MEDIUM), // Required to prevent buffer overruns if running at 115200 baud (115 bytes / period < 256 bytes buffer)
 #endif
@@ -573,6 +580,11 @@ void tasksInit(void)
 #endif
 
     setTaskEnabled(TASK_RX, true);
+
+#ifdef USE_PHONE_CONFIG
+    setTaskEnabled(TASK_PHONE_CONFIG, true);
+    setTaskEnabled(TASK_PHONE_CONFIG_NET, phoneConfigCheckBootAndReset());   // pump the usb-ncm/tcp link only in phone-config mode
+#endif
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 
