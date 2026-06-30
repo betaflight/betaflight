@@ -1116,12 +1116,13 @@ FAST_CODE void crsfScheduleTelemetryResponse(void)
 }
 
 // Scheduler check function for event-driven telemetry.
-// Periodic sensor telemetry is already capped to CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US (50Hz)
-// inside processCrsf() (CRSF_CYCLETIME_US / crsfScheduleCount). Mirror that cap on the task
-// wake-up rate so high RC link rates (e.g. 250Hz ELRS) cannot wake TASK_TELEMETRY faster than
-// it can produce a frame, which otherwise starves time-critical tasks (PID/motor write).
-// Latency-sensitive ad-hoc responses (MSP-over-telemetry, device info) bypass the cap so they
-// still drain at the inbound frame rate.
+// Cap TASK_TELEMETRY wake-ups at 50Hz so high RC link rates (e.g. 250Hz ELRS)
+// cannot wake the scheduler faster than it produces frames, which otherwise
+// starves time-critical tasks (PID/motor write). Each sensor frame type is
+// sent at most once per CRSF_CYCLETIME_US (100ms), so 50Hz task wakes are
+// sufficient to transmit all types on schedule.
+// Latency-sensitive ad-hoc responses (MSP-over-telemetry, device info) bypass
+// the cap so they still drain at the inbound frame rate.
 bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
     UNUSED(currentDeltaTimeUs);
