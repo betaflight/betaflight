@@ -6,12 +6,17 @@
 
 DEFAULT_OUTPUT := bin
 
+# Emit a bootable ESP-IDF application image (via esptool elf2image) into a
+# transient _tmp.bin, then merge bootloader + partition table + app into the
+# final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
+
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
 PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 
 # ESP-IDF location (when submodule is hydrated)
-ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
+ESP_IDF_DIR = $(LIB_MODULES_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32 toolchain
 # ESP_TOOLS_BIN is resolved in tools.mk; reuse it here
@@ -108,7 +113,7 @@ MCU_COMMON_SRC = \
             ESP32/periph_regs_esp32.c
 
 # ESP-IDF SOC peripheral descriptor sources
-# Paths are relative to LIB_MAIN_DIR (lib/main) since that's in VPATH
+# Paths are relative to LIB_MODULES_DIR (lib/modules) since that's in VPATH
 DEVICE_STDPERIPH_SRC = \
             esp-idf/components/soc/esp32/gpio_periph.c \
             esp-idf/components/soc/esp32/i2c_periph.c \

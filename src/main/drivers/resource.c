@@ -136,3 +136,66 @@ const char *getOwnerName(resourceOwner_e owner)
 
     return ownerNames[owner];
 }
+
+// Base of the `resource` ordinal for a bus peripheral, matching its hardware
+// instance name: 0 on parts that number from zero (SPI0/I2C0), 1 otherwise
+// (SPI1/I2C1). Derived from the same hardware-naming signals the drivers use.
+#if defined(USE_SPI_DEVICE_0)
+#define SPI_RESOURCE_INDEX_BASE 0
+#else
+#define SPI_RESOURCE_INDEX_BASE 1
+#endif
+#if defined(USE_I2C_DEVICE_0)
+#define I2C_RESOURCE_INDEX_BASE 0
+#else
+#define I2C_RESOURCE_INDEX_BASE 1
+#endif
+
+// First `resource` ordinal for an owner, so the ordinal matches that peripheral's
+// hardware instance name. On targets that opt in (USE_RESOURCE_INDEX_FROM_ZERO)
+// bus peripherals follow their chip numbering - UART0/SPI0/I2C0 are 0-based -
+// while logical resources (motor 1, servo 1) and sensors (gyro 1) stay 1-based.
+// Without the opt-in every resource is 1-based.
+static int resourceInputBase(resourceOwner_e owner)
+{
+#if defined(USE_RESOURCE_INDEX_FROM_ZERO)
+    switch (owner) {
+    case OWNER_SERIAL_TX:
+    case OWNER_SERIAL_RX:
+#if defined(USE_INVERTER)
+    case OWNER_INVERTER:
+#endif
+        return SERIAL_UART_FIRST_INDEX;
+    case OWNER_SPI_SCK:
+    case OWNER_SPI_SDI:
+    case OWNER_SPI_SDO:
+    case OWNER_SPI_CS:
+        return SPI_RESOURCE_INDEX_BASE;
+    case OWNER_I2C_SCL:
+    case OWNER_I2C_SDA:
+        return I2C_RESOURCE_INDEX_BASE;
+#if defined(USE_PIOUART)
+    case OWNER_PIOUART_TX:
+    case OWNER_PIOUART_RX:
+        return 0;   // PIOUART instances are always named from zero
+#endif
+    default:
+        return 1;   // motors, servos, sensors, LED, beeper, ... stay 1-based
+    }
+#else
+    (void)owner;
+    return 1;
+#endif
+}
+
+// Convert between the internal 0-based resource index and the ordinal the
+// `resource` CLI shows and accepts, applying the owner's base.
+int resourceIndexToInput(resourceOwner_e owner, int index)
+{
+    return index + resourceInputBase(owner);
+}
+
+int resourceInputToIndex(resourceOwner_e owner, int input)
+{
+    return input - resourceInputBase(owner);
+}

@@ -177,18 +177,6 @@ static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent)
         LCDprint(154); // empty
 }
 
-#if 0
-static void fillScreenWithCharacters(void)
-{
-    for (uint8_t row = 0; row < SCREEN_CHARACTER_ROW_COUNT; row++) {
-        for (uint8_t column = 0; column < SCREEN_CHARACTER_COLUMN_COUNT; column++) {
-            i2c_OLED_set_xy(dev, column, row);
-            i2c_OLED_send_char(dev, 'A' + column);
-        }
-    }
-}
-#endif
-
 static void updateTicker(void)
 {
     static uint8_t tickerIndex = 0;
@@ -552,9 +540,8 @@ static void showTasksPage(void)
     for (taskId_e taskId = 0; taskId < TASK_COUNT; ++taskId) {
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled && taskId != TASK_SERIAL) {// don't waste a line of the display showing serial taskInfo
-            const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTimeUs));
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct / 10;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct / 10;
             tfp_sprintf(lineBuffer, format, taskId, taskInfo.maxExecutionTimeUs, taskInfo.averageExecutionTime10thUs / 10, maxLoad, averageLoad);
             padLineBuffer();
             i2c_OLED_set_line(dev, rowIndex++);

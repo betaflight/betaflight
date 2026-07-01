@@ -49,7 +49,6 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/rpm_filter.h"
 
 #include "io/gps.h"
 
@@ -170,7 +169,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
             // NOTE: dynamic lpf is enabled by default so this setting is actually
             // overridden and the static lowpass 1 is disabled. We can't set this
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
-            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+            // reset the lowpass filter type to PT1 overriding the desired Butterworth setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -492,20 +491,41 @@ void pidAcroTrainerInit(void)
 #endif // USE_ACRO_TRAINER
 
 #ifdef USE_THRUST_LINEARIZATION
+// Compensate motor command for a non-linear (~quadratic) motor thrust response.
+// Uses a 2nd-order Taylor expansion of ArduPilot's MOT_THST_EXPO model:
+//   c(x) = x * (1 + e * (1-x) * (1 + e * (1-2x)))
+// where e = thrustLinearization (0..1.5, scaled from the 0..150 CLI value).
+// This matches the small-e Taylor series of (1-e)*m + e*m^2 to second order,
+// so thrust_linear ≈ MOT_THST_EXPO * 100 and ArduPilot's per-prop recommendations
+// (≈55 for 5", ≈65 for 10", ≈75 for 20"+) port directly.
+//
+// The 2nd-order term flips sign at x=0.5, dropping the curve's slope at full
+// throttle from 1.0 to (1 - e + e^2). This prevents the current cubic shape
+// from going tangent to identity at x=1 and softens the motor's natural
+// steepening near the top of the throttle range.
+//
+// Cost: 4 mults, 2 adds, 2 subs per motor (no sqrt). Called per-motor per loop.
+float pidApplyThrustLinearization(float motorOutput)
+{
+    const float e = pidRuntime.thrustLinearization;
+    const float inv = 1.0f - motorOutput;
+    motorOutput *= 1.0f + e * inv * (1.0f + e * (inv - motorOutput));
+    return motorOutput;
+}
+
+// Inverse of the curve above, applied to base throttle so hover throttle is
+// preserved when thrust linearization is active. Expanding c⁻¹(y) as a Taylor
+// series in e gives c⁻¹(y) = y - e·y·(1-y) + 0·e² + O(e³): the e² coefficient
+// vanishes by algebraic cancellation, so this two-term expression is accurate
+// to second order in e — matching the forward — and is cheaper than dividing
+// by the full forward multiplier.
 float pidCompensateThrustLinearization(float throttle)
 {
     if (pidRuntime.thrustLinearization != 0.0f) {
-        // for whoops where a lot of TL is needed, allow more throttle boost
-        const float throttleReversed = (1.0f - throttle);
-        throttle /= 1.0f + pidRuntime.throttleCompensateAmount * sq(throttleReversed);
+        const float e = pidRuntime.thrustLinearization;
+        throttle *= 1.0f - e * (1.0f - throttle);
     }
     return throttle;
-}
-
-float pidApplyThrustLinearization(float motorOutput)
-{
-    motorOutput *= 1.0f + pidRuntime.thrustLinearization * sq(1.0f - motorOutput);
-    return motorOutput;
 }
 #endif
 
@@ -573,8 +593,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
-        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(0.5f * autopilotConfig()->maxAngle, angleLimit);
+        // limit pilot requested angle to 1.0f *  autopilot angle to avoid excess speed and chaotic stops
+        angleLimit = fminf(1.0f * autopilotConfig()->maxAngle, angleLimit);
     }
 #endif
 
@@ -1109,10 +1129,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     rotateItermAndAxisError();
 
-#ifdef USE_RPM_FILTER
-    rpmFilterUpdate();
-#endif
-
     if (pidRuntime.useEzDisarm) {
         disarmOnImpact();
     }
@@ -1502,9 +1518,10 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_SVF:
+            cutoffFreq = MIN(cutoffFreq, 0.475f / pidRuntime.dT); // constrain to be below the nyquist
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+                svfLowpassFilterUpdate(&pidRuntime.dtermLowpass[axis].svfLowpassFilter, cutoffFreq, pidRuntime.dT);
             }
             break;
         case DYN_LPF_PT2:

@@ -124,8 +124,12 @@ void setDefaultSimulationState()
 {
     memset(osdElementConfigMutable(), 0, sizeof(osdElementConfig_t));
 
+    rtcTime_t rtcTime = simulationTime / 1000;
+    rtcSet(&rtcTime);
+
     osdConfigMutable()->enabled_stats = 0;
     osdConfigMutable()->framerate_hz = 12;
+    timeConfigMutable()->tz_offsetMinutes = 0;
 
     rssi = 1024;
 
@@ -521,6 +525,43 @@ TEST_F(OsdTest, TestStatsTiming)
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.60");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:01");
+}
+
+TEST_F(OsdTest, TestRtcDateTimeVariantsUseTimezoneOffset)
+{
+    // given
+    // this RTC time and timezone offset
+    dateTime_t dateTime;
+    dateTime.year = 2026;
+    dateTime.month = 5;
+    dateTime.day = 30;
+    dateTime.hours = 22;
+    dateTime.minutes = 30;
+    dateTime.seconds = 15;
+    dateTime.millis = 0;
+    rtcSetDateTime(&dateTime);
+    timeConfigMutable()->tz_offsetMinutes = 120;
+
+    // when
+    // the short date/time variant is formatted
+    char buffer[FORMATTED_DATE_TIME_BUFSIZE];
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_2);
+    EXPECT_TRUE(osdFormatRtcDateTime(buffer));
+
+    // then
+    // the short date/time variant uses local time
+    EXPECT_STREQ("05.31 00:30", buffer);
+
+    // when
+    // the time-only variant is formatted
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_3);
+    EXPECT_TRUE(osdFormatRtcDateTime(buffer));
+
+    // then
+    // the time-only variant uses local time
+    EXPECT_STREQ("00:30:15", buffer);
+
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_1);
 }
 
 /*

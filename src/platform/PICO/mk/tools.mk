@@ -1,7 +1,7 @@
 # Raspberry Pi Pico tools
 # Register SDK for CI caching and hydration
 PLATFORM_SDKS += pico_sdk
-PLATFORM_SDK_pico_sdk_SUBMODULE := lib/main/pico-sdk
+PLATFORM_SDK_pico_sdk_SUBMODULE := lib/modules/pico-sdk
 PLATFORM_SDK_pico_sdk_HYDRATE := pico_sdk
 PLATFORM_SDK_pico_sdk_TOOLS      := arm_sdk_install picotool_install
 PLATFORM_SDK_pico_sdk_CC         := $(PLATFORM_SDK_arm_CC)
@@ -12,7 +12,7 @@ PICOTOOL_REPO   := https://github.com/raspberrypi/picotool.git
 PICOTOOL_DL_DIR := $(DL_DIR)/picotool
 PICOTOOL_BUILD_DIR := $(PICOTOOL_DL_DIR)/build
 PICOTOOL_DIR    := $(TOOLS_DIR)/picotool
-PICO_SDK_PATH   ?= $(ROOT_DIR)/lib/main/pico-sdk
+PICO_SDK_PATH   ?= $(ROOT_DIR)/lib/modules/pico-sdk
 PICOTOOL        ?= $(PICOTOOL_DIR)/picotool
 
 # Stamp file indicating pico-sdk has been hydrated
@@ -36,7 +36,7 @@ pico_sdk: $(PICO_SDK_STAMP)
 # Auto-hydrate pico-sdk when needed as a build dependency
 $(PICO_SDK_STAMP):
 	@echo "Hydrating pico-sdk submodule"
-	$(V1) git submodule update --init --checkout --recursive -- lib/main/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
+	$(V1) git submodule update --init --checkout --recursive -- lib/modules/pico-sdk || { echo "Failed to update pico-sdk"; exit 1; }
 	@echo "pico-sdk ready"
 
 .PHONY: picotool_install

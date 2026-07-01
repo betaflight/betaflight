@@ -27,12 +27,12 @@ SIZE    := $(PREFIX)size
 
 OBL_FLASH_DRIVER ?= mx66uw1g45g
 
-HAL_DIR     := $(ROOT)/lib/main/STM32N6/Drivers/STM32N6xx_HAL_Driver
-CMSIS_ST    := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
-CMSIS       := $(ROOT)/lib/main/STM32N6/Drivers/CMSIS/Include
-OBL_MW      := $(ROOT)/lib/main/STM32N6/Middlewares/ST/OpenBootloader
+HAL_DIR     := $(ROOT)/lib/modules/STM32N6/Drivers/STM32N6xx_HAL_Driver
+CMSIS_ST    := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include
+CMSIS       := $(ROOT)/lib/modules/STM32N6/Drivers/CMSIS/Include
+OBL_MW      := $(ROOT)/lib/modules/STM32N6/Middlewares/ST/OpenBootloader
 OBL_USBLIB  := $(OBL_MW)/STM32_USB_Device_Library
-OBL_PROJ    := $(ROOT)/lib/main/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader
+OBL_PROJ    := $(ROOT)/lib/modules/STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader
 
 INCLUDES := \
     -I. \
@@ -54,7 +54,6 @@ INCLUDES := \
     -I$(OBL_PROJ)/USB_Device/App \
     -I$(OBL_PROJ)/USB_Device/Target
 
-# Match betaflight main build: NS aliases (no -mcmse, no CPU_IN_SECURE_STATE).
 DEFINES := \
     -DSTM32N657xx \
     -DUSE_HAL_DRIVER \
@@ -66,7 +65,20 @@ ifdef OBL_FORCE_DFU
 DEFINES += -DOBL_FORCE_DFU
 endif
 
-ARCH_FLAGS := -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
+# Bring-up override: make OBL_FORCE_RECOVERY=1 to build an OBL that
+# always enters Recovery mode (exposes nor0 from 0x70000000 so OBL+BF
+# can be reinstalled). RAM-load only — never sign and flash this.
+ifdef OBL_FORCE_RECOVERY
+DEFINES += -DOBL_FORCE_RECOVERY
+endif
+
+# OBL is the only S-state code on the device, so build it with the Cortex-M
+# Security Extensions enabled. -mcmse sets __ARM_FEATURE_CMSE=3, which makes
+# the ST CMSIS headers select the secure-alias peripheral base addresses
+# (RCC, RIFSC, GPIOx, DBGMCU, TAMP, PWR, RTC, EXTI, GPDMA1, HPDMA1, ...). All
+# peripheral access in OBL therefore goes through the S aliases naturally
+# via the CMSIS struct pointers instead of hand-coded addresses.
+ARCH_FLAGS := -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16 -mcmse
 
 CFLAGS := \
     $(ARCH_FLAGS) \
@@ -173,9 +185,9 @@ BIN := obl.bin
 SIGNING_TOOL ?= STM32_SigningTool_CLI
 SIGNED_BLOB  := prebuilt/obl_$(OBL_FLASH_DRIVER)_signed.stm32
 
-# Boot ROM @FSBL DFU alt cap empirically ~485 KiB. Build fails loudly if
-# the OBL output exceeds the safe budget.
-OBL_SIZE_LIMIT := 491520     # 480 KiB, matches linker LENGTH
+# Build fails loudly if the OBL output exceeds the linker-declared RAM
+# region. Matches LENGTH in STM32N657XX_OBL.ld.
+OBL_SIZE_LIMIT := 65536      # 64 KiB
 
 .PHONY: all signed size_check clean
 all: $(BIN) size_check

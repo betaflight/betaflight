@@ -7,8 +7,8 @@ PLATFORM_SDK := apm32f4
 PLATFORM_SDK_STAMP := $(APM32F4_SDK_STAMP)
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/APM32F4/Libraries/Device
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
+CMSIS_DIR      := $(LIB_MODULES_DIR)/APM32F4/Libraries/Device
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/APM32F4/Libraries/APM32F4xx_DAL_Driver
 STDPERIPH_SRC   = \
         apm32f4xx_dal_adc.c \
         apm32f4xx_dal_adc_ex.c \
@@ -113,7 +113,7 @@ DEVICE_STDPERIPH_SRC := \
         $(USBCDC_SRC) \
         $(USBMSC_SRC)
 #CMSIS
-VPATH := $(VPATH):$(LIB_MAIN_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
+VPATH := $(VPATH):$(LIB_MODULES_DIR)/APM32F4/Libraries/Device/Geehy/APM32F4xx
 
 INCLUDE_DIRS += \
         $(TARGET_PLATFORM_DIR) \
@@ -121,9 +121,9 @@ INCLUDE_DIRS += \
         $(TARGET_PLATFORM_DIR)/startup \
         $(PLATFORM_DIR)/common/stm32 \
         $(STDPERIPH_DIR)/Include \
-        $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-        $(LIB_MAIN_DIR)/$(USBMSC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCORE_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBCDC_DIR)/Inc \
+        $(LIB_MODULES_DIR)/$(USBMSC_DIR)/Inc \
         $(CMSIS_DIR)/Geehy/APM32F4xx/Include \
         $(TARGET_PLATFORM_DIR)/usb/vcp \
         $(TARGET_PLATFORM_DIR)/usb/msc \
@@ -163,18 +163,17 @@ else
 $(error TARGET_MCU [$(TARGET_MCU)] is not supported)
 endif
 
-MCU_COMMON_SRC = \
-        common/stm32/system.c \
-        common/stm32/io_impl.c \
-        common/stm32/config_flash.c \
+# Portable common/stm32 sources shared with the STM32/AT32/X32 families.
+include $(PLATFORM_DIR)/common/stm32/mcu_common_src.mk
+
+MCU_COMMON_SRC += \
         common/stm32/mco.c \
+        common/stm32/bus_spi_hw.c \
+        common/stm32/camera_control.c \
+        common/stm32/rx_pwm_hw.c \
         APM32/startup/system_apm32f4xx.c \
         drivers/inverter.c \
         drivers/dshot_bitbang_decode.c \
-        common/stm32/pwm_output_beeper.c \
-        common/stm32/pwm_output_dshot_shared.c \
-        common/stm32/dshot_dpwm.c \
-        common/stm32/dshot_bitbang_shared.c \
         APM32/bus_spi_apm32.c \
         APM32/bus_i2c_apm32.c \
         APM32/bus_i2c_apm32_init.c \
@@ -189,7 +188,6 @@ MCU_COMMON_SRC = \
         APM32/persistent_apm32.c \
         APM32/pwm_output_apm32.c \
         APM32/pwm_output_dshot_apm32.c \
-        common/stm32/rx_pwm_hw.c \
         APM32/rcm_apm32.c \
         APM32/serial_uart_apm32.c \
         APM32/timer_apm32.c \
@@ -200,20 +198,9 @@ MCU_COMMON_SRC = \
         APM32/serial_uart_apm32f4xx.c \
         drivers/adc.c \
         drivers/bus_spi_config.c \
-        common/stm32/bus_i2c_pinconfig.c \
-        common/stm32/bus_spi_hw.c \
-        common/stm32/camera_control.c \
-        common/stm32/bus_spi_pinconfig.c \
-        common/stm32/serial_uart_hw.c \
-        common/stm32/serial_uart_pinconfig.c \
         drivers/serial_escserial.c \
         drivers/serial_pinconfig.c \
-        APM32/system_apm32f4xx.c \
-        common/stm32/ledstrip_ws2811_stm32.c \
-        common/stm32/debug_pin.c \
-        common/stm32/adc_impl.c \
-        common/stm32/expresslrs_driver_hw.c \
-        common/stm32/fault_handlers.c
+        APM32/system_apm32f4xx.c
 
 VCP_SRC = \
         APM32/usb/vcp/usbd_cdc_descriptor.c \

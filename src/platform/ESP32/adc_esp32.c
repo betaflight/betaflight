@@ -82,18 +82,23 @@ static int adcChannelByPin(int pin)
 // Perform a single oneshot ADC1 read on the given channel
 static uint16_t adcReadChannel(uint8_t channel)
 {
+    adc_oneshot_ll_clear_event(ADC_LL_EVENT_ADC1_ONESHOT_DONE);
     adc_oneshot_ll_set_channel(ADC_UNIT_1, channel);
     adc_oneshot_ll_start(ADC_UNIT_1);
 
     int timeout = ADC_CONV_TIMEOUT;
-    while (!adc_oneshot_ll_raw_check_valid(ADC_UNIT_1) && --timeout > 0) {
+    while (!adc_oneshot_ll_get_event(ADC_LL_EVENT_ADC1_ONESHOT_DONE) && --timeout > 0) {
     }
 
     if (timeout <= 0) {
         return 0;
     }
 
-    return (uint16_t)adc_oneshot_ll_get_raw_result(ADC_UNIT_1);
+    uint32_t raw = adc_oneshot_ll_get_raw_result(ADC_UNIT_1);
+    if (!adc_oneshot_ll_raw_check_valid(ADC_UNIT_1, raw)) {
+        return 0;
+    }
+    return (uint16_t)raw;
 }
 
 void adcInit(const adcConfig_t *config)

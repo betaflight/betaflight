@@ -607,21 +607,14 @@ static uint8_t *USBD_DFU_GetUsrStringDesc(USBD_HandleTypeDef *pdev, uint8_t inde
   /*
    * Betaflight patch — the stock implementation hard-coded five
    * descriptor strings (FL/FSBL-EXT/FSBL-APP/<pStrDesc>/OTP), one per
-   * alt index, wired to ST's signed-FSBL workflow. We expose two
-   * application-specific alts:
+   * alt index, wired to ST's signed-FSBL workflow. We expose a single
+   * application-specific alt:
    *   alt 0 (USBD_IDX_INTERFACE_STR + 1) — DfuInterface->pStrDesc
    *                                        (= @Betaflight memory)
-   *   alt 1 (USBD_IDX_INTERFACE_STR + 2) — @TAMP (read-only debug)
    */
-  extern const char obl_tamp_desc_str[];
   if (index == (USBD_IDX_INTERFACE_STR + 1))
   {
     USBD_GetString((uint8_t *)DfuInterface->pStrDesc, USBD_StrDesc, length);
-    return USBD_StrDesc;
-  }
-  else if (index == (USBD_IDX_INTERFACE_STR + 2))
-  {
-    USBD_GetString((uint8_t *)obl_tamp_desc_str, USBD_StrDesc, length);
     return USBD_StrDesc;
   }
   else

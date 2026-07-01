@@ -27,6 +27,7 @@
 #include "platform.h"
 
 #include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/debug_uart.h"
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
 #include "drivers/persistent.h"
@@ -120,26 +121,31 @@ extern uint32_t isr_vector_table_base;
 
 void systemInit(void)
 {
-    // Debug subsystem clock + APB3 bus clock + DBGMCU.CR all configured
-    // via the secure alias. RCC and DBGMCU are RIFSC-gated and an
-    // NS-tagged transaction (which the CMSIS RCC->... and DBGMCU->...
-    // macros emit in this no-mcmse build) gets dropped silently — the
-    // bits read back as not set, the debug clock never enables, and
-    // SWD attach to a running BF fails AP1 examination ("Failed to
-    // read memory at 0xE000ED00"). Use the same secure-alias addresses
-    // OBL writes (system_stm32n6xx_obl.c).
-    //   RCC_S->MISCENSR  @ 0x56028A48 bit 0  — DBGENS
-    //   RCC_S->BUSENSR   @ 0x56028A44 bit 10 — APB3ENS
-    //   DBGMCU_S->CR     @ 0x54001004        — DBGCLKEN + DBG_SLEEP/STOP/STANDBY
-    *(volatile uint32_t *)0x56028A48UL = 1UL;
-    (void)*(volatile uint32_t *)0x56028248UL;
-    *(volatile uint32_t *)0x56028A44UL = (1UL << 10);
-    (void)*(volatile uint32_t *)0x56028244UL;
-    *(volatile uint32_t *)0x54001004UL = (1UL << 20)
+    // Bring the optional bare-metal trace UART up first thing so any
+    // wedge in the rest of systemInit / clock-config can still emit a
+    // byte to /dev/ttyUSBx. Compiles out when ENABLE_DEBUG_UART=0.
+    debugUartInit();
+    debugUartPuts("\r\nBF systemInit\r\n");
+
+    // Debug subsystem clock + APB3 bus clock + DBGMCU.CR — write via
+    // NS aliases. BF runs Non-Secure post-BXNS so S-alias addresses
+    // (0x5xxxxxxx) are in IDAU's forced-Secure quadrant and any access
+    // SecureFaults. The NS aliases (0x4xxxxxxx) classify NS via SAU
+    // region 1 (NS peripherals); RIFSC has the relevant SEC bits clear
+    // (boot ROM + OBL leave them 0), so the NS writes commit. OBL has
+    // already configured these — these writes are idempotent.
+    //   RCC->MISCENSR  @ 0x46028A48 bit 0  — DBGENS
+    //   RCC->BUSENSR   @ 0x46028A44 bit 10 — APB3ENS
+    //   DBGMCU->CR     @ 0x44001004        — DBGCLKEN + DBG_SLEEP/STOP/STANDBY
+    *(volatile uint32_t *)0x46028A48UL = 1UL;
+    (void)*(volatile uint32_t *)0x46028248UL;
+    *(volatile uint32_t *)0x46028A44UL = (1UL << 10);
+    (void)*(volatile uint32_t *)0x46028244UL;
+    *(volatile uint32_t *)0x44001004UL = (1UL << 20)
                                        | (1UL <<  0)
                                        | (1UL <<  1)
                                        | (1UL <<  2);
-    (void)*(volatile uint32_t *)0x54001004UL;
+    (void)*(volatile uint32_t *)0x44001004UL;
 
     // Vector table redirect first, so a pending IRQ enabled below routes
     // through our handlers (not whatever the boot ROM / FSBL had).
@@ -240,23 +246,82 @@ void systemInit(void)
     HAL_Init();
 
     // Open-everything RIFSC + GPIO config for OPEN-lifecycle dev silicon.
-    // BF runs as secure-privileged without -mcmse, so HAL macros emit NS
-    // alias addresses; SECCFGR/PRIVCFGR=0 lets those accesses through and
-    // RIMC master attributes mark every RIF-tracked master as MCID=1 +
-    // SEC + PRIV (LTDC/GPDMA/HPDMA/OTG/SDMMC/etc.). Production builds
-    // should replace this with the per-driver granular model.
+    // BF runs Non-Secure post-BXNS so S-alias writes (0x5xxxxxxx) hit
+    // IDAU's forced-Secure quadrant and SecureFault. Use the NS aliases
+    // (0x4xxxxxxx); RIFSC's relevant SEC bits are clear (boot ROM + OBL
+    // leave them 0), so NS-alias writes commit. Redundant with OBL's
+    // RIFSC opens, kept here as defensive idempotents.
     {
         SET_BIT(RCC->AHB3ENSR, RCC_AHB3ENR_RIFSCEN_Msk);
         (void)RCC->AHB3ENR;
 
+        volatile uint32_t * const seccfg  = (volatile uint32_t *)0x44024010UL;
+        volatile uint32_t * const privcfg = (volatile uint32_t *)0x44024030UL;
+        volatile uint32_t * const rimc    = (volatile uint32_t *)0x44024C10UL;
         for (unsigned i = 0; i < 6U; i++) {
-            RIFSC->RISC_SECCFGRx[i]  = 0U;
-            RIFSC->RISC_PRIVCFGRx[i] = 0U;
+            seccfg[i]  = 0U;
+            privcfg[i] = 0U;
         }
+        /* RIMC_ATTRx bit layout (per RM0486 + stm32n657xx.h):
+         *   bits 4-6 = MCID (3-bit master compartment ID — keep 0 = default)
+         *   bit 8    = MSEC  (master secure)
+         *   bit 9    = MPRIV (master privileged)
+         * The previous (1<<4)|(1<<5)|(1<<8) set MCID=3, MSEC=1, MPRIV=0 which
+         * landed DMA-class masters in compartment 3 and silently dropped
+         * hardware request signals from CID=0 peripherals to them. Set
+         * MSEC=1, MPRIV=1, MCID=0 so all bus masters share the slave
+         * compartment. CMSIS shows N6 has 13 RIMC_ATTRx registers.
+         */
         for (unsigned i = 0; i < 13U; i++) {
-            RIFSC->RIMC_ATTRx[i] = ((1U << 8) | (1U << 4) | (1U << 5));
+            rimc[i] = (1U << 9) | (1U << 8);   /* MPRIV | MSEC */
         }
+    }
 
+    /* GPDMA1/HPDMA1 channel security + privilege attributes.
+     *
+     * On N6, each GPDMA channel has its own per-channel security
+     * (SECCFGR.SECx) and privilege (PRIVCFGR.PRIVx) bits — separate from
+     * the master-side RIMC_ATTR. Writes to SECCFGR can only land via the
+     * SECURE alias (NS-alias writes silently drop in NS world, same
+     * pattern as TAMP/RIFSC).
+     *
+     * Without setting these, bus transactions issued by GPDMA channels
+     * carry NS+unpriv attributes. The boot ROM's RISAF setup admits the
+     * CPU's NS+priv transactions but rejects DMA NS+unpriv, so DMA writes
+     * to AXISRAM complete-with-TCF but the data never lands.
+     * Empirical: a software-triggered GPDMA1 M2M transfer reported TCF=1
+     * and CBR1=0 but the destination buffer kept its CPU-written sentinel.
+     * Marking the channel secure + privileged + source/dest secure (per
+     * the CubeN6 TIM_DMA reference) unblocks the writes.
+     *
+     * Apply to all 16 channels of GPDMA1 + HPDMA1 so any future DMA user
+     * (SPI, ADC continuous, DShot, etc.) inherits the right attributes.
+     * Per-channel SSEC/DSEC must still be set in CTR1 at init time — see
+     * stm32n6xx_ll_ex.h::LL_EX_DMA_Init.
+     */
+    {
+        /* Enable GPDMA1 + HPDMA1 clocks BEFORE writing SECCFGR/PRIVCFGR.
+         * RCC NS-alias base 0x46028000, AHB1ENSR @ +0xA50, AHB5ENSR @ +0xA60.
+         */
+        *(volatile uint32_t *)0x46028A50UL = (1UL << 4);     /* AHB1ENSR.GPDMA1ENS */
+        *(volatile uint32_t *)0x46028A60UL = (1UL << 0);     /* AHB5ENSR.HPDMA1ENS */
+        (void)*(volatile uint32_t *)0x46028250UL;            /* AHB1ENR readback to flush */
+
+        /* GPDMA1 NS-alias base = 0x40021000 (AHB1), HPDMA1 NS-alias base
+         * = 0x48020000 (AHB5). Open SECCFGR + PRIVCFGR on both. */
+        *(volatile uint32_t *)(0x40021000UL + 0x00) = 0x0000FFFFUL;   /* GPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x40021000UL + 0x04) = 0x0000FFFFUL;   /* GPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x40021000UL + 0x00);
+
+        *(volatile uint32_t *)(0x48020000UL + 0x00) = 0x0000FFFFUL;   /* HPDMA1->SECCFGR */
+        *(volatile uint32_t *)(0x48020000UL + 0x04) = 0x0000FFFFUL;   /* HPDMA1->PRIVCFGR */
+        (void)*(volatile uint32_t *)(0x48020000UL + 0x00);
+    }
+
+    /* GPIO bank clocks + GPIO SECCFGR open (NS-accessible).
+     * Was previously part of the RIFSC block above; kept here as its own
+     * block since it can run after the GPDMA channel-attr writes. */
+    {
         SET_BIT(RCC->AHB4ENSR,
             RCC_AHB4ENR_GPIOAEN_Msk | RCC_AHB4ENR_GPIOBEN_Msk |
             RCC_AHB4ENR_GPIOCEN_Msk | RCC_AHB4ENR_GPIODEN_Msk |
@@ -266,12 +331,15 @@ void systemInit(void)
             RCC_AHB4ENR_GPIOPEN_Msk | RCC_AHB4ENR_GPIOQEN_Msk);
         (void)RCC->AHB4ENR;
 
-        GPIO_TypeDef * const gpios[] = {
-            GPIOA, GPIOB, GPIOC, GPIOD, GPIOE, GPIOF,
-            GPIOG, GPIOH, GPION, GPIOO, GPIOP, GPIOQ,
+        // GPIOA_NS..GPIOQ_NS at 0x46020000 + bank * 0x400 (with the I..M gap
+        // skipped: H is at 0x46021C00, N at 0x46023400). SECCFGR offset 0x30.
+        static const uintptr_t gpio_ns_bases[] = {
+            0x46020000UL, 0x46020400UL, 0x46020800UL, 0x46020C00UL,
+            0x46021000UL, 0x46021400UL, 0x46021800UL, 0x46021C00UL,
+            0x46023400UL, 0x46023800UL, 0x46023C00UL, 0x46024000UL,
         };
-        for (unsigned i = 0; i < sizeof(gpios) / sizeof(gpios[0]); i++) {
-            gpios[i]->SECCFGR = 0x00000000U;
+        for (unsigned i = 0; i < sizeof(gpio_ns_bases) / sizeof(gpio_ns_bases[0]); i++) {
+            *(volatile uint32_t *)(gpio_ns_bases[i] + 0x30UL) = 0U;
         }
     }
 
@@ -296,19 +364,20 @@ void systemInit(void)
 
     // Spin PLL1 up off HSE, route IC1 → CPU at 600 MHz, USBPHY1 ← HSE/2.
     SystemClock_Config();
+    debugUartInit();   // re-init UART since clocks changed
 
-    // Re-assert APB3 bus clock + DBGMCU.CR via the secure alias after the
-    // clock-tree reconfig. HAL_RCC_OscConfig / HAL_RCC_ClockConfig drop
-    // bus-enable bits while they retune PLL1 and switch the CPU/SYSCLK
-    // source; without this post-config re-assert DBGCLKEN is gone by
-    // the time SWD tries to attach to a running BF.
-    *(volatile uint32_t *)0x56028A44UL = (1UL << 10);   // APB3ENS
-    (void)*(volatile uint32_t *)0x56028244UL;
-    *(volatile uint32_t *)0x54001004UL = (1UL << 20)    // DBGCLKEN
+    // Re-assert APB3 bus clock + DBGMCU.CR via NS aliases after the
+    // clock-tree reconfig. HAL_RCC_OscConfig / HAL_RCC_ClockConfig may
+    // drop bus-enable bits while they retune PLL1 / switch CPU/SYSCLK;
+    // without this post-config re-assert DBGCLKEN is gone by the time
+    // SWD tries to attach to a running BF.
+    *(volatile uint32_t *)0x46028A44UL = (1UL << 10);   // APB3ENS
+    (void)*(volatile uint32_t *)0x46028244UL;
+    *(volatile uint32_t *)0x44001004UL = (1UL << 20)    // DBGCLKEN
                                        | (1UL <<  0)    // DBG_SLEEP
                                        | (1UL <<  1)    // DBG_STOP
                                        | (1UL <<  2);   // DBG_STANDBY
-    (void)*(volatile uint32_t *)0x54001004UL;
+    (void)*(volatile uint32_t *)0x44001004UL;
 
     // Init cycle counter — depends on SystemCoreClock being current
     // (HAL_RCC_ClockConfig calls SystemCoreClockUpdate internally).
@@ -325,9 +394,20 @@ static void SystemClock_Config(void)
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-    // Power supply / voltage scaling: SMPS step-down disabled (VCORE supplied
-    // externally on the DK), VOS0 for full-frequency operation.
-    if (HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY) != HAL_OK) {
+    // Power supply selector. Default on-chip SMPS (custom N6 boards); set
+    // ENABLE_N6_PWR_EXTERNAL=1 in config.h for boards that feed VCORE
+    // externally (N6570-DK). Selecting the wrong mode browns out / hangs
+    // the chip in HAL_PWREx_ConfigSupply polling ACTVOSRDY.
+#ifndef ENABLE_N6_PWR_EXTERNAL
+#define ENABLE_N6_PWR_EXTERNAL 0
+#endif
+    if (HAL_PWREx_ConfigSupply(
+#if ENABLE_N6_PWR_EXTERNAL
+            PWR_EXTERNAL_SOURCE_SUPPLY
+#else
+            PWR_SMPS_SUPPLY
+#endif
+        ) != HAL_OK) {
         while (1);
     }
     if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE0) != HAL_OK) {
@@ -417,7 +497,8 @@ static void SystemClock_Config(void)
                                              | RCC_PERIPHCLK_ADC
                                              | RCC_PERIPHCLK_SDMMC1
                                              | RCC_PERIPHCLK_SDMMC2
-                                             | RCC_PERIPHCLK_USART1;
+                                             | RCC_PERIPHCLK_USART1
+                                             | RCC_PERIPHCLK_SPI1;
     PeriphClkInitStruct.UsbPhy1ClockSelection    = RCC_USBPHY1CLKSOURCE_HSE_DIV2;
     PeriphClkInitStruct.UsbOtgHs1ClockSelection  = RCC_USBOTGHS1CLKSOURCE_OTGPHY1;
     PeriphClkInitStruct.AdcClockSelection        = RCC_ADCCLKSOURCE_HCLK;
@@ -427,6 +508,7 @@ static void SystemClock_Config(void)
     // USART1 kernel: pick HSI (64 MHz, stable, decoupled from bus clocks) so
     // ST-LINK V3 VCOM bring-up works regardless of how PCLK2 is scaled.
     PeriphClkInitStruct.Usart1ClockSelection     = RCC_USART1CLKSOURCE_HSI;
+    PeriphClkInitStruct.Spi1ClockSelection       = RCC_SPI1CLKSOURCE_PCLK2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
         while (1);
     }

@@ -51,6 +51,13 @@
 
 #define USE_VCP
 
+// Dual-core: turn on the multicore API. Core 0 runs the FC and owns all
+// interrupts/peripherals; core 1 (APP_CPU) is a compute-offload helper reached
+// via multicoreExecute(). We do NOT define ENABLE_MULTICORE_INIT (the RP2350
+// run-init-on-core1 policy): on ESP32 ets_isr_attach binds handlers to the
+// calling core, so running init on core 1 would misroute our core-0 interrupts.
+#define USE_MULTICORE
+
 #undef USE_SOFTSERIAL1
 #undef USE_SOFTSERIAL2
 #undef USE_TRANSPONDER
@@ -58,18 +65,25 @@
 #undef USE_FLASH_CHIP
 #undef USE_RCC
 
-// SD card over SPI for blackbox logging (runtime-configured pins)
-#define USE_SDCARD
-#define USE_SDCARD_SPI
+// Per-board config.h opts into USE_SDCARD / USE_SDCARD_SPI when the
+// board carries an SPI SD socket; target.h stays MCU-shape only.
 
-// Default blackbox to serial; SD card available as an option
+#ifndef DEFAULT_BLACKBOX_DEVICE
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
+#endif
 
-// Config stored in flash partition
+// Config persisted in the on-board SPI flash. The region is mapped into the
+// byte-accessible DROM window at runtime (see ESP32/config_flash.c) so the
+// memory-mapped reads in config_eeprom.c resolve to flash; writes go through the
+// ROM SPI-flash API with the caches suspended and core 1 stalled. The streamer
+// writes 32-byte words (uint32_t-aligned), matching esp_rom_spiflash_write.
 #define CONFIG_IN_FLASH
-
-#define FLASH_CONFIG_STREAMER_BUFFER_SIZE   256
-#define FLASH_CONFIG_BUFFER_TYPE            uint8_t
+// Capability flag consumed in src/main (config_eeprom.c / config_streamer_impl.h):
+// configFlashInit() maps the region into the readable window before mmapped reads.
+#define ENABLE_CONFIG_FLASH_INIT
+#define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32
+#define FLASH_CONFIG_BUFFER_TYPE          uint32_t
+#define EEPROM_SIZE 32768
 
 /* DMA Settings */
 #undef USE_DMA_SPEC
@@ -114,6 +128,63 @@
 #undef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #undef USE_SERIAL_4WAY_SK_BOOTLOADER
 #undef USE_MULTI_GYRO
+
+// ---------------------------------------------------------------------------
+// Board-specific bring-up defaults for the bare "lonely binary" TARGET build
+// (make ESP32S3). For a unified board build (make CONFIG=<board>) USE_CONFIG
+// is defined and this whole block is skipped: the per-board config.h under
+// src/config/configs/ then supplies the sensors, bus pins, motors and LED.
+// ---------------------------------------------------------------------------
+#if !defined(USE_CONFIG)
+
+// IMU: InvenSense MPU-9250 on SPI device 0 (FSPI). Wiring on the lonely binary
+// (ESP32-S3 GPIO): SCK=GPIO12, MISO=GPIO13, MOSI=GPIO11, CS=GPIO10, INT=GPIO9.
+// (USE_VIRTUAL_GYRO/ACC can be re-enabled instead for sensorless bring-up.)
+#define USE_GYRO
+#define USE_ACC
+#define USE_GYRO_SPI_MPU9250
+#define USE_ACC_SPI_MPU9250
+
+#define SPI0_SCK_PIN            PA12
+#define SPI0_SDI_PIN            PA13   // MISO
+#define SPI0_SDO_PIN            PA11   // MOSI
+
+#define GYRO_1_SPI_INSTANCE     SPI0
+#define GYRO_1_CS_PIN           PA10
+// Gyro data-ready EXTI (GPIO9). The MPU drives INT at 8kHz; the gyro runs in
+// hardware-timed DMA mode (GYRO_EXTI_INT_DMA) - the EXTI ISR kicks an SPI-DMA
+// read and the GDMA-completion ISR flags data-ready.
+#define GYRO_1_EXTI_PIN         PA9
+#define GYRO_1_ALIGN            CW0_DEG
+
+// Run the PID loop at gyro_rate/4 (2kHz with the 8kHz MPU). The per-iteration
+// cost on this port is high, so attempting a 1:1 (8kHz) PID loop overloads the
+// scheduler; decimating to 2kHz keeps it within budget.
+#define DEFAULT_PID_PROCESS_DENOM 4
+
+// WS2812 addressable LED on GPIO48, used as a single status LED. The LED-strip
+// feature is enabled by default so it acts as a status indicator out of reset.
+#define LED_STRIP_PIN           PA48
+#define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
+// A single WS2812 as a status indicator is glaring at full output; dim it.
+#define LED_STRIP_DEFAULT_BRIGHTNESS 20
+// Seed one onboard status LED so the WS2812 is actively driven out of reset
+// (arm state: green disarmed / blue armed, blinking on warnings) rather than
+// sitting at its uncontrolled bright-white power-on state. DEFINE_LED and the
+// LED enums resolve in ledstrip.c, where this macro is expanded.
+#define LED_STRIP_DEFAULT_LED0  DEFINE_LED(0, 0, 0, 0, LED_FUNCTION_ARM_STATE, LED_FLAG_OVERLAY(LED_OVERLAY_WARNING))
+
+// PWM motor outputs (LEDC-driven), 4 motors for a quad. No DShot ESCs on the
+// board yet, so default to standard PWM; DShot stays available and selectable
+// via motor_pwm_protocol. Wiring (ESP32-S3 GPIO): M1=4, M2=5, M3=6, M4=7.
+// Kept clear of the dedicated JTAG pins (GPIO39-42) so on-target debugging works.
+#define DEFAULT_MOTOR_PROTOCOL  MOTOR_PROTOCOL_PWM
+#define MOTOR1_PIN              PA4
+#define MOTOR2_PIN              PA5
+#define MOTOR3_PIN              PA6
+#define MOTOR4_PIN              PA7
+
+#endif // !defined(USE_CONFIG)
 
 #undef USE_RANGEFINDER_HCSR04
 #undef USE_MAG

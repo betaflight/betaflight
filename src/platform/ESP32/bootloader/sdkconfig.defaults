@@ -1,0 +1,7 @@
+# Bootloader flash settings (esptool also patches these at flash time, but pin
+# them so the built bootloader header matches the Betaflight flash config).
+# Flash SIZE is not pinned here: it is injected per-build from MCU_FLASH_SIZE
+# as an extra sdkconfig default (see tools.mk ESP_BUILD_BOOTLOADER) so each
+# target's bootloader header matches its module (e.g. 4 MB for an N4R2 board).
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y

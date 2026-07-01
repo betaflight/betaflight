@@ -6,12 +6,19 @@
 
 DEFAULT_OUTPUT := bin
 
+# Emit a bootable ESP-IDF application image (via esptool elf2image) instead of a
+# raw objcopy dump, which with the split IROM/DROM layout would be enormous, into
+# a temporary _tmp.bin, then merge bootloader + partition table + app into the
+# final $(TARGET_BIN) for one-step flashing at 0x0 and delete the temp. The
+# bootloader is built from source by default; see tools.mk and bin/README.md.
+BIN_FROM_ELF_CMD = $(ESP_ELF2IMAGE_TMP) && $(ESP_FLASH_IMAGE_CMD)
+
 # Auto-hydrate esp-idf submodule when building ESP32 targets
 PLATFORM_SDK := esp_idf
 PLATFORM_SDK_STAMP := $(ESP_IDF_STAMP)
 
 # ESP-IDF location (when submodule is hydrated)
-ESP_IDF_DIR = $(LIB_MAIN_DIR)/esp-idf
+ESP_IDF_DIR = $(LIB_MODULES_DIR)/esp-idf
 
 # Override ARM toolchain with Xtensa ESP32-S3 toolchain
 # ESP_TOOLS_BIN is resolved in tools.mk; reuse it here
@@ -50,11 +57,13 @@ DEVICE_FLAGS += \
             -DESP32S3 \
             -DESP32
 
-MCU_FLASH_SIZE := 8192
+# Family default; target.mk / a per-board config.mk may set it first (?= so an
+# earlier override such as CUSTS3AIO's 4 MB N4R2 module is preserved).
+MCU_FLASH_SIZE ?= 8192
 
 LD_SCRIPT = $(LINKER_DIR)/esp32s3.ld
 
-STARTUP_SRC =
+STARTUP_SRC = ESP32/start_esp32s3.S
 
 # ROM linker scripts that provide symbols for ROM functions (esp_rom_delay_us, etc.)
 ESP_ROM_LD_DIR = $(ESP_IDF_DIR)/components/esp_rom/esp32s3/ld
@@ -83,6 +92,7 @@ MCU_COMMON_SRC = \
             drivers/serial_pinconfig.c \
             drivers/usb_io.c \
             drivers/adc.c \
+            ESP32/app_desc_esp32.c \
             ESP32/adc_esp32.c \
             ESP32/bus_i2c_esp32.c \
             drivers/bus_spi_config.c \
@@ -94,6 +104,7 @@ MCU_COMMON_SRC = \
             ESP32/exti_esp32.c \
             ESP32/interrupt_esp32.c \
             ESP32/io_esp32.c \
+            ESP32/multicore_esp32.c \
             ESP32/persistent.c \
             ESP32/pwm_motor_esp32.c \
             ESP32/pwm_servo_esp32.c \
@@ -106,7 +117,7 @@ MCU_COMMON_SRC = \
             ESP32/periph_regs_esp32.c
 
 # ESP-IDF SOC peripheral descriptor sources (provide GPIO, SYSTIMER, RMT, etc. symbols)
-# Paths are relative to LIB_MAIN_DIR (lib/main) since that's in VPATH
+# Paths are relative to LIB_MODULES_DIR (lib/modules) since that's in VPATH
 DEVICE_STDPERIPH_SRC = \
             esp-idf/components/soc/esp32s3/gpio_periph.c \
             esp-idf/components/soc/esp32s3/i2c_periph.c \

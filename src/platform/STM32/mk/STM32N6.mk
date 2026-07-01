@@ -11,10 +11,10 @@ CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS
+CMSIS_DIR      := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32n6xx_hal_adc.c \
             stm32n6xx_hal_adc_ex.c \
@@ -46,6 +46,7 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_tim_ex.c \
             stm32n6xx_hal_uart.c \
             stm32n6xx_hal_uart_ex.c \
+            stm32n6xx_hal_xspi.c \
             stm32n6xx_ll_dma.c \
             stm32n6xx_ll_exti.c \
             stm32n6xx_ll_i2c.c \
@@ -75,7 +76,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src:$(LIB_MAIN_DIR)/STM32N6/Utilities/Fonts
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src:$(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
@@ -84,10 +85,10 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
-                   $(LIB_MAIN_DIR)/STM32N6/Utilities/Fonts \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
+                   $(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -131,7 +132,7 @@ DEVICE_FLAGS       += -DN6_XIP_BUILD
 # into AXISRAM. Drop LTO for XIP only — clock funcs run from RAM,
 # instruction fetches survive the AXI clock transition during
 # HAL_RCC_OscConfig's HSI-park dance. Size cost is ~5-10% .text.
-OPTIMISATION_BASE   := -ffast-math -fmerge-all-constants
+LTO                 := no
 else ifeq ($(RAM_ONLY),1)
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_RAM.ld
 DEVICE_FLAGS       += -DN6_RAM_ONLY_BUILD
@@ -182,6 +183,7 @@ MCU_COMMON_SRC = \
             STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
+            STM32/debug_uart_stm32n6xx.c \
             STM32/timer_hal.c \
             STM32/timer_stm32n6xx.c \
             drivers/adc.c \
@@ -198,7 +200,7 @@ SIZE_OPTIMISED_SRC += \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/DSP
+DSP_LIB := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM55
 
 OPTIMISE_DEFAULT    := -Os

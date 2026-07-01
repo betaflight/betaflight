@@ -1106,6 +1106,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2139,7 +2142,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2176,9 +2181,11 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
@@ -2563,8 +2570,10 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
+STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
     "ORBIT", "FIGURE8"
@@ -2987,7 +2996,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
@@ -6168,6 +6177,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6186,8 +6197,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6212,9 +6223,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6223,6 +6239,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)
@@ -6770,16 +6788,17 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             const bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
+            const int resourceOrdinal = resourceIndexToInput(resourceTable[i].owner, index);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             if (ioTagDefault) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             } else if (defaultConfig) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
             if (ioTag) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             } else if (!(dumpMask & HIDE_UNUSED)) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
         }
     }
@@ -6790,7 +6809,7 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
     cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
-        cliPrintf(" %d", RESOURCE_INDEX(index));
+        cliPrintf(" %d", resourceIndexToInput(resourceTable[owner].owner, index));
     }
 }
 
@@ -6871,7 +6890,7 @@ static void showDma(void)
 
         cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
-            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {
             cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
@@ -6936,7 +6955,6 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFA
 #undef DEFW
 
-#define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
 #if !defined(DMA_CHANREQ_STRING)
@@ -6958,6 +6976,23 @@ static void optToString(int optval, char *buf)
     }
 }
 
+// A dmaopt instance number follows the same per-platform base as the matching pin
+// resource, so `dma SPI_SDO N` agrees with `resource SPI_SCK N`. TIMUP is special:
+// its timers are numbered non-contiguously, taken straight from the platform.
+static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
+{
+    switch (peripheral) {
+    case DMA_PERIPH_SPI_SDO:
+    case DMA_PERIPH_SPI_SDI:
+        return OWNER_SPI_SCK;
+    case DMA_PERIPH_UART_TX:
+    case DMA_PERIPH_UART_RX:
+        return OWNER_SERIAL_TX;
+    default:
+        return OWNER_FREE;   // ADC/SDIO/...: no per-platform base, 1-based naming
+    }
+}
+
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -6967,7 +7002,7 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
         }
         return dispNum;
     }
-    return DMA_OPT_UI_INDEX(index);
+    return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
@@ -6983,8 +7018,8 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
         return timerGetIndexByNumber(dispNum);
     }
 
-    const int index = dispNum - 1;
-    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+    const int index = resourceInputToIndex(dmaoptResourceOwner(entry->peripheral), dispNum);
+    return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
@@ -7485,7 +7520,7 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->index > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), resourceIndexToInput(timerOwner->owner, timerOwner->index - 1));
                 } else {
                     cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
@@ -7649,7 +7684,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
+                cliPrintf(" %d", resourceIndexToInput(ioRecs[i].owner, ioRecs[i].index - 1));
             }
             cliPrintLinefeed();
         }
@@ -7681,14 +7716,22 @@ static void cliResource(const char *cmdName, char *cmdline)
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    int index = pch ? atoi(pch) : 0;
+    int index = 0;
 
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError(cmdName, "INDEX", 1, RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex));
+    // A leading numeric token is the resource ordinal (the dump always emits one,
+    // even for single-instance resources). Pins begin with a letter (or "NONE"),
+    // so a non-numeric token here is the pin of a single-instance resource given
+    // without an ordinal. The ordinal base (0 or 1) is per-owner, see resource.c.
+    const bool haveIndex = pch && pch[0] >= '0' && pch[0] <= '9';
+    if (resourceTable[resourceIndex].maxIndex > 0 || haveIndex) {
+        const resourceOwner_e owner = resourceTable[resourceIndex].owner;
+        const int maxCount = RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex);
+        const int candidate = haveIndex ? resourceInputToIndex(owner, atoi(pch)) : -1;
+        if (!haveIndex || candidate < 0 || candidate >= maxCount) {
+            cliShowArgumentRangeError(cmdName, "INDEX", resourceIndexToInput(owner, 0), resourceIndexToInput(owner, maxCount - 1));
             return;
         }
-        index -= 1;
+        index = candidate;
 
         pch = strtok_r(NULL, " ", &saveptr);
     }
@@ -7729,7 +7772,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), resourceIndexToInput(resourceTable[resourceIndex].owner, index), tag ? ioName : "NONE");
     }
 }
 #endif
