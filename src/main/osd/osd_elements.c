@@ -1468,7 +1468,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             int displayPercent = 0;
             if (currentBatteryProfile->batteryCapacity) {
                 displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
-            } else {
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
                 uint8_t voltagePercent = calculateBatteryPercentageRemaining();
                 if (element->type == OSD_ELEMENT_TYPE_4) {
                     voltagePercent = 100 - voltagePercent;
