@@ -64,17 +64,13 @@ extern psas_data_t psasData;
 
 typedef struct psasRuntime_s {
     float stick_gain[XYZ_AXIS_COUNT];
-    float stick_speed_scale[XYZ_AXIS_COUNT];
-    float damping_gain[XYZ_AXIS_COUNT];
-    float damping_speed_scale[XYZ_AXIS_COUNT];
-    float pitch_stability_speed_scale;
+        float damping_gain[XYZ_AXIS_COUNT];
     float pitch_stability_gain;
     float pitch_accel_p_gain;
     float pitch_accel_i_gain;
     float pitch_accel_max;
     float pitch_accel_min;
     float yaw_stability_gain;
-    float yaw_stability_speed_scale;
     float wing_load;
     float air_density;
     float lift_c_limit;
