@@ -35,7 +35,12 @@
 #include "config/config_streamer_impl.h"
 
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 #include "config/config.h"
+
+#ifdef USE_LED_STRIP_STATUS_MODE
+#include "io/ledstrip.h"
+#endif
 
 #ifdef CONFIG_IN_SDCARD
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -434,6 +439,13 @@ bool loadEEPROM(void)
         const configRecord_t *rec = findEEPROM(reg, CR_CLASSICATION_SYSTEM);
         if (rec) {
             // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
+#ifdef USE_LED_STRIP_STATUS_MODE
+            if (pgN(reg) == PG_LED_STRIP_STATUS_MODE_CONFIG) {
+                if (!loadLedStripProfilesConfig(rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
+                    success = false;
+                }
+            } else
+#endif
             if (!pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
                 success = false;
             }

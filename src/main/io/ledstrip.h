@@ -154,6 +154,8 @@ typedef enum {
     LED_PROFILE_COUNT
 } ledProfile_e;
 
+#define MAX_LED_PROFILE_NAME_LENGTH 8u
+
 typedef struct modeColorIndexes_s {
     uint8_t color[LED_DIRECTION_COUNT];
 } modeColorIndexes_t;
@@ -198,7 +200,34 @@ typedef struct ledStripStatusModeConfig_s {
     uint8_t ledstrip_aux_channel;
 } ledStripStatusModeConfig_t;
 
-PG_DECLARE(ledStripStatusModeConfig_t, ledStripStatusModeConfig);
+typedef struct ledStripProfilesConfig_s {
+    ledStripStatusModeConfig_t profiles[LED_PROFILE_COUNT];
+    char profileNames[LED_PROFILE_COUNT][MAX_LED_PROFILE_NAME_LENGTH + 1];
+} ledStripProfilesConfig_t;
+
+PG_DECLARE(ledStripProfilesConfig_t, ledStripProfilesConfig);
+
+const ledStripStatusModeConfig_t *ledStripProfileConfig(uint8_t profile);
+ledStripStatusModeConfig_t *ledStripProfileConfigMutable(uint8_t profile);
+const char *ledStripProfileName(uint8_t profile);
+char *ledStripProfileNameMutable(uint8_t profile);
+const ledStripStatusModeConfig_t *ledStripActiveProfileConfig(void);
+ledStripStatusModeConfig_t *ledStripActiveProfileConfigMutable(void);
+
+static inline const ledStripStatusModeConfig_t *ledStripStatusModeConfig(void)
+{
+    return ledStripProfileConfig(LED_PROFILE_STATUS);
+}
+
+static inline ledStripStatusModeConfig_t *ledStripStatusModeConfigMutable(void)
+{
+    return ledStripProfileConfigMutable(LED_PROFILE_STATUS);
+}
+
+void updateActiveLedProfilePointers(void);
+void syncActiveLedProfileConfig(void);
+bool loadLedStripProfilesConfig(const void *from, int size, int version);
+void resetLedStripProfileRenderState(void);
 #endif
 
 #define LF(name) LED_FUNCTION_ ## name

@@ -76,7 +76,8 @@ typedef enum {
     MSP_PENDING_BOOTLOADER_FLASH,
 } mspPendingSystemRequest_e;
 
-#define MSP_PORT_INBUF_SIZE 192
+// LED strip profile MSP2 payload is ~465 bytes (64 LEDs + colors + mode colors).
+#define MSP_PORT_INBUF_SIZE 512
 #define MSP_PORT_OUTBUF_SIZE_MIN 512 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1. There has been overflow issues with 320 byte buffer.
 
 #ifdef USE_FLASHFS

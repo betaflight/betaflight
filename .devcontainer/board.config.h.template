@@ -1,0 +1,76 @@
+/*
+ * Board config overlay template — Betaflight custom build
+ *
+ * HOW TO USE (3 steps):
+ *
+ * 1. Find your board target name in Betaflight Configurator
+ *    (Firmware Flasher tab, or CLI: status → look for "board_name").
+ *    Example: MATEKF405TE, SPEEDYBEEF405V4, IFLIGHT_BLITZ_F722
+ *
+ * 2. Copy the STOCK config as a starting point:
+ *      src/config/configs/<TARGET>/config.h
+ *    Save a copy as:
+ *      .devcontainer/<TARGET>.config.h
+ *    (Use THIS file as reference for what to add/change — do not edit the template in place.)
+ *
+ * 3. Build:
+ *      .\.devcontainer\build-board.ps1 -Config <TARGET>
+ *
+ * WHAT YOU MUST CUSTOMIZE PER BOARD (read stock config.h first):
+ *
+ * - BOARD_NAME / FC_TARGET_MCU / pin definitions:
+ *   Keep ALL motor, UART, SPI, I2C, LED_STRIP_PIN from the stock file.
+ *   Never copy pinout from another board.
+ *
+ * - GPS_UART:
+ *   Must match the UART wired to your GPS on THIS board.
+ *   Stock config often has it commented or missing — check the board manual.
+ *   Examples: SERIAL_PORT_USART6, SERIAL_PORT_UART4
+ *
+ * - MAG (compass):
+ *   #define USE_MAG
+ *   #define USE_MAG_QMC5883   (or USE_MAG_HMC5883, USE_MAG_LIS2MDL, etc.)
+ *   MAG_I2C_INSTANCE must match the I2C bus used by the compass (usually I2CDEV_1).
+ *
+ * - PINIO (optional):
+ *   Remove PINIO1_PIN / PINIO1_CONFIG / PINIO1_BOX from stock config if you
+ *   do not use PINIO and want fewer mode boxes in Configurator.
+ *
+ * - LED_STRIP_PIN:
+ *   Usually already correct in stock config — verify against board schematic.
+ *
+ * The build script (build-board.ps1) adds these compile-time features via EXTRA_FLAGS:
+ *   USE_GPS, USE_MAG, USE_LED_STRIP, USE_LED_STRIP_64, USE_ALTITUDE_HOLD,
+ *   USE_POSITION_HOLD, USE_CHIRP, USE_VTX, etc.
+ * You still need USE_MAG + correct GPS_UART in this overlay for hardware to work.
+ *
+ * Flash only the HEX built for THIS target onto THIS board.
+ */
+
+#pragma once
+
+/* --- MCU / board identity (from stock config.h — DO NOT guess) --- */
+#define FC_TARGET_MCU     STM32F405
+#define BOARD_NAME        YOUR_BOARD_TARGET
+#define MANUFACTURER_ID   MFR
+
+/* --- Sensors / features to enable in overlay --- */
+#ifndef USE_MAG
+#define USE_MAG
+#define USE_MAG_QMC5883    /* change to match your compass chip */
+#endif
+
+/* --- GPS: set the UART connected to the GPS module on THIS board --- */
+#define GPS_UART SERIAL_PORT_USART6   /* example — verify in stock config / manual */
+
+/* --- I2C for baro + mag (usually from stock config) --- */
+#define MAG_I2C_INSTANCE I2CDEV_1
+#define BARO_I2C_INSTANCE I2CDEV_1
+
+/* --- Example: disable PINIO if not needed (remove these lines from stock copy) --- */
+/* #define PINIO1_PIN ... */
+/* #define PINIO1_CONFIG ... */
+/* #define PINIO1_BOX ... */
+
+/* --- Keep ALL pin definitions below from stock config.h unchanged --- */
+/* MOTORx_PIN, UARTx_TX/RX, LED_STRIP_PIN, SPI, I2C, TIMER_PIN_MAPPING, etc. */

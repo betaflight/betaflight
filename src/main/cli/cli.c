@@ -1059,6 +1059,28 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
     }
 }
 
+#ifdef USE_LED_STRIP
+static bool cliSetVarWithHook(const clivalue_t *var, uint32_t value)
+{
+    if (strcmp(var->name, "ledstrip_profile") == 0) {
+        if (value >= LED_PROFILE_COUNT) {
+            return false;
+        }
+        setLedProfile((uint8_t)value);
+        return true;
+    }
+
+    cliSetVar(var, value);
+    return true;
+}
+#else
+static bool cliSetVarWithHook(const clivalue_t *var, uint32_t value)
+{
+    cliSetVar(var, value);
+    return true;
+}
+#endif
+
 #if defined(USE_RESOURCE_MGMT) && !defined(MINIMAL_CLI)
 static void cliRepeat(char ch, uint8_t len)
 {
@@ -5353,16 +5375,18 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     uint32_t value = strtoul(eqptr, NULL, 10);
 
                     if (value <= val->config.u32Max) {
-                        cliSetVar(val, value);
-                        valueChanged = true;
+                        if (cliSetVarWithHook(val, value)) {
+                            valueChanged = true;
+                        }
                     }
                 } else if ((val->type & VALUE_TYPE_MASK) == VAR_INT32) {
                     int32_t value = strtol(eqptr, NULL, 10);
 
                     // INT32s are limited to being symmetric, so we test both bounds with the same magnitude
                     if (value <= val->config.d32Max && value >= -val->config.d32Max) {
-                        cliSetVar(val, value);
-                        valueChanged = true;
+                        if (cliSetVarWithHook(val, value)) {
+                            valueChanged = true;
+                        }
                     }
                 } else {
                     int value = atoi(eqptr);
@@ -5372,8 +5396,9 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     getMinMax(val, &min, &max);
 
                     if (value >= min && value <= max) {
-                        cliSetVar(val, value);
-                        valueChanged = true;
+                        if (cliSetVarWithHook(val, value)) {
+                            valueChanged = true;
+                        }
                     }
                 }
             }
@@ -5395,8 +5420,9 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
                     if (matched) {
                         value = tableValueIndex;
 
-                        cliSetVar(val, value);
-                        valueChanged = true;
+                        if (cliSetVarWithHook(val, value)) {
+                            valueChanged = true;
+                        }
                     }
                 }
             }
@@ -5933,6 +5959,14 @@ bool cliSetSettingByName(const char *cmdline)
     default:
         return false;
     }
+
+#ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
+    if (strcmp(val->name, "ledstrip_profile") == 0) {
+        syncActiveLedProfileConfig();
+    }
+#endif
+#endif
 
     return true;
 }
@@ -7976,11 +8010,11 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
             printMap(dumpMask, &rxConfig_Copy, rxConfig(), "map");
 
 #ifdef USE_LED_STRIP_STATUS_MODE
-            printLed(dumpMask, ledStripStatusModeConfig_Copy.ledConfigs, ledStripStatusModeConfig()->ledConfigs, "led");
+            printLed(dumpMask, ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS].ledConfigs, ledStripStatusModeConfig()->ledConfigs, "led");
 
-            printColor(dumpMask, ledStripStatusModeConfig_Copy.colors, ledStripStatusModeConfig()->colors, "color");
+            printColor(dumpMask, ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS].colors, ledStripStatusModeConfig()->colors, "color");
 
-            printModeColor(dumpMask, &ledStripStatusModeConfig_Copy, ledStripStatusModeConfig(), "mode_color");
+            printModeColor(dumpMask, &ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS], ledStripStatusModeConfig(), "mode_color");
 #endif
 
             printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0), "aux");
