@@ -163,6 +163,7 @@ extern "C" {
     void failsafeStartMonitoring(void) {}
     void failsafeUpdateState(void) {}
     bool failsafeIsActive(void) { return false; }
+    failsafeProcedure_e getEffectiveFailsafeProcedure(void) { return (failsafeProcedure_e)failsafeConfig()->failsafe_procedure; }
     bool rxAreFlightChannelsValid(void) { return false; }
     bool failsafeIsReceivingRxData(void) { return false; }
     void pidResetIterm(void) {}

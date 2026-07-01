@@ -114,6 +114,7 @@ void failsafeReset(void)
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.boxFailsafeSwitchWasOn = false;
+    failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
 }
 
 void failsafeInit(void)
@@ -137,6 +138,27 @@ bool failsafeIsMonitoring(void)
 bool failsafeIsActive(void) // real or BOXFAILSAFE induced stage 2 failsafe is currently active
 {
     return failsafeState.active;
+}
+
+// Returns the failsafe procedure to run on RX-loss stage 2.
+// While failsafe is active, returns the value latched at stage 2 entry so that
+// flipping BOXFAILSAFELAND mid-failsafe does not desync the state machine from
+// the GPS_RESCUE_MODE flight flag in core.c.
+// Outside an active failsafe, BOXFAILSAFELAND overrides the configured
+// procedure to AUTO_LANDING so pilots can disable GPS Rescue from the radio.
+// The override only exists on USE_GPS_RESCUE builds; otherwise it would silently
+// reroute DROP_IT to AUTO_LANDING with no GPS-rescue alternative to suppress.
+failsafeProcedure_e getEffectiveFailsafeProcedure(void)
+{
+    if (failsafeState.active) {
+        return failsafeState.activeProcedure;
+    }
+#ifdef USE_GPS_RESCUE
+    if (IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)) {
+        return FAILSAFE_PROCEDURE_AUTO_LANDING;
+    }
+#endif
+    return (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
 }
 
 void failsafeStartMonitoring(void)
@@ -272,6 +294,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     if (failsafeState.boxFailsafeSwitchWasOn && (failsafeConfig()->failsafe_switch_mode == FAILSAFE_SWITCH_MODE_KILL)) {
                         // Failsafe switch is configured as KILL switch and is switched ON
                         failsafeState.active = true;
+                        // KILL bypasses procedure dispatch and goes straight to LANDED;
+                        // overwrite the latch so getEffectiveFailsafeProcedure() cannot
+                        // return a stale GPS_RESCUE value carried over from a prior failsafe.
+                        failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
                         failsafeState.events++;
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                         failsafeState.phase = FAILSAFE_LANDED;
@@ -282,12 +308,15 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     } else if (!receivingRxData) {
                         if (millis() > failsafeState.throttleLowPeriod
 #ifdef USE_GPS_RESCUE
-                            && failsafeConfig()->failsafe_procedure != FAILSAFE_PROCEDURE_GPS_RESCUE
+                            && getEffectiveFailsafeProcedure() != FAILSAFE_PROCEDURE_GPS_RESCUE
 #endif
                             ) {
                             //  JustDisarm if throttle was LOW for at least 'failsafe_throttle_low_delay' before failsafe
                             //  protects against false arming when the Tx is powered up after the quad
                             failsafeState.active = true;
+                            // JustDisarm also bypasses procedure dispatch; overwrite the latch
+                            // for the same reason as the KILL path above.
+                            failsafeState.activeProcedure = FAILSAFE_PROCEDURE_AUTO_LANDING;
                             failsafeState.events++;
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                             failsafeState.phase = FAILSAFE_LANDED;
@@ -317,7 +346,16 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else {
                     failsafeState.active = true;
                     failsafeState.events++;
-                    switch (failsafeConfig()->failsafe_procedure) {
+                    // Latch the procedure at stage 2 entry so that toggling BOXFAILSAFELAND mid-failsafe
+                    // cannot desync the state machine from core.c's GPS_RESCUE_MODE flight-flag gating.
+#ifdef USE_GPS_RESCUE
+                    failsafeState.activeProcedure = IS_RC_MODE_ACTIVE(BOXFAILSAFELAND)
+                        ? FAILSAFE_PROCEDURE_AUTO_LANDING
+                        : (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
+#else
+                    failsafeState.activeProcedure = (failsafeProcedure_e)failsafeConfig()->failsafe_procedure;
+#endif
+                    switch (failsafeState.activeProcedure) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             //  Enter Stage 2 with settings for landing mode
                             ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -336,6 +374,13 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                             failsafeState.phase = FAILSAFE_GPS_RESCUE;
                             break;
 #endif
+                        case FAILSAFE_PROCEDURE_COUNT:
+                        default:
+                            // unreachable in practice (config is clamped) but reprocessState is set
+                            // unconditionally below, so guarantee a terminal phase to avoid spinning
+                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                            failsafeState.phase = FAILSAFE_LANDED;
+                            break;
                     }
                     if (failsafeState.boxFailsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;

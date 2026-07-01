@@ -91,6 +91,7 @@ typedef struct failsafeState_s {
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
     bool boxFailsafeSwitchWasOn;
+    failsafeProcedure_e activeProcedure;    // latched at stage 2 entry; valid while failsafeState.active
 } failsafeState_t;
 
 void failsafeInit(void);
@@ -101,6 +102,7 @@ void failsafeUpdateState(void);
 void failsafeCheckDataFailurePeriod(void);
 
 failsafePhase_e failsafePhase(void);
+failsafeProcedure_e getEffectiveFailsafeProcedure(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
