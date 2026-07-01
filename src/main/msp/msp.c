@@ -3731,6 +3731,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             char bandName[VTX_TABLE_BAND_NAME_LENGTH + 1];
             memset(bandName, 0, VTX_TABLE_BAND_NAME_LENGTH + 1);
             uint16_t frequencies[VTX_TABLE_MAX_CHANNELS];
+            memset(frequencies, 0, sizeof(frequencies));
             const uint8_t band = sbufReadU8(src);
             const uint8_t bandNameLength = sbufReadU8(src);
             if (sbufBytesRemaining(src) < bandNameLength) {
@@ -3741,6 +3742,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 if (i < VTX_TABLE_BAND_NAME_LENGTH) {
                     bandName[i] = toupper(nameChar);
                 }
+            }
+            if (sbufBytesRemaining(src) < 3) {
+                return MSP_RESULT_ERROR;
             }
             const char bandLetter = toupper(sbufReadU8(src));
             const bool isFactoryBand = (bool)sbufReadU8(src);
@@ -3813,6 +3817,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
     case MSP2_SET_MOTOR_OUTPUT_REORDERING:
         {
+            if (dataSize < 1) {
+                return MSP_RESULT_ERROR;
+            }
             const uint8_t arraySize = sbufReadU8(src);
             if (sbufBytesRemaining(src) < MIN(arraySize, MAX_SUPPORTED_MOTORS)) {
                 return MSP_RESULT_ERROR;
@@ -4164,7 +4171,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             return MSP_RESULT_ERROR;
         }
         unsigned count = sbufReadU8(src);
-        if (count == 0) {
+        if (count == 0 || (dataSize - 1) % count != 0) {
             return MSP_RESULT_ERROR;
         }
         unsigned portConfigSize = (dataSize - 1) / count;
@@ -4272,6 +4279,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #if defined(USE_BOARD_INFO)
     case MSP_SET_BOARD_INFO:
         if (!boardInformationIsSet()) {
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             uint8_t length = sbufReadU8(src);
             if (sbufBytesRemaining(src) < length) {
                 return MSP_RESULT_ERROR;
@@ -4283,6 +4293,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 length = MAX_BOARD_NAME_LENGTH;
             }
             boardName[length] = '\0';
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             length = sbufReadU8(src);
             if (sbufBytesRemaining(src) < length) {
                 return MSP_RESULT_ERROR;
