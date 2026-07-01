@@ -2129,6 +2129,9 @@ static void cliRxRange(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_LED_STRIP_STATUS_MODE
+static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsvColor_t *defaultColors, const char *headingStr);
+static void printModeColor(dumpFlags_t dumpMask, const ledStripStatusModeConfig_t *ledStripStatusModeConfig, const ledStripStatusModeConfig_t *defaultLedStripConfig, const char *headingStr);
+
 static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const ledConfig_t *defaultLedConfigs, const char *headingStr)
 {
     const char *format = "led %u %s";
@@ -2150,6 +2153,21 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
+static void printLedStripProfileDump(
+    dumpFlags_t dumpMask,
+    ledProfile_e profileIndex,
+    const char *profileHeading
+)
+{
+    const ledStripStatusModeConfig_t *profileCopy = &ledStripProfilesConfig_Copy.profiles[profileIndex];
+    const ledStripStatusModeConfig_t *profileCurrent = ledStripProfileConfig(profileIndex);
+
+    cliPrintHashLine(profileHeading);
+    printLed(dumpMask, profileCopy->ledConfigs, profileCurrent->ledConfigs, "led");
+    printColor(dumpMask, profileCopy->colors, profileCurrent->colors, "color");
+    printModeColor(dumpMask, profileCopy, profileCurrent, "mode_color");
+}
+
 static void cliLed(const char *cmdName, char *cmdline)
 {
     const char *format = "led %u %s";
@@ -2158,7 +2176,7 @@ static void cliLed(const char *cmdName, char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printLed(DUMP_MASTER, ledStripStatusModeConfig()->ledConfigs, NULL, NULL);
+        printLed(DUMP_MASTER, ledStripActiveProfileConfig()->ledConfigs, NULL, NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -2167,7 +2185,7 @@ static void cliLed(const char *cmdName, char *cmdline)
             if (!ptr) {
                 cliShowInvalidArgumentCountError(cmdName);
             } else if (parseLedStripConfig(i, ptr)) {
-                generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
+                generateLedConfig((ledConfig_t *)&ledStripActiveProfileConfigMutable()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
                 cliShowParseError(cmdName);
@@ -2199,7 +2217,7 @@ static void cliColor(const char *cmdName, char *cmdline)
 {
     const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
-        printColor(DUMP_MASTER, ledStripStatusModeConfig()->colors, NULL, NULL);
+        printColor(DUMP_MASTER, ledStripActiveProfileConfig()->colors, NULL, NULL);
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
@@ -2208,7 +2226,7 @@ static void cliColor(const char *cmdName, char *cmdline)
             if (!ptr) {
                 cliShowInvalidArgumentCountError(cmdName);
             } else if (parseColor(i, ptr)) {
-                const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
+                const hsvColor_t *color = &ledStripActiveProfileConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
                 cliShowParseError(cmdName);
@@ -2263,7 +2281,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripStatusModeConfig_
 static void cliModeColor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        printModeColor(DUMP_MASTER, ledStripStatusModeConfig(), NULL, NULL);
+        printModeColor(DUMP_MASTER, ledStripActiveProfileConfig(), NULL, NULL);
     } else {
         enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         int args[ARGS_COUNT];
@@ -8010,11 +8028,9 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
             printMap(dumpMask, &rxConfig_Copy, rxConfig(), "map");
 
 #ifdef USE_LED_STRIP_STATUS_MODE
-            printLed(dumpMask, ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS].ledConfigs, ledStripStatusModeConfig()->ledConfigs, "led");
-
-            printColor(dumpMask, ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS].colors, ledStripStatusModeConfig()->colors, "color");
-
-            printModeColor(dumpMask, &ledStripProfilesConfig_Copy.profiles[LED_PROFILE_STATUS], ledStripStatusModeConfig(), "mode_color");
+            printLedStripProfileDump(dumpMask, LED_PROFILE_RACE, "LED profile RACE");
+            printLedStripProfileDump(dumpMask, LED_PROFILE_BEACON, "LED profile BEACON");
+            printLedStripProfileDump(dumpMask, LED_PROFILE_STATUS, "LED profile STATUS");
 #endif
 
             printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0), "aux");

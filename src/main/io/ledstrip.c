@@ -1408,6 +1408,128 @@ void updateRequiredOverlay(void)
     disabledTimerMask |= !isOverlayTypeUsed(LED_OVERLAY_INDICATOR) << timIndicator;
 }
 
+bool ledStripProfileUsesSimpleRenderer(const ledStripStatusModeConfig_t *profile)
+{
+    const ledConfig_t reference = profile->ledConfigs[0];
+
+    if (ledGetFunction(&reference) != LED_FUNCTION_COLOR) {
+        return false;
+    }
+
+    if (ledGetDirection(&reference) != 0) {
+        return false;
+    }
+
+    for (int ledIndex = 1; ledIndex < LED_STRIP_MAX_LENGTH; ledIndex++) {
+        if (profile->ledConfigs[ledIndex] != reference) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void syncSimpleLedProfilesFromConfig(void)
+{
+    ledStripStatusModeConfig_t *raceProfile = ledStripProfileConfigMutable(LED_PROFILE_RACE);
+    if (ledStripProfileUsesSimpleRenderer(raceProfile)) {
+        initSolidColorProfile(raceProfile, ledStripConfig()->ledstrip_race_color, false);
+    }
+
+    ledStripStatusModeConfig_t *beaconProfile = ledStripProfileConfigMutable(LED_PROFILE_BEACON);
+    if (ledStripProfileUsesSimpleRenderer(beaconProfile)) {
+        initSolidColorProfile(beaconProfile, ledStripConfig()->ledstrip_beacon_color, true);
+    }
+}
+
+static ledProfileSequence_t applySimpleProfile(timeUs_t currentTimeUs)
+{
+    static timeUs_t colorUpdateTimeUs = 0;
+    static hsvColor_t previousHsv = { 0, 0, 0 };
+
+    hsvColor_t currentHsv = hsv[COLOR_BLACK];
+    const ledStripStatusModeConfig_t *profile = ledStripActiveProfileConfig();
+    const ledConfig_t *ledConfig = &profile->ledConfigs[0];
+    const uint8_t profileColorIndex = ledGetColor(ledConfig);
+    const hsvColor_t visualBeeperHsv = hsv[ledStripConfig()->ledstrip_visual_beeper_color];
+
+    unsigned flashPeriod = 0;
+    unsigned onPercent = 0;
+
+    switch (ledStripConfig()->ledstrip_profile) {
+    case LED_PROFILE_RACE:
+        if (profileColorIndex == COLOR_BLACK) {
+#ifdef USE_VTX_COMMON
+            const vtxDevice_t *vtxDevice = vtxCommonDevice();
+            if (vtxDevice) {
+                uint8_t const band = vtxSettingsConfig()->band;
+                uint8_t const channel = vtxSettingsConfig()->channel;
+                uint16_t vtxFrequency = VTX_SETTINGS_MIN_FREQUENCY_MHZ;
+
+                if (band && channel) {
+                    vtxFrequency = vtxCommonLookupFrequency(vtxDevice, band, channel);
+                } else {
+                    vtxFrequency = vtxSettingsConfig()->freq;
+                }
+
+                currentHsv = getHsvFromVtxFrequency(vtxFrequency);
+            }
+#endif
+        } else {
+            currentHsv = profile->colors[profileColorIndex];
+        }
+
+        if (IS_RC_MODE_ACTIVE(BOXBEEPERON) || failsafeIsActive()) {
+            flashPeriod = BEACON_FAILSAFE_PERIOD_MS;
+            onPercent = BEACON_FAILSAFE_ON_PERCENT;
+
+            const unsigned onPeriod = flashPeriod * onPercent / 100;
+
+            if (onPeriod > 0 && (millis() % flashPeriod) < onPeriod) {
+                currentHsv = visualBeeperHsv;
+            }
+        } else {
+            if (ledStripConfig()->ledstrip_visual_beeper && isBeeperOn()) {
+                currentHsv = visualBeeperHsv;
+            }
+        }
+        break;
+
+    case LED_PROFILE_BEACON:
+        flashPeriod = ledStripConfig()->ledstrip_beacon_period_ms;
+        onPercent = ledStripConfig()->ledstrip_beacon_percent;
+
+        currentHsv = profile->colors[profileColorIndex];
+
+        if ((millis() % flashPeriod) < (flashPeriod * onPercent / 100)) {
+            // LED stays on during the on-period; currentHsv already set
+        } else {
+            currentHsv = hsv[COLOR_BLACK];
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    const bool updateLedStripColor =
+        currentHsv.h != previousHsv.h ||
+        currentHsv.s != previousHsv.s ||
+        currentHsv.v != previousHsv.v ||
+        (cmpTimeUs(currentTimeUs, colorUpdateTimeUs) >= 0);
+
+    if (updateLedStripColor) {
+        setStripColor(&currentHsv);
+
+        previousHsv = currentHsv;
+        colorUpdateTimeUs = currentTimeUs + PROFILE_COLOR_UPDATE_INTERVAL_US;
+
+        return LED_PROFILE_ADVANCE;
+    }
+
+    return LED_PROFILE_SLOW;
+}
+
 static ledProfileSequence_t applyStatusProfile(timeUs_t now)
 {
     timeUs_t startTime = micros();
@@ -1531,7 +1653,6 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     }
     return true;
 }
-#endif
 
 void ledStripEnable(void)
 {
@@ -1591,7 +1712,21 @@ void ledStripUpdate(timeUs_t currentTimeUs) {
                 ledStripRenderState.updateStartTimeUs = currentTimeUs;
             }
 
-            ledProfileSequence = applyStatusProfile(currentTimeUs);
+            switch (ledStripConfig()->ledstrip_profile) {
+            case LED_PROFILE_STATUS:
+                ledProfileSequence = applyStatusProfile(currentTimeUs);
+                break;
+            case LED_PROFILE_RACE:
+            case LED_PROFILE_BEACON:
+                if (ledStripProfileUsesSimpleRenderer(ledStripActiveProfileConfig())) {
+                    ledProfileSequence = applySimpleProfile(currentTimeUs);
+                } else {
+                    ledProfileSequence = applyStatusProfile(currentTimeUs);
+                }
+                break;
+            default:
+                break;
+            }
 
             if (ledProfileSequence == LED_PROFILE_SLOW) {
                 // No timer was ready so no work was done
@@ -1668,6 +1803,8 @@ void setLedProfile(uint8_t profile)
     syncActiveLedProfileConfig();
 #endif
 }
+
+#endif // USE_LED_STRIP_STATUS_MODE
 
 uint8_t getLedBrightness(void)
 {

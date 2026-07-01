@@ -228,6 +228,8 @@ void updateActiveLedProfilePointers(void);
 void syncActiveLedProfileConfig(void);
 bool loadLedStripProfilesConfig(const void *from, int size, int version);
 void resetLedStripProfileRenderState(void);
+bool ledStripProfileUsesSimpleRenderer(const ledStripStatusModeConfig_t *profile);
+void syncSimpleLedProfilesFromConfig(void);
 #endif
 
 #define LF(name) LED_FUNCTION_ ## name

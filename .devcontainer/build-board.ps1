@@ -107,12 +107,12 @@ if ($OverlayToApply) {
     Copy-Item -Path $OverlayToApply -Destination $BoardConfigTarget -Force
     Write-Host "Overlay applique : $($OverlayToApply.Path) -> configs/$Config/config.h" -ForegroundColor Cyan
 } else {
-    Write-Host "Pas d'overlay local — config stock du submodule ($Config)." -ForegroundColor DarkGray
+    Write-Host "Pas d overlay local - config stock du submodule ($Config)." -ForegroundColor DarkGray
     Write-Host "Pour personnaliser : copiez board.config.h.template vers .devcontainer\$Config.config.h" -ForegroundColor DarkGray
 }
 
 if (-not $SkipImageBuild) {
-    Write-Host "Construction de l'image Docker '$ImageName' (premiere fois : ~5-10 min)..." -ForegroundColor Cyan
+    Write-Host "Construction de l image Docker $ImageName (premiere fois : ~5-10 min)..." -ForegroundColor Cyan
     docker build -t $ImageName -f .devcontainer/containerfile .devcontainer/
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } else {
@@ -145,8 +145,8 @@ $MakeCmd = "git config --global --add safe.directory /workspace && $MakeTarget"
 Write-Host "Compilation : $MakeCmd" -ForegroundColor Cyan
 
 $WorkspacePath = $RepoRoot.Path -replace '\\', '/'
-if ($WorkspacePath -match '^([A-Za-z]):') {
-    $WorkspacePath = "/$($Matches[1].ToLower())$($WorkspacePath.Substring(2))"
+if ($WorkspacePath.Length -ge 2 -and $WorkspacePath[1] -eq [char]58) {
+    $WorkspacePath = "/$($WorkspacePath.Substring(0, 1).ToLower())$($WorkspacePath.Substring(2))"
 }
 
 docker run --rm `

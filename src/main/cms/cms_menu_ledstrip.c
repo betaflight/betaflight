@@ -116,6 +116,8 @@ static const void *cmsx_Ledstrip_OnExit(displayPort_t *pDisp, const OSD_Entry *s
     ledStripConfigMutable()->ledstrip_visual_beeper = cmsx_ledVisualBeeper;
     ledStripConfigMutable()->ledstrip_visual_beeper_color = cmsx_ledVisualBeeperColor;
 
+    syncSimpleLedProfilesFromConfig();
+
     return NULL;
 }
 
