@@ -48,7 +48,9 @@
 #define JEDEC_ID_WINBOND_W25Q16JV_SPI           0xEF4015
 #define JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI       0xEF7015
 #define JEDEC_ID_BOYAMICRO_BY25Q128ES_SPI       0x684018
+#define JEDEC_ID_FMSH_FM25Q64A_SPI              0xA14017
 #define JEDEC_ID_FMSH_FM25Q128A_SPI             0xA14018
+#define JEDEC_ID_FMSH_FM25Q256_SPI              0xA14019
 
 // Device size parameters
 #define W25Q128FV_PAGE_SIZE         2048
@@ -269,6 +271,13 @@ static void w25q128fv_deviceInit(flashDevice_t *flashdev);
 MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t jedecID)
 {
     switch (jedecID) {
+    case JEDEC_ID_FMSH_FM25Q64A_SPI:
+        fdevice->geometry.sectors           = 128;
+        fdevice->geometry.pagesPerSector    = 256;
+        fdevice->geometry.pageSize          = 256;
+        // = 8388608 64MBit 8MB
+        break;
+
     case JEDEC_ID_WINBOND_W25Q128FV_SPI:
     case JEDEC_ID_WINBOND_W25Q128FV_QUADSPI:
     case JEDEC_ID_WINBOND_W25Q128JV_QUADSPI:
@@ -278,6 +287,13 @@ MMFLASH_CODE_NOINLINE bool w25q128fv_identify(flashDevice_t *fdevice, uint32_t j
         fdevice->geometry.pagesPerSector    = 256;
         fdevice->geometry.pageSize          = 256;
         // = 16777216 128MBit 16MB
+        break;
+
+    case JEDEC_ID_FMSH_FM25Q256_SPI:
+        fdevice->geometry.sectors           = 512;
+        fdevice->geometry.pagesPerSector    = 256;
+        fdevice->geometry.pageSize          = 256;
+        // = 33554432 256MBit 32MB
         break;
 
     case JEDEC_ID_WINBOND_W25Q16JV_DTR_SPI:
