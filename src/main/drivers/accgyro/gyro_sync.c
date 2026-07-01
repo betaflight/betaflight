@@ -89,6 +89,21 @@ uint16_t gyroSetSampleRate(gyroDev_t *gyro)
             gyroSampleRateHz = 6400;
             accSampleRateHz = 1600;
             break;
+
+#ifdef USE_ACCGYRO_SCS3302
+        case SCS3302_SPI:
+            gyro->gyroRateKHz = GYRO_RATE_6664_Hz;
+            gyroSampleRateHz = 6664;   
+            accSampleRateHz = 833;
+            break;
+#endif
+#ifdef USE_ACCGYRO_SCS3304
+        case SCS3304_SPI:
+            gyro->gyroRateKHz = GYRO_RATE_6664_Hz; 
+            gyroSampleRateHz = 6664;   
+            accSampleRateHz = 833;
+            break;
+#endif
         default:
             gyro->gyroRateKHz = GYRO_RATE_8_kHz;
             gyroSampleRateHz = 8000;
