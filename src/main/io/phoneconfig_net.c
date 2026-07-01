@@ -42,11 +42,13 @@
 #include "lwip/timeouts.h"
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
+#include "lwip/pbuf.h"
 #include "lwip/udp.h"
 #include "lwip/tcp.h"
 #include "netif/ethernet.h"
 
 #include "io/phoneconfig_net.h"
+#include "io/phoneflash.h"
 
 #define NET_FC_IP        LWIP_MAKEU32(192, 168, 7, 1)
 #define NET_HOST_IP      LWIP_MAKEU32(192, 168, 7, 2)
@@ -361,6 +363,24 @@ static void mspBridgeInit(void)
     mspSerialRegisterPort(&mspSerial.port);
 }
 
+static struct udp_pcb *flashPcb;
+
+// a PF_HELLO datagram means the host wants to reflash; note it, the phone-config task hands off
+static void flashRecv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
+{
+    (void)arg;
+    (void)pcb;
+    (void)addr;
+    (void)port;
+
+    if (p) {
+        uint8_t buf[16];
+        uint16_t n = pbuf_copy_partial(p, buf, sizeof(buf), 0);
+        phoneFlashNoteHello(buf, n);
+        pbuf_free(p);
+    }
+}
+
 void phoneConfigNetInit(const uint8_t *mac)
 {
     memcpy(macAddr, mac, 6);
@@ -389,6 +409,13 @@ void phoneConfigNetInit(const uint8_t *mac)
         mspListenPcb = tcp_listen(mspListenPcb);
         tcp_accept(mspListenPcb, mspAccept);
     }
+
+    flashPcb = udp_new();
+    if (flashPcb) {
+        udp_bind(flashPcb, IP_ADDR_ANY, PHONE_FLASH_UDP_PORT);
+        udp_recv(flashPcb, flashRecv, NULL);
+    }
+
     mspBridgeInit();
 
     netInitDone = true;

@@ -152,6 +152,7 @@ INCLUDE_DIRS += $(LWIP_DIR)/include $(SRC_DIR)/io/lwip_port
 VCP_SRC += \
             STM32/vcp_hal/usbd_cdc_ncm.c \
             STM32/phoneconfig_usb_f7xx.c \
+            STM32/phoneflash_burn_f7xx.c \
             io/phoneconfig_net.c \
             init.c def.c inet_chksum.c ip.c mem.c memp.c netif.c pbuf.c raw.c stats.c sys.c \
             tcp.c tcp_in.c tcp_out.c timeouts.c udp.c \

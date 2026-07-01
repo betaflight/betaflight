@@ -42,6 +42,8 @@
 
 #include "fc/runtime_config.h"
 
+#include "io/phoneflash.h"
+
 #include "sensors/acceleration.h"
 
 bool phoneConfigCheckBootAndReset(void)
@@ -91,6 +93,11 @@ void phoneConfigNetTask(timeUs_t currentTimeUs)
     phoneConfigUsbProcess();   // usb-ncm rx into lwip
     phoneConfigNetPoll();      // lwip timers, flush the msp tx ring
     phoneConfigUsbUnlock();
+
+    // hand off to the ram burn engine on a reflash request (does not return unless the host never commits)
+    if (phoneFlashPending() && !ARMING_FLAG(ARMED)) {
+        phoneFlashRun();
+    }
 }
 
 // flip-and-hold gesture: held mostly inverted for ~3 s while disarmed, reboots into phone-config.
