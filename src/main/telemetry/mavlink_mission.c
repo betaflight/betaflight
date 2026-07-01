@@ -42,6 +42,10 @@
 
 #include "pg/flight_plan.h"
 
+// Pull in the full MAVLink headers before telemetry/mavlink.h so the latter's
+// forward-typedef of mavlink_message_t yields to the real (identical) one.
+#include "common/mavlink.h"
+
 #include "telemetry/mavlink.h"
 #include "telemetry/mavlink_mission.h"
 
@@ -61,6 +65,7 @@ typedef enum {
 
 static struct {
     missionState_e state;
+    uint8_t  missionType;       // MAV_MISSION_TYPE of the active transfer
     uint16_t nextSeq;
     uint16_t totalCount;
     uint8_t  partnerSys;
@@ -71,6 +76,22 @@ static struct {
     int16_t  pendingReachedIndex;
     bool     rtlTerminator;     // current upload ends with NAV_RETURN_TO_LAUNCH (last slot discarded)
 } m;
+
+// Geofence storage. Accepted and round-tripped to the GCS for display, but NOT
+// yet enforced or persisted across reboot — enforcement + a backing PG land in a
+// later step. Held in RAM only.
+#define MAX_FENCE_POINTS 16
+typedef struct {
+    uint16_t command;   // MAV_CMD_NAV_FENCE_*
+    int32_t  lat;       // 1e7 degrees
+    int32_t  lon;       // 1e7 degrees
+    float    param1;    // vertex count (polygon) or radius in metres (circle)
+} fencePoint_t;
+
+static struct {
+    uint8_t count;
+    fencePoint_t points[MAX_FENCE_POINTS];
+} fenceStore;
 
 static mavlink_message_t txMsg;
 
@@ -93,35 +114,46 @@ static bool senderIsActivePartner(const mavlink_message_t *msg)
     return msg->sysid == m.partnerSys && msg->compid == m.partnerComp;
 }
 
-static void sendAck(uint8_t partnerSys, uint8_t partnerComp, uint8_t type)
+static void sendAck(uint8_t partnerSys, uint8_t partnerComp, uint8_t missionType, uint8_t result)
 {
     mavlink_msg_mission_ack_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-        partnerSys, partnerComp, type, MAV_MISSION_TYPE_MISSION, 0);
+        partnerSys, partnerComp, result, missionType, 0);
     mavlinkSendMessage(&txMsg);
 }
 
-static void sendRequestInt(uint8_t partnerSys, uint8_t partnerComp, uint16_t seq)
+static void sendRequestInt(uint8_t partnerSys, uint8_t partnerComp, uint8_t missionType, uint16_t seq)
 {
     mavlink_msg_mission_request_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-        partnerSys, partnerComp, seq, MAV_MISSION_TYPE_MISSION);
+        partnerSys, partnerComp, seq, missionType);
     mavlinkSendMessage(&txMsg);
 }
 
-static void sendCount(uint8_t partnerSys, uint8_t partnerComp, uint16_t count)
+static void sendCount(uint8_t partnerSys, uint8_t partnerComp, uint8_t missionType, uint16_t count)
 {
     mavlink_msg_mission_count_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-        partnerSys, partnerComp, count, MAV_MISSION_TYPE_MISSION, 0);
+        partnerSys, partnerComp, count, missionType, 0);
     mavlinkSendMessage(&txMsg);
 }
 
 static void abortUpload(uint8_t result)
 {
-    sendAck(m.partnerSys, m.partnerComp, result);
+    sendAck(m.partnerSys, m.partnerComp, m.missionType, result);
     m.state = MISSION_IDLE;
 }
 
 static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t seq)
 {
+    if (m.missionType == MAV_MISSION_TYPE_FENCE) {
+        const fencePoint_t *fpt = &fenceStore.points[seq];
+        mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
+            partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, fpt->command, 0, 1,
+            fpt->param1, 0.0f, 0.0f, 0.0f,
+            fpt->lat, fpt->lon, 0.0f,
+            MAV_MISSION_TYPE_FENCE);
+        mavlinkSendMessage(&txMsg);
+        return;
+    }
+
     const flightPlanConfig_t *plan = flightPlanConfig();
     const waypoint_t *wp = &plan->waypoints[seq];
 
@@ -173,6 +205,21 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         lat, lon, zM,
         MAV_MISSION_TYPE_MISSION);
     mavlinkSendMessage(&txMsg);
+}
+
+// True for the fence item commands we accept and round-trip.
+static bool isSupportedFenceCommand(uint16_t command)
+{
+    switch (command) {
+    case MAV_CMD_NAV_FENCE_RETURN_POINT:
+    case MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION:
+    case MAV_CMD_NAV_FENCE_POLYGON_VERTEX_EXCLUSION:
+    case MAV_CMD_NAV_FENCE_CIRCLE_INCLUSION:
+    case MAV_CMD_NAV_FENCE_CIRCLE_EXCLUSION:
+        return true;
+    default:
+        return false;
+    }
 }
 
 static bool decodeFrameAltCm(uint8_t frame, float z, int32_t *altCmOut, uint8_t *resultOut)
@@ -368,14 +415,17 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     return true;
 }
 
-static void handleRequestList(const mavlink_message_t *msg)
+static void handleRequestList(const mavlink_message_t *msg, uint8_t missionType)
 {
-    const uint16_t count = flightPlanConfig()->waypointCount;
+    const uint16_t count = (missionType == MAV_MISSION_TYPE_FENCE)
+        ? fenceStore.count
+        : flightPlanConfig()->waypointCount;
     m.partnerSys = msg->sysid;
     m.partnerComp = msg->compid;
+    m.missionType = missionType;
 
     if (count == 0) {
-        sendCount(msg->sysid, msg->compid, 0);
+        sendCount(msg->sysid, msg->compid, missionType, 0);
         m.state = MISSION_IDLE;
         return;
     }
@@ -384,7 +434,7 @@ static void handleRequestList(const mavlink_message_t *msg)
     m.nextSeq = 0;
     m.totalCount = count;
     m.lastActivityMs = millis();
-    sendCount(msg->sysid, msg->compid, count);
+    sendCount(msg->sysid, msg->compid, missionType, count);
 }
 
 static void handleRequestInt(const mavlink_message_t *msg)
@@ -395,21 +445,22 @@ static void handleRequestInt(const mavlink_message_t *msg)
     if (!targetIsUs(req.target_system, req.target_component)) {
         return;
     }
-    if (req.mission_type != MAV_MISSION_TYPE_MISSION) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
+    if (m.state != MISSION_SENDING || !senderIsActivePartner(msg)) {
         return;
     }
-    if (m.state != MISSION_SENDING || !senderIsActivePartner(msg)) {
+    if (req.mission_type != m.missionType) {
+        sendAck(msg->sysid, msg->compid, req.mission_type, MAV_MISSION_UNSUPPORTED);
+        m.state = MISSION_IDLE;
         return;
     }
     // Allow current seq or one-back retransmit; everything else is out of sequence.
     if (req.seq != m.nextSeq && !(m.nextSeq > 0 && req.seq == m.nextSeq - 1)) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_INVALID_SEQUENCE);
+        sendAck(msg->sysid, msg->compid, m.missionType, MAV_MISSION_INVALID_SEQUENCE);
         m.state = MISSION_IDLE;
         return;
     }
     if (req.seq >= m.totalCount) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_INVALID_SEQUENCE);
+        sendAck(msg->sysid, msg->compid, m.missionType, MAV_MISSION_INVALID_SEQUENCE);
         m.state = MISSION_IDLE;
         return;
     }
@@ -433,22 +484,47 @@ static void handleCount(const mavlink_message_t *msg)
     if (!targetIsUs(mc.target_system, mc.target_component)) {
         return;
     }
+
+    if (mc.mission_type == MAV_MISSION_TYPE_FENCE) {
+        if (mc.count > MAX_FENCE_POINTS) {
+            sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, MAV_MISSION_NO_SPACE);
+            return;
+        }
+        fenceStore.count = 0;   // a new upload replaces the existing fence
+        if (mc.count == 0) {
+            sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, MAV_MISSION_ACCEPTED);
+            m.state = MISSION_IDLE;
+            return;
+        }
+        m.state = MISSION_RECEIVING;
+        m.missionType = MAV_MISSION_TYPE_FENCE;
+        m.nextSeq = 0;
+        m.totalCount = mc.count;
+        m.partnerSys = msg->sysid;
+        m.partnerComp = msg->compid;
+        m.lastActivityMs = millis();
+        m.retries = 0;
+        m.rtlTerminator = false;
+        sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, 0);
+        return;
+    }
+
     if (mc.mission_type != MAV_MISSION_TYPE_MISSION) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
+        sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
     if (FLIGHT_MODE(AUTOPILOT_MODE)) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_DENIED);
+        sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_DENIED);
         return;
     }
     if (mc.count > MAX_WAYPOINTS) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_NO_SPACE);
+        sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_NO_SPACE);
         return;
     }
     if (mc.count == 0) {
         flightPlanConfigMutable()->waypointCount = 0;
         saveConfigAndNotify();
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_ACCEPTED);
+        sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
         m.state = MISSION_IDLE;
         return;
     }
@@ -459,6 +535,7 @@ static void handleCount(const mavlink_message_t *msg)
     flightPlanConfigMutable()->waypointCount = 0;
 
     m.state = MISSION_RECEIVING;
+    m.missionType = MAV_MISSION_TYPE_MISSION;
     m.nextSeq = 0;
     m.totalCount = mc.count;
     m.partnerSys = msg->sysid;
@@ -466,7 +543,7 @@ static void handleCount(const mavlink_message_t *msg)
     m.lastActivityMs = millis();
     m.retries = 0;
     m.rtlTerminator = false;
-    sendRequestInt(msg->sysid, msg->compid, 0);
+    sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, 0);
 }
 
 static void handleItemInt(const mavlink_message_t *msg)
@@ -480,12 +557,36 @@ static void handleItemInt(const mavlink_message_t *msg)
     if (m.state != MISSION_RECEIVING || !senderIsActivePartner(msg)) {
         return;
     }
-    if (it.mission_type != MAV_MISSION_TYPE_MISSION) {
+    if (it.mission_type != m.missionType) {
         abortUpload(MAV_MISSION_UNSUPPORTED);
         return;
     }
     if (it.seq != m.nextSeq) {
         abortUpload(MAV_MISSION_INVALID_SEQUENCE);
+        return;
+    }
+
+    if (m.missionType == MAV_MISSION_TYPE_FENCE) {
+        if (!isSupportedFenceCommand(it.command)) {
+            abortUpload(MAV_MISSION_UNSUPPORTED);
+            return;
+        }
+        fenceStore.points[it.seq].command = it.command;
+        fenceStore.points[it.seq].lat = it.x;
+        fenceStore.points[it.seq].lon = it.y;
+        fenceStore.points[it.seq].param1 = it.param1;
+
+        m.nextSeq++;
+        m.lastActivityMs = millis();
+        m.retries = 0;
+
+        if (m.nextSeq < m.totalCount) {
+            sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, m.nextSeq);
+            return;
+        }
+        fenceStore.count = (uint8_t)m.totalCount;
+        sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_FENCE, MAV_MISSION_ACCEPTED);
+        m.state = MISSION_IDLE;
         return;
     }
 
@@ -510,7 +611,7 @@ static void handleItemInt(const mavlink_message_t *msg)
     m.retries = 0;
 
     if (m.nextSeq < m.totalCount) {
-        sendRequestInt(msg->sysid, msg->compid, m.nextSeq);
+        sendRequestInt(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, m.nextSeq);
         return;
     }
 
@@ -518,7 +619,7 @@ static void handleItemInt(const mavlink_message_t *msg)
     const uint16_t finalCount = m.rtlTerminator ? m.totalCount - 1 : m.totalCount;
     flightPlanConfigMutable()->waypointCount = finalCount;
     saveConfigAndNotify();
-    sendAck(msg->sysid, msg->compid, MAV_MISSION_ACCEPTED);
+    sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
 }
 
@@ -529,17 +630,28 @@ static void handleClearAll(const mavlink_message_t *msg)
     if (!targetIsUs(mc.target_system, mc.target_component)) {
         return;
     }
-    if (mc.mission_type != MAV_MISSION_TYPE_MISSION) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
+
+    // mission_type 255 (MAV_MISSION_TYPE_ALL) clears every store.
+    const bool clearMission = (mc.mission_type == MAV_MISSION_TYPE_MISSION || mc.mission_type == MAV_MISSION_TYPE_ALL);
+    const bool clearFence = (mc.mission_type == MAV_MISSION_TYPE_FENCE || mc.mission_type == MAV_MISSION_TYPE_ALL);
+
+    if (!clearMission && !clearFence) {
+        sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_UNSUPPORTED);
         return;
     }
-    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
-        sendAck(msg->sysid, msg->compid, MAV_MISSION_DENIED);
+    if (clearMission && FLIGHT_MODE(AUTOPILOT_MODE)) {
+        sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_DENIED);
         return;
     }
-    flightPlanConfigMutable()->waypointCount = 0;
-    saveConfigAndNotify();
-    sendAck(msg->sysid, msg->compid, MAV_MISSION_ACCEPTED);
+
+    if (clearFence) {
+        fenceStore.count = 0;
+    }
+    if (clearMission) {
+        flightPlanConfigMutable()->waypointCount = 0;
+        saveConfigAndNotify();
+    }
+    sendAck(msg->sysid, msg->compid, mc.mission_type, MAV_MISSION_ACCEPTED);
     m.state = MISSION_IDLE;
 }
 
@@ -558,6 +670,43 @@ static void handleMissionAck(const mavlink_message_t *msg)
 static void onWaypointReached(uint8_t index)
 {
     m.pendingReachedIndex = index;
+}
+
+static void sendMissionCurrent(void)
+{
+    const uint16_t total = flightPlanConfig()->waypointCount;
+    const bool active = flightPlanNavIsActive();
+    const uint16_t seq = (total && active) ? flightPlanNavGetCurrentIndex() : 0;
+    const uint8_t missionMode = active ? 1 : 2;
+    uint8_t missionState;
+    if (total == 0) {
+        missionState = MISSION_STATE_NO_MISSION;
+    } else if (!active) {
+        missionState = MISSION_STATE_NOT_STARTED;
+    } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+        missionState = MISSION_STATE_COMPLETE;
+    } else {
+        missionState = MISSION_STATE_ACTIVE;
+    }
+    mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
+        seq, total, missionState, missionMode, 0, 0, 0);
+    mavlinkSendMessage(&txMsg);
+}
+
+static void handleSetCurrent(const mavlink_message_t *msg)
+{
+    mavlink_mission_set_current_t sc;
+    mavlink_msg_mission_set_current_decode(msg, &sc);
+    if (!targetIsUs(sc.target_system, sc.target_component)) {
+        return;
+    }
+    if (sc.seq > UINT8_MAX || !flightPlanNavSetCurrentIndex((uint8_t)sc.seq)) {
+        // Per spec, a failed SET_CURRENT is reported via MISSION_ACK(MAV_MISSION_ERROR).
+        sendAck(msg->sysid, msg->compid, MAV_MISSION_TYPE_MISSION, MAV_MISSION_ERROR);
+        return;
+    }
+    // Acknowledge by broadcasting the new cursor.
+    sendMissionCurrent();
 }
 
 void mavMissionInit(void)
@@ -580,11 +729,11 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
         if (!targetIsUs(r.target_system, r.target_component)) {
             return true;
         }
-        if (r.mission_type != MAV_MISSION_TYPE_MISSION) {
-            sendAck(msg->sysid, msg->compid, MAV_MISSION_UNSUPPORTED);
+        if (r.mission_type != MAV_MISSION_TYPE_MISSION && r.mission_type != MAV_MISSION_TYPE_FENCE) {
+            sendAck(msg->sysid, msg->compid, r.mission_type, MAV_MISSION_UNSUPPORTED);
             return true;
         }
-        handleRequestList(msg);
+        handleRequestList(msg, r.mission_type);
         return true;
     }
     case MAVLINK_MSG_ID_MISSION_REQUEST_INT:
@@ -595,6 +744,9 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
         return true;
     case MAVLINK_MSG_ID_MISSION_ITEM_INT:
         handleItemInt(msg);
+        return true;
+    case MAVLINK_MSG_ID_MISSION_SET_CURRENT:
+        handleSetCurrent(msg);
         return true;
     case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
         handleClearAll(msg);
@@ -616,7 +768,7 @@ void mavMissionUpdate(timeMs_t nowMs)
         } else {
             m.retries++;
             m.lastActivityMs = nowMs;
-            sendRequestInt(m.partnerSys, m.partnerComp, m.nextSeq);
+            sendRequestInt(m.partnerSys, m.partnerComp, m.missionType, m.nextSeq);
         }
     }
 
@@ -636,23 +788,7 @@ void mavMissionUpdate(timeMs_t nowMs)
     // MISSION_CURRENT @ 1 Hz — lets QGC display the live cursor whether or not
     // the mission is being executed.
     if ((nowMs - m.lastCurrentTxMs) >= MISSION_CURRENT_PERIOD_MS) {
-        const uint16_t total = flightPlanConfig()->waypointCount;
-        const bool active = flightPlanNavIsActive();
-        const uint16_t seq = (total && active) ? flightPlanNavGetCurrentIndex() : 0;
-        const uint8_t missionMode = active ? 1 : 2;
-        uint8_t missionState;
-        if (total == 0) {
-            missionState = MISSION_STATE_NO_MISSION;
-        } else if (!active) {
-            missionState = MISSION_STATE_NOT_STARTED;
-        } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
-            missionState = MISSION_STATE_COMPLETE;
-        } else {
-            missionState = MISSION_STATE_ACTIVE;
-        }
-        mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-            seq, total, missionState, missionMode, 0, 0, 0);
-        mavlinkSendMessage(&txMsg);
+        sendMissionCurrent();
         m.lastCurrentTxMs = nowMs;
     }
 }
