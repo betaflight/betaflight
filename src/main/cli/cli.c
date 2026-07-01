@@ -8571,12 +8571,6 @@ static void cliExit(const bool reboot)
     mixerResetDisarmedMotors();
 
     if (reboot) {
-#ifdef USE_PHONE_CONFIG
-        // phone-config: 'exit' stays connected so the configurator can return to msp, only 'save' reboots
-        if (phoneConfigCheckBootAndReset()) {
-            return;
-        }
-#endif
         cliReboot();
     }
 }
