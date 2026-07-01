@@ -1492,7 +1492,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
                 const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
                 const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
                 remainingCapacityBars = ceilf(batteryRemaining / stepSize);
-            } else {
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
                 uint8_t voltagePercent = calculateBatteryPercentageRemaining();
                 if (element->type == OSD_ELEMENT_TYPE_2) {
                     voltagePercent = 100 - voltagePercent;
