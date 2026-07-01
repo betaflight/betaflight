@@ -406,7 +406,6 @@ SIZE_OPTIMISED_SRC += \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
             drivers/accgyro/accgyro_spi_lsm6dso_init.c \
-            drivers/accgyro/accgyro_spi_scs3302.c \
             drivers/accgyro/accgyro_spi_scs3304_init.c \
             drivers/barometer/barometer_bmp085.c \
             drivers/barometer/barometer_bmp280.c \
