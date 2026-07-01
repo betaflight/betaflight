@@ -26,11 +26,17 @@
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
 #if defined(USE_SERIALRX_MAVLINK)
 bool isValidMavlinkTxBuffer (void);
 bool shouldSendMavlinkTelemetry(void);
+#define MAVLINK_RX_QUEUE_SIZE 16
+typedef struct mavlinkRxQueye_s {
+    mavlink_message_t msgs[MAVLINK_RX_QUEUE_SIZE];
+    volatile uint8_t head;
+    volatile uint8_t tail;
+} mavlinkRxQueye_t;
+bool mavlinkGetNextQueyeMessage(mavlink_message_t *msg);
 #else
 static inline bool isValidMavlinkTxBuffer(void) { return false; }
 static inline bool shouldSendMavlinkTelemetry(void) { return false; }

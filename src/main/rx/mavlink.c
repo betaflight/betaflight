@@ -59,6 +59,27 @@ static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
 static volatile uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
 static volatile bool txbuff_valid = false;
+static mavlinkRxQueye_t mavlinkRxQueye;
+
+static void mavlinkAddMessageToQueye(void)
+{
+    uint8_t next = (mavlinkRxQueye.head + 1) % MAVLINK_RX_QUEUE_SIZE;
+    if (next != mavlinkRxQueye.tail) {
+        mavlinkRxQueye.msgs[mavlinkRxQueye.head] = mavRecvMsg;
+        mavlinkRxQueye.head = next;
+    }
+}
+
+bool mavlinkGetNextQueyeMessage(mavlink_message_t *msg)
+{
+    if (mavlinkRxQueye.tail != mavlinkRxQueye.head) {
+        *msg = mavlinkRxQueye.msgs[mavlinkRxQueye.tail];
+        mavlinkRxQueye.tail = (mavlinkRxQueye.tail + 1) % MAVLINK_RX_QUEUE_SIZE;
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg) {
     const uint16_t *channelsPtr = (uint16_t*)&msg->chan1_raw;
@@ -136,12 +157,16 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
     if (result == MAVLINK_FRAMING_OK) {
         switch (mavRecvMsg.msgid) {
         case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
+            // Handle RC CHANNELS data immediately to get maximum RC rate
             handleIncoming_RC_CHANNELS_OVERRIDE();
             rxRuntimeState->lastRcFrameTimeUs = micros();
             break;
         case MAVLINK_MSG_ID_RADIO_STATUS:
             handleIncoming_RADIO_STATUS();
             break;
+        default:
+            // Add another message into the queye, to handle it in the mavlink telemetry task later
+            mavlinkAddMessageToQueye();
         }
     }
 }
