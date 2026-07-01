@@ -51,3 +51,6 @@
 	url = https://github.com/X-CORE-LABS-PTE-LTD/X32M7_Std_SDK.git
 	ignore = dirty
 	update = none
+[submodule "lib/main/lwip"]
+	path = lib/main/lwip
+	url = https://github.com/lwip-tcpip/lwip.git
