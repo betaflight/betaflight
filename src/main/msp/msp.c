@@ -3130,6 +3130,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
 
     case MSP_SET_MOTOR:
+        if (dataSize < getMotorCount() * sizeof(uint16_t)) {
+            return MSP_RESULT_ERROR;
+        }
         for (int i = 0; i < getMotorCount(); i++) {
             motor_disarmed[i] = motorConvertFromExternal(sbufReadU16(src));
         }
@@ -3728,17 +3731,27 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             char bandName[VTX_TABLE_BAND_NAME_LENGTH + 1];
             memset(bandName, 0, VTX_TABLE_BAND_NAME_LENGTH + 1);
             uint16_t frequencies[VTX_TABLE_MAX_CHANNELS];
+            memset(frequencies, 0, sizeof(frequencies));
             const uint8_t band = sbufReadU8(src);
             const uint8_t bandNameLength = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < bandNameLength) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < bandNameLength; i++) {
                 const char nameChar = sbufReadU8(src);
                 if (i < VTX_TABLE_BAND_NAME_LENGTH) {
                     bandName[i] = toupper(nameChar);
                 }
             }
+            if (sbufBytesRemaining(src) < 3) {
+                return MSP_RESULT_ERROR;
+            }
             const char bandLetter = toupper(sbufReadU8(src));
             const bool isFactoryBand = (bool)sbufReadU8(src);
             const uint8_t channelCount = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < channelCount * (int)sizeof(uint16_t)) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < channelCount; i++) {
                 const uint16_t frequency = sbufReadU16(src);
                 if (i < vtxTableConfig()->channels) {
@@ -3778,6 +3791,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const uint8_t powerLevel = sbufReadU8(src);
             const uint16_t powerValue = sbufReadU16(src);
             const uint8_t powerLevelLabelLength = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < powerLevelLabelLength) {
+                return MSP_RESULT_ERROR;
+            }
             for (int i = 0; i < powerLevelLabelLength; i++) {
                 const char labelChar = sbufReadU8(src);
                 if (i < VTX_TABLE_POWER_LABEL_LENGTH) {
@@ -3801,7 +3817,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
     case MSP2_SET_MOTOR_OUTPUT_REORDERING:
         {
+            if (dataSize < 1) {
+                return MSP_RESULT_ERROR;
+            }
             const uint8_t arraySize = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < MIN(arraySize, MAX_SUPPORTED_MOTORS)) {
+                return MSP_RESULT_ERROR;
+            }
 
             for (unsigned i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
                 uint8_t value = i;
@@ -3821,9 +3843,15 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             const bool armed = ARMING_FLAG(ARMED);
 
             if (!armed) {
+                if (sbufBytesRemaining(src) < 3) {
+                    return MSP_RESULT_ERROR;
+                }
                 const uint8_t commandType = sbufReadU8(src);
                 const uint8_t motorIndex = sbufReadU8(src);
                 const uint8_t commandCount = sbufReadU8(src);
+                if (sbufBytesRemaining(src) < commandCount) {
+                    return MSP_RESULT_ERROR;
+                }
 
                 if (DSHOT_CMD_TYPE_BLOCKING == commandType) {
                     motorDisable();
@@ -4143,6 +4171,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             return MSP_RESULT_ERROR;
         }
         unsigned count = sbufReadU8(src);
+        if (count == 0 || (dataSize - 1) % count != 0) {
+            return MSP_RESULT_ERROR;
+        }
         unsigned portConfigSize = (dataSize - 1) / count;
         unsigned expectedPortSize = sizeof(uint8_t) + sizeof(uint32_t) + (sizeof(uint8_t) * 4);
         if (portConfigSize < expectedPortSize) {
@@ -4248,7 +4279,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #if defined(USE_BOARD_INFO)
     case MSP_SET_BOARD_INFO:
         if (!boardInformationIsSet()) {
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             uint8_t length = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < length) {
+                return MSP_RESULT_ERROR;
+            }
             char boardName[MAX_BOARD_NAME_LENGTH + 1];
             sbufReadData(src, boardName, MIN(length, MAX_BOARD_NAME_LENGTH));
             if (length > MAX_BOARD_NAME_LENGTH) {
@@ -4256,7 +4293,13 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 length = MAX_BOARD_NAME_LENGTH;
             }
             boardName[length] = '\0';
+            if (sbufBytesRemaining(src) < 1) {
+                return MSP_RESULT_ERROR;
+            }
             length = sbufReadU8(src);
+            if (sbufBytesRemaining(src) < length) {
+                return MSP_RESULT_ERROR;
+            }
             char manufacturerId[MAX_MANUFACTURER_ID_LENGTH + 1];
             sbufReadData(src, manufacturerId, MIN(length, MAX_MANUFACTURER_ID_LENGTH));
             if (length > MAX_MANUFACTURER_ID_LENGTH) {
@@ -4421,6 +4464,9 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
     case MSP_SET_TRANSPONDER_CONFIG: {
         // Backward compatibility to BFC 3.1.1 is lost for this message type
 
+        if (dataSize < 1) {
+            return MSP_RESULT_ERROR;
+        }
         uint8_t provider = sbufReadU8(src);
         uint8_t bytesRemaining = dataSize - 1;
 

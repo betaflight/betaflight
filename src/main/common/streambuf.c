@@ -97,7 +97,10 @@ void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
 
 uint8_t sbufReadU8(sbuf_t *src)
 {
-    return *src->ptr++;
+    if (src->ptr < src->end) {
+        return *src->ptr++;
+    }
+    return 0;
 }
 
 uint16_t sbufReadU16(sbuf_t *src)
@@ -120,8 +123,13 @@ uint32_t sbufReadU32(sbuf_t *src)
 
 void sbufReadData(sbuf_t *src, void *data, int len)
 {
-    memcpy(data, src->ptr, len);
-    src->ptr += len;
+    const int available = MAX((int)(src->end - src->ptr), 0);
+    const int toCopy = MIN(len, available);
+    memcpy(data, src->ptr, toCopy);
+    if (toCopy < len) {
+        memset((uint8_t *)data + toCopy, 0, len - toCopy);
+    }
+    src->ptr += toCopy;
 }
 
 // reader - return bytes remaining in buffer
@@ -146,7 +154,11 @@ const uint8_t* sbufConstPtr(const sbuf_t *buf)
 // writer - commit written data
 void sbufAdvance(sbuf_t *buf, int size)
 {
-    buf->ptr += size;
+    if (size > 0 && size > (int)(buf->end - buf->ptr)) {
+        buf->ptr = buf->end;
+    } else {
+        buf->ptr += size;
+    }
 }
 
 // modifies streambuf so that written data are prepared for reading
