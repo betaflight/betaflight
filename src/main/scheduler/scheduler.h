@@ -199,6 +199,11 @@ typedef enum {
     TASK_DRONECAN,
 #endif
 
+#ifdef USE_PHONE_CONFIG
+    TASK_PHONE_CONFIG,
+    TASK_PHONE_CONFIG_NET,
+#endif
+
     /* Count of real tasks */
     TASK_COUNT,
 

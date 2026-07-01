@@ -82,6 +82,7 @@
 #ifdef USE_USB_MSC
 #include "drivers/usb_msc.h"
 #endif
+#include "io/phoneconfig.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_table.h"
@@ -918,6 +919,15 @@ void initPhase3(void)
     // Initialize MSP
     mspInit();
     mspSerialInit();
+
+#ifdef USE_PHONE_CONFIG
+    // bring up lwip, the dhcp server and the msp-over-tcp server, and register the tcp link as a
+    // virtual msp serial port. must run after mspSerialInit(), which clears the msp ports array.
+    // from here the stock TASK_SERIAL serves msp and cli over it against the fully-running fc.
+    if (phoneConfigCheckBootAndReset()) {
+        phoneConfigNetStart();
+    }
+#endif
 
 /*
  * CMS, display devices and OSD

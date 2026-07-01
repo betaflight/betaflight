@@ -153,6 +153,9 @@ USBD_ClassTypeDef  USBD_CDC =
   USBD_CDC_GetFSCfgDesc,
   USBD_CDC_GetOtherSpeedCfgDesc,
   USBD_CDC_GetDeviceQualifierDescriptor,
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+  NULL,   /* GetUsrStrDescriptor */
+#endif
 };
 
 /* USB CDC device Configuration Descriptor */

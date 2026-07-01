@@ -144,6 +144,22 @@ VCP_SRC = \
             STM32/serial_usb_vcp.c \
             drivers/usb_io.c
 
+# phone-config (usb cdc-ncm network gadget + lwip), enabled via OPTIONS
+ifneq (,$(findstring USE_PHONE_CONFIG,$(OPTIONS)))
+LWIP_DIR = $(LIB_MAIN_DIR)/lwip/src
+VPATH := $(VPATH):$(LWIP_DIR)/core:$(LWIP_DIR)/core/ipv4:$(LWIP_DIR)/netif
+INCLUDE_DIRS += $(LWIP_DIR)/include $(SRC_DIR)/io/lwip_port
+VCP_SRC += \
+            STM32/vcp_hal/usbd_cdc_ncm.c \
+            STM32/phoneconfig_usb_stm32.c \
+            STM32/phoneflash_burn_f7xx.c \
+            io/phoneconfig_net.c \
+            init.c def.c inet_chksum.c ip.c mem.c memp.c netif.c pbuf.c raw.c stats.c sys.c \
+            tcp.c tcp_in.c tcp_out.c timeouts.c udp.c \
+            acd.c etharp.c icmp.c ip4.c ip4_addr.c ip4_frag.c \
+            ethernet.c
+endif
+
 MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/bus_i2c_timing.c \

@@ -266,6 +266,9 @@ USBD_ClassTypeDef  USBD_HID_CDC =
     USBD_HID_CDC_GetFSCfgDesc,
     NULL,
     USBD_HID_CDC_GetDeviceQualifierDescriptor,
+#if (USBD_SUPPORT_USER_STRING == 1U) || (USBD_SUPPORT_USER_STRING_DESC == 1U)
+    NULL,   /* GetUsrStrDescriptor */
+#endif
 };
 
 static uint8_t USBD_HID_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)

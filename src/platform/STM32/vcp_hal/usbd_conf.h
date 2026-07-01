@@ -85,7 +85,14 @@
 #define USBD_MAX_NUM_INTERFACES               3
 #define USBD_MAX_NUM_CONFIGURATION            1
 #define USBD_MAX_STR_DESC_SIZ                 0x100
+#ifdef USE_PHONE_CONFIG
+/* cdc-ncm needs a mac-address user string (ios). the h7 usb device library spells the macro
+ * USBD_SUPPORT_USER_STRING_DESC, the f7 one USBD_SUPPORT_USER_STRING, so set both */
+#define USBD_SUPPORT_USER_STRING              1
+#define USBD_SUPPORT_USER_STRING_DESC         1
+#else
 #define USBD_SUPPORT_USER_STRING              0
+#endif
 #define USBD_SELF_POWERED                     1
 #define USBD_DEBUG_LEVEL                      0
 #define MSC_MEDIA_PACKET                      512U

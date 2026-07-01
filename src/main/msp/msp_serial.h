@@ -130,6 +130,10 @@ void mspSerialInit(void);
 bool mspSerialWaiting(void);
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn);
 void mspSerialAllocatePorts(void);
+#if defined(USE_PHONE_CONFIG)
+// register an externally-owned serial port as an msp port (phone-config tcp/msp bridge)
+mspPort_t *mspSerialRegisterPort(serialPort_t *serialPort);
+#endif
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
 void mspSerialReleaseSharedTelemetryPorts(void);
 mspDescriptor_t getMspSerialPortDescriptor(const serialPortIdentifier_e portIdentifier);

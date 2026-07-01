@@ -98,6 +98,9 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#if defined(USE_PHONE_CONFIG)
+#include "io/phoneconfig.h"
+#endif
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/transponder_ir.h"
@@ -385,6 +388,12 @@ static void mspRebootFn(serialPort_t *serialPort)
         if (fontHasBeenUpdated) {
             fontUpdateCompletion();
             fontHasBeenUpdated = false;
+        }
+#endif
+
+#ifdef USE_PHONE_CONFIG
+        if (phoneConfigCheckBootAndReset()) {
+            systemResetToPhoneConfig();
         }
 #endif
 
