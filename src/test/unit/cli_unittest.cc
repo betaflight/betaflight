@@ -306,6 +306,34 @@ void dashboardShowFixedPage(pageId_e){}
 void dashboardUpdate(timeUs_t) {}
 
 bool parseLedStripConfig(int, const char *){return false; }
+
+uint8_t migrateLedBlinkPattern(uint8_t pattern)
+{
+    if (pattern == LED_BLINK_PATTERN_DOUBLE_DEPRECATED) {
+        return LED_BLINK_PATTERN_BEACON;
+    }
+    return pattern;
+}
+
+const ledStripStatusModeConfig_t *ledStripActiveProfileConfig(void)
+{
+    return &ledStripProfilesConfig()->profiles[ledStripConfig()->ledstrip_profile];
+}
+
+ledStripStatusModeConfig_t *ledStripActiveProfileConfigMutable(void)
+{
+    return &ledStripProfilesConfigMutable()->profiles[ledStripConfig()->ledstrip_profile];
+}
+
+void syncActiveLedProfileConfig(void) {}
+
+void setLedProfile(uint8_t profile)
+{
+    if (profile < LED_PROFILE_COUNT) {
+        ledStripConfigMutable()->ledstrip_profile = profile;
+    }
+}
+
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 void parseRcChannels(const char *, rxConfig_t *){}
