@@ -222,7 +222,7 @@ float altitudeP = altitudeErrorCm * altitudeKp;
     // Altitude Derivative
     const float verticalVelocity = getAltitudeDerivativeControl(); // un-filtered vertical velocity from Kalman filter
     const float velMax = (velLimitCmS > 1.0f) ? velLimitCmS : ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S;
-    const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);    
+    const float targetVerticalVelocity = constrainf(targetAltitudeVelCmS, -velMax, velMax);
     float velocityError = targetVerticalVelocity - verticalVelocity;
 
     float dBoost = 1.0f;
@@ -231,9 +231,6 @@ float altitudeP = altitudeErrorCm * altitudeKp;
     if (absVerticalVelocity > boostThreshold) {
             const float ratio = absVerticalVelocity / boostThreshold;
             dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
-    }
-        const float ratio = absVerticalVelocity / boostThreshold;
-        dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
     }
     const float altitudeD = velocityError * altitudeKd * dBoost;
     const float altitudeF = targetVerticalVelocity * altitudeKf;
