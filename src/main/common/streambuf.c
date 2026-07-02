@@ -95,7 +95,10 @@ void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
     sbufWriteData(dst, string, strlen(string) + 1);
 }
 
-uint8_t sbufReadU8(sbuf_t *src)
+// The readers are kept out-of-line: under LTO the end-bounds check would
+// otherwise be inlined at every one of the ~hundreds of call sites, bloating
+// flash on constrained targets. A single shared copy costs a call instead.
+NOINLINE uint8_t sbufReadU8(sbuf_t *src)
 {
     if (src->ptr < src->end) {
         return *src->ptr++;
@@ -103,7 +106,7 @@ uint8_t sbufReadU8(sbuf_t *src)
     return 0;
 }
 
-uint16_t sbufReadU16(sbuf_t *src)
+NOINLINE uint16_t sbufReadU16(sbuf_t *src)
 {
     uint16_t ret;
     ret = sbufReadU8(src);
@@ -111,7 +114,7 @@ uint16_t sbufReadU16(sbuf_t *src)
     return ret;
 }
 
-uint32_t sbufReadU32(sbuf_t *src)
+NOINLINE uint32_t sbufReadU32(sbuf_t *src)
 {
     uint32_t ret;
     ret = sbufReadU8(src);
@@ -121,7 +124,7 @@ uint32_t sbufReadU32(sbuf_t *src)
     return ret;
 }
 
-void sbufReadData(sbuf_t *src, void *data, int len)
+NOINLINE void sbufReadData(sbuf_t *src, void *data, int len)
 {
     const int available = MAX((int)(src->end - src->ptr), 0);
     const int toCopy = MIN(len, available);
