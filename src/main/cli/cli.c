@@ -2169,6 +2169,19 @@ static const char *ledStripProfileCliName(uint8_t profileIndex)
     return tableEntry->values[0];
 }
 
+static const char *ledStripProfileBlinkPatternCliName(uint8_t pattern)
+{
+    pattern = migrateLedBlinkPattern(pattern);
+
+    const lookupTableEntry_t *tableEntry = &lookupTables[TABLE_LED_BLINK_PATTERN];
+
+    if (pattern < tableEntry->valueCount && tableEntry->values[pattern]) {
+        return tableEntry->values[pattern];
+    }
+
+    return tableEntry->values[0];
+}
+
 static bool printLedStripProfileDump(
     dumpFlags_t dumpMask,
     ledProfile_e profileIndex,
@@ -2235,10 +2248,10 @@ static bool printLedStripProfileDump(
     }
 
     {
-        const char *format = "set ledstrip_profile_%u_blink_pattern = %u";
+        const char *format = "set ledstrip_profile_%u_blink_pattern = %s";
         const bool equalsDefault = profileCopy->profile_blink_pattern == profileCurrent->profile_blink_pattern;
-        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_pattern);
-        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_pattern);
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, ledStripProfileBlinkPatternCliName(profileCurrent->profile_blink_pattern));
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, ledStripProfileBlinkPatternCliName(profileCopy->profile_blink_pattern));
     }
 
     {

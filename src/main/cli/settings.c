@@ -1504,7 +1504,7 @@ const clivalue_t valueTable[] = {
     { "ledstrip_blink_pattern",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_BLINK_PATTERN }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_pattern) },
     { "ledstrip_blink_flash_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 300 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_flash_ms) },
     { "ledstrip_blink_gap_ms",    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 300 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_gap_ms) },
-    { "ledstrip_blink_pause_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 200, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_pause_ms) },
+    { "ledstrip_blink_pause_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { LED_BLINK_PAUSE_MS_MIN_ALTERNATE, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_pause_ms) },
 #ifdef USE_LED_STRIP_STATUS_MODE
     { "ledstrip_profile_1_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[0]) },
     { "ledstrip_profile_2_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[1]) },

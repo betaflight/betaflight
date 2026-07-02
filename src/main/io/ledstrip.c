@@ -518,6 +518,7 @@ bool loadLedStripConfig(const void *from, int size, int version)
             ledStripConfig_System.ledstrip_blink_flash_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 2);
             ledStripConfig_System.ledstrip_blink_gap_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 4);
             ledStripConfig_System.ledstrip_blink_pause_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 6);
+            migrateMasterAlternateBlinkFromLegacyPeriodOn();
             return true;
         }
     }
@@ -581,6 +582,7 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
                 profile->profile_blink_flash_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 2);
                 profile->profile_blink_gap_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 4);
                 profile->profile_blink_pause_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 6);
+                migrateProfileAlternateBlinkFromLegacyPeriodOn(profile);
             }
 
             if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
@@ -610,6 +612,12 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_flash_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_gap_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_pause_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+            }
+
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                ledStripStatusModeConfig_t *profile = &ledStripProfilesConfig_System.profiles[profileIndex];
+                profile->profile_blink_pattern = migrateLedBlinkPattern(profile->profile_blink_pattern);
+                migrateProfileAlternateBlinkFromLegacyPeriodOn(profile);
             }
 
             if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
