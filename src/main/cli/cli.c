@@ -2220,6 +2220,48 @@ static bool printLedStripProfileDump(
         cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_rainbow_freq);
     }
 
+    {
+        const char *format = "set ledstrip_profile_%u_blink_period = %u";
+        const bool equalsDefault = profileCopy->profile_blink_period == profileCurrent->profile_blink_period;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_period);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_period);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_blink_on_ms = %u";
+        const bool equalsDefault = profileCopy->profile_blink_on_ms == profileCurrent->profile_blink_on_ms;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_on_ms);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_on_ms);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_blink_pattern = %u";
+        const bool equalsDefault = profileCopy->profile_blink_pattern == profileCurrent->profile_blink_pattern;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_pattern);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_pattern);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_blink_flash_ms = %u";
+        const bool equalsDefault = profileCopy->profile_blink_flash_ms == profileCurrent->profile_blink_flash_ms;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_flash_ms);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_flash_ms);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_blink_gap_ms = %u";
+        const bool equalsDefault = profileCopy->profile_blink_gap_ms == profileCurrent->profile_blink_gap_ms;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_gap_ms);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_gap_ms);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_blink_pause_ms = %u";
+        const bool equalsDefault = profileCopy->profile_blink_pause_ms == profileCurrent->profile_blink_pause_ms;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_blink_pause_ms);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_blink_pause_ms);
+    }
+
     if (!profileNameEqualsDefault || !(dumpMask & DO_DIFF)) {
         const char *format = "set ledstrip_profile_%u_name = %s";
         const char *nameForDump = profileNameCopy[0] ? profileNameCopy : emptyName;

@@ -180,7 +180,7 @@ static hsvColor_t getHsvFromVtxFrequency(uint16_t freq)
 #endif
 
 
-PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 6);
 
 // Default LED strip brightness (percent). A target may lower this, e.g. when a
 // single bright addressable LED is used as a status indicator.
@@ -206,6 +206,12 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
     ledStripConfig->ledstrip_larson_freq = LED_LARSON_FREQ_DEFAULT;
+    ledStripConfig->ledstrip_blink_period_ms = LED_BLINK_PERIOD_MS_DEFAULT;
+    ledStripConfig->ledstrip_blink_on_ms = LED_BLINK_ON_MS_DEFAULT;
+    ledStripConfig->ledstrip_blink_pattern = LED_BLINK_PATTERN_ALTERNATE;
+    ledStripConfig->ledstrip_blink_flash_ms = LED_BLINK_FLASH_MS_DEFAULT;
+    ledStripConfig->ledstrip_blink_gap_ms = LED_BLINK_GAP_MS_DEFAULT;
+    ledStripConfig->ledstrip_blink_pause_ms = LED_BLINK_PAUSE_MS_DEFAULT;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -261,7 +267,7 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
-PG_REGISTER_WITH_RESET_FN(ledStripProfilesConfig_t, ledStripProfilesConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 4);
+PG_REGISTER_WITH_RESET_FN(ledStripProfilesConfig_t, ledStripProfilesConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 7);
 
 static const char * const defaultLedProfileNames[LED_PROFILE_COUNT] = {
     "RACE",
@@ -300,6 +306,12 @@ static void pgResetFn_ledStripStatusModeProfile(ledStripStatusModeConfig_t *ledS
     ledStripStatusModeConfig->profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
     ledStripStatusModeConfig->profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
     ledStripStatusModeConfig->profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_flash_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_gap_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_blink_pause_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
 }
 
 static void initSolidColorProfile(ledStripStatusModeConfig_t *profile, colorId_e color, bool blink)
@@ -386,6 +398,142 @@ void syncActiveLedProfileConfig(void)
     resetLedStripProfileRenderState();
 }
 
+uint8_t migrateLedBlinkPattern(uint8_t pattern)
+{
+    if (pattern == LED_BLINK_PATTERN_DOUBLE_DEPRECATED) {
+        return LED_BLINK_PATTERN_BEACON;
+    }
+
+    return pattern;
+}
+
+static void convertLegacyPeriodOnToFlashPause(uint16_t periodMs, uint16_t onMs, uint16_t *flashMs, uint16_t *pauseMs)
+{
+    if (periodMs < 50) {
+        periodMs = LED_BLINK_PERIOD_MS_DEFAULT;
+    }
+
+    if (onMs < 1) {
+        onMs = LED_BLINK_ON_MS_DEFAULT;
+    }
+
+    if (onMs > periodMs) {
+        onMs = periodMs;
+    }
+
+    *flashMs = onMs;
+    *pauseMs = periodMs - onMs;
+
+    if (*flashMs < LED_BLINK_FLASH_MS_MIN) {
+        *flashMs = LED_BLINK_FLASH_MS_MIN;
+    } else if (*flashMs > 300) {
+        *flashMs = 300;
+    }
+
+    if (*pauseMs < LED_BLINK_PAUSE_MS_MIN_ALTERNATE) {
+        *pauseMs = LED_BLINK_PAUSE_MS_MIN_ALTERNATE;
+    } else if (*pauseMs > 2000) {
+        *pauseMs = 2000;
+    }
+}
+
+static void migrateMasterAlternateBlinkFromLegacyPeriodOn(void)
+{
+    const uint8_t pattern = migrateLedBlinkPattern(ledStripConfig_System.ledstrip_blink_pattern);
+
+    if (pattern != LED_BLINK_PATTERN_ALTERNATE) {
+        return;
+    }
+
+    const uint16_t periodMs = ledStripConfig_System.ledstrip_blink_period_ms;
+    const uint16_t onMs = ledStripConfig_System.ledstrip_blink_on_ms;
+    const bool legacyTimingCustom = (periodMs != LED_BLINK_PERIOD_MS_DEFAULT) || (onMs != LED_BLINK_ON_MS_DEFAULT);
+    const bool flashPauseAtDefaults =
+        (ledStripConfig_System.ledstrip_blink_flash_ms == LED_BLINK_FLASH_MS_DEFAULT) &&
+        (ledStripConfig_System.ledstrip_blink_pause_ms == LED_BLINK_PAUSE_MS_DEFAULT);
+
+    if (legacyTimingCustom && flashPauseAtDefaults) {
+        convertLegacyPeriodOnToFlashPause(
+            periodMs,
+            onMs,
+            &ledStripConfig_System.ledstrip_blink_flash_ms,
+            &ledStripConfig_System.ledstrip_blink_pause_ms
+        );
+    }
+}
+
+static void migrateProfileAlternateBlinkFromLegacyPeriodOn(ledStripStatusModeConfig_t *profile)
+{
+    const uint8_t pattern = profile->profile_blink_pattern;
+
+    if (pattern != 0 && pattern != LED_BLINK_PATTERN_ALTERNATE) {
+        return;
+    }
+
+    if (profile->profile_blink_flash_ms != 0 || profile->profile_blink_pause_ms != 0) {
+        return;
+    }
+
+    if (profile->profile_blink_period == 0 && profile->profile_blink_on_ms == 0) {
+        return;
+    }
+
+    const uint16_t periodMs = profile->profile_blink_period > 0 ? profile->profile_blink_period : LED_BLINK_PERIOD_MS_DEFAULT;
+    const uint16_t onMs = profile->profile_blink_on_ms > 0 ? profile->profile_blink_on_ms : LED_BLINK_ON_MS_DEFAULT;
+
+    convertLegacyPeriodOnToFlashPause(periodMs, onMs, &profile->profile_blink_flash_ms, &profile->profile_blink_pause_ms);
+}
+
+bool loadLedStripConfig(const void *from, int size, int version)
+{
+    pgResetInstance(&ledStripConfig_Registry, (uint8_t *)&ledStripConfig_System);
+
+    if (version == pgVersion(&ledStripConfig_Registry)) {
+        const int take = MIN(size, (int)sizeof(ledStripConfig_t));
+        memcpy(&ledStripConfig_System, from, take);
+        ledStripConfig_System.ledstrip_blink_pattern = migrateLedBlinkPattern(ledStripConfig_System.ledstrip_blink_pattern);
+        migrateMasterAlternateBlinkFromLegacyPeriodOn();
+        return true;
+    }
+
+    if (version == 5) {
+        const size_t periodOffset = offsetof(ledStripConfig_t, ledstrip_blink_period_ms);
+        const size_t oldSize = offsetof(ledStripConfig_t, ledstrip_blink_flash_ms);
+
+        if (size >= (int)oldSize) {
+            memcpy(&ledStripConfig_System, from, periodOffset);
+            const uint8_t *oldConfig = (const uint8_t *)from;
+            const uint16_t periodMs = *(const uint16_t *)(oldConfig + periodOffset);
+            const uint8_t blinkPercent = oldConfig[periodOffset + sizeof(uint16_t)];
+            const uint8_t blinkPattern = oldConfig[periodOffset + sizeof(uint16_t) + 1];
+            uint16_t onMs = (uint16_t)((uint32_t)periodMs * blinkPercent / 100);
+
+            if (onMs < 1) {
+                onMs = 1;
+            }
+
+            ledStripConfig_System.ledstrip_blink_period_ms = periodMs;
+            ledStripConfig_System.ledstrip_blink_on_ms = onMs;
+            ledStripConfig_System.ledstrip_blink_pattern = migrateLedBlinkPattern(blinkPattern);
+            ledStripConfig_System.ledstrip_blink_flash_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 2);
+            ledStripConfig_System.ledstrip_blink_gap_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 4);
+            ledStripConfig_System.ledstrip_blink_pause_ms = *(const uint16_t *)(oldConfig + periodOffset + sizeof(uint16_t) + 6);
+            return true;
+        }
+    }
+
+    if (version == 4) {
+        const size_t oldSize = offsetof(ledStripConfig_t, ledstrip_blink_flash_ms);
+
+        if (size >= (int)oldSize) {
+            memcpy(&ledStripConfig_System, from, oldSize);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool loadLedStripProfilesConfig(const void *from, int size, int version)
 {
     pgResetInstance(&ledStripProfilesConfig_Registry, (uint8_t *)&ledStripProfilesConfig_System);
@@ -393,7 +541,117 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
     if (version == pgVersion(&ledStripProfilesConfig_Registry)) {
         const int take = MIN(size, (int)sizeof(ledStripProfilesConfig_t));
         memcpy(&ledStripProfilesConfig_System, from, take);
+        for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+            ledStripStatusModeConfig_t *profile = &ledStripProfilesConfig_System.profiles[profileIndex];
+            profile->profile_blink_pattern = migrateLedBlinkPattern(profile->profile_blink_pattern);
+            migrateProfileAlternateBlinkFromLegacyPeriodOn(profile);
+        }
         return true;
+    }
+
+    if (version == 6) {
+        const size_t periodOffset = offsetof(ledStripStatusModeConfig_t, profile_blink_period);
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_blink_flash_ms);
+        const size_t oldProfilesSize = oldProfileSize * LED_PROFILE_COUNT;
+
+        if (size >= (int)oldProfilesSize) {
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                const uint8_t *oldProfile = (const uint8_t *)from + profileIndex * oldProfileSize;
+                ledStripStatusModeConfig_t *profile = &ledStripProfilesConfig_System.profiles[profileIndex];
+
+                memcpy(profile, oldProfile, periodOffset);
+                const uint16_t periodMs = *(const uint16_t *)(oldProfile + periodOffset);
+                const uint8_t blinkPercent = oldProfile[periodOffset + sizeof(uint16_t)];
+                const uint8_t blinkPattern = oldProfile[periodOffset + sizeof(uint16_t) + 1];
+                uint16_t onMs = (uint16_t)((uint32_t)periodMs * blinkPercent / 100);
+
+                if (onMs < 1) {
+                    onMs = 1;
+                }
+
+                profile->profile_blink_period = periodMs;
+                profile->profile_blink_pattern = migrateLedBlinkPattern(blinkPattern);
+
+                if (blinkPercent == 0 || periodMs == 0) {
+                    profile->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                } else {
+                    profile->profile_blink_on_ms = onMs;
+                }
+
+                profile->profile_blink_flash_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 2);
+                profile->profile_blink_gap_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 4);
+                profile->profile_blink_pause_ms = *(const uint16_t *)(oldProfile + periodOffset + sizeof(uint16_t) + 6);
+            }
+
+            if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
+                memcpy(
+                    ledStripProfilesConfig_System.profileNames,
+                    (const uint8_t *)from + oldProfilesSize,
+                    sizeof(ledStripProfilesConfig_System.profileNames)
+                );
+            } else {
+                initDefaultLedProfileNames(&ledStripProfilesConfig_System);
+            }
+            return true;
+        }
+    }
+
+    if (version == 5) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_blink_flash_ms);
+        const size_t oldProfilesSize = oldProfileSize * LED_PROFILE_COUNT;
+
+        if (size >= (int)oldProfilesSize) {
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                memcpy(
+                    &ledStripProfilesConfig_System.profiles[profileIndex],
+                    (const uint8_t *)from + profileIndex * oldProfileSize,
+                    oldProfileSize
+                );
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_flash_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_gap_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_pause_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+            }
+
+            if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
+                memcpy(
+                    ledStripProfilesConfig_System.profileNames,
+                    (const uint8_t *)from + oldProfilesSize,
+                    sizeof(ledStripProfilesConfig_System.profileNames)
+                );
+            } else {
+                initDefaultLedProfileNames(&ledStripProfilesConfig_System);
+            }
+            return true;
+        }
+    }
+
+    if (version == 4) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_blink_period);
+        const size_t oldProfilesSize = oldProfileSize * LED_PROFILE_COUNT;
+
+        if (size >= (int)oldProfilesSize) {
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                memcpy(
+                    &ledStripProfilesConfig_System.profiles[profileIndex],
+                    (const uint8_t *)from + profileIndex * oldProfileSize,
+                    oldProfileSize
+                );
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+            }
+
+            if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
+                memcpy(
+                    ledStripProfilesConfig_System.profileNames,
+                    (const uint8_t *)from + oldProfilesSize,
+                    sizeof(ledStripProfilesConfig_System.profileNames)
+                );
+            } else {
+                initDefaultLedProfileNames(&ledStripProfilesConfig_System);
+            }
+            return true;
+        }
     }
 
     if (version == 3) {
@@ -410,6 +668,9 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
             }
 
             if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
@@ -440,6 +701,9 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
                 ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
             }
 
             if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
@@ -1360,22 +1624,101 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     }
 }
 
-// blink twice, then wait ; either always or just when landing
-static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
+// blink overlay: configurable period, duty, and pattern per profile
+static bool ledBlinkLayerIsLedOn(uint8_t profile)
 {
-    const uint16_t blinkPattern = 0x8005; // 0b1000000000000101;
-    static uint16_t blinkMask;
+    const uint8_t pattern = ledStripProfileGetBlinkPattern(profile);
 
-    if (updateNow) {
-        blinkMask = blinkMask >> 1;
-        if (blinkMask <= 1)
-            blinkMask = blinkPattern;
+    if (pattern == LED_BLINK_PATTERN_BEACON) {
+        const uint16_t flashMs = ledStripProfileGetBlinkFlashMs(profile);
+        const uint16_t gapMs = ledStripProfileGetBlinkGapMs(profile);
+        const uint16_t pauseMs = ledStripProfileGetBlinkPauseMs(profile);
+        const uint32_t cycleMs = (uint32_t)flashMs + gapMs + flashMs + pauseMs;
 
-        *timer += HZ_TO_US(LED_OVERLAY_BLINK_RATE_HZ);
+        if (cycleMs < 50) {
+            return true;
+        }
+
+        const uint32_t phase = millis() % cycleMs;
+        const uint32_t flashEnd = flashMs;
+        const uint32_t gapEnd = flashEnd + gapMs;
+        const uint32_t secondFlashEnd = gapEnd + flashMs;
+
+        if (phase < flashEnd) {
+            return true;
+        }
+
+        if (phase < gapEnd) {
+            return false;
+        }
+
+        if (phase < secondFlashEnd) {
+            return true;
+        }
+
+        return false;
     }
 
-    bool ledOn = (blinkMask & 1);  // b_b_____...
-    if (!ledOn) {
+    if (pattern == LED_BLINK_PATTERN_ALTERNATE) {
+        const uint16_t flashMs = ledStripProfileGetBlinkFlashMs(profile);
+        const uint16_t pauseMs = ledStripProfileGetBlinkPauseMs(profile);
+        const uint32_t cycleMs = (uint32_t)flashMs + pauseMs;
+
+        if (cycleMs < 50) {
+            return true;
+        }
+
+        return (millis() % cycleMs) < flashMs;
+    }
+
+    return true;
+}
+
+static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
+{
+    if (updateNow) {
+        const uint8_t profile = ledStripConfig()->ledstrip_profile;
+        const uint8_t pattern = ledStripProfileGetBlinkPattern(profile);
+        uint16_t periodMs;
+
+        if (pattern == LED_BLINK_PATTERN_BEACON) {
+            periodMs = ledStripProfileGetBlinkFlashMs(profile)
+                + ledStripProfileGetBlinkGapMs(profile)
+                + ledStripProfileGetBlinkFlashMs(profile)
+                + ledStripProfileGetBlinkPauseMs(profile);
+        } else if (pattern == LED_BLINK_PATTERN_ALTERNATE) {
+            periodMs = ledStripProfileGetBlinkFlashMs(profile)
+                + ledStripProfileGetBlinkPauseMs(profile);
+        } else {
+            periodMs = 500;
+        }
+
+        uint16_t rateHz = LED_OVERLAY_BLINK_RATE_HZ;
+
+        if (periodMs >= 50) {
+            const uint16_t periodRateHz = 4000 / periodMs;
+
+            if (periodRateHz > rateHz) {
+                rateHz = periodRateHz;
+            }
+        }
+
+        if (pattern == LED_BLINK_PATTERN_BEACON || pattern == LED_BLINK_PATTERN_ALTERNATE) {
+            const uint16_t flashMs = ledStripProfileGetBlinkFlashMs(profile);
+
+            if (flashMs >= 10) {
+                const uint16_t flashRateHz = 4000 / flashMs;
+
+                if (flashRateHz > rateHz) {
+                    rateHz = flashRateHz;
+                }
+            }
+        }
+
+        *timer += HZ_TO_US(rateHz);
+    }
+
+    if (!ledBlinkLayerIsLedOn(ledStripConfig()->ledstrip_profile)) {
         for (int i = 0; i < ledCounts.count; ++i) {
             const ledConfig_t *ledConfig = &ledStripActiveProfileConfig()->ledConfigs[i];
 
@@ -1941,6 +2284,155 @@ uint16_t ledStripProfileGetRainbowFreq(uint8_t profile)
     }
 
     return 1;
+}
+
+uint16_t ledStripProfileGetBlinkPeriod(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileBlinkPeriod = ledStripProfileConfig(profile)->profile_blink_period;
+    if (profileBlinkPeriod > 0) {
+        return profileBlinkPeriod;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterBlinkPeriod = ledStripConfig()->ledstrip_blink_period_ms;
+    if (masterBlinkPeriod >= 50) {
+        return masterBlinkPeriod;
+    }
+
+    return LED_BLINK_PERIOD_MS_DEFAULT;
+}
+
+uint16_t ledStripProfileGetBlinkOnMs(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileBlinkOnMs = ledStripProfileConfig(profile)->profile_blink_on_ms;
+    if (profileBlinkOnMs > 0) {
+        return profileBlinkOnMs;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterBlinkOnMs = ledStripConfig()->ledstrip_blink_on_ms;
+    if (masterBlinkOnMs > 0) {
+        return masterBlinkOnMs;
+    }
+
+    return LED_BLINK_ON_MS_DEFAULT;
+}
+
+uint8_t ledStripProfileGetBlinkPattern(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint8_t profileBlinkPattern = ledStripProfileConfig(profile)->profile_blink_pattern;
+    if (profileBlinkPattern >= LED_BLINK_PATTERN_ALTERNATE) {
+        return migrateLedBlinkPattern(profileBlinkPattern);
+    }
+#endif
+    UNUSED(profile);
+
+    const uint8_t masterBlinkPattern = ledStripConfig()->ledstrip_blink_pattern;
+    if (masterBlinkPattern >= LED_BLINK_PATTERN_ALTERNATE) {
+        return migrateLedBlinkPattern(masterBlinkPattern);
+    }
+
+    return LED_BLINK_PATTERN_ALTERNATE;
+}
+
+uint16_t ledStripProfileGetBlinkFlashMs(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileBlinkFlashMs = ledStripProfileConfig(profile)->profile_blink_flash_ms;
+    if (profileBlinkFlashMs >= LED_BLINK_FLASH_MS_MIN) {
+        return profileBlinkFlashMs;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterBlinkFlashMs = ledStripConfig()->ledstrip_blink_flash_ms;
+    if (masterBlinkFlashMs >= LED_BLINK_FLASH_MS_MIN) {
+        return masterBlinkFlashMs;
+    }
+
+    return LED_BLINK_FLASH_MS_DEFAULT;
+}
+
+uint16_t ledStripProfileGetBlinkGapMs(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileBlinkGapMs = ledStripProfileConfig(profile)->profile_blink_gap_ms;
+    if (profileBlinkGapMs >= 20) {
+        return profileBlinkGapMs;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterBlinkGapMs = ledStripConfig()->ledstrip_blink_gap_ms;
+    if (masterBlinkGapMs >= 20) {
+        return masterBlinkGapMs;
+    }
+
+    return LED_BLINK_GAP_MS_DEFAULT;
+}
+
+uint16_t ledStripProfileGetBlinkPauseMs(uint8_t profile)
+{
+    uint16_t pauseMs = LED_BLINK_PAUSE_MS_DEFAULT;
+
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileBlinkPauseMs = ledStripProfileConfig(profile)->profile_blink_pause_ms;
+    if (profileBlinkPauseMs >= LED_BLINK_PAUSE_MS_MIN_ALTERNATE) {
+        pauseMs = profileBlinkPauseMs;
+    } else {
+        const uint16_t masterBlinkPauseMs = ledStripConfig()->ledstrip_blink_pause_ms;
+        if (masterBlinkPauseMs >= LED_BLINK_PAUSE_MS_MIN_ALTERNATE) {
+            pauseMs = masterBlinkPauseMs;
+        }
+    }
+#else
+    UNUSED(profile);
+
+    const uint16_t masterBlinkPauseMs = ledStripConfig()->ledstrip_blink_pause_ms;
+    if (masterBlinkPauseMs >= LED_BLINK_PAUSE_MS_MIN_ALTERNATE) {
+        pauseMs = masterBlinkPauseMs;
+    }
+#endif
+
+    const uint8_t pattern = ledStripProfileGetBlinkPattern(profile);
+    const uint16_t minPauseMs = (pattern == LED_BLINK_PATTERN_ALTERNATE)
+        ? LED_BLINK_PAUSE_MS_MIN_ALTERNATE
+        : LED_BLINK_PAUSE_MS_MIN;
+
+    if (pauseMs < minPauseMs) {
+        pauseMs = minPauseMs;
+    }
+
+    return pauseMs;
 }
 
 uint8_t ledStripProfileGetBrightness(uint8_t profile)

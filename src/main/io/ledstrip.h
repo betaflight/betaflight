@@ -154,6 +154,15 @@ typedef enum {
     LED_PROFILE_COUNT
 } ledProfile_e;
 
+typedef enum {
+    LED_BLINK_PATTERN_ALTERNATE = 1, // Flash: single flash + pause
+    LED_BLINK_PATTERN_BEACON = 3,    // Double flash: flash + gap + flash + pause
+} ledBlinkPattern_e;
+
+#define LED_BLINK_PATTERN_DOUBLE_DEPRECATED 2
+
+uint8_t migrateLedBlinkPattern(uint8_t pattern);
+
 #define MAX_LED_PROFILE_NAME_LENGTH 8u
 
 typedef struct modeColorIndexes_s {
@@ -188,6 +197,12 @@ typedef struct ledStripConfig_s {
     uint16_t ledstrip_rainbow_delta;
     uint16_t ledstrip_rainbow_freq;
     uint16_t ledstrip_larson_freq;
+    uint16_t ledstrip_blink_period_ms;
+    uint16_t ledstrip_blink_on_ms;
+    uint8_t ledstrip_blink_pattern;
+    uint16_t ledstrip_blink_flash_ms;
+    uint16_t ledstrip_blink_gap_ms;
+    uint16_t ledstrip_blink_pause_ms;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
@@ -196,6 +211,14 @@ PG_DECLARE(ledStripConfig_t, ledStripConfig);
 #define LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER 0
 #define LED_STRIP_PROFILE_OVERLAY_USE_MASTER 0
 #define LED_LARSON_FREQ_DEFAULT 15
+#define LED_BLINK_PERIOD_MS_DEFAULT 500
+#define LED_BLINK_ON_MS_DEFAULT 250
+#define LED_BLINK_FLASH_MS_DEFAULT 120
+#define LED_BLINK_FLASH_MS_MIN 20
+#define LED_BLINK_PAUSE_MS_MIN 200
+#define LED_BLINK_PAUSE_MS_MIN_ALTERNATE 100
+#define LED_BLINK_GAP_MS_DEFAULT 120
+#define LED_BLINK_PAUSE_MS_DEFAULT 2000
 
 typedef struct ledStripStatusModeConfig_s {
     ledConfig_t ledConfigs[LED_STRIP_MAX_LENGTH];
@@ -207,6 +230,12 @@ typedef struct ledStripStatusModeConfig_s {
     uint16_t profile_larson_freq; // 0 = use ledStripConfig()->ledstrip_larson_freq, else 1-255
     uint16_t profile_rainbow_delta; // 0 = use ledStripConfig()->ledstrip_rainbow_delta
     uint16_t profile_rainbow_freq; // 0 = use ledStripConfig()->ledstrip_rainbow_freq, else 1-2000
+    uint16_t profile_blink_period; // 0 = use ledStripConfig()->ledstrip_blink_period_ms, else 50-10000
+    uint16_t profile_blink_on_ms; // 0 = use ledStripConfig()->ledstrip_blink_on_ms, else 1-10000
+    uint8_t profile_blink_pattern; // 0 = use ledStripConfig()->ledstrip_blink_pattern, else LED_BLINK_PATTERN_*
+    uint16_t profile_blink_flash_ms; // 0 = use ledStripConfig()->ledstrip_blink_flash_ms, else 20-300
+    uint16_t profile_blink_gap_ms; // 0 = use ledStripConfig()->ledstrip_blink_gap_ms, else 20-300
+    uint16_t profile_blink_pause_ms; // 0 = use ledStripConfig()->ledstrip_blink_pause_ms, else 100-2000 (Double flash: min 200 at runtime)
 } ledStripStatusModeConfig_t;
 
 typedef struct ledStripProfilesConfig_s {
@@ -235,6 +264,7 @@ static inline ledStripStatusModeConfig_t *ledStripStatusModeConfigMutable(void)
 
 void updateActiveLedProfilePointers(void);
 void syncActiveLedProfileConfig(void);
+bool loadLedStripConfig(const void *from, int size, int version);
 bool loadLedStripProfilesConfig(const void *from, int size, int version);
 void resetLedStripProfileRenderState(void);
 bool ledStripProfileUsesSimpleRenderer(const ledStripStatusModeConfig_t *profile);
@@ -242,7 +272,7 @@ void syncSimpleLedProfilesFromConfig(void);
 
 // MSP2 profile blob size (must match sbufWriteLedStripProfileConfig in msp.c).
 #define LED_STRIP_PROFILE_MODE_COLOR_ENTRY_COUNT (LED_MODE_COUNT * LED_DIRECTION_COUNT + LED_SPECIAL_COLOR_COUNT + 1)
-#define LED_STRIP_PROFILE_MSP_BLOB_TRAILING_SIZE 10 // aux block (4) + overlay u16 fields (6)
+#define LED_STRIP_PROFILE_MSP_BLOB_TRAILING_SIZE 23 // aux block (4) + overlay fields (19)
 #define LED_STRIP_PROFILE_MSP_BLOB_SIZE (LED_STRIP_MAX_LENGTH * 4U + LED_CONFIGURABLE_COLOR_COUNT * 4U + LED_STRIP_PROFILE_MODE_COLOR_ENTRY_COUNT * 3U + LED_STRIP_PROFILE_MSP_BLOB_TRAILING_SIZE)
 #define LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE (1U + LED_STRIP_PROFILE_MSP_BLOB_SIZE) // profileIndex + blob
 #endif
@@ -292,4 +322,10 @@ void ledStripProfileSetBrightness(uint8_t profile, uint8_t brightness);
 uint16_t ledStripProfileGetLarsonFreq(uint8_t profile);
 uint16_t ledStripProfileGetRainbowDelta(uint8_t profile);
 uint16_t ledStripProfileGetRainbowFreq(uint8_t profile);
+uint16_t ledStripProfileGetBlinkPeriod(uint8_t profile);
+uint16_t ledStripProfileGetBlinkOnMs(uint8_t profile);
+uint8_t ledStripProfileGetBlinkPattern(uint8_t profile);
+uint16_t ledStripProfileGetBlinkFlashMs(uint8_t profile);
+uint16_t ledStripProfileGetBlinkGapMs(uint8_t profile);
+uint16_t ledStripProfileGetBlinkPauseMs(uint8_t profile);
 uint8_t ledStripGetActiveBrightness(void);

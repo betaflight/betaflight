@@ -444,6 +444,10 @@ bool loadEEPROM(void)
                 if (!loadLedStripProfilesConfig(rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
                     success = false;
                 }
+            } else if (pgN(reg) == PG_LED_STRIP_CONFIG) {
+                if (!loadLedStripConfig(rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {
+                    success = false;
+                }
             } else
 #endif
             if (!pgLoad(reg, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version)) {

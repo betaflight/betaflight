@@ -255,6 +255,12 @@ static void sbufWriteLedStripProfileConfig(sbuf_t *dst, const ledStripStatusMode
     sbufWriteU16(dst, profile->profile_larson_freq);
     sbufWriteU16(dst, profile->profile_rainbow_delta);
     sbufWriteU16(dst, profile->profile_rainbow_freq);
+    sbufWriteU16(dst, profile->profile_blink_period);
+    sbufWriteU16(dst, profile->profile_blink_on_ms);
+    sbufWriteU8(dst, profile->profile_blink_pattern);
+    sbufWriteU16(dst, profile->profile_blink_flash_ms);
+    sbufWriteU16(dst, profile->profile_blink_gap_ms);
+    sbufWriteU16(dst, profile->profile_blink_pause_ms);
 }
 
 _Static_assert(MSP_PORT_INBUF_SIZE >= LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE + MSP_MAX_HEADER_SIZE,
@@ -326,6 +332,51 @@ static bool sbufReadLedStripProfileConfig(sbuf_t *src, ledStripStatusModeConfig_
         profile->profile_rainbow_freq = sbufReadU16(src);
     } else {
         profile->profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_period = sbufReadU16(src);
+    } else {
+        profile->profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_on_ms = sbufReadU16(src);
+    } else if (sbufBytesRemaining(src) >= 1) {
+        const uint8_t blinkPercent = sbufReadU8(src);
+        const uint16_t periodMs = profile->profile_blink_period;
+
+        if (blinkPercent == 0 || periodMs == 0) {
+            profile->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+        } else {
+            uint16_t onMs = (uint16_t)((uint32_t)periodMs * blinkPercent / 100);
+
+            if (onMs < 1) {
+                onMs = 1;
+            }
+
+            profile->profile_blink_on_ms = onMs;
+        }
+    } else {
+        profile->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 1) {
+        profile->profile_blink_pattern = migrateLedBlinkPattern(sbufReadU8(src));
+    } else {
+        profile->profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_flash_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_flash_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_gap_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_gap_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_pause_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_pause_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
     }
     return true;
 }
@@ -2810,6 +2861,12 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_delta);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_freq);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_larson_freq);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_period_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_on_ms);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_blink_pattern);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_flash_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_gap_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_pause_ms);
         break;
 #endif
 
@@ -4521,6 +4578,34 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
             ledStripConfigMutable()->ledstrip_larson_freq = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_period_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_on_ms = sbufReadU16(src);
+        } else if (sbufBytesRemaining(src) >= 1) {
+            const uint8_t blinkPercent = sbufReadU8(src);
+            const uint16_t periodMs = ledStripConfig()->ledstrip_blink_period_ms;
+            uint16_t onMs = (periodMs > 0) ? (uint16_t)((uint32_t)periodMs * blinkPercent / 100) : LED_BLINK_ON_MS_DEFAULT;
+
+            if (onMs < 1) {
+                onMs = 1;
+            }
+
+            ledStripConfigMutable()->ledstrip_blink_on_ms = onMs;
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            ledStripConfigMutable()->ledstrip_blink_pattern = migrateLedBlinkPattern(sbufReadU8(src));
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_flash_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_gap_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_pause_ms = sbufReadU16(src);
         }
         break;
 #endif
