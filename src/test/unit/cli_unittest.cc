@@ -330,7 +330,7 @@ void syncActiveLedProfileConfig(void) {}
 void setLedProfile(uint8_t profile)
 {
     if (profile < LED_PROFILE_COUNT) {
-        ledStripConfigMutable()->ledstrip_profile = profile;
+        ledStripConfigMutable()->ledstrip_profile = (ledProfile_e)profile;
     }
 }
 
