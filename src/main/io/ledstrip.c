@@ -2224,7 +2224,7 @@ void setLedProfile(uint8_t profile)
     }
 
     if (profile != ledStripConfig()->ledstrip_profile) {
-        ledStripConfigMutable()->ledstrip_profile = profile;
+        ledStripConfigMutable()->ledstrip_profile = (ledProfile_e)profile;
     }
 
 #ifdef USE_LED_STRIP_STATUS_MODE
