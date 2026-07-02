@@ -368,7 +368,10 @@ FC_VER           := $(call pp_def_value_str,src/main/build/version.h,FC_VERSION_
 #
 # Added after GCC version update, remove once the warnings have been fixed
 #
-TEMPORARY_FLAGS :=
+# phone-config's cdc-ncm enables USBD_SUPPORT_USER_STRING, which adds a GetUsrStrDescriptor field the
+# stock cdc/msc/hid class initializers don't set. that is benign (static init zeroes it to null), so
+# suppress that one -Wextra warning for phone-config builds so -Werror doesn't reject the stock usb code.
+TEMPORARY_FLAGS := $(if $(findstring USE_PHONE_CONFIG,$(OPTIONS)),-Wno-missing-field-initializers)
 
 EXTRA_WARNING_FLAGS := -Wold-style-definition
 

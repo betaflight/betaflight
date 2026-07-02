@@ -89,6 +89,21 @@ void mspSerialAllocatePorts(void)
     }
 }
 
+#if defined(USE_PHONE_CONFIG)
+// register an externally-owned serial port as an msp port, used by phone-config mode's tcp/msp
+// bridge which has no uart serial-port config to drive mspSerialAllocatePorts().
+mspPort_t *mspSerialRegisterPort(serialPort_t *serialPort)
+{
+    for (int i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspPorts[i].port == NULL) {
+            resetMspPort(&mspPorts[i], serialPort, false);
+            return &mspPorts[i];
+        }
+    }
+    return NULL;
+}
+#endif
+
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
     for (mspPort_t *candidateMspPort = mspPorts; candidateMspPort < ARRAYEND(mspPorts); candidateMspPort++) {
