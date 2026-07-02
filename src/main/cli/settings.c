@@ -469,14 +469,14 @@ static const char * const lookupTableSpaMode[] = {
 static const char * const lookupTableLEDProfile[] = {
     "RACE", "BEACON", "STATUS"
 };
-static const char * const lookupTableLEDBlinkPattern[] = {
-    "AUTO", "FLASH", NULL, "DOUBLE"
-};
 #else
 static const char * const lookupTableLEDProfile[] = {
     "RACE", "BEACON"
 };
 #endif
+static const char * const lookupTableLEDBlinkPattern[] = {
+    "AUTO", "FLASH", NULL, "DOUBLE"
+};
 #endif
 
 const char * const lookupTableLedstripColors[COLOR_COUNT] = {
@@ -692,9 +692,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
-#ifdef USE_LED_STRIP_STATUS_MODE
     LOOKUP_TABLE_ENTRY(lookupTableLEDBlinkPattern),
-#endif
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
 #endif
 

@@ -4619,10 +4619,11 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         if (profileIndex >= LED_PROFILE_COUNT) {
             return MSP_RESULT_ERROR;
         }
-        ledStripStatusModeConfig_t *profile = ledStripProfileConfigMutable(profileIndex);
-        if (!sbufReadLedStripProfileConfig(src, profile)) {
+        ledStripStatusModeConfig_t profileConfig;
+        if (!sbufReadLedStripProfileConfig(src, &profileConfig)) {
             return MSP_RESULT_ERROR;
         }
+        *ledStripProfileConfigMutable(profileIndex) = profileConfig;
         if (profileIndex == ledStripConfig()->ledstrip_profile) {
             syncActiveLedProfileConfig();
         }
