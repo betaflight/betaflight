@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <math.h>
 
+#include <stddef.h>
+
 #include "platform.h"
 
 #ifdef USE_LED_STRIP
@@ -203,6 +205,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ledstrip_brightness = LED_STRIP_DEFAULT_BRIGHTNESS;
     ledStripConfig->ledstrip_rainbow_delta = 0;
     ledStripConfig->ledstrip_rainbow_freq = 120;
+    ledStripConfig->ledstrip_larson_freq = LED_LARSON_FREQ_DEFAULT;
 #ifndef UNIT_TEST
 #ifdef LED_STRIP_PIN
     ledStripConfig->ioTag = IO_TAG(LED_STRIP_PIN);
@@ -258,7 +261,7 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
-PG_REGISTER_WITH_RESET_FN(ledStripProfilesConfig_t, ledStripProfilesConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(ledStripProfilesConfig_t, ledStripProfilesConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 4);
 
 static const char * const defaultLedProfileNames[LED_PROFILE_COUNT] = {
     "RACE",
@@ -293,6 +296,10 @@ static void pgResetFn_ledStripStatusModeProfile(ledStripStatusModeConfig_t *ledS
     memcpy_fn(&ledStripStatusModeConfig->modeColors, &defaultModeColors, sizeof(defaultModeColors));
     memcpy_fn(&ledStripStatusModeConfig->specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
     ledStripStatusModeConfig->ledstrip_aux_channel = THROTTLE;
+    ledStripStatusModeConfig->profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
+    ledStripStatusModeConfig->profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    ledStripStatusModeConfig->profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
 }
 
 static void initSolidColorProfile(ledStripStatusModeConfig_t *profile, colorId_e color, bool blink)
@@ -389,15 +396,83 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version)
         return true;
     }
 
-    if (version == 1 && size >= (int)(sizeof(ledStripStatusModeConfig_t) * LED_PROFILE_COUNT)) {
-        const int take = MIN(size, (int)(sizeof(ledStripStatusModeConfig_t) * LED_PROFILE_COUNT));
-        memcpy(&ledStripProfilesConfig_System.profiles, from, take);
+    if (version == 3) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_larson_freq);
+        const size_t oldProfilesSize = oldProfileSize * LED_PROFILE_COUNT;
+
+        if (size >= (int)oldProfilesSize) {
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                memcpy(
+                    &ledStripProfilesConfig_System.profiles[profileIndex],
+                    (const uint8_t *)from + profileIndex * oldProfileSize,
+                    oldProfileSize
+                );
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+            }
+
+            if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
+                memcpy(
+                    ledStripProfilesConfig_System.profileNames,
+                    (const uint8_t *)from + oldProfilesSize,
+                    sizeof(ledStripProfilesConfig_System.profileNames)
+                );
+            } else {
+                initDefaultLedProfileNames(&ledStripProfilesConfig_System);
+            }
+            return true;
+        }
+    }
+
+    if (version == 2) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_brightness);
+        const size_t oldProfilesSize = oldProfileSize * LED_PROFILE_COUNT;
+
+        if (size >= (int)oldProfilesSize) {
+            for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+                memcpy(
+                    &ledStripProfilesConfig_System.profiles[profileIndex],
+                    (const uint8_t *)from + profileIndex * oldProfileSize,
+                    oldProfileSize
+                );
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+                ledStripProfilesConfig_System.profiles[profileIndex].profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+            }
+
+            if (size >= (int)(oldProfilesSize + sizeof(ledStripProfilesConfig_System.profileNames))) {
+                memcpy(
+                    ledStripProfilesConfig_System.profileNames,
+                    (const uint8_t *)from + oldProfilesSize,
+                    sizeof(ledStripProfilesConfig_System.profileNames)
+                );
+            } else {
+                initDefaultLedProfileNames(&ledStripProfilesConfig_System);
+            }
+            return true;
+        }
+    }
+
+    if (version == 1 && size >= (int)(offsetof(ledStripStatusModeConfig_t, profile_brightness) * LED_PROFILE_COUNT)) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_brightness);
+        for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
+            memcpy(
+                &ledStripProfilesConfig_System.profiles[profileIndex],
+                (const uint8_t *)from + profileIndex * oldProfileSize,
+                oldProfileSize
+            );
+            ledStripProfilesConfig_System.profiles[profileIndex].profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
+        }
         initDefaultLedProfileNames(&ledStripProfilesConfig_System);
         return true;
     }
 
-    if (version == 0 && size >= (int)sizeof(ledStripStatusModeConfig_t)) {
-        memcpy(&ledStripProfilesConfig_System.profiles[LED_PROFILE_STATUS], from, sizeof(ledStripStatusModeConfig_t));
+    if (version == 0 && size >= (int)offsetof(ledStripStatusModeConfig_t, profile_brightness)) {
+        const size_t oldProfileSize = offsetof(ledStripStatusModeConfig_t, profile_brightness);
+        memcpy(&ledStripProfilesConfig_System.profiles[LED_PROFILE_STATUS], from, MIN(size, (int)oldProfileSize));
+        ledStripProfilesConfig_System.profiles[LED_PROFILE_STATUS].profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
         initSolidColorProfile(&ledStripProfilesConfig_System.profiles[LED_PROFILE_RACE], ledStripConfig()->ledstrip_race_color, false);
         initSolidColorProfile(&ledStripProfilesConfig_System.profiles[LED_PROFILE_BEACON], ledStripConfig()->ledstrip_beacon_color, true);
         initDefaultLedProfileNames(&ledStripProfilesConfig_System);
@@ -1203,16 +1278,17 @@ static void applyRainbowLayer(bool updateNow, timeUs_t *timer)
     static int offset = 0;
 
     if (updateNow) {
-        offset += ledStripConfig()->ledstrip_rainbow_freq;
+        offset += ledStripProfileGetRainbowFreq(ledStripConfig()->ledstrip_profile);
         *timer += HZ_TO_US(LED_OVERLAY_RAINBOW_RATE_HZ);
     }
     uint8_t rainbowLedIndex = 0;
+    const uint16_t rainbowDelta = ledStripProfileGetRainbowDelta(ledStripConfig()->ledstrip_profile);
 
     for (unsigned i = 0; i < ledCounts.count; i++) {
         const ledConfig_t *ledConfig = &ledStripActiveProfileConfig()->ledConfigs[i];
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_RAINBOW)) {
             hsvColor_t ledColor;
-            ledColor.h = (offset / LED_OVERLAY_RAINBOW_RATE_HZ + rainbowLedIndex * ledStripConfig()->ledstrip_rainbow_delta) % (HSV_HUE_MAX + 1);
+            ledColor.h = (offset / LED_OVERLAY_RAINBOW_RATE_HZ + rainbowLedIndex * rainbowDelta) % (HSV_HUE_MAX + 1);
             ledColor.s = 0;
             ledColor.v = HSV_VALUE_MAX;
             setLedHsv(i, &ledColor);
@@ -1264,7 +1340,8 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     static larsonParameters_t larsonParameters = { 0, 0, 1 };
 
     if (updateNow) {
-        larsonScannerNextStep(&larsonParameters, 15);
+        const uint16_t larsonFreq = ledStripProfileGetLarsonFreq(ledStripConfig()->ledstrip_profile);
+        larsonScannerNextStep(&larsonParameters, larsonFreq);
         *timer += HZ_TO_US(LED_OVERLAY_LARSON_RATE_HZ);
     }
 
@@ -1668,7 +1745,7 @@ void ledStripDisable(void)
         setStripColor(&HSV(BLACK));
 
         // Multiple calls may be required as normally broken into multiple parts
-        while (!ws2811UpdateStrip(ledStripConfig()->ledstrip_brightness));
+        while (!ws2811UpdateStrip(ledStripGetActiveBrightness()));
     }
 }
 
@@ -1750,7 +1827,7 @@ void ledStripUpdate(timeUs_t currentTimeUs) {
             }
         } else {
             // Profile is applied, so now update the LEDs
-            if (ws2811UpdateStrip(ledStripConfig()->ledstrip_brightness)) {
+            if (ws2811UpdateStrip(ledStripGetActiveBrightness())) {
                 // Final pass updating the DMA buffer is always short
                 if (ledStripRenderState.multipassUpdate) {
                     schedulerIgnoreTaskExecTime();
@@ -1806,15 +1883,125 @@ void setLedProfile(uint8_t profile)
 
 #endif // USE_LED_STRIP_STATUS_MODE
 
+uint16_t ledStripProfileGetLarsonFreq(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileLarsonFreq = ledStripProfileConfig(profile)->profile_larson_freq;
+    if (profileLarsonFreq > 0) {
+        return profileLarsonFreq;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterLarsonFreq = ledStripConfig()->ledstrip_larson_freq;
+    if (masterLarsonFreq > 0) {
+        return masterLarsonFreq;
+    }
+
+    return LED_LARSON_FREQ_DEFAULT;
+}
+
+uint16_t ledStripProfileGetRainbowDelta(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileRainbowDelta = ledStripProfileConfig(profile)->profile_rainbow_delta;
+    if (profileRainbowDelta > 0) {
+        return profileRainbowDelta;
+    }
+#endif
+    UNUSED(profile);
+    return ledStripConfig()->ledstrip_rainbow_delta;
+}
+
+uint16_t ledStripProfileGetRainbowFreq(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint16_t profileRainbowFreq = ledStripProfileConfig(profile)->profile_rainbow_freq;
+    if (profileRainbowFreq > 0) {
+        return profileRainbowFreq;
+    }
+#endif
+    UNUSED(profile);
+
+    const uint16_t masterRainbowFreq = ledStripConfig()->ledstrip_rainbow_freq;
+    if (masterRainbowFreq > 0) {
+        return masterRainbowFreq;
+    }
+
+    return 1;
+}
+
+uint8_t ledStripProfileGetBrightness(uint8_t profile)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        profile = LED_PROFILE_STATUS;
+    }
+
+    const uint8_t profileBrightness = ledStripProfileConfig(profile)->profile_brightness;
+    if (profileBrightness >= 5) {
+        return profileBrightness;
+    }
+#endif
+    UNUSED(profile);
+    return ledStripConfig()->ledstrip_brightness;
+}
+
+void ledStripProfileSetBrightness(uint8_t profile, uint8_t brightness)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    if (profile >= LED_PROFILE_COUNT) {
+        return;
+    }
+
+    if (brightness >= 5 && brightness <= 100) {
+        ledStripProfileConfigMutable(profile)->profile_brightness = brightness;
+    }
+#else
+    UNUSED(profile);
+    setLedBrightness(brightness);
+#endif
+}
+
+uint8_t ledStripGetActiveBrightness(void)
+{
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    return ledStripProfileGetBrightness(ledStripConfig()->ledstrip_profile);
+#else
+    return ledStripConfig()->ledstrip_brightness;
+#endif
+}
+
 uint8_t getLedBrightness(void)
 {
-    return ledStripConfig()->ledstrip_brightness;
+    return ledStripGetActiveBrightness();
 }
 
 void setLedBrightness(uint8_t brightness)
 {
-    if ( brightness <= 100 ) {
-        ledStripConfigMutable()->ledstrip_brightness = brightness;
+    if (brightness < 5) {
+        brightness = 5;
     }
+    if (brightness > 100) {
+        return;
+    }
+
+#if defined(USE_LED_STRIP_STATUS_MODE)
+    ledStripProfileSetBrightness(ledStripConfig()->ledstrip_profile, brightness);
+#else
+    ledStripConfigMutable()->ledstrip_brightness = brightness;
+#endif
 }
 #endif

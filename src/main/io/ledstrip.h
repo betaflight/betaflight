@@ -187,17 +187,26 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_brightness;
     uint16_t ledstrip_rainbow_delta;
     uint16_t ledstrip_rainbow_freq;
+    uint16_t ledstrip_larson_freq;
 } ledStripConfig_t;
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
 #if defined(USE_LED_STRIP_STATUS_MODE)
+#define LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER 0
+#define LED_STRIP_PROFILE_OVERLAY_USE_MASTER 0
+#define LED_LARSON_FREQ_DEFAULT 15
+
 typedef struct ledStripStatusModeConfig_s {
     ledConfig_t ledConfigs[LED_STRIP_MAX_LENGTH];
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
     modeColorIndexes_t modeColors[LED_MODE_COUNT];
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_aux_channel;
+    uint8_t profile_brightness; // 0 = use ledStripConfig()->ledstrip_brightness, else 5-100
+    uint16_t profile_larson_freq; // 0 = use ledStripConfig()->ledstrip_larson_freq, else 1-255
+    uint16_t profile_rainbow_delta; // 0 = use ledStripConfig()->ledstrip_rainbow_delta
+    uint16_t profile_rainbow_freq; // 0 = use ledStripConfig()->ledstrip_rainbow_freq, else 1-2000
 } ledStripStatusModeConfig_t;
 
 typedef struct ledStripProfilesConfig_s {
@@ -230,6 +239,12 @@ bool loadLedStripProfilesConfig(const void *from, int size, int version);
 void resetLedStripProfileRenderState(void);
 bool ledStripProfileUsesSimpleRenderer(const ledStripStatusModeConfig_t *profile);
 void syncSimpleLedProfilesFromConfig(void);
+
+// MSP2 profile blob size (must match sbufWriteLedStripProfileConfig in msp.c).
+#define LED_STRIP_PROFILE_MODE_COLOR_ENTRY_COUNT (LED_MODE_COUNT * LED_DIRECTION_COUNT + LED_SPECIAL_COLOR_COUNT + 1)
+#define LED_STRIP_PROFILE_MSP_BLOB_TRAILING_SIZE 10 // aux block (4) + overlay u16 fields (6)
+#define LED_STRIP_PROFILE_MSP_BLOB_SIZE (LED_STRIP_MAX_LENGTH * 4U + LED_CONFIGURABLE_COLOR_COUNT * 4U + LED_STRIP_PROFILE_MODE_COLOR_ENTRY_COUNT * 3U + LED_STRIP_PROFILE_MSP_BLOB_TRAILING_SIZE)
+#define LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE (1U + LED_STRIP_PROFILE_MSP_BLOB_SIZE) // profileIndex + blob
 #endif
 
 #define LF(name) LED_FUNCTION_ ## name
@@ -272,3 +287,9 @@ uint8_t getLedProfile(void);
 void setLedProfile(uint8_t profile);
 uint8_t getLedBrightness(void);
 void setLedBrightness(uint8_t brightness);
+uint8_t ledStripProfileGetBrightness(uint8_t profile);
+void ledStripProfileSetBrightness(uint8_t profile, uint8_t brightness);
+uint16_t ledStripProfileGetLarsonFreq(uint8_t profile);
+uint16_t ledStripProfileGetRainbowDelta(uint8_t profile);
+uint16_t ledStripProfileGetRainbowFreq(uint8_t profile);
+uint8_t ledStripGetActiveBrightness(void);

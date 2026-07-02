@@ -251,7 +251,14 @@ static void sbufWriteLedStripProfileConfig(sbuf_t *dst, const ledStripStatusMode
     sbufWriteU8(dst, LED_AUX_CHANNEL);
     sbufWriteU8(dst, 0);
     sbufWriteU8(dst, profile->ledstrip_aux_channel);
+    sbufWriteU8(dst, profile->profile_brightness);
+    sbufWriteU16(dst, profile->profile_larson_freq);
+    sbufWriteU16(dst, profile->profile_rainbow_delta);
+    sbufWriteU16(dst, profile->profile_rainbow_freq);
 }
+
+_Static_assert(MSP_PORT_INBUF_SIZE >= LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE + MSP_MAX_HEADER_SIZE,
+    "MSP inBuf too small for LED strip profile config");
 
 static bool sbufReadLedStripProfileConfig(sbuf_t *src, ledStripStatusModeConfig_t *profile)
 {
@@ -299,6 +306,26 @@ static bool sbufReadLedStripProfileConfig(sbuf_t *src, ledStripStatusModeConfig_
         } else {
             return false;
         }
+    }
+    if (sbufBytesRemaining(src) >= 1) {
+        profile->profile_brightness = sbufReadU8(src);
+    } else {
+        profile->profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_larson_freq = sbufReadU16(src);
+    } else {
+        profile->profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_rainbow_delta = sbufReadU16(src);
+    } else {
+        profile->profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_rainbow_freq = sbufReadU16(src);
+    } else {
+        profile->profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
     }
     return true;
 }
@@ -2782,6 +2809,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         sbufWriteU8(dst, ledStripConfig()->ledstrip_brightness);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_delta);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_freq);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_larson_freq);
         break;
 #endif
 
@@ -4298,7 +4326,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = sbufReadU8(src);
-            if (i >= LED_STRIP_MAX_LENGTH || dataSize != (1 + 4)) {
+            if (i >= LED_STRIP_MAX_LENGTH || dataSize < (1 + 4) || dataSize > (1 + 4 + 1)) {
                 return MSP_RESULT_ERROR;
             }
 #ifdef USE_LED_STRIP_STATUS_MODE
@@ -4491,6 +4519,9 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
         ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU16(src);
         ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_larson_freq = sbufReadU16(src);
+        }
         break;
 #endif
 

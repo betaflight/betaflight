@@ -1492,10 +1492,23 @@ const clivalue_t valueTable[] = {
     { "ledstrip_brightness",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_brightness) },
     { "ledstrip_rainbow_delta",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_delta) },
     { "ledstrip_rainbow_freq",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_freq) },
+    { "ledstrip_larson_freq",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_larson_freq) },
 #ifdef USE_LED_STRIP_STATUS_MODE
     { "ledstrip_profile_1_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[0]) },
     { "ledstrip_profile_2_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[1]) },
     { "ledstrip_profile_3_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[2]) },
+    { "ledstrip_profile_1_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_brightness) },
+    { "ledstrip_profile_2_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_brightness) },
+    { "ledstrip_profile_3_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_brightness) },
+    { "ledstrip_profile_1_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_larson_freq) },
+    { "ledstrip_profile_2_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_larson_freq) },
+    { "ledstrip_profile_3_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_larson_freq) },
+    { "ledstrip_profile_1_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_rainbow_delta) },
+    { "ledstrip_profile_2_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_rainbow_delta) },
+    { "ledstrip_profile_3_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_rainbow_delta) },
+    { "ledstrip_profile_1_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_rainbow_freq) },
+    { "ledstrip_profile_2_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_rainbow_freq) },
+    { "ledstrip_profile_3_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_rainbow_freq) },
 #endif
 #endif
 

@@ -2153,19 +2153,93 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
-static void printLedStripProfileDump(
+static bool ledStripProfileConfigEquals(const ledStripStatusModeConfig_t *a, const ledStripStatusModeConfig_t *b)
+{
+    return memcmp(a, b, sizeof(ledStripStatusModeConfig_t)) == 0;
+}
+
+static const char *ledStripProfileCliName(uint8_t profileIndex)
+{
+    const lookupTableEntry_t *tableEntry = &lookupTables[TABLE_LED_PROFILE];
+
+    if (profileIndex < tableEntry->valueCount && tableEntry->values[profileIndex]) {
+        return tableEntry->values[profileIndex];
+    }
+
+    return tableEntry->values[0];
+}
+
+static bool printLedStripProfileDump(
     dumpFlags_t dumpMask,
     ledProfile_e profileIndex,
     const char *profileHeading
 )
 {
     const ledStripStatusModeConfig_t *profileCopy = &ledStripProfilesConfig_Copy.profiles[profileIndex];
-    const ledStripStatusModeConfig_t *profileCurrent = ledStripProfileConfig(profileIndex);
+    const ledStripStatusModeConfig_t *profileCurrent = &ledStripProfilesConfig()->profiles[profileIndex];
+    const char *profileNameCopy = ledStripProfilesConfig_Copy.profileNames[profileIndex];
+    const char *profileNameCurrent = ledStripProfilesConfig()->profileNames[profileIndex];
+
+    const bool profileConfigEqualsDefault = ledStripProfileConfigEquals(profileCopy, profileCurrent);
+    const bool profileNameEqualsDefault = strcmp(profileNameCopy, profileNameCurrent) == 0;
+
+    if ((dumpMask & DO_DIFF) && profileConfigEqualsDefault && profileNameEqualsDefault) {
+        return false;
+    }
 
     cliPrintHashLine(profileHeading);
+
+    // Required for preset replay: route led/color/mode_color to this profile.
+    cliDumpPrintLinef(0, false, "set ledstrip_profile = %s", ledStripProfileCliName(profileIndex));
+
+    {
+        const char *format = "set ledstrip_profile_%u_brightness = %u";
+        const bool equalsDefault = profileCopy->profile_brightness == profileCurrent->profile_brightness;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_brightness);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_brightness);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_larson_freq = %u";
+        const bool equalsDefault = profileCopy->profile_larson_freq == profileCurrent->profile_larson_freq;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_larson_freq);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_larson_freq);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_rainbow_delta = %u";
+        const bool equalsDefault = profileCopy->profile_rainbow_delta == profileCurrent->profile_rainbow_delta;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_rainbow_delta);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_rainbow_delta);
+    }
+
+    {
+        const char *format = "set ledstrip_profile_%u_rainbow_freq = %u";
+        const bool equalsDefault = profileCopy->profile_rainbow_freq == profileCurrent->profile_rainbow_freq;
+        cliDefaultPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCurrent->profile_rainbow_freq);
+        cliDumpPrintLinef(dumpMask, equalsDefault, format, profileIndex + 1, profileCopy->profile_rainbow_freq);
+    }
+
+    if (!profileNameEqualsDefault || !(dumpMask & DO_DIFF)) {
+        const char *format = "set ledstrip_profile_%u_name = %s";
+        const char *nameForDump = profileNameCopy[0] ? profileNameCopy : emptyName;
+        cliDumpPrintLinef(dumpMask, profileNameEqualsDefault, format, profileIndex + 1, nameForDump);
+    }
+
     printLed(dumpMask, profileCopy->ledConfigs, profileCurrent->ledConfigs, "led");
     printColor(dumpMask, profileCopy->colors, profileCurrent->colors, "color");
     printModeColor(dumpMask, profileCopy, profileCurrent, "mode_color");
+
+    return true;
+}
+
+static void printLedStripProfileRestore(dumpFlags_t dumpMask)
+{
+    const uint8_t activeProfileCopy = ledStripConfig_Copy.ledstrip_profile;
+    const uint8_t activeProfileDefault = ledStripConfig()->ledstrip_profile;
+    const bool equalsDefault = activeProfileCopy == activeProfileDefault;
+
+    cliDumpPrintLinef(dumpMask, equalsDefault, "set ledstrip_profile = %s", ledStripProfileCliName(activeProfileCopy));
 }
 
 static void cliLed(const char *cmdName, char *cmdline)
@@ -8028,9 +8102,13 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
             printMap(dumpMask, &rxConfig_Copy, rxConfig(), "map");
 
 #ifdef USE_LED_STRIP_STATUS_MODE
-            printLedStripProfileDump(dumpMask, LED_PROFILE_RACE, "LED profile RACE");
-            printLedStripProfileDump(dumpMask, LED_PROFILE_BEACON, "LED profile BEACON");
-            printLedStripProfileDump(dumpMask, LED_PROFILE_STATUS, "LED profile STATUS");
+            bool ledProfileDumped = false;
+            ledProfileDumped |= printLedStripProfileDump(dumpMask, LED_PROFILE_RACE, "LED profile RACE");
+            ledProfileDumped |= printLedStripProfileDump(dumpMask, LED_PROFILE_BEACON, "LED profile BEACON");
+            ledProfileDumped |= printLedStripProfileDump(dumpMask, LED_PROFILE_STATUS, "LED profile STATUS");
+            if (ledProfileDumped) {
+                printLedStripProfileRestore(dumpMask);
+            }
 #endif
 
             printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0), "aux");
