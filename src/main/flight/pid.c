@@ -313,7 +313,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_speed_main_curve_min = 10,       // Speed gain minimum for damping and stability *0.01
         .psas_speed_main_curve_max = 500,      // Speed gain maximum for damping and stability *0.01
         .psas_speed_stick_curve_min = 10,      // Speed gain minimum for sticks *0.01
-        .psas_speed_stick_curve_max = 500      // Speed gain maximum for sticks *0.01
+        .psas_speed_stick_curve_max = 500,     // Speed gain maximum for sticks *0.01
+        .psas_speed_use_gps = 0                // Use GPS speed for PSAS curves in non wind condition
 #endif
     );
 }

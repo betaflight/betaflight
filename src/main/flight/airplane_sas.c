@@ -267,30 +267,42 @@ static float FAST_CODE_NOINLINE computePower(float speedRelation, uint8_t power)
 
 static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidProfile)
 {
-    float speedRelation = pidProfile->psas_speed_optimum_vref / MAX(pidRuntime.tpaSpeed.speed, 0.1f);
+    if (!psasRuntime.speed_gains.isEnabled) {
+        return;
+    }
 
-    if (psasRuntime.speed_gains.isEnabled) {
-        float curve = computePower(speedRelation, pidProfile->psas_speed_main_curve_power * 0.1f);
-        float mainCurve = constrainf(curve, pidProfile->psas_speed_main_curve_min * 0.01, pidProfile->psas_speed_main_curve_max * 0.01);
-        for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            if (pidProfile->psas_speed_main_curve_enable[axis]) {
-                psasRuntime.speed_gains.main[axis] = mainCurve;
-            }
+    float speed;
+    if (pidProfile->psas_speed_use_gps) {
+        if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
+            speed = 0.01f * gpsSol.speed3d;
+        } else {
+            speed = pidProfile->psas_speed_optimum_vref;
         }
+    } else {
+        speed = pidRuntime.tpaSpeed.speed;
+    }
 
-        float stickCurve = constrainf(curve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
-        if (pidProfile->psas_speed_stick_curve_enable[FD_PITCH]) {
-            psasRuntime.speed_gains.stick[FD_PITCH] = stickCurve;
+    float speedRelation = pidProfile->psas_speed_optimum_vref / MAX(speed, 0.1f);
+    float curve = computePower(speedRelation, pidProfile->psas_speed_main_curve_power * 0.1f);
+    float mainCurve = constrainf(curve, pidProfile->psas_speed_main_curve_min * 0.01, pidProfile->psas_speed_main_curve_max * 0.01);
+    for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        if (pidProfile->psas_speed_main_curve_enable[axis]) {
+            psasRuntime.speed_gains.main[axis] = mainCurve;
         }
-        if (pidProfile->psas_speed_stick_curve_enable[FD_YAW]) {
-            psasRuntime.speed_gains.stick[FD_YAW] = stickCurve;
-        }
+    }
 
-        if (pidProfile->psas_speed_stick_curve_enable[FD_ROLL]) {
-            float rollStickCurve = computePower(speedRelation, pidProfile->psas_speed_roll_stick_curve_power * 0.1f);
-            rollStickCurve = constrainf(rollStickCurve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
-            psasRuntime.speed_gains.stick[FD_ROLL] = rollStickCurve;
-        }
+    float stickCurve = constrainf(curve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
+    if (pidProfile->psas_speed_stick_curve_enable[FD_PITCH]) {
+        psasRuntime.speed_gains.stick[FD_PITCH] = stickCurve;
+    }
+    if (pidProfile->psas_speed_stick_curve_enable[FD_YAW]) {
+        psasRuntime.speed_gains.stick[FD_YAW] = stickCurve;
+    }
+
+    if (pidProfile->psas_speed_stick_curve_enable[FD_ROLL]) {
+        float rollStickCurve = computePower(speedRelation, pidProfile->psas_speed_roll_stick_curve_power * 0.1f);
+        rollStickCurve = constrainf(rollStickCurve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
+        psasRuntime.speed_gains.stick[FD_ROLL] = rollStickCurve;
     }
 }
 

@@ -361,6 +361,7 @@ typedef struct pidProfile_s {
     uint16_t psas_speed_main_curve_max;         // Speed gain maximum for damping and stability *0.01
     uint16_t psas_speed_stick_curve_min;        // Speed gain minimum for sticks *0.01
     uint16_t psas_speed_stick_curve_max;        // Speed gain maximum for sticks *0.01
+    uint8_t psas_speed_use_gps;                 // Use GPS speed for PSAS curves in non wind condition
 #endif
 } pidProfile_t;
 
