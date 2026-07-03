@@ -352,6 +352,7 @@ void handlepositionControlFailure(void)
     setSticksActiveStatus(true); // allow pilot control in angle mode via isAutopilotInControl
     // Note 1: pilot must exit position hold or rescue to return to position hold mode or gps rescue mode
     // Note 2: autopilotAngle[i] = 0.0f is handled by the caller upon receiving a false return.
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);
 }
 
 bool positionControl(void)

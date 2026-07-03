@@ -313,7 +313,6 @@ void rescueEmergDescent(void)
         rescueState.phase = RESCUE_EMERG_DESCENT;
         // same as RESCUE_DESCENT phase, but no XY control
         // if baro is available then emergency descent is possible even if the GPS module fails
-        controlAltitude();
     } else {
         rescueDisarmNow();
     }
@@ -341,7 +340,7 @@ static void performSanityChecks(void)
     DEBUG_SET(DEBUG_RTH, 6, lrintf(rescueState.sensor.distanceToHomeCm));
 
     if (rescueState.phase == RESCUE_INITIALIZE) {
-        if (GPS_distanceToHome < 5 && isBelowLandingAltitude()) {
+        if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
             rescueDisarmNow();
             return;
         }
@@ -434,9 +433,19 @@ static void performSanityChecks(void)
             rescueState.intent.secondsFailing = 0;
         }
         break;
-    case RESCUE_ROTATE:
+
+     case RESCUE_ROTATE:
         rescueState.intent.secondsFailing = 0;
-        break;
+        rescueState.intent.secondsFailing += 1;
+        if (rescueState.intent.secondsFailing >= 10) {
+            // give up trying to achieve heading alignment; the posHold-based
+            // fly-home path can still make progress flying sideways/backwards
+            rescueState.phase = RESCUE_FLY_HOME;
+            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
+            rescueState.intent.secondsFailing = 0;
+        }
+         break;
+
     case RESCUE_FLY_HOME:
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
         rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
@@ -539,13 +548,10 @@ void initRescueValues(void)
 
 static void checkGPSRescueIsAvailable(void)
 {
-    if (!STATE(GPS_FIX_HOME) || !rescueState.sensor.gpsHealthy || !rescueState.sensor.isHeadingOK || !isAltitudeAvailable() || !rescueState.sensor.positionXYAvailable) {
-        rescueState.isAvailable = false;
+rescueState.isAvailable = STATE(GPS_FIX_HOME) && rescueState.sensor.gpsHealthy && rescueState.sensor.isHeadingOK && isAltitudeAvailable() && rescueState.sensor.positionXYAvailable;
         // Flash "RESCUE N/A" in the OSD if false
         // Note that GPS_FIX_HOME is set at arm time, and requires a 3D fix and minSats at that time
-    }
 }
-
 
 
 void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
@@ -640,8 +646,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         vector2Zero(&rescueState.intent.stepEF);
         moveTargetLocation(&rescueState.intent.stepEF, true); // stop position control
 
-
-        descend();
         break;
 
     case RESCUE_DO_NOTHING:
@@ -664,10 +668,11 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
  
  updateStartupAttenuators();
 
+controlAltitude();
+
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {
-        const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
-        altitudeControl(rescueState.intent.targetAltitudeCm, gpsRescueTaskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
+        controlAltitude();
     }
 }
 
