@@ -141,6 +141,7 @@ void gpsRescueInit(void)
     rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
     rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
     rescueState.sensor.currentPositionV  = (vector2_t){{0.0f, 0.0f}};
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
 
     rescueState.sensor.previousPositionV = rescueState.sensor.currentPositionV;
     // Zero out flight angles to keep the craft flat on initiation
@@ -506,7 +507,6 @@ void descend(void)
 void initRescueValues(void)
 {
    rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
-
     if (rescueState.sensor.distanceToHomeCm < gpsRescueConfig()->minStartDistM * 100.0f) {
         // 7.5m high for close-range headroom
         rescueState.intent.returnAltitudeCm = fmaxf(750.0f, rescueState.sensor.currentAltitudeCm + rescueState.intent.initialClimbCm);
@@ -528,15 +528,17 @@ void initRescueValues(void)
     }
     rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm;  // Initial target altitude is current filtered altitude
 
-    resetAltitudeControl(); // Initialise altitude in autopilot multirotor
-    resetPositionControl(TASK_GPS_RESCUE_RATE_HZ); // Initialise position control in autopilot multirotor
-
     rescueState.sensor.errorAngleDeg = 0.0f;       // Prevent yaw adjustments
     rescueYawRate = 0.0f;                          // No yaw until climb is complete
     rescueState.intent.targetVelocityCmS = 0.0f;   // Zero initial velocity
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
     rescueState.sensor.velocityCmS = 0.0f;
     rescueState.intent.yawAttenuator = 0.0f;       // For a smooth start to the yaw
     rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
+
+    resetAltitudeControl(); // Initialise altitude in autopilot multirotor
+    resetPositionControl(TASK_GPS_RESCUE_RATE_HZ); // Initialise position control in autopilot multirotor
+
 }
 
 static void checkGPSRescueIsAvailable(void)
@@ -583,9 +585,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     case RESCUE_ATTAIN_ALT:
          clearTargetStep();
         if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
-            const float climbRateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
-            rescueState.intent.targetAltitudeCm += climbRateCmS * gpsRescueTaskIntervalSeconds;
-            rescueState.intent.targetAltitudeVelCmS = climbRateCmS;
+            rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
         } else {
             // climb target achieved
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
@@ -619,7 +619,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_DESCENT:
-        descend();
+        descend(); // sets a negstive targetAltitudeVelocity
         calculateTargetStep();
         if (isBelowLandingAltitude()) {
             // enter landing mode once below landing altitude
@@ -643,6 +643,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 
     case RESCUE_DO_NOTHING:
     clearTargetStep();
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
     rescueYawRate = 0.0f;
     // altitude control with no change in height or heading,  position control at zero target velocity
 
@@ -662,6 +663,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {
+        rescueState.intent.targetAltitudeCm += rescueState.intent.targetAltitudeVelCmS * gpsRescueTaskIntervalSeconds;
         controlAltitude();
     }
 }
