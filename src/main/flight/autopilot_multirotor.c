@@ -107,6 +107,7 @@ pt1Filter_t altitudePHpf;
 // defined in common/axis.h alongside the other earth-frame axis enums.
 
 static vector2_t targetPosition;
+static vector2_t targetVelocity;
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -276,7 +277,7 @@ void setSticksActiveStatus(bool areSticksActive)
     ap.sticksActive = areSticksActive;
 }
 
-void moveTargetLocation(const vector2_t *stepEF, bool forceAbortRequest)
+void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortRequest)
 {
     if (forceAbortRequest) {
         abortNavRequested = true;
@@ -287,6 +288,8 @@ void moveTargetLocation(const vector2_t *stepEF, bool forceAbortRequest)
         if (stepEF != NULL) {
             targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
             targetPosition.v[EF_NORTH] += stepEF->v[EF_NORTH];
+             targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
+            targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz ;
             posHoldStartPosition = targetPosition; // update start point to new target to prevent poshold sanity failure
         }
     }
@@ -314,6 +317,8 @@ void initPositionHold(void)
     resetDistanceError();
     isPosHoldStarting[EF_EAST]  = true;
     isPosHoldStarting[EF_NORTH] = true;
+    targetVelocity.v[EF_EAST]  = 0.0f;
+    targetVelocity.v[EF_NORTH] = 0.0f;
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
 
@@ -370,9 +375,7 @@ bool positionControl(void)
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
     const vector2_t velocity = *(const vector2_t *)&est->velocity.v;
 
-    // Local factor arrays fully converted to vector2_t objects
     vector2_t pidSumVectorEF     = { { 0 } };
-    vector2_t targetVelocity     = { { 0 } };
     vector2_t velocityError      = { { 0 } };
     vector2_t pidP               = { { 0 } };
     vector2_t pidI               = { { 0 } };
@@ -450,10 +453,11 @@ bool positionControl(void)
                 distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis]; 
             }
         }
-        
+
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
-        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ; 
+        velocityError.v[axis] *= dTermRamp.v[axis];
+        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ * dTermRamp.v[axis]; 
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
 

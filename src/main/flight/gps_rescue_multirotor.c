@@ -272,13 +272,13 @@ void calculateTargetStep(void)
         vector2Zero(&rescueState.intent.stepEF);
     }
 
-    moveTargetLocation(&rescueState.intent.stepEF, false);
+    moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
 }
 
 void clearTargetStep(void)
 {
     vector2Zero(&rescueState.intent.stepEF);
-    moveTargetLocation(&rescueState.intent.stepEF, false);
+    moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
 }
 
 
@@ -637,7 +637,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     case RESCUE_EMERG_DESCENT:
         descend();
         vector2Zero(&rescueState.intent.stepEF);
-        moveTargetLocation(&rescueState.intent.stepEF, true); // stop position control
+        moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, true); // stop position control
 
         break;
 
