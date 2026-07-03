@@ -585,7 +585,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_GPS_RESCUE
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
+        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees             
+        angleLimit = (float)autopilotConfig()->maxAngle;
         angleFeedforward = 0.0f;
     }
 #endif
@@ -597,8 +598,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
-        // limit pilot requested angle to 1.0f *  autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(1.0f * autopilotConfig()->maxAngle, angleLimit);
+        // limit pilot requested angle to max autopilot angle to avoid excess speed
+        angleLimit = fminf((float)autopilotConfig()->maxAngle, angleLimit);
     }
 #endif
 
