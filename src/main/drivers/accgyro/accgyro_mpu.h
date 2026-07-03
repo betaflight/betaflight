@@ -49,7 +49,6 @@
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
 #define ICM45686_WHO_AM_I_CONST             (0xE9)
 #define ICM45605_WHO_AM_I_CONST             (0xE5)
-// NOTE: ICM-56686 v1.0 datasheet (preliminary) lists WHO_AM_I reset value 0x08; verify on hardware.
 #define ICM56686_WHO_AM_I_CONST             (0x08)
 #define IIM42652_WHO_AM_I_CONST             (0x6F)
 #define IIM42653_WHO_AM_I_CONST             (0x56)
