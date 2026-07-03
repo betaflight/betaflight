@@ -220,7 +220,8 @@ io_serial_unittest_SRC := \
 ledstrip_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
-		$(USER_DIR)/io/ledstrip.c
+		$(USER_DIR)/io/ledstrip.c \
+		$(USER_DIR)/pg/pg.c
 
 ledstrip_unittest_DEFINES := \
 		USE_LED_STRIP=
