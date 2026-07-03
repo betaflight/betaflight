@@ -230,10 +230,10 @@ TEST(CrossFireMSPTest, WriteResponseTest)
 
 }
 
-void testSendMspResponse(uint8_t *payload, const uint8_t )
+void testSendMspResponse(uint8_t *payload, const uint8_t payloadSize)
 {
     sbuf_t *plOut = sbufInit(&payloadOutputBuf, payloadOutput, payloadOutput + 64);
-    sbufWriteData(plOut, payload, *payload + 64);
+    sbufWriteData(plOut, payload, payloadSize);
     sbufSwitchToReader(&payloadOutputBuf, payloadOutput);
 }
 
