@@ -129,10 +129,17 @@ VCP_SRC = \
             X32/usbhs/vcp/usbd_cdc_vcp.c \
             drivers/usb_io.c
 
+# DroneCAN / libcanard — opt in so dronecan.mk wires the stack.
+DRONECAN_LIB_DIR := lib/modules/dronecan/libcanard
+LIB_SUBMODULES   += $(DRONECAN_LIB_DIR)
+
 # Portable common/stm32 sources shared with the STM32/APM32/AT32 families.
 include $(PLATFORM_DIR)/common/stm32/mcu_common_src.mk
 
 MCU_COMMON_SRC += \
+            common/stm32/can_hw_x32.c \
+            common/stm32/can_pinconfig.c \
+            X32/can_x32m7xx.c \
             X32/startup/soc.c \
             drivers/adc.c \
             drivers/bus_i2c_timing.c \
