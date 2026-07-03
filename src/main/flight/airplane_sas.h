@@ -62,9 +62,15 @@ typedef struct psas_control_s {
 
 extern psas_data_t psasData;
 
+typedef struct psas_speed_gains_s {
+    bool isEnabled;
+    float stick[XYZ_AXIS_COUNT];
+    float main[XYZ_AXIS_COUNT];
+} psas_speed_gains_t;
+
 typedef struct psasRuntime_s {
     float stick_gain[XYZ_AXIS_COUNT];
-        float damping_gain[XYZ_AXIS_COUNT];
+    float damping_gain[XYZ_AXIS_COUNT];
     float pitch_stability_gain;
     float pitch_accel_p_gain;
     float pitch_accel_i_gain;
@@ -81,6 +87,7 @@ typedef struct psasRuntime_s {
     float roll_yaw_clift_start;
     float roll_yaw_clift_stop;
     float roll_to_yaw_link;
+    psas_speed_gains_t speed_gains;
 } psasRuntime_t;
 
 void psasInit(const pidProfile_t *pidProfile);

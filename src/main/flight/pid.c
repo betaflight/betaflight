@@ -267,32 +267,18 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [FD_PITCH] = 100,
             [FD_YAW] = 100,
         },
-        // Enable SPA for stick gain
-        .psas_stick_speed_enable = {
-            [FD_ROLL] = 0,
-            [FD_PITCH] = 0,
-            [FD_YAW] = 0,
-        },
         // Percent control range addition by 1 degree per second angle rate * 1000
         .psas_damping_gain = {
             [FD_ROLL] = 20,
             [FD_PITCH] = 50,
             [FD_YAW] = 50,
         },
-        // Enable SPA for damping gain
-        .psas_damping_speed_enable = {
-            [FD_ROLL] = 0,
-            [FD_PITCH] = 0,
-            [FD_YAW] = 0,
-        },
         .psas_pitch_damping_filter_freq = 30,  // pitch damping filter cut freq 0.3Hz (Tf=0.531s)
         .psas_accel_z_filter_freq = 30,        // accel Z filter cut freq Hz * 10, 3Hz
         .psas_pitch_stability_gain = 0,        // percent control range addition by 1g accel z change *10
-        .psas_pitch_stability_speed_enable = 0,  // enable SPA for pitch stability gain
         .psas_yaw_damping_filter_freq = 5,     // yaw damping filter cut freq 0.05Hz (Tf=3s)
         .psas_accel_y_filter_freq = 10,        // accel Y filter cut freq Hz * 10, 1Hz
         .psas_yaw_stability_gain = 25,         // percent control by 1g Y accel change *10
-        .psas_yaw_stability_speed_enable = 0,    // enable SPA for yaw stability gain
         .psas_pitch_accel_p_gain = 0,          // elevator for 1g Z accel difference in % *10
         .psas_pitch_accel_i_gain = 0,          // elevator speed for 1g Z accel difference in %/sec
         .psas_pitch_accel_max = 40,            // maximal positive Z accel value *10
@@ -308,6 +294,26 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_roll_yaw_clift_start = 8,        // Aerodynamics lift force coef to start yaw control for roll rotation  *10
         .psas_roll_yaw_clift_stop = 10,        // Aerodynamics lift force coef to maximum yaw control for roll rotation  *10
         .psas_roll_to_yaw_link = 0,            // The maximal yaw control value to support roll rotation, % *10
+
+        // Enable speed curve for the stick gains
+        .psas_speed_stick_curve_enable = {
+            [FD_ROLL] = 0,
+            [FD_PITCH] = 0,
+            [FD_YAW] = 0,
+        },
+        // Enable speed curve for the damping and stability gains
+        .psas_speed_main_curve_enable = {
+            [FD_ROLL] = 0,
+            [FD_PITCH] = 0,
+            [FD_YAW] = 0,
+        },
+        .psas_speed_optimum_vref = 16,         // Reference speed value which has optimal plane settins m/s
+        .psas_speed_main_curve_power = 20,     // Speed gain curves power for damping, stability, pitch and yaw sticks *0.1
+        .psas_speed_roll_stick_curve_power = 10, // Speed gain curves power for roll stick *0.1
+        .psas_speed_main_curve_min = 10,       // Speed gain minimum for damping and stability *0.01
+        .psas_speed_main_curve_max = 500,      // Speed gain maximum for damping and stability *0.01
+        .psas_speed_stick_curve_min = 10,      // Speed gain minimum for sticks *0.01
+        .psas_speed_stick_curve_max = 500      // Speed gain maximum for sticks *0.01
 #endif
     );
 }
@@ -997,7 +1003,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
 
