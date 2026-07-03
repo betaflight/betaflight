@@ -433,7 +433,6 @@ static void performSanityChecks(void)
         break;
 
      case RESCUE_ROTATE:
-        rescueState.intent.secondsFailing = 0;
         rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 10) {
             // give up trying to achieve heading alignment; the posHold-based
@@ -660,8 +659,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));
  
  updateStartupAttenuators();
-
-controlAltitude();
 
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {
