@@ -105,7 +105,6 @@ typedef struct {
     bool isHeadingOK;
     bool newGpsData;
     bool positionXYAvailable;
-    float gpsDataIntervalSeconds;
     float aircraftHeadingDeg;
     float bearingToHomeDeg;
     float errorAngleDeg;
@@ -137,7 +136,6 @@ static float rescueYawRate = 0.0f;
 
 void gpsRescueInit(void)
 {
-    rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
     rescueState.intent.cmToEarthAngle = 1.0f / EARTH_ANGLE_TO_CM; // approx 0.898 cm per unit lat at equator
     rescueState.intent.initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
     rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
@@ -287,7 +285,7 @@ void clearTargetStep(void)
 static void controlAltitude(void)
 {
     const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
-    altitudeControl(rescueState.intent.targetAltitudeCm, rescueState.sensor.gpsDataIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
+    altitudeControl(rescueState.intent.targetAltitudeCm, gpsRescueTaskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
 }
 
 bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {
@@ -407,12 +405,12 @@ static void performSanityChecks(void)
     if (secondsLowSats >= 15) {
         rescueState.failure = RESCUE_LOWSATS;
     }
-    
+
     const float measuredAltitudeChange = getAltitudeCm() - prevAltitudeCm;
     prevAltitudeCm = getAltitudeCm();
     const float targetAltitudeChange = rescueState.intent.targetAltitudeCm - prevTargetAltitudeCm;
     prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
-    
+
     float altitudeControlError;
     if (targetAltitudeChange == 0.0f) {
         altitudeControlError = fabsf(measuredAltitudeChange);
@@ -498,17 +496,13 @@ void descend(void)
     } else {
         rescueState.intent.targetVelocityCmS = 0.0f;
     }
-
     float altitudeStepCm = gpsRescueTaskIntervalSeconds * gpsRescueConfig()->descendRate;
     // at or below 10m: descend at 0.6x set value; above 10m, descend faster, to max 3.0x at 50m
     altitudeStepCm *= scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
-
-    rescueState.intent.targetAltitudeStepCm = -altitudeStepCm;
+    rescueState.intent.targetAltitudeVelCmS = -altitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
     rescueState.intent.targetAltitudeCm -= altitudeStepCm;
-
-    rescueYawRate = 0.0f; // make sure yaw rate is zero
+    rescueYawRate = 0.0f; // make sure yaw rate is zero in case we float past the home point
 }
-
 
 void initRescueValues(void)
 {
@@ -590,9 +584,9 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     case RESCUE_ATTAIN_ALT:
          clearTargetStep();
         if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
-            const float rateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
-            rescueState.intent.targetAltitudeCm += rateCmS * gpsRescueTaskIntervalSeconds;
-            rescueState.intent.targetAltitudeVelCmS = rateCmS;
+            const float climbRateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
+            rescueState.intent.targetAltitudeCm += climbRateCmS * gpsRescueTaskIntervalSeconds;
+            rescueState.intent.targetAltitudeVelCmS = climbRateCmS
         } else {
             // climb target achieved
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
@@ -650,7 +644,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 
     case RESCUE_DO_NOTHING:
     clearTargetStep();
-    rescueState.intent.targetAltitudeStepCm = 0.0f;
     rescueYawRate = 0.0f;
     // altitude control with no change in height or heading,  position control at zero target velocity
 
