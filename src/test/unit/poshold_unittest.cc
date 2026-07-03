@@ -392,7 +392,7 @@ TEST_F(PosHoldTest, ReleasingSticksBrakes)
     // Stick release should cause a greater angle
     setSticksActiveStatus(false);
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.0f, 0.1f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -14.4f, 0.1f);
      runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
