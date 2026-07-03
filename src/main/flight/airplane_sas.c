@@ -283,7 +283,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
     }
 
     float speedRelation = pidProfile->psas_speed_optimum_vref / MAX(speed, 0.1f);
-    float curve = computePower(speedRelation, pidProfile->psas_speed_main_curve_power * 0.1f);
+    float curve = computePower(speedRelation, pidProfile->psas_speed_main_curve_power);
     float mainCurve = constrainf(curve, pidProfile->psas_speed_main_curve_min * 0.01, pidProfile->psas_speed_main_curve_max * 0.01);
     for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (pidProfile->psas_speed_main_curve_enable[axis]) {
@@ -300,7 +300,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
     }
 
     if (pidProfile->psas_speed_stick_curve_enable[FD_ROLL]) {
-        float rollStickCurve = computePower(speedRelation, pidProfile->psas_speed_roll_stick_curve_power * 0.1f);
+        float rollStickCurve = computePower(speedRelation, pidProfile->psas_speed_roll_stick_curve_power);
         rollStickCurve = constrainf(rollStickCurve, pidProfile->psas_speed_stick_curve_min * 0.01, pidProfile->psas_speed_stick_curve_max * 0.01);
         psasRuntime.speed_gains.stick[FD_ROLL] = rollStickCurve;
     }
