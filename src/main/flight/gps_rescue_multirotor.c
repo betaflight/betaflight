@@ -586,7 +586,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
             const float climbRateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
             rescueState.intent.targetAltitudeCm += climbRateCmS * gpsRescueTaskIntervalSeconds;
-            rescueState.intent.targetAltitudeVelCmS = climbRateCmS
+            rescueState.intent.targetAltitudeVelCmS = climbRateCmS;
         } else {
             // climb target achieved
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
