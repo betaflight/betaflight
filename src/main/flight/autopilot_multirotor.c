@@ -72,9 +72,9 @@
 
 #define ALTITUDE_P_SCALE       0.005f
 #define ALTITUDE_I_SCALE       0.002f
-#define ALTITUDE_D_SCALE       0.005f
+#define ALTITUDE_D_SCALE       0.01f
 #define ALTITUDE_F_KF_REF     30.0f
-#define ALTITUDE_F_SCALE       0.004f / ALTITUDE_F_KF_REF // full feedforward scale value when altitudeF CLI = 30
+#define ALTITUDE_F_SCALE       0.1f / ALTITUDE_F_KF_REF // full feedforward scale value when altitudeF CLI = 30
 #define ALTITUDE_VEL_CMD_MAX_DEFAULT_CM_S  1500.0f
 #define ALTITUDE_I_LIMIT      150.0f
 
@@ -101,7 +101,6 @@ static float altitudeKf;
 static uint16_t altHoldCapturedHoverPwm;
 static float altitudeI = 0.0f;
 static float throttleOut = 0.0f;
-pt1Filter_t altitudePHpf;
 
 // (EF_EAST/EF_NORTH) is
 // defined in common/axis.h alongside the other earth-frame axis enums.
@@ -154,8 +153,8 @@ static void initPidLpfs(void)
 void autopilotInit(void)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
-    ap.sticksActive = false;
-    abortNavRequested = false;
+    initPidLpfs();
+
     ap.maxAngle = cfg->maxAngle;
     ap.debugAxis = (gyroConfig()->gyro_filter_debug_axis == FD_PITCH) ? 1 : 0; // 1 for Pitch / North, 0 for Roll / East
 
@@ -168,11 +167,8 @@ void autopilotInit(void)
     positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
     positionPidCoeffs.Kd  = cfg->positionD  * POSITION_D_SCALE;
     positionPidCoeffs.Ka  = cfg->positionA  * POSITION_A_SCALE;
-
-    initPidLpfs();
-    const float altPHpfGain = pt1FilterGain(0.2f, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ)); 
-    pt1FilterInit(&altitudePHpf, altPHpfGain);
-
+    ap.sticksActive = false;
+    abortNavRequested = false;
     positionNavInit();
 }
 
@@ -214,10 +210,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
-float altitudeP = altitudeErrorCm * altitudeKp;
-    // high-pass P to compensate for motor-to-altitude lag
-    float highpassAltitudeP = altitudeP - pt1FilterApply(&altitudePHpf, altitudeP);
-    altitudeP += highpassAltitudeP;
+const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     // Altitude Derivative
@@ -324,7 +317,7 @@ void initPositionHold(void)
 
 static void initNavMode(void)
 {
-    initPidLpfs();
+    positionNavInit();
     resetDistanceError();
     resetDistanceErrorIntegral();
     isPosHoldStarting[EF_EAST]  = false;
