@@ -73,9 +73,10 @@
 #define SBUS_TIME_NEEDED_PER_BYTE (SBUS_TIME_NEEDED_PER_FRAME / SBUS_FRAME_SIZE) // ~120us per byte at 100k baud 8E2
 
 // An interbyte gap larger than this marks a frame boundary. Bytes within a frame
-// arrive about one byte period apart. The shortest inter-frame gap is fast mode's
-// 6000us refresh less the 3000us frame, ie 3000us, so this sits well clear of both.
-#define SBUS_INTERBYTE_TIMEOUT_US (5 * SBUS_TIME_NEEDED_PER_BYTE) // ~600us
+// arrive about one byte period apart (~120us at 100k baud, ~60us at 200k). The
+// shortest inter-frame gap is ~1000us on fast-refresh receivers, so this sits
+// well clear of both.
+#define SBUS_INTERBYTE_TIMEOUT_US ((timeDelta_t)(5 * SBUS_TIME_NEEDED_PER_BYTE)) // ~600us
 
 #if !defined(SBUS_PORT_OPTIONS)
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
