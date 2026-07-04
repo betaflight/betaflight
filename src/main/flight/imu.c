@@ -412,7 +412,7 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
 
 #ifdef USE_GPS
 
-// IMU groundspeed gain heuristic, not used while in GPS Rescue
+// IMU groundspeed gain heuristic
 static float imuCalcGroundspeedGain(float dt)
 {
     const bool isWing = isFixedWing();  // different weighting for airplane aerodynamic

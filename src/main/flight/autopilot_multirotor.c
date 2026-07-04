@@ -123,6 +123,7 @@ static pt2Filter_t posDtermLpf[EF_AXIS_COUNT];
 
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
+static bool forcePitchForward = false;
 
 typedef struct autopilotState_s {
     float sanityCheckDistance;
@@ -169,6 +170,7 @@ void autopilotInit(void)
     positionPidCoeffs.Ka  = cfg->positionA  * POSITION_A_SCALE;
     ap.sticksActive = false;
     abortNavRequested = false;
+    forcePitchForward = false;
     positionNavInit();
 }
 
@@ -288,6 +290,10 @@ void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool force
     }
 }
 
+void pitchForwardOverride (bool request){
+forcePitchForward = request;
+}
+
 static inline float calculateSanityCheckDistance(void)
 {
     const float speedCmS = vector2Norm((const vector2_t *)&positionEstimatorGetEstimate()->velocity.v);
@@ -328,8 +334,9 @@ void resetPositionControl(unsigned taskRateHz)
 {
     UNUSED(taskRateHz);
     abortNavRequested = false;
+    forcePitchForward = false;
     ap.sticksActive = false;
-
+    forcePitchForward = false;
     // Initialise the nav system
     positionEstimatorEnableXY(true);
     positionNavReset();
@@ -348,6 +355,9 @@ void handlepositionControlFailure(void)
     // Note 1: pilot must exit position hold or rescue to return to position hold mode or gps rescue mode
     // Note 2: autopilotAngle[i] = 0.0f is handled by the caller upon receiving a false return.
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);
+
 }
 
 bool positionControl(void)
@@ -363,7 +373,16 @@ bool positionControl(void)
      if (abortNavRequested) {
         handlepositionControlFailure();
          return false; // Return failure and show pos hold fail message in OSD
-        }
+    }
+
+    if (forcePitchForward) {
+        autopilotAngle[AI_ROLL]  = 0.0f;
+        autopilotAngle[AI_PITCH] = 35.0f;
+        DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 200);
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 200);
+        DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);
+        return true;
+    }
 
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
     const vector2_t velocity = *(const vector2_t *)&est->velocity.v;

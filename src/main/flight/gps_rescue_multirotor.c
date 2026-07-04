@@ -58,6 +58,7 @@ typedef enum {
     RESCUE_IDLE,
     RESCUE_INITIALIZE,
     RESCUE_ATTAIN_ALT,
+    RESCUE_PITCH_FORWARD,
     RESCUE_ROTATE,
     RESCUE_FLY_HOME,
     RESCUE_DESCENT,
@@ -433,6 +434,16 @@ static void performSanityChecks(void)
         }
         break;
 
+    case RESCUE_PITCH_FORWARD:
+        // attempting to re-orient IMU by forcing pitch forward
+        rescueState.intent.secondsFailing += 1;
+        if (rescueState.intent.secondsFailing >= 15) {
+            pitchForwardOverride(false); //give up after 15s  TODO: check if this is enough time or too much
+            rescueState.phase = RESCUE_EMERG_DESCENT;
+            rescueState.intent.secondsFailing = 0;
+        }
+        break;
+
      case RESCUE_ROTATE:
         rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 10) {
@@ -590,8 +601,22 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
             rescueState.intent.targetAltitudeVelCmS = 0.0f;
             rescueState.intent.secondsFailing = 0;
+            if (!rescueState.sensor.isHeadingOK) {
+                rescueState.phase = RESCUE_PITCH_FORWARD;
+            } else {
             rescueState.phase = RESCUE_ROTATE;
+            }
         }
+        break;
+
+    case RESCUE_PITCH_FORWARD:
+    if (!rescueState.sensor.isHeadingOK) { // sanity check allows 15s for this to be true
+        pitchForwardOverride(true); // instructs autopilot to apply forward pitch angle to recover IMU
+       } else {
+        pitchForwardOverride(false);
+        rescueState.phase = RESCUE_ROTATE;
+        rescueState.intent.secondsFailing = 0;
+       }
         break;
 
     case RESCUE_ROTATE:
