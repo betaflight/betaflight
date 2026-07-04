@@ -234,7 +234,7 @@ if (rescueState.sensor.positionXYAvailable) {
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.bearingToHomeDeg));
 }
 
-void updateStartupAttenuators(void)
+static void updateStartupAttenuators(void)
 {
     if (rescueState.intent.yawAttenuator < 1.0f) {
         rescueState.intent.yawAttenuator += gpsRescueTaskIntervalSeconds;
@@ -261,7 +261,7 @@ static void controlYaw(void)
     DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 7, rescueYawRate);
 }
 
-void calculateTargetStep(void)
+static void calculateTargetStep(void)
 {
     if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
         const float distanceToMoveCm = rescueState.intent.targetVelocityCmS * gpsRescueTaskIntervalSeconds * rescueState.intent.xyAttenuator;
@@ -276,7 +276,7 @@ void calculateTargetStep(void)
     moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
 }
 
-void clearTargetStep(void)
+static void clearTargetStep(void)
 {
     vector2Zero(&rescueState.intent.stepEF);
     moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
@@ -298,7 +298,7 @@ bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {
     return false;
 }
 
-void rescueDisarmNow(void)
+static void rescueDisarmNow(void)
 {
     rescueState.intent.secondsFailing = 0;
     rescueStop();
@@ -306,7 +306,7 @@ void rescueDisarmNow(void)
     disarm(DISARM_REASON_FAILSAFE);
 }
 
-void rescueEmergDescent(void)
+static void rescueEmergDescent(void)
 {
     if (isAltitudeAvailable()) {
         rescueState.phase = RESCUE_EMERG_DESCENT;
@@ -480,14 +480,13 @@ static void performSanityChecks(void)
 }
 
 
-
-void initDescent(void)
+static void initDescent(void)
 {
     if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
         rescueState.intent.descentDistanceCm = rescueState.sensor.distanceToHomeCm;
     }
 }
-void descend(void)
+static void descend(void)
 {
    if (rescueState.intent.descentDistanceCm > GPS_RESCUE_ACCEPT_RADIUS) {
         float attenuator = rescueState.sensor.distanceToHomeCm / rescueState.intent.descentDistanceCm;
