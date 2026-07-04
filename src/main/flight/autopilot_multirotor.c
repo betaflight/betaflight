@@ -290,8 +290,9 @@ void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool force
     }
 }
 
-void pitchForwardOverride (bool request){
-forcePitchForward = request;
+void pitchForwardOverride (bool request)
+{
+    forcePitchForward = request;
 }
 
 static inline float calculateSanityCheckDistance(void)
@@ -323,7 +324,7 @@ void initPositionHold(void)
 
 static void initNavMode(void)
 {
-    positionNavInit();
+    initPidLpfs();
     resetDistanceError();
     resetDistanceErrorIntegral();
     isPosHoldStarting[EF_EAST]  = false;
@@ -336,7 +337,6 @@ void resetPositionControl(unsigned taskRateHz)
     abortNavRequested = false;
     forcePitchForward = false;
     ap.sticksActive = false;
-    forcePitchForward = false;
     // Initialise the nav system
     positionEstimatorEnableXY(true);
     positionNavReset();

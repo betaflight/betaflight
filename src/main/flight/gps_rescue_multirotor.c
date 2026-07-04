@@ -441,16 +441,16 @@ static void performSanityChecks(void)
         rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 15) {
             pitchForwardOverride(false); //give up after 15s  TODO: check if this is enough time or too much
-            rescueState.phase = RESCUE_EMERG_DESCENT;
+            rescueEmergDescent();
             rescueState.intent.secondsFailing = 0;
         }
         break;
 
      case RESCUE_ROTATE:
-        rescueState.intent.secondsFailing += ( !(rescueState.phase == RESCUE_FLY_HOME) ? 1 : 0);
+        rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 10) {
             //almost never fails to rotate to the required angle, so this should never trigger
-            // Does not evaluate whether  attitude.values.yaw  is correct
+            // does not evaluate whether  attitude.values.yaw  is correct
             rescueState.phase = RESCUE_FLY_HOME;
             rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
             rescueState.intent.secondsFailing = 0;
@@ -508,12 +508,10 @@ static void descend(void)
     } else {
         rescueState.intent.targetVelocityCmS = 0.0f;
     }
-    float altitudeStepCm = gpsRescueTaskIntervalSeconds * gpsRescueConfig()->descendRate;
-    // at or below 10m: descend at 0.6x set value; above 10m, descend faster, to max 3.0x at 50m
-    altitudeStepCm *= scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
-    rescueState.intent.targetAltitudeVelCmS = -altitudeStepCm * TASK_GPS_RESCUE_RATE_HZ;
-    rescueState.intent.targetAltitudeCm -= altitudeStepCm;
-    rescueYawRate = 0.0f; // make sure yaw rate is zero in case we float past the home point
+    float verticalVelMax = -(float)gpsRescueConfig()->descendRate;
+    float verticalVelAttenuator = scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
+    rescueState.intent.targetAltitudeVelCmS = verticalVelMax * verticalVelAttenuator;
+    rescueYawRate = 0.0f; // keep yaw rate  zero in case we float past the home point
 }
 
 void initRescueValues(void)
@@ -588,7 +586,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
                 rescueState.phase = RESCUE_DO_NOTHING;
             } else {
-                initRescueValues();
+                initRescueValues(); // fix the target location
                 returnAltitudeLow = rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm;
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }
@@ -596,6 +594,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_ATTAIN_ALT:
+        clearTargetStep(); // don't change the target location
         if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
             rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
         } else {
@@ -619,13 +618,15 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             pitchForwardOverride(true); // instructs autopilot to apply forward pitch angle to recover IMU
         } else {
             pitchForwardOverride(false);
+            initPositionHold(); // re-anchor position target at the current location
             rescueState.phase = RESCUE_ROTATE;
             rescueState.intent.secondsFailing = 0;
         }
         break;
 
     case RESCUE_ROTATE:
-        updateYawStartupAttenuator();
+         clearTargetStep(); // don't change the target location
+         updateYawStartupAttenuator();
         controlYaw();
         if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
             rescueState.phase = RESCUE_FLY_HOME; 
