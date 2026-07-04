@@ -234,7 +234,7 @@ if (rescueState.sensor.positionXYAvailable) {
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.bearingToHomeDeg));
 }
 
-static void updateStartupAttenuators(void)
+static void updateYawStartupAttenuator(void)
 {
     if (rescueState.intent.yawAttenuator < 1.0f) {
         rescueState.intent.yawAttenuator += gpsRescueTaskIntervalSeconds;
@@ -242,7 +242,9 @@ static void updateStartupAttenuators(void)
             rescueState.intent.yawAttenuator = 1.0f;
         }
     }
-
+}
+static void updateVelocityStartupAttenuator(void)
+{
     if (rescueState.intent.xyAttenuator < 1.0f) {
         rescueState.intent.xyAttenuator += gpsRescueTaskIntervalSeconds;
         if (rescueState.intent.xyAttenuator > 1.0f) {
@@ -250,6 +252,7 @@ static void updateStartupAttenuators(void)
         }
     }
 }
+
 
 static void controlYaw(void)
 {
@@ -444,7 +447,7 @@ static void performSanityChecks(void)
         break;
 
      case RESCUE_ROTATE:
-        rescueState.intent.secondsFailing += 1;
+        rescueState.intent.secondsFailing += ( !(rescueState.phase == RESCUE_FLY_HOME) ? 1 : 0);
         if (rescueState.intent.secondsFailing >= 10) {
             //almost never fails to rotate to the required angle, so this should never trigger
             // Does not evaluate whether  attitude.values.yaw  is correct
@@ -540,6 +543,7 @@ void initRescueValues(void)
     rescueState.sensor.errorAngleDeg = 0.0f;       // Prevent yaw adjustments
     rescueYawRate = 0.0f;                          // No yaw until climb is complete
     rescueState.intent.targetVelocityCmS = 0.0f;   // Zero initial velocity
+    clearTargetStep();
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
     rescueState.sensor.velocityCmS = 0.0f;
     rescueState.intent.yawAttenuator = 0.0f;       // For a smooth start to the yaw
@@ -592,7 +596,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_ATTAIN_ALT:
-         clearTargetStep();
         if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
             rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
         } else {
@@ -622,7 +625,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_ROTATE:
-        clearTargetStep();
+        updateYawStartupAttenuator();
         controlYaw();
         if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
             rescueState.phase = RESCUE_FLY_HOME; 
@@ -632,6 +635,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_FLY_HOME:
+    updateVelocityStartupAttenuator();
         calculateTargetStep();
         controlYaw();
         if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
@@ -681,8 +685,9 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
     DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));
- 
- updateStartupAttenuators();
+        DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));
+
+
 
     // Autopilot control of altitude is always active when rescue mode is engaged
     if (rescueState.phase > RESCUE_INITIALIZE) {
