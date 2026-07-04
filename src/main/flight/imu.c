@@ -129,6 +129,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .small_angle = DEFAULT_SMALL_ANGLE,
     .imu_process_denom = 2,
     .mag_declination = 0,
+    .trust_mag = false, // user must set to true for mag to be accepted as a heading source
 );
 
 static void imuQuaternionComputeProducts(quaternion_t *quat, quaternionProducts *quatProd)

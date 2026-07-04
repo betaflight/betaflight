@@ -55,7 +55,7 @@
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
-
+#include "flight/imu.h"
 #include "io/beeper.h"
 
 #include "pg/pg.h"
@@ -440,7 +440,7 @@ bool compassInit(void)
 
 bool compassEnabledAndCalibrated(void)
 {
-    return sensors(SENSOR_MAG) && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
+    return sensors(SENSOR_MAG) && (imuConfig()->trust_mag) && (mag.magADC.x != 0) && (mag.magADC.y != 0) && (mag.magADC.z != 0);
 }
 
 void compassStartCalibration(void)

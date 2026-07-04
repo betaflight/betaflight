@@ -310,6 +310,7 @@
 
 #ifdef USE_MAG
 #define PARAM_NAME_IMU_MAG_DECLINATION "mag_declination"
+#define PARAM_NAME_TRUST_MAG "trust_mag"
 #endif
 
 #ifdef USE_TRANSPONDER
