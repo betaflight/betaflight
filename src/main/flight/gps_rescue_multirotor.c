@@ -95,7 +95,6 @@ typedef struct {
     float targetVelocityCmS;
     float xyAttenuator;
     float proximityAttenuator;
-    float disarmThreshold;
     vector2_t stepEF; // distance to move the craft along the path each iteration
     float cmToEarthAngle;
     float initialClimbCm;
@@ -139,7 +138,6 @@ void gpsRescueInit(void)
 {
     rescueState.intent.cmToEarthAngle = 1.0f / EARTH_ANGLE_TO_CM; // approx 0.898 cm per unit lat at equator
     rescueState.intent.initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
-    rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
     rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
     rescueState.sensor.currentPositionV  = (vector2_t){{0.0f, 0.0f}};
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
@@ -164,6 +162,7 @@ static void rescueStart(void)
 static void rescueStop(void)
 {
     rescueState.phase = RESCUE_IDLE;
+    pitchForwardOverride(false);
 }
 // While idle, update the altitude targets 
 static void updateMaxAltitude(void)
@@ -610,13 +609,16 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_PITCH_FORWARD:
-    if (!rescueState.sensor.isHeadingOK) { // sanity check allows 15s for this to be true
-        pitchForwardOverride(true); // instructs autopilot to apply forward pitch angle to recover IMU
-       } else {
-        pitchForwardOverride(false);
-        rescueState.phase = RESCUE_ROTATE;
-        rescueState.intent.secondsFailing = 0;
-       }
+        if (!rescueState.sensor.isHeadingOK) { // sanity check allows 15s for this to be true
+            clearTargetStep();
+            rescueYawRate = 0.0f;
+            rescueState.intent.targetVelocityCmS = 0.0f;
+            pitchForwardOverride(true); // instructs autopilot to apply forward pitch angle to recover IMU
+        } else {
+            pitchForwardOverride(false);
+            rescueState.phase = RESCUE_ROTATE;
+            rescueState.intent.secondsFailing = 0;
+        }
         break;
 
     case RESCUE_ROTATE:

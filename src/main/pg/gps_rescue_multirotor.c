@@ -44,8 +44,6 @@ PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
 
     .descentDistanceM = 20,
     .descendRate = 150,         // cm/s, minimum for descent and landing phase, or for descending if starting high ascent
-    .disarmThreshold = 30,
-
     .sanityChecks = RESCUE_SANITY_FS_ONLY,
     .minSats = 8,
     .allowArmingWithoutFix = false,
