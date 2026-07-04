@@ -625,8 +625,8 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_ROTATE:
-         clearTargetStep(); // don't change the target location
-         updateYawStartupAttenuator();
+        clearTargetStep(); // don't change the target location
+        updateYawStartupAttenuator();
         controlYaw();
         if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
             rescueState.phase = RESCUE_FLY_HOME; 
@@ -647,6 +647,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_DESCENT:
+        updateVelocityStartupAttenuator();
         descend(); // sets a negstive targetAltitudeVelocity
         calculateTargetStep();
         if (isBelowLandingAltitude()) {
@@ -686,7 +687,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
     DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));
-        DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));
+    DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));
 
 
 

@@ -196,7 +196,7 @@ void autopilotCaptureHoverThrottleForAltHold(void)
 {
     if (autopilotConfig()->hoverThrottle != 0) {
         altHoldCapturedHoverPwm = 0;
-        return;
+         return;
     }
     altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcCommand[THROTTLE], (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
 }
@@ -212,7 +212,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float currentAltitudeCm = getAltitudeCmControl(); // un-filtered altitude from Kalman filter
     const float altitudeErrorCm = targetAltitudeCm - currentAltitudeCm;
     const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f; // don't accumulate too much iTerm with transient but large overshoots (>2m error )
-const float altitudeP = altitudeErrorCm * altitudeKp;
+    const float altitudeP = altitudeErrorCm * altitudeKp;
     altitudeI += altitudeErrorCm * altitudeKi * itermRelax * taskIntervalS;
     altitudeI = constrainf(altitudeI, -ALTITUDE_I_LIMIT, ALTITUDE_I_LIMIT);
     // Altitude Derivative
@@ -225,8 +225,8 @@ const float altitudeP = altitudeErrorCm * altitudeKp;
     const float boostThreshold = 500.0f; // 5m/s
     const float absVerticalVelocity = fabsf(verticalVelocity);
     if (absVerticalVelocity > boostThreshold) {
-            const float ratio = absVerticalVelocity / boostThreshold;
-            dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
+        const float ratio = absVerticalVelocity / boostThreshold;
+         dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
     }
     const float altitudeD = velocityError * altitudeKd * dBoost;
     const float altitudeF = targetVerticalVelocity * altitudeKf;
@@ -281,9 +281,9 @@ void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool force
         abortNavRequested = false; 
 
         if (stepEF != NULL) {
-            targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
+             targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
             targetPosition.v[EF_NORTH] += stepEF->v[EF_NORTH];
-             targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
+            targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
             targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz ;
             posHoldStartPosition = targetPosition; // update start point to new target to prevent poshold sanity failure
         }
@@ -372,9 +372,8 @@ bool positionControl(void)
     }
      if (abortNavRequested) {
         handlepositionControlFailure();
-         return false; // Return failure and show pos hold fail message in OSD
+        return false; // Return failure and show pos hold fail message in OSD
     }
-
     if (forcePitchForward) {
         autopilotAngle[AI_ROLL]  = 0.0f;
         autopilotAngle[AI_PITCH] = 35.0f;
@@ -383,24 +382,19 @@ bool positionControl(void)
         DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 200);
         return true;
     }
-
     const vector2_t currentPosition = *(const vector2_t *)&est->position.v;
     const vector2_t velocity = *(const vector2_t *)&est->velocity.v;
-
     vector2_t pidSumVectorEF     = { { 0 } };
     vector2_t velocityError      = { { 0 } };
     vector2_t pidP               = { { 0 } };
     vector2_t pidI               = { { 0 } };
     vector2_t pidD               = { { 0 } };
     vector2_t pidA               = { { 0 } };
-    
     // Update navigation status
     positionNavUpdate(dt, est);
     ap.navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
-
     if (ap.navActive || ap.sticksActive) {
         isPositionHeld = false;
-
         if (ap.navActive) {
             if (!wasNavActive) {
                 initNavMode();
