@@ -591,7 +591,6 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             rescueState.intent.targetAltitudeVelCmS = 0.0f;
             rescueState.intent.secondsFailing = 0;
             rescueState.phase = RESCUE_ROTATE;
-            }
         }
         break;
 
