@@ -265,9 +265,15 @@ bool SD_IsDetected(void)
 
 bool SD_GetState(void)
 {
-    Status_card cardState = SD_PollingCardStatusBusy(&card,1000);
 
-    // return (cardState == Status_CardStatusBusy);
+
+    // Phase 1: Hardware DAT0 check (microseconds)
+    if (SDMMC_GetPresentFlagStatus(card.SDHOSTx, SDHOST_Data0LineLevelFlag) != SET) {
+        return false;  // DAT0 low = card definitely busy, no need to send CMD13
+    }
+
+    Status_card cardState = SD_PollingCardStatusBusy(&card, 1);
+
     return (cardState == Status_CardStatusIdle);
 }
 
@@ -884,6 +890,9 @@ SD_Error_t SD_Init(void)
     static SD_Error_t result = SD_ERROR;
 
     if (sdInitAttempted) {
+        if (result == SD_OK) {
+            return SD_GetState() ? SD_OK : SD_ERROR;
+        }
         return result;
     }
 
