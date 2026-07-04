@@ -436,8 +436,8 @@ static void performSanityChecks(void)
      case RESCUE_ROTATE:
         rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 10) {
-            // give up trying to achieve heading alignment; the posHold-based
-            // fly-home path can still make progress flying sideways/backwards
+            //almost never fails to rotate to the required angle, so this should never trigger
+            // Does not evaluate whether  attitude.values.yaw  is correct
             rescueState.phase = RESCUE_FLY_HOME;
             rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
             rescueState.intent.secondsFailing = 0;
@@ -590,9 +590,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
             rescueState.intent.targetAltitudeVelCmS = 0.0f;
             rescueState.intent.secondsFailing = 0;
-
-            if (rescueState.sensor.isHeadingOK) {
-                rescueState.phase = RESCUE_ROTATE;
+            rescueState.phase = RESCUE_ROTATE;
             }
         }
         break;
