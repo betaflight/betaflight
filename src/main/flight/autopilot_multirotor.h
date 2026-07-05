@@ -44,6 +44,5 @@ void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
-bool isAutopilotInControl(void);
 
 #endif // !USE_WING

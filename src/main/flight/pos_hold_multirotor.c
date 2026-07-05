@@ -105,11 +105,17 @@ void updatePosHold(timeUs_t currentTimeUs) {
         if (posHold.areSensorsOk) {
             posHold.isControlOk = positionControl();
         } else {
+
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
         }
     }
+}
+
+bool isAutopilotInControl(void)
+{
+    return posHold.isEnabled && posHold.isControlOk && posHold.areSensorsOk;
 }
 
 bool posHoldFailure(void) {

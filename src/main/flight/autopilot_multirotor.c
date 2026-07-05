@@ -115,12 +115,11 @@ static vector2_t previousVelocity;       // for acceleration
 static vector2_t dTermRamp;              // to smooth D when starting position hold
 static bool isPosHoldStarting[EF_AXIS_COUNT] = { false, false }; 
 
-static bool isPositionHeld;
-static bool wasPositionHeld = false;
 static pt2Filter_t posAccelLpf[EF_AXIS_COUNT];
 static pt2Filter_t posDtermLpf[EF_AXIS_COUNT];
 
-
+static bool isPositionHeld;
+static bool wasPositionHeld = false;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
 static bool forcePitchForward = false;
@@ -128,6 +127,7 @@ static bool forcePitchForward = false;
 typedef struct autopilotState_s {
     float sanityCheckDistance;
     bool sticksActive;
+    bool wasSticksActive;
     bool navActive;
     float maxAngle;
     unsigned debugAxis;
@@ -138,6 +138,7 @@ float autopilotAngle[RP_AXIS_COUNT];
 static autopilotState_t ap = {
     .sanityCheckDistance = SANITY_CHECK_DISTANCE,
     .sticksActive = false,
+    .wasSticksActive = false,
 };
 
 static void initPidLpfs(void)
@@ -169,6 +170,7 @@ void autopilotInit(void)
     positionPidCoeffs.Kd  = cfg->positionD  * POSITION_D_SCALE;
     positionPidCoeffs.Ka  = cfg->positionA  * POSITION_A_SCALE;
     ap.sticksActive = false;
+    ap.wasSticksActive = false;
     abortNavRequested = false;
     forcePitchForward = false;
     positionNavInit();
@@ -337,6 +339,7 @@ void resetPositionControl(unsigned taskRateHz)
     abortNavRequested = false;
     forcePitchForward = false;
     ap.sticksActive = false;
+    ap.wasSticksActive = false;
     // Initialise the nav system
     positionEstimatorEnableXY(true);
     positionNavReset();
@@ -351,14 +354,31 @@ void handlepositionControlFailure(void)
 {
     resetDistanceError();
     resetDistanceErrorIntegral();
-    setSticksActiveStatus(true); // allow pilot control in angle mode via isAutopilotInControl
-    // Note 1: pilot must exit position hold or rescue to return to position hold mode or gps rescue mode
-    // Note 2: autopilotAngle[i] = 0.0f is handled by the caller upon receiving a false return.
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, 100);
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);
 
 }
+
+void sticksMoveTarget(void)
+{
+    float stickPitch = getSetpointRate(PITCH);
+    float stickRoll  = getSetpointRate(ROLL);
+
+    const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
+    const float cosYaw = cosf(headingRad);
+    const float sinYaw = sinf(headingRad);
+
+    targetVelocity.v[EF_NORTH] = (stickPitch * cosYaw) - (stickRoll * sinYaw);
+    targetVelocity.v[EF_EAST]  = (stickPitch * sinYaw) + (stickRoll * cosYaw);
+
+    const float dt = HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
+    targetPosition.v[EF_NORTH] += targetVelocity.v[EF_NORTH] * dt;
+    targetPosition.v[EF_EAST]  += targetVelocity.v[EF_EAST] * dt;
+
+    posHoldStartPosition = targetPosition; 
+}
+
 
 bool positionControl(void)
 {
@@ -393,7 +413,7 @@ bool positionControl(void)
     // Update navigation status
     positionNavUpdate(dt, est);
     ap.navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
-    if (ap.navActive || ap.sticksActive) {
+    if (ap.navActive) {
         isPositionHeld = false;
         if (ap.navActive) {
             if (!wasNavActive) {
@@ -411,21 +431,29 @@ bool positionControl(void)
             isPositionHeld = true;
             initialVelocity = velocity;
         } else {
-            // In posHold 
+            // In posHold
+            if (ap.sticksActive) {
+                if (ap.wasSticksActive) {
+                    initPositionHold(); // resets hold point and enables stong braking mode 
+                    initialVelocity = velocity; // Captures current speed for the deceleration math
+                }
+                sticksMoveTarget();
+            }
             vector2_t deltaPosV;
             vector2Sub(&deltaPosV, &posHoldStartPosition, &currentPosition);
             const float sanityDistanceCm = vector2Norm(&deltaPosV);
             if (sanityDistanceCm > ap.sanityCheckDistance) {
-                ap.sticksActive = true; // permit manual pitch/roll control in angle mode
                 autopilotAngle[AI_ROLL]  = 0.0f; // Level out
                 autopilotAngle[AI_PITCH] = 0.0f;
                 handlepositionControlFailure();
-                return false; // Return failure and show pos hold fail message in OSD
+                return false; // Return failure, allow angle mode control,  and show pos hold fail message in OSD
             }
         }
     }
+
     wasPositionHeld = isPositionHeld;
     wasNavActive = ap.navActive;
+    ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         if (isPositionHeld) {
@@ -511,7 +539,6 @@ bool positionControl(void)
     if(abortNavRequested)   statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
-
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocityError.v[ap.debugAxis])); // velocity error
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis])); // distance error
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));   
@@ -541,17 +568,6 @@ bool isBelowLandingAltitude(void)
 float getAutopilotThrottle(void)
 {
     return throttleOut;
-}
-
-bool isAutopilotInControl(void)  // when false, pid.c allows flight in angle mode controlled by pilot
-{
-    // If an autonomous navigation path is active, the autopilot stays in control even if sticks are moved
-    if (ap.navActive) {
-        return true;
-    }
-
-    // in position hold, if sticks are moved, angle mode flight controlled by the pilot is active
-    return !ap.sticksActive;
 }
 
 #endif // !USE_WING

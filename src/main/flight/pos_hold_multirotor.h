@@ -26,6 +26,7 @@
 
 void posHoldInit(void);
 void updatePosHold(timeUs_t currentTimeUs);
+bool isAutopilotInControl(void);
 
 bool posHoldFailure(void);
 
