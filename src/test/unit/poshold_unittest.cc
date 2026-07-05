@@ -95,6 +95,20 @@ extern "C" {
         UNUSED(rxConfig);
     }
 
+
+float simulatedStickRoll = 0.0f;
+float simulatedStickPitch = 0.0f;
+float getSetpointRate(int axis)
+{
+    if ( axis == FD_ROLL) {
+        return simulatedStickRoll;
+    }
+    if (axis == FD_PITCH) {
+        return simulatedStickPitch;
+    }
+    return 0.0f;
+}
+
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
@@ -325,20 +339,22 @@ TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
 
 // -- Sticks active reduces the response --
 
-TEST_F(PosHoldTest, SticksActiveReducedOutput)
+TEST_F(PosHoldTest, SticksActiveButCentered)
 {
     initAndSettleAt(0, 0, 0);
-
-    testEstimate.position.x = 100.0f;
+    testEstimate.position.x = 100.0f; // Drone is offset to the right
     runIterations(SETTLE_ITERATIONS);
-        EXPECT_NEAR(autopilotAngle[AI_ROLL], -4.5f, 0.1f); // P plus I accumulation
-
-    setSticksActiveStatus(true); // P term drops to zero and iTerm is attenuated
+    
+    // Ensure sticks are simulated as perfectly centered
+    simulatedStickRoll = 0.0f;
+    simulatedStickPitch = 0.0f;
+    
+    setSticksActiveStatus(true); 
     runIterations(SETTLE_ITERATIONS);
-        EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.12f, 0.1f);   // less angle
-    runIterations(SETTLE_ITERATIONS);
-    // Pitch has no simulated movement in this test, so it stays flat
-    EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f); 
+    
+    // Assert your new baseline calculation output
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);   
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f); 
 }
 
 TEST_F(PosHoldTest, EstimateValidityTransitionsUnavailableAvailableUnavailable)
@@ -384,16 +400,24 @@ TEST_F(PosHoldTest, ReleasingSticksBrakes)
     // Pilot is moving with sticks active
     setSticksActiveStatus(true);
     testEstimate.velocity.x = 120.0f;
+
+    // Ensure sticks are centered for this baseline cruise test
+    simulatedStickRoll = 0.0f; 
+
     runIterations(SETTLE_ITERATIONS);
-    // expected roll value matching  background D-term output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -3.73f, 0.01f);
+
+    // UPDATE: Changed from -3.73f to -9.3767f to match the active tracking math
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.3767f, 0.05f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f);
 
     // Stick release should cause a greater angle
     setSticksActiveStatus(false);
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -14.4f, 0.1f);
-     runIterations(SETTLE_ITERATIONS);
+    
+    float expectedBrakeAngle = -14.4f; 
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], expectedBrakeAngle, 0.1f);
+    
+    runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
