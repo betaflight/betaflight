@@ -422,7 +422,7 @@ static float imuCalcGroundspeedGain(float dt)
     const float speedRatio = 0.5f * gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
     float speedBasedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : sq(speedRatio);
     // speedBasedGain is 0 at 0.0m/s, 1.0 at 2.0 m/s,rising towards 5.0 at 10m/s, to max 10.0 at 20m/s
-    // need a lot of speed since forward flight speed must exceed lateral wind drift by a significant margin 
+    // need a lot of speed since forward flight speed must exceed lateral wind drift by a significant margin
 
     // 2. suppress heading correction during and after yaw movements, down to zero at more than 10 deg/s
     float yawGyroRateFactor = fminf(fabsf(gyro.gyroADCf[FD_YAW] * 0.1f), 1.0f);
