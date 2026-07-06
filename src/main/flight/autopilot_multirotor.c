@@ -433,8 +433,8 @@ bool positionControl(void)
         } else {
             // In posHold
             if (ap.sticksActive) {
-                if (ap.wasSticksActive) {
-                    initPositionHold(); // resets hold point and enables stong braking mode 
+                if (!ap.wasSticksActive) {
+                    initPositionHold(); // resets hold point and enables strong braking mode 
                     initialVelocity = velocity; // Captures current speed for the deceleration math
                 }
                 sticksMoveTarget();
