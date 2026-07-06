@@ -1410,6 +1410,20 @@ case MSP_NAME:
         sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_start);
         sbufWriteU8(dst, currentPidProfile->psas_roll_yaw_clift_stop);
         sbufWriteU8(dst, currentPidProfile->psas_roll_to_yaw_link);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_main_curve_enable[0]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_main_curve_enable[1]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_main_curve_enable[2]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_stick_curve_enable[0]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_stick_curve_enable[1]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_stick_curve_enable[2]);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_optimum_vref);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_main_curve_power);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_roll_stick_curve_power);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_main_curve_min);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_main_curve_max);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_stick_curve_min);
+        sbufWriteU16(dst, currentPidProfile->psas_speed_stick_curve_max);
+        sbufWriteU8(dst, currentPidProfile->psas_speed_use_gps);
         break;
 #endif
     case MSP_ALTITUDE:
@@ -4462,6 +4476,20 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         currentPidProfile->psas_roll_yaw_clift_start = sbufReadU8(src);
         currentPidProfile->psas_roll_yaw_clift_stop = sbufReadU8(src);
         currentPidProfile->psas_roll_to_yaw_link = sbufReadU8(src);
+        currentPidProfile->psas_speed_main_curve_enable[0] = sbufReadU8(src);
+        currentPidProfile->psas_speed_main_curve_enable[1] = sbufReadU8(src);
+        currentPidProfile->psas_speed_main_curve_enable[2] = sbufReadU8(src);
+        currentPidProfile->psas_speed_stick_curve_enable[0] = sbufReadU8(src);
+        currentPidProfile->psas_speed_stick_curve_enable[1] = sbufReadU8(src);
+        currentPidProfile->psas_speed_stick_curve_enable[2] = sbufReadU8(src);
+        currentPidProfile->psas_speed_optimum_vref = sbufReadU8(src);
+        currentPidProfile->psas_speed_main_curve_power = sbufReadU8(src);
+        currentPidProfile->psas_speed_roll_stick_curve_power = sbufReadU8(src);
+        currentPidProfile->psas_speed_main_curve_min = sbufReadU16(src);
+        currentPidProfile->psas_speed_main_curve_max = sbufReadU16(src);
+        currentPidProfile->psas_speed_stick_curve_min = sbufReadU16(src);
+        currentPidProfile->psas_speed_stick_curve_max = sbufReadU16(src);
+        currentPidProfile->psas_speed_use_gps = sbufReadU8(src);
         break;
 #endif
 
