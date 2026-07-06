@@ -307,13 +307,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
             [FD_PITCH] = 0,
             [FD_YAW] = 0,
         },
-        .psas_speed_optimum_vref = 16,         // Reference speed value which has optimal plane settins m/s
+        .psas_speed_optimum_vref = 20,         // Reference speed value which has optimal plane settins m/s
         .psas_speed_main_curve_power = 20,     // Speed gain curves power for damping, stability, pitch and yaw sticks *0.1
         .psas_speed_roll_stick_curve_power = 10, // Speed gain curves power for roll stick *0.1
-        .psas_speed_main_curve_min = 10,       // Speed gain minimum for damping and stability *0.01
-        .psas_speed_main_curve_max = 500,      // Speed gain maximum for damping and stability *0.01
-        .psas_speed_stick_curve_min = 10,      // Speed gain minimum for sticks *0.01
-        .psas_speed_stick_curve_max = 500,     // Speed gain maximum for sticks *0.01
+        .psas_speed_main_curve_min = 20,       // Speed gain minimum for damping and stability *0.01
+        .psas_speed_main_curve_max = 200,      // Speed gain maximum for damping and stability *0.01
+        .psas_speed_stick_curve_min = 50,      // Speed gain minimum for sticks *0.01
+        .psas_speed_stick_curve_max = 200,     // Speed gain maximum for sticks *0.01
         .psas_speed_use_gps = 0                // Use GPS speed for PSAS curves in non wind condition
 #endif
     );
