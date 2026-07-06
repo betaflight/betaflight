@@ -279,7 +279,7 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
             speed = pidProfile->psas_speed_optimum_vref;
         }
     } else {
-#ifdef` USE_WING
+#ifdef USE_WING
         speed = pidRuntime.tpaSpeed.speed;
 #else
         speed = pidProfile->psas_speed_optimum_vref;
