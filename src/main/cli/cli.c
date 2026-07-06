@@ -2570,7 +2570,8 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliWriterFlush();
     flashfsEraseCompletely();
 
-    while (!flashfsIsReady() && !flashfsIsEraseInProgress()) {
+    while (!flashfsIsReady()) {
+        flashfsEraseAsync();
 #ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {

@@ -28,6 +28,8 @@
 
 #ifdef USE_FLASH_CHIP
 
+#include "common/utils.h"
+
 #include "drivers/flash/flash.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
@@ -438,6 +440,21 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
+MMFLASH_CODE bool flashIsReadyOrFail(void)
+{
+    if (flashIsReady()) {
+        flashDevice.timeoutAt = 0;
+        return true;
+    }
+
+    if (flashDevice.timeoutAt && cmp32(microsISR() / 1000, flashDevice.timeoutAt) >= 0) {
+        failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+        return false;
+    }
+
+    return false;
+}
+
 static bool flashWaitForReadyOrFail(void)
 {
     if (!flashDevice.vTable->waitForReady) {
@@ -466,10 +483,6 @@ void flashEraseCompletely(void)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
-
-    if (!flashWaitForReadyOrFail()) {
-        return;
-    }
 }
 
 /* The callback, if provided, will receive the totoal number of bytes transfered
