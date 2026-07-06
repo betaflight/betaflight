@@ -838,7 +838,8 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
+    // The earth-Up row (NWU_U) of rMat is earth-up expressed per body axis; negate to point down.
+    const float earthUpinBodyFrame[3] = {-rMat.m[NWU_U][X], -rMat.m[NWU_U][Y], -rMat.m[NWU_U][Z]};
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
@@ -1135,15 +1136,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
-    // Note that flight mode display has precedence in what to display.
-    //  1. FS
-    //  2. GPS RESCUE
-    //  3. HEADFREE_MODE
-    //  4. PASSTHRU,
-    //  5. PSAS
-    //  6. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  7. AIR
-    //  8. ACRO
+    // Note that flight mode display has precedence in what to display, FS first, ACRO last
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1483,6 +1476,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             int displayPercent = 0;
             if (currentBatteryProfile->batteryCapacity) {
                 displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_4) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                displayPercent = voltagePercent;
             }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
@@ -1501,6 +1500,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
                 const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
                 const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
                 remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_2) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
             }
 
             // Create empty battery indicator bar

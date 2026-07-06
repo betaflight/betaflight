@@ -33,6 +33,12 @@
 
 #define TASK_COMPASS_RATE_HZ 40 // the base mag update rate; faster intervals will apply for higher ODR mags
 
+#ifdef USE_MAG
+#define MAG_IN_BUILD  true
+#else
+#define MAG_IN_BUILD  false
+#endif
+
 // Type of magnetometer used/detected
 typedef enum {
     MAG_DEFAULT = 0,
@@ -80,7 +86,7 @@ typedef struct compassBiasEstimator_s {
 
 PG_DECLARE(compassConfig_t, compassConfig);
 
-bool compassIsHealthy(void);
+bool compassEnabledAndCalibrated(void);
 uint32_t compassUpdate(timeUs_t currentTime);
 bool compassInit(void);
 void compassPreInit(void);

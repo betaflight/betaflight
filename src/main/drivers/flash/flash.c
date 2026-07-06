@@ -28,6 +28,8 @@
 
 #ifdef USE_FLASH_CHIP
 
+#include "common/utils.h"
+
 #include "drivers/flash/flash.h"
 #include "drivers/flash/flash_impl.h"
 #include "drivers/flash/flash_m25p16.h"
@@ -475,6 +477,40 @@ MMFLASH_CODE bool flashWaitForReady(void)
     return flashDevice.vTable->waitForReady(&flashDevice);
 }
 
+MMFLASH_CODE static void flashExternalWriteFailed(void)
+{
+#ifdef USE_FLASH_MEMORY_MAPPED
+    // failureMode lives in XIP. When this trips from a save/erase
+    // loop inside the MMFLASH window, the call to failureMode would
+    // fault. Re-engage memory-mapped mode (best-effort — the chip
+    // may already be in a bad state) so the failure handler is
+    // reachable. Gated on the runtime boot state so the non-MM
+    // experimental path (flashOctoSpiInit under
+    // USE_OCTOSPI_EXPERIMENTAL) does not reconfigure the
+    // controller or unmask IRQs when MM was never enabled.
+    if (isMemoryMappedModeEnabledOnBoot()) {
+        flashMemoryMappedModeEnable();
+    }
+#endif
+
+    failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+}
+
+MMFLASH_CODE bool flashIsReadyOrFail(void)
+{
+    if (flashIsReady()) {
+        flashDevice.timeoutAt = 0;
+        return true;
+    }
+
+    if (flashDevice.timeoutAt && cmp32(microsISR() / 1000, flashDevice.timeoutAt) >= 0) {
+        flashExternalWriteFailed();
+        return false;
+    }
+
+    return false;
+}
+
 MMFLASH_CODE static bool flashWaitForReadyOrFail(void)
 {
     if (!flashDevice.vTable->waitForReady) {
@@ -482,20 +518,7 @@ MMFLASH_CODE static bool flashWaitForReadyOrFail(void)
     }
 
     if (!flashDevice.vTable->waitForReady(&flashDevice)) {
-#ifdef USE_FLASH_MEMORY_MAPPED
-        // failureMode lives in XIP. When this trips from a save/erase
-        // loop inside the MMFLASH window, the call to failureMode would
-        // fault. Re-engage memory-mapped mode (best-effort — the chip
-        // may already be in a bad state) so the failure handler is
-        // reachable. Gated on the runtime boot state so the non-MM
-        // experimental path (flashOctoSpiInit under
-        // USE_OCTOSPI_EXPERIMENTAL) does not reconfigure the
-        // controller or unmask IRQs when MM was never enabled.
-        if (isMemoryMappedModeEnabledOnBoot()) {
-            flashMemoryMappedModeEnable();
-        }
-#endif
-        failureMode(FAILURE_EXTERNAL_FLASH_WRITE_FAILED);
+        flashExternalWriteFailed();
         return false;
     }
 
@@ -516,10 +539,6 @@ void flashEraseCompletely(void)
 {
     flashDevice.callback = NULL;
     flashDevice.vTable->eraseCompletely(&flashDevice);
-
-    if (!flashWaitForReadyOrFail()) {
-        return;
-    }
 }
 
 /* The callback, if provided, will receive the totoal number of bytes transfered
