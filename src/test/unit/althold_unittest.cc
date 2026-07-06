@@ -231,12 +231,17 @@ extern "C" {
     float getAltitudeDerivativeControl(void) { return testAltitudeDerivativeCmS; }
     float getCosTiltAngle(void) { return testCosTiltAngle; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
-    float getGpsDataFrequencyHz(void) { return 10.0f; }
+
     float rcCommand[4];
 
     bool gpsHasNewData(uint16_t* gpsStamp) {
         UNUSED(*gpsStamp);
         return true;
+    }
+float getSetpointRate(int axis)
+{
+    UNUSED(axis);
+    return 0.0f; 
     }
 
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }

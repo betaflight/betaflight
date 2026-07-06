@@ -50,6 +50,7 @@
 #include "rx/rx.h"
 #include "pg/autopilot.h"
 #include "sensors/acceleration.h"
+#include "sensors/compass.h"
 
 #include "gps_rescue.h"
 
@@ -57,12 +58,13 @@ typedef enum {
     RESCUE_IDLE,
     RESCUE_INITIALIZE,
     RESCUE_ATTAIN_ALT,
+    RESCUE_PITCH_FORWARD,
     RESCUE_ROTATE,
     RESCUE_FLY_HOME,
     RESCUE_DESCENT,
     RESCUE_LANDING,
+    RESCUE_EMERG_DESCENT,
     RESCUE_DO_NOTHING,
-    RESCUE_ABORT
 } rescuePhase_e;
 
 typedef enum {
@@ -73,41 +75,45 @@ typedef enum {
     RESCUE_CRASHFLIP_DETECTED,
     RESCUE_STALLED,
     RESCUE_TOO_CLOSE,
-    RESCUE_NO_HOME_POINT
+    RESCUE_NO_HOME_POINT,
+    RESCUE_NO_ALTITUDE,
+    RESCUE_NO_HEADING,
 } rescueFailureState_e;
 
 typedef struct {
     float maxAltitudeCm;
     float returnAltitudeCm;
     float targetAltitudeCm;
-    float targetAltitudeVelCmS; // vertical velocity feedforward for cascaded alt controller (cm/s)
-    float targetVerticalVelocityCmS;
+    float targetAltitudeStepCm;
+    float targetAltitudeVelCmS;
     float pitchAngleLimitDeg;
     float rollAngleLimitDeg;
+    float descentDistanceCm;
     float descentDistanceM;
     int8_t secondsFailing;
     float yawAttenuator;
-    float disarmThreshold;
-    float velocityITermAccumulator;
-    float velocityPidCutoff;
-    float velocityPidCutoffModifier;
-    float velocityItermAttenuator;
-    float velocityItermRelax;
+    float targetVelocityCmS;
+    float xyAttenuator;
+    float proximityAttenuator;
+    vector2_t stepEF; // distance to move the craft along the path each iteration
+    float cmToEarthAngle;
+    float initialClimbCm;
 } rescueIntent_s;
 
 typedef struct {
+    bool gpsHealthy;
+    bool isHeadingOK;
+    bool newGpsData;
+    bool positionXYAvailable;
+    float aircraftHeadingDeg;
+    float bearingToHomeDeg;
+    float errorAngleDeg;
     float distanceToHomeCm;
-    float distanceToHomeM;
-    uint16_t groundSpeedCmS;
-    int16_t directionToHome;
-    bool healthy;
-    float errorAngle;
-    float gpsDataIntervalSeconds;
-    float velocityToHomeCmS;
-    float alitutudeStepCm;
-    float maxPitchStep;
-    float absErrorAngle;
-    float imuYawCogGain;
+    float velocityCmS; // for debugs only
+    vector2_t currentVelocityV;
+    vector2_t currentPositionV; // relative to arming location, not absolute
+    vector2_t previousPositionV;
+        float currentAltitudeCm;
 } rescueSensorData_s;
 
 typedef struct {
@@ -116,800 +122,585 @@ typedef struct {
     rescueSensorData_s sensor;
     rescueIntent_s intent;
     bool isAvailable;
+    bool isOK;
 } rescueState_s;
+rescueState_s rescueState;
 
 #define GPS_RESCUE_MAX_YAW_RATE          180    // deg/sec max yaw rate
-#define GPS_RESCUE_MAX_THROTTLE_ITERM    200    // max iterm value for throttle in degrees * 100
 #define GPS_RESCUE_ALLOWED_YAW_RANGE   30.0f   // yaw error must be less than this to enter fly home phase, and to pitch during descend()
-
-static const float taskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ); // i.e. 0.01 s
-static float rescueYaw;
-float gpsRescueAngle[RP_AXIS_COUNT] = { 0, 0 };
-bool magForceDisable = false;
-static pt1Filter_t velocityDLpf;
-static pt3Filter_t velocityUpsampleLpf;
+#define GPS_RESCUE_ACCEPT_RADIUS       20.0f // ignore closer than this Cm
+static const float gpsRescueTaskIntervalSeconds = HZ_TO_INTERVAL(TASK_GPS_RESCUE_RATE_HZ); // i.e. 0.01s
+static float rescueYawRate = 0.0f;
 
 
-rescueState_s rescueState;
 
 void gpsRescueInit(void)
 {
-    float cutoffHz, gain;
-    cutoffHz = gpsRescueConfig()->pitchCutoffHz / 100.0f;
-    rescueState.intent.velocityPidCutoff = cutoffHz;
-    rescueState.intent.velocityPidCutoffModifier = 1.0f;
-    gain = pt1FilterGain(cutoffHz, 1.0f);
-    pt1FilterInit(&velocityDLpf, gain);
-    cutoffHz *= 4.0f;
-    gain = pt3FilterGain(cutoffHz, taskIntervalSeconds);
-    pt3FilterInit(&velocityUpsampleLpf, gain);
+    rescueState.intent.cmToEarthAngle = 1.0f / EARTH_ANGLE_TO_CM; // approx 0.898 cm per unit lat at equator
+    rescueState.intent.initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
+    rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
+    rescueState.sensor.currentPositionV  = (vector2_t){{0.0f, 0.0f}};
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
+
+    rescueState.sensor.previousPositionV = rescueState.sensor.currentPositionV;
+    // Zero out flight angles to keep the craft flat on initiation
+    autopilotAngle[AI_ROLL] = 0.0f;
+    autopilotAngle[AI_PITCH] = 0.0f;
+    rescueState.isAvailable = true;
+    rescueState.sensor.isHeadingOK = true;
+    rescueState.isOK = true;
+
 }
 
 static void rescueStart(void)
 {
+     initPositionHold(); // initialise position hold at current location
+
     rescueState.phase = RESCUE_INITIALIZE;
 }
 
 static void rescueStop(void)
 {
     rescueState.phase = RESCUE_IDLE;
+    pitchForwardOverride(false);
 }
-
-// Things that need to run when GPS Rescue is enabled, and while armed, but while there is no Rescue in place
-static void setReturnAltitude(bool newGpsData)
+// While idle, update the altitude targets 
+static void updateMaxAltitude(void)
 {
-    // Hold maxAltitude at zero while disarmed, but if set_home_point_once is true, hold maxAlt until power cycled
+    // While disarmed, force maxAltitude to zero, unless set_home_point_once is true, when maxAlt is only reset on a power cycle
     if (!ARMING_FLAG(ARMED) && !gpsConfig()->gps_set_home_point_once) {
         rescueState.intent.maxAltitudeCm = 0.0f;
         return;
     }
+    // Otherwise store maxAltitude for this armed period
+    rescueState.intent.maxAltitudeCm = fmaxf(rescueState.sensor.currentAltitudeCm, rescueState.intent.maxAltitudeCm);
+    rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm;
 
-    // While armed, but not during the rescue, update the max altitude value
-    rescueState.intent.maxAltitudeCm = fmaxf(getAltitudeCmControl(), rescueState.intent.maxAltitudeCm);
+}
 
-    if (newGpsData) {
-        // set the target altitude to the current altitude.
-        rescueState.intent.targetAltitudeCm = getAltitudeCmControl();
+static void sensorUpdate(void)
+{
+    static uint16_t gpsStamp = 0;
+    rescueState.sensor.newGpsData = gpsHasNewData(&gpsStamp);
+    rescueState.sensor.isHeadingOK = imuIsHeadingValid();
+    rescueState.sensor.gpsHealthy = gpsIsHealthy();
 
-        // Intended descent distance for rescues that start outside the minStartDistM distance
-        // Set this to the user's intended descent distance, but not more than half the distance to home to ensure some fly home time
-        rescueState.intent.descentDistanceM = fminf(0.5f * rescueState.sensor.distanceToHomeM, gpsRescueConfig()->descentDistanceM);
+rescueState.sensor.currentAltitudeCm = getAltitudeCmControl();
 
-        const float initialClimbCm = gpsRescueConfig()->initialClimbM * 100.0f;
-        switch (gpsRescueConfig()->altitudeMode) {
-            case GPS_RESCUE_ALT_MODE_FIXED:
-                rescueState.intent.returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
-                break;
-            case GPS_RESCUE_ALT_MODE_CURRENT:
-                // climb above current altitude, but always return at least initial height above takeoff point, in case current altitude was negative
-                rescueState.intent.returnAltitudeCm = fmaxf(initialClimbCm, getAltitudeCmControl() + initialClimbCm);
-                break;
-            case GPS_RESCUE_ALT_MODE_MAX:
-            default:
-                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + initialClimbCm;
-                break;
+rescueState.sensor.positionXYAvailable = positionEstimatorIsValidXY();
+if (rescueState.sensor.positionXYAvailable) {
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    rescueState.sensor.currentPositionV  = *(const vector2_t *)&est->position.v;
+    rescueState.sensor.currentVelocityV  = *(const vector2_t *)&est->velocity.v;
+    rescueState.sensor.previousPositionV = rescueState.sensor.currentPositionV;
+}
+    rescueState.sensor.distanceToHomeCm = vector2Norm(&rescueState.sensor.currentPositionV);
+    rescueState.sensor.velocityCmS =vector2Norm(&rescueState.sensor.currentVelocityV); // only for debugs
+
+    rescueState.sensor.aircraftHeadingDeg = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // for debugs only
+
+    if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
+        const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
+        vector2_t headingV;
+
+        headingV.v[EF_NORTH] = cosf(headingRad);
+        headingV.v[EF_EAST]  = sinf(headingRad);
+
+        const float dotProduct = vector2Dot(&headingV, &rescueState.sensor.currentPositionV);
+        const float crossProduct = vector2Cross(&headingV, &rescueState.sensor.currentPositionV);
+
+        rescueState.sensor.errorAngleDeg = RADIANS_TO_DEGREES(atan2f(-crossProduct, -dotProduct));
+    } else {
+        rescueState.sensor.errorAngleDeg = 0.0f;
+    }
+
+    DEBUG_SET(DEBUG_ATTITUDE, 0, lrintf(rescueState.sensor.aircraftHeadingDeg));
+    DEBUG_SET(DEBUG_ATTITUDE, 2, lrintf(rescueState.sensor.velocityCmS));
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(rescueState.intent.targetVelocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(rescueState.sensor.velocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.intent.stepEF.v[EF_EAST] * 100.0f));
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.stepEF.v[EF_NORTH] * 100.0f));
+
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, lrintf(rescueState.sensor.velocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, GPS_directionToHome);
+
+    const float currentAltitudeCm = getAltitudeCm();
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityCmS));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(currentAltitudeCm));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(rescueState.sensor.aircraftHeadingDeg));
+    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.bearingToHomeDeg));
+}
+
+static void updateYawStartupAttenuator(void)
+{
+    if (rescueState.intent.yawAttenuator < 1.0f) {
+        rescueState.intent.yawAttenuator += gpsRescueTaskIntervalSeconds;
+        if (rescueState.intent.yawAttenuator > 1.0f) {
+            rescueState.intent.yawAttenuator = 1.0f;
+        }
+    }
+}
+static void updateVelocityStartupAttenuator(void)
+{
+    if (rescueState.intent.xyAttenuator < 1.0f) {
+        rescueState.intent.xyAttenuator += gpsRescueTaskIntervalSeconds;
+        if (rescueState.intent.xyAttenuator > 1.0f) {
+            rescueState.intent.xyAttenuator = 1.0f;
         }
     }
 }
 
-static void rescueAttainPosition(bool newGpsData)
+
+static void controlYaw(void)
 {
-    // runs at 100hz, but only updates RPYT settings when new GPS Data arrives and when not in idle phase.
-    static float previousVelocityError = 0.0f;
-    static float velocityI = 0.0f;
-    switch (rescueState.phase) {
-    case RESCUE_IDLE:
-        // values to be returned when no rescue is active
-        gpsRescueAngle[AI_PITCH] = 0.0f;
-        gpsRescueAngle[AI_ROLL] = 0.0f;
-        return;
-    case RESCUE_INITIALIZE:
-        // Initialize internal variables each time GPS Rescue is started
-        previousVelocityError = 0.0f;
-        velocityI = 0.0f;
-        resetAltitudeControl();
-        rescueState.intent.disarmThreshold = gpsRescueConfig()->disarmThreshold * 0.1f;
-        rescueState.sensor.imuYawCogGain = 1.0f;
-        return;
-    case RESCUE_DO_NOTHING:
-        // 20s of hover for switch induced sanity failures to allow time to recover
-        gpsRescueAngle[AI_PITCH] = 0.0f;
-        gpsRescueAngle[AI_ROLL] = 0.0f;
-        return;
-     default:
-        break;
-    }
-
-    /**
-        Altitude (throttle) controller
-    */
-    {
-        const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
-        altitudeControl(rescueState.intent.targetAltitudeCm, taskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
-    }
-
-    /**
-        Heading / yaw controller
-    */
-    // simple yaw P controller with roll mixed in.
-    // attitude.values.yaw is set by imuCalculateEstimatedAttitude() and is updated from GPS while groundspeed exceeds 2 m/s
-    // below 2m/s groundspeed, the IMU uses gyro to estimate yaw attitude change from previous values
-    // above 2m/s, GPS course over ground us ysed to 'correct' the IMU heading
-    // if the course over ground, due to wind or pre-exiting movement, is different from the attitude of the quad, the GPS correction will be less accurate
-    // the craft should not return much less than 5m/s during the rescue or the GPS corrections may be inaccurate.
-    // the faster the return speed, the more accurate the IMU will be, but the consequences of IMU error at the start are greater
-    // A compass (magnetometer) is vital for accurate GPS rescue at slow speeds, but must be calibrated and validated
-    // WARNING:  Some GPS units give false Home values!  Always check the arrow points to home on leaving home.
-    rescueYaw = rescueState.sensor.errorAngle * gpsRescueConfig()->yawP * rescueState.intent.yawAttenuator / 10.0f;
-    rescueYaw = constrainf(rescueYaw, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
+    float yawRateTemp = rescueState.sensor.errorAngleDeg * rescueState.intent.yawAttenuator * gpsRescueConfig()->yawP * 0.1f;
+    yawRateTemp = constrainf(yawRateTemp, -GPS_RESCUE_MAX_YAW_RATE, GPS_RESCUE_MAX_YAW_RATE);
+    yawRateTemp *= GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
     // rescueYaw is the yaw rate in deg/s to correct the heading error
-
-    // *** mix in some roll.  very important for heading tracking, since a yaw rate means the quad has drifted sideways
-    const float rollMixAttenuator = constrainf(1.0f - fabsf(rescueYaw) * 0.01f, 0.0f, 1.0f);
-    // less roll at higher yaw rates, no roll at 100 deg/s of yaw
-    const float rollAdjustment = -rescueYaw * gpsRescueConfig()->rollMix * rollMixAttenuator;
-    // if rollMix = 100, the roll:yaw ratio is 1:1 at small angles, reducing linearly to zero when the yaw rate is 100 deg/s
-    // when gpsRescueConfig()->rollMix is zero, there is no roll adjustment
-    // rollAdjustment is degrees * 100
-    // note that the roll element has the opposite sign to the yaw element *before* GET_DIRECTION
-    const float rollLimit = 100.0f * rescueState.intent.rollAngleLimitDeg;
-    gpsRescueAngle[AI_ROLL] = constrainf(rollAdjustment, -rollLimit, rollLimit);
-    // gpsRescueAngle is added to the normal roll Angle Mode corrections in pid.c
-
-    rescueYaw *= GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
-    // rescueYaw is the yaw rate in deg/s to correct the heading error
-
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 5, rollMixAttenuator);          // 0-1 to suppress roll adjustments at higher yaw rates
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 6, gpsRescueAngle[AI_ROLL]);    // roll added in degrees*100
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 7, rescueYaw);                  // the yaw rate in deg/s to correct a yaw error
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 7, gpsRescueAngle[AI_ROLL]);  // roll added in degrees*100
-
-    /**
-        Pitch / velocity controller
-    */
-    static float pitchAdjustment = 0.0f;
-    if (newGpsData) {
-
-        const float sampleIntervalNormaliseFactor = rescueState.sensor.gpsDataIntervalSeconds * 10.0f;
-
-        const float velocityError = rescueState.intent.targetVerticalVelocityCmS - rescueState.sensor.velocityToHomeCmS;
-        // velocityError is in cm per second, positive means too slow.
-        // NB positive pitch setpoint means nose down.
-        // target velocity can be very negative leading to large error before the start, with overshoot
-
-        // P component
-        const float velocityP = velocityError * gpsRescueConfig()->velP;
-
-        // I component
-        velocityI += 0.01f * gpsRescueConfig()->velI * velocityError * sampleIntervalNormaliseFactor * rescueState.intent.velocityItermRelax;
-        // velocityItermRelax is a time-based factor, 0->1 with time constant of 1s from when we start to fly home
-        // avoids excess iTerm accumulation during the initial acceleration phase and during descent.
-
-        velocityI *= rescueState.intent.velocityItermAttenuator;
-        // used to minimise iTerm windup during IMU error states and iTerm overshoot in the descent phase
-        // also, if we over-fly the home point, we need to re-accumulate iTerm from zero, not the previously accumulated value
-
-        const float pitchAngleLimit = rescueState.intent.pitchAngleLimitDeg * 100.0f;
-        const float velocityILimit = 0.5f * pitchAngleLimit;
-        // I component alone cannot exceed half the max pitch angle
-        velocityI = constrainf(velocityI, -velocityILimit, velocityILimit);
-
-        // D component
-        float velocityD = ((velocityError - previousVelocityError) / sampleIntervalNormaliseFactor);
-        previousVelocityError = velocityError;
-        velocityD *= gpsRescueConfig()->velD;
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 5, lrintf(velocityD)); // velocity D before lowpass smoothing
-        // smooth the D steps
-        const float cutoffHz = rescueState.intent.velocityPidCutoff * rescueState.intent.velocityPidCutoffModifier;
-        // note that this cutoff is increased up to 2x as we get closer to landing point in descend()
-        const float gain = pt1FilterGain(cutoffHz, rescueState.sensor.gpsDataIntervalSeconds);
-        pt1FilterUpdateCutoff(&velocityDLpf, gain);
-        velocityD = pt1FilterApply(&velocityDLpf, velocityD);
-
-        pitchAdjustment = velocityP + velocityI + velocityD;
-        // limit to maximum allowed angle
-        pitchAdjustment = constrainf(pitchAdjustment, -pitchAngleLimit, pitchAngleLimit);
-
-        // pitchAdjustment is the absolute Pitch angle adjustment value in degrees * 100
-        // it gets added to the normal level mode Pitch adjustments in pid.c
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 0, lrintf(velocityP));
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, lrintf(velocityD));
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 4, lrintf(velocityI));
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 6, lrintf(rescueState.intent.velocityItermRelax)); // factor attenuates velocity iTerm by multiplication
-        DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 7, lrintf(pitchAdjustment)); // rescue pitch angle in degrees * 100
-    }
-
-    // if initiated too close, and in the climb phase, pitch forward in whatever direction the nose is oriented until min distance away
-    // intent is to get far enough away that, with an IMU error, the quad will have enough distance to home to correct that error in the fly home phase
-    if (rescueState.phase == RESCUE_ATTAIN_ALT && rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minStartDistM) {
-        pitchAdjustment = 1500.0f; // 15 degree pitch forward
-    }
-
-    // upsampling and smoothing of pitch angle steps
-    float pitchAdjustmentFiltered = pt3FilterApply(&velocityUpsampleLpf, pitchAdjustment);
-
-    gpsRescueAngle[AI_PITCH] = pitchAdjustmentFiltered;
-    // this angle gets added to the normal pitch Angle Mode control values in pid.c - will be seen in pitch setpoint
-
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 3, lrintf(rescueState.intent.targetVerticalVelocityCmS)); // target velocity to home
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 1, lrintf(rescueState.intent.targetVerticalVelocityCmS)); // target velocity to home
+    rescueYawRate = yawRateTemp;
+    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 7, rescueYawRate);
 }
+
+static void calculateTargetStep(void)
+{
+    if (rescueState.sensor.distanceToHomeCm > GPS_RESCUE_ACCEPT_RADIUS) {
+        const float distanceToMoveCm = rescueState.intent.targetVelocityCmS * gpsRescueTaskIntervalSeconds * rescueState.intent.xyAttenuator;
+        const float scale = distanceToMoveCm / rescueState.sensor.distanceToHomeCm;
+            DEBUG_SET(DEBUG_RTH, 5, lrintf(scale*100.0f));
+
+        vector2Scale(&rescueState.intent.stepEF, &rescueState.sensor.currentPositionV, -scale);
+    } else {
+        vector2Zero(&rescueState.intent.stepEF);
+    }
+
+    moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
+}
+
+static void clearTargetStep(void)
+{
+    vector2Zero(&rescueState.intent.stepEF);
+    moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, false);
+}
+
+
+static void controlAltitude(void)
+{
+    const float vzLim = 3.0f * fmaxf((float)gpsRescueConfig()->ascendRate, (float)gpsRescueConfig()->descendRate);
+    altitudeControl(rescueState.intent.targetAltitudeCm, gpsRescueTaskIntervalSeconds, rescueState.intent.targetAltitudeVelCmS, vzLim);
+}
+
+bool oneSecondPassed(timeUs_t currentTimeUs, timeUs_t *lastTimeUs) {
+    timeDelta_t deltaTime = cmpTimeUs(currentTimeUs, *lastTimeUs);
+    if (deltaTime >= 1000000) {
+        *lastTimeUs = currentTimeUs;
+        return true;
+    }
+    return false;
+}
+
+static void rescueDisarmNow(void)
+{
+    rescueState.intent.secondsFailing = 0;
+    rescueStop();
+    setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+    disarm(DISARM_REASON_FAILSAFE);
+}
+
+static void rescueEmergDescent(void)
+{
+    if (isAltitudeAvailable()) {
+        rescueState.phase = RESCUE_EMERG_DESCENT;
+        // same as RESCUE_DESCENT phase, but no XY control
+        // if baro is available then emergency descent is possible even if the GPS module fails
+    } else {
+        rescueDisarmNow();
+    }
+}
+
 
 static void performSanityChecks(void)
 {
-    static timeUs_t previousTimeUs = 0; // Last time Stalled/LowSat was checked
-    static float prevAltitudeCm = 0.0f; // to calculate ascent or descent change
-    static float prevTargetAltitudeCm = 0.0f; // to calculate ascent or descent target change
-    static float previousDistanceToHomeCm = 0.0f; // to check that we are returning
-    static int8_t secondsLowSats = 0; // Minimum sat detection
-    static int8_t secondsDoingNothing; // Limit on doing nothing
+    static float prevAltitudeCm = 0.0f;
+    static float prevTargetAltitudeCm = 0.0f;
+    static float previousDistanceToHomeCm = 0.0f;
+    static int8_t secondsLowSats = 0;
+    static int8_t secondsDoingNothing;
     const timeUs_t currentTimeUs = micros();
 
     if (rescueState.phase == RESCUE_IDLE) {
         rescueState.failure = RESCUE_HEALTHY;
         return;
-    } else if (rescueState.phase == RESCUE_INITIALIZE) {
-        // Initialize these variables each time a GPS Rescue is started
-        previousTimeUs = currentTimeUs;
-        prevAltitudeCm = getAltitudeCmControl();
-        prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
-        previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
-        secondsLowSats = 0;
-        secondsDoingNothing = 0;
     }
 
-    // Handle events that set a failure mode to other than healthy.
-    // Disarm via Abort when sanity on, or for hard Rx loss in FS_ONLY mode
-    // Otherwise allow 20s of semi-controlled descent with impact disarm detection
-    const bool hardFailsafe = !isRxReceivingSignal();
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);
+    DEBUG_SET(DEBUG_RTH, 3, rescueState.failure);
+    DEBUG_SET(DEBUG_RTH, 4, rescueState.intent.secondsFailing);
+    DEBUG_SET(DEBUG_RTH, 5, secondsLowSats);
+    DEBUG_SET(DEBUG_RTH, 6, lrintf(rescueState.sensor.distanceToHomeCm));
 
-    if (rescueState.failure != RESCUE_HEALTHY) {
-        // Default to 20s semi-controlled descent with impact detection, then abort
-        rescueState.phase = RESCUE_DO_NOTHING;
-
-        switch(gpsRescueConfig()->sanityChecks) {
-        case RESCUE_SANITY_ON:
-            rescueState.phase = RESCUE_ABORT;
-            break;
-        case RESCUE_SANITY_FS_ONLY:
-            if (hardFailsafe) {
-                rescueState.phase = RESCUE_ABORT;
-            }
-            break;
-        default:
-            // even with sanity checks off,
-            // override when Allow Arming without Fix is enabled without GPS_FIX_HOME and no Control link available.
-            if (gpsRescueConfig()->allowArmingWithoutFix && !STATE(GPS_FIX_HOME) && hardFailsafe) {
-                rescueState.phase = RESCUE_ABORT;
-            }
-        }
-    }
-
-    // Crash detection is enabled in all rescues.  If triggered, immediately disarm.
-    if (crashRecoveryModeActive()) {
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm(DISARM_REASON_CRASH_PROTECTION);
-        rescueStop();
-    }
-
-    // Check if GPS comms are healthy
-    // ToDo - check if we have an altitude reading; if we have Baro, we can use Landing mode for controlled descent without GPS
-    if (!rescueState.sensor.healthy) {
-        rescueState.failure = RESCUE_GPSLOST;
-    }
-
-    //  Things that should run at a low refresh rate (such as flyaway detection, etc) will be checked at 1Hz
-    const timeDelta_t dTime = cmpTimeUs(currentTimeUs, previousTimeUs);
-    if (dTime < 1000000) { //1hz
-        return;
-    }
-    previousTimeUs = currentTimeUs;
-
-    // checks that we are getting closer to home.
-    // if the quad is stuck, or if GPS data packets stop, there will be no change in distance to home
-    // we can't use rescueState.sensor.currentVelocity because it will be held at the last good value if GPS data updates stop
-    if (rescueState.phase == RESCUE_FLY_HOME) {
-        const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm; // cm/s
-        previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
-        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.1f * rescueState.intent.targetVerticalVelocityCmS) ? 1 : -1;
-        rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 30);
-        if (rescueState.intent.secondsFailing >= 30) {
-#ifdef USE_MAG
-            //If there is a mag and has not been disabled, we have to assume is healthy and has been used in imu.c
-            if (sensors(SENSOR_MAG) && gpsRescueConfig()->useMag && !magForceDisable) {
-                //Try again with mag disabled
-                magForceDisable = true;
-                rescueState.intent.secondsFailing = 0;
-            } else
-#endif
-            {
-                rescueState.failure = RESCUE_FLYAWAY;
-            }
-        }
-    }
-
-    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
-    secondsLowSats = constrain(secondsLowSats, 0, 10);
-
-    if (secondsLowSats == 10) {
-        rescueState.failure = RESCUE_LOWSATS;
-    }
-
-    // These conditions ignore sanity mode settings, and apply in all rescues, to handle getting stuck in a climb or descend
-
-    const float actualAltitudeChange = getAltitudeCmControl() - prevAltitudeCm;
-    // ** possibly could use getAltitudeDerivative() for  for actual altitude change, though it is smoothed
-    const float targetAltitudeChange = rescueState.intent.targetAltitudeCm - prevTargetAltitudeCm;
-    const float ratio = actualAltitudeChange / targetAltitudeChange;
-    prevAltitudeCm = getAltitudeCmControl();
-    prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
-
-    switch (rescueState.phase) {
-    case RESCUE_LANDING:
-        rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
-        rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
-        if (rescueState.intent.secondsFailing >= 10) {
-            rescueState.phase = RESCUE_ABORT;
-            // Landing mode shouldn't take more than 10s
-        }
-        break;
-    case RESCUE_ATTAIN_ALT:
-    case RESCUE_DESCENT:
-        rescueState.intent.secondsFailing += ratio > 0.5f ? -1 : 1;
-        rescueState.intent.secondsFailing = constrain(rescueState.intent.secondsFailing, 0, 10);
-        if (rescueState.intent.secondsFailing >= 10) {
-            rescueState.phase = RESCUE_LANDING;
-            rescueState.intent.secondsFailing = 0;
-            // if can't climb, or slow descending, enable impact detection and time out in 10s
-        }
-        break;
-    case RESCUE_DO_NOTHING:
-        secondsDoingNothing = MIN(secondsDoingNothing + 1, 20);
-        if (secondsDoingNothing >= 20) {
-            rescueState.phase = RESCUE_ABORT;
-            // time-limited semi-controlled fall with impact detection
-        }
-        break;
-    default:
-        // do nothing
-        break;
-    }
-
-    DEBUG_SET(DEBUG_RTH, 2, (rescueState.failure * 10 + rescueState.phase));
-    DEBUG_SET(DEBUG_RTH, 3, (rescueState.intent.secondsFailing * 100 + secondsLowSats));
-}
-
-// Same convention as GPS_distance_cm_bearing: clockwise from North, decidegrees (0.1 deg units).
-static int16_t rescueBearingToHomeDecideg(float posEastCm, float posNorthCm)
-{
-    const float dLat = -posNorthCm;
-    const float dLon = -posEastCm;
-    float bearing = 9000.0f - RADIANS_TO_DEGREES(atan2_approx(dLat, dLon)) * 100.0f;
-    while (bearing < 0.0f) {
-        bearing += 36000.0f;
-    }
-    while (bearing >= 36000.0f) {
-        bearing -= 36000.0f;
-    }
-    return (int16_t)lrintf(bearing / 10.0f);
-}
-
-static void applyRescueHeadingError(void)
-{
-    rescueState.sensor.errorAngle = (attitude.values.yaw - rescueState.sensor.directionToHome) / 10.0f;
-    if (rescueState.sensor.errorAngle <= -180) {
-        rescueState.sensor.errorAngle += 360;
-    } else if (rescueState.sensor.errorAngle > 180) {
-        rescueState.sensor.errorAngle -= 360;
-    }
-    rescueState.sensor.absErrorAngle = fabsf(rescueState.sensor.errorAngle);
-}
-
-static void sensorUpdate(bool newGpsData)
-{
-    static float prevDistanceToHomeCm = 0.0f;
-
-    const float altitudeCurrentCm = getAltitudeCmControl();
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 2, lrintf(altitudeCurrentCm));
-    rescueState.sensor.healthy = gpsIsHealthy();
-
-    const bool useEstXY = positionEstimatorIsValidXY();
-
-    if (useEstXY) {
-        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
-        rescueState.sensor.distanceToHomeCm = hypotf(est->position.v[ENU_E], est->position.v[ENU_N]);
-        rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm * 0.01f;
-        rescueState.sensor.directionToHome = rescueBearingToHomeDecideg(est->position.v[ENU_E], est->position.v[ENU_N]);
-        rescueState.sensor.groundSpeedCmS = hypotf(est->velocity.v[ENU_E], est->velocity.v[ENU_N]);
-        const float distCm = rescueState.sensor.distanceToHomeCm;
-        if (distCm > 10.0f) {
-            const float invDist = 1.0f / distCm;
-            // Unit vector from craft toward home (negated position), ENU horizontal.
-            const float uEast  = -est->position.v[ENU_E] * invDist;
-            const float uNorth = -est->position.v[ENU_N] * invDist;
-            rescueState.sensor.velocityToHomeCmS = est->velocity.v[ENU_E] * uEast + est->velocity.v[ENU_N] * uNorth;
-        } else {
-            rescueState.sensor.velocityToHomeCmS = 0.0f;
-        }
-        rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
-    } else {
-        rescueState.sensor.directionToHome = GPS_directionToHome;
-        if (!newGpsData) {
-            applyRescueHeadingError();
-            DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS);
-            DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);
-            DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);
-            DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome);
-            DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(attitude.values.yaw));
-            DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.directionToHome));
+    if (rescueState.phase == RESCUE_INITIALIZE) {
+        if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
+            rescueDisarmNow();
             return;
         }
 
-        rescueState.sensor.distanceToHomeCm = GPS_distanceToHomeCm;
-        rescueState.sensor.distanceToHomeM = rescueState.sensor.distanceToHomeCm / 100.0f;
-        rescueState.sensor.groundSpeedCmS = gpsSol.groundSpeed;
-
-        rescueState.sensor.gpsDataIntervalSeconds = getGpsDataIntervalSeconds();
-
-        rescueState.sensor.velocityToHomeCmS = ((prevDistanceToHomeCm - rescueState.sensor.distanceToHomeCm) * getGpsDataFrequencyHz());
-        prevDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
-    }
-
-    applyRescueHeadingError();
-
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 0, rescueState.sensor.groundSpeedCmS);
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 1, gpsSol.groundCourse);
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 2, attitude.values.yaw);
-    DEBUG_SET(DEBUG_GPS_RESCUE_HEADING, 3, rescueState.sensor.directionToHome);
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 4, lrintf(attitude.values.yaw));
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 5, lrintf(rescueState.sensor.directionToHome));
-
-    DEBUG_SET(DEBUG_ATTITUDE, 4, rescueState.sensor.velocityToHomeCmS);
-
-    // when there is a flyaway due to IMU disorientation, increase IMU yaw CoG gain, and reduce max pitch angle
-    if (gpsRescueConfig()->groundSpeedCmS) {
-        // calculate a factor that can reduce pitch angle when flying away
-        const float rescueGroundspeed = gpsRescueConfig()->imuYawGain * 100.0f; // in cm/s, imuYawGain is m/s groundspeed
-        // rescueGroundspeed is effectively a normalising gain factor for the magnitude of the groundspeed error
-        // a higher value reduces groundspeedErrorRatio, making the radius wider and reducing the circling behaviour
-
-        const float groundspeedErrorRatio = fabsf(rescueState.sensor.groundSpeedCmS - rescueState.sensor.velocityToHomeCmS) / rescueGroundspeed;
-        // 0 if groundspeed = velocity to home, or both are zero
-        // 1 if forward velocity is zero but sideways speed is imuYawGain in m/s
-        // 2 if moving backwards at imuYawGain m/s, 4 if moving backwards at 2* imuYawGain m/s, etc
-
-        DEBUG_SET(DEBUG_ATTITUDE, 5, groundspeedErrorRatio * 100);
-
-        rescueState.intent.velocityItermAttenuator = 4.0f / (groundspeedErrorRatio + 4.0f);
-        // 1 if groundspeedErrorRatio = 0, falling to 2/3 if groundspeedErrorRatio = 2, 0.5 if groundspeedErrorRatio = 4, etc
-        // limit (essentially prevent) velocity iTerm accumulation whenever there is a meaningful groundspeed error
-        // this is a crude but simple way to prevent iTerm windup when recovering from an IMU error
-        // the magnitude of the effect will be less at low GPS data rates, since there will be fewer multiplications per second
-        // but for our purposes this should not matter much, our intent is to severely attenuate iTerm
-        // if, for example, we had a 90 degree attitude error, groundspeedErrorRatio = 1, invGroundspeedError = 0.8,
-        // after 10 iterations, iTerm is 0.1 of what it would have been
-        // also is useful in blocking iTerm accumulation if we overshoot the landing point
-
-        const float pitchForwardAngle = (gpsRescueAngle[AI_PITCH] > 0.0f) ? fminf(gpsRescueAngle[AI_PITCH] / 3000.0f, 2.0f) : 0.0f;
-        // pitchForwardAngle is positive early in a rescue, and associates with a nose forward ground course
-        // note: gpsRescueAngle[AI_PITCH] is in degrees * 100, and is halved when the IMU is 180 wrong
-        // pitchForwardAngle is 0 when flat
-        // pitchForwardAngle is 0.5 if pitch angle is 15 degrees (ie with rescue angle of 30 and 180deg IMU error)
-        // pitchForwardAngle is 1.0 if pitch angle is 30 degrees (ie with rescue angle of 60 and 180deg IMU error)
-        // pitchForwardAngle is 2.0 if pitch angle is 60 degrees and flying towards home (unlikely to be sustained at that angle)
-
-        DEBUG_SET(DEBUG_ATTITUDE, 6, pitchForwardAngle * 100.0f);
-
-        if (rescueState.phase != RESCUE_FLY_HOME) {
-            // prevent IMU disorientation arising from drift during climb, rotate or do nothing phases, which have zero pitch angle
-            // in descent, or too close, increase IMU yaw gain as pitch angle increases
-            rescueState.sensor.imuYawCogGain = pitchForwardAngle;
+        // Check home point fix ONLY during initialization pass
+        if (STATE(GPS_FIX_HOME)) {
+            rescueState.failure = RESCUE_HEALTHY;
         } else {
-            rescueState.sensor.imuYawCogGain = pitchForwardAngle + fminf(groundspeedErrorRatio, 3.5f);
-            // imuYawCogGain will be more positive at higher pitch angles and higher groundspeed errors
-            // imuYawCogGain will be lowest (close to zero) at lower pitch angles and when flying straight towards home
+            rescueState.failure = RESCUE_NO_HOME_POINT;
         }
+
+        prevAltitudeCm = getAltitudeCm();
+        prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
+        previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
+        rescueState.intent.secondsFailing = 0;
+        secondsLowSats = 0;
+        secondsDoingNothing = 0;
+        rescueState.isOK = true;
     }
 
-    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 2, lrintf(rescueState.sensor.velocityToHomeCmS));
-    DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 0, lrintf(rescueState.sensor.velocityToHomeCmS));
-}
-
-// This function flashes "RESCUE N/A" in the OSD if:
-// 1. sensor healthy - GPS data is being received.
-// 2. GPS has a 3D fix.
-// 3. GPS number of satellites is greater than or equal to the minimum configured satellite count.
-// Note 1: cannot arm without the required number of sats
-// hence this flashing indicates that after having enough sats, we now have below the minimum and the rescue likely would fail
-// Note 2: this function does not take into account the distance from home
-// The sanity checks are independent, this just provides the OSD warning
-static bool checkGPSRescueIsAvailable(void)
-{
-    static timeUs_t previousTimeUs = 0; // Last time LowSat was checked
-    const timeUs_t currentTimeUs = micros();
-    static int8_t secondsLowSats = 0; // Minimum sat detection
-    static bool lowsats = false;
-    static bool noGPSfix = false;
-    bool result = true;
-
-    if (!gpsIsHealthy() || !STATE(GPS_FIX_HOME)) {
-        return false;
-    }
-
-    //  Things that should run at a low refresh rate >> ~1hz
-    const timeDelta_t dTime = cmpTimeUs(currentTimeUs, previousTimeUs);
-    if (dTime < 1000000) { //1hz
-        if (noGPSfix || lowsats) {
-            result = false;
-        }
-        return result;
-    }
-
-    previousTimeUs = currentTimeUs;
-
-    if (!STATE(GPS_FIX)) {
-        result = false;
-        noGPSfix = true;
-    } else {
-        noGPSfix = false;
-    }
-
-    secondsLowSats = constrain(secondsLowSats + ((gpsSol.numSat < GPS_MIN_SAT_COUNT) ? 1 : -1), 0, 2);
-    if (secondsLowSats == 2) {
-        lowsats = true;
-        result = false;
-    } else {
-        lowsats = false;
-    }
-
-    return result;
-}
-
-static void disarmOnImpact(void)
-{
-    if (acc.accMagnitude > rescueState.intent.disarmThreshold) {
+    if (crashRecoveryModeActive()) {
         setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm(DISARM_REASON_GPS_RESCUE);
-        rescueStop();
+        rescueDisarmNow();
     }
-}
 
-static void descend(bool newGpsData)
-{
-    if (newGpsData) {
-        // consider landing area to be a circle half landing height around home, to avoid overshooting home point
-        const float distanceToLandingAreaM = rescueState.sensor.distanceToHomeM - (0.5f * autopilotConfig()->landingAltitudeM);
-        const float proximityToLandingArea = constrainf(distanceToLandingAreaM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
+    const bool hardFailsafe = !isRxReceivingSignal(); 
 
-        // increase the velocity lowpass filter cutoff for more aggressive responses when descending, especially close to home
-        // 1.5x when starting descent, 2.5x (smoother) when almost landed
-        rescueState.intent.velocityPidCutoffModifier = 2.5f - proximityToLandingArea;
-
-        // reduce target velocity as we get closer to home. Zero within 2m of home, reducing risk of overshooting.
-        rescueState.intent.targetVerticalVelocityCmS = gpsRescueConfig()->groundSpeedCmS * proximityToLandingArea;
-
-        // attenuate velocity target unless pointing towards home, to minimise circling behaviour during overshoots
-        if (rescueState.sensor.absErrorAngle > GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            rescueState.intent.targetVerticalVelocityCmS = 0;
-        } else {
-            rescueState.intent.targetVerticalVelocityCmS *= (GPS_RESCUE_ALLOWED_YAW_RANGE - rescueState.sensor.absErrorAngle) / GPS_RESCUE_ALLOWED_YAW_RANGE;
+    if (rescueState.failure == RESCUE_HEALTHY) {
+        rescueState.isOK = true;
+    } else {
+        rescueState.isOK = false;
+        switch(gpsRescueConfig()->sanityChecks) {
+        case RESCUE_SANITY_ON:
+            rescueEmergDescent();
+            return;
+        case RESCUE_SANITY_FS_ONLY:
+            if (hardFailsafe) {
+                rescueEmergDescent();
+                return;
+            }
+            break;
+        default: 
+            if ((!rescueState.isAvailable) && hardFailsafe) {
+                rescueEmergDescent();
+                return;
+            }
+            break;
         }
-
-        // attenuate velocity iterm towards zero as we get closer to the landing area
-        rescueState.intent.velocityItermAttenuator = fminf(proximityToLandingArea, rescueState.intent.velocityItermAttenuator);
-
-        // full pitch angle available all the time
-        rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
-
-        // limit roll angle to half the allowed pitch angle and attenuate when closer to home
-        // keep some roll when at the landing circle distance to avoid endless circling
-        const float proximityToHome = constrainf(rescueState.sensor.distanceToHomeM / rescueState.intent.descentDistanceM, 0.0f, 1.0f);
-        rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * proximityToHome;
     }
 
-    // ensure we have full yaw authority in case we entered descent mode without enough time in fly home to acquire it gracefully
-    rescueState.intent.yawAttenuator = 1.0f;
+    DEBUG_SET(DEBUG_RTH, 2, rescueState.phase);
 
-    // set the altitude step, considering the interval between altitude readings and the descent rate
-    float altitudeStepCm = taskIntervalSeconds * gpsRescueConfig()->descendRate;
+    static timeUs_t lastSanityCheck = 0;
+    if (!oneSecondPassed(currentTimeUs, &lastSanityCheck)) {
+        return;
+    }
 
-    // at or below 10m: descend at 0.6x set value; above 10m, descend faster, to max 3.0x at 50m
-    altitudeStepCm *= scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
+    if (!rescueState.sensor.gpsHealthy) {
+        rescueState.failure = RESCUE_GPSLOST;
+    }
+    
+    secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
+    secondsLowSats = MAX(0, secondsLowSats);
+    if (secondsLowSats >= 15) {
+        rescueState.failure = RESCUE_LOWSATS;
+    }
 
-    rescueState.intent.targetAltitudeVelCmS = (taskIntervalSeconds > 1e-6f) ? (-altitudeStepCm / taskIntervalSeconds) : 0.0f;
-    rescueState.intent.targetAltitudeCm -= altitudeStepCm;
+    const float measuredAltitudeChange = getAltitudeCm() - prevAltitudeCm;
+    prevAltitudeCm = getAltitudeCm();
+    const float targetAltitudeChange = rescueState.intent.targetAltitudeCm - prevTargetAltitudeCm;
+    prevTargetAltitudeCm = rescueState.intent.targetAltitudeCm;
+
+    float altitudeControlError;
+    if (targetAltitudeChange == 0.0f) {
+        altitudeControlError = fabsf(measuredAltitudeChange);
+    } else {
+        altitudeControlError = measuredAltitudeChange / targetAltitudeChange;
+    }
+
+    const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm; 
+    previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
+
+    switch (rescueState.phase) {
+    case RESCUE_ATTAIN_ALT:
+        rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
+        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+        if (rescueState.intent.secondsFailing >= 10) {
+            rescueState.intent.targetAltitudeCm = getAltitudeCm();
+            rescueState.failure = RESCUE_STALLED;
+            rescueState.intent.secondsFailing = 0;
+        }
+        break;
+
+    case RESCUE_PITCH_FORWARD:
+        // attempting to re-orient IMU by forcing pitch forward
+        rescueState.intent.secondsFailing += 1;
+        if (rescueState.intent.secondsFailing >= 15) {
+            pitchForwardOverride(false); //give up after 15s  TODO: check if this is enough time or too much
+            rescueEmergDescent();
+            rescueState.intent.secondsFailing = 0;
+        }
+        break;
+
+     case RESCUE_ROTATE:
+        rescueState.intent.secondsFailing += 1;
+        if (rescueState.intent.secondsFailing >= 10) {
+            //almost never fails to rotate to the required angle, so this should never trigger
+            // does not evaluate whether  attitude.values.yaw  is correct
+            rescueState.phase = RESCUE_FLY_HOME;
+            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
+            rescueState.intent.secondsFailing = 0;
+        }
+         break;
+
+    case RESCUE_FLY_HOME:
+        rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
+        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+        if (rescueState.intent.secondsFailing >= 20) {
+            rescueState.intent.secondsFailing = 0;
+            rescueState.failure = RESCUE_FLYAWAY;
+        }
+        break;
+    case RESCUE_DO_NOTHING:
+        secondsDoingNothing = secondsDoingNothing + 1;
+        if (secondsDoingNothing >= 15) {
+            secondsDoingNothing = 0;
+            rescueState.phase = RESCUE_DESCENT;
+        }
+        break;
+    case RESCUE_DESCENT:
+        rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
+        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+        if (rescueState.intent.secondsFailing >= 15) {
+            rescueState.phase = RESCUE_LANDING;
+            rescueState.intent.secondsFailing = 0;
+        }
+        break;
+    case RESCUE_LANDING:
+        rescueState.intent.secondsFailing += altitudeControlError > 0.5f ? -1 : 1;
+        rescueState.intent.secondsFailing = MAX(0, rescueState.intent.secondsFailing);
+        if (rescueState.intent.secondsFailing >= 15) {
+            rescueDisarmNow();
+        }
+        break;
+    default:
+        break;
+    }
 }
 
-static void initialiseRescueValues (void)
+
+static void initDescent(void)
 {
-    rescueState.intent.secondsFailing = 0; // reset the sanity check timer
-    rescueState.intent.yawAttenuator = 0.0f; // no yaw in the climb
-    rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS; // avoid snap from D at the start
-    rescueState.intent.rollAngleLimitDeg = 0.0f; // no roll until flying home
-    rescueState.intent.velocityPidCutoffModifier = 1.0f; // normal velocity lowpass filter cutoff
-    rescueState.intent.pitchAngleLimitDeg = 0.0f; // force pitch adjustment to zero - level mode will level out
-    rescueState.intent.velocityItermAttenuator = 1.0f; // allow iTerm to accumulate normally unless constrained by IMU error or descent phase
-    rescueState.intent.velocityItermRelax = 0.0f; // but don't accumulate any at the start, not until fly home
+    if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
+        rescueState.intent.descentDistanceCm = rescueState.sensor.distanceToHomeCm;
+    }
+}
+static void descend(void)
+{
+   if (rescueState.intent.descentDistanceCm > GPS_RESCUE_ACCEPT_RADIUS) {
+        float attenuator = rescueState.sensor.distanceToHomeCm / rescueState.intent.descentDistanceCm;
+        attenuator = constrainf(attenuator, 0.0f, 1.0f);
+        rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * attenuator;
+    } else {
+        rescueState.intent.targetVelocityCmS = 0.0f;
+    }
+    float verticalVelMax = -(float)gpsRescueConfig()->descendRate;
+    float verticalVelAttenuator = scaleRangef(constrainf(rescueState.intent.targetAltitudeCm, 1000, 5000), 1000, 5000, 0.6f, 3.0f);
+    rescueState.intent.targetAltitudeVelCmS = verticalVelMax * verticalVelAttenuator;
+    rescueYawRate = 0.0f; // keep yaw rate  zero in case we float past the home point
+}
+
+void initRescueValues(void)
+{
+   rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
+    if (rescueState.sensor.distanceToHomeCm < gpsRescueConfig()->minStartDistM * 100.0f) {
+        // 7.5m high for close-range headroom
+        rescueState.intent.returnAltitudeCm = fmaxf(750.0f, rescueState.sensor.currentAltitudeCm + rescueState.intent.initialClimbCm);
+    } else {
+        // Set return altitude according to user configuration
+        switch (gpsRescueConfig()->altitudeMode) {
+            case GPS_RESCUE_ALT_MODE_FIXED:
+                rescueState.intent.returnAltitudeCm = gpsRescueConfig()->returnAltitudeM * 100.0f;
+                break;
+            case GPS_RESCUE_ALT_MODE_CURRENT:
+                // Climb above current altitude, but always return at least initial height above takeoff point
+                rescueState.intent.returnAltitudeCm = fmaxf(rescueState.intent.initialClimbCm, rescueState.sensor.currentAltitudeCm + rescueState.intent.initialClimbCm);
+                break;
+            case GPS_RESCUE_ALT_MODE_MAX:
+            default:
+                rescueState.intent.returnAltitudeCm = rescueState.intent.maxAltitudeCm + rescueState.intent.initialClimbCm;
+                break;
+        }
+    }
+    rescueState.intent.targetAltitudeCm = rescueState.sensor.currentAltitudeCm;  // Initial target altitude is current filtered altitude
+
+    rescueState.sensor.errorAngleDeg = 0.0f;       // Prevent yaw adjustments
+    rescueYawRate = 0.0f;                          // No yaw until climb is complete
+    rescueState.intent.targetVelocityCmS = 0.0f;   // Zero initial velocity
+    clearTargetStep();
     rescueState.intent.targetAltitudeVelCmS = 0.0f;
+    rescueState.sensor.velocityCmS = 0.0f;
+    rescueState.intent.yawAttenuator = 0.0f;       // For a smooth start to the yaw
+    rescueState.intent.xyAttenuator = 0.0f;        // For a slower start to gaining velocity
+
+    resetAltitudeControl(); // Initialise altitude in autopilot multirotor
+    resetPositionControl(TASK_GPS_RESCUE_RATE_HZ); // Initialise position control in autopilot multirotor
+
 }
 
-void gpsRescueUpdate(void)
-// runs at gpsRescueTaskIntervalSeconds, and runs whether or not rescue is active
+static void checkGPSRescueIsAvailable(void)
 {
-    static uint16_t gpsStamp = 0;
-    bool newGpsData = gpsHasNewData(&gpsStamp);
+rescueState.isAvailable = STATE(GPS_FIX_HOME) && rescueState.sensor.gpsHealthy && rescueState.sensor.isHeadingOK && isAltitudeAvailable() && rescueState.sensor.positionXYAvailable;
+        // Flash "RESCUE N/A" in the OSD if false
+        // Note that GPS_FIX_HOME is set at arm time, and requires a 3D fix and minSats at that time
+}
 
+
+void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
+{
     if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        rescueStop(); // sets phase to RESCUE_IDLE; does nothing else.  RESCUE_IDLE tasks still run.
+        rescueStop(); // sets phase to RESCUE_IDLE
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE) && rescueState.phase == RESCUE_IDLE) {
-        rescueStart(); // sets phase to rescue_initialise if we enter GPS Rescue mode while idle
-        rescueAttainPosition(false); // Initialise basic parameters when a Rescue starts (can't initialise sensor data reliably)
-        performSanityChecks(); // Initialises sanity check values when a Rescue starts
+        rescueStart(); // sets phase to RESCUE_INITIALIZE
     }
-    // Will now be in RESCUE_INITIALIZE mode, if just entered Rescue while IDLE, otherwise stays IDLE
-
-    sensorUpdate(newGpsData); // always get latest GPS and Altitude data, update ascend and descend rates
+    sensorUpdate(); // get latest velocity to home and Altitude data, set some defaults
+    checkGPSRescueIsAvailable();
+    performSanityChecks();
 
     static bool returnAltitudeLow = true;
-    static bool initialVelocityLow = true;
-    rescueState.isAvailable = checkGPSRescueIsAvailable();
 
     switch (rescueState.phase) {
     case RESCUE_IDLE:
-        // in Idle phase = NOT in GPS Rescue
-        // update the return altitude and descent distance values, to have valid settings immediately they are needed
-        setReturnAltitude(newGpsData);
+        updateMaxAltitude();
         break;
-        // sanity checks are bypassed in IDLE mode; instead, failure state is always initialised to HEALTHY
-        // target altitude is always set to current altitude.
-
+        
     case RESCUE_INITIALIZE:
-        // Things that should be done at the start of a Rescue
+        returnAltitudeLow = getAltitudeCm() < rescueState.intent.returnAltitudeCm;
         if (!STATE(GPS_FIX_HOME)) {
-            // we didn't get a home point on arming
             rescueState.failure = RESCUE_NO_HOME_POINT;
-            // will result in a disarm via the sanity check system, or float around if switch induced
         } else {
-            if (rescueState.sensor.distanceToHomeM < 5.0f && isBelowLandingAltitude()) {
-                // attempted initiation within 5m of home, and 'on the ground' -> instant disarm, for safety reasons
-                rescueState.phase = RESCUE_ABORT;
+            if (rescueState.sensor.distanceToHomeCm < GPS_RESCUE_ACCEPT_RADIUS && isBelowLandingAltitude()) {
+                rescueState.phase = RESCUE_DO_NOTHING;
             } else {
-                // attempted initiation within minimum rescue distance requires us to fly out to at least that distance
-                if (rescueState.sensor.distanceToHomeM < gpsRescueConfig()->minStartDistM) {
-                    // climb above current height by buffer height, to at least 10m altitude
-                    rescueState.intent.returnAltitudeCm = fmaxf(1000.0f, getAltitudeCmControl() + (gpsRescueConfig()->initialClimbM * 100.0f));
-                    // note that the pitch controller will pitch forward to fly out to minStartDistM
-                    // set the descent distance to half the minimum rescue distance. which we should have moved out to in the climb phase
-                    rescueState.intent.descentDistanceM = 0.5f * gpsRescueConfig()->minStartDistM;
-                }
-                // otherwise behave as for a normal rescue
-                initialiseRescueValues ();
-                returnAltitudeLow = getAltitudeCmControl() < rescueState.intent.returnAltitudeCm;
+                initRescueValues(); // fix the target location
+                returnAltitudeLow = rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm;
                 rescueState.phase = RESCUE_ATTAIN_ALT;
             }
         }
         break;
 
     case RESCUE_ATTAIN_ALT:
-        // gradually increment the target altitude until the craft reaches target altitude
-        // note that this can mean the target altitude may increase above returnAltitude if the craft lags target
-        // sanity check will abort if altitude gain is blocked for a cumulative period
-        if (returnAltitudeLow == (getAltitudeCmControl() < rescueState.intent.returnAltitudeCm)) {
-            // we started low, and still are low; also true if we started high, and still are too high
-            const float rateCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
-            rescueState.intent.targetAltitudeCm += rateCmS * taskIntervalSeconds;
-            rescueState.intent.targetAltitudeVelCmS = rateCmS;
-
+        clearTargetStep(); // don't change the target location
+        if (returnAltitudeLow == (rescueState.sensor.currentAltitudeCm < rescueState.intent.returnAltitudeCm)) {
+            rescueState.intent.targetAltitudeVelCmS = returnAltitudeLow ? (float)gpsRescueConfig()->ascendRate : -(float)gpsRescueConfig()->descendRate;
         } else {
-            // target altitude achieved - move on to ROTATE phase, returning at target altitude
+            // climb target achieved
             rescueState.intent.targetAltitudeCm = rescueState.intent.returnAltitudeCm;
             rescueState.intent.targetAltitudeVelCmS = 0.0f;
-            // if initiated too close, do not rotate or do anything else until sufficiently far away that a 'normal' rescue can happen
-            if (rescueState.sensor.distanceToHomeM > gpsRescueConfig()->minStartDistM) {
-                rescueState.phase = RESCUE_ROTATE;
+            rescueState.intent.secondsFailing = 0;
+            if (!rescueState.sensor.isHeadingOK) {
+                rescueState.phase = RESCUE_PITCH_FORWARD;
+            } else {
+            rescueState.phase = RESCUE_ROTATE;
             }
         }
+        break;
 
-        // give velocity P and I no error that otherwise could be present due to velocity drift at the start of the rescue
-        rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS;
+    case RESCUE_PITCH_FORWARD:
+        if (!rescueState.sensor.isHeadingOK) { // sanity check allows 15s for this to be true
+            clearTargetStep();
+            rescueYawRate = 0.0f;
+            rescueState.intent.targetVelocityCmS = 0.0f;
+            pitchForwardOverride(true); // instructs autopilot to apply forward pitch angle to recover IMU
+        } else {
+            pitchForwardOverride(false);
+            initPositionHold(); // re-anchor position target at the current location
+            rescueState.phase = RESCUE_ROTATE;
+            rescueState.intent.secondsFailing = 0;
+        }
         break;
 
     case RESCUE_ROTATE:
-        if (rescueState.intent.yawAttenuator < 1.0f) { // acquire yaw authority over one second
-            rescueState.intent.yawAttenuator += taskIntervalSeconds;
+        clearTargetStep(); // don't change the target location
+        updateYawStartupAttenuator();
+        controlYaw();
+        if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
+            rescueState.phase = RESCUE_FLY_HOME; 
+            rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
+            rescueState.intent.secondsFailing = 0;
         }
-        if (rescueState.sensor.absErrorAngle < GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            // enter fly home phase, and enable pitch, when the yaw angle error is small enough
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
-            rescueState.phase = RESCUE_FLY_HOME; // enter fly home phase
-            rescueState.intent.secondsFailing = 0; // reset sanity timer for flight home
-        }
-        initialVelocityLow = rescueState.sensor.velocityToHomeCmS < gpsRescueConfig()->groundSpeedCmS; // used to set direction of velocity target change
-        rescueState.intent.targetVerticalVelocityCmS = rescueState.sensor.velocityToHomeCmS;
         break;
 
     case RESCUE_FLY_HOME:
-        if (rescueState.intent.yawAttenuator < 1.0f) { // be sure to accumulate full yaw authority
-            rescueState.intent.yawAttenuator += taskIntervalSeconds;
-        }
-        // velocity PIDs are now active
-        // update target velocity gradually, aiming for rescueGroundspeed with a time constant of 1.0s
-        const float targetVerticalVelocityError = gpsRescueConfig()->groundSpeedCmS - rescueState.intent.targetVerticalVelocityCmS;
-        const float velocityTargetStep = taskIntervalSeconds * targetVerticalVelocityError;
-        // velocityTargetStep is positive when starting low, negative when starting high
-        const bool targetVerticalVelocityIsLow = rescueState.intent.targetVerticalVelocityCmS < gpsRescueConfig()->groundSpeedCmS;
-        if (initialVelocityLow == targetVerticalVelocityIsLow) {
-            // also true if started faster than target velocity and target is still high
-            rescueState.intent.targetVerticalVelocityCmS += velocityTargetStep;
-        }
-
-        // slowly introduce velocity iTerm accumulation at start, goes 0 ->1 with time constant 2.0s
-        rescueState.intent.velocityItermRelax += 0.5f * taskIntervalSeconds * (1.0f - rescueState.intent.velocityItermRelax);
-        // there is always a lot of lag at the start, this gradual start avoids excess iTerm accumulation
-
-        rescueState.intent.velocityPidCutoffModifier = 2.0f - rescueState.intent.velocityItermRelax;
-        // higher velocity filter cutoff for initial few seconds to improve accuracy; can be smoother later
-
-        if (newGpsData) {
-            // cut back on allowed angle if there is a high groundspeed error
-            rescueState.intent.pitchAngleLimitDeg = gpsRescueConfig()->maxRescueAngle;
-            // introduce roll slowly and limit to half the max pitch angle; earth referenced yaw may add more roll via angle code
-            rescueState.intent.rollAngleLimitDeg = 0.5f * rescueState.intent.pitchAngleLimitDeg * rescueState.intent.velocityItermRelax;
-            if (rescueState.sensor.distanceToHomeM <= rescueState.intent.descentDistanceM) {
-                rescueState.phase = RESCUE_DESCENT;
-                rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
-            }
+    updateVelocityStartupAttenuator();
+        calculateTargetStep();
+        controlYaw();
+        if (rescueState.sensor.distanceToHomeCm < rescueState.intent.descentDistanceCm) {
+            rescueState.phase = RESCUE_DESCENT; // enter descend phase
+            initDescent();
+            rescueState.intent.secondsFailing = 0; // reset sanity timer for descent
         }
         break;
 
     case RESCUE_DESCENT:
-        // attenuate velocity and altitude targets while updating the heading to home
+        updateVelocityStartupAttenuator();
+        descend(); // sets a negstive targetAltitudeVelocity
+        calculateTargetStep();
         if (isBelowLandingAltitude()) {
             // enter landing mode once below landing altitude
             rescueState.phase = RESCUE_LANDING;
             rescueState.intent.secondsFailing = 0; // reset sanity timer for landing
         }
-        descend(newGpsData);
         break;
 
     case RESCUE_LANDING:
-        // Reduce altitude target steadily until impact, then disarm.
-        // control yaw angle and throttle and pitch, attenuate velocity, roll and pitch iTerm
-        // increase velocity smoothing cutoff as we get closer to ground
-        descend(newGpsData);
-        disarmOnImpact();
+        descend();
+        clearTargetStep();
+        // same as Descent mode
         break;
 
-    case RESCUE_ABORT:
-        setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
-        disarm(DISARM_REASON_FAILSAFE);
-        rescueState.intent.secondsFailing = 0; // reset sanity timers so we can re-arm
-        rescueStop();
+    case RESCUE_EMERG_DESCENT:
+        descend();
+        vector2Zero(&rescueState.intent.stepEF);
+        moveTargetLocation(&rescueState.intent.stepEF, TASK_GPS_RESCUE_RATE_HZ, true); // stop position control
+
         break;
 
     case RESCUE_DO_NOTHING:
-        disarmOnImpact();
+    clearTargetStep();
+    rescueState.intent.targetAltitudeVelCmS = 0.0f;
+    rescueYawRate = 0.0f;
+    // altitude control with no change in height or heading,  position control at zero target velocity
+
         break;
 
     default:
         break;
     }
 
+    DEBUG_SET(DEBUG_GPS_RESCUE_VELOCITY, 1, rescueState.phase);
+    DEBUG_SET(DEBUG_ATTITUDE,            5, rescueState.phase);
+    DEBUG_SET(DEBUG_ATTITUDE,            6, lrintf(rescueState.intent.targetVelocityCmS));
     DEBUG_SET(DEBUG_GPS_RESCUE_TRACKING, 3, lrintf(rescueState.intent.targetAltitudeCm));
-    DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.intent.maxAltitudeCm / 10.0f));
+    DEBUG_SET(DEBUG_RTH,                 7, lrintf(rescueState.intent.targetVelocityCmS));
+    DEBUG_SET(DEBUG_RTH, 0, lrintf(rescueState.sensor.velocityCmS / 10.0f));
 
-    performSanityChecks();
-    rescueAttainPosition(newGpsData);
+
+
+    // Autopilot control of altitude is always active when rescue mode is engaged
+    if (rescueState.phase > RESCUE_INITIALIZE) {
+        rescueState.intent.targetAltitudeCm += rescueState.intent.targetAltitudeVelCmS * gpsRescueTaskIntervalSeconds;
+        controlAltitude();
+    }
 }
 
 float gpsRescueGetYawRate(void)
 {
-    return rescueYaw; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
-}
-
-float gpsRescueGetImuYawCogGain(void)
-{
-    return rescueState.sensor.imuYawCogGain; // to speed up the IMU orientation to COG when needed
+    return rescueYawRate; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
 }
 
 bool gpsRescueIsConfigured(void)
@@ -919,23 +710,18 @@ bool gpsRescueIsConfigured(void)
 
 bool gpsRescueIsAvailable(void)
 {
-    return rescueState.isAvailable; // flashes the warning when not available (low sats, etc)
+    return rescueState.isAvailable; // when false, flashes `RESCUE N/A` when not available (IMU disoriented, no Home Point)
 }
 
-bool gpsRescueIsDisabled(void)
-// used for OSD warning, needs review
+bool gpsRescueIsHeadingOK(void)
 {
-    return (!STATE(GPS_FIX_HOME));
+    return rescueState.sensor.isHeadingOK; // when false, flashes `HEADING N/A` until IMU is oriented
 }
 
-#ifdef USE_MAG
-bool gpsRescueDisableMag(void)
+bool gpsRescueIsOK(void)
 {
-    // Enable mag on user request, but don't use it during fly home or if force disabled
-    // Note that while flying home the course over ground from GPS provides a heading that is less affected by wind
-    return !(gpsRescueConfig()->useMag && rescueState.phase != RESCUE_FLY_HOME && !magForceDisable);
+    return rescueState.isOK; // when false, flashes `RESCUE FAIL` in OSD when failure time exceeds 5s or when in a failure mode
 }
-#endif
-#endif
 
+#endif // USE_GPS_RESCUE
 #endif // !USE_WING
