@@ -237,6 +237,7 @@
 #define MSP_SET_RAW_RC                  200  // in message:  8 rc chan
 #define MSP_SET_RAW_GPS                 201  // in message:  Fix, numsat, lat, lon, alt, speed
 #define MSP_SET_PID                     202  // in message:  P I D coeff (9 are used currently)
+#define MSP_SET_WING                    203  // in message:  Set WING settings
 #define MSP_SET_RC_TUNING               204  // in message:  RC rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define MSP_ACC_CALIBRATION             205  // in message:  No param - calibrate accelerometer
 #define MSP_MAG_CALIBRATION             206  // in message:  No param - calibrate magnetometer
@@ -259,7 +260,6 @@
 #define MSP_SET_GPS_RESCUE_PIDS         226  // in message:  Set GPS Rescue PID values
 #define MSP_SET_VTXTABLE_BAND           227  // in message:  Set vtxTable band/channel data
 #define MSP_SET_VTXTABLE_POWERLEVEL     228  // in message:  Set vtxTable powerLevel data
-#define MSP_SET_WING                    230  // in message:  Set WING settings
 
 // Multiple MSP and special commands (230-255)
 #define MSP_MULTIPLE_MSP                230  // out message: Request multiple MSPs in one request
