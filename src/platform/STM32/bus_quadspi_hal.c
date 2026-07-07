@@ -808,10 +808,12 @@ void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
     }
 
     quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
+    HAL_StatusTypeDef status;
 
     busSegment_t *curSegment = segments;
 
     bool csNegated = true;
+    bool timeout = false;
 
     while (curSegment->len) {
         if (csNegated) {
@@ -822,12 +824,18 @@ void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
         if (curSegment->u.buffers.txData) {
             /* Configure QSPI: DLR register with the number of data to write */
             WRITE_REG(quadSpiDevice[device].halHandle->hal.Instance->DLR, curSegment->len - 1U);
-            HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.txData, QUADSPI_DEFAULT_TIMEOUT);
+            status = HAL_QSPI_Transmit(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.txData, QUADSPI_DEFAULT_TIMEOUT);
+            timeout = (status != HAL_OK);
         }
-        if (curSegment->u.buffers.rxData) {
+        if (!timeout && curSegment->u.buffers.rxData) {
             /* Configure QSPI: DLR register with the number of data to read */
             WRITE_REG(quadSpiDevice[device].halHandle->hal.Instance->DLR, curSegment->len - 1U);
-            HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.rxData, QUADSPI_DEFAULT_TIMEOUT);
+            status = HAL_QSPI_Receive(&quadSpiDevice[device].halHandle->hal, (uint8_t *)curSegment->u.buffers.rxData, QUADSPI_DEFAULT_TIMEOUT);
+            timeout = (status != HAL_OK);
+        }
+
+        if (timeout) {
+            break;
         }
 
         if (curSegment->negateCS) {
@@ -841,6 +849,10 @@ void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
 
     if (!csNegated) {
         quadSpiDeselectDevice(dev->bus->busType_u.qspi.instance);
+    }
+
+    if (timeout) {
+        quadSpiTimeoutUserCallback(dev->bus->busType_u.qspi.instance);
     }
 }
 #endif
