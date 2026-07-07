@@ -2448,7 +2448,7 @@ static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t time
 
 #ifdef USE_RTC_TIME
 // Set system clock once when GPS time is available
-static void setRtcDateTimeFromGps(void)
+static void setRtcDateTimeFromGps(void) {
     if (!rtcHasTime() && gpsSol.dateTime.valid) {
         dateTime_t dt;
         dt.year = gpsSol.dateTime.year;
