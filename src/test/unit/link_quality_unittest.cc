@@ -485,6 +485,7 @@ extern "C" {
     uint8_t getBatteryCellCount() { return 4; }
     uint16_t getBatteryVoltage() { return 1680; }
     uint16_t getBatteryAverageCellVoltage() { return  420; }
+    uint8_t calculateBatteryPercentageRemaining(void) { return  0; }
     int32_t getAmperage() { return 0; }
     int32_t getMAhDrawn() { return 0; }
     float getWhDrawn() { return 0.0; }

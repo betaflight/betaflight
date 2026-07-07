@@ -814,6 +814,7 @@ const spiHardware_t spiHardware[] = {
         .mosiPins = {
             { DEFIO_TAG_E(PA7), GPIO_AF5 },
             { DEFIO_TAG_E(PD7), GPIO_AF3 },
+            { DEFIO_TAG_E(PB5), GPIO_AF5 },
         },
         .rcc = RCC_APB2_2(SPI1),
     },
@@ -862,6 +863,7 @@ const spiHardware_t spiHardware[] = {
                 { DEFIO_TAG_E(PB2), GPIO_AF6 },
                 { DEFIO_TAG_E(PC12), GPIO_AF5 },
                 { DEFIO_TAG_E(PD6), GPIO_AF5 },
+                { DEFIO_TAG_E(PB5), GPIO_AF6 },
             },
             .rcc = RCC_APB1_2(SPI3),
         },
@@ -883,6 +885,7 @@ const spiHardware_t spiHardware[] = {
             },
             .mosiPins = {
                 { DEFIO_TAG_E(PA7), GPIO_AF6 },
+                { DEFIO_TAG_E(PB5), GPIO_AF7 },
                 { DEFIO_TAG_E(PG14), GPIO_AF6 },
             },
             .rcc = RCC_APB5_1(SPI4),

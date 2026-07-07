@@ -82,8 +82,18 @@ void systemResetToBootloader(bootloaderRequestType_e requestType)
     NVIC_SystemReset();
 }
 
-// STM32H5 system flash (ROM bootloader) base address
-#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)FLASH_SYSTEM_BASE_NS)
+// STM32H5 system bootloader vector-table address (AN2606).
+// This is the bootloader entry point, NOT the FLASH_SYSTEM_BASE_NS region base
+// (0x0BF80000): reading the initial SP / reset vector from the region base lands
+// on garbage, so the software `bl`/MSP DFU request never enters the bootloader
+// while the hardware BOOT pin still works (the ROM handles that path itself).
+#if defined(STM32H562xx) || defined(STM32H563xx) || defined(STM32H573xx)
+#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x0BF97000)
+#elif defined(STM32H503xx)
+#define SYSMEMBOOT_VECTOR_TABLE ((uint32_t *)0x0BF87000)
+#else
+#error "STM32H5: system bootloader address unknown for this part (see AN2606)"
+#endif
 
 typedef void *(*bootJumpPtr)(void);
 

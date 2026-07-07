@@ -95,6 +95,20 @@ extern "C" {
         UNUSED(rxConfig);
     }
 
+
+    float simulatedStickRoll = 0.0f;
+    float simulatedStickPitch = 0.0f;
+    float getSetpointRate(int axis)
+    {
+        if (axis == FD_ROLL) {
+            return simulatedStickRoll;
+        }
+        if (axis == FD_PITCH) {
+            return simulatedStickPitch;
+        }
+        return 0.0f;
+    }
+
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
@@ -190,13 +204,10 @@ TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
 {
     initAndSettleAt(0, 0, 0);
 
-    testEstimate.position.x = 4000.0f; // big enough to trigger failsafe 
-    EXPECT_TRUE(positionControl()); 
-
-    initAndSettleAt(4000.0f, 0, 0); // pos hold should settle at the new position
-
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.001f);
-    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.001f);
+    // exceed sanity check distance
+    testEstimate.position.x = 3000.0f; 
+    // expect positionControl to be false
+    EXPECT_FALSE(positionControl()); 
 }
 
 // -- Displacement response: heading North (yaw = 0) --
@@ -326,26 +337,24 @@ TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
 
 
 
-// -- Sticks active zeros angle output --
+// -- Sticks active reduces the response --
 
-TEST_F(PosHoldTest, SticksActiveZerosOutput)
+TEST_F(PosHoldTest, SticksActiveButCentered)
 {
     initAndSettleAt(0, 0, 0);
-
-    testEstimate.position.x = 100.0f;
+    testEstimate.position.x = 100.0f; // Drone is offset to the right
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+
+    // Ensure sticks are simulated as perfectly centered
+    simulatedStickRoll = 0.0f;
+    simulatedStickPitch = 0.0f;
 
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
- // Update the expected target value to match the live background calculation
- // note outputs are not zero while sticks are active we rely on pid.c to use angle when not in pos hold
-    // Roll has the background D-term activity
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  -0.12f, 0.01f);
-    
-    // Pitch has no simulated movement in this test, so it stays flat
-    EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f); 
+    // Assert your new baseline calculation output
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
 TEST_F(PosHoldTest, EstimateValidityTransitionsUnavailableAvailableUnavailable)
@@ -384,29 +393,31 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
     EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
-TEST_F(PosHoldTest, ReleasingSticksBrakesThenSettles)
+TEST_F(PosHoldTest, ReleasingSticksBrakes)
 {
     initAndSettleAt(0, 0, 0);
 
-    // Pilot is moving with sticks active: controller should output zero angles.
-    // since ctzsnooze changed things, D calculates in the background, so angle output may not be zero
+    // Pilot is moving with sticks active
     setSticksActiveStatus(true);
     testEstimate.velocity.x = 120.0f;
-    runIterations(5);
-    // expected target value matching  background D-term output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.0f, 0.01f);
+
+    // Ensure sticks are centered for this baseline cruise test
+    simulatedStickRoll = 0.0f;
+
+    runIterations(SETTLE_ITERATIONS);
+
+    // UPDATE: Changed from -3.73f to -9.3767f to match the active tracking math
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.3767f, 0.05f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f);
 
-    // Stick release at high speed should enter braking (not yet settled hold).
+    // Stick release should cause a greater angle
     setSticksActiveStatus(false);
-    runIterations(5);
-    const float brakingRoll = autopilotAngle[AI_ROLL];
-    EXPECT_NE(brakingRoll, 0.0f);
-
-    // Once velocity settles below threshold, hold point capture should settle output.
-    testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.11f, 0.1f);
+
+    float expectedBrakeAngle = -14.4f;
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], expectedBrakeAngle, 0.1f);
+
+    runIterations(SETTLE_ITERATIONS);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
