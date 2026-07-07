@@ -808,7 +808,7 @@ void quadSpiSequence(const extDevice_t *dev, busSegment_t *segments)
     }
 
     quadSpiDevice_e device = quadSpiDeviceByInstance(dev->bus->busType_u.qspi.instance);
-    HAL_StatusTypeDef status;
+    HAL_StatusTypeDef status = HAL_OK;
 
     busSegment_t *curSegment = segments;
 
