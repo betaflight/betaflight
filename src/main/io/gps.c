@@ -2508,7 +2508,7 @@ static bool UBLOX_parse_gps(void)
         // Store GPS date/time for telemetry, applying nano correction per u-blox spec.
         gpsDateTimeFromNavPvt(&gpsSol.dateTime, &ubxRcvMsgPayload.ubxNavPvt);
 #ifdef USE_RTC_TIME
-        set_rtc_date_time_from_gps();
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
@@ -2597,7 +2597,7 @@ static bool UBLOX_parse_gps(void)
                                   ubxRcvMsgPayload.ubxNavSol.time_nsec);
         }
 #ifdef USE_RTC_TIME
-        set_rtc_date_time_from_gps();
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_VELNED):
@@ -2612,7 +2612,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.velned.velD = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_down; // cm/s
         ubxHaveNewSpeed = true;
 #ifdef USE_RTC_TIME
-        set_rtc_date_time_from_gps();
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SVINFO):
