@@ -198,7 +198,7 @@ void autopilotCaptureHoverThrottleForAltHold(void)
 {
     if (autopilotConfig()->hoverThrottle != 0) {
         altHoldCapturedHoverPwm = 0;
-         return;
+        return;
     }
     altHoldCapturedHoverPwm = (uint16_t)lrintf(constrainf(rcCommand[THROTTLE], (float)AP_HOVER_THROTTLE_CAPTURE_MIN, (float)AP_HOVER_THROTTLE_CAPTURE_MAX));
 }
@@ -228,7 +228,7 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float absVerticalVelocity = fabsf(verticalVelocity);
     if (absVerticalVelocity > boostThreshold) {
         const float ratio = absVerticalVelocity / boostThreshold;
-         dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
+        dBoost = (3.0f * ratio - 2.0f) / ratio; // 1 at 5m/s, 2 at 10m/s...
     }
     const float altitudeD = velocityError * altitudeKd * dBoost;
     const float altitudeF = targetVerticalVelocity * altitudeKf;
@@ -280,19 +280,19 @@ void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool force
         abortNavRequested = true;
     } else {
         // Force the flag back to false when a normal tracking pass runs
-        abortNavRequested = false; 
+        abortNavRequested = false;
 
         if (stepEF != NULL) {
-             targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
+            targetPosition.v[EF_EAST]  += stepEF->v[EF_EAST];
             targetPosition.v[EF_NORTH] += stepEF->v[EF_NORTH];
             targetVelocity.v[EF_EAST]  = stepEF->v[EF_EAST] * taskRateHz;
-            targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz ;
+            targetVelocity.v[EF_NORTH] = stepEF->v[EF_NORTH] * taskRateHz;
             posHoldStartPosition = targetPosition; // update start point to new target to prevent poshold sanity failure
         }
     }
 }
 
-void pitchForwardOverride (bool request)
+void pitchForwardOverride(bool request)
 {
     forcePitchForward = request;
 }
@@ -315,7 +315,7 @@ static void resetDistanceErrorIntegral(void)
 
 void initPositionHold(void)
 {
-     updatePositionHoldTarget();
+    updatePositionHoldTarget();
     resetDistanceError();
     isPosHoldStarting[EF_EAST]  = true;
     isPosHoldStarting[EF_NORTH] = true;
@@ -376,7 +376,7 @@ void sticksMoveTarget(void)
     targetPosition.v[EF_NORTH] += targetVelocity.v[EF_NORTH] * dt;
     targetPosition.v[EF_EAST]  += targetVelocity.v[EF_EAST] * dt;
 
-    posHoldStartPosition = targetPosition; 
+    posHoldStartPosition = targetPosition;
 }
 
 
@@ -390,7 +390,7 @@ bool positionControl(void)
     if (!est->isValidXY) {
         return false;
     }
-     if (abortNavRequested) {
+    if (abortNavRequested) {
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
     }
@@ -434,7 +434,7 @@ bool positionControl(void)
             // In posHold
             if (ap.sticksActive) {
                 if (!ap.wasSticksActive) {
-                    initPositionHold(); // resets hold point and enables strong braking mode 
+                    initPositionHold(); // resets hold point and enables strong braking mode
                     initialVelocity = velocity; // Captures current speed for the deceleration math
                 }
                 sticksMoveTarget();
@@ -491,7 +491,7 @@ bool positionControl(void)
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
         velocityError.v[axis] *= dTermRamp.v[axis];
-        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ * dTermRamp.v[axis]; 
+        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ * dTermRamp.v[axis];
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
 
@@ -531,12 +531,12 @@ bool positionControl(void)
         vector2Scale(&angleV, &angleV, scale);
     }
 
-    autopilotAngle[AI_ROLL]  = -angleV.v[AI_ROLL];  
-    autopilotAngle[AI_PITCH] =  angleV.v[AI_PITCH]; 
+    autopilotAngle[AI_ROLL]  = -angleV.v[AI_ROLL];
+    autopilotAngle[AI_PITCH] =  angleV.v[AI_PITCH];
 
     int statusValue = 0;
     if (ap.navActive)       statusValue += 10;
-    if(abortNavRequested)   statusValue += 100;
+    if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocityError.v[ap.debugAxis])); // velocity error

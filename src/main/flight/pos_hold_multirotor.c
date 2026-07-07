@@ -99,13 +99,12 @@ void updatePosHold(timeUs_t currentTimeUs) {
         posHold.isEnabled = false;
     }
 
-    if (posHold.isEnabled) { 
+    if (posHold.isEnabled) {
         posHoldCheckSticks();
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
             posHold.isControlOk = positionControl();
         } else {
-
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
                 autopilotAngle[i] = 0.0f;
             }
