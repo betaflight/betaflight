@@ -508,7 +508,7 @@ MMFLASH_CODE static uint32_t w25q128fv_pageProgramContinue(flashDevice_t *fdevic
         bool writable = false;
         do {
             writable = w25q128fv_isWritable(fdevice);
-        } while (!writable && w25q128fv_hasTimedOut(fdevice));
+        } while (!writable && !w25q128fv_hasTimedOut(fdevice));
         if (!writable) {
             return 0;
         }
