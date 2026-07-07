@@ -53,8 +53,6 @@
 #define W25N_INSTRUCTION_WRITE_ENABLE     0x06
 #define W25N_INSTRUCTION_DIE_SELECT       0xC2
 #define W25N_INSTRUCTION_BLOCK_ERASE      0xD8
-#define W25N_INSTRUCTION_READ_BBM_LUT     0xA5
-#define W25N_INSTRUCTION_BB_MANAGEMENT    0xA1
 #define W25N_INSTRUCTION_PROGRAM_DATA_LOAD        0x02
 #define W25N_INSTRUCTION_RANDOM_PROGRAM_DATA_LOAD 0x84
 #define W25N_INSTRUCTION_PROGRAM_EXECUTE  0x10
@@ -93,14 +91,6 @@
 #define W25N_STATUS_FLAG_WRITE_ENABLED (1 << 1)
 #define W25N_STATUS_FLAG_BUSY          (1 << 0)
 
-#define W25N_BBLUT_TABLE_ENTRY_COUNT     20
-#define W25N_BBLUT_TABLE_ENTRY_SIZE      4  // in bytes
-
-// Bits in LBA for BB LUT
-#define W25N_BBLUT_STATUS_ENABLED (1 << 15)
-#define W25N_BBLUT_STATUS_INVALID (1 << 14)
-#define W25N_BBLUT_STATUS_MASK    (W25N_BBLUT_STATUS_ENABLED | W25N_BBLUT_STATUS_INVALID)
-
 // Some useful defs and macros
 #define W25N_PAGE_SIZE fdevice->geometry.pageSize
 #define W25N_LINEAR_TO_COLUMN(laddr) ((laddr) % W25N_PAGE_SIZE)
@@ -121,11 +111,6 @@
 #define W25N_STATUS_REGISTER_SIZE        8
 #define W25N_STATUS_PAGE_ADDRESS_SIZE    16
 #define W25N_STATUS_COLUMN_ADDRESS_SIZE  16
-
-typedef struct bblut_s {
-    uint16_t pba;
-    uint16_t lba;
-} bblut_t;
 
 // Table of recognised FLASH devices
 struct {
@@ -1007,112 +992,6 @@ const flashVTable_t w25n_vTable = {
     .readBytes = w25n_readBytes,
     .getGeometry = w25n_getGeometry,
 };
-
-typedef volatile struct cb_context_s {
-    flashDevice_t *fdevice;
-    bblut_t *bblut;
-    int lutsize;
-    int lutindex;
-} cb_context_t;
-
-// Called in ISR context
-// Read of BBLUT entry has just completed
-static busStatus_e w25n_readBBLUTCallback(uintptr_t arg)
-{
-    cb_context_t *cb_context = (cb_context_t *)arg;
-    flashDevice_t *fdevice = cb_context->fdevice;
-    uint8_t *rxData = fdevice->io.handle.dev->bus->curSegment->u.buffers.rxData;
-
-    cb_context->bblut->pba = (rxData[0] << 16)|rxData[1];
-    cb_context->bblut->lba = (rxData[2] << 16)|rxData[3];
-
-    if (++cb_context->lutindex < cb_context->lutsize) {
-        cb_context->bblut++;
-        return BUS_BUSY; // Repeat the operation
-    }
-
-    return BUS_READY; // All done
-}
-
-LOCAL_UNUSED_FUNCTION static void w25n_readBBLUT(flashDevice_t *fdevice, bblut_t *bblut, int lutsize)
-{
-    UNUSED(bblut);
-    UNUSED(lutsize);
-
-    uint8_t in[4];
-
-    if (fdevice->io.mode == FLASHIO_SPI) {
-        extDevice_t *dev = fdevice->io.handle.dev;
-
-        uint8_t cmd[4];
-
-        cmd[0] = W25N_INSTRUCTION_READ_BBM_LUT;
-        cmd[1] = 0;
-
-        busSegment_t segments[] = {
-                {.u.buffers = {cmd, NULL}, sizeof(cmd), false, NULL},
-                {.u.buffers = {NULL, in}, sizeof(in), true, w25n_readBBLUTCallback},
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-
-        spiSequence(dev, &segments[0]);
-
-        // Block pending completion of SPI access
-        spiWait(dev);
-    }
-#ifdef USE_QUADSPI
-    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        extDevice_t *dev = fdevice->io.handle.dev;
-
-        // Note: Using HAL QuadSPI there doesn't appear to be a way to send 2 bytes, then blocks of 4 bytes, while keeping the CS line LOW
-        // thus, we have to read the entire BBLUT in one go and process the result.
-
-        uint8_t bblutBuffer[W25N_BBLUT_TABLE_ENTRY_COUNT * W25N_BBLUT_TABLE_ENTRY_SIZE];
-        quadSpiReceive1LINE(dev, W25N_INSTRUCTION_READ_BBM_LUT, 8, bblutBuffer, sizeof(bblutBuffer));
-
-        for (int i = 0, offset = 0 ; i < lutsize ; i++, offset += 4) {
-            if (i < W25N_BBLUT_TABLE_ENTRY_COUNT) {
-                bblut[i].pba = (in[offset + 0] << 16)|in[offset + 1];
-                bblut[i].lba = (in[offset + 2] << 16)|in[offset + 3];
-            }
-        }
-    }
-#endif
-}
-
-LOCAL_UNUSED_FUNCTION static void w25n_writeBBLUT(flashDevice_t *fdevice, uint16_t lba, uint16_t pba)
-{
-    w25n_waitForReady(fdevice);
-
-    if (fdevice->io.mode == FLASHIO_SPI) {
-        extDevice_t *dev = fdevice->io.handle.dev;
-
-        uint8_t cmd[5] = { W25N_INSTRUCTION_BB_MANAGEMENT, lba >> 8, lba, pba >> 8, pba };
-
-        busSegment_t segments[] = {
-                {.u.buffers = {cmd, NULL}, sizeof(cmd), true, NULL},
-                {.u.link = {NULL, NULL}, 0, true, NULL},
-        };
-
-        // Ensure any prior DMA has completed before continuing
-        spiWait(dev);
-
-        spiSequence(dev, &segments[0]);
-
-        // Block pending completion of SPI access
-        spiWait(dev);
-    }
-#ifdef USE_QUADSPI
-    else if (fdevice->io.mode == FLASHIO_QUADSPI) {
-        extDevice_t *dev = fdevice->io.handle.dev;
-
-        uint8_t data[4] = { lba >> 8, lba, pba >> 8, pba };
-        quadSpiInstructionWithData1LINE(dev, W25N_INSTRUCTION_BB_MANAGEMENT, 0, data, sizeof(data));
-    }
-#endif
-
-    w25n_setTimeout(fdevice, W25N_TIMEOUT_PAGE_PROGRAM_MS);
-}
 
 static void w25n_deviceInit(flashDevice_t *flashdev)
 {
