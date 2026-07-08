@@ -2096,6 +2096,20 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_START, "%d", currentPidProfile->psas_roll_yaw_clift_start);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_YAW_CLIFT_STOP, "%d", currentPidProfile->psas_roll_yaw_clift_stop);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_ROLL_TO_YAW_LINK, "%d", currentPidProfile->psas_roll_to_yaw_link);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_STICK_ENABLE, "%d", currentPidProfile->psas_speed_stick_curve_enable[0]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_MAIN_ENABLE, "%d", currentPidProfile->psas_speed_main_curve_enable[0]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_PITCH_STICK_ENABLE, "%d", currentPidProfile->psas_speed_stick_curve_enable[1]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_PITCH_MAIN_ENABLE, "%d", currentPidProfile->psas_speed_main_curve_enable[1]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_YAW_STICK_ENABLE, "%d", currentPidProfile->psas_speed_stick_curve_enable[2]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_YAW_MAIN_ENABLE, "%d", currentPidProfile->psas_speed_main_curve_enable[2]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_USE_GPS, "%d", currentPidProfile->psas_speed_use_gps);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_OPTIMUM_VREF, "%d", currentPidProfile->psas_speed_optimum_vref);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_POWER, "%d", currentPidProfile->psas_speed_main_curve_power);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_STICK_CURVE_POWER, "%d", currentPidProfile->psas_speed_roll_stick_curve_power);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MIN, "%d", currentPidProfile->psas_speed_main_curve_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX, "%d", currentPidProfile->psas_speed_main_curve_max);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, "%d", currentPidProfile->psas_speed_stick_curve_min);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, "%d", currentPidProfile->psas_speed_stick_curve_max);
 #endif // USE_AIRPLANE_SAS
 
         default:
