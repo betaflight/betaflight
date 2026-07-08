@@ -49,6 +49,10 @@
 #include "io/gps.h"
 #include "io/gps_virtual.h"
 
+#ifdef USE_GPS_SEPTENTRIO
+#include "io/gps_septentrio.h"
+#endif
+
 #if ENABLE_DRONECAN
 #include "io/dronecan/dronecan_gnss.h"
 #endif
@@ -84,18 +88,22 @@ gpsSolutionData_t gpsSol;
 uint8_t GPS_update = 0;             // toogle to distinct a GPS position update (directly or via MSP)
 
 uint8_t GPS_numCh;                              // Details on numCh/svinfo in gps.h
-GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS_M8N];
+GPS_svinfo_t GPS_svinfo[GPS_SV_MAXSATS]; 
 
 // GPS LOST_COMMUNICATION timeout in ms (max time between received nav solutions)
 #define GPS_TIMEOUT_MS 2500
 // Timeout for waiting for an ACK or NAK response to a configuration command
 #define UBLOX_ACK_TIMEOUT_MS 150
+#define SEPTENTRIO_ACK_TIMEOUT_MS 200      
+#define SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS 1500 // Time to wait for a response from the Septentrio receiver when probing for the active port
+
 // Time allowed for module to respond to baud rate change during initial configuration
 #define GPS_CONFIG_BAUD_CHANGE_INTERVAL 330  // Time to wait, in ms, between 'test this baud rate' messages
 #define GPS_CONFIG_CHANGE_INTERVAL 110       // Time to wait, in ms, between CONFIG steps
-#define GPS_BAUDRATE_TEST_COUNT 3      // Number of times to repeat the test message when setting baudrate
-#define GPS_RECV_TIME_MAX 25           // Max permitted time, in us, for the NMEA Receive Data process
-#define GPS_UBLOX_RECV_TIME_MAX 15     // Max permitted time, in us, for the UBLOX Receive Data process
+#define GPS_BAUDRATE_TEST_COUNT 3       // Number of times to repeat the test message when setting baudrate
+#define GPS_RECV_TIME_MAX 25            // Max permitted time, in us, for the NMEA Receive Data process
+#define GPS_UBLOX_RECV_TIME_MAX 15      // Max permitted time, in us, for the UBLOX Receive Data process
+#define GPS_SEPTENTRIO_RECV_TIME_MAX 15 // Max permitted time, in us, for the SEPTENTRIO Receive Data process
 #define GPS_FRAME_PROCESS_TIME_US 10    // Estimated ceiling for time required to process a frame, in us, for the Receive Data process
 // Decay the estimated max task duration by 1/(1 << GPS_TASK_DECAY_SHIFT) on every invocation
 #define GPS_TASK_DECAY_SHIFT 9         // Smoothing factor for GPS task re-scheduler
@@ -386,6 +394,7 @@ static bool gpsNewFrameNMEA(char c);
 #ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
 #endif
+// (Septentrio declarations in gps_septentrio.h)
 
 static void gpsSetState(gpsState_e state)
 {
@@ -394,7 +403,7 @@ static void gpsSetState(gpsState_e state)
     gpsData.state = state;
     gpsData.state_position = 0;
     gpsData.state_ts = gpsData.now;
-    gpsData.ackState = UBLOX_ACK_IDLE;
+    gpsData.ackState = GPS_ACK_IDLE;
 }
 
 void gpsInit(void)
@@ -567,7 +576,7 @@ static void ubloxSendMessage(const ubxMessage_t *msg, bool skipAck)
     serialWrite(gpsPort, checksumB);
     // Save state for ACK waiting
     gpsData.ackWaitingMsgId = msg->header.msg_id; //save message id for ACK
-    gpsData.ackState = skipAck ? UBLOX_ACK_GOT_ACK : UBLOX_ACK_WAITING;
+    gpsData.ackState = skipAck ? GPS_ACK_GOT_ACK : GPS_ACK_WAITING;
     gpsData.lastMessageSent = gpsData.now;
 }
 
@@ -999,6 +1008,177 @@ static void gpsConfigureNmea(void)
 }
 #endif // USE_GPS_NMEA
 
+#ifdef USE_GPS_SEPTENTRIO
+
+static void septentrioSendCommand(const char *command) 
+{
+    serialWriteBuf(gpsPort, (uint8_t *)command, strlen(command));
+    gpsData.ackState = GPS_ACK_WAITING; 
+    gpsData.lastMessageSent = gpsData.now; 
+}
+
+static void septentrioSendOutputCommand(const char *streamName, const char *sbfBlocks, const char *rate)
+{
+    char cmd[SEPTENTRIO_CMD_BUF_SIZE];
+    // sso: setSBFOutput
+    tfp_sprintf(cmd, "sso, %s, %s, %s, %s\n", streamName, portDetector.portName, sbfBlocks, rate);
+    septentrioSendCommand(cmd);
+}
+
+static const char *septentrioUpdateRateToString(uint8_t updateRateHz)
+{
+    return (updateRateHz >= 10) ? "msec100" :
+           (updateRateHz >= 5)  ? "msec200" :
+           (updateRateHz >= 2)  ? "msec500" : "sec1"; // default to 1Hz
+}
+
+static void gpsConfigureSeptentrio(void)
+{    
+    // Wait until GPS transmit buffer is empty
+    if (!isSerialTransmitBufferEmpty(gpsPort)) {
+        return;
+    }
+
+    switch (gpsData.state) {
+    case GPS_STATE_DETECT_BAUD:
+        // Use the user-configured baud rate for Septentrio receivers
+        serialSetBaudRate(gpsPort, baudRates[gpsInitData[gpsData.userBaudRateIndex].baudrateIndex]); 
+        gpsSetState(GPS_STATE_CHANGE_BAUD); 
+        break;
+
+    case GPS_STATE_CHANGE_BAUD:
+        if (cmp32(gpsData.now, gpsData.state_ts) < GPS_CONFIG_BAUD_CHANGE_INTERVAL) {
+            return; // wait for the receiver's serial port to settle
+        }
+        gpsSetState(GPS_STATE_CONFIGURE);
+        break;
+
+    case GPS_STATE_CONFIGURE:
+        if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+            gpsSeptentrioReset(); // reset the receiver to ensure it is in a known state before starting to receive data
+            gpsSetState(GPS_STATE_RECEIVING_DATA);
+            break;
+        }
+
+        // Delay 1 second upon initial entry into the CONFIGURE state (same value as ublox)
+        if (gpsData.state_position == 0 && cmp32(gpsData.now, gpsData.state_ts) < 1000) { 
+            return;
+        }
+
+        if (gpsData.ackState == GPS_ACK_IDLE) { // no active command waiting for a response  
+            // Require a minimum delay between configuration commands 
+            static uint32_t lastStatePositionTime = 0;
+            if (lastStatePositionTime == 0) {
+                lastStatePositionTime = gpsData.now;
+            }
+            if (cmp32(gpsData.now, lastStatePositionTime) < GPS_CONFIG_CHANGE_INTERVAL) {
+                return;
+            }
+            lastStatePositionTime = gpsData.now;
+
+            // Set the navigation solution rate to the user-configured update rate
+            gpsData.updateRateHz = gpsConfig()->gps_update_rate_hz;
+            const char *septentrioUserRate = septentrioUpdateRateToString(gpsData.updateRateHz);
+
+            // Configuration steps for Septentrio receivers
+            switch ((septentrioConfigStep_e)gpsData.state_position) {
+            case SEPTENTRIO_CFG_FORCE_INPUT:
+                // Flood receiver with 'S' to force ASCII command mode
+                // No ACK expected, move directly to next step after the short configuration delay
+                serialWriteBuf(gpsPort, (uint8_t *)"SSSSSSSSSS\n", 11);
+                gpsData.ackState = GPS_ACK_GOT_ACK;
+                gpsData.lastMessageSent = gpsData.now;
+                break;
+            case SEPTENTRIO_CFG_DETECT_PORT:
+                // Detect the active receiver port for SBF output
+                // No ACK expected directly, but waiting for the receiver's ping response to detect the port (dedicated timeout handling)
+                gpsSeptentrioPortDetectorReset();
+                // gecm: getEchoMessage (ping command)
+                septentrioSendCommand("gecm\n"); 
+                break;
+            case SEPTENTRIO_CFG_SET_DATAIO:
+                char cmd[SEPTENTRIO_CMD_BUF_SIZE];
+                // sdio: setDataInOut
+                tfp_sprintf(cmd,"sdio,%s,Auto,SBF\n", portDetector.portName); 
+                septentrioSendCommand(cmd);
+                break;
+            case SEPTENTRIO_CFG_SET_SBF_OUTPUT_PVT:
+                // Main navigation blocks at the user-configured update rate
+                septentrioSendOutputCommand("Stream1", "PVTGeodetic+DOP+EndOfPVT", septentrioUserRate);
+                break;
+            case SEPTENTRIO_CFG_SET_SBF_OUTPUT_COV:
+                // Symmetric variance-covariance matrices for velocity
+                septentrioSendOutputCommand("Stream1", "+VelCovGeodetic", septentrioUserRate);
+                break;
+            case SEPTENTRIO_CFG_SET_SBF_OUTPUT_CHANNELSTATUS:
+                // 1Hz is sufficient for tracking receiver channels and populating satellite (SV) information
+                septentrioSendOutputCommand("Stream2", "ChannelStatus", "sec1");
+                break;
+            case SEPTENTRIO_CFG_SET_DYNAMICS:
+                // srd: setReceiverDynamics
+                septentrioSendCommand("srd,high,UAV\n");
+                break;
+            case SEPTENTRIO_CFG_COMPLETE:
+                gpsSeptentrioReset();
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+                break;
+            default:
+                break;
+            }
+        } // ACK or NACK are then triggered in the gpsNewFrameSeptentrio(uint8_t) function, which processes incoming data 
+        
+        // ACK handling for Septentrio receivers (same states as ublox)
+        switch (gpsData.ackState) {
+        case GPS_ACK_IDLE:
+            // No active command waiting for a response, nothing to do
+            break;
+        case GPS_ACK_WAITING:
+            // Use a longer timeout for port detection, standard short ACK timeout otherwise
+            int32_t timeout = (gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) 
+                ? SEPTENTRIO_PORT_DETECTION_TIMEOUT_MS 
+                : SEPTENTRIO_ACK_TIMEOUT_MS;
+
+            if (cmp32(gpsData.now, gpsData.lastMessageSent) > timeout) {
+                if (!portDetector.isDetected) { // restart the configuration process after no port has been detected
+                    gpsData.state_position = SEPTENTRIO_CFG_FORCE_INPUT; 
+                    gpsData.state_ts = gpsData.now;
+                    gpsData.ackState = GPS_ACK_IDLE;
+                } else { // standard command timeout treated as NACK 
+                    gpsData.ackState = GPS_ACK_GOT_NACK; 
+                }
+            }
+            break; // wait for ACK, NACK, or timeout
+        case GPS_ACK_GOT_ACK:
+            gpsData.state_position++; // move to next configuration step
+            gpsData.state_ts = gpsData.now; 
+            gpsData.ackState = GPS_ACK_IDLE; 
+            break;
+        case GPS_ACK_GOT_NACK:
+            // Port detection and position output commands are essential,
+            // so restart the configuration from the appropriate step (force input or detect port)
+            if ((septentrioConfigStep_e)gpsData.state_position == SEPTENTRIO_CFG_DETECT_PORT) {
+                gpsData.state_position = SEPTENTRIO_CFG_FORCE_INPUT;
+            } else if (((septentrioConfigStep_e)gpsData.state_position == SEPTENTRIO_CFG_SET_DATAIO)
+                    || ((septentrioConfigStep_e)gpsData.state_position == SEPTENTRIO_CFG_SET_SBF_OUTPUT_PVT)) {
+                gpsData.state_position = SEPTENTRIO_CFG_DETECT_PORT;
+            } else { // for other commands, ignore the NACK and proceed to the next configuration step
+                gpsData.state_position++; 
+            }
+            gpsData.state_ts = gpsData.now;
+            gpsData.ackState = GPS_ACK_IDLE;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+#endif // USE_GPS_SEPTENTRIO
+
 #ifdef USE_GPS_UBLOX
 
 static void gpsConfigureUblox(void)
@@ -1035,7 +1215,7 @@ static void gpsConfigureUblox(void)
             if (!messageSent) {
                 gpsData.platformVersion = UBX_VERSION_UNDEF;
                 ubloxSendClassMessage(CLASS_MON, MSG_MON_VER, 0);
-                gpsData.ackState = UBLOX_ACK_IDLE; // ignore ACK for this message
+                gpsData.ackState = GPS_ACK_IDLE; // ignore ACK for this message
                 messageSent = true;
             }
             if (cmp32(gpsData.now, gpsData.state_ts) > GPS_CONFIG_BAUD_CHANGE_INTERVAL) {
@@ -1087,7 +1267,7 @@ static void gpsConfigureUblox(void)
             return;
         }
 
-        if (gpsData.ackState == UBLOX_ACK_IDLE) {
+        if (gpsData.ackState == GPS_ACK_IDLE) {
 
             // short delay before between commands, including the first command
             static uint32_t last_state_position_time = 0;
@@ -1237,31 +1417,31 @@ static void gpsConfigureUblox(void)
             }
         }
 
-        // check the ackState after changing CONFIG state, or every iteration while not UBLOX_ACK_IDLE
+        // check the ackState after changing CONFIG state, or every iteration while not GPS_ACK_IDLE
         switch (gpsData.ackState) {
-        case UBLOX_ACK_IDLE:
+        case GPS_ACK_IDLE:
             break;
-        case UBLOX_ACK_WAITING:
+        case GPS_ACK_WAITING:
             if (cmp32(gpsData.now, gpsData.lastMessageSent) > UBLOX_ACK_TIMEOUT_MS){
                 // give up, treat it like receiving ack
-                gpsData.ackState = UBLOX_ACK_GOT_ACK;
+                gpsData.ackState = GPS_ACK_GOT_ACK;
             }
             break;
-        case UBLOX_ACK_GOT_ACK:
+        case GPS_ACK_GOT_ACK:
             // move forward one position, and clear the ack state
             gpsData.state_position++;
-            gpsData.ackState = UBLOX_ACK_IDLE;
+            gpsData.ackState = GPS_ACK_IDLE;
             break;
-        case UBLOX_ACK_GOT_NACK:
+        case GPS_ACK_GOT_NACK:
             // this is the tricky bit
             // and we absolutely must get the unit type right
             if (gpsData.state_position == UBLOX_DETECT_UNIT) {
                 gpsSetState(GPS_STATE_CONFIGURE);
-                gpsData.ackState = UBLOX_ACK_IDLE;
+                gpsData.ackState = GPS_ACK_IDLE;
             } else {
                 // otherwise, for testing: just ignore nacks
                 gpsData.state_position++;
-                gpsData.ackState = UBLOX_ACK_IDLE;
+                gpsData.ackState = GPS_ACK_IDLE;
             }
             break;
         default:
@@ -1285,6 +1465,13 @@ static void gpsConfigureHardware(void)
         gpsConfigureUblox();
 #endif
         break;
+
+    case GPS_SEPTENTRIO:
+#ifdef USE_GPS_SEPTENTRIO
+        gpsConfigureSeptentrio();
+#endif
+        break;
+
     default:
         break;
     }
@@ -1481,6 +1668,34 @@ void gpsUpdate(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_GPS_SEPTENTRIO
+    case GPS_SEPTENTRIO:
+    {
+        if (!gpsPort) {
+            break;
+        }
+        rxBytesWaiting = serialRxBytesWaiting(gpsPort);
+        DEBUG_SET(DEBUG_GPS_CONNECTION, 7, rxBytesWaiting);
+        static uint8_t wait = 0;
+        static bool isFast = false;
+        while (rxBytesWaiting-- > 0) {
+            wait = 0;
+            if (!isFast) {
+                rescheduleTask(TASK_SELF, TASK_PERIOD_HZ(TASK_GPS_RATE_FAST));
+                isFast = true;
+            }
+            if (cmpTimeUs(micros(), currentTimeUs) > GPS_SEPTENTRIO_RECV_TIME_MAX) {
+                break;
+            }
+            if (gpsNewFrameSeptentrio(serialRead(gpsPort))) {
+                gpsHandleFrameComplete();
+            }
+        }
+        rescheduleWhenNecessary(&wait, &isFast);
+        break;
+    }
+#endif
+
     case GPS_MSP:
         if (GPS_update & GPS_MSP_UPDATE) { // GPS data received via MSP
             if (gpsData.state == GPS_STATE_INITIALIZED) {
@@ -1641,6 +1856,11 @@ bool gpsNewFrame(uint8_t c)
     case GPS_UBLOX:         // UBX binary
 #ifdef USE_GPS_UBLOX
         return gpsNewFrameUBLOX(c);
+#endif
+        break;
+    case GPS_SEPTENTRIO:    // SBF binary
+#ifdef USE_GPS_SEPTENTRIO
+        return gpsNewFrameSeptentrio(c);
 #endif
         break;
     default:
@@ -2665,13 +2885,13 @@ static bool UBLOX_parse_gps(void)
         }
         break;
     case CLSMSG(CLASS_ACK, MSG_ACK_ACK):
-        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
-            gpsData.ackState = UBLOX_ACK_GOT_ACK;
+        if ((gpsData.ackState == GPS_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
+            gpsData.ackState = GPS_ACK_GOT_ACK;
         }
         break;
     case CLSMSG(CLASS_ACK, MSG_ACK_NACK):
-        if ((gpsData.ackState == UBLOX_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
-            gpsData.ackState = UBLOX_ACK_GOT_NACK;
+        if ((gpsData.ackState == GPS_ACK_WAITING) && (ubxRcvMsgPayload.ubxAck.msgId == gpsData.ackWaitingMsgId)) {
+            gpsData.ackState = GPS_ACK_GOT_NACK;
         }
         break;
 
