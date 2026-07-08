@@ -773,7 +773,11 @@ void initPhase3(void)
         LED0_TOGGLE;
 #if defined(USE_BEEPER)
         delay(25);
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+        // This boot beep bypasses beeper()/beeperUsbSuppressed(), so honour BEEPER_USB
+        // here directly. MSP is not up yet, but usbCableIsInserted() is already valid.
+        const bool usbSuppressed = (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && usbCableIsInserted();
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT)) && !usbSuppressed) {
             BEEP_ON;
         }
         delay(25);

@@ -64,6 +64,7 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t imu_process_denom;
     int16_t mag_declination;      // Magnetic declination in degrees * 10
+    bool trust_mag;      // default to false, to indicate that the user has calibrated and validated their mag
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);

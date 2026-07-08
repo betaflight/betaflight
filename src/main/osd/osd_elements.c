@@ -253,6 +253,12 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 
 // Current element and render status
 static osdElementParms_t activeElement;
+#ifdef UNIT_TEST
+void osdSetActiveElementTypeForTest(osdElementType_e type)
+{
+    activeElement.type = type;
+}
+#endif
 static bool displayPendingForeground;
 static bool displayPendingBackground;
 static char elementBuff[OSD_ELEMENT_BUFFER_LENGTH];
@@ -482,12 +488,15 @@ bool osdFormatRtcDateTime(char *buffer)
         return false;
     }
 
+    dateTime_t localDateTime;
+    dateTimeUTCToLocal(&dateTime, &localDateTime);
+
     switch (activeElement.type) {
     case OSD_ELEMENT_TYPE_3: 
-        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds); 
+        tfp_sprintf(buffer, "%02d:%02d:%02d", localDateTime.hours, localDateTime.minutes, localDateTime.seconds);
         break;
     case OSD_ELEMENT_TYPE_2:
-        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
+        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", localDateTime.month, localDateTime.day, localDateTime.hours, localDateTime.minutes);
         break;
     case OSD_ELEMENT_TYPE_1:
     default:
@@ -828,7 +837,8 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
+    // The earth-Up row (NWU_U) of rMat is earth-up expressed per body axis; negate to point down.
+    const float earthUpinBodyFrame[3] = {-rMat.m[NWU_U][X], -rMat.m[NWU_U][Y], -rMat.m[NWU_U][Z]};
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
@@ -1125,14 +1135,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
-    // Note that flight mode display has precedence in what to display.
-    //  1. FS
-    //  2. GPS RESCUE
-    //  3. PASSTHRU
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  5. AIR
-    //  6. ACRO
-
+    // Note that flight mode display has precedence in what to display, FS first, ACRO last
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1468,6 +1471,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             int displayPercent = 0;
             if (currentBatteryProfile->batteryCapacity) {
                 displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_4) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                displayPercent = voltagePercent;
             }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
@@ -1486,6 +1495,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
                 const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
                 const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
                 remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_2) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
             }
 
             // Create empty battery indicator bar

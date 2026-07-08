@@ -83,7 +83,7 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
         IO_t io = IOGetByTag(tag);
         if (!io) continue;
 
-        IOInit(io, OWNER_SERVO, i);
+        IOInit(io, OWNER_SERVO, RESOURCE_INDEX(i));
         IOConfigGPIO(io, IOCFG_OUT_PP);
 
         uint32_t pin = IO_Pin(io);
@@ -97,7 +97,7 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig)
 
         esp_rom_gpio_pad_select_gpio(pin);
         gpio_ll_output_enable(&GPIO, pin);
-        esp_rom_gpio_connect_out_signal(pin, LEDC_LS_SIG_OUT0_IDX + ch, false, false);
+        esp_rom_gpio_connect_out_signal(pin, ESP32_LEDC_LS_SIG_OUT0_IDX + ch, false, false);
 
         // Set initial position to center (1500us)
         uint32_t duty = lrintf(servoDevConfig->servoCenterPulse * usToCountsFactor);
