@@ -375,6 +375,11 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         pidRuntime.pidCoefficient[axis].Kd = DTERM_SCALE * pidProfile->pid[axis].D;
         pidRuntime.pidCoefficient[axis].Kf = FEEDFORWARD_SCALE * (pidProfile->pid[axis].F * 0.01f);
     }
+
+#ifdef USE_ADRC
+    adrcInitConfig(&pidProfile->adrc, &pidRuntime.adrc, pidRuntime.dT);
+#endif
+
 #ifdef USE_INTEGRATED_YAW_CONTROL
     if (!pidProfile->use_integrated_yaw)
 #endif

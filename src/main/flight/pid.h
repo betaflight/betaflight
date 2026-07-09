@@ -30,6 +30,8 @@
 
 #include "pg/pg.h"
 
+#include "flight/adrc.h"
+
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
 #define PID_MIXER_SCALING           1000.0f
@@ -61,13 +63,9 @@
 #define ITERM_ACCELERATOR_GAIN_OFF 0
 #define ITERM_ACCELERATOR_GAIN_MAX 250
 
-// ADRC defaults: P = control bandwidth wc, I = observer bandwidth wo, D = system gain b0 (x10).
-// Re-derived for ADRC instead of reusing stock Betaflight PID integers. Values follow the
-// community-proven 5" tune (wc=10, wo=110, b0=100) and keep wo/wc within the ~3..10 rule.
-// Yaw gets an explicit b0 instead of D=0 (which silently fell through to the 500 fallback).
-#define PID_ROLL_DEFAULT  { 10, 110, 100, 120, 0 }
-#define PID_PITCH_DEFAULT { 10, 110, 100, 125, 0 }
-#define PID_YAW_DEFAULT   { 10,  80, 100, 120, 0 }
+#define PID_ROLL_DEFAULT  { 45, 80, 30, 120, 0 }
+#define PID_PITCH_DEFAULT { 47, 84, 34, 125, 0 }
+#define PID_YAW_DEFAULT   { 45, 80,  0, 120, 0 }
 #define D_MAX_DEFAULT     { 40, 46, 0 }
 
 #define DTERM_LPF1_DYN_MIN_HZ_DEFAULT 75
@@ -207,6 +205,7 @@ typedef struct pidProfile_s {
     uint16_t pidSumLimitYaw;                // pidSum limit value for yaw
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t angle_limit;                    // Max angle in degrees in Angle mode
+    uint8_t pid_type;                       // Selects the rate control law: classic Betaflight PID or (experimental) ADRC
 
     uint8_t horizon_limit_degrees;          // in Horizon mode, zero levelling when the quad's attitude exceeds this angle
     uint8_t horizon_ignore_sticks;          // 0 = default, meaning both stick and attitude attenuation; 1 = only attitude attenuation
@@ -250,6 +249,10 @@ typedef struct pidProfile_s {
     uint8_t d_max[XYZ_AXIS_COUNT];          // Maximum D value on each axis
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
+
+#ifdef USE_ADRC
+    adrcProfile_t adrc;                     // ADRC tunables; see adrc.h. Ignored unless pid_type == PID_TYPE_ADRC
+#endif
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile
@@ -331,11 +334,6 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
-
-    uint8_t adrc_b0_scale;                  // ADRC System-Gain multiplier: b0 = D * adrc_b0_scale (default 10; raise on high thrust/weight builds where D maxes out)
-    uint8_t adrc_hover_throttle;            // ADRC hover throttle % — b0 is scaled b0*(throttle/hover)^2 above hover (fix #10); motor authority ~ RPM^2 ~ throttle^2
-    uint8_t adrc_sigma_decay;               // ADRC z3 leaky-decay rate * 0.1 (fix #11): bleeds transient disturbance off; 0 = classic pure integrator
-    uint8_t adrc_sigma_decay_sched;         // ADRC z3 decay scheduling gain * 0.01 (fix #11): slows the decay while a sustained disturbance holds; 0 = disabled
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -537,15 +535,9 @@ typedef struct pidRuntime_s {
     float chirpTimeSeconds;
 #endif // USE_CHIRP
 
-    // ADRC State variables
-    float adrc_z1[XYZ_AXIS_COUNT];
-    float adrc_z2[XYZ_AXIS_COUNT];
-    float adrc_z3[XYZ_AXIS_COUNT];
-    float adrc_lastOutput[XYZ_AXIS_COUNT];
-    bool adrc_liftoff;        // latched once per arm cycle: craft has left the ground
-    float adrc_gyroActiveS;   // seconds of sustained gyro activity (liftoff detector)
-    float adrc_idleS;         // seconds throttle has stayed at idle (fix #10 gate re-arm)
-    float adrc_errLp[XYZ_AXIS_COUNT]; // slow low-pass of the ESO error, for z3 decay scheduling (fix #11)
+#ifdef USE_ADRC
+    adrcRuntime_t adrc;
+#endif
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

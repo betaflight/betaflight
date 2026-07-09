@@ -489,6 +489,14 @@ pid_unittest_DEFINES := \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 
+adrc_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/flight/adrc.c
+
+adrc_unittest_DEFINES := \
+		USE_ADRC=
+
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 

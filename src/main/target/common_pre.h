@@ -377,6 +377,7 @@
 #define USE_INTEGRATED_YAW_CONTROL
 
 #define USE_ITERM_RELAX
+#define USE_ADRC // experimental: Active Disturbance Rejection Control, an alternative to classic PID
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 

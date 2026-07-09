@@ -464,6 +464,12 @@ static const char * const lookupTableSpaMode[] = {
     "OFF", "I_FREEZE", "I", "PID", "PD_I_FREEZE"
 };
 
+#ifdef USE_ADRC
+static const char * const lookupTablePidType[] = {
+    "CLASSIC", "ADRC"
+};
+#endif
+
 #ifdef USE_LED_STRIP
 #ifdef USE_LED_STRIP_STATUS_MODE
 static const char * const lookupTableLEDProfile[] = {
@@ -687,6 +693,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
     LOOKUP_TABLE_ENTRY(lookupTableTpaMode),
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
+#ifdef USE_ADRC
+    LOOKUP_TABLE_ENTRY(lookupTablePidType),
+#endif
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
@@ -1263,16 +1272,6 @@ const clivalue_t valueTable[] = {
     { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, PID_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].D) },
     { "f_yaw",                      VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, F_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_YAW].F) },
 
-    // ADRC: System-Gain multiplier, b0 = D * adrc_b0_scale (fix #9). Per-craft constant;
-    // raise above the default 10 on high thrust/weight builds where D would max out.
-    { "adrc_b0_scale",              VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc_b0_scale) },
-    // ADRC: hover throttle % — b0 is scaled b0*(throttle/hover)^2 above hover (fix #10).
-    { "adrc_hover_throttle",        VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc_hover_throttle) },
-    // ADRC: z3 leaky-decay rate * 0.1 (fix #11). 0 = classic pure integrator.
-    { "adrc_sigma_decay",           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc_sigma_decay) },
-    // ADRC: z3 decay scheduling gain * 0.01 (fix #11). 0 = disabled (fixed decay).
-    { "adrc_sigma_decay_sched",     VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc_sigma_decay_sched) },
-
 #ifdef USE_WING
     { PARAM_NAME_S_PITCH,           VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, PID_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_PITCH].S) },
     { PARAM_NAME_S_ROLL,            VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, PID_GAIN_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, pid[PID_ROLL].S) },
@@ -1411,6 +1410,22 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SPA_YAW_MODE,       VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, spa_mode[FD_YAW]) },
     { PARAM_NAME_YAW_TYPE,           VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_YAW_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_type) },
     { PARAM_NAME_ANGLE_PITCH_OFFSET, VAR_INT16 | PROFILE_VALUE, .config.minmaxUnsigned = { -ANGLE_PITCH_OFFSET_MAX, ANGLE_PITCH_OFFSET_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, angle_pitch_offset) },
+#endif
+
+#ifdef USE_ADRC
+    { PARAM_NAME_PID_TYPE,      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, pid_type) },
+    { PARAM_NAME_ADRC_WC_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_ROLL]) },
+    { PARAM_NAME_ADRC_WC_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_PITCH]) },
+    { PARAM_NAME_ADRC_WC_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wc[FD_YAW]) },
+    { PARAM_NAME_ADRC_WO_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_ROLL]) },
+    { PARAM_NAME_ADRC_WO_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_PITCH]) },
+    { PARAM_NAME_ADRC_WO_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.wo[FD_YAW]) },
+    { PARAM_NAME_ADRC_B0_ROLL,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_ROLL]) },
+    { PARAM_NAME_ADRC_B0_PITCH, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_PITCH]) },
+    { PARAM_NAME_ADRC_B0_YAW,   VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, UINT16_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0[FD_YAW]) },
+    { PARAM_NAME_ADRC_GYRO_LPF_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.gyroFilterHz) },
+    { PARAM_NAME_ADRC_HOVER_THROTTLE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.hoverThrottlePercent) },
+    { PARAM_NAME_ADRC_SIGMA_DECAY,    VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.sigmaDecay) },
 #endif
 
 // PG_TELEMETRY_CONFIG
