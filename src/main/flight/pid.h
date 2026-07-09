@@ -331,6 +331,11 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+
+    uint8_t adrc_b0_scale;                  // ADRC System-Gain multiplier: b0 = D * adrc_b0_scale (default 10; raise on high thrust/weight builds where D maxes out)
+    uint8_t adrc_hover_throttle;            // ADRC hover throttle % — b0 is scaled b0*(throttle/hover)^2 above hover (fix #10); motor authority ~ RPM^2 ~ throttle^2
+    uint8_t adrc_sigma_decay;               // ADRC z3 leaky-decay rate * 0.1 (fix #11): bleeds transient disturbance off; 0 = classic pure integrator
+    uint8_t adrc_sigma_decay_sched;         // ADRC z3 decay scheduling gain * 0.01 (fix #11): slows the decay while a sustained disturbance holds; 0 = disabled
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);
@@ -539,6 +544,8 @@ typedef struct pidRuntime_s {
     float adrc_lastOutput[XYZ_AXIS_COUNT];
     bool adrc_liftoff;        // latched once per arm cycle: craft has left the ground
     float adrc_gyroActiveS;   // seconds of sustained gyro activity (liftoff detector)
+    float adrc_idleS;         // seconds throttle has stayed at idle (fix #10 gate re-arm)
+    float adrc_errLp[XYZ_AXIS_COUNT]; // slow low-pass of the ESO error, for z3 decay scheduling (fix #11)
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;

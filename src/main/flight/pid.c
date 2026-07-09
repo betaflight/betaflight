@@ -83,7 +83,7 @@ FAST_DATA_ZERO_INIT pidRuntime_t pidRuntime;
 
 #define ADRC_WC_SCALE 1.0f
 #define ADRC_WO_SCALE 1.0f
-#define ADRC_B0_SCALE 10.0f
+#define ADRC_B0_SCALE_DEFAULT 10   // default D -> b0 multiplier; per-craft override via adrc_b0_scale (fix #9)
 #define ADRC_B0_FALLBACK 50.0f
 
 // EXPERIMENTAL fix #8 (see ADRC_FIXES.md): while the craft is ground-constrained the plant
@@ -92,11 +92,38 @@ FAST_DATA_ZERO_INIT pidRuntime_t pidRuntime;
 // takeoff bounce seen in blackbox. Until liftoff is detected the b0*u term is therefore
 // not fed to the observer. Liftoff = throttle above ADRC_LIFTOFF_THROTTLE, or any-axis
 // rotation above ADRC_LIFTOFF_GYRO_DPS sustained for ADRC_LIFTOFF_HOLD_S (a toss launch
-// opens it almost instantly). Latched until disarm, so in-flight throttle chops keep the
-// full observer.
+// opens it almost instantly).
 #define ADRC_LIFTOFF_THROTTLE 0.4f
 #define ADRC_LIFTOFF_GYRO_DPS 20.0f
 #define ADRC_LIFTOFF_HOLD_S 0.025f
+
+// EXPERIMENTAL fix #10 (gate re-arm): the liftoff latch re-arms after throttle stays below
+// ADRC_LIFTOFF_IDLE_THROTTLE for ADRC_LIFTOFF_IDLE_HOLD_S, so every ground-test rep in one
+// arm is gated — not just the first. Betaflight's own zeroThrottleItermReset is airmode-
+// latched off for the rest of the arm once throttle crosses the airmode point, so we time
+// idle ourselves. A brief in-flight throttle chop (shorter than the hold) does not re-arm it.
+#define ADRC_LIFTOFF_IDLE_THROTTLE 0.05f
+#define ADRC_LIFTOFF_IDLE_HOLD_S 0.5f
+
+// EXPERIMENTAL fix #10 (throttle-scaled b0): motor authority scales with RPM and thrust ~
+// throttle^2, so b0 tuned at hover is wrong away from it. b0 is scaled by (throttle/hover)^2,
+// clamped to [1, ADRC_B0_THR_SCALE_MAX] — only UP from hover: scaling down below hover makes
+// 1/b0 huge and injects extreme output for small errors at low throttle. Default hover %:
+#define ADRC_HOVER_THROTTLE_DEFAULT 35
+#define ADRC_B0_THR_SCALE_MAX 9.0f
+
+// EXPERIMENTAL fix #11 (z3 leaky decay): z3 decays toward 0 at adrc_sigma_decay so a transient
+// bump bleeds off instead of lingering. Optional scheduling (adrc_sigma_decay_sched) slows the
+// decay while a slow low-pass of the ESO error (cutoff ADRC_DECAY_FILT_HZ) stays large — note
+// this tracks observer *transients* (aggressive maneuvers, prop-wash), not a steady disturbance
+// (in equilibrium the ESO drives its error to ~0 even while z3 correctly holds a constant load),
+// so the scheduling knob is unvalidated — leave it 0. Default rate * 0.1:
+#define ADRC_SIGMA_DECAY_DEFAULT 3
+#define ADRC_DECAY_FILT_HZ 10.0f
+
+// fix #12: raw z3 in the same units as z1/z2 overflows the int16 blackbox debug field under
+// strong disturbance; log it divided by this so debug[2/5/6] stay readable (multiply back x16).
+#define ADRC_Z3_LOG_SCALE 16.0f
 
 #if defined(USE_THROTTLE_BOOST)
 FAST_DATA_ZERO_INIT float throttleBoost;
@@ -275,6 +302,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .chirp_frequency_start_deci_hz = 2,
         .chirp_frequency_end_deci_hz = 6000,
         .chirp_time_seconds = 20,
+        .adrc_b0_scale = ADRC_B0_SCALE_DEFAULT,
+        .adrc_hover_throttle = ADRC_HOVER_THROTTLE_DEFAULT,
+        .adrc_sigma_decay = ADRC_SIGMA_DECAY_DEFAULT,
+        .adrc_sigma_decay_sched = 0,
     );
 }
 
@@ -329,9 +360,11 @@ void pidResetIterm(void)
         pidRuntime.adrc_z2[axis] = 0.0f;
         pidRuntime.adrc_z3[axis] = 0.0f;
         pidRuntime.adrc_lastOutput[axis] = 0.0f;
+        pidRuntime.adrc_errLp[axis] = 0.0f;
     }
     pidRuntime.adrc_liftoff = false;
     pidRuntime.adrc_gyroActiveS = 0.0f;
+    pidRuntime.adrc_idleS = 0.0f;
 }
 
 #ifdef USE_WING
@@ -1198,8 +1231,28 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #endif // USE_CHIRP
 
-    // EXPERIMENTAL fix #8: liftoff detection for the ADRC observer (see defines up top).
-    if (!pidRuntime.adrc_liftoff) {
+    // EXPERIMENTAL fix #8 + #10: liftoff detection for the ADRC observer (see defines up top).
+    if (pidRuntime.adrc_liftoff) {
+        // fix #10: re-arm the gate after a sustained return to idle throttle AND stillness, so
+        // every ground-test rep within one arm is gated, not just the first liftoff. The gyro
+        // condition is essential: mixerGetThrottle() excludes airmode mixing, so a mid-air
+        // throttle chop (dive, split-S, throttle cut) reads idle even while airmode keeps the
+        // craft responding — re-arming there would blind the ESO to its own b0*u and let z3
+        // absorb the control effect. On the ground between reps the craft is genuinely still.
+        const float adrcGyroPeak = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]),
+                                         fmaxf(fabsf(gyro.gyroADCf[FD_PITCH]), fabsf(gyro.gyroADCf[FD_YAW])));
+        if (mixerGetThrottle() < ADRC_LIFTOFF_IDLE_THROTTLE && adrcGyroPeak < ADRC_LIFTOFF_GYRO_DPS) {
+            pidRuntime.adrc_idleS += pidRuntime.dT;
+            if (pidRuntime.adrc_idleS >= ADRC_LIFTOFF_IDLE_HOLD_S) {
+                pidRuntime.adrc_liftoff = false;
+                pidRuntime.adrc_gyroActiveS = 0.0f;
+                pidRuntime.adrc_idleS = 0.0f;
+            }
+        } else {
+            pidRuntime.adrc_idleS = 0.0f;
+        }
+    } else {
+        pidRuntime.adrc_idleS = 0.0f;
         if (mixerGetThrottle() >= ADRC_LIFTOFF_THROTTLE) {
             pidRuntime.adrc_liftoff = true;
         } else {
@@ -1215,6 +1268,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
         }
     }
+
+    // fix #10: throttle-scaled b0 multiplier, shared across axes. b0 ∝ RPM^2 ∝ throttle^2;
+    // only scaled UP above hover (clamped), see defines. fix #11: z3 leaky-decay constants.
+    const float adrcThrottle = constrainf(mixerGetThrottle(), 0.0f, 1.0f);
+    const float adrcHover = MAX((float)pidProfile->adrc_hover_throttle * 0.01f, 0.05f);
+    const float adrcThrRatio = adrcThrottle / adrcHover;
+    const float adrcB0ThrScale = constrainf(adrcThrRatio * adrcThrRatio, 1.0f, ADRC_B0_THR_SCALE_MAX);
+    const float adrcSigmaDecay = (float)pidProfile->adrc_sigma_decay * 0.1f;
+    const float adrcDecaySchedGain = (float)pidProfile->adrc_sigma_decay_sched * 0.01f;
+    const float adrcDecayFiltAlpha = pidRuntime.dT / (pidRuntime.dT + 1.0f / (2.0f * M_PIf * ADRC_DECAY_FILT_HZ));
 
     // ----------PID controller----------
     for (flight_dynamics_index_t axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1296,15 +1359,21 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             &currentPidSetpoint, &errorRate);
 #endif
 
-        // ADRC parameters
+        // ADRC parameters. b0 = D * adrc_b0_scale (fix #9): the multiplier is a per-craft
+        // constant set once in the CLI, so high thrust/weight builds (whoops) can reach
+        // b0 beyond the uint8 D field's ceiling while day-to-day tuning stays in the D cell.
+        const float b0Scale = (pidProfile->adrc_b0_scale > 0) ? (float)pidProfile->adrc_b0_scale : (float)ADRC_B0_SCALE_DEFAULT;
         float wc = (float)pidProfile->pid[axis].P * ADRC_WC_SCALE;
         float wo = (float)pidProfile->pid[axis].I * ADRC_WO_SCALE;
-        float b0 = (float)pidProfile->pid[axis].D * ADRC_B0_SCALE;
+        float b0 = (float)pidProfile->pid[axis].D * b0Scale;
 
         // Sane fallbacks for wc, wo, b0
         if (wc < 1.0f) wc = 10.0f;
         if (wo < 1.0f) wo = 30.0f;
-        if (b0 < 1.0f) b0 = ADRC_B0_FALLBACK * ADRC_B0_SCALE;
+        if (b0 < 1.0f) b0 = ADRC_B0_FALLBACK * b0Scale;
+
+        // fix #10: throttle-scaled plant gain (hover-tuned b0 stays calibrated across throttle)
+        b0 *= adrcB0ThrScale;
 
         // Observer gains (for second-order linear ADRC)
         float beta1 = 3.0f * wo;
@@ -1318,9 +1387,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // EXPERIMENTAL fix #8: on the ground the plant does not respond to the command,
         // so the observer models b0*u only after liftoff (otherwise z3 winds to -b0*u).
         const float adrcB0u = pidRuntime.adrc_liftoff ? (b0 * pidRuntime.adrc_lastOutput[axis]) : 0.0f;
+
+        // EXPERIMENTAL fix #11: z3 is a leaky integrator so a transient bump bleeds off. Optional
+        // scheduling slows the decay during observer transients (sched gain 0 -> decay ==
+        // sigma_decay; the LP tracks maneuver/prop-wash error, not steady disturbance — see define).
+        pidRuntime.adrc_errLp[axis] += adrcDecayFiltAlpha * (-error_eso - pidRuntime.adrc_errLp[axis]);
+        const float adrcDecayEff = adrcSigmaDecay / (1.0f + adrcDecaySchedGain * fabsf(pidRuntime.adrc_errLp[axis]));
+
         pidRuntime.adrc_z1[axis] += dt * (pidRuntime.adrc_z2[axis] - beta1 * error_eso);
         pidRuntime.adrc_z2[axis] += dt * (pidRuntime.adrc_z3[axis] + adrcB0u - beta2 * error_eso);
-        pidRuntime.adrc_z3[axis] += dt * (-beta3 * error_eso);
+        pidRuntime.adrc_z3[axis] += dt * (-beta3 * error_eso - adrcDecayEff * pidRuntime.adrc_z3[axis]);
 
         // Anti-windup: bound the disturbance estimate so it cannot wind up under
         // motor/actuator saturation (otherwise recovery from clipping lags while z3 unwinds).
@@ -1330,20 +1406,25 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
         // Expose the ESO states to blackbox so testers can actually see the observer.
         // roll: z1/z2/z3 in [0..2]; pitch: z1/z2/z3 in [3..5]; yaw z3 in [6];
-        // [7] = pitch b0, sign-tagged with the liftoff latch (fix #8): positive = airborne
-        // (b0*u fed to the ESO), negative = still gated on the ground.
-        // z1 = estimated rate (deg/s), z2 = estimated accel, z3 = estimated total disturbance.
+        // [7] = throttle-scaled b0 multiplier x100 (fix #10), sign-tagged with the liftoff
+        // latch (fix #8): positive = airborne (b0*u fed to the ESO), negative = gated on ground.
+        // z1 = estimated rate (deg/s), z2 = estimated accel, z3 = estimated total disturbance
+        // (logged /ADRC_Z3_LOG_SCALE, fix #12, so the int16 field does not clip — multiply back).
+        // debug[] is int16_t and DEBUG_SET does not range-check, so an over-range value would
+        // WRAP (the "goes nuts" trace) — the z3 anti-windup clamp (b0 * pidsum limit) can still
+        // exceed int16 even /16 on high-b0 builds, so saturate: a flat rail reads as "off-scale"
+        // on a plot, a wrap reads as garbage. Past the rail the I term (-z3/b0) is exact.
         if (axis == FD_ROLL) {
-            DEBUG_SET(DEBUG_ADRC, 0, lrintf(pidRuntime.adrc_z1[axis]));
-            DEBUG_SET(DEBUG_ADRC, 1, lrintf(pidRuntime.adrc_z2[axis]));
-            DEBUG_SET(DEBUG_ADRC, 2, lrintf(pidRuntime.adrc_z3[axis]));
+            DEBUG_SET(DEBUG_ADRC, 0, lrintf(constrainf(pidRuntime.adrc_z1[axis], -32767.0f, 32767.0f)));
+            DEBUG_SET(DEBUG_ADRC, 1, lrintf(constrainf(pidRuntime.adrc_z2[axis], -32767.0f, 32767.0f)));
+            DEBUG_SET(DEBUG_ADRC, 2, lrintf(constrainf(pidRuntime.adrc_z3[axis] / ADRC_Z3_LOG_SCALE, -32767.0f, 32767.0f)));
         } else if (axis == FD_PITCH) {
-            DEBUG_SET(DEBUG_ADRC, 3, lrintf(pidRuntime.adrc_z1[axis]));
-            DEBUG_SET(DEBUG_ADRC, 4, lrintf(pidRuntime.adrc_z2[axis]));
-            DEBUG_SET(DEBUG_ADRC, 5, lrintf(pidRuntime.adrc_z3[axis]));
-            DEBUG_SET(DEBUG_ADRC, 7, lrintf(pidRuntime.adrc_liftoff ? b0 : -b0));
+            DEBUG_SET(DEBUG_ADRC, 3, lrintf(constrainf(pidRuntime.adrc_z1[axis], -32767.0f, 32767.0f)));
+            DEBUG_SET(DEBUG_ADRC, 4, lrintf(constrainf(pidRuntime.adrc_z2[axis], -32767.0f, 32767.0f)));
+            DEBUG_SET(DEBUG_ADRC, 5, lrintf(constrainf(pidRuntime.adrc_z3[axis] / ADRC_Z3_LOG_SCALE, -32767.0f, 32767.0f)));
+            DEBUG_SET(DEBUG_ADRC, 7, lrintf((pidRuntime.adrc_liftoff ? 1.0f : -1.0f) * adrcB0ThrScale * 100.0f));
         } else { // FD_YAW
-            DEBUG_SET(DEBUG_ADRC, 6, lrintf(pidRuntime.adrc_z3[axis]));
+            DEBUG_SET(DEBUG_ADRC, 6, lrintf(constrainf(pidRuntime.adrc_z3[axis] / ADRC_Z3_LOG_SCALE, -32767.0f, 32767.0f)));
         }
 
         // Control Law (Virtual PD)
@@ -1472,9 +1553,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidRuntime.adrc_z2[axis] = 0.0f;
             pidRuntime.adrc_z3[axis] = 0.0f;
             pidRuntime.adrc_lastOutput[axis] = 0.0f;
+            pidRuntime.adrc_errLp[axis] = 0.0f;
         }
         pidRuntime.adrc_liftoff = false;
         pidRuntime.adrc_gyroActiveS = 0.0f;
+        pidRuntime.adrc_idleS = 0.0f;
     } else if (pidRuntime.zeroThrottleItermReset) {
         // Keep the ESO running at zero throttle (do not wipe z1/z2/z3) so the disturbance
         // estimate is maintained instead of restarting from zero on every spool-up.
