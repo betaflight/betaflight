@@ -537,6 +537,8 @@ typedef struct pidRuntime_s {
     float adrc_z2[XYZ_AXIS_COUNT];
     float adrc_z3[XYZ_AXIS_COUNT];
     float adrc_lastOutput[XYZ_AXIS_COUNT];
+    bool adrc_liftoff;        // latched once per arm cycle: craft has left the ground
+    float adrc_gyroActiveS;   // seconds of sustained gyro activity (liftoff detector)
 } pidRuntime_t;
 
 extern pidRuntime_t pidRuntime;
