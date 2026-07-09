@@ -240,6 +240,45 @@ TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
     EXPECT_FLOAT_EQ(z3Before, runtime.z3[FD_ROLL]);
 }
 
+TEST_F(AdrcUnittest, Z2TracksHardManeuverAcceleration)
+{
+    // A hard 5" snap produces 12-25k deg/s^2 of real angular acceleration; feed a 20 000 deg/s^2
+    // gyro ramp at a realistic 8 kHz looptime and require z2 to actually track it. An
+    // authority-derived z2 bound (pidSumLimit*b0/kd = 500*2000/120 ~ 8 300 deg/s^2 at the shipped
+    // defaults) rails well below this and would fail here.
+    constexpr float dT = 0.000125f; // 8 kHz
+    adrcInitConfig(&profile, &runtime, dT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    float rate = 0.0f;
+    for (int i = 0; i < 800; i++) { // 0.1 s: 0 -> 2000 deg/s
+        rate += 20000.0f * dT;
+        adrcApplyControl(&runtime, FD_ROLL, rate, rate, dT, 500.0f);
+    }
+    EXPECT_GT(runtime.z2[FD_ROLL], 10000.0f);
+}
+
+TEST_F(AdrcUnittest, ControlTermsAreNotClampedIndividually)
+{
+    // Mid-snap P legitimately exceeds pidSumLimit while an opposing D partially cancels it; the
+    // final authority clamp belongs to the mixer's constrainf(Sum). Per-term clamps would cut the
+    // net drive severalfold here (P clamped to 500 with D = -300 nets 200, instead of the
+    // validated 900 - 300 = 600).
+    constexpr float dT = 0.000125f;
+    adrcInitConfig(&profile, &runtime, dT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    runtime.z2[FD_ROLL] = 5000.0f; // plausible mid-snap acceleration estimate
+    // gyro == z1 == 0 (errorEso == 0), so the preset states pass through the ESO update unchanged.
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, dT, 500.0f);
+    EXPECT_GT(out.P, 500.0f);          // kp*err/b0 = 3600*500/2000 = 900 - must not clamp to 500
+    EXPECT_NEAR(-300.0f, out.D, 5.0f); // -kd*z2/b0 = -120*5000/2000
+}
+
 TEST_F(AdrcUnittest, GateBlocksB0uFeedbackWhenClosed)
 {
     // Grounded (gate closed): a large lastOutput must not feed b0*u into z2.

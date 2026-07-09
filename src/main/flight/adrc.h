@@ -125,8 +125,9 @@ void adrcResetGate(adrcRuntime_t *adrcRuntime);
 // all three axes in one iteration.
 void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adrcProfile, float dT);
 
-// pidSumLimit bounds each of P/I/D individually (and, via that, the ESO states that drive them),
-// mirroring classic PID's itermLimit-style windup protection - see adrc.c for why this is needed.
+// pidSumLimit anti-windup-clamps the ESO's disturbance estimate (z3), capping |I| = |z3/b0| at
+// pidSumLimit - the ADRC equivalent of classic PID's itermLimit. See adrc.c for why z3 is the
+// only state/term that gets an authority-derived bound.
 adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRate, float currentPidSetpoint,
     float dT, float pidSumLimit);
 

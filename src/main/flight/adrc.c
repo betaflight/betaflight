@@ -35,10 +35,12 @@
 
 #include "adrc.h"
 
-// Generous physical bound on the ESO's rate estimate (z1) - well beyond any real gyro reading,
-// just prevents unbounded divergence (e.g. from a badly tuned wo) rather than constraining normal
-// flight in any way.
+// Generous physical bounds on the ESO's rate estimate (z1) and rate-derivative estimate (z2) -
+// well beyond any real gyro reading / angular acceleration (a hard 5" snap peaks at roughly
+// 12-25k deg/s^2, so 100k leaves ample margin) - just preventing unbounded divergence (e.g. from
+// a badly tuned wo) rather than constraining normal flight in any way.
 #define ADRC_Z1_LIMIT 2000.0f
+#define ADRC_Z2_LIMIT 100000.0f
 
 // Liftoff-gate thresholds, ported as-is from danusha2345/ADRC-betaflight (ADRC_FIXES.md fix
 // #8/#10) - community-validated on real hardware across several testers/airframes. While the
@@ -230,15 +232,17 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     adrcRuntime->z2[axis] += dT * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
     adrcRuntime->z3[axis] += dT * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);
 
-    // Bound the ESO states themselves (not just their effect on P/I/D below), the same way classic
-    // PID's iterm accumulator is itself clamped rather than only clamping its contribution to the
-    // sum - without this, a saturated output still lets z2/z3 wind up unboundedly in the meantime,
-    // which then takes far longer to unwind once the disturbance driving it stops. z2/z3's bounds
-    // are derived from the same per-term pidSumLimit used below, so a term can't wind up to more
-    // than it could ever contribute anyway.
+    // Anti-windup: bound the disturbance estimate (z3) so it cannot wind up under motor/actuator
+    // saturation - otherwise recovery from clipping lags while z3 unwinds. |I| = |z3/b0| is thereby
+    // capped at pidSumLimit. z3 is the only ESO state that needs an authority-derived bound: it is
+    // the only one with integrator memory (pre-decay, a pure integrator of the observer error),
+    // while z1/z2 are servo'd back toward the measurement every iteration by their -beta*errorEso
+    // terms and cannot accumulate. z1/z2 only get the generous physical divergence bounds above -
+    // a tighter, authority-derived bound on z2 (pidSumLimit*b0/kd ~ 8 300 deg/s^2 at the shipped
+    // defaults) rails during ordinary snaps/flips, whose real angular acceleration exceeds it
+    // severalfold at/below hover, distorting the observer exactly when it must track fastest.
     adrcRuntime->z1[axis] = constrainf(adrcRuntime->z1[axis], -ADRC_Z1_LIMIT, ADRC_Z1_LIMIT);
-    const float maxZ2 = pidSumLimit * b0 / fmaxf(c->kd, 1.0f);
-    adrcRuntime->z2[axis] = constrainf(adrcRuntime->z2[axis], -maxZ2, maxZ2);
+    adrcRuntime->z2[axis] = constrainf(adrcRuntime->z2[axis], -ADRC_Z2_LIMIT, ADRC_Z2_LIMIT);
     const float maxZ3 = pidSumLimit * b0;
     adrcRuntime->z3[axis] = constrainf(adrcRuntime->z3[axis], -maxZ3, maxZ3);
 
@@ -253,14 +257,18 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
         adrcRuntime->vRef[axis] = currentPidSetpoint;
     }
 
-    // Virtual PD control law; b0 divides out the control-input gain estimate. Each term is then
-    // clamped to pidSumLimit individually - mirroring how classic PID's iterm is windup-protected -
-    // since unlike classic PID, nothing here otherwise stops a single term from claiming the whole
-    // mixer's authority every iteration if the ESO is diverging.
+    // Virtual PD control law; b0 divides out the control-input gain estimate. The terms are NOT
+    // clamped individually: P and D are memoryless (nothing to wind up), the z3 clamp above
+    // already caps |I| at pidSumLimit, and the mixer applies the final constrainf(Sum,
+    // +/-pidSumLimit) either way, so a diverging ESO is equally bounded without them. What
+    // per-term clamps would do is change closed-loop authority mid-maneuver - P legitimately
+    // exceeds pidSumLimit while an opposing D partially cancels it, and clamping both cuts the
+    // net drive severalfold mid-snap - which is exactly the regime the community-validated tunes
+    // were flown in without them.
     const adrcOutput_t output = {
-        .P = constrainf((c->kp * (adrcRuntime->vRef[axis] - adrcRuntime->z1[axis])) / b0, -pidSumLimit, pidSumLimit),
-        .D = constrainf((-c->kd * adrcRuntime->z2[axis]) / b0, -pidSumLimit, pidSumLimit),
-        .I = constrainf((-adrcRuntime->z3[axis]) / b0, -pidSumLimit, pidSumLimit),
+        .P = (c->kp * (adrcRuntime->vRef[axis] - adrcRuntime->z1[axis])) / b0,
+        .D = (-c->kd * adrcRuntime->z2[axis]) / b0,
+        .I = (-adrcRuntime->z3[axis]) / b0,
     };
 
     // Log all three axes simultaneously (the ported source gates on gyro.gyroDebugAxis, one axis
