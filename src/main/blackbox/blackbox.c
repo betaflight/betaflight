@@ -1606,6 +1606,21 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_D_MAX_GAIN, "%d",             currentPidProfile->d_max_gain);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_D_MAX_ADVANCE, "%d",          currentPidProfile->d_max_advance);
 #endif
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PID_TYPE, "%d",               currentPidProfile->pid_type);
+#ifdef USE_ADRC
+        BLACKBOX_PRINT_HEADER_LINE("adrcWC", "%d,%d,%d",                    currentPidProfile->adrc.wc[FD_ROLL],
+                                                                            currentPidProfile->adrc.wc[FD_PITCH],
+                                                                            currentPidProfile->adrc.wc[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("adrcWO", "%d,%d,%d",                    currentPidProfile->adrc.wo[FD_ROLL],
+                                                                            currentPidProfile->adrc.wo[FD_PITCH],
+                                                                            currentPidProfile->adrc.wo[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("adrcB0", "%d,%d,%d",                    currentPidProfile->adrc.b0[FD_ROLL],
+                                                                            currentPidProfile->adrc.b0[FD_PITCH],
+                                                                            currentPidProfile->adrc.b0[FD_YAW]);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_GYRO_LPF_HZ, "%d",       currentPidProfile->adrc.gyroFilterHz);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_HOVER_THROTTLE, "%d",    currentPidProfile->adrc.hoverThrottlePercent);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_SIGMA_DECAY, "%d",       currentPidProfile->adrc.sigmaDecay);
+#endif
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF1_TYPE, "%d",        currentPidProfile->dterm_lpf1_type);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_DTERM_LPF1_STATIC_HZ, "%d",   currentPidProfile->dterm_lpf1_static_hz);
 #ifdef USE_DYN_LPF
