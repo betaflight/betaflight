@@ -240,6 +240,23 @@ TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
     EXPECT_FLOAT_EQ(z3Before, runtime.z3[FD_ROLL]);
 }
 
+TEST_F(AdrcUnittest, ResetSeedsGyroFilterSoHandoverHasNoEsoKick)
+{
+    // adrcResetState() must seed the gyro filter together with z1: seeding z1 from the raw gyro
+    // while the filter re-converges from zero would produce errorEso ~ gyro on the very next
+    // loop, kicking z3 by -beta3*errorEso*dT (~ -122 000 at 1000 deg/s and 8 kHz) - the opposite
+    // of the smooth handover the reset exists for (mid-air profile switch into ADRC).
+    constexpr float dT = 0.000125f; // 8 kHz
+    adrcInitConfig(&profile, &runtime, dT);
+
+    gyro.gyroADCf[FD_ROLL] = 1000.0f;
+    adrcResetState(&runtime, FD_ROLL);
+
+    adrcApplyControl(&runtime, FD_ROLL, gyro.gyroADCf[FD_ROLL], 1000.0f, dT, 500.0f);
+    EXPECT_NEAR(0.0f, runtime.z3[FD_ROLL], 100.0f);   // no false disturbance kick
+    EXPECT_NEAR(1000.0f, runtime.z1[FD_ROLL], 10.0f); // observer starts on the measurement
+}
+
 TEST_F(AdrcUnittest, GyroLpfZeroIsPassThroughNotFrozen)
 {
     // 0 means "filter disabled" everywhere else in Betaflight; a naive pt2FilterGain(0, dT) == 0

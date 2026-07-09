@@ -383,8 +383,8 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     // switch from a CLASSIC profile, during which the observer state is not updated at all.
     // adrcResetState() starts z1 from the current gyro reading, so the handover transient is
     // near-zero instead of a kick from arm-time-stale state. Deliberately conditioned on the
-    // transition: pidInitConfig() also fires on in-flight CLI/adjustment saves, where discarding
-    // the z3 trim estimate would cost a visible attitude sag. The liftoff gate is left alone -
+    // transition: pidInitConfig() also fires mid-flight from adjustment-range tuning
+    // (rc_adjustments.c), where discarding the z3 trim estimate would cost a visible attitude sag. The liftoff gate is left alone -
     // it re-latches within one gyro-hold interval when already airborne.
     if (pidProfile->pid_type != pidRuntime.activePidType) {
         if (pidProfile->pid_type == PID_TYPE_ADRC) {

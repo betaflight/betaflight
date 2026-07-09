@@ -147,9 +147,14 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         // an ESO input frozen at zero and a blind controller. The dT guard mirrors
         // pidInitFilters()' targetPidLooptime guard for boot-time calls before the looptime is
         // known (pt2FilterGain(hz, 0) is 0 too); the post-looptime init re-runs with the real dT.
+        // Gain-only update, NOT pt2FilterInit(): init zeroes the filter states, and pidInitConfig()
+        // fires while armed - adjustment-range tuning (rc_adjustments.c) and pid-profile switches -
+        // so re-converging from zero would feed the ESO a near-zero gyro for a few ms, a large
+        // false errorEso spike straight into z3 (adrcResetState() seeds the states on every reset
+        // path, so they are never stale).
         const float gyroFilterGain = (adrcProfile->gyroFilterHz > 0 && dT > 0)
             ? pt2FilterGain(adrcProfile->gyroFilterHz, dT) : 1.0f;
-        pt2FilterInit(&adrcRuntime->gyroFilter[axis], gyroFilterGain);
+        pt2FilterUpdateCutoff(&adrcRuntime->gyroFilter[axis], gyroFilterGain);
     }
 
     adrcRuntime->b0ThrottleScale = 1.0f;
@@ -157,7 +162,15 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
 
 void adrcResetState(adrcRuntime_t *adrcRuntime, int axis)
 {
-    adrcRuntime->z1[axis] = gyro.gyroADCf[axis];
+    const float gyroRate = gyro.gyroADCf[axis];
+    // Seed both cascaded pt2 stages so the filtered gyro equals the current gyro immediately.
+    // Seeding z1 alone while the filter re-converges from stale (or zeroed) state would
+    // manufacture exactly the errorEso kick this reset exists to prevent: at gyro = 1000 deg/s
+    // the first filtered sample is ~24 deg/s (150 Hz pt2 @ 8 kHz), so errorEso ~ 976 and the
+    // first z3 step is -beta3*errorEso*dT ~ -122 000.
+    adrcRuntime->gyroFilter[axis].state = gyroRate;
+    adrcRuntime->gyroFilter[axis].state1 = gyroRate;
+    adrcRuntime->z1[axis] = gyroRate;
     adrcRuntime->z2[axis] = 0.0f;
     adrcRuntime->z3[axis] = 0.0f;
     adrcRuntime->vRef[axis] = 0.0f;
