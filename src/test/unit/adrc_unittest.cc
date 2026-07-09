@@ -240,6 +240,21 @@ TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
     EXPECT_FLOAT_EQ(z3Before, runtime.z3[FD_ROLL]);
 }
 
+TEST_F(AdrcUnittest, GyroLpfZeroIsPassThroughNotFrozen)
+{
+    // 0 means "filter disabled" everywhere else in Betaflight; a naive pt2FilterGain(0, dT) == 0
+    // would instead freeze the ESO's gyro input at zero - a blind controller that flies away on
+    // arm. With the filter bypassed the observer must still see the gyro and start tracking it.
+    profile.gyroFilterHz = 0;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    adrcApplyControl(&runtime, FD_ROLL, 100.0f, 0.0f, TEST_DT, 500.0f);
+    EXPECT_GT(runtime.z1[FD_ROLL], 0.0f); // frozen-at-zero input would leave z1 exactly 0
+}
+
 TEST_F(AdrcUnittest, Z2TracksHardManeuverAcceleration)
 {
     // A hard 5" snap produces 12-25k deg/s^2 of real angular acceleration; feed a 20 000 deg/s^2

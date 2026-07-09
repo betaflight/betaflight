@@ -138,7 +138,14 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         c->decayRate = adrcProfile->sigmaDecay * 0.1f;
         c->tdGain = (adrcProfile->tdHz > 0) ? (2.0f * M_PIf * adrcProfile->tdHz) : 0.0f;
 
-        pt2FilterInit(&adrcRuntime->gyroFilter[axis], pt2FilterGain(adrcProfile->gyroFilterHz, dT));
+        // A pt2 gain of 1 makes the filter an exact pass-through, so adrc_gyro_lpf_hz = 0 follows
+        // the usual "0 disables the filter" convention - pt2FilterGain(0, dT) would return 0, i.e.
+        // an ESO input frozen at zero and a blind controller. The dT guard mirrors
+        // pidInitFilters()' targetPidLooptime guard for boot-time calls before the looptime is
+        // known (pt2FilterGain(hz, 0) is 0 too); the post-looptime init re-runs with the real dT.
+        const float gyroFilterGain = (adrcProfile->gyroFilterHz > 0 && dT > 0)
+            ? pt2FilterGain(adrcProfile->gyroFilterHz, dT) : 1.0f;
+        pt2FilterInit(&adrcRuntime->gyroFilter[axis], gyroFilterGain);
     }
 
     adrcRuntime->b0ThrottleScale = 1.0f;
