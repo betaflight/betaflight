@@ -327,6 +327,8 @@ ledStripStatusModeConfig_t *ledStripActiveProfileConfigMutable(void)
 
 void syncActiveLedProfileConfig(void) {}
 
+void syncSimpleLedProfilesFromConfig(void) {}
+
 void setLedProfile(uint8_t profile)
 {
     if (profile < LED_PROFILE_COUNT) {
