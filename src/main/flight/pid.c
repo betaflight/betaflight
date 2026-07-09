@@ -1287,6 +1287,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         pidRuntime.adrc_z2[axis] += dt * (pidRuntime.adrc_z3[axis] + (b0 * pidRuntime.adrc_lastOutput[axis]) - beta2 * error_eso);
         pidRuntime.adrc_z3[axis] += dt * (-beta3 * error_eso);
 
+        // Anti-windup: bound the disturbance estimate so it cannot wind up under
+        // motor/actuator saturation (otherwise recovery from clipping lags while z3 unwinds).
+        // |I term| = |z3 / b0| is capped at the per-axis pidsum limit.
+        const float adrcZ3Limit = b0 * ((axis == FD_YAW) ? PIDSUM_LIMIT_YAW : PIDSUM_LIMIT);
+        pidRuntime.adrc_z3[axis] = constrainf(pidRuntime.adrc_z3[axis], -adrcZ3Limit, adrcZ3Limit);
+
         // Control Law (Virtual PD)
         float kp = wc * wc;
         float kd = 2.0f * wc;
@@ -1373,8 +1379,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].Sum = pidSum;
         }
 
-        // Save actual control output for next iteration of ADRC observer
-        pidRuntime.adrc_lastOutput[axis] = pidData[axis].Sum;
+        // Save actual control output for next iteration of ADRC observer.
+        // Clamp to the per-axis pidsum limit so the ESO is fed the command that can
+        // actually reach the plant, instead of absorbing mixer clipping as a fake disturbance.
+        const float adrcOutLimit = (axis == FD_YAW) ? PIDSUM_LIMIT_YAW : PIDSUM_LIMIT;
+        pidRuntime.adrc_lastOutput[axis] = constrainf(pidData[axis].Sum, -adrcOutLimit, adrcOutLimit);
     }
 
 #ifdef USE_WING
@@ -1406,7 +1415,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidRuntime.adrc_lastOutput[axis] = 0.0f;
         }
     } else if (pidRuntime.zeroThrottleItermReset) {
-        pidResetIterm();
+        // Keep the ESO running at zero throttle (do not wipe z1/z2/z3) so the disturbance
+        // estimate is maintained instead of restarting from zero on every spool-up.
+        // Only the legacy I accumulator is cleared (ADRC recomputes I = -z3/b0 each loop).
+        for (int axis = 0; axis < 3; axis++) {
+            pidData[axis].I = 0.0f;
+        }
     }
 }
 
