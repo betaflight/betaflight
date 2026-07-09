@@ -24,6 +24,8 @@
 
 #include "platform.h"
 
+#include "build/build_config.h"
+
 #include "common/bitarray.h"
 #include "common/maths.h"
 
@@ -45,7 +47,7 @@
 #include "rc_modes.h"
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
-static boxBitmask_t stickyModesEverDisabled;
+STATIC_UNIT_TESTED boxBitmask_t stickyModesEverDisabled;
 
 static bool airmodeEnabled;
 

@@ -55,6 +55,8 @@ extern "C" {
     #include "fc/core.h"
 
     #include "scheduler/scheduler.h"
+
+    extern boxBitmask_t stickyModesEverDisabled;
 }
 
 #include "unittest_macros.h"
@@ -68,6 +70,7 @@ void unsetArmingDisabled(armingDisableFlags_e flag)
 class RcControlsModesTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
+        memset(&stickyModesEverDisabled, 0, sizeof(stickyModesEverDisabled));
     }
 };
 
