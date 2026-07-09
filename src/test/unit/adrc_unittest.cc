@@ -251,3 +251,37 @@ TEST_F(AdrcUnittest, GateBlocksB0uFeedbackWhenClosed)
     // b0*u term - only from -beta2*errorEso, which is also 0 here.
     EXPECT_FLOAT_EQ(z2Before, runtime.z2[FD_ROLL]);
 }
+
+TEST_F(AdrcUnittest, TdDisabledByDefaultTracksSetpointExactly)
+{
+    // tdHz == 0 (the default) must bypass the tracking differentiator entirely - vRef should
+    // follow a setpoint step with zero lag, matching pre-TD behavior exactly.
+    ASSERT_EQ(0, profile.tdHz);
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(500.0f, runtime.vRef[FD_ROLL]);
+}
+
+TEST_F(AdrcUnittest, TdEnabledSmoothsSetpointStep)
+{
+    // With the TD enabled, a setpoint step must not appear in vRef instantly - it should lag
+    // behind, unlike the disabled (direct passthrough) case above. tdHz is kept low relative to
+    // TEST_DT (125 Hz-equivalent, deliberately slower than any real flight-loop rate) so the
+    // discrete Euler integration (dT*tdGain) stays well inside its stable region instead of
+    // numerically overshooting - at real loop rates (~1.6 kHz+) this isn't a practical concern
+    // at any sane adrc_td_hz value.
+    profile.tdHz = 5;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    EXPECT_GT(500.0f, runtime.vRef[FD_ROLL]);
+    EXPECT_LT(0.0f, runtime.vRef[FD_ROLL]);
+
+    // Run it long enough to settle - vRef should converge on the setpoint once it stops moving.
+    for (int i = 0; i < 500; i++) {
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    }
+    EXPECT_NEAR(500.0f, runtime.vRef[FD_ROLL], 1.0f);
+}

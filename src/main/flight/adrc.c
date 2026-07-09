@@ -114,6 +114,11 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     // z3 leaky-decay rate x0.1 (fix #11): a mild leak (tau ~ 3s) so a transient disturbance bump
     // bleeds off instead of lingering. Set 0 for the classic pure integrator.
     adrcProfile->sigmaDecay = 3;
+    // Tracking differentiator, off by default: smooths the setpoint feeding the control law (not
+    // the ESO's own gyro-tracking error) instead of feeding it straight through. Ported from
+    // SeverinBitterli's independent implementation, not danusha2345's - unvalidated here, left
+    // opt-in for testers.
+    adrcProfile->tdHz = 0;
 }
 
 void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime, float dT)
@@ -129,6 +134,7 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         c->beta2 = 3.0f * c->wo * c->wo;
         c->beta3 = c->wo * c->wo * c->wo;
         c->decayRate = adrcProfile->sigmaDecay * 0.1f;
+        c->tdGain = (adrcProfile->tdHz > 0) ? (2.0f * M_PIf * adrcProfile->tdHz) : 0.0f;
 
         pt2FilterInit(&adrcRuntime->gyroFilter[axis], pt2FilterGain(adrcProfile->gyroFilterHz, dT));
     }
@@ -141,6 +147,7 @@ void adrcResetState(adrcRuntime_t *adrcRuntime, int axis)
     adrcRuntime->z1[axis] = gyro.gyroADCf[axis];
     adrcRuntime->z2[axis] = 0.0f;
     adrcRuntime->z3[axis] = 0.0f;
+    adrcRuntime->vRef[axis] = 0.0f;
     adrcRuntime->lastOutput[axis] = 0.0f;
 }
 
@@ -235,12 +242,23 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     const float maxZ3 = pidSumLimit * b0;
     adrcRuntime->z3[axis] = constrainf(adrcRuntime->z3[axis], -maxZ3, maxZ3);
 
+    // Tracking differentiator (opt-in, off by default): smooths the setpoint driving the control
+    // law's P term, separate from the ESO's own error term above (errorEso still tracks the raw
+    // gyro directly - the TD only changes what the control law treats as "where we're steering
+    // toward", not what the observer treats as "what actually happened"). tdGain == 0 bypasses it
+    // (vRef tracks currentPidSetpoint exactly, one-loop-delay-free).
+    if (c->tdGain > 0.0f) {
+        adrcRuntime->vRef[axis] += dT * (c->tdGain * (currentPidSetpoint - adrcRuntime->vRef[axis]));
+    } else {
+        adrcRuntime->vRef[axis] = currentPidSetpoint;
+    }
+
     // Virtual PD control law; b0 divides out the control-input gain estimate. Each term is then
     // clamped to pidSumLimit individually - mirroring how classic PID's iterm is windup-protected -
     // since unlike classic PID, nothing here otherwise stops a single term from claiming the whole
     // mixer's authority every iteration if the ESO is diverging.
     const adrcOutput_t output = {
-        .P = constrainf((c->kp * (currentPidSetpoint - adrcRuntime->z1[axis])) / b0, -pidSumLimit, pidSumLimit),
+        .P = constrainf((c->kp * (adrcRuntime->vRef[axis] - adrcRuntime->z1[axis])) / b0, -pidSumLimit, pidSumLimit),
         .D = constrainf((-c->kd * adrcRuntime->z2[axis]) / b0, -pidSumLimit, pidSumLimit),
         .I = constrainf((-adrcRuntime->z3[axis]) / b0, -pidSumLimit, pidSumLimit),
     };

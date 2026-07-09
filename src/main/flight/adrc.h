@@ -34,6 +34,8 @@
 // Builds on a proof-of-concept by Godwin Pious (@Boyyt357): https://github.com/Boyyt357/ADRC-betaflight
 // Robustness fixes (liftoff gate, throttle-scaled b0, anti-windup, z3 decay) ported from
 // danusha2345/ADRC-betaflight: https://github.com/danusha2345/ADRC-betaflight
+// Tracking differentiator (adrc_td_hz) ported from an independent implementation by SeverinBitterli:
+// https://github.com/SeverinBitterli/betaflight/tree/ADRC-Implementation
 
 typedef enum {
     PID_TYPE_CLASSIC = 0,
@@ -55,6 +57,12 @@ typedef struct adrcProfile_s {
                                    // hover, since motor authority ~ throttle^2 (not per-axis)
     uint8_t sigmaDecay;           // z3 leaky-decay rate x0.1; 0 = classic pure integrator (not
                                    // per-axis)
+    uint16_t tdHz;                // tracking-differentiator corner freq on the setpoint feeding the
+                                   // control law (not the ESO's own error term); 0 = disabled
+                                   // (bypass, setpoint fed straight through). Off by default - not
+                                   // part of the danusha2345 port, independently added by a third
+                                   // ADRC implementation (SeverinBitterli/betaflight, ADRC-Implementation
+                                   // branch); standard ADRC theory component, unvalidated here.
 } adrcProfile_t;
 
 // Precomputed per-axis coefficients derived from adrcProfile_t at profile-load time, so the hot
@@ -69,6 +77,7 @@ typedef struct adrcCoefficient_s {
     float beta2;   // = 3*wo*wo (ESO observer gain)
     float beta3;   // = wo*wo*wo (ESO observer gain)
     float decayRate; // = adrcProfile->sigmaDecay * 0.1 (z3 leaky-decay rate, shared across axes)
+    float tdGain;    // = 2*pi*tdHz, shared across axes; 0 = tracking differentiator disabled
 } adrcCoefficient_t;
 
 // Runtime state, embedded as a single field in pidRuntime_t.
@@ -78,6 +87,8 @@ typedef struct adrcRuntime_s {
     float z1[XYZ_AXIS_COUNT]; // ESO estimate of rate
     float z2[XYZ_AXIS_COUNT]; // ESO estimate of rate derivative
     float z3[XYZ_AXIS_COUNT]; // ESO estimate of lumped disturbance
+    float vRef[XYZ_AXIS_COUNT]; // tracking-differentiator-filtered setpoint fed to the control law;
+                                 // tracks the raw setpoint directly when tdGain == 0 (disabled)
     float lastOutput[XYZ_AXIS_COUNT]; // control output fed back into the observer next iteration
     bool liftoff;           // latched once per arm cycle: craft has left the ground (shared, not
                              // per-axis - gyro activity is checked across all three axes at once)

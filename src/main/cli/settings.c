@@ -1426,6 +1426,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ADRC_GYRO_LPF_HZ, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.gyroFilterHz) },
     { PARAM_NAME_ADRC_HOVER_THROTTLE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.hoverThrottlePercent) },
     { PARAM_NAME_ADRC_SIGMA_DECAY,    VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.sigmaDecay) },
+    { PARAM_NAME_ADRC_TD_HZ,          VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.tdHz) },
 #endif
 
 // PG_TELEMETRY_CONFIG
