@@ -127,9 +127,13 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         adrcCoefficient_t *c = &adrcRuntime->coefficient[axis];
-        c->wc = adrcProfile->wc[axis];
-        c->wo = adrcProfile->wo[axis];
-        c->b0 = (adrcProfile->b0[axis] > 0) ? adrcProfile->b0[axis] : 500.0f;
+        // Floors mirror the CLI ranges, as defense-in-depth for out-of-range values arriving via
+        // PG/EEPROM rather than `set`: wo = 0 would freeze the observer outright (all betas 0,
+        // z1 stuck at its arm-time value while P keeps acting on it) and wc = 0 would zero the
+        // whole control law; both fail silently, with nothing in the CLI to hint at why.
+        c->wc = fmaxf(adrcProfile->wc[axis], 5.0f);
+        c->wo = fmaxf(adrcProfile->wo[axis], 10.0f);
+        c->b0 = fmaxf(adrcProfile->b0[axis], 100.0f);
         c->kp = c->wc * c->wc;
         c->kd = 2.0f * c->wc;
         c->beta1 = 3.0f * c->wo;
