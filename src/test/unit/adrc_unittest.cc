@@ -189,6 +189,9 @@ TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         adrcResetState(&runtime, axis);
     }
+    // Exercise the profile's own configured decay rate, not the (also nonzero) gated decay rate
+    // that applies while grounded - see ADRC_GATED_Z3_DECAY_RATE in adrc.c.
+    runtime.liftoff = true;
 
     runtime.z3[FD_ROLL] = 1000.0f;
     // With gyroRate == z1 (errorEso == 0), only the decay term drives z3, isolating its effect.
@@ -198,6 +201,25 @@ TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)
     EXPECT_LT(fabsf(runtime.z3[FD_ROLL]), 1000.0f);
 }
 
+TEST_F(AdrcUnittest, Z3DecaysFasterWhenGroundedThanConfiguredDecayRate)
+{
+    // sigmaDecay = 0 (pure integrator) is the worst case for windup while grounded - the gated
+    // decay must override it regardless of what the profile configures.
+    profile.sigmaDecay = 0;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    ASSERT_FALSE(runtime.liftoff);
+
+    runtime.z3[FD_ROLL] = 1000.0f;
+    // With gyroRate == z1 (errorEso == 0), only the decay term drives z3, isolating its effect.
+    adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    // A single step at the gated rate (20/s) should visibly erode z3 even though sigmaDecay == 0
+    // would otherwise leave it untouched (see Z3IsPureIntegratorWhenDecayDisabled, airborne case).
+    EXPECT_LT(runtime.z3[FD_ROLL], 1000.0f);
+}
+
 TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
 {
     profile.sigmaDecay = 0;
@@ -205,6 +227,11 @@ TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         adrcResetState(&runtime, axis);
     }
+    // sigmaDecay only governs z3's decay while airborne - while ungated, z3 always uses the much
+    // faster ADRC_GATED_Z3_DECAY_RATE regardless of this setting, so it can't wind up while
+    // grounded (see adrc.c). Simulate airborne so sigmaDecay == 0 actually yields a pure
+    // integrator here.
+    runtime.liftoff = true;
 
     runtime.z3[FD_ROLL] = 1000.0f;
     const float z3Before = runtime.z3[FD_ROLL];

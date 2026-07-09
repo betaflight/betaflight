@@ -55,6 +55,16 @@
 #define ADRC_LIFTOFF_IDLE_THROTTLE 0.05f
 #define ADRC_LIFTOFF_IDLE_HOLD_S 0.5f
 
+// The liftoff gate above only zeroes the b0*u term in z2's update - it does nothing to stop z3
+// itself from winding up while grounded. z3 is a leaky integrator of errorEso regardless of gate
+// state, and its steady-state gain (beta3/decayRate) is enormous (beta3 = wo^3, decayRate is a
+// fraction of 1/s), so even a tiny sustained bias (sensor cal residual, filter phase lag) winds it
+// toward its clamp given enough idle time - confirmed on a props-off bench test, where sitting
+// armed at idle let yaw z3 wind to ~80% of its clamp before any stick input. While ungated, use a
+// much faster decay so z3 relaxes toward zero instead of accumulating; it still updates smoothly
+// (no reset discontinuity), just can't hold a wound-up value while the craft isn't flying.
+#define ADRC_GATED_Z3_DECAY_RATE 20.0f
+
 // Throttle-scaled b0 (fix #10a): motor authority scales with RPM, and thrust ~ RPM^2 ~ throttle^2,
 // so a b0 tuned at hover is wrong away from hover. Scaled only UP from hover (clamped) - scaling
 // down would make 1/b0 huge and inject extreme output at low throttle.
@@ -203,13 +213,15 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     const float b0u = adrcRuntime->liftoff ? (b0 * adrcRuntime->lastOutput[axis]) : 0.0f;
 
     // Extended State Observer update (Euler forward integration). z3 is a leaky integrator (rate
-    // c->decayRate, 0 = classic pure integrator) so a transient disturbance bump bleeds off instead
-    // of lingering indefinitely. (The ported source also has an optional decay-*scheduling* gain,
+    // c->decayRate while airborne, 0 = classic pure integrator; ADRC_GATED_Z3_DECAY_RATE while
+    // ungated, see its comment above) so a transient disturbance bump bleeds off instead of
+    // lingering indefinitely. (The ported source also has an optional decay-*scheduling* gain,
     // slowing the leak during observer transients - skipped here since the fork's own docs call it
     // unvalidated: the low-pass it keys on tracks maneuver/prop-wash transients, not a steady load.)
+    const float z3DecayRate = adrcRuntime->liftoff ? c->decayRate : ADRC_GATED_Z3_DECAY_RATE;
     adrcRuntime->z1[axis] += dT * (adrcRuntime->z2[axis] - c->beta1 * errorEso);
     adrcRuntime->z2[axis] += dT * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
-    adrcRuntime->z3[axis] += dT * (-c->beta3 * errorEso - c->decayRate * adrcRuntime->z3[axis]);
+    adrcRuntime->z3[axis] += dT * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);
 
     // Bound the ESO states themselves (not just their effect on P/I/D below), the same way classic
     // PID's iterm accumulator is itself clamped rather than only clamping its contribution to the
