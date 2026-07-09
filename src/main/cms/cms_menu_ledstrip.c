@@ -20,8 +20,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "platform.h"
 
@@ -57,11 +55,12 @@ static uint8_t cmsx_ledBeaconArmedOnly;
 static uint8_t cmsx_ledVisualBeeper;
 static uint8_t cmsx_ledVisualBeeperColor;
 
-#define LED_PROFILE_NAME_DISPLAY_SIZE (MAX_LED_PROFILE_NAME_LENGTH + 1)
-
 #ifdef USE_LED_STRIP_STATUS_MODE
-static char cmsx_ledProfileNameStrings[LED_PROFILE_COUNT][LED_PROFILE_NAME_DISPLAY_SIZE];
-static const char *cmsx_ledProfileNamePtrs[LED_PROFILE_COUNT];
+static const char * const cmsx_ledProfileNamePtrs[LED_PROFILE_COUNT] = {
+    "RACE",
+    "BEACON",
+    "STATUS",
+};
 #else
 static const char * const cmsx_ledProfileNamePtrs[LED_PROFILE_COUNT] = {
     "RACE",
@@ -69,17 +68,19 @@ static const char * const cmsx_ledProfileNamePtrs[LED_PROFILE_COUNT] = {
 };
 #endif
 
+static const void *cmsx_ledProfileOnChange(displayPort_t *pDisp, const void *ptr)
+{
+    UNUSED(pDisp);
+    UNUSED(ptr);
+
+    setLedProfile(cmsx_ledProfile);
+
+    return NULL;
+}
+
 static const void *cmsx_Ledstrip_OnEnter(displayPort_t *pDisp)
 {
     UNUSED(pDisp);
-
-#ifdef USE_LED_STRIP_STATUS_MODE
-    for (unsigned profileIndex = 0; profileIndex < LED_PROFILE_COUNT; profileIndex++) {
-        strncpy(cmsx_ledProfileNameStrings[profileIndex], ledStripProfileName(profileIndex), LED_PROFILE_NAME_DISPLAY_SIZE - 1);
-        cmsx_ledProfileNameStrings[profileIndex][LED_PROFILE_NAME_DISPLAY_SIZE - 1] = '\0';
-        cmsx_ledProfileNamePtrs[profileIndex] = cmsx_ledProfileNameStrings[profileIndex];
-    }
-#endif
 
     cmsx_FeatureLedstrip = featureIsEnabled(FEATURE_LED_STRIP) ? 1 : 0;
     cmsx_ledProfile = getLedProfile();
@@ -125,7 +126,7 @@ static const OSD_Entry cmsx_menuLedstripEntries[] =
 {
     { "-- LED STRIP --",  OME_Label, NULL, NULL },
     { "ENABLED",          OME_Bool,  NULL, &cmsx_FeatureLedstrip },
-    { "PROFILE",          OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, cmsx_ledProfileNamePtrs } },
+    { "PROFILE",          OME_TAB,   cmsx_ledProfileOnChange, &(OSD_TAB_t){ &cmsx_ledProfile, LED_PROFILE_COUNT - 1, cmsx_ledProfileNamePtrs } },
     { "RACE COLOR",       OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledRaceColor, COLOR_COUNT - 1, lookupTableLedstripColors } },
     { "BEACON COLOR",     OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_ledBeaconColor, COLOR_COUNT -1, lookupTableLedstripColors } },
     { "BEACON PERIOD",    OME_UINT16,NULL, &(OSD_UINT16_t){ &cmsx_ledBeaconPeriod, 50, 10000, 10 } },

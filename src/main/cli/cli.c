@@ -1060,6 +1060,16 @@ static void cliSetVar(const clivalue_t *var, const uint32_t value)
 }
 
 #ifdef USE_LED_STRIP
+#ifdef USE_LED_STRIP_STATUS_MODE
+static void cliSyncSimpleLedProfilesFromMasterColors(const char *name)
+{
+    if (strcmp(name, "ledstrip_race_color") == 0 || strcmp(name, "ledstrip_beacon_color") == 0) {
+        syncSimpleLedProfilesFromConfig();
+        syncActiveLedProfileConfig();
+    }
+}
+#endif
+
 static bool cliSetVarWithHook(const clivalue_t *var, uint32_t value)
 {
     if (strcmp(var->name, "ledstrip_profile") == 0) {
@@ -1071,6 +1081,11 @@ static bool cliSetVarWithHook(const clivalue_t *var, uint32_t value)
     }
 
     cliSetVar(var, value);
+
+#ifdef USE_LED_STRIP_STATUS_MODE
+    cliSyncSimpleLedProfilesFromMasterColors(var->name);
+#endif
+
     return true;
 }
 #else
@@ -6111,6 +6126,8 @@ bool cliSetSettingByName(const char *cmdline)
 #ifdef USE_LED_STRIP_STATUS_MODE
     if (strcmp(val->name, "ledstrip_profile") == 0) {
         syncActiveLedProfileConfig();
+    } else {
+        cliSyncSimpleLedProfilesFromMasterColors(val->name);
     }
 #endif
 #endif
