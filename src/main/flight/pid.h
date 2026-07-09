@@ -537,6 +537,8 @@ typedef struct pidRuntime_s {
 
 #ifdef USE_ADRC
     adrcRuntime_t adrc;
+    uint8_t activePidType;                  // pid_type the ADRC runtime state was last active under
+                                            // (pidType_e); detects profile switches into ADRC
 #endif
 } pidRuntime_t;
 

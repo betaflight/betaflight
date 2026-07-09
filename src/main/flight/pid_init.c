@@ -378,6 +378,22 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 
 #ifdef USE_ADRC
     adrcInitConfig(&pidProfile->adrc, &pidRuntime.adrc, pidRuntime.dT);
+
+    // Re-seed the ESO when the active control law switches INTO ADRC - e.g. a mid-air profile
+    // switch from a CLASSIC profile, during which the observer state is not updated at all.
+    // adrcResetState() starts z1 from the current gyro reading, so the handover transient is
+    // near-zero instead of a kick from arm-time-stale state. Deliberately conditioned on the
+    // transition: pidInitConfig() also fires on in-flight CLI/adjustment saves, where discarding
+    // the z3 trim estimate would cost a visible attitude sag. The liftoff gate is left alone -
+    // it re-latches within one gyro-hold interval when already airborne.
+    if (pidProfile->pid_type != pidRuntime.activePidType) {
+        if (pidProfile->pid_type == PID_TYPE_ADRC) {
+            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+                adrcResetState(&pidRuntime.adrc, axis);
+            }
+        }
+        pidRuntime.activePidType = pidProfile->pid_type;
+    }
 #endif
 
 #ifdef USE_INTEGRATED_YAW_CONTROL
