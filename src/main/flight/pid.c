@@ -120,7 +120,11 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 #define IS_AXIS_IN_ANGLE_MODE(i) false
 #endif // USE_ACC
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 13);
+// 14: adrc_liftoff_idle_hold_ms 500 -> 0 (mid-air re-arm now opt-in) and adrc_b0_scale_max 9 -> 3.
+// The layout is unchanged, but a version-match memcpy would keep the old stored values - and 500
+// specifically re-creates the mid-air gate closures the new default exists to prevent, on every
+// config saved from a prior build. Flight safety over stored-profile continuity: force the reset.
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 14);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
