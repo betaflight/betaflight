@@ -367,6 +367,14 @@ if (crashFlipModeActive) {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+            setArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        }
+#endif
+
         if (calculateThrottleStatus() != THROTTLE_LOW) {
             setArmingDisabled(ARMING_DISABLED_THROTTLE);
         } else {
