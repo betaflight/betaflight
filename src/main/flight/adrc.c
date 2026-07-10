@@ -146,12 +146,16 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     // Mid-air re-arm off by default (0 = the gate stays open from first liftoff until disarm).
     // The ported re-arm heuristic - idle throttle + stillness sustained for this hold - cannot
     // tell a landing from a smooth zero-throttle float: in the first freestyle log flown on this
-    // branch (btfl_002-ACRO.bbl, SpeedyBee F7 Mini) it closed the gate mid-air three times, on
-    // ballistic floats reading 1-4 deg/s for over 500 ms, each time dumping the live z3 estimate
-    // (carrying up to |94k|) through the fast gated decay and blinding the observer to b0*u -
-    // exactly the corruption an airmode throttle chop then slams into on the catch. Freestyle
-    // *is* throttle chops and catches, so this cannot stay the default. Set > 0 only for bench /
-    // repeated ground reps within one arm cycle, where the heuristic's assumptions actually hold.
+    // branch (btfl_002-ACRO.bbl, SpeedyBee F7 Mini, acro - airmode feature not even enabled) it
+    // closed the gate mid-air three times, on ballistic floats reading 1-4 deg/s for over 500 ms
+    // with |acc| at 0.1-0.5 g (demonstrably airborne, near free-fall), each time dumping the live
+    // z3 estimate (carrying up to ~|100k|) through the fast gated decay and blinding the observer
+    // to b0*u. Under airmode the mixer keeps applying u through exactly such floats, so the
+    // corruption there is expected to be worse still (architectural inference - not yet measured
+    // in a log). Freestyle *is* throttle chops and catches, so this cannot stay the default. Set
+    // > 0 only for bench / repeated ground reps within one arm cycle, where the heuristic's
+    // assumptions actually hold; a future re-arm could additionally require |acc| ~ 1 g sustained,
+    // which cleanly separates these floats from a genuine landing in this very log.
     adrcProfile->liftoffIdleHoldMs = 0;
     // z3 decay rate x0.1 while ungated (grounded) - always faster than sigmaDecay above so z3
     // can't wind up while idle regardless of its configured airborne decay.
@@ -159,12 +163,17 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     // Ceiling on the throttle-scaled b0 multiplier (fix #10a). 3, not the fork's hardcoded 9: the
     // quadratic (throttle/hover)^2 law was only ever community-validated up to ~x3 (hover = 35%
     // craft, scale 9 needs 105% throttle), and the first freestyle log on this branch shows what
-    // the extrapolated region does - at hover = 22% a 59%-throttle punch hit scale 7.4 and the
-    // craft took an uncommanded 180 deg/s pitch excursion with motors far from saturation
-    // (1411/2047): the control law was simply under-gained sevenfold while z3 wound to 524k
-    // re-compensating. Classic TPA's full-throttle authority cut (~35-50%) implies the true
-    // plant-gain growth from hover to full throttle is ~x2-3, not x8 - the quadratic law
-    // overestimates it well above hover, so cap where validation ends. CLI-tunable for experiments.
+    // the extrapolated region does. At hover = 22% a 59%-throttle punch hit scale 7.4, and the
+    // failure is two-phase: DURING the punch, an uncommanded 148 deg/s pitch excursion with
+    // motors far from saturation (1411/2047) - output per unit error cut 7.4x vs the hover
+    // calibration (net under-gain vs the true plant more like x2.5-3, since real gain does grow
+    // with throttle) - while z3 wound past the blackbox debug clip (>= 524k) absorbing the
+    // unrejected error; then at the throttle chop the scale collapsed 7.4 -> 1 within ~80 ms and
+    // the still-wound z3 over-applied, swinging the craft +180 deg/s the opposite way. The
+    // schedule yanks the gain out from under the ESO's adaptation faster than z3 re-converges,
+    // so the scale transient itself pumps the loop at every throttle pump. Classic TPA's
+    // full-throttle authority cut (~35-50%) independently implies true plant-gain growth from
+    // hover to full of ~x2-3, not x8 - cap where validation ends. CLI-tunable for experiments.
     adrcProfile->b0ThrottleScaleMax = 3;
 }
 
