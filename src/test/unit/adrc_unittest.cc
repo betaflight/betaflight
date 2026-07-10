@@ -251,6 +251,7 @@ TEST_F(AdrcUnittest, GateDoesNotReArmOnBriefAirborneThrottleChop)
 TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)
 {
     profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9; // raise the ceiling out of the way - the quadratic law itself is under test
 
     simulatedThrottle = 0.35f; // at hover
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
@@ -271,10 +272,13 @@ TEST_F(AdrcUnittest, B0ThrottleScaleNeverGoesBelowOne)
 
 TEST_F(AdrcUnittest, B0ThrottleScaleClampsToMax)
 {
+    // The default ceiling is 3: the quadratic law was only community-validated up to ~x3, and the
+    // first freestyle log showed the extrapolated region under-gains the control law severalfold
+    // on throttle punches (see adrcResetProfile()).
     profile.hoverThrottlePercent = 10; // low hover setting so full throttle exceeds the clamp
-    simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to the default max (9)
+    simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to the default max (3)
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    EXPECT_NEAR(9.0f, runtime.b0ThrottleScale, 1e-3f);
+    EXPECT_NEAR(3.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
 TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)

@@ -156,8 +156,16 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     // z3 decay rate x0.1 while ungated (grounded) - always faster than sigmaDecay above so z3
     // can't wind up while idle regardless of its configured airborne decay.
     adrcProfile->gatedZ3DecayRate = 200;
-    // Ceiling on the throttle-scaled b0 multiplier (fix #10a).
-    adrcProfile->b0ThrottleScaleMax = 9;
+    // Ceiling on the throttle-scaled b0 multiplier (fix #10a). 3, not the fork's hardcoded 9: the
+    // quadratic (throttle/hover)^2 law was only ever community-validated up to ~x3 (hover = 35%
+    // craft, scale 9 needs 105% throttle), and the first freestyle log on this branch shows what
+    // the extrapolated region does - at hover = 22% a 59%-throttle punch hit scale 7.4 and the
+    // craft took an uncommanded 180 deg/s pitch excursion with motors far from saturation
+    // (1411/2047): the control law was simply under-gained sevenfold while z3 wound to 524k
+    // re-compensating. Classic TPA's full-throttle authority cut (~35-50%) implies the true
+    // plant-gain growth from hover to full throttle is ~x2-3, not x8 - the quadratic law
+    // overestimates it well above hover, so cap where validation ends. CLI-tunable for experiments.
+    adrcProfile->b0ThrottleScaleMax = 3;
 }
 
 void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime, float dT)
