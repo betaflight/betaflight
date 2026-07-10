@@ -192,10 +192,12 @@ flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/failsafe.c
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
 
 flight_failsafe_unittest_DEFINES := \
-		USE_GPS_RESCUE=
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1
 
 
 flight_imu_unittest_SRC := \

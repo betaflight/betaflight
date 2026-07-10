@@ -26,6 +26,9 @@ extern "C" {
     #include "common/maths.h"
     #include "common/vector.h"
 
+    #include "fc/core.h"
+    #include "fc/runtime_config.h"
+
     #include "flight/flight_plan_nav.h"
     #include "flight/position_estimator.h"
     #include "flight/position_nav.h"
@@ -38,6 +41,9 @@ extern "C" {
 
     int16_t debug[DEBUG16_VALUE_COUNT];
     uint8_t debugMode;
+
+    uint8_t stateFlags;
+    uint16_t GPS_distanceToHome;
 }
 
 #include "unittest_macros.h"
@@ -66,6 +72,12 @@ gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
 
 timeUs_t g_stubMicros;
+
+positionEstimate3d_t g_stubEstimate;
+bool g_stubValidXY;
+
+int g_disarmCalls;
+flightLogDisarmReason_e g_lastDisarmReason;
 
 } // namespace
 
@@ -118,11 +130,34 @@ float positionEstimatorGetAltitudeCm(void)
 
 const positionEstimate3d_t *positionEstimatorGetEstimate(void)
 {
-    // Treat the vehicle as parked at the ENU origin for unit-test purposes;
-    // matches the pre-delay-leg-vector behaviour where the leg length was the
-    // full target distance from the origin.
-    static const positionEstimate3d_t stubEstimate = {};
-    return &stubEstimate;
+    return &g_stubEstimate;
+}
+
+bool positionEstimatorIsValidXY(void)
+{
+    return g_stubValidXY;
+}
+
+bool positionNavHasActiveTarget(void)
+{
+    return g_lastTarget.valid;
+}
+
+const positionNavCommand_t *positionNavGetActiveCommand(void)
+{
+    static positionNavCommand_t cmd;
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.active = g_lastTarget.valid;
+    cmd.targetPosEfM = g_lastTarget.targetEfM;
+    cmd.includeAltitude = g_lastTarget.includeAltitude;
+    cmd.cruiseSpeedMps = g_lastTarget.cruiseSpeedMps;
+    return &cmd;
+}
+
+void disarm(flightLogDisarmReason_e reason)
+{
+    g_disarmCalls++;
+    g_lastDisarmReason = reason;
 }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
@@ -156,6 +191,13 @@ protected:
         g_clearTargetCalls = 0;
         g_stubMicros = 0;
 
+        memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
+        g_stubValidXY = true;
+        g_disarmCalls = 0;
+
+        stateFlags = 0;
+        GPS_distanceToHome = 0;
+
         // Default GPS origin: equator, prime meridian, 100 m AMSL.
         g_stubGpsOrigin.lat = 0;
         g_stubGpsOrigin.lon = 0;
@@ -167,8 +209,11 @@ protected:
 
         autopilotConfig_t *cfg = autopilotConfigMutable();
         memset(cfg, 0, sizeof(*cfg));
-        cfg->waypointArrivalRadius = 500; // 5 m
-        cfg->maxVelocity = 1000;          // 10 m/s
+        cfg->waypointArrivalRadius = 500;  // 5 m
+        cfg->maxVelocity = 1000;           // 10 m/s
+        cfg->landingDescentRate = 50;      // 0.5 m/s
+        cfg->landingDetectionTime = 10;    // 1 s
+        cfg->landingVelocityThreshold = 50; // 0.5 m/s
 
         flightPlanNavInit();
     }
@@ -371,4 +416,216 @@ TEST_F(FlightPlanNavTest, EngageClampsBelowMinCruiseSpeed)
 
     flightPlanNavEngage();
     EXPECT_GE(g_lastTarget.cruiseSpeedMps, 1.0f - 0.01f);
+}
+
+// --- Safety behaviour ---
+
+class FlightPlanNavSafetyTest : public FlightPlanNavTest {
+protected:
+    // A leg to a target ~2.2 km away so sanity margins have room to act.
+    void engageDistantLeg() {
+        addWaypoint(200000, 0, 15000, WAYPOINT_TYPE_FLYOVER); // ~2.2 km north
+        g_stubMicros = 1'000'000;
+        flightPlanNavEngage();
+        ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+        // First update captures the initial best distance.
+        flightPlanNavUpdate(g_stubMicros);
+        ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    }
+};
+
+TEST_F(FlightPlanNavSafetyTest, EstimatorInvalidAbortsMission)
+{
+    engageDistantLeg();
+
+    g_stubValidXY = false;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_ESTIMATOR);
+    EXPECT_GE(g_clearTargetCalls, 1);
+}
+
+TEST_F(FlightPlanNavSafetyTest, NoProgressForStallWindowAborts)
+{
+    engageDistantLeg();
+
+    // Vehicle parked: no movement toward the target.
+    g_stubMicros += 29'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    g_stubMicros += 2'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_STALLED);
+}
+
+TEST_F(FlightPlanNavSafetyTest, ProgressResetsStallWindow)
+{
+    engageDistantLeg();
+
+    // Move 100 m toward the target just before the stall window expires.
+    g_stubMicros += 29'000'000;
+    g_stubEstimate.position.v[ENU_N] = 100.0f * 100.0f; // cm
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // Another near-window with no further progress: still inside the new window.
+    g_stubMicros += 29'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavSafetyTest, MovingAwayPastMarginAbortsAsFlyaway)
+{
+    engageDistantLeg();
+
+    // Drift 25 m away from the target (south) — beyond the 20 m margin.
+    g_stubEstimate.position.v[ENU_N] = -25.0f * 100.0f; // cm
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
+}
+
+TEST_F(FlightPlanNavSafetyTest, AbortReasonClearsOnReEngage)
+{
+    engageDistantLeg();
+    g_stubValidXY = false;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_ESTIMATOR);
+
+    g_stubValidXY = true;
+    flightPlanNavDisengage();
+    flightPlanNavEngage();
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_NONE);
+}
+
+TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithLandActionStartsLanding)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+
+    GPS_distanceToHome = 150;
+    g_stubEstimate.position.v[ENU_U] = 30.0f * 100.0f; // 30 m up, in cm
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    ASSERT_TRUE(g_lastTarget.valid);
+    // Landing target: current position, far below current altitude.
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+    EXPECT_FALSE(flightPlanNavRescueRequested());
+}
+
+TEST_F(FlightPlanNavSafetyTest, GeofenceInsideLimitDoesNothing)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+
+    GPS_distanceToHome = 99;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavSafetyTest, GeofenceWithoutHomeFixDoesNothing)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    engageDistantLeg();
+
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionLatchesRescueRequest)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_RTH;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    EXPECT_TRUE(flightPlanNavRescueRequested());
+    // The request survives disengagement (rescue outranks and disengages the mission).
+    flightPlanNavDisengage();
+    EXPECT_TRUE(flightPlanNavRescueRequested());
+
+    flightPlanNavClearRescueRequest();
+    EXPECT_FALSE(flightPlanNavRescueRequested());
+}
+
+TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Descent establishes (well above the 25% of commanded rate threshold).
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f; // cm/s
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Touchdown: vertical velocity inside the quiet threshold.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros); // starts the quiet timer
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 1'100'000; // past landingDetectionTime (1 s)
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanNavSafetyTest, LandingQuietTimerResetsIfDescentResumes)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // Brief quiet period, then descent resumes (e.g. drifted off a bush).
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f;
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    // New quiet period must run the full detection time again.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 600'000;
+    flightPlanNavUpdate(g_stubMicros); // quiet timer restarts here
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 600'000;
+    flightPlanNavUpdate(g_stubMicros); // 0.6 s into the new window — too early
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 500'000;
+    flightPlanNavUpdate(g_stubMicros); // 1.1 s — past detection time
+    EXPECT_EQ(g_disarmCalls, 1);
 }

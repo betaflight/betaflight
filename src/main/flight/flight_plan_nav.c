@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <float.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -33,6 +35,9 @@
 
 #include "drivers/time.h"
 
+#include "fc/core.h"
+#include "fc/runtime_config.h"
+
 #include "flight/flight_plan_nav.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
@@ -46,6 +51,22 @@
 #define FP_FLYBY_COMPLETION_MPS   2.0f
 #define FP_FLYOVER_COMPLETION_MPS 0.5f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
+
+// Sanity limits while a leg is being flown. Progress must improve the best
+// distance-to-target by FP_PROGRESS_EPSILON_M within FP_STALL_TIMEOUT_US, and
+// the current distance may never exceed the best by FP_FLYAWAY_MARGIN_M.
+// The DELAY modifier's cruise floor (0.1 m/s) still clears the stall window.
+#define FP_PROGRESS_EPSILON_M     2.0f
+#define FP_STALL_TIMEOUT_US       30000000u
+#define FP_FLYAWAY_MARGIN_M       20.0f
+
+// Landing descends toward a target far below the current position so vertical
+// arrival can never trigger; touchdown detection is what ends the descent.
+#define FP_LANDING_TARGET_DEPTH_M 200.0f
+#define FP_LANDING_MIN_RATE_MPS   0.3f
+// Fallback: start touchdown monitoring even if descent was never observed
+// (e.g. landing initiated at ground level).
+#define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
 
 static struct {
     flightPlanNavState_e state;
@@ -66,6 +87,18 @@ static struct {
     uint16_t delayDurationDs;
     timeUs_t delayEndUs;
     float    yawRateCapDps;
+
+    flightPlanAbortReason_e abortReason;
+    bool rescueRequested;
+
+    // Leg progress tracking for stall/flyaway detection
+    float bestDistanceToTargetM;
+    timeUs_t lastProgressUs;
+
+    // Landing state
+    timeUs_t landingStartUs;
+    timeUs_t touchdownQuietStartUs;
+    bool landingDescentEstablished;
 } fp;
 
 static flightPlanWaypointReachedFn reachedListener = NULL;
@@ -211,7 +244,121 @@ static bool dispatchWaypoint(void)
 
     fp.state = FP_NAV_TARGETING;
     fp.holdDurationDs = effective.duration;
+    fp.bestDistanceToTargetM = FLT_MAX;
+    fp.lastProgressUs = micros();
     return true;
+}
+
+static void abortMission(flightPlanAbortReason_e reason)
+{
+    fp.state = FP_NAV_ABORTED;
+    fp.abortReason = reason;
+    // Dropping the nav target makes positionControl() fall back to holding
+    // position at the current location; the pilot exits via the mode switch.
+    positionNavClearTarget();
+}
+
+static float distanceToNavTargetM(const positionEstimate3d_t *est)
+{
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    vector3_t deltaM = {.v = {
+        [ENU_E] = cmd->targetPosEfM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
+        [ENU_N] = cmd->targetPosEfM.v[ENU_N] - est->position.v[ENU_N] * 0.01f,
+        [ENU_U] = cmd->includeAltitude ? cmd->targetPosEfM.v[ENU_U] - est->position.v[ENU_U] * 0.01f : 0.0f,
+    }};
+    return vector3Norm(&deltaM);
+}
+
+static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t *est)
+{
+    if (!positionNavHasActiveTarget()) {
+        return;
+    }
+
+    const float distanceM = distanceToNavTargetM(est);
+
+    if (distanceM < fp.bestDistanceToTargetM - FP_PROGRESS_EPSILON_M) {
+        fp.bestDistanceToTargetM = distanceM;
+        fp.lastProgressUs = currentTimeUs;
+        return;
+    }
+
+    if (fp.bestDistanceToTargetM != FLT_MAX && distanceM > fp.bestDistanceToTargetM + FP_FLYAWAY_MARGIN_M) {
+        abortMission(FP_ABORT_FLYAWAY);
+        return;
+    }
+
+    if (cmpTimeUs(currentTimeUs, fp.lastProgressUs) >= (timeDelta_t)FP_STALL_TIMEOUT_US) {
+        abortMission(FP_ABORT_STALLED);
+    }
+}
+
+static void startLanding(timeUs_t currentTimeUs)
+{
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const vector3_t targetM = {.v = {
+        [ENU_E] = est->position.v[ENU_E] * 0.01f,
+        [ENU_N] = est->position.v[ENU_N] * 0.01f,
+        [ENU_U] = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M,
+    }};
+
+    const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, autopilotConfig()->landingDescentRate * 0.01f);
+    positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
+
+    fp.state = FP_NAV_LANDING;
+    fp.landingStartUs = currentTimeUs;
+    fp.touchdownQuietStartUs = 0;
+    fp.landingDescentEstablished = false;
+}
+
+static void updateLanding(timeUs_t currentTimeUs)
+{
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const float verticalVelocityCmS = est->velocity.v[ENU_U];
+    const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, autopilotConfig()->landingDescentRate);
+
+    if (!fp.landingDescentEstablished
+        && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
+        fp.landingDescentEstablished = true;
+    }
+
+    const bool monitorTouchdown = fp.landingDescentEstablished
+        || cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US;
+    if (!monitorTouchdown) {
+        return;
+    }
+
+    // Touchdown: descent has stopped despite being commanded, and the vehicle
+    // is not moving vertically. A descent at the commanded rate must never
+    // count as quiet, whatever landingVelocityThreshold is configured to.
+    const bool descentStopped = verticalVelocityCmS > -0.25f * commandedDescentCmS;
+    if (descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold) {
+        if (fp.touchdownQuietStartUs == 0) {
+            fp.touchdownQuietStartUs = currentTimeUs;
+        } else if (cmpTimeUs(currentTimeUs, fp.touchdownQuietStartUs) >= (timeDelta_t)((uint32_t)autopilotConfig()->landingDetectionTime * 100000u)) {
+            positionNavClearTarget();
+            disarm(DISARM_REASON_LANDING);
+        }
+    } else {
+        fp.touchdownQuietStartUs = 0;
+    }
+}
+
+static void checkGeofence(timeUs_t currentTimeUs)
+{
+    const autopilotConfig_t *cfg = autopilotConfig();
+    if (cfg->maxDistanceFromHomeM == 0 || !STATE(GPS_FIX_HOME)) {
+        return;
+    }
+    if (GPS_distanceToHome <= cfg->maxDistanceFromHomeM) {
+        return;
+    }
+
+    if (cfg->geofenceAction == AP_GEOFENCE_RTH) {
+        fp.rescueRequested = true;
+    } else {
+        startLanding(currentTimeUs);
+    }
 }
 
 static void advanceToNext(void)
@@ -279,6 +426,8 @@ void flightPlanNavInit(void)
     fp.currentIndex = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
+    fp.abortReason = FP_ABORT_NONE;
+    fp.rescueRequested = false;
     clearModifierState();
 }
 
@@ -286,6 +435,7 @@ void flightPlanNavEngage(void)
 {
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
+    fp.abortReason = FP_ABORT_NONE;
     clearModifierState();
 
     // Capture the estimator's current Z so subsequent waypoint altitudes are
@@ -329,6 +479,23 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         return;
     }
 
+    if (fp.state == FP_NAV_LANDING) {
+        updateLanding(currentTimeUs);
+        return;
+    }
+
+    if (fp.state == FP_NAV_TARGETING || fp.state == FP_NAV_HOLDING) {
+        if (!positionEstimatorIsValidXY()) {
+            abortMission(FP_ABORT_ESTIMATOR);
+            return;
+        }
+
+        checkGeofence(currentTimeUs);
+        if (fp.state == FP_NAV_LANDING || fp.rescueRequested) {
+            return;
+        }
+    }
+
     // DELAY-window expiry: clear the cap and re-issue the current leg at the
     // unmodified cruise so we don't crawl for the rest of the leg.
     if (fp.delayActive && cmpTimeUs(currentTimeUs, fp.delayEndUs) >= 0) {
@@ -336,6 +503,10 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         if (fp.state == FP_NAV_TARGETING) {
             dispatchWaypoint();
         }
+    }
+
+    if (fp.state == FP_NAV_TARGETING) {
+        checkLegProgress(currentTimeUs, positionEstimatorGetEstimate());
     }
 
     if (fp.state == FP_NAV_HOLDING) {
@@ -360,6 +531,21 @@ flightPlanNavState_e flightPlanNavGetState(void)
 uint8_t flightPlanNavGetCurrentIndex(void)
 {
     return fp.currentIndex;
+}
+
+flightPlanAbortReason_e flightPlanNavGetAbortReason(void)
+{
+    return fp.abortReason;
+}
+
+bool flightPlanNavRescueRequested(void)
+{
+    return fp.rescueRequested;
+}
+
+void flightPlanNavClearRescueRequest(void)
+{
+    fp.rescueRequested = false;
 }
 
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)
