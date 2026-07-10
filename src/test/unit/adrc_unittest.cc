@@ -154,14 +154,36 @@ TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
     EXPECT_TRUE(runtime.liftoff);
 }
 
-TEST_F(AdrcUnittest, GateReArmsAfterSustainedIdleStillness)
+TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloatByDefault)
 {
     // Simulate already airborne.
     simulatedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_TRUE(runtime.liftoff);
 
-    // Idle throttle and stillness, sustained past the default liftoffIdleHoldMs (500ms @ 8ms = 63 loops).
+    // A smooth ballistic float: zero throttle, near-zero rotation, sustained well past any
+    // plausible re-arm hold (1.6s). Indistinguishable from a landing by throttle+gyro alone -
+    // the first freestyle log on this branch hit exactly this three times (1-4 deg/s floats over
+    // 500ms) and lost its live z3 each time. With the default liftoffIdleHoldMs = 0 the mid-air
+    // re-arm is disabled outright, so the gate must stay open until disarm.
+    simulatedThrottle = 0.0f;
+    resetGyro();
+    for (int i = 0; i < 200; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, OptInReArmAfterSustainedIdleStillness)
+{
+    profile.liftoffIdleHoldMs = 500; // opt into the bench/ground-rep re-arm
+
+    // Simulate already airborne.
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    // Idle throttle and stillness, sustained past the configured hold (500ms @ 8ms = 63 loops).
     simulatedThrottle = 0.0f;
     resetGyro();
     for (int i = 0; i < 70; i++) {
@@ -180,8 +202,8 @@ TEST_F(AdrcUnittest, LiftoffIdleThresholdsAreConfigurable)
     ASSERT_TRUE(runtime.liftoff);
 
     // 10% throttle satisfies this profile's raised 20% idle threshold (it would NOT satisfy the
-    // default 5%), but idleS accumulates toward this profile's longer 1000ms hold, not the default
-    // 500ms - 100 loops @ 8ms = 800ms, comfortably under 1000ms, so the gate must still be armed.
+    // default 5%), but idleS accumulates toward this profile's 1000ms hold - 100 loops @ 8ms =
+    // 800ms, comfortably under 1000ms, so the gate must still be armed.
     simulatedThrottle = 0.10f;
     resetGyro();
     for (int i = 0; i < 100; i++) {
@@ -205,6 +227,8 @@ TEST_F(AdrcUnittest, LiftoffIdleThresholdsAreConfigurable)
 
 TEST_F(AdrcUnittest, GateDoesNotReArmOnBriefAirborneThrottleChop)
 {
+    profile.liftoffIdleHoldMs = 500; // opt into the re-arm - the idle-timer reset is what's under test
+
     simulatedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_TRUE(runtime.liftoff);
@@ -372,9 +396,11 @@ TEST_F(AdrcUnittest, GateReArmStillnessIsCappedIndependently)
 
 TEST_F(AdrcUnittest, GateReArmHoldHasFloor)
 {
-    // liftoffIdleHoldMs = 0 must not allow a single quiet loop mid-chop to close the gate in
-    // flight - the hold is floored so re-arm still requires a sustained idle-and-still period.
-    profile.liftoffIdleHoldMs = 0;
+    // An absurdly short opt-in hold must not allow a single quiet loop mid-chop to close the gate
+    // in flight - nonzero holds are floored so re-arm still requires a sustained idle-and-still
+    // period. (0 is not floored: it disables the re-arm outright - covered by
+    // GateStaysOpenThroughSustainedFloatByDefault.)
+    profile.liftoffIdleHoldMs = 1;
 
     simulatedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);

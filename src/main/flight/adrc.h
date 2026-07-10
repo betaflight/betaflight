@@ -77,7 +77,9 @@ typedef struct adrcProfile_s {
     uint8_t liftoffIdleThrottlePercent; // throttle % the craft must drop below before the gate can
                                         // re-arm - keep below liftoffThrottlePercent and below your
                                         // actual hover throttle
-    uint16_t liftoffIdleHoldMs;         // how long idle-throttle-and-stillness must sustain to re-arm
+    uint16_t liftoffIdleHoldMs;         // how long idle-throttle-and-stillness must sustain to re-arm;
+                                        // 0 (default) = never re-arm mid-cycle, gate stays open
+                                        // from first liftoff until disarm (bench/ground-rep opt-in)
 
     uint16_t gatedZ3DecayRate; // z3 decay rate x0.1 while ungated (grounded) - always faster than
                                 // sigmaDecay above so z3 can't wind up while idle regardless of its
