@@ -311,6 +311,46 @@ TEST_F(AdrcUnittest, ControlTermsAreNotClampedIndividually)
     EXPECT_NEAR(-300.0f, out.D, 5.0f); // -kd*z2/b0 = -120*5000/2000
 }
 
+TEST_F(AdrcUnittest, InitConfigFloorsOutOfRangeCoefficients)
+{
+    // The CLI table constrains wc/wo/b0 to sane minimums, but values can still arrive out of
+    // range via PG/EEPROM (e.g. a stale save from before the floors were added). adrcInitConfig()
+    // must floor them itself as defense-in-depth: wo == 0 would freeze the observer outright (all
+    // betas 0, z1 stuck at its arm-time value while P keeps acting on it), and wc == 0 would zero
+    // the whole control law - both fail silently, with nothing in the CLI to hint at why.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        profile.wc[axis] = 0;
+        profile.wo[axis] = 0;
+        profile.b0[axis] = 0;
+    }
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_GE(runtime.coefficient[axis].wc, 5.0f);
+        EXPECT_GE(runtime.coefficient[axis].wo, 10.0f);
+        EXPECT_GE(runtime.coefficient[axis].b0, 100.0f);
+        // Derived gains must be computed from the floored values, not the raw zeros.
+        EXPECT_GT(runtime.coefficient[axis].kp, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].kd, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta1, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta2, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta3, 0.0f);
+    }
+}
+
+TEST_F(AdrcUnittest, InitConfigPassesThroughInRangeCoefficientsUnmodified)
+{
+    // The floor must not perturb legitimate in-range tunes.
+    profile.wc[FD_ROLL] = 60;
+    profile.wo[FD_ROLL] = 100;
+    profile.b0[FD_ROLL] = 2000;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+
+    EXPECT_FLOAT_EQ(60.0f, runtime.coefficient[FD_ROLL].wc);
+    EXPECT_FLOAT_EQ(100.0f, runtime.coefficient[FD_ROLL].wo);
+    EXPECT_FLOAT_EQ(2000.0f, runtime.coefficient[FD_ROLL].b0);
+}
+
 TEST_F(AdrcUnittest, GateBlocksB0uFeedbackWhenClosed)
 {
     // Grounded (gate closed): a large lastOutput must not feed b0*u into z2.
