@@ -1427,6 +1427,13 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_ADRC_HOVER_THROTTLE, VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.hoverThrottlePercent) },
     { PARAM_NAME_ADRC_SIGMA_DECAY,    VAR_UINT8 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.sigmaDecay) },
     { PARAM_NAME_ADRC_TD_HZ,          VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, LPF_MAX_HZ }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.tdHz) },
+    { PARAM_NAME_ADRC_LIFTOFF_THROTTLE,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 100 },   PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffThrottlePercent) },
+    { PARAM_NAME_ADRC_LIFTOFF_GYRO_DPS,      VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 255 },   PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffGyroDps) },
+    { PARAM_NAME_ADRC_LIFTOFF_HOLD_MS,       VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 5000 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffHoldMs) },
+    { PARAM_NAME_ADRC_LIFTOFF_IDLE_THROTTLE, VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 100 },   PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffIdleThrottlePercent) },
+    { PARAM_NAME_ADRC_LIFTOFF_IDLE_HOLD_MS,  VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_PID_PROFILE, offsetof(pidProfile_t, adrc.liftoffIdleHoldMs) },
+    { PARAM_NAME_ADRC_GATED_Z3_DECAY,        VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 0, 2000 },  PG_PID_PROFILE, offsetof(pidProfile_t, adrc.gatedZ3DecayRate) },
+    { PARAM_NAME_ADRC_B0_SCALE_MAX,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 1, 50 },    PG_PID_PROFILE, offsetof(pidProfile_t, adrc.b0ThrottleScaleMax) },
 #endif
 
 // PG_TELEMETRY_CONFIG

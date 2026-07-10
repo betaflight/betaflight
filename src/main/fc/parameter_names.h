@@ -248,6 +248,13 @@
 #define PARAM_NAME_ADRC_HOVER_THROTTLE "adrc_hover_throttle"
 #define PARAM_NAME_ADRC_SIGMA_DECAY "adrc_sigma_decay"
 #define PARAM_NAME_ADRC_TD_HZ "adrc_td_hz"
+#define PARAM_NAME_ADRC_LIFTOFF_THROTTLE "adrc_liftoff_throttle"
+#define PARAM_NAME_ADRC_LIFTOFF_GYRO_DPS "adrc_liftoff_gyro_dps"
+#define PARAM_NAME_ADRC_LIFTOFF_HOLD_MS "adrc_liftoff_hold_ms"
+#define PARAM_NAME_ADRC_LIFTOFF_IDLE_THROTTLE "adrc_liftoff_idle_throttle"
+#define PARAM_NAME_ADRC_LIFTOFF_IDLE_HOLD_MS "adrc_liftoff_idle_hold_ms"
+#define PARAM_NAME_ADRC_GATED_Z3_DECAY "adrc_gated_z3_decay"
+#define PARAM_NAME_ADRC_B0_SCALE_MAX "adrc_b0_scale_max"
 
 #define PARAM_NAME_HORIZON_LEVEL_STRENGTH "horizon_level_strength"
 #define PARAM_NAME_HORIZON_LIMIT_DEGREES "horizon_limit_degrees"

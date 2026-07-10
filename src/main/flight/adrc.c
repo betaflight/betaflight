@@ -42,20 +42,16 @@
 #define ADRC_Z1_LIMIT 2000.0f
 #define ADRC_Z2_LIMIT 100000.0f
 
-// Liftoff-gate thresholds, ported as-is from danusha2345/ADRC-betaflight (ADRC_FIXES.md fix
-// #8/#10) - community-validated on real hardware across several testers/airframes. While the
-// craft is ground-constrained the plant does not respond to the control output, but the ESO
-// doesn't know that: it misattributes the "missing" response to a phantom disturbance and winds
-// z3 up, which then has to unwind violently at liftoff. Until liftoff is detected - throttle above
-// ADRC_LIFTOFF_THROTTLE, or any-axis rotation above ADRC_LIFTOFF_GYRO_DPS sustained for
-// ADRC_LIFTOFF_HOLD_S (so a toss launch opens the gate almost instantly) - the observer's b0*u
-// feedback term is held at zero. The gate re-arms only after throttle stays below
-// ADRC_LIFTOFF_IDLE_THROTTLE *and* the craft is still for ADRC_LIFTOFF_IDLE_HOLD_S.
-#define ADRC_LIFTOFF_THROTTLE 0.4f
-#define ADRC_LIFTOFF_GYRO_DPS 20.0f
-#define ADRC_LIFTOFF_HOLD_S 0.025f
-#define ADRC_LIFTOFF_IDLE_THROTTLE 0.05f
-#define ADRC_LIFTOFF_IDLE_HOLD_S 0.5f
+// Liftoff-gate mechanism (thresholds now live in adrcProfile_t - see adrc.h - ported as tunable
+// fields rather than fixed constants; the numbers below are just the danusha2345/ADRC-betaflight
+// community-validated defaults, set in adrcResetProfile()). While the craft is ground-constrained
+// the plant does not respond to the control output, but the ESO doesn't know that: it misattributes
+// the "missing" response to a phantom disturbance and winds z3 up, which then has to unwind
+// violently at liftoff. Until liftoff is detected - throttle above liftoffThrottlePercent, or
+// any-axis rotation above liftoffGyroDps sustained for liftoffHoldMs (so a toss launch opens the
+// gate almost instantly) - the observer's b0*u feedback term is held at zero. The gate re-arms only
+// after throttle stays below liftoffIdleThrottlePercent *and* the craft is still for
+// liftoffIdleHoldMs.
 
 // The liftoff gate above only zeroes the b0*u term in z2's update - it does nothing to stop z3
 // itself from winding up while grounded. z3 is a leaky integrator of errorEso regardless of gate
@@ -63,14 +59,14 @@
 // fraction of 1/s), so even a tiny sustained bias (sensor cal residual, filter phase lag) winds it
 // toward its clamp given enough idle time - confirmed on a props-off bench test, where sitting
 // armed at idle let yaw z3 wind to ~80% of its clamp before any stick input. While ungated, use a
-// much faster decay so z3 relaxes toward zero instead of accumulating; it still updates smoothly
-// (no reset discontinuity), just can't hold a wound-up value while the craft isn't flying.
-#define ADRC_GATED_Z3_DECAY_RATE 20.0f
+// much faster decay (adrcProfile->gatedZ3DecayRate) so z3 relaxes toward zero instead of
+// accumulating; it still updates smoothly (no reset discontinuity), just can't hold a wound-up
+// value while the craft isn't flying.
 
 // Throttle-scaled b0 (fix #10a): motor authority scales with RPM, and thrust ~ RPM^2 ~ throttle^2,
-// so a b0 tuned at hover is wrong away from hover. Scaled only UP from hover (clamped) - scaling
-// down would make 1/b0 huge and inject extreme output at low throttle.
-#define ADRC_B0_THR_SCALE_MAX 9.0f
+// so a b0 tuned at hover is wrong away from hover. Scaled only UP from hover, clamped to
+// adrcProfile->b0ThrottleScaleMax - scaling down would make 1/b0 huge and inject extreme output at
+// low throttle.
 #define ADRC_HOVER_THROTTLE_MIN_FRACTION 0.05f
 
 // z3, logged in the same units as z1/z2, can exceed the int16 blackbox debug field under strong
@@ -121,6 +117,21 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     // SeverinBitterli's independent implementation, not danusha2345's - unvalidated here, left
     // opt-in for testers.
     adrcProfile->tdHz = 0;
+
+    // Liftoff-gate defaults, ported as-is from danusha2345/ADRC-betaflight (ADRC_FIXES.md fix
+    // #8/#10) - community-validated on real hardware across several testers/airframes. See adrc.h
+    // for what each one does; liftoffThrottlePercent in particular has no built-in relationship to
+    // hoverThrottlePercent above - set it a bit above your actual hover throttle, not equal to it.
+    adrcProfile->liftoffThrottlePercent = 40;
+    adrcProfile->liftoffGyroDps = 20;
+    adrcProfile->liftoffHoldMs = 25;
+    adrcProfile->liftoffIdleThrottlePercent = 5;
+    adrcProfile->liftoffIdleHoldMs = 500;
+    // z3 decay rate x0.1 while ungated (grounded) - always faster than sigmaDecay above so z3
+    // can't wind up while idle regardless of its configured airborne decay.
+    adrcProfile->gatedZ3DecayRate = 200;
+    // Ceiling on the throttle-scaled b0 multiplier (fix #10a).
+    adrcProfile->b0ThrottleScaleMax = 9;
 }
 
 void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime, float dT)
@@ -141,6 +152,7 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         c->beta3 = c->wo * c->wo * c->wo;
         c->decayRate = adrcProfile->sigmaDecay * 0.1f;
         c->tdGain = (adrcProfile->tdHz > 0) ? (2.0f * M_PIf * adrcProfile->tdHz) : 0.0f;
+        c->gatedDecayRate = adrcProfile->gatedZ3DecayRate * 0.1f;
 
         // A pt2 gain of 1 makes the filter an exact pass-through, so adrc_gyro_lpf_hz = 0 follows
         // the usual "0 disables the filter" convention - pt2FilterGain(0, dT) would return 0, i.e.
@@ -190,14 +202,20 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
         fmaxf(fabsf(gyro.gyroADCf[FD_PITCH]), fabsf(gyro.gyroADCf[FD_YAW])));
     const float throttle = mixerGetThrottle();
 
+    const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
+    const float liftoffGyroDps = adrcProfile->liftoffGyroDps;
+    const float liftoffHoldS = adrcProfile->liftoffHoldMs * 0.001f;
+    const float liftoffIdleThrottle = adrcProfile->liftoffIdleThrottlePercent * 0.01f;
+    const float liftoffIdleHoldS = adrcProfile->liftoffIdleHoldMs * 0.001f;
+
     if (adrcRuntime->liftoff) {
         // Re-arm only after a sustained return to idle throttle AND stillness, so every ground-test
         // rep within one arm cycle gets re-gated. The gyro condition is essential: a mid-air
         // throttle chop (dive, split-S) reads idle on throttle alone while airmode keeps the craft
         // responding - re-arming there would blind the ESO to its own b0*u mid-flight.
-        if (throttle < ADRC_LIFTOFF_IDLE_THROTTLE && gyroPeak < ADRC_LIFTOFF_GYRO_DPS) {
+        if (throttle < liftoffIdleThrottle && gyroPeak < liftoffGyroDps) {
             adrcRuntime->idleS += dT;
-            if (adrcRuntime->idleS >= ADRC_LIFTOFF_IDLE_HOLD_S) {
+            if (adrcRuntime->idleS >= liftoffIdleHoldS) {
                 adrcResetGate(adrcRuntime);
             }
         } else {
@@ -205,11 +223,11 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
         }
     } else {
         adrcRuntime->idleS = 0.0f;
-        if (throttle >= ADRC_LIFTOFF_THROTTLE) {
+        if (throttle >= liftoffThrottle) {
             adrcRuntime->liftoff = true;
-        } else if (gyroPeak > ADRC_LIFTOFF_GYRO_DPS) {
+        } else if (gyroPeak > liftoffGyroDps) {
             adrcRuntime->gyroActiveS += dT;
-            if (adrcRuntime->gyroActiveS >= ADRC_LIFTOFF_HOLD_S) {
+            if (adrcRuntime->gyroActiveS >= liftoffHoldS) {
                 adrcRuntime->liftoff = true;
             }
         } else {
@@ -221,7 +239,7 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     // (clamped) - scaling down would make 1/b0 huge and inject extreme output at low throttle.
     const float hover = fmaxf(adrcProfile->hoverThrottlePercent * 0.01f, ADRC_HOVER_THROTTLE_MIN_FRACTION);
     const float throttleRatio = constrainf(throttle, 0.0f, 1.0f) / hover;
-    adrcRuntime->b0ThrottleScale = constrainf(throttleRatio * throttleRatio, 1.0f, ADRC_B0_THR_SCALE_MAX);
+    adrcRuntime->b0ThrottleScale = constrainf(throttleRatio * throttleRatio, 1.0f, adrcProfile->b0ThrottleScaleMax);
 }
 
 adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRate, float currentPidSetpoint,
@@ -246,12 +264,12 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     const float b0u = adrcRuntime->liftoff ? (b0 * adrcRuntime->lastOutput[axis]) : 0.0f;
 
     // Extended State Observer update (Euler forward integration). z3 is a leaky integrator (rate
-    // c->decayRate while airborne, 0 = classic pure integrator; ADRC_GATED_Z3_DECAY_RATE while
-    // ungated, see its comment above) so a transient disturbance bump bleeds off instead of
-    // lingering indefinitely. (The ported source also has an optional decay-*scheduling* gain,
-    // slowing the leak during observer transients - skipped here since the fork's own docs call it
-    // unvalidated: the low-pass it keys on tracks maneuver/prop-wash transients, not a steady load.)
-    const float z3DecayRate = adrcRuntime->liftoff ? c->decayRate : ADRC_GATED_Z3_DECAY_RATE;
+    // c->decayRate while airborne, 0 = classic pure integrator; c->gatedDecayRate while ungated,
+    // see its comment above) so a transient disturbance bump bleeds off instead of lingering
+    // indefinitely. (The ported source also has an optional decay-*scheduling* gain, slowing the
+    // leak during observer transients - skipped here since the fork's own docs call it unvalidated:
+    // the low-pass it keys on tracks maneuver/prop-wash transients, not a steady load.)
+    const float z3DecayRate = adrcRuntime->liftoff ? c->decayRate : c->gatedDecayRate;
     adrcRuntime->z1[axis] += dT * (adrcRuntime->z2[axis] - c->beta1 * errorEso);
     adrcRuntime->z2[axis] += dT * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
     adrcRuntime->z3[axis] += dT * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);

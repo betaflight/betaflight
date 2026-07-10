@@ -95,7 +95,20 @@ TEST_F(AdrcUnittest, GateStaysClosedAtIdle)
 
 TEST_F(AdrcUnittest, GateOpensImmediatelyOnThrottle)
 {
-    simulatedThrottle = 0.5f; // above ADRC_LIFTOFF_THROTTLE (0.4)
+    simulatedThrottle = 0.5f; // above the default liftoffThrottlePercent (40%)
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, LiftoffThrottleThresholdIsConfigurable)
+{
+    profile.liftoffThrottlePercent = 70;
+
+    simulatedThrottle = 0.5f; // above the default (40%) but below this profile's 70%
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FALSE(runtime.liftoff);
+
+    simulatedThrottle = 0.75f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_TRUE(runtime.liftoff);
 }
@@ -103,13 +116,38 @@ TEST_F(AdrcUnittest, GateOpensImmediatelyOnThrottle)
 TEST_F(AdrcUnittest, GateOpensOnSustainedRotationWithoutThrottle)
 {
     simulatedThrottle = 0.0f;
-    gyro.gyroADCf[FD_ROLL] = 25.0f; // above ADRC_LIFTOFF_GYRO_DPS (20)
+    gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default liftoffGyroDps (20)
 
-    // A single loop is shorter than the ADRC_LIFTOFF_HOLD_S (0.025s) sustain requirement.
+    // A single loop is shorter than the default liftoffHoldMs (25ms) sustain requirement.
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_FALSE(runtime.liftoff);
 
     // After enough loops the sustained-rotation hold is satisfied (toss-launch path).
+    for (int i = 0; i < 10; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
+{
+    profile.liftoffGyroDps = 50;
+    profile.liftoffHoldMs = 100; // needs a longer sustain than the default 25ms
+
+    simulatedThrottle = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default (20dps) but below this profile's 50dps
+    for (int i = 0; i < 20; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+
+    gyro.gyroADCf[FD_ROLL] = 60.0f;
+    // 100ms / 8ms per loop = 12.5 loops - 10 loops (80ms) must not yet satisfy the longer hold.
+    for (int i = 0; i < 10; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+
     for (int i = 0; i < 10; i++) {
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     }
@@ -123,10 +161,43 @@ TEST_F(AdrcUnittest, GateReArmsAfterSustainedIdleStillness)
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_TRUE(runtime.liftoff);
 
-    // Idle throttle and stillness, sustained past ADRC_LIFTOFF_IDLE_HOLD_S (0.5s @ 8ms = 63 loops).
+    // Idle throttle and stillness, sustained past the default liftoffIdleHoldMs (500ms @ 8ms = 63 loops).
     simulatedThrottle = 0.0f;
     resetGyro();
     for (int i = 0; i < 70; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, LiftoffIdleThresholdsAreConfigurable)
+{
+    profile.liftoffIdleThrottlePercent = 20; // much higher than the default (5%) - easier to satisfy
+    profile.liftoffIdleHoldMs = 1000;        // longer than the default (500ms)
+
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    // 10% throttle satisfies this profile's raised 20% idle threshold (it would NOT satisfy the
+    // default 5%), but idleS accumulates toward this profile's longer 1000ms hold, not the default
+    // 500ms - 100 loops @ 8ms = 800ms, comfortably under 1000ms, so the gate must still be armed.
+    simulatedThrottle = 0.10f;
+    resetGyro();
+    for (int i = 0; i < 100; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+
+    // idleS keeps accumulating across calls as long as the idle condition holds (it never breaks
+    // here) - 20 more loops brings the cumulative total to 960ms, still just under the 1000ms hold.
+    for (int i = 0; i < 20; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+
+    // 10 more loops crosses the cumulative 1000ms mark (1040ms total) - now it must re-arm.
+    for (int i = 0; i < 10; i++) {
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     }
     EXPECT_FALSE(runtime.liftoff);
@@ -177,9 +248,18 @@ TEST_F(AdrcUnittest, B0ThrottleScaleNeverGoesBelowOne)
 TEST_F(AdrcUnittest, B0ThrottleScaleClampsToMax)
 {
     profile.hoverThrottlePercent = 10; // low hover setting so full throttle exceeds the clamp
-    simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to 9
+    simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to the default max (9)
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_NEAR(9.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)
+{
+    profile.hoverThrottlePercent = 10; // ratio = 10, ratio^2 = 100 at full throttle
+    profile.b0ThrottleScaleMax = 20;
+    simulatedThrottle = 1.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_NEAR(20.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
 TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)
@@ -190,7 +270,7 @@ TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)
         adrcResetState(&runtime, axis);
     }
     // Exercise the profile's own configured decay rate, not the (also nonzero) gated decay rate
-    // that applies while grounded - see ADRC_GATED_Z3_DECAY_RATE in adrc.c.
+    // that applies while grounded - see gatedZ3DecayRate in adrc.h.
     runtime.liftoff = true;
 
     runtime.z3[FD_ROLL] = 1000.0f;
@@ -215,9 +295,26 @@ TEST_F(AdrcUnittest, Z3DecaysFasterWhenGroundedThanConfiguredDecayRate)
     runtime.z3[FD_ROLL] = 1000.0f;
     // With gyroRate == z1 (errorEso == 0), only the decay term drives z3, isolating its effect.
     adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
-    // A single step at the gated rate (20/s) should visibly erode z3 even though sigmaDecay == 0
-    // would otherwise leave it untouched (see Z3IsPureIntegratorWhenDecayDisabled, airborne case).
+    // A single step at the default gated rate (20/s) should visibly erode z3 even though
+    // sigmaDecay == 0 would otherwise leave it untouched (see Z3IsPureIntegratorWhenDecayDisabled,
+    // airborne case).
     EXPECT_LT(runtime.z3[FD_ROLL], 1000.0f);
+}
+
+TEST_F(AdrcUnittest, GatedZ3DecayRateIsConfigurable)
+{
+    profile.gatedZ3DecayRate = 0; // disable the gated decay entirely
+    profile.sigmaDecay = 0;       // and the airborne decay, so z3 has no decay path at all
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    ASSERT_FALSE(runtime.liftoff); // grounded - the gated rate is the only one that would apply
+
+    runtime.z3[FD_ROLL] = 1000.0f;
+    adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    // With gatedZ3DecayRate == 0, z3 must not decay at all while grounded either.
+    EXPECT_FLOAT_EQ(1000.0f, runtime.z3[FD_ROLL]);
 }
 
 TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
@@ -228,9 +325,8 @@ TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
         adrcResetState(&runtime, axis);
     }
     // sigmaDecay only governs z3's decay while airborne - while ungated, z3 always uses the much
-    // faster ADRC_GATED_Z3_DECAY_RATE regardless of this setting, so it can't wind up while
-    // grounded (see adrc.c). Simulate airborne so sigmaDecay == 0 actually yields a pure
-    // integrator here.
+    // faster gatedZ3DecayRate regardless of this setting, so it can't wind up while grounded (see
+    // adrc.c). Simulate airborne so sigmaDecay == 0 actually yields a pure integrator here.
     runtime.liftoff = true;
 
     runtime.z3[FD_ROLL] = 1000.0f;

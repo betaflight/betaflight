@@ -63,6 +63,27 @@ typedef struct adrcProfile_s {
                                    // part of the danusha2345 port, independently added by a third
                                    // ADRC implementation (SeverinBitterli/betaflight, ADRC-Implementation
                                    // branch); standard ADRC theory component, unvalidated here.
+
+    // Liftoff-gate thresholds (see adrcUpdatePerLoopState() in adrc.c for the state machine these
+    // drive). Community-validated defaults from danusha2345/ADRC-betaflight, but craft-dependent -
+    // in particular liftoffThrottlePercent has no relationship to hoverThrottlePercent above unless
+    // you set one; it answers a different question ("how sure am I this throttle means I'm off the
+    // ground", vs. hoverThrottlePercent's "where do I actually hover"). Set it a bit above your
+    // actual hover throttle rather than equal to it.
+    uint8_t liftoffThrottlePercent;     // throttle % that alone confirms liftoff (not per-axis)
+    uint8_t liftoffGyroDps;             // sustained rotation (deg/s, any axis) that alone confirms
+                                        // liftoff - the toss-launch path (not per-axis)
+    uint16_t liftoffHoldMs;             // how long the rotation above must sustain before it counts
+    uint8_t liftoffIdleThrottlePercent; // throttle % the craft must drop below before the gate can
+                                        // re-arm - keep below liftoffThrottlePercent and below your
+                                        // actual hover throttle
+    uint16_t liftoffIdleHoldMs;         // how long idle-throttle-and-stillness must sustain to re-arm
+
+    uint16_t gatedZ3DecayRate; // z3 decay rate x0.1 while ungated (grounded) - always faster than
+                                // sigmaDecay above so z3 can't wind up while idle regardless of its
+                                // configured airborne decay (not per-axis)
+    uint8_t b0ThrottleScaleMax; // ceiling on the throttle-scaled b0 multiplier (see
+                                // hoverThrottlePercent above); scaling is never applied below 1x
 } adrcProfile_t;
 
 // Precomputed per-axis coefficients derived from adrcProfile_t at profile-load time, so the hot
@@ -78,6 +99,9 @@ typedef struct adrcCoefficient_s {
     float beta3;   // = wo*wo*wo (ESO observer gain)
     float decayRate; // = adrcProfile->sigmaDecay * 0.1 (z3 leaky-decay rate, shared across axes)
     float tdGain;    // = 2*pi*tdHz, shared across axes; 0 = tracking differentiator disabled
+    float gatedDecayRate; // = adrcProfile->gatedZ3DecayRate * 0.1 (z3 decay rate while ungated,
+                           // shared across axes) - precomputed here so adrcApplyControl() doesn't
+                           // need the profile pointer just for this one field
 } adrcCoefficient_t;
 
 // Runtime state, embedded as a single field in pidRuntime_t.
