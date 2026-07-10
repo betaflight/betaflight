@@ -69,6 +69,19 @@
 // low throttle.
 #define ADRC_HOVER_THROTTLE_MIN_FRACTION 0.05f
 
+// Relationships between the liftoff-gate tunables that per-value CLI ranges cannot enforce,
+// sanitized at point of use in adrcUpdatePerLoopState():
+// - the re-arm (idle) throttle must sit below the liftoff throttle, or one and the same throttle
+//   satisfies both the open and the re-arm condition and the gate chops the ESO's b0*u feedback
+//   at loop rate;
+// - "stillness" for re-arm must mean actual stillness no matter how high the liftoff-detection
+//   gyro threshold is pushed (a craft still rotating through a mid-air throttle chop is not
+//   ground-idle), so the re-arm side is capped independently;
+// - the re-arm hold must be long enough that a single quiet loop mid-chop cannot close the gate
+//   in flight.
+#define ADRC_REARM_STILL_MAX_DPS 30.0f
+#define ADRC_REARM_HOLD_MIN_S 0.1f
+
 // z3, logged in the same units as z1/z2, can exceed the int16 blackbox debug field under strong
 // disturbance; scale it down so it stays readable (fix #12).
 #define ADRC_Z3_LOG_SCALE 16.0f
@@ -152,7 +165,12 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         c->beta3 = c->wo * c->wo * c->wo;
         c->decayRate = adrcProfile->sigmaDecay * 0.1f;
         c->tdGain = (adrcProfile->tdHz > 0) ? (2.0f * M_PIf * adrcProfile->tdHz) : 0.0f;
-        c->gatedDecayRate = adrcProfile->gatedZ3DecayRate * 0.1f;
+        // Never slower than the airborne decay and never zero: adrc_gated_z3_decay = 0 would
+        // silently reintroduce the grounded z3 windup this rate exists to prevent (a small sensor
+        // bias integrates for as long as the craft sits armed at idle, then unwinds as an I kick
+        // at takeoff - the exact failure the gated decay was added for). Ground tau is floored at
+        // ~1 s.
+        c->gatedDecayRate = fmaxf(fmaxf(adrcProfile->gatedZ3DecayRate * 0.1f, c->decayRate), 1.0f);
 
         // A pt2 gain of 1 makes the filter an exact pass-through, so adrc_gyro_lpf_hz = 0 follows
         // the usual "0 disables the filter" convention - pt2FilterGain(0, dT) would return 0, i.e.
@@ -205,15 +223,17 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
     const float liftoffGyroDps = adrcProfile->liftoffGyroDps;
     const float liftoffHoldS = adrcProfile->liftoffHoldMs * 0.001f;
-    const float liftoffIdleThrottle = adrcProfile->liftoffIdleThrottlePercent * 0.01f;
-    const float liftoffIdleHoldS = adrcProfile->liftoffIdleHoldMs * 0.001f;
+    // See the ADRC_REARM_* comment up top for why these three are sanitized rather than read raw.
+    const float liftoffIdleThrottle = fminf(adrcProfile->liftoffIdleThrottlePercent * 0.01f, liftoffThrottle - 0.01f);
+    const float liftoffIdleHoldS = fmaxf(adrcProfile->liftoffIdleHoldMs * 0.001f, ADRC_REARM_HOLD_MIN_S);
+    const float rearmStillGyroDps = fminf(liftoffGyroDps, ADRC_REARM_STILL_MAX_DPS);
 
     if (adrcRuntime->liftoff) {
         // Re-arm only after a sustained return to idle throttle AND stillness, so every ground-test
         // rep within one arm cycle gets re-gated. The gyro condition is essential: a mid-air
         // throttle chop (dive, split-S) reads idle on throttle alone while airmode keeps the craft
         // responding - re-arming there would blind the ESO to its own b0*u mid-flight.
-        if (throttle < liftoffIdleThrottle && gyroPeak < liftoffGyroDps) {
+        if (throttle < liftoffIdleThrottle && gyroPeak < rearmStillGyroDps) {
             adrcRuntime->idleS += dT;
             if (adrcRuntime->idleS >= liftoffIdleHoldS) {
                 adrcResetGate(adrcRuntime);

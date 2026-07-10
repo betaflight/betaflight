@@ -301,20 +301,95 @@ TEST_F(AdrcUnittest, Z3DecaysFasterWhenGroundedThanConfiguredDecayRate)
     EXPECT_LT(runtime.z3[FD_ROLL], 1000.0f);
 }
 
-TEST_F(AdrcUnittest, GatedZ3DecayRateIsConfigurable)
+TEST_F(AdrcUnittest, GatedZ3DecayHasProtectiveFloor)
 {
-    profile.gatedZ3DecayRate = 0; // disable the gated decay entirely
-    profile.sigmaDecay = 0;       // and the airborne decay, so z3 has no decay path at all
+    profile.gatedZ3DecayRate = 0; // attempt to disable the gated decay entirely
+    profile.sigmaDecay = 0;       // and the airborne decay - the worst case for grounded windup
     adrcInitConfig(&profile, &runtime, TEST_DT);
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         adrcResetState(&runtime, axis);
     }
     ASSERT_FALSE(runtime.liftoff); // grounded - the gated rate is the only one that would apply
 
+    // adrc_gated_z3_decay = 0 must NOT disable the grounded anti-windup - it is floored (tau ~1s)
+    // so z3 cannot hold a wound-up value while the craft sits armed at idle.
+    EXPECT_FLOAT_EQ(1.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
+
+    // One step (errorEso == 0, so only the decay term drives z3): 1000 * (1 - 1.0*0.008) = 992 -
+    // decaying at the floor rate, neither untouched (the pre-fix 0-disables-it behavior) nor at
+    // the default 20/s (which would give 840).
     runtime.z3[FD_ROLL] = 1000.0f;
     adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
-    // With gatedZ3DecayRate == 0, z3 must not decay at all while grounded either.
-    EXPECT_FLOAT_EQ(1000.0f, runtime.z3[FD_ROLL]);
+    EXPECT_NEAR(992.0f, runtime.z3[FD_ROLL], 0.5f);
+
+    // And the floor also tracks the airborne decay: gated must never be the slower of the two.
+    profile.sigmaDecay = 50;      // airborne 5.0/s
+    profile.gatedZ3DecayRate = 10; // grounded 1.0/s - slower than airborne, must be lifted to 5.0/s
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    EXPECT_FLOAT_EQ(5.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
+}
+
+TEST_F(AdrcUnittest, GateDoesNotChatterWithInvertedThresholds)
+{
+    // The CLI cannot cross-validate the two throttle thresholds; if the idle (re-arm) threshold
+    // is configured at or above the liftoff threshold, one and the same throttle satisfies both
+    // the open and the re-arm condition, and an unsanitized gate would chop the ESO's b0*u
+    // feedback at loop rate. The idle threshold must be clamped below the liftoff threshold.
+    profile.liftoffThrottlePercent = 40;
+    profile.liftoffIdleThrottlePercent = 60; // inverted on purpose
+    profile.liftoffIdleHoldMs = 0;           // and no hold, the worst case
+
+    simulatedThrottle = 0.5f; // above liftoff, below the (bogus) idle threshold
+    resetGyro();
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+    for (int i = 0; i < 200; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        ASSERT_TRUE(runtime.liftoff) << "gate chattered at iteration " << i;
+    }
+}
+
+TEST_F(AdrcUnittest, GateReArmStillnessIsCappedIndependently)
+{
+    // liftoffGyroDps doubles as the re-arm "stillness" bound; pushing it up for less sensitive
+    // liftoff detection must not redefine 100 deg/s of rotation as "still" - that would re-arm
+    // the gate mid-air during a throttle chop. The re-arm side is capped at a true-stillness
+    // level regardless of this setting.
+    profile.liftoffGyroDps = 255;
+
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    // Mid-air throttle chop: idle throttle, but the craft is clearly still flying/rotating.
+    simulatedThrottle = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 100.0f;
+    for (int i = 0; i < 300; i++) { // 2.4s - far beyond any hold time
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateReArmHoldHasFloor)
+{
+    // liftoffIdleHoldMs = 0 must not allow a single quiet loop mid-chop to close the gate in
+    // flight - the hold is floored so re-arm still requires a sustained idle-and-still period.
+    profile.liftoffIdleHoldMs = 0;
+
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    simulatedThrottle = 0.0f;
+    resetGyro();
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT); // one quiet loop (8ms < 100ms floor)
+    EXPECT_TRUE(runtime.liftoff);
+
+    // But a genuinely sustained idle still re-arms (dominated by the 100ms floor, not 500ms).
+    for (int i = 0; i < 20; i++) { // +160ms
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
 }
 
 TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
