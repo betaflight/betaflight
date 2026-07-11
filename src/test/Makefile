@@ -183,6 +183,20 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
 
+config_eeprom_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/config/config_eeprom.c \
+		$(USER_DIR)/config/config_streamer.c \
+		$(USER_DIR)/pg/pg.c
+
+config_eeprom_unittest_DEFINES := \
+		CONFIG_IN_RAM= \
+		EEPROM_SIZE=4096
+
+config_eeprom_unittest_INCLUDE_DIRS := \
+		$(TEST_DIR)/config_eeprom
+
 
 encoding_unittest_SRC := \
 		$(USER_DIR)/common/encoding.c
