@@ -38,6 +38,7 @@
 #include "fc/core.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
@@ -64,8 +65,9 @@
 // arrival can never trigger; touchdown detection is what ends the descent.
 #define FP_LANDING_TARGET_DEPTH_M 200.0f
 #define FP_LANDING_MIN_RATE_MPS   0.3f
-// Fallback: start touchdown monitoring even if descent was never observed
-// (e.g. landing initiated at ground level).
+// Fallback: start touchdown monitoring even if descent was never observed —
+// only near the ground (landing initiated at ground level). At altitude a
+// vehicle that cannot descend must keep trying, not disarm mid-air.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
 
 static struct {
@@ -323,7 +325,8 @@ static void updateLanding(timeUs_t currentTimeUs)
     }
 
     const bool monitorTouchdown = fp.landingDescentEstablished
-        || cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US;
+        || (isBelowLandingAltitude()
+            && cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US);
     if (!monitorTouchdown) {
         return;
     }
@@ -337,6 +340,7 @@ static void updateLanding(timeUs_t currentTimeUs)
             fp.touchdownQuietStartUs = currentTimeUs;
         } else if (cmpTimeUs(currentTimeUs, fp.touchdownQuietStartUs) >= (timeDelta_t)((uint32_t)autopilotConfig()->landingDetectionTime * 100000u)) {
             positionNavClearTarget();
+            fp.state = FP_NAV_COMPLETE;
             disarm(DISARM_REASON_LANDING);
         }
     } else {

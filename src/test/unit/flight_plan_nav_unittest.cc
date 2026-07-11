@@ -75,6 +75,7 @@ timeUs_t g_stubMicros;
 
 positionEstimate3d_t g_stubEstimate;
 bool g_stubValidXY;
+bool g_stubBelowLandingAltitude;
 
 int g_disarmCalls;
 flightLogDisarmReason_e g_lastDisarmReason;
@@ -160,6 +161,11 @@ void disarm(flightLogDisarmReason_e reason)
     g_lastDisarmReason = reason;
 }
 
+bool isBelowLandingAltitude(void)
+{
+    return g_stubBelowLandingAltitude;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.
@@ -193,6 +199,7 @@ protected:
 
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
         g_stubValidXY = true;
+        g_stubBelowLandingAltitude = true;
         g_disarmCalls = 0;
 
         stateFlags = 0;
@@ -589,6 +596,51 @@ TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)
 
     g_stubMicros += 1'100'000; // past landingDetectionTime (1 s)
     flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+}
+
+TEST_F(FlightPlanNavSafetyTest, LandingAtAltitudeWithoutDescentNeverDisarms)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    g_stubBelowLandingAltitude = false; // high up, and unable to descend
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Descent never establishes; well past establish-timeout + detection time.
+    for (int i = 0; i < 15; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0);
+}
+
+TEST_F(FlightPlanNavSafetyTest, GroundLevelLandingFallbackDisarms)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_LAND;
+    stateFlags |= GPS_FIX_HOME;
+    engageDistantLeg();
+    GPS_distanceToHome = 150;
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+
+    // Near the ground (default stub), no descent possible: the fallback arms
+    // touchdown monitoring after the establish timeout and quiet time disarms.
+    for (int i = 0; i < 4; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+    EXPECT_EQ(g_disarmCalls, 0); // still inside establish timeout
+
+    for (int i = 0; i < 4; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
     EXPECT_EQ(g_disarmCalls, 1);
     EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
 }

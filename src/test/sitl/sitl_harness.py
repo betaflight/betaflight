@@ -212,6 +212,8 @@ class Sitl:
             timeout=60,
         )
         debug(f"provision rc={res.returncode}")
+        if res.returncode != 0:
+            raise RuntimeError(f"provisioning failed (rc={res.returncode}):\n{res.stdout}\n{res.stderr}")
         if not os.path.exists(eeprom):
             raise RuntimeError(f"provisioning produced no eeprom.bin:\n{res.stdout}\n{res.stderr}")
 
@@ -238,16 +240,18 @@ class Sitl:
             deadline = time.monotonic() + 20
             while time.monotonic() < deadline:
                 if self.proc.poll() is not None:
-                    raise RuntimeError(f"SITL exited early (rc={self.proc.returncode}); see sitl.log")
+                    debug(f"SITL exited early (rc={self.proc.returncode}); relaunching")
+                    break
                 try:
                     self.sock = socket.create_connection(("127.0.0.1", TCP_PORT), timeout=1)
                     self.msp = Msp(self.sock)
                     self.boxids = list(self.msp.request(MSP_BOXIDS))
                     debug(f"boxids: {self.boxids}")
                     return
-                except OSError:
+                except (OSError, TimeoutError, RuntimeError) as exc:
+                    debug(f"MSP startup probe failed: {exc}")
                     time.sleep(0.3)
-            debug(f"MSP port never appeared (attempt {attempt + 1}); relaunching")
+            debug(f"launch attempt {attempt + 1} failed; relaunching")
             self.stop()
             time.sleep(2.0)
         raise RuntimeError("SITL did not open the MSP port after 3 launches")
@@ -342,7 +346,8 @@ def scenario_rx_loss(sitl, rc, fdm, policy):
             lambda: {BOX_FAILSAFE, BOX_AUTOPILOT} <= sitl.modes(),
         )
         time.sleep(3)
-        assert BOX_AUTOPILOT in sitl.modes(), "mission dropped during CONTINUE"
+        modes = sitl.modes()
+        assert {BOX_FAILSAFE, BOX_AUTOPILOT} <= modes, f"CONTINUE state did not persist: {modes}"
         log("mission still flying 3 s into failsafe")
     elif policy == "LAND":
         wait_for(
@@ -367,12 +372,25 @@ def scenario_geofence(sitl, rc, fdm, action):
             "GPS rescue engaged, mission disengaged",
             lambda: (lambda m: BOX_GPSRESCUE in m and BOX_AUTOPILOT not in m)(sitl.modes()),
         )
+        time.sleep(3)
+        modes = sitl.modes()
+        assert BOX_GPSRESCUE in modes and BOX_AUTOPILOT not in modes, \
+            f"geofence rescue did not remain latched: {modes}"
+        log("rescue remains latched")
     else:  # LAND
         time.sleep(3)
         modes = sitl.modes()
         assert BOX_AUTOPILOT in modes, f"mission dropped instead of landing: {modes}"
         assert BOX_GPSRESCUE not in modes, f"unexpected rescue: {modes}"
         log("mission holds LANDING state at current position")
+        # No physics: the vehicle can't descend, but SITL hovers at the arming
+        # altitude baseline (below ap_landing_altitude_m), so the ground-level
+        # touchdown fallback must detect and disarm.
+        wait_for(
+            "touchdown detection disarms",
+            lambda: BOX_ARM not in sitl.modes(),
+            timeout=15,
+        )
 
 
 def scenario_geofence_rth_rxloss(sitl, rc, fdm):
