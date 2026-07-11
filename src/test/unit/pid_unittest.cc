@@ -896,6 +896,42 @@ TEST(pidControllerTest, testAdrcYawSpinRecoveryExitKeepsDisturbanceItermBumpless
 }
 #endif
 
+TEST(pidControllerTest, testAdrcArmTransitionStartsFreshEpoch)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->adrc.gyroFilterHz = 0;
+    pidProfile->adrc.sigmaDecay = 0;
+    pidInitConfig(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = 0.0f;
+    }
+
+    // Arm cycle 1: open the gate via the throttle condition, then land carrying a stale
+    // disturbance estimate (the post-landing ground-contact windup measured in flight).
+    simulatedThrottle = 0.6f;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_TRUE(pidRuntime.adrc.liftoff);
+    pidRuntime.adrc.z3[FD_ROLL] = 100000.0f;
+
+    // Disarm. With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true
+    // while disarmed, so the stabilisation-disabled reset branch must not be relied on here.
+    DISABLE_ARMING_FLAG(ARMED);
+    simulatedThrottle = 0.0f;
+    pidController(pidProfile, currentTestTime());
+
+    // Re-arm: a fresh epoch must begin - gate closed, no inherited disturbance trim. Fails on the
+    // pre-ADRC-017 code, where the gate and z3 survive the disarm into the next arm cycle.
+    ENABLE_ARMING_FLAG(ARMED);
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+    EXPECT_NEAR(0.0f, pidRuntime.adrc.z3[FD_ROLL], 1.0f);
+}
+
 TEST(pidControllerTest, testClassicCrashDetectionStillRequiresClassicD)
 {
     prepareCrashRecoveryTest(PID_TYPE_CLASSIC, PID_CRASH_RECOVERY_ON, false);

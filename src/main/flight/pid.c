@@ -1078,9 +1078,22 @@ void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale,
     }
 }
 
+static FAST_CODE_NOINLINE void adrcResetAllState(void);
+
 static FAST_CODE_NOINLINE void updateAdrcSharedState(const pidProfile_t *pidProfile)
 {
     if (pidProfile->pid_type == PID_TYPE_ADRC) {
+        // With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true while
+        // disarmed, so the !pidStabilisationEnabled reset branch in pidController() never runs and
+        // the liftoff gate plus ESO state would survive disarm into the next arm cycle. Measured
+        // consequence: after a landing the still-open gate lets z3 wind against outputs the ground
+        // (or the disarmed motors) never let act, and that stale disturbance trim then enters the
+        // next takeoff. Start every arm cycle with a fresh epoch instead (ADRC-017).
+        const bool armed = ARMING_FLAG(ARMED);
+        if (armed && !pidRuntime.adrcWasArmed) {
+            adrcResetAllState();
+        }
+        pidRuntime.adrcWasArmed = armed;
         adrcUpdatePerLoopState(&pidRuntime.adrc, &pidProfile->adrc, pidRuntime.dT);
     }
 }
@@ -1098,7 +1111,8 @@ static FAST_CODE_NOINLINE void applyAdrcControl(int axis, float gyroRate, float 
 }
 
 // See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE. Resets all per-axis ESO
-// state plus the shared liftoff-gate state - called only on genuine disarm/overflow.
+// state plus the shared liftoff-gate state - called on the disarm->arm transition (fresh epoch per
+// arm cycle) and from the controller-disabled branch (stabilisation off, gyro overflow, Crash Flip).
 static FAST_CODE_NOINLINE void adrcResetAllState(void)
 {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -1117,7 +1131,9 @@ static FAST_CODE_NOINLINE void adrcZeroThrottleItermReset(void)
     // disturbance estimate survives spool-up rather than restarting from zero each time
     // (community fork fix #4, danusha2345/ADRC-betaflight). Safe because
     // adrcUpdatePerLoopState()'s liftoff gate (fix #8/#10b) holds the ESO's b0*u feedback at
-    // zero until liftoff is actually detected, so an alive ESO cannot wind up while grounded.
+    // zero until liftoff is actually detected, so an alive ESO cannot wind up while grounded
+    // pre-liftoff. Post-landing (gate still open on the ground) windup remains possible, but is
+    // bounded to the current arm cycle by the arm-transition reset in updateAdrcSharedState().
     // Only the legacy I accumulator is cleared; ADRC recomputes I = -z3/b0 every loop regardless.
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         pidData[axis].I = 0.0f;
