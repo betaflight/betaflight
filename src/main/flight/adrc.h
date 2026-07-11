@@ -48,9 +48,9 @@ typedef enum {
 
 // User-facing tunables, embedded as a single field in pidProfile_t.
 typedef struct adrcProfile_s {
-    uint16_t wc[XYZ_AXIS_COUNT]; // controller (virtual PD) bandwidth per axis
-    uint16_t wo[XYZ_AXIS_COUNT]; // extended state observer bandwidth per axis
-    uint16_t b0[XYZ_AXIS_COUNT]; // control-input gain estimate per axis
+    uint16_t wc[XYZ_AXIS_COUNT]; // controller (virtual PD) bandwidth [rad/s] per axis
+    uint16_t wo[XYZ_AXIS_COUNT]; // extended state observer bandwidth [rad/s] per axis
+    uint16_t b0[XYZ_AXIS_COUNT]; // control-input gain estimate [deg/s^3 per PID output] per axis
     uint16_t gyroFilterHz;       // low-pass cutoff applied to the ESO's gyro input (not per-axis,
                                  // matching dterm_lpf1/lpf2's single-value convention)
     uint8_t hoverThrottlePercent; // throttle % at hover; b0 is scaled by (throttle/hover)^2 above
@@ -91,16 +91,16 @@ typedef struct adrcProfile_s {
 // Precomputed per-axis coefficients derived from adrcProfile_t at profile-load time, so the hot
 // loop doesn't redo wc*wc, 3*wo, wo*wo*wo etc every iteration.
 typedef struct adrcCoefficient_s {
-    float wc;      // controller (virtual PD) bandwidth
-    float wo;      // observer bandwidth
-    float b0;      // control-input gain estimate
+    float wc;      // controller (virtual PD) bandwidth [rad/s]
+    float wo;      // effective observer bandwidth [rad/s], capped against the runtime looptime
+    float b0;      // control-input gain estimate [deg/s^3 per PID output]
     float kp;      // = wc*wc (virtual PD control law proportional gain)
     float kd;      // = 2*wc (virtual PD control law derivative gain)
     float beta1;   // = 3*wo (ESO observer gain)
     float beta2;   // = 3*wo*wo (ESO observer gain)
     float beta3;   // = wo*wo*wo (ESO observer gain)
     float decayRate; // = adrcProfile->sigmaDecay * 0.1 (z3 leaky-decay rate, shared across axes)
-    float tdGain;    // = 2*pi*tdHz, shared across axes; 0 = tracking differentiator disabled
+    float tdFilterGain; // stable PT1 gain for tdHz at the runtime looptime; 0 = TD disabled
     float gatedDecayRate; // = adrcProfile->gatedZ3DecayRate * 0.1 (z3 decay rate while ungated,
                            // shared across axes) - precomputed here so adrcApplyControl() doesn't
                            // need the profile pointer just for this one field
@@ -110,11 +110,11 @@ typedef struct adrcCoefficient_s {
 typedef struct adrcRuntime_s {
     adrcCoefficient_t coefficient[XYZ_AXIS_COUNT];
     pt2Filter_t gyroFilter[XYZ_AXIS_COUNT]; // low-pass ahead of the ESO; see gyroFilterHz above
-    float z1[XYZ_AXIS_COUNT]; // ESO estimate of rate
-    float z2[XYZ_AXIS_COUNT]; // ESO estimate of rate derivative
-    float z3[XYZ_AXIS_COUNT]; // ESO estimate of lumped disturbance
+    float z1[XYZ_AXIS_COUNT]; // ESO estimate of angular rate [deg/s]
+    float z2[XYZ_AXIS_COUNT]; // ESO estimate of angular acceleration [deg/s^2]
+    float z3[XYZ_AXIS_COUNT]; // ESO estimate of lumped rate-plant disturbance [deg/s^3]
     float vRef[XYZ_AXIS_COUNT]; // tracking-differentiator-filtered setpoint fed to the control law;
-                                 // tracks the raw setpoint directly when tdGain == 0 (disabled)
+                                 // tracks the raw setpoint directly when tdFilterGain == 0 (disabled)
     float lastOutput[XYZ_AXIS_COUNT]; // control output fed back into the observer next iteration
     bool liftoff;           // latched once per arm cycle: craft has left the ground (shared, not
                              // per-axis - gyro activity is checked across all three axes at once)

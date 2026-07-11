@@ -35,12 +35,29 @@
 
 #include "adrc.h"
 
-// Generous physical bounds on the ESO's rate estimate (z1) and rate-derivative estimate (z2) -
-// well beyond any real gyro reading / angular acceleration (a hard 5" snap peaks at roughly
-// 12-25k deg/s^2, so 100k leaves ample margin) - just preventing unbounded divergence (e.g. from
-// a badly tuned wo) rather than constraining normal flight in any way.
-#define ADRC_Z1_LIMIT 2000.0f
+// Generous physical bounds on the ESO's angular-rate estimate z1 [deg/s] and angular-acceleration
+// estimate z2 [deg/s^2]. z1 leaves 2x headroom over Betaflight's supported +/-4000 dps gyro FSR;
+// a hard 5" snap peaks at roughly 12-25k deg/s^2, so the z2 bound likewise avoids constraining
+// normal flight while still preventing unbounded numerical divergence.
+#define ADRC_Z1_LIMIT 8000.0f
 #define ADRC_Z2_LIMIT 100000.0f
+
+// The forward-Euler ESO has repeated discrete observer poles at 1 - wo*dT before z3 decay is
+// included. Keeping wo*dT <= 0.5 leaves the poles non-oscillatory with margin for the independently
+// configured decay term. The default wo remains unchanged at every supported loop rate (the slowest
+// supported 200 Hz loop permits wo=100); only impossible high-bandwidth/slow-loop combinations are
+// reduced at runtime.
+#define ADRC_ESO_MAX_WO_DT 0.5f
+
+// Defense-in-depth mirrors the CLI ranges for values that can also arrive through persisted data.
+#define ADRC_WC_MIN 5.0f
+#define ADRC_WC_MAX 300.0f
+#define ADRC_WO_MIN 10.0f
+#define ADRC_WO_MAX 600.0f
+#define ADRC_B0_MIN 100.0f
+#define ADRC_SIGMA_DECAY_MAX 100.0f
+#define ADRC_GATED_Z3_DECAY_MAX 2000.0f
+#define ADRC_B0_SCALE_MAX 50.0f
 
 // Liftoff-gate mechanism (thresholds now live in adrcProfile_t - see adrc.h - ported as tunable
 // fields rather than fixed constants; the numbers below are just the danusha2345/ADRC-betaflight
@@ -86,10 +103,51 @@
 #define ADRC_REARM_STILL_MAX_DPS 30.0f
 #define ADRC_REARM_HOLD_MIN_S 0.1f
 
-// z3, logged in the same units as z1/z2, can exceed the int16 blackbox debug field under strong
-// disturbance; scale it down so it stays readable (fix #12).
+// z3 is the lumped rate-plant disturbance [deg/s^3], so its numeric range is much larger than z1
+// [deg/s] or z2 [deg/s^2]. Scale it down to fit the int16 blackbox debug field (fix #12).
 #define ADRC_Z3_LOG_SCALE 16.0f
 #define ADRC_DEBUG_LIMIT 32767.0f
+
+// Firmware is built with -ffast-math, under which the compiler may assume ordinary isfinite()
+// checks are always true. Inspect the IEEE-754 exponent directly so the recovery path remains real
+// in release builds as well as unit tests.
+static bool adrcIsFinite(float value)
+{
+    union {
+        float f;
+        uint32_t u;
+    } bits = { .f = value };
+
+    return (bits.u & 0x7F800000U) != 0x7F800000U;
+}
+
+static void adrcResetAxisState(adrcRuntime_t *adrcRuntime, int axis, float gyroRate)
+{
+    const float finiteGyroRate = adrcIsFinite(gyroRate) ? gyroRate : 0.0f;
+    pt2Filter_t *gyroFilter = &adrcRuntime->gyroFilter[axis];
+
+    if (!adrcIsFinite(gyroFilter->k) || gyroFilter->k < 0.0f || gyroFilter->k > 1.0f) {
+        gyroFilter->k = 1.0f;
+    }
+    gyroFilter->state = finiteGyroRate;
+    gyroFilter->state1 = finiteGyroRate;
+    adrcRuntime->z1[axis] = finiteGyroRate;
+    adrcRuntime->z2[axis] = 0.0f;
+    adrcRuntime->z3[axis] = 0.0f;
+    adrcRuntime->vRef[axis] = finiteGyroRate;
+    adrcRuntime->lastOutput[axis] = 0.0f;
+}
+
+static bool adrcAxisStateIsFinite(const adrcRuntime_t *adrcRuntime, int axis)
+{
+    const pt2Filter_t *gyroFilter = &adrcRuntime->gyroFilter[axis];
+
+    return adrcIsFinite(gyroFilter->k) && gyroFilter->k >= 0.0f && gyroFilter->k <= 1.0f
+        && adrcIsFinite(gyroFilter->state) && adrcIsFinite(gyroFilter->state1)
+        && adrcIsFinite(adrcRuntime->z1[axis]) && adrcIsFinite(adrcRuntime->z2[axis])
+        && adrcIsFinite(adrcRuntime->z3[axis]) && adrcIsFinite(adrcRuntime->vRef[axis])
+        && adrcIsFinite(adrcRuntime->lastOutput[axis]);
+}
 
 void adrcResetProfile(adrcProfile_t *adrcProfile)
 {
@@ -179,28 +237,35 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
 
 void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime, float dT)
 {
+    const bool validDt = adrcIsFinite(dT) && dT > 0.0f;
+
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         adrcCoefficient_t *c = &adrcRuntime->coefficient[axis];
         // Floors mirror the CLI ranges, as defense-in-depth for out-of-range values arriving via
         // PG/EEPROM rather than `set`: wo = 0 would freeze the observer outright (all betas 0,
         // z1 stuck at its arm-time value while P keeps acting on it) and wc = 0 would zero the
         // whole control law; both fail silently, with nothing in the CLI to hint at why.
-        c->wc = fmaxf(adrcProfile->wc[axis], 5.0f);
-        c->wo = fmaxf(adrcProfile->wo[axis], 10.0f);
-        c->b0 = fmaxf(adrcProfile->b0[axis], 100.0f);
+        c->wc = constrainf(adrcProfile->wc[axis], ADRC_WC_MIN, ADRC_WC_MAX);
+        c->wo = constrainf(adrcProfile->wo[axis], ADRC_WO_MIN, ADRC_WO_MAX);
+        if (validDt) {
+            c->wo = fminf(c->wo, ADRC_ESO_MAX_WO_DT / dT);
+        }
+        c->b0 = fmaxf(adrcProfile->b0[axis], ADRC_B0_MIN);
         c->kp = c->wc * c->wc;
         c->kd = 2.0f * c->wc;
         c->beta1 = 3.0f * c->wo;
         c->beta2 = 3.0f * c->wo * c->wo;
         c->beta3 = c->wo * c->wo * c->wo;
-        c->decayRate = adrcProfile->sigmaDecay * 0.1f;
-        c->tdGain = (adrcProfile->tdHz > 0) ? (2.0f * M_PIf * adrcProfile->tdHz) : 0.0f;
+        c->decayRate = fminf(adrcProfile->sigmaDecay, ADRC_SIGMA_DECAY_MAX) * 0.1f;
+        const float tdHz = fminf(adrcProfile->tdHz, LPF_MAX_HZ);
+        c->tdFilterGain = (tdHz > 0.0f && validDt) ? pt1FilterGain(tdHz, dT) : 0.0f;
         // Never slower than the airborne decay and never zero: adrc_gated_z3_decay = 0 would
         // silently reintroduce the grounded z3 windup this rate exists to prevent (a small sensor
         // bias integrates for as long as the craft sits armed at idle, then unwinds as an I kick
         // at takeoff - the exact failure the gated decay was added for). Ground tau is floored at
         // ~1 s.
-        c->gatedDecayRate = fmaxf(fmaxf(adrcProfile->gatedZ3DecayRate * 0.1f, c->decayRate), 1.0f);
+        const float gatedZ3Decay = fminf(adrcProfile->gatedZ3DecayRate, ADRC_GATED_Z3_DECAY_MAX) * 0.1f;
+        c->gatedDecayRate = fmaxf(fmaxf(gatedZ3Decay, c->decayRate), 1.0f);
 
         // A pt2 gain of 1 makes the filter an exact pass-through, so adrc_gyro_lpf_hz = 0 follows
         // the usual "0 disables the filter" convention - pt2FilterGain(0, dT) would return 0, i.e.
@@ -212,8 +277,9 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         // so re-converging from zero would feed the ESO a near-zero gyro for a few ms, a large
         // false errorEso spike straight into z3 (adrcResetState() seeds the states on every reset
         // path, so they are never stale).
-        const float gyroFilterGain = (adrcProfile->gyroFilterHz > 0 && dT > 0)
-            ? pt2FilterGain(adrcProfile->gyroFilterHz, dT) : 1.0f;
+        const float gyroFilterHz = fminf(adrcProfile->gyroFilterHz, LPF_MAX_HZ);
+        const float gyroFilterGain = (gyroFilterHz > 0.0f && validDt)
+            ? pt2FilterGain(gyroFilterHz, dT) : 1.0f;
         pt2FilterUpdateCutoff(&adrcRuntime->gyroFilter[axis], gyroFilterGain);
     }
 
@@ -228,13 +294,10 @@ void adrcResetState(adrcRuntime_t *adrcRuntime, int axis)
     // manufacture exactly the errorEso kick this reset exists to prevent: at gyro = 1000 deg/s
     // the first filtered sample is ~24 deg/s (150 Hz pt2 @ 8 kHz), so errorEso ~ 976 and the
     // first z3 step is -beta3*errorEso*dT ~ -122 000.
-    adrcRuntime->gyroFilter[axis].state = gyroRate;
-    adrcRuntime->gyroFilter[axis].state1 = gyroRate;
-    adrcRuntime->z1[axis] = gyroRate;
-    adrcRuntime->z2[axis] = 0.0f;
-    adrcRuntime->z3[axis] = 0.0f;
-    adrcRuntime->vRef[axis] = 0.0f;
-    adrcRuntime->lastOutput[axis] = 0.0f;
+    // vRef is seeded from the same physical state rather than zero. pidResetIterm() also calls this
+    // during launch control and every loop of a 3D reversal; a zero TD reference there would create
+    // a large command opposite to the current rotation until the tracker caught up.
+    adrcResetAxisState(adrcRuntime, axis, gyroRate);
 }
 
 void adrcResetGate(adrcRuntime_t *adrcRuntime)
@@ -252,7 +315,9 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     // mixTable() runs after the PID task and publishes the final collective value for the next
     // PID iteration. This includes ALT_HOLD/GPS_RESCUE overrides and mixer constraints, unlike
     // mixerGetThrottle(), which intentionally remains the pre-override blackbox/TPA value.
-    const float throttle = mixerGetAdrcThrottle();
+    const float rawThrottle = mixerGetAdrcThrottle();
+    const float throttle = adrcIsFinite(rawThrottle) ? constrainf(rawThrottle, 0.0f, 1.0f) : 0.0f;
+    const float finiteDt = (adrcIsFinite(dT) && dT > 0.0f) ? dT : 0.0f;
 
     const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
     const float liftoffGyroDps = adrcProfile->liftoffGyroDps;
@@ -274,7 +339,7 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
         // freestyle), and a mid-air re-gate both dumps z3 through the fast gated decay and blinds
         // the ESO to b0*u while airmode keeps flying the craft - hence opt-in, default off.
         if (rearmEnabled && throttle < liftoffIdleThrottle && gyroPeak < rearmStillGyroDps) {
-            adrcRuntime->idleS += dT;
+            adrcRuntime->idleS += finiteDt;
             if (adrcRuntime->idleS >= liftoffIdleHoldS) {
                 adrcResetGate(adrcRuntime);
             }
@@ -286,7 +351,7 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
         if (throttle >= liftoffThrottle) {
             adrcRuntime->liftoff = true;
         } else if (gyroPeak > liftoffGyroDps) {
-            adrcRuntime->gyroActiveS += dT;
+            adrcRuntime->gyroActiveS += finiteDt;
             if (adrcRuntime->gyroActiveS >= liftoffHoldS) {
                 adrcRuntime->liftoff = true;
             }
@@ -311,23 +376,38 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     // Motor authority ~ throttle^2, so a hover-tuned b0 is wrong away from hover; scale only UP
     // (clamped) - scaling down would make 1/b0 huge and inject extreme output at low throttle.
     const float hover = fmaxf(adrcProfile->hoverThrottlePercent * 0.01f, ADRC_HOVER_THROTTLE_MIN_FRACTION);
-    const float throttleRatio = constrainf(throttle, 0.0f, 1.0f) / hover;
-    adrcRuntime->b0ThrottleScale = constrainf(throttleRatio * throttleRatio, 1.0f, adrcProfile->b0ThrottleScaleMax);
+    const float throttleRatio = throttle / hover;
+    const float maxB0Scale = constrainf(adrcProfile->b0ThrottleScaleMax, 1.0f, ADRC_B0_SCALE_MAX);
+    adrcRuntime->b0ThrottleScale = constrainf(throttleRatio * throttleRatio, 1.0f, maxB0Scale);
 }
 
 adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRate, float currentPidSetpoint,
     float dT, float pidSumLimit)
 {
     const adrcCoefficient_t *c = &adrcRuntime->coefficient[axis];
+    const float finiteDt = (adrcIsFinite(dT) && dT > 0.0f) ? dT : 0.0f;
+    const float finiteGyroRate = adrcIsFinite(gyroRate) ? gyroRate
+        : (adrcIsFinite(adrcRuntime->z1[axis]) ? adrcRuntime->z1[axis] : 0.0f);
+    const float finiteSetpoint = adrcIsFinite(currentPidSetpoint) ? currentPidSetpoint : finiteGyroRate;
+
+    if (!adrcAxisStateIsFinite(adrcRuntime, axis)) {
+        adrcResetAxisState(adrcRuntime, axis, finiteGyroRate);
+    }
+    if (!adrcIsFinite(adrcRuntime->b0ThrottleScale) || adrcRuntime->b0ThrottleScale < 1.0f) {
+        adrcRuntime->b0ThrottleScale = 1.0f;
+    } else if (adrcRuntime->b0ThrottleScale > ADRC_B0_SCALE_MAX) {
+        adrcRuntime->b0ThrottleScale = ADRC_B0_SCALE_MAX;
+    }
 
     // Throttle-scaled plant gain: motor authority ~ throttle^2, so a hover-tuned b0 stays calibrated
     // across the throttle range instead of only at hover. See adrcUpdatePerLoopState().
-    const float b0 = c->b0 * adrcRuntime->b0ThrottleScale;
+    const float b0Base = (adrcIsFinite(c->b0) && c->b0 >= ADRC_B0_MIN) ? c->b0 : ADRC_B0_MIN;
+    const float b0 = b0Base * adrcRuntime->b0ThrottleScale;
 
     // Dedicated low-pass ahead of the ESO. Not part of the ported source (danusha2345's own code
     // feeds the raw gyro reading directly into errorEso); this project's own addition, kept because
     // this airframe's base gyro filter is deliberately loose.
-    const float filteredGyroRate = pt2FilterApply(&adrcRuntime->gyroFilter[axis], gyroRate);
+    const float filteredGyroRate = pt2FilterApply(&adrcRuntime->gyroFilter[axis], finiteGyroRate);
 
     const float errorEso = adrcRuntime->z1[axis] - filteredGyroRate;
 
@@ -343,9 +423,14 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     // leak during observer transients - skipped here since the fork's own docs call it unvalidated:
     // the low-pass it keys on tracks maneuver/prop-wash transients, not a steady load.)
     const float z3DecayRate = adrcRuntime->liftoff ? c->decayRate : c->gatedDecayRate;
-    adrcRuntime->z1[axis] += dT * (adrcRuntime->z2[axis] - c->beta1 * errorEso);
-    adrcRuntime->z2[axis] += dT * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
-    adrcRuntime->z3[axis] += dT * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);
+    adrcRuntime->z1[axis] += finiteDt * (adrcRuntime->z2[axis] - c->beta1 * errorEso);
+    adrcRuntime->z2[axis] += finiteDt * (adrcRuntime->z3[axis] + b0u - c->beta2 * errorEso);
+    adrcRuntime->z3[axis] += finiteDt * (-c->beta3 * errorEso - z3DecayRate * adrcRuntime->z3[axis]);
+
+    if (!adrcIsFinite(adrcRuntime->z1[axis]) || !adrcIsFinite(adrcRuntime->z2[axis])
+        || !adrcIsFinite(adrcRuntime->z3[axis])) {
+        adrcResetAxisState(adrcRuntime, axis, finiteGyroRate);
+    }
 
     // Anti-windup: bound the disturbance estimate (z3) so it cannot wind up under motor/actuator
     // saturation - otherwise recovery from clipping lags while z3 unwinds. |I| = |z3/b0| is thereby
@@ -358,18 +443,20 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     // severalfold at/below hover, distorting the observer exactly when it must track fastest.
     adrcRuntime->z1[axis] = constrainf(adrcRuntime->z1[axis], -ADRC_Z1_LIMIT, ADRC_Z1_LIMIT);
     adrcRuntime->z2[axis] = constrainf(adrcRuntime->z2[axis], -ADRC_Z2_LIMIT, ADRC_Z2_LIMIT);
-    const float maxZ3 = pidSumLimit * b0;
+    const float finitePidSumLimit = (adrcIsFinite(pidSumLimit) && pidSumLimit > 0.0f) ? pidSumLimit : 0.0f;
+    const float maxZ3 = finitePidSumLimit * b0;
     adrcRuntime->z3[axis] = constrainf(adrcRuntime->z3[axis], -maxZ3, maxZ3);
 
     // Tracking differentiator (opt-in, off by default): smooths the setpoint driving the control
     // law's P term, separate from the ESO's own error term above (errorEso still tracks the raw
     // gyro directly - the TD only changes what the control law treats as "where we're steering
-    // toward", not what the observer treats as "what actually happened"). tdGain == 0 bypasses it
-    // (vRef tracks currentPidSetpoint exactly, one-loop-delay-free).
-    if (c->tdGain > 0.0f) {
-        adrcRuntime->vRef[axis] += dT * (c->tdGain * (currentPidSetpoint - adrcRuntime->vRef[axis]));
+    // toward", not what the observer treats as "what actually happened"). tdFilterGain is the
+    // unconditionally stable PT1 gain omega*dT/(1 + omega*dT), so every positive cutoff/looptime
+    // combination stays monotonic. A zero gain bypasses the TD exactly.
+    if (c->tdFilterGain > 0.0f) {
+        adrcRuntime->vRef[axis] += c->tdFilterGain * (finiteSetpoint - adrcRuntime->vRef[axis]);
     } else {
-        adrcRuntime->vRef[axis] = currentPidSetpoint;
+        adrcRuntime->vRef[axis] = finiteSetpoint;
     }
 
     // Virtual PD control law; b0 divides out the control-input gain estimate. The terms are NOT
@@ -380,11 +467,17 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
     // exceeds pidSumLimit while an opposing D partially cancels it, and clamping both cuts the
     // net drive severalfold mid-snap - which is exactly the regime the community-validated tunes
     // were flown in without them.
-    const adrcOutput_t output = {
+    adrcOutput_t output = {
         .P = (c->kp * (adrcRuntime->vRef[axis] - adrcRuntime->z1[axis])) / b0,
         .D = (-c->kd * adrcRuntime->z2[axis]) / b0,
         .I = (-adrcRuntime->z3[axis]) / b0,
     };
+    if (!adrcIsFinite(output.P) || !adrcIsFinite(output.I) || !adrcIsFinite(output.D)) {
+        adrcResetAxisState(adrcRuntime, axis, finiteGyroRate);
+        output.P = 0.0f;
+        output.I = 0.0f;
+        output.D = 0.0f;
+    }
 
     // Log all three axes simultaneously (the ported source gates on gyro.gyroDebugAxis, one axis
     // only): roll z1/z2/z3 in [0..2], pitch z1/z2/z3 in [3..5], yaw z3 in [6], throttle-scaled b0
