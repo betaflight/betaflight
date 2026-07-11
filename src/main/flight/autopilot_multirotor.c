@@ -128,6 +128,7 @@ static bool wasPositionHeld = false;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
 static bool forcePitchForward = false;
+static bool wasAngleSaturated = false;
 
 static float apYawRateDps = 0.0f;
 static bool apYawActive = false;
@@ -357,6 +358,7 @@ void resetPositionControl(unsigned taskRateHz)
     ap.wasSticksActive = false;
     disableYawControl();
     apYawCourseValid = false;
+    wasAngleSaturated = false;
     // Initialise the nav system
     positionEstimatorEnableXY(true);
     positionNavReset();
@@ -630,7 +632,13 @@ bool positionControl(void)
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
 
         if (ap.navActive) {
-            distanceError.v[axis] += velocityError.v[axis] * dt; 
+            // Anti-windup: while the angle output is saturated (accelerating
+            // toward cruise), only integrate toward unwinding, or metres of
+            // pseudo distance error accumulate that can only be shed by
+            // flying well past the commanded speed.
+            if (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f) {
+                distanceError.v[axis] += velocityError.v[axis] * dt;
+            }
         } else if (!isPositionHeld) {
             // sticks active
             distanceErrorIntegral.v[axis] *= 0.99f;
@@ -660,6 +668,7 @@ bool positionControl(void)
     angleV.v[AI_ROLL]  = vector2Cross(&headingV, &pidSumVectorEF);
 
     const float mag = vector2Norm(&angleV);
+    wasAngleSaturated = (mag > ap.maxAngle);
     if (mag > ap.maxAngle && mag > 0.001f) {
         const float scale = ap.maxAngle / mag;
         vector2Scale(&angleV, &angleV, scale);
