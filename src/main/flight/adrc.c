@@ -273,8 +273,10 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
         // pidInitFilters()' targetPidLooptime guard for boot-time calls before the looptime is
         // known (pt2FilterGain(hz, 0) is 0 too); the post-looptime init re-runs with the real dT.
         // Gain-only update, NOT pt2FilterInit(): init zeroes the filter states, and pidInitConfig()
-        // fires while armed - adjustment-range tuning (rc_adjustments.c) and pid-profile switches -
-        // so re-converging from zero would feed the ESO a near-zero gyro for a few ms, a large
+        // can fire while armed for adjustment-range tuning (rc_adjustments.c). Disarmed profile
+        // or controller-type switches reset the state explicitly; an in-flight gain update must
+        // not make the filter re-converge from zero and feed the ESO a near-zero gyro for a few ms,
+        // causing a large
         // false errorEso spike straight into z3 (adrcResetState() seeds the states on every reset
         // path, so they are never stale).
         const float gyroFilterHz = fminf(adrcProfile->gyroFilterHz, LPF_MAX_HZ);

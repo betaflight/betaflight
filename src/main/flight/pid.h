@@ -570,7 +570,7 @@ bool pidAntiGravityEnabled(void);
 #ifdef USE_ADRC
 // Called by the motor mixer after authority normalization so the ESO receives the command that
 // could reach the plant, rather than the pre-normalization PID sum.
-void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale);
+void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit);
 #endif
 
 #ifdef USE_THRUST_LINEARIZATION

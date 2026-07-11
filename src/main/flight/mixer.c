@@ -696,7 +696,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     if (applyCrashFlipModeToMotors()) {
 #ifdef USE_ADRC
         mixerAdrcThrottle = 0.0f;
-        pidUpdateAdrcAppliedOutput(currentPidProfile, 0.0f);
+        pidUpdateAdrcAppliedOutput(currentPidProfile, 0.0f, currentPidProfile->pidSumLimitYaw);
 #endif
         return;
         // if crash flip modeis being applied to the motors, mixing is done
@@ -861,7 +861,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // all mixer modes; MIXER_DYNAMIC's deliberate per-motor redistribution remains part of the
     // plant/disturbance seen by the observer.
     mixerAdrcThrottle = motorStopped ? 0.0f : throttle;
-    pidUpdateAdrcAppliedOutput(currentPidProfile, motorStopped ? 0.0f : appliedAxisScale);
+    pidUpdateAdrcAppliedOutput(currentPidProfile, motorStopped ? 0.0f : appliedAxisScale, yawPidSumLimit);
 #else
     UNUSED(appliedAxisScale);
 #endif

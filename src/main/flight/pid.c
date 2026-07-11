@@ -1062,7 +1062,7 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 // FAST_CODE_NOINLINE keeps these out of pidController()'s ITCM-resident body (mirrors the existing
 // applyAcroTrainer/applyLaunchControl/handleCrashRecovery pattern above) - they only run for ADRC
 // profiles and are not on the hot path for builds that don't use it.
-void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale)
+void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit)
 {
     if (pidProfile->pid_type != PID_TYPE_ADRC) {
         return;
@@ -1071,8 +1071,9 @@ void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale)
     // A negative or non-finite scale cannot represent motor authority. The comparison is
     // intentionally ordered so NaN also falls back to zero instead of reaching constrainf().
     const float appliedScale = axisScale > 0.0f ? fminf(axisScale, 1.0f) : 0.0f;
+    const float appliedYawLimit = yawSumLimit > 0.0f ? yawSumLimit : pidProfile->pidSumLimitYaw;
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        const float sumLimit = axis == FD_YAW ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        const float sumLimit = axis == FD_YAW ? appliedYawLimit : pidProfile->pidSumLimit;
         pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -sumLimit, sumLimit) * appliedScale;
     }
 }

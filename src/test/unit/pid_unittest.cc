@@ -1378,11 +1378,17 @@ TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)
     pidData[FD_PITCH].Sum = -800.0f;
     pidData[FD_YAW].Sum = 600.0f;
 
-    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f);
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
 
     EXPECT_FLOAT_EQ(250.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
     EXPECT_FLOAT_EQ(-250.0f, pidRuntime.adrc.lastOutput[FD_PITCH]);
     EXPECT_FLOAT_EQ(200.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+
+    // Yaw-spin recovery raises the mixer clamp to PIDSUM_LIMIT_MAX. Feed the same effective
+    // limit back to the observer instead of silently clipping at the profile's normal yaw limit.
+    pidData[FD_YAW].Sum = 900.0f;
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, PIDSUM_LIMIT_MAX);
+    EXPECT_FLOAT_EQ(450.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
 }
 
 TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfiles)
@@ -1395,20 +1401,20 @@ TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfil
         pidData[axis].Sum = 100.0f;
     }
 
-    pidUpdateAdrcAppliedOutput(pidProfile, -1.0f);
+    pidUpdateAdrcAppliedOutput(pidProfile, -1.0f, pidProfile->pidSumLimitYaw);
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
         pidRuntime.adrc.lastOutput[axis] = 42.0f;
     }
 
-    pidUpdateAdrcAppliedOutput(pidProfile, NAN);
+    pidUpdateAdrcAppliedOutput(pidProfile, NAN, pidProfile->pidSumLimitYaw);
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
         pidRuntime.adrc.lastOutput[axis] = 42.0f;
     }
 
     pidProfile->pid_type = PID_TYPE_CLASSIC;
-    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f);
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         EXPECT_FLOAT_EQ(42.0f, pidRuntime.adrc.lastOutput[axis]);
     }

@@ -510,7 +510,8 @@ TEST_F(AdrcUnittest, ResetSeedsGyroFilterSoHandoverHasNoEsoKick)
     // adrcResetState() must seed the gyro filter together with z1: seeding z1 from the raw gyro
     // while the filter re-converges from zero would produce errorEso ~ gyro on the very next
     // loop, kicking z3 by -beta3*errorEso*dT (~ -122 000 at 1000 deg/s and 8 kHz) - the opposite
-    // of the smooth handover the reset exists for (mid-air profile switch into ADRC).
+    // of the smooth handover needed after boot, a disarmed controller-type switch, or recovery
+    // from invalid observer state.
     constexpr float dT = 0.000125f; // 8 kHz
     adrcInitConfig(&profile, &runtime, dT);
 
