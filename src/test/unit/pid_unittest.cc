@@ -1185,28 +1185,42 @@ TEST(pidControllerTest, testTpaHyperbolic)
     EXPECT_NEAR(0.9f, pidRuntime.tpaFactor, 0.01f);
 }
 
-TEST(pidControllerTest, testAdrcEsoReseedsOnMidAirProfileSwitchIntoAdrc)
+TEST(pidControllerTest, testAdrcStateResetsOnDisarmedControlLawChange)
 {
     resetTest();
+    ASSERT_FALSE(ARMING_FLAG(ARMED));
 
     pidProfile->pid_type = PID_TYPE_ADRC;
     gyro.gyroADCf[FD_ROLL] = 300.0f;
-    pidInitConfig(pidProfile); // first activation - z1 seeds from the current gyro reading
+    pidInitConfig(pidProfile);
     EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
 
-    // Switch back to CLASSIC - the ESO is not touched while inactive, so it goes stale.
+    // Stock stick/MSP profile selection is disarmed. Define that supported configuration
+    // transition explicitly: neither controller may inherit the other's integrator/output state.
+    pidData[FD_ROLL].I = 75.0f;
+    pidRuntime.adrc.z3[FD_ROLL] = 12345.0f;
+    pidRuntime.adrc.lastOutput[FD_ROLL] = 400.0f;
+    pidRuntime.adrc.liftoff = true;
+
     pidProfile->pid_type = PID_TYPE_CLASSIC;
     pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
 
-    // Craft keeps rotating while classic PID is in control.
     gyro.gyroADCf[FD_ROLL] = 900.0f;
 
-    // Switching back into ADRC mid-air must re-seed z1 from the CURRENT gyro reading, not
-    // resume from the 300 left over from the first activation - otherwise the observer starts
-    // the handover already wrong by errorEso = 600, producing a P/observer kick.
+    // Selecting ADRC again while disarmed prepares the next arming epoch from the current gyro;
+    // this is configuration hygiene, not a promise of unsupported in-flight profile handover.
     pidProfile->pid_type = PID_TYPE_ADRC;
     pidInitConfig(pidProfile);
     EXPECT_FLOAT_EQ(900.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
 }
 
 TEST(pidControllerTest, testAdrcEsoNotReseedOnRepeatedInitUnderSameType)
@@ -1218,16 +1232,18 @@ TEST(pidControllerTest, testAdrcEsoNotReseedOnRepeatedInitUnderSameType)
     pidInitConfig(pidProfile);
     EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
 
-    // Simulate an in-flight CLI/adjustment-range save while ADRC stays active the whole time
-    // (rc_adjustments.c calls pidInitConfig() on every such change): the z3 disturbance/trim
+    // Adjustment ranges call pidInitConfig() while ADRC stays active. The z3 disturbance/trim
     // estimate must survive, and z1 must not be force-seeded again either - only a genuine
-    // pid_type transition should reset the observer.
+    // control-law configuration change should reset controller memory.
+    ENABLE_ARMING_FLAG(ARMED);
+    pidRuntime.adrc.liftoff = true;
     pidRuntime.adrc.z3[FD_ROLL] = 12345.0f;
     gyro.gyroADCf[FD_ROLL] = 900.0f;
     pidInitConfig(pidProfile); // pid_type unchanged - must be a no-op for the ESO state
 
     EXPECT_FLOAT_EQ(12345.0f, pidRuntime.adrc.z3[FD_ROLL]);
     EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_TRUE(pidRuntime.adrc.liftoff);
 }
 
 TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)

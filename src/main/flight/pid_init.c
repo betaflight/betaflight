@@ -379,18 +379,15 @@ void pidInitConfig(const pidProfile_t *pidProfile)
 #ifdef USE_ADRC
     adrcInitConfig(&pidProfile->adrc, &pidRuntime.adrc, pidRuntime.dT);
 
-    // Re-seed the ESO when the active control law switches INTO ADRC - e.g. a mid-air profile
-    // switch from a CLASSIC profile, during which the observer state is not updated at all.
-    // adrcResetState() starts z1 from the current gyro reading, so the handover transient is
-    // near-zero instead of a kick from arm-time-stale state. Deliberately conditioned on the
-    // transition: pidInitConfig() also fires mid-flight from adjustment-range tuning
-    // (rc_adjustments.c), where discarding the z3 trim estimate would cost a visible attitude sag. The liftoff gate is left alone -
-    // it re-latches within one gyro-hold interval when already airborne.
+    // Stock PID-profile selection paths reject changes while armed. Treat a pid_type change here
+    // as a disarmed control-law configuration transition, not as an in-flight handover promise:
+    // clear both classic I and ADRC observer/output memory so neither controller inherits the
+    // other's state on the next arm. Same-type pidInitConfig() calls still preserve ADRC state;
+    // adjustment ranges legitimately use that path while armed.
     if (pidProfile->pid_type != pidRuntime.activePidType) {
-        if (pidProfile->pid_type == PID_TYPE_ADRC) {
-            for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-                adrcResetState(&pidRuntime.adrc, axis);
-            }
+        pidResetIterm();
+        if (!ARMING_FLAG(ARMED)) {
+            adrcResetGate(&pidRuntime.adrc);
         }
         pidRuntime.activePidType = pidProfile->pid_type;
     }
