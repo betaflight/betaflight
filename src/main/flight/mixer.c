@@ -860,7 +860,14 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     // one-iteration lastOutput feedback. The scale is the authority factor applied uniformly by
     // all mixer modes; MIXER_DYNAMIC's deliberate per-motor redistribution remains part of the
     // plant/disturbance seen by the observer.
-    mixerAdrcThrottle = motorStopped ? 0.0f : throttle;
+    float appliedCollectiveThrottle = throttle;
+#ifdef USE_THRUST_LINEARIZATION
+    // throttle is in the inverse-compensated motor-command domain here, while the plant receives
+    // the forward-linearized value below. Publish the same physical-domain base collective; any
+    // nonlinear mixed-axis residual remains part of the disturbance observed by ADRC.
+    appliedCollectiveThrottle = constrainf(pidApplyThrustLinearization(throttle), 0.0f, 1.0f);
+#endif
+    mixerAdrcThrottle = motorStopped ? 0.0f : appliedCollectiveThrottle;
     pidUpdateAdrcAppliedOutput(currentPidProfile, motorStopped ? 0.0f : appliedAxisScale, yawPidSumLimit);
 #else
     UNUSED(appliedAxisScale);

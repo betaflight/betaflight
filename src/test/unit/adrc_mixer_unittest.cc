@@ -64,6 +64,7 @@ bool testAirmodeEnabled;
 bool testCrashFlipModeActive;
 bool testYawSpinDetected;
 float testAutopilotThrottle;
+float testThrustLinearization;
 float testRcDeflection[XYZ_AXIS_COUNT];
 
 int adrcFeedbackCallCount;
@@ -133,6 +134,7 @@ protected:
         testCrashFlipModeActive = false;
         testYawSpinDetected = false;
         testAutopilotThrottle = 0.0f;
+        testThrustLinearization = 0.0f;
 
         adrcFeedbackCallCount = 0;
         adrcFeedbackProfile = nullptr;
@@ -183,6 +185,25 @@ TEST_F(AdrcMixerUnittest, LegacyMixerPublishesNormalizationAppliedToMotorMix)
     EXPECT_NEAR(mixerGetAdrcThrottle(), 0.5f, TEST_EPSILON);
     EXPECT_NEAR(motor[0], 0.0f, TEST_EPSILON);
     EXPECT_NEAR(motor[2], 1.0f, TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, ThrustLinearizationPublishesPhysicalCollectiveDomain)
+{
+    constexpr float desiredCollective = 0.4f;
+    testThrustLinearization = 0.2f;
+    setRcThrottle(desiredCollective);
+
+    mixTable(1500);
+
+    const float compensatedThrottle = pidCompensateThrustLinearization(desiredCollective);
+    const float expectedPhysicalCollective = pidApplyThrustLinearization(compensatedThrottle);
+    const QuadXMotorComponents components = decomposeQuadXMotorOutput();
+
+    expectAdrcFeedback(1.0f, testPidProfile.pidSumLimitYaw);
+    EXPECT_NEAR(expectedPhysicalCollective, desiredCollective, 5.0e-4f);
+    EXPECT_NEAR(components.collective, expectedPhysicalCollective, TEST_EPSILON);
+    EXPECT_NEAR(mixerGetAdrcThrottle(), components.collective, TEST_EPSILON);
+    EXPECT_GT(mixerGetAdrcThrottle(), compensatedThrottle + 0.04f);
 }
 
 TEST_F(AdrcMixerUnittest, LinearMixerPublishesNormalizationAppliedToMotorMix)
@@ -461,6 +482,22 @@ void pidUpdateAntiGravityThrottleFilter(float normalizedThrottle)
 void pidUpdateTpaFactor(float normalizedThrottle)
 {
     UNUSED(normalizedThrottle);
+}
+
+float pidApplyThrustLinearization(float motorOutput)
+{
+    const float e = testThrustLinearization;
+    const float inv = 1.0f - motorOutput;
+    motorOutput *= 1.0f + e * inv * (1.0f + e * (inv - motorOutput));
+    return motorOutput;
+}
+
+float pidCompensateThrustLinearization(float throttle)
+{
+    if (testThrustLinearization != 0.0f) {
+        throttle *= 1.0f - testThrustLinearization * (1.0f - throttle);
+    }
+    return throttle;
 }
 
 void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit)

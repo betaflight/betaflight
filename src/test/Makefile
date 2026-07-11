@@ -530,6 +530,7 @@ adrc_mixer_unittest_DEFINES := \
 		USE_ADRC= \
 		USE_ALTITUDE_HOLD= \
 		USE_GPS_RESCUE= \
+		USE_THRUST_LINEARIZATION= \
 		USE_YAW_SPIN_RECOVERY=
 
 position_rescue_geometry_unittest_SRC := \
