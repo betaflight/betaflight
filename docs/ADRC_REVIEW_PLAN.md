@@ -149,8 +149,8 @@ gate-open transition из ADRC-001.
 | ADRC-004 | P0 | Устойчивая TD discretization | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-005 | P0 | Loop-rate safe ESO | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-006 | P0 | Persisted schema для D-term LPF | `adrc-dterm-lpf` | TODO | — |
-| ADRC-007 | P1 | Фактически приложенный mixer feedback | `adrc-gate-fix` | TODO | — |
-| ADRC-008 | P1 | Post-override throttle для ADRC | `adrc-gate-fix` | TODO | — |
+| ADRC-007 | P1 | Фактически приложенный mixer feedback | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-008 | P1 | Post-override throttle для ADRC | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-009 | P1 | State limits и finite-value defenses | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-010 | P1 | Семантика CLASSIC↔ADRC handover | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-011 | P1 | Исправить vacuous gate tests | `adrc-gate-fix` | IN PROGRESS | — |
@@ -342,7 +342,7 @@ Acceptance criteria:
 ### ADRC-007 — Фактически приложенный mixer feedback
 
 - Приоритет: **P1**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/pid.c`;
@@ -368,7 +368,7 @@ Acceptance criteria:
 ### ADRC-008 — Post-override throttle для ADRC
 
 - Приоритет: **P1**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/adrc.c`;
