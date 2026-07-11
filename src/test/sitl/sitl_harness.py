@@ -115,9 +115,15 @@ class MotorFeed(threading.Thread):
                     self.motors = list(struct.unpack("<4f", data[:16]))
             except socket.timeout:
                 pass
+            except OSError:
+                break  # socket closed during shutdown
 
     def shutdown(self):
+        # release the port 9002 bind before the next scenario constructs its feed
         self.running = False
+        if self.is_alive():
+            self.join(timeout=1.0)
+        self.sock.close()
 
 
 GRAVITY = 9.80665
@@ -538,16 +544,33 @@ def boot_and_engage(sitl, rc, fdm):
     wait_for("recalibration complete", lambda: sitl.status()["arming_flags"] == 0, timeout=20)
 
     rc.set(6, RC_HIGH)  # AUX3: ANGLE for the manual segment
-    rc.set(4, RC_HIGH)  # AUX1: arm (throttle is low)
-    wait_for("armed", lambda: BOX_ARM in sitl.modes())
+    # A transient arming-disable (e.g. an RXLOSS blip) at the moment the switch
+    # goes high latches ARM_SWITCH until the switch is cycled; retry the arm.
+    for attempt in range(3):
+        rc.set(4, RC_HIGH)  # AUX1: arm (throttle is low)
+        try:
+            wait_for("armed", lambda: BOX_ARM in sitl.modes(), timeout=8)
+            break
+        except AssertionError:
+            if attempt == 2:
+                raise
+            log("arm attempt latched ARM_SWITCH; cycling the switch")
+            rc.set(4, 1000)
+            time.sleep(1.0)
 
     rc.set(2, 1600)     # raise throttle (wasThrottleRaised) and climb clear of the ground
     time.sleep(3.0)
 
     rc.set(5, RC_HIGH)  # AUX2: AUTOPILOT
+    required_modes = {BOX_AUTOPILOT, BOX_ALTHOLD, BOX_POSHOLD}
+
+    def active_required_modes():
+        modes = sitl.modes()
+        return modes if modes >= required_modes else None
+
     modes = wait_for(
         "AUTOPILOT + ALTHOLD + POSHOLD active (mode wiring)",
-        lambda: sitl.modes() >= {BOX_AUTOPILOT, BOX_ALTHOLD, BOX_POSHOLD} and sitl.modes() or None,
+        active_required_modes,
     )
     rc.set(2, 1300)     # throttle into the alt-hold deadband: no stick adjustments
     return modes
@@ -576,13 +599,20 @@ def scenario_mission_flight(sitl, rc, fdm):
     # distance past the point at cruise speed.
     wait_for(
         "settled near the waypoint",
-        lambda: fdm.model.vel[1] < 1.0 and fdm.distance_to_wp(0.0, 300.0) < 25.0,
+        lambda: math.hypot(fdm.model.vel[0], fdm.model.vel[1]) < 1.0 and fdm.distance_to_wp(0.0, 300.0) < 25.0,
         timeout=60,
         interval=2.0,
     )
-    time.sleep(10)
+    # dwell: a transit averages cruise speed, a hold oscillates about the
+    # point (instantaneous peaks reach ~2 m/s with SITL's 15 Hz position loop)
+    samples = []
+    for _ in range(10):
+        time.sleep(1.0)
+        samples.append(math.hypot(fdm.model.vel[0], fdm.model.vel[1]))
     dist = fdm.distance_to_wp(0.0, 300.0)
+    avg_speed = sum(samples) / len(samples)
     assert dist < 25.0, f"did not hold position near waypoint: {dist:.1f} m away"
+    assert avg_speed < 1.5, f"did not settle at waypoint: averaging {avg_speed:.1f} m/s"
     assert BOX_ARM in sitl.modes(), "unexpected disarm at mission end"
     log(f"parked {dist:.1f} m from the waypoint")
 
@@ -697,7 +727,7 @@ def scenario_geofence_rth_rxloss(sitl, rc, fdm):
     wait_for("failsafe active", lambda: BOX_FAILSAFE in sitl.modes())
     time.sleep(3)
     modes = sitl.modes()
-    assert BOX_GPSRESCUE in modes, f"rescue dropped when rxfail cleared the switch: {modes}"
+    assert {BOX_FAILSAFE, BOX_GPSRESCUE} <= modes, f"rescue dropped when rxfail cleared the switch: {modes}"
     log("rescue persists through RX loss")
 
 
@@ -747,23 +777,26 @@ def run_scenario(name, binary, workdir):
 
     log(f"=== scenario: {name}")
     sitl = Sitl(binary, scenario_dir)
-    rc = RcFeed()
-    motors = MotorFeed()
-    fdm = FdmFeed(motors)
+    rc = motors = fdm = None
     try:
+        # feed construction can fail (port 9002 bind); it must fail the
+        # scenario, not abort the suite
+        rc = RcFeed()
+        motors = MotorFeed()
+        fdm = FdmFeed(motors)
         sitl.provision(base_config(extra_cfg))
         sitl.start()
         motors.start()
         body(sitl, rc, fdm)
         log(f"=== PASS: {name}")
         return True
-    except (AssertionError, RuntimeError, TimeoutError) as e:
+    except (AssertionError, RuntimeError, TimeoutError, OSError) as e:
         log(f"=== FAIL: {name}: {e}")
         return False
     finally:
-        rc.shutdown()
-        fdm.shutdown()
-        motors.shutdown()
+        for feed in (rc, fdm, motors):
+            if feed is not None:
+                feed.shutdown()
         sitl.stop()
 
 
