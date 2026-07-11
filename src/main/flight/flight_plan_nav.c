@@ -93,8 +93,8 @@ static struct {
 
     // Staged modifiers — populated by drainModifiers(), consumed by the next
     // positional dispatch. altOverride is one-shot; delay arms a timer that
-    // clamps cruise during the next leg; yawRateCapDps is stored but not yet
-    // consumed (needs autopilot yaw control to land first).
+    // clamps cruise during the next leg; yawRateCapDps caps the autopilot yaw
+    // controller from that point in the plan onward.
     bool     altOverridePending;
     int32_t  altOverrideCm;
     uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
@@ -179,9 +179,8 @@ static const waypoint_t *drainModifiers(void)
             fp.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
             break;
         case WAYPOINT_TYPE_YAW_RATE:
-            // Stored only. Hook point: once autopilot_multirotor.c controls
-            // yaw, call into a setter here to apply the cap.
             fp.yawRateCapDps = (float)wp->speed;
+            autopilotSetYawRateLimit(fp.yawRateCapDps);
             break;
         default:
             return wp;
@@ -440,6 +439,7 @@ static void clearModifierState(void)
     fp.delayDurationDs = 0;
     fp.delayEndUs = 0;
     fp.yawRateCapDps = 0.0f;
+    autopilotSetYawRateLimit(0.0f);
 }
 
 void flightPlanNavInit(void)
@@ -486,6 +486,7 @@ void flightPlanNavDisengage(void)
 {
     fp.active = false;
     fp.state = FP_NAV_IDLE;
+    clearModifierState();
     positionNavClearTarget();
 }
 

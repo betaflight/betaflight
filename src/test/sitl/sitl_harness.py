@@ -256,8 +256,9 @@ class FdmFeed(threading.Thread):
 
     Emits in the Gazebo-bridge conventions the default SITL build expects:
     quaternion pre-multiplied by Rz(-90deg) (the FC re-applies Rz(+90deg)),
-    gyro in the FRD sensor frame (pitch negated), and GPS lat/lon mirrored
-    around the first packet's origin (the FC un-mirrors).
+    gyro in the plugin sensor frame (pitch and yaw negated from the model's
+    nose-down/compass-CW conventions), and GPS lat/lon mirrored around the
+    first packet's origin (the FC un-mirrors).
     """
 
     def __init__(self, motors=None):
@@ -274,8 +275,11 @@ class FdmFeed(threading.Thread):
     def distance_from_home(self):
         return math.hypot(self.model.pos[0], self.model.pos[1])
 
-    def distance_to_north_wp(self, north_m):
-        return math.hypot(self.model.pos[0], self.model.pos[1] - north_m)
+    def distance_to_wp(self, east_m, north_m):
+        return math.hypot(self.model.pos[0] - east_m, self.model.pos[1] - north_m)
+
+    def heading_deg(self):
+        return math.degrees(self.model.yaw) % 360.0
 
     def run(self):
         last = time.monotonic()
@@ -305,7 +309,10 @@ class FdmFeed(threading.Thread):
             pkt = struct.pack(
                 "<18d",
                 now - self.t0,
-                self.model.rates[0], -self.model.rates[1], self.model.rates[2],  # FRD sensor frame
+                # Gazebo-plugin gyro frame: roll right +, pitch nose-up +,
+                # yaw CCW +. The model keeps nose-down/CW positive (compass
+                # conventions), so pitch and yaw are negated on emit.
+                self.model.rates[0], -self.model.rates[1], -self.model.rates[2],
                 f_body[0], f_body[1], f_body[2],                                 # specific force, FRD
                 q[0], q[1], q[2], q[3],
                 self.model.vel[0], self.model.vel[1], self.model.vel[2],         # ENU m/s
@@ -498,6 +505,7 @@ def wait_for(description, predicate, timeout=20.0, interval=0.2):
 
 
 WP_LAT = HOME_LAT + 300.0 / M_PER_DEG  # default waypoint 300 m north of home
+WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # 150 m east
 
 
 def base_config(extra):
@@ -559,7 +567,7 @@ def scenario_mission_flight(sitl, rc, fdm):
     # while MSP_RAW_GPS leads the true position (virtual-GPS extrapolation).
     wait_for(
         "waypoint reached (within 8 m, ground truth)",
-        lambda: fdm.distance_to_north_wp(300.0) < 8.0,
+        lambda: fdm.distance_to_wp(0.0, 300.0) < 8.0,
         timeout=150,
         interval=1.0,
     )
@@ -568,15 +576,47 @@ def scenario_mission_flight(sitl, rc, fdm):
     # distance past the point at cruise speed.
     wait_for(
         "settled near the waypoint",
-        lambda: fdm.model.vel[1] < 1.0 and fdm.distance_to_north_wp(300.0) < 25.0,
+        lambda: fdm.model.vel[1] < 1.0 and fdm.distance_to_wp(0.0, 300.0) < 25.0,
         timeout=60,
         interval=2.0,
     )
     time.sleep(10)
-    dist = fdm.distance_to_north_wp(300.0)
+    dist = fdm.distance_to_wp(0.0, 300.0)
     assert dist < 25.0, f"did not hold position near waypoint: {dist:.1f} m away"
     assert BOX_ARM in sitl.modes(), "unexpected disarm at mission end"
     log(f"parked {dist:.1f} m from the waypoint")
+
+
+def scenario_mission_yaw(sitl, rc, fdm):
+    """Default VELOCITY yaw mode: flying an eastbound leg, the nose must swing
+    from north to the ground course and hold it while the leg is flown."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "vehicle departs east toward the waypoint",
+        lambda: fdm.model.pos[0] > 15.0,
+        timeout=30,
+    )
+
+    def on_course():
+        err = (fdm.heading_deg() - 90.0 + 180.0) % 360.0 - 180.0
+        return abs(err) < 25.0
+
+    wait_for("nose tracks the course (heading ~090)", on_course, timeout=30)
+    time.sleep(3.0)
+    assert on_course(), f"heading did not hold the course: {fdm.heading_deg():.0f} deg"
+
+    # SITL's starved LOW-priority scheduler runs the position controller at
+    # ~15-20 Hz (vs 100 Hz on hardware), so the braking phase can wander
+    # before converging; the timeout allows for it.
+    wait_for(
+        "waypoint reached (ground truth)",
+        lambda: fdm.distance_to_wp(150.0, 0.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during yaw mission"
+    log(f"leg flown nose-first, heading {fdm.heading_deg():.0f} deg at arrival")
 
 
 def scenario_rx_loss(sitl, rc, fdm, policy):
@@ -663,7 +703,15 @@ def scenario_geofence_rth_rxloss(sitl, rc, fdm):
 
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
-    "mission_flight": (scenario_mission_flight, []),
+    # FIXED yaw: this scenario validates pure translation control; yaw-coupled
+    # flight is mission_yaw's job (SITL's 15-20 Hz position loop wanders under
+    # the default VELOCITY yaw during braking)
+    "mission_flight": (scenario_mission_flight, ["set ap_yaw_mode = FIXED"]),
+    "mission_yaw": (
+        scenario_mission_yaw,
+        # redirect the default waypoint east so the course demands a 90 deg swing
+        [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit"],
+    ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
     "rx_continue": (lambda s, r, f: scenario_rx_loss(s, r, f, "CONTINUE"), ["set ap_rx_loss_policy = CONTINUE"]),
     "rx_land": (lambda s, r, f: scenario_rx_loss(s, r, f, "LAND"), ["set ap_rx_loss_policy = LAND"]),

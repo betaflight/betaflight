@@ -177,6 +177,13 @@ bool isBelowLandingAltitude(void)
     return g_stubBelowLandingAltitude;
 }
 
+static float g_yawRateLimitDps;
+
+void autopilotSetYawRateLimit(float rateLimitDps)
+{
+    g_yawRateLimitDps = rateLimitDps;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.
@@ -212,6 +219,7 @@ protected:
         g_stubValidXY = true;
         g_stubBelowLandingAltitude = true;
         g_disarmCalls = 0;
+        g_yawRateLimitDps = -1.0f; // sentinel: no autopilotSetYawRateLimit call yet
 
         stateFlags = 0;
         GPS_distanceToHome = 0;
@@ -427,6 +435,34 @@ TEST_F(FlightPlanNavTest, EngageClampsBelowMinCruiseSpeed)
 
     flightPlanNavEngage();
     EXPECT_GE(g_lastTarget.cruiseSpeedMps, 1.0f - 0.01f);
+}
+
+TEST_F(FlightPlanNavTest, YawRateModifierCapsAutopilotYawAndPersists)
+{
+    addWaypoint(0, 0, 0, WAYPOINT_TYPE_YAW_RATE, 45 /* deg/s */);
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+
+    // The cap applies from the modifier onward, not just the next leg.
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+}
+
+TEST_F(FlightPlanNavTest, YawRateCapClearsOnDisengageAndEngage)
+{
+    addWaypoint(0, 0, 0, WAYPOINT_TYPE_YAW_RATE, 45);
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+
+    flightPlanNavDisengage();
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
 }
 
 // --- Safety behaviour ---
