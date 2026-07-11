@@ -1105,6 +1105,9 @@ static FAST_CODE_NOINLINE void adrcResetAllState(void)
         adrcResetState(&pidRuntime.adrc, axis);
     }
     adrcResetGate(&pidRuntime.adrc);
+#ifdef USE_YAW_SPIN_RECOVERY
+    pidRuntime.adrcYawSpinActivePreviousLoop = false;
+#endif
 }
 
 // See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE.
@@ -1133,6 +1136,13 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
+#ifdef USE_ADRC
+    // Keep ADRC's disturbance integrator suppressed for the first loop after yaw-spin detection
+    // clears. That loop resumes ordinary P/D control, but must not expose a freshly estimated I
+    // term immediately after recovery forced the published I channel to zero.
+    const bool adrcYawSpinRecoveryActiveThisLoop = yawSpinActive || pidRuntime.adrcYawSpinActivePreviousLoop;
+    pidRuntime.adrcYawSpinActivePreviousLoop = yawSpinActive;
+#endif
 #endif
 
     const bool launchControlActive = isLaunchControlActive();
@@ -1496,6 +1506,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // output is simply overwritten here when ADRC is selected instead of being conditionally
         // skipped. This keeps the classic control law's code and behavior untouched.
         if (pidProfile->pid_type == PID_TYPE_ADRC) {
+#if defined(USE_YAW_SPIN_RECOVERY)
+            // Remove a pre-recovery disturbance estimate before the ESO step so stale z3 cannot
+            // enter z2 once. Keep lastOutput: it is the real command applied during recovery and
+            // remains valid b0*u feedback for the observer's acceleration state.
+            if (adrcYawSpinRecoveryActiveThisLoop) {
+                pidRuntime.adrc.z3[axis] = 0.0f;
+            }
+#endif
 #if defined(USE_ACC)
             // Do not feed a pre-crash disturbance estimate into z2 on the recovery path. The ESO
             // continues tracking rate/acceleration, while z3 is held at zero below until recovery
@@ -1505,6 +1523,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 #endif
             applyAdrcControl(axis, gyroRate, currentPidSetpoint, pidProfile);
+#if defined(USE_YAW_SPIN_RECOVERY)
+            if (adrcYawSpinRecoveryActiveThisLoop) {
+                // adrcApplyControl() may estimate a fresh disturbance from the recovery transient.
+                // Suppress it through the first exit loop, then resume from a clean zero state.
+                pidRuntime.adrc.z3[axis] = 0.0f;
+                pidData[axis].I = 0.0f;
+            }
+#endif
         }
 #endif
 

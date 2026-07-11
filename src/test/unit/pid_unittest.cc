@@ -36,6 +36,7 @@ float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
 float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
+bool simulatedYawSpinDetected = false;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
@@ -108,6 +109,7 @@ extern "C" {
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
+    bool gyroYawSpinDetected(void) { return simulatedYawSpinDetected; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
@@ -193,6 +195,7 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
+    simulatedYawSpinDetected = false;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -821,6 +824,73 @@ TEST(pidControllerTest, testAdrcCrashRecoveryExitKeepsItermBumpless)
         EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
     }
 }
+
+#ifdef USE_YAW_SPIN_RECOVERY
+TEST(pidControllerTest, testAdrcYawSpinRecoveryExitKeepsDisturbanceItermBumpless)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->adrc.gyroFilterHz = 0;
+    pidProfile->adrc.sigmaDecay = 0;
+    pidInitConfig(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    simulatedThrottle = pidProfile->adrc.hoverThrottlePercent * 0.01f;
+
+    const float recoveryOutput[XYZ_AXIS_COUNT] = { 100.0f, -125.0f, 150.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = 0.0f;
+        adrcResetState(&pidRuntime.adrc, axis);
+        pidRuntime.adrc.z3[axis] = ((axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit)
+            * pidRuntime.adrc.coefficient[axis].b0;
+        pidRuntime.adrc.lastOutput[axis] = recoveryOutput[axis];
+    }
+    pidRuntime.adrc.liftoff = true;
+
+    // A saturated disturbance estimate must be removed before the active recovery observer step;
+    // otherwise stale z3 enters z2 once even though the published I term is zeroed afterwards.
+    simulatedYawSpinDetected = true;
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        const float expectedZ2 = pidRuntime.dT * pidRuntime.adrc.coefficient[axis].b0 * recoveryOutput[axis];
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_NEAR(expectedZ2, pidRuntime.adrc.z2[axis], 1.0e-3f);
+        EXPECT_FLOAT_EQ(recoveryOutput[axis], pidRuntime.adrc.lastOutput[axis]);
+        EXPECT_FLOAT_EQ(pidData[axis].P + pidData[axis].D + pidData[axis].F + pidData[axis].S,
+            pidData[axis].Sum);
+    }
+
+    // Hold disturbance I at zero for the first loop after detection clears. Deliberately move
+    // the gyro now so this loop would create fresh z3 without the one-loop exit guard.
+    const float recoveryExitGyro[XYZ_AXIS_COUNT] = { 10.0f, -12.0f, 8.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = recoveryExitGyro[axis];
+    }
+    simulatedYawSpinDetected = false;
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z1[axis]));
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z2[axis]));
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(recoveryOutput[axis], pidRuntime.adrc.lastOutput[axis]);
+        EXPECT_FLOAT_EQ(pidData[axis].P + pidData[axis].D + pidData[axis].F + pidData[axis].S,
+            pidData[axis].Sum);
+    }
+
+    // The next clean loop may resume disturbance estimation from zero.
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_NE(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_NE(0.0f, pidData[axis].I);
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z3[axis]));
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.lastOutput[axis]));
+    }
+}
+#endif
 
 TEST(pidControllerTest, testClassicCrashDetectionStillRequiresClassicD)
 {
