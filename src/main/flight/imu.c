@@ -635,10 +635,14 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 #if ENABLE_SIMULATOR && !defined(USE_IMU_CALC)
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
+    // Attitude is ground truth from the simulator, so heading is valid by
+    // definition; without this, position hold and missions can never gain
+    // XY authority (imuIsHeadingValid() would be false forever with no mag).
+    canUseGPSHeading = true;
+
     // unused static functions
     UNUSED(imuMahonyAHRSupdate);
     UNUSED(imuIsAccelerometerHealthy);
-    UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
     UNUSED(currentTimeUs);

@@ -49,17 +49,30 @@
 #include "pg/flight_plan.h"
 
 #define FP_MIN_CRUISE_MPS         1.0f
-#define FP_FLYBY_COMPLETION_MPS   2.0f
-#define FP_FLYOVER_COMPLETION_MPS 0.5f
+// Legs complete on acceptance-radius entry at any speed: the position
+// controller integrates distance error to hold cruise and cannot unwind it
+// fast enough to meet a near-stop speed gate at the waypoint (it would orbit
+// instead). The post-completion hold-mode braking handles stopping.
+#define FP_COMPLETION_ANY_MPS     1000.0f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
 
 // Sanity limits while a leg is being flown. Progress must improve the best
 // distance-to-target by FP_PROGRESS_EPSILON_M within FP_STALL_TIMEOUT_US, and
-// the current distance may never exceed the best by FP_FLYAWAY_MARGIN_M.
+// the current distance may never exceed the best by the flyaway margin.
+// The margin scales with the leg (approach speed, and therefore legitimate
+// overshoot, grows with distance-to-target) between fixed bounds.
 // The DELAY modifier's cruise floor (0.1 m/s) still clears the stall window.
 #define FP_PROGRESS_EPSILON_M     2.0f
 #define FP_STALL_TIMEOUT_US       30000000u
-#define FP_FLYAWAY_MARGIN_M       20.0f
+#define FP_FLYAWAY_MARGIN_MIN_M   20.0f
+#define FP_FLYAWAY_MARGIN_MAX_M   100.0f
+#define FP_FLYAWAY_LEG_FRACTION   0.25f
+
+// Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
+// legs decelerate into the waypoint instead of carrying cruise speed into the
+// acceptance radius. Deliberately gentle: the position controller tracks
+// velocity through an integrator, so the ramp must be slow enough to unwind.
+#define FP_APPROACH_DECEL_MPS2    0.3f
 
 // Landing descends toward a target far below the current position so vertical
 // arrival can never trigger; touchdown detection is what ends the descent.
@@ -95,6 +108,7 @@ static struct {
 
     // Leg progress tracking for stall/flyaway detection
     float bestDistanceToTargetM;
+    float flyawayMarginM;
     timeUs_t lastProgressUs;
 
     // Landing state
@@ -235,14 +249,13 @@ static bool dispatchWaypoint(void)
         }
     }
 
-    // FLYBY: advance with residual velocity so we curve through.
-    // FLYOVER/HOLD/LAND: require near-stop to count as arrived.
-    const float completionMps = (effective.type == WAYPOINT_TYPE_FLYBY)
-        ? FP_FLYBY_COMPLETION_MPS
-        : FP_FLYOVER_COMPLETION_MPS;
-
     positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
-                           completionMps, true, onWaypointReached, NULL);
+                           FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
+    positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
+    // En-route waypoints advance on horizontal arrival; a vehicle that cannot
+    // reach the commanded altitude must not orbit forever. HOLD and LAND are
+    // station-keeping targets and keep the altitude gate.
+    positionNavSetAltitudeArrivalRequired(isHoldOrLand);
 
     fp.state = FP_NAV_TARGETING;
     fp.holdDurationDs = effective.duration;
@@ -279,13 +292,18 @@ static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t 
 
     const float distanceM = distanceToNavTargetM(est);
 
+    if (fp.bestDistanceToTargetM == FLT_MAX) {
+        fp.flyawayMarginM = constrainf(distanceM * FP_FLYAWAY_LEG_FRACTION,
+                                       FP_FLYAWAY_MARGIN_MIN_M, FP_FLYAWAY_MARGIN_MAX_M);
+    }
+
     if (distanceM < fp.bestDistanceToTargetM - FP_PROGRESS_EPSILON_M) {
         fp.bestDistanceToTargetM = distanceM;
         fp.lastProgressUs = currentTimeUs;
         return;
     }
 
-    if (fp.bestDistanceToTargetM != FLT_MAX && distanceM > fp.bestDistanceToTargetM + FP_FLYAWAY_MARGIN_M) {
+    if (fp.bestDistanceToTargetM != FLT_MAX && distanceM > fp.bestDistanceToTargetM + fp.flyawayMarginM) {
         abortMission(FP_ABORT_FLYAWAY);
         return;
     }
@@ -479,6 +497,15 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
 
     // Retry dispatch if we engaged before the estimator had an origin.
     if (fp.state == FP_NAV_IDLE && flightPlanConfig()->waypointCount > 0) {
+        dispatchWaypoint();
+        return;
+    }
+
+    // The position controller wipes the nav command when it (re)initialises —
+    // which happens right after mission engagement, since AUTOPILOT_MODE
+    // activates POS_HOLD_MODE and its first update calls resetPositionControl().
+    // Re-issue the current leg whenever the dispatched target has been lost.
+    if (fp.state == FP_NAV_TARGETING && !positionNavHasActiveTarget()) {
         dispatchWaypoint();
         return;
     }

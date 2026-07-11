@@ -115,6 +115,17 @@ void positionNavSetAutoClearOnReach(bool autoClear)
     (void)autoClear;
 }
 
+void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
+{
+    (void)maxAccelMps2;
+    (void)maxDecelMps2;
+}
+
+void positionNavSetAltitudeArrivalRequired(bool required)
+{
+    (void)required;
+}
+
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
 {
     if (!g_stubGpsOriginSet || out == NULL) {
@@ -293,19 +304,12 @@ TEST_F(FlightPlanNavTest, FallsBackToMaxVelocityWhenWaypointSpeedZero)
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 10.0f, 0.01f);
 }
 
-TEST_F(FlightPlanNavTest, FlybyUsesHigherCompletionSpeedThanFlyover)
+TEST_F(FlightPlanNavTest, LegsCompleteOnRadiusEntryAtAnySpeed)
 {
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
     flightPlanNavEngage();
-    const float flyoverCompletion = g_lastTarget.completionSpeedMps;
-
-    // Reset and add a FLYBY.
-    flightPlanConfigMutable()->waypointCount = 0;
-    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYBY);
-    flightPlanNavEngage();
-    const float flybyCompletion = g_lastTarget.completionSpeedMps;
-
-    EXPECT_GT(flybyCompletion, flyoverCompletion);
+    // The completion speed must never gate arrival (see FP_COMPLETION_ANY_MPS).
+    EXPECT_GT(g_lastTarget.completionSpeedMps, 100.0f);
 }
 
 TEST_F(FlightPlanNavTest, WaypointReachedAdvancesToNext)
@@ -488,8 +492,8 @@ TEST_F(FlightPlanNavSafetyTest, MovingAwayPastMarginAbortsAsFlyaway)
 {
     engageDistantLeg();
 
-    // Drift 25 m away from the target (south) — beyond the 20 m margin.
-    g_stubEstimate.position.v[ENU_N] = -25.0f * 100.0f; // cm
+    // The ~2.2 km leg gives the capped 100 m flyaway margin; drift just past it.
+    g_stubEstimate.position.v[ENU_N] = -105.0f * 100.0f; // cm
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
