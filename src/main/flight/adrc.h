@@ -44,9 +44,9 @@ typedef enum {
 #endif
 } pidType_e;
 
-#ifdef USE_ADRC
-
-// User-facing tunables, embedded as a single field in pidProfile_t.
+// User-facing tunables, embedded as a single field in pidProfile_t. Defined unconditionally -
+// like the pidProfile_t field that embeds it - so the persisted profile layout is identical on
+// targets that exclude the ADRC code for flash budget (see common_pre.h / pid.h).
 typedef struct adrcProfile_s {
     uint16_t wc[XYZ_AXIS_COUNT]; // controller (virtual PD) bandwidth [rad/s] per axis
     uint16_t wo[XYZ_AXIS_COUNT]; // extended state observer bandwidth [rad/s] per axis
@@ -87,6 +87,8 @@ typedef struct adrcProfile_s {
     uint8_t b0ThrottleScaleMax; // ceiling on the throttle-scaled b0 multiplier (see
                                 // hoverThrottlePercent above); scaling is never applied below 1x
 } adrcProfile_t;
+
+#ifdef USE_ADRC
 
 // Precomputed per-axis coefficients derived from adrcProfile_t at profile-load time, so the hot
 // loop doesn't redo wc*wc, 3*wo, wo*wo*wo etc every iteration.

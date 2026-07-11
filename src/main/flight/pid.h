@@ -250,9 +250,11 @@ typedef struct pidProfile_s {
     uint8_t d_max_gain;                     // Gain factor for amount of gyro / setpoint activity required to boost D
     uint8_t d_max_advance;                  // Percentage multiplier for setpoint input to boost algorithm
 
-#ifdef USE_ADRC
-    adrcProfile_t adrc;                     // ADRC tunables; see adrc.h. Ignored unless pid_type == PID_TYPE_ADRC
-#endif
+    adrcProfile_t adrc;                     // ADRC tunables; see adrc.h. Ignored unless pid_type == PID_TYPE_ADRC.
+                                            // Deliberately NOT #ifdef USE_ADRC: the persisted pidProfile_t layout
+                                            // must stay identical across targets and across builds that disable
+                                            // ADRC for flash budget (e.g. STM32F446), or a same-PG-version record
+                                            // would be reinterpreted with shifted fields. Only the code is gated.
     uint8_t motor_output_limit;             // Upper limit of the motor output (percent)
     int8_t auto_profile_cell_count;         // Cell count for this profile to be used with if auto PID profile switching is used
     char profileName[MAX_PROFILE_NAME_LENGTH + 1]; // Descriptive name for profile

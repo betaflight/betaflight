@@ -377,7 +377,13 @@
 #define USE_INTEGRATED_YAW_CONTROL
 
 #define USE_ITERM_RELAX
-#define USE_ADRC // experimental: Active Disturbance Rejection Control, an alternative to classic PID
+#if !defined(STM32F446xx)
+// Experimental: Active Disturbance Rejection Control, an alternative to classic PID.
+// Excluded on STM32F446: its 512k FLASH1 is within ~3k of full with the default
+// feature set, and ADRC does not fit. The persisted adrcProfile_t field stays in
+// pidProfile_t regardless (see pid.h) so the config layout is unaffected.
+#define USE_ADRC
+#endif
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
 
