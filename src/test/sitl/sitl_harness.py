@@ -375,6 +375,26 @@ def scenario_geofence(sitl, rc, fdm, action):
         log("mission holds LANDING state at current position")
 
 
+def scenario_geofence_rth_rxloss(sitl, rc, fdm):
+    """The RTH latch must survive RX loss: stage-2 rxfail values force the
+    AUTOPILOT switch low (rxfail preset in this scenario's config), which must
+    not read as the pilot cancelling the rescue."""
+    boot_and_engage(sitl, rc, fdm)
+    fdm.move_east(150.0)
+    wait_for(
+        "GPS rescue engaged after geofence breach",
+        lambda: BOX_GPSRESCUE in sitl.modes(),
+    )
+
+    log("killing RC stream mid-rescue")
+    rc.stop_stream()
+    wait_for("failsafe active", lambda: BOX_FAILSAFE in sitl.modes())
+    time.sleep(3)
+    modes = sitl.modes()
+    assert BOX_GPSRESCUE in modes, f"rescue dropped when rxfail cleared the switch: {modes}"
+    log("rescue persists through RX loss")
+
+
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
@@ -387,6 +407,14 @@ SCENARIOS = {
     "geofence_rth": (
         lambda s, r, f: scenario_geofence(s, r, f, "RTH"),
         ["set ap_max_distance_from_home = 50", "set ap_geofence_action = RTH"],
+    ),
+    "geofence_rth_rxloss": (
+        scenario_geofence_rth_rxloss,
+        [
+            "set ap_max_distance_from_home = 50",
+            "set ap_geofence_action = RTH",
+            "rxfail 5 s 1000",  # stage 2 forces the AUTOPILOT switch low
+        ],
     ),
 }
 

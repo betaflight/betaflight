@@ -1094,8 +1094,10 @@ void processRxModes(timeUs_t currentTimeUs)
             flightPlanNavDisengage();
         }
         // A geofence RTH request stays latched while the rescue it triggered
-        // runs; the pilot cancels it with the mode switch, or it dies on disarm
-        if (!ARMING_FLAG(ARMED) || !IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+        // runs; the pilot cancels it with the mode switch, or it dies on disarm.
+        // On RX loss the aux channels are substituted with rxfail values, not
+        // pilot intent, so switch-off only counts while channel data is real.
+        if (!ARMING_FLAG(ARMED) || (!IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && rxAreFlightChannelsValid())) {
             flightPlanNavClearRescueRequest();
         }
     }
@@ -1128,7 +1130,7 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode,
+        // and either the pos_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs the position controller
         && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
