@@ -499,6 +499,16 @@ adrc_unittest_SRC := \
 adrc_unittest_DEFINES := \
 		USE_ADRC=
 
+adrc_mixer_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/flight/mixer.c
+
+adrc_mixer_unittest_DEFINES := \
+		USE_ADRC= \
+		USE_ALTITUDE_HOLD= \
+		USE_GPS_RESCUE= \
+		USE_YAW_SPIN_RECOVERY=
+
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
