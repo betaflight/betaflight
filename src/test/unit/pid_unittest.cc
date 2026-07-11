@@ -30,7 +30,7 @@ float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedMaxRcDeflectionAbs = 0;
 float simulatedMixerGetRcThrottle = 0;
-float simulatedThrottle = 0; // used by adrc.c's adrcUpdatePerLoopState() via mixerGetThrottle()
+float simulatedThrottle = 0; // used by adrc.c's adrcUpdatePerLoopState()
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
@@ -101,6 +101,7 @@ extern "C" {
     float getMaxRcDeflectionAbs() { return fabsf(simulatedMaxRcDeflectionAbs); }
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
     float mixerGetThrottle(void) { return simulatedThrottle; }
+    float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
 
 
     bool isBelowLandingAltitude(void) { return false; }
@@ -1227,4 +1228,50 @@ TEST(pidControllerTest, testAdrcEsoNotReseedOnRepeatedInitUnderSameType)
 
     EXPECT_FLOAT_EQ(12345.0f, pidRuntime.adrc.z3[FD_ROLL]);
     EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    pidData[FD_ROLL].Sum = 800.0f;
+    pidData[FD_PITCH].Sum = -800.0f;
+    pidData[FD_YAW].Sum = 600.0f;
+
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f);
+
+    EXPECT_FLOAT_EQ(250.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FLOAT_EQ(-250.0f, pidRuntime.adrc.lastOutput[FD_PITCH]);
+    EXPECT_FLOAT_EQ(200.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+}
+
+TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfiles)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pidData[axis].Sum = 100.0f;
+    }
+
+    pidUpdateAdrcAppliedOutput(pidProfile, -1.0f);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        pidRuntime.adrc.lastOutput[axis] = 42.0f;
+    }
+
+    pidUpdateAdrcAppliedOutput(pidProfile, NAN);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        pidRuntime.adrc.lastOutput[axis] = 42.0f;
+    }
+
+    pidProfile->pid_type = PID_TYPE_CLASSIC;
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(42.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
 }

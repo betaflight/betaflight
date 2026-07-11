@@ -248,7 +248,10 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
 {
     const float gyroPeak = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]),
         fmaxf(fabsf(gyro.gyroADCf[FD_PITCH]), fabsf(gyro.gyroADCf[FD_YAW])));
-    const float throttle = mixerGetThrottle();
+    // mixTable() runs after the PID task and publishes the final collective value for the next
+    // PID iteration. This includes ALT_HOLD/GPS_RESCUE overrides and mixer constraints, unlike
+    // mixerGetThrottle(), which intentionally remains the pre-override blackbox/TPA value.
+    const float throttle = mixerGetAdrcThrottle();
 
     const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
     const float liftoffGyroDps = adrcProfile->liftoffGyroDps;

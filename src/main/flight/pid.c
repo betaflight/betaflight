@@ -1062,6 +1062,21 @@ NOINLINE static void applySpa(int axis, const pidProfile_t *pidProfile)
 // FAST_CODE_NOINLINE keeps these out of pidController()'s ITCM-resident body (mirrors the existing
 // applyAcroTrainer/applyLaunchControl/handleCrashRecovery pattern above) - they only run for ADRC
 // profiles and are not on the hot path for builds that don't use it.
+void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale)
+{
+    if (pidProfile->pid_type != PID_TYPE_ADRC) {
+        return;
+    }
+
+    // A negative or non-finite scale cannot represent motor authority. The comparison is
+    // intentionally ordered so NaN also falls back to zero instead of reaching constrainf().
+    const float appliedScale = axisScale > 0.0f ? fminf(axisScale, 1.0f) : 0.0f;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const float sumLimit = axis == FD_YAW ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -sumLimit, sumLimit) * appliedScale;
+    }
+}
+
 static FAST_CODE_NOINLINE void updateAdrcSharedState(const pidProfile_t *pidProfile)
 {
     if (pidProfile->pid_type == PID_TYPE_ADRC) {
@@ -1534,17 +1549,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         {
             pidData[axis].Sum = pidSum;
         }
-
-#ifdef USE_ADRC
-        if (pidProfile->pid_type == PID_TYPE_ADRC) {
-            // Save actual control output for next iteration of the ADRC observer, clamped to
-            // pidProfile->pidSumLimit(Yaw) - the value mixer.c actually clamps against - so the
-            // ESO is fed the command that can actually reach the plant, instead of absorbing
-            // mixer clipping as a fake disturbance.
-            const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
-            pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -adrcSumLimit, adrcSumLimit);
-        }
-#endif
     }
 
 #ifdef USE_WING

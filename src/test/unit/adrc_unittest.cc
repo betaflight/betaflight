@@ -43,7 +43,7 @@ extern "C" {
 
     gyro_t gyro;
 
-    float mixerGetThrottle(void) { return simulatedThrottle; }
+    float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
 }
 
 #include "unittest_macros.h"
