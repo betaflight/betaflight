@@ -92,6 +92,7 @@ extern "C" {
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+    bool unitCrashFlipModeActive = false;
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
@@ -118,6 +119,7 @@ extern "C" {
     }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
+    bool isCrashFlipModeActive(void) { return unitCrashFlipModeActive; }
     void disarm(flightLogDisarmReason_e) { }
     float getMaxRcRate(int axis)
     {
@@ -209,6 +211,7 @@ void resetTest(void)
         pidData[axis].S = 0;
         pidData[axis].Sum = 0;
         simulatedSetpointRate[axis] = 0;
+        simulatedPrevSetpointRate[axis] = 0;
         simulatedRcDeflection[axis] = 0;
         simulatedRawSetpoint[axis] = 0;
         gyro.gyroADCf[axis] = 0;
@@ -219,6 +222,7 @@ void resetTest(void)
 
     flightModeFlags = 0;
     unitLaunchControlActive = false;
+    unitCrashFlipModeActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
     loadControlRateProfile();
@@ -1436,6 +1440,101 @@ TEST(pidControllerTest, testAdrcEsoNotReseedOnRepeatedInitUnderSameType)
     EXPECT_FLOAT_EQ(12345.0f, pidRuntime.adrc.z3[FD_ROLL]);
     EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
     EXPECT_TRUE(pidRuntime.adrc.liftoff);
+}
+
+TEST(pidControllerTest, testAdrcCrashFlipHoldsControllerResetThroughAutoRearm)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->iterm_relax = ITERM_RELAX_OFF;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        // Isolate the ADRC transition from the independent feedforward path.
+        pidProfile->pid[axis].F = 0;
+    }
+    pidInitConfig(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    unitCrashFlipModeActive = true;
+    simulatedThrottle = 0.0f; // mixTable() publishes zero collective authority in Crash Flip.
+    pidRuntime.adrc.liftoff = true;
+    pidRuntime.adrc.gyroActiveS = 1.0f;
+    pidRuntime.adrc.idleS = 1.0f;
+
+    const float crashFlipGyro[XYZ_AXIS_COUNT] = { 600.0f, -450.0f, 0.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const float sumLimit = axis == FD_YAW ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        gyro.gyroADCf[axis] = crashFlipGyro[axis];
+        simulatedSetpointRate[axis] = -crashFlipGyro[axis];
+        pidData[axis].Sum = 2.0f * sumLimit;
+        pidRuntime.adrc.z1[axis] = -crashFlipGyro[axis];
+        pidRuntime.adrc.z2[axis] = 50000.0f;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+        pidRuntime.adrc.lastOutput[axis] = sumLimit;
+    }
+
+    // Six test loops exceed the 25 ms gyro liftoff hold. Turtle-mode rotation must neither open
+    // the ADRC gate nor retain the saturated control/observer state while the mixer owns motors.
+    for (int loop = 0; loop < 6; loop++) {
+        pidController(pidProfile, currentTestTime());
+
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].P);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].D);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].F);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].S);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+            EXPECT_FLOAT_EQ(crashFlipGyro[axis], pidRuntime.adrc.z1[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        }
+        EXPECT_FALSE(pidRuntime.adrc.liftoff);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.gyroActiveS);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.idleS);
+    }
+
+    // Auto-rearm exits Crash Flip without a disarm. With the pilot command matched to the current
+    // rate, the first normal loop must start from the last clean gyro-seeded state, not turtle state.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        simulatedPrevSetpointRate[axis] = crashFlipGyro[axis];
+        simulatedSetpointRate[axis] = crashFlipGyro[axis];
+    }
+    unitCrashFlipModeActive = false;
+    pidController(pidProfile, currentTestTime());
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        SCOPED_TRACE(axis);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].P);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].D);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].F);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].S);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(crashFlipGyro[axis], pidRuntime.adrc.z1[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+}
+
+TEST(pidControllerTest, testClassicPidStillRunsDuringCrashFlip)
+{
+    resetTest();
+    ASSERT_EQ(PID_TYPE_CLASSIC, pidProfile->pid_type);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    unitCrashFlipModeActive = true;
+    simulatedSetpointRate[FD_ROLL] = 500.0f;
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NE(0.0f, pidData[FD_ROLL].P);
+    EXPECT_NE(0.0f, pidData[FD_ROLL].Sum);
 }
 
 TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)

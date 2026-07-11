@@ -1640,12 +1640,22 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // because of accumulated PIDs once PASSTHRU_MODE gets disabled.
     bool isFixedWingAndPassthru = isFixedWing() && FLIGHT_MODE(PASSTHRU_MODE);
 #endif // USE_WING
-    // Disable PID control if at zero throttle or if gyro overflow detected
+
+#ifdef USE_ADRC
+    // Crash Flip owns the motors and may exit through auto-rearm without a disarm. Keep ADRC reset
+    // while turtle mode is active so its gate/ESO cannot learn that separate actuator epoch.
+    const bool adrcCrashFlipActive = pidProfile->pid_type == PID_TYPE_ADRC && isCrashFlipModeActive();
+#endif
+
+    // Disable PID control if at zero throttle or if gyro overflow detected.
     // This may look very innefficient, but it is done on purpose to always show real CPU usage as in flight
     if (!pidRuntime.pidStabilisationEnabled
         || gyroOverflowDetected()
 #ifdef USE_WING
         || isFixedWingAndPassthru
+#endif
+#ifdef USE_ADRC
+        || adrcCrashFlipActive
 #endif
         ) {
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
@@ -1658,9 +1668,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].Sum = 0;
         }
 #ifdef USE_ADRC
-        // Reset ADRC state (per-axis ESO plus the shared liftoff-gate) here: unlike
-        // pidResetIterm(), this branch only fires on genuine disarm/overflow, so resetting the
-        // gate here is safe.
+        // Reset ADRC state (per-axis ESO plus the shared liftoff-gate) here. Unlike
+        // pidResetIterm(), these are controller-disabled epochs: disarm/overflow, or Crash Flip
+        // where a separate motor command path owns the craft, so resetting the gate is safe.
         adrcResetAllState();
 #endif
     } else if (pidRuntime.zeroThrottleItermReset) {
