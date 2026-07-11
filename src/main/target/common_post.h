@@ -887,6 +887,24 @@ extern struct linker_symbol __fontdata_end;
 #endif
 #endif
 
+// MAVLink inbound COMMAND_LONG / COMMAND_INT actuation (arm/disarm, mode set,
+// RTL, set-home, reboot). Defaults on wherever MAVLink telemetry is built in.
+#if !defined(ENABLE_TELEMETRY_MAVLINK_COMMANDS)
+#if defined(USE_TELEMETRY_MAVLINK)
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 1
+#else
+#define ENABLE_TELEMETRY_MAVLINK_COMMANDS 0
+#endif
+#endif
+
+// Remote arming over MAVLink is opt-in at compile time for safety. The disarm
+// path is always compiled in when commands are enabled; only the arm path is
+// gated. When enabled, arming still routes through tryArm() and honours every
+// arming-disable flag — there is no bypass.
+#if !defined(ENABLE_REMOTE_ARM)
+#define ENABLE_REMOTE_ARM 0
+#endif
+
 #if !defined(ENABLE_RX_UDP)
 #define ENABLE_RX_UDP 0
 #endif

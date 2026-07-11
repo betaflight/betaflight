@@ -147,6 +147,13 @@ typedef struct modeActivationProfile_s {
 bool IS_RC_MODE_ACTIVE(boxId_e boxId);
 void rcModeUpdate(const boxBitmask_t *newState);
 
+// External (MAVLink command) flight-mode override. Forces the selected box modes
+// active on top of the RC-derived mask each loop, so a MAVLink DO_SET_MODE / RTL
+// survives the per-loop recompute in updateActivatedModes(). Overrides are
+// cleared on disarm. No effect when ENABLE_TELEMETRY_MAVLINK_COMMANDS is off.
+void rcModeSetExternalOverride(boxId_e boxId, bool enabled);
+void rcModeClearExternalOverrides(void);
+
 bool isAirmodeEnabled(void);
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
