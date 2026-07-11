@@ -88,6 +88,23 @@ void expectAdrcFeedback(const float expectedAxisScale, const float expectedYawLi
     EXPECT_NEAR(adrcFeedbackYawLimit, expectedYawLimit, TEST_EPSILON);
 }
 
+struct QuadXMotorComponents {
+    float collective;
+    float roll;
+    float pitch;
+    float yaw;
+};
+
+QuadXMotorComponents decomposeQuadXMotorOutput(void)
+{
+    return {
+        (motor[0] + motor[1] + motor[2] + motor[3]) * 0.25f,
+        (-motor[0] - motor[1] + motor[2] + motor[3]) * 0.25f,
+        (motor[0] - motor[1] + motor[2] - motor[3]) * 0.25f,
+        (-motor[0] + motor[1] + motor[2] - motor[3]) * 0.25f,
+    };
+}
+
 class AdrcMixerUnittest : public ::testing::Test {
 protected:
     void SetUp() override
@@ -179,6 +196,51 @@ TEST_F(AdrcMixerUnittest, LinearMixerPublishesNormalizationAppliedToMotorMix)
     EXPECT_NEAR(mixerGetAdrcThrottle(), 0.5f, TEST_EPSILON);
     EXPECT_NEAR(motor[0], 0.0f, TEST_EPSILON);
     EXPECT_NEAR(motor[2], 1.0f, TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, DynamicMixerPublishesUniformScaleAndLeavesRedistributionAsPlantDisturbance)
+{
+    mixerConfigMutable()->mixer_type = MIXER_DYNAMIC;
+    setRcThrottle(0.25f);
+    pidData[FD_ROLL].Sum = 400.0f;
+    pidData[FD_PITCH].Sum = 400.0f;
+
+    mixTable(2500);
+
+    const float expectedAxisScale = 1.0f / 1.6f;
+    expectAdrcFeedback(expectedAxisScale, testPidProfile.pidSumLimitYaw);
+    EXPECT_NEAR(mixerGetAdrcThrottle(), 0.25f, TEST_EPSILON);
+
+    // MIXER_DYNAMIC adds k * abs(motorMix) per motor, where k = 1 - 2 * throttle.
+    // For equal roll and pitch on QuadX this residual contains collective and yaw terms.
+    const QuadXMotorComponents components = decomposeQuadXMotorOutput();
+    EXPECT_NEAR(components.collective, 0.375f, TEST_EPSILON);
+    EXPECT_NEAR(components.roll, 0.4f * expectedAxisScale, TEST_EPSILON);
+    EXPECT_NEAR(components.pitch, 0.4f * expectedAxisScale, TEST_EPSILON);
+    EXPECT_NEAR(components.yaw, 0.125f, TEST_EPSILON);
+}
+
+TEST_F(AdrcMixerUnittest, EzLandingPublishesExactUniformAxisScale)
+{
+    mixerConfigMutable()->mixer_type = MIXER_EZLANDING;
+    mixerRuntime.ezLandingLimit = 0.15f;
+    setRcThrottle(0.0f);
+    pidData[FD_ROLL].Sum = 400.0f;
+    pidData[FD_PITCH].Sum = 400.0f;
+
+    mixTable(2750);
+
+    const float baseNormalizationFactor = 1.0f / 1.6f;
+    const float ezLandFactor = 0.15f / (0.5f + 1.0e-6f);
+    const float expectedAxisScale = baseNormalizationFactor * ezLandFactor;
+    expectAdrcFeedback(expectedAxisScale, testPidProfile.pidSumLimitYaw);
+    EXPECT_NEAR(mixerGetAdrcThrottle(), 0.15f, TEST_EPSILON);
+
+    const QuadXMotorComponents components = decomposeQuadXMotorOutput();
+    EXPECT_NEAR(components.collective, mixerGetAdrcThrottle(), TEST_EPSILON);
+    EXPECT_NEAR(components.roll, 0.4f * expectedAxisScale, TEST_EPSILON);
+    EXPECT_NEAR(components.pitch, 0.4f * expectedAxisScale, TEST_EPSILON);
+    EXPECT_NEAR(components.yaw, 0.0f, TEST_EPSILON);
 }
 
 TEST_F(AdrcMixerUnittest, NoAirmodePublishesLowThrottleAuthorityAttenuation)

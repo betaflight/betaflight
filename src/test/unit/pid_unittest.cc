@@ -1391,6 +1391,29 @@ TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)
     EXPECT_FLOAT_EQ(450.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
 }
 
+TEST(pidControllerTest, testAdrcSaturatedAppliedOutputFeedsNextObserverStep)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    pidRuntime.adrc.liftoff = true;
+    pidRuntime.adrc.b0ThrottleScale = 1.0f;
+    pidData[FD_ROLL].Sum = 800.0f;
+
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
+
+    const float expectedAppliedOutput = 250.0f;
+    ASSERT_FLOAT_EQ(expectedAppliedOutput, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    const float z2Before = pidRuntime.adrc.z2[FD_ROLL];
+    const float expectedZ2 = z2Before + pidRuntime.dT
+        * pidRuntime.adrc.coefficient[FD_ROLL].b0 * expectedAppliedOutput;
+
+    adrcApplyControl(&pidRuntime.adrc, FD_ROLL, 0.0f, 0.0f, pidRuntime.dT, pidProfile->pidSumLimit);
+
+    EXPECT_NEAR(expectedZ2, pidRuntime.adrc.z2[FD_ROLL], 1.0e-3f);
+}
+
 TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfiles)
 {
     resetTest();
