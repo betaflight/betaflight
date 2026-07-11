@@ -312,12 +312,12 @@ static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t 
     }
 }
 
-static void startLanding(timeUs_t currentTimeUs)
+static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const vector3_t targetM = {.v = {
-        [ENU_E] = est->position.v[ENU_E] * 0.01f,
-        [ENU_N] = est->position.v[ENU_N] * 0.01f,
+        [ENU_E] = targetEastM,
+        [ENU_N] = targetNorthM,
         [ENU_U] = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M,
     }};
 
@@ -378,7 +378,8 @@ static void checkGeofence(timeUs_t currentTimeUs)
     if (cfg->geofenceAction == AP_GEOFENCE_RTH) {
         fp.rescueRequested = true;
     } else {
-        startLanding(currentTimeUs);
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        startLanding(currentTimeUs, est->position.v[ENU_E] * 0.01f, est->position.v[ENU_N] * 0.01f);
     }
 }
 
@@ -425,7 +426,15 @@ static void onWaypointReached(void *userData)
         return;
     }
 
-    // TODO: WAYPOINT_TYPE_LAND — trigger descent/disarm path.
+    if (wp->type == WAYPOINT_TYPE_LAND) {
+        // Descend at the waypoint itself, not wherever the arrival gate
+        // tripped: the active nav command still carries the leg's ENU target.
+        // Touchdown completes the plan, so a mid-plan LAND is terminal.
+        const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+        startLanding(micros(), cmd->targetPosEfM.v[ENU_E], cmd->targetPosEfM.v[ENU_N]);
+        return;
+    }
+
     // TODO: WAYPOINT_PATTERN_ORBIT / FIGURE8 sub-target generation for HOLD.
     advanceToNext();
 }

@@ -121,9 +121,11 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     (void)maxDecelMps2;
 }
 
+static bool g_altitudeArrivalRequired;
+
 void positionNavSetAltitudeArrivalRequired(bool required)
 {
-    (void)required;
+    g_altitudeArrivalRequired = required;
 }
 
 bool positionEstimatorGetGpsOrigin(gpsLocation_t *out)
@@ -218,6 +220,7 @@ protected:
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
         g_stubValidXY = true;
         g_stubBelowLandingAltitude = true;
+        g_altitudeArrivalRequired = false;
         g_disarmCalls = 0;
         g_yawRateLimitDps = -1.0f; // sentinel: no autopilotSetYawRateLimit call yet
 
@@ -236,6 +239,7 @@ protected:
         autopilotConfig_t *cfg = autopilotConfigMutable();
         memset(cfg, 0, sizeof(*cfg));
         cfg->waypointArrivalRadius = 500;  // 5 m
+        cfg->waypointHoldRadius = 200;     // 2 m
         cfg->maxVelocity = 1000;           // 10 m/s
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
@@ -465,6 +469,77 @@ TEST_F(FlightPlanNavTest, YawRateCapClearsOnDisengageAndEngage)
     EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
 }
 
+// --- LAND waypoint type ---
+
+TEST_F(FlightPlanNavTest, LandWaypointDispatchesWithHoldGate)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_LAND);
+    flightPlanNavEngage();
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    ASSERT_TRUE(g_lastTarget.valid);
+    // Station-keeping gate: waypointHoldRadius (2 m) with the altitude gate kept.
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 2.0f, 0.01f);
+    EXPECT_TRUE(g_altitudeArrivalRequired);
+}
+
+TEST_F(FlightPlanNavTest, LandWaypointArrivalDescendsAtTheWaypoint)
+{
+    // Waypoint 10 m east, 20 m north (same flat-earth conversion as
+    // EngageSetsFirstWaypointTarget).
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    const int32_t latUnitsFor20m = (int32_t)((20.0f / 111319.49f) * 1.0e7f);
+    addWaypoint(latUnitsFor20m, lonUnitsFor10m, 5000, WAYPOINT_TYPE_LAND);
+
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    // Arrival gate trips short of the waypoint, 30 m up.
+    g_stubEstimate.position.v[ENU_E] = 8.5f * 100.0f;
+    g_stubEstimate.position.v[ENU_N] = 19.0f * 100.0f;
+    g_stubEstimate.position.v[ENU_U] = 30.0f * 100.0f;
+    triggerReached();
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    ASSERT_TRUE(g_lastTarget.valid);
+    // Descent anchors at the waypoint, not the current position.
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 20.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
+}
+
+TEST_F(FlightPlanNavTest, LandWaypointTouchdownDisarmsAndCompletes)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_LAND);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER); // must never be flown
+
+    flightPlanNavEngage();
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    const int dispatchesBeforeTouchdown = g_setTargetCalls;
+
+    // Descent establishes (above 25% of the commanded rate).
+    g_stubEstimate.velocity.v[ENU_U] = -40.0f; // cm/s
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    // Touchdown: quiet timer starts.
+    g_stubEstimate.velocity.v[ENU_U] = 0.0f;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 0);
+
+    g_stubMicros += 1'100'000; // past landingDetectionTime (1 s)
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_disarmCalls, 1);
+    EXPECT_EQ(g_lastDisarmReason, DISARM_REASON_LANDING);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
+    // LAND is terminal: the trailing waypoint is never dispatched.
+    EXPECT_EQ(g_setTargetCalls, dispatchesBeforeTouchdown);
+}
+
 // --- Safety behaviour ---
 
 class FlightPlanNavSafetyTest : public FlightPlanNavTest {
@@ -557,12 +632,16 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithLandActionStartsLanding)
     engageDistantLeg();
 
     GPS_distanceToHome = 150;
-    g_stubEstimate.position.v[ENU_U] = 30.0f * 100.0f; // 30 m up, in cm
+    g_stubEstimate.position.v[ENU_E] = 12.0f * 100.0f; // cm
+    g_stubEstimate.position.v[ENU_N] = 34.0f * 100.0f;
+    g_stubEstimate.position.v[ENU_U] = 30.0f * 100.0f; // 30 m up
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
     ASSERT_TRUE(g_lastTarget.valid);
     // Landing target: current position, far below current altitude.
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 12.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 34.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
     EXPECT_FALSE(flightPlanNavRescueRequested());

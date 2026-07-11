@@ -531,6 +531,8 @@ def wait_for(description, predicate, timeout=20.0, interval=0.2):
 
 WP_LAT = HOME_LAT + 300.0 / M_PER_DEG  # default waypoint 300 m north of home
 WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # 150 m east
+WP_NORTH40_LAT = HOME_LAT + 40.0 / M_PER_DEG  # short leg for the landing mission
+WP_EAST25_LON = HOME_LON + 25.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 
 
 def base_config(extra):
@@ -668,6 +670,35 @@ def scenario_mission_yaw(sitl, rc, fdm):
     log(f"leg flown nose-first, heading {fdm.heading_deg():.0f} deg at arrival")
 
 
+def scenario_mission_land(sitl, rc, fdm):
+    """LAND waypoint: fly the first leg north, divert to the offset LAND
+    waypoint, arrive through the 3D hold gate, descend there, and disarm on
+    touchdown (impact jerk; the estimator's vz is unreliable when grounded)."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "vehicle departs toward the first waypoint",
+        lambda: fdm.distance_from_home() > 15.0,
+        timeout=30,
+    )
+    wait_for(
+        "LAND waypoint approach (ground truth)",
+        lambda: fdm.distance_to_wp(25.0, 40.0) < 6.0,
+        timeout=120,
+        interval=1.0,
+    )
+    wait_for(
+        "touchdown disarms",
+        lambda: BOX_ARM not in sitl.modes(),
+        timeout=90,
+        interval=1.0,
+    )
+    assert fdm.model.on_ground(), f"disarmed in the air: alt {fdm.model.pos[2]:.1f} m"
+    dist = fdm.distance_to_wp(25.0, 40.0)
+    assert dist < 10.0, f"landed {dist:.1f} m from the LAND waypoint"
+    log(f"landed {dist:.1f} m from the LAND waypoint")
+
+
 def scenario_rx_loss(sitl, rc, fdm, policy):
     boot_and_engage(sitl, rc, fdm)
     log(f"killing RC stream (policy={policy})")
@@ -760,6 +791,21 @@ SCENARIOS = {
         scenario_mission_yaw,
         # redirect the default waypoint east so the course demands a 90 deg swing
         [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit"],
+    ),
+    "mission_land": (
+        scenario_mission_land,
+        [
+            "set ap_yaw_mode = FIXED",
+            # short north leg, then LAND at an offset so the executor must fly
+            # to the landing point before descending
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 0 orbit",
+            # SITL's 15-20 Hz position loop wanders during braking; a fatter
+            # 3D gate keeps arrival deterministic
+            "set ap_waypoint_hold_radius = 400",
+            "set ap_landing_descent_rate = 200",  # keep the descent short
+            "set landing_disarm_threshold = 10",   # jerk-based touchdown disarm
+        ],
     ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
     "rx_continue": (lambda s, r, f: scenario_rx_loss(s, r, f, "CONTINUE"), ["set ap_rx_loss_policy = CONTINUE"]),
