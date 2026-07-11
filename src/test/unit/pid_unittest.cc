@@ -710,6 +710,128 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     // Add additional verifications
 }
 
+#ifdef USE_ADRC
+static void prepareCrashRecoveryTest(pidType_e pidType, pidCrashRecovery_e crashRecovery, bool gpsRescue)
+{
+    resetTest();
+    pidProfile->pid_type = pidType;
+    pidProfile->pid[PID_ROLL].D = 0;
+    pidProfile->pid[PID_PITCH].D = 0;
+    pidProfile->pid[PID_YAW].D = 0;
+    pidProfile->crash_recovery = crashRecovery;
+    pidInit(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    sensorsSet(SENSOR_ACC);
+    if (gpsRescue) {
+        ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+    simulatedMotorMixRange = 1.2f;
+
+    // Prime the static D-term history and, for GPS Rescue, start its one-second
+    // crash-detection guard before applying the gyro step.
+    gyro.gyroADCf[FD_ROLL] = 0.0f;
+    pidController(pidProfile, 2000000);
+}
+
+static void triggerRollCrash(void)
+{
+    gyro.gyroADCf[FD_ROLL] = 800.0f;
+    pidController(pidProfile, 4000000);
+}
+
+TEST(pidControllerTest, testAdrcCrashDetectionAndItermSuppressionDoNotRequireClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    triggerRollCrash();
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcGpsRescueCrashDetectionAndItermSuppressionDoNotRequireClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_OFF, true);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    triggerRollCrash();
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcPitchCrashClearsEarlierAxisItermInSameLoop)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    gyro.gyroADCf[FD_PITCH] = 800.0f;
+    pidController(pidProfile, 4000000);
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    const float sumWithoutI = pidData[FD_ROLL].P + pidData[FD_ROLL].D
+        + pidData[FD_ROLL].F + pidData[FD_ROLL].S;
+    EXPECT_FLOAT_EQ(sumWithoutI, pidData[FD_ROLL].Sum);
+    EXPECT_FLOAT_EQ(constrainf(sumWithoutI, -pidProfile->pidSumLimit, pidProfile->pidSumLimit),
+        pidRuntime.adrc.lastOutput[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcCrashRecoveryExitKeepsItermBumpless)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    const timeUs_t crashTimeUs = 3000000;
+    pidRuntime.inCrashRecoveryMode = true;
+    pidRuntime.crashDetectedAtUs = crashTimeUs;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        const float sumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+    }
+
+    pidController(pidProfile, crashTimeUs + targetPidLooptime);
+    EXPECT_TRUE(crashRecoveryModeActive());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        const float sumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+    }
+
+    simulatedMotorMixRange = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 0.0f;
+    pidController(pidProfile, crashTimeUs + 2 * targetPidLooptime);
+    EXPECT_FALSE(crashRecoveryModeActive());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
+
+    pidController(pidProfile, crashTimeUs + 3 * targetPidLooptime);
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+    }
+}
+
+TEST(pidControllerTest, testClassicCrashDetectionStillRequiresClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_CLASSIC, PID_CRASH_RECOVERY_ON, false);
+
+    triggerRollCrash();
+
+    EXPECT_FALSE(crashRecoveryModeActive());
+}
+#endif
+
 TEST(pidControllerTest, testFeedForward)
 // NOTE: THIS DOES NOT TEST THE FEEDFORWARD CALCULATIONS, which are now in rc.c, and return setpointDelta
 // This test only validates the feedforward value calculated in pid.c for a given simulated setpointDelta

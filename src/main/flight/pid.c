@@ -1259,6 +1259,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // Shared (not per-axis) ADRC state - liftoff gate and throttle-scaled b0 - must be updated once
     // per loop, before the per-axis loop below, so every axis reads consistent state this iteration.
     updateAdrcSharedState(pidProfile);
+#if defined(USE_ACC)
+    // Latch recovery for the whole PID iteration. handleCrashRecovery() can clear the global flag
+    // on the first axis when the craft has recovered, but every axis must still use the same
+    // zero-disturbance-I policy for this final recovery iteration.
+    bool adrcCrashRecoveryActiveThisLoop = pidRuntime.inCrashRecoveryMode;
+#endif
 #endif
 
     // ----------PID controller----------
@@ -1339,6 +1345,9 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         handleCrashRecovery(
             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
             &currentPidSetpoint, &errorRate);
+#ifdef USE_ADRC
+        adrcCrashRecoveryActiveThisLoop |= pidRuntime.inCrashRecoveryMode;
+#endif
 #endif
 
         const float previousIterm = pidData[axis].I;
@@ -1412,21 +1421,35 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #endif
         pidRuntime.previousPidSetpoint[axis] = currentPidSetpoint; // this is the value sent to blackbox, and used for D-max setpoint
 
-        // disable D if launch control is active
-        if ((pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive) {
+        // Crash detection uses the filtered gyro delta, but ADRC must not depend on the classic
+        // D gain merely to calculate it. Classic PID keeps its existing Kd/launch-control gate.
+        const bool dTermEnabled = (pidRuntime.pidCoefficient[axis].Kd > 0) && !launchControlActive;
+        bool gyroDeltaRequired = dTermEnabled;
+#if defined(USE_ACC) && defined(USE_ADRC)
+        gyroDeltaRequired |= (pidProfile->pid_type == PID_TYPE_ADRC) && !launchControlActive;
+#endif
+        float delta = 0.0f;
+        if (gyroDeltaRequired) {
             // Divide rate change by dT to get differential (ie dr/dt).
             // dT is fixed and calculated from the target PID loop time
             // This is done to avoid DTerm spikes that occur with dynamically
             // calculated deltaT whenever another task causes the PID
             // loop execution to be delayed.
-            const float delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
-            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
+            delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
+        }
 
 #if defined(USE_ACC)
-            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
-                detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
-            }
+        if (gyroDeltaRequired && cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+            detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+#ifdef USE_ADRC
+            adrcCrashRecoveryActiveThisLoop |= pidRuntime.inCrashRecoveryMode;
 #endif
+        }
+#endif
+
+        // disable D if launch control is active
+        if (dTermEnabled) {
+            float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
 #ifdef USE_D_MAX
             float dMaxMultiplier = 1.0f;
@@ -1472,6 +1495,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // output is simply overwritten here when ADRC is selected instead of being conditionally
         // skipped. This keeps the classic control law's code and behavior untouched.
         if (pidProfile->pid_type == PID_TYPE_ADRC) {
+#if defined(USE_ACC)
+            // Do not feed a pre-crash disturbance estimate into z2 on the recovery path. The ESO
+            // continues tracking rate/acceleration, while z3 is held at zero below until recovery
+            // has completed without restoring I = -z3/b0 later in this same loop.
+            if (adrcCrashRecoveryActiveThisLoop) {
+                pidRuntime.adrc.z3[axis] = 0.0f;
+            }
+#endif
             applyAdrcControl(axis, gyroRate, currentPidSetpoint, pidProfile);
         }
 #endif
@@ -1550,6 +1581,32 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             pidData[axis].Sum = pidSum;
         }
     }
+
+#if defined(USE_ADRC) && defined(USE_ACC)
+    if (pidProfile->pid_type == PID_TYPE_ADRC && adrcCrashRecoveryActiveThisLoop) {
+        // ADRC uses the I field to expose -z3/b0. Remove that contribution from both the reported
+        // term and the already-calculated actuator command, then keep z3 at zero. This post-pass
+        // also covers a crash first detected on pitch/yaw after an earlier axis was calculated.
+        for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+            const float adrcIterm = pidData[axis].I;
+            pidData[axis].I = 0.0f;
+            pidRuntime.adrc.z3[axis] = 0.0f;
+#ifdef USE_INTEGRATED_YAW_CONTROL
+            if (axis == FD_YAW && pidRuntime.useIntegratedYaw) {
+                const float integratedYawRelaxFactor = 1.0f
+                    - pidRuntime.integratedYawRelax / 100000.0f * pidRuntime.dT / 0.000125f;
+                pidData[axis].Sum -= adrcIterm * pidRuntime.dT * 100.0f * integratedYawRelaxFactor;
+            } else
+#endif
+            {
+                pidData[axis].Sum -= adrcIterm;
+            }
+
+            const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+            pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -adrcSumLimit, adrcSumLimit);
+        }
+    }
+#endif
 
 #ifdef USE_WING
     // When PASSTHRU_MODE is active - reset all PIDs to zero so the aircraft won't snap out of control
