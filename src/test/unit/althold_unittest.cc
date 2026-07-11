@@ -219,6 +219,7 @@ extern "C" {
     acc_t acc;
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
+    gyro_t gyro;
 
     float testAltitudeCm = 0.0f;
     float testAltitudeDerivativeCmS = 0.0f;

@@ -45,4 +45,10 @@ void autopilotClearAltHoldHoverThrottle(void);
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
 
+// Mission yaw control: rate injected as the yaw setpoint by rc.c while a
+// navigation leg is being flown (see updateYawControl in autopilot_multirotor.c)
+float autopilotGetYawRate(void);
+bool autopilotYawControlActive(void);
+void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
+
 #endif // !USE_WING
