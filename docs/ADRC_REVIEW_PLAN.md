@@ -143,17 +143,17 @@ gate-open transition из ADRC-001.
 
 | ID | Приоритет | Кратко | Ветка | Статус | Implementation commit(s) |
 |---|---|---|---|---|---|
-| ADRC-001 | P0 | Bumpless liftoff gate open | `adrc-gate-fix` | TODO | — |
-| ADRC-002 | P0 | Crash detector без зависимости от classic D | `adrc-gate-fix` | TODO | — |
-| ADRC-003 | P0 | ADRC I/z3 во время crash recovery | `adrc-gate-fix` | TODO | — |
-| ADRC-004 | P0 | Устойчивая TD discretization | `adrc-gate-fix` | TODO | — |
-| ADRC-005 | P0 | Loop-rate safe ESO | `adrc-gate-fix` | TODO | — |
+| ADRC-001 | P0 | Bumpless liftoff gate open | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-002 | P0 | Crash detector без зависимости от classic D | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-003 | P0 | ADRC I/z3 во время crash recovery | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-004 | P0 | Устойчивая TD discretization | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-005 | P0 | Loop-rate safe ESO | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-006 | P0 | Persisted schema для D-term LPF | `adrc-dterm-lpf` | TODO | — |
 | ADRC-007 | P1 | Фактически приложенный mixer feedback | `adrc-gate-fix` | TODO | — |
 | ADRC-008 | P1 | Post-override throttle для ADRC | `adrc-gate-fix` | TODO | — |
-| ADRC-009 | P1 | State limits и finite-value defenses | `adrc-gate-fix` | TODO | — |
-| ADRC-010 | P1 | Семантика CLASSIC↔ADRC handover | `adrc-gate-fix` | TODO | — |
-| ADRC-011 | P1 | Исправить vacuous gate tests | `adrc-gate-fix` | TODO | — |
+| ADRC-009 | P1 | State limits и finite-value defenses | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-010 | P1 | Семантика CLASSIC↔ADRC handover | `adrc-gate-fix` | IN PROGRESS | — |
+| ADRC-011 | P1 | Исправить vacuous gate tests | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-012 | P1 | End-to-end tests и F411 cycle budget | `adrc-gate-fix` | TODO | — |
 | ADRC-013 | P1 | Rebase, CI, release b3 и точный re-flight | `adrc-gate-fix` | BLOCKED | Нужны ADRC-001…012 |
 
@@ -162,7 +162,7 @@ gate-open transition из ADRC-001.
 ### ADRC-001 — Bumpless liftoff gate open
 
 - Приоритет: **P0**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/adrc.c`: gate transition, `lastOutput` и ESO update;
@@ -195,7 +195,7 @@ Flight evidence после исправления: —.
 ### ADRC-002 — Crash detector без зависимости от classic D
 
 - Приоритет: **P0**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/pid.c`;
@@ -220,7 +220,7 @@ Acceptance criteria:
 ### ADRC-003 — ADRC I/z3 во время crash recovery
 
 - Приоритет: **P0**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/pid.c`;
@@ -247,7 +247,7 @@ Acceptance criteria:
 ### ADRC-004 — Устойчивая TD discretization и reset semantics
 
 - Приоритет: **P0** при включённом `adrc_td_hz`.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/adrc.c`;
@@ -279,7 +279,7 @@ Acceptance criteria:
 ### ADRC-005 — Loop-rate safe ESO
 
 - Приоритет: **P0** для разрешённых экстремальных конфигураций.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/adrc.c`;
@@ -391,7 +391,7 @@ Acceptance criteria:
 ### ADRC-009 — State limits и finite-value defenses
 
 - Приоритет: **P1**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/adrc.c`;
@@ -418,7 +418,7 @@ Acceptance criteria:
 ### ADRC-010 — Семантика CLASSIC↔ADRC handover
 
 - Приоритет: **P1**, latent для stock runtime.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронутые места:
   - `src/main/flight/pid_init.c`;
@@ -449,7 +449,7 @@ Acceptance criteria:
 ### ADRC-011 — Исправить vacuous gate tests
 
 - Приоритет: **P1**, выполнять вместе с первым gate-related fix.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Затронуто: `src/test/unit/adrc_unittest.cc`.
 
