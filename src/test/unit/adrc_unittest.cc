@@ -100,6 +100,38 @@ TEST_F(AdrcUnittest, GateOpensImmediatelyOnThrottle)
     EXPECT_TRUE(runtime.liftoff);
 }
 
+TEST_F(AdrcUnittest, GateOpenDropsGroundEpochOutputBeforeFirstControlStep)
+{
+    // Reproduce the logged Airmode takeoff failure: the gate opens while the observer still
+    // carries a nonzero command from the ground-constrained previous loop. The observer itself
+    // remains live and coherent while gated; only that stale actuator input must not cross epochs.
+    gyro.gyroADCf[FD_ROLL] = 300.0f;
+    runtime.gyroFilter[FD_ROLL].state = 300.0f;
+    runtime.gyroFilter[FD_ROLL].state1 = 300.0f;
+    runtime.z1[FD_ROLL] = 300.0f;
+    runtime.vRef[FD_ROLL] = 300.0f;
+    runtime.lastOutput[FD_ROLL] = 500.0f;
+
+    simulatedThrottle = 0.5f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(300.0f, runtime.gyroFilter[FD_ROLL].state);
+    EXPECT_FLOAT_EQ(300.0f, runtime.gyroFilter[FD_ROLL].state1);
+    EXPECT_FLOAT_EQ(300.0f, runtime.z1[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z2[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(300.0f, runtime.vRef[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.lastOutput[FD_ROLL]);
+
+    // With measurement == setpoint, the first airborne control step must be exactly neutral;
+    // any output here comes solely from stale observer/output state crossing the gate.
+    const adrcOutput_t output = adrcApplyControl(&runtime, FD_ROLL, 300.0f, 300.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(0.0f, output.P);
+    EXPECT_FLOAT_EQ(0.0f, output.I);
+    EXPECT_FLOAT_EQ(0.0f, output.D);
+}
+
 TEST_F(AdrcUnittest, LiftoffThrottleThresholdIsConfigurable)
 {
     profile.liftoffThrottlePercent = 70;
@@ -190,6 +222,37 @@ TEST_F(AdrcUnittest, OptInReArmAfterSustainedIdleStillness)
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     }
     EXPECT_FALSE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateReopenStartsANewActuatorFeedbackEpoch)
+{
+    profile.liftoffIdleHoldMs = 100;
+
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    simulatedThrottle = 0.0f;
+    resetGyro();
+    for (int i = 0; i < 20; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    ASSERT_FALSE(runtime.liftoff);
+
+    gyro.gyroADCf[FD_PITCH] = -250.0f;
+    runtime.z1[FD_PITCH] = -250.0f;
+    runtime.z2[FD_PITCH] = -150.0f;
+    runtime.z3[FD_PITCH] = 750.0f;
+    runtime.lastOutput[FD_PITCH] = -400.0f;
+
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(-250.0f, runtime.z1[FD_PITCH]);
+    EXPECT_FLOAT_EQ(-150.0f, runtime.z2[FD_PITCH]);
+    EXPECT_FLOAT_EQ(750.0f, runtime.z3[FD_PITCH]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.lastOutput[FD_PITCH]);
 }
 
 TEST_F(AdrcUnittest, LiftoffIdleThresholdsAreConfigurable)
@@ -365,7 +428,7 @@ TEST_F(AdrcUnittest, GateDoesNotChatterWithInvertedThresholds)
     // feedback at loop rate. The idle threshold must be clamped below the liftoff threshold.
     profile.liftoffThrottlePercent = 40;
     profile.liftoffIdleThrottlePercent = 60; // inverted on purpose
-    profile.liftoffIdleHoldMs = 0;           // and no hold, the worst case
+    profile.liftoffIdleHoldMs = 100;         // opt in so the re-arm branch is actually exercised
 
     simulatedThrottle = 0.5f; // above liftoff, below the (bogus) idle threshold
     resetGyro();
@@ -384,6 +447,7 @@ TEST_F(AdrcUnittest, GateReArmStillnessIsCappedIndependently)
     // the gate mid-air during a throttle chop. The re-arm side is capped at a true-stillness
     // level regardless of this setting.
     profile.liftoffGyroDps = 255;
+    profile.liftoffIdleHoldMs = 100; // opt in so a missing stillness cap would re-arm the gate
 
     simulatedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);

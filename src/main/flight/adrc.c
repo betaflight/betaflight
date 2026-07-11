@@ -246,6 +246,7 @@ void adrcResetGate(adrcRuntime_t *adrcRuntime)
 
 void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adrcProfile, float dT)
 {
+    const bool wasLiftoff = adrcRuntime->liftoff;
     const float gyroPeak = fmaxf(fabsf(gyro.gyroADCf[FD_ROLL]),
         fmaxf(fabsf(gyro.gyroADCf[FD_PITCH]), fabsf(gyro.gyroADCf[FD_YAW])));
     // mixTable() runs after the PID task and publishes the final collective value for the next
@@ -291,6 +292,19 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
             }
         } else {
             adrcRuntime->gyroActiveS = 0.0f;
+        }
+    }
+
+    if (!wasLiftoff && adrcRuntime->liftoff) {
+        // Start a new actuator-feedback epoch without disturbing the observer state that kept
+        // tracking gyro while the gate was closed. The mixer may already have applied airmode
+        // output that the ground-constrained plant could not realise; admitting that ground-epoch
+        // lastOutput as b0*u in the first open loop creates exactly the discontinuity the gate is
+        // meant to prevent. Drop only that stale input. The first open loop then matches the
+        // closed-path observer update, and the following loop feeds back the first output actually
+        // generated during this airborne epoch. The same invariant applies after an opt-in re-arm.
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            adrcRuntime->lastOutput[axis] = 0.0f;
         }
     }
 
