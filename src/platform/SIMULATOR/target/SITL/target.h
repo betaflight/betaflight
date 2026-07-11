@@ -76,6 +76,10 @@
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
 
+// OS preemption spikes must not peak-hold task duration estimates
+// (see scheduler.h) or non-realtime tasks starve to a few hertz
+#define TASK_EXEC_TIME_CLAMP_US         100
+
 #define USE_VIRTUAL_LED
 
 #define USE_ACC

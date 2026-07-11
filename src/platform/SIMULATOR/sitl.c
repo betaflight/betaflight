@@ -348,14 +348,17 @@ static void updateState(const fdm_packet* pkt)
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
 #if ENABLE_GAZEBO_BRIDGE
-    // The Gazebo BetaflightPlugin computes the quaternion as Rx(π)*M*Rx(π)
-    // (a similarity transform), but Betaflight needs the body(FRD)-to-world(NED)
-    // quaternion: ENUtoNED * M * FRDtoFLU = Rz(π/2) * Rx(π) * M * Rx(π).
-    // Pre-multiply by Rz(90°) to correct: q' = q_Rz(π/2) * q_plugin
+    // The Gazebo BetaflightPlugin sends the quaternion conjugated by Rx(π)
+    // (q_plugin = Rx(π) * M * Rx(π), with M the FLU-body to ENU-world
+    // attitude). Undo the conjugation (negate qy/qz), then rotate the world
+    // frame by Rz(π/2) (ENU -> NWU): q = Rz(π/2) * Rx(π) * q_plugin * Rx(π).
+    // FLU body equals Betaflight's internal NWU body, so the result is the
+    // proper body-to-world rotation - the Euler display and every rMat
+    // vector consumer (position estimator, mag fusion) agree at any heading.
     const float qw = pkt->imu_orientation_quat[0];
     const float qx = pkt->imu_orientation_quat[1];
-    const float qy = pkt->imu_orientation_quat[2];
-    const float qz = pkt->imu_orientation_quat[3];
+    const float qy = -pkt->imu_orientation_quat[2];
+    const float qz = -pkt->imu_orientation_quat[3];
     static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
     imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
 #else
@@ -402,7 +405,9 @@ static void updateState(const fdm_packet* pkt)
     if (course < 0.0) {
         course += 360.0;
     }
-    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course);
+    // velocity_xyz is ENU: NED velN = [1], velE = [0], velD = -[2]
+    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course,
+                  pkt->velocity_xyz[1], pkt->velocity_xyz[0], -pkt->velocity_xyz[2]);
 
     if (gpxEnabled) {
         static uint64_t lastGpxTimeUs = 0;

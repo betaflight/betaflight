@@ -166,7 +166,13 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat.m[NWU_U][Y] = 2.0f * (qP.yz - -qP.wx);
     rMat.m[NWU_U][Z] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
-#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
+#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER) && !ENABLE_GAZEBO_BRIDGE
+    // Legacy simulator bridges (X-Plane, RealFlight) send a quaternion with
+    // mirrored pitch/yaw; flipping these two elements patches the Euler
+    // extraction for them, at the price of rMat no longer being a proper
+    // rotation (vector consumers like the position estimator see phantom
+    // earth-frame accelerations at combined pitch and heading). The Gazebo
+    // bridge instead corrects the quaternion itself on receive (sitl.c).
     rMat.m[NWU_W][X] = -2.0f * (qP.xy - -qP.wz);
     rMat.m[NWU_U][X] = -2.0f * (qP.xz + -qP.wy);
 #endif

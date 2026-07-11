@@ -130,9 +130,12 @@ GRAVITY = 9.80665
 HOVER_THRUST = 0.30        # just above the FC hoverThrottle default (1275 -> 0.275)
 RATE_GAIN = 12.0           # rad/s of body rate per unit differential thrust
 RATE_TAU = 0.08            # attitude response time constant, seconds
-TILT_V_GAIN = 4.0          # terminal horizontal speed per tan(tilt): a slow, draggy quad
+# Deliberately draggy (a real 5-inch holds 5 m/s at ~20 deg, not ~50): the
+# nav position controller tracks its velocity target through an integrator
+# and oscillates against a low-drag plant until the velocity-mode loop
+# (ap_velocity_*, currently unconsumed) exists.
+K_DRAG = 2.4               # 1/s, linear drag: 50 deg of tilt holds ~4.9 m/s
 VERT_V_GAIN = 6.0          # terminal climb rate per unit thrust above hover
-VEL_TAU_H = 0.8            # horizontal velocity response, seconds
 VEL_TAU_V = 0.3            # vertical velocity response, seconds
 
 
@@ -193,26 +196,29 @@ class MotionModel:
         self.roll = max(-1.2, min(1.2, self.roll))
         self.pitch = max(-1.2, min(1.2, self.pitch))
 
-        # First-order velocity response toward the tilt/thrust terminal
-        # velocities: the plant shape (angle ~ steady-state velocity) that
-        # Betaflight's position and altitude controllers are tuned for.
-        vt_fwd = TILT_V_GAIN * math.tan(self.pitch)
-        vt_right = TILT_V_GAIN * math.tan(self.roll)
+        # Horizontal: thrust-vector acceleration with linear drag
+        # (dv/dt = g*tan(tilt) - K_DRAG*v). Vertical: first-order response
+        # toward the thrust-above-hover terminal rate, the plant shape
+        # alt-hold is tuned for; tilt reduces the vertical thrust component
+        # (the FC compensates with 1/cos(tilt); the plant must charge for it
+        # or that boost becomes a climb bias during fast forward flight).
+        a_fwd = GRAVITY * math.tan(self.pitch)
+        a_right = GRAVITY * math.tan(self.roll)
         sin_y, cos_y = math.sin(self.yaw), math.cos(self.yaw)
-        vt = [
-            vt_fwd * sin_y + vt_right * cos_y,               # east
-            vt_fwd * cos_y - vt_right * sin_y,               # north
-            # Tilt reduces the vertical thrust component (the FC compensates
-            # with 1/cos(tilt); the plant must charge for it or that boost
-            # becomes a climb bias during fast forward flight).
-            VERT_V_GAIN * (thrust * math.cos(self.pitch) * math.cos(self.roll) - HOVER_THRUST),
+        acc_h = [
+            a_fwd * sin_y + a_right * cos_y - K_DRAG * self.vel[0],  # east
+            a_fwd * cos_y - a_right * sin_y - K_DRAG * self.vel[1],  # north
         ]
-        for i in range(3):
-            tau = VEL_TAU_V if i == 2 else VEL_TAU_H
-            new_vel = self.vel[i] + (vt[i] - self.vel[i]) * min(1.0, dt / tau)
-            self.accel[i] = (new_vel - self.vel[i]) / dt if dt > 0 else 0.0
-            self.vel[i] = new_vel
+        for i in range(2):
+            self.accel[i] = acc_h[i]
+            self.vel[i] += acc_h[i] * dt
             self.pos[i] += self.vel[i] * dt
+
+        vt_z = VERT_V_GAIN * (thrust * math.cos(self.pitch) * math.cos(self.roll) - HOVER_THRUST)
+        new_vz = self.vel[2] + (vt_z - self.vel[2]) * min(1.0, dt / VEL_TAU_V)
+        self.accel[2] = (new_vz - self.vel[2]) / dt if dt > 0 else 0.0
+        self.vel[2] = new_vz
+        self.pos[2] += self.vel[2] * dt
 
         if self.pos[2] < 0.0:
             self.pos[2] = 0.0
@@ -223,17 +229,25 @@ class MotionModel:
             self.impact_ticks = 4
 
 
-def quat_from_euler_ned(roll, pitch, yaw):
-    """Body(FRD)->world(NED) quaternion from BF-convention Euler angles."""
+def quat_from_euler_bf(roll, pitch, yaw):
+    """Body->world quaternion in Betaflight's internal NWU frames from the
+    model conventions (roll right+, pitch nose-down+, yaw compass CW+):
+    NWU yaw is CCW-positive, pitch and roll map directly."""
     cr, sr = math.cos(roll / 2), math.sin(roll / 2)
-    cp, sp = math.cos(-pitch / 2), math.sin(-pitch / 2)  # NED pitch is nose-down positive
-    cy, sy = math.cos(yaw / 2), math.sin(yaw / 2)
+    cp, sp = math.cos(pitch / 2), math.sin(pitch / 2)
+    cy, sy = math.cos(-yaw / 2), math.sin(-yaw / 2)
     return (
         cy * cp * cr + sy * sp * sr,
         cy * cp * sr - sy * sp * cr,
         cy * sp * cr + sy * cp * sr,
         sy * cp * cr - cy * sp * sr,
     )
+
+
+def quat_conj_x180(q):
+    """Similarity transform by 180 deg about x: what the gazebo plugin applies
+    to its quaternion, and what the FC's bridge undoes on receive."""
+    return (q[0], q[1], -q[2], -q[3])
 
 
 def quat_mul(a, b):
@@ -298,19 +312,24 @@ class FdmFeed(threading.Thread):
 
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
-            q = quat_mul(K_RZ_NEG90, quat_from_euler_ned(self.model.roll, self.model.pitch, self.model.yaw))
 
-            # Specific force rotated into the body (FRD) frame through the true
-            # attitude — the estimator tilt-compensates the accelerometer, so
-            # an unprojected feed leaks gravity into its vertical channel
-            # whenever the vehicle is pitched hard.
-            q_true = quat_from_euler_ned(self.model.roll, self.model.pitch, self.model.yaw)
-            f_world_ned = (
+            # The FC's bridge computes q = Rz(+90) * Rx(180) * q_packet * Rx(180),
+            # so emit the true NWU attitude pre-rotated by Rz(-90) and
+            # pre-conjugated: the FC recovers exactly q_nwu.
+            q_nwu = quat_from_euler_bf(self.model.roll, self.model.pitch, self.model.yaw)
+            q = quat_conj_x180(quat_mul(K_RZ_NEG90, q_nwu))
+
+            # Specific force in the FC's earth frame (NWU), rotated into the
+            # body with the same attitude the FC reconstructs, so the
+            # estimator's tilt-compensation inverts this rotation exactly at
+            # any heading. The packet carries the negated body vector - the
+            # SITL acc driver negates all three axes on read.
+            f_world_nwu = (
                 self.model.accel[1],                     # north
-                self.model.accel[0],                     # east
-                -(self.model.accel[2] + GRAVITY),        # down
+                -self.model.accel[0],                    # west
+                self.model.accel[2] + GRAVITY,           # up
             )
-            f_body = quat_rotate_inv(q_true, f_world_ned)
+            f_body = quat_rotate_inv(q_nwu, f_world_nwu)
 
             pkt = struct.pack(
                 "<18d",
@@ -319,7 +338,7 @@ class FdmFeed(threading.Thread):
                 # yaw CCW +. The model keeps nose-down/CW positive (compass
                 # conventions), so pitch and yaw are negated on emit.
                 self.model.rates[0], -self.model.rates[1], -self.model.rates[2],
-                f_body[0], f_body[1], f_body[2],                                 # specific force, FRD
+                -f_body[0], -f_body[1], -f_body[2],                              # negated NWU-body specific force
                 q[0], q[1], q[2], q[3],
                 self.model.vel[0], self.model.vel[1], self.model.vel[2],         # ENU m/s
                 2.0 * HOME_LON - lon_true,                                       # mirrored for the bridge

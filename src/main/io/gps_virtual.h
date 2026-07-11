@@ -22,5 +22,5 @@
 #pragma once
 
 #include "io/gps.h"
-void setVirtualGPS(double latitude, double longitude, double altiutude, double velocity, double velocity3D, double course);
+void setVirtualGPS(double latitude, double longitude, double altiutude, double velocity, double velocity3D, double course, double velNorth, double velEast, double velDown);
 void getVirtualGPS(gpsSolutionData_t *gpsSolData);
