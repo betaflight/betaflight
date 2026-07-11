@@ -148,13 +148,13 @@ gate-open transition из ADRC-001.
 | ADRC-003 | P0 | ADRC I/z3 во время crash recovery | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-004 | P0 | Устойчивая TD discretization | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-005 | P0 | Loop-rate safe ESO | `adrc-gate-fix` | IN PROGRESS | — |
-| ADRC-006 | P0 | Persisted schema для D-term LPF | `adrc-dterm-lpf` | TODO | — |
+| ADRC-006 | P0 | Persisted schema для D-term LPF | `adrc-dterm-lpf` | IN PROGRESS | — |
 | ADRC-007 | P1 | Фактически приложенный mixer feedback | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-008 | P1 | Post-override throttle для ADRC | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-009 | P1 | State limits и finite-value defenses | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-010 | P1 | Семантика CLASSIC↔ADRC handover | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-011 | P1 | Исправить vacuous gate tests | `adrc-gate-fix` | IN PROGRESS | — |
-| ADRC-012 | P1 | End-to-end tests и F411 cycle budget | `adrc-gate-fix` | TODO | — |
+| ADRC-012 | P1 | End-to-end tests и F411 cycle budget | `adrc-gate-fix` | IN PROGRESS | — |
 | ADRC-013 | P1 | Rebase, CI, release b3 и точный re-flight | `adrc-gate-fix` | BLOCKED | Нужны ADRC-001…012 |
 
 ## Детальные пункты
@@ -304,7 +304,7 @@ Acceptance criteria:
 ### ADRC-006 — Persisted schema для D-term LPF
 
 - Приоритет: **P0**, блокирует использование `adrc-dterm-lpf`.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 - Ветка: `adrc-dterm-lpf` после переноса остальных обязательных fixes.
 - Затронутые места:
@@ -470,7 +470,7 @@ Acceptance criteria:
 ### ADRC-012 — End-to-end tests и F411 cycle budget
 
 - Приоритет: **P1**.
-- Статус: `TODO`.
+- Статус: `IN PROGRESS`.
 - Implementation commit(s): —.
 
 Обязательное покрытие:
