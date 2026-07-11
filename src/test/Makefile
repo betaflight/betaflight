@@ -491,6 +491,14 @@ pid_unittest_DEFINES := \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
 
+# Reuse pid_unittest.cc's established platform stubs and reset helpers, but keep the ADRC gate
+# feedback-loop checks in a focused binary that can be mutation-tested independently.
+adrc_gate_e2e_unittest_SRC := \
+		$(pid_unittest_SRC) \
+		$(TEST_DIR)/pid_unittest.cc
+
+adrc_gate_e2e_unittest_DEFINES := $(pid_unittest_DEFINES)
+
 adrc_unittest_SRC := \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/filter.c \
@@ -915,6 +923,13 @@ endif
 
 $(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
 	@echo "compiling $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
+                -c $$< -o $$@
+
+$(OBJECT_DIR)/$1/%.cc.o: $(TEST_DIR)/%.cc
+	@echo "compiling test c++ file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
