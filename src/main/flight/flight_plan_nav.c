@@ -52,6 +52,10 @@
 #ifdef USE_GPS_RESCUE
 #include "pg/gps_rescue.h"
 #endif
+#if ENABLE_RESCUE_PLAN
+#include "flight/gps_rescue.h"
+#include "flight/imu.h"
+#endif
 
 #define FP_MIN_CRUISE_MPS         1.0f
 // Legs complete on acceptance-radius entry at any speed: the position
@@ -88,9 +92,14 @@
 // vehicle that cannot descend must keep trying, not disarm mid-air.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
 
-// Injected runtime plans are small synthesised sequences (geofence RTH today,
-// rescue-as-mission later); MAVLink-scale plans stay in the PG store.
+// Injected runtime plans are small synthesised sequences (geofence RTH,
+// failsafe rescue); MAVLink-scale plans stay in the PG store.
 #define FP_INJECTED_PLAN_MAX 4
+
+#if ENABLE_RESCUE_PLAN
+// Legacy PITCH_FORWARD gives up after 15 s of heading recovery
+#define FP_RESCUE_HEADING_TIMEOUT_US 15000000u
+#endif
 
 static struct {
     flightPlanNavState_e state;
@@ -98,7 +107,7 @@ static struct {
     timeUs_t holdStartUs;
     uint16_t holdDurationDs;
     bool active;
-    float zBiasM;               // estimator Z at engage, so waypoint Z shares the estimator baseline
+    float zBiasM;               // estimator-vs-GPS altitude frame offset, captured at engage
 
     // Staged modifiers — populated by drainModifiers(), consumed by the next
     // positional dispatch. altOverride is one-shot; delay arms a timer that
@@ -119,6 +128,16 @@ static struct {
     waypoint_t injected[FP_INJECTED_PLAN_MAX];
     uint8_t injectedCount;
 
+#if ENABLE_RESCUE_PLAN
+    // Failsafe rescue plan staged before the executor engages; drained by
+    // flightPlanNavEngage() in place of the PG mission.
+    waypoint_t staged[FP_INJECTED_PLAN_MAX];
+    uint8_t stagedCount;
+    bool isRescuePlan;          // the active injected plan is a failsafe rescue
+    bool rescueHeadingHold;     // pitch-forward heading recovery in progress
+    timeUs_t rescueHeadingStartUs;
+#endif
+
     // Leg progress tracking for stall/flyaway detection
     float bestDistanceToTargetM;
     float flyawayMarginM;
@@ -133,6 +152,7 @@ static struct {
 static flightPlanWaypointReachedFn reachedListener = NULL;
 
 static void onWaypointReached(void *userData);
+static void clearModifierState(void);
 
 static uint8_t activePlanCount(void)
 {
@@ -172,8 +192,8 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     out->v[ENU_E] = enuCm.v[EF_EAST] * 0.01f;
     out->v[ENU_N] = enuCm.v[EF_NORTH] * 0.01f;
     // Waypoint altitude is AMSL (GPS frame); the estimator's Z is zeroed to
-    // whichever source armed it first (baro or GPS). zBiasM is the estimator
-    // reading at engage time, which aligns the target Up with the feedback Up.
+    // whichever source armed it first (baro or GPS). zBiasM is the frame
+    // offset between the two, which aligns the target Up with the feedback Up.
     out->v[ENU_U] = (wp->altitude - origin.altCm) * 0.01f + fp.zBiasM;
     return true;
 }
@@ -436,6 +456,101 @@ static void injectReturnHomePlan(timeUs_t currentTimeUs)
     }
 }
 
+#if ENABLE_RESCUE_PLAN
+// Failsafe rescue mission: [climb-in-place HOLD at the current position ->
+// FLYOVER home -> LAND home]. The leading HOLD gates on altitude arrival
+// (dispatchWaypoint sets altitudeArrivalRequired for HOLD), so the climb
+// completes before the return leg starts — legacy ATTAIN_ALT semantics.
+static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
+{
+    if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
+        return 0;
+    }
+
+    const int32_t homeAltCm = GPS_home_llh.altCm;
+    const int32_t currentAltCm = gpsSol.llh.altCm;
+    const int32_t climbCm = (int32_t)gpsRescueConfig()->initialClimbM * 100;
+    const int32_t fixedCm = (int32_t)gpsRescueConfig()->returnAltitudeM * 100;
+
+    int32_t returnAltCm;
+    if (GPS_distanceToHome < gpsRescueConfig()->minStartDistM) {
+        // Legacy close-range branch: modest headroom rather than a full climb
+        returnAltCm = MAX(homeAltCm + 750, currentAltCm + climbCm);
+    } else {
+        switch (gpsRescueConfig()->altitudeMode) {
+        case GPS_RESCUE_ALT_MODE_FIXED:
+            returnAltCm = homeAltCm + fixedCm;
+            break;
+        case GPS_RESCUE_ALT_MODE_CURRENT:
+            returnAltCm = currentAltCm + climbCm;
+            break;
+        case GPS_RESCUE_ALT_MODE_MAX:
+        default:
+            // Legacy tracks max altitude relative to the arming point; home
+            // altitude anchors it back to the AMSL frame waypoints use.
+            returnAltCm = homeAltCm + (int32_t)gpsRescueGetMaxAltitudeCm() + climbCm;
+            break;
+        }
+    }
+    returnAltCm = MAX(returnAltCm, currentAltCm); // never command an en-route descent
+
+    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
+    out[0] = (waypoint_t){
+        .latitude = gpsSol.llh.lat,
+        .longitude = gpsSol.llh.lon,
+        .altitude = returnAltCm,
+        .type = WAYPOINT_TYPE_HOLD,
+    };
+    out[1] = (waypoint_t){
+        .latitude = GPS_home_llh.lat,
+        .longitude = GPS_home_llh.lon,
+        .altitude = returnAltCm,
+        .speed = speedCmS,
+        .type = WAYPOINT_TYPE_FLYOVER,
+    };
+    out[2] = (waypoint_t){
+        .latitude = GPS_home_llh.lat,
+        .longitude = GPS_home_llh.lon,
+        .altitude = returnAltCm,
+        .speed = speedCmS,
+        .type = WAYPOINT_TYPE_LAND,
+    };
+    return 3;
+}
+
+bool flightPlanNavStageRescuePlan(void)
+{
+    waypoint_t plan[FP_INJECTED_PLAN_MAX];
+    const uint8_t count = buildRescuePlan(plan);
+    if (count == 0) {
+        return false;
+    }
+
+    if (fp.active) {
+        // Already flying (rx-loss during a mission): replace it immediately.
+        memcpy(fp.injected, plan, count * sizeof(plan[0]));
+        fp.injectedCount = count;
+        fp.currentIndex = 0;
+        fp.abortReason = FP_ABORT_NONE;
+        fp.isRescuePlan = true;
+        fp.rescueHeadingHold = false;
+        fp.stagedCount = 0;
+        clearModifierState();
+        dispatchWaypoint();
+        return true;
+    }
+
+    memcpy(fp.staged, plan, count * sizeof(plan[0]));
+    fp.stagedCount = count;
+    return true;
+}
+
+bool flightPlanNavIsRescuePlanActive(void)
+{
+    return fp.active && fp.isRescuePlan;
+}
+#endif // ENABLE_RESCUE_PLAN
+
 static void checkGeofence(timeUs_t currentTimeUs)
 {
     // An injected plan is itself the geofence response; evaluating the fence
@@ -499,6 +614,18 @@ static void onWaypointReached(void *userData)
         reachedListener(fp.currentIndex);
     }
 
+#if ENABLE_RESCUE_PLAN
+    // Rescue climb complete but the IMU heading is untrusted: hold here and
+    // pitch forward so GPS course-over-ground can teach the estimator its
+    // heading before the return leg (legacy PITCH_FORWARD semantics).
+    if (fp.isRescuePlan && fp.currentIndex == 0 && activePlanCount() > 1 && !imuIsHeadingValid()) {
+        fp.rescueHeadingHold = true;
+        fp.rescueHeadingStartUs = micros();
+        pitchForwardOverride(true);
+        return;
+    }
+#endif
+
     // A LAND duration is a pre-descent loiter; the hold-expiry path starts
     // the descent instead of advancing.
     const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD) || (wp->type == WAYPOINT_TYPE_LAND);
@@ -538,6 +665,11 @@ void flightPlanNavInit(void)
     fp.zBiasM = 0.0f;
     fp.abortReason = FP_ABORT_NONE;
     fp.injectedCount = 0;
+#if ENABLE_RESCUE_PLAN
+    fp.stagedCount = 0;
+    fp.isRescuePlan = false;
+    fp.rescueHeadingHold = false;
+#endif
     clearModifierState();
 }
 
@@ -551,14 +683,38 @@ void flightPlanNavEngage(void)
     fp.injectedCount = 0;
     clearModifierState();
 
-    // Capture the estimator's current Z so subsequent waypoint altitudes are
-    // referenced to the same baseline the position controller uses.
-    fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+    // Reconcile the estimator's altitude baseline with the GPS frame waypoint
+    // altitudes are computed in. The pure frame offset (estimator reading
+    // minus GPS height above origin) is valid at any engagement altitude —
+    // a failsafe rescue engages mid-flight, where the raw estimator reading
+    // would shift the whole plan up by the current height.
+    gpsLocation_t origin;
+    if (positionEstimatorGetGpsOrigin(&origin)) {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f - (gpsSol.llh.altCm - origin.altCm) * 0.01f;
+    } else {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+    }
 
     // HOLD waypoints keep the position target live for the hold duration; a
     // new target replaces the previous on advance anyway, so this module
     // never wants positionNav to auto-clear the target on reach.
     positionNavSetAutoClearOnReach(false);
+
+#if ENABLE_RESCUE_PLAN
+    fp.isRescuePlan = false;
+    fp.rescueHeadingHold = false;
+    if (fp.stagedCount > 0) {
+        // A staged failsafe rescue plan replaces the PG mission entirely;
+        // rescue waypoint 0 is dispatched, never PG waypoint 0.
+        memcpy(fp.injected, fp.staged, fp.stagedCount * sizeof(fp.injected[0]));
+        fp.injectedCount = fp.stagedCount;
+        fp.stagedCount = 0;
+        fp.isRescuePlan = true;
+        fp.active = true;
+        dispatchWaypoint();
+        return;
+    }
+#endif
 
     if (flightPlanConfig()->waypointCount == 0) {
         fp.state = FP_NAV_COMPLETE;
@@ -578,6 +734,14 @@ void flightPlanNavDisengage(void)
     fp.active = false;
     fp.state = FP_NAV_IDLE;
     fp.injectedCount = 0;
+#if ENABLE_RESCUE_PLAN
+    fp.stagedCount = 0;
+    fp.isRescuePlan = false;
+    if (fp.rescueHeadingHold) {
+        fp.rescueHeadingHold = false;
+        pitchForwardOverride(false);
+    }
+#endif
     clearModifierState();
     positionNavClearTarget();
 }
@@ -592,6 +756,9 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     fp.injectedCount = count;
     fp.currentIndex = 0;
     fp.abortReason = FP_ABORT_NONE;
+#if ENABLE_RESCUE_PLAN
+    fp.isRescuePlan = false;
+#endif
     clearModifierState();
     // If dispatch fails (GPS origin lost) the state falls back to IDLE and
     // the update loop retries against the injected plan.
@@ -609,6 +776,23 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     if (!fp.active) {
         return;
     }
+
+#if ENABLE_RESCUE_PLAN
+    if (fp.rescueHeadingHold) {
+        // Leg progress/stall checks are meaningless while deliberately
+        // pitching forward away from the climb waypoint.
+        if (imuIsHeadingValid()) {
+            pitchForwardOverride(false);
+            fp.rescueHeadingHold = false;
+            advanceToNext();
+        } else if (cmpTimeUs(currentTimeUs, fp.rescueHeadingStartUs) >= (timeDelta_t)FP_RESCUE_HEADING_TIMEOUT_US) {
+            pitchForwardOverride(false);
+            fp.rescueHeadingHold = false;
+            abortMission(FP_ABORT_HEADING);
+        }
+        return;
+    }
+#endif
 
     // Retry dispatch if we engaged before the estimator had an origin.
     if (fp.state == FP_NAV_IDLE && activePlanCount() > 0) {

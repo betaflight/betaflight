@@ -907,8 +907,10 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
     ASSERT_TRUE(flightPlanNavIsInjectedPlanActive());
-    // Never descend en route: return at the higher of the two altitudes.
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
+    // Never descend en route: the plan returns at the current GPS altitude,
+    // which in the estimator's feedback frame is its reading at engage (the
+    // stub reads 0 while GPS says 150 m AMSL — a mid-flight engagement).
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)

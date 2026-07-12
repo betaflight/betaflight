@@ -1053,8 +1053,14 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GPS_RESCUE
+    // With ENABLE_RESCUE_PLAN the failsafe procedure flies a rescue mission
+    // under AUTOPILOT_MODE instead; only the pilot's switch selects legacy
+    // rescue, which then preempts the mission via the gate below.
     if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
-        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+#if !ENABLE_RESCUE_PLAN
+        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)
+#endif
+        )) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }

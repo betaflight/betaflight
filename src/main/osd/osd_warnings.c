@@ -409,6 +409,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         case FP_ABORT_FLYAWAY:
             tfp_sprintf(warningText, "WP FLYAWAY");
             break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
         default:
             tfp_sprintf(warningText, "WP ABORT");
             break;

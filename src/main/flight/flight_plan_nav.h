@@ -42,6 +42,7 @@ typedef enum {
     FP_ABORT_ESTIMATOR,     // XY position estimate became invalid mid-mission
     FP_ABORT_STALLED,       // no progress toward the target within the stall window
     FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
+    FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
 } flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
@@ -71,6 +72,16 @@ flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 // stored mission, with no resume of what was preempted.
 bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
 bool flightPlanNavIsInjectedPlanActive(void);
+
+#if ENABLE_RESCUE_PLAN
+// Synthesise a failsafe rescue mission (climb-in-place, fly home, land) from
+// the current position and home, staged for the next flightPlanNavEngage() to
+// consume in place of the PG mission; injected immediately if the executor is
+// already active. Returns false when no home or fix exists to build a plan —
+// the failsafe caller then degrades to auto-landing.
+bool flightPlanNavStageRescuePlan(void);
+bool flightPlanNavIsRescuePlanActive(void);
+#endif
 
 // Single observer slot for "waypoint reached" — invoked with the index of the
 // waypoint that was just reached, before any HOLD timer or advance. Pass NULL

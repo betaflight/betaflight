@@ -199,6 +199,18 @@ flight_failsafe_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
 		ENABLE_FLIGHT_PLAN=1
 
+flight_failsafe_rescue_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
+
+flight_failsafe_rescue_unittest_DEFINES := \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
+
 
 flight_imu_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
@@ -531,6 +543,22 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_rescue_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/gps_rescue_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_rescue_unittest_DEFINES := \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
+
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 

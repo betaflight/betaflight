@@ -872,6 +872,16 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
+// Failsafe GPS rescue flown as a synthesised flight-plan mission instead of
+// the legacy gps_rescue controller. Opt-in; the BOXGPSRESCUE switch keeps
+// flying legacy rescue either way.
+#if !defined(ENABLE_RESCUE_PLAN)
+#define ENABLE_RESCUE_PLAN 0
+#endif
+#if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
+#error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
+#endif
+
 #if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
 #error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
