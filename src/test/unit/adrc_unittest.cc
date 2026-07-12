@@ -79,6 +79,15 @@ protected:
         }
         adrcResetGate(&runtime);
     }
+
+    // The b0 schedule reads a low-passed collective (~80 ms tau); run enough loops for the filter
+    // to fully settle on the current simulatedThrottle before asserting steady-state values.
+    void settleB0ThrottleScale()
+    {
+        for (int i = 0; i < 400; i++) {
+            adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        }
+    }
 };
 
 } // namespace
@@ -317,11 +326,11 @@ TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)
     profile.b0ThrottleScaleMax = 9; // raise the ceiling out of the way - the quadratic law itself is under test
 
     simulatedThrottle = 0.35f; // at hover
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    settleB0ThrottleScale();
     EXPECT_NEAR(1.0f, runtime.b0ThrottleScale, 1e-4f);
 
     simulatedThrottle = 0.70f; // 2x hover -> scale should be 2^2 = 4
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    settleB0ThrottleScale();
     EXPECT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
@@ -329,7 +338,7 @@ TEST_F(AdrcUnittest, B0ThrottleScaleNeverGoesBelowOne)
 {
     profile.hoverThrottlePercent = 35;
     simulatedThrottle = 0.0f; // below hover
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    settleB0ThrottleScale();
     EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
 }
 
@@ -340,7 +349,7 @@ TEST_F(AdrcUnittest, B0ThrottleScaleClampsToMax)
     // on throttle punches (see adrcResetProfile()).
     profile.hoverThrottlePercent = 10; // low hover setting so full throttle exceeds the clamp
     simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to the default max (3)
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    settleB0ThrottleScale();
     EXPECT_NEAR(3.0f, runtime.b0ThrottleScale, 1e-3f);
 }
 
@@ -349,8 +358,59 @@ TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)
     profile.hoverThrottlePercent = 10; // ratio = 10, ratio^2 = 100 at full throttle
     profile.b0ThrottleScaleMax = 20;
     simulatedThrottle = 1.0f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    settleB0ThrottleScale();
     EXPECT_NEAR(20.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleReleasesGraduallyOnThrottleChop)
+{
+    // A throttle chop must not collapse the scale within one loop: the z3 that adapted through
+    // the inflated b0 during the high-throttle phase over-applies the moment the divisor snaps
+    // back to 1, swinging the craft against the punch (flight-measured ~90 deg/s uncommanded
+    // pitch "rebound", 2026-07-12). The low-passed collective (~80 ms tau) releases the scale on
+    // the same timescale the ESO re-adapts.
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9;
+
+    simulatedThrottle = 0.70f;
+    settleB0ThrottleScale();
+    ASSERT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+
+    simulatedThrottle = 0.35f; // chop back to hover
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_GT(runtime.b0ThrottleScale, 3.5f);   // still near the pre-chop value one loop later
+
+    settleB0ThrottleScale();
+    EXPECT_NEAR(1.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleIgnoresLoopRateCollectiveModulation)
+{
+    // The published collective includes the mixer's per-loop constrain, which tracks the loop's
+    // own axis activity (airmode raises collective to make room for the mix). Fed raw, that
+    // modulated the effective gain at the ~25 Hz loop resonance (debug d7 swinging 1.0..2.8 at a
+    // steady stick - flight A/B 2026-07-12). The b0 schedule must respond to the average, not the
+    // per-loop swings.
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9;
+
+    simulatedThrottle = 0.525f; // settle at the mean of the modulation below
+    settleB0ThrottleScale();
+    const float meanScale = runtime.b0ThrottleScale;
+
+    float minScale = meanScale, maxScale = meanScale;
+    for (int i = 0; i < 500; i++) {
+        simulatedThrottle = (i & 1) ? 0.70f : 0.35f; // +/-50% collective swing, alternating loops
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        if (i >= 250) { // measure after the transient
+            minScale = fminf(minScale, runtime.b0ThrottleScale);
+            maxScale = fmaxf(maxScale, runtime.b0ThrottleScale);
+        }
+    }
+    // Unfiltered, the scale would swing the full 1.0..4.0 range; filtered it must stay close to
+    // the mean response.
+    EXPECT_LT(maxScale - minScale, 0.5f);
+    EXPECT_NEAR(meanScale, (maxScale + minScale) * 0.5f, 0.5f);
 }
 
 TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)

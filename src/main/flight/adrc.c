@@ -87,6 +87,17 @@
 // low throttle.
 #define ADRC_HOVER_THROTTLE_MIN_FRACTION 0.05f
 
+// The b0 schedule reads a low-passed collective rather than the raw per-loop value, for two
+// flight-measured reasons (A/B on identical tune, 2026-07-12): (1) the published collective
+// includes the mixer's per-loop constrain, which tracks the loop's own axis activity (airmode
+// raises collective to make room for the mix) - fed raw, it modulated the effective gain by tens
+// of percent right at the ~25 Hz loop resonance (debug d7 swinging 1.0..2.8 at a steady stick);
+// (2) a throttle chop collapsed the scale 3->1 within ~80 ms, faster than the ESO re-adapts, so
+// the z3 that had wound up through the inflated b0 over-applied at scale 1 and swung the craft
+// against the punch (~90 deg/s uncommanded pitch, the "nose dip rebound"). An ~80 ms time
+// constant smooths both paths without delaying punch scaling meaningfully.
+#define ADRC_B0_SCALE_THROTTLE_LPF_HZ 2.0f
+
 // Relationships between the liftoff-gate tunables that per-value CLI ranges cannot enforce,
 // sanitized at point of use in adrcUpdatePerLoopState(). These only apply when the opt-in mid-air
 // re-arm is enabled at all (adrc_liftoff_idle_hold_ms > 0, see adrcResetProfile()):
@@ -286,6 +297,7 @@ void adrcInitConfig(const adrcProfile_t *adrcProfile, adrcRuntime_t *adrcRuntime
     }
 
     adrcRuntime->b0ThrottleScale = 1.0f;
+    adrcRuntime->b0ScaleThrottle = 0.0f;
 }
 
 void adrcResetState(adrcRuntime_t *adrcRuntime, int axis)
@@ -424,8 +436,17 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
 
     // Motor authority ~ throttle^2, so a hover-tuned b0 is wrong away from hover; scale only UP
     // (clamped) - scaling down would make 1/b0 huge and inject extreme output at low throttle.
+    // The schedule reads a low-passed collective, not the raw per-loop value - see the
+    // ADRC_B0_SCALE_THROTTLE_LPF_HZ comment up top for the two flight-measured failure modes
+    // (26 Hz gain modulation through the mixer constrain; z3 rebound on throttle chops). The
+    // liftoff gate above deliberately stays on the raw value: liftoff detection must be prompt.
+    const float throttleLpfGain = (finiteDt > 0.0f) ? pt1FilterGain(ADRC_B0_SCALE_THROTTLE_LPF_HZ, finiteDt) : 1.0f;
+    if (!adrcIsFinite(adrcRuntime->b0ScaleThrottle)) {
+        adrcRuntime->b0ScaleThrottle = throttle;
+    }
+    adrcRuntime->b0ScaleThrottle += throttleLpfGain * (throttle - adrcRuntime->b0ScaleThrottle);
     const float hover = fmaxf(adrcProfile->hoverThrottlePercent * 0.01f, ADRC_HOVER_THROTTLE_MIN_FRACTION);
-    const float throttleRatio = throttle / hover;
+    const float throttleRatio = adrcRuntime->b0ScaleThrottle / hover;
     const float maxB0Scale = constrainf(adrcProfile->b0ThrottleScaleMax, 1.0f, ADRC_B0_SCALE_MAX);
     adrcRuntime->b0ThrottleScale = constrainf(throttleRatio * throttleRatio, 1.0f, maxB0Scale);
 }

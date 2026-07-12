@@ -124,6 +124,8 @@ typedef struct adrcRuntime_s {
     float idleS;            // seconds throttle has stayed at idle (gate re-arm)
     float b0ThrottleScale;  // (throttle/hover)^2, clamped - shared cache updated once per loop by
                              // adrcUpdatePerLoopState(), applied per-axis in adrcApplyControl()
+    float b0ScaleThrottle;  // low-passed collective feeding the b0 schedule above (the gate reads
+                             // the raw value) - see ADRC_B0_SCALE_THROTTLE_LPF_HZ in adrc.c
 #ifdef USE_YAW_SPIN_RECOVERY
     bool yawSpinActivePreviousLoop; // holds disturbance I at zero for the first loop after yaw-spin
                                      // recovery clears; see adrcLatchYawSpinRecovery()
