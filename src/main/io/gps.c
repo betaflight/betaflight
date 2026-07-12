@@ -1368,25 +1368,40 @@ static void updateVirtualGPS(void)
     static uint32_t nextUpdateTime = 0;
 
     if (cmp32(gpsData.now, nextUpdateTime) > 0) {
-        if (gpsData.state == GPS_STATE_INITIALIZED) {
-            gpsSetState(GPS_STATE_RECEIVING_DATA);
+        // Freshness is a feeder-thread counter, checked against this task's
+        // own clock: a stale feed leaves lastNavMessage frozen so the
+        // RECEIVING_DATA timeout below trips, exactly as a real receiver
+        // going dark. Fresh data recovers from the post-timeout DETECT_BAUD
+        // parking state.
+        static uint32_t lastCount = 0;
+        static uint32_t lastCountChangeMs = 0;
+        const uint32_t count = getVirtualGPSUpdateCount();
+        if (count != lastCount) {
+            lastCount = count;
+            lastCountChangeMs = gpsData.now;
         }
+        const bool fresh = (lastCountChangeMs != 0) && (cmp32(gpsData.now, lastCountChangeMs) < GPS_TIMEOUT_MS);
 
-        getVirtualGPS(&gpsSol);
-        gpsSol.time = gpsData.now;
+        if (fresh) {
+            if (gpsData.state == GPS_STATE_INITIALIZED || gpsData.state == GPS_STATE_DETECT_BAUD) {
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+            }
+            getVirtualGPS(&gpsSol);
+            gpsSol.time = gpsData.now;
 
-        gpsData.lastNavMessage = gpsData.now;
-        sensorsSet(SENSOR_GPS);
+            gpsData.lastNavMessage = gpsData.now;
+            sensorsSet(SENSOR_GPS);
 
-        if (gpsSol.numSat > 3) {
-            gpsSetFixState(GPS_FIX);
-        } else {
-            gpsSetFixState(0);
+            if (gpsSol.numSat > 3) {
+                gpsSetFixState(GPS_FIX);
+            } else {
+                gpsSetFixState(0);
+            }
+            GPS_update ^= GPS_DIRECT_TICK;
+
+            calculateNavInterval();
+            onGpsNewData();
         }
-        GPS_update ^= GPS_DIRECT_TICK;
-
-        calculateNavInterval();
-        onGpsNewData();
 
         nextUpdateTime = gpsData.now + updateInterval;
     }

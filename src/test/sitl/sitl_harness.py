@@ -280,12 +280,17 @@ class FdmFeed(threading.Thread):
     first packet's origin (the FC un-mirrors).
     """
 
-    def __init__(self, motors=None):
+    def __init__(self, motors=None, initial_yaw_deg=0.0):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.model = MotionModel()
+        self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
         self.running = True
+        self.gps_valid = True     # False emits out-of-range lat/lon: the FC's GPS goes dark
+        self.history = []         # (t, east, north, up, ve, vn, vu, heading_deg) at ~10 Hz
+        self._hist_lock = threading.Lock()
+        self._hist_decim = 0
         self.t0 = time.monotonic()
 
     def move_east(self, metres):
@@ -300,6 +305,38 @@ class FdmFeed(threading.Thread):
     def heading_deg(self):
         return math.degrees(self.model.yaw) % 360.0
 
+    def snapshot_history(self):
+        with self._hist_lock:
+            return list(self.history)
+
+    def max_altitude(self):
+        return max((s[3] for s in self.snapshot_history()), default=0.0)
+
+    def time_to_home(self, radius_m=10.0, after_t=0.0):
+        """First recorded time the craft is within radius_m of home, after after_t."""
+        for s in self.snapshot_history():
+            if s[0] > after_t and math.hypot(s[1], s[2]) < radius_m:
+                return s[0]
+        return None
+
+    def touchdown(self, after_t=0.0):
+        """(t, east, north) of the first on-ground sample following airborne flight."""
+        airborne = False
+        for s in self.snapshot_history():
+            if s[0] < after_t:
+                continue
+            if s[3] > 1.0:
+                airborne = True
+            elif airborne and s[3] <= 0.01:
+                return (s[0], s[1], s[2])
+        return None
+
+    def max_distance_from_home(self, after_t=0.0):
+        return max((math.hypot(s[1], s[2]) for s in self.snapshot_history() if s[0] >= after_t), default=0.0)
+
+    def now_t(self):
+        return time.monotonic() - self.t0
+
     def run(self):
         last = time.monotonic()
         while self.running:
@@ -308,6 +345,15 @@ class FdmFeed(threading.Thread):
             last = now
             m = self.motors.motors if self.motors else [0.0] * 4
             self.model.step(dt, m)
+
+            self._hist_decim += 1
+            if self._hist_decim >= 5:  # ~10 Hz of the 50 Hz loop
+                self._hist_decim = 0
+                with self._hist_lock:
+                    self.history.append((now - self.t0,
+                                         self.model.pos[0], self.model.pos[1], self.model.pos[2],
+                                         self.model.vel[0], self.model.vel[1], self.model.vel[2],
+                                         self.heading_deg()))
 
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
@@ -330,6 +376,11 @@ class FdmFeed(threading.Thread):
             )
             f_body = quat_rotate_inv(q_nwu, f_world_nwu)
 
+            # Out-of-range lat/lon = GPS-loss sentinel; the FC skips the
+            # virtual GPS update and its receive timeout trips, while IMU
+            # feeds stay live. (NaN would be folded away by -ffast-math.)
+            lon_pkt = 2.0 * HOME_LON - lon_true if self.gps_valid else 999.0
+            lat_pkt = 2.0 * HOME_LAT - lat_true if self.gps_valid else 999.0
             pkt = struct.pack(
                 "<18d",
                 now - self.t0,
@@ -340,8 +391,8 @@ class FdmFeed(threading.Thread):
                 -f_body[0], -f_body[1], -f_body[2],                              # negated NWU-body specific force
                 q[0], q[1], q[2], q[3],
                 self.model.vel[0], self.model.vel[1], self.model.vel[2],         # ENU m/s
-                2.0 * HOME_LON - lon_true,                                       # mirrored for the bridge
-                2.0 * HOME_LAT - lat_true,
+                lon_pkt,                                                         # mirrored for the bridge
+                lat_pkt,
                 HOME_ALT_M + self.model.pos[2],
                 101325.0,
             )
@@ -544,6 +595,8 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
+        # the estimator needs the truth-fed virtual mag as a heading source
+        "set trust_mag = ON",
         # matches the MotionModel plant: atan(K_DRAG * v / g) over cruise speeds
         "set ap_velocity_drag_coeff = 440",
         # 10 m above home, 5 m/s — low and quick keeps landing scenarios short

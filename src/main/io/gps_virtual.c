@@ -29,9 +29,14 @@
 #include "io/gps_virtual.h"
 
 static gpsSolutionData_t gpsVirtualData;
+static uint32_t updateCount = 0;
 
 void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course, double velNorth, double velEast, double velDown)
 {
+    // May be called from a feeder thread (SITL UDP receive); the counter is a
+    // single word so the GPS task can detect freshness without a cross-thread
+    // clock read.
+    updateCount++;
     gpsVirtualData.numSat = 12;    // satellites_in_view
     gpsVirtualData.acc.hAcc = 500; // horizontal_pos_accuracy - convert cm to mm
     gpsVirtualData.acc.vAcc = 500; // vertical_pos_accuracy - convert cm to mm
@@ -53,5 +58,10 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
 void getVirtualGPS(gpsSolutionData_t *gpsSolData)
 {
     *gpsSolData = gpsVirtualData;
+}
+
+uint32_t getVirtualGPSUpdateCount(void)
+{
+    return updateCount;
 }
 #endif
