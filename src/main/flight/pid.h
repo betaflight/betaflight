@@ -541,12 +541,6 @@ typedef struct pidRuntime_s {
     adrcRuntime_t adrc;
     uint8_t activePidType;                  // pid_type last initialized into controller memory
                                             // (pidType_e); configuration changes reset both laws
-#ifdef USE_YAW_SPIN_RECOVERY
-    bool adrcYawSpinActivePreviousLoop;      // holds disturbance I at zero for the first exit loop
-#endif
-    bool adrcWasArmed;                       // previous loop's ARMED state; a rising edge starts a
-                                             // fresh ADRC epoch (ADRC-017: the stabilisation-disabled
-                                             // reset path is dead code at stock pid_at_min_throttle=ON)
 #endif
 } pidRuntime_t;
 

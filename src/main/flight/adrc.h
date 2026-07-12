@@ -124,6 +124,12 @@ typedef struct adrcRuntime_s {
     float idleS;            // seconds throttle has stayed at idle (gate re-arm)
     float b0ThrottleScale;  // (throttle/hover)^2, clamped - shared cache updated once per loop by
                              // adrcUpdatePerLoopState(), applied per-axis in adrcApplyControl()
+#ifdef USE_YAW_SPIN_RECOVERY
+    bool yawSpinActivePreviousLoop; // holds disturbance I at zero for the first loop after yaw-spin
+                                     // recovery clears; see adrcLatchYawSpinRecovery()
+#endif
+    bool wasArmed;          // previous loop's ARMED state; a rising edge starts a fresh ADRC epoch
+                             // (ADRC-017) - see adrcUpdateArmTransition()
 } adrcRuntime_t;
 
 // P/I/D fields are repurposed purely for blackbox/mixer compatibility; they do not carry their
@@ -148,6 +154,30 @@ void adrcResetState(adrcRuntime_t *adrcRuntime, int axis);
 // cut the ESO's b0*u feedback while still airborne.
 void adrcResetGate(adrcRuntime_t *adrcRuntime);
 
+// Resets everything: all per-axis ESO/output state, the liftoff gate, and the recovery-latch
+// flags. Call on the disarm->arm transition (via adrcUpdateArmTransition() below) and from
+// controller-disabled epochs (stabilisation off, gyro overflow, Crash Flip).
+void adrcResetAll(adrcRuntime_t *adrcRuntime);
+
+// Feed the current ARMED state once per loop; a rising edge (disarm->arm) starts a fresh ADRC
+// epoch via adrcResetAll(). This must not depend on the pidStabilisationEnabled reset path: with
+// the stock default pid_at_min_throttle = ON that path never runs while disarmed (ADRC-017).
+void adrcUpdateArmTransition(adrcRuntime_t *adrcRuntime, bool armed);
+
+#ifdef USE_YAW_SPIN_RECOVERY
+// Feed the current yaw-spin state once per loop; returns whether recovery handling must stay
+// active this loop, which extends one loop past the detector clearing (see adrc.c).
+bool adrcLatchYawSpinRecovery(adrcRuntime_t *adrcRuntime, bool yawSpinActive);
+#endif
+
+// Stores the control output actually applied to the plant this loop (post mixer normalization /
+// saturation), fed back to the observer as b0*u next iteration.
+void adrcSetAppliedOutput(adrcRuntime_t *adrcRuntime, int axis, float output);
+
+// Zeroes the lumped disturbance estimate (z3) for one axis; used by crash recovery to keep a
+// pre-crash disturbance trim out of the recovery control action.
+void adrcClearDisturbanceEstimate(adrcRuntime_t *adrcRuntime, int axis);
+
 // Updates the shared (not per-axis) liftoff-gate latch and throttle-scaled b0 cache. Call once per
 // PID loop, before the per-axis loop, so adrcApplyControl() below can read consistent state for
 // all three axes in one iteration.
@@ -158,5 +188,11 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
 // only state/term that gets an authority-derived bound.
 adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRate, float currentPidSetpoint,
     float dT, float pidSumLimit);
+
+// adrcApplyControl() plus the yaw-spin/crash recovery disturbance policy (see adrc.c). This is
+// the entry point pid.c uses; the recovery flags simply pass through as false when the respective
+// feature is compiled out or inactive.
+adrcOutput_t adrcApplyControlWithRecovery(adrcRuntime_t *adrcRuntime, int axis, float gyroRate,
+    float currentPidSetpoint, float dT, float pidSumLimit, bool yawSpinRecoveryActive, bool crashRecoveryActive);
 
 #endif // USE_ADRC

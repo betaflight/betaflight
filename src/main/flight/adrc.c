@@ -309,6 +309,53 @@ void adrcResetGate(adrcRuntime_t *adrcRuntime)
     adrcRuntime->idleS = 0.0f;
 }
 
+void adrcResetAll(adrcRuntime_t *adrcRuntime)
+{
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(adrcRuntime, axis);
+    }
+    adrcResetGate(adrcRuntime);
+#ifdef USE_YAW_SPIN_RECOVERY
+    adrcRuntime->yawSpinActivePreviousLoop = false;
+#endif
+}
+
+void adrcUpdateArmTransition(adrcRuntime_t *adrcRuntime, bool armed)
+{
+    // With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true while
+    // disarmed, so the !pidStabilisationEnabled reset branch in pidController() never runs and
+    // the liftoff gate plus ESO state would survive disarm into the next arm cycle. Measured
+    // consequence: after a landing the still-open gate lets z3 wind against outputs the ground
+    // (or the disarmed motors) never let act, and that stale disturbance trim then enters the
+    // next takeoff. Start every arm cycle with a fresh epoch instead (ADRC-017).
+    if (armed && !adrcRuntime->wasArmed) {
+        adrcResetAll(adrcRuntime);
+    }
+    adrcRuntime->wasArmed = armed;
+}
+
+#ifdef USE_YAW_SPIN_RECOVERY
+bool adrcLatchYawSpinRecovery(adrcRuntime_t *adrcRuntime, bool yawSpinActive)
+{
+    // Keep the disturbance integrator suppressed for the first loop after yaw-spin detection
+    // clears. That loop resumes ordinary P/D control, but must not expose a freshly estimated I
+    // term immediately after recovery forced the published I channel to zero.
+    const bool activeThisLoop = yawSpinActive || adrcRuntime->yawSpinActivePreviousLoop;
+    adrcRuntime->yawSpinActivePreviousLoop = yawSpinActive;
+    return activeThisLoop;
+}
+#endif
+
+void adrcSetAppliedOutput(adrcRuntime_t *adrcRuntime, int axis, float output)
+{
+    adrcRuntime->lastOutput[axis] = output;
+}
+
+void adrcClearDisturbanceEstimate(adrcRuntime_t *adrcRuntime, int axis)
+{
+    adrcRuntime->z3[axis] = 0.0f;
+}
+
 void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adrcProfile, float dT)
 {
     const bool wasLiftoff = adrcRuntime->liftoff;
@@ -498,6 +545,29 @@ adrcOutput_t adrcApplyControl(adrcRuntime_t *adrcRuntime, int axis, float gyroRa
         DEBUG_SET(DEBUG_ADRC, 7, lrintf((adrcRuntime->liftoff ? 1.0f : -1.0f) * adrcRuntime->b0ThrottleScale * 100.0f));
     } else { // FD_YAW
         DEBUG_SET(DEBUG_ADRC, 6, lrintf(constrainf(adrcRuntime->z3[axis] / ADRC_Z3_LOG_SCALE, -ADRC_DEBUG_LIMIT, ADRC_DEBUG_LIMIT)));
+    }
+
+    return output;
+}
+
+adrcOutput_t adrcApplyControlWithRecovery(adrcRuntime_t *adrcRuntime, int axis, float gyroRate,
+    float currentPidSetpoint, float dT, float pidSumLimit, bool yawSpinRecoveryActive, bool crashRecoveryActive)
+{
+    // Remove a pre-recovery disturbance estimate before the ESO step so stale z3 cannot enter z2
+    // once. lastOutput is kept: it is the real command applied during recovery and remains valid
+    // b0*u feedback for the observer's acceleration state.
+    if (yawSpinRecoveryActive || crashRecoveryActive) {
+        adrcRuntime->z3[axis] = 0.0f;
+    }
+
+    adrcOutput_t output = adrcApplyControl(adrcRuntime, axis, gyroRate, currentPidSetpoint, dT, pidSumLimit);
+
+    if (yawSpinRecoveryActive) {
+        // The ESO step above may estimate a fresh disturbance from the recovery transient.
+        // Suppress it through the first exit loop, then resume from a clean zero state. (Crash
+        // recovery handles its own I/z3 post-pass across all axes at once - see pidController().)
+        adrcRuntime->z3[axis] = 0.0f;
+        output.I = 0.0f;
     }
 
     return output;

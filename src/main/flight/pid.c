@@ -1074,54 +1074,31 @@ void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale,
     const float appliedYawLimit = yawSumLimit > 0.0f ? yawSumLimit : pidProfile->pidSumLimitYaw;
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         const float sumLimit = axis == FD_YAW ? appliedYawLimit : pidProfile->pidSumLimit;
-        pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -sumLimit, sumLimit) * appliedScale;
+        adrcSetAppliedOutput(&pidRuntime.adrc, axis, constrainf(pidData[axis].Sum, -sumLimit, sumLimit) * appliedScale);
     }
 }
-
-static FAST_CODE_NOINLINE void adrcResetAllState(void);
 
 static FAST_CODE_NOINLINE void updateAdrcSharedState(const pidProfile_t *pidProfile)
 {
     if (pidProfile->pid_type == PID_TYPE_ADRC) {
-        // With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true while
-        // disarmed, so the !pidStabilisationEnabled reset branch in pidController() never runs and
-        // the liftoff gate plus ESO state would survive disarm into the next arm cycle. Measured
-        // consequence: after a landing the still-open gate lets z3 wind against outputs the ground
-        // (or the disarmed motors) never let act, and that stale disturbance trim then enters the
-        // next takeoff. Start every arm cycle with a fresh epoch instead (ADRC-017).
-        const bool armed = ARMING_FLAG(ARMED);
-        if (armed && !pidRuntime.adrcWasArmed) {
-            adrcResetAllState();
-        }
-        pidRuntime.adrcWasArmed = armed;
+        // A disarm->arm rising edge starts a fresh ADRC epoch (ADRC-017; see adrc.c) - the
+        // stabilisation-disabled reset branch below is dead code at stock pid_at_min_throttle=ON.
+        adrcUpdateArmTransition(&pidRuntime.adrc, ARMING_FLAG(ARMED));
         adrcUpdatePerLoopState(&pidRuntime.adrc, &pidProfile->adrc, pidRuntime.dT);
     }
 }
 
 // See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE. Applies the ADRC control
 // law for one axis, overwriting classic PID's P/I/D output for that axis.
-static FAST_CODE_NOINLINE void applyAdrcControl(int axis, float gyroRate, float currentPidSetpoint, const pidProfile_t *pidProfile)
+static FAST_CODE_NOINLINE void applyAdrcControl(int axis, float gyroRate, float currentPidSetpoint,
+    const pidProfile_t *pidProfile, bool yawSpinRecoveryActive, bool crashRecoveryActive)
 {
     const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
-    const adrcOutput_t adrcOutput = adrcApplyControl(&pidRuntime.adrc, axis, gyroRate, currentPidSetpoint,
-        pidRuntime.dT, adrcSumLimit);
+    const adrcOutput_t adrcOutput = adrcApplyControlWithRecovery(&pidRuntime.adrc, axis, gyroRate,
+        currentPidSetpoint, pidRuntime.dT, adrcSumLimit, yawSpinRecoveryActive, crashRecoveryActive);
     pidData[axis].P = adrcOutput.P;
     pidData[axis].I = adrcOutput.I;
     pidData[axis].D = adrcOutput.D;
-}
-
-// See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE. Resets all per-axis ESO
-// state plus the shared liftoff-gate state - called on the disarm->arm transition (fresh epoch per
-// arm cycle) and from the controller-disabled branch (stabilisation off, gyro overflow, Crash Flip).
-static FAST_CODE_NOINLINE void adrcResetAllState(void)
-{
-    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        adrcResetState(&pidRuntime.adrc, axis);
-    }
-    adrcResetGate(&pidRuntime.adrc);
-#ifdef USE_YAW_SPIN_RECOVERY
-    pidRuntime.adrcYawSpinActivePreviousLoop = false;
-#endif
 }
 
 // See updateAdrcSharedState() above for why this is FAST_CODE_NOINLINE.
@@ -1153,11 +1130,8 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 #ifdef USE_YAW_SPIN_RECOVERY
     const bool yawSpinActive = gyroYawSpinDetected();
 #ifdef USE_ADRC
-    // Keep ADRC's disturbance integrator suppressed for the first loop after yaw-spin detection
-    // clears. That loop resumes ordinary P/D control, but must not expose a freshly estimated I
-    // term immediately after recovery forced the published I channel to zero.
-    const bool adrcYawSpinRecoveryActiveThisLoop = yawSpinActive || pidRuntime.adrcYawSpinActivePreviousLoop;
-    pidRuntime.adrcYawSpinActivePreviousLoop = yawSpinActive;
+    // ADRC recovery handling extends one loop past the detector clearing; see adrc.c.
+    const bool adrcYawSpinRecoveryActiveThisLoop = adrcLatchYawSpinRecovery(&pidRuntime.adrc, yawSpinActive);
 #endif
 #endif
 
@@ -1522,31 +1496,18 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // output is simply overwritten here when ADRC is selected instead of being conditionally
         // skipped. This keeps the classic control law's code and behavior untouched.
         if (pidProfile->pid_type == PID_TYPE_ADRC) {
+            // The yaw-spin/crash recovery disturbance policy (zeroing the pre-recovery z3 estimate)
+            // lives in adrc.c; pid.c only reports which recovery modes are active this loop.
+            bool adrcYawSpinRecoveryActive = false;
+            bool adrcCrashRecoveryActive = false;
 #if defined(USE_YAW_SPIN_RECOVERY)
-            // Remove a pre-recovery disturbance estimate before the ESO step so stale z3 cannot
-            // enter z2 once. Keep lastOutput: it is the real command applied during recovery and
-            // remains valid b0*u feedback for the observer's acceleration state.
-            if (adrcYawSpinRecoveryActiveThisLoop) {
-                pidRuntime.adrc.z3[axis] = 0.0f;
-            }
+            adrcYawSpinRecoveryActive = adrcYawSpinRecoveryActiveThisLoop;
 #endif
 #if defined(USE_ACC)
-            // Do not feed a pre-crash disturbance estimate into z2 on the recovery path. The ESO
-            // continues tracking rate/acceleration, while z3 is held at zero below until recovery
-            // has completed without restoring I = -z3/b0 later in this same loop.
-            if (adrcCrashRecoveryActiveThisLoop) {
-                pidRuntime.adrc.z3[axis] = 0.0f;
-            }
+            adrcCrashRecoveryActive = adrcCrashRecoveryActiveThisLoop;
 #endif
-            applyAdrcControl(axis, gyroRate, currentPidSetpoint, pidProfile);
-#if defined(USE_YAW_SPIN_RECOVERY)
-            if (adrcYawSpinRecoveryActiveThisLoop) {
-                // adrcApplyControl() may estimate a fresh disturbance from the recovery transient.
-                // Suppress it through the first exit loop, then resume from a clean zero state.
-                pidRuntime.adrc.z3[axis] = 0.0f;
-                pidData[axis].I = 0.0f;
-            }
-#endif
+            applyAdrcControl(axis, gyroRate, currentPidSetpoint, pidProfile,
+                adrcYawSpinRecoveryActive, adrcCrashRecoveryActive);
         }
 #endif
 
@@ -1633,7 +1594,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
             const float adrcIterm = pidData[axis].I;
             pidData[axis].I = 0.0f;
-            pidRuntime.adrc.z3[axis] = 0.0f;
+            adrcClearDisturbanceEstimate(&pidRuntime.adrc, axis);
 #ifdef USE_INTEGRATED_YAW_CONTROL
             if (axis == FD_YAW && pidRuntime.useIntegratedYaw) {
                 const float integratedYawRelaxFactor = 1.0f
@@ -1646,7 +1607,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             }
 
             const float adrcSumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
-            pidRuntime.adrc.lastOutput[axis] = constrainf(pidData[axis].Sum, -adrcSumLimit, adrcSumLimit);
+            adrcSetAppliedOutput(&pidRuntime.adrc, axis, constrainf(pidData[axis].Sum, -adrcSumLimit, adrcSumLimit));
         }
     }
 #endif
@@ -1687,7 +1648,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         // Reset ADRC state (per-axis ESO plus the shared liftoff-gate) here. Unlike
         // pidResetIterm(), these are controller-disabled epochs: disarm/overflow, or Crash Flip
         // where a separate motor command path owns the craft, so resetting the gate is safe.
-        adrcResetAllState();
+        adrcResetAll(&pidRuntime.adrc);
 #endif
     } else if (pidRuntime.zeroThrottleItermReset) {
 #ifdef USE_ADRC
