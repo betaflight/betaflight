@@ -1068,13 +1068,21 @@ void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale,
         return;
     }
 
-    // A negative or non-finite scale cannot represent motor authority. The comparison is
-    // intentionally ordered so NaN also falls back to zero instead of reaching constrainf().
-    const float appliedScale = axisScale > 0.0f ? fminf(axisScale, 1.0f) : 0.0f;
+    // The mixer's authority scale is used as a BINARY signal only: any positive scale means the
+    // command reached the motors (proportionally normalized or not), zero/negative/NaN means it
+    // did not (motor stop, Crash Flip; the comparison is ordered so NaN also reads as no
+    // authority). The proportional factor is deliberately NOT multiplied in: b0 is calibrated in
+    // flight with the mixer's proportional normalization inside the loop, so feeding scale*u
+    // makes the ESO/z3 restore the "missing" authority and over-gains the loop by 1/scale exactly
+    // where scale < 1 - low throttle without airmode. Flight A/B 2026-07-12 (identical tune, only
+    // this feedback changed): a sustained 24-26 Hz roll/pitch limit cycle at 10-30% throttle with
+    // scale*u, absent with u.
+    const bool hasAuthority = axisScale > 0.0f;
     const float appliedYawLimit = yawSumLimit > 0.0f ? yawSumLimit : pidProfile->pidSumLimitYaw;
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         const float sumLimit = axis == FD_YAW ? appliedYawLimit : pidProfile->pidSumLimit;
-        adrcSetAppliedOutput(&pidRuntime.adrc, axis, constrainf(pidData[axis].Sum, -sumLimit, sumLimit) * appliedScale);
+        adrcSetAppliedOutput(&pidRuntime.adrc, axis,
+            hasAuthority ? constrainf(pidData[axis].Sum, -sumLimit, sumLimit) : 0.0f);
     }
 }
 

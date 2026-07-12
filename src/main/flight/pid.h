@@ -570,8 +570,9 @@ void pidSetAntiGravityState(bool newState);
 bool pidAntiGravityEnabled(void);
 
 #ifdef USE_ADRC
-// Called by the motor mixer after authority normalization so the ESO receives the command that
-// could reach the plant, rather than the pre-normalization PID sum.
+// Called by the motor mixer after authority normalization. The scale is consumed as a binary
+// authority signal (zero when the mixer applied no axis command at all - motor stop, Crash Flip);
+// see the definition in pid.c for why the proportional factor is deliberately not applied.
 void pidUpdateAdrcAppliedOutput(const pidProfile_t *pidProfile, float axisScale, float yawSumLimit);
 #endif
 

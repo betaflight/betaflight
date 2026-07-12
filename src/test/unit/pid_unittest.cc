@@ -1585,15 +1585,19 @@ TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)
 
     pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
 
-    EXPECT_FLOAT_EQ(250.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
-    EXPECT_FLOAT_EQ(-250.0f, pidRuntime.adrc.lastOutput[FD_PITCH]);
-    EXPECT_FLOAT_EQ(200.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+    // The proportional mixer scale (0.5 here) must NOT be multiplied into the feedback: b0 is
+    // flight-calibrated with the mixer's proportional normalization inside the loop, and feeding
+    // scale*u re-defines b0 and over-gains the loop by 1/scale at low throttle (flight-measured
+    // 24-26 Hz limit cycle, A/B 2026-07-12). Positive scale only means "the command was applied".
+    EXPECT_FLOAT_EQ(500.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FLOAT_EQ(-500.0f, pidRuntime.adrc.lastOutput[FD_PITCH]);
+    EXPECT_FLOAT_EQ(400.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
 
     // Yaw-spin recovery raises the mixer clamp to PIDSUM_LIMIT_MAX. Feed the same effective
     // limit back to the observer instead of silently clipping at the profile's normal yaw limit.
     pidData[FD_YAW].Sum = 900.0f;
     pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, PIDSUM_LIMIT_MAX);
-    EXPECT_FLOAT_EQ(450.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+    EXPECT_FLOAT_EQ(900.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
 }
 
 TEST(pidControllerTest, testAdrcSaturatedAppliedOutputFeedsNextObserverStep)
@@ -1608,7 +1612,7 @@ TEST(pidControllerTest, testAdrcSaturatedAppliedOutputFeedsNextObserverStep)
 
     pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
 
-    const float expectedAppliedOutput = 250.0f;
+    const float expectedAppliedOutput = 500.0f;
     ASSERT_FLOAT_EQ(expectedAppliedOutput, pidRuntime.adrc.lastOutput[FD_ROLL]);
     const float z2Before = pidRuntime.adrc.z2[FD_ROLL];
     const float expectedZ2 = z2Before + pidRuntime.dT

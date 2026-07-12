@@ -857,9 +857,10 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_ADRC
     // The observer consumes these values on the next PID iteration, matching its existing
-    // one-iteration lastOutput feedback. The scale is the authority factor applied uniformly by
-    // all mixer modes; MIXER_DYNAMIC's deliberate per-motor redistribution remains part of the
-    // plant/disturbance seen by the observer.
+    // one-iteration lastOutput feedback. The scale is the uniform authority factor of the active
+    // mixer mode; the pid layer consumes it as a binary applied/not-applied signal only (see
+    // pidUpdateAdrcAppliedOutput()). MIXER_DYNAMIC's deliberate per-motor redistribution remains
+    // part of the plant/disturbance seen by the observer.
     float appliedCollectiveThrottle = throttle;
 #ifdef USE_THRUST_LINEARIZATION
     // throttle is in the inverse-compensated motor-command domain here, while the plant receives
