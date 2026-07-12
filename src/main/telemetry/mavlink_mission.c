@@ -165,7 +165,10 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
         break;
     }
 
-    const uint8_t current = (flightPlanNavIsActive() && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
+    // While an injected runtime plan flies, the executor index does not refer
+    // to the stored mission this download describes.
+    const uint8_t current = (flightPlanNavIsActive() && !flightPlanNavIsInjectedPlanActive()
+        && seq == flightPlanNavGetCurrentIndex()) ? 1 : 0;
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
@@ -638,7 +641,8 @@ void mavMissionUpdate(timeMs_t nowMs)
     if ((nowMs - m.lastCurrentTxMs) >= MISSION_CURRENT_PERIOD_MS) {
         const uint16_t total = flightPlanConfig()->waypointCount;
         const bool active = flightPlanNavIsActive();
-        const uint16_t seq = (total && active) ? flightPlanNavGetCurrentIndex() : 0;
+        const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
+            ? flightPlanNavGetCurrentIndex() : 0;
         const uint8_t missionMode = active ? 1 : 2;
         uint8_t missionState;
         if (total == 0) {

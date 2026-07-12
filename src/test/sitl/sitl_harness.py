@@ -672,8 +672,9 @@ def scenario_mission_yaw(sitl, rc, fdm):
 
 def scenario_mission_land(sitl, rc, fdm):
     """LAND waypoint: fly the first leg north, divert to the offset LAND
-    waypoint, arrive through the 3D hold gate, descend there, and disarm on
-    touchdown (impact jerk; the estimator's vz is unreliable when grounded)."""
+    waypoint, arrive through the 3D hold gate, loiter for the waypoint
+    duration, descend, and disarm on touchdown (impact jerk; the estimator's
+    vz is unreliable when grounded)."""
     boot_and_engage(sitl, rc, fdm)
 
     wait_for(
@@ -687,6 +688,12 @@ def scenario_mission_land(sitl, rc, fdm):
         timeout=120,
         interval=1.0,
     )
+    # 5 s pre-descent loiter: shortly after arrival the vehicle must still be
+    # holding altitude (an immediate 2 m/s descent would be ~4 m down by now)
+    time.sleep(2.0)
+    assert BOX_ARM in sitl.modes(), "disarmed during the loiter"
+    assert fdm.model.pos[2] > 7.0, f"descended during the loiter: alt {fdm.model.pos[2]:.1f} m"
+    log(f"loitering at {fdm.model.pos[2]:.1f} m before descent")
     wait_for(
         "touchdown disarms",
         lambda: BOX_ARM not in sitl.modes(),
@@ -734,16 +741,28 @@ def scenario_geofence(sitl, rc, fdm, action):
     wait_for("mission departs toward the fence", lambda: fdm.distance_from_home() > 25.0, timeout=60)
 
     if action == "RTH":
-        wait_for(
-            "GPS rescue engaged, mission disengaged",
-            lambda: (lambda m: BOX_GPSRESCUE in m and BOX_AUTOPILOT not in m)(sitl.modes()),
-            timeout=60,
-        )
+        # Plan swap, not rescue: the mission keeps flying (an injected
+        # [fly home, land] plan) and the vehicle comes back inside the fence.
         time.sleep(3)
         modes = sitl.modes()
-        assert BOX_GPSRESCUE in modes and BOX_AUTOPILOT not in modes, \
-            f"geofence rescue did not remain latched: {modes}"
-        log("rescue remains latched")
+        assert BOX_GPSRESCUE not in modes, f"rescue engaged instead of plan swap: {modes}"
+        assert BOX_AUTOPILOT in modes, f"mission dropped on breach: {modes}"
+        wait_for(
+            "vehicle returns inside the fence",
+            lambda: fdm.distance_from_home() < 25.0,
+            timeout=120,
+            interval=1.0,
+        )
+        wait_for(
+            "touchdown at home disarms",
+            lambda: BOX_ARM not in sitl.modes(),
+            timeout=120,
+            interval=1.0,
+        )
+        dist = fdm.distance_from_home()
+        assert fdm.model.on_ground(), f"disarmed in the air: alt {fdm.model.pos[2]:.1f} m"
+        assert dist < 10.0, f"landed {dist:.1f} m from home"
+        log(f"returned and landed {dist:.1f} m from home")
     else:  # LAND
         time.sleep(8)
         modes = sitl.modes()
@@ -762,23 +781,35 @@ def scenario_geofence(sitl, rc, fdm, action):
 
 
 def scenario_geofence_rth_rxloss(sitl, rc, fdm):
-    """The RTH latch must survive RX loss: stage-2 rxfail values force the
-    AUTOPILOT switch low (rxfail preset in this scenario's config), which must
-    not read as the pilot cancelling the rescue."""
+    """The geofence return must survive RX loss: with rx-loss policy CONTINUE
+    the failsafe keeps flying the injected return plan while stage-2 rxfail
+    values force the AUTOPILOT switch low."""
     boot_and_engage(sitl, rc, fdm)
+    wait_for("mission departs toward the fence", lambda: fdm.distance_from_home() > 40.0, timeout=60)
     wait_for(
-        "GPS rescue engaged after geofence breach",
-        lambda: BOX_GPSRESCUE in sitl.modes(),
-        timeout=60,
+        "return leg underway (heading back inside 40 m)",
+        lambda: fdm.distance_from_home() < 40.0,
+        timeout=90,
+        interval=0.5,
     )
 
-    log("killing RC stream mid-rescue")
+    log("killing RC stream mid-return")
     rc.stop_stream()
     wait_for("failsafe active", lambda: BOX_FAILSAFE in sitl.modes())
     time.sleep(3)
     modes = sitl.modes()
-    assert {BOX_FAILSAFE, BOX_GPSRESCUE} <= modes, f"rescue dropped when rxfail cleared the switch: {modes}"
-    log("rescue persists through RX loss")
+    assert {BOX_FAILSAFE, BOX_AUTOPILOT} <= modes, f"return plan dropped on RX loss: {modes}"
+    assert BOX_GPSRESCUE not in modes, f"unexpected rescue: {modes}"
+    log("return continues through RX loss")
+    wait_for(
+        "lands at home under failsafe",
+        lambda: BOX_ARM not in sitl.modes(),
+        timeout=150,
+        interval=1.0,
+    )
+    dist = fdm.distance_from_home()
+    assert dist < 10.0, f"landed {dist:.1f} m from home"
+    log(f"landed {dist:.1f} m from home under failsafe")
 
 
 SCENARIOS = {
@@ -799,7 +830,8 @@ SCENARIOS = {
             # short north leg, then LAND at an offset so the executor must fly
             # to the landing point before descending
             f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
-            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 0 orbit",
+            # 5 s pre-descent loiter at the LAND waypoint
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 50 orbit",
             # SITL's 15-20 Hz position loop wanders during braking; a fatter
             # 3D gate keeps arrival deterministic
             "set ap_waypoint_hold_radius = 400",
@@ -821,14 +853,28 @@ SCENARIOS = {
     ),
     "geofence_rth": (
         lambda s, r, f: scenario_geofence(s, r, f, "RTH"),
-        ["set ap_max_distance_from_home = 50", "set ap_geofence_action = RTH"],
+        [
+            "set ap_max_distance_from_home = 50",
+            "set ap_geofence_action = RTH",
+            "set ap_yaw_mode = FIXED",
+            "set gps_rescue_return_alt = 15",     # short climb keeps the return quick
+            "set ap_waypoint_hold_radius = 400",
+            "set ap_landing_descent_rate = 200",
+            "set landing_disarm_threshold = 10",
+        ],
     ),
     "geofence_rth_rxloss": (
         scenario_geofence_rth_rxloss,
         [
             "set ap_max_distance_from_home = 50",
             "set ap_geofence_action = RTH",
+            "set ap_rx_loss_policy = CONTINUE",
             "rxfail 5 s 1000",  # stage 2 forces the AUTOPILOT switch low
+            "set ap_yaw_mode = FIXED",
+            "set gps_rescue_return_alt = 15",
+            "set ap_waypoint_hold_radius = 400",
+            "set ap_landing_descent_rate = 200",
+            "set landing_disarm_threshold = 10",
         ],
     ),
 }
