@@ -72,14 +72,21 @@ static bool sensorsOk(void)
     // correction rotation will cause a flyaway.
     // Use the runtime GPS state (fix present + config allows GPS) rather than
     // the configured source alone, so AUTO mode with no GPS hardware correctly
-    // skips the heading check and does not block optical-flow-only hold.
-    const bool needsHeading = positionEstimatorIsGPSContributing();
-    return positionEstimatorIsValidXY() && (!needsHeading || imuIsHeadingValid());
+
+    if (!positionEstimatorIsValidXY()) {
+        return false; // always need valid XY data, can be optical only
+    }
+
+    if (positionEstimatorIsHeadingRequired()) {
+        return imuIsHeadingValid(); // if heading is essential (ie no optical flow), pass or fail based on whether or not heading exists.
+    } else {
+        return true; // if no heading is needed, we don't care about it (optical flow situation)
+    }
 }
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         if (!posHold.isEnabled) {
             resetPositionControl(POSHOLD_TASK_RATE_HZ);
             posHold.isControlOk = true;
@@ -87,15 +94,12 @@ void updatePosHold(timeUs_t currentTimeUs) {
         }
     } else {
         if (posHold.isEnabled) {
-            for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
-                autopilotAngle[i] = 0.0f;
-            }
             setSticksActiveStatus(false);
         }
         posHold.isEnabled = false;
     }
 
-    if (posHold.isEnabled && posHold.isControlOk) {
+    if (posHold.isEnabled) {
         posHoldCheckSticks();
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
@@ -106,6 +110,11 @@ void updatePosHold(timeUs_t currentTimeUs) {
             }
         }
     }
+}
+
+bool isAutopilotInControl(void)
+{
+    return posHold.isEnabled && posHold.isControlOk && posHold.areSensorsOk;
 }
 
 bool posHoldFailure(void) {

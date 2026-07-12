@@ -21,6 +21,8 @@
 #include <stdint.h>
 
 #include "common/axis.h"
+#include "common/vector.h"
+
 
 #ifndef USE_WING
 
@@ -32,16 +34,21 @@ void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(unsigned taskRateHz);
-void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeVelCmS, float velLimitCmS);
-
+void moveTargetLocation(const vector2_t *stepEF, unsigned taskRateHz, bool forceAbortNav);// for nav modes to update the target position
+void pitchForwardOverride(bool request);
+void initPositionHold(void);
 uint16_t autopilotGetEffectiveHoverThrottlePwm(void);
 void autopilotCaptureHoverThrottleForAltHold(void);
 void autopilotClearAltHoldHoverThrottle(void);
-
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
-bool isAutopilotInControl(void);
+
+// Mission yaw control: rate injected as the yaw setpoint by rc.c while a
+// navigation leg is being flown (see updateYawControl in autopilot_multirotor.c)
+float autopilotGetYawRate(void);
+bool autopilotYawControlActive(void);
+void autopilotSetYawRateLimit(float rateLimitDps); // deg/s, 0 = no mission cap
 
 #endif // !USE_WING

@@ -451,8 +451,12 @@ FAST_CODE timeUs_t schedulerExecuteTask(task_t *selectedTask, timeUs_t currentTi
         if (taskNextStateTime != -1) {
             selectedTask->anticipatedExecutionTime = taskNextStateTime << TASK_EXEC_TIME_SHIFT;
         } else if (!ignoreCurrentTaskExecTime) {
-            if (taskExecutionTimeUs > (selectedTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT)) {
-                selectedTask->anticipatedExecutionTime = taskExecutionTimeUs << TASK_EXEC_TIME_SHIFT;
+            timeUs_t taskExecutionEstimateUs = taskExecutionTimeUs;
+            if ((TASK_EXEC_TIME_CLAMP_US != 0) && (taskExecutionEstimateUs > TASK_EXEC_TIME_CLAMP_US)) {
+                taskExecutionEstimateUs = TASK_EXEC_TIME_CLAMP_US;
+            }
+            if (taskExecutionEstimateUs > (selectedTask->anticipatedExecutionTime >> TASK_EXEC_TIME_SHIFT)) {
+                selectedTask->anticipatedExecutionTime = taskExecutionEstimateUs << TASK_EXEC_TIME_SHIFT;
             } else if (selectedTask->anticipatedExecutionTime > 1) {
                 // Slowly decay the max time
                 selectedTask->anticipatedExecutionTime--;

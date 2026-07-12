@@ -76,6 +76,10 @@
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
 
+// OS preemption spikes must not peak-hold task duration estimates
+// (see scheduler.h) or non-realtime tasks starve to a few hertz
+#define TASK_EXEC_TIME_CLAMP_US         100
+
 #define USE_VIRTUAL_LED
 
 #define USE_ACC
@@ -110,6 +114,9 @@
 
 #define USE_GPS
 #define USE_VIRTUAL_GPS
+#define USE_ALTITUDE_HOLD
+#define USE_POSITION_HOLD
+#define USE_FLIGHT_PLAN
 
 #define USE_PARAMETER_GROUPS
 
@@ -141,7 +148,6 @@
 #undef USE_TELEMETRY_FRSKY_HUB
 #undef USE_TELEMETRY_HOTT
 #undef USE_TELEMETRY_SMARTPORT
-#undef USE_TELEMETRY_MAVLINK
 #undef USE_RESOURCE_MGMT
 #undef USE_CMS
 #undef USE_TELEMETRY_CRSF

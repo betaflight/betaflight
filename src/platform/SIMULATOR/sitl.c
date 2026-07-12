@@ -79,6 +79,14 @@
 
 #include "dyad.h"
 #include "udplink.h"
+#include "sitl_gyro.h"
+
+// ENABLE_GAZEBO_BRIDGE is a boolean selector for the gyro yaw sign (passed to
+// sitlGyroBodyFromSim below). target.h defaults it to 1; configs set 0 for the
+// legacy bridges. Require it to be explicitly 0 or 1 so an accidental non-boolean
+// value (which would quietly read as "Gazebo") fails the build instead (see #15294).
+STATIC_ASSERT((ENABLE_GAZEBO_BRIDGE) == 0 || (ENABLE_GAZEBO_BRIDGE) == 1,
+              ENABLE_GAZEBO_BRIDGE_must_be_0_or_1);
 
 uint32_t SystemCoreClock;
 
@@ -285,30 +293,22 @@ static void updateState(const fdm_packet* pkt)
         return;
     }
 
-#if ENABLE_GAZEBO_BRIDGE
-    // The BetaflightPlugin reads angular velocity from the IMU *sensor* entity
-    // (components::AngularVelocity on imuEntity), so the data arrives in the
-    // sensor frame. The IMU sensor pose is Rx(π) relative to the FLU link,
-    // which makes the sensor frame effectively FRD (X=fwd, Y=right, Z=down).
-    //
-    // BF gyro conventions:
-    //   Roll  = +wx_FRD (roll right)          → keep X
-    //   Pitch = -wy_FRD (BF positive = nose down, opposite to FRD) → negate Y
-    //   Yaw   = +wz_FRD (CW viewed from above)                    → keep Z
-#endif
     int16_t x,y,z;
     x = constrain(-pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE, -32767, 32767);
     y = constrain(-pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE, -32767, 32767);
     z = constrain(-pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE, -32767, 32767);
     virtualAccSet(virtualAccDev, x, y, z);
 
-    x = constrain(pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-    y = constrain(-pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-#if ENABLE_GAZEBO_BRIDGE
-    z = constrain(pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-#else
-    z = constrain(-pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG, -32767, 32767);
-#endif
+    // Map simulator IMU angular velocity onto Betaflight gyro axes. The yaw (Z)
+    // polarity is bridge-specific (see sitlGyroBodyFromSim() for the FRD/legacy
+    // rationale); ENABLE_GAZEBO_BRIDGE selects it. Keeping the mapping in one
+    // helper prevents the bridge split from being silently dropped by edits to
+    // this function, which is what caused regression #15294.
+    double gyroRoll, gyroPitch, gyroYaw;
+    sitlGyroBodyFromSim(pkt->imu_angular_velocity_rpy, ENABLE_GAZEBO_BRIDGE, &gyroRoll, &gyroPitch, &gyroYaw);
+    x = constrain(gyroRoll  * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    y = constrain(gyroPitch * GYRO_SCALE * RAD2DEG, -32767, 32767);
+    z = constrain(gyroYaw   * GYRO_SCALE * RAD2DEG, -32767, 32767);
     virtualGyroSet(virtualGyroDev, x, y, z);
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo plugin doesn't fill pkt->pressure; derive from altitude using the
@@ -348,14 +348,17 @@ static void updateState(const fdm_packet* pkt)
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
 #if ENABLE_GAZEBO_BRIDGE
-    // The Gazebo BetaflightPlugin computes the quaternion as Rx(π)*M*Rx(π)
-    // (a similarity transform), but Betaflight needs the body(FRD)-to-world(NED)
-    // quaternion: ENUtoNED * M * FRDtoFLU = Rz(π/2) * Rx(π) * M * Rx(π).
-    // Pre-multiply by Rz(90°) to correct: q' = q_Rz(π/2) * q_plugin
+    // The Gazebo BetaflightPlugin sends the quaternion conjugated by Rx(π)
+    // (q_plugin = Rx(π) * M * Rx(π), with M the FLU-body to ENU-world
+    // attitude). Undo the conjugation (negate qy/qz), then rotate the world
+    // frame by Rz(π/2) (ENU -> NWU): q = Rz(π/2) * Rx(π) * q_plugin * Rx(π).
+    // FLU body equals Betaflight's internal NWU body, so the result is the
+    // proper body-to-world rotation - the Euler display and every rMat
+    // vector consumer (position estimator, mag fusion) agree at any heading.
     const float qw = pkt->imu_orientation_quat[0];
     const float qx = pkt->imu_orientation_quat[1];
-    const float qy = pkt->imu_orientation_quat[2];
-    const float qz = pkt->imu_orientation_quat[3];
+    const float qy = -pkt->imu_orientation_quat[2];
+    const float qz = -pkt->imu_orientation_quat[3];
     static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
     imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
 #else
@@ -402,7 +405,9 @@ static void updateState(const fdm_packet* pkt)
     if (course < 0.0) {
         course += 360.0;
     }
-    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course);
+    // velocity_xyz is ENU: NED velN = [1], velE = [0], velD = -[2]
+    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course,
+                  pkt->velocity_xyz[1], pkt->velocity_xyz[0], -pkt->velocity_xyz[2]);
 
     if (gpxEnabled) {
         static uint64_t lastGpxTimeUs = 0;

@@ -41,8 +41,11 @@
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 
 #include "io/beeper.h"
+
+#include "pg/autopilot.h"
 
 #include "msp/msp_serial.h"
 
@@ -227,6 +230,31 @@ LOCAL_UNUSED_FUNCTION static uint32_t failsafeFailurePeriodMs(void)
     return failsafeState.rxDataFailurePeriod;
 }
 
+static void failsafeStartProcedure(failsafeProcedure_e procedure)
+{
+    switch (procedure) {
+        case FAILSAFE_PROCEDURE_AUTO_LANDING:
+            //  Enter Stage 2 with settings for landing mode
+            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+            failsafeState.phase = FAILSAFE_LANDING;
+            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
+            break;
+
+        case FAILSAFE_PROCEDURE_DROP_IT:
+        default:
+            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+            failsafeState.phase = FAILSAFE_LANDED;
+            //  go directly to FAILSAFE_LANDED
+            break;
+#ifdef USE_GPS_RESCUE
+        case FAILSAFE_PROCEDURE_GPS_RESCUE:
+            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+            failsafeState.phase = FAILSAFE_GPS_RESCUE;
+            break;
+#endif
+    }
+}
+
 FAST_CODE_NOINLINE void failsafeUpdateState(void)
 // triggered directly, and ONLY, by the scheduler, at 10ms = PERIOD_RXDATA_FAILURE - intervals
 {
@@ -317,25 +345,24 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else {
                     failsafeState.active = true;
                     failsafeState.events++;
-                    switch (failsafeConfig()->failsafe_procedure) {
-                        case FAILSAFE_PROCEDURE_AUTO_LANDING:
-                            //  Enter Stage 2 with settings for landing mode
-                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                            failsafeState.phase = FAILSAFE_LANDING;
-                            failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_landing_time * MILLIS_PER_SECOND;
-                            break;
-
-                        case FAILSAFE_PROCEDURE_DROP_IT:
-                            ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-                            failsafeState.phase = FAILSAFE_LANDED;
-                            //  go directly to FAILSAFE_LANDED
-                            break;
-#ifdef USE_GPS_RESCUE
-                        case FAILSAFE_PROCEDURE_GPS_RESCUE:
-                            ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
-                            failsafeState.phase = FAILSAFE_GPS_RESCUE;
-                            break;
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+                    if (FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavIsActive()
+                        && flightPlanNavGetState() != FP_NAV_COMPLETE
+                        && flightPlanNavGetState() != FP_NAV_ABORTED
+                        && autopilotConfig()->rxLossPolicy == AP_RX_LOSS_CONTINUE) {
+                        // keep flying the mission; FAILSAFE_AUTOPILOT monitors it
+                        // and falls back to the configured procedure when it ends
+                        ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                        failsafeState.phase = FAILSAFE_AUTOPILOT;
+                    } else if (FLIGHT_MODE(AUTOPILOT_MODE)
+                        && autopilotConfig()->rxLossPolicy == AP_RX_LOSS_LAND) {
+                        // land at the current position: the mission disengages, and
+                        // pos-hold anchors the failsafe auto-landing descent
+                        failsafeStartProcedure(FAILSAFE_PROCEDURE_AUTO_LANDING);
+                    } else
 #endif
+                    {
+                        failsafeStartProcedure(failsafeConfig()->failsafe_procedure);
                     }
                     if (failsafeState.boxFailsafeSwitchWasOn) {
                         failsafeState.receivingRxDataPeriodPreset = 0;
@@ -384,6 +411,30 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         failsafeState.phase = FAILSAFE_LANDED;
                         reprocessState = true;
                     }
+                }
+                break;
+#endif
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+            case FAILSAFE_AUTOPILOT:
+                if (receivingRxData) {
+                    if (areSticksActive(failsafeConfig()->failsafe_stick_threshold) || failsafeState.boxFailsafeSwitchWasOn) {
+                        // same recovery rules as GPS Rescue: a true link-loss failsafe
+                        // needs stick input to hand control back
+                        failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                        reprocessState = true;
+                    }
+                } else if (!armed) {
+                    failsafeState.phase = FAILSAFE_LANDED;
+                    reprocessState = true;
+                } else if (!FLIGHT_MODE(AUTOPILOT_MODE)
+                    || flightPlanNavGetState() == FP_NAV_COMPLETE
+                    || flightPlanNavGetState() == FP_NAV_ABORTED) {
+                    // mission ended, aborted, or lost its requirements (e.g. GPS)
+                    // while the link is still down: fall back to the configured procedure
+                    failsafeStartProcedure(failsafeConfig()->failsafe_procedure);
+                    reprocessState = true;
+                } else {
+                    beeperMode = BEEPER_RX_LOST_LANDING;
                 }
                 break;
 #endif
