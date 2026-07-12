@@ -40,6 +40,7 @@
 
 #include "io/gps.h"
 
+#include "pg/autopilot.h"
 #include "pg/flight_plan.h"
 
 #include "telemetry/mavlink.h"
@@ -128,14 +129,23 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
     uint16_t command;
     float param1 = 0.0f;
     float param2 = 0.0f;
+    float param3 = 0.0f;
     int32_t lat = wp->latitude;
     int32_t lon = wp->longitude;
     float zM = wp->altitude * 0.01f;
 
     switch (wp->type) {
     case WAYPOINT_TYPE_HOLD:
-        command = MAV_CMD_NAV_LOITER_TIME;
-        param1 = wp->duration * 0.1f;
+        if (wp->pattern == WAYPOINT_PATTERN_ORBIT) {
+            command = MAV_CMD_NAV_LOITER_TURNS;
+            param1 = (float)wp->duration / (float)flightPlanNavOrbitPeriodDs(wp->speed);
+            param3 = autopilotConfig()->waypointHoldRadius * 0.01f;
+        } else {
+            // FIGURE8 has no MAVLink vocabulary; it downloads as a plain
+            // timed loiter (the pattern survives only in the stored mission).
+            command = MAV_CMD_NAV_LOITER_TIME;
+            param1 = wp->duration * 0.1f;
+        }
         break;
     case WAYPOINT_TYPE_LAND:
         command = MAV_CMD_NAV_LAND;
@@ -172,7 +182,7 @@ static void sendMissionItem(uint8_t partnerSys, uint8_t partnerComp, uint16_t se
 
     mavlink_msg_mission_item_int_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
         partnerSys, partnerComp, seq, MAV_FRAME_GLOBAL_INT, command, current, 1,
-        param1, param2, 0.0f, 0.0f,
+        param1, param2, param3, 0.0f,
         lat, lon, zM,
         MAV_MISSION_TYPE_MISSION);
     mavlinkSendMessage(&txMsg);
@@ -251,7 +261,7 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
     wp->altitude = altCm;
     wp->speed = 0;
     wp->duration = 0;
-    wp->pattern = WAYPOINT_PATTERN_ORBIT;
+    wp->pattern = WAYPOINT_PATTERN_NONE;
 
     switch (it->command) {
     case MAV_CMD_NAV_WAYPOINT:
@@ -272,9 +282,18 @@ static bool mapMavCmdToWaypoint(const mavlink_mission_item_int_t *it, waypoint_t
             wp->duration = (ds >= UINT16_MAX) ? UINT16_MAX : (uint16_t)ds;
         }
         break;
-    case MAV_CMD_NAV_LOITER_TURNS:
+    case MAV_CMD_NAV_LOITER_TURNS: {
+        // param1 = turns, converted to a hold duration at the executor's
+        // orbit rate. param3's radius is ignored: the orbit flies at the
+        // configured ap_waypoint_hold_radius.
         wp->type = WAYPOINT_TYPE_HOLD;
+        wp->pattern = WAYPOINT_PATTERN_ORBIT;
+        if (it->param1 > 0.0f) {
+            const float ds = it->param1 * (float)flightPlanNavOrbitPeriodDs(wp->speed);
+            wp->duration = (ds >= UINT16_MAX) ? UINT16_MAX : (uint16_t)ds;
+        }
         break;
+    }
     case MAV_CMD_NAV_LOITER_UNLIM:
         wp->type = WAYPOINT_TYPE_HOLD;
         wp->duration = UINT16_MAX;

@@ -87,6 +87,14 @@ void positionNavSetTargetEf(
     withinAcceptanceAltitude = false;
 }
 
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
+{
+    if (!cmd.active) {
+        return;
+    }
+    cmd.targetPosEfM = *targetPosEfM;
+}
+
 void positionNavClearTarget(void)
 {
     cmd.active = false;

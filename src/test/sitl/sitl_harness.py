@@ -600,7 +600,7 @@ def base_config(extra):
         # matches the MotionModel plant: atan(K_DRAG * v / g) over cruise speeds
         "set ap_velocity_drag_coeff = 440",
         # 10 m above home, 5 m/s — low and quick keeps landing scenarios short
-        f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
+        f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
     ] + extra
 
 
@@ -775,6 +775,119 @@ def scenario_mission_land(sitl, rc, fdm):
     dist = fdm.distance_to_wp(25.0, 40.0)
     assert dist < 10.0, f"landed {dist:.1f} m from the LAND waypoint"
     log(f"landed {dist:.1f} m from the LAND waypoint")
+
+
+def scenario_mission_takeoff(sitl, rc, fdm):
+    """TAKEOFF waypoint: climb in place to the waypoint altitude (its lat/lon
+    are advisory), then fly the following leg. The climb must not translate."""
+    boot_and_engage(sitl, rc, fdm)
+    t_engage = fdm.now_t()
+
+    wait_for(
+        "climb through 12 m (TAKEOFF target 15 m)",
+        lambda: fdm.model.pos[2] > 12.0,
+        timeout=90,
+        interval=0.5,
+    )
+    t_top = fdm.now_t()
+
+    # Horizontal drift during the climb, relative to where the mission engaged
+    # (TAKEOFF holds the current position, not home).
+    climb = [s for s in fdm.snapshot_history() if t_engage <= s[0] <= t_top]
+    assert climb, "no recorded samples during the climb"
+    e0, n0 = climb[0][1], climb[0][2]
+    drift = max(math.hypot(s[1] - e0, s[2] - n0) for s in climb)
+    assert drift < 8.0, f"translated {drift:.1f} m during the TAKEOFF climb"
+    log(f"climbed to {fdm.model.pos[2]:.1f} m with {drift:.1f} m drift")
+
+    wait_for(
+        "leg to the north waypoint after the climb",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the takeoff mission"
+
+
+def hold_window_samples(fdm, centre_e, centre_n, t0, t1):
+    """(distances, azimuth sweep in rad) of history samples in [t0, t1],
+    measured about the hold point. Sweep accumulates wrapped step deltas, so
+    systematic circulation grows it while hover noise cancels out."""
+    pts = [s for s in fdm.snapshot_history() if t0 <= s[0] <= t1]
+    dists = [math.hypot(s[1] - centre_e, s[2] - centre_n) for s in pts]
+    azimuths = [math.atan2(s[2] - centre_n, s[1] - centre_e) for s in pts]
+    sweep = 0.0
+    for a, b in zip(azimuths, azimuths[1:]):
+        sweep += (b - a + math.pi) % (2.0 * math.pi) - math.pi
+    return dists, sweep
+
+
+def scenario_mission_orbit(sitl, rc, fdm):
+    """HOLD with the ORBIT pattern: after arriving at the hold point the
+    vehicle must circulate around it on the hold radius for the duration."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "arrival at the hold point",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    t_arrive = fdm.now_t()
+
+    # Analysis window: skip 12 s (arrival braking + pattern spin-up), observe
+    # 40 s of the 60 s hold. Carrot rate 0.25 rad/s -> ~1.6 laps in the window.
+    wait_for("orbit window elapsed", lambda: fdm.now_t() > t_arrive + 52.0,
+             timeout=70, interval=2.0)
+    dists, sweep = hold_window_samples(fdm, 0.0, 40.0, t_arrive + 12.0, t_arrive + 52.0)
+    assert len(dists) > 250, f"recorder too sparse over the hold window: {len(dists)} samples"
+
+    mean_dist = sum(dists) / len(dists)
+    log(f"orbit mean radius {mean_dist:.1f} m, peak {max(dists):.1f} m, "
+        f"swept {math.degrees(sweep):.0f} deg")
+    # The vehicle rides the ring with pursuit lag (a little inside) plus the
+    # loop phase lag (a little outside); a hover at the hold point would sit
+    # near zero and a runaway pursuit far outside.
+    assert 3.0 < mean_dist < 12.0, f"orbit radius off: mean {mean_dist:.1f} m from the hold point"
+    assert max(dists) < 16.0, f"orbit excursion: {max(dists):.1f} m from the hold point"
+    assert sweep > math.radians(270.0), f"no sustained circulation: swept {math.degrees(sweep):.0f} deg"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the orbit"
+
+
+def scenario_mission_figure8(sitl, rc, fdm):
+    """HOLD with the FIGURE8 pattern: bounded excursion about the hold point
+    with repeated passes back through the centre."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "arrival at the hold point",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    t_arrive = fdm.now_t()
+
+    wait_for("figure-8 window elapsed", lambda: fdm.now_t() > t_arrive + 52.0,
+             timeout=70, interval=2.0)
+    dists, _ = hold_window_samples(fdm, 0.0, 40.0, t_arrive + 12.0, t_arrive + 52.0)
+    assert len(dists) > 250, f"recorder too sparse over the hold window: {len(dists)} samples"
+
+    # Lemniscate on an 8 m radius: lobes reach the ring, the path re-crosses
+    # the centre twice per cycle (~25 s), and never leaves the hold radius.
+    log(f"figure-8 peak {max(dists):.1f} m from the hold point")
+    assert max(dists) < 13.0, f"figure-8 excursion: {max(dists):.1f} m from the hold point"
+    assert max(dists) > 4.0, f"no pattern motion: peak {max(dists):.1f} m from the hold point"
+    crossings = 0
+    away = False
+    for d in dists:
+        if d > 5.0:
+            away = True
+        elif away and d < 4.0:
+            crossings += 1
+            away = False
+    assert crossings >= 2, f"path did not re-cross the centre: {crossings} passes"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the figure-8"
+    log(f"figure-8 {crossings} centre passes")
 
 
 def scenario_rx_loss(sitl, rc, fdm, policy):
@@ -1110,7 +1223,7 @@ SCENARIOS = {
     "mission_yaw": (
         scenario_mission_yaw,
         # redirect the default waypoint east so the course demands a 90 deg swing
-        [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit"],
+        [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none"],
     ),
     "mission_land": (
         scenario_mission_land,
@@ -1118,14 +1231,43 @@ SCENARIOS = {
             "set ap_yaw_mode = FIXED",
             # short north leg, then LAND at an offset so the executor must fly
             # to the landing point before descending
-            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
             # 5 s pre-descent loiter at the LAND waypoint
-            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 50 orbit",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 50 none",
             # SITL's 15-20 Hz position loop wanders during braking; a fatter
             # 3D gate keeps arrival deterministic
             "set ap_waypoint_hold_radius = 400",
             "set ap_landing_descent_rate = 200",  # keep the descent short
             "set landing_disarm_threshold = 10",   # jerk-based touchdown disarm
+        ],
+    ),
+    "mission_takeoff": (
+        scenario_mission_takeoff,
+        [
+            "set ap_yaw_mode = FIXED",
+            # TAKEOFF's lat/lon are advisory; the climb happens in place
+            f"waypoint update 0 {HOME_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 15) * 100)} 500 takeoff 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 15) * 100)} 500 flyover 0 none",
+        ],
+    ),
+    "mission_orbit": (
+        scenario_mission_orbit,
+        [
+            "set ap_yaw_mode = FIXED",
+            # 8 m pattern radius: caps the carrot at 2 m/s (0.25 rad/s), big
+            # enough to be unambiguous against SITL's coarse position loop
+            "set ap_waypoint_hold_radius = 800",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 orbit",
+        ],
+    ),
+    "mission_figure8": (
+        scenario_mission_figure8,
+        [
+            "set ap_yaw_mode = FIXED",
+            "set ap_waypoint_hold_radius = 800",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 figure8",
         ],
     ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),

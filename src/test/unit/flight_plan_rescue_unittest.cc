@@ -126,6 +126,14 @@ void positionNavSetTargetEf(
     g_setTargetCalls++;
 }
 
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
+{
+    if (!g_lastTarget.valid) {
+        return;
+    }
+    g_lastTarget.targetEfM = *targetPosEfM;
+}
+
 void positionNavClearTarget(void)
 {
     g_clearTargetCalls++;
@@ -328,7 +336,7 @@ protected:
         wp->type = type;
         wp->speed = speed;
         wp->duration = duration;
-        wp->pattern = WAYPOINT_PATTERN_ORBIT;
+        wp->pattern = WAYPOINT_PATTERN_NONE;
     }
 
     void triggerReached() {

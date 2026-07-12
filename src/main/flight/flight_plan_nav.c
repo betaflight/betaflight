@@ -96,6 +96,22 @@
 // failsafe rescue); MAVLink-scale plans stay in the PG store.
 #define FP_INJECTED_PLAN_MAX 4
 
+// HOLD patterns chase a time-parametrised carrot around the hold point. The
+// angular rate cap keeps small radii flyable (full cruise on the default 2 m
+// radius would demand a 2.5 rad/s spin) and holds the rotation slow enough
+// for the position->velocity->attitude chain to phase-track: each loop adds
+// lag, and a carrot the vehicle cannot angularly follow balloons the pursuit
+// orbit far outside the ring. The position-to-velocity gain means the vehicle
+// self-paces roughly patternSpeed metres behind the carrot.
+#define FP_PATTERN_MAX_RATE_RADS  0.25f
+#define FP_PATTERN_UPDATE_US      200000u
+// Legs complete on radius entry at any speed, so the hold is entered carrying
+// cruise momentum. The pattern waits for the reached command's own braking to
+// park the vehicle first — a carrot started at cruise entry speed balloons
+// the pursuit orbit far outside the ring. The timeout bounds a windy day.
+#define FP_PATTERN_START_SPEED_MPS  1.5f
+#define FP_PATTERN_START_TIMEOUT_US 5000000u
+
 #if ENABLE_RESCUE_PLAN
 // Legacy PITCH_FORWARD gives up after 15 s of heading recovery
 #define FP_RESCUE_HEADING_TIMEOUT_US 15000000u
@@ -137,6 +153,16 @@ static struct {
     bool rescueHeadingHold;     // pitch-forward heading recovery in progress
     timeUs_t rescueHeadingStartUs;
 #endif
+
+    // HOLD pattern sub-target generation
+    bool patternPending;        // waiting for the arrival braking to settle
+    bool patternActive;
+    uint8_t patternType;        // waypointPattern_e
+    vector3_t patternCentreM;   // hold point, ENU metres
+    float patternPhaseRad;
+    float patternSpeedMps;      // carrot path speed
+    float patternCruiseMps;     // chase speed cap (the leg's cruise)
+    timeUs_t patternLastUpdateUs;
 
     // Leg progress tracking for stall/flyaway detection
     float bestDistanceToTargetM;
@@ -261,9 +287,20 @@ static bool dispatchWaypoint(void)
         return false;
     }
 
+    // TAKEOFF climbs in place: the waypoint's lat/lon are advisory (MAVLink
+    // marks them optional) — the target is the current position at the
+    // waypoint's altitude.
+    if (effective.type == WAYPOINT_TYPE_TAKEOFF) {
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        targetEnuM.v[ENU_E] = est->position.v[ENU_E] * 0.01f;
+        targetEnuM.v[ENU_N] = est->position.v[ENU_N] * 0.01f;
+    }
+
     const autopilotConfig_t *cfg = autopilotConfig();
-    const bool isHoldOrLand = (effective.type == WAYPOINT_TYPE_HOLD) || (effective.type == WAYPOINT_TYPE_LAND);
-    const float arrivalRadiusM = (isHoldOrLand ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
+    const bool isStationKeeping = (effective.type == WAYPOINT_TYPE_HOLD)
+                               || (effective.type == WAYPOINT_TYPE_LAND)
+                               || (effective.type == WAYPOINT_TYPE_TAKEOFF);
+    const float arrivalRadiusM = (isStationKeeping ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
 
     float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
@@ -290,13 +327,15 @@ static bool dispatchWaypoint(void)
         }
     }
 
+    fp.patternPending = false;
+    fp.patternActive = false;
     positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
                            FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
     positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
     // En-route waypoints advance on horizontal arrival; a vehicle that cannot
-    // reach the commanded altitude must not orbit forever. HOLD and LAND are
-    // station-keeping targets and keep the altitude gate.
-    positionNavSetAltitudeArrivalRequired(isHoldOrLand);
+    // reach the commanded altitude must not orbit forever. HOLD, LAND and
+    // TAKEOFF are station-keeping targets and keep the altitude gate.
+    positionNavSetAltitudeArrivalRequired(isStationKeeping);
 
     fp.state = FP_NAV_TARGETING;
     fp.holdDurationDs = effective.duration;
@@ -309,6 +348,8 @@ static void abortMission(flightPlanAbortReason_e reason)
 {
     fp.state = FP_NAV_ABORTED;
     fp.abortReason = reason;
+    fp.patternPending = false;
+    fp.patternActive = false;
     // Dropping the nav target makes positionControl() fall back to holding
     // position at the current location; the pilot exits via the mode switch.
     positionNavClearTarget();
@@ -575,12 +616,104 @@ static void checkGeofence(timeUs_t currentTimeUs)
     }
 }
 
+static void patternCarrot(float phaseRad, float radiusM, vector3_t *out)
+{
+    out->v[ENU_U] = fp.patternCentreM.v[ENU_U];
+    if (fp.patternType == WAYPOINT_PATTERN_FIGURE8) {
+        // Lemniscate of Gerono — crosses the centre twice per cycle
+        out->v[ENU_E] = fp.patternCentreM.v[ENU_E] + radiusM * sin_approx(phaseRad);
+        out->v[ENU_N] = fp.patternCentreM.v[ENU_N] + radiusM * sin_approx(phaseRad) * cos_approx(phaseRad);
+    } else {
+        out->v[ENU_E] = fp.patternCentreM.v[ENU_E] + radiusM * cos_approx(phaseRad);
+        out->v[ENU_N] = fp.patternCentreM.v[ENU_N] + radiusM * sin_approx(phaseRad);
+    }
+}
+
+// The carrot command must never complete: completion would refire
+// onWaypointReached (restarting the hold timer) and zero the velocity target.
+// completionSpeed 0 keeps it permanently unreachable. Accel limits are lifted
+// because the approach-decel braking term would cap chase speed to a crawl at
+// carrot-lead distances; the next leg's dispatch restores them.
+static void issuePatternCommand(float radiusM)
+{
+    vector3_t carrot;
+    patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
+    positionNavSetTargetEf(&carrot, fp.patternCruiseMps, radiusM, 0.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.0f);
+}
+
+static void startHoldPattern(const waypoint_t *wp)
+{
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+
+    fp.patternType = wp->pattern;
+    fp.patternCentreM = cmd->targetPosEfM;
+    fp.patternCruiseMps = cmd->cruiseSpeedMps;
+    fp.patternSpeedMps = MIN(cmd->cruiseSpeedMps, radiusM * FP_PATTERN_MAX_RATE_RADS);
+
+    if (wp->pattern == WAYPOINT_PATTERN_FIGURE8) {
+        // The curve passes through the centre, which is where the vehicle is
+        fp.patternPhaseRad = 0.0f;
+    } else {
+        // Start the carrot at the vehicle's azimuth from the centre so the
+        // first move is outward onto the ring, not a dash across it
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        fp.patternPhaseRad = atan2_approx(est->position.v[ENU_N] * 0.01f - fp.patternCentreM.v[ENU_N],
+                                          est->position.v[ENU_E] * 0.01f - fp.patternCentreM.v[ENU_E]);
+    }
+    fp.patternLastUpdateUs = micros();
+    fp.patternActive = true;
+    issuePatternCommand(radiusM);
+}
+
+static void updateHoldPattern(timeUs_t currentTimeUs)
+{
+    const timeDelta_t sinceUs = cmpTimeUs(currentTimeUs, fp.patternLastUpdateUs);
+    if (sinceUs < (timeDelta_t)FP_PATTERN_UPDATE_US) {
+        return;
+    }
+    fp.patternLastUpdateUs = currentTimeUs;
+
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+    fp.patternPhaseRad += (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    if (fp.patternPhaseRad > M_PIf) {
+        fp.patternPhaseRad -= 2.0f * M_PIf;
+    }
+
+    if (positionNavHasActiveTarget()) {
+        vector3_t carrot;
+        patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
+        positionNavMoveTargetEf(&carrot);
+    } else {
+        // A position-control re-init wiped the carrot command; re-issue it
+        issuePatternCommand(radiusM);
+    }
+}
+
+// Orbit period at the configured pattern radius for a leg flown at speedCmS
+// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
+// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
+{
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+    float cruiseMps = (speedCmS > 0) ? speedCmS * 0.01f : autopilotConfig()->maxVelocity * 0.01f;
+    if (cruiseMps < FP_MIN_CRUISE_MPS) {
+        cruiseMps = FP_MIN_CRUISE_MPS;
+    }
+    const float rateRads = MIN(cruiseMps, radiusM * FP_PATTERN_MAX_RATE_RADS) / radiusM;
+    const float periodDs = 10.0f * 2.0f * M_PIf / rateRads;
+    return (periodDs >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(periodDs);
+}
+
 static void advanceToNext(void)
 {
     // The leg that's ending consumed any staged altitude override; clear it
     // before the next drainModifiers() pass so a new override (or none) is
     // staged cleanly for the upcoming leg.
     fp.altOverridePending = false;
+    fp.patternPending = false;
+    fp.patternActive = false;
 
     if (fp.currentIndex + 1 >= activePlanCount()) {
         fp.state = FP_NAV_COMPLETE;
@@ -626,12 +759,20 @@ static void onWaypointReached(void *userData)
     }
 #endif
 
-    // A LAND duration is a pre-descent loiter; the hold-expiry path starts
-    // the descent instead of advancing.
-    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD) || (wp->type == WAYPOINT_TYPE_LAND);
+    // A LAND duration is a pre-descent loiter and a TAKEOFF duration a
+    // post-climb loiter; the hold-expiry path starts the descent (LAND) or
+    // advances (HOLD, TAKEOFF).
+    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD)
+                             || (wp->type == WAYPOINT_TYPE_LAND)
+                             || (wp->type == WAYPOINT_TYPE_TAKEOFF);
     if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
+        if (wp->type == WAYPOINT_TYPE_HOLD && wp->pattern != WAYPOINT_PATTERN_NONE) {
+            // Deferred: the update loop starts the pattern once the arrival
+            // braking has settled (see FP_PATTERN_START_SPEED_MPS).
+            fp.patternPending = true;
+        }
         return;
     }
 
@@ -641,7 +782,6 @@ static void onWaypointReached(void *userData)
         return;
     }
 
-    // TODO: WAYPOINT_PATTERN_ORBIT / FIGURE8 sub-target generation for HOLD.
     advanceToNext();
 }
 
@@ -665,6 +805,8 @@ void flightPlanNavInit(void)
     fp.zBiasM = 0.0f;
     fp.abortReason = FP_ABORT_NONE;
     fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
@@ -681,6 +823,8 @@ void flightPlanNavEngage(void)
     // Engagement always starts the PG mission; an injected plan does not
     // survive a switch cycle (no resume).
     fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
     clearModifierState();
 
     // Reconcile the estimator's altitude baseline with the GPS frame waypoint
@@ -734,6 +878,8 @@ void flightPlanNavDisengage(void)
     fp.active = false;
     fp.state = FP_NAV_IDLE;
     fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
@@ -840,6 +986,24 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     }
 
     if (fp.state == FP_NAV_HOLDING) {
+        if (fp.patternPending) {
+            const waypoint_t *wp = currentWaypoint();
+            if (!positionNavHasActiveTarget() || wp == NULL) {
+                // The hold command was wiped while settling; degrade to a
+                // plain hold rather than orbit an unknown centre.
+                fp.patternPending = false;
+            } else {
+                const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+                const float hSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+                if (hSpeedMps < FP_PATTERN_START_SPEED_MPS
+                    || cmpTimeUs(currentTimeUs, fp.holdStartUs) >= (timeDelta_t)FP_PATTERN_START_TIMEOUT_US) {
+                    fp.patternPending = false;
+                    startHoldPattern(wp);
+                }
+            }
+        } else if (fp.patternActive) {
+            updateHoldPattern(currentTimeUs);
+        }
         const uint32_t holdUs = (uint32_t)fp.holdDurationDs * 100000u;
         const uint32_t elapsedUs = (uint32_t)(currentTimeUs - fp.holdStartUs);
         if (elapsedUs >= holdUs) {

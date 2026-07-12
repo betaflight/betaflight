@@ -66,6 +66,11 @@ flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 
+// Orbit period (deciseconds) at the configured pattern radius for a leg flown
+// at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
+// counts to and from hold durations.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
+
 // Replace the active mission with a small synthesised runtime plan (at most 4
 // waypoints, copied). Only valid while the executor is active. The injected
 // plan does not survive a switch cycle: engage and disengage revert to the
