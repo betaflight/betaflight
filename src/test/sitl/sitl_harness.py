@@ -18,6 +18,7 @@ Usage:
 """
 
 import argparse
+import json
 import math
 import os
 import shutil
@@ -56,6 +57,7 @@ RC_LOW = 1000
 RC_HIGH = 2000
 
 VERBOSE = False
+TELEMETRY_PORT = 9005  # ground-truth JSON fan-out for external visualisers, 0 disables
 
 
 def log(msg):
@@ -280,12 +282,13 @@ class FdmFeed(threading.Thread):
     first packet's origin (the FC un-mirrors).
     """
 
-    def __init__(self, motors=None, initial_yaw_deg=0.0):
+    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.model = MotionModel()
         self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
+        self.status = status
         self.running = True
         self.gps_valid = True     # False emits out-of-range lat/lon: the FC's GPS goes dark
         self.history = []         # (t, east, north, up, ve, vn, vu, heading_deg) at ~10 Hz
@@ -358,6 +361,33 @@ class FdmFeed(threading.Thread):
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 
+            if TELEMETRY_PORT:
+                try:
+                    # Ground-truth state for external visualisers. The model
+                    # keeps pitch nose-down/yaw-CW positive; emit display
+                    # conventions (pitch nose-up positive) once, here.
+                    self.sock.sendto(json.dumps({
+                        "t": now - self.t0,
+                        "pos": list(self.model.pos),
+                        "vel": list(self.model.vel),
+                        "att": [math.degrees(self.model.roll),
+                                -math.degrees(self.model.pitch),
+                                math.degrees(self.model.yaw) % 360.0],
+                        "rates": [math.degrees(self.model.rates[0]),
+                                  -math.degrees(self.model.rates[1]),
+                                  math.degrees(self.model.rates[2])],
+                        "motors": list(m),
+                        "lat": lat_true,
+                        "lon": lon_true,
+                        "alt": HOME_ALT_M + self.model.pos[2],
+                        "gps": bool(self.gps_valid),
+                        "armed": self.status.armed if self.status else None,
+                        "modes": self.status.modes if self.status else [],
+                        "home": [HOME_LAT, HOME_LON, HOME_ALT_M],
+                    }).encode(), ("127.0.0.1", TELEMETRY_PORT))
+                except OSError:
+                    pass  # fire-and-forget; a visualiser must never affect a scenario
+
             # The FC's bridge computes q = Rz(+90) * Rx(180) * q_packet * Rx(180),
             # so emit the true NWU attitude pre-rotated by Rz(-90) and
             # pre-conjugated: the FC recovers exactly q_nwu.
@@ -409,19 +439,23 @@ class Msp:
     def __init__(self, sock):
         self.sock = sock
         self.buf = b""
+        # serialises request/reply pairs: the status poller thread shares this
+        # connection with scenario bodies
+        self.lock = threading.Lock()
 
     def request(self, cmd, payload=b"", timeout=2.0):
-        frame = struct.pack("<BB", len(payload), cmd) + payload
-        checksum = 0
-        for b in frame:
-            checksum ^= b
-        self.sock.sendall(b"$M<" + frame + bytes([checksum]))
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            reply = self._read_frame(cmd, deadline)
-            if reply is not None:
-                return reply
-        raise TimeoutError(f"no MSP reply for cmd {cmd}")
+        with self.lock:
+            frame = struct.pack("<BB", len(payload), cmd) + payload
+            checksum = 0
+            for b in frame:
+                checksum ^= b
+            self.sock.sendall(b"$M<" + frame + bytes([checksum]))
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                reply = self._read_frame(cmd, deadline)
+                if reply is not None:
+                    return reply
+            raise TimeoutError(f"no MSP reply for cmd {cmd}")
 
     def _read_frame(self, want_cmd, deadline):
         while time.monotonic() < deadline:
@@ -565,6 +599,42 @@ class Sitl:
             except subprocess.TimeoutExpired:
                 self.proc.kill()
             self.proc = None
+
+
+class StatusPoller(threading.Thread):
+    """5 Hz MSP_STATUS poll feeding true arm/mode state into the telemetry
+    fan-out. Read-only observer: errors are swallowed and the last state kept,
+    so it can never fail a scenario."""
+
+    BOX_NAMES = {
+        BOX_ARM: "ARM",
+        BOX_ALTHOLD: "ALTHOLD",
+        BOX_POSHOLD: "POSHOLD",
+        BOX_FAILSAFE: "FAILSAFE",
+        BOX_GPSRESCUE: "GPSRESCUE",
+        BOX_AUTOPILOT: "AUTOPILOT",
+    }
+
+    def __init__(self, sitl):
+        super().__init__(daemon=True)
+        self.sitl = sitl
+        self.running = True
+        self.armed = False
+        self.modes = []
+
+    def run(self):
+        while self.running:
+            try:
+                if self.sitl.msp is not None:
+                    modes = self.sitl.modes()
+                    self.armed = BOX_ARM in modes
+                    self.modes = [self.BOX_NAMES.get(b, f"BOX{b}") for b in sorted(modes) if b != BOX_ARM]
+            except (TimeoutError, RuntimeError, OSError):
+                pass
+            time.sleep(0.2)
+
+    def shutdown(self):
+        self.running = False
 
 
 def wait_for(description, predicate, timeout=20.0, interval=0.2):
@@ -1340,21 +1410,24 @@ def decode_blackbox_logs(scenario_dir):
 def run_leg(name, variant, body, extra_cfg, opts, binary, leg_dir):
     os.makedirs(leg_dir)
     sitl = Sitl(binary, leg_dir)
-    rc = motors = fdm = None
+    rc = motors = fdm = poller = None
     try:
         # feed construction can fail (port 9002 bind); it must fail the
         # scenario, not abort the suite
         rc = RcFeed()
         motors = MotorFeed()
-        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0))
+        poller = StatusPoller(sitl) if TELEMETRY_PORT else None
+        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller)
         sitl.provision(base_config(extra_cfg))
         sitl.start()
         motors.start()
+        if poller:
+            poller.start()
         if variant is None:
             return body(sitl, rc, fdm)
         return body(sitl, rc, fdm, variant)
     finally:
-        for feed in (rc, fdm, motors):
+        for feed in (rc, fdm, motors, poller):
             if feed is not None:
                 feed.shutdown()
         sitl.stop()
@@ -1388,15 +1461,18 @@ def run_scenario(name, binary, workdir, binary_b=None):
 
 
 def main():
-    global VERBOSE
+    global VERBOSE, TELEMETRY_PORT
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--binary", required=True, help="path to betaflight_SITL.elf (built with USE_FLIGHT_PLAN)")
     ap.add_argument("--binary-b", help="rescue-plan binary (-DENABLE_RESCUE_PLAN=1) for A/B scenarios")
     ap.add_argument("--scenario", default="all", choices=["all"] + list(SCENARIOS))
     ap.add_argument("--workdir", default="/tmp/sitl_harness")
+    ap.add_argument("--telemetry-port", type=int, default=TELEMETRY_PORT,
+                    help="UDP port for ground-truth JSON telemetry (0 disables)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     VERBOSE = args.verbose
+    TELEMETRY_PORT = args.telemetry_port
 
     os.makedirs(args.workdir, exist_ok=True)
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
