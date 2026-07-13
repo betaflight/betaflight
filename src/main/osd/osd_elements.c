@@ -1462,7 +1462,7 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
         }
     } else {
-        if (getBatteryState() == BATTERY_CRITICAL){
+        if (getBatteryState() == BATTERY_CRITICAL) {
             element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
         }
     }
