@@ -56,7 +56,19 @@
 // 4 - D term * 10 // velocity factor ( distance error derivative)
 // 5 - A term * 10 // velocity derivative factor (acceleration in distance terms)
 // 6 - PIDsum * 10
-// 7 - Status - encodes navActive+ 10, SticksActive +5, PositionHeld +3, +1 when starting,
+// 7 - Status - encodes navActive+ 10, velocityMode +20, SticksActive +5, PositionHeld +3, +1 when starting,
+// In velocity mode slots 2-5 carry the velocity-loop terms: P/I on velocity error,
+// D damping, A the drag feedforward; slot 1 reads ~0. See also DEBUG_POSITION_NAV.
+
+// DEBUG_POSITION_NAV, axis set by gyro_filter_debug_axis
+// 0 - target velocity cm/s
+// 1 - filtered measured velocity cm/s
+// 2 - velocity error cm/s
+// 3 - P term * 10 (post buildup clamp)
+// 4 - I term * 10
+// 5 - D term * 10 (damping)
+// 6 - drag feedforward * 10
+// 7 - velocityMode * 10, +1 while the buildup clamp engages
 
 // DEBUG_AUTOPILOT_STOP
 // 0 - distance from position-hold target (cm)
@@ -93,7 +105,22 @@
 #define AP_YAW_D_SCALE         0.01f
 #define AP_YAW_RAMP_TIME_S     1.0f
 
+// Nav velocity loop (cm/s error -> degrees of lean)
+#define VELOCITY_P_SCALE       0.0004f   // default 50 -> 2 deg per m/s of error
+#define VELOCITY_I_SCALE       0.001f
+#define VELOCITY_D_SCALE       0.0004f
+#define VELOCITY_DRAG_SCALE    0.0001f   // default 50 -> 2.5 deg at 5 m/s target
+#define VELOCITY_I_LIMIT_DEG    15.0f
+#define VELOCITY_I_RELAX_CMS   250.0f    // integrate only near the target speed, so the
+                                         // integral cannot wind up during the accel phase
+
 static pidCoefficient_t positionPidCoeffs;
+
+static float velocityKp;
+static float velocityKi;
+static float velocityKd;
+static float velocityDragKff;
+static vector2_t velocityIntegral;       // nav velocity-loop I term, degrees, earth frame
 
 static float altitudeKp;
 static float altitudeKi;
@@ -183,6 +210,11 @@ void autopilotInit(void)
     positionPidCoeffs.Ki  = cfg->positionI  * POSITION_I_SCALE;
     positionPidCoeffs.Kd  = cfg->positionD  * POSITION_D_SCALE;
     positionPidCoeffs.Ka  = cfg->positionA  * POSITION_A_SCALE;
+
+    velocityKp      = cfg->velocityP * VELOCITY_P_SCALE;
+    velocityKi      = cfg->velocityI * VELOCITY_I_SCALE;
+    velocityKd      = cfg->velocityD * VELOCITY_D_SCALE;
+    velocityDragKff = cfg->velocityDragCoeff * VELOCITY_DRAG_SCALE;
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     abortNavRequested = false;
@@ -329,6 +361,11 @@ static void resetDistanceErrorIntegral(void)
     distanceErrorIntegral = (vector2_t){{ 0.0f, 0.0f }};
 }
 
+static void resetVelocityIntegral(void)
+{
+    velocityIntegral = (vector2_t){{ 0.0f, 0.0f }};
+}
+
 void initPositionHold(void)
 {
     updatePositionHoldTarget();
@@ -345,6 +382,7 @@ static void initNavMode(void)
     initPidLpfs();
     resetDistanceError();
     resetDistanceErrorIntegral();
+    resetVelocityIntegral();
     isPosHoldStarting[EF_EAST]  = false;
     isPosHoldStarting[EF_NORTH] = false;
 }
@@ -367,6 +405,7 @@ void resetPositionControl(unsigned taskRateHz)
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
     resetDistanceErrorIntegral();
+    resetVelocityIntegral();
 }
 
 void handlepositionControlFailure(void)
@@ -591,6 +630,9 @@ bool positionControl(void)
     wasNavActive = ap.navActive;
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
+    const bool velocityMode = ap.navActive && autopilotConfig()->velocityControlEnable;
+    vector2_t velocityFilteredV = { { 0 } };
+
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         if (isPositionHeld) {
             if (isPosHoldStarting[axis]) {
@@ -625,37 +667,73 @@ bool positionControl(void)
         }
 
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
+        velocityFilteredV.v[axis] = velocityFiltered;
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
-        velocityError.v[axis] *= dTermRamp.v[axis];
-        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ * dTermRamp.v[axis];
+        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] = velocityFiltered;
-        const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
 
-        if (ap.navActive) {
-            // Anti-windup: while the angle output is saturated (accelerating
-            // toward cruise), only integrate toward unwinding, or metres of
-            // pseudo distance error accumulate that can only be shed by
-            // flying well past the commanded speed.
-            if (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f) {
-                distanceError.v[axis] += velocityError.v[axis] * dt;
+        if (velocityMode) {
+            // Track the nav velocity target directly; dTermRamp is pos-hold
+            // start-up state and holds a stale value during nav, so the raw
+            // error and acceleration are used here.
+            const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
+            if (fabsf(velocityError.v[axis]) < VELOCITY_I_RELAX_CMS
+                && (!wasAngleSaturated || (velocityError.v[axis] * velocityIntegral.v[axis]) < 0.0f)) {
+                velocityIntegral.v[axis] += velocityError.v[axis] * velocityKi * dt;
+                velocityIntegral.v[axis] = constrainf(velocityIntegral.v[axis], -VELOCITY_I_LIMIT_DEG, VELOCITY_I_LIMIT_DEG);
             }
-        } else if (!isPositionHeld) {
-            // sticks active
-            distanceErrorIntegral.v[axis] *= 0.99f;
-            distanceError.v[axis] = 0.0f;
+            pidP.v[axis] = velocityError.v[axis] * velocityKp;
+            pidI.v[axis] = velocityIntegral.v[axis];
+            pidD.v[axis] = acceleration * velocityKd;
+            pidA.v[axis] = targetVelocity.v[axis] * velocityDragKff; // drag feedforward carries the cruise tilt
+        } else {
+            velocityError.v[axis] *= dTermRamp.v[axis];
+            const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw * dTermRamp.v[axis]);
+
+            if (ap.navActive) {
+                // Anti-windup: while the angle output is saturated (accelerating
+                // toward cruise), only integrate toward unwinding, or metres of
+                // pseudo distance error accumulate that can only be shed by
+                // flying well past the commanded speed.
+                if (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f) {
+                    distanceError.v[axis] += velocityError.v[axis] * dt;
+                }
+            } else if (!isPositionHeld) {
+                // sticks active
+                distanceErrorIntegral.v[axis] *= 0.99f;
+                distanceError.v[axis] = 0.0f;
+            }
+
+            distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
+            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt * (isPosHoldStarting[axis] ? 0.0f : 1.0f);
+            distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
+
+            pidP.v[axis] = distanceError.v[axis] * positionPidCoeffs.Kp;
+            pidI.v[axis] = distanceErrorIntegral.v[axis] * positionPidCoeffs.Ki;
+            pidD.v[axis] = velocityError.v[axis] * positionPidCoeffs.Kd * dTermRamp.v[axis];
+            pidA.v[axis] = acceleration * positionPidCoeffs.Ka;
         }
-
-        distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-        distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt * (isPosHoldStarting[axis] ? 0.0f : 1.0f);
-        distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-
-        pidP.v[axis] = distanceError.v[axis] * positionPidCoeffs.Kp;
-        pidI.v[axis] = distanceErrorIntegral.v[axis] * positionPidCoeffs.Ki;
-        pidD.v[axis] = velocityError.v[axis] * positionPidCoeffs.Kd * dTermRamp.v[axis];
-        pidA.v[axis] = acceleration * positionPidCoeffs.Ka;
 
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis];
     } // End for loop
+
+    bool buildupClamped = false;
+    if (velocityMode) {
+        // velocityBuildupMaxPitch bounds the P vector, the acceleration-demand
+        // term, so the pitch bias while building up to speed is limited; the
+        // drag feedforward, integral trim and damping ride on top, with the
+        // maxAngle clamp below as the hard limit on the total.
+        const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
+        const float pMag = vector2Norm(&pidP);
+        if (pMag > buildupMaxDeg) {
+            buildupClamped = true;
+            const float scale = (pMag > 0.001f) ? buildupMaxDeg / pMag : 0.0f;
+            vector2Scale(&pidP, &pidP, scale);
+            for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
+                pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis];
+            }
+        }
+    }
 
     // Rotation from Earth Frame to Body Frame
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
@@ -679,6 +757,7 @@ bool positionControl(void)
 
     int statusValue = 0;
     if (ap.navActive)       statusValue += 10;
+    if (velocityMode)       statusValue += 20;
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
@@ -699,6 +778,15 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (isPosHoldStarting[EF_EAST] ? 1 : 0));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (isPosHoldStarting[EF_NORTH] ? 1 : 0));
+
+    DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocityFilteredV.v[ap.debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));
+    DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));
+    DEBUG_SET(DEBUG_POSITION_NAV, 5, lrintf(pidD.v[ap.debugAxis] * 10));
+    DEBUG_SET(DEBUG_POSITION_NAV, 6, lrintf(pidA.v[ap.debugAxis] * 10));
+    DEBUG_SET(DEBUG_POSITION_NAV, 7, (velocityMode ? 10 : 0) + (buildupClamped ? 1 : 0));
 
     return true;
 }

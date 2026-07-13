@@ -67,13 +67,14 @@ extern "C" {
     // yaw-control tests drive them via the mockNav* variables.
     static bool mockNavHasActiveTarget = false;
     static positionNavCommand_t mockNavCommand;
+    static vector3_t mockTargetVelCmS;
 
     void positionNavInit(void) { }
     void positionNavReset(void) { }
     void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
     bool positionNavHasActiveTarget(void) { return mockNavHasActiveTarget; }
     bool positionNavTargetReached(void) { return false; }
-    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return mockTargetVelCmS; }
     const positionNavCommand_t *positionNavGetActiveCommand(void) { return mockNavHasActiveTarget ? &mockNavCommand : NULL; }
 
     float getAltitudeCm(void) { return 0.0f; }
@@ -180,6 +181,7 @@ protected:
         memset(&gyro, 0, sizeof(gyro));
         memset(&mockNavCommand, 0, sizeof(mockNavCommand));
         mockNavHasActiveTarget = false;
+        mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
         flightModeFlags = 0;
     }
 };
@@ -652,4 +654,183 @@ TEST_F(AutopilotYawTest, EngageRampsRateIn)
     EXPECT_TRUE(autopilotYawControlActive());
     EXPECT_GT(autopilotGetYawRate(), -15.0f);
     EXPECT_LT(autopilotGetYawRate(), 0.0f);
+}
+
+// -- Nav velocity mode --
+
+static uint16_t dragCoeffForTarget(float kDragPerS, float targetCmS)
+{
+    const float ffDeg = RADIANS_TO_DEGREES(atanf(kDragPerS * targetCmS / 981.0f));
+    return (uint16_t)lrintf(ffDeg / (targetCmS * 0.0001f));
+}
+
+static void stepVelocityPlant(float kDragPerS, float *vNorthCmS)
+{
+    positionControl();
+    const float pitchRad = DEGREES_TO_RADIANS(autopilotAngle[AI_PITCH]);
+    *vNorthCmS += (981.0f * tanf(pitchRad) - kDragPerS * (*vNorthCmS)) * 0.01f;
+    testEstimate.velocity.y = *vNorthCmS;
+}
+
+class VelocityModeTest : public PosHoldTest {
+protected:
+    void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
+                            uint16_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
+                            uint8_t maxAngle = 45, bool enable = true)
+    {
+        initAndSettleAt(0, 0, 0);
+
+        autopilotConfig_t *cfg = autopilotConfigMutable();
+        cfg->maxAngle = maxAngle;
+        cfg->positionCutoff = 30;
+        cfg->velocityControlEnable = enable ? 1 : 0;
+        cfg->velocityP = velocityP;
+        cfg->velocityI = velocityI;
+        cfg->velocityD = velocityD;
+        cfg->velocityDragCoeff = velocityDragCoeff;
+        cfg->velocityBuildupMaxPitch = velocityBuildupMaxPitch;
+        autopilotInit();
+
+        mockNavHasActiveTarget = true;
+        mockNavCommand.active = true;
+    }
+
+    void setTargetVelocityNorth(float cmS)
+    {
+        mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
+    }
+};
+
+TEST_F(VelocityModeTest, CruiseConvergence)
+{
+    const float kDrag = 0.8f;
+    const float targetCmS = 500.0f;
+    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
+    setTargetVelocityNorth(targetCmS);
+
+    float vNorth = 0.0f;
+    for (int i = 0; i < 1500; i++) {
+        stepVelocityPlant(kDrag, &vNorth);
+    }
+
+    EXPECT_NEAR(vNorth, targetCmS, targetCmS * 0.05f);
+}
+
+TEST_F(VelocityModeTest, NoOvershoot)
+{
+    const float kDrag = 0.8f;
+    const float targetCmS = 500.0f;
+    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
+    setTargetVelocityNorth(targetCmS);
+
+    float vNorth = 0.0f;
+    float maxV = 0.0f;
+    for (int i = 0; i < 1500; i++) {
+        stepVelocityPlant(kDrag, &vNorth);
+        maxV = fmaxf(maxV, vNorth);
+    }
+
+    EXPECT_LE(maxV, targetCmS * 1.10f);
+}
+
+TEST_F(VelocityModeTest, DragFeedforwardMagnitude)
+{
+    const float targetCmS = 400.0f;
+    const uint16_t dragCoeff = 300;
+    engageVelocityNav(30, 10, 20, dragCoeff, 30);
+    setTargetVelocityNorth(targetCmS);
+    testEstimate.velocity.y = targetCmS;
+
+    runIterations(300);
+
+    const float expectedFFDeg = dragCoeff * 0.0001f * targetCmS;
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], expectedFFDeg, 1.0f);
+}
+
+TEST_F(VelocityModeTest, BuildupClampBoundsP)
+{
+    const uint8_t buildupMaxPitch = 10;
+    engageVelocityNav(50, 0, 0, 0, buildupMaxPitch, 45);
+    setTargetVelocityNorth(1500.0f);
+
+    for (int i = 0; i < 30; i++) {
+        positionControl();
+        EXPECT_LE(fabsf(autopilotAngle[AI_PITCH]), buildupMaxPitch + 0.05f);
+    }
+}
+
+TEST_F(VelocityModeTest, IntegralSeparationAndFreeze)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    setTargetVelocityNorth(2000.0f); // filtered velocity stays near 0: error stays well above the 250 cm/s relax gate
+
+    positionControl();
+    const float pitchFirst = autopilotAngle[AI_PITCH];
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFirst, 0.05f);
+
+    testEstimate.velocity.y = 2000.0f - 100.0f; // step to a small, sustained error
+    runIterations(40); // let the velocity filter settle into the relax gate
+    const float pitchSmallErrEarly = autopilotAngle[AI_PITCH];
+    runIterations(100);
+    const float pitchSmallErrLater = autopilotAngle[AI_PITCH];
+    EXPECT_GT(fabsf(pitchSmallErrLater), fabsf(pitchSmallErrEarly) + 0.5f);
+}
+
+TEST_F(VelocityModeTest, VelocityModeDisabledUsesLegacyPath)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45, false);
+    setTargetVelocityNorth(300.0f);
+
+    runIterations(20);
+    const float pitchEarly = autopilotAngle[AI_PITCH];
+
+    runIterations(100);
+    const float pitchLater = autopilotAngle[AI_PITCH];
+
+    EXPECT_GT(fabsf(pitchLater), fabsf(pitchEarly) + 1.0f);
+}
+
+TEST_F(VelocityModeTest, ResetOnNavReentry)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    setTargetVelocityNorth(150.0f); // stays inside the relax gate throughout: the integral builds every cycle
+
+    runIterations(150);
+    const float pitchBeforeReentry = autopilotAngle[AI_PITCH];
+
+    mockNavHasActiveTarget = false;
+    positionControl(); // one cycle of pos-hold fallback
+
+    mockNavHasActiveTarget = true;
+    positionControl(); // nav re-entry: initNavMode() resets the velocity integral
+
+    EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), fabsf(pitchBeforeReentry) * 0.5f);
+}
+
+TEST_F(VelocityModeTest, PosHoldUnaffectedByDefaultOn)
+{
+    const int cycles = 50;
+    float baselineRoll[cycles];
+    float baselinePitch[cycles];
+
+    initAndSettleAt(0, 0, 0);
+    autopilotConfigMutable()->velocityControlEnable = 0;
+    autopilotInit();
+    testEstimate.position.x = 100.0f;
+    for (int i = 0; i < cycles; i++) {
+        positionControl();
+        baselineRoll[i] = autopilotAngle[AI_ROLL];
+        baselinePitch[i] = autopilotAngle[AI_PITCH];
+    }
+
+    initAndSettleAt(0, 0, 0);
+    autopilotConfigMutable()->velocityControlEnable = 1;
+    autopilotInit();
+    testEstimate.position.x = 100.0f;
+    for (int i = 0; i < cycles; i++) {
+        positionControl();
+        EXPECT_FLOAT_EQ(autopilotAngle[AI_ROLL], baselineRoll[i]);
+        EXPECT_FLOAT_EQ(autopilotAngle[AI_PITCH], baselinePitch[i]);
+    }
 }

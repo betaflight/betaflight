@@ -130,11 +130,10 @@ GRAVITY = 9.80665
 HOVER_THRUST = 0.30        # just above the FC hoverThrottle default (1275 -> 0.275)
 RATE_GAIN = 12.0           # rad/s of body rate per unit differential thrust
 RATE_TAU = 0.08            # attitude response time constant, seconds
-# Deliberately draggy (a real 5-inch holds 5 m/s at ~20 deg, not ~50): the
-# nav position controller tracks its velocity target through an integrator
-# and oscillates against a low-drag plant until the velocity-mode loop
-# (ap_velocity_*, currently unconsumed) exists.
-K_DRAG = 2.4               # 1/s, linear drag: 50 deg of tilt holds ~4.9 m/s
+# Low-drag plant: the nav velocity loop (ap_velocity_*) enforces cruise speed,
+# so the drag no longer needs to mask integrator overshoot. base_config sets
+# ap_velocity_drag_coeff to match this plant (atan(K_DRAG*v/g) over 5-7.5 m/s).
+K_DRAG = 0.8               # 1/s, linear drag: 22 deg of tilt holds ~5 m/s
 VERT_V_GAIN = 6.0          # terminal climb rate per unit thrust above hover
 VEL_TAU_V = 0.3            # vertical velocity response, seconds
 
@@ -545,6 +544,8 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
+        # matches the MotionModel plant: atan(K_DRAG * v / g) over cruise speeds
+        "set ap_velocity_drag_coeff = 440",
         # 10 m above home, 5 m/s — low and quick keeps landing scenarios short
         f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
     ] + extra
@@ -609,12 +610,29 @@ def scenario_mission_flight(sitl, rc, fdm):
     )
     # Assertions use the model's ground truth; the FC estimator tracks it,
     # while MSP_RAW_GPS leads the true position (virtual-GPS extrapolation).
+    # Mid-leg cruise: sample in the plateau (past the accel ramp, before the
+    # ~42 m braking taper) and check the velocity loop holds the commanded
+    # 5 m/s without overshoot.
+    cruise_samples = []
+
+    def reached_or_sample():
+        d = fdm.distance_to_wp(0.0, 300.0)
+        if fdm.distance_from_home() > 50.0 and d > 100.0:
+            cruise_samples.append(math.hypot(fdm.model.vel[0], fdm.model.vel[1]))
+        return d < 8.0
+
     wait_for(
         "waypoint reached (within 8 m, ground truth)",
-        lambda: fdm.distance_to_wp(0.0, 300.0) < 8.0,
+        lambda: reached_or_sample(),
         timeout=150,
         interval=1.0,
     )
+    assert len(cruise_samples) >= 5, f"cruise plateau too short: {len(cruise_samples)} samples"
+    cruise_avg = sum(cruise_samples) / len(cruise_samples)
+    cruise_max = max(cruise_samples)
+    assert 0.8 * 5.0 <= cruise_avg <= 1.2 * 5.0, f"cruise speed off target: avg {cruise_avg:.2f} m/s"
+    assert cruise_max <= 1.3 * 5.0, f"cruise overshoot: peak {cruise_max:.2f} m/s"
+    log(f"cruise avg {cruise_avg:.2f} m/s, peak {cruise_max:.2f} m/s over {len(cruise_samples)} samples")
     # Mission complete: executor parks in position hold at the waypoint.
     # Legs complete on radius entry; the hold-mode braking parks a short
     # distance past the point at cruise speed.
