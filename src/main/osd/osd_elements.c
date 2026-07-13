@@ -1457,8 +1457,14 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     const int usedCapacity = getMAhDrawn();
     int displayBasis = usedCapacity;
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    if (currentBatteryProfile->batteryCapacity) {
+        if (mAhDrawn >= osdConfig()->cap_alarm) {
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        }
+    } else {
+        if(getBatteryState() == BATTERY_CRITICAL){
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        }
     }
 
     switch (element->type) {
