@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -31,6 +32,7 @@
 
 #include "common/maths.h"
 #include "common/time.h"
+#include "common/utils.h"
 #include "common/vector.h"
 
 #include "drivers/time.h"
@@ -47,6 +49,9 @@
 
 #include "pg/autopilot.h"
 #include "pg/flight_plan.h"
+#ifdef USE_GPS_RESCUE
+#include "pg/gps_rescue.h"
+#endif
 
 #define FP_MIN_CRUISE_MPS         1.0f
 // Legs complete on acceptance-radius entry at any speed: the position
@@ -83,6 +88,10 @@
 // vehicle that cannot descend must keep trying, not disarm mid-air.
 #define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
 
+// Injected runtime plans are small synthesised sequences (geofence RTH today,
+// rescue-as-mission later); MAVLink-scale plans stay in the PG store.
+#define FP_INJECTED_PLAN_MAX 4
+
 static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
@@ -104,7 +113,11 @@ static struct {
     float    yawRateCapDps;
 
     flightPlanAbortReason_e abortReason;
-    bool rescueRequested;
+
+    // Injected runtime plan; while injectedCount > 0 it replaces the PG
+    // mission as the executor's waypoint source.
+    waypoint_t injected[FP_INJECTED_PLAN_MAX];
+    uint8_t injectedCount;
 
     // Leg progress tracking for stall/flyaway detection
     float bestDistanceToTargetM;
@@ -121,13 +134,22 @@ static flightPlanWaypointReachedFn reachedListener = NULL;
 
 static void onWaypointReached(void *userData);
 
-static const waypoint_t *currentWaypoint(void)
+static uint8_t activePlanCount(void)
 {
-    const flightPlanConfig_t *plan = flightPlanConfig();
-    if (fp.currentIndex >= plan->waypointCount) {
+    return (fp.injectedCount > 0) ? fp.injectedCount : flightPlanConfig()->waypointCount;
+}
+
+static const waypoint_t *activePlanWaypoint(uint8_t index)
+{
+    if (index >= activePlanCount()) {
         return NULL;
     }
-    return &plan->waypoints[fp.currentIndex];
+    return (fp.injectedCount > 0) ? &fp.injected[index] : &flightPlanConfig()->waypoints[index];
+}
+
+static const waypoint_t *currentWaypoint(void)
+{
+    return activePlanWaypoint(fp.currentIndex);
 }
 
 static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
@@ -185,7 +207,7 @@ static const waypoint_t *drainModifiers(void)
         default:
             return wp;
         }
-        if (++fp.currentIndex >= flightPlanConfig()->waypointCount) {
+        if (++fp.currentIndex >= activePlanCount()) {
             return NULL;
         }
     }
@@ -365,8 +387,63 @@ static void updateLanding(timeUs_t currentTimeUs)
     }
 }
 
+// Descend at the leg's target (the waypoint itself), not wherever the arrival
+// gate tripped. If the position command has been wiped (a position-control
+// re-init), a zeroed target would descend at the GPS origin — re-fly the LAND
+// waypoint instead.
+static void startLandingAtNavTarget(timeUs_t currentTimeUs)
+{
+    if (!positionNavHasActiveTarget()) {
+        dispatchWaypoint();
+        return;
+    }
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    startLanding(currentTimeUs, cmd->targetPosEfM.v[ENU_E], cmd->targetPosEfM.v[ENU_N]);
+}
+
+// Geofence RTH response: [fly home at return altitude, land at home]. Return
+// altitude never commands an en-route descent (rescue's ALT_MODE_MAX
+// behaviour). Falls back to landing in place if the plan can't be injected.
+static void injectReturnHomePlan(timeUs_t currentTimeUs)
+{
+#ifdef USE_GPS_RESCUE
+    const int32_t returnAltCm = MAX(GPS_home_llh.altCm + (int32_t)gpsRescueConfig()->returnAltitudeM * 100, gpsSol.llh.altCm);
+    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
+#else
+    const int32_t returnAltCm = gpsSol.llh.altCm;
+    const uint16_t speedCmS = 0;    // waypoint default: autopilot maxVelocity
+#endif
+    const waypoint_t plan[] = {
+        {
+            .latitude = GPS_home_llh.lat,
+            .longitude = GPS_home_llh.lon,
+            .altitude = returnAltCm,
+            .speed = speedCmS,
+            .type = WAYPOINT_TYPE_FLYOVER,
+        },
+        {
+            .latitude = GPS_home_llh.lat,
+            .longitude = GPS_home_llh.lon,
+            .altitude = returnAltCm,
+            .speed = speedCmS,
+            .type = WAYPOINT_TYPE_LAND,
+        },
+    };
+
+    if (!flightPlanNavInjectPlan(plan, ARRAYLEN(plan))) {
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        startLanding(currentTimeUs, est->position.v[ENU_E] * 0.01f, est->position.v[ENU_N] * 0.01f);
+    }
+}
+
 static void checkGeofence(timeUs_t currentTimeUs)
 {
+    // An injected plan is itself the geofence response; evaluating the fence
+    // while flying it would re-trigger every cycle.
+    if (fp.injectedCount > 0) {
+        return;
+    }
+
     const autopilotConfig_t *cfg = autopilotConfig();
     if (cfg->maxDistanceFromHomeM == 0 || !STATE(GPS_FIX_HOME)) {
         return;
@@ -376,7 +453,7 @@ static void checkGeofence(timeUs_t currentTimeUs)
     }
 
     if (cfg->geofenceAction == AP_GEOFENCE_RTH) {
-        fp.rescueRequested = true;
+        injectReturnHomePlan(currentTimeUs);
     } else {
         const positionEstimate3d_t *est = positionEstimatorGetEstimate();
         startLanding(currentTimeUs, est->position.v[ENU_E] * 0.01f, est->position.v[ENU_N] * 0.01f);
@@ -390,7 +467,7 @@ static void advanceToNext(void)
     // staged cleanly for the upcoming leg.
     fp.altOverridePending = false;
 
-    if (fp.currentIndex + 1 >= flightPlanConfig()->waypointCount) {
+    if (fp.currentIndex + 1 >= activePlanCount()) {
         fp.state = FP_NAV_COMPLETE;
         positionNavClearTarget();
         return;
@@ -416,22 +493,24 @@ static void onWaypointReached(void *userData)
         return;
     }
 
-    if (reachedListener) {
+    // Listener indices refer to the PG mission; injected-plan progress is
+    // meaningless to a MAVLink partner tracking the uploaded plan.
+    if (reachedListener && fp.injectedCount == 0) {
         reachedListener(fp.currentIndex);
     }
 
-    if (wp->type == WAYPOINT_TYPE_HOLD && fp.holdDurationDs > 0) {
+    // A LAND duration is a pre-descent loiter; the hold-expiry path starts
+    // the descent instead of advancing.
+    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD) || (wp->type == WAYPOINT_TYPE_LAND);
+    if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
         return;
     }
 
     if (wp->type == WAYPOINT_TYPE_LAND) {
-        // Descend at the waypoint itself, not wherever the arrival gate
-        // tripped: the active nav command still carries the leg's ENU target.
         // Touchdown completes the plan, so a mid-plan LAND is terminal.
-        const positionNavCommand_t *cmd = positionNavGetActiveCommand();
-        startLanding(micros(), cmd->targetPosEfM.v[ENU_E], cmd->targetPosEfM.v[ENU_N]);
+        startLandingAtNavTarget(micros());
         return;
     }
 
@@ -458,7 +537,7 @@ void flightPlanNavInit(void)
     fp.active = false;
     fp.zBiasM = 0.0f;
     fp.abortReason = FP_ABORT_NONE;
-    fp.rescueRequested = false;
+    fp.injectedCount = 0;
     clearModifierState();
 }
 
@@ -467,6 +546,9 @@ void flightPlanNavEngage(void)
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
     fp.abortReason = FP_ABORT_NONE;
+    // Engagement always starts the PG mission; an injected plan does not
+    // survive a switch cycle (no resume).
+    fp.injectedCount = 0;
     clearModifierState();
 
     // Capture the estimator's current Z so subsequent waypoint altitudes are
@@ -495,8 +577,31 @@ void flightPlanNavDisengage(void)
 {
     fp.active = false;
     fp.state = FP_NAV_IDLE;
+    fp.injectedCount = 0;
     clearModifierState();
     positionNavClearTarget();
+}
+
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
+{
+    if (!fp.active || waypoints == NULL || count == 0 || count > FP_INJECTED_PLAN_MAX) {
+        return false;
+    }
+
+    memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
+    fp.injectedCount = count;
+    fp.currentIndex = 0;
+    fp.abortReason = FP_ABORT_NONE;
+    clearModifierState();
+    // If dispatch fails (GPS origin lost) the state falls back to IDLE and
+    // the update loop retries against the injected plan.
+    dispatchWaypoint();
+    return true;
+}
+
+bool flightPlanNavIsInjectedPlanActive(void)
+{
+    return fp.active && fp.injectedCount > 0;
 }
 
 void flightPlanNavUpdate(timeUs_t currentTimeUs)
@@ -506,7 +611,7 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     }
 
     // Retry dispatch if we engaged before the estimator had an origin.
-    if (fp.state == FP_NAV_IDLE && flightPlanConfig()->waypointCount > 0) {
+    if (fp.state == FP_NAV_IDLE && activePlanCount() > 0) {
         dispatchWaypoint();
         return;
     }
@@ -532,7 +637,7 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         }
 
         checkGeofence(currentTimeUs);
-        if (fp.state == FP_NAV_LANDING || fp.rescueRequested) {
+        if (fp.state == FP_NAV_LANDING) {
             return;
         }
     }
@@ -554,7 +659,12 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         const uint32_t holdUs = (uint32_t)fp.holdDurationDs * 100000u;
         const uint32_t elapsedUs = (uint32_t)(currentTimeUs - fp.holdStartUs);
         if (elapsedUs >= holdUs) {
-            advanceToNext();
+            const waypoint_t *wp = currentWaypoint();
+            if (wp != NULL && wp->type == WAYPOINT_TYPE_LAND) {
+                startLandingAtNavTarget(currentTimeUs);
+            } else {
+                advanceToNext();
+            }
         }
     }
 }
@@ -577,16 +687,6 @@ uint8_t flightPlanNavGetCurrentIndex(void)
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void)
 {
     return fp.abortReason;
-}
-
-bool flightPlanNavRescueRequested(void)
-{
-    return fp.rescueRequested;
-}
-
-void flightPlanNavClearRescueRequest(void)
-{
-    fp.rescueRequested = false;
 }
 
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)

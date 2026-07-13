@@ -26,6 +26,8 @@
 
 #include "common/time.h"
 
+#include "pg/flight_plan.h"
+
 typedef enum {
     FP_NAV_IDLE = 0,
     FP_NAV_TARGETING,
@@ -63,11 +65,12 @@ flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 
-// Geofence RTH latch. Set when a geofence breach with AP_GEOFENCE_RTH occurs;
-// consumed by the GPS rescue mode gate. Stays latched (rescue outranks the
-// mission and disengages it) until cleared on disarm or AUTOPILOT switch-off.
-bool flightPlanNavRescueRequested(void);
-void flightPlanNavClearRescueRequest(void);
+// Replace the active mission with a small synthesised runtime plan (at most 4
+// waypoints, copied). Only valid while the executor is active. The injected
+// plan does not survive a switch cycle: engage and disengage revert to the
+// stored mission, with no resume of what was preempted.
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
+bool flightPlanNavIsInjectedPlanActive(void);
 
 // Single observer slot for "waypoint reached" — invoked with the index of the
 // waypoint that was just reached, before any HOLD timer or advance. Pass NULL

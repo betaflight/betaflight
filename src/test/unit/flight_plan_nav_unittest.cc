@@ -37,6 +37,7 @@ extern "C" {
 
     #include "pg/autopilot.h"
     #include "pg/flight_plan.h"
+    #include "pg/gps_rescue.h"
     #include "pg/pg.h"
 
     int16_t debug[DEBUG16_VALUE_COUNT];
@@ -44,6 +45,8 @@ extern "C" {
 
     uint8_t stateFlags;
     uint16_t GPS_distanceToHome;
+    gpsSolutionData_t gpsSol;
+    gpsLocation_t GPS_home_llh;
 }
 
 #include "unittest_macros.h"
@@ -233,6 +236,17 @@ protected:
         g_stubGpsOrigin.altCm = 10000;
         g_stubGpsOriginSet = true;
 
+        // Home at the origin; current GPS altitude at home altitude.
+        memset(&GPS_home_llh, 0, sizeof(GPS_home_llh));
+        GPS_home_llh.altCm = 10000;
+        memset(&gpsSol, 0, sizeof(gpsSol));
+        gpsSol.llh.altCm = 10000;
+
+        gpsRescueConfig_t *rescueCfg = gpsRescueConfigMutable();
+        memset(rescueCfg, 0, sizeof(*rescueCfg));
+        rescueCfg->returnAltitudeM = 30;
+        rescueCfg->groundSpeedCmS = 750;
+
         flightPlanConfig_t *plan = flightPlanConfigMutable();
         memset(plan, 0, sizeof(*plan));
 
@@ -246,6 +260,24 @@ protected:
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
 
         flightPlanNavInit();
+    }
+
+    void TearDown() override {
+        flightPlanNavSetReachedListener(nullptr);
+    }
+
+    static waypoint_t makeWaypoint(int32_t lat, int32_t lon, int32_t altCm,
+                                   uint8_t type, uint16_t speed = 0, uint16_t duration = 0)
+    {
+        waypoint_t wp = {};
+        wp.latitude = lat;
+        wp.longitude = lon;
+        wp.altitude = altCm;
+        wp.speed = speed;
+        wp.duration = duration;
+        wp.type = type;
+        wp.pattern = WAYPOINT_PATTERN_ORBIT;
+        return wp;
     }
 
     void addWaypoint(int32_t lat, int32_t lon, int32_t altCm,
@@ -469,6 +501,105 @@ TEST_F(FlightPlanNavTest, YawRateCapClearsOnDisengageAndEngage)
     EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
 }
 
+// --- Injected runtime plans ---
+
+namespace {
+int g_reachedCalls;
+void recordReached(uint8_t index) { (void)index; g_reachedCalls++; }
+} // namespace
+
+TEST_F(FlightPlanNavTest, InjectedPlanReplacesMissionAndRunsToTermination)
+{
+    // Single-waypoint PG mission with a yaw-rate cap staged: injection must
+    // clear the cap and must not be truncated by the shorter PG count.
+    addWaypoint(0, 0, 0, WAYPOINT_TYPE_YAW_RATE, 45);
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
+    const int callsBefore = g_setTargetCalls;
+
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    const waypoint_t plan[] = {
+        makeWaypoint(0, lonUnitsFor10m, 12000, WAYPOINT_TYPE_FLYOVER),
+        makeWaypoint(0, lonUnitsFor10m, 12000, WAYPOINT_TYPE_LAND),
+    };
+    ASSERT_TRUE(flightPlanNavInjectPlan(plan, 2));
+
+    EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(g_setTargetCalls, callsBefore + 1);
+    EXPECT_FLOAT_EQ(g_yawRateLimitDps, 0.0f);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 20.0f, 0.1f); // 120 m AMSL - 100 m origin
+
+    // The injected plan advances past the PG waypoint count (1 positional wp).
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+}
+
+TEST_F(FlightPlanNavTest, InjectRejectsInvalidRequests)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    const waypoint_t wp = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_LAND);
+    const waypoint_t five[5] = { wp, wp, wp, wp, wp };
+
+    // Executor not active.
+    EXPECT_FALSE(flightPlanNavInjectPlan(&wp, 1));
+
+    flightPlanNavEngage();
+    EXPECT_FALSE(flightPlanNavInjectPlan(&wp, 0));
+    EXPECT_FALSE(flightPlanNavInjectPlan(five, 5));
+    EXPECT_FALSE(flightPlanNavInjectPlan(NULL, 1));
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+
+    EXPECT_TRUE(flightPlanNavInjectPlan(&wp, 1));
+    EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
+}
+
+TEST_F(FlightPlanNavTest, EngageAfterInjectRevertsToPgPlan)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    const waypoint_t wp = makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_LAND);
+    ASSERT_TRUE(flightPlanNavInjectPlan(&wp, 1));
+
+    flightPlanNavDisengage();
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+
+    flightPlanNavEngage();
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f); // PG waypoint: 150 m AMSL - 100 m origin
+}
+
+TEST_F(FlightPlanNavTest, ReachedListenerSuppressedWhileInjected)
+{
+    g_reachedCalls = 0;
+    flightPlanNavSetReachedListener(recordReached);
+
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    flightPlanNavEngage();
+    triggerReached();
+    EXPECT_EQ(g_reachedCalls, 1); // PG mission progress is reported
+
+    const waypoint_t plan[] = {
+        makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_FLYOVER),
+        makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_LAND),
+    };
+    ASSERT_TRUE(flightPlanNavInjectPlan(plan, 2));
+    triggerReached();
+    EXPECT_EQ(g_reachedCalls, 1); // injected-plan progress is not
+}
+
 // --- LAND waypoint type ---
 
 TEST_F(FlightPlanNavTest, LandWaypointDispatchesWithHoldGate)
@@ -538,6 +669,56 @@ TEST_F(FlightPlanNavTest, LandWaypointTouchdownDisarmsAndCompletes)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_COMPLETE);
     // LAND is terminal: the trailing waypoint is never dispatched.
     EXPECT_EQ(g_setTargetCalls, dispatchesBeforeTouchdown);
+}
+
+TEST_F(FlightPlanNavTest, LandWaypointWithDurationLoitersThenDescends)
+{
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    addWaypoint(0, lonUnitsFor10m, 5000, WAYPOINT_TYPE_LAND, 0, 20 /* 2.0 s loiter */);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    triggerReached();
+
+    // Pre-descent loiter, exactly like HOLD.
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubMicros += 1'000'000; // 1 s: still loitering
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    g_stubEstimate.position.v[ENU_U] = 30.0f * 100.0f;
+    g_stubMicros += 1'500'000; // 2.5 s: loiter expired, descend at the waypoint
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
+}
+
+TEST_F(FlightPlanNavTest, LandLoiterExpiryWithLostTargetRedispatchesLeg)
+{
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    addWaypoint(0, lonUnitsFor10m, 5000, WAYPOINT_TYPE_LAND, 0, 20);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    triggerReached();
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+
+    // The position command is wiped during the loiter (position-control
+    // re-init). A zeroed target must not be used as the descent anchor —
+    // the leg is re-flown instead.
+    positionNavClearTarget();
+    const int callsBefore = g_setTargetCalls;
+
+    g_stubMicros += 2'500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(g_setTargetCalls, callsBefore + 1);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 10.0f, 0.1f); // the LAND leg again, not a descent
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, -50.0f, 0.1f);
 }
 
 // --- Safety behaviour ---
@@ -644,7 +825,7 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithLandActionStartsLanding)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 34.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f - 200.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 0.5f, 0.01f);
-    EXPECT_FALSE(flightPlanNavRescueRequested());
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
 }
 
 TEST_F(FlightPlanNavSafetyTest, GeofenceInsideLimitDoesNothing)
@@ -672,23 +853,62 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceWithoutHomeFixDoesNothing)
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 }
 
-TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionLatchesRescueRequest)
+TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
 {
     autopilotConfigMutable()->maxDistanceFromHomeM = 100;
     autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_RTH;
     stateFlags |= GPS_FIX_HOME;
     engageDistantLeg();
+    const int callsBeforeBreach = g_setTargetCalls;
+
+    GPS_distanceToHome = 150;
+    g_stubEstimate.position.v[ENU_N] = 150.0f * 100.0f; // 150 m out, en route
+    flightPlanNavUpdate(g_stubMicros + 10'000);
+
+    // The return plan replaces the mission: fly to home at the rescue return
+    // altitude (30 m above the 100 m home altitude) at the rescue ground speed.
+    EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(g_setTargetCalls, callsBeforeBreach + 1);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 7.5f, 0.01f);
+
+    // Still outside the fence on the way home: no re-injection.
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_setTargetCalls, callsBeforeBreach + 1);
+
+    // Home arrival dispatches the plan's LAND leg; its arrival descends there.
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    triggerReached();
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
+
+    // No resume: the injected plan dies with disengagement.
+    flightPlanNavDisengage();
+    EXPECT_FALSE(flightPlanNavIsInjectedPlanActive());
+}
+
+TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitude)
+{
+    autopilotConfigMutable()->maxDistanceFromHomeM = 100;
+    autopilotConfigMutable()->geofenceAction = AP_GEOFENCE_RTH;
+    stateFlags |= GPS_FIX_HOME;
+    gpsSol.llh.altCm = 15000; // 150 m AMSL: 20 m above home + returnAltitudeM
+    engageDistantLeg();
 
     GPS_distanceToHome = 150;
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
-    EXPECT_TRUE(flightPlanNavRescueRequested());
-    // The request survives disengagement (rescue outranks and disengages the mission).
-    flightPlanNavDisengage();
-    EXPECT_TRUE(flightPlanNavRescueRequested());
-
-    flightPlanNavClearRescueRequest();
-    EXPECT_FALSE(flightPlanNavRescueRequested());
+    ASSERT_TRUE(flightPlanNavIsInjectedPlanActive());
+    // Never descend en route: return at the higher of the two altitudes.
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)

@@ -1054,12 +1054,7 @@ void processRxModes(timeUs_t currentTimeUs)
 
 #ifdef USE_GPS_RESCUE
     if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
-        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-        // geofence breach with the RTH action requests a rescue
-        || flightPlanNavRescueRequested()
-#endif
-        )) {
+        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
@@ -1069,15 +1064,26 @@ void processRxModes(timeUs_t currentTimeUs)
 #endif
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    // During failsafe the mission flies only while the failsafe state machine
+    // has chosen to (rx-loss policy). In the stage-1 window before failsafe
+    // activates, rxfail substitution already drives the aux channels, so the
+    // switch is only pilot intent while channel data is real — otherwise hold
+    // the current mode and let the policy decide at stage-2 entry.
+    bool autopilotRequested;
+    if (failsafeIsActive()) {
+        autopilotRequested = (failsafePhase() == FAILSAFE_AUTOPILOT);
+    } else if (rxAreFlightChannelsValid()) {
+        autopilotRequested = IS_RC_MODE_ACTIVE(BOXAUTOPILOT);
+    } else {
+        autopilotRequested = FLIGHT_MODE(AUTOPILOT_MODE);
+    }
+
     // Before the hold modes: AUTOPILOT_MODE activates both, so they must see
     // its state from the same cycle.
     if (ARMING_FLAG(ARMED)
-        // GPS Rescue has priority over the mission, including a rescue the
-        // mission itself requested (geofence RTH)
+        // GPS Rescue has priority over the mission
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // during failsafe the switch state is synthetic; fly the mission only
-        // while the failsafe state machine has chosen to (rx-loss policy)
-        && (failsafeIsActive() ? (failsafePhase() == FAILSAFE_AUTOPILOT) : IS_RC_MODE_ACTIVE(BOXAUTOPILOT))
+        && autopilotRequested
         && sensors(SENSOR_ACC)
         && sensors(SENSOR_GPS) && STATE(GPS_FIX)
         // waypoints carry altitude; without altitude data the mission must not run
@@ -1092,13 +1098,6 @@ void processRxModes(timeUs_t currentTimeUs)
         if (FLIGHT_MODE(AUTOPILOT_MODE)) {
             DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
             flightPlanNavDisengage();
-        }
-        // A geofence RTH request stays latched while the rescue it triggered
-        // runs; the pilot cancels it with the mode switch, or it dies on disarm.
-        // On RX loss the aux channels are substituted with rxfail values, not
-        // pilot intent, so switch-off only counts while channel data is real.
-        if (!ARMING_FLAG(ARMED) || (!IS_RC_MODE_ACTIVE(BOXAUTOPILOT) && rxAreFlightChannelsValid())) {
-            flightPlanNavClearRescueRequest();
         }
     }
 #endif
