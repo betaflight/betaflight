@@ -590,6 +590,30 @@ void mavMissionInit(void)
     flightPlanNavSetReachedListener(onWaypointReached);
 }
 
+// Pack and send MISSION_CURRENT from live executor state. Driven at 1 Hz by
+// mavMissionUpdate() and once immediately in response to MISSION_SET_CURRENT.
+static void sendMissionCurrent(void)
+{
+    const uint16_t total = flightPlanConfig()->waypointCount;
+    const bool active = flightPlanNavIsActive();
+    const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
+        ? flightPlanNavGetCurrentIndex() : 0;
+    const uint8_t missionMode = active ? 1 : 2;
+    uint8_t missionState;
+    if (total == 0) {
+        missionState = MISSION_STATE_NO_MISSION;
+    } else if (!active) {
+        missionState = MISSION_STATE_NOT_STARTED;
+    } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+        missionState = MISSION_STATE_COMPLETE;
+    } else {
+        missionState = MISSION_STATE_ACTIVE;
+    }
+    mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
+        seq, total, missionState, missionMode, 0, 0, 0);
+    mavlinkSendMessage(&txMsg);
+}
+
 bool mavMissionHandleMessage(const mavlink_message_t *msg)
 {
     // Each handler decodes the typed payload and applies its own target filter
@@ -621,6 +645,18 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
     case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
         handleClearAll(msg);
         return true;
+    case MAVLINK_MSG_ID_MISSION_SET_CURRENT: {
+        mavlink_mission_set_current_t sc;
+        mavlink_msg_mission_set_current_decode(msg, &sc);
+        if (!targetIsUs(sc.target_system, sc.target_component)) {
+            return true;
+        }
+        // Out-of-range seq is a no-op on the cursor; the executor guards the
+        // range too. Either way the partner gets the current cursor back.
+        flightPlanNavSetCurrentIndex((uint8_t)sc.seq);
+        sendMissionCurrent();
+        return true;
+    }
     case MAVLINK_MSG_ID_MISSION_ACK:
         handleMissionAck(msg);
         return true;
@@ -658,24 +694,7 @@ void mavMissionUpdate(timeMs_t nowMs)
     // MISSION_CURRENT @ 1 Hz — lets QGC display the live cursor whether or not
     // the mission is being executed.
     if ((nowMs - m.lastCurrentTxMs) >= MISSION_CURRENT_PERIOD_MS) {
-        const uint16_t total = flightPlanConfig()->waypointCount;
-        const bool active = flightPlanNavIsActive();
-        const uint16_t seq = (total && active && !flightPlanNavIsInjectedPlanActive())
-            ? flightPlanNavGetCurrentIndex() : 0;
-        const uint8_t missionMode = active ? 1 : 2;
-        uint8_t missionState;
-        if (total == 0) {
-            missionState = MISSION_STATE_NO_MISSION;
-        } else if (!active) {
-            missionState = MISSION_STATE_NOT_STARTED;
-        } else if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
-            missionState = MISSION_STATE_COMPLETE;
-        } else {
-            missionState = MISSION_STATE_ACTIVE;
-        }
-        mavlink_msg_mission_current_pack(MAVLINK_SYSTEM_ID, MAVLINK_COMPONENT_ID, &txMsg,
-            seq, total, missionState, missionMode, 0, 0, 0);
-        mavlinkSendMessage(&txMsg);
+        sendMissionCurrent();
         m.lastCurrentTxMs = nowMs;
     }
 }

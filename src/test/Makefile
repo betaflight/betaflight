@@ -453,6 +453,19 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
+telemetry_mavlink_mission_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/autopilot.c
+
+telemetry_mavlink_mission_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1
+
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
@@ -693,6 +706,10 @@ COMMON_FLAGS += -Wno-c99-designator
 
 # no warning expected on clang
 COMMON_FLAGS += -Werror
+
+# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# redefine it identically; harmless, but flagged as a C11 feature under gnu99.
+COMMON_FLAGS += -Wno-typedef-redefinition
 
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
 $(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)

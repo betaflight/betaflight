@@ -66,6 +66,19 @@ flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 
+// Live navigation geometry to the active waypoint, for OSD/CLI readouts. All
+// three return a sentinel when the executor is not tracking a target:
+// distance < 0, bearing < 0, ETA == 0.
+float flightPlanNavGetDistanceToWaypointM(void);
+int32_t flightPlanNavGetBearingToWaypointDeciDeg(void);
+uint16_t flightPlanNavGetEtaSeconds(void);
+
+// Set the active waypoint (MAVLink MISSION_SET_CURRENT). While the executor is
+// running the PG mission it re-dispatches to that leg; while idle it becomes
+// the index the next engage starts from. Ignored for out-of-range indices and
+// while an injected plan is active.
+void flightPlanNavSetCurrentIndex(uint8_t index);
+
 // Orbit period (deciseconds) at the configured pattern radius for a leg flown
 // at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
 // counts to and from hold durations.
