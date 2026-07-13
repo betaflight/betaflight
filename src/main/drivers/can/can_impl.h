@@ -32,7 +32,11 @@
 #endif
 
 // Maximum number of alternate pin options per TX/RX line.
+#if defined(X32M7)
+#define CAN_MAX_PIN_SEL 5
+#else
 #define CAN_MAX_PIN_SEL 3
+#endif
 
 typedef struct canPinDef_s {
     ioTag_t pin;

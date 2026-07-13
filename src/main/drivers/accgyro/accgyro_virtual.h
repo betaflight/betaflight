@@ -20,6 +20,13 @@
 
 #pragma once
 
+// A virtual gyro is fed by a simulator at tens of hertz; sampling it at the
+// 8 kHz real-sensor default only re-reads stale data while the 125 us gyro
+// scheduling windows starve every other task on a hosted target.
+#ifndef VIRTUAL_GYRO_SAMPLE_RATE_HZ
+#define VIRTUAL_GYRO_SAMPLE_RATE_HZ 1000
+#endif
+
 struct accDev_s;
 extern struct accDev_s *virtualAccDev;
 bool virtualAccDetect(struct accDev_s *acc);

@@ -76,6 +76,7 @@ void positionNavSetTargetEf(
     cmd.cruiseSpeedMps = cruiseSpeedMps;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
+    cmd.altitudeArrivalRequired = true;
 
     cmd.callback = callback;
     cmd.callbackUserData = userData;
@@ -116,6 +117,11 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
 {
     cmd.maxAccelMps2 = maxAccelMps2;
     cmd.maxDecelMps2 = maxDecelMps2;
+}
+
+void positionNavSetAltitudeArrivalRequired(bool required)
+{
+    cmd.altitudeArrivalRequired = required;
 }
 
 void positionNavSetAutoClearOnReach(bool autoClear)
@@ -205,7 +211,8 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     const bool horizSpeedOk = (horizSpeedMps <= cmd.completionSpeedMps);
     const bool vertSpeedOk = !cmd.includeAltitude || (absVzMps <= cmd.completionSpeedMps);
-    const bool reached = withinAcceptanceRadius && withinAcceptanceAltitude && horizSpeedOk && vertSpeedOk;
+    const bool altitudeOk = withinAcceptanceAltitude || !cmd.altitudeArrivalRequired;
+    const bool reached = withinAcceptanceRadius && altitudeOk && horizSpeedOk && vertSpeedOk;
 
     if (reached && !cmd.completionSignalled) {
         const bool autoClearOnReach = cmd.autoClearOnReach;

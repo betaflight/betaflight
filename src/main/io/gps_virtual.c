@@ -30,7 +30,7 @@
 
 static gpsSolutionData_t gpsVirtualData;
 
-void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course)
+void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course, double velNorth, double velEast, double velDown)
 {
     gpsVirtualData.numSat = 12;    // satellites_in_view
     gpsVirtualData.acc.hAcc = 500; // horizontal_pos_accuracy - convert cm to mm
@@ -43,6 +43,11 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.groundSpeed = (uint16_t)(speed * 100.0);  // cm/sec
     gpsVirtualData.speed3d = (uint16_t)(speed3D * 100.0);    // cm/sec
     gpsVirtualData.groundCourse = (uint16_t)(course * 10.0); // decidegrees
+    // The position estimator fuses NED velocity as a measurement; left
+    // zeroed it drags the velocity estimate toward zero during flight.
+    gpsVirtualData.velned.velN = (int16_t)(velNorth * 100.0); // cm/sec
+    gpsVirtualData.velned.velE = (int16_t)(velEast * 100.0);  // cm/sec
+    gpsVirtualData.velned.velD = (int16_t)(velDown * 100.0);  // cm/sec
 }
 
 void getVirtualGPS(gpsSolutionData_t *gpsSolData)

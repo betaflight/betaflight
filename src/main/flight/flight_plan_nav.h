@@ -26,12 +26,23 @@
 
 #include "common/time.h"
 
+#include "pg/flight_plan.h"
+
 typedef enum {
     FP_NAV_IDLE = 0,
     FP_NAV_TARGETING,
     FP_NAV_HOLDING,
     FP_NAV_COMPLETE,
+    FP_NAV_LANDING,
+    FP_NAV_ABORTED,
 } flightPlanNavState_e;
+
+typedef enum {
+    FP_ABORT_NONE = 0,
+    FP_ABORT_ESTIMATOR,     // XY position estimate became invalid mid-mission
+    FP_ABORT_STALLED,       // no progress toward the target within the stall window
+    FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
+} flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
 
@@ -52,6 +63,14 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs);
 bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
+flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
+
+// Replace the active mission with a small synthesised runtime plan (at most 4
+// waypoints, copied). Only valid while the executor is active. The injected
+// plan does not survive a switch cycle: engage and disengage revert to the
+// stored mission, with no resume of what was preempted.
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
+bool flightPlanNavIsInjectedPlanActive(void);
 
 // Single observer slot for "waypoint reached" — invoked with the index of the
 // waypoint that was just reached, before any HOLD timer or advance. Pass NULL
