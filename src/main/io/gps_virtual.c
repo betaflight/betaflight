@@ -33,10 +33,10 @@ static uint32_t updateCount = 0;
 
 void setVirtualGPS(double latitude, double longitude, double altiutude, double speed, double speed3D, double course, double velNorth, double velEast, double velDown)
 {
-    // May be called from a feeder thread (SITL UDP receive); the counter is a
-    // single word so the GPS task can detect freshness without a cross-thread
-    // clock read.
-    updateCount++;
+    // May be called from a feeder thread (SITL UDP receive) while the GPS task
+    // reads on the main loop. Populate the struct fully first, then publish by
+    // release-storing the incremented counter: a reader that acquire-loads the
+    // new count is then guaranteed to see the complete data.
     gpsVirtualData.numSat = 12;    // satellites_in_view
     gpsVirtualData.acc.hAcc = 500; // horizontal_pos_accuracy - convert cm to mm
     gpsVirtualData.acc.vAcc = 500; // vertical_pos_accuracy - convert cm to mm
@@ -53,6 +53,9 @@ void setVirtualGPS(double latitude, double longitude, double altiutude, double s
     gpsVirtualData.velned.velN = (int16_t)(velNorth * 100.0); // cm/sec
     gpsVirtualData.velned.velE = (int16_t)(velEast * 100.0);  // cm/sec
     gpsVirtualData.velned.velD = (int16_t)(velDown * 100.0);  // cm/sec
+
+    const uint32_t next = __atomic_load_n(&updateCount, __ATOMIC_RELAXED) + 1;
+    __atomic_store_n(&updateCount, next, __ATOMIC_RELEASE);
 }
 
 void getVirtualGPS(gpsSolutionData_t *gpsSolData)
@@ -62,6 +65,6 @@ void getVirtualGPS(gpsSolutionData_t *gpsSolData)
 
 uint32_t getVirtualGPSUpdateCount(void)
 {
-    return updateCount;
+    return __atomic_load_n(&updateCount, __ATOMIC_ACQUIRE);
 }
 #endif
