@@ -2599,14 +2599,19 @@ void osdUpdateAlarms(void)
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
-        SET_BLINK(OSD_MAIN_BATT_USAGE);
         SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
         CLR_BLINK(OSD_MAH_DRAWN);
-        CLR_BLINK(OSD_MAIN_BATT_USAGE);
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
+    if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
+    (!currentBatteryProfile->batteryCapacity && getBatteryState() == BATTERY_CRITICAL)) {
+        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    } else {
+        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    }
+   
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {
