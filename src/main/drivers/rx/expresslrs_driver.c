@@ -192,18 +192,4 @@ void expressLrsInitialiseTimer(const timerHardware_t *timHw, timerOvrHandlerRec_
     timerConfigUpdateCallback(timer, timerUpdateCb);
 }
 
-void expressLrsTimerEnableIRQs(void)
-{
-    uint8_t irq = timerInputInterrupt(timer);
-
-    // Use the NVIC TIMER priority for now
-#ifdef USE_HAL_DRIVER
-    HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
-    HAL_NVIC_EnableIRQ(irq);
-#else
-    NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER));
-    NVIC_EnableIRQ(irq);
-#endif
-}
-
 #endif

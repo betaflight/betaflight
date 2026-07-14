@@ -253,6 +253,12 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 
 // Current element and render status
 static osdElementParms_t activeElement;
+#ifdef UNIT_TEST
+void osdSetActiveElementTypeForTest(osdElementType_e type)
+{
+    activeElement.type = type;
+}
+#endif
 static bool displayPendingForeground;
 static bool displayPendingBackground;
 static char elementBuff[OSD_ELEMENT_BUFFER_LENGTH];
@@ -482,12 +488,15 @@ bool osdFormatRtcDateTime(char *buffer)
         return false;
     }
 
+    dateTime_t localDateTime;
+    dateTimeUTCToLocal(&dateTime, &localDateTime);
+
     switch (activeElement.type) {
     case OSD_ELEMENT_TYPE_3: 
-        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds); 
+        tfp_sprintf(buffer, "%02d:%02d:%02d", localDateTime.hours, localDateTime.minutes, localDateTime.seconds);
         break;
     case OSD_ELEMENT_TYPE_2:
-        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
+        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", localDateTime.month, localDateTime.day, localDateTime.hours, localDateTime.minutes);
         break;
     case OSD_ELEMENT_TYPE_1:
     default:
@@ -580,7 +589,7 @@ static char osdGetBatterySymbol(int cellVoltage)
         return SYM_MAIN_BATT; // FIXME: currently the BAT- symbol, ideally replace with a battery with exclamation mark
     } else {
         // Calculate a symbol offset using cell voltage over full cell voltage range
-        const int symOffset = scaleRange(cellVoltage, batteryConfig()->vbatmincellvoltage, batteryConfig()->vbatmaxcellvoltage, 0, 8);
+        const int symOffset = scaleRange(cellVoltage, currentBatteryProfile->vbatmincellvoltage, currentBatteryProfile->vbatmaxcellvoltage, 0, 8);
         return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
     }
 }
@@ -723,6 +732,20 @@ static void osdElementCustomSerialText(osdElementParms_t *element)
 }
 #endif
 
+#ifdef USE_PROFILE_NAMES
+static void toUpperCase(char* dest, const char* src, unsigned int maxSrcLength);
+
+// Displays the active battery profile name or index.
+static void osdElementBatteryProfileName(osdElementParms_t *element)
+{
+    if (currentBatteryProfile->profileName[0] != '\0') {
+        toUpperCase(element->buff, currentBatteryProfile->profileName, MAX_BATTERY_PROFILE_NAME_LENGTH);
+    } else {
+        tfp_sprintf(element->buff, "BAT%d", getCurrentBatteryProfileIndex() + 1);
+    }
+}
+#endif
+
 #ifdef USE_OSD_ADJUSTMENTS
 static void osdElementAdjustmentRange(osdElementParms_t *element)
 {
@@ -814,7 +837,8 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
+    // The earth-Up row (NWU_U) of rMat is earth-up expressed per body axis; negate to point down.
+    const float earthUpinBodyFrame[3] = {-rMat.m[NWU_U][X], -rMat.m[NWU_U][Y], -rMat.m[NWU_U][Z]};
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
@@ -1111,14 +1135,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
-    // Note that flight mode display has precedence in what to display.
-    //  1. FS
-    //  2. GPS RESCUE
-    //  3. PASSTHRU
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  5. AIR
-    //  6. ACRO
-
+    // Note that flight mode display has precedence in what to display, FS first, ACRO last
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1446,21 +1463,27 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
 
     switch (element->type) {
     case OSD_ELEMENT_TYPE_3:  // mAh remaining percentage (counts down as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        displayBasis = constrain(currentBatteryProfile->batteryCapacity - usedCapacity, 0, currentBatteryProfile->batteryCapacity);
         FALLTHROUGH;
 
     case OSD_ELEMENT_TYPE_4:  // mAh used percentage (counts up as battery is used)
         {
             int displayPercent = 0;
-            if (batteryConfig()->batteryCapacity) {
-                displayPercent = constrain(lrintf(100.0f * displayBasis / batteryConfig()->batteryCapacity), 0, 100);
+            if (currentBatteryProfile->batteryCapacity) {
+                displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_4) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                displayPercent = voltagePercent;
             }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
         }
 
     case OSD_ELEMENT_TYPE_2:  // mAh used graphical progress bar (grows as battery is used)
-        displayBasis = constrain(batteryConfig()->batteryCapacity - usedCapacity, 0, batteryConfig()->batteryCapacity);
+        displayBasis = constrain(currentBatteryProfile->batteryCapacity - usedCapacity, 0, currentBatteryProfile->batteryCapacity);
         FALLTHROUGH;
 
     case OSD_ELEMENT_TYPE_1:  // mAh remaining graphical progress bar (shrinks as battery is used)
@@ -1468,9 +1491,16 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
         {
             uint8_t remainingCapacityBars = 0;
 
-            if (batteryConfig()->batteryCapacity) {
-                const float batteryRemaining = constrain(batteryConfig()->batteryCapacity - displayBasis, 0, batteryConfig()->batteryCapacity);
-                remainingCapacityBars = ceilf((batteryRemaining / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            if (currentBatteryProfile->batteryCapacity > 0) {
+                const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
+                const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
+                remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_2) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
             }
 
             // Create empty battery indicator bar
@@ -1713,6 +1743,13 @@ static void osdBackgroundStickOverlay(osdElementParms_t *element)
 static void osdElementStickOverlay(osdElementParms_t *element)
 {
     // Now draw the cursor
+#ifdef DEBUG_OSD_STICKS_TEST
+    // for quick testing of stick overlays without requiring any RC input
+    UNUSED(radioModes);
+    float tr = micros()*(6.283f/1000000.0f / 3);
+    uint8_t cursorX = OSD_STICK_OVERLAY_WIDTH/2 * (1 + cosf(tr));
+    uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS/2 * (1 + sinf(tr));
+#else
     rc_alias_e vertical_channel, horizontal_channel;
 
     if (element->item == OSD_STICK_OVERLAY_LEFT) {
@@ -1725,6 +1762,8 @@ static void osdElementStickOverlay(osdElementParms_t *element)
 
     const uint8_t cursorX = scaleRange(constrain(rcData[horizontal_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_WIDTH);
     const uint8_t cursorY = OSD_STICK_OVERLAY_VERTICAL_POSITIONS - 1 - scaleRange(constrain(rcData[vertical_channel], PWM_RANGE_MIN, PWM_RANGE_MAX - 1), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, OSD_STICK_OVERLAY_VERTICAL_POSITIONS);
+#endif // DEBUG_OSD_STICKS_TEST
+
     const char cursor = SYM_STICK_OVERLAY_SPRITE_HIGH + (cursorY % OSD_STICK_OVERLAY_SPRITE_HEIGHT);
 
     tfp_sprintf(element->buff, "%c", cursor);
@@ -1939,6 +1978,7 @@ static const uint8_t osdElementDisplayOrder[] = {
 #ifdef USE_PROFILE_NAMES
     OSD_RATE_PROFILE_NAME,
     OSD_PID_PROFILE_NAME,
+    OSD_BATTERY_PROFILE_NAME,
 #endif
 #ifdef USE_OSD_PROFILES
     OSD_PROFILE_NAME,
@@ -2076,6 +2116,7 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_PROFILE_NAMES
     [OSD_RATE_PROFILE_NAME]       = osdElementRateProfileName,
     [OSD_PID_PROFILE_NAME]        = osdElementPidProfileName,
+    [OSD_BATTERY_PROFILE_NAME]    = osdElementBatteryProfileName,
 #endif
 #ifdef USE_OSD_PROFILES
     [OSD_PROFILE_NAME]            = osdElementOsdProfileName,
@@ -2224,6 +2265,9 @@ static bool osdDrawSingleElement(displayPort_t *osdDisplayPort, uint8_t item)
     // Call the element drawing function
     if (IS_SYS_OSD_ELEMENT(item)) {
         displaySys(osdDisplayPort, elemPosX, elemPosY, (displayPortSystemElement_e)(item - OSD_SYS_GOGGLE_VOLTAGE + DISPLAYPORT_SYS_GOGGLE_VOLTAGE));
+    } else if (displayExtended(osdDisplayPort, elemPosX, elemPosY, item, false /* not background */)) {
+        // Element has been handled by a specialised handler (e.g. artificial horizon by FBOSD framebuffer driver).
+        activeElement.rendered = true;
     } else {
         osdElementDrawFunction[item](&activeElement);
         if (activeElement.drawElement) {
@@ -2257,9 +2301,14 @@ static bool osdDrawSingleElementBackground(displayPort_t *osdDisplayPort, uint8_
     activeElement.attr = DISPLAYPORT_SEVERITY_NORMAL;
 
     // Call the element background drawing function
-    osdElementBackgroundFunction[item](&activeElement);
-    if (activeElement.drawElement) {
-        displayPendingBackground = true;
+    if (displayExtended(osdDisplayPort, elemPosX, elemPosY, item, true /* is background */)) {
+        // Element has been handled by a specialised handler (e.g. sidebars by FBOSD framebuffer driver).
+        activeElement.rendered = true;
+    } else {
+        osdElementBackgroundFunction[item](&activeElement);
+        if (activeElement.drawElement) {
+            displayPendingBackground = true;
+        }
     }
 
     return activeElement.rendered;
@@ -2447,13 +2496,20 @@ bool osdDrawSpec(displayPort_t *osdDisplayPort)
 
 void osdDrawActiveElementsBackground(displayPort_t *osdDisplayPort)
 {
-    if (backgroundLayerSupported) {
-        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
-        displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
-        for (unsigned i = 0; i < activeOsdElementCount; i++) {
-            while (!osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]));
+    // We get here from osdAnalyzeActiveElements, after changes to the OSD from the Configurator (see msp.c).
+    // Protect against enabling the OSD feature and clicking Save + Reboot, when osdDisplayPort will be null.
+    if (osdDisplayPort) {
+        if (backgroundLayerSupported) {
+            displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_BACKGROUND);
+            displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_WAIT);
+            for (unsigned i = 0; i < activeOsdElementCount; i++) {
+                while (!osdDrawSingleElementBackground(osdDisplayPort, activeOsdElementArray[i]));
+            }
+            displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
+        } else {
+            // FB_OSD might need notification to redraw a background buffer.
+            displayRedrawBackground(osdDisplayPort);
         }
-        displayLayerSelect(osdDisplayPort, DISPLAYPORT_LAYER_FOREGROUND);
     }
 }
 

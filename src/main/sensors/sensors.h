@@ -58,3 +58,14 @@ typedef enum {
     SENSOR_GPSMAG = 1 << 6,
     SENSOR_OPTICALFLOW = 1 << 7
 } sensors_e;
+
+extern const char * const lookupTableGyroHardware[];
+extern const char * const lookupTableAccHardware[];
+extern const char * const lookupTableBaroHardware[];
+extern const char * const lookupTableMagHardware[];
+extern const char * const lookupTableRangefinderHardware[];
+extern const char * const lookupTableOpticalflowHardware[];
+
+const char * const *sensorHardwareNames(sensorIndex_e sensor, int *count);
+sensorIndex_e sensorIndexFromName(const char *name);
+const char *sensorTypeName(sensorIndex_e sensor);

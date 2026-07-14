@@ -30,13 +30,13 @@
 
 #define LOGFILE_PREFIX "LOG"
 #define LOGFILE_SUFFIX "BFL"
+#define NAME_BUFFER_LENGTH 13   //file name template: LOG00001.BFL, 13 = 12 symbols + \0
 
 static FILE *blackboxVirtualFile = NULL;
 static int32_t largestLogFileNumber = 0;
 
 bool blackboxVirtualOpen(void)
 {
-    const size_t log_name_length = strlen(LOGFILE_PREFIX) + 5 + strlen(LOGFILE_SUFFIX) + 1; //file name template: LOG00001.BFL
     DIR *dir = opendir(".");
     if (!dir) {
         return false; // Failed to open directory
@@ -44,7 +44,7 @@ bool blackboxVirtualOpen(void)
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
-        if (strlen(entry->d_name) == log_name_length
+        if (strlen(entry->d_name) == NAME_BUFFER_LENGTH - 1
             && strncmp(entry->d_name, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
             && strncmp(entry->d_name + 9, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
 
@@ -87,9 +87,8 @@ bool blackboxVirtualBeginLog(void)
     if (blackboxVirtualFile != NULL) {
         return false;
     }
-    const size_t name_buffer_length = snprintf(NULL, 0, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
-    char filename[name_buffer_length];
-    snprintf(filename, sizeof(filename), "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
+    char filename[NAME_BUFFER_LENGTH];
+    snprintf(filename, NAME_BUFFER_LENGTH, "%s%05u.%s", LOGFILE_PREFIX, (largestLogFileNumber + 1) % 100000, LOGFILE_SUFFIX);
     blackboxVirtualFile = fopen(filename, "w");
     if (blackboxVirtualFile != NULL) {
         largestLogFileNumber++;

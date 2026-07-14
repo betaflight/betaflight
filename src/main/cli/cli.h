@@ -32,6 +32,15 @@ void cliEnter(struct serialPort_s *serialPort, bool interactive);
 void cliProcessConfigFile(const char *filename);
 #endif
 
+#ifdef USE_CLI
+#define CLI_IN_BUFFER_SIZE  256
+#define CLI_OUT_BUFFER_SIZE 64
+
+int cliGetSettingByName(const char *name, char *buf, int bufLen);
+int cliGetSettingInfoByName(const char *name, int offset, char *buf, int bufLen, int *totalLen);
+bool cliSetSettingByName(const char *cmdline);
+#endif
+
 #ifdef USE_CLI_DEBUG_PRINT
 void cliPrint(const char *str);
 void cliPrintLinefeed(void);

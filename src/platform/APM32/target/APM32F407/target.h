@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight APM32F407"
+#define USBD_PRODUCT_STRING     "Betaflight - APM32F407"
 #endif
 
 #ifndef APM32F407

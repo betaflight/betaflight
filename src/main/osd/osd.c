@@ -161,7 +161,7 @@ STATIC_ASSERT(OSD_POS_MAX == OSD_POS(63,31), OSD_POS_MAX_incorrect);
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 13);
 
-PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 2);
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 3);
 
 // Controls the display order of the OSD post-flight statistics.
 // Adjust the ordering here to control how the post-flight stats are presented.
@@ -507,8 +507,8 @@ static void osdCompleteInitialization(void)
     }
     displayWrite(osdDisplayPort, midCol + 12 - version_str_len, midRow, DISPLAYPORT_SEVERITY_NORMAL, version_str_buf);
 
-    #ifdef USE_CMS
-    displayWrite(osdDisplayPort, midCol - 8, midRow + 2,  DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
+#ifdef USE_CMS
+    displayWrite(osdDisplayPort, midCol - 8, midRow + 2, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT1);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 3, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT2);
     displayWrite(osdDisplayPort, midCol - 4, midRow + 4, DISPLAYPORT_SEVERITY_NORMAL, CMS_STARTUP_HELP_TEXT3);
 #endif
@@ -1384,6 +1384,12 @@ bool osdUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
         }
     }
 
+    // Early check for displayPort blocking OSD action, avoids repeated calls to main task function (osdUpdate)
+    // and avoids scheduler issues with spikes in task duration.
+    if ((osdState == OSD_STATE_CHECK || osdState == OSD_STATE_TRANSFER) && displayIsTransferInProgress(osdDisplayPort)) {
+        return false;
+    }
+
     return (osdState != OSD_STATE_IDLE);
 }
 
@@ -1478,14 +1484,16 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_ALARMS:
         osdUpdateAlarms();
 
-        if (resumeRefreshAt) {
-            osdState = OSD_STATE_TRANSFER;
-        } else {
-            osdState = OSD_STATE_UPDATE_CANVAS;
-        }
+        // Pass through OSD_STATE_UPDATE_CANVAS even when short circuiting (resumeRefreshAt), for stats purposes (task rate).
+        osdState = OSD_STATE_UPDATE_CANVAS;
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
+        if (resumeRefreshAt) {
+            osdState = OSD_STATE_TRANSFER;
+            break;
+        }
+
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
             displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);

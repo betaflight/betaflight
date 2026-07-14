@@ -50,7 +50,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_1
     {
         .device = I2CDEV_1,
-        .reg = I2C1,
+        .reg = (i2cResource_t *)I2C1,
         .sclPins = {
             I2CPINDEF(PB6, GPIO_AF_I2C1),
             I2CPINDEF(PB8, GPIO_AF_I2C1),
@@ -67,7 +67,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_2
     {
         .device = I2CDEV_2,
-        .reg = I2C2,
+        .reg = (i2cResource_t *)I2C2,
         .sclPins = {
             I2CPINDEF(PB10, GPIO_AF_I2C2),
             I2CPINDEF(PF1,  GPIO_AF_I2C2),
@@ -94,7 +94,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 #ifdef USE_I2C_DEVICE_3
     {
         .device = I2CDEV_3,
-        .reg = I2C3,
+        .reg = (i2cResource_t *)I2C3,
         .sclPins = {
             I2CPINDEF(PA8, GPIO_AF_I2C3),
         },
@@ -172,7 +172,7 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         return false;
     }
 
-    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
 
     if (!I2Cx) {
         return false;
@@ -245,7 +245,7 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         return false;
     }
 
-    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
     if (!I2Cx) {
         return false;
     }
@@ -289,7 +289,7 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
 static void i2c_er_handler(i2cDevice_e device)
 {
-    I2C_TypeDef *I2Cx = i2cDevice[device].hardware->reg;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].hardware->reg;
 
     i2cState_t *state = &i2cDevice[device].state;
 
@@ -322,7 +322,7 @@ static void i2c_er_handler(i2cDevice_e device)
 
 void i2c_ev_handler(i2cDevice_e device)
 {
-    I2C_TypeDef *I2Cx = i2cDevice[device].hardware->reg;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].hardware->reg;
 
     i2cEvState_t *ev_state = &i2c_ev_state[device];
     i2cState_t *state = &i2cDevice[device].state;
@@ -448,7 +448,7 @@ void i2cInit(i2cDevice_e device)
         return;
     }
 
-    I2C_TypeDef *I2Cx = hw->reg;
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)hw->reg;
 
     memset(&pDev->state, 0, sizeof(pDev->state));
 

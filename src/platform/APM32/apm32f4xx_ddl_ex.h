@@ -70,6 +70,16 @@ __STATIC_INLINE uint32_t DDL_EX_DMA_Init(DMA_Stream_TypeDef *DMAx_Streamy, DDL_D
     return DDL_DMA_Init(DMA, Stream, DMA_InitStruct);
 }
 
+__STATIC_INLINE void DDL_EX_DMA_SetMemoryAddress(DMA_Stream_TypeDef *DMAx_Streamy, uint32_t addr)
+{
+    DMAx_Streamy->M0ADDR = addr;
+}
+
+__STATIC_INLINE void DDL_EX_DMA_SetPeriphAddress(DMA_Stream_TypeDef *DMAx_Streamy, uint32_t addr)
+{
+    DMAx_Streamy->PADDR = addr;
+}
+
 __STATIC_INLINE void DDL_EX_DMA_SetDataLength(DMA_Stream_TypeDef* DMAx_Streamy, uint32_t NbData)
 {
     MODIFY_REG(DMAx_Streamy->NDATA, DMA_NDATAx, NbData);

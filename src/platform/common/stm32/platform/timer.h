@@ -47,15 +47,15 @@ volatile timCCR_t* timerChCCRHi(const timerHardware_t* timHw);
 // Platform-internal timer functions (not called from src/main)
 
 // Get timer clock from raw timer instance pointer (for platform-internal use)
-uint32_t timerClockFromInstance(const void *tim);
+uint32_t timerClockFromInstance(const timerResource_t *tim);
 
-void *timerFindTimerHandle(void *tim);
-void timerForceOverflow(void *tim);
-volatile timCCR_t* timerCCR(void *tim, uint8_t channel);
+void *timerFindTimerHandle(timerResource_t *tim);
+void timerForceOverflow(timerResource_t *tim);
+volatile timCCR_t* timerCCR(timerResource_t *tim, uint8_t channel);
 
-uint16_t timerGetPrescalerByDesiredHertz(void *tim, uint32_t hz);
-uint16_t timerGetPrescalerByDesiredMhz(void *tim, uint16_t mhz);
-uint16_t timerGetPeriodByPrescaler(void *tim, uint16_t prescaler, uint32_t hz);
+uint16_t timerGetPrescalerByDesiredHertz(timerResource_t *tim, uint32_t hz);
+uint16_t timerGetPrescalerByDesiredMhz(timerResource_t *tim, uint16_t mhz);
+uint16_t timerGetPeriodByPrescaler(timerResource_t *tim, uint16_t prescaler, uint32_t hz);
 
 uint16_t timerDmaSource(uint8_t channel);
 uint8_t timerLookupChannelIndex(const uint16_t channel);
@@ -64,7 +64,7 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerEdgeHandlerRe
 void timerChannelConfigInterruptDualLo(const timerHardware_t *timHw, FunctionalState newState);
 
 #if PLATFORM_TRAIT_RCC
-rccPeriphTag_t timerRCC(const void *tim);
+rccPeriphTag_t timerRCC(const timerResource_t *tim);
 #endif
 
 #if defined(USE_HAL_DRIVER)

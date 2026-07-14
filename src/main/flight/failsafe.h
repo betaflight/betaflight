@@ -51,7 +51,8 @@ typedef enum {
     FAILSAFE_LANDED,
     FAILSAFE_RX_LOSS_MONITORING,
     FAILSAFE_RX_LOSS_RECOVERED,
-    FAILSAFE_GPS_RESCUE
+    FAILSAFE_GPS_RESCUE,
+    FAILSAFE_AUTOPILOT      // continuing an autopilot mission under rx loss (ap_rx_loss_policy = CONTINUE)
 } failsafePhase_e;
 
 typedef enum {

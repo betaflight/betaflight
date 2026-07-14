@@ -64,6 +64,7 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
     uint8_t imu_process_denom;
     int16_t mag_declination;      // Magnetic declination in degrees * 10
+    bool trust_mag;      // default to false, to indicate that the user has calibrated and validated their mag
 } imuConfig_t;
 
 PG_DECLARE(imuConfig_t, imuConfig);
@@ -82,10 +83,10 @@ void imuUpdateAttitude(timeUs_t currentTimeUs);
 
 void imuInit(void);
 
-#ifdef SIMULATOR_BUILD
+#if ENABLE_SIMULATOR
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
 void imuSetAttitudeQuat(float w, float x, float y, float z);
-#if defined(SIMULATOR_IMU_SYNC)
+#if ENABLE_SIMULATOR_IMU_SYNC
 void imuSetHasNewData(uint32_t dt);
 #endif
 #endif
@@ -93,3 +94,4 @@ void imuSetHasNewData(uint32_t dt);
 bool imuQuaternionHeadfreeOffsetSet(void);
 void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *v);
 bool isUpright(void);
+bool imuIsHeadingValid(void);
