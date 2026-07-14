@@ -1496,7 +1496,6 @@ TEST(pidControllerTest, testAdrcCrashFlipHoldsControllerResetThroughAutoRearm)
     simulatedThrottle = 0.0f; // mixTable() publishes zero collective authority in Crash Flip.
     pidRuntime.adrc.liftoff = true;
     pidRuntime.adrc.gyroActiveS = 1.0f;
-    pidRuntime.adrc.idleS = 1.0f;
 
     const float crashFlipGyro[XYZ_AXIS_COUNT] = { 600.0f, -450.0f, 0.0f };
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -1529,7 +1528,6 @@ TEST(pidControllerTest, testAdrcCrashFlipHoldsControllerResetThroughAutoRearm)
         }
         EXPECT_FALSE(pidRuntime.adrc.liftoff);
         EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.gyroActiveS);
-        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.idleS);
     }
 
     // Auto-rearm exits Crash Flip without a disarm. With the pilot command matched to the current

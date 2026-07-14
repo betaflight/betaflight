@@ -124,7 +124,13 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 // The layout is unchanged, but a version-match memcpy would keep the old stored values - and 500
 // specifically re-creates the mid-air gate closures the new default exists to prevent, on every
 // config saved from a prior build. Flight safety over stored-profile continuity: force the reset.
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 14);
+// 15: adrc_liftoff_idle_throttle and adrc_liftoff_idle_hold_ms removed entirely (ADRC-020: the
+// opt-in mid-air re-arm heuristic was deleted rather than kept - it cannot distinguish a landing
+// from a calm mid-air float, and the arm-epoch fix already covers the ground-rep use case it
+// existed for). This changes adrcProfile_t's layout - gatedZ3DecayRate/b0ThrottleScaleMax shift to
+// earlier offsets - so, per the ADRC-006 precedent, force the reset rather than let a version-match
+// memcpy reinterpret an old blob's trailing bytes at the wrong fields.
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, PID_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 15);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {

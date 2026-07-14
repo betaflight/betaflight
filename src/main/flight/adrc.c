@@ -67,9 +67,10 @@
 // violently at liftoff. Until liftoff is detected - throttle above liftoffThrottlePercent, or
 // any-axis rotation above liftoffGyroDps sustained for liftoffHoldMs (so a toss launch opens the
 // gate almost instantly) - the observer's b0*u feedback term is held at zero. Once open the gate
-// stays open until disarm; optionally (adrc_liftoff_idle_hold_ms > 0, off by default - see
-// adrcResetProfile()) it re-arms after throttle stays below liftoffIdleThrottlePercent *and* the
-// craft is still for liftoffIdleHoldMs.
+// stays open until disarm, the only ground signal that cannot false-trigger mid-flight (ADRC-020:
+// an earlier opt-in mid-air re-arm heuristic was removed rather than kept - throttle+gyro alone
+// cannot distinguish a landing from a calm mid-air float, and adrcUpdateArmTransition() below
+// already covers the ground-rep use case it existed for via a fresh epoch on every disarm->arm).
 
 // The liftoff gate above only zeroes the b0*u term in z2's update - it does nothing to stop z3
 // itself from winding up while grounded. z3 is a leaky integrator of errorEso regardless of gate
@@ -97,22 +98,6 @@
 // against the punch (~90 deg/s uncommanded pitch, the "nose dip rebound"). An ~80 ms time
 // constant smooths both paths without delaying punch scaling meaningfully.
 #define ADRC_B0_SCALE_THROTTLE_LPF_HZ 2.0f
-
-// Relationships between the liftoff-gate tunables that per-value CLI ranges cannot enforce,
-// sanitized at point of use in adrcUpdatePerLoopState(). These only apply when the opt-in mid-air
-// re-arm is enabled at all (adrc_liftoff_idle_hold_ms > 0, see adrcResetProfile()):
-// - the re-arm (idle) throttle must sit below the liftoff throttle, or one and the same throttle
-//   satisfies both the open and the re-arm condition and the gate chops the ESO's b0*u feedback
-//   at loop rate;
-// - "stillness" for re-arm must mean actual stillness no matter how high the liftoff-detection
-//   gyro threshold is pushed (a craft still rotating through a mid-air throttle chop is not
-//   ground-idle), so the re-arm side is capped independently;
-// - the re-arm hold must be long enough that a single quiet loop mid-chop cannot close the gate
-//   in flight. (These floors cannot fix the heuristic's blind spot - a smooth ballistic float
-//   satisfies any throttle+gyro stillness test a genuine landing satisfies, which is why the
-//   re-arm is opt-in rather than merely sanitized.)
-#define ADRC_REARM_STILL_MAX_DPS 30.0f
-#define ADRC_REARM_HOLD_MIN_S 0.1f
 
 // z3 is the lumped rate-plant disturbance [deg/s^3], so its numeric range is much larger than z1
 // [deg/s] or z2 [deg/s^2]. Scale it down to fit the int16 blackbox debug field (fix #12).
@@ -211,21 +196,19 @@ void adrcResetProfile(adrcProfile_t *adrcProfile)
     adrcProfile->liftoffThrottlePercent = 40;
     adrcProfile->liftoffGyroDps = 20;
     adrcProfile->liftoffHoldMs = 25;
-    adrcProfile->liftoffIdleThrottlePercent = 5;
-    // Mid-air re-arm off by default (0 = the gate stays open from first liftoff until disarm).
-    // The ported re-arm heuristic - idle throttle + stillness sustained for this hold - cannot
-    // tell a landing from a smooth zero-throttle float: in the first freestyle log flown on this
-    // branch (btfl_002-ACRO.bbl, SpeedyBee F7 Mini, acro - airmode feature not even enabled) it
-    // closed the gate mid-air three times, on ballistic floats reading 1-4 deg/s for over 500 ms
-    // with |acc| at 0.1-0.5 g (demonstrably airborne, near free-fall), each time dumping the live
-    // z3 estimate (carrying up to ~|100k|) through the fast gated decay and blinding the observer
-    // to b0*u. Under airmode the mixer keeps applying u through exactly such floats, so the
-    // corruption there is expected to be worse still (architectural inference - not yet measured
-    // in a log). Freestyle *is* throttle chops and catches, so this cannot stay the default. Set
-    // > 0 only for bench / repeated ground reps within one arm cycle, where the heuristic's
-    // assumptions actually hold; a future re-arm could additionally require |acc| ~ 1 g sustained,
-    // which cleanly separates these floats from a genuine landing in this very log.
-    adrcProfile->liftoffIdleHoldMs = 0;
+    // No mid-air re-arm: the gate opens once at first liftoff and stays open until disarm, which
+    // is the only ground signal that cannot false-trigger mid-flight (ADRC-020). An earlier
+    // opt-in re-arm heuristic (idle throttle + stillness sustained for a hold) was removed rather
+    // than kept: in the first freestyle log flown on this branch (btfl_002-ACRO.bbl, SpeedyBee F7
+    // Mini, acro - airmode feature not even enabled) it closed the gate mid-air three times, on
+    // ballistic floats reading 1-4 deg/s for over 500 ms with |acc| at 0.1-0.5 g (demonstrably
+    // airborne, near free-fall), each time dumping the live z3 estimate (carrying up to ~|100k|)
+    // through the fast gated decay and blinding the observer to b0*u. Under airmode the mixer
+    // keeps applying u through exactly such floats, so the corruption there is expected to be
+    // worse still. Adding a sustained |acc| ~ 1g condition would separate these floats from a
+    // genuine landing, but adrcUpdateArmTransition()'s fresh-epoch-per-arm-cycle fix already
+    // covers the ground-rep use case the heuristic existed for, so there is no validated use case
+    // left to justify keeping the extra params/risk surface.
     // z3 decay rate x0.1 while ungated (grounded) - always faster than sigmaDecay above so z3
     // can't wind up while idle regardless of its configured airborne decay.
     adrcProfile->gatedZ3DecayRate = 200;
@@ -318,7 +301,6 @@ void adrcResetGate(adrcRuntime_t *adrcRuntime)
 {
     adrcRuntime->liftoff = false;
     adrcRuntime->gyroActiveS = 0.0f;
-    adrcRuntime->idleS = 0.0f;
 }
 
 void adrcResetAll(adrcRuntime_t *adrcRuntime)
@@ -383,32 +365,11 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
     const float liftoffThrottle = adrcProfile->liftoffThrottlePercent * 0.01f;
     const float liftoffGyroDps = adrcProfile->liftoffGyroDps;
     const float liftoffHoldS = adrcProfile->liftoffHoldMs * 0.001f;
-    // 0 disables the mid-air re-arm outright (the default - see adrcResetProfile()): the gate then
-    // opens at first liftoff and stays open for the rest of the arm cycle, disarm being the only
-    // ground signal that cannot false-trigger on a smooth zero-throttle float.
-    const bool rearmEnabled = adrcProfile->liftoffIdleHoldMs > 0;
-    // See the ADRC_REARM_* comment up top for why these three are sanitized rather than read raw.
-    const float liftoffIdleThrottle = fminf(adrcProfile->liftoffIdleThrottlePercent * 0.01f, liftoffThrottle - 0.01f);
-    const float liftoffIdleHoldS = fmaxf(adrcProfile->liftoffIdleHoldMs * 0.001f, ADRC_REARM_HOLD_MIN_S);
-    const float rearmStillGyroDps = fminf(liftoffGyroDps, ADRC_REARM_STILL_MAX_DPS);
 
-    if (adrcRuntime->liftoff) {
-        // Opt-in re-arm for bench / repeated ground reps within one arm cycle: a sustained return
-        // to idle throttle AND stillness. The gyro condition keeps an ordinary mid-air throttle
-        // chop (dive, split-S - craft still rotating) from re-gating, but it cannot tell a landing
-        // from a smooth ballistic float (throttle 0, gyro a few deg/s for over a second is normal
-        // freestyle), and a mid-air re-gate both dumps z3 through the fast gated decay and blinds
-        // the ESO to b0*u while airmode keeps flying the craft - hence opt-in, default off.
-        if (rearmEnabled && throttle < liftoffIdleThrottle && gyroPeak < rearmStillGyroDps) {
-            adrcRuntime->idleS += finiteDt;
-            if (adrcRuntime->idleS >= liftoffIdleHoldS) {
-                adrcResetGate(adrcRuntime);
-            }
-        } else {
-            adrcRuntime->idleS = 0.0f;
-        }
-    } else {
-        adrcRuntime->idleS = 0.0f;
+    // No mid-air re-arm (ADRC-020): once open, the gate stays open for the rest of the arm cycle.
+    // Disarm (adrcUpdateArmTransition() -> adrcResetAll()) is the only ground signal that cannot
+    // false-trigger on a smooth zero-throttle float mid-flight.
+    if (!adrcRuntime->liftoff) {
         if (throttle >= liftoffThrottle) {
             adrcRuntime->liftoff = true;
         } else if (gyroPeak > liftoffGyroDps) {
@@ -428,7 +389,7 @@ void adrcUpdatePerLoopState(adrcRuntime_t *adrcRuntime, const adrcProfile_t *adr
         // lastOutput as b0*u in the first open loop creates exactly the discontinuity the gate is
         // meant to prevent. Drop only that stale input. The first open loop then matches the
         // closed-path observer update, and the following loop feeds back the first output actually
-        // generated during this airborne epoch. The same invariant applies after an opt-in re-arm.
+        // generated during this airborne epoch.
         for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
             adrcRuntime->lastOutput[axis] = 0.0f;
         }

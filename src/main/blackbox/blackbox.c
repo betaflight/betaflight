@@ -1624,8 +1624,6 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_THROTTLE, "%d",      currentPidProfile->adrc.liftoffThrottlePercent);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_GYRO_DPS, "%d",      currentPidProfile->adrc.liftoffGyroDps);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_HOLD_MS, "%d",       currentPidProfile->adrc.liftoffHoldMs);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_IDLE_THROTTLE, "%d", currentPidProfile->adrc.liftoffIdleThrottlePercent);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_LIFTOFF_IDLE_HOLD_MS, "%d",  currentPidProfile->adrc.liftoffIdleHoldMs);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_GATED_Z3_DECAY, "%d",        currentPidProfile->adrc.gatedZ3DecayRate);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_ADRC_B0_SCALE_MAX, "%d",          currentPidProfile->adrc.b0ThrottleScaleMax);
 #endif

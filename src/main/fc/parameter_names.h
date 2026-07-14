@@ -251,8 +251,6 @@
 #define PARAM_NAME_ADRC_LIFTOFF_THROTTLE "adrc_liftoff_throttle"
 #define PARAM_NAME_ADRC_LIFTOFF_GYRO_DPS "adrc_liftoff_gyro_dps"
 #define PARAM_NAME_ADRC_LIFTOFF_HOLD_MS "adrc_liftoff_hold_ms"
-#define PARAM_NAME_ADRC_LIFTOFF_IDLE_THROTTLE "adrc_liftoff_idle_throttle"
-#define PARAM_NAME_ADRC_LIFTOFF_IDLE_HOLD_MS "adrc_liftoff_idle_hold_ms"
 #define PARAM_NAME_ADRC_GATED_Z3_DECAY "adrc_gated_z3_decay"
 #define PARAM_NAME_ADRC_B0_SCALE_MAX "adrc_b0_scale_max"
 

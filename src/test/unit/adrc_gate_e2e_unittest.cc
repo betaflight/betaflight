@@ -44,12 +44,11 @@ namespace {
 constexpr float TEST_AUTHORITY_SCALE = 1.0f;
 constexpr float TEST_GROUND_SETPOINT_DPS = 300.0f;
 
-void prepareAdrcFeedbackLoop(const uint16_t rearmHoldMs)
+void prepareAdrcFeedbackLoop(void)
 {
     resetTest();
 
     pidProfile->pid_type = PID_TYPE_ADRC;
-    pidProfile->adrc.liftoffIdleHoldMs = rearmHoldMs;
     pidInitConfig(pidProfile);
 
     ENABLE_ARMING_FLAG(ARMED);
@@ -113,28 +112,7 @@ void expectNeutralOpenAndNextObserverLoop(void)
 
 TEST(AdrcGateE2eTest, FirstOpenDropsGroundMixerFeedbackBeforeObserverUsesIt)
 {
-    prepareAdrcFeedbackLoop(0);
-
-    const float staleOutput = publishGroundConstrainedCommand();
-    isolateGroundEpochFeedback(staleOutput);
-    expectNeutralOpenAndNextObserverLoop();
-}
-
-TEST(AdrcGateE2eTest, OptInRearmStartsAnotherCleanFeedbackEpoch)
-{
-    prepareAdrcFeedbackLoop(100);
-
-    simulatedThrottle = 0.6f;
-    pidController(pidProfile, currentTestTime());
-    ASSERT_TRUE(pidRuntime.adrc.liftoff);
-    pidUpdateAdrcAppliedOutput(pidProfile, TEST_AUTHORITY_SCALE, pidProfile->pidSumLimitYaw);
-
-    simulatedThrottle = 0.0f;
-    for (int loop = 0; loop < 20 && pidRuntime.adrc.liftoff; ++loop) {
-        pidController(pidProfile, currentTestTime());
-        pidUpdateAdrcAppliedOutput(pidProfile, TEST_AUTHORITY_SCALE, pidProfile->pidSumLimitYaw);
-    }
-    ASSERT_FALSE(pidRuntime.adrc.liftoff);
+    prepareAdrcFeedbackLoop();
 
     const float staleOutput = publishGroundConstrainedCommand();
     isolateGroundEpochFeedback(staleOutput);

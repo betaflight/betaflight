@@ -195,128 +195,23 @@ TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
     EXPECT_TRUE(runtime.liftoff);
 }
 
-TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloatByDefault)
+TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloat)
 {
     // Simulate already airborne.
     simulatedThrottle = 0.6f;
     adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     ASSERT_TRUE(runtime.liftoff);
 
-    // A smooth ballistic float: zero throttle, near-zero rotation, sustained well past any
-    // plausible re-arm hold (1.6s). Indistinguishable from a landing by throttle+gyro alone -
-    // the first freestyle log on this branch hit exactly this three times (1-4 deg/s floats over
-    // 500ms) and lost its live z3 each time. With the default liftoffIdleHoldMs = 0 the mid-air
-    // re-arm is disabled outright, so the gate must stay open until disarm.
+    // A smooth ballistic float: zero throttle, near-zero rotation, sustained well past a second -
+    // indistinguishable from a landing by throttle+gyro alone. The first freestyle log on this
+    // branch hit exactly this three times (1-4 deg/s floats over 500ms) and lost its live z3 each
+    // time before the opt-in mid-air re-arm heuristic that used to cause this was removed entirely
+    // (ADRC-020); the gate now has no re-arm path at all and must stay open until disarm.
     simulatedThrottle = 0.0f;
     resetGyro();
     for (int i = 0; i < 200; i++) {
         adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     }
-    EXPECT_TRUE(runtime.liftoff);
-}
-
-TEST_F(AdrcUnittest, OptInReArmAfterSustainedIdleStillness)
-{
-    profile.liftoffIdleHoldMs = 500; // opt into the bench/ground-rep re-arm
-
-    // Simulate already airborne.
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    // Idle throttle and stillness, sustained past the configured hold (500ms @ 8ms = 63 loops).
-    simulatedThrottle = 0.0f;
-    resetGyro();
-    for (int i = 0; i < 70; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_FALSE(runtime.liftoff);
-}
-
-TEST_F(AdrcUnittest, GateReopenStartsANewActuatorFeedbackEpoch)
-{
-    profile.liftoffIdleHoldMs = 100;
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    simulatedThrottle = 0.0f;
-    resetGyro();
-    for (int i = 0; i < 20; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    ASSERT_FALSE(runtime.liftoff);
-
-    gyro.gyroADCf[FD_PITCH] = -250.0f;
-    runtime.z1[FD_PITCH] = -250.0f;
-    runtime.z2[FD_PITCH] = -150.0f;
-    runtime.z3[FD_PITCH] = 750.0f;
-    runtime.lastOutput[FD_PITCH] = -400.0f;
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-
-    ASSERT_TRUE(runtime.liftoff);
-    EXPECT_FLOAT_EQ(-250.0f, runtime.z1[FD_PITCH]);
-    EXPECT_FLOAT_EQ(-150.0f, runtime.z2[FD_PITCH]);
-    EXPECT_FLOAT_EQ(750.0f, runtime.z3[FD_PITCH]);
-    EXPECT_FLOAT_EQ(0.0f, runtime.lastOutput[FD_PITCH]);
-}
-
-TEST_F(AdrcUnittest, LiftoffIdleThresholdsAreConfigurable)
-{
-    profile.liftoffIdleThrottlePercent = 20; // much higher than the default (5%) - easier to satisfy
-    profile.liftoffIdleHoldMs = 1000;        // longer than the default (500ms)
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    // 10% throttle satisfies this profile's raised 20% idle threshold (it would NOT satisfy the
-    // default 5%), but idleS accumulates toward this profile's 1000ms hold - 100 loops @ 8ms =
-    // 800ms, comfortably under 1000ms, so the gate must still be armed.
-    simulatedThrottle = 0.10f;
-    resetGyro();
-    for (int i = 0; i < 100; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_TRUE(runtime.liftoff);
-
-    // idleS keeps accumulating across calls as long as the idle condition holds (it never breaks
-    // here) - 20 more loops brings the cumulative total to 960ms, still just under the 1000ms hold.
-    for (int i = 0; i < 20; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_TRUE(runtime.liftoff);
-
-    // 10 more loops crosses the cumulative 1000ms mark (1040ms total) - now it must re-arm.
-    for (int i = 0; i < 10; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_FALSE(runtime.liftoff);
-}
-
-TEST_F(AdrcUnittest, GateDoesNotReArmOnBriefAirborneThrottleChop)
-{
-    profile.liftoffIdleHoldMs = 500; // opt into the re-arm - the idle-timer reset is what's under test
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    // A brief chop shorter than the idle-hold requirement (well under 63 loops).
-    simulatedThrottle = 0.0f;
-    resetGyro();
-    for (int i = 0; i < 20; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_TRUE(runtime.liftoff);
-
-    // Throttle returns - the gate must still be open, and the idle timer must have been reset
-    // rather than continuing to accumulate toward re-arm across the interruption.
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
     EXPECT_TRUE(runtime.liftoff);
 }
 
@@ -478,72 +373,6 @@ TEST_F(AdrcUnittest, GatedZ3DecayHasProtectiveFloor)
     profile.gatedZ3DecayRate = 10; // grounded 1.0/s - slower than airborne, must be lifted to 5.0/s
     adrcInitConfig(&profile, &runtime, TEST_DT);
     EXPECT_FLOAT_EQ(5.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
-}
-
-TEST_F(AdrcUnittest, GateDoesNotChatterWithInvertedThresholds)
-{
-    // The CLI cannot cross-validate the two throttle thresholds; if the idle (re-arm) threshold
-    // is configured at or above the liftoff threshold, one and the same throttle satisfies both
-    // the open and the re-arm condition, and an unsanitized gate would chop the ESO's b0*u
-    // feedback at loop rate. The idle threshold must be clamped below the liftoff threshold.
-    profile.liftoffThrottlePercent = 40;
-    profile.liftoffIdleThrottlePercent = 60; // inverted on purpose
-    profile.liftoffIdleHoldMs = 100;         // opt in so the re-arm branch is actually exercised
-
-    simulatedThrottle = 0.5f; // above liftoff, below the (bogus) idle threshold
-    resetGyro();
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-    for (int i = 0; i < 200; i++) {
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-        ASSERT_TRUE(runtime.liftoff) << "gate chattered at iteration " << i;
-    }
-}
-
-TEST_F(AdrcUnittest, GateReArmStillnessIsCappedIndependently)
-{
-    // liftoffGyroDps doubles as the re-arm "stillness" bound; pushing it up for less sensitive
-    // liftoff detection must not redefine 100 deg/s of rotation as "still" - that would re-arm
-    // the gate mid-air during a throttle chop. The re-arm side is capped at a true-stillness
-    // level regardless of this setting.
-    profile.liftoffGyroDps = 255;
-    profile.liftoffIdleHoldMs = 100; // opt in so a missing stillness cap would re-arm the gate
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    // Mid-air throttle chop: idle throttle, but the craft is clearly still flying/rotating.
-    simulatedThrottle = 0.0f;
-    gyro.gyroADCf[FD_ROLL] = 100.0f;
-    for (int i = 0; i < 300; i++) { // 2.4s - far beyond any hold time
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_TRUE(runtime.liftoff);
-}
-
-TEST_F(AdrcUnittest, GateReArmHoldHasFloor)
-{
-    // An absurdly short opt-in hold must not allow a single quiet loop mid-chop to close the gate
-    // in flight - nonzero holds are floored so re-arm still requires a sustained idle-and-still
-    // period. (0 is not floored: it disables the re-arm outright - covered by
-    // GateStaysOpenThroughSustainedFloatByDefault.)
-    profile.liftoffIdleHoldMs = 1;
-
-    simulatedThrottle = 0.6f;
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    ASSERT_TRUE(runtime.liftoff);
-
-    simulatedThrottle = 0.0f;
-    resetGyro();
-    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT); // one quiet loop (8ms < 100ms floor)
-    EXPECT_TRUE(runtime.liftoff);
-
-    // But a genuinely sustained idle still re-arms (dominated by the 100ms floor, not 500ms).
-    for (int i = 0; i < 20; i++) { // +160ms
-        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
-    }
-    EXPECT_FALSE(runtime.liftoff);
 }
 
 TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)

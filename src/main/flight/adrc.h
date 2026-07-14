@@ -74,12 +74,11 @@ typedef struct adrcProfile_s {
     uint8_t liftoffGyroDps;             // sustained rotation (deg/s, any axis) that alone confirms
                                         // liftoff - the toss-launch path (not per-axis)
     uint16_t liftoffHoldMs;             // how long the rotation above must sustain before it counts
-    uint8_t liftoffIdleThrottlePercent; // throttle % the craft must drop below before the gate can
-                                        // re-arm - keep below liftoffThrottlePercent and below your
-                                        // actual hover throttle
-    uint16_t liftoffIdleHoldMs;         // how long idle-throttle-and-stillness must sustain to re-arm;
-                                        // 0 (default) = never re-arm mid-cycle, gate stays open
-                                        // from first liftoff until disarm (bench/ground-rep opt-in)
+                                        // (ADRC-020: the opt-in mid-air re-arm heuristic that used
+                                        // to live here was removed rather than fixed - throttle+gyro
+                                        // alone cannot distinguish a landing from a calm mid-air
+                                        // float, and the arm-epoch fix below already covers the
+                                        // ground-rep use case it existed for)
 
     uint16_t gatedZ3DecayRate; // z3 decay rate x0.1 while ungated (grounded) - always faster than
                                 // sigmaDecay above so z3 can't wind up while idle regardless of its
@@ -121,7 +120,6 @@ typedef struct adrcRuntime_s {
     bool liftoff;           // latched once per arm cycle: craft has left the ground (shared, not
                              // per-axis - gyro activity is checked across all three axes at once)
     float gyroActiveS;      // seconds of sustained gyro activity (liftoff detector)
-    float idleS;            // seconds throttle has stayed at idle (gate re-arm)
     float b0ThrottleScale;  // (throttle/hover)^2, clamped - shared cache updated once per loop by
                              // adrcUpdatePerLoopState(), applied per-axis in adrcApplyControl()
     float b0ScaleThrottle;  // low-passed collective feeding the b0 schedule above (the gate reads
