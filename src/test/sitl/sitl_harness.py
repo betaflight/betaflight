@@ -28,6 +28,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 
 MSP_STATUS = 101
 MSP_RAW_GPS = 106
@@ -289,6 +290,7 @@ class FdmFeed(threading.Thread):
         self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
         self.status = status
+        self.sid = uuid.uuid4().hex[:8]  # telemetry session id: lets visualisers detect restarts
         self.running = True
         self.gps_valid = True     # False emits out-of-range lat/lon: the FC's GPS goes dark
         self.history = []         # (t, east, north, up, ve, vn, vu, heading_deg) at ~10 Hz
@@ -367,6 +369,7 @@ class FdmFeed(threading.Thread):
                     # keeps pitch nose-down/yaw-CW positive; emit display
                     # conventions (pitch nose-up positive) once, here.
                     self.sock.sendto(json.dumps({
+                        "sid": self.sid,
                         "t": now - self.t0,
                         "pos": list(self.model.pos),
                         "vel": list(self.model.vel),
