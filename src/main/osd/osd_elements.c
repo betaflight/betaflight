@@ -2606,7 +2606,7 @@ void osdUpdateAlarms(void)
     }
 
     if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
-    (!currentBatteryProfile->batteryCapacity && getBatteryState() == BATTERY_CRITICAL)) {
+        (!currentBatteryProfile->batteryCapacity && getBatteryState() == BATTERY_CRITICAL)) {
         SET_BLINK(OSD_MAIN_BATT_USAGE);
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
