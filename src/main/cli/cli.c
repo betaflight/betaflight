@@ -2871,13 +2871,15 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         };
         const flightPlanNavState_e state = flightPlanNavGetState();
         cliPrintLinef("  state: %s", (state < ARRAYLEN(stateNames)) ? stateNames[state] : "UNKNOWN");
-        cliPrintLinef("  current waypoint: %u/%u", flightPlanNavGetCurrentIndex() + 1, config->waypointCount);
+        const uint8_t currentDisplay = (config->waypointCount == 0) ? 0 : flightPlanNavGetCurrentIndex() + 1;
+        cliPrintLinef("  current waypoint: %u/%u", currentDisplay, config->waypointCount);
 
         const float distanceM = flightPlanNavGetDistanceToWaypointM();
         if (distanceM >= 0.0f) {
+            const uint32_t distanceCm = lrintf(distanceM * 100.0f);
             const int32_t bearingDeg = flightPlanNavGetBearingToWaypointDeciDeg() / 10;
-            cliPrintLinef("  distance: %d.%02um  bearing: %ld deg  eta: %us",
-                (int)distanceM, (unsigned)(lrintf(distanceM * 100.0f) % 100), (long)bearingDeg, flightPlanNavGetEtaSeconds());
+            cliPrintLinef("  distance: %u.%02um  bearing: %ld deg  eta: %us",
+                distanceCm / 100, distanceCm % 100, (long)bearingDeg, flightPlanNavGetEtaSeconds());
         }
 
         if (state == FP_NAV_ABORTED) {

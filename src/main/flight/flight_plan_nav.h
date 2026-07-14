@@ -68,7 +68,9 @@ flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 
 // Live navigation geometry to the active waypoint, for OSD/CLI readouts. All
 // three return a sentinel when the executor is not tracking a target:
-// distance < 0, bearing < 0, ETA == 0.
+// distance < 0, bearing < 0, ETA == 0. ETA also returns 0 when horizontal
+// speed is below 0.5 m/s (no meaningful estimate), so callers must treat 0 as
+// "no ETA" rather than "arrived".
 float flightPlanNavGetDistanceToWaypointM(void);
 int32_t flightPlanNavGetBearingToWaypointDeciDeg(void);
 uint16_t flightPlanNavGetEtaSeconds(void);

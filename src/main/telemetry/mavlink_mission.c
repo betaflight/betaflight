@@ -652,8 +652,11 @@ bool mavMissionHandleMessage(const mavlink_message_t *msg)
             return true;
         }
         // Out-of-range seq is a no-op on the cursor; the executor guards the
-        // range too. Either way the partner gets the current cursor back.
-        flightPlanNavSetCurrentIndex((uint8_t)sc.seq);
+        // range too. Guard the narrowing cast so a seq > 255 can't wrap into a
+        // valid index. Either way the partner gets the current cursor back.
+        if (sc.seq <= UINT8_MAX) {
+            flightPlanNavSetCurrentIndex((uint8_t)sc.seq);
+        }
         sendMissionCurrent();
         return true;
     }

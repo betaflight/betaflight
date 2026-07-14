@@ -1081,7 +1081,12 @@ uint16_t flightPlanNavGetEtaSeconds(void)
     if (speedMps < 0.5f) {
         return 0;
     }
-    const float etaS = distanceToNavTargetM(est) / speedMps;
+    // Horizontal groundspeed only reaches the waypoint's horizontal offset, so
+    // divide by the 2D distance; the 3D slant would overstate ETA on climbs.
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
+    const float distance2dM = sqrtf(sq(deltaM.v[ENU_E]) + sq(deltaM.v[ENU_N]));
+    const float etaS = distance2dM / speedMps;
     return (etaS >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(etaS);
 }
 

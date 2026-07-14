@@ -1325,8 +1325,12 @@ static void osdElementWpNumber(osdElementParms_t *element)
 static void osdElementWpNextNumber(osdElementParms_t *element)
 {
     const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
     const uint8_t next = osdWpCurrentIndex(count) + 1;
-    if (count == 0 || next >= count) {
+    if (next >= count) {
         osdPutHyphen(element);
         return;
     }
