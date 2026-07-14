@@ -242,6 +242,25 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
     EXPECT_EQ(dshotCommandWriteCount, 0);
 }
 
+TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_BatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: USB flag + configurator active + battery present
+    // must still fire the DShot beacon — bench-only suppression must not affect flight.
+    simulatorBoxBeeperOn = true;
+    simulatorFailsafeRxDataReceived = true;
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    simulatorBatteryState = BATTERY_OK;
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+
+    beeper(BEEPER_RX_SET);
+    simulatorCurrentTimeUs = 250000000;
+    simulatorMspConfiguratorActive = true;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_GT(dshotCommandWriteCount, 0);
+}
+
 TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorNotActive_Sounds)
 {
     // AUX switch active, RX healthy, USB flag set but configurator NOT active → beacon sounds
@@ -324,6 +343,23 @@ TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
     // beeperUpdate() must re-check suppression on the BeepOn step and stay silent.
     beeperUpdate(simulatorCurrentTimeUs);
     EXPECT_FALSE(isBeeperOn());
+}
+
+TEST_F(BeeperTest, SequencePlayback_SuppressedConditionsButBatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: even if USB/configurator suppression conditions
+    // are met, a battery present means suppression must not engage.
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorBatteryState = BATTERY_OK;
+
+    simulatorUsbCableInserted = false;
+    simulatorMspConfiguratorActive = false;
+    beeper(BEEPER_RX_SET);
+
+    simulatorMspConfiguratorActive = true;
+
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 // =============================================================================
