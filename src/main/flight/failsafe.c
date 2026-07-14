@@ -74,6 +74,10 @@ PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CO
 #define DEFAULT_FAILSAFE_RECOVERY_DELAY 5            // 500ms of valid rx data needed to allow recovery from failsafe and arming block
 #endif
 
+#if ENABLE_RESCUE_PLAN
+#define FAILSAFE_AUTOPILOT_ENGAGE_GRACE_MS 1000      // core.c engages a staged rescue mission within a cycle; this bounds the wait
+#endif
+
 PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_throttle = 1000,                           // default throttle off.
     .failsafe_throttle_low_delay = 100,                  // default throttle low delay for "just disarm" on failsafe condition
@@ -117,6 +121,9 @@ void failsafeReset(void)
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.boxFailsafeSwitchWasOn = false;
+#if ENABLE_RESCUE_PLAN
+    failsafeState.autopilotEngageDeadline = 0;
+#endif
 }
 
 void failsafeInit(void)
@@ -248,8 +255,21 @@ static void failsafeStartProcedure(failsafeProcedure_e procedure)
             break;
 #ifdef USE_GPS_RESCUE
         case FAILSAFE_PROCEDURE_GPS_RESCUE:
+#if ENABLE_RESCUE_PLAN
+            if (flightPlanNavStageRescuePlan()) {
+                // core.c engages the executor when it sees FAILSAFE_AUTOPILOT;
+                // the deadline bounds how long we wait for that to happen.
+                ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
+                failsafeState.phase = FAILSAFE_AUTOPILOT;
+                failsafeState.autopilotEngageDeadline = millis() + FAILSAFE_AUTOPILOT_ENGAGE_GRACE_MS;
+            } else {
+                // no home/fix to build a rescue plan: baro-only auto-landing
+                failsafeStartProcedure(FAILSAFE_PROCEDURE_AUTO_LANDING);
+            }
+#else
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
             failsafeState.phase = FAILSAFE_GPS_RESCUE;
+#endif
             break;
 #endif
     }
@@ -354,6 +374,10 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                         // and falls back to the configured procedure when it ends
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                         failsafeState.phase = FAILSAFE_AUTOPILOT;
+#if ENABLE_RESCUE_PLAN
+                        // mission already engaged: no engage grace applies
+                        failsafeState.autopilotEngageDeadline = millis();
+#endif
                     } else if (FLIGHT_MODE(AUTOPILOT_MODE)
                         && autopilotConfig()->rxLossPolicy == AP_RX_LOSS_LAND) {
                         // land at the current position: the mission disengages, and
@@ -426,6 +450,28 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                 } else if (!armed) {
                     failsafeState.phase = FAILSAFE_LANDED;
                     reprocessState = true;
+#if ENABLE_RESCUE_PLAN
+                } else if (!FLIGHT_MODE(AUTOPILOT_MODE)
+                    && flightPlanNavGetState() != FP_NAV_COMPLETE
+                    && flightPlanNavGetState() != FP_NAV_ABORTED
+                    && cmp32(millis(), failsafeState.autopilotEngageDeadline) < 0) {
+                    // a staged rescue mission is waiting for core.c to engage
+                    // the executor; give it the grace window before degrading
+                    beeperMode = BEEPER_RX_LOST_LANDING;
+                } else if (!FLIGHT_MODE(AUTOPILOT_MODE)
+                    || flightPlanNavGetState() == FP_NAV_COMPLETE
+                    || flightPlanNavGetState() == FP_NAV_ABORTED) {
+                    // mission ended, aborted, never engaged, or lost its
+                    // requirements while the link is still down. Re-selecting
+                    // GPS-RESCUE would re-stage the mission that just failed,
+                    // so degrade to the baro-only auto-landing instead.
+                    failsafeProcedure_e fallback = failsafeConfig()->failsafe_procedure;
+                    if (fallback == FAILSAFE_PROCEDURE_GPS_RESCUE) {
+                        fallback = FAILSAFE_PROCEDURE_AUTO_LANDING;
+                    }
+                    failsafeStartProcedure(fallback);
+                    reprocessState = true;
+#else
                 } else if (!FLIGHT_MODE(AUTOPILOT_MODE)
                     || flightPlanNavGetState() == FP_NAV_COMPLETE
                     || flightPlanNavGetState() == FP_NAV_ABORTED) {
@@ -433,6 +479,7 @@ FAST_CODE_NOINLINE void failsafeUpdateState(void)
                     // while the link is still down: fall back to the configured procedure
                     failsafeStartProcedure(failsafeConfig()->failsafe_procedure);
                     reprocessState = true;
+#endif
                 } else {
                     beeperMode = BEEPER_RX_LOST_LANDING;
                 }

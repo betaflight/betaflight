@@ -15,6 +15,8 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <float.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -70,6 +72,7 @@ struct CapturedTarget {
 CapturedTarget g_lastTarget;
 int g_setTargetCalls;
 int g_clearTargetCalls;
+int g_moveTargetCalls;
 
 gpsLocation_t g_stubGpsOrigin;
 bool g_stubGpsOriginSet;
@@ -105,6 +108,15 @@ void positionNavSetTargetEf(
     g_lastTarget.userData = userData;
     g_lastTarget.valid = true;
     g_setTargetCalls++;
+}
+
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
+{
+    if (!g_lastTarget.valid) {
+        return;
+    }
+    g_lastTarget.targetEfM = *targetPosEfM;
+    g_moveTargetCalls++;
 }
 
 void positionNavClearTarget(void)
@@ -218,6 +230,7 @@ protected:
         memset(&g_lastTarget, 0, sizeof(g_lastTarget));
         g_setTargetCalls = 0;
         g_clearTargetCalls = 0;
+        g_moveTargetCalls = 0;
         g_stubMicros = 0;
 
         memset(&g_stubEstimate, 0, sizeof(g_stubEstimate));
@@ -276,13 +289,13 @@ protected:
         wp.speed = speed;
         wp.duration = duration;
         wp.type = type;
-        wp.pattern = WAYPOINT_PATTERN_ORBIT;
+        wp.pattern = WAYPOINT_PATTERN_NONE;
         return wp;
     }
 
     void addWaypoint(int32_t lat, int32_t lon, int32_t altCm,
                      uint8_t type, uint16_t speed = 0, uint16_t duration = 0,
-                     uint8_t pattern = WAYPOINT_PATTERN_ORBIT)
+                     uint8_t pattern = WAYPOINT_PATTERN_NONE)
     {
         flightPlanConfig_t *plan = flightPlanConfigMutable();
         waypoint_t *wp = &plan->waypoints[plan->waypointCount++];
@@ -418,6 +431,297 @@ TEST_F(FlightPlanNavTest, HoldWithZeroDurationAdvancesImmediately)
 
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, TakeoffDispatchClimbsInPlace)
+{
+    // Vehicle at (40 E, 30 N) m; TAKEOFF waypoint 100 m away horizontally.
+    g_stubEstimate.position.x = 4000.0f;
+    g_stubEstimate.position.y = 3000.0f;
+    const int32_t unitsFor100m = (int32_t)((100.0f / 111319.49f) * 1.0e7f);
+    addWaypoint(unitsFor100m, unitsFor100m, 15000, WAYPOINT_TYPE_TAKEOFF);
+
+    flightPlanNavEngage();
+
+    // Target is the current position at the waypoint altitude, with the
+    // station-keeping radius and the climb gated on altitude arrival.
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 40.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 30.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.acceptanceRadiusM, 2.0f, 0.01f);
+    EXPECT_TRUE(g_altitudeArrivalRequired);
+}
+
+TEST_F(FlightPlanNavTest, TakeoffAdvancesOnArrival)
+{
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_TAKEOFF);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    triggerReached();
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, TakeoffWithDurationLoitersThenAdvancesWithoutPattern)
+{
+    // A pattern on a TAKEOFF waypoint is meaningless and must not start.
+    addWaypoint(0, 0, 15000, WAYPOINT_TYPE_TAKEOFF, 0, 20 /* 2.0 s */, WAYPOINT_PATTERN_ORBIT);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    triggerReached();
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+    EXPECT_EQ(g_setTargetCalls, 1);   // no carrot command issued
+
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+    EXPECT_EQ(g_moveTargetCalls, 0);
+
+    g_stubMicros += 1'500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavTest, HoldPatternNoneKeepsStationTarget)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_HOLD, 0, 100 /* 10 s */);
+
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    const vector3_t holdTarget = g_lastTarget.targetEfM;
+    triggerReached();
+
+    for (int i = 0; i < 5; i++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+    EXPECT_EQ(g_setTargetCalls, 1);
+    EXPECT_EQ(g_moveTargetCalls, 0);
+    EXPECT_EQ(memcmp(&g_lastTarget.targetEfM, &holdTarget, sizeof(holdTarget)), 0);
+}
+
+class FlightPlanNavPatternTest : public FlightPlanNavTest {
+protected:
+    // HOLD waypoint at (10 E, 20 N, +50 U) m, leg cruise 3 m/s. With the
+    // default 2 m hold radius the carrot rate cap gives 0.5 m/s path speed,
+    // so the phase advances at 0.25 rad/s.
+    static constexpr float kCentreE = 10.0f;
+    static constexpr float kCentreN = 20.0f;
+    static constexpr float kCentreU = 50.0f;
+    static constexpr float kRadiusM = 2.0f;
+
+    void engageHoldPattern(uint8_t pattern, uint16_t durationDs = 200)
+    {
+        const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+        const int32_t latUnitsFor20m = (int32_t)((20.0f / 111319.49f) * 1.0e7f);
+        addWaypoint(latUnitsFor20m, lonUnitsFor10m, 15000, WAYPOINT_TYPE_HOLD,
+                    300 /* 3 m/s */, durationDs, pattern);
+        addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+        g_stubMicros = 1'000'000;
+        flightPlanNavEngage();
+    }
+
+    float distanceFromCentre() const
+    {
+        return sqrtf(sq(g_lastTarget.targetEfM.x - kCentreE) + sq(g_lastTarget.targetEfM.y - kCentreN));
+    }
+};
+
+TEST_F(FlightPlanNavPatternTest, OrbitIssuesNonCompletingCarrotCommand)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    // Vehicle slightly east of the centre: carrot starts at azimuth 0.
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+
+    // Arrival alone must not start the pattern; the update loop starts it
+    // once the arrival braking has settled (stub estimate is at rest).
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+    EXPECT_EQ(g_setTargetCalls, 1);
+    flightPlanNavUpdate(g_stubMicros);
+    ASSERT_EQ(g_setTargetCalls, 2);
+    // The carrot command must never complete: completion would refire the
+    // arrival callback (restarting the hold) and zero the velocity target.
+    EXPECT_EQ(g_lastTarget.completionSpeedMps, 0.0f);
+    EXPECT_EQ(g_lastTarget.callback, nullptr);
+    EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 3.0f, 0.01f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, kCentreE + kRadiusM, 0.05f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, kCentreN, 0.05f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, kCentreU, 0.01f);
+}
+
+TEST_F(FlightPlanNavPatternTest, OrbitCarrotStartsAtVehicleAzimuth)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    // Vehicle west of the centre: the first carrot must be on the west side
+    // of the ring (no dash across the circle).
+    g_stubEstimate.position.x = (kCentreE - 2.0f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);
+
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, kCentreE - kRadiusM, 0.05f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, kCentreN, 0.05f);
+}
+
+TEST_F(FlightPlanNavPatternTest, OrbitStartDeferredUntilArrivalBrakingSettles)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    g_stubEstimate.velocity.x = 400.0f;  // still carrying 4 m/s of leg momentum
+    triggerReached();
+
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_setTargetCalls, 1);      // too fast: no carrot command yet
+
+    g_stubEstimate.velocity.x = 0.0f;    // braking has parked the vehicle
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_setTargetCalls, 2);
+    EXPECT_EQ(g_lastTarget.completionSpeedMps, 0.0f);
+}
+
+TEST_F(FlightPlanNavPatternTest, OrbitStartTimeoutOverridesSettleGate)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    g_stubEstimate.velocity.x = 400.0f;  // never settles (e.g. holding against wind)
+    triggerReached();
+
+    g_stubMicros += 2'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_setTargetCalls, 1);
+
+    g_stubMicros += 4'000'000;           // 6 s since arrival: past the 5 s timeout
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(g_setTargetCalls, 2);
+}
+
+TEST_F(FlightPlanNavPatternTest, OrbitCarrotTracksCircleAroundHoldPoint)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);   // settled: pattern starts
+
+    // 0.25 rad/s: after 1 s the azimuth is 0.25 rad, after 2 s 0.5 rad.
+    float previousAzimuth = 0.0f;
+    for (int step = 1; step <= 2; step++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        EXPECT_EQ(g_moveTargetCalls, step);
+        EXPECT_NEAR(distanceFromCentre(), kRadiusM, 0.01f);
+        EXPECT_NEAR(g_lastTarget.targetEfM.z, kCentreU, 0.01f);
+        const float azimuth = atan2f(g_lastTarget.targetEfM.y - kCentreN,
+                                     g_lastTarget.targetEfM.x - kCentreE);
+        EXPECT_NEAR(azimuth, step * 0.25f, 0.05f);
+        EXPECT_GT(azimuth, previousAzimuth);
+        previousAzimuth = azimuth;
+    }
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+}
+
+TEST_F(FlightPlanNavPatternTest, Figure8CarrotBoundedAndRecrossesCentre)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_FIGURE8, 400 /* 40 s */);
+    g_stubEstimate.position.x = kCentreE * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);   // settled: pattern starts
+
+    // The lemniscate starts at the centre, where the vehicle already is.
+    EXPECT_NEAR(distanceFromCentre(), 0.0f, 0.01f);
+
+    // Walk a full cycle (2π at 0.25 rad/s ≈ 25 s) in 1 s steps: the carrot
+    // stays within the hold radius and returns near the centre mid-cycle.
+    float maxDistance = 0.0f;
+    float minDistanceAfterLeaving = FLT_MAX;
+    bool leftCentre = false;
+    for (int step = 0; step < 26; step++) {
+        g_stubMicros += 1'000'000;
+        flightPlanNavUpdate(g_stubMicros);
+
+        const float distance = distanceFromCentre();
+        EXPECT_LT(distance, kRadiusM + 0.01f);
+        maxDistance = fmaxf(maxDistance, distance);
+        if (distance > 1.5f) {
+            leftCentre = true;
+        } else if (leftCentre) {
+            minDistanceAfterLeaving = fminf(minDistanceAfterLeaving, distance);
+        }
+    }
+    EXPECT_GT(maxDistance, 1.9f);
+    EXPECT_LT(minDistanceAfterLeaving, 0.5f);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_HOLDING);
+}
+
+TEST_F(FlightPlanNavPatternTest, PatternCommandReissuedAfterWipedNavCommand)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);   // settled: pattern starts
+    ASSERT_EQ(g_setTargetCalls, 2);
+
+    // A position-control re-init wipes the nav command mid-hold.
+    g_lastTarget.valid = false;
+
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    EXPECT_EQ(g_setTargetCalls, 3);
+    ASSERT_TRUE(g_lastTarget.valid);
+    EXPECT_EQ(g_lastTarget.completionSpeedMps, 0.0f);
+    EXPECT_NEAR(distanceFromCentre(), kRadiusM, 0.01f);
+}
+
+TEST_F(FlightPlanNavPatternTest, PatternClearedOnAdvance)
+{
+    engageHoldPattern(WAYPOINT_PATTERN_ORBIT, 20 /* 2.0 s */);
+    g_stubEstimate.position.x = (kCentreE + 1.5f) * 100.0f;
+    g_stubEstimate.position.y = kCentreN * 100.0f;
+    triggerReached();
+    flightPlanNavUpdate(g_stubMicros);   // settled: pattern starts
+
+    // Expire the hold: the next leg dispatches and the carrot stops.
+    g_stubMicros += 2'500'000;
+    flightPlanNavUpdate(g_stubMicros);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+
+    const vector3_t legTarget = g_lastTarget.targetEfM;
+    const int movesAtAdvance = g_moveTargetCalls;
+    g_stubMicros += 1'000'000;
+    flightPlanNavUpdate(g_stubMicros);
+
+    EXPECT_EQ(g_moveTargetCalls, movesAtAdvance);
+    EXPECT_EQ(memcmp(&g_lastTarget.targetEfM, &legTarget, sizeof(legTarget)), 0);
+}
+
+TEST_F(FlightPlanNavTest, OrbitPeriodMatchesRateCapAndCruiseLimit)
+{
+    // Default 2 m radius: the 0.25 rad/s rate cap dominates -> 2π/0.25 ≈ 25.1 s
+    EXPECT_EQ(flightPlanNavOrbitPeriodDs(0), 251);
+    // 10 m radius, 1 m/s leg: cruise-limited -> 0.1 rad/s -> 2π/0.1 ≈ 62.8 s
+    autopilotConfigMutable()->waypointHoldRadius = 1000;
+    EXPECT_EQ(flightPlanNavOrbitPeriodDs(100), 628);
 }
 
 TEST_F(FlightPlanNavTest, DisengageClearsTargetAndResetsState)
@@ -907,8 +1211,10 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceRthAboveReturnAltReturnsAtCurrentAltitud
     flightPlanNavUpdate(g_stubMicros + 10'000);
 
     ASSERT_TRUE(flightPlanNavIsInjectedPlanActive());
-    // Never descend en route: return at the higher of the two altitudes.
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 50.0f, 0.1f);
+    // Never descend en route: the plan returns at the current GPS altitude,
+    // which in the estimator's feedback frame is its reading at engage (the
+    // stub reads 0 while GPS says 150 m AMSL — a mid-flight engagement).
+    EXPECT_NEAR(g_lastTarget.targetEfM.z, 0.0f, 0.1f);
 }
 
 TEST_F(FlightPlanNavSafetyTest, LandingTouchdownDisarms)

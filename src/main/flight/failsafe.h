@@ -92,6 +92,9 @@ typedef struct failsafeState_s {
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
     bool boxFailsafeSwitchWasOn;
+#if ENABLE_RESCUE_PLAN
+    uint32_t autopilotEngageDeadline;       // grace window for core.c to engage a staged rescue mission
+#endif
 } failsafeState_t;
 
 void failsafeInit(void);

@@ -146,6 +146,12 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_i2c_address = MAG_I2C_ADDRESS;
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
+#elif defined(USE_VIRTUAL_MAG)
+    compassConfig->mag_busType = BUS_TYPE_NONE;
+    compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
+    compassConfig->mag_i2c_address = 0;
+    compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
+    compassConfig->mag_spi_csn = IO_TAG_NONE;
 #else
     compassConfig->mag_hardware = MAG_NONE;
     compassConfig->mag_busType = BUS_TYPE_NONE;
@@ -386,6 +392,14 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
 #else
 static bool compassDetect(magDev_t *dev, sensor_align_e *alignment)
 {
+#if defined(USE_VIRTUAL_MAG)
+    *alignment = ALIGN_DEFAULT; // virtual mag data is already in the body frame
+    if (compassConfig()->mag_hardware != MAG_NONE && virtualMagDetect(dev)) {
+        detectedSensors[SENSOR_INDEX_MAG] = MAG_DEFAULT;
+        sensorsSet(SENSOR_MAG);
+        return true;
+    }
+#endif
     UNUSED(dev);
     UNUSED(alignment);
 

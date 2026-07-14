@@ -2576,8 +2576,9 @@ static const char * const waypointTypeNames[] = {
 STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
-    "ORBIT", "FIGURE8"
+    "NONE", "ORBIT", "FIGURE8"
 };
+STATIC_ASSERT(WAYPOINT_PATTERN_COUNT == ARRAYLEN(waypointPatternNames), waypointPatternNames_array_length_mismatch);
 
 // Parse decimal coordinate string to int32 (degrees * 10^7)
 // Accepts formats like: -33.5429890, 151.6664560, -33.5, 151
@@ -3011,7 +3012,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!patternFound) {
-        cliPrintErrorLinef(cmdName, "INVALID PATTERN. USE: ORBIT, FIGURE8");
+        cliPrintErrorLinef(cmdName, "INVALID PATTERN. USE: NONE, ORBIT, FIGURE8");
         return;
     }
 

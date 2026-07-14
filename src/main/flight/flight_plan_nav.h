@@ -42,6 +42,7 @@ typedef enum {
     FP_ABORT_ESTIMATOR,     // XY position estimate became invalid mid-mission
     FP_ABORT_STALLED,       // no progress toward the target within the stall window
     FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
+    FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
 } flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
@@ -65,12 +66,27 @@ flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
 
+// Orbit period (deciseconds) at the configured pattern radius for a leg flown
+// at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
+// counts to and from hold durations.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS);
+
 // Replace the active mission with a small synthesised runtime plan (at most 4
 // waypoints, copied). Only valid while the executor is active. The injected
 // plan does not survive a switch cycle: engage and disengage revert to the
 // stored mission, with no resume of what was preempted.
 bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count);
 bool flightPlanNavIsInjectedPlanActive(void);
+
+#if ENABLE_RESCUE_PLAN
+// Synthesise a failsafe rescue mission (climb-in-place, fly home, land) from
+// the current position and home, staged for the next flightPlanNavEngage() to
+// consume in place of the PG mission; injected immediately if the executor is
+// already active. Returns false when no home or fix exists to build a plan —
+// the failsafe caller then degrades to auto-landing.
+bool flightPlanNavStageRescuePlan(void);
+bool flightPlanNavIsRescuePlanActive(void);
+#endif
 
 // Single observer slot for "waypoint reached" — invoked with the index of the
 // waypoint that was just reached, before any HOLD timer or advance. Pass NULL
