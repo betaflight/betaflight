@@ -96,11 +96,12 @@ STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits excee
 
 static bool beeperUsbSuppressed(void)
 {
-    // BEEPER_USB ("ON_USB") silences the beeper while the board is connected via USB.
-    // usbCableIsInserted() is the literal detection (valid even at boot and immune to
-    // gaps in MSP polling); mspSerialIsConfiguratorActive() is retained as a fallback
-    // for targets without a USB detect pin and for wireless MSP links.
+    // BEEPER_USB ("ON_USB") silences the beeper on the bench when powered via USB with
+    // no battery present. usbCableIsInserted() / mspSerialIsConfiguratorActive() detect
+    // the USB/configurator link; the battery check preserves in-flight beeper behavior
+    // regardless of USB/configurator state (see betaflight#15423 - PR #14976 regression).
     return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+        && getBatteryState() == BATTERY_NOT_PRESENT
         && (usbCableIsInserted() || mspSerialIsConfiguratorActive());
 }
 
