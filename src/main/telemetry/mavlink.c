@@ -574,10 +574,10 @@ static void mavlinkProcessIncoming(void)
 }
 
 #ifdef USE_SERIALRX_MAVLINK
-static void mavlinkProcessQueyeMessages(void)
+static void mavlinkProcessQueueMessages(void)
 {
     uint8_t rxBudget = MAVLINK_RX_QUEUE_SIZE;
-    while (rxBudget-- && mavlinkGetNextQueyeMessage(&mavRxMsg)) {
+    while (rxBudget-- && mavlinkGetNextQueueMessage(&mavRxMsg)) {
         mavlinkDispatch(&mavRxMsg);
     }
 }
