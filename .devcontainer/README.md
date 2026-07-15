@@ -68,9 +68,13 @@ To flash/debug over SWD (e.g. `make openocd-gdb`) the container needs access to 
 debugger's own USB device, not just the FC. Add rules for the ST-Link IDs:
 
 ```bash
-# ST-Link V2 / V2-1
+# ST-Link V2
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3748", MODE="0666", TAG+="uaccess"
-# ST-Link V3
+# ST-Link V2-1 (e.g. integrated on Nucleo boards)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE="0666", TAG+="uaccess"
+# ST-Link V3 (various modes/variants)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374f", MODE="0666", TAG+="uaccess"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3753", MODE="0666", TAG+="uaccess"
 ```
 
