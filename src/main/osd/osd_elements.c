@@ -1363,7 +1363,7 @@ static void osdElementLinkQuality(osdElementParms_t *element)
 {
     uint16_t osdLinkQuality = 0;
 
-    if (rxGetLinkQuality() < osdConfig()->link_quality_alarm) {
+    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
