@@ -64,6 +64,27 @@ static bool     dnaSessionActive;
 static timeUs_t dnaLastActivityUs;
 static uint8_t  dnaTransferId;
 
+// Node IDs observed live on the bus (one bit per ID). Statically-configured
+// peers and nodes bound by another allocator never appear in the persisted
+// table, so the allocator must also exclude anyone it has heard NodeStatus
+// from. Never cleared: a node that goes quiet may only be rebooting.
+static uint32_t dnaSeenNodeIds[(CANARD_MAX_NODE_ID + 32) / 32];
+
+static void handleNodeStatus(CanardInstance *ins, CanardRxTransfer *t)
+{
+    UNUSED(ins);
+
+    const uint8_t id = t->source_node_id;
+    if (id >= CANARD_MIN_NODE_ID && id <= CANARD_MAX_NODE_ID) {
+        dnaSeenNodeIds[id / 32] |= 1U << (id % 32);
+    }
+}
+
+static bool dnaNodeIdSeen(uint8_t id)
+{
+    return (dnaSeenNodeIds[id / 32] & (1U << (id % 32))) != 0;
+}
+
 //-----------------------------------------------------------------------------
 // Persistent table helpers
 //-----------------------------------------------------------------------------
@@ -105,7 +126,8 @@ static void dnaTableStore(const uint8_t uniqueId[UAVCAN_DNA_UNIQUE_ID_LEN], uint
 
 // Pick a free node ID, honouring the peer's preference where possible. Searches
 // up from the preferred (or 125) towards 125, then down towards 1, skipping our
-// own node ID and any already in the table. Returns 0 if none is available.
+// own node ID, any already in the table, and any heard live on the bus.
+// Returns 0 if none is available.
 static uint8_t dnaFindFreeNodeId(uint8_t preferred)
 {
     bool occupied[CANARD_MAX_NODE_ID + 1];
@@ -118,6 +140,11 @@ static uint8_t dnaFindFreeNodeId(uint8_t preferred)
     for (int i = 0; i < DRONECAN_DNA_MAX_ENTRIES; i++) {
         const uint8_t id = dronecanDnaConfig()->entry[i].nodeId;
         if (id >= CANARD_MIN_NODE_ID && id <= CANARD_MAX_NODE_ID) {
+            occupied[id] = true;
+        }
+    }
+    for (uint8_t id = CANARD_MIN_NODE_ID; id <= CANARD_MAX_NODE_ID; id++) {
+        if (dnaNodeIdSeen(id)) {
             occupied[id] = true;
         }
     }
@@ -238,18 +265,29 @@ void dronecanDnaInit(void)
     dnaSessionActive = false;
     dnaLastActivityUs = 0;
     dnaTransferId = 0;
+    memset(dnaSeenNodeIds, 0, sizeof(dnaSeenNodeIds));
 
     if (!dronecanConfig()->dna_enabled) {
         return;
     }
 
-    const dronecanSubscriber_t sub = {
+    const dronecanSubscriber_t allocationSub = {
         .signature    = UAVCAN_DNA_ALLOCATION_SIGNATURE,
         .dataTypeId   = UAVCAN_DNA_ALLOCATION_ID,
         .transferType = CanardTransferTypeBroadcast,
         .handler      = handleAllocation,
     };
-    (void)dronecanRegisterSubscriber(&sub);
+    (void)dronecanRegisterSubscriber(&allocationSub);
+
+    // Every node broadcasts NodeStatus at >=1 Hz, so listening to it is enough
+    // to learn which IDs are already taken on the bus.
+    const dronecanSubscriber_t nodeStatusSub = {
+        .signature    = UAVCAN_NODE_STATUS_SIGNATURE,
+        .dataTypeId   = UAVCAN_NODE_STATUS_ID,
+        .transferType = CanardTransferTypeBroadcast,
+        .handler      = handleNodeStatus,
+    };
+    (void)dronecanRegisterSubscriber(&nodeStatusSub);
 }
 
 void dronecanDnaExpireSessions(timeUs_t currentTimeUs)

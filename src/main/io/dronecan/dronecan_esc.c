@@ -156,6 +156,10 @@ void dronecanEscUpdateComplete(void)
 // Telemetry in: esc.Status -> escSensorData[]
 //-----------------------------------------------------------------------------
 
+// esc.Status ingestion lands in esc_sensor.c's store, which only exists on
+// USE_ESC_SENSOR targets; RawCommand output above has no such dependency.
+#if defined(USE_ESC_SENSOR)
+
 // Last-heard timestamp per ESC index, for aging stale telemetry slots.
 static timeUs_t escStatusLastUs[MAX_SUPPORTED_MOTORS];
 
@@ -206,6 +210,8 @@ static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
     escStatusLastUs[escIndex] = micros();
 }
 
+#endif // USE_ESC_SENSOR
+
 //-----------------------------------------------------------------------------
 // Public surface
 //-----------------------------------------------------------------------------
@@ -221,6 +227,7 @@ void dronecanEscInit(void)
     escBroadcastPeriodUs = 1000000U / rateHz;
     escLastBroadcastUs = micros();
 
+#if defined(USE_ESC_SENSOR)
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         escStatusLastUs[i] = 0;
     }
@@ -234,6 +241,7 @@ void dronecanEscInit(void)
         .handler      = handleEscStatus,
     };
     (void)dronecanRegisterSubscriber(&sub);
+#endif
 }
 
 void dronecanEscUpdate(timeUs_t currentTimeUs)
@@ -243,6 +251,7 @@ void dronecanEscUpdate(timeUs_t currentTimeUs)
 
     // Age telemetry slots that have gone quiet so consumers see stale data
     // rather than a frozen last reading.
+#if defined(USE_ESC_SENSOR)
     for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (escStatusLastUs[i] != 0
                 && cmpTimeUs(currentTimeUs, escStatusLastUs[i]) >= ESC_STATUS_STALE_US) {
@@ -250,6 +259,9 @@ void dronecanEscUpdate(timeUs_t currentTimeUs)
             escStatusLastUs[i] = currentTimeUs;
         }
     }
+#else
+    UNUSED(currentTimeUs);
+#endif
 }
 
 //-----------------------------------------------------------------------------
