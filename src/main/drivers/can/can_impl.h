@@ -23,6 +23,8 @@
 
 #include "platform.h"
 
+#include "common/time.h"
+
 #include "drivers/can/can.h"
 #include "drivers/can/can_types.h"
 #include "drivers/io_types.h"
@@ -89,6 +91,15 @@ typedef struct canDevice_s {
     volatile uint8_t txHead;        // producer index (next write slot)
     volatile uint8_t txTail;        // consumer index (next slot to transmit)
     volatile uint32_t txRingOverflows;  // frames dropped, ring full (diagnostics)
+
+    // No-ACK wedge detection. With nothing to ACK (peers unpowered, bus
+    // fault) the pending hardware slots retransmit forever and TC never
+    // fires; canTransmit() watches completions while the ring is saturated
+    // and cancels the pending slots after a timeout of zero progress.
+    volatile uint32_t txCompletions;    // TC events, incremented in the ISR
+    uint32_t txCompletionsSeen;         // task-side progress snapshot
+    timeUs_t txStallSinceUs;            // when the snapshot was last refreshed
+    volatile uint32_t txStallRecoveries;    // cancel-and-drop events (diagnostics)
 
     bool initialized;
 } canDevice_t;

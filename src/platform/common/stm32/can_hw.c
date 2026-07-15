@@ -37,6 +37,7 @@
 #error "ENABLE_CAN is set but the target MCU family has no FDCAN support in this driver"
 #endif
 
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "drivers/can/can.h"
@@ -44,7 +45,12 @@
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/resource.h"
+#include "drivers/time.h"
 #include "platform/rcc.h"
+
+// Zero TX completions for this long while the software ring is saturated is
+// treated as a wedged (unacknowledged) bus — see canTransmit().
+#define CAN_TX_STALL_TIMEOUT_US 100000
 
 //-----------------------------------------------------------------------------
 // Message RAM layout
@@ -501,6 +507,10 @@ void canInitDevice(canDevice_e device, uint32_t bitrate)
     pDev->txHead = 0;
     pDev->txTail = 0;
     pDev->txRingOverflows = 0;
+    pDev->txCompletions = 0;
+    pDev->txCompletionsSeen = 0;
+    pDev->txStallSinceUs = micros();
+    pDev->txStallRecoveries = 0;
 
     // Enable Rx FIFO 0 new-message and message-lost interrupts, the
     // transmission-complete interrupt, and arm the peripheral side of IRQ
@@ -645,6 +655,28 @@ bool canTransmit(canDevice_e device, uint32_t identifier, bool isExtended,
     if (next == pDev->txTail) {
         // Ring full — genuine backpressure. Drop and report so the caller can
         // retry; libcanard leaves the frame at its queue head on a false.
+        //
+        // A saturated ring with zero completions means nothing is ACKing
+        // (peers unpowered, bus fault): auto-retransmission keeps the pending
+        // hardware slots busy forever and TC never fires. The FDCAN has no
+        // per-frame one-shot mode and disabling retransmission globally would
+        // drop frames on ordinary arbitration loss, so recover by cancelling
+        // the pending slots and discarding the stale backlog. A live bus
+        // completes a classic frame in well under a millisecond, so this
+        // never fires from congestion alone.
+        const timeUs_t now = micros();
+        if (pDev->txCompletions != pDev->txCompletionsSeen) {
+            pDev->txCompletionsSeen = pDev->txCompletions;
+            pDev->txStallSinceUs = now;
+        } else if (cmpTimeUs(now, pDev->txStallSinceUs) >= CAN_TX_STALL_TIMEOUT_US) {
+            FDCAN_GlobalTypeDef *regs = canRegs(device);
+            NVIC_DisableIRQ((IRQn_Type)pDev->irq0);
+            regs->TXBCR = (1UL << CAN_TX_FIFO_DEPTH) - 1UL;
+            pDev->txTail = head;
+            pDev->txStallRecoveries++;
+            pDev->txStallSinceUs = now;
+            NVIC_EnableIRQ((IRQn_Type)pDev->irq0);
+        }
         pDev->txRingOverflows++;
         return false;
     }
@@ -749,6 +781,7 @@ void canIrqHandler(canDevice_e device)
     // resume draining the software TX ring into the hardware FIFO.
     if (ir & FDCAN_IR_TC) {
         regs->IR = FDCAN_IR_TC;
+        canDevice[device].txCompletions++;
         canTxKick(device);
     }
 }
