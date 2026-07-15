@@ -42,7 +42,7 @@
 // fix state). Superset of the legacy Fix message; most CAN GNSS modules
 // publish this variant.
 #define UAVCAN_GNSS_FIX2_ID             1063U
-#define UAVCAN_GNSS_FIX2_SIGNATURE      0xca41e928aebcb2d9ULL
+#define UAVCAN_GNSS_FIX2_SIGNATURE      0xca41e7000f37435fULL
 
 // Fix2.status enum values.
 #define UAVCAN_GNSS_FIX2_STATUS_NO_FIX      0U

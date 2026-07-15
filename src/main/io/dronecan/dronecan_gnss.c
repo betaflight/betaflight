@@ -48,11 +48,11 @@
 #define FIX2_OFFSET_LONGITUDE_1E8   136U   // 37 bits signed
 #define FIX2_OFFSET_LATITUDE_1E8    173U   // 37 bits signed
 #define FIX2_OFFSET_HEIGHT_MSL_MM   237U   // 27 bits signed
-#define FIX2_OFFSET_VEL_N_F16       264U   // 16 bits float16
-#define FIX2_OFFSET_VEL_E_F16       280U   // 16 bits float16
-#define FIX2_OFFSET_VEL_D_F16       296U   // 16 bits float16
-#define FIX2_OFFSET_SATS_USED       312U   //  6 bits unsigned
-#define FIX2_OFFSET_STATUS          318U   //  2 bits unsigned
+#define FIX2_OFFSET_VEL_N_F32       264U   // 32 bits float32
+#define FIX2_OFFSET_VEL_E_F32       296U   // 32 bits float32
+#define FIX2_OFFSET_VEL_D_F32       328U   // 32 bits float32
+#define FIX2_OFFSET_SATS_USED       360U   //  6 bits unsigned
+#define FIX2_OFFSET_STATUS          366U   //  2 bits unsigned
 
 #define CM_PER_METRE                100
 
@@ -82,24 +82,20 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     int64_t lon_1e8 = 0;
     int64_t lat_1e8 = 0;
     int32_t height_msl_mm = 0;
-    uint16_t velN_f16 = 0;
-    uint16_t velE_f16 = 0;
-    uint16_t velD_f16 = 0;
+    float velN = 0.0f;
+    float velE = 0.0f;
+    float velD = 0.0f;
     uint8_t satsUsed = 0;
     uint8_t status = 0;
 
     canardDecodeScalar(t, FIX2_OFFSET_LONGITUDE_1E8,  37, true,  &lon_1e8);
     canardDecodeScalar(t, FIX2_OFFSET_LATITUDE_1E8,   37, true,  &lat_1e8);
     canardDecodeScalar(t, FIX2_OFFSET_HEIGHT_MSL_MM,  27, true,  &height_msl_mm);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_N_F16,      16, false, &velN_f16);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_E_F16,      16, false, &velE_f16);
-    canardDecodeScalar(t, FIX2_OFFSET_VEL_D_F16,      16, false, &velD_f16);
+    canardDecodeScalar(t, FIX2_OFFSET_VEL_N_F32,      32, false, &velN);
+    canardDecodeScalar(t, FIX2_OFFSET_VEL_E_F32,      32, false, &velE);
+    canardDecodeScalar(t, FIX2_OFFSET_VEL_D_F32,      32, false, &velD);
     canardDecodeScalar(t, FIX2_OFFSET_SATS_USED,       6, false, &satsUsed);
     canardDecodeScalar(t, FIX2_OFFSET_STATUS,          2, false, &status);
-
-    const float velN = canardConvertFloat16ToNativeFloat(velN_f16);
-    const float velE = canardConvertFloat16ToNativeFloat(velE_f16);
-    const float velD = canardConvertFloat16ToNativeFloat(velD_f16);
 
     const float speed2d = sqrtf(velN * velN + velE * velE);
     const float speed3d = sqrtf(velN * velN + velE * velE + velD * velD);
