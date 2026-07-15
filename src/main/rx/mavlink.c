@@ -59,22 +59,22 @@ static mavlink_message_t mavRecvMsg;
 static mavlink_status_t mavRecvStatus;
 static volatile uint8_t txbuff_free = 100;  // tx buffer space in %, start with empty buffer
 static volatile bool txbuff_valid = false;
-static mavlinkRxQueye_t mavlinkRxQueye;
+static mavlinkRxQueue_t mavlinkRxQueue;
 
-static void mavlinkAddMessageToQueye(void)
+static void mavlinkAddMessageToQueue(void)
 {
-    uint8_t next = (mavlinkRxQueye.head + 1) % MAVLINK_RX_QUEUE_SIZE;
-    if (next != mavlinkRxQueye.tail) {
-        mavlinkRxQueye.msgs[mavlinkRxQueye.head] = mavRecvMsg;
-        mavlinkRxQueye.head = next;
+    uint8_t next = (mavlinkRxQueue.head + 1) % MAVLINK_RX_QUEUE_SIZE;
+    if (next != mavlinkRxQueue.tail) {
+        mavlinkRxQueue.msgs[mavlinkRxQueue.head] = mavRecvMsg;
+        mavlinkRxQueue.head = next;
     }
 }
 
-bool mavlinkGetNextQueyeMessage(mavlink_message_t *msg)
+bool mavlinkGetNextQueueMessage(mavlink_message_t *msg)
 {
-    if (mavlinkRxQueye.tail != mavlinkRxQueye.head) {
-        *msg = mavlinkRxQueye.msgs[mavlinkRxQueye.tail];
-        mavlinkRxQueye.tail = (mavlinkRxQueye.tail + 1) % MAVLINK_RX_QUEUE_SIZE;
+    if (mavlinkRxQueue.tail != mavlinkRxQueue.head) {
+        *msg = mavlinkRxQueue.msgs[mavlinkRxQueue.tail];
+        mavlinkRxQueue.tail = (mavlinkRxQueue.tail + 1) % MAVLINK_RX_QUEUE_SIZE;
         return true;
     } else {
         return false;
