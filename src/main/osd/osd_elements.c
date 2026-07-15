@@ -1363,7 +1363,7 @@ static void osdElementLinkQuality(osdElementParms_t *element)
 {
     uint16_t osdLinkQuality = 0;
 
-    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+    if (rxGetLinkQuality() < osdConfig()->link_quality_alarm) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
@@ -1464,6 +1464,8 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     } else {
         if (getBatteryState() == BATTERY_CRITICAL) {
             element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        } else if (getBatteryState() == BATTERY_WARNING) {
+            element->attr = DISPLAYPORT_SEVERITY_WARNING;
         }
     }
 
@@ -2606,7 +2608,7 @@ void osdUpdateAlarms(void)
     }
 
     if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
-        (!currentBatteryProfile->batteryCapacity && getBatteryState() == BATTERY_CRITICAL)) {
+        (!currentBatteryProfile->batteryCapacity && getBatteryState() != BATTERY_OK)) {
         SET_BLINK(OSD_MAIN_BATT_USAGE);
     } else {
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
