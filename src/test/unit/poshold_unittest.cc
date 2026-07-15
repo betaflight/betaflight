@@ -156,6 +156,8 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     cfg->positionI  = 30;
     cfg->positionD  = 30;
     cfg->positionA  = 30;
+    cfg->positionF  = 30;
+    cfg->stopThreshold = 10;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
@@ -405,31 +407,73 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
     EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
-TEST_F(PosHoldTest, ReleasingSticksBrakes)
+// -- Feedforward (stick push) is a term of its own, apart from damping --
+
+TEST_F(PosHoldTest, FeedforwardProducesStickProportionalLean)
 {
     initAndSettleAt(0, 0, 0);
 
-    // Pilot is moving with sticks active
+    // Craft stationary at target, so pidP and pidD are both ~0; the lean comes
+    // from the F feedforward driven by the stick-commanded target velocity.
     setSticksActiveStatus(true);
-    testEstimate.velocity.x = 120.0f;
 
-    // Ensure sticks are centered for this baseline cruise test
-    simulatedStickRoll = 0.0f;
+    simulatedStickRoll = 100.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float leanSmall = autopilotAngle[AI_ROLL];
 
+    simulatedStickRoll = 200.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float leanLarge = autopilotAngle[AI_ROLL];
+
+    EXPECT_GT(fabsf(leanSmall), 0.5f);                 // a real push, not noise
+    EXPECT_GT(fabsf(leanLarge), fabsf(leanSmall) + 1.0f); // twice the stick, more lean
+}
+
+// Guards the fix: on stick release the stale target velocity is zeroed, so the
+// feedforward can't keep pushing in the direction of travel and fight braking.
+TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Cruise East under a large stick deflection while actually moving East.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 300.0f;
+    testEstimate.velocity.x = 150.0f;
     runIterations(SETTLE_ITERATIONS);
 
-    // UPDATE: Changed from -3.73f to -9.3767f to match the active tracking math
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -9.3767f, 0.05f);
-    EXPECT_NEAR(autopilotAngle[AI_PITCH],  0.0f,        0.01f);
-
-    // Stick release should cause a greater angle
+    // Release the stick but the craft is still moving East at the moment of release.
     setSticksActiveStatus(false);
-    runIterations(SETTLE_ITERATIONS);
+    simulatedStickRoll = 0.0f;
+    testEstimate.velocity.x = 150.0f;
+    positionControl(); // first braking loop
 
-    float expectedBrakeAngle = -14.4f;
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], expectedBrakeAngle, 0.1f);
+    // Must lean West (negative roll) to brake. If the feedforward push survived
+    // the release it would dominate and roll would be positive (still pushing East).
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
+}
 
+TEST_F(PosHoldTest, ReleasingSticksBrakesThenHolds)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Cruise East, stick centered, moving at 120 cm/s.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 0.0f;
+    testEstimate.velocity.x = 120.0f;
     runIterations(SETTLE_ITERATIONS);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);          // damping opposes the drift
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
+
+    // Release: decay velocity toward zero while advancing position, as a real brake would.
+    setSticksActiveStatus(false);
+    for (int i = 0; i < 600; i++) {
+        testEstimate.velocity.x *= 0.96f;
+        testEstimate.position.x += testEstimate.velocity.x * 0.01f;
+        positionControl();
+    }
+
+    // Stop captured: output settles back to level once the craft has stopped.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.5f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
