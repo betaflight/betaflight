@@ -44,6 +44,9 @@
 void dronecanNodeInit(void);
 void dronecanNodeUpdate(timeUs_t currentTimeUs);
 void dronecanGnssInit(void);
+#ifdef USE_MAG
+void dronecanMagInit(void);
+#endif
 
 //-----------------------------------------------------------------------------
 // Memory pool
@@ -261,6 +264,11 @@ void dronecanInit(void)
     // land in our cache as soon as the transport is live.
 #ifdef USE_GPS
     dronecanGnssInit();
+#endif
+#ifdef USE_MAG
+    // Install the field-strength subscribers so a DroneCAN compass module's
+    // broadcasts land in our cache as soon as the transport is live.
+    dronecanMagInit();
 #endif
 
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);

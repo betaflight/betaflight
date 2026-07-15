@@ -479,6 +479,27 @@ transponder_ir_unittest_SRC := \
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
 
+DRONECAN_LIBCANARD_DIR := $(ROOT)/lib/modules/dronecan/libcanard
+
+dronecan_mag_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_mag.c \
+		$(TEST_DIR)/dronecan_mag_canard.c
+
+dronecan_mag_unittest_DEFINES := \
+		ENABLE_DRONECAN=1 \
+		USE_MAG=
+
+dronecan_mag_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+# Hydrate the libcanard submodule on a fresh checkout before the shim (which
+# #includes canard.c) is compiled. Order-only so an already-present tree is
+# never rebuilt.
+$(DRONECAN_LIBCANARD_DIR)/canard.c:
+	$(V1) git -C $(ROOT) submodule update --init -- lib/modules/dronecan/libcanard
+
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o: | $(DRONECAN_LIBCANARD_DIR)/canard.c
+
 
 .PHONY: check-pg-ids
 check-pg-ids:
