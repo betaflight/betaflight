@@ -283,13 +283,13 @@ void dronecanInit(void)
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
 
 #if ENABLE_DRONECAN_ESC
-    // RawCommand is emitted from the PID loop (see dronecan_esc.c), so the task
-    // no longer drives command timing. We still raise the tick to the ESC rate
-    // when commanding so RX telemetry servicing and the fallback TX flush keep
-    // pace with the bus; otherwise the default 50 Hz node housekeeping is ample.
+    // RawCommand is emitted from the PID loop (see dronecan_esc.c) and every
+    // emission drains the TX queue, so the task only services RX telemetry and
+    // housekeeping. 100 Hz keeps the 32-slot RX ring ahead of worst-case
+    // esc.Status/GNSS bursts; tracking esc_rate_hz here would just duplicate
+    // the PID-loop flush at up to 500 Hz.
     if (isMotorProtocolDronecan()) {
-        const uint16_t rateHz = constrain(dronecanConfig()->esc_rate_hz, 50, 500);
-        rescheduleTask(TASK_DRONECAN, TASK_PERIOD_HZ(rateHz));
+        rescheduleTask(TASK_DRONECAN, TASK_PERIOD_HZ(100));
     }
 #endif
 

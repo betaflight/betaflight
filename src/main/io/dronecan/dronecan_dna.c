@@ -106,17 +106,23 @@ static uint8_t dnaTableLookup(const uint8_t uniqueId[UAVCAN_DNA_UNIQUE_ID_LEN])
 // at peer power-up, so this is a rare, ground-only event.
 static void dnaTableStore(const uint8_t uniqueId[UAVCAN_DNA_UNIQUE_ID_LEN], uint8_t nodeId)
 {
+    if (ARMING_FLAG(ARMED)) {
+        // Config stays untouched in flight. The binding still works for this
+        // power cycle (the response is sent regardless) and the granted ID
+        // stays excluded via the live-ID mask; the peer simply renegotiates
+        // after its next power cycle.
+        return;
+    }
+
     for (int i = 0; i < DRONECAN_DNA_MAX_ENTRIES; i++) {
         dronecanDnaEntry_t *e = &dronecanDnaConfigMutable()->entry[i];
         if (e->nodeId == 0) {
             memcpy(e->uniqueId, uniqueId, UAVCAN_DNA_UNIQUE_ID_LEN);
             e->nodeId = nodeId;
-            if (!ARMING_FLAG(ARMED)) {
-                // The flash write stalls this task for milliseconds; tell the
-                // scheduler to ignore it rather than flag a timing overrun.
-                schedulerIgnoreTaskExecTime();
-                writeEEPROM();
-            }
+            // The flash write stalls this task for milliseconds; tell the
+            // scheduler to ignore it rather than flag a timing overrun.
+            schedulerIgnoreTaskExecTime();
+            writeEEPROM();
             return;
         }
     }
