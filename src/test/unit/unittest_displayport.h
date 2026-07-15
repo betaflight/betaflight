@@ -212,3 +212,9 @@ void displayPortTestBufferAttrBits(int x, int y, uint8_t expectedBits)
     const uint8_t attr = testDisplayPortAttrBuffer[(y * testDisplayPort.cols) + x];
     EXPECT_EQ(expectedBits, attr & expectedBits);
 }
+
+void displayPortTestBufferAttrNoBits(int x, int y, uint8_t unexpectedBits)
+{
+    const uint8_t attr = testDisplayPortAttrBuffer[(y * testDisplayPort.cols) + x];
+    EXPECT_EQ(0, attr & unexpectedBits);
+}
