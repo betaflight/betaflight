@@ -387,6 +387,18 @@ void configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
+#if defined(STM32C5)
+        // On C5 the instruction cache also caches const/data reads from the
+        // flash code region, which includes the config storage area. After
+        // rewriting config, invalidate ICACHE so subsequent reads are coherent
+        // instead of being served from stale cache lines. CMSIS-direct (the C5
+        // HAL2 has no ICACHE wrapper); bounded wait so a stuck flag can't hang.
+        SET_BIT(ICACHE->CR, ICACHE_CR_CACHEINV);
+        for (volatile uint32_t icacheWait = 0;
+             icacheWait < 1000000U && !(ICACHE->SR & ICACHE_SR_BSYENDF);
+             icacheWait++) { }
+        WRITE_REG(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
+#endif
 #elif defined(X32M7)
         // NOP
 #elif defined(AT32F4)
