@@ -492,13 +492,11 @@ dronecan_mag_unittest_DEFINES := \
 dronecan_mag_unittest_INCLUDE_DIRS := \
 		$(DRONECAN_LIBCANARD_DIR)
 
-# Hydrate the libcanard submodule on a fresh checkout before the shim (which
-# #includes canard.c) is compiled. Order-only so an already-present tree is
-# never rebuilt.
-$(DRONECAN_LIBCANARD_DIR)/canard.c:
-	$(V1) git -C $(ROOT) submodule update --init -- lib/modules/dronecan/libcanard
-
-$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o: | $(DRONECAN_LIBCANARD_DIR)/canard.c
+# The hydration rule for canard.c lives with the dronecan_gnss test above;
+# order every object of this test after it too.
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: | $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
 .PHONY: check-pg-ids

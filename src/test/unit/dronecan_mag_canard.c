@@ -22,4 +22,7 @@
 // Compile libcanard's implementation into the test binary. The submodule path
 // is added to this test's INCLUDE_DIRS so both this shim and the code under
 // test resolve canard.h against the same source.
+#if !__has_include("canard.c")
+#error "libcanard missing; run: git submodule update --init lib/modules/dronecan/libcanard"
+#endif
 #include "canard.c"
