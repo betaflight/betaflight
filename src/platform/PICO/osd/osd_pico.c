@@ -424,6 +424,7 @@ int osdPioCountHSyncs(void)
 
 
 #ifdef DEBUG_OSD_FB_PICO
+#include "hardware/clocks.h"
 
 static void vsync_callback_debug(void)
 {
@@ -448,6 +449,11 @@ static void vsync_callback_debug(void)
         qtot += q;
     }
 
+    static int mpc;
+    if (!mpc) {
+        mpc = clockMicrosToCycles(1); // 150 for default clock on RP2350
+    }
+
     static uint32_t n_to_c;
 
     if (ddc % NN == 0) {
@@ -457,14 +463,14 @@ static void vsync_callback_debug(void)
 #endif
         nisz = 0; dmb = 0;
         // NB ave wraps quickly (~1000 vsyncs)
-//        bprintf("max time between callbacks: %d, last: %d, ave: %.1f",vmax/150, q/150, (double)(((float)qtot)/c/150));
+//        bprintf("max time between callbacks: %d, last: %d, ave: %.1f",vmax/mpc, q/mpc, (double)(((float)qtot)/c/mpc));
 //        bprintf("tus %d, tusr %d, ave %.1f calls per VS, %.1f rds per VS, %.1f calls/rd",
 //                tus, tusr,
 //                (double)tus/NN, (double)tusr/NN, (double)tus/tusr);
 //        bprintf("max (per rd) us per call (ave over rds) %.1f, for which painted (ave over rds) %.1f",
-//                (double)maxcycles/150.0/tusr, (double)paintedmaxcycles/tusr);
+//                ((double)maxcycles)/mpc/tusr, (double)paintedmaxcycles/tusr);
 #if 0
-        bprintf("max us per render call (last set of vsyncs had %d complete rds) %d", tusr, maxcycles/150);
+        bprintf("max us per render call (last set of vsyncs had %d complete rds) %d", tusr, maxcycles/mpc);
 #endif
         static int printq = 0;
         if (++printq == 3) {
@@ -486,9 +492,9 @@ static void vsync_callback_debug(void)
             }
 #if 0
             bprintf(", fg %d (%.1f), bg %d (%.1f), fg+bg %d (%.1f)",
-                    drawBGTot/(NN*150), ((double)drawBGTot)/(NN*150*us_per_vsync/100),
-                    drawFGTot/(NN*150), ((double)drawFGTot)/(NN*150*us_per_vsync/100),
-                    (drawFGTot + drawBGTot)/(NN*150), ((double)(drawFGTot + drawBGTot))/(NN*150*us_per_vsync/100));
+                    drawBGTot/(NN*mpc), ((double)drawBGTot)/(NN*mpc*us_per_vsync/100),
+                    drawFGTot/(NN*mpc), ((double)drawFGTot)/(NN*mpc*us_per_vsync/100),
+                    (drawFGTot + drawBGTot)/(NN*mpc), ((double)(drawFGTot + drawBGTot))/(NN*mpc*us_per_vsync/100));
 #endif
         }
 
