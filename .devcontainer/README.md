@@ -62,6 +62,31 @@ Here are the steps required:
 
 NOTE: this example is with a ready made flight controller on UART, but the same procedure works for STLink debuggers for example.
 
+### STLink debugger (SWD flash/debug via OpenOCD)
+
+To flash/debug over SWD (e.g. `make openocd-gdb`) the container needs access to the
+debugger's own USB device, not just the FC. Add rules for the ST-Link IDs:
+
+```bash
+# ST-Link V2 / V2-1
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3748", MODE="0666", TAG+="uaccess"
+# ST-Link V3
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3753", MODE="0666", TAG+="uaccess"
+```
+
+Without this the ST-Link node comes up `root:root` and OpenOCD fails with
+`libusb_open() failed with LIBUSB_ERROR_ACCESS`. (A `sudo chmod 666 /dev/bus/usb/<bus>/<dev>`
+works but only until the next replug.)
+
+**Wiring gotcha:** the ST-Link V3 must have its **T_VCC / VREF** pin connected to the
+target's 3.3 V — it senses the target voltage to level-shift SWD. With only SWDIO/SWCLK/GND
+wired, OpenOCD reports `Target voltage: 0.00V` and `examination failed` even though the board
+is powered and running.
+
+The bundled OpenOCD is built from [STMicroelectronics' fork](https://github.com/STMicroelectronics/OpenOCD)
+because the distro package (0.12.0) lacks STM32H5 support. It covers the STM32 F4/F7/G4/H7/H5
+families; other platforms (STM32C5/N6, AT32, CH32, RP2350, …) will be added in follow-ups.
+
 ## Installation of tools
 
 Two examples are given here - one using Docker and the other using Podman.
