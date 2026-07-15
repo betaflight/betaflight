@@ -44,11 +44,23 @@
 #define UAVCAN_GNSS_FIX2_ID             1063U
 #define UAVCAN_GNSS_FIX2_SIGNATURE      0xca41e7000f37435fULL
 
+// uavcan.equipment.gnss.Auxiliary — low-priority companion to Fix2 carrying
+// the dilution-of-precision figures (gdop/pdop/hdop/vdop/...).
+#define UAVCAN_GNSS_AUXILIARY_ID        1061U
+#define UAVCAN_GNSS_AUXILIARY_SIGNATURE 0x9be8bdc4c3dbbfd2ULL
+
 // Fix2.status enum values.
 #define UAVCAN_GNSS_FIX2_STATUS_NO_FIX      0U
 #define UAVCAN_GNSS_FIX2_STATUS_TIME_ONLY   1U
 #define UAVCAN_GNSS_FIX2_STATUS_2D_FIX      2U
 #define UAVCAN_GNSS_FIX2_STATUS_3D_FIX      3U
+
+// Fix2.gnss_time_standard enum values. Only UTC maps to a wall-clock calendar
+// without external leap-second bookkeeping.
+#define UAVCAN_GNSS_TIME_STANDARD_NONE      0U
+#define UAVCAN_GNSS_TIME_STANDARD_TAI       1U
+#define UAVCAN_GNSS_TIME_STANDARD_UTC       2U
+#define UAVCAN_GNSS_TIME_STANDARD_GPS       3U
 
 // NodeStatus.health
 #define UAVCAN_NODE_HEALTH_OK           0U

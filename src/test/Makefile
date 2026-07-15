@@ -233,6 +233,16 @@ gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
 
 
+dronecan_gnss_unittest_SRC := \
+		$(TEST_DIR)/dronecan_gnss_libcanard.c
+
+dronecan_gnss_unittest_DEFINES := \
+		ENABLE_DRONECAN=1
+
+dronecan_gnss_unittest_INCLUDE_DIRS := \
+		$(ROOT)/lib/modules/dronecan/libcanard
+
+
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
 		$(USER_DIR)/io/serial_resource.c

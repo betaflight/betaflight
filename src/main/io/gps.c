@@ -1346,6 +1346,20 @@ static void updateDronecanGPS(void)
     gpsSol = incoming;
     gpsSol.time = gpsData.now;
 
+#ifdef USE_RTC_TIME
+    if (!rtcHasTime() && gpsSol.dateTime.valid) {
+        dateTime_t dt;
+        dt.year = gpsSol.dateTime.year;
+        dt.month = gpsSol.dateTime.month;
+        dt.day = gpsSol.dateTime.day;
+        dt.hours = gpsSol.dateTime.hour;
+        dt.minutes = gpsSol.dateTime.min;
+        dt.seconds = gpsSol.dateTime.sec;
+        dt.millis = gpsSol.dateTime.millis;
+        rtcSetDateTime(&dt);
+    }
+#endif
+
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
@@ -2267,7 +2281,7 @@ static const uint16_t gpsMonthDays[2][12] = {
 };
 
 // Convert Unix seconds and milliseconds to gpsDateTime_t
-static void unixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
+void gpsUnixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
 {
     dt->sec = unixSeconds % 60;
     unixSeconds /= 60;
@@ -2458,7 +2472,7 @@ static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t time
     }
 
     int64_t unixSeconds = gpsSeconds + GPS_EPOCH_OFFSET_SECONDS - GPS_LEAP_SECONDS;
-    unixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
+    gpsUnixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
 }
 
 static bool UBLOX_parse_gps(void)
