@@ -31,12 +31,12 @@ bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntim
 bool isValidMavlinkTxBuffer (void);
 bool shouldSendMavlinkTelemetry(void);
 #define MAVLINK_RX_QUEUE_SIZE 16
-typedef struct mavlinkRxQueye_s {
+typedef struct mavlinkRxQueue_s {
     mavlink_message_t msgs[MAVLINK_RX_QUEUE_SIZE];
     volatile uint8_t head;
     volatile uint8_t tail;
-} mavlinkRxQueye_t;
-bool mavlinkGetNextQueyeMessage(mavlink_message_t *msg);
+} mavlinkRxQueue_t;
+bool mavlinkGetNextQueueMessage(mavlink_message_t *msg);
 #else
 static inline bool isValidMavlinkTxBuffer(void) { return false; }
 static inline bool shouldSendMavlinkTelemetry(void) { return false; }
