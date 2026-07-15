@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if ENABLE_DRONECAN
+#if ENABLE_DRONECAN && defined(USE_GPS)
 
 #include <math.h>
 #include <stdbool.h>
@@ -316,4 +316,4 @@ timeUs_t dronecanGnssLastUpdateUs(void)
     return t;
 }
 
-#endif // ENABLE_DRONECAN
+#endif // ENABLE_DRONECAN && USE_GPS

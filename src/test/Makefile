@@ -242,6 +242,15 @@ dronecan_gnss_unittest_DEFINES := \
 dronecan_gnss_unittest_INCLUDE_DIRS := \
 		$(ROOT)/lib/modules/dronecan/libcanard
 
+# libcanard is a submodule the firmware Makefile hydrates on demand; a test-only
+# checkout (CI's test job) arrives without it.
+$(ROOT)/lib/modules/dronecan/libcanard/canard.c:
+	git -C $(ROOT) submodule update --init -- lib/modules/dronecan/libcanard
+
+$(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_libcanard.c.o \
+$(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_unittest.o: \
+		$(ROOT)/lib/modules/dronecan/libcanard/canard.c
+
 
 io_serial_unittest_SRC := \
 		$(USER_DIR)/io/serial.c \
