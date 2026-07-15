@@ -1315,7 +1315,7 @@ void handleMAVLinkTelemetry(void)
     mavlinkProcessIncoming();
 #else
     if (telemetrySharedPort != NULL && rxRuntimeState.serialrxProvider == SERIALRX_MAVLINK) {
-        mavlinkProcessQueyeMessages();
+        mavlinkProcessQueueMessages();
     } else {
         mavlinkProcessIncoming();
     }
