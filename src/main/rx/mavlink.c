@@ -165,8 +165,8 @@ STATIC_UNIT_TESTED void mavlinkDataReceive(uint16_t c, void *data)
             handleIncoming_RADIO_STATUS();
             break;
         default:
-            // Add another message into the queye, to handle it in the mavlink telemetry task later
-            mavlinkAddMessageToQueye();
+            // Add another message into the queue, to handle it in the mavlink telemetry task later
+            mavlinkAddMessageToQueue();
         }
     }
 }
