@@ -113,6 +113,7 @@ bool cliMode = false;
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -137,6 +138,7 @@ bool cliMode = false;
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/can.h"
+#include "pg/dronecan.h"
 #include "pg/flight_plan.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
@@ -6070,8 +6072,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrint("NOT CONNECTED, ");
         }
-        if (gpsConfig()->provider == GPS_MSP) {
-            cliPrint("MSP, ");
+        if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
+            cliPrint(lookupTables[TABLE_GPS_PROVIDER].values[gpsConfig()->provider]);
         } else {
             const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
             if (!gpsPortConfig) {
@@ -6085,24 +6087,36 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 }
                 cliPrint("), ");
             }
-        }
-        if (gpsData.state <= GPS_STATE_CONFIGURE) {
-            cliPrint("NOT CONFIGURED");
-        } else {
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
-                cliPrint("auto config OFF");
+            if (gpsData.state <= GPS_STATE_CONFIGURE) {
+                cliPrint("NOT CONFIGURED");
             } else {
-                cliPrint("configured");
+                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+                    cliPrint("auto config OFF");
+                } else {
+                    cliPrint("configured");
+                }
             }
-        }
 #ifdef USE_GPS_UBLOX
-        cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+            if (gpsConfig()->provider == GPS_UBLOX) {
+                cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+            }
 #endif
+        }
     } else {
         cliPrint("NOT ENABLED");
     }
     cliPrintLinefeed();
 #endif // USE_GPS
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled) {
+        if (dronecanIsInitialised()) {
+            cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
+        } else {
+            cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
+        }
+    }
+#endif
 
 #if defined(USE_OSD)
     osdDisplayPortDevice_e displayPortDeviceType;
