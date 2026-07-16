@@ -31,7 +31,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(dronecanConfig_t, dronecanConfig, PG_DRONECAN_CO
 
 PG_RESET_TEMPLATE(dronecanConfig_t, dronecanConfig,
     .enabled = 0,
-    .node_id = 0,
+    .node_id = 10,
     .device = 1,
 );
 
