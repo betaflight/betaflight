@@ -6667,6 +6667,7 @@ const cliResourceValue_t resourceTable[] = {
 #if ENABLE_CAN
     DEFW( OWNER_CAN_TX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagTx, CANDEV_COUNT ),
     DEFW( OWNER_CAN_RX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagRx, CANDEV_COUNT ),
+    DEFW( OWNER_CAN_SILENT,    PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagSilent, CANDEV_COUNT ),
 #endif
 #ifdef USE_ESCSERIAL
     DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),

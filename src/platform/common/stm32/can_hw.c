@@ -227,7 +227,28 @@ static uint32_t canPackNominalBitTiming(uint32_t nbrp, uint32_t ntseg1,
 // matches the HAL2 reset default for FDCAN.
 static uint32_t canGetKernelClockHz(void)
 {
-#if defined(STM32G4) || defined(STM32H7)
+#if defined(STM32H7)
+    // H7's HAL_RCCEx_GetPeriphCLKFreq() has no FDCAN branch and returns 0
+    // for it, which left CAN stuck in init on every H7 target. Read the
+    // kernel-clock mux directly. HSE_VALUE is compile-time, but it must
+    // match the crystal for the system clocks to have come up at all.
+    switch (__HAL_RCC_GET_FDCAN_SOURCE()) {
+    case RCC_FDCANCLKSOURCE_HSE:
+        return HSE_VALUE;
+    case RCC_FDCANCLKSOURCE_PLL: {
+        PLL1_ClocksTypeDef clocks;
+        HAL_RCCEx_GetPLL1ClockFreq(&clocks);
+        return clocks.PLL1_Q_Frequency;
+    }
+    case RCC_FDCANCLKSOURCE_PLL2: {
+        PLL2_ClocksTypeDef clocks;
+        HAL_RCCEx_GetPLL2ClockFreq(&clocks);
+        return clocks.PLL2_Q_Frequency;
+    }
+    default:
+        return 0;
+    }
+#elif defined(STM32G4)
     return HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
 #else
     return HAL_RCC_GetPCLK1Freq();
@@ -460,6 +481,16 @@ void canInitDevice(canDevice_e device, uint32_t bitrate)
     // readings during initialisation).
     IOConfigGPIOAF(txIO, IOCFG_AF_PP, pDev->txAF);
     IOConfigGPIOAF(rxIO, IOCFG_AF_PP_UP, pDev->rxAF);
+
+    // Some boards route the transceiver's silent/standby input to a GPIO
+    // (often pulled to silent in hardware); drive it low for normal
+    // operation or the node bus-offs on its first transmission.
+    if (pDev->silent) {
+        IO_t silentIO = IOGetByTag(pDev->silent);
+        IOInit(silentIO, OWNER_CAN_SILENT, RESOURCE_INDEX(device));
+        IOConfigGPIO(silentIO, IOCFG_OUT_PP);
+        IOLo(silentIO);
+    }
 
     if (!canEnterConfigMode(regs)) {
         // Peripheral did not latch INIT; nothing more we can do safely.

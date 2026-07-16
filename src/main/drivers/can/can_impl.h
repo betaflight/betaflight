@@ -61,6 +61,7 @@ typedef struct canDevice_s {
     canResource_t *reg;
     ioTag_t tx;
     ioTag_t rx;
+    ioTag_t silent;
     uint8_t txAF;
     uint8_t rxAF;
 #if PLATFORM_TRAIT_RCC
