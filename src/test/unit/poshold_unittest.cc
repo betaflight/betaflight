@@ -429,6 +429,27 @@ TEST_F(PosHoldTest, FeedforwardProducesStickProportionalLean)
     EXPECT_GT(fabsf(leanLarge), fabsf(leanSmall) + 1.0f); // twice the stick, more lean
 }
 
+// With no stick input the commanded target velocity, and therefore the F
+// feedforward, must be zero. sticksMoveTarget() latches its last value as the
+// stick eases back through the deadband; that residue must not stay driving F.
+TEST_F(PosHoldTest, FeedforwardZeroWhenSticksInactive)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_STOP; // slots 6/7 carry pidF East/North * 10
+
+    // Deflect the roll stick, then centre it and release.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 150.0f;
+    runIterations(50);
+    simulatedStickRoll = 0.0f;
+    setSticksActiveStatus(false);
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(debug[6], 0); // pidF East
+    EXPECT_EQ(debug[7], 0); // pidF North
+    debugMode = DEBUG_NONE;
+}
+
 // Guards the fix: on stick release the stale target velocity is zeroed, so the
 // feedforward can't keep pushing in the direction of travel and fight braking.
 TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)

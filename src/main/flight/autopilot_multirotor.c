@@ -626,13 +626,16 @@ bool positionControl(void)
             }
             sticksMoveTarget();
         } else {
+            // No stick input: there is no commanded velocity, so force it to
+            // zero every loop. sticksMoveTarget() latches the last value written
+            // as the stick eased back through the deadband, which is a small
+            // nonzero velocity; left in place it keeps driving the F feedforward
+            // (and fights braking) until the stop capture clears it.
+            targetVelocity.v[EF_EAST]  = 0.0f;
+            targetVelocity.v[EF_NORTH] = 0.0f;
             if (ap.wasSticksActive) {
-                // Sticks just released: capture the current point, drop the
-                // feedforward push to zero so it can't fight deceleration, and
-                // begin the braking phase.
+                // Sticks just released: capture the current point and begin braking.
                 updatePositionHoldTarget();
-                targetVelocity.v[EF_EAST]  = 0.0f;
-                targetVelocity.v[EF_NORTH] = 0.0f;
                 ap.sanityCheckDistance = calculateSanityCheckDistance();
                 ap.isPosHoldBraking = true;
             }
