@@ -49,7 +49,6 @@ typedef struct flashGeometry_s {
     uint32_t maxReadClkSPIHz;
     int32_t bbReplacementBlocks;
     uint8_t bufReadModeSet;
-    uint8_t bblutTableEntryCount;
 } flashGeometry_t;
 
 typedef enum {
