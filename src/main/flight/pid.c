@@ -611,9 +611,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_GPS_RESCUE
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        // Clamp to the airframe's already-configured acro rate limit -- a near-180 degree
-        // starting error (e.g. recovering from inversion) would otherwise demand an
-        // unbounded rate here.
+        // Clamp to the configured acro rate limit -- a near-180 degree starting error would
+        // otherwise demand an unbounded rate here.
         angleRate = constrainf(angleRate, -(float)currentControlRateProfile->rate_limit[axis], (float)currentControlRateProfile->rate_limit[axis]);
     }
 #endif

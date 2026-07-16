@@ -452,9 +452,8 @@ void servoMixer(void)
         input[INPUT_STABILIZED_PITCH] = pidData[FD_PITCH].Sum * PID_SERVO_MIXER_SCALING;
         input[INPUT_STABILIZED_YAW] = pidData[FD_YAW].Sum * PID_SERVO_MIXER_SCALING;
 
-        // Reverse yaw servo when inverted in 3D mode. Reads the mixer's actual selected motor
-        // direction rather than raw stick position, so this stays correct during GPS Rescue
-        // (which picks direction from measured tilt, not the stick) and crashflip.
+        // Reverse yaw servo when inverted -- reads the mixer's actual direction, not raw
+        // stick position, so this stays correct during GPS Rescue and crashflip.
         if (featureIsEnabled(FEATURE_3D) && isMotorOutputReversed()) {
             input[INPUT_STABILIZED_YAW] *= -1;
         }

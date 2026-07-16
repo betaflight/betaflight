@@ -146,22 +146,15 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
 #ifdef USE_GPS_RESCUE
-        // GPS Rescue picks motor direction from measured tilt, not rcCommand[THROTTLE]
-        // (meaningless once the pilot is out of the loop), and must fully override the
-        // stick-based checks below rather than OR into them like isCrashFlipModeActive()
-        // does: crashflip only ever wants INVERTED, but GPS Rescue must force either
-        // direction, and a stale rcCommand[THROTTLE] could otherwise still win.
-        // Hysteresis avoids flip-flopping (and retriggering the iterm reset below) near
-        // 90 degrees; holding direction when ACC is unavailable avoids defaulting to
-        // normal while actually inverted. Crashflip still takes priority if somehow active
-        // at the same time: applyCrashFlipModeToMotors() directly reuses the motorOutputMin/
-        // Range this branch selects and requires the reversed range unconditionally.
-        const float gpsRescueTiltHysteresis = 0.15f; // roughly +/-8.6 degrees around the crossing
-        const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE) && !isCrashFlipModeActive();
+        // GPS Rescue drives direction from measured tilt, not rcCommand[THROTTLE]: must fully
+        // override the stick checks below rather than OR into them like isCrashFlipModeActive()
+        // does, since GPS Rescue must force either direction.
+        const float gpsRescueTiltHysteresis = 0.15f; // avoids flip-flop near 90 degrees
+        const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE) && !isCrashFlipModeActive(); // crashflip still wins
         const bool gpsRescueWantsInverted = gpsRescueActive &&
             (sensors(SENSOR_ACC)
                 ? (motorOutputMixSign == -1 ? !(getCosTiltAngle() > gpsRescueTiltHysteresis) : (getCosTiltAngle() < -gpsRescueTiltHysteresis))
-                : (motorOutputMixSign == -1));
+                : (motorOutputMixSign == -1)); // hold direction if ACC is unavailable
 #endif
         if (
 #ifdef USE_GPS_RESCUE
