@@ -72,6 +72,19 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
                 msbpos += 1;
             }
 
+            // MPU base address must be aligned to the region size.
+            // Widen the region until the aligned base still covers the
+            // full range from start to end.
+            uint32_t regionSize = 1U << msbpos;
+            uint32_t alignedStart = start & ~(regionSize - 1);
+
+            while (alignedStart + regionSize < region->end) {
+                msbpos++;
+                regionSize = 1U << msbpos;
+                alignedStart = start & ~(regionSize - 1);
+            }
+
+            MPU_InitStruct.BaseAddress = alignedStart;
             MPU_InitStruct.Size = msbpos;
         }
 

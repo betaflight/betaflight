@@ -21,42 +21,44 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "drivers/resource.h"
-
-#include "platform/dma.h"
 
 #define CACHE_LINE_SIZE 32
 #define CACHE_LINE_MASK (CACHE_LINE_SIZE - 1)
 
-// dmaResource_t is a opaque data type which represents a single DMA engine,
-// called and implemented differently in different families of STM32s.
-// The opaque data type provides uniform handling of the engine in source code.
-// The engines are referenced by dmaResource_t through out the Betaflight code,
-// and then converted back to DMA_ARCH_TYPE which is a native type for
-// the particular MCU type when calling library functions.
+#define DMA_NONE 0
+#define DMA_FIRST_HANDLER 1
 
+// dmaIdentifier_e values are platform-specific.
+// Specific handler identifiers (e.g. DMA1_ST0_HANDLER) are defined
+// in platform headers and only used within src/platform code.
+typedef int dmaIdentifier_e;
+
+// dmaResource_t is an opaque data type which represents a single DMA engine,
+// called and implemented differently in different families of MCUs.
+// The opaque data type provides uniform handling of the engine in source code.
+// The engines are referenced by dmaResource_t throughout the Betaflight code,
+// and then converted back to the native MCU type when calling library functions
+// within platform implementation code.
 typedef struct dmaResource_s dmaResource_t;
 
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
 
 typedef struct dmaChannelDescriptor_s {
-    DMA_TypeDef*                dma;
+    void                        *dma;
     dmaResource_t               *ref;
-#if PLATFORM_TRAIT_DMA_STREAM_REQUIRED
     uint8_t                     stream;
-#endif
     uint32_t                    channel;
     dmaCallbackHandlerFuncPtr   irqHandlerCallback;
     uint8_t                     flagsShift;
-    IRQn_Type                   irqN;
+    int32_t                     irqN;
     uint32_t                    userParam;
     resourceOwner_t             resourceOwner;
     uint32_t                    completeFlag;
-#if PLATFORM_TRAIT_DMA_MUX_REQUIRED
-    dmamux_channel_type         *dmamux;
-#endif
+    void                        *dmamux;
 } dmaChannelDescriptor_t;
 
 #define DMA_IDENTIFIER_TO_INDEX(x) ((x) - DMA_FIRST_HANDLER)
@@ -72,3 +74,9 @@ const resourceOwner_t *dmaGetOwner(dmaIdentifier_e identifier);
 dmaChannelDescriptor_t* dmaGetDescriptorByIdentifier(const dmaIdentifier_e identifier);
 uint32_t dmaGetChannel(const uint8_t channel);
 
+// Hardware abstraction - implemented per platform
+int dmaGetHandlerCount(void);
+int dmaGetDeviceNumber(dmaIdentifier_e identifier);
+int dmaGetDeviceIndex(dmaIdentifier_e identifier);
+const char *dmaGetDisplayString(void);
+uint32_t dmaGetDataLength(dmaResource_t *ref);

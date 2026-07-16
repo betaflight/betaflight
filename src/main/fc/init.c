@@ -51,6 +51,8 @@
 #include "drivers/bus_quadspi.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
+#include "drivers/can/can.h"
+#include "drivers/can/can_impl.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
 #include "drivers/dma.h"
@@ -96,6 +98,9 @@
 #include "flight/alt_hold.h"
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_nav.h"
+#endif
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
@@ -108,9 +113,11 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
+#include "io/displayport_fb_osd.h"
 #include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
@@ -147,6 +154,7 @@
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/bus_quadspi.h"
+#include "pg/can.h"
 #include "pg/flash.h"
 #include "pg/mco.h"
 #include "pg/motor.h"
@@ -263,6 +271,19 @@ static void configureOctoSPIBusses(void)
 #endif
 #endif
 }
+
+#if ENABLE_CAN
+static void configureCANBusses(void)
+{
+    canPinConfigure(canPinConfig(0));
+    const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
+    // Try every CAN device the platform advertises.  canInit() returns
+    // false for absent / unconfigured devices; that is harmless.
+    for (int dev = 0; dev < CANDEV_COUNT; dev++) {
+        canInit((canDevice_e)dev, bitrate);
+    }
+}
+#endif
 
 #ifdef USE_SDCARD
 static void sdCardAndFSInit(void)
@@ -418,9 +439,7 @@ void initPhase1(void)
 #endif
     LED2_ON;
 
-#if !defined(SIMULATOR_BUILD)
     EXTIInit();
-#endif
 }
 
 void initPhase2(void)
@@ -490,7 +509,29 @@ void initPhase2(void)
 #endif
 
 #ifdef USE_OVERCLOCK
-    OverclockRebootIfNecessary(systemConfig()->cpu_overclock);
+    {
+        static const uint16_t overclockMhzTable[] = {
+            0, // OFF (use default clock)
+#if ENABLE_OVERCLOCK_108_MHZ
+            108,
+#endif
+#if ENABLE_OVERCLOCK_120_MHZ
+            120,
+#endif
+#if ENABLE_OVERCLOCK_192_MHZ
+            192,
+#endif
+#if ENABLE_OVERCLOCK_216_MHZ
+            216,
+#endif
+#if ENABLE_OVERCLOCK_240_MHZ
+            240,
+#endif
+        };
+        const uint8_t idx = systemConfig()->cpu_overclock;
+        const uint16_t mhz = (idx < ARRAYLEN(overclockMhzTable)) ? overclockMhzTable[idx] : 0;
+        OverclockRebootIfNecessary(mhz);
+    }
 #endif
 
     // Configure MCO output after config is stable
@@ -506,7 +547,7 @@ void initPhase2(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART) && !defined(SIMULATOR_BUILD)
+#if defined(USE_UART)
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -542,7 +583,7 @@ void initPhase2(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#if defined(USE_INVERTER) && !defined(SIMULATOR_BUILD)
+#if defined(USE_INVERTER)
     initInverters(serialPinConfig());
 #endif
 
@@ -563,9 +604,9 @@ void initPhase2(void)
         initFlags |= QUAD_OCTO_SPI_BUSSES_INIT_ATTEMPTED;
     }
 
-#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && PLATFORM_TRAIT_SDIO_INIT
+#if ENABLE_SDIO_INIT && defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD)
     sdioPinConfigure();
-    SDIO_GPIO_Init();
+    sdioInitialize();
 #endif
 }
 
@@ -645,6 +686,14 @@ void initPhase3(void)
 
 #endif // TARGET_BUS_INIT
 
+#if ENABLE_CAN && !defined(TARGET_BUS_INIT)
+    configureCANBusses();
+#endif
+
+#if ENABLE_DRONECAN
+    dronecanInit();
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
@@ -716,6 +765,7 @@ void initPhase3(void)
     pinioBoxInit(pinioBoxConfig());
 #endif
 
+
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
@@ -725,7 +775,11 @@ void initPhase3(void)
         LED0_TOGGLE;
 #if defined(USE_BEEPER)
         delay(25);
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+        // This boot beep bypasses beeper()/beeperUsbSuppressed(), so honour BEEPER_USB
+        // here directly. MSP is not up yet, but usbCableIsInserted() is already valid.
+        const bool usbSuppressed = (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && usbCableIsInserted();
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT)) && !usbSuppressed) {
             BEEP_ON;
         }
         delay(25);
@@ -737,6 +791,7 @@ void initPhase3(void)
 
     LED0_OFF;
     LED1_OFF;
+
 
     imuInit();
 
@@ -817,6 +872,9 @@ void initPhase3(void)
 
     positionInit();
     autopilotInit();
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    flightPlanNavInit();
+#endif
 
 #if defined(USE_VTX_COMMON) || defined(USE_VTX_CONTROL)
     vtxTableInit();
@@ -920,6 +978,15 @@ void initPhase3(void)
             FALLTHROUGH;
 #endif
 
+#if ENABLE_FB_OSD
+        case OSD_DISPLAYPORT_DEVICE_FBOSD:
+            if (fbOsdDisplayPortInit(vcdProfile(), &osdDisplayPort) || device == OSD_DISPLAYPORT_DEVICE_FBOSD) {
+                osdDisplayPortDevice = OSD_DISPLAYPORT_DEVICE_FBOSD;
+                break;
+            }
+            FALLTHROUGH;
+#endif
+
 #if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT) && defined(USE_OSD_OVER_MSP_DISPLAYPORT)
         case OSD_DISPLAYPORT_DEVICE_MSP:
             osdDisplayPort = displayPortMspInit();
@@ -1009,7 +1076,9 @@ void initPhase3(void)
 
     debugInit();
 
+#if ENABLE_UNUSED_PINS_INIT
     unusedPinsInit();
+#endif
 
     tasksInit();
 

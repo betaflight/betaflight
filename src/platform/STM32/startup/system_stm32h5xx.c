@@ -187,6 +187,8 @@
   * @{
   */
 
+void SystemClock_Config(void); // Forward
+
 /**
   * @}
   */
@@ -195,11 +197,160 @@
   * @{
   */
 
+// H5 default clock tree: drive SYSCLK from HSE × PLL1 to the H5's 250 MHz
+// peak and run HCLK / APB1 / APB2 / APB3 at the full SYSCLK (all max 250 MHz
+// per RM0481 §6.6). USB FS keeps its own 48 MHz reference from HSI48 +
+// CRS-against-SOF so it is independent of the system clock domain.
+//
+// PLL1 targets a 500 MHz VCO → 250 MHz SYSCLK (P=2), with PLLM chosen so the
+// PFD (HSE/M) stays inside a single VCIRANGE window and N gives the 500 MHz VCO
+// with an integer ratio. The PFD band determines PLLRGE (RM0481 §10.5), so it
+// is selected per HSE value below rather than hardcoded — HSE_VALUE is derived
+// from each board's SYSTEM_HSE_MHZ (mk/config.mk). To support a new crystal,
+// add a case here (target 500 MHz VCO, PFD in a valid VCIRANGE band).
+//
+//   8 MHz HSE  : M=2 → PFD 4.0 MHz (VCIRANGE_2, lower edge), N=125 → VCO 500 MHz
+//   25 MHz HSE : M=5 → PFD 5.0 MHz (VCIRANGE_2),             N=100 → VCO 500 MHz
+//   common     : P=2 → 250 MHz, Q=4 → 125 MHz, R=2 → 250 MHz, VCORANGE_WIDE
+//
+// Voltage scale 0 covers up to 250 MHz; flash latency at VOS0 / 250 MHz is
+// 5 WS (RM0481 §7.5 Table 39).
+//
+// If HSE fails to start (e.g. development board with crystal removed or
+// damaged) the function falls back to HSI 64 MHz at VOS0, leaving the rest
+// of the platform usable for diagnostics.
+#if HSE_VALUE == 8000000
+#define PLL1_M          2                       // PFD = 4 MHz
+#define PLL1_N          125                     // VCO = 500 MHz
+#define PLL1_VCIRANGE   RCC_PLL1_VCIRANGE_2     // 4-8 MHz PFD band
+#elif HSE_VALUE == 25000000
+#define PLL1_M          5                       // PFD = 5 MHz
+#define PLL1_N          100                     // VCO = 500 MHz
+#define PLL1_VCIRANGE   RCC_PLL1_VCIRANGE_2     // 4-8 MHz PFD band
+#else
+#error "STM32H5 SystemClock_Config: unsupported SYSTEM_HSE_MHZ. Add a PLL1 ratio (target 500 MHz VCO, PFD in a valid VCIRANGE band)."
+#endif
+
+__attribute__((weak))
+void SystemClock_Config(void)
+{
+    // Voltage scale 0: required headroom for the 250 MHz domain.
+    // (PWR has no RCC enable bit on H5 — RM0481 §8 lists no PWREN — so
+    // __HAL_RCC_PWR_CLK_ENABLE() is unnecessary and the H5 HAL does not
+    // export it. PWR is always-clocked.)
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) { }
+
+    // Flash high-frequency mode for the 225-250 MHz CPU range at VOS0.
+    // RM0481 §7.5 Table 39 requires WRHIGHFREQ=10 to be set BEFORE the
+    // CPU is taken above 225 MHz; HAL_RCC_ClockConfig() programs LATENCY
+    // but never touches WRHIGHFREQ.
+    MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
+
+    RCC_OscInitTypeDef oscInit = {0};
+    oscInit.OscillatorType   = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI48;
+    oscInit.HSEState         = RCC_HSE_ON;
+    oscInit.HSI48State       = RCC_HSI48_ON;
+    oscInit.PLL.PLLState     = RCC_PLL_ON;
+    oscInit.PLL.PLLSource    = RCC_PLL1_SOURCE_HSE;
+    oscInit.PLL.PLLM         = PLL1_M;
+    oscInit.PLL.PLLN         = PLL1_N;
+    oscInit.PLL.PLLP         = 2;
+    oscInit.PLL.PLLQ         = 4;
+    oscInit.PLL.PLLR         = 2;
+    oscInit.PLL.PLLRGE       = PLL1_VCIRANGE;
+    oscInit.PLL.PLLVCOSEL    = RCC_PLL1_VCORANGE_WIDE;
+    oscInit.PLL.PLLFRACN     = 0;
+
+    HAL_StatusTypeDef status = HAL_RCC_OscConfig(&oscInit);
+
+    if (status == HAL_OK) {
+        RCC_ClkInitTypeDef clkInit = {0};
+        clkInit.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
+                                 RCC_CLOCKTYPE_PCLK3;
+        clkInit.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+        clkInit.AHBCLKDivider  = RCC_HCLK_DIV1;
+        clkInit.APB1CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB2CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB3CLKDivider = RCC_HCLK_DIV1;
+        if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_5) != HAL_OK) {
+            while (1) { }
+        }
+
+        // HAL_RCC_OscConfig only enables the PLL1 P output (system clock). H5
+        // peripherals such as SPI1/2/3 default their kernel clock to pll1_q_ck
+        // (RCC_SPIxCLKSOURCE_PLL1Q == SPIxSEL reset value 0); SDMMC and others
+        // likewise. Without the Q output enabled those peripherals get no kernel
+        // clock and block forever on their first transfer (e.g. gyro SPI detect
+        // spins waiting for TXP/EOT). Enable Q (125 MHz) and R (250 MHz) now that
+        // PLL1 is locked — this mirrors what HAL_RCCEx_PeriphCLKConfig does when a
+        // peripheral selects PLL1Q.
+        __HAL_RCC_PLL1_CLKOUT_ENABLE(RCC_PLL1_DIVQ | RCC_PLL1_DIVR);
+    } else {
+        // HSE did not lock. Fall back to HSI 64 MHz so the platform stays
+        // diagnosable (1 WS at VOS0 covers HSI64 per Table 39).
+        RCC_OscInitTypeDef hsi = {0};
+        hsi.OscillatorType      = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
+        hsi.HSIState            = RCC_HSI_ON;
+        hsi.HSIDiv              = RCC_HSI_DIV1;
+        hsi.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+        hsi.HSI48State          = RCC_HSI48_ON;
+        hsi.PLL.PLLState        = RCC_PLL_NONE;
+        if (HAL_RCC_OscConfig(&hsi) != HAL_OK) {
+            while (1) { }
+        }
+
+        RCC_ClkInitTypeDef clkInit = {0};
+        clkInit.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
+                                 RCC_CLOCKTYPE_PCLK3;
+        clkInit.SYSCLKSource   = RCC_SYSCLKSOURCE_HSI;
+        clkInit.AHBCLKDivider  = RCC_HCLK_DIV1;
+        clkInit.APB1CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB2CLKDivider = RCC_HCLK_DIV1;
+        clkInit.APB3CLKDivider = RCC_HCLK_DIV1;
+        if (HAL_RCC_ClockConfig(&clkInit, FLASH_LATENCY_1) != HAL_OK) {
+            while (1) { }
+        }
+    }
+
+    RCC_PeriphCLKInitTypeDef pclkInit = {0};
+    pclkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+    pclkInit.UsbClockSelection    = RCC_USBCLKSOURCE_HSI48;
+    if (HAL_RCCEx_PeriphCLKConfig(&pclkInit) != HAL_OK) {
+        while (1) { }
+    }
+
+    // Discipline HSI48 against the USB SOF every 1 ms.
+    __HAL_RCC_CRS_CLK_ENABLE();
+    RCC_CRSInitTypeDef crsInit = {
+        .Prescaler             = RCC_CRS_SYNC_DIV1,
+        .Source                = RCC_CRS_SYNC_SOURCE_USB,
+        .Polarity              = RCC_CRS_SYNC_POLARITY_RISING,
+        .ReloadValue           = RCC_CRS_RELOADVALUE_DEFAULT,
+        .ErrorLimitValue       = RCC_CRS_ERRORLIMIT_DEFAULT,
+        .HSI48CalibrationValue = RCC_CRS_HSI48CALIBRATION_DEFAULT,
+    };
+    HAL_RCCEx_CRSConfig(&crsInit);
+}
+
 /**
   * @brief  Setup the microcontroller system.
   * @param  None
   * @retval None
   */
+
+static void initialiseDmaMemorySections(void)
+{
+    extern uint8_t _sdmaram_bss;
+    extern uint8_t _edmaram_bss;
+    extern uint8_t _sdmaram_data;
+    extern uint8_t _edmaram_data;
+    extern uint8_t _sdmaram_idata;
+    bzero(&_sdmaram_bss, (size_t) (&_edmaram_bss - &_sdmaram_bss));
+    memcpy(&_sdmaram_data, &_sdmaram_idata, (size_t) (&_edmaram_data - &_sdmaram_data));
+}
 
 void SystemInit(void)
 {
@@ -279,6 +430,17 @@ void SystemInit(void)
     /* Lock the FLASH Option Control Register access */
     FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
   }
+
+#ifdef USE_HAL_DRIVER
+  HAL_Init();
+#endif
+
+  SystemClock_Config();
+  SystemCoreClockUpdate();
+
+  initialiseDmaMemorySections();
+
+  systemProcessResetReason();
 }
 
 /**

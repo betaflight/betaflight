@@ -40,12 +40,12 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM3,  .rcc = RCC_APB1L(TIM3),  .inputIrq = TIM3_IRQn},
     { .TIMx = TIM4,  .rcc = RCC_APB1L(TIM4),  .inputIrq = TIM4_IRQn},
     { .TIMx = TIM5,  .rcc = RCC_APB1L(TIM5),  .inputIrq = TIM5_IRQn},
-    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_DAC_IRQn},
+    { .TIMx = TIM6,  .rcc = RCC_APB1L(TIM6),  .inputIrq = TIM6_IRQn},
     { .TIMx = TIM7,  .rcc = RCC_APB1L(TIM7),  .inputIrq = TIM7_IRQn},
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),   .inputIrq = TIM8_CC_IRQn},
-    { .TIMx = TIM12, .rcc = RCC_APB1L(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
-    { .TIMx = TIM13, .rcc = RCC_APB1L(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
-    { .TIMx = TIM14, .rcc = RCC_APB1L(TIM14), .inputIrq = TIM8_TRG_COM_TIM14_IRQn},
+    { .TIMx = TIM12, .rcc = RCC_APB1L(TIM12), .inputIrq = TIM12_IRQn},
+    { .TIMx = TIM13, .rcc = RCC_APB1L(TIM13), .inputIrq = TIM13_IRQn},
+    { .TIMx = TIM14, .rcc = RCC_APB1L(TIM14), .inputIrq = TIM14_IRQn},
     { .TIMx = TIM15, .rcc = RCC_APB2(TIM15),  .inputIrq = TIM15_IRQn},
     { .TIMx = TIM16, .rcc = RCC_APB2(TIM16),  .inputIrq = TIM16_IRQn},
     { .TIMx = TIM17, .rcc = RCC_APB2(TIM17),  .inputIrq = TIM17_IRQn},
@@ -155,11 +155,11 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 
 // Port H
 
-    DEF_TIM(TIM1, CHN3, PH6, 0, 0, 0), // AF1 (ADDED)
+    DEF_TIM(TIM1, CH3N, PH6, 0, 0, 0), // AF1
     DEF_TIM(TIM1, CH3, PH7, 0, 0, 0),
-    DEF_TIM(TIM1, CHN2, PH8, 0, 0, 0),
+    DEF_TIM(TIM1, CH2N, PH8, 0, 0, 0),
     DEF_TIM(TIM1, CH2, PH9, 0, 0, 0),
-    DEF_TIM(TIM1, CHN1, PH10, 0, 0, 0),
+    DEF_TIM(TIM1, CH1N, PH10, 0, 0, 0),
     DEF_TIM(TIM1, CH1, PH11, 0, 0, 0),
 
     DEF_TIM(TIM12, CH1, PH6, 0, 0, 0), // AF2 (ADDED)
@@ -189,7 +189,7 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
 #endif
 
 
-uint32_t timerClockFromInstance(const void *tim)
+uint32_t timerClockFromInstance(const timerResource_t *tim)
 {
     int timpre;
     uint32_t pclk;

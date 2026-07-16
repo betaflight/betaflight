@@ -128,7 +128,7 @@ static inline uint32_t llog2(uint32_t n) { return 31 - __builtin_clz(n | 1); }
 
 // using memcpy_fn will force memcpy function call, instead of inlining it. In most cases function call takes fewer instructions
 //  than inlined version (inlining is cheaper for very small moves < 8 bytes / 2 store instructions)
-#if defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
+#if defined(UNIT_TEST) || ENABLE_SIMULATOR
 // Call memcpy when building unittest - this is easier that asm symbol name mangling (symbols start with _underscore on win32)
 #include <string.h>
 static inline void  memcpy_fn ( void * destination, const void * source, size_t num ) { memcpy(destination, source, num); }

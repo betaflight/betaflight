@@ -43,11 +43,7 @@
 static const uint8_t STORAGE_Inquirydata[] =
 {
     0x00, 0x80, 0x02, 0x02,
-#ifdef USE_HAL_DRIVER
-    (STANDARD_INQUIRY_DATA_LEN - 5),
-#else
-    (USBD_STD_INQUIRY_LENGTH - 5),
-#endif
+    (USBD_MSC_INQUIRY_DATA_LEN - 5),
     0x00, 0x00, 0x00,
     'B', 'E', 'T', 'A', 'F', 'L', 'T', ' ', // Manufacturer : 8 bytes
     'O', 'n', 'b', 'o', 'a', 'r', 'd', ' ', // Product      : 16 Bytes
@@ -64,11 +60,7 @@ static int8_t STORAGE_Init(uint8_t lun)
     return 0;
 }
 
-#ifdef USE_HAL_DRIVER
-static int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
-#else
-static int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint32_t *block_size)
-#endif
+static int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, usbd_msc_block_size_t *block_size)
 {
     UNUSED(lun);
     *block_size = 512;
@@ -118,12 +110,7 @@ static int8_t STORAGE_GetMaxLun(void)
   return (STORAGE_LUN_NBR - 1);
 }
 
-#ifdef USE_HAL_DRIVER
-USBD_StorageTypeDef
-#else
-USBD_STORAGE_cb_TypeDef
-#endif
-USBD_MSC_EMFAT_fops =
+USBD_MSC_StorageType USBD_MSC_EMFAT_fops =
 {
     STORAGE_Init,
     STORAGE_GetCapacity,

@@ -43,7 +43,7 @@ void timerChannelDisable(const timerHardware_t *timHw)
 
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
-void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
+void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
 {
     TIM_HandleTypeDef *Handle = timerFindTimerHandle(tim);
     if (Handle == NULL) return;
@@ -75,7 +75,7 @@ void timerChannelDisable(const timerHardware_t *timHw)
 
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
 
-void pwmICConfig(void *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
+void pwmICConfig(timerResource_t *tim, uint8_t channel, uint16_t polarity, uint8_t filter)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
 

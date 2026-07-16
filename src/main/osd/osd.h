@@ -50,8 +50,12 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_CAMERA_FRAME_MAX_HEIGHT 16    // Rows supported by MAX7456 (PAL)
 
 #define OSD_FRAMERATE_MIN_HZ 1
+#ifndef OSD_FRAMERATE_MAX_HZ
 #define OSD_FRAMERATE_MAX_HZ 60
+#endif
+#ifndef OSD_FRAMERATE_DEFAULT_HZ
 #define OSD_FRAMERATE_DEFAULT_HZ 12
+#endif
 
 #define OSD_PROFILE_BITS_POS 11
 #define OSD_PROFILE_MASK    (((1 << OSD_PROFILE_COUNT) - 1) << OSD_PROFILE_BITS_POS)
@@ -196,6 +200,20 @@ typedef enum {
     OSD_CUSTOM_MSG3,
     OSD_LIDAR_DIST,
     OSD_CUSTOM_SERIAL_TEXT,
+    OSD_BATTERY_PROFILE_NAME,
+
+#if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
+    // Waypoint elements
+    OSD_WP_NUMBER,              // "WP 3/12" - current/total
+    OSD_WP_CURRENT_LAT,         // Current waypoint latitude
+    OSD_WP_CURRENT_LON,         // Current waypoint longitude
+    OSD_WP_CURRENT_ALT,         // Current waypoint altitude
+    OSD_WP_DISTANCE,            // Distance to current waypoint
+    OSD_WP_DIRECTION,           // Direction arrow to current waypoint
+    OSD_WP_NEXT_NUMBER,         // "NEXT 4" - next waypoint number
+    OSD_WP_ETA,                 // Estimated time to waypoint
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -282,7 +300,7 @@ typedef enum {
     OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
-    OSD_WARNING_GPS_RESCUE_DISABLED,
+    OSD_WARNING_GPS_RESCUE_FAILING,
     OSD_WARNING_RSSI,
     OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_RSSI_DBM,
@@ -290,6 +308,7 @@ typedef enum {
     OSD_WARNING_RSNR,
     OSD_WARNING_LOAD,
     OSD_WARNING_POSHOLD_FAILED,
+    OSD_WARNING_AUTOPILOT_ABORT,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -299,6 +318,7 @@ typedef enum {
     OSD_DISPLAYPORT_DEVICE_MAX7456,
     OSD_DISPLAYPORT_DEVICE_MSP,
     OSD_DISPLAYPORT_DEVICE_FRSKYOSD,
+    OSD_DISPLAYPORT_DEVICE_FBOSD,
 } osdDisplayPortDevice_e;
 
 // Make sure the number of warnings do not exceed the available 32bit storage
@@ -308,7 +328,7 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_TEMP_ALARM_OFF         0
 #define ESC_CURRENT_ALARM_OFF     -1
 
-#define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
+#define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 5000000 // 5 seconds
 
 extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
 extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];

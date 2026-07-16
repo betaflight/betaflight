@@ -70,6 +70,9 @@ uint32_t featuresSupportedByBuild =
 #ifdef USE_RX_MSP
     | FEATURE_RX_MSP
 #endif
+#if ENABLE_RX_UDP
+    | FEATURE_RX_UDP
+#endif
 #ifdef USE_ADC
     | FEATURE_RSSI_ADC
 #endif

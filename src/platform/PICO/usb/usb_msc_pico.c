@@ -26,6 +26,7 @@
 
 #include "build/build_config.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "blackbox/blackbox.h"

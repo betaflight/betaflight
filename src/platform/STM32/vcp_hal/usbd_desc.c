@@ -60,10 +60,16 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#ifndef USBD_VID
 #define USBD_VID                      0x0483
+#endif
+#ifndef USBD_PID
 #define USBD_PID                      0x5740
+#endif
 #define USBD_LANGID_STRING            0x409
+#ifndef USBD_MANUFACTURER_STRING
 #define USBD_MANUFACTURER_STRING      FC_FIRMWARE_NAME
+#endif
 
 #ifdef USBD_PRODUCT_STRING
 #define USBD_PRODUCT_HS_STRING          USBD_PRODUCT_STRING
