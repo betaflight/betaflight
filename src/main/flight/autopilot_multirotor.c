@@ -689,37 +689,40 @@ bool positionControl(void)
             pidI.v[axis] = velocityIntegral.v[axis];
             pidD.v[axis] = acceleration * velocityKd;
             pidA.v[axis] = targetVelocity.v[axis] * velocityDragKff; // drag feedforward carries the cruise tilt
-        } else if (ap.navActive) {
-            // Legacy nav path (velocity mode disabled): integrate velocity error
-            // into a pseudo-distance error and run the position PID against it.
-            if (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f) {
-                distanceError.v[axis] += velocityError.v[axis] * dt;
-            }
-            distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
-            distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-            pidP.v[axis] = distanceError.v[axis] * positionPidCoeffs.Kp;
-            pidI.v[axis] = distanceErrorIntegral.v[axis] * positionPidCoeffs.Ki;
-            pidD.v[axis] = velocityError.v[axis] * positionPidCoeffs.Kd;
-            pidA.v[axis] = acceleration * positionPidCoeffs.Ka;
         } else {
-            // Position hold: F carries the stick push, D is pure damping on the
-            // measured velocity, so tuning D no longer changes stick response.
-            if (ap.isPosHoldBraking) {
-                // Move the target with the craft while slowing, so P doesn't snap
-                // to a large value the instant the craft stops.
-                targetPosition.v[axis] += velocity.v[axis] * dt;
+            // Position law shared by position hold and the legacy nav path
+            // (velocity mode disabled). The two differ only in how the distance
+            // error is sourced; the PID sum is identical.
+            //
+            // D is pure damping on measured velocity and F is the target-velocity
+            // feedforward. Kf * target - Kd * velocity equals the old
+            // (target - velocity) * Kd velocity-error D term when the two gains
+            // are equal (they share a scale and default), so this reproduces the
+            // legacy response while letting the push be tuned apart from damping.
+            if (ap.navActive) {
+                // Implied distance error: integrate the velocity error, with
+                // anti-windup so a saturated output only unwinds it.
+                if (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f) {
+                    distanceError.v[axis] += velocityError.v[axis] * dt;
+                }
+            } else {
+                if (ap.isPosHoldBraking) {
+                    // Move the target with the craft while slowing, so P doesn't
+                    // snap to a large value the instant the craft stops.
+                    targetPosition.v[axis] += velocity.v[axis] * dt;
+                }
+                distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
             }
-            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
             distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-            const bool holdITerm = !(ap.isPosHoldBraking || ap.sticksActive);
-            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt * (holdITerm ? 1.0f : 0.0f);
+            // Nav integrates continuously; pos hold freezes the integral while braking or under stick input.
+            const bool accumulateITerm = ap.navActive || !(ap.isPosHoldBraking || ap.sticksActive);
+            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt * (accumulateITerm ? 1.0f : 0.0f);
             distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
             pidP.v[axis] = distanceError.v[axis] * positionPidCoeffs.Kp;
             pidI.v[axis] = distanceErrorIntegral.v[axis] * positionPidCoeffs.Ki;
-            pidD.v[axis] = -velocityFiltered * positionPidCoeffs.Kd;      // damping only
+            pidD.v[axis] = -velocityFiltered * positionPidCoeffs.Kd;      // damping on measured velocity
             pidA.v[axis] = acceleration * positionPidCoeffs.Ka;
-            pidF.v[axis] = targetVelocity.v[axis] * positionPidCoeffs.Kf; // stick push, tunable apart from D
+            pidF.v[axis] = targetVelocity.v[axis] * positionPidCoeffs.Kf; // target-velocity feedforward
         }
 
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
