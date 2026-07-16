@@ -145,7 +145,30 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
         const float rcCommandThrottleRange3dLow = rcCommand3dDeadBandLow - PWM_RANGE_MIN;
         const float rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rcCommand3dDeadBandHigh;
 
-        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isCrashFlipModeActive()) {
+#ifdef USE_GPS_RESCUE
+        // GPS Rescue picks motor direction from measured tilt, not rcCommand[THROTTLE]
+        // (meaningless once the pilot is out of the loop), and must fully override the
+        // stick-based checks below rather than OR into them like isCrashFlipModeActive()
+        // does: crashflip only ever wants INVERTED, but GPS Rescue must force either
+        // direction, and a stale rcCommand[THROTTLE] could otherwise still win.
+        // Hysteresis avoids flip-flopping (and retriggering the iterm reset below) near
+        // 90 degrees; holding direction when ACC is unavailable avoids defaulting to
+        // normal while actually inverted. Crashflip still takes priority if somehow active
+        // at the same time: applyCrashFlipModeToMotors() directly reuses the motorOutputMin/
+        // Range this branch selects and requires the reversed range unconditionally.
+        const float gpsRescueTiltHysteresis = 0.15f; // roughly +/-8.6 degrees around the crossing
+        const bool gpsRescueActive = FLIGHT_MODE(GPS_RESCUE_MODE) && !isCrashFlipModeActive();
+        const bool gpsRescueWantsInverted = gpsRescueActive &&
+            (sensors(SENSOR_ACC)
+                ? (motorOutputMixSign == -1 ? !(getCosTiltAngle() > gpsRescueTiltHysteresis) : (getCosTiltAngle() < -gpsRescueTiltHysteresis))
+                : (motorOutputMixSign == -1));
+#endif
+        if (
+#ifdef USE_GPS_RESCUE
+            gpsRescueActive ? gpsRescueWantsInverted :
+#endif
+            (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow || isCrashFlipModeActive())
+            ) {
             // INVERTED
             motorRangeMin = mixerRuntime.motorOutputLow;
             motorRangeMax = mixerRuntime.deadbandMotor3dLow;
@@ -168,7 +191,12 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-        } else if (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
+        } else if (
+#ifdef USE_GPS_RESCUE
+            gpsRescueActive ? !gpsRescueWantsInverted :
+#endif
+            (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh)
+            ) {
             // NORMAL
             motorRangeMin = mixerRuntime.deadbandMotor3dHigh;
             motorRangeMax = mixerRuntime.motorOutputHigh;
@@ -273,6 +301,11 @@ static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
     rcThrottle = throttle;
+}
+
+bool isMotorOutputReversed(void)
+{
+    return motorOutputMixSign == -1;
 }
 
 static bool applyCrashFlipModeToMotors(void)

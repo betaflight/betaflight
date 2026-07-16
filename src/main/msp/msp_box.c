@@ -249,7 +249,7 @@ void initActiveBoxIds(void)
 #ifdef USE_GPS
     if (featureIsEnabled(FEATURE_GPS)) {
 #ifdef USE_GPS_RESCUE
-        if (!featureIsEnabled(FEATURE_3D) && !isFixedWing()) {
+        if (!isFixedWing()) {
             BME(BOXGPSRESCUE);
         }
 #endif
