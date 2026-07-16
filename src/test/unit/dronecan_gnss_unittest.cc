@@ -54,7 +54,9 @@ extern "C" {
         return true;
     }
 
-    timeUs_t micros(void) { return 0; }
+    static timeUs_t mockMicros = 0;
+
+    timeUs_t micros(void) { return mockMicros; }
 
     // Pulled in as source so the tests can drive the static frame handlers and
     // inspect the seqlock-published cache directly.
@@ -81,6 +83,9 @@ static void resetCache(void)
     latestSeq = 0;
     received = false;
     lastUpdateUs = 0;
+    auxUpdateUs = 0;
+    auxReceived = false;
+    mockMicros = 0;
     stubDateTimeCalled = false;
     stubUnixSeconds = 0;
     stubMillis = 0;
@@ -132,6 +137,8 @@ static uint16_t buildAuxiliary(uint8_t *buf)
     return 16;
 }
 
+static void feedDefaultFix2(void);
+
 static void feed(void (*handler)(CanardInstance *, CanardRxTransfer *),
                  const uint8_t *payload, uint16_t len)
 {
@@ -142,6 +149,12 @@ static void feed(void (*handler)(CanardInstance *, CanardRxTransfer *),
     t.payload_middle = NULL;
     t.payload_tail = NULL;
     handler(NULL, &t);
+}
+
+static void feedDefaultFix2(void)
+{
+    uint8_t buf[64];
+    feed(handleFix2, buf, buildFix2(buf));
 }
 
 TEST(DronecanGnssTest, Fix2PositionVelocity)
@@ -243,8 +256,7 @@ TEST(DronecanGnssTest, AuxiliaryDop)
 {
     resetCache();
 
-    uint8_t fix2[64];
-    feed(handleFix2, fix2, buildFix2(fix2));
+    feedDefaultFix2();
 
     uint8_t aux[32];
     feed(handleAuxiliary, aux, buildAuxiliary(aux));
@@ -261,14 +273,13 @@ TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
 {
     resetCache();
 
-    uint8_t fix2[64];
-    feed(handleFix2, fix2, buildFix2(fix2));
+    feedDefaultFix2();
 
     uint8_t aux[32];
     feed(handleAuxiliary, aux, buildAuxiliary(aux));
 
     // A fresh Fix2 must not wipe the hdop/vdop published by Auxiliary.
-    feed(handleFix2, fix2, buildFix2(fix2));
+    feedDefaultFix2();
 
     gpsSolutionData_t sol;
     ASSERT_TRUE(dronecanGnssGetLatest(&sol));
@@ -277,7 +288,9 @@ TEST(DronecanGnssTest, Fix2PreservesAuxiliaryDop)
     EXPECT_EQ(150, sol.dop.vdop);
 }
 
-TEST(DronecanGnssTest, Fix2NoFixZeroesSats)
+// Anything below a 3D fix is unusable for navigation, so 2D is deliberately
+// reported as no fix.
+TEST(DronecanGnssTest, Fix2TreatsTwoDFixAsNoFix)
 {
     resetCache();
 
@@ -290,4 +303,127 @@ TEST(DronecanGnssTest, Fix2NoFixZeroesSats)
     gpsSolutionData_t sol;
     ASSERT_TRUE(dronecanGnssGetLatest(&sol));
     EXPECT_EQ(0, sol.numSat);
+}
+
+TEST(DronecanGnssTest, Fix2ScalarCovariance)
+{
+    resetCache();
+
+    uint8_t buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    const uint8_t status = UAVCAN_GNSS_FIX2_STATUS_3D_FIX;
+    canardEncodeScalar(buf, 366, 2, &status);
+
+    const uint8_t covLength = 1;
+    canardEncodeScalar(buf, 378, 6, &covLength);
+    encodeF16(buf, 384, 4.0f);
+    const uint32_t pdopBit = 384 + 16;
+    encodeF16(buf, pdopBit, 1.5f);
+    feed(handleFix2, buf, (uint16_t)((pdopBit + 16 + 7) / 8));
+
+    gpsSolutionData_t sol;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+
+    // A single scalar variance applies to every axis.
+    EXPECT_EQ(2000u, sol.acc.hAcc);
+    EXPECT_EQ(2000u, sol.acc.vAcc);
+    EXPECT_EQ(2000u, sol.acc.sAcc);
+    EXPECT_EQ(150, sol.dop.pdop);
+}
+
+TEST(DronecanGnssTest, Fix2UpperTriangularCovariance)
+{
+    resetCache();
+
+    uint8_t buf[128];
+    memset(buf, 0, sizeof(buf));
+
+    const uint8_t status = UAVCAN_GNSS_FIX2_STATUS_3D_FIX;
+    canardEncodeScalar(buf, 366, 2, &status);
+
+    const uint8_t covLength = 21;
+    canardEncodeScalar(buf, 378, 6, &covLength);
+    // Upper triangle row-major; diagonal entries sit at 0, 6, 11, 15, 18, 20.
+    encodeF16(buf, 384 + 0 * 16, 4.0f);
+    encodeF16(buf, 384 + 6 * 16, 9.0f);
+    encodeF16(buf, 384 + 11 * 16, 16.0f);
+    encodeF16(buf, 384 + 15 * 16, 0.25f);
+    encodeF16(buf, 384 + 18 * 16, 0.25f);
+    encodeF16(buf, 384 + 20 * 16, 1.0f);
+    const uint32_t pdopBit = 384 + 21 * 16;
+    encodeF16(buf, pdopBit, 1.5f);
+    feed(handleFix2, buf, (uint16_t)((pdopBit + 16 + 7) / 8));
+
+    gpsSolutionData_t sol;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+
+    EXPECT_EQ((uint32_t)(sqrtf(6.5f) * 1000.0f), sol.acc.hAcc);
+    EXPECT_EQ(4000u, sol.acc.vAcc);
+    EXPECT_EQ((uint32_t)(sqrtf(0.5f) * 1000.0f), sol.acc.sAcc);
+    EXPECT_EQ(150, sol.dop.pdop);
+}
+
+TEST(DronecanGnssTest, Fix2TruncatedCovarianceIsIgnored)
+{
+    resetCache();
+
+    uint8_t buf[64];
+    memset(buf, 0, sizeof(buf));
+
+    const uint8_t status = UAVCAN_GNSS_FIX2_STATUS_3D_FIX;
+    canardEncodeScalar(buf, 366, 2, &status);
+
+    // Claim a full matrix but truncate the payload after six entries: the
+    // decoder must not read past the payload, and no accuracy is published.
+    const uint8_t covLength = 36;
+    canardEncodeScalar(buf, 378, 6, &covLength);
+    encodeF16(buf, 384, 4.0f);
+    feed(handleFix2, buf, (uint16_t)((384 + 6 * 16) / 8));
+
+    gpsSolutionData_t sol;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+
+    EXPECT_EQ(0u, sol.acc.hAcc);
+    EXPECT_EQ(0u, sol.acc.vAcc);
+    EXPECT_EQ(0u, sol.acc.sAcc);
+    EXPECT_EQ(0, sol.dop.pdop);
+}
+
+TEST(DronecanGnssTest, AuxiliaryDopExpires)
+{
+    resetCache();
+
+    feedDefaultFix2();
+
+    uint8_t aux[32];
+    feed(handleAuxiliary, aux, buildAuxiliary(aux));
+
+    // Fix2 keeps the Auxiliary figures only while they're fresh.
+    mockMicros = DRONECAN_GNSS_AUX_FRESH_US + 1;
+    feedDefaultFix2();
+
+    gpsSolutionData_t sol;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+
+    EXPECT_EQ(0, sol.dop.hdop);
+    EXPECT_EQ(0, sol.dop.vdop);
+    EXPECT_EQ(150, sol.dop.pdop);
+}
+
+TEST(DronecanGnssTest, Fix2NonUtcTimestampSkipsDateTime)
+{
+    resetCache();
+
+    uint8_t buf[64];
+    const uint16_t len = buildFix2(buf);
+    const uint8_t timeStandard = UAVCAN_GNSS_TIME_STANDARD_GPS;
+    canardEncodeScalar(buf, 112, 3, &timeStandard);
+    feed(handleFix2, buf, len);
+
+    gpsSolutionData_t sol;
+    ASSERT_TRUE(dronecanGnssGetLatest(&sol));
+
+    EXPECT_FALSE(stubDateTimeCalled);
+    EXPECT_FALSE(sol.dateTime.valid);
 }

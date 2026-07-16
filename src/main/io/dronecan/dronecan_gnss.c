@@ -68,6 +68,13 @@ static volatile uint32_t latestSeq = 0;
 static volatile bool received = false;
 static volatile timeUs_t lastUpdateUs = 0;
 
+// Auxiliary hdop/vdop are only carried across Fix2 refreshes while fresh, so
+// a module that stops broadcasting Auxiliary can't pin stale quality figures
+// to live positions. Both handlers run in the dronecan task, so no seqlock.
+#define DRONECAN_GNSS_AUX_FRESH_US 2000000
+static timeUs_t auxUpdateUs = 0;
+static bool auxReceived = false;
+
 static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
 {
     UNUSED(ins);
@@ -115,21 +122,45 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
         uint8_t covLength = 0;
         canardDecodeScalar(t, bit, 6, false, &covLength); bit += 6;
 
-        // Covariance is a 6x6 position/velocity matrix. Modules send either
-        // the full row-major matrix (36) or just its diagonal (6); any other
-        // length carries no usable per-axis variance.
+        // Covariance is a 6x6 position/velocity matrix; modules send a scalar
+        // (1), the diagonal (6), the upper triangle row-major (21) or the full
+        // row-major matrix (36). Guard the claimed length against the payload
+        // so a truncated or malformed transfer can't be read past its end.
         float diag[6];
         bool haveDiag = false;
-        if (covLength == 6) {
-            for (unsigned i = 0; i < 6; i++) {
-                diag[i] = dronecanDecodeFloat16(t, bit + i * 16U);
+        if (bit + (uint32_t)covLength * 16U <= payloadBits) {
+            // Diagonal element positions within the upper-triangular encoding.
+            static const uint8_t triDiag[6] = { 0, 6, 11, 15, 18, 20 };
+            switch (covLength) {
+            case 1: {
+                const float var = dronecanDecodeFloat16(t, bit);
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = var;
+                }
+                haveDiag = true;
+                break;
             }
-            haveDiag = true;
-        } else if (covLength == 36) {
-            for (unsigned i = 0; i < 6; i++) {
-                diag[i] = dronecanDecodeFloat16(t, bit + (i * 6U + i) * 16U);
+            case 6:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + i * 16U);
+                }
+                haveDiag = true;
+                break;
+            case 21:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + triDiag[i] * 16U);
+                }
+                haveDiag = true;
+                break;
+            case 36:
+                for (unsigned i = 0; i < 6; i++) {
+                    diag[i] = dronecanDecodeFloat16(t, bit + (i * 6U + i) * 16U);
+                }
+                haveDiag = true;
+                break;
+            default:
+                break;
             }
-            haveDiag = true;
         }
 
         if (haveDiag) {
@@ -180,10 +211,12 @@ static void handleFix2(CanardInstance *ins, CanardRxTransfer *t)
     latestSeq++;
     __asm volatile ("" ::: "memory");
 
-    // hdop/vdop arrive on the Auxiliary message; preserve them across the
-    // reset so a Fix2 update doesn't wipe the last DOP figures.
-    const uint16_t hdop = latest.dop.hdop;
-    const uint16_t vdop = latest.dop.vdop;
+    // hdop/vdop arrive on the Auxiliary message; carry them across the reset
+    // only while Auxiliary is still broadcasting.
+    const bool auxFresh = auxReceived
+            && cmpTimeUs(micros(), auxUpdateUs) < DRONECAN_GNSS_AUX_FRESH_US;
+    const uint16_t hdop = auxFresh ? latest.dop.hdop : 0;
+    const uint16_t vdop = auxFresh ? latest.dop.vdop : 0;
 
     memset(&latest, 0, sizeof(latest));
     latest.llh.lat   = scaleLonLat_1e8to1e7(lat_1e8);
@@ -230,6 +263,9 @@ static void handleAuxiliary(CanardInstance *ins, CanardRxTransfer *t)
     const float hdop = dronecanDecodeFloat16(t, 32);
     const float vdop = dronecanDecodeFloat16(t, 48);
 
+    auxUpdateUs = micros();
+    auxReceived = true;
+
     latestSeq++;
     __asm volatile ("" ::: "memory");
 
@@ -251,6 +287,8 @@ void dronecanGnssInit(void)
     memset(&latest, 0, sizeof(latest));
     received = false;
     lastUpdateUs = 0;
+    auxUpdateUs = 0;
+    auxReceived = false;
 
     const dronecanSubscriber_t fix2Sub = {
         .signature    = UAVCAN_GNSS_FIX2_SIGNATURE,
