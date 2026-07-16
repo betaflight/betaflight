@@ -46,6 +46,39 @@ typedef struct flashGeometry_s {
     uint16_t pagesPerSector;
     flashType_e flashType;
     uint32_t jedecId;
+    // Maximum sustained log-frame rate this chip can support in ring-mode blackbox
+    // without back-pressuring the writer past the RAM buffer's erase-stall capacity.
+    // Set by the driver from chip-family knowledge (sector size × erase time × safety
+    // margin); see flashfsGetMaxSustainedLogRateHz() for the consumer-side fallback
+    // when this is 0 (driver hasn't set it yet, or chip type unknown).
+    uint16_t maxSustainedLogRateHz;
+    // Sub-sector erase granularity, in bytes. NOR chips often expose both a coarse
+    // block erase (sectorSize, e.g. 64 KB / ~150 ms) and a finer sub-sector erase
+    // (e.g. 4 KB / ~30 ms). Linear-mode flashfs always uses the coarse path because
+    // log sessions are infrequent; ring-mode flashfs_log prefers the sub-sector erase
+    // for its on-the-fly pool refill because the chip-BUSY window during each erase
+    // is what bounds the ring-mode buffer-vs-erase product (and therefore drop-free
+    // sustained rate). Set to 0 by drivers that don't support a separate sub-sector
+    // command — consumers fall back to sectorSize.
+    uint32_t subsectorSize;
+    // Typical chip-BUSY time after a sub-sector erase, in milliseconds. Used by
+    // ring-mode flashfs_log's eraseTick as the timing-skip window: don't poll
+    // the status register before this elapsed. Match the chip's datasheet
+    // typical (or a touch below, if you want to be conservative). Fast chips
+    // that complete sooner just sit idle until the window expires — fine,
+    // because the RAM buffer + erase pool are sized to absorb hundreds of ms
+    // of detection latency before any drop pressure. Setting this aggressively
+    // (near typical) saves SPI polls per erase cycle. 0 means the driver
+    // doesn't characterise sub-sector timing (consumer falls back to
+    // sectorEraseTypicalMs or a compile-time default).
+    uint16_t subsectorEraseTypicalMs;
+    // Typical chip-BUSY time after a sector/block erase, in milliseconds. Same
+    // semantics as subsectorEraseTypicalMs. Set this in every driver (even when
+    // sub-sector isn't supported) so the consumer always has a usable value.
+    // Particularly important on NAND (block erase ~2 ms — the NOR-derived
+    // compile-time defaults are 50× too large here, which would waste nearly
+    // an entire NAND erase cycle's worth of CPU on SPI polls).
+    uint16_t sectorEraseTypicalMs;
 } flashGeometry_t;
 
 typedef enum {
@@ -64,6 +97,21 @@ bool flashIsReady(void);
 bool flashIsReadyOrFail(void);
 bool flashWaitForReady(void);
 void flashEraseSector(uint32_t address);
+// FIRE-AND-RETURN async sub-sector erase. UNLIKE flashEraseSector, this does NOT
+// wait for the chip to finish — the CPU returns once the SPI bus has drained
+// the command, with the chip still BUSY (~30-60 ms on NOR sub-sector / ~150 ms
+// if the driver fell back to sector erase). Callers must poll flashIsReady()
+// before the next flash op. Used by ring-mode flashfs_log on F4 builds for
+// hot-path pool refill where any blocking would jitter the FC loop. See the
+// comment on flashGeometry_t.subsectorSize for the bandwidth rationale, and
+// the flashEraseSubsector definition in flash.c for the async contract.
+void flashEraseSubsector(uint32_t address);
+// FIRE-AND-RETURN async sector (64 KB on NOR, ~128 KB on NAND) erase. Same
+// async contract as flashEraseSubsector. Used by ring-mode flashfs_log on
+// F7/H7 builds where the bigger buffer can absorb the longer (~150 ms) BUSY
+// window in exchange for ~6× higher sustained erase bandwidth — which is what
+// makes the 4 kHz log-rate target achievable on those chips.
+void flashEraseSectorAsync(uint32_t address);
 void flashEraseCompletely(void);
 void flashPageProgramBegin(uint32_t address, void (*callback)(uintptr_t arg));
 uint32_t flashPageProgramContinue(const uint8_t **buffers, uint32_t *bufferSizes, uint32_t bufferCount);

@@ -244,6 +244,12 @@ static const char * const lookupTableBlackboxMode[] = {
 static const char * const lookupTableBlackboxSampleRate[] = {
     "1/1", "1/2", "1/4", "1/8", "1/16"
 };
+
+#ifdef USE_BLACKBOX_RING_LOG
+static const char * const lookupTableBlackboxFlashMode[] = {
+    "LINEAR", "RING"
+};
+#endif
 #endif
 
 #ifdef USE_SERIALRX
@@ -603,6 +609,9 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice),
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxMode),
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxSampleRate),
+#ifdef USE_BLACKBOX_RING_LOG
+    LOOKUP_TABLE_ENTRY(lookupTableBlackboxFlashMode),
+#endif
 #endif
     LOOKUP_TABLE_ENTRY(currentMeterSourceNames),
     LOOKUP_TABLE_ENTRY(voltageMeterSourceNames),
@@ -936,6 +945,9 @@ const clivalue_t valueTable[] = {
 #endif
     { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
     { "blackbox_high_resolution",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, high_resolution) },
+#ifdef USE_BLACKBOX_RING_LOG
+    { "blackbox_flash_mode",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_FLASH_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, flash_mode) },
+#endif
 #endif
 
 // PG_MOTOR_CONFIG

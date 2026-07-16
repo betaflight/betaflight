@@ -523,6 +523,12 @@
 #undef USE_FLASHFS
 #endif
 
+// Ring-mode blackbox requires both onboard flash and the blackbox subsystem. If either is
+// disabled (e.g., on a small target via cloud build option), drop ring-mode support.
+#if !defined(USE_FLASHFS) || !defined(USE_BLACKBOX)
+#undef USE_BLACKBOX_RING_LOG
+#endif
+
 #if (!defined(USE_SDCARD) && !defined(USE_FLASHFS)) || !defined(USE_BLACKBOX)
 #undef USE_USB_MSC
 #endif
