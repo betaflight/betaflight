@@ -49,6 +49,17 @@
 #define UAVCAN_GNSS_AUXILIARY_ID        1061U
 #define UAVCAN_GNSS_AUXILIARY_SIGNATURE 0x9be8bdc4c3dbbfd2ULL
 
+// uavcan.equipment.ahrs.MagneticFieldStrength2 — broadcast magnetic field
+// vector in Gauss, body frame. Carries a sensor_id so a multi-mag node can be
+// disambiguated.
+#define UAVCAN_MAG2_ID                  1002U
+#define UAVCAN_MAG2_SIGNATURE           0xb6ac0c442430297eULL
+
+// uavcan.equipment.ahrs.MagneticFieldStrength — legacy single-mag variant of
+// the above (no sensor_id); still what many CAN compasses broadcast.
+#define UAVCAN_MAG_ID                   1001U
+#define UAVCAN_MAG_SIGNATURE            0xe2a7d4a9460bc2f2ULL
+
 // Fix2.status enum values.
 #define UAVCAN_GNSS_FIX2_STATUS_NO_FIX      0U
 #define UAVCAN_GNSS_FIX2_STATUS_TIME_ONLY   1U

@@ -479,6 +479,25 @@ transponder_ir_unittest_SRC := \
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
 
+DRONECAN_LIBCANARD_DIR := $(ROOT)/lib/modules/dronecan/libcanard
+
+dronecan_mag_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_mag.c \
+		$(TEST_DIR)/dronecan_mag_canard.c
+
+dronecan_mag_unittest_DEFINES := \
+		ENABLE_DRONECAN=1 \
+		USE_MAG=
+
+dronecan_mag_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+# The hydration rule for canard.c lives with the dronecan_gnss test above;
+# every object of this test depends on it.
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
 
 .PHONY: check-pg-ids
 check-pg-ids:
