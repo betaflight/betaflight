@@ -698,7 +698,7 @@ void plot(int x, int y, int c)
     // c =  0 -> transparent (no overlay)   W=0   EN=0   [currently also W=1 EN=0, but reserve that for possible other usage]
     // c =  1 -> black                      W=0   EN=1
     // c =  2 -> white                      W=1   EN=1
-    uint32_t c1 = getCycleCounter();
+    DEBUG_COUNTER_INST(c1);
 
     uint8_t *plotBuffer = plotToBackground ? osdBufferBackground : osdBufferA;
 
