@@ -53,12 +53,12 @@
 // 1 - DistanceError cm
 // 2 - P term * 10 // based on distance from intended position
 // 3 - I term * 10 // integral of distance error over time
-// 4 - D term * 10 // velocity factor ( distance error derivative)
+// 4 - D term * 10 // damping on measured velocity
 // 5 - A term * 10 // velocity derivative factor (acceleration in distance terms)
-// 6 - PIDsum * 10
-// 7 - Status - encodes navActive+ 10, velocityMode +20, SticksActive +5, PositionHeld +3, +1 when starting,
+// 6 - F term * 10 // target-velocity feedforward (the stick push / nav target)
+// 7 - Status - encodes navActive+ 10, velocityMode +20, SticksActive +5, PositionHeld +3, +1 when braking,
 // In velocity mode slots 2-5 carry the velocity-loop terms: P/I on velocity error,
-// D damping, A the drag feedforward; slot 1 reads ~0. See also DEBUG_POSITION_NAV.
+// D damping, A the drag feedforward; slot 6 (F) reads ~0. See also DEBUG_POSITION_NAV.
 
 // DEBUG_POSITION_NAV, axis set by gyro_filter_debug_axis
 // 0 - target velocity cm/s
@@ -781,7 +781,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 4, lrintf(pidD.v[ap.debugAxis] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 5, lrintf(pidA.v[ap.debugAxis] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidSumVectorEF.v[ap.debugAxis] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 6, lrintf(pidF.v[ap.debugAxis] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
 
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 0, lrintf(velocityError.v[EF_EAST]));
@@ -790,8 +790,8 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 3, lrintf(pidSumVectorEF.v[EF_NORTH] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 4, lrintf(autopilotAngle[AI_ROLL] * 10));
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 5, lrintf(autopilotAngle[AI_PITCH] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, lrintf(pidF.v[EF_EAST] * 10));
-    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, lrintf(pidF.v[EF_NORTH] * 10));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, statusValue + (ap.isPosHoldBraking ? 1 : 0));
+    DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
 
     DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
     DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocityFilteredV.v[ap.debugAxis]));

@@ -435,7 +435,7 @@ TEST_F(PosHoldTest, FeedforwardProducesStickProportionalLean)
 TEST_F(PosHoldTest, FeedforwardZeroWhenSticksInactive)
 {
     initAndSettleAt(0, 0, 0);
-    debugMode = DEBUG_AUTOPILOT_STOP; // slots 6/7 carry pidF East/North * 10
+    debugMode = DEBUG_AUTOPILOT_PID; // slot 6 carries pidF on the debug axis (East here) * 10
 
     // Deflect the roll stick, then centre it and release.
     setSticksActiveStatus(true);
@@ -445,8 +445,7 @@ TEST_F(PosHoldTest, FeedforwardZeroWhenSticksInactive)
     setSticksActiveStatus(false);
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_EQ(debug[6], 0); // pidF East
-    EXPECT_EQ(debug[7], 0); // pidF North
+    EXPECT_EQ(debug[6], 0); // pidF, flat with no stick input
     debugMode = DEBUG_NONE;
 }
 
