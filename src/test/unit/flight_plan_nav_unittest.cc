@@ -724,6 +724,84 @@ TEST_F(FlightPlanNavTest, OrbitPeriodMatchesRateCapAndCruiseLimit)
     EXPECT_EQ(flightPlanNavOrbitPeriodDs(100), 628);
 }
 
+TEST_F(FlightPlanNavTest, SetCurrentIndexReTargetsWhileActive)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(50, 60, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(g_setTargetCalls, 1);
+
+    flightPlanNavSetCurrentIndex(2);
+
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 2);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_EQ(g_setTargetCalls, 2);
+}
+
+TEST_F(FlightPlanNavTest, SetCurrentIndexStoresStartIndexWhileIdle)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    // Set before engage: no dispatch happens yet.
+    flightPlanNavSetCurrentIndex(1);
+    EXPECT_EQ(g_setTargetCalls, 0);
+
+    flightPlanNavEngage();
+
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+    EXPECT_EQ(g_setTargetCalls, 1);
+}
+
+TEST_F(FlightPlanNavTest, SetCurrentIndexIgnoresOutOfRange)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
+
+    flightPlanNavEngage();
+    flightPlanNavSetCurrentIndex(5); // >= count
+
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(g_setTargetCalls, 1);
+}
+
+TEST_F(FlightPlanNavTest, GeometryAccessorsSentinelWhenIdle)
+{
+    addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
+    // Not engaged -> no active target.
+    EXPECT_LT(flightPlanNavGetDistanceToWaypointM(), 0.0f);
+    EXPECT_LT(flightPlanNavGetBearingToWaypointDeciDeg(), 0);
+    EXPECT_EQ(flightPlanNavGetEtaSeconds(), 0);
+}
+
+TEST_F(FlightPlanNavTest, GeometryAccessorsReflectActiveTarget)
+{
+    // Waypoint 10 m east, 20 m north, altitude matching the vehicle so the
+    // 3D distance is purely horizontal.
+    const int32_t lonUnitsFor10m = (int32_t)((10.0f / 111319.49f) * 1.0e7f);
+    const int32_t latUnitsFor20m = (int32_t)((20.0f / 111319.49f) * 1.0e7f);
+    addWaypoint(latUnitsFor20m, lonUnitsFor10m, 5000, WAYPOINT_TYPE_FLYOVER, 300);
+
+    flightPlanNavEngage();
+    ASSERT_TRUE(g_lastTarget.valid);
+
+    // Vehicle at origin, altitude aligned with the target (-50 m ENU up).
+    g_stubEstimate.position.v[0] = 0.0f;      // east cm
+    g_stubEstimate.position.v[1] = 0.0f;      // north cm
+    g_stubEstimate.position.v[2] = -5000.0f;  // up cm (matches target z)
+    g_stubEstimate.velocity.v[0] = 500.0f;    // 5 m/s east
+    g_stubEstimate.velocity.v[1] = 0.0f;
+
+    EXPECT_NEAR(flightPlanNavGetDistanceToWaypointM(), 22.36f, 0.1f);
+    // atan2(E=10, N=20) = 26.57 deg CW from north -> 266 deci-degrees.
+    EXPECT_NEAR(flightPlanNavGetBearingToWaypointDeciDeg(), 266, 2);
+    // 22.36 m / 5 m/s = 4.47 s -> rounds to 4.
+    EXPECT_EQ(flightPlanNavGetEtaSeconds(), 4);
+}
+
 TEST_F(FlightPlanNavTest, DisengageClearsTargetAndResetsState)
 {
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);

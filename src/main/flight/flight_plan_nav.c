@@ -120,6 +120,7 @@
 static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
+    uint8_t pendingStartIndex;  // MISSION_SET_CURRENT while idle; consumed by engage
     timeUs_t holdStartUs;
     uint16_t holdDurationDs;
     bool active;
@@ -355,14 +356,18 @@ static void abortMission(flightPlanAbortReason_e reason)
     positionNavClearTarget();
 }
 
-static float distanceToNavTargetM(const positionEstimate3d_t *est)
+static void navTargetDeltaEnuM(const positionEstimate3d_t *est, vector3_t *deltaM)
 {
     const positionNavCommand_t *cmd = positionNavGetActiveCommand();
-    vector3_t deltaM = {.v = {
-        [ENU_E] = cmd->targetPosEfM.v[ENU_E] - est->position.v[ENU_E] * 0.01f,
-        [ENU_N] = cmd->targetPosEfM.v[ENU_N] - est->position.v[ENU_N] * 0.01f,
-        [ENU_U] = cmd->includeAltitude ? cmd->targetPosEfM.v[ENU_U] - est->position.v[ENU_U] * 0.01f : 0.0f,
-    }};
+    deltaM->v[ENU_E] = cmd->targetPosEfM.v[ENU_E] - est->position.v[ENU_E] * 0.01f;
+    deltaM->v[ENU_N] = cmd->targetPosEfM.v[ENU_N] - est->position.v[ENU_N] * 0.01f;
+    deltaM->v[ENU_U] = cmd->includeAltitude ? cmd->targetPosEfM.v[ENU_U] - est->position.v[ENU_U] * 0.01f : 0.0f;
+}
+
+static float distanceToNavTargetM(const positionEstimate3d_t *est)
+{
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
     return vector3Norm(&deltaM);
 }
 
@@ -801,6 +806,7 @@ void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
+    fp.pendingStartIndex = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
     fp.abortReason = FP_ABORT_NONE;
@@ -867,6 +873,9 @@ void flightPlanNavEngage(void)
         return;
     }
 
+    // A MISSION_SET_CURRENT received while idle chooses the starting leg.
+    fp.currentIndex = (fp.pendingStartIndex < flightPlanConfig()->waypointCount) ? fp.pendingStartIndex : 0;
+    fp.pendingStartIndex = 0;
     fp.active = true;
     // Try to dispatch immediately; if the GPS origin isn't ready yet we stay
     // IDLE and flightPlanNavUpdate() will retry.
@@ -1035,6 +1044,70 @@ uint8_t flightPlanNavGetCurrentIndex(void)
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void)
 {
     return fp.abortReason;
+}
+
+float flightPlanNavGetDistanceToWaypointM(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return -1.0f;
+    }
+    return distanceToNavTargetM(positionEstimatorGetEstimate());
+}
+
+int32_t flightPlanNavGetBearingToWaypointDeciDeg(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return -1;
+    }
+    vector3_t deltaM;
+    navTargetDeltaEnuM(positionEstimatorGetEstimate(), &deltaM);
+    // Compass bearing: 0 = north, growing clockwise. ENU east/north maps to
+    // atan2(E, N); wrap into [0, 3600) deci-degrees.
+    int32_t deciDeg = lrintf(atan2_approx(deltaM.v[ENU_E], deltaM.v[ENU_N]) * (1800.0f / M_PIf));
+    deciDeg %= 3600;
+    if (deciDeg < 0) {
+        deciDeg += 3600;
+    }
+    return deciDeg;
+}
+
+uint16_t flightPlanNavGetEtaSeconds(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return 0;
+    }
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    if (speedMps < 0.5f) {
+        return 0;
+    }
+    // Horizontal groundspeed only reaches the waypoint's horizontal offset, so
+    // divide by the 2D distance; the 3D slant would overstate ETA on climbs.
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
+    const float distance2dM = sqrtf(sq(deltaM.v[ENU_E]) + sq(deltaM.v[ENU_N]));
+    const float etaS = distance2dM / speedMps;
+    return (etaS >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(etaS);
+}
+
+void flightPlanNavSetCurrentIndex(uint8_t index)
+{
+    // SET_CURRENT addresses the uploaded PG mission; an injected runtime plan
+    // (geofence RTH / failsafe rescue) owns its own sequencing.
+    if (fp.injectedCount > 0 || index >= flightPlanConfig()->waypointCount) {
+        return;
+    }
+
+    if (fp.active) {
+        fp.currentIndex = index;
+        fp.patternPending = false;
+        fp.patternActive = false;
+        clearModifierState();
+        fp.state = FP_NAV_TARGETING;
+        dispatchWaypoint();
+    } else {
+        fp.pendingStartIndex = index;
+    }
 }
 
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)

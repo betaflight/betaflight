@@ -19,23 +19,17 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "drivers/can/can.h"
-#include "drivers/io_types.h"
+#if ENABLE_DRONECAN_DNA
 
+#include "pg/dronecan_dna.h"
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct canPinConfig_s {
-    ioTag_t ioTagTx;
-    ioTag_t ioTagRx;
-    ioTag_t ioTagSilent;
-} canPinConfig_t;
+// Reset to all-empty (every nodeId 0). Zero-init via the default template.
+PG_REGISTER_WITH_RESET_TEMPLATE(dronecanDnaConfig_t, dronecanDnaConfig, PG_DRONECAN_DNA_CONFIG, 0);
 
-PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);
+PG_RESET_TEMPLATE(dronecanDnaConfig_t, dronecanDnaConfig, );
 
-typedef struct canConfig_s {
-    uint16_t bitrate_khz;   // nominal bit rate in kHz (default 1000 = 1 Mbit/s)
-} canConfig_t;
-
-PG_DECLARE(canConfig_t, canConfig);
+#endif // ENABLE_DRONECAN_DNA
