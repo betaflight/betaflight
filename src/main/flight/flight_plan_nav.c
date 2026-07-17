@@ -104,6 +104,7 @@
 #define FP_GATE_RADIUS_SCALE     1.5f    // gate radius = corner speed (m/s) * this
 #define FP_OVERSPEED_MARGIN_MPS  1.5f    // measured-speed governor margin over the profile speed
 #define FP_OVERRUN_LAT_M         8.0f    // a fast gate miss still counts within this lateral corridor
+#define FP_CARROT_NO_ARRIVAL_M   -1.0f   // acceptance radius sentinel: positionNav never self-completes a carrot leg
 
 // Landing descends toward a target far below the current position so vertical
 // arrival can never trigger; touchdown detection is what ends the descent.
@@ -406,11 +407,14 @@ static bool dispatchWaypoint(void)
 
     if (passGate) {
         // positionNav is a pure velocity generator chasing the marched carrot:
-        // acceptance radius 0 stops it ever self-completing, no callback (the
-        // executor advances), and no internal accel/decel (the carrot's
-        // trapezoid owns the speed profile). carrotSpeed carries across the
+        // a negative acceptance radius means it never self-completes (the craft
+        // sitting on a carrot frozen at its own position would otherwise trip
+        // "reached", drop ap.navActive, and kill the yaw rotation on a
+        // gate-closed leg start - a deadlock). The executor owns advancement, so
+        // there is no callback, and no internal accel/decel: the carrot's
+        // trapezoid owns the speed profile. carrotSpeed carries across the
         // corner — only engage/retry reset it.
-        positionNavSetTargetEf(&targetEnuM, cruiseMps, 0.0f,
+        positionNavSetTargetEf(&targetEnuM, cruiseMps, FP_CARROT_NO_ARRIVAL_M,
                                FP_COMPLETION_ANY_MPS, true, NULL, NULL);
         positionNavSetAccelLimits(0.0f, 0.0f);
         positionNavSetAltitudeArrivalRequired(false);

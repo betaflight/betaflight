@@ -656,6 +656,13 @@ WP_LAT = HOME_LAT + 300.0 / M_PER_DEG  # default waypoint 300 m north of home
 WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # 150 m east
 WP_NORTH40_LAT = HOME_LAT + 40.0 / M_PER_DEG  # short leg for the landing mission
 WP_EAST25_LON = HOME_LON + 25.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
+WP_NORTH90_LAT = HOME_LAT + 90.0 / M_PER_DEG  # far leg for the backwards-engage mission
+# ~130 deg corner: a 60 m north leg into wp0, then out to (42 m east, 25 m north),
+# so the outgoing leg bears ~130 deg and the pre-turn swings the nose past 90 deg
+# off the inbound leg
+WP_NORTH60_LAT = HOME_LAT + 60.0 / M_PER_DEG
+WP_CORNER_LAT = HOME_LAT + 25.0 / M_PER_DEG
+WP_CORNER_LON = HOME_LON + 42.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 
 
 def base_config(extra):
@@ -812,6 +819,73 @@ def scenario_mission_yaw(sitl, rc, fdm):
     )
     assert BOX_ARM in sitl.modes(), "unexpected disarm during yaw mission"
     log(f"leg flown nose-first, heading {fdm.heading_deg():.0f} deg at arrival")
+
+
+def scenario_mission_engage_backwards(sitl, rc, fdm):
+    """Engage with the nose pointing away from the first leg (initial_yaw_deg=180,
+    leg runs north). In the default VELOCITY yaw mode no course develops while the
+    craft sits still, so the executor must rotate the nose onto the leg and fly it
+    rather than freezing the carrot into a STALL abort."""
+    boot_and_engage(sitl, rc, fdm)
+
+    # Departing at all proves it didn't deadlock: a frozen carrot never moves,
+    # develops no course, and aborts STALLED after 30 s.
+    wait_for(
+        "rotates onto the leg and departs (>15 m from home)",
+        lambda: fdm.distance_from_home() > 15.0,
+        timeout=40,
+    )
+
+    def on_leg():
+        err = (fdm.heading_deg() - 0.0 + 180.0) % 360.0 - 180.0
+        return abs(err) < 30.0
+
+    wait_for("nose swung onto the northbound leg (~000)", on_leg, timeout=25)
+
+    wait_for(
+        "reaches the far waypoint (ground truth)",
+        lambda: fdm.distance_to_wp(0.0, 90.0) < 10.0,
+        timeout=120,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm on the backwards-engage mission"
+    log(f"rotated onto the leg from a backwards engage, heading {fdm.heading_deg():.0f} deg")
+
+
+def scenario_mission_corner(sitl, rc, fdm):
+    """A ~130 deg corner. The pre-turn deliberately swings the nose past 90 deg
+    off the inbound leg approaching the gate; the march gate must exempt the
+    pre-turn so the craft carries corner speed through the gate instead of
+    freezing in it (the hairpin-stall bug)."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "flies the first leg to the corner waypoint",
+        lambda: fdm.distance_to_wp(0.0, 60.0) < 12.0,
+        timeout=90,
+        interval=1.0,
+    )
+
+    # Sample ground speed while crossing the corner: a stalled gate would drop it
+    # toward zero; a working pre-turn carries it through near the corner speed.
+    corner_samples = []
+
+    def carried_through():
+        if fdm.distance_to_wp(0.0, 60.0) < 20.0:
+            corner_samples.append(math.hypot(fdm.model.vel[0], fdm.model.vel[1]))
+        return fdm.distance_to_wp(42.0, 25.0) < 10.0
+
+    wait_for(
+        "carries through the corner to the second waypoint",
+        carried_through,
+        timeout=120,
+        interval=1.0,
+    )
+    assert corner_samples, "never sampled near the corner"
+    corner_min = min(corner_samples)
+    assert corner_min > 0.8, f"stalled in the corner: min ground speed {corner_min:.2f} m/s"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the corner mission"
+    log(f"carried the corner, min ground speed {corner_min:.2f} m/s over {len(corner_samples)} samples")
 
 
 def scenario_mission_land(sitl, rc, fdm):
@@ -1297,6 +1371,24 @@ SCENARIOS = {
         scenario_mission_yaw,
         # redirect the default waypoint east so the course demands a 90 deg swing
         [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none"],
+    ),
+    "mission_engage_backwards": (
+        scenario_mission_engage_backwards,
+        [
+            # two north legs so the first is a pass-through carrot leg; the nose
+            # starts backwards (initial_yaw_deg) in the default VELOCITY yaw mode
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+            f"waypoint insert 1 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+        ],
+        {"initial_yaw_deg": 180.0},
+    ),
+    "mission_corner": (
+        scenario_mission_corner,
+        [
+            # 60 m north into the corner, then out on a ~130 deg turn
+            f"waypoint update 0 {WP_NORTH60_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+            f"waypoint insert 1 {WP_CORNER_LAT:.7f} {WP_CORNER_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+        ],
     ),
     "mission_land": (
         scenario_mission_land,
