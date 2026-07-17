@@ -241,6 +241,21 @@ static const waypoint_t *currentWaypoint(void)
     return activePlanWaypoint(fp.currentIndex);
 }
 
+// The next positional (non-modifier) waypoint at or after `from`, or NULL if the
+// plan has none left. Modifier records (ALT_CHANGE/DELAY/YAW_RATE) carry no
+// coordinates, so the corner geometry and the pass-through/last-leg decision
+// must look past them without consuming modifier state (drainModifiers does that).
+static const waypoint_t *nextPositionalWaypoint(uint8_t from)
+{
+    for (uint8_t i = from; i < activePlanCount(); i++) {
+        const waypoint_t *wp = activePlanWaypoint(i);
+        if (wp != NULL && wp->type < WAYPOINT_TYPE_ALT_CHANGE) {
+            return wp;
+        }
+    }
+    return NULL;
+}
+
 static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
 {
     gpsLocation_t origin;
@@ -373,7 +388,9 @@ static bool dispatchWaypoint(void)
     // En-route FLYOVER/FLYBY waypoints (never the last, never station-keeping)
     // are pass-through gates flown with leg-line carrot tracking; everything else
     // keeps the precise point-target arrival + hold.
-    const bool isLastWaypoint = (fp.currentIndex + 1 >= activePlanCount());
+    // "Last" means no further positional waypoint (trailing modifiers don't count);
+    // only a leg with a real next waypoint becomes a carved pass-through gate.
+    const bool isLastWaypoint = (nextPositionalWaypoint(fp.currentIndex + 1) == NULL);
     const bool passGate = !isStationKeeping && !isLastWaypoint;
 
     fp.patternPending = false;
@@ -505,6 +522,15 @@ static float wrapDeg180f(float deg)
 // on command and the craft is moving, so wind and manoeuvres cannot trip it.
 static bool checkHeadingFault(float dtS, const positionEstimate3d_t *est)
 {
+    // Only meaningful while the autopilot is actively steering the nose toward a
+    // heading; in FIXED/DAMPENER the nose is uncommanded, so a course-vs-heading
+    // gap is expected and must not be read as a fault.
+    const uint8_t yawMode = autopilotConfig()->yawMode;
+    if (yawMode == YAW_MODE_FIXED || yawMode == YAW_MODE_DAMPENER) {
+        fp.hdgFaultTimeS = 0.0f;
+        return false;
+    }
+
     vector3_t deltaM;
     navTargetDeltaEnuM(est, &deltaM);
     const float bearingDeg = RADIANS_TO_DEGREES(atan2_approx(deltaM.v[ENU_E], deltaM.v[ENU_N]));
@@ -540,10 +566,11 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const vector2_t toWp  = { .x = wp.x - craft.x, .y = wp.y - craft.y };
     const float distM = vector2Norm(&toWp);
 
-    // A pass-through leg always has a next waypoint; use it for the corner speed.
+    // Corner geometry uses the next positional waypoint, skipping any modifier
+    // records between legs (their coordinates would otherwise steer the corner).
     vector2_t next = wp;
     bool haveNext = false;
-    const waypoint_t *nextWp = activePlanWaypoint(fp.currentIndex + 1);
+    const waypoint_t *nextWp = nextPositionalWaypoint(fp.currentIndex + 1);
     if (nextWp != NULL) {
         vector3_t nextEnuM;
         waypoint_t effNext = *nextWp;
@@ -573,8 +600,10 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
                 : fp.legCruiseMps;   // straight through
         }
     }
-    const float arriveM = constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE,
-                                     cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+    // waypointArrivalRadius can be configured above FP_PASS_MAX_M, which would
+    // otherwise invert the constrainf bounds; clamp the floor to the gate max.
+    const float minGateM = fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+    const float arriveM = constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, minGateM, FP_PASS_MAX_M);
 
     // Overrun fallback: a fast crossing that misses the arrive bubble by a hair
     // still counts once the craft is past the waypoint along-track inside a sane

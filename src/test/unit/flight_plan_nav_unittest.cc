@@ -1608,3 +1608,22 @@ TEST_F(FlightPlanNavCarrotTest, PreTurnBlendsNoseTowardNextLeg)
     EXPECT_GT(g_navHeadingOverrideDeg, 0.0f);
     EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
 }
+
+TEST_F(FlightPlanNavCarrotTest, CornerSkipsModifierBetweenLegs)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);    // wp0: turn here
+    addWaypointMetres(-100.0f, 100.0f, 0, WAYPOINT_TYPE_YAW_RATE);    // modifier: bogus west coords, must be ignored
+    addWaypointMetres(100.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);  // next positional leg: 90 deg east
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    setCraftMetres(0.0f, 88.0f);   // into the pre-turn zone before wp0
+    step();
+
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    ASSERT_TRUE(g_navHeadingOverrideValid);
+    // The corner blends toward the next positional leg (east, +90), not the
+    // modifier's west coordinates, which would drive the override negative.
+    EXPECT_GT(g_navHeadingOverrideDeg, 0.0f);
+    EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
+}

@@ -387,7 +387,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD
-    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {
+    // A mission abort (e.g. the heading-fault level park) routes through the
+    // position-hold failure path too; let the specific WP warning below own it
+    // rather than masking it with the generic POSHOLD FAIL.
+    bool missionAbortActive = false;
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
+#endif
+    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
         tfp_sprintf(warningText, "POSHOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;

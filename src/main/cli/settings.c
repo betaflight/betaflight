@@ -2039,7 +2039,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_NAV_DECEL,               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, navDecel) },
     { PARAM_NAME_AP_NAV_ACCEL,               VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 1000 },   PG_AUTOPILOT, offsetof(autopilotConfig_t, navAccel) },
     { PARAM_NAME_AP_NAV_CARROT_LEAD_TIME,    VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 2, 40 },      PG_AUTOPILOT, offsetof(autopilotConfig_t, navCarrotLeadTime) },
-    { PARAM_NAME_AP_NAV_CARROT_LEAD_MAX,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 500, 6000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navCarrotLeadMax) },
+    { PARAM_NAME_AP_NAV_CARROT_LEAD_MAX,     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 600, 6000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navCarrotLeadMax) },
     { PARAM_NAME_AP_NAV_PRETURN_DIST,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 500, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, navPreturnDist) },
 
     // Phase 5: Velocity buildup
