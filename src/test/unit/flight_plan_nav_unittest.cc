@@ -966,6 +966,9 @@ TEST_F(FlightPlanNavTest, InjectedPlanReplacesMissionAndRunsToTermination)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 20.0f, 0.1f); // 120 m AMSL - 100 m origin
 
     // The injected plan advances past the PG waypoint count (1 positional wp).
+    // The FLYOVER return leg keeps the arrival-radius gate, so the craft has to
+    // reach the waypoint (10 m east) for it to count.
+    g_stubEstimate.position.v[ENU_E] = 10.0f * 100.0f;
     arriveAtWaypoint();
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
@@ -1543,33 +1546,84 @@ TEST_F(FlightPlanNavCarrotTest, CarrotTracksLegLineNotCraftCrossTrack)
     EXPECT_NEAR(g_lastTarget.targetEfM.y, 50.0f, 5.0f);
 }
 
-TEST_F(FlightPlanNavCarrotTest, StraightThroughAdvancesAtWideGate)
+TEST_F(FlightPlanNavCarrotTest, StraightThroughFlybyAdvancesAtWideGate)
 {
-    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0
-    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1: straight on (last)
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY); // wp0
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYBY); // wp1: straight on (last)
     setCraftMetres(0.0f, 89.0f);   // 11 m short of wp0
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
     step();
 
-    // Straight-through: corner speed = cruise, gate radius clamps to 12 m, so an
-    // 11 m approach already crosses the gate and advances.
+    // Straight-through FLYBY: corner speed = cruise, gate radius clamps to 12 m,
+    // so an 11 m approach already crosses the gate and advances.
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
 }
 
-TEST_F(FlightPlanNavCarrotTest, SharpTurnAdvancesOnlyCloseIn)
+TEST_F(FlightPlanNavCarrotTest, SharpTurnFlybyAdvancesOnlyCloseIn)
 {
-    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0
-    addWaypointMetres(0.0f, 50.0f, 15000, WAYPOINT_TYPE_FLYOVER);  // wp1: 180 deg reversal (last)
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY); // wp0
+    addWaypointMetres(0.0f, 50.0f, 15000, WAYPOINT_TYPE_FLYBY);  // wp1: 180 deg reversal (last)
     setCraftMetres(0.0f, 89.0f);   // 11 m short of wp0
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
     step();
 
-    // Hairpin: corner speed drops to the floor, gate radius shrinks to 5 m, so an
-    // 11 m approach is not yet a crossing — the leg keeps tracking.
+    // Hairpin FLYBY: corner speed drops to the floor, gate radius shrinks to 5 m,
+    // so an 11 m approach is not yet a crossing — the leg keeps tracking.
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavCarrotTest, FlyoverUsesArrivalRadiusGate)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // fly over the point
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
+    setCraftMetres(0.0f, 92.0f);   // 8 m short: inside a FLYBY 12 m gate, outside FLYOVER's 5 m
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    // FLYOVER keeps the arrival-radius gate, so an 8 m straight-through approach
+    // has not crossed yet (a FLYBY would have).
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+}
+
+TEST_F(FlightPlanNavCarrotTest, EngageNoseBackwardsRotatesOntoLeg)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY); // leg due north
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYBY); // last
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 1800;   // nose pointing south, 180 deg off the north leg
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    // Nothing else steers yaw in VELOCITY mode with no course developed, so the
+    // executor must command the nose onto the leg (north) rather than deadlocking
+    // on a frozen carrot.
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 1.0f);   // leg bearing, north
+}
+
+TEST_F(FlightPlanNavCarrotTest, BrakingCarrotBehindKeepsNoseForward)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYBY);
+    setCraftMetres(0.0f, 0.0f);
+    attitude.values.yaw = 0;   // nose north, along the leg
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+    setCraftMetres(0.0f, 60.0f);   // overrun: shoot well past the trailing carrot
+    step();
+
+    // The carrot is now behind the craft (braking); the nose stays pointed forward
+    // along the leg (north), never swung 180 back at the trailing carrot.
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    EXPECT_NEAR(g_navHeadingOverrideDeg, 0.0f, 5.0f);
 }
 
 TEST_F(FlightPlanNavCarrotTest, OverrunFallbackAdvancesPastWaypoint)
@@ -1596,7 +1650,6 @@ TEST_F(FlightPlanNavCarrotTest, PreTurnBlendsNoseTowardNextLeg)
     g_stubMicros = 1'000'000;
     flightPlanNavEngage();
     step();   // anchor leg0 (origin -> (0,100), heading north)
-    EXPECT_FALSE(g_navHeadingOverrideValid);   // far from the gate: the yaw mode governs
 
     // Approach the gate into the pre-turn zone (7 m of leg left past the gate).
     setCraftMetres(0.0f, 88.0f);

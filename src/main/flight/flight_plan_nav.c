@@ -602,8 +602,16 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     }
     // waypointArrivalRadius can be configured above FP_PASS_MAX_M, which would
     // otherwise invert the constrainf bounds; clamp the floor to the gate max.
-    const float minGateM = fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
-    const float arriveM = constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, minGateM, FP_PASS_MAX_M);
+    const float arriveRadiusM = fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+    // FLYBY cuts the corner: the gate scales up with the corner speed. FLYOVER
+    // keeps its fly-over-the-point meaning - the carrot tracking and corner-speed
+    // profile still apply, but the gate stays at the arrival radius so the craft
+    // passes tight over the point instead of carving the corner wide.
+    const waypoint_t *thisWp = currentWaypoint();
+    const bool flyby = (thisWp == NULL) || (thisWp->type == WAYPOINT_TYPE_FLYBY);
+    const float arriveM = flyby
+        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, arriveRadiusM, FP_PASS_MAX_M)
+        : arriveRadiusM;
 
     // Overrun fallback: a fast crossing that misses the arrive bubble by a hair
     // still counts once the craft is past the waypoint along-track inside a sane
@@ -668,34 +676,34 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
         desiredMps = 0.0f;
     }
 
-    // March gating keys on alignment with the leg direction so forward progress
-    // never accumulates while rotating in place at a leg start or a reversal.
     const float headingDeg = attitude.values.yaw * 0.1f;
     const float legBearingDeg = RADIANS_TO_DEGREES(atan2_approx(legDir.x, legDir.y));
     const float legErrDeg = wrapDeg180f(headingDeg - legBearingDeg);
-    if (fabsf(legErrDeg) >= 90.0f) {
-        desiredMps = 0.0f;
-    }
 
-    // Pre-turn: through the approach zone (ending a few metres before the gate,
-    // so the yaw law has closed the lag by the crossing) blend the commanded nose
-    // heading from this leg onto the next. Outside the zone the configured yaw
-    // mode governs (override off). Only the nose is affected — the carrot, and so
-    // the path, is unchanged, and the march gate above ignores the pre-turn swing.
+    // Pre-turn: through the approach zone (ending a few metres before the gate, so
+    // the yaw law has closed the lag by the crossing) blend the commanded nose
+    // heading from this leg onto the next. Computed BEFORE the march gate so the
+    // gate can exempt it: the pre-turn deliberately swings the nose past the leg
+    // on sharp corners, and must not stall forward progress while doing so.
     fp.inPreTurn = false;
+    float noseBearingDeg = legBearingDeg;
     if (haveNext) {
         const float preturnM = cfg->navPreturnDist * 0.01f;
         const float t = 1.0f - constrainf((remainingM - 5.0f) / fmaxf(preturnM - 5.0f, 1.0f), 0.0f, 1.0f);
         const vector2_t nextLeg = { .x = next.x - wp.x, .y = next.y - wp.y };
         if (t > 0.0f && vector2Norm(&nextLeg) > 1.0f) {
             const float nextBearingDeg = RADIANS_TO_DEGREES(atan2_approx(nextLeg.x, nextLeg.y));
-            const float blendedDeg = legBearingDeg + t * wrapDeg180f(nextBearingDeg - legBearingDeg);
-            autopilotSetNavHeadingOverride(true, blendedDeg);
+            noseBearingDeg = legBearingDeg + t * wrapDeg180f(nextBearingDeg - legBearingDeg);
             fp.inPreTurn = true;
         }
     }
-    if (!fp.inPreTurn) {
-        autopilotSetNavHeadingOverride(false, 0.0f);
+
+    // March gating keys on alignment with the leg direction so forward progress
+    // never accumulates while rotating in place at a leg start or a reversal; the
+    // pre-turn swing is exempt so corner speed carries through the gate.
+    const bool aligned = fabsf(legErrDeg) < 90.0f || fp.inPreTurn;
+    if (!aligned) {
+        desiredMps = 0.0f;
     }
 
     fp.carrotSpeedMps = constrainf(desiredMps,
@@ -710,6 +718,22 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     const float brakeGapM = 0.25f * fp.carrotSpeedMps + 1.5f;
     fp.legProgressM = constrainf(fp.legProgressM, alongFloorM - brakeGapM, alongFloorM + leadM);
     fp.legProgressM = constrainf(fp.legProgressM, 0.0f, legLenM);
+
+    // Nose command. On a pass-through leg the executor owns yaw, which is what
+    // makes the march gate safe: point the nose along the leg (blending onto the
+    // next leg through the pre-turn) whenever it is not already aligned and
+    // chasing a carrot that is ahead. This rotates the nose onto the leg at an
+    // engage or reversal (so a nose-backwards engage cannot deadlock the frozen
+    // carrot), and never points the nose at a carrot that has dropped behind the
+    // craft while braking (which would command a spin and can false-trip the
+    // heading-fault check). Once aligned with the carrot ahead, the configured
+    // yaw mode takes over.
+    const bool carrotAhead = fp.legProgressM > craftAlongM;
+    if (fp.inPreTurn || !aligned || !carrotAhead) {
+        autopilotSetNavHeadingOverride(true, noseBearingDeg);
+    } else {
+        autopilotSetNavHeadingOverride(false, 0.0f);
+    }
 
     vector3_t carrot = {.v = {
         [ENU_E] = fp.legStartEnuM.x + legDir.x * fp.legProgressM,
