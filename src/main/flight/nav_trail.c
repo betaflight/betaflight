@@ -72,7 +72,7 @@ const navTrailPoint_t *navTrailPointAt(unsigned index)
     return &trail[index];
 }
 
-static void pushTrailPoint(int32_t eastM, int32_t northM)
+static void pushTrailPoint(int16_t eastM, int16_t northM)
 {
     // Adaptive decimation: when full, drop every second point and double the
     // spacing so the whole flight stays represented at reduced resolution.
@@ -84,8 +84,8 @@ static void pushTrailPoint(int32_t eastM, int32_t northM)
         trailSpacingM = MIN(trailSpacingM * 2, NAV_TRAIL_MAX_SPACING_M);
     }
 
-    trail[trailCount].eastM = constrain(eastM, INT16_MIN, INT16_MAX);
-    trail[trailCount].northM = constrain(northM, INT16_MIN, INT16_MAX);
+    trail[trailCount].eastM = eastM;
+    trail[trailCount].northM = northM;
     trailCount++;
 }
 
@@ -93,8 +93,13 @@ static void pushTrailPoint(int32_t eastM, int32_t northM)
 // gate. Split out so unit tests can drive it without GPS plumbing.
 STATIC_UNIT_TESTED void navTrailIngestPosition(const vector2_t *posCm)
 {
-    const int32_t eastM = lrintf(posCm->x / 100.0f);
-    const int32_t northM = lrintf(posCm->y / 100.0f);
+    // clamp to the int16 range BEFORE the distance gate - a GPS glitch past
+    // +-32km otherwise leaves the raw coord in the gate math while the stored
+    // point is already clamped, so dx/dy blow up, the gate fires every tick,
+    // and the buffer fills with the same clamped point until decimation has
+    // eaten the real trail
+    const int16_t eastM = constrain(lrintf(posCm->x / 100.0f), INT16_MIN, INT16_MAX);
+    const int16_t northM = constrain(lrintf(posCm->y / 100.0f), INT16_MIN, INT16_MAX);
 
     if (trailCount == 0) {
         pushTrailPoint(eastM, northM);

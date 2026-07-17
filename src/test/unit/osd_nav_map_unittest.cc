@@ -169,6 +169,31 @@ TEST_F(OsdNavMapTest, TrailUpdateRecordsWhileArmedAndResetsOnArmEdge)
     EXPECT_EQ(100, navTrailPointAt(0)->eastM);
 }
 
+TEST_F(OsdNavMapTest, TrailGlitchBeyondRangeDoesNotWipeTheTrail)
+{
+    // lay down a normal line
+    for (int i = 0; i < 5; i++) {
+        const vector2_t pos = { .x = i * 600.0f, .y = 0.0f };
+        navTrailIngestPosition(&pos);
+    }
+    ASSERT_EQ(5u, navTrailCount());
+
+    // a wild glitch way past the int16 range, held for many ticks. before the
+    // fix this stored a fresh clamped point every call and decimation chewed
+    // the real trail away; now it clamps to one point at the edge and the gate
+    // sees zero movement after that
+    const vector2_t glitch = { .x = 5000000.0f, .y = 5000000.0f };   // 50 km, past the int16 metre range
+    for (int i = 0; i < 300; i++) {
+        navTrailIngestPosition(&glitch);
+    }
+
+    EXPECT_EQ(6u, navTrailCount());
+    EXPECT_EQ(INT16_MAX, navTrailPointAt(5)->eastM);
+    // the earlier real points survived (stored in whole metres)
+    EXPECT_EQ(0, navTrailPointAt(0)->eastM);
+    EXPECT_EQ(24, navTrailPointAt(4)->eastM);
+}
+
 //
 // map scale
 //
@@ -358,6 +383,24 @@ TEST_F(OsdNavMapRenderTest, AutoZoomFitsAllPositionalWaypoints)
     EXPECT_EQ(800u, osdNavMapScaleMForTest());
 }
 
+TEST_F(OsdNavMapRenderTest, AutoZoomIgnoresWaypointsBeyondTheMarkerCap)
+{
+    osdNavMapConfigMutable()->minScaleM = 20;
+    stateFlags |= GPS_FIX | GPS_FIX_HOME;
+    setCraftEnuM(5, 0);
+
+    // waypoint 1 (index 0) is close; a tenth waypoint (index 9) is way out.
+    // markers only label 1..9, so the map must not zoom out to chase a marker
+    // it will never draw
+    setWaypoint(0, WAYPOINT_TYPE_FLYOVER, 60, 0);
+    setWaypoint(9, WAYPOINT_TYPE_FLYOVER, 3000, 0);
+
+    renderElement();
+
+    // 60 m fits the 150 floor; not the ~8 km step index 9 would have forced
+    EXPECT_EQ(150u, osdNavMapScaleMForTest());
+}
+
 TEST_F(OsdNavMapRenderTest, OffMapHomeClampsToEdgeWithDirectionArrow)
 {
     osdNavMapConfigMutable()->centre = OSD_NAV_MAP_CENTRE_CRAFT;
@@ -408,6 +451,45 @@ TEST_F(OsdNavMapRenderTest, WaypointMarkersSkipModifiersAndBlinkTheActiveOne)
     }
     EXPECT_GT(seen3, 0);
     EXPECT_GT(missing3, 0);
+}
+
+TEST_F(OsdNavMapRenderTest, TrailSwitchbackKeepsBothCrossingsOfAColumn)
+{
+    stateFlags |= GPS_FIX | GPS_FIX_HOME;
+    osdNavMapConfigMutable()->minScaleM = 150;
+
+    // out-and-back: east along the north edge, down the far side, west along
+    // the south edge. the two shallow legs cross the same columns at rows well
+    // apart - the column dedup has to keep both, not blank out the return leg
+    const float pts[][2] = {
+        { -40.0f,  40.0f }, {  40.0f,  40.0f },   // north edge, west -> east
+        {  40.0f, -40.0f },                        // down the east side (steep)
+        { -40.0f, -40.0f },                        // south edge, east -> west
+    };
+    for (auto &p : pts) {
+        const vector2_t v = { .x = p[0] * 100.0f, .y = p[1] * 100.0f };
+        navTrailIngestPosition(&v);
+    }
+    setCraftEnuM(-40, -40);   // craft on the last point so there's no stray tail
+
+    renderElement();
+
+    // some column has to carry an AH-bar stroke in two different rows; before
+    // the fix the return leg was suppressed and no column ever did
+    int columnsWithTwoRows = 0;
+    for (int x = 0; x < SCREEN_COLS; x++) {
+        int rowsWithBar = 0;
+        for (int y = 0; y < SCREEN_ROWS; y++) {
+            const uint8_t g = screen[y][x];
+            if (g >= SYM_AH_BAR9_0 && g <= (uint8_t)(SYM_AH_BAR9_0 + 8)) {
+                rowsWithBar++;
+            }
+        }
+        if (rowsWithBar >= 2) {
+            columnsWithTwoRows++;
+        }
+    }
+    EXPECT_GT(columnsWithTwoRows, 0);
 }
 
 // STUBS

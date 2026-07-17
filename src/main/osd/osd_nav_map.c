@@ -240,11 +240,13 @@ static void plotWorldLine(const vector2_t *fromCm, const vector2_t *toCm)
             const float t = constrainf(((float)col - colF0) / dCol, 0.0f, 1.0f);
             const float rF = rowF0 + t * dRow;
             const int row = lrintf(rF);
-            // polyline joins: consecutive segments share an endpoint column and
-            // can round it to rows one apart, doubling the stroke - one bar per
-            // column per frame keeps the stroke single-cell thick
+            // consecutive segments share an endpoint column and can round it to
+            // rows one apart - that's the doubled ink to kill. only skip that
+            // adjacent-row case though: a loop or switchback re-crossing the
+            // same column a few rows off is a real stroke, let it draw
             if (col >= 0 && col < NAV_MAP_COLS) {
-                if (trailBarRowPlusOne[col] != 0 && trailBarRowPlusOne[col] != (uint8_t)(row + 1)) {
+                const uint8_t marked = trailBarRowPlusOne[col];
+                if (marked != 0 && abs((int)marked - (row + 1)) <= 1) {
                     continue;
                 }
                 trailBarRowPlusOne[col] = (uint8_t)(row + 1);
@@ -491,8 +493,12 @@ static void prepareFrame(void)
         maxY = fmaxf(maxY, fabsf(viewY));
     }
     if (homeValid) {
+        // only fit waypoints that actually get drawn - labels stop at
+        // NAV_MAP_MARKER_MAX ('1'..'9'), so fitting the later ones just zooms
+        // the map out for markers you never see (same bound as
+        // plotWaypointMarkers)
         const uint8_t count = MIN(flightPlanConfig()->waypointCount, (uint8_t)MAX_WAYPOINTS);
-        for (uint8_t i = 0; i < count; i++) {
+        for (uint8_t i = 0; i < count && i < NAV_MAP_MARKER_MAX; i++) {
             const waypoint_t *wp = &flightPlanConfig()->waypoints[i];
             if (!waypointIsPositional(wp)) {
                 continue;
