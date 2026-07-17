@@ -401,8 +401,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->logo_on_arming = OSD_LOGO_ARMING_OFF;
     osdConfig->logo_on_arming_duration = 5;  // 0.5 seconds
 
-    osdConfig->camera_frame_width = 24;
-    osdConfig->camera_frame_height = 11;
+    osdConfig->camera_frame_width = (OSD_CAMERA_FRAME_MAX_WIDTH * 4) / 5; // 24 for MAX7456
+    osdConfig->camera_frame_height = (OSD_CAMERA_FRAME_MAX_HEIGHT * 11) / 16; // 11 for MAX7456
 
     osdConfig->stat_show_cell_value = false;
     osdConfig->framerate_hz = OSD_FRAMERATE_DEFAULT_HZ;

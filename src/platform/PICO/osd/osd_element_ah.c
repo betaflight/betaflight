@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if ENABLE_FB_OSD && defined OSD_FB_PICO_PIXEL_MODE
+#if ENABLE_FB_OSD && OSD_FB_PICO_ENABLE_PIXEL_MODE
 
 #include <math.h>
 #include <stdint.h>
@@ -166,7 +166,6 @@ void cacheArtificialHorizonInfo(uint8_t x, uint8_t y)
 
     infoAH.cx = x * PICO_OSD_CHAR_WIDTH + PICO_OSD_CHAR_WIDTH / 2;
     infoAH.cy = y * PICO_OSD_CHAR_HEIGHT + PICO_OSD_CHAR_HEIGHT / 2;
-
     const int displacementScale = (fb_ny - 64) / 2;
     if (maxPitch > 0) {
         infoAH.pixelsPerDeciDeg = (float)displacementScale / maxPitch;
@@ -373,5 +372,5 @@ bool renderAHUntil(uint32_t limit_micros)
 #error unknown AH_IMPLMENTATION
 #endif
 
-#endif // #if ENABLE_FB_OSD && defined OSD_FB_PICO_PIXEL_MODE
+#endif // #if ENABLE_FB_OSD && OSD_FB_PICO_ENABLE_PIXEL_MODE
 

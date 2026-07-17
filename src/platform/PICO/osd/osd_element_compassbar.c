@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if ENABLE_FB_OSD && defined OSD_FB_PICO_PIXEL_MODE
+#if ENABLE_FB_OSD && OSD_FB_PICO_ENABLE_PIXEL_MODE
 
 #include <stdint.h>
 #include <string.h>
@@ -48,8 +48,8 @@ void cacheCompassBarInfo(uint8_t x, uint8_t y)
 {
     // cf. memcpy(element->buff, compassBar + osdGetHeadingIntoDiscreteDirections(DECIDEGREES_TO_DEGREES(attitude.values.yaw), 16), 9);
     // was string of 9 chars. Cache the central position in pixel coordinates based on that.
-    infoCompassBar.x = (x + 4.5) * PICO_OSD_CHAR_WIDTH;
-    infoCompassBar.y = (y + 0.5) * PICO_OSD_CHAR_HEIGHT;
+    infoCompassBar.x = (x + 4.5f) * PICO_OSD_CHAR_WIDTH;
+    infoCompassBar.y = (y + 0.5f) * PICO_OSD_CHAR_HEIGHT;
     infoCompassBar.deciDegrees = attitude.values.yaw;
     renderCompassBarComplete = false;
 }
@@ -172,6 +172,7 @@ bool renderCompassBarUntil(uint32_t limit_micros)
             // Main bearing string
             if (renderStringNext()) {
                 state++;
+                // Prepare black fill rectangle around main string
                 iterRectInit(infoCompassBar.x - COMPASSBAR_STRING_OFFSET - 1, infoCompassBar.y - PICO_OSD_CHAR_HEIGHT - 3,
                              infoCompassBar.x + COMPASSBAR_STRING_OFFSET + 1, infoCompassBar.y - 4);
             }
@@ -348,5 +349,5 @@ bool renderCompassBarUntil(uint32_t limit_micros)
 }
 
 
-#endif // #if ENABLE_FB_OSD && defined OSD_FB_PICO_PIXEL_MODE
+#endif // #if ENABLE_FB_OSD && OSD_FB_PICO_ENABLE_PIXEL_MODE
 

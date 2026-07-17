@@ -99,14 +99,20 @@
 #define SYM_ARROW_SMALL_UP          0x75
 #define SYM_ARROW_SMALL_DOWN        0x76
 
-#ifdef DEBUG_OSD_TEST_SMALLFONT
-#define SYM_LAT_2                   0x80
-#define SYM_LON_2                   0x81
-#define SYM_HEADSET_L               0x82
-#define SYM_HEADSET_R               0x83
+#ifdef OSD_RSSI_WITH_SYMBOL
+#define SYM_HEADSET                 0x82
 #endif
 
-#ifndef OSD_FB_ELEMENT_ARTIFICIAL_HORIZON
+#if OSD_FB_PICO_ENABLE_PIXEL_MODE
+#define SYM_ALT_LADDER              SYM_AH_DECORATION // vertical ladder element
+#define SYM_ALT_ABOVEMAX            0x86
+#define SYM_ALT_BELOWZERO           0x87
+#define SYM_CROSSHAIRS_TL           SYM_AH_CENTER_LINE
+#define SYM_CROSSHAIRS_TR           SYM_AH_CENTER
+#define SYM_CROSSHAIRS_BL           SYM_AH_CENTER_LINE_RIGHT
+#define SYM_CROSSHAIRS_BR           0x88
+#endif
+
 // AH Bars
 #define SYM_AH_BAR9_0               0x80
 #define SYM_AH_BAR9_1               0x81
@@ -117,7 +123,6 @@
 #define SYM_AH_BAR9_6               0x86
 #define SYM_AH_BAR9_7               0x87
 #define SYM_AH_BAR9_8               0x88
-#endif
 
 // Progress bar
 #define SYM_PB_START                0x8A
