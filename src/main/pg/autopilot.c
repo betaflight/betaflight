@@ -62,6 +62,15 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .stickDeadband = 50,              // RC units
     .throttleDeadband = 50,           // RC units
 
+    // Leg-line carrot path tracking and turn-angle cornering
+    .navCornerSpeed = 220,            // 2.2 m/s corner-speed floor
+    .navCornerDeltaV = 440,           // 4.4 m/s per-corner delta-v budget
+    .navDecel = 100,                  // 1.0 m/s^2 approach deceleration
+    .navAccel = 250,                  // 2.5 m/s^2 carrot slew
+    .navCarrotLeadTime = 12,          // 1.2 s carrot lead
+    .navCarrotLeadMax = 2500,         // 25 m maximum carrot lead
+    .navPreturnDist = 1500,           // 15 m pre-turn blend zone
+
     // Yaw control parameters
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity
     .yawP = 50,                       // 0.5 P gain

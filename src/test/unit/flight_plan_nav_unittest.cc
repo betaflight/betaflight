@@ -32,6 +32,7 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "flight/flight_plan_nav.h"
+    #include "flight/imu.h"
     #include "flight/position_estimator.h"
     #include "flight/position_nav.h"
 
@@ -49,6 +50,7 @@ extern "C" {
     uint16_t GPS_distanceToHome;
     gpsSolutionData_t gpsSol;
     gpsLocation_t GPS_home_llh;
+    attitudeEulerAngles_t attitude;
 }
 
 #include "unittest_macros.h"
@@ -70,6 +72,7 @@ struct CapturedTarget {
 };
 
 CapturedTarget g_lastTarget;
+vector3_t g_lastDispatchTargetEfM;   // destination from positionNavSetTargetEf only (carrot moves don't touch it)
 int g_setTargetCalls;
 int g_clearTargetCalls;
 int g_moveTargetCalls;
@@ -100,6 +103,7 @@ void positionNavSetTargetEf(
     void *userData)
 {
     g_lastTarget.targetEfM = *targetPosEfM;
+    g_lastDispatchTargetEfM = *targetPosEfM;
     g_lastTarget.cruiseSpeedMps = cruiseSpeedMps;
     g_lastTarget.acceptanceRadiusM = acceptanceRadiusM;
     g_lastTarget.completionSpeedMps = completionSpeedMps;
@@ -201,6 +205,22 @@ void autopilotSetYawRateLimit(float rateLimitDps)
     g_yawRateLimitDps = rateLimitDps;
 }
 
+static bool g_forceLevelPark;
+
+void autopilotForceLevelPark(bool request)
+{
+    g_forceLevelPark = request;
+}
+
+static bool g_navHeadingOverrideValid;
+static float g_navHeadingOverrideDeg;
+
+void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
+{
+    g_navHeadingOverrideValid = valid;
+    g_navHeadingOverrideDeg = headingDeg;
+}
+
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *distance)
 {
     // Simplified flat-earth approximation sufficient for unit-test deltas.
@@ -239,6 +259,12 @@ protected:
         g_altitudeArrivalRequired = false;
         g_disarmCalls = 0;
         g_yawRateLimitDps = -1.0f; // sentinel: no autopilotSetYawRateLimit call yet
+        g_forceLevelPark = false;
+        g_navHeadingOverrideValid = false;
+        g_navHeadingOverrideDeg = 0.0f;
+        memset(&g_lastDispatchTargetEfM, 0, sizeof(g_lastDispatchTargetEfM));
+
+        memset(&attitude, 0, sizeof(attitude));
 
         stateFlags = 0;
         GPS_distanceToHome = 0;
@@ -271,6 +297,14 @@ protected:
         cfg->landingDescentRate = 50;      // 0.5 m/s
         cfg->landingDetectionTime = 10;    // 1 s
         cfg->landingVelocityThreshold = 50; // 0.5 m/s
+        // Leg-line carrot tracking (PG reset template is not applied under test).
+        cfg->navCornerSpeed = 220;         // 2.2 m/s floor
+        cfg->navCornerDeltaV = 440;        // 4.4 m/s per-corner budget
+        cfg->navDecel = 100;               // 1.0 m/s^2
+        cfg->navAccel = 250;               // 2.5 m/s^2
+        cfg->navCarrotLeadTime = 12;       // 1.2 s
+        cfg->navCarrotLeadMax = 2500;      // 25 m
+        cfg->navPreturnDist = 1500;        // 15 m
 
         flightPlanNavInit();
     }
@@ -311,6 +345,20 @@ protected:
     void triggerReached() {
         ASSERT_NE(g_lastTarget.callback, nullptr);
         g_lastTarget.callback(g_lastTarget.userData);
+    }
+
+    // Advance the current leg. Precise point legs (last waypoint, station-keeping,
+    // injected LAND) complete via the positionNav callback; en-route pass-through
+    // legs have no callback and advance through the executor's carrot gate on a
+    // position update. The default test waypoints sit within a metre of the
+    // origin, so a craft parked at the origin is already inside any gate radius.
+    void arriveAtWaypoint() {
+        if (g_lastTarget.callback != nullptr) {
+            g_lastTarget.callback(g_lastTarget.userData);
+        } else {
+            g_stubMicros += 100'000;
+            flightPlanNavUpdate(g_stubMicros);
+        }
     }
 };
 
@@ -378,7 +426,7 @@ TEST_F(FlightPlanNavTest, WaypointReachedAdvancesToNext)
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
     EXPECT_EQ(g_setTargetCalls, 1);
 
-    triggerReached();
+    arriveAtWaypoint();
 
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
@@ -835,7 +883,7 @@ TEST_F(FlightPlanNavTest, ReEngageRestartsAtFirstWaypoint)
     addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
 
     flightPlanNavEngage();
-    triggerReached();
+    arriveAtWaypoint();
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
 
     flightPlanNavDisengage();
@@ -866,7 +914,7 @@ TEST_F(FlightPlanNavTest, YawRateModifierCapsAutopilotYawAndPersists)
     EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
 
     // The cap applies from the modifier onward, not just the next leg.
-    triggerReached();
+    arriveAtWaypoint();
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     EXPECT_FLOAT_EQ(g_yawRateLimitDps, 45.0f);
 }
@@ -918,11 +966,11 @@ TEST_F(FlightPlanNavTest, InjectedPlanReplacesMissionAndRunsToTermination)
     EXPECT_NEAR(g_lastTarget.targetEfM.z, 20.0f, 0.1f); // 120 m AMSL - 100 m origin
 
     // The injected plan advances past the PG waypoint count (1 positional wp).
-    triggerReached();
+    arriveAtWaypoint();
     EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
-    triggerReached();
+    arriveAtWaypoint();
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
 }
 
@@ -970,7 +1018,7 @@ TEST_F(FlightPlanNavTest, ReachedListenerSuppressedWhileInjected)
     addWaypoint(10, 20, 15000, WAYPOINT_TYPE_FLYOVER);
     addWaypoint(30, 40, 15000, WAYPOINT_TYPE_FLYOVER);
     flightPlanNavEngage();
-    triggerReached();
+    arriveAtWaypoint();
     EXPECT_EQ(g_reachedCalls, 1); // PG mission progress is reported
 
     const waypoint_t plan[] = {
@@ -978,7 +1026,7 @@ TEST_F(FlightPlanNavTest, ReachedListenerSuppressedWhileInjected)
         makeWaypoint(0, 0, 12000, WAYPOINT_TYPE_LAND),
     };
     ASSERT_TRUE(flightPlanNavInjectPlan(plan, 2));
-    triggerReached();
+    arriveAtWaypoint();
     EXPECT_EQ(g_reachedCalls, 1); // injected-plan progress is not
 }
 
@@ -1174,6 +1222,49 @@ TEST_F(FlightPlanNavSafetyTest, MovingAwayPastMarginAbortsAsFlyaway)
     EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_FLYAWAY);
 }
 
+TEST_F(FlightPlanNavSafetyTest, HeadingFaultParksWingsLevel)
+{
+    engageDistantLeg();
+
+    // Nose on command (target due north, heading north) and moving at 5 m/s, but
+    // course-over-ground is 90 deg off the heading: a magnetometer fault.
+    attitude.values.yaw = 0;    // heading 0 deg (north), on the commanded bearing
+    gpsSol.groundSpeed = 500;   // 5 m/s, above the 3 m/s gate
+    gpsSol.groundCourse = 900;  // 90 deg: disagreement with heading exceeds 70 deg
+
+    // The integrator needs > 2 s of sustained disagreement; per-cycle dt is
+    // capped at 0.25 s, so step well past the threshold.
+    for (int i = 0; i < 12; i++) {
+        g_stubMicros += 250'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_ABORTED);
+    EXPECT_EQ(flightPlanNavGetAbortReason(), FP_ABORT_MAG_FAULT);
+    EXPECT_TRUE(g_forceLevelPark);   // angle-mode self-level, never position hold
+    EXPECT_GE(g_clearTargetCalls, 1);
+}
+
+TEST_F(FlightPlanNavSafetyTest, CourseDisagreementOffCommandDoesNotTrip)
+{
+    engageDistantLeg();
+
+    // The same course-over-ground disagreement, but the nose is 60 deg off the
+    // commanded bearing (a deliberate manoeuvre, not a fault): the detector is
+    // ineligible and must not integrate toward a trip.
+    attitude.values.yaw = 600;   // 60 deg, off the northward commanded bearing
+    gpsSol.groundSpeed = 500;
+    gpsSol.groundCourse = 1500;  // 150 deg: 90 deg from heading, still > 70
+
+    for (int i = 0; i < 12; i++) {
+        g_stubMicros += 250'000;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    EXPECT_FALSE(g_forceLevelPark);
+}
+
 TEST_F(FlightPlanNavSafetyTest, AbortReasonClearsOnReEngage)
 {
     engageDistantLeg();
@@ -1249,13 +1340,14 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
 
     // The return plan replaces the mission: fly to home at the rescue return
     // altitude (30 m above the 100 m home altitude) at the rescue ground speed.
+    // The return leg is a pass-through leg, so positionNav is fed a carrot
+    // marching toward home — assert the dispatched destination, not the carrot.
     EXPECT_TRUE(flightPlanNavIsInjectedPlanActive());
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
     EXPECT_EQ(g_setTargetCalls, callsBeforeBreach + 1);
-    ASSERT_TRUE(g_lastTarget.valid);
-    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.z, 30.0f, 0.1f);
+    EXPECT_NEAR(g_lastDispatchTargetEfM.x, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastDispatchTargetEfM.y, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastDispatchTargetEfM.z, 30.0f, 0.1f);
     EXPECT_NEAR(g_lastTarget.cruiseSpeedMps, 7.5f, 0.01f);
 
     // Still outside the fence on the way home: no re-injection.
@@ -1263,14 +1355,18 @@ TEST_F(FlightPlanNavSafetyTest, GeofenceBreachWithRthActionInjectsReturnPlan)
     flightPlanNavUpdate(g_stubMicros);
     EXPECT_EQ(g_setTargetCalls, callsBeforeBreach + 1);
 
-    // Home arrival dispatches the plan's LAND leg; its arrival descends there.
-    triggerReached();
+    // Reach home: the pass-through leg advances through the carrot gate and
+    // dispatches the plan's LAND leg to home; its arrival descends there.
+    GPS_distanceToHome = 0;
+    g_stubEstimate.position.v[ENU_N] = 0.0f;
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
-    triggerReached();
+    EXPECT_NEAR(g_lastDispatchTargetEfM.x, 0.0f, 0.1f);
+    EXPECT_NEAR(g_lastDispatchTargetEfM.y, 0.0f, 0.1f);
+
+    triggerReached();  // the LAND leg is a precise point target: its callback advances it
     EXPECT_EQ(flightPlanNavGetState(), FP_NAV_LANDING);
-    ASSERT_TRUE(g_lastTarget.valid);
-    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.1f);
-    EXPECT_NEAR(g_lastTarget.targetEfM.y, 0.0f, 0.1f);
 
     // No resume: the injected plan dies with disengagement.
     flightPlanNavDisengage();
@@ -1403,4 +1499,112 @@ TEST_F(FlightPlanNavSafetyTest, LandingQuietTimerResetsIfDescentResumes)
     g_stubMicros += 500'000;
     flightPlanNavUpdate(g_stubMicros); // 1.1 s — past detection time
     EXPECT_EQ(g_disarmCalls, 1);
+}
+
+// --- Leg-line carrot tracking and turn-angle cornering ---
+
+class FlightPlanNavCarrotTest : public FlightPlanNavTest {
+protected:
+    static constexpr float kUnitsPerMetre = 1.0e7f / 111319.49f;
+
+    void addWaypointMetres(float eastM, float northM, int32_t altCm, uint8_t type) {
+        addWaypoint((int32_t)lrintf(northM * kUnitsPerMetre),
+                    (int32_t)lrintf(eastM * kUnitsPerMetre), altCm, type);
+    }
+    void setCraftMetres(float eastM, float northM) {
+        g_stubEstimate.position.v[ENU_E] = eastM * 100.0f;
+        g_stubEstimate.position.v[ENU_N] = northM * 100.0f;
+    }
+    void step(uint32_t us = 100'000) {
+        g_stubMicros += us;
+        flightPlanNavUpdate(g_stubMicros);
+    }
+};
+
+TEST_F(FlightPlanNavCarrotTest, CarrotTracksLegLineNotCraftCrossTrack)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0 (pass-through)
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1 (last)
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();   // craft at the origin: leg0 is origin -> (0,100), due north
+    step();                  // anchor the leg and march
+
+    // Wind pushes the craft 20 m east of the leg line, halfway along.
+    setCraftMetres(20.0f, 50.0f);
+    step();
+
+    // The carrot rides the leg line (E = 0), not the craft (E = 20), so the
+    // position controller is commanded to pull back onto the drawn line. It sits
+    // near the craft's along-track progress (N ~ 50), not stuck at the origin or
+    // the far waypoint.
+    ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_NEAR(g_lastTarget.targetEfM.x, 0.0f, 0.5f);
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, 50.0f, 5.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, StraightThroughAdvancesAtWideGate)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0
+    addWaypointMetres(0.0f, 200.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1: straight on (last)
+    setCraftMetres(0.0f, 89.0f);   // 11 m short of wp0
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    // Straight-through: corner speed = cruise, gate radius clamps to 12 m, so an
+    // 11 m approach already crosses the gate and advances.
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, SharpTurnAdvancesOnlyCloseIn)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0
+    addWaypointMetres(0.0f, 50.0f, 15000, WAYPOINT_TYPE_FLYOVER);  // wp1: 180 deg reversal (last)
+    setCraftMetres(0.0f, 89.0f);   // 11 m short of wp0
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    // Hairpin: corner speed drops to the floor, gate radius shrinks to 5 m, so an
+    // 11 m approach is not yet a crossing — the leg keeps tracking.
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
+}
+
+TEST_F(FlightPlanNavCarrotTest, OverrunFallbackAdvancesPastWaypoint)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp0
+    addWaypointMetres(0.0f, 50.0f, 15000, WAYPOINT_TYPE_FLYOVER);  // wp1: hairpin, tight 5 m gate
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();   // craft at origin: anchors leg0 origin -> (0,100)
+    step();
+
+    // The craft shoots past wp0 along-track (to N = 108) inside the lateral
+    // corridor without ever entering the 5 m hairpin bubble: the overrun
+    // fallback still counts the gate.
+    setCraftMetres(0.5f, 108.0f);
+    step();
+
+    EXPECT_EQ(flightPlanNavGetCurrentIndex(), 1);
+}
+
+TEST_F(FlightPlanNavCarrotTest, PreTurnBlendsNoseTowardNextLeg)
+{
+    addWaypointMetres(0.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER);   // wp0: turn here
+    addWaypointMetres(100.0f, 100.0f, 15000, WAYPOINT_TYPE_FLYOVER); // wp1: 90 deg east (last)
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();   // anchor leg0 (origin -> (0,100), heading north)
+    EXPECT_FALSE(g_navHeadingOverrideValid);   // far from the gate: the yaw mode governs
+
+    // Approach the gate into the pre-turn zone (7 m of leg left past the gate).
+    setCraftMetres(0.0f, 88.0f);
+    step();
+
+    ASSERT_EQ(flightPlanNavGetCurrentIndex(), 0);
+    EXPECT_TRUE(g_navHeadingOverrideValid);
+    // Nose commanded between this leg (0 deg, north) and the next (90 deg, east).
+    EXPECT_GT(g_navHeadingOverrideDeg, 0.0f);
+    EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
 }
