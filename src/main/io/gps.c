@@ -2475,6 +2475,23 @@ static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t time
     gpsUnixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
 }
 
+#ifdef USE_RTC_TIME
+// Set system clock once when GPS time is available
+static void setRtcDateTimeFromGps(void) {
+    if (!rtcHasTime() && gpsSol.dateTime.valid) {
+        dateTime_t dt;
+        dt.year = gpsSol.dateTime.year;
+        dt.month = gpsSol.dateTime.month;
+        dt.day = gpsSol.dateTime.day;
+        dt.hours = gpsSol.dateTime.hour;
+        dt.minutes = gpsSol.dateTime.min;
+        dt.seconds = gpsSol.dateTime.sec;
+        dt.millis = gpsSol.dateTime.millis;
+        rtcSetDateTime(&dt);
+    }
+}
+#endif
+
 static bool UBLOX_parse_gps(void)
 {
 //    lastUbxRcvMsgClass = ubxRcvMsgClass;
@@ -2519,6 +2536,9 @@ static bool UBLOX_parse_gps(void)
         ubxHaveNewSpeed = true;
         // Store GPS date/time for telemetry, applying nano correction per u-blox spec.
         gpsDateTimeFromNavPvt(&gpsSol.dateTime, &ubxRcvMsgPayload.ubxNavPvt);
+#ifdef USE_RTC_TIME
+        setRtcDateTimeFromGps();
+#endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
 #ifdef USE_DASHBOARD
@@ -2606,11 +2626,7 @@ static bool UBLOX_parse_gps(void)
                                   ubxRcvMsgPayload.ubxNavSol.time_nsec);
         }
 #ifdef USE_RTC_TIME
-        // Set system clock once when GPS time is available
-        if (!rtcHasTime() && gpsSol.dateTime.valid) {
-            rtcTime_t temp_time = (((int64_t) ubxRcvMsgPayload.ubxNavSol.week) * 7 * 24 * 60 * 60 * 1000) + ubxRcvMsgPayload.ubxNavSol.time + (ubxRcvMsgPayload.ubxNavSol.time_nsec / 1000000) + 315964800000LL - 18000;
-            rtcSet(&temp_time);
-        }
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_VELNED):
@@ -2625,18 +2641,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.velned.velD = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_down; // cm/s
         ubxHaveNewSpeed = true;
 #ifdef USE_RTC_TIME
-        // Set system clock once when GPS time is available
-        if (!rtcHasTime() && gpsSol.dateTime.valid) {
-            dateTime_t dt;
-            dt.year = gpsSol.dateTime.year;
-            dt.month = gpsSol.dateTime.month;
-            dt.day = gpsSol.dateTime.day;
-            dt.hours = gpsSol.dateTime.hour;
-            dt.minutes = gpsSol.dateTime.min;
-            dt.seconds = gpsSol.dateTime.sec;
-            dt.millis = gpsSol.dateTime.millis;
-            rtcSetDateTime(&dt);
-        }
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SVINFO):
