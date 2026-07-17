@@ -181,8 +181,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
  *******************************************************************************/
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    VCP_DataTx(ptrBuffer, sendLength);
-    return sendLength;
+    return VCP_DataTx(ptrBuffer, sendLength);
 }
 
 uint32_t CDC_Send_FreeBytes(void)
@@ -195,7 +194,8 @@ uint32_t CDC_Send_FreeBytes(void)
  *         CDC data to be sent to the Host (app) over USB
  * @param  Buf: Buffer of data to be sent
  * @param  Len: Number of data to be sent (in bytes)
- * @retval Result of the operation: USBD_OK if all operations are OK else VCP_FAIL
+ * @retval Number of bytes actually queued for transmission; less than Len on
+ *         backpressure timeout.
  */
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
 {
@@ -203,20 +203,31 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         make sure that any paragraph end frame is not in play
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
-    */
-    while (USB_Tx_State != 0);
 
-    for (uint32_t i = 0; i < Len; i++) {
-        // Stall if the ring buffer is full
+        Bounded to 2ms: host may not be polling the IN endpoint yet (e.g. at connect).
+    */
+    uint32_t deadline = millis() + 2;
+    while (USB_Tx_State != 0) {
+        if (millis() >= deadline) {
+            return 0;
+        }
+    }
+
+    uint32_t i;
+    for (i = 0; i < Len; i++) {
+        // Bounded to 2ms per byte; return partial count on timeout.
+        deadline = millis() + 2;
         while (((APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE) == APP_Rx_ptr_out) {
-            delay(1);
+            if (millis() >= deadline) {
+                return i;
+            }
         }
 
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
     }
 
-    return USBD_OK;
+    return i;
 }
 
 /*******************************************************************************

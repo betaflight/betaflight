@@ -6242,9 +6242,7 @@ static void cliTasks(const char *cmdName, char *cmdline)
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             const int maxLoad = taskInfo.maxLoad10thPct;
             const int averageLoad = taskInfo.movingAverageLoad10thPct;
-            if (taskId != TASK_SERIAL) {
-                averageLoadSum += averageLoad;
-            }
+            averageLoadSum += averageLoad;
             if (systemConfig()->task_statistics) {
 #if defined(USE_LATE_TASK_STATISTICS)
                 cliPrintLinef("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d %6d %6d %7d",
@@ -6274,7 +6272,7 @@ static void cliTasks(const char *cmdName, char *cmdline)
         uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
         cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
                       checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
-        cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
+        cliPrintLinef("Total %52d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
 

@@ -49,6 +49,8 @@
 #include "drivers/nvic.h"
 #include "at32f435_437_tmr.h"
 
+#include "scheduler/scheduler.h"
+
 #define USB_TIMEOUT  50
 
 static vcpPort_t vcpPort = {0};
@@ -244,9 +246,14 @@ uint32_t CDC_Send_FreeBytes(void)
 
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    for (uint32_t i = 0; i < sendLength; i++) {
+    uint32_t i;
+    for (i = 0; i < sendLength; i++) {
+        // Bounded to 2ms per byte; return partial count on timeout.
+        uint32_t deadline = millis() + 2;
         while (CDC_Send_FreeBytes() == 0) {
-            delay(1);
+            if (millis() >= deadline) {
+                return i;
+            }
         }
         ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) {
             UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
@@ -404,6 +411,11 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
         count -= txed;
         p += txed;
 
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
+
         if (millis() - start > USB_TIMEOUT) {
             break;
         }
@@ -429,6 +441,11 @@ static bool usbVcpFlush(vcpPort_t *port)
         uint32_t txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
+
+        if (count > 0) {
+            // USB backpressure wait is not task execution time.
+            schedulerIgnoreTaskExecTime();
+        }
 
         if (millis() - start > USB_TIMEOUT) {
             break;

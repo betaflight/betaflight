@@ -359,10 +359,14 @@ static USBD_STA_T USBD_CDC_ItfSOF(void)
  *******************************************************************************/
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    for (uint32_t i = 0; i < sendLength; i++) {
+    uint32_t i;
+    for (i = 0; i < sendLength; i++) {
+        // Bounded to 2ms per byte; return partial count on timeout.
+        uint32_t deadline = millis() + 2;
         while (CDC_Send_FreeBytes() == 0) {
-            // block until there is free space in the ring buffer
-            delay(1);
+            if (millis() >= deadline) {
+                return i;
+            }
         }
         ATOMIC_BLOCK(NVIC_BUILD_PRIORITY(6, 0)) { // Paranoia
             cdcTxBuffer[cdcTxBufPtrIn] = ptrBuffer[i];
