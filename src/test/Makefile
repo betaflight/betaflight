@@ -493,10 +493,10 @@ dronecan_mag_unittest_INCLUDE_DIRS := \
 		$(DRONECAN_LIBCANARD_DIR)
 
 # The hydration rule for canard.c lives with the dronecan_gnss test above;
-# order every object of this test after it too.
+# every object of this test depends on it.
 $(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o \
 $(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
-$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: | $(DRONECAN_LIBCANARD_DIR)/canard.c
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
 
 
 .PHONY: check-pg-ids
