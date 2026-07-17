@@ -259,7 +259,9 @@ void dronecanInit(void)
     dronecanNodeInit();
     // Install the GNSS Fix2 subscriber so a DroneCAN GPS module's broadcasts
     // land in our cache as soon as the transport is live.
+#ifdef USE_GPS
     dronecanGnssInit();
+#endif
 
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
 

@@ -1346,6 +1346,20 @@ static void updateDronecanGPS(void)
     gpsSol = incoming;
     gpsSol.time = gpsData.now;
 
+#ifdef USE_RTC_TIME
+    if (!rtcHasTime() && gpsSol.dateTime.valid) {
+        dateTime_t dt;
+        dt.year = gpsSol.dateTime.year;
+        dt.month = gpsSol.dateTime.month;
+        dt.day = gpsSol.dateTime.day;
+        dt.hours = gpsSol.dateTime.hour;
+        dt.minutes = gpsSol.dateTime.min;
+        dt.seconds = gpsSol.dateTime.sec;
+        dt.millis = gpsSol.dateTime.millis;
+        rtcSetDateTime(&dt);
+    }
+#endif
+
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
@@ -2028,6 +2042,48 @@ static bool gpsNewFrameNMEA(char c)
 }
 #endif // USE_GPS_NMEA
 
+// Days from start of year for each month (non-leap year first row, leap year second row)
+static const uint16_t gpsMonthDays[2][12] = {
+    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }, // Non-leap year
+    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }  // Leap year
+};
+
+// Convert Unix seconds and milliseconds to gpsDateTime_t
+void gpsUnixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
+{
+    dt->sec = unixSeconds % 60;
+    unixSeconds /= 60;
+    dt->min = unixSeconds % 60;
+    unixSeconds /= 60;
+    dt->hour = unixSeconds % 24;
+    int32_t days = unixSeconds / 24;
+
+    // Calculate year and day of year from 1970
+    int year = 1970;
+    while (true) {
+        int daysInYear = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 366 : 365;
+        if (days < daysInYear) {
+            break;
+        }
+        days -= daysInYear;
+        year++;
+    }
+    dt->year = year;
+
+    int isLeap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 1 : 0;
+
+    int month;
+    for (month = 11; month > 0; month--) {
+        if (days >= gpsMonthDays[isLeap][month]) {
+            break;
+        }
+    }
+    dt->month = month + 1;
+    dt->day = days - gpsMonthDays[isLeap][month] + 1;
+
+    dt->millis = millis;
+}
+
 #ifdef USE_GPS_UBLOX
 // UBX support
 typedef struct ubxNavPosllh_s {
@@ -2260,48 +2316,6 @@ static uint16_t ubxFrameParsePayloadCounter;
 // Current GPS-UTC leap seconds offset (as of 2017, 18 leap seconds)
 #define GPS_LEAP_SECONDS 18
 
-// Days from start of year for each month (non-leap year first row, leap year second row)
-static const uint16_t gpsMonthDays[2][12] = {
-    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }, // Non-leap year
-    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }  // Leap year
-};
-
-// Convert Unix seconds and milliseconds to gpsDateTime_t
-static void unixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
-{
-    dt->sec = unixSeconds % 60;
-    unixSeconds /= 60;
-    dt->min = unixSeconds % 60;
-    unixSeconds /= 60;
-    dt->hour = unixSeconds % 24;
-    int32_t days = unixSeconds / 24;
-
-    // Calculate year and day of year from 1970
-    int year = 1970;
-    while (true) {
-        int daysInYear = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 366 : 365;
-        if (days < daysInYear) {
-            break;
-        }
-        days -= daysInYear;
-        year++;
-    }
-    dt->year = year;
-
-    int isLeap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 1 : 0;
-
-    int month;
-    for (month = 11; month > 0; month--) {
-        if (days >= gpsMonthDays[isLeap][month]) {
-            break;
-        }
-    }
-    dt->month = month + 1;
-    dt->day = days - gpsMonthDays[isLeap][month] + 1;
-
-    dt->millis = millis;
-}
-
 // Convert date/time to Unix seconds (UTC)
 static int64_t dateTimeToUnixSeconds(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec)
 {
@@ -2458,7 +2472,7 @@ static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t time
     }
 
     int64_t unixSeconds = gpsSeconds + GPS_EPOCH_OFFSET_SECONDS - GPS_LEAP_SECONDS;
-    unixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
+    gpsUnixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
 }
 
 static bool UBLOX_parse_gps(void)
