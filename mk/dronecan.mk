@@ -18,6 +18,8 @@ MCU_COMMON_SRC += \
             io/dronecan/dronecan_gnss.c \
             io/dronecan/dronecan_mag.c \
             io/dronecan/dronecan_node.c \
+            io/dronecan/dronecan_esc.c \
+            io/dronecan/dronecan_dna.c \
             dronecan/libcanard/canard.c
 
 SIZE_OPTIMISED_SRC += \

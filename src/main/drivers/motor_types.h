@@ -32,6 +32,7 @@ typedef enum {
     MOTOR_PROTOCOL_FAMILY_UNKNOWN = 0,
     MOTOR_PROTOCOL_FAMILY_PWM,
     MOTOR_PROTOCOL_FAMILY_DSHOT,
+    MOTOR_PROTOCOL_FAMILY_CAN,
 } motorProtocolFamily_e;
 
 typedef enum {
@@ -46,6 +47,9 @@ typedef enum {
 /*  MOTOR_PROTOCOL_DSHOT1200, removed */
     MOTOR_PROTOCOL_PROSHOT1000,
     MOTOR_PROTOCOL_DISABLED,
+    // Appended after DISABLED so existing stored motor_pwm_protocol values keep
+    // their meaning across a config upgrade.
+    MOTOR_PROTOCOL_DRONECAN,
     MOTOR_PROTOCOL_MAX
 } motorProtocolTypes_e;
 

@@ -34,11 +34,21 @@
 #include "common/utils.h"
 
 #include "drivers/can/can.h"
+#include "drivers/motor.h"
 #include "drivers/time.h"
+
+#include "scheduler/scheduler.h"
 
 #include "io/dronecan/dronecan.h"
 
 #include "pg/dronecan.h"
+
+#if ENABLE_DRONECAN_ESC
+#include "io/dronecan/dronecan_esc.h"
+#endif
+#if ENABLE_DRONECAN_DNA
+#include "io/dronecan/dronecan_dna.h"
+#endif
 
 // Forward declarations; implemented in dronecan_node.c / dronecan_gnss.c.
 void dronecanNodeInit(void);
@@ -271,7 +281,27 @@ void dronecanInit(void)
     dronecanMagInit();
 #endif
 
+#if ENABLE_DRONECAN_ESC
+    // Install the esc.Status subscriber and reset the RawCommand buffer.
+    dronecanEscInit();
+#endif
+#if ENABLE_DRONECAN_DNA
+    // Bring up the dynamic node-ID allocator (no-op if dna_enabled is clear).
+    dronecanDnaInit();
+#endif
+
     canRegisterRxCallback(dronecanDevice, dronecanCanRxAdapter);
+
+#if ENABLE_DRONECAN_ESC
+    // RawCommand is emitted from the PID loop (see dronecan_esc.c) and every
+    // emission drains the TX queue, so the task only services RX telemetry and
+    // housekeeping. 100 Hz keeps the 32-slot RX ring ahead of worst-case
+    // esc.Status/GNSS bursts; tracking esc_rate_hz here would just duplicate
+    // the PID-loop flush at up to 500 Hz.
+    if (isMotorProtocolDronecan()) {
+        rescheduleTask(TASK_DRONECAN, TASK_PERIOD_HZ(100));
+    }
+#endif
 
     dronecanStartUs = micros();
     dronecanLastSecondUs = dronecanStartUs;
@@ -290,6 +320,19 @@ void dronecanUpdate(timeUs_t currentTimeUs)
     }
 
     dronecanDrainRxRing(currentTimeUs);
+
+#if ENABLE_DRONECAN_ESC
+    // Broadcast esc.RawCommand (when commanding ESCs) and age stale telemetry.
+    // Runs every tick — this is the high-rate path the task is rescheduled for.
+    dronecanEscUpdate(currentTimeUs);
+#endif
+
+#if ENABLE_DRONECAN_DNA
+    // Drop dynamic-allocation sessions that have stalled mid-handshake. Runs
+    // every tick so expiry tracks the 500 ms follow-up timeout, not the 1 Hz
+    // boundary below.
+    dronecanDnaExpireSessions(currentTimeUs);
+#endif
 
     // 1 Hz boundary — publish NodeStatus and sweep stale RX transfers.
     if (cmpTimeUs(currentTimeUs, dronecanLastSecondUs) >= 1000000) {
@@ -313,6 +356,14 @@ bool dronecanRegisterSubscriber(const dronecanSubscriber_t *subscriber)
 CanardInstance *dronecanGetInstance(void)
 {
     return &dronecanInstance;
+}
+
+void dronecanFlushTx(void)
+{
+    if (!dronecanInitialised) {
+        return;
+    }
+    dronecanDrainTxQueue();
 }
 
 #endif // ENABLE_DRONECAN
