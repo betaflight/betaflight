@@ -229,6 +229,10 @@ static void handleAllocation(CanardInstance *ins, CanardRxTransfer *t)
 
     if (firstPart) {
         dnaAccumLen = 0;            // stage 1 — restart accumulation
+    } else if (!dnaSessionActive) {
+        // Continuation with no session in flight: a late or out-of-order frame
+        // from an abandoned handshake. Ignore it rather than resurrect state.
+        return;
     }
 
     for (uint16_t i = 0; i < idBytes && dnaAccumLen < UAVCAN_DNA_UNIQUE_ID_LEN; i++) {
@@ -252,13 +256,19 @@ static void handleAllocation(CanardInstance *ins, CanardRxTransfer *t)
         nodeId = dnaFindFreeNodeId(preferredId);
         if (nodeId == 0) {
             dnaSessionActive = false;   // nothing free to hand out
+            dnaAccumLen = 0;
             return;
         }
         dnaTableStore(dnaAccum, nodeId);
+        // Mark the grant in the live-ID mask immediately, so the ID can't be
+        // handed out twice even when the store was skipped (armed, table full)
+        // and the peer hasn't broadcast its first NodeStatus yet.
+        dnaSeenNodeIds[nodeId / 32] |= 1U << (nodeId % 32);
     }
 
     dnaRespond(nodeId, dnaAccum, UAVCAN_DNA_UNIQUE_ID_LEN);
     dnaSessionActive = false;
+    dnaAccumLen = 0;
 }
 
 //-----------------------------------------------------------------------------

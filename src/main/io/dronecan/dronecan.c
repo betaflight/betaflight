@@ -317,15 +317,18 @@ void dronecanUpdate(timeUs_t currentTimeUs)
     dronecanEscUpdate(currentTimeUs);
 #endif
 
+#if ENABLE_DRONECAN_DNA
+    // Drop dynamic-allocation sessions that have stalled mid-handshake. Runs
+    // every tick so expiry tracks the 500 ms follow-up timeout, not the 1 Hz
+    // boundary below.
+    dronecanDnaExpireSessions(currentTimeUs);
+#endif
+
     // 1 Hz boundary — publish NodeStatus and sweep stale RX transfers.
     if (cmpTimeUs(currentTimeUs, dronecanLastSecondUs) >= 1000000) {
         dronecanLastSecondUs = currentTimeUs;
         dronecanNodeUpdate(currentTimeUs);
         canardCleanupStaleTransfers(&dronecanInstance, (uint64_t)currentTimeUs);
-#if ENABLE_DRONECAN_DNA
-        // Drop dynamic-allocation sessions that have stalled mid-handshake.
-        dronecanDnaExpireSessions(currentTimeUs);
-#endif
     }
 
     dronecanDrainTxQueue();

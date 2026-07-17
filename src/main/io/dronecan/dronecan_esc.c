@@ -163,7 +163,10 @@ void dronecanEscUpdateComplete(void)
 // Last-heard timestamp per ESC index, for aging stale telemetry slots.
 static timeUs_t escStatusLastUs[MAX_SUPPORTED_MOTORS];
 
-#define ESC_STATUS_STALE_US     1000000     // 1s without a Status -> age the slot
+// Age quiet slots every 100 ms so a silent ESC crosses ESC_BATTERY_AGE_MAX
+// (10) in about a second — the same suppression timescale as the serial
+// ESC-sensor path. A healthy Status stream resets the age on every frame.
+#define ESC_STATUS_AGE_INTERVAL_US  100000
 #define KELVIN_TO_CELSIUS       273.15f
 
 static void handleEscStatus(CanardInstance *ins, CanardRxTransfer *t)
@@ -254,7 +257,7 @@ void dronecanEscUpdate(timeUs_t currentTimeUs)
 #if defined(USE_ESC_SENSOR)
     for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (escStatusLastUs[i] != 0
-                && cmpTimeUs(currentTimeUs, escStatusLastUs[i]) >= ESC_STATUS_STALE_US) {
+                && cmpTimeUs(currentTimeUs, escStatusLastUs[i]) >= ESC_STATUS_AGE_INTERVAL_US) {
             escSensorExternalAge(i);
             escStatusLastUs[i] = currentTimeUs;
         }
