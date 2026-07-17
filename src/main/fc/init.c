@@ -99,6 +99,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/gps_rescue.h"
+#include "flight/nav_hud.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 #include "flight/position.h"
@@ -747,6 +748,9 @@ void initPhase3(void)
 #ifdef USE_GPS_LAP_TIMER
         gpsLapTimerInit();
 #endif // USE_GPS_LAP_TIMER
+#ifdef USE_OSD_NAV_HUD
+        navHudInit();
+#endif // USE_OSD_NAV_HUD
     }
 #endif
 

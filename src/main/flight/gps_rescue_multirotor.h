@@ -58,4 +58,37 @@ bool gpsRescueIsDisabled(void);
 bool gpsRescueDisableMag(void);
 float gpsRescueGetImuYawCogGain(void);
 
+typedef enum {
+    RESCUE_IDLE,
+    RESCUE_INITIALIZE,
+    RESCUE_ATTAIN_ALT,
+    RESCUE_ROTATE,
+    RESCUE_FLY_HOME,
+    RESCUE_DESCENT,
+    RESCUE_LANDING,
+    RESCUE_DO_NOTHING,
+    RESCUE_ABORT
+} rescuePhase_e;
+
+typedef enum {
+    RESCUE_HEALTHY,
+    RESCUE_FLYAWAY,
+    RESCUE_GPSLOST,
+    RESCUE_LOWSATS,
+    RESCUE_CRASHFLIP_DETECTED,
+    RESCUE_STALLED,
+    RESCUE_TOO_CLOSE,
+    RESCUE_NO_HOME_POINT
+} rescueFailureState_e;
+
+// read-only accessors for status displays (e.g. the OSD navigation HUD)
+rescuePhase_e gpsRescueGetPhase(void);
+rescueFailureState_e gpsRescueGetFailure(void);
+float gpsRescueGetTargetAltitudeCm(void);
+float gpsRescueGetReturnAltitudeCm(void);
+float gpsRescueGetTargetVelocityCmS(void);
+float gpsRescueGetDescentDistanceCm(void);
+
+
+
 #endif // !USE_WING

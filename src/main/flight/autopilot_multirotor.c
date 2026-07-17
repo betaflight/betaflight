@@ -104,6 +104,11 @@ static void resetEFAxisParams(efPidAxis_t *efAxis, const float vaGain)
     resetEFAxisFilters(efAxis, vaGain);
     efAxis->isStopping = true; // Enter starting (deceleration) 'phase'
     efAxis->integral = 0.0f;
+    // the first D/A computation differentiates against these: stale values
+    // from a previous engagement spike D into its 35-degree clamp and lurch
+    // the craft the moment the hold engages
+    efAxis->previousDistance = 0.0f;
+    efAxis->previousVelocity = 0.0f;
 }
 
 static void resetUpsampleFilters(void)
@@ -125,6 +130,9 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
     // from pos_hold.c (or other client) when initiating position hold at target location
     ap.targetLocation = *initialTargetLocation;
     ap.sticksActive = false;
+    // until the first GPS computation, the upsampler feeds from pidSumBF:
+    // clear it so a fresh engagement starts wings-level, not at a stale lean
+    ap.pidSumBF = (vector2_t){ .x = 0.0f, .y = 0.0f };
     // set sanity check distance according to groundspeed at start, minimum of 10m
     ap.sanityCheckDistance = sanityCheckDistance(gpsSol.groundSpeed);
     for (unsigned i = 0; i < ARRAYLEN(ap.efAxis); i++) {
@@ -134,6 +142,19 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
     const float taskInterval = 1.0f / taskRateHz;
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
     resetUpsampleFilters(); // clear accumlator from previous iterations
+}
+
+// move the position target without resetting controller state; used by the
+// waypoint mission to slide a carrot target ahead of the craft. A moving
+// target can legitimately sit further away than the at-rest sanity distance,
+// so the caller widens it as needed.
+void posControlSetMissionTarget(const gpsLocation_t *location, float sanityCheckDistanceCm)
+{
+    ap.targetLocation.lat = location->lat;
+    ap.targetLocation.lon = location->lon;
+    if (ap.sanityCheckDistance < sanityCheckDistanceCm) {
+        ap.sanityCheckDistance = sanityCheckDistanceCm;
+    }
 }
 
 void autopilotInit(void)
@@ -220,6 +241,19 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 void setSticksActiveStatus(bool areSticksActive)
 {
     ap.sticksActive = areSticksActive;
+}
+
+// While position control is not running (sanity failure or sensor loss),
+// positionControl() no longer writes autopilotAngle - without this the last
+// commanded lean angle would be held indefinitely and the craft would fly
+// sideways until the pilot notices. Feeding zero through the same upsampling
+// filter decays the angles smoothly to wings-level instead.
+void positionControlRelax(void)
+{
+    ap.pidSumBF = (vector2_t){ .x = 0.0f, .y = 0.0f };
+    for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
+        autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], 0.0f);
+    }
 }
 
 static void setTargetLocationByAxis(const gpsLocation_t* newTargetLocation, axisEF_e efAxisIdx)
@@ -386,6 +420,19 @@ bool positionControl(void)
 bool isBelowLandingAltitude(void)
 {
     return getAltitudeCm() < 100.0f * autopilotConfig()->landingAltitudeM;
+}
+
+// Expose the position-hold / navigation target as home-relative ENU cm for
+// status displays such as the navigation HUD.
+bool autopilotGetTargetPositionEfCm(vector2_t *targetEfCm)
+{
+    if (!FLIGHT_MODE(POS_HOLD_MODE | GPS_RESCUE_MODE) || !STATE(GPS_FIX_HOME)) {
+        targetEfCm->x = 0.0f;
+        targetEfCm->y = 0.0f;
+        return false;
+    }
+    GPS_distance2d(&GPS_home_llh, &ap.targetLocation, targetEfCm);
+    return true;
 }
 
 float getAutopilotThrottle(void)

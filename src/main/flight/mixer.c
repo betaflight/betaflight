@@ -51,6 +51,7 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer_init.h"
+#include "flight/nav_mission.h"
 #include "flight/mixer_tricopter.h"
 #include "flight/pid.h"
 #include "flight/rpm_filter.h"
@@ -807,7 +808,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
 
 #ifdef USE_ALTITUDE_HOLD
     // Throttle value to be used during altitude hold mode (and failsafe landing mode)
-    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE) || navMissionIsControlling()) {
         throttle = getAutopilotThrottle();
     }
 #endif
@@ -844,6 +845,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         && !mixerRuntime.feature3dEnabled
         && !airmodeEnabled
         && !FLIGHT_MODE(GPS_RESCUE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE)   // disable motor_stop while GPS Rescue / Alt Hold / Pos Hold is active
+        && !navMissionIsControlling()
         && (rcData[THROTTLE] < rxConfig()->mincheck)) {
         applyMotorStop();
     } else {

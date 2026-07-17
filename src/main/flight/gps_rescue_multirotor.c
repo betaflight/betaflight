@@ -52,28 +52,7 @@
 
 #include "gps_rescue.h"
 
-typedef enum {
-    RESCUE_IDLE,
-    RESCUE_INITIALIZE,
-    RESCUE_ATTAIN_ALT,
-    RESCUE_ROTATE,
-    RESCUE_FLY_HOME,
-    RESCUE_DESCENT,
-    RESCUE_LANDING,
-    RESCUE_DO_NOTHING,
-    RESCUE_ABORT
-} rescuePhase_e;
-
-typedef enum {
-    RESCUE_HEALTHY,
-    RESCUE_FLYAWAY,
-    RESCUE_GPSLOST,
-    RESCUE_LOWSATS,
-    RESCUE_CRASHFLIP_DETECTED,
-    RESCUE_STALLED,
-    RESCUE_TOO_CLOSE,
-    RESCUE_NO_HOME_POINT
-} rescueFailureState_e;
+// rescuePhase_e and rescueFailureState_e are defined in gps_rescue_multirotor.h
 
 typedef struct {
     float maxAltitudeCm;
@@ -888,5 +867,36 @@ bool gpsRescueDisableMag(void)
 }
 #endif
 #endif
+
+
+rescuePhase_e gpsRescueGetPhase(void)
+{
+    return rescueState.phase;
+}
+
+rescueFailureState_e gpsRescueGetFailure(void)
+{
+    return rescueState.failure;
+}
+
+float gpsRescueGetTargetAltitudeCm(void)
+{
+    return rescueState.intent.targetAltitudeCm;
+}
+
+float gpsRescueGetReturnAltitudeCm(void)
+{
+    return rescueState.intent.returnAltitudeCm;
+}
+
+float gpsRescueGetTargetVelocityCmS(void)
+{
+    return rescueState.intent.targetVelocityCmS;
+}
+
+float gpsRescueGetDescentDistanceCm(void)
+{
+    return rescueState.intent.descentDistanceM * 100.0f;
+}
 
 #endif // !USE_WING

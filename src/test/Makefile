@@ -214,6 +214,43 @@ motor_output_unittest_SRC := \
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
 
+
+
+nav_mission_sim_unittest_SRC := \
+		$(USER_DIR)/flight/nav_mission.c \
+		$(USER_DIR)/flight/nav_hud.c \
+		$(USER_DIR)/flight/pos_hold_multirotor.c \
+		$(USER_DIR)/flight/alt_hold_multirotor.c \
+		$(USER_DIR)/flight/autopilot_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/pg/rx.c
+
+nav_mission_sim_unittest_DEFINES := \
+		USE_GPS= \
+		USE_POSITION_HOLD= \
+		USE_ALTITUDE_HOLD= \
+		USE_OSD_NAV_HUD= \
+		USE_NAV_MISSION=
+
+nav_hud_unittest_SRC := \
+		$(USER_DIR)/flight/nav_hud.c \
+		$(USER_DIR)/flight/nav_mission.c \
+		$(USER_DIR)/osd/osd_nav_hud.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c
+
+nav_hud_unittest_DEFINES := \
+		USE_OSD= \
+		USE_NAV_MISSION= \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_MAG= \
+		USE_OSD_NAV_HUD=
+
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
 		$(USER_DIR)/osd/osd_elements.c \
@@ -542,7 +579,7 @@ ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
 # Please revisit versions when new clang version arrive. Supported versions: { Linux / OSX: 7 - 18 }
 CC_VERSION_MAJOR := $(firstword $(subst ., ,$(CC_VERSION)))
 CC_VERSION_CHECK_MIN := 7
-CC_VERSION_CHECK_MAX := 18
+CC_VERSION_CHECK_MAX := 21
 
 # c99-designator is fine, code is not expected to be clean C++
 COMMON_FLAGS += -Wno-c99-designator

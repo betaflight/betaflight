@@ -39,6 +39,10 @@
 #include "pg/pos_hold.h"
 #include "pos_hold.h"
 
+#ifdef USE_NAV_MISSION
+#include "flight/nav_mission.h"
+#endif
+
 typedef struct posHoldState_s {
     bool isEnabled;
     bool isControlOk;
@@ -53,6 +57,9 @@ void posHoldInit(void)
 {
     posHold.deadband = posHoldConfig()->deadband * 0.01f;
     posHold.useStickAdjustment = posHoldConfig()->deadband;
+    posHold.isEnabled = false;
+    posHold.isControlOk = true;
+    posHold.areSensorsOk = true;
 }
 
 static void posHoldCheckSticks(void)
@@ -81,7 +88,15 @@ static bool sensorsOk(void)
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+#ifdef USE_NAV_MISSION
+    // the mission owns its own engagement; it may claim the position engine
+    // without the pilot's POS HOLD switch
+    navMissionUpdate(currentTimeUs);
+    const bool missionControls = navMissionIsControlling();
+#else
+    const bool missionControls = false;
+#endif
+    if (FLIGHT_MODE(POS_HOLD_MODE) || missionControls) {
         if (!posHold.isEnabled) {
             resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
             posHold.isControlOk = true;
@@ -95,14 +110,40 @@ void updatePosHold(timeUs_t currentTimeUs) {
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
             posHoldCheckSticks();
+#ifdef USE_NAV_MISSION
+            if (missionControls) {
+                // the mission has its own (larger) stick-abort threshold; don't
+                // let trim-level deflection reset the target every cycle and
+                // fight the carrot - that starves the mission of authority
+                setSticksActiveStatus(false);
+            }
+#endif
             posHold.isControlOk = positionControl(); // false only on sanity check failure
         }
+    }
+
+    if (posHold.isEnabled && (!posHold.isControlOk || !posHold.areSensorsOk)) {
+        // positionControl() is no longer being run, so autopilotAngle would
+        // hold its last lean forever: decay it to wings-level instead
+        positionControlRelax();
     }
 }
 
 bool posHoldFailure(void) {
     // used only to display warning in OSD if requested but failing
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
+}
+
+bool posHoldControlLost(void) {
+    // ungated view of the latched sanity/sensor failure, for the mission layer
+    return posHold.isEnabled && (!posHold.isControlOk || !posHold.areSensorsOk);
+}
+
+void posHoldRetrigger(void) {
+    // drop the engine for one cycle: the next updatePosHold() re-runs the
+    // enable edge, re-anchoring position control at the current location with
+    // a fresh sanity radius and isControlOk = true
+    posHold.isEnabled = false;
 }
 
 #endif // USE_POSITION_HOLD

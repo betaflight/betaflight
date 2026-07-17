@@ -195,6 +195,11 @@ typedef enum {
     OSD_CUSTOM_MSG2,
     OSD_CUSTOM_MSG3,
     OSD_LIDAR_DIST,
+
+
+    // Navigation HUD (minimap + GPS Rescue guidance); entries are
+    // unconditional so element indices stay stable across build options
+    OSD_NAV_HUD,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

@@ -93,6 +93,7 @@
 #include "pg/mco.h"
 #include "pg/motor.h"
 #include "pg/msp.h"
+#include "pg/nav_hud.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/pilot.h"
@@ -450,6 +451,18 @@ const char * const lookupTableRescueAltitudeMode[] = {
 };
 #endif
 
+#ifdef USE_OSD_NAV_HUD
+static const char * const lookupTableNavHudMode[] = {
+    "OFF", "COMPACT", "STANDARD", "FULL"
+};
+static const char * const lookupTableNavHudOrientation[] = {
+    "NORTH_UP", "HEADING_UP"
+};
+static const char * const lookupTableNavHudCenter[] = {
+    "AUTO", "HOME", "CRAFT"
+};
+#endif
+
 #if defined(USE_VIDEO_SYSTEM)
 static const char * const lookupTableVideoSystem[] = {
     "AUTO", "PAL", "NTSC", "HD"
@@ -623,6 +636,11 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableRescueSanityType),
     LOOKUP_TABLE_ENTRY(lookupTableRescueAltitudeMode),
 #endif
+#endif
+#ifdef USE_OSD_NAV_HUD
+    LOOKUP_TABLE_ENTRY(lookupTableNavHudMode),
+    LOOKUP_TABLE_ENTRY(lookupTableNavHudOrientation),
+    LOOKUP_TABLE_ENTRY(lookupTableNavHudCenter),
 #endif
 #ifdef USE_BLACKBOX
     LOOKUP_TABLE_ENTRY(lookupTableBlackboxDevice),
@@ -1186,6 +1204,29 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_GPS_LAP_TIMER_GATE_TOLERANCE, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 100 },  PG_GPS_LAP_TIMER, offsetof(gpsLapTimerConfig_t, gateToleranceM) },
 #endif // USE_GPS_LAP_TIMER
 
+#ifdef USE_OSD_NAV_HUD
+// PG_NAV_HUD_CONFIG
+    { "nav_hud_mode",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_HUD_MODE }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, mode) },
+    { "nav_hud_orientation",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_HUD_ORIENTATION }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, orientation) },
+    { "nav_hud_center",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_HUD_CENTER }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, center) },
+    { "nav_hud_auto_zoom",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, autoZoom) },
+    { "nav_hud_fixed_scale",        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 10000 }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, fixedScaleM) },
+    { "nav_hud_breadcrumbs",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, breadcrumbs) },
+    { "nav_hud_breadcrumb_count",   VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 8, 240 }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, breadcrumbCount) },
+    { "nav_hud_breadcrumb_spacing", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 5, 500 }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, breadcrumbSpacingM) },
+    { "nav_hud_projected_track",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, projectedTrack) },
+    { "nav_hud_direct_home_line",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, homeLine) },
+    { "nav_hud_rescue_route",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, rescueRoute) },
+    { "nav_hud_rescue_auto_expand", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, rescueExpand) },
+    { "nav_hud_show_eta",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, showEta) },
+    { "nav_hud_show_cross_track",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, showXtrack) },
+    { "nav_hud_show_targets",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, showTargets) },
+    { "nav_hud_show_gps_health",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, showGpsHealth) },
+    { "nav_hud_show_speed",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, showSpeed) },
+    { "nav_hud_range_ring",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, rangeRing) },
+    { "nav_hud_mission_3d",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_HUD_CONFIG, offsetof(navHudConfig_t, mission3D) },
+#endif // USE_OSD_NAV_HUD
+
 #endif // USE_GPS
 
     { PARAM_NAME_DEADBAND,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 32 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, deadband) },
@@ -1714,6 +1755,9 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RANGEFINDER
     { "osd_lidar_dist_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_LIDAR_DIST]) },
 #endif //USE_RANGEFINDER
+#ifdef USE_OSD_NAV_HUD
+    { "osd_nav_hud_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_NAV_HUD]) },
+#endif // USE_OSD_NAV_HUD
 #endif // end of #ifdef USE_OSD
 
 // PG_SYSTEM_CONFIG

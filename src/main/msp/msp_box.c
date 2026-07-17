@@ -345,6 +345,16 @@ void initActiveBoxIds(void)
     }
 #endif
 
+#ifdef USE_OSD_NAV_HUD
+    // the nav HUD waypoint recorder observes USER2 (rising edge drops a
+    // waypoint), so advertise it even without a PINIO mapping
+    BME(BOXUSER2);
+#endif
+#ifdef USE_NAV_MISSION
+    // the waypoint mission sequencer observes USER3 (fly the mission)
+    BME(BOXUSER3);
+#endif
+
 #if defined(USE_PID_AUDIO)
     BME(BOXPIDAUDIO);
 #endif

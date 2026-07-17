@@ -17,6 +17,12 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "common/axis.h"
+#include "common/vector.h"
+
 #ifndef USE_WING
 
 #include "io/gps.h"
@@ -27,6 +33,8 @@ void autopilotInit(void);
 void resetAltitudeControl(void);
 void setSticksActiveStatus(bool areSticksActive);
 void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned taskRateHz);
+void posControlSetMissionTarget(const gpsLocation_t *location, float sanityCheckDistanceCm);
+void positionControlRelax(void); // decay autopilotAngle to wings-level while position control is not running
 void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
@@ -34,5 +42,6 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);
 bool isAutopilotInControl(void);
+bool autopilotGetTargetPositionEfCm(vector2_t *targetEfCm); // read-only hold anchor for status displays
 
 #endif // !USE_WING

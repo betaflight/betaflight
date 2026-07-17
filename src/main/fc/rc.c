@@ -43,6 +43,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
+#include "flight/nav_mission.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 
@@ -643,10 +644,14 @@ FAST_CODE void processRcCommand(void)
             float angleRate;
 
 #ifdef USE_GPS_RESCUE
-            if ((axis == FD_YAW) && FLIGHT_MODE(GPS_RESCUE_MODE)) {
-                // If GPS Rescue is active then override the setpointRate used in the
-                // pid controller with the value calculated from the desired heading logic.
+            if ((axis == FD_YAW) && (FLIGHT_MODE(GPS_RESCUE_MODE) || navMissionIsControlling())) {
+                // If GPS Rescue (or a waypoint mission) is active then override the
+                // setpointRate with the value from the desired heading logic.
+#ifdef USE_NAV_MISSION
+                angleRate = FLIGHT_MODE(GPS_RESCUE_MODE) ? gpsRescueGetYawRate() : navMissionGetYawRateDps();
+#else
                 angleRate = gpsRescueGetYawRate();
+#endif
                 // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;

@@ -585,6 +585,20 @@
 #undef USE_CMS_GPS_RESCUE_MENU
 #endif
 
+// Navigation HUD (OSD minimap + GPS Rescue guidance). Generic feature for any
+// GPS-capable target with an OSD; defined here (not common_pre.h) so targets
+// that add USE_GPS in target.h (e.g. SITL) are handled consistently.
+#if defined(USE_GPS) && defined(USE_OSD) && !defined(USE_OSD_NAV_HUD)
+#define USE_OSD_NAV_HUD
+#endif
+
+#if defined(USE_OSD_NAV_HUD) && defined(USE_POSITION_HOLD) && !defined(USE_WING)
+#define USE_NAV_MISSION
+#endif
+#if !defined(USE_GPS) || !defined(USE_OSD)
+#undef USE_OSD_NAV_HUD
+#endif
+
 #ifndef USE_BEEPER
 #undef BEEPER_PIN
 #undef BEEPER_PWM_HZ

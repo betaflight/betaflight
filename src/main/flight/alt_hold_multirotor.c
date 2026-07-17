@@ -37,6 +37,8 @@
 #include "rx/rx.h"
 #include "pg/autopilot.h"
 
+#include "flight/nav_mission.h"
+
 #include "alt_hold.h"
 
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
@@ -70,9 +72,9 @@ void altHoldInit(void)
 
 static void altHoldProcessTransitions(void) {
 
-    if (FLIGHT_MODE(ALT_HOLD_MODE)) {
+    if (FLIGHT_MODE(ALT_HOLD_MODE) || navMissionIsControlling()) {
         if (!altHold.isActive) {
-            altHoldReset();
+            altHoldReset();   // captures the current altitude as the hold target
             altHold.isActive = true;
         }
     } else {
@@ -135,6 +137,15 @@ static void altHoldUpdateTargetAltitude(void)
 
 static void altHoldUpdate(void)
 {
+#ifdef USE_NAV_MISSION
+    if (navMissionAltitudeActive()) {
+        // a 3D mission owns the altitude target (ramped at rescue's climb and
+        // descend rates); roll/pitch stick abort remains the pilot override
+        altHold.targetAltitudeCm = navMissionGetTargetAltitudeCm();
+        altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, navMissionGetTargetClimbRateCmS());
+        return;
+    }
+#endif
     // check if the user has changed the target altitude using sticks
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();

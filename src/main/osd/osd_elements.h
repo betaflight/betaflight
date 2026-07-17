@@ -54,6 +54,7 @@ void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
 void osdFormatTimer(char *buff, bool showSymbol, bool usePrecision, int timerIndex);
 float osdGetMetersToSelectedUnit(int32_t meters);
 char osdGetMetersToSelectedUnitSymbol(void);
+uint8_t osdGetDirectionSymbolFromHeading(int heading); // heading in degrees, 0 = up, clockwise
 int32_t osdGetSpeedToSelectedUnit(int32_t value);
 char osdGetSpeedToSelectedUnitSymbol(void);
 char osdGetTemperatureSymbolForSelectedUnit(void);

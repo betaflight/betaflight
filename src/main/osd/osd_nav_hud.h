@@ -17,23 +17,13 @@
 
 #pragma once
 
-#ifndef USE_WING
+#include "osd/osd_elements.h"
 
-// #include "pg/pos_hold.h"
+#ifdef USE_OSD_NAV_HUD
 
-#ifdef USE_POSITION_HOLD
-#include "common/time.h"
-#include "io/gps.h"
+void osdElementNavHud(osdElementParms_t *element);
+#ifdef UNIT_TEST
+void osdNavHudResetRenderStateForTest(void);
+#endif
 
-#define POSHOLD_TASK_RATE_HZ 100 // hz
-
-void posHoldInit(void);
-void updatePosHold(timeUs_t currentTimeUs);
-
-bool posHoldFailure(void);
-bool posHoldControlLost(void); // latched sanity/sensor failure, ungated by flight mode
-void posHoldRetrigger(void);   // re-anchor position control at the current location next cycle
-
-#endif // USE_POSITION_HOLD
-
-#endif // !USE_WING
+#endif // USE_OSD_NAV_HUD

@@ -61,6 +61,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/gps_rescue.h"
+#include "flight/nav_mission.h"
 #include "flight/alt_hold.h"
 #include "flight/pos_hold.h"
 
@@ -1045,8 +1046,11 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+        // and either the alt_hold switch is activated, a waypoint mission is
+        // flying (the mission needs the full hold pipeline), a mission has
+        // FAILED (park it: self-level and hold, never coast at the last bank),
+        // or failsafe landing
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || navMissionIsControlling() || navMissionFailed())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
@@ -1066,8 +1070,13 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
+        // and either the pos_hold switch is activated, a waypoint mission is
+        // flying (this also forces ANGLE mode above), or failsafe landing.
+        // NOTE: a FAILED mission does NOT force POS_HOLD - only ANGLE+ALT_HOLD
+        // (below/above) - because position hold leans on heading, and a failure
+        // is often a heading/GPS fault; forcing it would fly sideways. Self-
+        // level + altitude hold parks it safely without depending on heading.
+        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || navMissionIsControlling())
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // but not until throttle is raised

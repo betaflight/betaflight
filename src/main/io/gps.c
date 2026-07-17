@@ -57,6 +57,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/gps_rescue.h"
+#include "flight/nav_hud.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
 
@@ -2692,6 +2693,10 @@ void onGpsNewData(void)
 #ifdef USE_GPS_LAP_TIMER
     gpsLapTimerNewGpsData();
 #endif // USE_GPS_LAP_TIMER
+
+#ifdef USE_OSD_NAV_HUD
+    navHudOnGpsNewData();
+#endif // USE_OSD_NAV_HUD
 
 }
 

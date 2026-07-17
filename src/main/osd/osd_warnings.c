@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
+#include "flight/nav_mission.h"
 #include "flight/pos_hold.h"
 
 #include "io/beeper.h"
@@ -368,6 +369,17 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #endif // USE_GPS_RESCUE
+
+#if defined(USE_POSITION_HOLD) && defined(USE_NAV_MISSION)
+    // the mission aborted itself after repeated position-control failure and
+    // decayed to wings-level: the pilot MUST take over now
+    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && navMissionFailed()) {
+        tfp_sprintf(warningText, "MISSION FAIL");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
 
 #ifdef USE_POSITION_HOLD
     if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {

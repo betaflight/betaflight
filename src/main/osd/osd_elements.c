@@ -160,6 +160,7 @@
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
+#include "osd/osd_nav_hud.h"
 #include "osd/osd_warnings.h"
 
 #include "pg/motor.h"
@@ -588,7 +589,7 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+uint8_t osdGetDirectionSymbolFromHeading(int heading)
 {
     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
@@ -2088,6 +2089,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_RANGEFINDER
     [OSD_LIDAR_DIST]              = osdElementLidarDist,
 #endif
+#ifdef USE_OSD_NAV_HUD
+    [OSD_NAV_HUD]                 = osdElementNavHud,
+#endif
 };
 
 // Define the mapping between the OSD element id and the function to draw its background (static part)
@@ -2140,6 +2144,9 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+#ifdef USE_OSD_NAV_HUD
+        osdAddActiveElement(OSD_NAV_HUD);
+#endif // USE_OSD_NAV_HUD
     }
 #endif // GPS
 
