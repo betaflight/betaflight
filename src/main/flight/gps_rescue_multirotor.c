@@ -154,7 +154,7 @@ void gpsRescueInit(void)
 
 static void rescueStart(void)
 {
-     initPositionHold(); // initialise position hold at current location
+    initPositionHold(); // initialise position hold at current location
 
     rescueState.phase = RESCUE_INITIALIZE;
 }
@@ -164,7 +164,7 @@ static void rescueStop(void)
     rescueState.phase = RESCUE_IDLE;
     pitchForwardOverride(false);
 }
-// While idle, update the altitude targets 
+// While idle, update the altitude targets
 static void updateMaxAltitude(void)
 {
     // While disarmed, force maxAltitude to zero, unless set_home_point_once is true, when maxAlt is only reset on a power cycle
@@ -368,7 +368,7 @@ static void performSanityChecks(void)
         rescueDisarmNow();
     }
 
-    const bool hardFailsafe = !isRxReceivingSignal(); 
+    const bool hardFailsafe = !isRxReceivingSignal();
 
     if (rescueState.failure == RESCUE_HEALTHY) {
         rescueState.isOK = true;
@@ -384,7 +384,7 @@ static void performSanityChecks(void)
                 return;
             }
             break;
-        default: 
+        default:
             if ((!rescueState.isAvailable) && hardFailsafe) {
                 rescueEmergDescent();
                 return;
@@ -403,7 +403,7 @@ static void performSanityChecks(void)
     if (!rescueState.sensor.gpsHealthy) {
         rescueState.failure = RESCUE_GPSLOST;
     }
-    
+
     secondsLowSats += (!STATE(GPS_FIX) || (gpsSol.numSat < GPS_MIN_SAT_COUNT)) ? 1 : -1;
     secondsLowSats = MAX(0, secondsLowSats);
     if (secondsLowSats >= 15) {
@@ -422,7 +422,7 @@ static void performSanityChecks(void)
         altitudeControlError = measuredAltitudeChange / targetAltitudeChange;
     }
 
-    const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm; 
+    const float velocityToHomeCmS = previousDistanceToHomeCm - rescueState.sensor.distanceToHomeCm;
     previousDistanceToHomeCm = rescueState.sensor.distanceToHomeCm;
 
     switch (rescueState.phase) {
@@ -446,7 +446,7 @@ static void performSanityChecks(void)
         }
         break;
 
-     case RESCUE_ROTATE:
+    case RESCUE_ROTATE:
         rescueState.intent.secondsFailing += 1;
         if (rescueState.intent.secondsFailing >= 10) {
             //almost never fails to rotate to the required angle, so this should never trigger
@@ -455,7 +455,7 @@ static void performSanityChecks(void)
             rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
             rescueState.intent.secondsFailing = 0;
         }
-         break;
+        break;
 
     case RESCUE_FLY_HOME:
         rescueState.intent.secondsFailing += (velocityToHomeCmS < 0.2f * rescueState.intent.targetVelocityCmS) ? 1 : -1;
@@ -499,9 +499,10 @@ static void initDescent(void)
         rescueState.intent.descentDistanceCm = rescueState.sensor.distanceToHomeCm;
     }
 }
+
 static void descend(void)
 {
-   if (rescueState.intent.descentDistanceCm > GPS_RESCUE_ACCEPT_RADIUS) {
+    if (rescueState.intent.descentDistanceCm > GPS_RESCUE_ACCEPT_RADIUS) {
         float attenuator = rescueState.sensor.distanceToHomeCm / rescueState.intent.descentDistanceCm;
         attenuator = constrainf(attenuator, 0.0f, 1.0f);
         rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS * attenuator;
@@ -516,7 +517,7 @@ static void descend(void)
 
 void initRescueValues(void)
 {
-   rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
+    rescueState.intent.descentDistanceCm = gpsRescueConfig()->descentDistanceM * 100.0f;
     if (rescueState.sensor.distanceToHomeCm < gpsRescueConfig()->minStartDistM * 100.0f) {
         // 7.5m high for close-range headroom
         rescueState.intent.returnAltitudeCm = fmaxf(750.0f, rescueState.sensor.currentAltitudeCm + rescueState.intent.initialClimbCm);
@@ -577,7 +578,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
     case RESCUE_IDLE:
         updateMaxAltitude();
         break;
-        
+
     case RESCUE_INITIALIZE:
         returnAltitudeLow = getAltitudeCm() < rescueState.intent.returnAltitudeCm;
         if (!STATE(GPS_FIX_HOME)) {
@@ -629,7 +630,7 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         updateYawStartupAttenuator();
         controlYaw();
         if (fabsf(rescueState.sensor.errorAngleDeg) < GPS_RESCUE_ALLOWED_YAW_RANGE) {
-            rescueState.phase = RESCUE_FLY_HOME; 
+            rescueState.phase = RESCUE_FLY_HOME;
             rescueState.intent.targetVelocityCmS = gpsRescueConfig()->groundSpeedCmS;
             rescueState.intent.secondsFailing = 0;
         }
@@ -671,10 +672,10 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
         break;
 
     case RESCUE_DO_NOTHING:
-    clearTargetStep();
-    rescueState.intent.targetAltitudeVelCmS = 0.0f;
-    rescueYawRate = 0.0f;
-    // altitude control with no change in height or heading,  position control at zero target velocity
+        clearTargetStep();
+        rescueState.intent.targetAltitudeVelCmS = 0.0f;
+        rescueYawRate = 0.0f;
+        // altitude control with no change in height or heading, position control at zero target velocity
 
         break;
 
@@ -701,6 +702,11 @@ void gpsRescueUpdate(void) // called from core.c at TASK_GPS_RESCUE_RATE_HZ
 float gpsRescueGetYawRate(void)
 {
     return rescueYawRate; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
+}
+
+float gpsRescueGetMaxAltitudeCm(void)
+{
+    return rescueState.intent.maxAltitudeCm; // running max since arming, tracked while the rescue task idles
 }
 
 bool gpsRescueIsConfigured(void)

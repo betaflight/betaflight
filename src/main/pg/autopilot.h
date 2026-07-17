@@ -63,16 +63,17 @@ typedef struct autopilotConfig_s {
     uint8_t positionI;
     uint8_t positionD;
     uint8_t positionA;
+    uint8_t positionF;
     uint8_t positionCutoff;
     uint8_t stopThreshold;       // cm/s, speed below which braking captures a position hold target
     uint8_t maxAngle;
 
-    // Velocity-based position control with drag compensation
-    uint8_t velocityControlEnable;    // 0=position→angle, 1=position→velocity→angle (default 1)
+    // Velocity-based position control with drag compensation (nav path only; pos-hold is unaffected)
+    uint8_t velocityControlEnable;    // 0=legacy pseudo-distance→angle, 1=velocity-PID→angle (default 1)
     uint8_t velocityP;                // velocity loop P gain, scaled by 10 (default 50 = 5.0)
     uint8_t velocityI;                // velocity loop I gain, scaled by 10 (default 10 = 1.0)
     uint8_t velocityD;                // velocity loop D gain, scaled by 10 (default 5 = 0.5)
-    uint16_t velocityDragCoeff;       // drag coefficient, scaled by 10000 (default 50 = 0.0050)
+    uint16_t velocityDragCoeff;       // linear drag feedforward: degrees = coeff * target cm/s, scaled by 10000 (default 50 = 0.0050, 2.5 deg at 5 m/s)
     uint16_t maxVelocity;             // cm/s, maximum velocity setpoint (default 1000 = 10 m/s)
 
     // Waypoint navigation parameters
@@ -89,7 +90,7 @@ typedef struct autopilotConfig_s {
     uint16_t minForwardVelocity;      // cm/s, minimum forward velocity: GPS course reliability (multirotor) / stall prevention (wing)
 
     // Velocity buildup (acceleration from stationary)
-    uint8_t velocityBuildupMaxPitch;  // degrees, max pitch bias for acceleration (default 8)
+    uint8_t velocityBuildupMaxPitch;  // degrees, clamp on the velocity-loop P vector, so the pitch bias while accelerating; drag FF/I/D ride on top, maxAngle bounds the total (default 8)
 
     // Turn rate and holding patterns
     uint8_t maxTurnRate;              // deg/s, maximum turn rate (default 3 for rate-1 turn, configurable 1-90)

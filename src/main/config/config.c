@@ -390,7 +390,9 @@ static void validateAndFixConfig(void)
     }
 
 #if defined(USE_ESC_SENSOR)
-    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR)) {
+    // DroneCAN ESC telemetry feeds escSensorData[] without a serial port, so
+    // only a serial-sourced sensor requires one.
+    if (!findSerialPortConfig(FUNCTION_ESC_SENSOR) && !isMotorProtocolDronecan()) {
         featureDisableImmediate(FEATURE_ESC_SENSOR);
     }
 #endif

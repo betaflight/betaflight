@@ -123,6 +123,7 @@ static const char * const ownerNames[] = {
     [OWNER_PIOUART_RX] = "PIOUART_RX",
     [OWNER_CAN_TX] = "CAN_TX",
     [OWNER_CAN_RX] = "CAN_RX",
+    [OWNER_CAN_SILENT] = "CAN_SILENT",
     // Keep in sync with resourceOwner_e.
 };
 

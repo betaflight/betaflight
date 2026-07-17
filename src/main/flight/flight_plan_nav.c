@@ -19,8 +19,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <float.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -29,10 +32,15 @@
 
 #include "common/maths.h"
 #include "common/time.h"
+#include "common/utils.h"
 #include "common/vector.h"
 
 #include "drivers/time.h"
 
+#include "fc/core.h"
+#include "fc/runtime_config.h"
+
+#include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
@@ -41,24 +49,87 @@
 
 #include "pg/autopilot.h"
 #include "pg/flight_plan.h"
+#ifdef USE_GPS_RESCUE
+#include "pg/gps_rescue.h"
+#endif
+#if ENABLE_RESCUE_PLAN
+#include "flight/gps_rescue.h"
+#include "flight/imu.h"
+#endif
 
 #define FP_MIN_CRUISE_MPS         1.0f
-#define FP_FLYBY_COMPLETION_MPS   2.0f
-#define FP_FLYOVER_COMPLETION_MPS 0.5f
+// Legs complete on acceptance-radius entry at any speed: the position
+// controller integrates distance error to hold cruise and cannot unwind it
+// fast enough to meet a near-stop speed gate at the waypoint (it would orbit
+// instead). The post-completion hold-mode braking handles stopping.
+#define FP_COMPLETION_ANY_MPS     1000.0f
 #define FP_DELAY_MIN_CRUISE_MPS   0.1f
+
+// Sanity limits while a leg is being flown. Progress must improve the best
+// distance-to-target by FP_PROGRESS_EPSILON_M within FP_STALL_TIMEOUT_US, and
+// the current distance may never exceed the best by the flyaway margin.
+// The margin scales with the leg (approach speed, and therefore legitimate
+// overshoot, grows with distance-to-target) between fixed bounds.
+// The DELAY modifier's cruise floor (0.1 m/s) still clears the stall window.
+#define FP_PROGRESS_EPSILON_M     2.0f
+#define FP_STALL_TIMEOUT_US       30000000u
+#define FP_FLYAWAY_MARGIN_MIN_M   20.0f
+#define FP_FLYAWAY_MARGIN_MAX_M   100.0f
+#define FP_FLYAWAY_LEG_FRACTION   0.25f
+
+// Approach braking: caps the nav velocity target to sqrt(2*decel*distance) so
+// legs decelerate into the waypoint instead of carrying cruise speed into the
+// acceptance radius. Deliberately gentle: the position controller tracks
+// velocity through an integrator, so the ramp must be slow enough to unwind.
+#define FP_APPROACH_DECEL_MPS2    0.3f
+
+// Landing descends toward a target far below the current position so vertical
+// arrival can never trigger; touchdown detection is what ends the descent.
+#define FP_LANDING_TARGET_DEPTH_M 200.0f
+#define FP_LANDING_MIN_RATE_MPS   0.3f
+// Fallback: start touchdown monitoring even if descent was never observed —
+// only near the ground (landing initiated at ground level). At altitude a
+// vehicle that cannot descend must keep trying, not disarm mid-air.
+#define FP_LANDING_ESTABLISH_TIMEOUT_US 5000000u
+
+// Injected runtime plans are small synthesised sequences (geofence RTH,
+// failsafe rescue); MAVLink-scale plans stay in the PG store.
+#define FP_INJECTED_PLAN_MAX 4
+
+// HOLD patterns chase a time-parametrised carrot around the hold point. The
+// angular rate cap keeps small radii flyable (full cruise on the default 2 m
+// radius would demand a 2.5 rad/s spin) and holds the rotation slow enough
+// for the position->velocity->attitude chain to phase-track: each loop adds
+// lag, and a carrot the vehicle cannot angularly follow balloons the pursuit
+// orbit far outside the ring. The position-to-velocity gain means the vehicle
+// self-paces roughly patternSpeed metres behind the carrot.
+#define FP_PATTERN_MAX_RATE_RADS  0.25f
+#define FP_PATTERN_UPDATE_US      200000u
+// Legs complete on radius entry at any speed, so the hold is entered carrying
+// cruise momentum. The pattern waits for the reached command's own braking to
+// park the vehicle first — a carrot started at cruise entry speed balloons
+// the pursuit orbit far outside the ring. The timeout bounds a windy day.
+#define FP_PATTERN_START_SPEED_MPS  1.5f
+#define FP_PATTERN_START_TIMEOUT_US 5000000u
+
+#if ENABLE_RESCUE_PLAN
+// Legacy PITCH_FORWARD gives up after 15 s of heading recovery
+#define FP_RESCUE_HEADING_TIMEOUT_US 15000000u
+#endif
 
 static struct {
     flightPlanNavState_e state;
     uint8_t currentIndex;
+    uint8_t pendingStartIndex;  // MISSION_SET_CURRENT while idle; consumed by engage
     timeUs_t holdStartUs;
     uint16_t holdDurationDs;
     bool active;
-    float zBiasM;               // estimator Z at engage, so waypoint Z shares the estimator baseline
+    float zBiasM;               // estimator-vs-GPS altitude frame offset, captured at engage
 
     // Staged modifiers — populated by drainModifiers(), consumed by the next
     // positional dispatch. altOverride is one-shot; delay arms a timer that
-    // clamps cruise during the next leg; yawRateCapDps is stored but not yet
-    // consumed (needs autopilot yaw control to land first).
+    // clamps cruise during the next leg; yawRateCapDps caps the autopilot yaw
+    // controller from that point in the plan onward.
     bool     altOverridePending;
     int32_t  altOverrideCm;
     uint8_t  altOverrideMode;       // 0=Neutral, 1=Climbing, 2=Descending; informational
@@ -66,19 +137,66 @@ static struct {
     uint16_t delayDurationDs;
     timeUs_t delayEndUs;
     float    yawRateCapDps;
+
+    flightPlanAbortReason_e abortReason;
+
+    // Injected runtime plan; while injectedCount > 0 it replaces the PG
+    // mission as the executor's waypoint source.
+    waypoint_t injected[FP_INJECTED_PLAN_MAX];
+    uint8_t injectedCount;
+
+#if ENABLE_RESCUE_PLAN
+    // Failsafe rescue plan staged before the executor engages; drained by
+    // flightPlanNavEngage() in place of the PG mission.
+    waypoint_t staged[FP_INJECTED_PLAN_MAX];
+    uint8_t stagedCount;
+    bool isRescuePlan;          // the active injected plan is a failsafe rescue
+    bool rescueHeadingHold;     // pitch-forward heading recovery in progress
+    timeUs_t rescueHeadingStartUs;
+#endif
+
+    // HOLD pattern sub-target generation
+    bool patternPending;        // waiting for the arrival braking to settle
+    bool patternActive;
+    uint8_t patternType;        // waypointPattern_e
+    vector3_t patternCentreM;   // hold point, ENU metres
+    float patternPhaseRad;
+    float patternSpeedMps;      // carrot path speed
+    float patternCruiseMps;     // chase speed cap (the leg's cruise)
+    timeUs_t patternLastUpdateUs;
+
+    // Leg progress tracking for stall/flyaway detection
+    float bestDistanceToTargetM;
+    float flyawayMarginM;
+    timeUs_t lastProgressUs;
+
+    // Landing state
+    timeUs_t landingStartUs;
+    timeUs_t touchdownQuietStartUs;
+    bool landingDescentEstablished;
 } fp;
 
 static flightPlanWaypointReachedFn reachedListener = NULL;
 
 static void onWaypointReached(void *userData);
+static void clearModifierState(void);
+
+static uint8_t activePlanCount(void)
+{
+    return (fp.injectedCount > 0) ? fp.injectedCount : flightPlanConfig()->waypointCount;
+}
+
+static const waypoint_t *activePlanWaypoint(uint8_t index)
+{
+    if (index >= activePlanCount()) {
+        return NULL;
+    }
+    return (fp.injectedCount > 0) ? &fp.injected[index] : &flightPlanConfig()->waypoints[index];
+}
 
 static const waypoint_t *currentWaypoint(void)
 {
-    const flightPlanConfig_t *plan = flightPlanConfig();
-    if (fp.currentIndex >= plan->waypointCount) {
-        return NULL;
-    }
-    return &plan->waypoints[fp.currentIndex];
+    return activePlanWaypoint(fp.currentIndex);
 }
 
 static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
@@ -101,8 +219,8 @@ static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
     out->v[ENU_E] = enuCm.v[EF_EAST] * 0.01f;
     out->v[ENU_N] = enuCm.v[EF_NORTH] * 0.01f;
     // Waypoint altitude is AMSL (GPS frame); the estimator's Z is zeroed to
-    // whichever source armed it first (baro or GPS). zBiasM is the estimator
-    // reading at engage time, which aligns the target Up with the feedback Up.
+    // whichever source armed it first (baro or GPS). zBiasM is the frame
+    // offset between the two, which aligns the target Up with the feedback Up.
     out->v[ENU_U] = (wp->altitude - origin.altCm) * 0.01f + fp.zBiasM;
     return true;
 }
@@ -130,14 +248,13 @@ static const waypoint_t *drainModifiers(void)
             fp.delayEndUs = micros() + (uint32_t)wp->duration * 100000u;
             break;
         case WAYPOINT_TYPE_YAW_RATE:
-            // Stored only. Hook point: once autopilot_multirotor.c controls
-            // yaw, call into a setter here to apply the cap.
             fp.yawRateCapDps = (float)wp->speed;
+            autopilotSetYawRateLimit(fp.yawRateCapDps);
             break;
         default:
             return wp;
         }
-        if (++fp.currentIndex >= flightPlanConfig()->waypointCount) {
+        if (++fp.currentIndex >= activePlanCount()) {
             return NULL;
         }
     }
@@ -171,9 +288,20 @@ static bool dispatchWaypoint(void)
         return false;
     }
 
+    // TAKEOFF climbs in place: the waypoint's lat/lon are advisory (MAVLink
+    // marks them optional) — the target is the current position at the
+    // waypoint's altitude.
+    if (effective.type == WAYPOINT_TYPE_TAKEOFF) {
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        targetEnuM.v[ENU_E] = est->position.v[ENU_E] * 0.01f;
+        targetEnuM.v[ENU_N] = est->position.v[ENU_N] * 0.01f;
+    }
+
     const autopilotConfig_t *cfg = autopilotConfig();
-    const bool isHoldOrLand = (effective.type == WAYPOINT_TYPE_HOLD) || (effective.type == WAYPOINT_TYPE_LAND);
-    const float arrivalRadiusM = (isHoldOrLand ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
+    const bool isStationKeeping = (effective.type == WAYPOINT_TYPE_HOLD)
+                               || (effective.type == WAYPOINT_TYPE_LAND)
+                               || (effective.type == WAYPOINT_TYPE_TAKEOFF);
+    const float arrivalRadiusM = (isStationKeeping ? cfg->waypointHoldRadius : cfg->waypointArrivalRadius) * 0.01f;
 
     float cruiseMps = (effective.speed > 0) ? effective.speed * 0.01f : cfg->maxVelocity * 0.01f;
     if (cruiseMps < FP_MIN_CRUISE_MPS) {
@@ -200,18 +328,387 @@ static bool dispatchWaypoint(void)
         }
     }
 
-    // FLYBY: advance with residual velocity so we curve through.
-    // FLYOVER/HOLD/LAND: require near-stop to count as arrived.
-    const float completionMps = (effective.type == WAYPOINT_TYPE_FLYBY)
-        ? FP_FLYBY_COMPLETION_MPS
-        : FP_FLYOVER_COMPLETION_MPS;
-
+    fp.patternPending = false;
+    fp.patternActive = false;
     positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
-                           completionMps, true, onWaypointReached, NULL);
+                           FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
+    positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
+    // En-route waypoints advance on horizontal arrival; a vehicle that cannot
+    // reach the commanded altitude must not orbit forever. HOLD, LAND and
+    // TAKEOFF are station-keeping targets and keep the altitude gate.
+    positionNavSetAltitudeArrivalRequired(isStationKeeping);
 
     fp.state = FP_NAV_TARGETING;
     fp.holdDurationDs = effective.duration;
+    fp.bestDistanceToTargetM = FLT_MAX;
+    fp.lastProgressUs = micros();
     return true;
+}
+
+static void abortMission(flightPlanAbortReason_e reason)
+{
+    fp.state = FP_NAV_ABORTED;
+    fp.abortReason = reason;
+    fp.patternPending = false;
+    fp.patternActive = false;
+    // Dropping the nav target makes positionControl() fall back to holding
+    // position at the current location; the pilot exits via the mode switch.
+    positionNavClearTarget();
+}
+
+static void navTargetDeltaEnuM(const positionEstimate3d_t *est, vector3_t *deltaM)
+{
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    deltaM->v[ENU_E] = cmd->targetPosEfM.v[ENU_E] - est->position.v[ENU_E] * 0.01f;
+    deltaM->v[ENU_N] = cmd->targetPosEfM.v[ENU_N] - est->position.v[ENU_N] * 0.01f;
+    deltaM->v[ENU_U] = cmd->includeAltitude ? cmd->targetPosEfM.v[ENU_U] - est->position.v[ENU_U] * 0.01f : 0.0f;
+}
+
+static float distanceToNavTargetM(const positionEstimate3d_t *est)
+{
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
+    return vector3Norm(&deltaM);
+}
+
+static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t *est)
+{
+    if (!positionNavHasActiveTarget()) {
+        return;
+    }
+
+    const float distanceM = distanceToNavTargetM(est);
+
+    if (fp.bestDistanceToTargetM == FLT_MAX) {
+        fp.flyawayMarginM = constrainf(distanceM * FP_FLYAWAY_LEG_FRACTION,
+                                       FP_FLYAWAY_MARGIN_MIN_M, FP_FLYAWAY_MARGIN_MAX_M);
+    }
+
+    if (distanceM < fp.bestDistanceToTargetM - FP_PROGRESS_EPSILON_M) {
+        fp.bestDistanceToTargetM = distanceM;
+        fp.lastProgressUs = currentTimeUs;
+        return;
+    }
+
+    if (fp.bestDistanceToTargetM != FLT_MAX && distanceM > fp.bestDistanceToTargetM + fp.flyawayMarginM) {
+        abortMission(FP_ABORT_FLYAWAY);
+        return;
+    }
+
+    if (cmpTimeUs(currentTimeUs, fp.lastProgressUs) >= (timeDelta_t)FP_STALL_TIMEOUT_US) {
+        abortMission(FP_ABORT_STALLED);
+    }
+}
+
+static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
+{
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const vector3_t targetM = {.v = {
+        [ENU_E] = targetEastM,
+        [ENU_N] = targetNorthM,
+        [ENU_U] = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M,
+    }};
+
+    const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, autopilotConfig()->landingDescentRate * 0.01f);
+    positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
+
+    fp.state = FP_NAV_LANDING;
+    fp.landingStartUs = currentTimeUs;
+    fp.touchdownQuietStartUs = 0;
+    fp.landingDescentEstablished = false;
+}
+
+static void updateLanding(timeUs_t currentTimeUs)
+{
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const float verticalVelocityCmS = est->velocity.v[ENU_U];
+    const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, autopilotConfig()->landingDescentRate);
+
+    if (!fp.landingDescentEstablished
+        && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
+        fp.landingDescentEstablished = true;
+    }
+
+    const bool monitorTouchdown = fp.landingDescentEstablished
+        || (isBelowLandingAltitude()
+            && cmpTimeUs(currentTimeUs, fp.landingStartUs) >= (timeDelta_t)FP_LANDING_ESTABLISH_TIMEOUT_US);
+    if (!monitorTouchdown) {
+        return;
+    }
+
+    // Touchdown: descent has stopped despite being commanded, and the vehicle
+    // is not moving vertically. A descent at the commanded rate must never
+    // count as quiet, whatever landingVelocityThreshold is configured to.
+    const bool descentStopped = verticalVelocityCmS > -0.25f * commandedDescentCmS;
+    if (descentStopped && fabsf(verticalVelocityCmS) < autopilotConfig()->landingVelocityThreshold) {
+        if (fp.touchdownQuietStartUs == 0) {
+            fp.touchdownQuietStartUs = currentTimeUs;
+        } else if (cmpTimeUs(currentTimeUs, fp.touchdownQuietStartUs) >= (timeDelta_t)((uint32_t)autopilotConfig()->landingDetectionTime * 100000u)) {
+            positionNavClearTarget();
+            fp.state = FP_NAV_COMPLETE;
+            disarm(DISARM_REASON_LANDING);
+        }
+    } else {
+        fp.touchdownQuietStartUs = 0;
+    }
+}
+
+// Descend at the leg's target (the waypoint itself), not wherever the arrival
+// gate tripped. If the position command has been wiped (a position-control
+// re-init), a zeroed target would descend at the GPS origin — re-fly the LAND
+// waypoint instead.
+static void startLandingAtNavTarget(timeUs_t currentTimeUs)
+{
+    if (!positionNavHasActiveTarget()) {
+        dispatchWaypoint();
+        return;
+    }
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    startLanding(currentTimeUs, cmd->targetPosEfM.v[ENU_E], cmd->targetPosEfM.v[ENU_N]);
+}
+
+// Geofence RTH response: [fly home at return altitude, land at home]. Return
+// altitude never commands an en-route descent (rescue's ALT_MODE_MAX
+// behaviour). Falls back to landing in place if the plan can't be injected.
+static void injectReturnHomePlan(timeUs_t currentTimeUs)
+{
+#ifdef USE_GPS_RESCUE
+    const int32_t returnAltCm = MAX(GPS_home_llh.altCm + (int32_t)gpsRescueConfig()->returnAltitudeM * 100, gpsSol.llh.altCm);
+    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
+#else
+    const int32_t returnAltCm = gpsSol.llh.altCm;
+    const uint16_t speedCmS = 0;    // waypoint default: autopilot maxVelocity
+#endif
+    const waypoint_t plan[] = {
+        {
+            .latitude = GPS_home_llh.lat,
+            .longitude = GPS_home_llh.lon,
+            .altitude = returnAltCm,
+            .speed = speedCmS,
+            .type = WAYPOINT_TYPE_FLYOVER,
+        },
+        {
+            .latitude = GPS_home_llh.lat,
+            .longitude = GPS_home_llh.lon,
+            .altitude = returnAltCm,
+            .speed = speedCmS,
+            .type = WAYPOINT_TYPE_LAND,
+        },
+    };
+
+    if (!flightPlanNavInjectPlan(plan, ARRAYLEN(plan))) {
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        startLanding(currentTimeUs, est->position.v[ENU_E] * 0.01f, est->position.v[ENU_N] * 0.01f);
+    }
+}
+
+#if ENABLE_RESCUE_PLAN
+// Failsafe rescue mission: [climb-in-place HOLD at the current position ->
+// FLYOVER home -> LAND home]. The leading HOLD gates on altitude arrival
+// (dispatchWaypoint sets altitudeArrivalRequired for HOLD), so the climb
+// completes before the return leg starts — legacy ATTAIN_ALT semantics.
+static uint8_t buildRescuePlan(waypoint_t out[FP_INJECTED_PLAN_MAX])
+{
+    if (!STATE(GPS_FIX_HOME) || !STATE(GPS_FIX)) {
+        return 0;
+    }
+
+    const int32_t homeAltCm = GPS_home_llh.altCm;
+    const int32_t currentAltCm = gpsSol.llh.altCm;
+    const int32_t climbCm = (int32_t)gpsRescueConfig()->initialClimbM * 100;
+    const int32_t fixedCm = (int32_t)gpsRescueConfig()->returnAltitudeM * 100;
+
+    int32_t returnAltCm;
+    if (GPS_distanceToHome < gpsRescueConfig()->minStartDistM) {
+        // Legacy close-range branch: modest headroom rather than a full climb
+        returnAltCm = MAX(homeAltCm + 750, currentAltCm + climbCm);
+    } else {
+        switch (gpsRescueConfig()->altitudeMode) {
+        case GPS_RESCUE_ALT_MODE_FIXED:
+            returnAltCm = homeAltCm + fixedCm;
+            break;
+        case GPS_RESCUE_ALT_MODE_CURRENT:
+            returnAltCm = currentAltCm + climbCm;
+            break;
+        case GPS_RESCUE_ALT_MODE_MAX:
+        default:
+            // Legacy tracks max altitude relative to the arming point; home
+            // altitude anchors it back to the AMSL frame waypoints use.
+            returnAltCm = homeAltCm + (int32_t)gpsRescueGetMaxAltitudeCm() + climbCm;
+            break;
+        }
+    }
+    returnAltCm = MAX(returnAltCm, currentAltCm); // never command an en-route descent
+
+    const uint16_t speedCmS = gpsRescueConfig()->groundSpeedCmS;
+    out[0] = (waypoint_t){
+        .latitude = gpsSol.llh.lat,
+        .longitude = gpsSol.llh.lon,
+        .altitude = returnAltCm,
+        .type = WAYPOINT_TYPE_HOLD,
+    };
+    out[1] = (waypoint_t){
+        .latitude = GPS_home_llh.lat,
+        .longitude = GPS_home_llh.lon,
+        .altitude = returnAltCm,
+        .speed = speedCmS,
+        .type = WAYPOINT_TYPE_FLYOVER,
+    };
+    out[2] = (waypoint_t){
+        .latitude = GPS_home_llh.lat,
+        .longitude = GPS_home_llh.lon,
+        .altitude = returnAltCm,
+        .speed = speedCmS,
+        .type = WAYPOINT_TYPE_LAND,
+    };
+    return 3;
+}
+
+bool flightPlanNavStageRescuePlan(void)
+{
+    waypoint_t plan[FP_INJECTED_PLAN_MAX];
+    const uint8_t count = buildRescuePlan(plan);
+    if (count == 0) {
+        return false;
+    }
+
+    if (fp.active) {
+        // Already flying (rx-loss during a mission): replace it immediately.
+        memcpy(fp.injected, plan, count * sizeof(plan[0]));
+        fp.injectedCount = count;
+        fp.currentIndex = 0;
+        fp.abortReason = FP_ABORT_NONE;
+        fp.isRescuePlan = true;
+        fp.rescueHeadingHold = false;
+        fp.stagedCount = 0;
+        clearModifierState();
+        dispatchWaypoint();
+        return true;
+    }
+
+    memcpy(fp.staged, plan, count * sizeof(plan[0]));
+    fp.stagedCount = count;
+    return true;
+}
+
+bool flightPlanNavIsRescuePlanActive(void)
+{
+    return fp.active && fp.isRescuePlan;
+}
+#endif // ENABLE_RESCUE_PLAN
+
+static void checkGeofence(timeUs_t currentTimeUs)
+{
+    // An injected plan is itself the geofence response; evaluating the fence
+    // while flying it would re-trigger every cycle.
+    if (fp.injectedCount > 0) {
+        return;
+    }
+
+    const autopilotConfig_t *cfg = autopilotConfig();
+    if (cfg->maxDistanceFromHomeM == 0 || !STATE(GPS_FIX_HOME)) {
+        return;
+    }
+    if (GPS_distanceToHome <= cfg->maxDistanceFromHomeM) {
+        return;
+    }
+
+    if (cfg->geofenceAction == AP_GEOFENCE_RTH) {
+        injectReturnHomePlan(currentTimeUs);
+    } else {
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        startLanding(currentTimeUs, est->position.v[ENU_E] * 0.01f, est->position.v[ENU_N] * 0.01f);
+    }
+}
+
+static void patternCarrot(float phaseRad, float radiusM, vector3_t *out)
+{
+    out->v[ENU_U] = fp.patternCentreM.v[ENU_U];
+    if (fp.patternType == WAYPOINT_PATTERN_FIGURE8) {
+        // Lemniscate of Gerono — crosses the centre twice per cycle
+        out->v[ENU_E] = fp.patternCentreM.v[ENU_E] + radiusM * sin_approx(phaseRad);
+        out->v[ENU_N] = fp.patternCentreM.v[ENU_N] + radiusM * sin_approx(phaseRad) * cos_approx(phaseRad);
+    } else {
+        out->v[ENU_E] = fp.patternCentreM.v[ENU_E] + radiusM * cos_approx(phaseRad);
+        out->v[ENU_N] = fp.patternCentreM.v[ENU_N] + radiusM * sin_approx(phaseRad);
+    }
+}
+
+// The carrot command must never complete: completion would refire
+// onWaypointReached (restarting the hold timer) and zero the velocity target.
+// completionSpeed 0 keeps it permanently unreachable. Accel limits are lifted
+// because the approach-decel braking term would cap chase speed to a crawl at
+// carrot-lead distances; the next leg's dispatch restores them.
+static void issuePatternCommand(float radiusM)
+{
+    vector3_t carrot;
+    patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
+    positionNavSetTargetEf(&carrot, fp.patternCruiseMps, radiusM, 0.0f, true, NULL, NULL);
+    positionNavSetAccelLimits(0.0f, 0.0f);
+}
+
+static void startHoldPattern(const waypoint_t *wp)
+{
+    const positionNavCommand_t *cmd = positionNavGetActiveCommand();
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+
+    fp.patternType = wp->pattern;
+    fp.patternCentreM = cmd->targetPosEfM;
+    fp.patternCruiseMps = cmd->cruiseSpeedMps;
+    fp.patternSpeedMps = MIN(cmd->cruiseSpeedMps, radiusM * FP_PATTERN_MAX_RATE_RADS);
+
+    if (wp->pattern == WAYPOINT_PATTERN_FIGURE8) {
+        // The curve passes through the centre, which is where the vehicle is
+        fp.patternPhaseRad = 0.0f;
+    } else {
+        // Start the carrot at the vehicle's azimuth from the centre so the
+        // first move is outward onto the ring, not a dash across it
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        fp.patternPhaseRad = atan2_approx(est->position.v[ENU_N] * 0.01f - fp.patternCentreM.v[ENU_N],
+                                          est->position.v[ENU_E] * 0.01f - fp.patternCentreM.v[ENU_E]);
+    }
+    fp.patternLastUpdateUs = micros();
+    fp.patternActive = true;
+    issuePatternCommand(radiusM);
+}
+
+static void updateHoldPattern(timeUs_t currentTimeUs)
+{
+    const timeDelta_t sinceUs = cmpTimeUs(currentTimeUs, fp.patternLastUpdateUs);
+    if (sinceUs < (timeDelta_t)FP_PATTERN_UPDATE_US) {
+        return;
+    }
+    fp.patternLastUpdateUs = currentTimeUs;
+
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+    fp.patternPhaseRad += (fp.patternSpeedMps / radiusM) * MIN(sinceUs * 1e-6f, 1.0f);
+    if (fp.patternPhaseRad > M_PIf) {
+        fp.patternPhaseRad -= 2.0f * M_PIf;
+    }
+
+    if (positionNavHasActiveTarget()) {
+        vector3_t carrot;
+        patternCarrot(fp.patternPhaseRad, radiusM, &carrot);
+        positionNavMoveTargetEf(&carrot);
+    } else {
+        // A position-control re-init wiped the carrot command; re-issue it
+        issuePatternCommand(radiusM);
+    }
+}
+
+// Orbit period at the configured pattern radius for a leg flown at speedCmS
+// (0 = autopilot max velocity — the same cruise derivation dispatch uses).
+// MAVLink converts LOITER_TURNS turn counts to and from hold durations here.
+uint16_t flightPlanNavOrbitPeriodDs(uint16_t speedCmS)
+{
+    const float radiusM = autopilotConfig()->waypointHoldRadius * 0.01f;
+    float cruiseMps = (speedCmS > 0) ? speedCmS * 0.01f : autopilotConfig()->maxVelocity * 0.01f;
+    if (cruiseMps < FP_MIN_CRUISE_MPS) {
+        cruiseMps = FP_MIN_CRUISE_MPS;
+    }
+    const float rateRads = MIN(cruiseMps, radiusM * FP_PATTERN_MAX_RATE_RADS) / radiusM;
+    const float periodDs = 10.0f * 2.0f * M_PIf / rateRads;
+    return (periodDs >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(periodDs);
 }
 
 static void advanceToNext(void)
@@ -220,8 +717,10 @@ static void advanceToNext(void)
     // before the next drainModifiers() pass so a new override (or none) is
     // staged cleanly for the upcoming leg.
     fp.altOverridePending = false;
+    fp.patternPending = false;
+    fp.patternActive = false;
 
-    if (fp.currentIndex + 1 >= flightPlanConfig()->waypointCount) {
+    if (fp.currentIndex + 1 >= activePlanCount()) {
         fp.state = FP_NAV_COMPLETE;
         positionNavClearTarget();
         return;
@@ -247,18 +746,47 @@ static void onWaypointReached(void *userData)
         return;
     }
 
-    if (reachedListener) {
+    // Listener indices refer to the PG mission; injected-plan progress is
+    // meaningless to a MAVLink partner tracking the uploaded plan.
+    if (reachedListener && fp.injectedCount == 0) {
         reachedListener(fp.currentIndex);
     }
 
-    if (wp->type == WAYPOINT_TYPE_HOLD && fp.holdDurationDs > 0) {
+#if ENABLE_RESCUE_PLAN
+    // Rescue climb complete but the IMU heading is untrusted: hold here and
+    // pitch forward so GPS course-over-ground can teach the estimator its
+    // heading before the return leg (legacy PITCH_FORWARD semantics).
+    if (fp.isRescuePlan && fp.currentIndex == 0 && activePlanCount() > 1 && !imuIsHeadingValid()) {
+        fp.rescueHeadingHold = true;
+        fp.rescueHeadingStartUs = micros();
+        pitchForwardOverride(true);
+        return;
+    }
+#endif
+
+    // A LAND duration is a pre-descent loiter and a TAKEOFF duration a
+    // post-climb loiter; the hold-expiry path starts the descent (LAND) or
+    // advances (HOLD, TAKEOFF).
+    const bool holdsOnArrival = (wp->type == WAYPOINT_TYPE_HOLD)
+                             || (wp->type == WAYPOINT_TYPE_LAND)
+                             || (wp->type == WAYPOINT_TYPE_TAKEOFF);
+    if (holdsOnArrival && fp.holdDurationDs > 0) {
         fp.state = FP_NAV_HOLDING;
         fp.holdStartUs = micros();
+        if (wp->type == WAYPOINT_TYPE_HOLD && wp->pattern != WAYPOINT_PATTERN_NONE) {
+            // Deferred: the update loop starts the pattern once the arrival
+            // braking has settled (see FP_PATTERN_START_SPEED_MPS).
+            fp.patternPending = true;
+        }
         return;
     }
 
-    // TODO: WAYPOINT_TYPE_LAND — trigger descent/disarm path.
-    // TODO: WAYPOINT_PATTERN_ORBIT / FIGURE8 sub-target generation for HOLD.
+    if (wp->type == WAYPOINT_TYPE_LAND) {
+        // Touchdown completes the plan, so a mid-plan LAND is terminal.
+        startLandingAtNavTarget(micros());
+        return;
+    }
+
     advanceToNext();
 }
 
@@ -271,14 +799,25 @@ static void clearModifierState(void)
     fp.delayDurationDs = 0;
     fp.delayEndUs = 0;
     fp.yawRateCapDps = 0.0f;
+    autopilotSetYawRateLimit(0.0f);
 }
 
 void flightPlanNavInit(void)
 {
     fp.state = FP_NAV_IDLE;
     fp.currentIndex = 0;
+    fp.pendingStartIndex = 0;
     fp.active = false;
     fp.zBiasM = 0.0f;
+    fp.abortReason = FP_ABORT_NONE;
+    fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
+#if ENABLE_RESCUE_PLAN
+    fp.stagedCount = 0;
+    fp.isRescuePlan = false;
+    fp.rescueHeadingHold = false;
+#endif
     clearModifierState();
 }
 
@@ -286,16 +825,46 @@ void flightPlanNavEngage(void)
 {
     fp.currentIndex = 0;
     fp.state = FP_NAV_IDLE;
+    fp.abortReason = FP_ABORT_NONE;
+    // Engagement always starts the PG mission; an injected plan does not
+    // survive a switch cycle (no resume).
+    fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
     clearModifierState();
 
-    // Capture the estimator's current Z so subsequent waypoint altitudes are
-    // referenced to the same baseline the position controller uses.
-    fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+    // Reconcile the estimator's altitude baseline with the GPS frame waypoint
+    // altitudes are computed in. The pure frame offset (estimator reading
+    // minus GPS height above origin) is valid at any engagement altitude —
+    // a failsafe rescue engages mid-flight, where the raw estimator reading
+    // would shift the whole plan up by the current height.
+    gpsLocation_t origin;
+    if (positionEstimatorGetGpsOrigin(&origin)) {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f - (gpsSol.llh.altCm - origin.altCm) * 0.01f;
+    } else {
+        fp.zBiasM = positionEstimatorGetAltitudeCm() * 0.01f;
+    }
 
     // HOLD waypoints keep the position target live for the hold duration; a
     // new target replaces the previous on advance anyway, so this module
     // never wants positionNav to auto-clear the target on reach.
     positionNavSetAutoClearOnReach(false);
+
+#if ENABLE_RESCUE_PLAN
+    fp.isRescuePlan = false;
+    fp.rescueHeadingHold = false;
+    if (fp.stagedCount > 0) {
+        // A staged failsafe rescue plan replaces the PG mission entirely;
+        // rescue waypoint 0 is dispatched, never PG waypoint 0.
+        memcpy(fp.injected, fp.staged, fp.stagedCount * sizeof(fp.injected[0]));
+        fp.injectedCount = fp.stagedCount;
+        fp.stagedCount = 0;
+        fp.isRescuePlan = true;
+        fp.active = true;
+        dispatchWaypoint();
+        return;
+    }
+#endif
 
     if (flightPlanConfig()->waypointCount == 0) {
         fp.state = FP_NAV_COMPLETE;
@@ -304,6 +873,9 @@ void flightPlanNavEngage(void)
         return;
     }
 
+    // A MISSION_SET_CURRENT received while idle chooses the starting leg.
+    fp.currentIndex = (fp.pendingStartIndex < flightPlanConfig()->waypointCount) ? fp.pendingStartIndex : 0;
+    fp.pendingStartIndex = 0;
     fp.active = true;
     // Try to dispatch immediately; if the GPS origin isn't ready yet we stay
     // IDLE and flightPlanNavUpdate() will retry.
@@ -314,7 +886,44 @@ void flightPlanNavDisengage(void)
 {
     fp.active = false;
     fp.state = FP_NAV_IDLE;
+    fp.injectedCount = 0;
+    fp.patternPending = false;
+    fp.patternActive = false;
+#if ENABLE_RESCUE_PLAN
+    fp.stagedCount = 0;
+    fp.isRescuePlan = false;
+    if (fp.rescueHeadingHold) {
+        fp.rescueHeadingHold = false;
+        pitchForwardOverride(false);
+    }
+#endif
+    clearModifierState();
     positionNavClearTarget();
+}
+
+bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
+{
+    if (!fp.active || waypoints == NULL || count == 0 || count > FP_INJECTED_PLAN_MAX) {
+        return false;
+    }
+
+    memcpy(fp.injected, waypoints, count * sizeof(*waypoints));
+    fp.injectedCount = count;
+    fp.currentIndex = 0;
+    fp.abortReason = FP_ABORT_NONE;
+#if ENABLE_RESCUE_PLAN
+    fp.isRescuePlan = false;
+#endif
+    clearModifierState();
+    // If dispatch fails (GPS origin lost) the state falls back to IDLE and
+    // the update loop retries against the injected plan.
+    dispatchWaypoint();
+    return true;
+}
+
+bool flightPlanNavIsInjectedPlanActive(void)
+{
+    return fp.active && fp.injectedCount > 0;
 }
 
 void flightPlanNavUpdate(timeUs_t currentTimeUs)
@@ -323,10 +932,53 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         return;
     }
 
+#if ENABLE_RESCUE_PLAN
+    if (fp.rescueHeadingHold) {
+        // Leg progress/stall checks are meaningless while deliberately
+        // pitching forward away from the climb waypoint.
+        if (imuIsHeadingValid()) {
+            pitchForwardOverride(false);
+            fp.rescueHeadingHold = false;
+            advanceToNext();
+        } else if (cmpTimeUs(currentTimeUs, fp.rescueHeadingStartUs) >= (timeDelta_t)FP_RESCUE_HEADING_TIMEOUT_US) {
+            pitchForwardOverride(false);
+            fp.rescueHeadingHold = false;
+            abortMission(FP_ABORT_HEADING);
+        }
+        return;
+    }
+#endif
+
     // Retry dispatch if we engaged before the estimator had an origin.
-    if (fp.state == FP_NAV_IDLE && flightPlanConfig()->waypointCount > 0) {
+    if (fp.state == FP_NAV_IDLE && activePlanCount() > 0) {
         dispatchWaypoint();
         return;
+    }
+
+    // The position controller wipes the nav command when it (re)initialises —
+    // which happens right after mission engagement, since AUTOPILOT_MODE
+    // activates POS_HOLD_MODE and its first update calls resetPositionControl().
+    // Re-issue the current leg whenever the dispatched target has been lost.
+    if (fp.state == FP_NAV_TARGETING && !positionNavHasActiveTarget()) {
+        dispatchWaypoint();
+        return;
+    }
+
+    if (fp.state == FP_NAV_LANDING) {
+        updateLanding(currentTimeUs);
+        return;
+    }
+
+    if (fp.state == FP_NAV_TARGETING || fp.state == FP_NAV_HOLDING) {
+        if (!positionEstimatorIsValidXY()) {
+            abortMission(FP_ABORT_ESTIMATOR);
+            return;
+        }
+
+        checkGeofence(currentTimeUs);
+        if (fp.state == FP_NAV_LANDING) {
+            return;
+        }
     }
 
     // DELAY-window expiry: clear the cap and re-issue the current leg at the
@@ -338,11 +990,38 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         }
     }
 
+    if (fp.state == FP_NAV_TARGETING) {
+        checkLegProgress(currentTimeUs, positionEstimatorGetEstimate());
+    }
+
     if (fp.state == FP_NAV_HOLDING) {
+        if (fp.patternPending) {
+            const waypoint_t *wp = currentWaypoint();
+            if (!positionNavHasActiveTarget() || wp == NULL) {
+                // The hold command was wiped while settling; degrade to a
+                // plain hold rather than orbit an unknown centre.
+                fp.patternPending = false;
+            } else {
+                const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+                const float hSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+                if (hSpeedMps < FP_PATTERN_START_SPEED_MPS
+                    || cmpTimeUs(currentTimeUs, fp.holdStartUs) >= (timeDelta_t)FP_PATTERN_START_TIMEOUT_US) {
+                    fp.patternPending = false;
+                    startHoldPattern(wp);
+                }
+            }
+        } else if (fp.patternActive) {
+            updateHoldPattern(currentTimeUs);
+        }
         const uint32_t holdUs = (uint32_t)fp.holdDurationDs * 100000u;
         const uint32_t elapsedUs = (uint32_t)(currentTimeUs - fp.holdStartUs);
         if (elapsedUs >= holdUs) {
-            advanceToNext();
+            const waypoint_t *wp = currentWaypoint();
+            if (wp != NULL && wp->type == WAYPOINT_TYPE_LAND) {
+                startLandingAtNavTarget(currentTimeUs);
+            } else {
+                advanceToNext();
+            }
         }
     }
 }
@@ -360,6 +1039,75 @@ flightPlanNavState_e flightPlanNavGetState(void)
 uint8_t flightPlanNavGetCurrentIndex(void)
 {
     return fp.currentIndex;
+}
+
+flightPlanAbortReason_e flightPlanNavGetAbortReason(void)
+{
+    return fp.abortReason;
+}
+
+float flightPlanNavGetDistanceToWaypointM(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return -1.0f;
+    }
+    return distanceToNavTargetM(positionEstimatorGetEstimate());
+}
+
+int32_t flightPlanNavGetBearingToWaypointDeciDeg(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return -1;
+    }
+    vector3_t deltaM;
+    navTargetDeltaEnuM(positionEstimatorGetEstimate(), &deltaM);
+    // Compass bearing: 0 = north, growing clockwise. ENU east/north maps to
+    // atan2(E, N); wrap into [0, 3600) deci-degrees.
+    int32_t deciDeg = lrintf(atan2_approx(deltaM.v[ENU_E], deltaM.v[ENU_N]) * (1800.0f / M_PIf));
+    deciDeg %= 3600;
+    if (deciDeg < 0) {
+        deciDeg += 3600;
+    }
+    return deciDeg;
+}
+
+uint16_t flightPlanNavGetEtaSeconds(void)
+{
+    if (!fp.active || !positionNavHasActiveTarget()) {
+        return 0;
+    }
+    const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+    const float speedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    if (speedMps < 0.5f) {
+        return 0;
+    }
+    // Horizontal groundspeed only reaches the waypoint's horizontal offset, so
+    // divide by the 2D distance; the 3D slant would overstate ETA on climbs.
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
+    const float distance2dM = sqrtf(sq(deltaM.v[ENU_E]) + sq(deltaM.v[ENU_N]));
+    const float etaS = distance2dM / speedMps;
+    return (etaS >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(etaS);
+}
+
+void flightPlanNavSetCurrentIndex(uint8_t index)
+{
+    // SET_CURRENT addresses the uploaded PG mission; an injected runtime plan
+    // (geofence RTH / failsafe rescue) owns its own sequencing.
+    if (fp.injectedCount > 0 || index >= flightPlanConfig()->waypointCount) {
+        return;
+    }
+
+    if (fp.active) {
+        fp.currentIndex = index;
+        fp.patternPending = false;
+        fp.patternActive = false;
+        clearModifierState();
+        fp.state = FP_NAV_TARGETING;
+        dispatchWaypoint();
+    } else {
+        fp.pendingStartIndex = index;
+    }
 }
 
 void flightPlanNavSetReachedListener(flightPlanWaypointReachedFn fn)

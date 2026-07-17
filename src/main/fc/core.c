@@ -367,6 +367,14 @@ if (crashFlipModeActive) {
             unsetArmingDisabled(ARMING_DISABLED_POSHOLD);
         }
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+        if (IS_RC_MODE_ACTIVE(BOXAUTOPILOT)) {
+            setArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_AUTOPILOT);
+        }
+#endif
+
         if (calculateThrottleStatus() != THROTTLE_LOW) {
             setArmingDisabled(ARMING_DISABLED_THROTTLE);
         } else {
@@ -1045,7 +1053,14 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
+    // With ENABLE_RESCUE_PLAN the failsafe procedure flies a rescue mission
+    // under AUTOPILOT_MODE instead; only the pilot's switch selects legacy
+    // rescue, which then preempts the mission via the gate below.
+    if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE)
+#if !ENABLE_RESCUE_PLAN
+        || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)
+#endif
+        )) {
         if (!FLIGHT_MODE(GPS_RESCUE_MODE)) {
             ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
         }
@@ -1054,13 +1069,53 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    // During failsafe the mission flies only while the failsafe state machine
+    // has chosen to (rx-loss policy). In the stage-1 window before failsafe
+    // activates, rxfail substitution already drives the aux channels, so the
+    // switch is only pilot intent while channel data is real — otherwise hold
+    // the current mode and let the policy decide at stage-2 entry.
+    bool autopilotRequested;
+    if (failsafeIsActive()) {
+        autopilotRequested = (failsafePhase() == FAILSAFE_AUTOPILOT);
+    } else if (rxAreFlightChannelsValid()) {
+        autopilotRequested = IS_RC_MODE_ACTIVE(BOXAUTOPILOT);
+    } else {
+        autopilotRequested = FLIGHT_MODE(AUTOPILOT_MODE);
+    }
+
+    // Before the hold modes: AUTOPILOT_MODE activates both, so they must see
+    // its state from the same cycle.
+    if (ARMING_FLAG(ARMED)
+        // GPS Rescue has priority over the mission
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)
+        && autopilotRequested
+        && sensors(SENSOR_ACC)
+        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
+        // waypoints carry altitude; without altitude data the mission must not run
+        && isAltitudeAvailable()
+        && wasThrottleRaised()) {
+        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
+            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavEngage();
+        }
+        flightPlanNavUpdate(currentTimeUs);
+    } else {
+        if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+            DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
+            flightPlanNavDisengage();
+        }
+    }
+#endif
+
 #ifdef USE_ALTITUDE_HOLD
     // only if armed; can coexist with position hold
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Altitude Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive())
+        // and either the alt_hold switch is activated, or are in failsafe landing mode,
+        // or an autopilot mission needs altitude control
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data
@@ -1080,8 +1135,9 @@ void processRxModes(timeUs_t currentTimeUs)
     if (ARMING_FLAG(ARMED)
         // and not in GPS_RESCUE_MODE, to give it priority over Position Hold
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        // and either the alt_hold switch is activated, or are in failsafe landing mode
-        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive())
+        // and either the pos_hold switch is activated, or are in failsafe landing mode,
+        // or an autopilot mission needs the position controller
+        && (IS_RC_MODE_ACTIVE(BOXPOSHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE))
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // but not until throttle is raised
@@ -1091,24 +1147,6 @@ void processRxModes(timeUs_t currentTimeUs)
         }
     } else {
         DISABLE_FLIGHT_MODE(POS_HOLD_MODE);
-    }
-#endif
-
-#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
-    if (ARMING_FLAG(ARMED)
-        && !FLIGHT_MODE(GPS_RESCUE_MODE)
-        && IS_RC_MODE_ACTIVE(BOXAUTOPILOT)
-        && sensors(SENSOR_ACC)
-        && sensors(SENSOR_GPS) && STATE(GPS_FIX)
-        && wasThrottleRaised()) {
-        if (!FLIGHT_MODE(AUTOPILOT_MODE)) {
-            ENABLE_FLIGHT_MODE(AUTOPILOT_MODE);
-            flightPlanNavEngage();
-        }
-        flightPlanNavUpdate(currentTimeUs);
-    } else if (FLIGHT_MODE(AUTOPILOT_MODE)) {
-        DISABLE_FLIGHT_MODE(AUTOPILOT_MODE);
-        flightPlanNavDisengage();
     }
 #endif
 

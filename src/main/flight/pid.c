@@ -188,8 +188,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
         .d_max = D_MAX_DEFAULT,
-        .d_max_gain = 37,
-        .d_max_advance = 0,
+        .d_max_gain = 0,
+        .d_max_advance = 35,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .profileName = { 0 },
@@ -644,7 +644,7 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 
 #ifdef USE_GPS_RESCUE
     if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
-        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees             
+        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
         angleLimit = (float)autopilotConfig()->maxAngle;
         angleFeedforward = 0.0f;
     }

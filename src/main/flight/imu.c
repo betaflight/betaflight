@@ -166,7 +166,13 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat.m[NWU_U][Y] = 2.0f * (qP.yz - -qP.wx);
     rMat.m[NWU_U][Z] = 1.0f - 2.0f * qP.xx - 2.0f * qP.yy;
 
-#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER)
+#if ENABLE_SIMULATOR && !defined(USE_IMU_CALC) && !defined(SET_IMU_FROM_EULER) && !ENABLE_GAZEBO_BRIDGE
+    // Legacy simulator bridges (X-Plane, RealFlight) send a quaternion with
+    // mirrored pitch/yaw; flipping these two elements patches the Euler
+    // extraction for them, at the price of rMat no longer being a proper
+    // rotation (vector consumers like the position estimator see phantom
+    // earth-frame accelerations at combined pitch and heading). The Gazebo
+    // bridge instead corrects the quaternion itself on receive (sitl.c).
     rMat.m[NWU_W][X] = -2.0f * (qP.xy - -qP.wz);
     rMat.m[NWU_U][X] = -2.0f * (qP.xz + -qP.wy);
 #endif
@@ -422,7 +428,7 @@ static float imuCalcGroundspeedGain(float dt)
     const float speedRatio = 0.5f * gpsSol.groundSpeed / GPS_COG_MIN_GROUNDSPEED;
     float speedBasedGain = speedRatio > 1.0f ? fminf(speedRatio, 10.0f) : sq(speedRatio);
     // speedBasedGain is 0 at 0.0m/s, 1.0 at 2.0 m/s,rising towards 5.0 at 10m/s, to max 10.0 at 20m/s
-    // need a lot of speed since forward flight speed must exceed lateral wind drift by a significant margin 
+    // need a lot of speed since forward flight speed must exceed lateral wind drift by a significant margin
 
     // 2. suppress heading correction during and after yaw movements, down to zero at more than 10 deg/s
     float yawGyroRateFactor = fminf(fabsf(gyro.gyroADCf[FD_YAW] * 0.1f), 1.0f);
@@ -635,10 +641,14 @@ static void imuComputeQuaternionFromRPY(quaternionProducts *quatProd, int16_t in
 #if ENABLE_SIMULATOR && !defined(USE_IMU_CALC)
 static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
+    // Attitude is ground truth from the simulator, so heading is valid by
+    // definition; without this, position hold and missions can never gain
+    // XY authority (imuIsHeadingValid() would be false forever with no mag).
+    canUseGPSHeading = true;
+
     // unused static functions
     UNUSED(imuMahonyAHRSupdate);
     UNUSED(imuIsAccelerometerHealthy);
-    UNUSED(canUseGPSHeading);
     UNUSED(imuCalcKpGain);
     UNUSED(imuCalcMagErr);
     UNUSED(currentTimeUs);

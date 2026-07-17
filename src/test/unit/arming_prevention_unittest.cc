@@ -105,6 +105,7 @@ extern "C" {
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
     acc_t acc = {};
+    gyro_t gyro = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
 
@@ -1192,10 +1193,10 @@ void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, 
         UNUSED(*gpsStamp);
         return true;
     }
-float getSetpointRate(int axis)
-{
-    UNUSED(axis);
-    return 0.0f; 
+    float getSetpointRate(int axis)
+    {
+        UNUSED(axis);
+        return 0.0f;
     }
 
     float getGpsCosLat(void) { return 1.0f; }
