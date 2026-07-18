@@ -119,6 +119,7 @@ typedef enum {
     OWNER_PIOUART_RX,
     OWNER_CAN_TX,                // TX must be just before RX
     OWNER_CAN_RX,
+    OWNER_CAN_SILENT,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

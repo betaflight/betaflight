@@ -409,6 +409,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         case FP_ABORT_FLYAWAY:
             tfp_sprintf(warningText, "WP FLYAWAY");
             break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
         default:
             tfp_sprintf(warningText, "WP ABORT");
             break;
@@ -416,6 +419,23 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
+    }
+
+    // Mission progress cues, below every critical warning above. The mode
+    // itself is shown by the flight-mode indicator; these surface the two
+    // states that are otherwise invisible: the terminal descent and arrival.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        if (flightPlanNavGetState() == FP_NAV_LANDING) {
+            tfp_sprintf(warningText, "WP LANDING");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+        if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+            tfp_sprintf(warningText, "WP COMPLETE");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
     }
 #endif
 
