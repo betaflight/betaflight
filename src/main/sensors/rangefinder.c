@@ -44,6 +44,11 @@
 #include "drivers/rangefinder/rangefinder_lidarmt.h"
 #include "drivers/rangefinder/rangefinder_nooploop.h"
 #include "drivers/rangefinder/rangefinder_upt1.h"
+#include "drivers/rangefinder/rangefinder_vl53l1x.h"
+#include "drivers/bus.h"
+#include "drivers/bus_i2c_busdev.h"
+#include "drivers/bus_spi.h"
+#include "drivers/io.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
@@ -73,10 +78,20 @@ rangefinder_t rangefinder;
 #define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
 #define RANGEFINDER_DYNAMIC_FACTOR              75
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
+#ifndef DEFAULT_RANGEFINDER_I2C_ADDRESS
+#define DEFAULT_RANGEFINDER_I2C_ADDRESS 0
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 1);
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
     .rangefinder_hardware = RANGEFINDER_NONE,
+    // All I2C devices shares a default config with address = 0 (per device default)
+    .rangefinder_busType = BUS_TYPE_I2C,
+    .rangefinder_i2c_device = I2C_DEV_TO_CFG(RANGEFINDER_I2C_INSTANCE),
+    .rangefinder_i2c_address = DEFAULT_RANGEFINDER_I2C_ADDRESS,
+    .rangefinder_spi_device = SPI_DEV_TO_CFG(SPIINVALID),
+    .rangefinder_spi_csn = IO_TAG_NONE,
 );
 
 #ifdef USE_RANGEFINDER_HCSR04
@@ -94,10 +109,34 @@ PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
 static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwareToUse)
 {
     rangefinderType_e rangefinderHardware = RANGEFINDER_NONE;
+    extDevice_t *extdev = &dev->dev;
 
-#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF) && !defined(USE_RANGEFINDER_NOOPLOOP) && !defined(USE_RANGEFINDER_UPT1)
+#if !defined(USE_RANGEFINDER_HCSR04) && !defined(USE_RANGEFINDER_TF) && !defined(USE_RANGEFINDER_NOOPLOOP) && !defined(USE_RANGEFINDER_UPT1) && !defined(USE_RANGEFINDER_VL53L1X)
     UNUSED(dev);
 #endif
+
+    switch (rangefinderConfig()->rangefinder_busType) {
+#ifdef USE_I2C
+        case BUS_TYPE_I2C:
+            i2cBusSetInstance(extdev, rangefinderConfig()->rangefinder_i2c_device);
+            extdev->busType_u.i2c.address = rangefinderConfig()->rangefinder_i2c_address;
+            break;
+#endif
+
+#ifdef USE_SPI
+        case BUS_TYPE_SPI:
+            {
+                if (!spiSetBusInstance(extdev, rangefinderConfig()->rangefinder_spi_device)) {
+                    return false;
+                }
+
+                extdev->busType_u.spi.csnPin = IOGetByTag(rangefinderConfig()->rangefinder_spi_csn);
+            }
+            break;
+#endif
+        default:
+            return false;
+    }
 
     switch (rangefinderHardwareToUse) {
         case RANGEFINDER_HCSR04:
@@ -156,6 +195,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             }
             break;
 #endif
+
+        case RANGEFINDER_VL53L1X:
+#if defined(USE_RANGEFINDER_VL53L1X)
+            if (vl53l1xDetect(dev)) {
+                rangefinderHardware = RANGEFINDER_VL53L1X;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L1X_TASK_PERIOD_MS));
+            }
+#endif
+            break;
 
         case RANGEFINDER_NONE:
             rangefinderHardware = RANGEFINDER_NONE;

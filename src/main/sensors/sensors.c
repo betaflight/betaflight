@@ -154,7 +154,8 @@ const char * const lookupTableRangefinderHardware[RANGEFINDER_HARDWARE_COUNT] = 
     [RANGEFINDER_NOOPLOOP_F] = "NOOPLOOP_F",
     [RANGEFINDER_NOOPLOOP_FP] = "NOOPLOOP_FP",
     [RANGEFINDER_NOOPLOOP_F2MINI] = "NOOPLOOP_F2MINI",
-    [RANGEFINDER_UPT1] = "UPT1"
+    [RANGEFINDER_UPT1] = "UPT1",
+    [RANGEFINDER_VL53L1X] = "VL53L1X",
 };
 
 // sync with opticalflowType_e

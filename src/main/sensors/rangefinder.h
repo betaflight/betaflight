@@ -43,11 +43,17 @@ typedef enum {
     RANGEFINDER_NOOPLOOP_FP   = 13,
     RANGEFINDER_NOOPLOOP_F2MINI = 14,
     RANGEFINDER_UPT1          = 15,
+    RANGEFINDER_VL53L1X       = 16,
     RANGEFINDER_HARDWARE_COUNT,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {
     uint8_t rangefinder_hardware;
+    uint8_t rangefinder_busType;
+    uint8_t rangefinder_spi_device;
+    ioTag_t rangefinder_spi_csn;
+    uint8_t rangefinder_i2c_device;
+    uint8_t rangefinder_i2c_address;
 } rangefinderConfig_t;
 
 PG_DECLARE(rangefinderConfig_t, rangefinderConfig);

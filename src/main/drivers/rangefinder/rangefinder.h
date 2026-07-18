@@ -23,6 +23,9 @@
 #include "common/time.h"
 #include "drivers/io_types.h"
 
+#include "drivers/bus.h"
+#include "drivers/exti.h"
+
 #define RANGEFINDER_OUT_OF_RANGE        (-1)
 #define RANGEFINDER_HARDWARE_FAILURE    (-2)
 #define RANGEFINDER_NO_NEW_DATA         (-3)
@@ -38,6 +41,9 @@ typedef void (*rangefinderOpStartFuncPtr)(struct rangefinderDev_s * dev);
 typedef int32_t (*rangefinderOpReadFuncPtr)(struct rangefinderDev_s * dev);
 
 typedef struct rangefinderDev_s {
+    extDevice_t dev;
+    extiCallbackRec_t exti;
+
     timeMs_t delayMs;
     int16_t maxRangeCm;
 

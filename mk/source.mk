@@ -256,6 +256,7 @@ COMMON_SRC = \
             drivers/rangefinder/rangefinder_lidarmt.c \
             drivers/rangefinder/rangefinder_nooploop.c \
             drivers/rangefinder/rangefinder_upt1.c \
+            drivers/rangefinder/rangefinder_vl53l1x.c \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
