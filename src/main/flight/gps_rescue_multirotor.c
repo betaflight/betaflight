@@ -704,6 +704,11 @@ float gpsRescueGetYawRate(void)
     return rescueYawRate; // the control yaw value for rc.c to be used while flightMode gps_rescue is active.
 }
 
+float gpsRescueGetMaxAltitudeCm(void)
+{
+    return rescueState.intent.maxAltitudeCm; // running max since arming, tracked while the rescue task idles
+}
+
 bool gpsRescueIsConfigured(void)
 {
     return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE || isModeActivationConditionPresent(BOXGPSRESCUE);

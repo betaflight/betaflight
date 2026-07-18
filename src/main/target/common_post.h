@@ -869,6 +869,16 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_FLIGHT_PLAN 0
 #endif
 
+// Failsafe GPS rescue flown as a synthesised flight-plan mission instead of
+// the legacy gps_rescue controller. Opt-in; the BOXGPSRESCUE switch keeps
+// flying legacy rescue either way.
+#if !defined(ENABLE_RESCUE_PLAN)
+#define ENABLE_RESCUE_PLAN 0
+#endif
+#if ENABLE_RESCUE_PLAN && !(ENABLE_FLIGHT_PLAN && defined(USE_GPS_RESCUE) && !defined(USE_WING))
+#error "ENABLE_RESCUE_PLAN requires ENABLE_FLIGHT_PLAN, USE_GPS_RESCUE and !USE_WING"
+#endif
+
 #if defined(USE_POSITION_HOLD) && !(defined(USE_GPS) || defined(USE_OPTICALFLOW))
 #error "USE_POSITION_HOLD requires USE_GPS and/or USE_OPTICALFLOW to be defined"
 #endif
@@ -898,6 +908,20 @@ extern struct linker_symbol __fontdata_end;
 // flag (dronecan_enabled) deciding whether the task is actually started.
 #if !defined(ENABLE_DRONECAN)
 #define ENABLE_DRONECAN ENABLE_CAN
+#endif
+
+// DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
+// ingest their telemetry (uavcan.equipment.esc.Status). Built in wherever the
+// DroneCAN stack is, gated at runtime by selecting the DRONECAN motor protocol.
+#if !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC ENABLE_DRONECAN
+#endif
+
+// DroneCAN dynamic node-ID allocation: the FC acts as the centralised allocator,
+// handing node IDs to unconfigured peers (e.g. ESCs). Runtime PG flag
+// (dronecan_dna_enabled) decides whether the allocator actually runs.
+#if !defined(ENABLE_DRONECAN_DNA)
+#define ENABLE_DRONECAN_DNA ENABLE_DRONECAN
 #endif
 
 // First-cut probe for SPA06-003 (Goertek) over STM32C5 I3C1 in legacy-I2C

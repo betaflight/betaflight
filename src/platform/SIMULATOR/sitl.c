@@ -51,6 +51,7 @@
 
 #include "drivers/accgyro/accgyro_virtual.h"
 #include "drivers/barometer/barometer_virtual.h"
+#include "drivers/compass/compass_virtual.h"
 #include "flight/imu.h"
 #include "flight/position.h"
 
@@ -320,6 +321,61 @@ static void updateState(const fdm_packet* pkt)
     // Legacy bridges (X-Plane, RealFlight) supply pressure directly in fdm_packet
     virtualBaroSet((int32_t)pkt->pressure, 2500);
 #endif
+    // Reconstruct the body-to-world (NWU) attitude quaternion from the packet.
+    // Consumed by the direct-attitude path and by the virtual mag feed, which
+    // must use the same rotation or mag fusion fights the fed attitude.
+#if ENABLE_GAZEBO_BRIDGE
+    // The Gazebo BetaflightPlugin sends the quaternion conjugated by Rx(π)
+    // (q_plugin = Rx(π) * M * Rx(π), with M the FLU-body to ENU-world
+    // attitude). Undo the conjugation (negate qy/qz), then rotate the world
+    // frame by Rz(π/2) (ENU -> NWU): q = Rz(π/2) * Rx(π) * q_plugin * Rx(π).
+    // FLU body equals Betaflight's internal NWU body, so the result is the
+    // proper body-to-world rotation - the Euler display and every rMat
+    // vector consumer (position estimator, mag fusion) agree at any heading.
+    const float pktQw = pkt->imu_orientation_quat[0];
+    const float pktQx = pkt->imu_orientation_quat[1];
+    const float pktQy = -pkt->imu_orientation_quat[2];
+    const float pktQz = -pkt->imu_orientation_quat[3];
+    static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
+    const float attQw = k * (pktQw - pktQz);
+    const float attQx = k * (pktQx - pktQy);
+    const float attQy = k * (pktQy + pktQx);
+    const float attQz = k * (pktQz + pktQw);
+#else
+    // Legacy bridges send the body-to-world quaternion directly
+    const float attQw = pkt->imu_orientation_quat[0];
+    const float attQx = pkt->imu_orientation_quat[1];
+    const float attQy = pkt->imu_orientation_quat[2];
+    const float attQz = pkt->imu_orientation_quat[3];
+#endif
+
+#if defined(USE_VIRTUAL_MAG)
+    {
+        // Synthetic earth field, NWU, 4096 counts: 60° inclination and 2° east
+        // declination so every body component is generically nonzero
+        // (compassEnabledAndCalibrated requires nonzero x, y and z). The 2°
+        // heading bias is negligible against scenario tolerances; the vertical
+        // component is ignored by imuCalcMagErr's horizontal projection.
+        static const float fieldN = 2046.8f;
+        static const float fieldW = -71.5f;
+        static const float fieldU = -3547.2f;
+        // v_body = R(q)^T * v_world
+        const float r00 = 1.0f - 2.0f * (attQy * attQy + attQz * attQz);
+        const float r01 = 2.0f * (attQx * attQy - attQw * attQz);
+        const float r02 = 2.0f * (attQx * attQz + attQw * attQy);
+        const float r10 = 2.0f * (attQx * attQy + attQw * attQz);
+        const float r11 = 1.0f - 2.0f * (attQx * attQx + attQz * attQz);
+        const float r12 = 2.0f * (attQy * attQz - attQw * attQx);
+        const float r20 = 2.0f * (attQx * attQz - attQw * attQy);
+        const float r21 = 2.0f * (attQy * attQz + attQw * attQx);
+        const float r22 = 1.0f - 2.0f * (attQx * attQx + attQy * attQy);
+        const float magX = r00 * fieldN + r10 * fieldW + r20 * fieldU;
+        const float magY = r01 * fieldN + r11 * fieldW + r21 * fieldU;
+        const float magZ = r02 * fieldN + r12 * fieldW + r22 * fieldU;
+        virtualMagSet(lrintf(magX), lrintf(magY), lrintf(magZ));
+    }
+#endif
+
 #if !defined(USE_IMU_CALC)
 #if defined(SET_IMU_FROM_EULER)
     // set from Euler
@@ -347,25 +403,7 @@ static void updateState(const fdm_packet* pkt)
     zf = atan2(t3, t4) * RAD2DEG;
     imuSetAttitudeRPY(xf, -yf, zf); // yes! pitch was inverted!!
 #else
-#if ENABLE_GAZEBO_BRIDGE
-    // The Gazebo BetaflightPlugin sends the quaternion conjugated by Rx(π)
-    // (q_plugin = Rx(π) * M * Rx(π), with M the FLU-body to ENU-world
-    // attitude). Undo the conjugation (negate qy/qz), then rotate the world
-    // frame by Rz(π/2) (ENU -> NWU): q = Rz(π/2) * Rx(π) * q_plugin * Rx(π).
-    // FLU body equals Betaflight's internal NWU body, so the result is the
-    // proper body-to-world rotation - the Euler display and every rMat
-    // vector consumer (position estimator, mag fusion) agree at any heading.
-    const float qw = pkt->imu_orientation_quat[0];
-    const float qx = pkt->imu_orientation_quat[1];
-    const float qy = -pkt->imu_orientation_quat[2];
-    const float qz = -pkt->imu_orientation_quat[3];
-    static const float k = 0.70710678f; // cos(π/4) = sin(π/4) = √2/2
-    imuSetAttitudeQuat(k * (qw - qz), k * (qx - qy), k * (qy + qx), k * (qz + qw));
-#else
-    // Legacy bridges send body-to-world quaternion directly
-    imuSetAttitudeQuat((float)pkt->imu_orientation_quat[0], (float)pkt->imu_orientation_quat[1],
-                       (float)pkt->imu_orientation_quat[2], (float)pkt->imu_orientation_quat[3]);
-#endif
+    imuSetAttitudeQuat(attQw, attQx, attQy, attQz);
 #endif
 #endif
 
@@ -373,6 +411,7 @@ static void updateState(const fdm_packet* pkt)
     const double longitude = pkt->position_xyz[0];
     const double latitude = pkt->position_xyz[1];
     const double altitude = pkt->position_xyz[2];
+
 
 #if ENABLE_GAZEBO_BRIDGE
     // Gazebo Harmonic's SphericalFromLocalPosition inverts horizontal position
@@ -406,8 +445,13 @@ static void updateState(const fdm_packet* pkt)
         course += 360.0;
     }
     // velocity_xyz is ENU: NED velN = [1], velE = [0], velD = -[2]
-    setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course,
-                  pkt->velocity_xyz[1], pkt->velocity_xyz[0], -pkt->velocity_xyz[2]);
+    // Out-of-range lat/lon is a test-harness sentinel for GPS loss: skip the
+    // update so the virtual GPS goes stale. Kept as a range check because
+    // -ffast-math folds isnan() to false. Real bridges send valid coordinates.
+    if (fabs(latitude) <= 90.0 && fabs(longitude) <= 180.0) {
+        setVirtualGPS(correctedLat, correctedLon, altitude, speed, speed3D, course,
+                      pkt->velocity_xyz[1], pkt->velocity_xyz[0], -pkt->velocity_xyz[2]);
+    }
 
     if (gpxEnabled) {
         static uint64_t lastGpxTimeUs = 0;
