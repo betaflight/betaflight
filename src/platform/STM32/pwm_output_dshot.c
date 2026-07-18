@@ -128,7 +128,8 @@ static void pwmDshotSetDirectionInput(
 
 #if defined(STM32F4)
     // Output and input share the channel, addresses, widths and increment modes.
-    // Switch direction and disable the output TC interrupt without rebuilding the stream.
+    // The stream is disabled and its flags are cleared by the IRQ handler before
+    // changing direction, as required before enabling a new DMA transfer.
     CLEAR_BIT(((DMA_Stream_TypeDef *)dmaRef)->CR, DMA_SxCR_DIR | DMA_SxCR_TCIE);
 #else
     xDMA_DeInit(dmaRef);
@@ -144,7 +145,6 @@ static void pwmDshotSetDirectionInput(
     TIM_ICInit(timer, &motor->icInitStruct);
 
 #if !defined(STM32F4)
-    motor->dmaInitStruct.DMA_DIR = DMA_DIR_PeripheralToMemory;
     xDMA_Init(dmaRef, pDmaInit);
 #endif
 }
@@ -197,6 +197,14 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             TIM_DMACmd((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
         }
 
+#if defined(STM32F4)
+        DMA_Stream_TypeDef *stream = (DMA_Stream_TypeDef *)motor->dmaRef;
+        while (stream->CR & DMA_SxCR_EN) {
+            // Configuration registers are write-protected until EN reads zero.
+        }
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF | DMA_IT_DMEIF | DMA_IT_TEIF | DMA_IT_HTIF | DMA_IT_TCIF);
+#endif
+
 #ifdef USE_DSHOT_TELEMETRY
         if (useDshotTelemetry) {
             pwmDshotSetDirectionInput(motor);
@@ -206,7 +214,9 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
 #endif
+#if !defined(STM32F4)
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+#endif
     }
 }
 
