@@ -420,6 +420,23 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *blinking = true;
         return;
     }
+
+    // Mission progress cues, below every critical warning above. The mode
+    // itself is shown by the flight-mode indicator; these surface the two
+    // states that are otherwise invisible: the terminal descent and arrival.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        if (flightPlanNavGetState() == FP_NAV_LANDING) {
+            tfp_sprintf(warningText, "WP LANDING");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+        if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+            tfp_sprintf(warningText, "WP COMPLETE");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
+    }
 #endif
 
     // Show warning if in HEADFREE flight mode

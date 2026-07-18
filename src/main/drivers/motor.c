@@ -42,6 +42,10 @@
 
 #include "sensors/battery.h"
 
+#if ENABLE_DRONECAN_ESC
+#include "io/dronecan/dronecan_esc.h"
+#endif
+
 #include "motor.h"
 
 static FAST_DATA_ZERO_INIT motorDevice_t motorDevice;
@@ -172,6 +176,11 @@ bool checkMotorProtocolEnabled(const motorDevConfig_t *motorDevConfig, bool *isP
         isDshot = true;
         break;
 #endif
+#if ENABLE_DRONECAN_ESC
+    case MOTOR_PROTOCOL_DRONECAN:
+        enabled = true;
+        break;
+#endif
     default:
         break;
     }
@@ -201,9 +210,22 @@ motorProtocolFamily_e motorGetProtocolFamily(void)
     case MOTOR_PROTOCOL_PROSHOT1000:
         return MOTOR_PROTOCOL_FAMILY_DSHOT;
 #endif
+#if ENABLE_DRONECAN_ESC
+    case MOTOR_PROTOCOL_DRONECAN:
+        return MOTOR_PROTOCOL_FAMILY_CAN;
+#endif
     default:
         return MOTOR_PROTOCOL_FAMILY_UNKNOWN;
     }
+}
+
+bool isMotorProtocolDronecan(void)
+{
+#if ENABLE_DRONECAN_ESC
+    return motorConfig()->dev.motorProtocol == MOTOR_PROTOCOL_DRONECAN;
+#else
+    return false;
+#endif
 }
 
 static void checkMotorProtocol(const motorDevConfig_t *motorDevConfig)
@@ -226,6 +248,11 @@ void motorInitEndpoints(const motorConfig_t *motorConfig, float outputLimit, flo
 #ifdef USE_DSHOT
         case MOTOR_PROTOCOL_FAMILY_DSHOT:
             dshotInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
+            break;
+#endif
+#if ENABLE_DRONECAN_ESC
+        case MOTOR_PROTOCOL_FAMILY_CAN:
+            dronecanMotorInitEndpoints(motorConfig, outputLimit, outputLow, outputHigh, disarm, deadbandMotor3dHigh, deadbandMotor3dLow);
             break;
 #endif
         default:
@@ -289,6 +316,12 @@ void motorDevInit(unsigned motorCount)
     motorDevice.count = motorCount;
     if (isMotorProtocolEnabled()) {
         do {
+#if ENABLE_DRONECAN_ESC
+            if (isMotorProtocolDronecan()) {
+                success = dronecanMotorDevInit(&motorDevice, motorCount);
+                break;
+            }
+#endif
             if (!isMotorProtocolDshot()) {
 #ifdef USE_PWM_OUTPUT
                 success = motorPwmDevInit(&motorDevice, motorDevConfig, idlePulse);

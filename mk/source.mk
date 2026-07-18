@@ -12,6 +12,7 @@ PG_SRC = \
             pg/can.c \
             pg/dashboard.c \
             pg/dronecan.c \
+            pg/dronecan_dna.c \
             pg/displayport_profiles.c \
             pg/dyn_notch.c \
             pg/flash.c \
