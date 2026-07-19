@@ -97,12 +97,12 @@
 
 #define XY_DISTANCE_SCALE    0.0015f   // distance P / velocity I
 #define XY_DISTANCE_I_SCALE  0.00015f  // distance I
-#define XY_VELOCITY_SCALE    0.002f    // distance D / velocity P
+#define XY_VELOCITY_SCALE    0.002f    // distance D / velocity P (opposes velocity)
 #define XY_ACCEL_SCALE       0.0005f   // distance Acceleration / velocity D
 
 
-#define XY_F_SCALE           0.002f   //  stick velocity target feedforward value
-#define XY_DRAG_SCALE        0.0001f  //  velocity based drag correction factor for Nav/ Velocity modes
+#define XY_F_SCALE           0.002f   //  velocity target delta gain value
+#define XY_DRAG_SCALE        0.0001f  //  velocity based drag correction factor
 
 
 #define POSHOLD_STALL_CHECK_SPEED_CMS  45.0f // below this speed a deceleration reversal means braking has stalled to a stop
@@ -132,6 +132,7 @@ static float throttleOut = 0.0f;
 
 static vector2_t targetPosition;
 static vector2_t targetVelocity;
+static vector2_t previousTargetVelocity; // for feedforward
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -688,7 +689,10 @@ bool positionControl(void)
     vector2_t velocityFilteredV = { { 0 } };
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-         float dTermBrakingBoost = 1.0f;
+        float dTermBrakingBoost = 1.0f;
+        const float targetVelDelta = targetVelocity.v[axis] - previousTargetVelocity.v[axis];
+        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
+
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityFilteredV.v[axis] = velocityFiltered;
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
@@ -696,11 +700,9 @@ bool positionControl(void)
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
         bool shouldIntegrateDistanceError = true;
-        float kF = xyPid.Kf; // normal kF for position hold stick movements
 
         if (velocityMode) {
             // Nav velocity loop: track the commanded ground velocity directly.
-            kF = xyKDrag + xyPid.Kd; // drag feedforward plus normal D gain to emulate D from error
             distanceErrorIntegral.v[axis] = 0.0f; // force distance error integral to zero
             shouldIntegrateDistanceError = false; // do not allow second integral accumulation
             if (fabsf(velocityError.v[axis]) < XY_VELOCITY_I_RELAX_CMS
@@ -708,10 +710,9 @@ bool positionControl(void)
                 distanceError.v[axis] += velocityError.v[axis] * dt; // make a virtual distance error from integral of velocityError
             }
         } else if (ap.isPosHoldBraking) {
-            kF = 0.0f; // no drive from velocity target while braking :comment may not be needed as target velocity must be zero while braking
             // Move the target with the craft while slowing, so P doesn'tsnap from a large value to zero the instant the craft stops.
             targetPosition.v[axis] += velocity.v[axis] * dt;
-            shouldIntegrateDistanceError = false;
+            shouldIntegrateDistanceError = false; // don't integrate distance error while actively braking
         } else {
             // not in a special mode
             distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis]; //normal distanceError calculation from currentPosition
@@ -727,8 +728,9 @@ bool positionControl(void)
             pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
             pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
             pidD.v[axis] = -velocityFiltered * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
+            pidD.v[axis] += velocityFiltered *xyKDrag; // drag compensation reduces damping
             pidA.v[axis] = acceleration * xyPid.Ka;
-            pidF.v[axis] = targetVelocity.v[axis] * kF; // velocity feedforward
+            pidF.v[axis] = (targetVelocity.v[axis] + targetVelDelta) * xyPid.Kf;
 
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
     } // End for loop
