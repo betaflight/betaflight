@@ -154,6 +154,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/flight_plan_nav.h"
 #include "flight/gps_rescue.h"
 #include "flight/position.h"
 #include "flight/imu.h"
@@ -170,6 +171,7 @@
 #include "osd/osd_elements.h"
 #include "osd/osd_warnings.h"
 
+#include "pg/flight_plan.h"
 #include "pg/motor.h"
 #include "pg/pilot.h"
 #include "pg/stats.h"
@@ -1295,6 +1297,111 @@ static void osdElementEfficiency(osdElementParms_t *element)
         tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
     }
 }
+
+#if ENABLE_FLIGHT_PLAN
+static void osdPutHyphen(osdElementParms_t *element)
+{
+    element->buff[0] = SYM_HYPHEN;
+    element->buff[1] = '\0';
+}
+
+// Current waypoint clamped into the stored plan; valid only when count > 0.
+static uint8_t osdWpCurrentIndex(uint8_t count)
+{
+    const uint8_t index = flightPlanNavGetCurrentIndex();
+    return (index < count) ? index : (uint8_t)(count - 1);
+}
+
+static void osdElementWpNumber(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "WP%u/%u", osdWpCurrentIndex(count) + 1, count);
+}
+
+static void osdElementWpNextNumber(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    const uint8_t next = osdWpCurrentIndex(count) + 1;
+    if (next >= count) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "NEXT%u", next + 1);
+}
+
+static void osdFormatWaypointCoordinate(char *buff, int32_t value, char leadingSymbol)
+{
+    *buff++ = leadingSymbol;
+    if (value < 0) {
+        *buff++ = SYM_HYPHEN;
+    }
+    tfp_sprintf(buff, "%u.%07u", abs(value) / GPS_DEGREES_DIVIDER, abs(value) % GPS_DEGREES_DIVIDER);
+}
+
+static void osdElementWpCoordinate(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    const waypoint_t *wp = &flightPlanConfig()->waypoints[osdWpCurrentIndex(count)];
+    if (element->item == OSD_WP_CURRENT_LON) {
+        osdFormatWaypointCoordinate(element->buff, wp->longitude, SYM_LON);
+    } else {
+        osdFormatWaypointCoordinate(element->buff, wp->latitude, SYM_LAT);
+    }
+}
+
+static void osdElementWpAltitude(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    osdFormatAltitudeString(element->buff, flightPlanConfig()->waypoints[osdWpCurrentIndex(count)].altitude, element->type);
+}
+
+static void osdElementWpDistance(osdElementParms_t *element)
+{
+    const float distanceM = flightPlanNavGetDistanceToWaypointM();
+    if (distanceM < 0.0f) {
+        osdPutHyphen(element);
+        return;
+    }
+    osdFormatDistanceString(element->buff, lrintf(distanceM), SYM_NONE);
+}
+
+static void osdElementWpDirection(osdElementParms_t *element)
+{
+    const int32_t bearingDeci = flightPlanNavGetBearingToWaypointDeciDeg();
+    if (bearingDeci < 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(bearingDeci - attitude.values.yaw));
+    element->buff[1] = 0;
+}
+
+static void osdElementWpEta(osdElementParms_t *element)
+{
+    const uint16_t etaSeconds = flightPlanNavGetEtaSeconds();
+    if (etaSeconds == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "%02u:%02u", etaSeconds / 60, etaSeconds % 60);
+}
+#endif // ENABLE_FLIGHT_PLAN
 #endif // USE_GPS
 
 #ifdef USE_GPS_LAP_TIMER
@@ -2053,6 +2160,16 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
+#if ENABLE_FLIGHT_PLAN
+    [OSD_WP_NUMBER]               = osdElementWpNumber,
+    [OSD_WP_CURRENT_LAT]          = osdElementWpCoordinate,
+    [OSD_WP_CURRENT_LON]          = osdElementWpCoordinate,
+    [OSD_WP_CURRENT_ALT]          = osdElementWpAltitude,
+    [OSD_WP_DISTANCE]             = osdElementWpDistance,
+    [OSD_WP_DIRECTION]            = osdElementWpDirection,
+    [OSD_WP_NEXT_NUMBER]          = osdElementWpNextNumber,
+    [OSD_WP_ETA]                  = osdElementWpEta,
+#endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
     [OSD_DEBUG2]                  = osdElementDebug2,
@@ -2211,6 +2328,16 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+#if ENABLE_FLIGHT_PLAN
+        osdAddActiveElement(OSD_WP_NUMBER);
+        osdAddActiveElement(OSD_WP_CURRENT_LAT);
+        osdAddActiveElement(OSD_WP_CURRENT_LON);
+        osdAddActiveElement(OSD_WP_CURRENT_ALT);
+        osdAddActiveElement(OSD_WP_DISTANCE);
+        osdAddActiveElement(OSD_WP_DIRECTION);
+        osdAddActiveElement(OSD_WP_NEXT_NUMBER);
+        osdAddActiveElement(OSD_WP_ETA);
+#endif
     }
 #endif // GPS
 

@@ -36,6 +36,7 @@ extern "C" {
 
     #include "flight/flight_plan_nav.h"
     #include "flight/gps_rescue.h"
+    #include "flight/imu.h"
     #include "flight/position_estimator.h"
     #include "flight/position_nav.h"
 
@@ -53,6 +54,7 @@ extern "C" {
     uint16_t GPS_distanceToHome;
     gpsSolutionData_t gpsSol;
     gpsLocation_t GPS_home_llh;
+    attitudeEulerAngles_t attitude;
 }
 
 #include "unittest_macros.h"
@@ -252,6 +254,9 @@ void pitchForwardOverride(bool request)
     g_pitchForwardCalls++;
     g_lastPitchForward = request;
 }
+
+void autopilotForceLevelPark(bool) {}
+void autopilotSetNavHeadingOverride(bool, float) {}
 
 } // extern "C"
 
@@ -554,7 +559,11 @@ TEST_F(FlightPlanRescueTest, FullRescueRunToLanding)
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 1);
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
-    triggerReached();
+    // wp1 (fly home) is an en-route pass-through leg: it advances through the
+    // executor's carrot gate on a position update, not the positionNav callback.
+    // The estimator places the craft at home (ENU origin), already inside the gate.
+    g_stubMicros += 100'000;
+    flightPlanNavUpdate(g_stubMicros);
     ASSERT_EQ(flightPlanNavGetCurrentIndex(), 2);
     ASSERT_EQ(flightPlanNavGetState(), FP_NAV_TARGETING);
 
