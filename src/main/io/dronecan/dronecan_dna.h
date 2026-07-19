@@ -21,21 +21,18 @@
 
 #pragma once
 
-#include "drivers/can/can.h"
-#include "drivers/io_types.h"
+#include "platform.h"
 
-#include "pg/pg.h"
+#if ENABLE_DRONECAN_DNA
 
-typedef struct canPinConfig_s {
-    ioTag_t ioTagTx;
-    ioTag_t ioTagRx;
-    ioTag_t ioTagSilent;
-} canPinConfig_t;
+#include "common/time.h"
 
-PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);
+// Install the dynamic node-ID allocation handler. No-op if dronecan_dna_enabled
+// is clear. Called once from dronecanInit().
+void dronecanDnaInit(void);
 
-typedef struct canConfig_s {
-    uint16_t bitrate_khz;   // nominal bit rate in kHz (default 1000 = 1 Mbit/s)
-} canConfig_t;
+// Drop an in-progress allocation session that has stalled past the follow-up
+// timeout. Called on the dronecan task's 1 Hz boundary.
+void dronecanDnaExpireSessions(timeUs_t currentTimeUs);
 
-PG_DECLARE(canConfig_t, canConfig);
+#endif // ENABLE_DRONECAN_DNA

@@ -21,16 +21,26 @@
 
 #pragma once
 
+#include "platform.h"
+
+#if ENABLE_DRONECAN && defined(USE_MAG)
+
+#include <stdbool.h>
 #include <stdint.h>
 
-#include "pg/pg.h"
+#include "common/axis.h"
+#include "common/time.h"
 
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
+// Install the MagneticFieldStrength2 subscriber. Call once from dronecanInit()
+// after the base subscriber table has been initialised.
+void dronecanMagInit(void);
 
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+// Copy the last-received field vector (milligauss, body frame) into the
+// caller's buffer. Returns false if no frame has been received yet.
+bool dronecanMagGetLatest(int16_t mag[XYZ_AXIS_COUNT]);
+
+// Microsecond timestamp of the most recent accepted frame (host clock, not the
+// DSDL timestamp). Used by the compass driver to detect staleness.
+timeUs_t dronecanMagLastUpdateUs(void);
+
+#endif // ENABLE_DRONECAN && USE_MAG

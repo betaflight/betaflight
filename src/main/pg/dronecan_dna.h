@@ -21,21 +21,30 @@
 
 #pragma once
 
-#include "drivers/can/can.h"
-#include "drivers/io_types.h"
+#include "platform.h"
+
+#if ENABLE_DRONECAN_DNA
+
+#include <stdint.h>
 
 #include "pg/pg.h"
 
-typedef struct canPinConfig_s {
-    ioTag_t ioTagTx;
-    ioTag_t ioTagRx;
-    ioTag_t ioTagSilent;
-} canPinConfig_t;
+#include "io/dronecan/dronecan_msg.h"
 
-PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);
+// Persisted dynamic node-ID allocation table. Each occupied slot binds a peer's
+// 16-byte unique ID to the node ID this FC handed it, so the same device keeps
+// its ID across reboots. nodeId == 0 marks an empty slot.
+#define DRONECAN_DNA_MAX_ENTRIES    16
 
-typedef struct canConfig_s {
-    uint16_t bitrate_khz;   // nominal bit rate in kHz (default 1000 = 1 Mbit/s)
-} canConfig_t;
+typedef struct dronecanDnaEntry_s {
+    uint8_t uniqueId[UAVCAN_DNA_UNIQUE_ID_LEN];
+    uint8_t nodeId;
+} dronecanDnaEntry_t;
 
-PG_DECLARE(canConfig_t, canConfig);
+typedef struct dronecanDnaConfig_s {
+    dronecanDnaEntry_t entry[DRONECAN_DNA_MAX_ENTRIES];
+} dronecanDnaConfig_t;
+
+PG_DECLARE(dronecanDnaConfig_t, dronecanDnaConfig);
+
+#endif // ENABLE_DRONECAN_DNA
