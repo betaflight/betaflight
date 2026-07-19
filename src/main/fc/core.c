@@ -1076,7 +1076,8 @@ void processRxModes(timeUs_t currentTimeUs)
     // channel-validity guard keeps rxfail aux substitution from ghost-editing
     // the plan during signal loss.
     flightPlanCaptureUpdate(currentTimeUs,
-                            rxAreFlightChannelsValid() && IS_RC_MODE_ACTIVE(BOXWPCAPTURE));
+                            IS_RC_MODE_ACTIVE(BOXWPCAPTURE),
+                            rxAreFlightChannelsValid());
 
     // During failsafe the mission flies only while the failsafe state machine
     // has chosen to (rx-loss policy). In the stage-1 window before failsafe

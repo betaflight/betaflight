@@ -29,7 +29,7 @@
 // position (sampled at the press) to the flight plan as a FLYBY waypoint, a
 // 1.5 s hold deletes the last waypoint. Edits apply to the live PG plan, so
 // the CLI waypoint command sees them and `save` persists them.
-void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive);
+void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool channelsValid);
 
 // Transient OSD cue ("WP3 SET", "WP2 DELETED", "WP FULL"), or NULL when none
 // is pending. The cue self-expires.

@@ -83,8 +83,8 @@ protected:
         g_stubMicros += ms * 1000;
     }
 
-    void update(bool switchActive) {
-        flightPlanCaptureUpdate(g_stubMicros, switchActive);
+    void update(bool switchActive, bool channelsValid = true) {
+        flightPlanCaptureUpdate(g_stubMicros, switchActive, channelsValid);
     }
 
     // press then release with the switch held for holdMs
@@ -179,6 +179,26 @@ TEST_F(FlightPlanCaptureTest, SwitchIsIgnoredWhileTheMissionFlies)
     update(false);
     EXPECT_EQ(2, flightPlanConfig()->waypointCount);
     EXPECT_TRUE(flightPlanCaptureOsdMessage() == NULL);
+}
+
+TEST_F(FlightPlanCaptureTest, SignalLossMidHoldFreezesTheGestureNotCommitsIt)
+{
+    fillPlan(2);
+
+    // press starts a hold that's heading for a delete...
+    update(true);
+    advanceMs(800);
+    // ...but the link drops before the 1.5 s threshold. that must not read as a
+    // release and commit the pending waypoint - freeze instead
+    update(true, false);
+    EXPECT_EQ(2, flightPlanConfig()->waypointCount);
+    EXPECT_TRUE(flightPlanCaptureOsdMessage() == NULL);
+
+    // link back, still held, cross the threshold: the delete lands as intended
+    advanceMs(800);
+    update(true);
+    EXPECT_EQ(1, flightPlanConfig()->waypointCount);
+    EXPECT_STREQ("WP2 DELETED", flightPlanCaptureOsdMessage());
 }
 
 TEST_F(FlightPlanCaptureTest, MissionEngagingBetweenPressAndReleaseCancelsTheDrop)

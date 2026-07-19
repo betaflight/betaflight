@@ -71,8 +71,18 @@ static bool editsAllowed(void)
     return !flightPlanNavIsActive();
 }
 
-void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive)
+void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool channelsValid)
 {
+    // signal loss: freeze the gesture rather than read the dropout as a
+    // release. folding validity into switchActive would make a hold that was
+    // heading for a delete look like a release and commit the pending waypoint
+    // - the exact ghost-edit this guard exists to stop. the press position and
+    // the hold clock are both held, so the gesture just resumes when the link
+    // is back (and rxfail driving the box high mid-loss still can't touch it).
+    if (!channelsValid) {
+        return;
+    }
+
     flightPlanConfig_t *plan = flightPlanConfigMutable();
 
     if (switchActive && !switchWas) {
