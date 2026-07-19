@@ -400,11 +400,19 @@ void configLock(void)
         // rewriting config, invalidate ICACHE so subsequent reads are coherent
         // instead of being served from stale cache lines. CMSIS-direct (the C5
         // HAL2 has no ICACHE wrapper); bounded wait so a stuck flag can't hang.
+        //
+        // Clear any stale busy-end flag first (e.g. left set by the power-on
+        // auto-invalidation) — otherwise the wait below would see BSYENDF
+        // already set and exit before THIS invalidation completes, leaving the
+        // cache with stale config lines.
+        WRITE_REG(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
         SET_BIT(ICACHE->CR, ICACHE_CR_CACHEINV);
         for (volatile uint32_t icacheWait = 0;
              icacheWait < 1000000U && !(ICACHE->SR & ICACHE_SR_BSYENDF);
              icacheWait++) { }
         WRITE_REG(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
+        __DSB();
+        __ISB();
 #endif
 #elif defined(X32M7)
         // NOP
