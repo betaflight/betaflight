@@ -6129,6 +6129,44 @@ static void cliStatus(const char *cmdName, char *cmdline)
             }
 #endif
         }
+        if (gpsData.state >= GPS_STATE_RECEIVING_DATA) {
+            cliPrintLinefeed();
+            cliPrintf("  sats: %d", gpsSol.numSat);
+
+            uint16_t cnoSum = 0;
+            uint8_t cnoCount = 0;
+            for (unsigned i = 0; i < GPS_numCh; i++) {
+                if (GPS_svinfo[i].cno > 0) {
+                    cnoSum += GPS_svinfo[i].cno;
+                    cnoCount++;
+                }
+            }
+            if (cnoCount > 0) {
+                cliPrintf(", signal: %d dBHz", cnoSum / cnoCount);
+            }
+
+            if (gpsSol.dop.hdop > 0) {
+                cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
+            }
+
+            if (STATE(GPS_FIX)) {
+                const int32_t lat = gpsSol.llh.lat;
+                const int32_t lon = gpsSol.llh.lon;
+                const int32_t altCm = gpsSol.llh.altCm;
+                cliPrintf(", pos: %s%d.%07d %s%d.%07d, alt: %s%d.%02dm",
+                    lat < 0 ? "-" : "", ABS(lat) / 10000000, ABS(lat) % 10000000,
+                    lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
+                    altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
+            } else {
+                cliPrint(", no fix");
+            }
+
+            if (gpsSol.dateTime.valid) {
+                cliPrintf(", %04d-%02d-%02dT%02d:%02d:%02dZ",
+                    gpsSol.dateTime.year, gpsSol.dateTime.month, gpsSol.dateTime.day,
+                    gpsSol.dateTime.hour, gpsSol.dateTime.min, gpsSol.dateTime.sec);
+            }
+        }
     } else {
         cliPrint("NOT ENABLED");
     }
