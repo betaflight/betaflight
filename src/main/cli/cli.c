@@ -6129,7 +6129,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
             }
 #endif
         }
-        if (gpsData.state >= GPS_STATE_RECEIVING_DATA) {
+        if (gpsIsHealthy()) {
             cliPrintLinefeed();
             cliPrintf("  sats: %d", gpsSol.numSat);
 
@@ -6158,7 +6158,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
                     lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
                     altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
             } else {
-                cliPrint(", no fix");
+                cliPrint(", pos: no fix");
             }
 
             if (gpsSol.dateTime.valid) {
