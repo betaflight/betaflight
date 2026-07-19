@@ -6149,6 +6149,10 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
             }
 
+            if (gpsSol.dop.vdop > 0) {
+                cliPrintf(", vdop: %d.%02d", gpsSol.dop.vdop / 100, gpsSol.dop.vdop % 100);
+            }
+
             if (STATE(GPS_FIX)) {
                 const int32_t lat = gpsSol.llh.lat;
                 const int32_t lon = gpsSol.llh.lon;
