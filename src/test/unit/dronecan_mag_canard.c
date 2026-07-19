@@ -19,23 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "drivers/can/can.h"
-#include "drivers/io_types.h"
-
-#include "pg/pg.h"
-
-typedef struct canPinConfig_s {
-    ioTag_t ioTagTx;
-    ioTag_t ioTagRx;
-    ioTag_t ioTagSilent;
-} canPinConfig_t;
-
-PG_DECLARE_ARRAY(canPinConfig_t, CANDEV_COUNT, canPinConfig);
-
-typedef struct canConfig_s {
-    uint16_t bitrate_khz;   // nominal bit rate in kHz (default 1000 = 1 Mbit/s)
-} canConfig_t;
-
-PG_DECLARE(canConfig_t, canConfig);
+// Compile libcanard's implementation into the test binary. The submodule path
+// is added to this test's INCLUDE_DIRS so both this shim and the code under
+// test resolve canard.h against the same source.
+#if !__has_include("canard.c")
+#error "libcanard missing; run: git submodule update --init lib/modules/dronecan/libcanard"
+#endif
+#include "canard.c"

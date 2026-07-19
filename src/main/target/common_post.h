@@ -913,6 +913,20 @@ extern struct linker_symbol __fontdata_end;
 #define ENABLE_DRONECAN ENABLE_CAN
 #endif
 
+// DroneCAN ESC: command ESCs over CAN (uavcan.equipment.esc.RawCommand) and
+// ingest their telemetry (uavcan.equipment.esc.Status). Built in wherever the
+// DroneCAN stack is, gated at runtime by selecting the DRONECAN motor protocol.
+#if !defined(ENABLE_DRONECAN_ESC)
+#define ENABLE_DRONECAN_ESC ENABLE_DRONECAN
+#endif
+
+// DroneCAN dynamic node-ID allocation: the FC acts as the centralised allocator,
+// handing node IDs to unconfigured peers (e.g. ESCs). Runtime PG flag
+// (dronecan_dna_enabled) decides whether the allocator actually runs.
+#if !defined(ENABLE_DRONECAN_DNA)
+#define ENABLE_DRONECAN_DNA ENABLE_DRONECAN
+#endif
+
 // First-cut probe for SPA06-003 (Goertek) over STM32C5 I3C1 in legacy-I2C
 // mode. When set, the probe runs once after baroInit() to confirm I3C bring-up
 // on PC10/PC11 by reading the SPA06 CHIP_ID (reg 0x0D) at address 0x77/0x76.

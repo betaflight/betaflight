@@ -387,6 +387,13 @@ void configLock(void)
 {
 #if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
+#if defined(STM32H5)
+        // On H5 the instruction cache also caches const/data reads from the
+        // flash code region, which includes the config storage area. After
+        // rewriting config, invalidate ICACHE so subsequent reads are coherent
+        // instead of being served from stale cache lines.
+        HAL_ICACHE_Invalidate();
+#endif
 #if defined(STM32C5)
         // On C5 the instruction cache also caches const/data reads from the
         // flash code region, which includes the config storage area. After
