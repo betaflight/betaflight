@@ -105,7 +105,7 @@
 #define XY_DRAG_SCALE        0.0001f  //  velocity based drag correction factor
 
 
-#define POSHOLD_STALL_CHECK_SPEED_CMS  45.0f // below this speed a deceleration reversal means braking has stalled to a stop
+#define POSHOLD_VELOCITY_REVERSAL_THRESHOLD 50.0f // dotcross reversal greater than this will terminate braking mode
 #define SANITY_CHECK_DISTANCE 2000.0f        // 20m, increased when stopping from speeds above 10m/s
 #define ERROR_DISTANCE_LIMIT  2000.0f        // TO DO: test set to a useful value, this is 20m
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
@@ -140,7 +140,7 @@ static vector2_t distanceErrorIntegral;  // integral of position error
 static vector2_t previousVelocity;       // for acceleration
 
 static pt2Filter_t posAccelLpf[EF_AXIS_COUNT];
-static pt2Filter_t posDtermLpf[EF_AXIS_COUNT];
+static pt2Filter_t posPidSumLpf[EF_AXIS_COUNT];
 
 static bool isPositionHeld;
 static bool wasPositionHeld = false;
@@ -167,9 +167,6 @@ typedef struct autopilotState_s {
     bool navActive;
     float maxAngle;
     float speedXY;              // horizontal ground speed this loop, cm/s
-    float speedXYOneLoopAgo;
-    float speedTwoLoopsAgo;
-    float prevDeltaSpeedXY;     // speed delta one loop ago, for the stall inflection test
     bool isPosHoldBraking;      // decelerating toward a captured hold point
     unsigned debugAxis;
 } autopilotState_t;
@@ -189,7 +186,7 @@ static void initPidLpfs(void)
     const float k = pt2FilterGain(cutoffHz, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ));
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         pt2FilterInit(&posAccelLpf[i], k);
-        pt2FilterInit(&posDtermLpf[i], k);
+        pt2FilterInit(&posPidSumLpf[i], k);
     }
 }
 
@@ -216,9 +213,6 @@ void autopilotInit(void)
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     ap.speedXY = 0.0f;
-    ap.speedXYOneLoopAgo = 0.0f;
-    ap.speedTwoLoopsAgo = 0.0f;
-    ap.prevDeltaSpeedXY = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
     forcePitchForward = false;
@@ -578,7 +572,8 @@ bool positionControl(void)
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const timeDelta_t posholdDtUs = getTaskDeltaTimeUs(TASK_SELF);
     const float dt = (posholdDtUs > 0) ? (posholdDtUs * 1e-6f) : HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
-
+    static int brakingTimer = 0;
+    
     if (!est->isValidXY) {
         disableYawControl();
         return false;
@@ -619,14 +614,7 @@ bool positionControl(void)
     positionNavUpdate(dt, est);
     ap.navActive = positionNavHasActiveTarget() && !positionNavTargetReached();
 
-    // Speed history for the braking stop/stall detector, kept in ap so it
-    // resets cleanly on re-engage rather than persisting in a function static.
     ap.speedXY = vector2Norm(&velocity);
-    const float currentDeltaXY = ap.speedXY - ap.speedXYOneLoopAgo;
-    ap.prevDeltaSpeedXY = ap.speedXYOneLoopAgo - ap.speedTwoLoopsAgo;
-    ap.speedTwoLoopsAgo = ap.speedXYOneLoopAgo;
-    ap.speedXYOneLoopAgo = ap.speedXY;
-
     if (ap.navActive) {
         isPositionHeld = false;
         if (!wasNavActive) {
@@ -639,6 +627,7 @@ bool positionControl(void)
         // Control mode should be position hold
         if (!isPositionHeld) {
             initPositionHold();
+            brakingTimer = 0;
             ap.sanityCheckDistance = calculateSanityCheckDistance();
             isPositionHeld = true;
         }
@@ -659,15 +648,23 @@ bool positionControl(void)
                 updatePositionHoldTarget();
                 ap.sanityCheckDistance = calculateSanityCheckDistance();
                 ap.isPosHoldBraking = true;
+                brakingTimer = 0;
             }
             if (ap.isPosHoldBraking) {
-                // Braking mode; ends when decelerating below the stop threshold, or when a
-                // deceleration reversal at low speed implies that the braking has stalled.
-                const float inflectionProduct = currentDeltaXY * ap.prevDeltaSpeedXY;
-                const bool stopped = (currentDeltaXY <= 0.0f) && (ap.speedXY < (float)autopilotConfig()->stopThreshold);
-                const bool stalled = (ap.speedXY < POSHOLD_STALL_CHECK_SPEED_CMS) && (inflectionProduct < 0.0f);
-                if (stopped || stalled) {
-                    updatePositionHoldTarget(); // capture the stopped point as the hold target
+                targetPosition = currentPosition; // Drag target location every frame while braking to avoid P and I climb
+                brakingTimer += 1; //
+                if (brakingTimer > POSHOLD_TASK_RATE_HZ) { // one second, might be better at 1.5 or 2.0s but this is pretty good
+                    brakingTimer = POSHOLD_TASK_RATE_HZ;
+                }
+                // Braking mode; ends when velocity is below the stop threshold or when the dominant velocity vector reverses sign
+                const float vectorDotProduct = (velocity.v[EF_NORTH] * previousVelocity.v[EF_NORTH]) + 
+                                               (velocity.v[EF_EAST]  * previousVelocity.v[EF_EAST]);
+                const bool velocityCrossingZero = vectorDotProduct < -POSHOLD_VELOCITY_REVERSAL_THRESHOLD; // some deadband
+                const bool stopped = (ap.speedXY < (float)autopilotConfig()->stopThreshold);
+                const bool timedOut = brakingTimer >= POSHOLD_TASK_RATE_HZ;
+                if (stopped || timedOut || velocityCrossingZero) {
+                    updatePositionHoldTarget(); // capture the current location as the final hold  target
+                    brakingTimer = 0;
                     ap.isPosHoldBraking = false;
                 }
             } else {
@@ -684,7 +681,6 @@ bool positionControl(void)
             }
         }
     }
-
     updateYawControl(dt, est);
 
     wasPositionHeld = isPositionHeld;
@@ -692,7 +688,6 @@ bool positionControl(void)
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
 
     const bool velocityMode = ap.navActive && autopilotConfig()->velocityControlEnable;
-    vector2_t velocityFilteredV = { { 0 } };
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
@@ -701,12 +696,11 @@ bool positionControl(void)
         const float limitedTgtVelDelta = constrainf(tgtVelDelta, -MAX_TARGET_VELOCITY_STEP, MAX_TARGET_VELOCITY_STEP);
         targetVelocityRamped.v[axis] += limitedTgtVelDelta; // avoid sharp jumps in targetVelocityRamped, limiting rate of change to MAX_TARGET_VELOCITY_STEP
 
-        const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
-        velocityFilteredV.v[axis] = velocityFiltered;
-        velocityError.v[axis] = targetVelocityRamped.v[axis] - velocityFiltered;
-        const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ;
-        previousVelocity.v[axis] = velocityFiltered;
+        velocityError.v[axis] = targetVelocityRamped.v[axis] - velocity.v[axis];
+        const float accelerationRaw = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
+        previousVelocity.v[axis] =  velocity.v[axis];
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
+
         bool shouldIntegrateDistanceError = true;
 
         if (velocityMode) {
@@ -723,7 +717,6 @@ bool positionControl(void)
 
             if (ap.isPosHoldBraking) {
                 dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
-                distanceError.v[axis] = 0.0f; // force P to zero and thereby also block iTerm accumulation
             } else if (ap.sticksActive) {
                 // both velocity target and position target are actively changed according to setpoint
                 shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value 
@@ -736,14 +729,15 @@ bool positionControl(void)
             distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
         }
 
-            pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
-            pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
-            pidD.v[axis] = -velocityFiltered * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
-            pidD.v[axis] += velocityFiltered *xyKDrag; // drag compensation reduces damping
-            pidA.v[axis] = acceleration * xyPid.Ka;
-            pidF.v[axis] = targetVelocityRamped.v[axis] * xyPid.Kd + limitedTgtVelDelta * xyPid.Kf;
-            // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
+        pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
+        pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
+        pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
+        pidD.v[axis] += velocity.v[axis] *xyKDrag; // drag compensation reduces damping
+        pidA.v[axis] = acceleration * xyPid.Ka;
+        pidF.v[axis] = targetVelocityRamped.v[axis] * xyPid.Kd + limitedTgtVelDelta * xyPid.Kf;
+        // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
+        pidSumVectorEF.v[axis] = pt2FilterApply(&posPidSumLpf[axis], pidSumVectorEF.v[axis]);
     } // End for loop
 
     bool buildupClamped = false;
@@ -789,7 +783,7 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis])); // velocity error
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis])); // velocity cm/s
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis])); // distance error
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));   
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));
@@ -808,7 +802,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
 
     DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocityFilteredV.v[ap.debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));
     DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));
     DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));
     DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));
