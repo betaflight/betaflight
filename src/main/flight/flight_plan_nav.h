@@ -43,6 +43,7 @@ typedef enum {
     FP_ABORT_STALLED,       // no progress toward the target within the stall window
     FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
     FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
+    FP_ABORT_MAG_FAULT,     // course-over-ground disagreed with heading at speed: parked wings-level
 } flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);
@@ -65,6 +66,21 @@ bool flightPlanNavIsActive(void);
 flightPlanNavState_e flightPlanNavGetState(void);
 uint8_t flightPlanNavGetCurrentIndex(void);
 flightPlanAbortReason_e flightPlanNavGetAbortReason(void);
+
+// Live navigation geometry to the active waypoint, for OSD/CLI readouts. All
+// three return a sentinel when the executor is not tracking a target:
+// distance < 0, bearing < 0, ETA == 0. ETA also returns 0 when horizontal
+// speed is below 0.5 m/s (no meaningful estimate), so callers must treat 0 as
+// "no ETA" rather than "arrived".
+float flightPlanNavGetDistanceToWaypointM(void);
+int32_t flightPlanNavGetBearingToWaypointDeciDeg(void);
+uint16_t flightPlanNavGetEtaSeconds(void);
+
+// Set the active waypoint (MAVLink MISSION_SET_CURRENT). While the executor is
+// running the PG mission it re-dispatches to that leg; while idle it becomes
+// the index the next engage starts from. Ignored for out-of-range indices and
+// while an injected plan is active.
+void flightPlanNavSetCurrentIndex(uint8_t index);
 
 // Orbit period (deciseconds) at the configured pattern radius for a leg flown
 // at speedCmS (0 = autopilot max velocity). Converts MAVLink LOITER_TURNS turn
