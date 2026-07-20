@@ -797,7 +797,6 @@ bool positionControl(void)
             }
         }
     }
-
     updateYawControl(dt, est);
 
     wasPositionHeld = isPositionHeld;
@@ -805,17 +804,18 @@ bool positionControl(void)
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
     const bool velocityMode = ap.navActive && autopilotConfig()->velocityControlEnable;
 
+
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-        float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        const float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
+        bool shouldIntegrateDistanceError = true;
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
         const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
-        previousVelocity.v[axis] =  velocity.v[axis];
-        bool shouldIntegrateDistanceError = true;
         if (ap.derivativeStale) {
             // frozen-output fixes were skipped: no delta across the window,
             // so resumption cannot spike A against second-old velocity
-            previousVelocity.v[axis] =  velocity.v[axis];
+        previousVelocity.v[axis] =  velocity.v[axis];
         }
 
         if (velocityMode) {
@@ -843,8 +843,7 @@ bool positionControl(void)
                 }
             }
         }
-        //these things happen in all modes
-         distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
+distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
         if (shouldIntegrateDistanceError) {
                 distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
         }
@@ -860,8 +859,6 @@ bool positionControl(void)
         float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
         pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
-        ap.derivativeStale = false;
-
     bool buildupClamped = false;
     if (velocityMode) {
         // velocityBuildupMaxPitch bounds the velocity-proportional drive vector (now pidD)
@@ -905,7 +902,7 @@ bool positionControl(void)
     if (abortNavRequested)  statusValue += 100;
     if (isPositionHeld)     statusValue += 3; // plus 1, ie 4,  if stopping
     if (ap.sticksActive)    statusValue += 5;
-    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis])); // velocity error
+    DEBUG_SET(DEBUG_AUTOPILOT_PID, 0, lrintf(velocity.v[ap.debugAxis])); // velocity cm/s
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 1, lrintf(distanceError.v[ap.debugAxis])); // distance error
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 2, lrintf(pidP.v[ap.debugAxis] * 10));   
     DEBUG_SET(DEBUG_AUTOPILOT_PID, 3, lrintf(pidI.v[ap.debugAxis] * 10));
@@ -925,7 +922,7 @@ bool positionControl(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, statusValue + (ap.isPosHoldBraking ? 1 : 0));
 
     DEBUG_SET(DEBUG_POSITION_NAV, 0, lrintf(targetVelocity.v[ap.debugAxis]));
-    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocityFilteredV.v[ap.debugAxis]));
+    DEBUG_SET(DEBUG_POSITION_NAV, 1, lrintf(velocity.v[ap.debugAxis]));
     DEBUG_SET(DEBUG_POSITION_NAV, 2, lrintf(velocityError.v[ap.debugAxis]));
     DEBUG_SET(DEBUG_POSITION_NAV, 3, lrintf(pidP.v[ap.debugAxis] * 10));
     DEBUG_SET(DEBUG_POSITION_NAV, 4, lrintf(pidI.v[ap.debugAxis] * 10));
