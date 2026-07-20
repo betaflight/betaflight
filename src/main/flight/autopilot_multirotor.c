@@ -189,6 +189,8 @@ typedef struct autopilotState_s {
     float speedXYOneLoopAgo;
     float speedTwoLoopsAgo;
     float prevDeltaSpeedXY;     // speed delta one loop ago, for the stall inflection test
+    float speedTrendCmS;        // ~0.5 s lowpass of speedXY: reference for "is the craft slowing?"
+    bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
     unsigned debugAxis;
 } autopilotState_t;
@@ -240,6 +242,8 @@ void autopilotInit(void)
     ap.speedXY = 0.0f;
     ap.speedXYOneLoopAgo = 0.0f;
     ap.speedTwoLoopsAgo = 0.0f;
+    ap.speedTrendCmS = 0.0f;
+    ap.speedSlowing = false;
     ap.prevDeltaSpeedXY = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
@@ -472,6 +476,23 @@ void handlepositionControlFailure(void)
 
 }
 
+// A sanity-fence violation has outlived the persistence window: spend the
+// one-shot retry if it is available (re-anchor and carry on), otherwise level
+// out and fail the hold.
+static bool sanityViolationExpired(void)
+{
+    if (!ap.sanityRetryUsed) {
+        ap.sanityRetryUsed = true;
+        positionControlReanchor();
+        return true;
+    }
+    disableYawControl();
+    autopilotAngle[AI_ROLL]  = 0.0f; // Level out
+    autopilotAngle[AI_PITCH] = 0.0f;
+    handlepositionControlFailure();
+    return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
+}
+
 void sticksMoveTarget(void)
 {
     float stickPitch = getSetpointRate(PITCH);
@@ -663,6 +684,12 @@ bool positionControl(void)
     ap.prevDeltaSpeedXY = ap.speedXYOneLoopAgo - ap.speedTwoLoopsAgo;
     ap.speedTwoLoopsAgo = ap.speedXYOneLoopAgo;
     ap.speedXYOneLoopAgo = ap.speedXY;
+    // "Is the craft actually slowing?" — speed measured against its own ~0.5 s
+    // average, judged before the average absorbs the new sample. Lets the
+    // braking-phase fence tell brake physics (speed falling, distance growth
+    // is expected) from a flyaway (speed held or rising).
+    ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
+    ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
     if (ap.navActive) {
         isPositionHeld = false;
@@ -709,6 +736,36 @@ bool positionControl(void)
                 if (stopped || stalled) {
                     updatePositionHoldTarget(); // capture the stopped point as the hold target
                     ap.isPosHoldBraking = false;
+                } else {
+                    // The fence watches the brake too. Braking suppresses the
+                    // settled check below, and a genuine flyaway (a bad-mag
+                    // toilet bowl accelerates, so it never meets the stop or
+                    // stall conditions) would otherwise ride the moving target
+                    // indefinitely — including straight after the one-shot
+                    // retry, which re-enters through this braking capture.
+                    // While the craft is actually slowing, growing distance is
+                    // brake physics and the fence rides just ahead of it (so a
+                    // fast entry whose stopping distance beats 2 s of entry
+                    // speed cannot false-trip); beyond the fence and NOT
+                    // slowing runs the same violation clock as the settled
+                    // hold.
+                    vector2_t brakeDeltaV;
+                    vector2Sub(&brakeDeltaV, &posHoldStartPosition, &currentPosition);
+                    const float brakeDistance = vector2Norm(&brakeDeltaV);
+                    if (brakeDistance > ap.sanityCheckDistance) {
+                        if (ap.speedSlowing) {
+                            ap.sanityCheckDistance = brakeDistance + 2.0f * ap.speedXY;
+                            ap.sanityViolationS = 0.0f;
+                        } else {
+                            ap.violationFreeS = 0.0f;
+                            ap.sanityViolationS += dt;
+                            if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+                                return sanityViolationExpired();
+                            }
+                        }
+                    } else {
+                        ap.sanityViolationS = 0.0f;
+                    }
                 }
             } else {
                 // Settled hold: guard against a position-estimate flyaway.
@@ -727,16 +784,7 @@ bool positionControl(void)
                     ap.violationFreeS = 0.0f;
                     ap.sanityViolationS += dt;
                     if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
-                        if (!ap.sanityRetryUsed) {
-                            ap.sanityRetryUsed = true;
-                            positionControlReanchor();
-                            return true;
-                        }
-                        disableYawControl();
-                        autopilotAngle[AI_ROLL]  = 0.0f; // Level out
-                        autopilotAngle[AI_PITCH] = 0.0f;
-                        handlepositionControlFailure();
-                        return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
+                        return sanityViolationExpired();
                     }
                     return true; // brief excursion: hold the previous command
                 } else {

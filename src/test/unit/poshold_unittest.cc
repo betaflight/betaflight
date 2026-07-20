@@ -218,23 +218,23 @@ TEST_F(PosHoldTest, FlyawayDetectionRetriesOnceThenTriggers)
 {
     initAndSettleAt(0, 0, 0);
 
-    // Exceed the sanity fence. The check is graded: through the persistence
-    // window the output is held, and the first SUSTAINED trip spends the
-    // one-shot auto-retry (re-anchor at the current spot) instead of failing.
-    testEstimate.position.x = 3000.0f;
-    for (int i = 0; i < 120; i++) {   // 1.2 s at 100 Hz: window + retry
-        EXPECT_TRUE(positionControl());
-    }
-
-    // Settle at the re-anchored spot, then run away again before the retry
-    // replenishes: a genuine progressive flyaway must still fail.
-    runIterations(SETTLE_ITERATIONS);
-    testEstimate.position.x = 6000.0f;
+    // Progressive runaway at a constant 15 m/s (bad-mag style): the estimate
+    // keeps moving and never meets the braking stop/stall conditions, so the
+    // fence has to catch it in BOTH the settled phase (first sustained trip,
+    // which spends the one-shot retry) and the post-retry braking phase
+    // (second trip, which must fail). No artificial settling in between.
     bool failed = false;
-    for (int i = 0; i < 150 && !failed; i++) {
+    int failedAt = -1;
+    for (int i = 0; i < 800 && !failed; i++) {
+        testEstimate.position.x += 15.0f;      // 15 cm per 10 ms tick
+        testEstimate.velocity.x = 1500.0f;
         failed = !positionControl();
+        failedAt = i;
     }
     EXPECT_TRUE(failed);
+    // The failure must land AFTER the retry re-anchored (first sustained trip
+    // is ~2.3 s in): a single trip alone no longer fails the hold.
+    EXPECT_GT(failedAt, 300);
 }
 
 TEST_F(PosHoldTest, SingleOutlierFixIsAbsorbedHoldingLastOutput)
