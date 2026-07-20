@@ -21,16 +21,30 @@
 
 #pragma once
 
+#include "platform.h"
+
+#if ENABLE_DRONECAN_DNA
+
 #include <stdint.h>
 
 #include "pg/pg.h"
 
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
+#include "io/dronecan/dronecan_msg.h"
 
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+// Persisted dynamic node-ID allocation table. Each occupied slot binds a peer's
+// 16-byte unique ID to the node ID this FC handed it, so the same device keeps
+// its ID across reboots. nodeId == 0 marks an empty slot.
+#define DRONECAN_DNA_MAX_ENTRIES    16
+
+typedef struct dronecanDnaEntry_s {
+    uint8_t uniqueId[UAVCAN_DNA_UNIQUE_ID_LEN];
+    uint8_t nodeId;
+} dronecanDnaEntry_t;
+
+typedef struct dronecanDnaConfig_s {
+    dronecanDnaEntry_t entry[DRONECAN_DNA_MAX_ENTRIES];
+} dronecanDnaConfig_t;
+
+PG_DECLARE(dronecanDnaConfig_t, dronecanDnaConfig);
+
+#endif // ENABLE_DRONECAN_DNA
