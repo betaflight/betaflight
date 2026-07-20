@@ -329,7 +329,7 @@ static void cliWriterFlushInternal(bufWriter_t *writer)
 
 static void cliPrintInternal(bufWriter_t *writer, const char *str)
 {
-    if (writer) {
+    if (writer && str) {
         while (*str) {
             bufWriterAppend(writer, *str++);
         }
@@ -5491,11 +5491,18 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
             const char *typeName = sensorTypeName(i);
             if (names && typeName) {
                 cliPrintf("%s: ", typeName);
+                bool first = true;
                 for (int j = 0; j < count; j++) {
-                    if (j > 0) {
+                    // Name tables can have NULL holes for hardware enum values not
+                    // compiled into this build (e.g. MAG_DRONECAN without ENABLE_DRONECAN).
+                    if (!names[j]) {
+                        continue;
+                    }
+                    if (!first) {
                         cliPrint(",");
                     }
                     cliPrint(names[j]);
+                    first = false;
                 }
                 cliPrintLinefeed();
             }
