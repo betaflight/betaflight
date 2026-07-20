@@ -100,6 +100,15 @@
 #define POSITION_F_SCALE       0.0017f
 #define POSHOLD_STALL_CHECK_SPEED_CMS  45.0f // below this speed a deceleration reversal means braking has stalled to a stop
 #define SANITY_CHECK_DISTANCE 2000.0f //20m, increased when stopping from speeds above 10m/s
+// The settled-hold flyaway fence is graded, not instant: an excursion must
+// persist this long before it counts as a failure. Field logs show single-fix
+// multipath excursions of 12-51 m while parked in a clean hover; instant
+// tripping turned each one into a POSHOLD FAIL with a level-out step.
+#define SANITY_VIOLATION_LATCH_S 1.0f
+// One automatic re-anchor is allowed per healthy stretch; this much clean
+// settled time earns it back. A genuine flyaway trips again immediately after
+// its retry and stays failed.
+#define SANITY_RETRY_REPLENISH_S 10.0f
 #define ERROR_DISTANCE_LIMIT  2000.0f // TO DO: test set to a useful value, this is 20m
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
@@ -169,6 +178,9 @@ static void disableYawControl(void);
 
 typedef struct autopilotState_s {
     float sanityCheckDistance;
+    float sanityViolationS;     // time the settled hold has spent beyond the fence
+    float violationFreeS;       // clean settled time since the last violation; replenishes the retry
+    bool sanityRetryUsed;       // one automatic re-anchor per healthy stretch
     bool sticksActive;
     bool wasSticksActive;
     bool navActive;
@@ -402,6 +414,19 @@ void initPositionHold(void)
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
 
+// Re-anchor the hold at the craft's current position — what a pilot cycling
+// the mode switch achieves, callable from recovery paths (sensor dropout
+// recovery, the one-shot sanity retry). Enters through the normal braking
+// capture so any speed the craft picked up meanwhile is arrested first, and
+// the fence is re-sized to the current ground speed.
+void positionControlReanchor(void)
+{
+    initPositionHold();
+    ap.sanityCheckDistance = calculateSanityCheckDistance();
+    ap.sanityViolationS = 0.0f;
+    ap.violationFreeS = 0.0f;
+}
+
 static void initNavMode(void)
 {
     initPidLpfs();
@@ -428,6 +453,9 @@ void resetPositionControl(unsigned taskRateHz)
     positionNavReset();
     wasNavActive = false; // will be enabled as required
     ap.sanityCheckDistance = calculateSanityCheckDistance(); // Set an initial sanity check distance
+    ap.sanityViolationS = 0.0f;
+    ap.violationFreeS = 0.0f;
+    ap.sanityRetryUsed = false;
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
     resetDistanceErrorIntegral();
@@ -684,14 +712,39 @@ bool positionControl(void)
                 }
             } else {
                 // Settled hold: guard against a position-estimate flyaway.
+                // Graded, not instant: a single bad fix (multipath excursions
+                // of 12-51 m appear in field logs during a clean hover) must
+                // not fail the hold — fed to the PIDs it would also slam P
+                // into the angle clamp, so the previous output is held while
+                // a brief excursion passes. Only a persistent one fails, and
+                // the first sustained trip earns one automatic re-anchor at
+                // the current spot (what a pilot cycling the switch does):
+                // an isolated mid-flight glitch self-heals, while a genuine
+                // flyaway trips again immediately and stays failed.
                 vector2_t deltaPosV;
                 vector2Sub(&deltaPosV, &posHoldStartPosition, &currentPosition);
                 if (vector2Norm(&deltaPosV) > ap.sanityCheckDistance) {
-                    disableYawControl();
-                    autopilotAngle[AI_ROLL]  = 0.0f; // Level out
-                    autopilotAngle[AI_PITCH] = 0.0f;
-                    handlepositionControlFailure();
-                    return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
+                    ap.violationFreeS = 0.0f;
+                    ap.sanityViolationS += dt;
+                    if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+                        if (!ap.sanityRetryUsed) {
+                            ap.sanityRetryUsed = true;
+                            positionControlReanchor();
+                            return true;
+                        }
+                        disableYawControl();
+                        autopilotAngle[AI_ROLL]  = 0.0f; // Level out
+                        autopilotAngle[AI_PITCH] = 0.0f;
+                        handlepositionControlFailure();
+                        return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
+                    }
+                    return true; // brief excursion: hold the previous command
+                } else {
+                    ap.sanityViolationS = 0.0f;
+                    ap.violationFreeS += dt;
+                    if (ap.violationFreeS > SANITY_RETRY_REPLENISH_S) {
+                        ap.sanityRetryUsed = false;
+                    }
                 }
             }
         }

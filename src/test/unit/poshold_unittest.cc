@@ -214,14 +214,48 @@ TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)
 
 // -- Flyaway detection --
 
-TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
+TEST_F(PosHoldTest, FlyawayDetectionRetriesOnceThenTriggers)
 {
     initAndSettleAt(0, 0, 0);
 
-    // exceed sanity check distance
-    testEstimate.position.x = 3000.0f; 
-    // expect positionControl to be false
-    EXPECT_FALSE(positionControl()); 
+    // Exceed the sanity fence. The check is graded: through the persistence
+    // window the output is held, and the first SUSTAINED trip spends the
+    // one-shot auto-retry (re-anchor at the current spot) instead of failing.
+    testEstimate.position.x = 3000.0f;
+    for (int i = 0; i < 120; i++) {   // 1.2 s at 100 Hz: window + retry
+        EXPECT_TRUE(positionControl());
+    }
+
+    // Settle at the re-anchored spot, then run away again before the retry
+    // replenishes: a genuine progressive flyaway must still fail.
+    runIterations(SETTLE_ITERATIONS);
+    testEstimate.position.x = 6000.0f;
+    bool failed = false;
+    for (int i = 0; i < 150 && !failed; i++) {
+        failed = !positionControl();
+    }
+    EXPECT_TRUE(failed);
+}
+
+TEST_F(PosHoldTest, SingleOutlierFixIsAbsorbedHoldingLastOutput)
+{
+    initAndSettleAt(0, 0, 0);
+    const float rollBefore = autopilotAngle[AI_ROLL];
+    const float pitchBefore = autopilotAngle[AI_PITCH];
+
+    // A single 30 m multipath spike, well beyond the 20 m fence.
+    testEstimate.position.x = 3000.0f;
+    EXPECT_TRUE(positionControl());
+    // The spike is not fed to the PIDs: the previous output is held, no
+    // lunge toward the angle clamp and no POSHOLD FAIL.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollBefore, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchBefore, 0.01f);
+
+    // The next fixes are normal again: control simply carries on.
+    testEstimate.position.x = 0.0f;
+    for (int i = 0; i < 100; i++) {
+        EXPECT_TRUE(positionControl());
+    }
 }
 
 // -- Displacement response: heading North (yaw = 0) --
