@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
+#include "flight/flight_plan_capture.h"
 #include "flight/flight_plan_nav.h"
 #include "flight/pos_hold.h"
 
@@ -387,7 +388,14 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD
-    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {
+    // A mission abort (e.g. the heading-fault level park) routes through the
+    // position-hold failure path too; let the specific WP warning below own it
+    // rather than masking it with the generic POSHOLD FAIL.
+    bool missionAbortActive = false;
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
+#endif
+    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
         tfp_sprintf(warningText, "POSHOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
@@ -412,6 +420,9 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         case FP_ABORT_HEADING:
             tfp_sprintf(warningText, "WP HEADING");
             break;
+        case FP_ABORT_MAG_FAULT:
+            tfp_sprintf(warningText, "WP MAG FAULT");
+            break;
         default:
             tfp_sprintf(warningText, "WP ABORT");
             break;
@@ -419,6 +430,18 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
         *blinking = true;
         return;
+    }
+
+    // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
+    // Shown outside AUTOPILOT mode too - capture happens before engaging - and
+    // below every critical warning; the cue self-expires.
+    {
+        const char *captureMsg = flightPlanCaptureOsdMessage();
+        if (captureMsg != NULL) {
+            tfp_sprintf(warningText, "%s", captureMsg);
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
     }
 
     // Mission progress cues, below every critical warning above. The mode
