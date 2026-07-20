@@ -42,6 +42,7 @@
 
 #include "flight/autopilot.h"
 #include "flight/flight_plan_nav.h"
+#include "flight/imu.h"
 #include "flight/position_estimator.h"
 #include "flight/position_nav.h"
 
@@ -82,6 +83,28 @@
 // acceptance radius. Deliberately gentle: the position controller tracks
 // velocity through an integrator, so the ramp must be slow enough to unwind.
 #define FP_APPROACH_DECEL_MPS2    0.3f
+
+// Heading-fault (magnetometer) detector. While the nose is on command and the
+// craft is moving, a course-over-ground that disagrees with the fused heading
+// past FP_HDG_FAULT_ERR_DEG for FP_HDG_FAULT_TIME_S means the heading estimate
+// is wrong — the sideways-flyaway precursor. A real crab angle this large
+// cannot hold a leg line at this ground speed, so wind cannot trip it. The trip
+// parks the craft wings-level rather than in position hold, which would lean on
+// the same bad heading and fly it away.
+#define FP_HDG_FAULT_ERR_DEG        70.0f
+#define FP_HDG_FAULT_TIME_S         2.0f
+#define FP_HDG_FAULT_MIN_SPEED_CMS  300.0f
+#define FP_HDG_FAULT_ALIGNED_DEG    30.0f
+
+// Leg-line carrot path tracking (en-route pass-through legs). Tunable
+// magnitudes live in autopilotConfig (nav_corner_speed etc.); these are the
+// fixed shape limits. Ported from the field-proven tracker in PR #15442.
+#define FP_PASS_MAX_M            12.0f   // largest pass-through gate radius
+#define FP_CARROT_LEAD_MIN_M     6.0f    // the carrot always leads by at least this
+#define FP_GATE_RADIUS_SCALE     1.5f    // gate radius = corner speed (m/s) * this
+#define FP_OVERSPEED_MARGIN_MPS  1.5f    // measured-speed governor margin over the profile speed
+#define FP_OVERRUN_LAT_M         8.0f    // a fast gate miss still counts within this lateral corridor
+#define FP_CARROT_NO_ARRIVAL_M   -1.0f   // acceptance radius sentinel: positionNav never self-completes a carrot leg
 
 // Landing descends toward a target far below the current position so vertical
 // arrival can never trigger; touchdown detection is what ends the descent.
@@ -170,6 +193,26 @@ static struct {
     float flyawayMarginM;
     timeUs_t lastProgressUs;
 
+    // Heading-fault detector integrator, and the timestamp the per-cycle dt is
+    // derived from (flightPlanNavUpdate's cadence is not a fixed rate).
+    float hdgFaultTimeS;
+    timeUs_t lastUpdateUs;
+
+    // Leg-line carrot tracking for en-route (FLYOVER/FLYBY) pass-through legs.
+    // positionNav chases a carrot the executor marches along the leg line; the
+    // executor owns gate detection and advancement. State carries across a
+    // corner so the profile is continuous (only engage/retry re-anchor it).
+    bool      legIsPassGate;    // current leg uses carrot leg-line tracking
+    bool      legValid;         // the leg line is anchored
+    vector3_t legTargetEnuM;    // the point this leg flies to (E,N,U metres)
+    float     legCruiseMps;     // this leg's cruise cap
+    vector2_t legStartEnuM;     // anchor of the leg line (E,N metres)
+    float     legProgressM;     // carrot distance travelled along the leg
+    float     carrotSpeedMps;   // slewed carrot speed
+    vector2_t carrotPrevEnuM;   // last commanded carrot; the next leg anchors here
+    bool      carrotPrevValid;
+    bool      inPreTurn;        // blending the nose onto the next leg (excluded from the heading-fault check)
+
     // Landing state
     timeUs_t landingStartUs;
     timeUs_t touchdownQuietStartUs;
@@ -197,6 +240,21 @@ static const waypoint_t *activePlanWaypoint(uint8_t index)
 static const waypoint_t *currentWaypoint(void)
 {
     return activePlanWaypoint(fp.currentIndex);
+}
+
+// The next positional (non-modifier) waypoint at or after `from`, or NULL if the
+// plan has none left. Modifier records (ALT_CHANGE/DELAY/YAW_RATE) carry no
+// coordinates, so the corner geometry and the pass-through/last-leg decision
+// must look past them without consuming modifier state (drainModifiers does that).
+static const waypoint_t *nextPositionalWaypoint(uint8_t from)
+{
+    for (uint8_t i = from; i < activePlanCount(); i++) {
+        const waypoint_t *wp = activePlanWaypoint(i);
+        if (wp != NULL && wp->type < WAYPOINT_TYPE_ALT_CHANGE) {
+            return wp;
+        }
+    }
+    return NULL;
 }
 
 static bool computeTargetEnuM(const waypoint_t *wp, vector3_t *out)
@@ -328,20 +386,53 @@ static bool dispatchWaypoint(void)
         }
     }
 
+    // En-route FLYOVER/FLYBY waypoints (never the last, never station-keeping)
+    // are pass-through gates flown with leg-line carrot tracking; everything else
+    // keeps the precise point-target arrival + hold.
+    // "Last" means no further positional waypoint (trailing modifiers don't count);
+    // only a leg with a real next waypoint becomes a carved pass-through gate.
+    const bool isLastWaypoint = (nextPositionalWaypoint(fp.currentIndex + 1) == NULL);
+    const bool passGate = !isStationKeeping && !isLastWaypoint;
+
     fp.patternPending = false;
     fp.patternActive = false;
-    positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
-                           FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
-    positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
-    // En-route waypoints advance on horizontal arrival; a vehicle that cannot
-    // reach the commanded altitude must not orbit forever. HOLD, LAND and
-    // TAKEOFF are station-keeping targets and keep the altitude gate.
-    positionNavSetAltitudeArrivalRequired(isStationKeeping);
+    fp.legIsPassGate = passGate;
+    fp.legValid = false;               // re-anchor the leg line on the next update
+    fp.legTargetEnuM = targetEnuM;
+    fp.legCruiseMps = cruiseMps;
+    fp.inPreTurn = false;
+    if (!passGate) {
+        autopilotSetNavHeadingOverride(false, 0.0f);   // precise legs use the configured yaw mode
+    }
+
+    if (passGate) {
+        // positionNav is a pure velocity generator chasing the marched carrot:
+        // a negative acceptance radius means it never self-completes (the craft
+        // sitting on a carrot frozen at its own position would otherwise trip
+        // "reached", drop ap.navActive, and kill the yaw rotation on a
+        // gate-closed leg start - a deadlock). The executor owns advancement, so
+        // there is no callback, and no internal accel/decel: the carrot's
+        // trapezoid owns the speed profile. carrotSpeed carries across the
+        // corner — only engage/retry reset it.
+        positionNavSetTargetEf(&targetEnuM, cruiseMps, FP_CARROT_NO_ARRIVAL_M,
+                               FP_COMPLETION_ANY_MPS, true, NULL, NULL);
+        positionNavSetAccelLimits(0.0f, 0.0f);
+        positionNavSetAltitudeArrivalRequired(false);
+    } else {
+        positionNavSetTargetEf(&targetEnuM, cruiseMps, arrivalRadiusM,
+                               FP_COMPLETION_ANY_MPS, true, onWaypointReached, NULL);
+        positionNavSetAccelLimits(0.0f, FP_APPROACH_DECEL_MPS2);
+        // En-route waypoints advance on horizontal arrival; a vehicle that cannot
+        // reach the commanded altitude must not orbit forever. HOLD, LAND and
+        // TAKEOFF are station-keeping targets and keep the altitude gate.
+        positionNavSetAltitudeArrivalRequired(isStationKeeping);
+    }
 
     fp.state = FP_NAV_TARGETING;
     fp.holdDurationDs = effective.duration;
     fp.bestDistanceToTargetM = FLT_MAX;
     fp.lastProgressUs = micros();
+    fp.hdgFaultTimeS = 0.0f;
     return true;
 }
 
@@ -351,6 +442,8 @@ static void abortMission(flightPlanAbortReason_e reason)
     fp.abortReason = reason;
     fp.patternPending = false;
     fp.patternActive = false;
+    fp.inPreTurn = false;
+    autopilotSetNavHeadingOverride(false, 0.0f);
     // Dropping the nav target makes positionControl() fall back to holding
     // position at the current location; the pilot exits via the mode switch.
     positionNavClearTarget();
@@ -371,14 +464,24 @@ static float distanceToNavTargetM(const positionEstimate3d_t *est)
     return vector3Norm(&deltaM);
 }
 
-static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t *est)
+// Delta to the actual waypoint for OSD/CLI readouts. On a carrot leg the nav
+// target is the leading carrot, so report the leg's true waypoint instead.
+static void navWaypointDeltaEnuM(const positionEstimate3d_t *est, vector3_t *deltaM)
 {
-    if (!positionNavHasActiveTarget()) {
-        return;
+    if (fp.legIsPassGate) {
+        deltaM->v[ENU_E] = fp.legTargetEnuM.v[ENU_E] - est->position.v[ENU_E] * 0.01f;
+        deltaM->v[ENU_N] = fp.legTargetEnuM.v[ENU_N] - est->position.v[ENU_N] * 0.01f;
+        deltaM->v[ENU_U] = fp.legTargetEnuM.v[ENU_U] - est->position.v[ENU_U] * 0.01f;
+    } else {
+        navTargetDeltaEnuM(est, deltaM);
     }
+}
 
-    const float distanceM = distanceToNavTargetM(est);
-
+// Stall/flyaway sanity against a distance-to-goal. The carrot path passes the
+// distance to the waypoint (not the leading carrot, which never converges);
+// the point path passes the distance to the nav target.
+static void updateProgressTracking(float distanceM, timeUs_t currentTimeUs)
+{
     if (fp.bestDistanceToTargetM == FLT_MAX) {
         fp.flyawayMarginM = constrainf(distanceM * FP_FLYAWAY_LEG_FRACTION,
                                        FP_FLYAWAY_MARGIN_MIN_M, FP_FLYAWAY_MARGIN_MAX_M);
@@ -398,6 +501,253 @@ static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t 
     if (cmpTimeUs(currentTimeUs, fp.lastProgressUs) >= (timeDelta_t)FP_STALL_TIMEOUT_US) {
         abortMission(FP_ABORT_STALLED);
     }
+}
+
+static void checkLegProgress(timeUs_t currentTimeUs, const positionEstimate3d_t *est)
+{
+    if (!positionNavHasActiveTarget()) {
+        return;
+    }
+    updateProgressTracking(distanceToNavTargetM(est), currentTimeUs);
+}
+
+static float wrapDeg180f(float deg)
+{
+    deg = fmodf(deg + 540.0f, 360.0f);
+    if (deg < 0.0f) {
+        deg += 360.0f;
+    }
+    return deg - 180.0f;
+}
+
+// Integrate the heading-fault detector for one cycle. Returns true when a
+// course-over-ground vs fused-heading disagreement has been sustained long
+// enough to declare the heading estimate faulty. Only judged while the nose is
+// on command and the craft is moving, so wind and manoeuvres cannot trip it.
+static bool checkHeadingFault(float dtS, const positionEstimate3d_t *est)
+{
+    // Only meaningful while the autopilot is actively steering the nose toward a
+    // heading; in FIXED/DAMPENER the nose is uncommanded, so a course-vs-heading
+    // gap is expected and must not be read as a fault.
+    const uint8_t yawMode = autopilotConfig()->yawMode;
+    if (yawMode == YAW_MODE_FIXED || yawMode == YAW_MODE_DAMPENER) {
+        fp.hdgFaultTimeS = 0.0f;
+        return false;
+    }
+
+    vector3_t deltaM;
+    navTargetDeltaEnuM(est, &deltaM);
+    const float bearingDeg = RADIANS_TO_DEGREES(atan2_approx(deltaM.v[ENU_E], deltaM.v[ENU_N]));
+    const float headingDeg = attitude.values.yaw * 0.1f;
+    const float yawErrDeg = wrapDeg180f(headingDeg - bearingDeg);
+    const float cogVsHeadingDeg = fabsf(wrapDeg180f(headingDeg - gpsSol.groundCourse * 0.1f));
+
+    const bool eligible = gpsSol.groundSpeed > FP_HDG_FAULT_MIN_SPEED_CMS
+                       && fabsf(yawErrDeg) < FP_HDG_FAULT_ALIGNED_DEG
+                       && !fp.inPreTurn;   // the pre-turn deliberately swings the nose off-course
+    fp.hdgFaultTimeS = (eligible && cogVsHeadingDeg > FP_HDG_FAULT_ERR_DEG)
+                     ? fp.hdgFaultTimeS + dtS
+                     : fmaxf(fp.hdgFaultTimeS - 2.0f * dtS, 0.0f);
+    return fp.hdgFaultTimeS > FP_HDG_FAULT_TIME_S;
+}
+
+// One cycle of leg-line carrot tracking for an en-route pass-through leg: march a
+// carrot along the leg line toward the waypoint and hand it to positionNav, carve
+// the corner into the next leg at a turn-angle-scaled speed, and own gate
+// detection/advancement. Ported from the tracker in PR #15442.
+static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEstimate3d_t *est)
+{
+    const autopilotConfig_t *cfg = autopilotConfig();
+    const float cornerSpeedFloorMps = cfg->navCornerSpeed * 0.01f;
+    const float cornerDeltaVMps     = cfg->navCornerDeltaV * 0.01f;
+    const float decelMps2           = cfg->navDecel * 0.01f;
+    const float accelMps2           = cfg->navAccel * 0.01f;
+    const float leadTimeS           = cfg->navCarrotLeadTime * 0.1f;
+    const float leadMaxM            = cfg->navCarrotLeadMax * 0.01f;
+
+    const vector2_t craft = { .x = est->position.v[ENU_E] * 0.01f, .y = est->position.v[ENU_N] * 0.01f };
+    const vector2_t wp    = { .x = fp.legTargetEnuM.v[ENU_E], .y = fp.legTargetEnuM.v[ENU_N] };
+    const vector2_t toWp  = { .x = wp.x - craft.x, .y = wp.y - craft.y };
+    const float distM = vector2Norm(&toWp);
+
+    // Corner geometry uses the next positional waypoint, skipping any modifier
+    // records between legs (their coordinates would otherwise steer the corner).
+    vector2_t next = wp;
+    bool haveNext = false;
+    const waypoint_t *nextWp = nextPositionalWaypoint(fp.currentIndex + 1);
+    if (nextWp != NULL) {
+        vector3_t nextEnuM;
+        waypoint_t effNext = *nextWp;
+        if (computeTargetEnuM(&effNext, &nextEnuM)) {
+            next.x = nextEnuM.v[ENU_E];
+            next.y = nextEnuM.v[ENU_N];
+            haveNext = true;
+        }
+    }
+
+    // Corner speed on a constant delta-v budget: the velocity change a corner
+    // demands is 2*v*sin(turn/2), so v = deltaV / (2 sin(turn/2)) sheds the same
+    // delta-v at every gate — a shallow bend at cruise runs no wider than a
+    // hairpin at the floor. The gate radius scales with it for the same reason.
+    float cornerSpeedMps = fp.legCruiseMps;
+    const vector2_t inFrom = fp.legValid ? fp.legStartEnuM : craft;
+    if (haveNext) {
+        const vector2_t inVec  = { .x = wp.x - inFrom.x, .y = wp.y - inFrom.y };
+        const vector2_t outVec = { .x = next.x - wp.x,   .y = next.y - wp.y };
+        const float inLen  = vector2Norm(&inVec);
+        const float outLen = vector2Norm(&outVec);
+        if (inLen > 1.0f && outLen > 1.0f) {
+            const float cosTurn = (inVec.x * outVec.x + inVec.y * outVec.y) / (inLen * outLen);
+            const float shed = sqrtf(fmaxf(2.0f - 2.0f * cosTurn, 0.0f)); // = 2 sin(turn/2)
+            cornerSpeedMps = (shed > 0.05f)
+                ? constrainf(cornerDeltaVMps / shed, cornerSpeedFloorMps, fp.legCruiseMps)
+                : fp.legCruiseMps;   // straight through
+        }
+    }
+    // waypointArrivalRadius can be configured above FP_PASS_MAX_M, which would
+    // otherwise invert the constrainf bounds; clamp the floor to the gate max.
+    const float arriveRadiusM = fminf(cfg->waypointArrivalRadius * 0.01f, FP_PASS_MAX_M);
+    // FLYBY cuts the corner: the gate scales up with the corner speed. FLYOVER
+    // keeps its fly-over-the-point meaning - the carrot tracking and corner-speed
+    // profile still apply, but the gate stays at the arrival radius so the craft
+    // passes tight over the point instead of carving the corner wide.
+    const waypoint_t *thisWp = currentWaypoint();
+    const bool flyby = (thisWp == NULL) || (thisWp->type == WAYPOINT_TYPE_FLYBY);
+    const float arriveM = flyby
+        ? constrainf(cornerSpeedMps * FP_GATE_RADIUS_SCALE, arriveRadiusM, FP_PASS_MAX_M)
+        : arriveRadiusM;
+
+    // Overrun fallback: a fast crossing that misses the arrive bubble by a hair
+    // still counts once the craft is past the waypoint along-track inside a sane
+    // lateral corridor — without it the craft overruns the carrot and yaws back.
+    bool overran = false;
+    if (fp.legValid) {
+        const vector2_t inVec = { .x = wp.x - fp.legStartEnuM.x, .y = wp.y - fp.legStartEnuM.y };
+        const float inLen = vector2Norm(&inVec);
+        if (inLen > 1.0f) {
+            const float ux = inVec.x / inLen, uy = inVec.y / inLen;
+            const float along   = (craft.x - fp.legStartEnuM.x) * ux + (craft.y - fp.legStartEnuM.y) * uy;
+            const float lateral = fabsf((craft.y - fp.legStartEnuM.y) * ux - (craft.x - fp.legStartEnuM.x) * uy);
+            overran = along > inLen && lateral < FP_OVERRUN_LAT_M;
+        }
+    }
+
+    // Stall/flyaway sanity is measured against the waypoint, not the leading
+    // carrot (which never converges to zero distance).
+    updateProgressTracking(distM, currentTimeUs);
+    if (fp.state != FP_NAV_TARGETING) {
+        return;   // the sanity check aborted the mission
+    }
+
+    if (distM < arriveM || overran) {
+        // Gate crossed: the next leg anchors on this waypoint so the drawn
+        // wp->wp line and the position target stay continuous through the corner.
+        fp.carrotPrevEnuM = wp;
+        fp.carrotPrevValid = true;
+        onWaypointReached(NULL);   // fires the reached listener and advances/dispatches
+        return;
+    }
+
+    // Anchor the leg line. A fresh leg starts at the last commanded carrot
+    // (normally the waypoint just passed) so the flown line is the drawn wp->wp
+    // line; engage/retry clear carrotPrevValid to anchor on the craft instead.
+    if (!fp.legValid) {
+        fp.legStartEnuM = fp.carrotPrevValid ? fp.carrotPrevEnuM : craft;
+        fp.legProgressM = 0.0f;
+        fp.legValid = true;
+    }
+
+    const vector2_t legVec = { .x = wp.x - fp.legStartEnuM.x, .y = wp.y - fp.legStartEnuM.y };
+    const float legLenM = vector2Norm(&legVec);
+    vector2_t legDir = { .x = 1.0f, .y = 0.0f };
+    if (legLenM > 1.0f) {
+        legDir.x = legVec.x / legLenM;
+        legDir.y = legVec.y / legLenM;
+    }
+    const float craftAlongM = (craft.x - fp.legStartEnuM.x) * legDir.x + (craft.y - fp.legStartEnuM.y) * legDir.y;
+
+    // Trapezoidal profile keyed on the craft's distance to the gate: cruise, then
+    // decelerate to cross at the corner speed. The carrot speed slews (no
+    // full-cruise leap at leg starts) and is deliberately not reset at leg
+    // switches, so speed carries smoothly through corners.
+    const float remainingM = fmaxf(legLenM - craftAlongM - arriveM, 0.0f);
+    float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingM));
+
+    // Governor on measured speed: a craft carrying more than the profile (tailwind,
+    // catch-up) makes the carrot surrender braking authority; freeze it instead.
+    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    if (horizSpeedMps > desiredMps + FP_OVERSPEED_MARGIN_MPS) {
+        desiredMps = 0.0f;
+    }
+
+    const float headingDeg = attitude.values.yaw * 0.1f;
+    const float legBearingDeg = RADIANS_TO_DEGREES(atan2_approx(legDir.x, legDir.y));
+    const float legErrDeg = wrapDeg180f(headingDeg - legBearingDeg);
+
+    // Pre-turn: through the approach zone (ending a few metres before the gate, so
+    // the yaw law has closed the lag by the crossing) blend the commanded nose
+    // heading from this leg onto the next. Computed BEFORE the march gate so the
+    // gate can exempt it: the pre-turn deliberately swings the nose past the leg
+    // on sharp corners, and must not stall forward progress while doing so.
+    fp.inPreTurn = false;
+    float noseBearingDeg = legBearingDeg;
+    if (haveNext) {
+        const float preturnM = cfg->navPreturnDist * 0.01f;
+        const float t = 1.0f - constrainf((remainingM - 5.0f) / fmaxf(preturnM - 5.0f, 1.0f), 0.0f, 1.0f);
+        const vector2_t nextLeg = { .x = next.x - wp.x, .y = next.y - wp.y };
+        if (t > 0.0f && vector2Norm(&nextLeg) > 1.0f) {
+            const float nextBearingDeg = RADIANS_TO_DEGREES(atan2_approx(nextLeg.x, nextLeg.y));
+            noseBearingDeg = legBearingDeg + t * wrapDeg180f(nextBearingDeg - legBearingDeg);
+            fp.inPreTurn = true;
+        }
+    }
+
+    // March gating keys on alignment with the leg direction so forward progress
+    // never accumulates while rotating in place at a leg start or a reversal; the
+    // pre-turn swing is exempt so corner speed carries through the gate.
+    const bool aligned = fabsf(legErrDeg) < 90.0f || fp.inPreTurn;
+    if (!aligned) {
+        desiredMps = 0.0f;
+    }
+
+    fp.carrotSpeedMps = constrainf(desiredMps,
+                                   fp.carrotSpeedMps - accelMps2 * dtS,
+                                   fp.carrotSpeedMps + accelMps2 * dtS);
+    fp.legProgressM += fp.carrotSpeedMps * dtS;
+
+    // Pure-pursuit lead, with the carrot allowed a bounded gap behind the craft —
+    // the only thing positionNav brakes for — so an overrun bites firmly.
+    const float alongFloorM = fmaxf(craftAlongM, 0.0f);
+    const float leadM     = constrainf(fp.carrotSpeedMps * leadTimeS, FP_CARROT_LEAD_MIN_M, leadMaxM);
+    const float brakeGapM = 0.25f * fp.carrotSpeedMps + 1.5f;
+    fp.legProgressM = constrainf(fp.legProgressM, alongFloorM - brakeGapM, alongFloorM + leadM);
+    fp.legProgressM = constrainf(fp.legProgressM, 0.0f, legLenM);
+
+    // Nose command. On a pass-through leg the executor owns yaw, which is what
+    // makes the march gate safe: point the nose along the leg (blending onto the
+    // next leg through the pre-turn) whenever it is not already aligned and
+    // chasing a carrot that is ahead. This rotates the nose onto the leg at an
+    // engage or reversal (so a nose-backwards engage cannot deadlock the frozen
+    // carrot), and never points the nose at a carrot that has dropped behind the
+    // craft while braking (which would command a spin and can false-trip the
+    // heading-fault check). Once aligned with the carrot ahead, the configured
+    // yaw mode takes over.
+    const bool carrotAhead = fp.legProgressM > craftAlongM;
+    if (fp.inPreTurn || !aligned || !carrotAhead) {
+        autopilotSetNavHeadingOverride(true, noseBearingDeg);
+    } else {
+        autopilotSetNavHeadingOverride(false, 0.0f);
+    }
+
+    vector3_t carrot = {.v = {
+        [ENU_E] = fp.legStartEnuM.x + legDir.x * fp.legProgressM,
+        [ENU_N] = fp.legStartEnuM.y + legDir.y * fp.legProgressM,
+        [ENU_U] = fp.legTargetEnuM.v[ENU_U],   // altitude tracks the waypoint, as the point path does
+    }};
+    fp.carrotPrevEnuM.x = carrot.v[ENU_E];
+    fp.carrotPrevEnuM.y = carrot.v[ENU_N];
+    fp.carrotPrevValid = true;
+    positionNavMoveTargetEf(&carrot);
 }
 
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
@@ -813,6 +1163,13 @@ void flightPlanNavInit(void)
     fp.injectedCount = 0;
     fp.patternPending = false;
     fp.patternActive = false;
+    fp.hdgFaultTimeS = 0.0f;
+    fp.lastUpdateUs = 0;
+    fp.legIsPassGate = false;
+    fp.legValid = false;
+    fp.carrotSpeedMps = 0.0f;
+    fp.carrotPrevValid = false;
+    fp.inPreTurn = false;
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
@@ -831,6 +1188,15 @@ void flightPlanNavEngage(void)
     fp.injectedCount = 0;
     fp.patternPending = false;
     fp.patternActive = false;
+    fp.hdgFaultTimeS = 0.0f;
+    fp.lastUpdateUs = 0;
+    fp.legIsPassGate = false;
+    fp.legValid = false;
+    fp.carrotSpeedMps = 0.0f;
+    fp.carrotPrevValid = false;
+    fp.inPreTurn = false;
+    autopilotForceLevelPark(false);   // a fresh engage clears any latched heading-fault park
+    autopilotSetNavHeadingOverride(false, 0.0f);
     clearModifierState();
 
     // Reconcile the estimator's altitude baseline with the GPS frame waypoint
@@ -889,6 +1255,15 @@ void flightPlanNavDisengage(void)
     fp.injectedCount = 0;
     fp.patternPending = false;
     fp.patternActive = false;
+    fp.hdgFaultTimeS = 0.0f;
+    fp.lastUpdateUs = 0;
+    fp.legIsPassGate = false;
+    fp.legValid = false;
+    fp.carrotSpeedMps = 0.0f;
+    fp.carrotPrevValid = false;
+    fp.inPreTurn = false;
+    autopilotForceLevelPark(false);
+    autopilotSetNavHeadingOverride(false, 0.0f);
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
@@ -911,6 +1286,8 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     fp.injectedCount = count;
     fp.currentIndex = 0;
     fp.abortReason = FP_ABORT_NONE;
+    fp.carrotPrevValid = false;   // a fresh plan re-anchors on the craft
+    fp.carrotSpeedMps = 0.0f;
 #if ENABLE_RESCUE_PLAN
     fp.isRescuePlan = false;
 #endif
@@ -931,6 +1308,11 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     if (!fp.active) {
         return;
     }
+
+    const float dtS = (fp.lastUpdateUs != 0)
+        ? constrainf(cmpTimeUs(currentTimeUs, fp.lastUpdateUs) * 1e-6f, 0.0f, 0.25f)
+        : 0.0f;
+    fp.lastUpdateUs = currentTimeUs;
 
 #if ENABLE_RESCUE_PLAN
     if (fp.rescueHeadingHold) {
@@ -960,6 +1342,10 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     // activates POS_HOLD_MODE and its first update calls resetPositionControl().
     // Re-issue the current leg whenever the dispatched target has been lost.
     if (fp.state == FP_NAV_TARGETING && !positionNavHasActiveTarget()) {
+        // Position control re-initialised and wiped the target: re-anchor a
+        // carrot leg on the craft's current position, not a stale carrot.
+        fp.carrotPrevValid = false;
+        fp.carrotSpeedMps = 0.0f;
         dispatchWaypoint();
         return;
     }
@@ -991,7 +1377,18 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
     }
 
     if (fp.state == FP_NAV_TARGETING) {
-        checkLegProgress(currentTimeUs, positionEstimatorGetEstimate());
+        const positionEstimate3d_t *est = positionEstimatorGetEstimate();
+        if (fp.legIsPassGate) {
+            updateLegCarrot(dtS, currentTimeUs, est);   // marches the carrot, owns gate advance + sanity
+        } else {
+            checkLegProgress(currentTimeUs, est);
+        }
+        if (fp.state == FP_NAV_TARGETING && positionNavHasActiveTarget()
+            && checkHeadingFault(dtS, est)) {
+            autopilotForceLevelPark(true);
+            abortMission(FP_ABORT_MAG_FAULT);
+            return;
+        }
     }
 
     if (fp.state == FP_NAV_HOLDING) {
@@ -1051,7 +1448,9 @@ float flightPlanNavGetDistanceToWaypointM(void)
     if (!fp.active || !positionNavHasActiveTarget()) {
         return -1.0f;
     }
-    return distanceToNavTargetM(positionEstimatorGetEstimate());
+    vector3_t deltaM;
+    navWaypointDeltaEnuM(positionEstimatorGetEstimate(), &deltaM);
+    return vector3Norm(&deltaM);
 }
 
 int32_t flightPlanNavGetBearingToWaypointDeciDeg(void)
@@ -1060,7 +1459,7 @@ int32_t flightPlanNavGetBearingToWaypointDeciDeg(void)
         return -1;
     }
     vector3_t deltaM;
-    navTargetDeltaEnuM(positionEstimatorGetEstimate(), &deltaM);
+    navWaypointDeltaEnuM(positionEstimatorGetEstimate(), &deltaM);
     // Compass bearing: 0 = north, growing clockwise. ENU east/north maps to
     // atan2(E, N); wrap into [0, 3600) deci-degrees.
     int32_t deciDeg = lrintf(atan2_approx(deltaM.v[ENU_E], deltaM.v[ENU_N]) * (1800.0f / M_PIf));
@@ -1084,7 +1483,7 @@ uint16_t flightPlanNavGetEtaSeconds(void)
     // Horizontal groundspeed only reaches the waypoint's horizontal offset, so
     // divide by the 2D distance; the 3D slant would overstate ETA on climbs.
     vector3_t deltaM;
-    navTargetDeltaEnuM(est, &deltaM);
+    navWaypointDeltaEnuM(est, &deltaM);
     const float distance2dM = sqrtf(sq(deltaM.v[ENU_E]) + sq(deltaM.v[ENU_N]));
     const float etaS = distance2dM / speedMps;
     return (etaS >= (float)UINT16_MAX) ? UINT16_MAX : (uint16_t)lrintf(etaS);
