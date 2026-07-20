@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "platform/dma.h"
 #include "common/maths.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
