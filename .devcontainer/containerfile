@@ -25,6 +25,7 @@ RUN apt-get update && \
     ssh \
     btop \
     xxd \
+    gdb-multiarch \
     && rm -rf /var/lib/apt/lists/*
 
 # Generate en_US.UTF-8 locale

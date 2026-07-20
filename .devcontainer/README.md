@@ -91,6 +91,13 @@ The bundled OpenOCD is built from [STMicroelectronics' fork](https://github.com/
 because the distro package (0.12.0) lacks STM32H5 support. It covers the STM32 F4/F7/G4/H7/H5
 families; other platforms (STM32C5/N6, AT32, CH32, RP2350, …) will be added in follow-ups.
 
+For GDB use the pre-installed `gdb-multiarch`; the toolchain's `arm-none-eabi-gdb` won't start
+on Debian (it needs `libncursesw.so.5`/`libtinfo.so.5`, removed in trixie), e.g.:
+
+```bash
+gdb-multiarch obj/main/betaflight_<TARGET>.elf -ex 'target extended-remote localhost:3333'
+```
+
 ## Installation of tools
 
 Two examples are given here - one using Docker and the other using Podman.
