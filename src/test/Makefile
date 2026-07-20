@@ -595,6 +595,17 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
 
+flight_plan_capture_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_capture.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
+flight_plan_capture_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
+
 flight_plan_rescue_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
