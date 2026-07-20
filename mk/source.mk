@@ -21,13 +21,13 @@ PG_SRC = \
             pg/gps.c \
             pg/gps_lap_timer.c \
             pg/gps_rescue_multirotor.c \
-            pg/osd_nav_map.c \
             pg/gps_rescue_wing.c \
             pg/gyrodev.c \
             pg/max7456.c \
             pg/mco.c \
             pg/motor.c \
             pg/msp.c \
+            pg/osd_nav_map.c \
             pg/pg.c \
             pg/pilot.c \
             pg/piniobox.c \
@@ -173,12 +173,12 @@ COMMON_SRC = \
             flight/flight_plan_capture.c \
             flight/flight_plan_nav.c \
             flight/gps_rescue_multirotor.c \
-            flight/nav_trail.c \
             flight/gps_rescue_wing.c \
             flight/imu.c \
             flight/mixer.c \
             flight/mixer_init.c \
             flight/mixer_tricopter.c \
+            flight/nav_trail.c \
             flight/pid.c \
             flight/pid_init.c \
             flight/position.c \
