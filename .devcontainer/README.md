@@ -243,6 +243,32 @@ You can then build and flash the firmware as usual:
 
 ```
 
+## SWD debugging (OpenOCD + GDB)
+
+`openocd` and `gdb-multiarch` are included in the container. To attach to a running target
+over an ST-Link, build with debug symbols and start the gdb-server:
+
+```bash
+make <CONFIG> DEBUG=GDB                       # symbols; flash the resulting HEX via DFU
+.devcontainer/openocd-stm32h5.sh              # STM32H5/C5 (Cortex-M33) gdb-server on :3334
+gdb-multiarch obj/main/betaflight_<TARGET>.elf \
+    -ex 'target extended-remote localhost:3334' -ex 'monitor halt' -ex bt
+```
+
+`openocd-stm32h5.sh` encapsulates the H5/C5 quirk that OpenOCD 0.12 ships no target cfg for
+these parts and that their CPU core debug is on AP1 (see the comments in the script). For other
+MCUs use the matching `target/stm32*.cfg` directly.
+
+Probe access needs a udev rule on the host alongside the FC rules above (the ST-Link node is
+`root:root`), e.g. for an ST-Link V3 in `/etc/udev/rules.d/99-betaflight.rules`:
+
+```bash
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3753", MODE="0660", TAG+="uaccess"
+```
+
+Note: SWD and the Configurator share the single USB link on most FCs, so attaching disturbs the
+VCP — drive the FC from the Configurator with GDB detached, and use GDB only to halt/inspect.
+
 ## Gazebo SITL Simulation
 
 A separate container is provided for running Betaflight SITL with [Gazebo Harmonic](https://gazebosim.org/) simulation.

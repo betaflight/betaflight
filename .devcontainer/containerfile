@@ -26,6 +26,7 @@ RUN apt-get update && \
     btop \
     xxd \
     openocd \
+    gdb-multiarch \
     && rm -rf /var/lib/apt/lists/*
 
 # Generate en_US.UTF-8 locale
