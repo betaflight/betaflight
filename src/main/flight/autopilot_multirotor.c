@@ -117,6 +117,7 @@
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
 #define XY_VELOCITY_I_RELAX_CMS   250.0f     // in Nav mode only, integrate only near the target speed, so the
                                              // integral cannot wind up during the accel phase
+#define MAX_TARGET_VELOCITY_STEP 100.0f // target velocity for feedforward cannot change by more than this per loop
 
 static pidCoefficient_t xyPid;
 static float xyKDrag = 0.0f;
@@ -424,6 +425,8 @@ static void initNavMode(void)
     targetAcceleration.v[EF_EAST]  = 0.0f;
     targetAcceleration.v[EF_NORTH] = 0.0f;
     resetDistanceError();
+    targetVelocityRamped.v[EF_EAST]  = 0.0f;
+    targetVelocityRamped.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
@@ -804,16 +807,16 @@ bool positionControl(void)
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-        const float targetVelDelta = targetVelocity.v[axis] - previousTargetVelocity.v[axis];
-        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
+        float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
+        const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
+        previousVelocity.v[axis] =  velocity.v[axis];
         bool shouldIntegrateDistanceError = true;
         if (ap.derivativeStale) {
             // frozen-output fixes were skipped: no delta across the window,
             // so resumption cannot spike A against second-old velocity
             previousVelocity.v[axis] =  velocity.v[axis];
         }
-        const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
-        bool shouldIntegrateDistanceError = true;
 
         if (velocityMode) {
             // Nav velocity loop: track the commanded ground velocity directly.
@@ -826,7 +829,7 @@ bool positionControl(void)
         } else {
             // in Position Hold Mode
 #ifdef USE_FEEDFORWARD
-            tgtVelAcceleration = targetAcceleration.v[axis]; // from sticks using setpoint feedforward like in acro
+            targetVelDelta = targetAcceleration.v[axis]; // from sticks using setpoint feedforward like in acro
 #endif
             if (ap.sticksActive) {
                 // position hold with sticks active - velocity target according to setpoint
@@ -846,19 +849,18 @@ bool positionControl(void)
                 distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
         }
         distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-
-            pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
-            pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
-            pidD.v[axis] = -velocityFiltered * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
-            pidD.v[axis] += velocityFiltered *xyKDrag; // drag compensation reduces damping
-            pidA.v[axis] = acceleration * xyPid.Ka;
-            pidF.v[axis] = (targetVelocity.v[axis] + targetVelDelta) * xyPid.Kf;
+        pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
+        pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
+        pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
+        pidD.v[axis] += velocity.v[axis] *xyKDrag; // drag compensation reduces damping at higher speed
+        pidA.v[axis] = acceleration * xyPid.Ka;
+        pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + targetVelDelta * xyPid.Kf;
         // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
         const float noisyPids = pidP.v[axis] + pidA.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
         float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
         pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
-    ap.derivativeStale = false;
+        ap.derivativeStale = false;
 
     bool buildupClamped = false;
     if (velocityMode) {
