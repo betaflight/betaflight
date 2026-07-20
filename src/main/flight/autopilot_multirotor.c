@@ -111,6 +111,7 @@
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
 #define XY_VELOCITY_I_RELAX_CMS   250.0f     // integrate only near the target speed, so the
                                              // integral cannot wind up during the accel phase
+#define MAX_TARGET_VELOCITY_STEP 100.0f // target velocity for feedforward cannot change by more than this per loop
 
 static pidCoefficient_t xyPid;
 static float xyKDrag = 0.0f;
@@ -132,7 +133,7 @@ static float throttleOut = 0.0f;
 
 static vector2_t targetPosition;
 static vector2_t targetVelocity;
-static vector2_t previousTargetVelocity; // for feedforward
+static vector2_t targetVelocityRamped; // for feedforward when target velocity changes
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -382,6 +383,9 @@ void initPositionHold(void)
     resetDistanceError();
     targetVelocity.v[EF_EAST]  = 0.0f;
     targetVelocity.v[EF_NORTH] = 0.0f;
+    targetVelocityRamped.v[EF_EAST]  = 0.0f;
+    targetVelocityRamped.v[EF_NORTH] = 0.0f;
+
     ap.isPosHoldBraking = true; // arrest any entry speed before capturing the hold point
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
@@ -392,6 +396,8 @@ static void initNavMode(void)
     resetDistanceError();
     resetDistanceErrorIntegral();
     resetDistanceError();
+    targetVelocityRamped.v[EF_EAST]  = 0.0f;
+    targetVelocityRamped.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
@@ -690,12 +696,14 @@ bool positionControl(void)
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-        const float targetVelDelta = targetVelocity.v[axis] - previousTargetVelocity.v[axis];
-        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
+
+        const float tgtVelDelta = targetVelocity.v[axis] - targetVelocityRamped.v[axis];
+        const float limitedTgtVelDelta = constrainf(tgtVelDelta, -MAX_TARGET_VELOCITY_STEP, MAX_TARGET_VELOCITY_STEP);
+        targetVelocityRamped.v[axis] += limitedTgtVelDelta; // avoid sharp jumps in targetVelocityRamped, limiting rate of change to MAX_TARGET_VELOCITY_STEP
 
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityFilteredV.v[axis] = velocityFiltered;
-        velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
+        velocityError.v[axis] = targetVelocityRamped.v[axis] - velocityFiltered;
         const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
@@ -709,16 +717,19 @@ bool positionControl(void)
                 && (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f)) {
                 distanceError.v[axis] += velocityError.v[axis] * dt; // make a virtual distance error from integral of velocityError
             }
-        } else if (ap.isPosHoldBraking) {
-            // Move the target with the craft while slowing, so P doesn'tsnap from a large value to zero the instant the craft stops.
-            targetPosition.v[axis] += velocity.v[axis] * dt;
-            shouldIntegrateDistanceError = false; // don't integrate distance error while actively braking
         } else {
-            // not in a special mode
-            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis]; //normal distanceError calculation from currentPosition
-            shouldIntegrateDistanceError = !ap.sticksActive; // don't add to distance integral while sticks are active
+            // in Position Hold Mode
+            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis]; 
+
+            if (ap.isPosHoldBraking) {
+                dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
+                distanceError.v[axis] = 0.0f; // force P to zero and thereby also block iTerm accumulation
+            } else if (ap.sticksActive) {
+                // both velocity target and position target are actively changed according to setpoint
+                shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value 
+            }
         }
-        // these things happen in all positionControl modes
+        //these things happen in all modes
         distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
         if (shouldIntegrateDistanceError) {
             distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
@@ -730,8 +741,8 @@ bool positionControl(void)
             pidD.v[axis] = -velocityFiltered * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
             pidD.v[axis] += velocityFiltered *xyKDrag; // drag compensation reduces damping
             pidA.v[axis] = acceleration * xyPid.Ka;
-            pidF.v[axis] = (targetVelocity.v[axis] + targetVelDelta) * xyPid.Kf;
-
+            pidF.v[axis] = targetVelocityRamped.v[axis] * xyPid.Kd + limitedTgtVelDelta * xyPid.Kf;
+            // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
     } // End for loop
 
