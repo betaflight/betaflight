@@ -19,18 +19,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <stdint.h>
-
-#include "pg/pg.h"
-
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
-
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+// Compile libcanard's implementation into the test binary. The submodule path
+// is added to this test's INCLUDE_DIRS so both this shim and the code under
+// test resolve canard.h against the same source.
+#if !__has_include("canard.c")
+#error "libcanard missing; run: git submodule update --init lib/modules/dronecan/libcanard"
+#endif
+#include "canard.c"

@@ -21,16 +21,20 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
 
-#include "pg/pg.h"
+#include "common/time.h"
 
-typedef struct dronecanConfig_s {
-    uint8_t enabled;    // 0 = off, 1 = on
-    uint8_t node_id;    // DroneCAN node ID (1..127). 0 == unset (node stays inactive).
-    uint8_t device;     // CAN device number (1..CANDEV_COUNT), 1-based to match CLI
-    uint16_t esc_rate_hz; // esc.RawCommand broadcast rate; also the dronecan task tick rate when commanding ESCs (50..500)
-    uint8_t dna_enabled;  // 0 = off, 1 = on: act as the dynamic node-ID allocator
-} dronecanConfig_t;
+// In-flight waypoint capture on the WP CAPTURE box: a tap appends the craft's
+// position (sampled at the press) to the flight plan as a FLYBY waypoint, a
+// 1.5 s hold deletes the last waypoint. Edits apply to the live PG plan, so
+// the CLI waypoint command sees them and `save` persists them.
+void flightPlanCaptureUpdate(timeUs_t currentTimeUs, bool switchActive, bool channelsValid);
 
-PG_DECLARE(dronecanConfig_t, dronecanConfig);
+// Transient OSD cue ("WP3 SET", "WP2 DELETED", "WP FULL"), or NULL when none
+// is pending. The cue self-expires.
+const char *flightPlanCaptureOsdMessage(void);
+
+#ifdef UNIT_TEST
+void flightPlanCaptureResetForTest(void);
+#endif

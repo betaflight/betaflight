@@ -58,6 +58,11 @@
 #include "flight/imu.h"
 #include "io/beeper.h"
 
+#if ENABLE_DRONECAN
+#include "io/dronecan/dronecan.h"
+#include "io/dronecan/dronecan_mag.h"
+#endif
+
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -170,6 +175,50 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 
+#if ENABLE_DRONECAN
+// Frames older than this are treated as no data, so a dead bus trips the
+// compass task's read-failure path rather than latching the last vector.
+#define DRONECAN_MAG_TIMEOUT_US (500 * 1000)
+
+static bool dronecanMagDevInit(magDev_t *magDev)
+{
+    UNUSED(magDev);
+    return true;
+}
+
+static bool dronecanMagDevRead(magDev_t *magDev, int16_t *magData)
+{
+    UNUSED(magDev);
+
+    int16_t latest[XYZ_AXIS_COUNT];
+    if (!dronecanMagGetLatest(latest)) {
+        return false;
+    }
+
+    if (cmpTimeUs(micros(), dronecanMagLastUpdateUs()) >= DRONECAN_MAG_TIMEOUT_US) {
+        return false;
+    }
+
+    magData[X] = latest[X];
+    magData[Y] = latest[Y];
+    magData[Z] = latest[Z];
+    return true;
+}
+
+static bool dronecanMagDevDetect(magDev_t *magDev)
+{
+    // A DroneCAN mag can't be probed on a bus. dronecanInit() runs before
+    // compassInit() in fc/init.c, so dronecanIsInitialised() already reflects
+    // the enabled flag, a valid node ID and a valid CAN device.
+    if (!dronecanIsInitialised()) {
+        return false;
+    }
+    magDev->init = dronecanMagDevInit;
+    magDev->read = dronecanMagDevRead;
+    return true;
+}
+#endif // ENABLE_DRONECAN
+
 void compassPreInit(void)
 {
 #ifdef USE_SPI
@@ -185,6 +234,18 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
     *alignment = MAG_ALIGN;
 
     magSensor_e magHardware = MAG_NONE;
+
+#if ENABLE_DRONECAN
+    // Explicitly-selected only; never part of AUTO probing.
+    if (compassConfig()->mag_hardware == MAG_DRONECAN) {
+        if (dronecanMagDevDetect(magDev)) {
+            detectedSensors[SENSOR_INDEX_MAG] = MAG_DRONECAN;
+            sensorsSet(SENSOR_MAG);
+            return true;
+        }
+        return false;
+    }
+#endif
 
     extDevice_t *dev = &magDev->dev;
     // Associate magnetometer bus with its device

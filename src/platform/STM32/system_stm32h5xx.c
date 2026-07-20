@@ -46,6 +46,29 @@ void systemInit(void)
     memProtReset();
     memProtConfigure(mpuRegions, mpuRegionCount);
 
+    // STM32H5 (Cortex-M33): the instruction cache is a separate peripheral,
+    // disabled at reset, and is the ONLY flash accelerator on H5 (FLASH_ACR
+    // has no prefetch bit). Without it, hot code runs from flash at 5 wait
+    // states with no acceleration, inflating CPU load. Enable it here.
+    //
+    // Coherency notes:
+    //   - DMA buffers live in SRAM accessed via the system-bus alias
+    //     (0x2000_0000+), which bypasses ICACHE, so DMA writes need no
+    //     invalidation.
+    //   - The one region that changes at runtime under the code alias is the
+    //     config flash storage; configLock() invalidates ICACHE after each
+    //     config write so reads stay coherent.
+    //   - The OTP / read-only factory info block (UID, ADC calibration) is
+    //     marked non-cacheable by memProtConfigure() above — its non-burst
+    //     reads would otherwise fault an ICACHE cache-line refill.
+    //
+    // Do NOT call HAL_ICACHE_Invalidate() before enabling: on power-on/reset
+    // the cache is auto-invalidated by hardware, and the HAL invalidate wait
+    // loop is gated on HAL_GetTick(), which is not yet advancing this early in
+    // systemInit() — if it entered the wait it could spin forever and hang the
+    // board before USB comes up. HAL_ICACHE_Enable() alone is sufficient.
+    HAL_ICACHE_Enable();
+
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
