@@ -327,6 +327,42 @@ typedef struct pidProfile_s {
     uint16_t chirp_frequency_start_deci_hz; // start frequency in units of 0.1 hz
     uint16_t chirp_frequency_end_deci_hz;   // end frequency in units of 0.1 hz
     uint8_t chirp_time_seconds;             // excitation time
+
+#ifdef USE_AIRPLANE_SAS
+    uint8_t psas_stick_gain[XYZ_AXIS_COUNT];    // Percent control output by pilot stick deflection
+    uint16_t psas_damping_gain[XYZ_AXIS_COUNT]; // Percent control range addition by 1 degree per second angle rate *0.001
+    uint16_t psas_pitch_damping_filter_freq;    // pitch damping filter cut freq Hz *0.01
+    uint8_t psas_accel_z_filter_freq;           // accel Z filter cut freq Hz *0.1
+    uint16_t psas_pitch_stability_gain;         // percent control range addition by 1g accel z change *0.1
+    uint16_t psas_pitch_accel_p_gain;           // elevator for 1g Z accel difference in % *0.1
+    uint8_t psas_pitch_accel_i_gain;            // elevator speed for 1g Z accel difference in %/sec
+    uint8_t psas_pitch_accel_max;               // maximal positive Z accel value *0.1
+    uint8_t psas_pitch_accel_min;               // maximal negative Z accel value *0.1
+    uint16_t psas_yaw_damping_filter_freq;      // yaw damping filter cut freq Hz *0.01
+    uint8_t psas_accel_y_filter_freq;           // accel Y filter cut freq Hz *0.1
+    uint16_t psas_yaw_stability_gain;           // percent control by 1g Y accel change *0.1
+    uint16_t psas_wing_load;                    // wing load (mass / WingArea) g/decimeter^2 *0.1. Set yours plane proper value to use lift coef estimation, AoA limiter, roll to yaw cross link
+    uint16_t psas_air_density;                  // The current atmosphere air density [g/m^3], the MSA 1225 g/m^3 value is default. TODO: Dynamical air density computing by using baro sensors data
+    uint8_t psas_lift_c_limit;                  // Limit aerodynamics lift force coefficient value *0.1
+    uint8_t psas_aoa_limiter_gain;              // elevator speed for 0.1 lift force coef difference in %/sec
+    uint8_t psas_lift_coef_filter_freq;         // aoa limiter lift coef filter cut freq Hz *0.1
+    uint8_t psas_aoa_limiter_forecast_time;     // aoa limiter lift coef forecast time, s *0.01
+    uint8_t psas_aoa_limiter_tau_return;        // aoa limiter tau value, to return zero I value output s *0.1
+    uint16_t psas_servo_time;                   // minimal time of servo movement from neutral to maximum, ms
+    uint8_t psas_roll_yaw_clift_start;          // Aerodynamics lift force coef to start yaw control for roll rotation  *0.1
+    uint8_t psas_roll_yaw_clift_stop;           // Aerodynamics lift force coef to maximum yaw control for roll rotation  *0.1
+    uint8_t psas_roll_to_yaw_link;              // The maximal yaw control value to support roll rotation, % *0.1
+    uint8_t psas_speed_main_curve_enable[XYZ_AXIS_COUNT]; // Enable speed curves for the damping and stability gains
+    uint8_t psas_speed_stick_curve_enable[XYZ_AXIS_COUNT]; // Enable speed curves for the stick gains
+    uint8_t psas_speed_optimum_vref;            // Reference speed value which has optimal plane settins m/s 
+    uint8_t psas_speed_main_curve_power;        // Speed gain curves power for damping, stability, pitch and yaw sticks *0.1
+    uint8_t psas_speed_roll_stick_curve_power;  // Speed gain curves power for roll stick *0.1
+    uint16_t psas_speed_main_curve_min;         // Speed gain minimum for damping and stability *0.01
+    uint16_t psas_speed_main_curve_max;         // Speed gain maximum for damping and stability *0.01
+    uint16_t psas_speed_stick_curve_min;        // Speed gain minimum for sticks *0.01
+    uint16_t psas_speed_stick_curve_max;        // Speed gain maximum for sticks *0.01
+    uint8_t psas_speed_use_gps;                 // Use GPS speed for PSAS curves in non wind condition
+#endif
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, PID_PROFILE_COUNT, pidProfiles);

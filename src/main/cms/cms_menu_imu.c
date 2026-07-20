@@ -967,6 +967,130 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
+#ifdef USE_AIRPLANE_SAS
+static uint8_t temp_psas_stick_gain[XYZ_AXIS_COUNT];
+static uint16_t temp_psas_damping_gain[XYZ_AXIS_COUNT];
+static uint16_t temp_psas_pitch_stability_gain;
+static uint16_t temp_psas_yaw_stability_gain;
+static uint16_t temp_psas_pitch_accel_p_gain;
+static uint8_t temp_psas_pitch_accel_i_gain;
+static uint8_t temp_psas_pitch_accel_max;
+static uint8_t temp_psas_pitch_accel_min;
+static uint8_t temp_psas_lift_c_limit;
+static uint8_t temp_psas_aoa_limiter_gain;
+static uint8_t temp_psas_aoa_limiter_forecast_time;
+static uint8_t temp_psas_aoa_limiter_tau_return;
+static uint16_t temp_psas_wing_load;
+
+static const void *cmsx_PsasRead(void)
+{
+
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
+    for (uint8_t i = 0; i < 3; i++) {
+        temp_psas_stick_gain[i] = pidProfile->psas_stick_gain[i];
+        temp_psas_damping_gain[i] = pidProfile->psas_damping_gain[i];
+    }
+
+    temp_psas_pitch_stability_gain = pidProfile->psas_pitch_stability_gain;
+    temp_psas_yaw_stability_gain = pidProfile->psas_yaw_stability_gain;
+    temp_psas_pitch_accel_p_gain = pidProfile->psas_pitch_accel_p_gain;
+    temp_psas_pitch_accel_i_gain = pidProfile->psas_pitch_accel_i_gain;
+    temp_psas_pitch_accel_max = pidProfile->psas_pitch_accel_max;
+    temp_psas_pitch_accel_min = pidProfile->psas_pitch_accel_min;
+    temp_psas_lift_c_limit = pidProfile->psas_lift_c_limit;
+    temp_psas_aoa_limiter_gain = pidProfile->psas_aoa_limiter_gain;
+    temp_psas_aoa_limiter_forecast_time = pidProfile->psas_aoa_limiter_forecast_time;
+    temp_psas_aoa_limiter_tau_return = pidProfile->psas_aoa_limiter_tau_return;
+    temp_psas_wing_load = pidProfile->psas_wing_load;
+
+    return NULL;
+}
+
+static const void *cmsx_PsasOnEnter(displayPort_t *pDisp)
+{
+    UNUSED(pDisp);
+
+    setProfileIndexString(pidProfileIndexString, pidProfileIndex, currentPidProfile->profileName);
+    cmsx_PsasRead();
+
+    return NULL;
+}
+
+static const void *cmsx_PsasWriteback(displayPort_t *pDisp, const OSD_Entry *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    pidProfile_t *pidProfile = currentPidProfile;
+    for (uint8_t i = 0; i < 3; i++) {
+        pidProfile->psas_stick_gain[i] = temp_psas_stick_gain[i];
+        pidProfile->psas_damping_gain[i] = temp_psas_damping_gain[i];
+    }
+
+    pidProfile->psas_pitch_stability_gain = temp_psas_pitch_stability_gain;
+    pidProfile->psas_yaw_stability_gain = temp_psas_yaw_stability_gain;
+    pidProfile->psas_pitch_accel_p_gain = temp_psas_pitch_accel_p_gain;
+    pidProfile->psas_pitch_accel_i_gain = temp_psas_pitch_accel_i_gain;
+    pidProfile->psas_pitch_accel_max = temp_psas_pitch_accel_max;
+    pidProfile->psas_pitch_accel_min = temp_psas_pitch_accel_min;
+    pidProfile->psas_lift_c_limit = temp_psas_lift_c_limit;
+    pidProfile->psas_aoa_limiter_gain = temp_psas_aoa_limiter_gain;
+    pidProfile->psas_aoa_limiter_forecast_time = temp_psas_aoa_limiter_forecast_time;
+    pidProfile->psas_aoa_limiter_tau_return = temp_psas_aoa_limiter_tau_return;
+    pidProfile->psas_wing_load = temp_psas_wing_load;
+
+    pidInitConfig(currentPidProfile);
+
+    return NULL;
+}
+
+static OSD_Entry cmsx_menuPsasEntries[] =
+{
+    { "-- PSAS --", OME_Label, NULL, pidProfileIndexString},
+    { "-- PILOT --", OME_Label, NULL, NULL},
+    { "ROLL", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_ROLL], 5, 200, 1 }},
+    { "PITCH", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_PITCH], 5, 200, 1 }},
+    { "YAW", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_stick_gain[PID_YAW], 0, 200, 1 }},
+
+    { "-- DAMPING --", OME_Label, NULL, NULL},
+    { "ROLL", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_ROLL], 0, 255, 1 }},
+    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_PITCH], 0, 500, 10 }},
+    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_damping_gain[PID_YAW], 0, 500, 10 }},
+
+    { "-- STABILITY --", OME_Label, NULL, NULL},
+    { "PITCH", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_pitch_stability_gain, 0, 300, 1 }},
+    { "YAW", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_yaw_stability_gain, 0, 300, 1 }},
+
+    { "-- ACC Z CONTROLLER --", OME_Label, NULL, NULL},
+    { "ACC Z I", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_i_gain, 0, UINT8_MAX, 1 }},
+    { "ACC Z P", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_pitch_accel_p_gain, 0, 1000, 10 }},
+    { "ACC Z MAX", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_max, 20, UINT8_MAX, 1 }},
+    { "ACC Z MIN", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_pitch_accel_min, 10, UINT8_MAX, 1 }},
+
+    { "-- AOA LIMITER --", OME_Label, NULL, NULL},
+    { "WING LOAD", OME_UINT16, NULL, &(OSD_UINT16_t){ &temp_psas_wing_load, 0, 1500, 1 }},
+    { "I", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_gain, 0, UINT8_MAX, 1 }},
+    { "LIMIT", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_lift_c_limit, 5, 20, 1 }},
+    { "FORECAST", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_forecast_time, 0, UINT8_MAX, 1 }},
+    { "T RETURN", OME_UINT8, NULL, &(OSD_UINT8_t){ &temp_psas_aoa_limiter_tau_return, 1, 50, 1 }},
+
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL}
+};
+
+static CMS_Menu cmsx_menuPSAS = {
+#ifdef CMS_MENU_DEBUG
+    .GUARD_text = "XPSAS",
+    .GUARD_type = OME_MENU,
+#endif
+    .onEnter = cmsx_PsasOnEnter,
+    .onExit = cmsx_PsasWriteback,
+    .onDisplayUpdate = NULL,
+    .entries = cmsx_menuPsasEntries
+};
+#endif
+
+
 #ifdef USE_EXTENDED_CMS_MENUS
 
 static uint8_t cmsx_dstPidProfile;
@@ -1047,6 +1171,9 @@ static const OSD_Entry cmsx_menuImuEntries[] =
     { "-- PROFILE --", OME_Label, NULL, NULL},
 
     {"PID PROF",  OME_TAB,     cmsx_profileIndexOnChange,     &(OSD_TAB_t){&tmpPidProfileIndex, PID_PROFILE_COUNT-1, pidProfileNamePtrs}},
+#ifdef USE_AIRPLANE_SAS
+    {"PSAS",      OME_Submenu, cmsMenuChange,                 &cmsx_menuPSAS},
+#endif
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid},
 #ifdef USE_SIMPLIFIED_TUNING
     {"SIMPLIFIED TUNING",   OME_Submenu, cmsMenuChange,                 &cmsx_menuSimplifiedTuning},

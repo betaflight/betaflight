@@ -214,6 +214,10 @@ typedef enum {
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
 
+#ifdef USE_AIRPLANE_SAS
+    OSD_AOA_LIMITER,
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

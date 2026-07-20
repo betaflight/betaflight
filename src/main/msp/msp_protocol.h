@@ -213,12 +213,13 @@
 #define MSP_CALCULATE_SIMPLIFIED_DTERM  144  // out message: Calculate D term filter values based on sliders without saving
 #define MSP_VALIDATE_SIMPLIFIED_TUNING  145  // out message: Returns array of true/false showing which simplified tuning groups match values
 
-// Additional non-MultiWii commands (150-166)
+// Additional non-MultiWii commands (150-168)
 #define MSP_STATUS_EX                   150  // out message: Cycletime, errors_count, CPU load, sensor present etc
 #define MSP_UID                         160  // out message: Unique device ID
 #define MSP_GPSSVINFO                   164  // out message: Get Signal Strength (only U-Blox)
 #define MSP_GPSSTATISTICS               166  // out message: Get GPS debugging data
 #define MSP_ATTITUDE_QUATERNION         167  // out message: Orientation quaternion components (w, x, y, z)
+#define MSP_PSAS_CONFIG                 168  // out message:  PSAS config data
 
 // OSD specific commands (180-189)
 #define MSP_OSD_VIDEO_CONFIG            180  // out message: Get OSD video settings
@@ -258,6 +259,7 @@
 #define MSP_SET_GPS_RESCUE_PIDS         226  // in message:  Set GPS Rescue PID values
 #define MSP_SET_VTXTABLE_BAND           227  // in message:  Set vtxTable band/channel data
 #define MSP_SET_VTXTABLE_POWERLEVEL     228  // in message:  Set vtxTable powerLevel data
+#define MSP_SET_PSAS_CONFIG             229  // in message:  Set PSAS config data
 
 // Multiple MSP and special commands (230-255)
 #define MSP_MULTIPLE_MSP                230  // out message: Request multiple MSPs in one request
