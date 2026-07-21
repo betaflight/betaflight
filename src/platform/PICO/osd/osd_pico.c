@@ -600,8 +600,8 @@ static void vsync_callback(void)
     }
 #else
     dmaClearBackgroundBuffer = false;
-    setBackgroundItemsPending();
     if (flipThisVSync) {
+        setBackgroundItemsPending();
         dma_channel_configure(
             dma_chan_bg_to_bufA,
             &config_bg_to_bufA,     // Config (don't increment read address)
