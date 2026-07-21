@@ -43,6 +43,7 @@ typedef enum {
     FP_ABORT_STALLED,       // no progress toward the target within the stall window
     FP_ABORT_FLYAWAY,       // distance to target grew past the flyaway margin
     FP_ABORT_HEADING,       // rescue heading recovery did not converge in time
+    FP_ABORT_MAG_FAULT,     // course-over-ground disagreed with heading at speed: parked wings-level
 } flightPlanAbortReason_e;
 
 void flightPlanNavInit(void);

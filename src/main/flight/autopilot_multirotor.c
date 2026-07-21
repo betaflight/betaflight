@@ -154,6 +154,7 @@ static bool wasPositionHeld = false;
 static bool wasNavActive = false;
 static bool abortNavRequested = false;
 static bool forcePitchForward = false;
+static bool forceLevelPark = false;
 static bool wasAngleSaturated = false;
 
 static float apYawRateDps = 0.0f;
@@ -161,6 +162,8 @@ static bool apYawActive = false;
 static float apYawAttenuator = 0.0f;
 static float apYawRateLimitDps = 0.0f;
 static bool apYawCourseValid = false;
+static bool apNavHeadingOverrideValid = false;   // mission pre-turn: nose commanded onto the next leg
+static float apNavHeadingOverrideDeg = 0.0f;
 
 static void disableYawControl(void);
 
@@ -229,6 +232,8 @@ void autopilotInit(void)
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
     forcePitchForward = false;
+    forceLevelPark = false;
+    apNavHeadingOverrideValid = false;
     disableYawControl();
     apYawRateLimitDps = 0.0f;
     positionNavInit();
@@ -355,6 +360,17 @@ void pitchForwardOverride(bool request)
     forcePitchForward = request;
 }
 
+void autopilotForceLevelPark(bool request)
+{
+    forceLevelPark = request;
+}
+
+void autopilotSetNavHeadingOverride(bool valid, float headingDeg)
+{
+    apNavHeadingOverrideValid = valid;
+    apNavHeadingOverrideDeg = headingDeg;
+}
+
 static inline float calculateSanityCheckDistance(void)
 {
     const float speedCmS = vector2Norm((const vector2_t *)&positionEstimatorGetEstimate()->velocity.v);
@@ -400,6 +416,8 @@ void resetPositionControl(unsigned taskRateHz)
     UNUSED(taskRateHz);
     abortNavRequested = false;
     forcePitchForward = false;
+    forceLevelPark = false;
+    apNavHeadingOverrideValid = false;
     ap.sticksActive = false;
     ap.wasSticksActive = false;
     disableYawControl();
@@ -515,19 +533,26 @@ static void updateYawControl(float dt, const positionEstimate3d_t *est)
 
     float desiredHeadingDeg = 0.0f;
     bool haveDesiredHeading = false;
-    switch (cfg->yawMode) {
-    case YAW_MODE_VELOCITY:
-        haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg);
-        break;
-    case YAW_MODE_BEARING:
-        haveDesiredHeading = bearingToTargetDeg(est, &desiredHeadingDeg);
-        break;
-    case YAW_MODE_HYBRID:
-        haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
-            || bearingToTargetDeg(est, &desiredHeadingDeg);
-        break;
-    default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
-        break;
+    if (apNavHeadingOverrideValid) {
+        // Mission pre-turn blend: point the nose onto the next leg regardless of
+        // the configured yaw mode, so it is already there as the gate is crossed.
+        desiredHeadingDeg = apNavHeadingOverrideDeg;
+        haveDesiredHeading = true;
+    } else {
+        switch (cfg->yawMode) {
+        case YAW_MODE_VELOCITY:
+            haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg);
+            break;
+        case YAW_MODE_BEARING:
+            haveDesiredHeading = bearingToTargetDeg(est, &desiredHeadingDeg);
+            break;
+        case YAW_MODE_HYBRID:
+            haveDesiredHeading = courseHeadingDeg(est, &desiredHeadingDeg)
+                || bearingToTargetDeg(est, &desiredHeadingDeg);
+            break;
+        default: // YAW_MODE_FIXED, YAW_MODE_DAMPENER (wing only)
+            break;
+        }
     }
 
     if (!haveDesiredHeading) {
@@ -572,6 +597,14 @@ bool positionControl(void)
         disableYawControl();
         handlepositionControlFailure();
         return false; // Return failure and show pos hold fail message in OSD
+    }
+    if (forceLevelPark) {
+        // Heading/mag fault: position hold would lean on the suspect heading and
+        // fly sideways, so drop to angle-mode self-level (altitude hold, a
+        // separate mode, keeps holding height) until a mode-switch cycle clears it.
+        disableYawControl();
+        handlepositionControlFailure();
+        return false;
     }
     if (forcePitchForward) {
         disableYawControl();

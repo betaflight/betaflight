@@ -196,6 +196,15 @@
 #define PARAM_NAME_AP_MAX_YAW_RATE "ap_max_yaw_rate"
 #define PARAM_NAME_AP_MIN_FORWARD_VELOCITY "ap_min_forward_velocity"
 
+// Leg-line carrot path tracking and turn-angle cornering
+#define PARAM_NAME_AP_NAV_CORNER_SPEED "ap_nav_corner_speed"
+#define PARAM_NAME_AP_NAV_CORNER_DELTA_V "ap_nav_corner_delta_v"
+#define PARAM_NAME_AP_NAV_DECEL "ap_nav_decel"
+#define PARAM_NAME_AP_NAV_ACCEL "ap_nav_accel"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_TIME "ap_nav_carrot_lead_time"
+#define PARAM_NAME_AP_NAV_CARROT_LEAD_MAX "ap_nav_carrot_lead_max"
+#define PARAM_NAME_AP_NAV_PRETURN_DIST "ap_nav_preturn_dist"
+
 // Phase 5: Velocity buildup
 #define PARAM_NAME_AP_VELOCITY_BUILDUP_MAX_PITCH "ap_velocity_buildup_max_pitch"
 

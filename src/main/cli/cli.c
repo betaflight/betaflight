@@ -2886,7 +2886,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
 
         if (state == FP_NAV_ABORTED) {
             static const char * const abortNames[] = {
-                "NONE", "GPS LOST", "STALLED", "FLYAWAY", "HEADING",
+                "NONE", "GPS LOST", "STALLED", "FLYAWAY", "HEADING", "MAG FAULT",
             };
             const flightPlanAbortReason_e reason = flightPlanNavGetAbortReason();
             cliPrintLinef("  abort reason: %s", (reason < ARRAYLEN(abortNames)) ? abortNames[reason] : "UNKNOWN");
