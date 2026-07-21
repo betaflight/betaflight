@@ -58,8 +58,13 @@ void IOInitGlobal(void)
     const int pin5 = IO_PINBYTAG(IO_TAG(PICO_BEC_5V_ENABLE_PIN));
     gpio_init(pin5);
     gpio_set_dir(pin5, 1);
+#if PICO_BEC_ENABLE_NONINVERTED
+    gpio_put(pin5, 1);
+    bprintf("5V enable pin: %d set high", pin5);
+#else
     gpio_put(pin5, 0);
     bprintf("5V enable pin: %d set low", pin5);
+#endif
     ioRecs[pin5].owner = OWNER_SYSTEM;
 #endif
 
@@ -67,8 +72,13 @@ void IOInitGlobal(void)
     const int pin9 = IO_PINBYTAG(IO_TAG(PICO_BEC_9V_ENABLE_PIN));
     gpio_init(pin9);
     gpio_set_dir(pin9, 1);
+#if PICO_BEC_ENABLE_NONINVERTED
+    gpio_put(pin9, 1);
+    bprintf("9V enable pin: %d set high", pin9);
+#else
     gpio_put(pin9, 0);
     bprintf("9V enable pin: %d set low", pin9);
+#endif
     ioRecs[pin9].owner = OWNER_SYSTEM;
 #endif
 }

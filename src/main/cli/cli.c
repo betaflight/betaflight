@@ -105,6 +105,7 @@ bool cliMode = false;
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -2861,9 +2862,35 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
             }
         }
 
-        // TODO: Add runtime status when Phase 3 (waypoint tracker) is complete
-        // This will show: current waypoint, state, distance, bearing, etc.
-        cliPrintLine("\nRuntime status: Not yet implemented (requires Phase 3)");
+        cliPrintLine("\nRuntime status:");
+        if (!flightPlanNavIsActive()) {
+            cliPrintLine("  inactive");
+            return;
+        }
+
+        static const char * const stateNames[] = {
+            "IDLE", "TARGETING", "HOLDING", "COMPLETE", "LANDING", "ABORTED",
+        };
+        const flightPlanNavState_e state = flightPlanNavGetState();
+        cliPrintLinef("  state: %s", (state < ARRAYLEN(stateNames)) ? stateNames[state] : "UNKNOWN");
+        const uint8_t currentDisplay = (config->waypointCount == 0) ? 0 : flightPlanNavGetCurrentIndex() + 1;
+        cliPrintLinef("  current waypoint: %u/%u", currentDisplay, config->waypointCount);
+
+        const float distanceM = flightPlanNavGetDistanceToWaypointM();
+        if (distanceM >= 0.0f) {
+            const uint32_t distanceCm = lrintf(distanceM * 100.0f);
+            const int32_t bearingDeg = flightPlanNavGetBearingToWaypointDeciDeg() / 10;
+            cliPrintLinef("  distance: %u.%02um  bearing: %ld deg  eta: %us",
+                distanceCm / 100, distanceCm % 100, (long)bearingDeg, flightPlanNavGetEtaSeconds());
+        }
+
+        if (state == FP_NAV_ABORTED) {
+            static const char * const abortNames[] = {
+                "NONE", "GPS LOST", "STALLED", "FLYAWAY", "HEADING", "MAG FAULT",
+            };
+            const flightPlanAbortReason_e reason = flightPlanNavGetAbortReason();
+            cliPrintLinef("  abort reason: %s", (reason < ARRAYLEN(abortNames)) ? abortNames[reason] : "UNKNOWN");
+        }
         return;
     }
 
@@ -6101,6 +6128,48 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
             }
 #endif
+        }
+        if (gpsIsHealthy()) {
+            cliPrintLinefeed();
+            cliPrintf("  sats: %d", gpsSol.numSat);
+
+            uint16_t cnoSum = 0;
+            uint8_t cnoCount = 0;
+            for (unsigned i = 0; i < GPS_numCh; i++) {
+                if (GPS_svinfo[i].cno > 0) {
+                    cnoSum += GPS_svinfo[i].cno;
+                    cnoCount++;
+                }
+            }
+            if (cnoCount > 0) {
+                cliPrintf(", signal: %d dBHz", cnoSum / cnoCount);
+            }
+
+            if (gpsSol.dop.hdop > 0) {
+                cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
+            }
+
+            if (gpsSol.dop.vdop > 0) {
+                cliPrintf(", vdop: %d.%02d", gpsSol.dop.vdop / 100, gpsSol.dop.vdop % 100);
+            }
+
+            if (STATE(GPS_FIX)) {
+                const int32_t lat = gpsSol.llh.lat;
+                const int32_t lon = gpsSol.llh.lon;
+                const int32_t altCm = gpsSol.llh.altCm;
+                cliPrintf(", pos: %s%d.%07d %s%d.%07d, alt: %s%d.%02dm",
+                    lat < 0 ? "-" : "", ABS(lat) / 10000000, ABS(lat) % 10000000,
+                    lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
+                    altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
+            } else {
+                cliPrint(", pos: no fix");
+            }
+
+            if (gpsSol.dateTime.valid) {
+                cliPrintf(", %04d-%02d-%02dT%02d:%02d:%02dZ",
+                    gpsSol.dateTime.year, gpsSol.dateTime.month, gpsSol.dateTime.day,
+                    gpsSol.dateTime.hour, gpsSol.dateTime.min, gpsSol.dateTime.sec);
+            }
         }
     } else {
         cliPrint("NOT ENABLED");
