@@ -192,6 +192,7 @@ typedef struct autopilotState_s {
     float speedTrendCmS;        // ~0.5 s lowpass of speedXY: reference for "is the craft slowing?"
     bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
+    bool derivativeStale;       // output was frozen past the fence: re-baseline the A-term on resume
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -429,6 +430,7 @@ void positionControlReanchor(void)
     ap.sanityCheckDistance = calculateSanityCheckDistance();
     ap.sanityViolationS = 0.0f;
     ap.violationFreeS = 0.0f;
+    ap.derivativeStale = false;
 }
 
 static void initNavMode(void)
@@ -786,6 +788,10 @@ bool positionControl(void)
                     if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
                         return sanityViolationExpired();
                     }
+                    // The A-term history is now stale; mark it so the resume
+                    // loop re-baselines instead of differentiating across the
+                    // frozen window (one spurious spike against old velocity)
+                    ap.derivativeStale = true;
                     return true; // brief excursion: hold the previous command
                 } else {
                     ap.sanityViolationS = 0.0f;
@@ -811,6 +817,11 @@ bool positionControl(void)
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityFilteredV.v[axis] = velocityFiltered;
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
+        if (ap.derivativeStale) {
+            // frozen-output fixes were skipped: no delta across the window,
+            // so resumption cannot spike A against second-old velocity
+            previousVelocity.v[axis] = velocityFiltered;
+        }
         const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
@@ -864,6 +875,7 @@ bool positionControl(void)
 
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
     } // End for loop
+    ap.derivativeStale = false;
 
     bool buildupClamped = false;
     if (velocityMode) {

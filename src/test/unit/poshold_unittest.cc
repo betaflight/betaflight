@@ -258,6 +258,36 @@ TEST_F(PosHoldTest, SingleOutlierFixIsAbsorbedHoldingLastOutput)
     }
 }
 
+TEST_F(PosHoldTest, ResumeAfterFrozenExcursionDoesNotSpikeTheOutput)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // real motion first, so the A-term history holds a meaningful velocity
+    testEstimate.velocity.x = 300.0f;
+    for (int i = 0; i < 50; i++) {
+        EXPECT_TRUE(positionControl());
+    }
+
+    // a sub-latch excursion freezes the output; meanwhile the craft stops,
+    // so the frozen A-term history goes badly stale
+    testEstimate.position.x = 3000.0f;
+    testEstimate.velocity.x = 0.0f;
+    for (int i = 0; i < 80; i++) {   // 0.8 s, inside the 1 s latch window
+        EXPECT_TRUE(positionControl());
+    }
+    const float rollFrozen = autopilotAngle[AI_ROLL];
+    const float pitchFrozen = autopilotAngle[AI_PITCH];
+
+    // resumption must not step the output: the D/A filter chain and the
+    // A-term history freeze together (coherently), and the explicit
+    // re-baseline pins that property against future restructuring. Measured
+    // transient in this scenario is < 0.05 deg.
+    testEstimate.position.x = 0.0f;
+    EXPECT_TRUE(positionControl());
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollFrozen, 0.25f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFrozen, 0.25f);
+}
+
 // -- Displacement response: heading North (yaw = 0) --
 
 TEST_F(PosHoldTest, EastDisplacementProducesNegativeRollResponse)
