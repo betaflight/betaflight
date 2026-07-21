@@ -95,6 +95,10 @@
 #define AP_YAW_D_SCALE         0.01f
 #define AP_YAW_RAMP_TIME_S     1.0f
 
+#define AP_YAW_P_SCALE         0.01f
+#define AP_YAW_D_SCALE         0.01f
+#define AP_YAW_RAMP_TIME_S     1.0f
+
 #define XY_DISTANCE_SCALE    0.0015f   // distance P / velocity I
 #define XY_DISTANCE_I_SCALE  0.00015f  // distance I
 #define XY_VELOCITY_SCALE    0.003f    // distance D / velocity P (opposes velocity)
@@ -117,8 +121,6 @@
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
 #define XY_VELOCITY_I_RELAX_CMS   250.0f     // in Nav mode only, integrate only near the target speed, so the
                                              // integral cannot wind up during the accel phase
-#define MAX_TARGET_VELOCITY_STEP 100.0f // target velocity for feedforward cannot change by more than this per loop
-
 static pidCoefficient_t xyPid;
 static float xyKDrag = 0.0f;
 
@@ -425,8 +427,8 @@ static void initNavMode(void)
     targetAcceleration.v[EF_EAST]  = 0.0f;
     targetAcceleration.v[EF_NORTH] = 0.0f;
     resetDistanceError();
-    targetVelocityRamped.v[EF_EAST]  = 0.0f;
-    targetVelocityRamped.v[EF_NORTH] = 0.0f;
+    previousTargetVelocity.v[EF_EAST]  = 0.0f;
+    previousTargetVelocity.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
@@ -859,6 +861,9 @@ distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT,
         float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
         pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
+
+    ap.derivativeStale = false;
+
     bool buildupClamped = false;
     if (velocityMode) {
         // velocityBuildupMaxPitch bounds the velocity-proportional drive vector (now pidD)
