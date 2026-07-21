@@ -69,3 +69,11 @@ bool i2cBusy(i2cDevice_e device, bool *error);
 
 uint16_t i2cGetErrorCounter(void);
 uint8_t i2cGetRegisteredDeviceCount(void);
+
+// Startup bus-health diagnostic. A configured bus whose SCL/SDA cannot be
+// released to a valid idle-high at init (stuck low) is almost always a
+// hardware problem — missing external pull-ups or a device holding the bus.
+// i2cInit reports the result here so it can be surfaced (e.g. in CLI status)
+// instead of failing silently. Bit position is the i2cDevice_e value.
+void i2cSetBusStuck(i2cDevice_e device, bool stuck);
+uint16_t i2cGetStuckBusMask(void);

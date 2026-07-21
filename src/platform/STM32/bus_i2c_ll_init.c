@@ -326,7 +326,13 @@ void i2cInit(i2cDevice_e device)
     // Enable RCC
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    i2cUnstick(scl, sda);
+    // Drive the bus idle and confirm both lines actually reach a valid high.
+    // If they cannot (stuck low), the bus is electrically dead — almost always
+    // missing external pull-ups or a device holding a line. Record it so the
+    // failure is visible (CLI status) rather than silent. Init continues; a
+    // dead bus simply times out on every transaction.
+    const bool busIdle = i2cUnstick(scl, sda);
+    i2cSetBusStuck(device, !busIdle);
 
     // Init pins
 #if defined(STM32F7)

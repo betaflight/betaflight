@@ -32,6 +32,11 @@
 
 static uint8_t i2cRegisteredDeviceCount = 0;
 
+// Bitmask of configured buses that could not be released to idle at init.
+// Set/cleared by i2cInit() via i2cSetBusStuck(); platforms that never call
+// the setter simply leave the mask at 0.
+static uint16_t i2cStuckBusMask = 0;
+
 bool i2cBusWriteRegister(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     return i2cWrite(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, data);
@@ -99,5 +104,23 @@ void i2cBusDeviceRegister(const extDevice_t *dev)
 uint8_t i2cGetRegisteredDeviceCount(void)
 {
     return i2cRegisteredDeviceCount;
+}
+
+void i2cSetBusStuck(i2cDevice_e device, bool stuck)
+{
+    if (device < 0 || device >= I2CDEV_COUNT) {
+        return;
+    }
+
+    if (stuck) {
+        i2cStuckBusMask |= (1U << device);
+    } else {
+        i2cStuckBusMask &= ~(1U << device);
+    }
+}
+
+uint16_t i2cGetStuckBusMask(void)
+{
+    return i2cStuckBusMask;
 }
 #endif

@@ -6026,6 +6026,22 @@ static void cliStatus(const char *cmdName, char *cmdline)
 #endif
     cliPrintLinefeed();
 
+#if defined(USE_I2C)
+    // Flag any configured bus that could not be released to idle at init.
+    // Stuck-low lines are almost always a hardware fault (missing external
+    // pull-ups, or a device holding the bus) rather than a firmware issue.
+    const uint16_t i2cStuckBusMask = i2cGetStuckBusMask();
+    if (i2cStuckBusMask) {
+        cliPrint("I2C BUS STUCK LOW AT INIT (check pull-ups/wiring):");
+        for (int device = 0; device < I2CDEV_COUNT; device++) {
+            if (i2cStuckBusMask & (1U << device)) {
+                cliPrintf(" I2C%d", I2C_DEV_TO_CFG(device));
+            }
+        }
+        cliPrintLinefeed();
+    }
+#endif
+
     // Sensors
 #if defined(USE_SENSOR_NAMES)
     cliPrintf("%s: ", sensorTypeDisplayNames[SENSOR_INDEX_GYRO]);

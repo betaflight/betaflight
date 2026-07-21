@@ -463,7 +463,11 @@ void i2cInit(i2cDevice_e device)
 
     I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
-    i2cUnstick(scl, sda);
+    // Confirm the bus can be released to idle-high; a stuck-low line is almost
+    // always missing pull-ups or a device holding the bus. Record it so a dead
+    // bus is visible (CLI status) rather than failing silently.
+    const bool busIdle = i2cUnstick(scl, sda);
+    i2cSetBusStuck(device, !busIdle);
 
     // Init pins
 #ifdef STM32F4
