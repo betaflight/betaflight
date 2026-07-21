@@ -1122,7 +1122,7 @@ bool osdPioRenderScreenUntil(uint32_t limit_micros)
     selectBackgroundBuffer();
     bool complete =
         renderSticksBackgroundUntil(limit_micros) &&
-        renderCameraFrameUntil(limit_micros);
+        renderCameraFrameUntil(limit_micros) &&
         renderSidebarsUntil(limit_micros);
     selectForegroundBuffer();
 
