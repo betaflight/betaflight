@@ -99,9 +99,7 @@
 #define XY_DISTANCE_I_SCALE  0.00015f  // distance I
 #define XY_VELOCITY_SCALE    0.002f    // distance D / velocity P (opposes velocity)
 #define XY_ACCEL_SCALE       0.0005f   // distance Acceleration / velocity D
-
-
-#define XY_F_SCALE           0.002f   //  velocity target delta gain value
+#define XY_F_SCALE           0.005f / POSHOLD_TASK_RATE_HZ   //  velocity target delta scale factor
 #define XY_DRAG_SCALE        0.0001f  //  velocity based drag correction factor
 
 
@@ -109,10 +107,8 @@
 #define SANITY_CHECK_DISTANCE 2000.0f        // 20m, increased when stopping from speeds above 10m/s
 #define ERROR_DISTANCE_LIMIT  2000.0f        // TO DO: test set to a useful value, this is 20m
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
-#define XY_VELOCITY_I_RELAX_CMS   250.0f     // integrate only near the target speed, so the
+#define XY_VELOCITY_I_RELAX_CMS   250.0f     // in Nav mode only, integrate only near the target speed, so the
                                              // integral cannot wind up during the accel phase
-#define MAX_TARGET_VELOCITY_STEP 100.0f // target velocity for feedforward cannot change by more than this per loop
-
 static pidCoefficient_t xyPid;
 static float xyKDrag = 0.0f;
 
@@ -133,7 +129,7 @@ static float throttleOut = 0.0f;
 
 static vector2_t targetPosition;
 static vector2_t targetVelocity;
-static vector2_t targetVelocityRamped; // for feedforward when target velocity changes
+static vector2_t previousTargetVelocity; // for feedforward when target velocity changes
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -377,8 +373,8 @@ void initPositionHold(void)
     resetDistanceError();
     targetVelocity.v[EF_EAST]  = 0.0f;
     targetVelocity.v[EF_NORTH] = 0.0f;
-    targetVelocityRamped.v[EF_EAST]  = 0.0f;
-    targetVelocityRamped.v[EF_NORTH] = 0.0f;
+    previousTargetVelocity.v[EF_EAST]  = 0.0f;
+    previousTargetVelocity.v[EF_NORTH] = 0.0f;
 
     ap.isPosHoldBraking = true; // arrest any entry speed before capturing the hold point
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
@@ -390,8 +386,8 @@ static void initNavMode(void)
     resetDistanceError();
     resetDistanceErrorIntegral();
     resetDistanceError();
-    targetVelocityRamped.v[EF_EAST]  = 0.0f;
-    targetVelocityRamped.v[EF_NORTH] = 0.0f;
+    previousTargetVelocity.v[EF_EAST]  = 0.0f;
+    previousTargetVelocity.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
@@ -686,17 +682,12 @@ bool positionControl(void)
     wasPositionHeld = isPositionHeld;
     wasNavActive = ap.navActive;
     ap.wasSticksActive = ap.sticksActive; // Main frame-to-frame history update
-
     const bool velocityMode = ap.navActive && autopilotConfig()->velocityControlEnable;
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-
-        const float tgtVelDelta = targetVelocity.v[axis] - targetVelocityRamped.v[axis];
-        const float limitedTgtVelDelta = constrainf(tgtVelDelta, -MAX_TARGET_VELOCITY_STEP, MAX_TARGET_VELOCITY_STEP);
-        targetVelocityRamped.v[axis] += limitedTgtVelDelta; // avoid sharp jumps in targetVelocityRamped, limiting rate of change to MAX_TARGET_VELOCITY_STEP
-
-        velocityError.v[axis] = targetVelocityRamped.v[axis] - velocity.v[axis];
+        const float tgtVelAcceleration = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
         const float accelerationRaw = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] =  velocity.v[axis];
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
@@ -734,11 +725,13 @@ bool positionControl(void)
         pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
         pidD.v[axis] += velocity.v[axis] *xyKDrag; // drag compensation reduces damping
         pidA.v[axis] = acceleration * xyPid.Ka;
-        pidF.v[axis] = targetVelocityRamped.v[axis] * xyPid.Kd + limitedTgtVelDelta * xyPid.Kf;
+        pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + tgtVelAcceleration * xyPid.Kf;
         // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
         pidSumVectorEF.v[axis] = pt2FilterApply(&posPidSumLpf[axis], pidSumVectorEF.v[axis]);
+
     } // End for loop
+    previousTargetVelocity = targetVelocity;
 
     bool buildupClamped = false;
     if (velocityMode) {
