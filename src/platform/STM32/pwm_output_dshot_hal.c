@@ -54,9 +54,9 @@ void dshotEnableChannels(unsigned motorCount)
 {
     for (unsigned i = 0; i < motorCount; i++) {
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
-            LL_EX_TIM_CC_EnableNChannel(dmaMotors[i].timerHardware->tim, dmaMotors[i].llChannel);
+            LL_EX_TIM_CC_EnableNChannel((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].llChannel);
         } else {
-            LL_TIM_CC_EnableChannel(dmaMotors[i].timerHardware->tim, dmaMotors[i].llChannel);
+            LL_TIM_CC_EnableChannel((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].llChannel);
         }
     }
 }
@@ -76,7 +76,7 @@ void pwmDshotSetDirectionOutput(
 #endif
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     xLL_EX_DMA_DeInit(motor->dmaRef);
 
@@ -101,7 +101,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     LL_DMA_InitTypeDef* pDmaInit = &motor->dmaInitStruct;
 
     const timerHardware_t * const timerHardware = motor->timerHardware;
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     xLL_EX_DMA_DeInit(motor->dmaRef);
 
@@ -112,7 +112,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
     LL_TIM_EnableARRPreload(timer); // Only update the period once all channels are done
     timer->ARR = 0xffffffff;
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5)
     // Configure pin as GPIO output to avoid glitch during timer configuration
     uint32_t pin = IO_Pin(motor->io);
     LL_GPIO_SetPinMode(IO_GPIO(motor->io), pin, LL_GPIO_MODE_OUTPUT);
@@ -123,7 +123,7 @@ FAST_CODE static void pwmDshotSetDirectionInput(
 
     LL_TIM_IC_Init(timer, motor->llChannel, &motor->icInitStruct);
 
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5)
     // Configure pin back to timer
     LL_GPIO_SetPinMode(IO_GPIO(motor->io), IO_Pin(motor->io), LL_GPIO_MODE_ALTERNATE);
     if (IO_Pin(motor->io) & 0xFF) {
@@ -148,11 +148,18 @@ FAST_CODE void pwmCompleteDshotMotorUpdate(void)
     for (int i = 0; i < dmaMotorTimerCount; i++) {
 #ifdef USE_DSHOT_DMAR
         if (useBurstDshot) {
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+            /* GPDMA has no auto-reload of CSAR. Each frame must rewind
+             * the source pointer to the start of the burst buffer before
+             * the channel is re-enabled. */
+            xLL_EX_DMA_SetMemoryAddress(dmaMotorTimers[i].dmaBurstRef,
+                                        (uint32_t)dmaMotorTimers[i].dmaBurstBuffer);
+#endif
             xLL_EX_DMA_SetDataLength(dmaMotorTimers[i].dmaBurstRef, dmaMotorTimers[i].dmaBurstLength);
             xLL_EX_DMA_EnableResource(dmaMotorTimers[i].dmaBurstRef);
 
             /* configure the DMA Burst Mode */
-#if defined(STM32N6)
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
             LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS, LL_TIM_DMA_UPDATE);
 #else
             LL_TIM_ConfigDMABurst(dmaMotorTimers[i].timer, LL_TIM_DMABURST_BASEADDR_CCR1, LL_TIM_DMABURST_LENGTH_4TRANSFERS);
@@ -185,12 +192,12 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 #ifdef USE_DSHOT_DMAR
             if (useBurstDshot) {
                 xLL_EX_DMA_DisableResource(motor->timerHardware->dmaTimUPRef);
-                LL_TIM_DisableDMAReq_UPDATE(motor->timerHardware->tim);
+                LL_TIM_DisableDMAReq_UPDATE((TIM_TypeDef *)motor->timerHardware->tim);
             } else
 #endif
             {
                 xLL_EX_DMA_DisableResource(motor->dmaRef);
-                LL_EX_TIM_DisableIT(motor->timerHardware->tim, motor->timerDmaSource);
+                LL_EX_TIM_DisableIT((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource);
             }
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -198,7 +205,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
                 pwmDshotSetDirectionInput(motor);
                 xLL_EX_DMA_SetDataLength(motor->dmaRef, GCR_TELEMETRY_INPUT_LEN);
                 xLL_EX_DMA_EnableResource(motor->dmaRef);
-                LL_EX_TIM_EnableIT(motor->timerHardware->tim, motor->timerDmaSource);
+                LL_EX_TIM_EnableIT((TIM_TypeDef *)motor->timerHardware->tim, motor->timerDmaSource);
                 dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
             }
         }
@@ -250,9 +257,9 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         const resourceOwner_t *owner = dmaGetOwner(dmaIdentifier);
-        if (owner->owner == OWNER_TIMUP && owner->index == timerGetTIMNumber(timerHardware->tim)) {
+        if (owner->owner == OWNER_TIMUP && owner->index == timerGetTIMNumber(timerHardware)) {
             dmaIsConfigured = true;
-        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware->tim))) {
+        } else if (!dmaAllocate(dmaIdentifier, OWNER_TIMUP, timerGetTIMNumber(timerHardware))) {
             return false;
         }
     } else
@@ -266,7 +273,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->dmaRef = dmaRef;
 
-    TIM_TypeDef *timer = timerHardware->tim;
+    TIM_TypeDef *timer = (TIM_TypeDef *)timerHardware->tim;
 
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount - 1);
@@ -279,7 +286,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         output ^= TIMER_OUTPUT_INVERTED;
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5)
         if (output & TIMER_OUTPUT_INVERTED) {
             IOHi(motorIO);
         } else {
@@ -291,7 +298,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->timerHardware = timerHardware;
 
     motor->iocfg = IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_LOW, pupMode);
-#ifdef STM32H7
+#if defined(STM32H7) || defined(STM32H5) || defined(STM32C5)
     motor->io = motorIO;
 #endif
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
@@ -300,10 +307,10 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         LL_TIM_InitTypeDef init;
         LL_TIM_StructInit(&init);
 
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         LL_TIM_DisableCounter(timer);
 
-        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
+        init.Prescaler = (uint16_t)(lrintf((float) timerClockFromInstance(timerHardware->tim) / getDshotHz(pwmProtocolType) + 0.01f) - 1);
         init.Autoreload = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH) - 1;
         init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
         init.RepetitionCounter = 0;
@@ -349,7 +356,20 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else
 #endif
     {
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+        /* Empirically, a CCxDE-driven GPDMA channel re-fires
+         * continuously and races through the whole DShot frame in
+         * microseconds — by the time the next UEV latches preload to
+         * active, the trailing zero has already overwritten the bit
+         * value and the pin never pulses. RM0481 documents no semantic
+         * difference between the CC and UP DMA requests; the update
+         * event (UEV / UDE) is the configuration proven to work,
+         * giving exactly one transfer per TIM cycle, matching the
+         * DShot bit period. */
+        motor->timerDmaSource = TIM_DIER_UDE;
+#else
         motor->timerDmaSource = timerDmaSource(timerHardware->channel);
+#endif
         motor->timer->timerDmaSources &= ~motor->timerDmaSource;
     }
 
@@ -361,31 +381,67 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     LL_DMA_StructInit(&DMAINIT);
-#if defined(STM32N6)
-    // TODO: N6 HPDMA/GPDMA DMA init for DShot not yet implemented
-    // Set minimal fields that exist in N6 LL_DMA_InitTypeDef
+#if defined(STM32H5) || defined(STM32C5) || defined(STM32N6)
+    const uint32_t dshotBufferSize = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE);
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
         DMAINIT.Request = dmaChannel;
         DMAINIT.DestAddress = (uint32_t)&((TIM_TypeDef *)timerHardware->tim)->DMAR;
         DMAINIT.SrcAddress = (uint32_t)motor->timer->dmaBurstBuffer;
+        /* TIM burst-DMA: TIM emits DBL+1 = 4 DMA requests per update
+         * event (one per register in the CCR1..CCR4 burst window) and
+         * the GPDMA channel responds with a single word transfer per
+         * request. BNDT in source bytes therefore covers the whole
+         * 4-channel buffer: bit-periods * 4 CCRs * 4 bytes/word.
+         * Pre-N6 stream DMAs counted transfer events; bufferSize * 4
+         * was correct there but undersizes the GPDMA case by 4x. */
+        DMAINIT.BlkDataLength = dshotBufferSize * 4 * 4;
     } else
 #endif
     {
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
-        DMAINIT.Request = dmaChannel;
+        /* Use the timer's UP-event request — see the comment near the
+         * motor->timerDmaSource assignment above for why the per-channel
+         * CCxDE doesn't work on N6/H5/C5 GPDMA. Each motor's channel
+         * responds independently to TIMx_UP and writes to its own CCRx.
+         * Note: RM0481 (p.715) cautions against routing one hardware
+         * request (REQSEL) to more than one active channel, with "no
+         * user setting error reporting" — which is what happens here
+         * with more than one motor per timer. This configuration is
+         * empirically stable on this workload (all sharing channels
+         * are armed before UDE is enabled and each consumes one grant
+         * per UEV), but be aware of it when debugging multi-motor DMA
+         * anomalies. timerHardware->dmaTimUPChannel is the per-timer
+         * GPDMA request ID (e.g. LL_GPDMA1_REQUEST_TIM1_UP). */
+        DMAINIT.Request = timerHardware->dmaTimUPChannel;
         DMAINIT.DestAddress = (uint32_t)timerChCCR(timerHardware);
         DMAINIT.SrcAddress = (uint32_t)motor->dmaBuffer;
+        /* Per-channel DMA: one word per TIM UEV → one CCR write. */
+        DMAINIT.BlkDataLength = dshotBufferSize * 4;
     }
     DMAINIT.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    DMAINIT.BlkDataLength = (pwmProtocolType == MOTOR_PROTOCOL_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE) * 4;
     DMAINIT.SrcIncMode = LL_DMA_SRC_INCREMENT;
     DMAINIT.DestIncMode = LL_DMA_DEST_FIXED;
     DMAINIT.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_WORD;
     DMAINIT.DestDataWidth = LL_DMA_DEST_DATAWIDTH_WORD;
     DMAINIT.Priority = LL_DMA_HIGH_PRIORITY;
     DMAINIT.Mode = LL_DMA_NORMAL;
+#if defined(STM32N6) || defined(STM32H5)
+    /* GPDMA has two master ports. On N6 the split is mandatory: the
+     * source buffer sits in AXISRAM, reachable only via PORT1 (AXI),
+     * while the TIM registers are reached via PORT0 (AHB) — the
+     * both-PORT0 default of LL_DMA_StructInit reads the buffer as
+     * zeros (pattern from the CubeN6 TIM_DMA reference). On H5 both
+     * ports are AHB masters that reach all memories and peripherals
+     * (RM0481 fig. 1); the same split simply picks each port's
+     * zero-latency fast bus multiplexer path: PORT1 to SRAM1, PORT0 to
+     * the APB bridge (RM0481 section 2.1.7). C5's HAL2 compat shim
+     * exposes LL_DMA without these fields/enums; its single GPDMA
+     * master serves both sides so the defaults work. */
+    DMAINIT.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT1;
+    DMAINIT.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
+#endif
 #else
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
@@ -431,7 +487,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     DMAINIT.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_WORD;
     DMAINIT.Mode = LL_DMA_MODE_NORMAL;
     DMAINIT.Priority = LL_DMA_PRIORITY_HIGH;
-#endif // STM32N6
+#endif // STM32H5 || STM32C5 || STM32N6
 
     if (!dmaIsConfigured) {
         xLL_EX_DMA_Init(dmaRef, &DMAINIT);

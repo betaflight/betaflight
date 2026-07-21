@@ -2,6 +2,8 @@
 # F4 Make file include
 #
 
+PLATFORM_SDK := arm
+
 #CMSIS
 ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_DIR      := $(LIB_MAIN_DIR)/STM32F4/Drivers/CMSIS

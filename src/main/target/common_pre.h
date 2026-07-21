@@ -67,6 +67,13 @@
 */
 
 #define USE_PARAMETER_GROUPS
+
+// SPA06-003 shares the SPL07-003 register map; the DPS310 driver handles both.
+// Placed before the CLOUD_BUILD / USE_CONFIG gates so per-board configs that
+// opt in via USE_BARO_SPA06_003 alone still pull the DPS310 driver in.
+#if defined(USE_BARO_SPA06_003) && !defined(USE_BARO_DPS310)
+#define USE_BARO_DPS310
+#endif
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
 //#pragma GCC diagnostic warning "-Wconversion"
@@ -110,7 +117,6 @@
 #define USE_BARO_SPI_BMP280
 #define USE_BARO_BMP388
 #define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
 #define USE_BARO_SPI_LPS
 #define USE_BARO_QMP6988
 #define USE_BARO_SPI_QMP6988
@@ -304,6 +310,7 @@
 #define USE_RANGEFINDER_HCSR04
 #define USE_RANGEFINDER_TF
 #define USE_RANGEFINDER_NOOPLOOP
+#define USE_RANGEFINDER_UPT1
 #define USE_OPTICALFLOW_MT
 
 #endif // TARGET_FLASH_SIZE >= 1024
@@ -341,6 +348,7 @@
 #ifndef CONTROL_RATE_PROFILE_COUNT
 #define CONTROL_RATE_PROFILE_COUNT 4 // or maybe 6
 #endif
+#define BATTERY_PROFILE_COUNT 3
 
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
@@ -403,12 +411,10 @@
 #define USE_RX_MSP_OVERRIDE
 #define USE_RX_LINK_UPLINK_POWER
 
-#define USE_AIRMODE_LPF
 #define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_SENSOR_NAMES
 #define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
-#define USE_ABSOLUTE_CONTROL
 #define USE_HOTT_TEXTMODE
 #define USE_ESC_SENSOR_TELEMETRY
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
@@ -431,11 +437,8 @@
 
 #endif // !defined(CORE_BUILD)
 
-#ifdef USE_GPS
-#define USE_GPS_NMEA
-#define USE_GPS_UBLOX
-#define USE_GPS_RESCUE
-#endif // USE_GPS
+// Note: USE_GPS secondary defines (USE_GPS_NMEA, USE_GPS_UBLOX, USE_GPS_RESCUE)
+// are in common_post.h because SITL defines USE_GPS in target.h (after common_pre.h).
 
 #if (defined(USE_OSD_HD) || defined(USE_OSD_SD) || defined(USE_FRSKYOSD)) && !defined(USE_OSD)
 // If either USE_OSD_SD for USE_OSD_HD are defined, ensure that USE_OSD is also defined
@@ -526,15 +529,10 @@
 
 #undef USE_YAW_SPIN_RECOVERY
 #undef USE_LAUNCH_CONTROL
-#undef USE_ABSOLUTE_CONTROL
 #undef USE_INTEGRATED_YAW_CONTROL
 #undef USE_RUNAWAY_TAKEOFF
 
 #endif // USE_WING
-
-#if defined(USE_POSITION_HOLD) && !defined(USE_GPS)
-#error "USE_POSITION_HOLD requires USE_GPS to be defined"
-#endif
 
 // backwards compatibility for older config.h targets
 #ifndef GYRO_CONFIG_USE_GYRO_1

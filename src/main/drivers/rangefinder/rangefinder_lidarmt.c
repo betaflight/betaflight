@@ -43,6 +43,9 @@
 #define MT_OPTICALFLOW_MIN_RANGE 80  // mm
 #define MT_OPFLOW_MIN_QUALITY_THRESHOLD 30
 
+// Correct scaling of the flow requires multiplication of the scale factor by 2
+#define MTF01_OPTICAL_FLOW_SCALE (2 * 100.0f) // Flow rate is at 100cm
+
 static opticalflowData_t opticalflowSensorData = {0};
 
 static bool hasRFNewData = false;
@@ -147,6 +150,7 @@ bool mtOpticalflowDetect(opticalflowDev_t * dev, rangefinderType_e mtRangefinder
     dev->delayMs = deviceConf->delayMs;
     dev->minRangeCm = MT_OPTICALFLOW_MIN_RANGE;
     dev->minQualityThreshold = MT_OPFLOW_MIN_QUALITY_THRESHOLD;
+    dev->gyroSampleDelay = 7;
 
     dev->init   = &mtOpticalflowInit;
     dev->update = &mtOpticalflowUpdate;
@@ -159,15 +163,31 @@ void mtOpticalflowReceiveNewData(const uint8_t * bufferPtr) {
     const mtRangefinderData_t * latestRangefinderData = getMTRangefinderData();
 
     const mtOpticalflowDataMessage_t * pkt = (const mtOpticalflowDataMessage_t *)bufferPtr;
+    const timeUs_t curTime = micros();
+    const float dt_s = (float)(curTime - opticalflowSensorData.timeStampUs) / 1e6f;
 
-    opticalflowSensorData.timeStampUs = micros();
-    opticalflowSensorData.flowRate.x  = (float)pkt->motionX / 1000.0f;
-    opticalflowSensorData.flowRate.y  = (float)pkt->motionY / 1000.0f;
-    opticalflowSensorData.quality     = pkt->quality * 100 / 255;
+    const bool dtValid = (dt_s > 0.0f && dt_s < 1.0f);
+    const bool rangeValid = (latestRangefinderData->distanceMm >= MT_OPTICALFLOW_MIN_RANGE);
+    const bool rfFresh = (cmp32(curTime, latestRangefinderData->timestampUs) <= (5000 * deviceConf->delayMs));
 
-    if (latestRangefinderData->distanceMm < MT_OPTICALFLOW_MIN_RANGE) {
+    opticalflowSensorData.timeStampUs = curTime;
+    opticalflowSensorData.flowDtValid = dtValid;
+    opticalflowSensorData.rangeValid  = rangeValid && rfFresh;
+    opticalflowSensorData.flowValid   = dtValid;
+
+    if (dtValid) {
+        opticalflowSensorData.flowRate.x = (float)pkt->motionX / MTF01_OPTICAL_FLOW_SCALE / dt_s;
+        opticalflowSensorData.flowRate.y = (float)pkt->motionY / MTF01_OPTICAL_FLOW_SCALE / dt_s;
+        opticalflowSensorData.quality    = pkt->quality * 100 / 255;
+    } else {
+        opticalflowSensorData.flowRate.x = 0;
+        opticalflowSensorData.flowRate.y = 0;
+        opticalflowSensorData.quality    = 0;
+    }
+
+    if (!rangeValid) {
         opticalflowSensorData.quality = OPTICALFLOW_OUT_OF_RANGE;
-    } else if (cmp32(micros(), latestRangefinderData->timestampUs) > (5000 * deviceConf->delayMs)) {   // 5 updates missing
+    } else if (!rfFresh) {
         opticalflowSensorData.quality = OPTICALFLOW_HARDWARE_FAILURE;
     }
 }

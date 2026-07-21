@@ -226,7 +226,7 @@ static uint16_t getTemperature(void)
 static uint16_t getFuel(void)
 {
     uint16_t fuel = 0;
-    if (batteryConfig()->batteryCapacity > 0) {
+    if (currentBatteryProfile->batteryCapacity > 0) {
         fuel = (uint16_t)calculateBatteryPercentageRemaining();
     } else {
         fuel = (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF);
@@ -242,7 +242,7 @@ static uint16_t getRPM(void)
         rpm = rcCommand[THROTTLE];  // / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && featureIsEnabled(FEATURE_MOTOR_STOP)) rpm = 0;
     } else {
-        rpm = (uint16_t)(batteryConfig()->batteryCapacity); //  / BLADE_NUMBER_DIVIDER
+        rpm = (uint16_t)(currentBatteryProfile->batteryCapacity); //  / BLADE_NUMBER_DIVIDER
     }
     return rpm;
 }

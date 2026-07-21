@@ -298,7 +298,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
         TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+        RCC_ClockCmd(timerRCC(timerHardware->tim), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
         TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)(lrintf((float) timerClock(timerHardware) / getDshotHz(pwmProtocolType) + 0.01f) - 1);

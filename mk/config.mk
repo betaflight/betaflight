@@ -8,13 +8,12 @@ ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
 endif
 
-ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
+# Config handling — only active when CONFIG= is set explicitly
+ifneq ($(CONFIG),)
+
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 $(error `$(CONFIG_DIR)` not found. Have you hydrated configuration using: 'make configs'?)
 endif
-endif
-
-ifneq ($(CONFIG),)
 
 ifneq ($(TARGET),)
 $(error TARGET or CONFIG should be specified. Not both.)
@@ -26,6 +25,15 @@ INCLUDE_DIRS       += $(CONFIG_DIR)/configs/$(CONFIG)
 
 # include $(CONFIG)/config.mk if it exists
 -include $(CONFIG_DIR)/configs/$(CONFIG)/config.mk
+
+# OCTOSPI_FLASH_CHIP selects the flash chip wired to the OCTOSPI/XSPI peripheral.
+# Set in per-config config.mk (e.g. OCTOSPI_FLASH_CHIP := MX66UW1G45G). Emits both
+# USE_FLASH_<chip> (chip driver gating) and OCTOSPI_FLASH_CHIP_<chip> (build-time
+# selection marker for chips that cannot be probed via JEDEC RDID, such as those
+# operating in 8-line OPI mode).
+ifneq ($(OCTOSPI_FLASH_CHIP),)
+TARGET_FLAGS += -DUSE_FLASH_$(OCTOSPI_FLASH_CHIP) -DOCTOSPI_FLASH_CHIP_$(OCTOSPI_FLASH_CHIP)
+endif
 
 ifneq ($(wildcard $(CONFIG_HEADER_FILE)),)
 
@@ -90,3 +98,15 @@ $(BASE_CONFIGS):
 ## <CONFIG>_rev    : build configured target and add revision to filename
 $(addsuffix _rev,$(BASE_CONFIGS)):
 	$(V0) $(MAKE) fwo CONFIG=$(subst _rev,,$@) REV=yes
+
+# When configs are not hydrated, BASE_CONFIGS is empty so config targets
+# have no recipe. Override Make's default "No rule" error with a helpful message
+# but only for targets explicitly requested on the command line.
+ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
+.DEFAULT:
+	@if echo " $(MAKECMDGOALS) " | grep -q " $@ "; then \
+		echo "*** No rule to make target '$@'. If this is a configuration target, run 'make configs' first." >&2; \
+		exit 1; \
+	fi
+endif
+

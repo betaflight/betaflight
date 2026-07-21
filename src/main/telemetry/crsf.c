@@ -93,6 +93,10 @@ static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 #ifdef USE_GPS
 static uint32_t lastGpsSolnTime;
 #endif
+#if defined(USE_CRSF_V3) && defined(USE_GPS)
+static timeUs_t lastGpsTimeFrameTime = (timeUs_t)(-30000000);  // Send GPS Time immediately, then every 30s thereafter while disarmed
+static uint32_t lastGpsTimeSolnTime;  // Keep separate GPS soln time to not delay normal GPS frames
+#endif
 #ifdef USE_BARO
 static uint32_t lastBaroTime;
 #endif
@@ -985,11 +989,12 @@ static bool processCrsf(uint32_t currentTimeUs, uint32_t crsfLastCycleTime)
 
 #ifdef USE_GPS
 #if defined(USE_CRSF_V3)
-    if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && gpsSol.time != lastGpsSolnTime && gpsSol.dateTime.valid) {
+    if (crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX) && !ARMING_FLAG(ARMED) && gpsSol.dateTime.valid && gpsSol.time != lastGpsTimeSolnTime && cmpTimeUs(currentTimeUs, lastGpsTimeFrameTime) > 30000000) { // Removed isCrsfV3Running check from GPS Time 0x03 message as it requires baudrate negotiation which ELRS does not perform
         crsfInitializeFrame(dst);
         crsfFrameGpsTime(dst);
         crsfFinalize(dst);
-        crsfTimedSchedule &= ~BIT(CRSF_TIMED_FRAME_GPS_TIME_INDEX);
+        lastGpsTimeSolnTime = gpsSol.time;
+        lastGpsTimeFrameTime = currentTimeUs;
         return true;
     }
     if (isCrsfV3Running && crsfTimedSchedule & BIT(CRSF_TIMED_FRAME_GPS_EXTENDED_INDEX) && gpsSol.time != lastGpsSolnTime) {
@@ -1111,13 +1116,38 @@ FAST_CODE void crsfScheduleTelemetryResponse(void)
 }
 
 // Scheduler check function for event-driven telemetry.
-// Parameters reserved for potential future rate-limiting or timing logic.
+// Cap TASK_TELEMETRY wake-ups at 50Hz so high RC link rates (e.g. 250Hz ELRS)
+// cannot wake the scheduler faster than it produces frames, which otherwise
+// starves time-critical tasks (PID/motor write). Each sensor frame type is
+// sent at most once per CRSF_CYCLETIME_US (100ms), so 50Hz task wakes are
+// sufficient to transmit all types on schedule.
+// Latency-sensitive ad-hoc responses (MSP-over-telemetry, device info) bypass
+// the cap so they still drain at the inbound frame rate.
 bool crsfTelemetryUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
-    UNUSED(currentTimeUs);
     UNUSED(currentDeltaTimeUs);
 
-    return telemetryResponsePending;
+    if (!telemetryResponsePending) {
+        return false;
+    }
+
+    // Ad-hoc responses must be serviced as soon as possible, not rate-limited.
+#if defined(USE_MSP_OVER_TELEMETRY)
+    if (mspReplyPending) {
+        return true;
+    }
+#endif
+    if (deviceInfoReplyPending) {
+        return true;
+    }
+
+    static timeUs_t lastTelemetryCheckTimeUs = 0;
+    if (cmpTimeUs(currentTimeUs, lastTelemetryCheckTimeUs) < (timeDelta_t)CRSF_TELEMETRY_FRAME_INTERVAL_MAX_US) {
+        return false;
+    }
+
+    lastTelemetryCheckTimeUs = currentTimeUs;
+    return true;
 }
 
 #endif

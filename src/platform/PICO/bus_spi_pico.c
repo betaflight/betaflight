@@ -37,6 +37,7 @@
 
 #include "common/maths.h"
 #include "drivers/bus.h"
+#include "drivers/bus_spi_types.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"
@@ -63,7 +64,7 @@
 const spiHardware_t spiHardware[] = {
     {
         .device = SPIDEV_0,
-        .reg = SPI0,
+        .reg = (spiResource_t *)SPI0,
         .sckPins = {
             { DEFIO_TAG_E(PA2) },
             { DEFIO_TAG_E(PA6) },
@@ -97,7 +98,7 @@ const spiHardware_t spiHardware[] = {
     },
     {
         .device = SPIDEV_1,
-        .reg = SPI1,
+        .reg = (spiResource_t *)SPI1,
         .sckPins = {
             { DEFIO_TAG_E(PA10) },
             { DEFIO_TAG_E(PA14) },
@@ -169,8 +170,12 @@ void spiPinConfigure(const struct spiPinConfig_s *pConfig)
 static void spiSetClockFromSpeed(spi_inst_t *spi, uint16_t speed)
 {
     uint32_t freq = spiCalculateClock(speed);
-    bprintf("spiSetClockFromSpeed %p %d -> %d",spi, speed, freq);
-    spi_set_baudrate(spi, freq);
+    uint32_t baudrate = spi_set_baudrate(spi, freq);
+#ifdef PICO_TRACE
+    bprintf("spiSetClockFromSpeed %p %d -> %d, achieved %d",spi, speed, freq, baudrate);
+#else
+    UNUSED(baudrate);
+#endif
 }
 
 /*
@@ -317,6 +322,7 @@ void spiInitBusDMA(void)
         dmaSetHandler(DMA_CHANNEL_TO_IDENTIFIER(bus->dmaRx->channel), spiRxIrqHandler, NVIC_PRIO_SPI_DMA, 0);
 
         // We got the required resources, so we can use DMA on this bus
+        bprintf("PICO SPI init bus DMA true for device %d", device);
         bus->useDMA = true;
     }
 }
@@ -327,7 +333,7 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     UNUSED(descriptor);
 }
 
-bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
+bool spiInternalReadWriteBufPolled(spiResource_t *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     // TODO optimise with 16-bit transfers as per stm bus_spi_ll code
     int bytesProcessed = 0;
@@ -416,7 +422,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 void spiSequenceStart(const extDevice_t *dev)
 {
     busDevice_t *bus = dev->bus;
-    SPI_TypeDef *instance = bus->busType_u.spi.instance;
+    spiResource_t *instance = bus->busType_u.spi.instance;
     spiDevice_t *spi = &spiDevice[spiDeviceByInstance(instance)];
     bool dmaSafe = dev->useDMA;
 #if TESTING_NO_DMA

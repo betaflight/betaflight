@@ -2,15 +2,19 @@
 # N6 Make file include
 #
 
+# Auto-hydrate STM32CubeN6 submodule when building N6 targets
+PLATFORM_SDK := stm32n6
+PLATFORM_SDK_STAMP := $(STM32N6_SDK_STAMP)
+
 ifeq ($(DEBUG_HARDFAULTS),N6)
 CFLAGS          += -DDEBUG_HARDFAULTS
 endif
 
 #CMSIS
-CMSIS_DIR      := $(LIB_MAIN_DIR)/CMSIS
+CMSIS_DIR      := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS
 
 #STDPERIPH
-STDPERIPH_DIR   = $(LIB_MAIN_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
+STDPERIPH_DIR   = $(LIB_MODULES_DIR)/STM32N6/Drivers/STM32N6xx_HAL_Driver
 STDPERIPH_SRC   = \
             stm32n6xx_hal_adc.c \
             stm32n6xx_hal_adc_ex.c \
@@ -23,12 +27,15 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_gpio.c \
             stm32n6xx_hal_i2c.c \
             stm32n6xx_hal_i2c_ex.c \
+            stm32n6xx_hal_ltdc.c \
+            stm32n6xx_hal_ltdc_ex.c \
             stm32n6xx_hal_pcd.c \
             stm32n6xx_hal_pcd_ex.c \
             stm32n6xx_hal_pwr.c \
             stm32n6xx_hal_pwr_ex.c \
             stm32n6xx_hal_rcc.c \
             stm32n6xx_hal_rcc_ex.c \
+            stm32n6xx_hal_rif.c \
             stm32n6xx_hal_rng_ex.c \
             stm32n6xx_hal_rtc.c \
             stm32n6xx_hal_rtc_ex.c \
@@ -39,25 +46,28 @@ STDPERIPH_SRC   = \
             stm32n6xx_hal_tim_ex.c \
             stm32n6xx_hal_uart.c \
             stm32n6xx_hal_uart_ex.c \
+            stm32n6xx_hal_xspi.c \
             stm32n6xx_ll_dma.c \
             stm32n6xx_ll_exti.c \
+            stm32n6xx_ll_i2c.c \
             stm32n6xx_ll_gpio.c \
             stm32n6xx_ll_rcc.c \
             stm32n6xx_ll_sdmmc.c \
             stm32n6xx_ll_spi.c \
+            stm32n6xx_ll_usart.c \
             stm32n6xx_ll_tim.c \
             stm32n6xx_ll_usb.c \
             stm32n6xx_ll_utils.c
 
 
 #USB
-USBCORE_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = STM32_USB_Device_Library_HAL/Core
 USBCORE_SRC = \
             $(USBCORE_DIR)/Src/usbd_core.c \
             $(USBCORE_DIR)/Src/usbd_ctlreq.c \
             $(USBCORE_DIR)/Src/usbd_ioreq.c
 
-USBCDC_DIR = STM32N6/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = STM32_USB_Device_Library_HAL/Class/CDC
 USBCDC_SRC = \
             $(USBCDC_DIR)/Src/usbd_cdc.c
 
@@ -66,7 +76,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32N6xx:$(STDPERIPH_DIR)/Src:$(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts
 CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_PLATFORM_DIR) \
@@ -75,8 +85,10 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCORE_DIR)/Inc \
                    $(LIB_MAIN_DIR)/$(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/Core/Include \
-                   $(LIB_MAIN_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Core/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include \
+                   $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/Device/ST/STM32N6xx/Include/Templates \
+                   $(LIB_MODULES_DIR)/STM32N6/Utilities/Fonts \
                    $(TARGET_PLATFORM_DIR)/vcp_hal
 
 #Flags
@@ -85,9 +97,48 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m55 -mfloat-abi=hard -mfpu=fpv5-d16
 # Flags that are used in the STM32 libraries
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
+# Suppress old-style-definition warning in vendor HAL source (ST bug: empty () instead of (void))
+SRC_CFLAGS_stm32n6xx_hal_rcc_ex.c := -Wno-old-style-definition
+
 ifeq ($(TARGET_MCU),STM32N657xx)
 DEVICE_FLAGS       += -DSTM32N657xx
+# Four N6 link variants:
+#  * RAM_ONLY=1    — dev iteration. SWD/gdb loads vectors+text+data straight
+#                    into AXISRAM at 0x24000000.
+#  * BF_AS_FSBL=1  — the entire BF image is signed and run as the boot-ROM
+#                    FSBL. .text/.data live in AXISRAM2 secure starting at
+#                    0x34180400 (the FSBL load slot); .bss / heap / stack
+#                    fall through to AXISRAM1 secure. Bypasses the FSBL
+#                    stub + XSPI memory-map handoff for bring-up debug.
+#  * XIP=1         — production target: BF executes in-place from XSPI at
+#                    0x70100000 (.text/.rodata/.pg_*). Only initialised
+#                    data and .ram_code are copied to AXISRAM at boot.
+#                    Signed FSBL stub (or eventually OpenBootloader) at
+#                    0x70000000 is responsible for bringing XSPI memory-
+#                    mapped + jumping to 0x70100000 — the stub MUST NOT
+#                    deinit XSPI before the jump. Mirrors H7 SPRACING EXST.
+#  * default (LRUN)— legacy path: boot from signed FSBL stub at
+#                    0x70000000, copy app from XSPI to AXISRAM1 at
+#                    Reset_Handler. Kept for comparison while XIP is on
+#                    probation.
+ifeq ($(BF_AS_FSBL),1)
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_FSBL_FULL.ld
+DEVICE_FLAGS       += -DN6_BF_AS_FSBL_BUILD
+else ifeq ($(XIP),1)
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_XIP.ld
+DEVICE_FLAGS       += -DN6_XIP_BUILD
+# LTO collapses per-function sections so .text.HAL_RCC_OscConfig etc. no
+# longer match the linker wildcards we need to pull clock-switch code
+# into AXISRAM. Drop LTO for XIP only — clock funcs run from RAM,
+# instruction fetches survive the AXI clock transition during
+# HAL_RCC_OscConfig's HSI-park dance. Size cost is ~5-10% .text.
+LTO                 := no
+else ifeq ($(RAM_ONLY),1)
+DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_RAM.ld
+DEVICE_FLAGS       += -DN6_RAM_ONLY_BUILD
+else
 DEFAULT_LD_SCRIPT   = $(LINKER_DIR)/STM32N657XX_LRUN.ld
+endif
 STARTUP_SRC         = STM32/startup/startup_stm32n657xx.s
 MCU_FLASH_SIZE     := 2048
 DEVICE_FLAGS       += -DMAX_MPU_REGIONS=16
@@ -110,10 +161,12 @@ VCP_SRC = \
 
 MCU_COMMON_SRC = \
             drivers/bus_i2c_timing.c \
+            drivers/bus_octospi.c \
             drivers/dshot_bitbang_decode.c \
             STM32/adc_stm32n6xx.c \
-            STM32/bus_i2c_hal_init.c \
-            STM32/bus_i2c_hal.c \
+            STM32/bus_i2c_ll_init.c \
+            STM32/bus_i2c_ll.c \
+            STM32/bus_octospi_stm32n6xx.c \
             STM32/bus_spi_ll.c \
             STM32/debug.c \
             STM32/dma_reqmap_mcu.c \
@@ -126,9 +179,11 @@ MCU_COMMON_SRC = \
             STM32/persistent.c \
             STM32/pwm_output_dshot_hal.c \
             STM32/rcc_stm32.c \
-            STM32/serial_uart_hal.c \
+            STM32/serial_uart_ll.c \
+            STM32/sdio_n6xx.c \
             STM32/serial_uart_stm32n6xx.c \
             STM32/system_stm32n6xx.c \
+            STM32/debug_uart_stm32n6xx.c \
             STM32/timer_hal.c \
             STM32/timer_stm32n6xx.c \
             drivers/adc.c \
@@ -141,11 +196,15 @@ SPEED_OPTIMISED_SRC += \
 
 SIZE_OPTIMISED_SRC += \
             drivers/bus_i2c_timing.c \
-            STM32/bus_i2c_hal_init.c \
+            STM32/bus_i2c_ll_init.c \
             STM32/serial_usb_vcp.c \
             drivers/serial_escserial.c
 
-DSP_LIB := $(LIB_MAIN_DIR)/CMSIS/DSP
+DSP_LIB := $(LIB_MODULES_DIR)/STM32N6/Drivers/CMSIS/DSP
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM55
+
+OPTIMISE_DEFAULT    := -Os
+OPTIMISE_SPEED      := -Os
+OPTIMISE_SIZE       := -Os
 
 include $(TARGET_PLATFORM_DIR)/mk/STM32_COMMON.mk

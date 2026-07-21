@@ -46,3 +46,9 @@ typedef void* IO_t;            // type specifying IO pin. Currently ioRec_t poin
 //  helps masking CPU differences
 
 typedef uint8_t ioConfig_t;  // packed IO configuration
+
+// gpioResource_t is an opaque data type which represents a GPIO port
+// peripheral, implemented differently across MCU families.
+// Code in src/main references GPIO ports through gpioResource_t pointers;
+// platform code casts these to the native MCU type (e.g. GPIO_TypeDef*).
+typedef struct gpioResource_s gpioResource_t;

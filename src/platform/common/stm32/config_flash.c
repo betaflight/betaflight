@@ -171,7 +171,7 @@ uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
+#elif defined(STM32H743xx) || defined(STM32G4) || defined(STM32H7A3xx) || defined(STM32H7A3xxQ) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx) || defined(STM32H5) || defined(STM32C5)
 /*
 MCUs with uniform array of equal size sectors, handled in two banks having contiguous address.
 (Devices with non-contiguous flash layout is not currently useful anyways.)
@@ -195,12 +195,17 @@ G473/474 in dual bank mode
 Bank 1 0x08000000 - 0x0803FFFF 2KB * 128
 Bank 2 0x08040000 - 0x0807FFFF 2KB * 128
 
+H562/H563 in dual bank mode
+2 bank * 128 sector/bank * 8KB/sector (2MB)
+Bank 1 0x08000000 - 0x080FFFFF 8KB * 128
+Bank 2 0x08100000 - 0x081FFFFF 8KB * 128
+
 Note that FLASH_BANK_SIZE constant used in the following code changes depending on
 bank operation mode. The code assumes dual bank operation, in which case the
 FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 */
 
-#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx)
+#if defined(STM32H743xx) || defined(STM32H723xx) || defined(STM32H725xx) || defined(STM32H735xx) || defined(STM32H757xx)
 #define FLASH_PAGE_PER_BANK 8
 #elif defined(STM32H7A3xx) || defined(STM32H7A3xxQ)
 #define FLASH_PAGE_PER_BANK 128
@@ -209,6 +214,21 @@ FLASH_BANK_SIZE constant is set to one half of the available flash size in HAL.
 // These are not defined in CMSIS like H7
 #define FLASH_BANK1_BASE FLASH_BASE
 #define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
+#elif defined(STM32H5)
+#define FLASH_PAGE_PER_BANK 128
+// These are not defined in CMSIS for H5
+#define FLASH_BANK1_BASE FLASH_BASE
+#define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
+#elif defined(STM32C5)
+#define FLASH_PAGE_PER_BANK 128
+// These are not defined in CMSIS for C5
+#define FLASH_BANK1_BASE FLASH_BASE
+#define FLASH_BANK2_BASE (FLASH_BANK1_BASE + FLASH_BANK_SIZE)
+#endif
+
+#if defined(FLASH_PAGE_PER_BANK) && !defined(STM32G4) && !defined(STM32H5) && !defined(STM32C5)
+// G4/H5 FLASH_BANK_SIZE is runtime-computed from flash size register, so cannot be used in static assertion
+_Static_assert(FLASH_BANK_SIZE == (FLASH_PAGE_SIZE * FLASH_PAGE_PER_BANK), "FLASH bank/page configuration mismatch");
 #endif
 
 void getFLASHSectorForEEPROM(uint32_t address, uint32_t *bank, uint32_t *sector)
@@ -310,10 +330,50 @@ uint32_t getFLASHSectorForEEPROM(void)
 }
 #endif
 
+#if defined(X32M7)
+#define X32_FLASH_ERASE_SIZE FLASH_PAGE_SIZE
+
+static bool x32ConfigAddressIsValid(uintptr_t address, size_t length)
+{
+    const uintptr_t configStart = (uintptr_t)&__config_start;
+    const uintptr_t configEnd = (uintptr_t)&__config_end;
+
+    return length <= (UINTPTR_MAX - address) &&
+        address >= configStart &&
+        (address + length) <= configEnd;
+}
+
+static configStreamerResult_e x32FlashStatusToConfigResult(uint32_t status)
+{
+    switch (status) {
+    case FLASH_SUCCESS:
+        return CONFIG_RESULT_SUCCESS;
+    case FLASH_BUS_ADDR_ERROR:
+    case FLASH_LOGIC_ADDR_ERROR:
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    case FLASH_FAILED:
+        return CONFIG_RESULT_INCOMPLETE;
+    default:
+        return CONFIG_RESULT_FAILURE;
+    }
+}
+
+static configStreamerResult_e x32EraseFlashIfNeeded(uintptr_t address)
+{
+    if ((address % X32_FLASH_ERASE_SIZE) != 0) {
+        return CONFIG_RESULT_SUCCESS;
+    }
+
+    return x32FlashStatusToConfigResult(SMU_EraseFlash((uint32_t)address));
+}
+#endif
+
 void configUnlock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
     HAL_FLASH_Unlock();
+#elif defined(X32M7)
+    // NOP
 #elif defined(APM32F4)
     DAL_FLASH_Unlock();
 #elif defined(AT32F4)
@@ -325,8 +385,17 @@ void configUnlock(void)
 
 void configLock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
         HAL_FLASH_Lock();
+#if defined(STM32H5)
+        // On H5 the instruction cache also caches const/data reads from the
+        // flash code region, which includes the config storage area. After
+        // rewriting config, invalidate ICACHE so subsequent reads are coherent
+        // instead of being served from stale cache lines.
+        HAL_ICACHE_Invalidate();
+#endif
+#elif defined(X32M7)
+        // NOP
 #elif defined(AT32F4)
         flash_lock();
 #elif defined(APM32F4)
@@ -344,12 +413,18 @@ void configClearFlags(void)
     // NOP
 #elif defined(STM32H7)
     // NOP
+#elif defined(STM32H5)
+    // NOP
+#elif defined(STM32C5)
+    // NOP
 #elif defined(STM32G4)
     // NOP
 #elif defined(AT32F4)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
 #elif defined(APM32F4)
     __DAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+#elif defined(X32M7)
+    // SMU flash operations return status directly.
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -405,6 +480,26 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     if (status != HAL_OK) {
         return CONFIG_RESULT_INCOMPLETE;
     }
+#elif defined(STM32H5)
+    if (address % FLASH_PAGE_SIZE == 0) {
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_SECTORS,
+            .NbSectors     = 1
+        };
+        getFLASHSectorForEEPROM(address, &EraseInitStruct.Banks, &EraseInitStruct.Sector);
+        uint32_t SECTORError;
+        const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK) {
+            return CONFIG_RESULT_FAILURE;
+        }
+    }
+
+    // H5 programs 128 bits (quad-word) at a time; DataAddress points to 4 x uint32_t
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == 16,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, address, (uint32_t)buffer);
+    if (status != HAL_OK) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
 #elif defined(STM32G4)
     if (address % FLASH_PAGE_SIZE == 0) {
 
@@ -458,6 +553,19 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     if (status != DAL_OK) {
         return CONFIG_RESULT_ADDRESS_INVALID;
     }
+#elif defined(X32M7)
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+
+    if (!x32ConfigAddressIsValid(address, CONFIG_STREAMER_BUFFER_SIZE) || (address % sizeof(uint32_t)) != 0) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+
+    const configStreamerResult_e eraseResult = x32EraseFlashIfNeeded(address);
+    if (eraseResult != CONFIG_RESULT_SUCCESS) {
+        return eraseResult;
+    }
+
+    return x32FlashStatusToConfigResult(SMU_WriteFlash((uint32_t)address, (uint8_t *)buffer, CONFIG_STREAMER_BUFFER_SIZE));
 #elif defined(STM32F4)
     if (address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -469,6 +577,26 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const FLASH_Status status = FLASH_ProgramWord(address, *buffer);
     if (status != FLASH_COMPLETE) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+#elif defined(STM32C5)
+    if (address % FLASH_PAGE_SIZE == 0) {
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_SECTORS,
+            .NbSectors     = 1
+        };
+        getFLASHSectorForEEPROM(address, &EraseInitStruct.Banks, &EraseInitStruct.Sector);
+        uint32_t SECTORError;
+        const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK) {
+            return CONFIG_RESULT_FAILURE;
+        }
+    }
+
+    // C5 programs 128 bits (quad-word) at a time; DataAddress points to 4 x uint32_t
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == 16,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, address, (uint32_t)buffer);
+    if (status != HAL_OK) {
         return CONFIG_RESULT_ADDRESS_INVALID;
     }
 #else

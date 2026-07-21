@@ -33,6 +33,7 @@
 #include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/position.h"
+#include "flight/position_nav.h"
 
 #include "rx/rx.h"
 #include "pg/autopilot.h"
@@ -44,7 +45,7 @@ static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); /
 typedef struct {
     bool isActive;
     float targetAltitudeCm;
-    float maxVelocity;
+    float maxClimbRate;
     float targetVelocity;
     float deadband;
     bool allowStickAdjustment;
@@ -55,7 +56,7 @@ altHoldState_t altHold;
 static void altHoldReset(void)
 {
     resetAltitudeControl();
-    altHold.targetAltitudeCm = getAltitudeCm();
+    altHold.targetAltitudeCm = getAltitudeCmControl();
     altHold.targetVelocity = 0.0f;
 }
 
@@ -64,7 +65,7 @@ void altHoldInit(void)
     altHold.isActive = false;
     altHold.deadband = altHoldConfig()->deadband / 100.0f;
     altHold.allowStickAdjustment = altHoldConfig()->deadband;
-    altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
+    altHold.maxClimbRate = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
     altHoldReset();
 }
 
@@ -73,21 +74,16 @@ static void altHoldProcessTransitions(void) {
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         if (!altHold.isActive) {
             altHoldReset();
+            autopilotCaptureHoverThrottleForAltHold();
             altHold.isActive = true;
         }
     } else {
+        if (altHold.isActive) {
+            resetAltitudeControl();  // Reset throttle output when exiting altitude hold
+            autopilotClearAltHoldHoverThrottle();
+        }
         altHold.isActive = false;
     }
-
-    // ** the transition out of alt hold (exiting altHold) may be rough.  Some notes... **
-    // The original PR had a gradual transition from hold throttle to pilot control throttle
-    // using !(altHoldRequested && altHold.isActive) to run an exit function
-    // a cross-fade factor was sent to mixer.c based on time since the flight mode request was terminated
-    // it was removed primarily to simplify this PR
-
-    // hence in this PR's the user's throttle needs to be close to the hover throttle value on exiting altHold
-    // its not so bad because the 'target adjustment' by throttle requires that
-    // user throttle must be not more than half way out from hover for a stable hold
 }
 
 static void altHoldUpdateTargetAltitude(void)
@@ -101,8 +97,9 @@ static void altHoldUpdateTargetAltitude(void)
 
     if (altHold.allowStickAdjustment && calculateThrottleStatus() != THROTTLE_LOW) {
         const float rcThrottle = rcCommand[THROTTLE];
-        const float lowThreshold = autopilotConfig()->hoverThrottle - altHold.deadband * (autopilotConfig()->hoverThrottle - PWM_RANGE_MIN);
-        const float highThreshold = autopilotConfig()->hoverThrottle + altHold.deadband * (PWM_RANGE_MAX - autopilotConfig()->hoverThrottle);
+        const float hoverPwm = (float)autopilotGetEffectiveHoverThrottlePwm();
+        const float lowThreshold = hoverPwm - altHold.deadband * (hoverPwm - PWM_RANGE_MIN);
+        const float highThreshold = hoverPwm + altHold.deadband * (PWM_RANGE_MAX - hoverPwm);
 
         if (rcThrottle < lowThreshold) {
             stickFactor = scaleRangef(rcThrottle, PWM_RANGE_MIN, lowThreshold, -1.0f, 0.0f);
@@ -110,7 +107,14 @@ static void altHoldUpdateTargetAltitude(void)
             stickFactor = scaleRangef(rcThrottle, highThreshold, PWM_RANGE_MAX, 0.0f, 1.0f);
         }
     }
-
+    // StickFactor is a multiplier for maxClimbRate, based on throttle position, that sets the ascend or descend velocity
+    // is zero at zero throttle and within the deadband, meaning no requested change in altitude
+    // below the lower deadband limit, it is negative, changing from 0 to -1, or full descend speed, reached just above zero throttle
+    // conversely, as throttle moves above the upper deadband limit, StickFactor increased from 0 to 1 at full throttle
+    // when throttle is moved quickly upwards from being fully down, it passes through the maximum descent rate range, leading to a negative glitch.
+    // a similar downgoing glitch occurs when exiting upwards from zero throttle
+    // these glitches are minimised  when these transitions are quick
+            
     // if failsafe is active, and we get here, we are in failsafe landing mode, it controls throttle
     if (failsafeIsActive()) {
         // descend at up to 10 times faster when high
@@ -119,27 +123,43 @@ static void altHoldUpdateTargetAltitude(void)
         // this code doubles descent rate at 20m, to max 10x (10m/s on defaults) at 200m
         // the deceleration may be a bit rocky if it starts very high up
         // constant (set) deceleration target in the last 2m
-        stickFactor = -(0.9f + constrainf(getAltitudeCm() / 2000.0f, 0.1f, 9.0f));
+        stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
-    altHold.targetVelocity = stickFactor * altHold.maxVelocity;
 
-    // prevent stick input from moving target altitude too far away from current altitude
-    // otherwise it can be difficult to bring target altitude close to current altitude in a reasonable time
-    // using maxVelocity means the stick can bring altitude target to current within 1s
+    altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
+    // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
+    // that it might be difficult to get back to a similar target altitude in a reasonable time.
+    // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
     // this constrains the P and I response to user target changes, but not D of F responses
-    // Range is compared to distance that might be traveled in one second
-    if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
+    if (fabsf(getAltitudeCmControl() - altHold.targetAltitudeCm) < altHold.maxClimbRate * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
 }
 
 static void altHoldUpdate(void)
 {
-    // check if the user has changed the target altitude using sticks
+    
     if (altHoldConfig()->climbRate) {
-        altHoldUpdateTargetAltitude();
+        altHoldUpdateTargetAltitude(); // check if the pilot has changed the target altitude using sticks
     }
-    altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);
+
+    float targetAltitudeCm = altHold.targetAltitudeCm; 
+    float targetAltitudeVelocity = altHold.targetVelocity;
+
+    if (positionNavHasActiveTarget()) {
+        const positionNavCommand_t *navCmd = positionNavGetActiveCommand();
+        if (navCmd->includeAltitude) {
+            targetAltitudeCm = navCmd->targetPosEfM.z * 100.0f;
+            if (positionNavTargetReached()) {
+                altHold.targetAltitudeCm = targetAltitudeCm; // store target altitude so Alt Hold does not revert to pre-nav target altitude on the next cycle.
+            targetAltitudeVelocity = 0.0f;
+            } else {
+                 targetAltitudeVelocity = positionNavGetTargetVelocityCmS().z; 
+            }
+        }
+    }
+
+    altitudeControl(targetAltitudeCm, taskIntervalSeconds, targetAltitudeVelocity, altHold.maxClimbRate);
 }
 
 void updateAltHold(timeUs_t currentTimeUs) {
@@ -156,6 +176,6 @@ void updateAltHold(timeUs_t currentTimeUs) {
 bool isAltHoldActive(void) {
     return altHold.isActive;
 }
-#endif
 
+#endif // USE_ALTITUDE_HOLD
 #endif // !USE_WING

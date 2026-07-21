@@ -60,18 +60,18 @@
 
 octoSpiDevice_t octoSpiDevice[OCTOSPIDEV_COUNT] = { 0 };
 
-MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(OCTOSPI_TypeDef *instance)
+MMFLASH_CODE_NOINLINE octoSpiDevice_e octoSpiDeviceByInstance(octoSpiResource_t *instance)
 {
-#ifdef USE_OCTOSPI_DEVICE_1
-    if (instance == OCTOSPI1) {
-        return OCTOSPIDEV_1;
+    for (size_t hwindex = 0; hwindex < OCTOSPIDEV_COUNT; hwindex++) {
+        if (octoSpiHardware[hwindex].reg == instance) {
+            return octoSpiHardware[hwindex].device;
+        }
     }
-#endif
 
     return OCTOSPIINVALID;
 }
 
-OCTOSPI_TypeDef *octoSpiInstanceByDevice(octoSpiDevice_e device)
+octoSpiResource_t *octoSpiInstanceByDevice(octoSpiDevice_e device)
 {
     if (device == OCTOSPIINVALID || device >= OCTOSPIDEV_COUNT) {
         return NULL;

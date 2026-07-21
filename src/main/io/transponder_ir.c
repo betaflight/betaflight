@@ -90,6 +90,9 @@ void transponderUpdate(timeUs_t currentTimeUs)
     }
 
     uint8_t provider = transponderConfig()->provider;
+    if (provider == TRANSPONDER_NONE) {
+        return;
+    }
 
     // TODO use a random number generator for random jitter?  The idea here is to avoid multiple transmitters transmitting at the same time.
     uint32_t jitter = (transponderRequirements[provider - 1].transmitJitter / 10 * jitterDurations[jitterIndex++]);

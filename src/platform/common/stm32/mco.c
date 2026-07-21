@@ -88,8 +88,11 @@ static void mcoConfigure(MCODevice_e device, const mcoConfig_t *config)
         HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_PLLI2SCLK, RCC_MCODIV_4);
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH,  GPIO_NOPULL), GPIO_AF0_MCO);
 #elif defined(APM32F4)
+#if defined(APM32F405xx) || defined(APM32F407xx) || defined(APM32F415xx) || defined(APM32F417xx) || \
+    defined(APM32F465xx) || defined(APM32F411xx)
         DAL_RCM_MCOConfig(RCM_MCO2, RCM_MCO2SOURCE_PLLI2SCLK, RCM_MCODIV_4);
         IOConfigGPIOAF(io, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH,  GPIO_NOPULL), GPIO_AF0_MCO);
+#endif
 #else
         // All F4s
         RCC_MCO2Config(RCC_MCO2Source_PLLI2SCLK, RCC_MCO2Div_4);
@@ -111,6 +114,9 @@ void mcoInit(void)
 #elif defined(STM32G4)
     // G4 only supports one MCO on PA8
     mcoConfigure(MCODEV_1, mcoConfig(MCODEV_1));
+#elif defined(STM32C5)
+    // C5 MCO not yet implemented
+    return;
 #else
 #error Unsupported MCU
 #endif

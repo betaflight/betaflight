@@ -23,6 +23,7 @@
 
 #include "platform.h"
 #include "common/utils.h"
+#include "drivers/timer_types.h"
 #include "platform/dma.h"
 
 #define USED_TIMERS  ( BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7) | BIT(8) | BIT(9) | BIT(10) | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(20) )
@@ -142,7 +143,7 @@
         @upopt   USE_DSHOT_DMAR  timeup dma channel index
 */
 #define DEF_TIM(tim, chan, pin, out, dmaopt, upopt) {                   \
-    tim,                                                                \
+    (timerResource_t *)tim,                                             \
     TIMER_GET_IO_TAG(pin),                                              \
     DEF_TIM_CHANNEL(CH_ ## chan),                                       \
     (DEF_TIM_OUTPUT(CH_ ## chan) | out),                                \

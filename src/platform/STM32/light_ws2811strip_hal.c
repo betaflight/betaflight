@@ -48,7 +48,16 @@ static uint16_t timerChannel = 0;
 static FAST_IRQ_HANDLER void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
+#if defined(STM32H5) || defined(STM32N6)
+    // DMA request is the update event (UDE) on GPDMA — see ws2811LedStripHardwareInit().
+    __HAL_TIM_DISABLE_DMA(&TimHandle, TIM_DMA_UPDATE);
+    // On the other platforms TIM_DMACmd() returns the handle to READY; without
+    // this reset DMA_SetCurrDataCounter() returns HAL_BUSY from the second
+    // frame on and the strip freezes on the first frame.
+    TimHandle.State = HAL_TIM_STATE_READY;
+#else
     TIM_DMACmd(&TimHandle, timerChannel, DISABLE);
+#endif
     ws2811LedDataTransferInProgress = false;
 }
 
@@ -89,8 +98,8 @@ bool ws2811LedStripHardwareInit(void)
     TimHandle.Instance = timer;
 
     /* Compute the prescaler value */
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
-    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timerHardware->tim, WS2811_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timerHardware->tim, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
@@ -110,7 +119,10 @@ bool ws2811LedStripHardwareInit(void)
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
-#if defined(STM32N6)
+#if defined(STM32H5)
+    __HAL_RCC_GPDMA1_CLK_ENABLE();
+    __HAL_RCC_GPDMA2_CLK_ENABLE();
+#elif defined(STM32N6)
     __HAL_RCC_GPDMA1_CLK_ENABLE();
     __HAL_RCC_HPDMA1_CLK_ENABLE();
 #else
@@ -119,9 +131,21 @@ bool ws2811LedStripHardwareInit(void)
 #endif
 
     /* Set the parameters to be configured */
-#if defined(STM32N6)
-    // N6 uses HPDMA/GPDMA with a different HAL DMA init structure
-    hdma_tim.Init.Request = dmaChannel;
+#if defined(STM32H5) || defined(STM32N6)
+    // N6/H5 use HPDMA/GPDMA with a different HAL DMA init structure.
+    //
+    // Drive the channel from the timer UPDATE request (UDE), not the
+    // per-channel compare request (CCxDE). Empirically, a CCxDE-driven GPDMA
+    // channel re-fires continuously and races through the whole WS2811 bit
+    // buffer in microseconds, so no valid waveform reaches the pin — even
+    // though plain PWM (no DMA) on the same pin works. RM0481 documents no
+    // semantic difference between the CC and UP DMA requests; UP is the
+    // configuration proven to work, gives one CCRx write per timer period,
+    // and mirrors the DShot GPDMA path (see pwm_output_dshot_hal.c).
+    // timerHardware->dmaTimUPChannel is the per-timer GPDMA request id
+    // (e.g. LL_GPDMA1_REQUEST_TIM1_UP).
+    hdma_tim.Init.Request = timerHardware->dmaTimUPChannel;
+    UNUSED(dmaChannel);
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.SrcInc = DMA_SINC_INCREMENTED;
     hdma_tim.Init.DestInc = DMA_DINC_FIXED;
@@ -132,7 +156,12 @@ bool ws2811LedStripHardwareInit(void)
     hdma_tim.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
     hdma_tim.Init.SrcBurstLength = 1;
     hdma_tim.Init.DestBurstLength = 1;
-    hdma_tim.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
+    // On H5 both GPDMA master ports reach all memories and peripherals
+    // (RM0481 fig. 1); splitting the transfer across ports picks each port's
+    // zero-latency fast path: PORT1 for the source buffer in SRAM, PORT0 for
+    // the APB bridge to the timer CCRx. On N6 the split is mandatory: PORT1
+    // is the AXI port and the only one that reaches AXISRAM.
+    hdma_tim.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 | DMA_DEST_ALLOCATED_PORT0;
     hdma_tim.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #elif defined(STM32H7) || defined(STM32G4)
     hdma_tim.Init.Request = dmaChannel;
@@ -216,14 +245,32 @@ void ws2811LedStripStartTransfer(void)
     SCB_CleanDCache_by_Addr(ledStripDMABuffer, WS2811_DMA_BUF_CACHE_ALIGN_BYTES);
 #endif
 
-    if (DMA_SetCurrDataCounter(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK) {
+#if defined(STM32H5) || defined(STM32N6)
+    // GPDMA sizes the transfer in BYTES (CBR1.BNDT), not in transfer items:
+    // HAL_DMA_Start_IT() writes the length straight into BNDT. Each item is a
+    // 32-bit word (one CCRx write per WS2811 bit), so the byte count is the
+    // word count times 4. Passing the word count would program only a quarter
+    // of the buffer, clocking out ~1/4 of the bitstream (and cutting the reset
+    // latch) so the strip shows nothing/garbage. Classic DMA (F4/F7/H7/G4)
+    // counts transfer items, so it keeps the word count.
+    const uint16_t ws2811DmaLength = WS2811_DMA_BUFFER_SIZE * sizeof(uint32_t);
+#else
+    const uint16_t ws2811DmaLength = WS2811_DMA_BUFFER_SIZE;
+#endif
+
+    if (DMA_SetCurrDataCounter(&TimHandle, timerChannel, ledStripDMABuffer, ws2811DmaLength) != HAL_OK) {
         /* DMA set error */
         ws2811LedDataTransferInProgress = false;
         return;
     }
     /* Reset timer counter */
     __HAL_TIM_SET_COUNTER(&TimHandle,0);
-    /* Enable channel DMA requests */
+    /* Enable DMA requests */
+#if defined(STM32H5) || defined(STM32N6)
+    // Edge-triggered update event on GPDMA — see ws2811LedStripHardwareInit().
+    __HAL_TIM_ENABLE_DMA(&TimHandle, TIM_DMA_UPDATE);
+#else
     TIM_DMACmd(&TimHandle,timerChannel,ENABLE);
+#endif
 }
 #endif

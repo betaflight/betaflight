@@ -1,0 +1,4 @@
+#Opt	Id	Name	Type	IP	Offset	Binary
+P	0x1	fsbl-openbl	Binary	none	0x0	../../STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader/Binaries/NOR_Binary/OpenBootloader_STM32N6570-DK-trusted.stm32
+P	0x3	fsbl-extfl	Binary	none	0x0	../../STM32N6/Projects/STM32N6570-DK/Applications/OpenBootloader/Binaries/NOR_Binary/MX66UW1G45G_STM32N6570-DK-OBL.bin
+P	0x4	bf-fsbl	Binary	nor0	0x0	prebuilt/bf_as_fsbl.stm32

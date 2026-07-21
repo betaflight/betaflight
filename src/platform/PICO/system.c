@@ -24,6 +24,7 @@
 
 #include "platform.h"
 
+#include "common/maths.h"
 #include "common/time.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
@@ -114,7 +115,7 @@ void systemInit(void)
     // load the unique id into a local array
     pico_unique_board_id_t id;
     pico_get_unique_board_id(&id);
-    memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
+    memcpy(&systemUniqueId, &id.id, MIN(sizeof(systemUniqueId), (uint32_t)PICO_UNIQUE_BOARD_ID_SIZE_BYTES));
 
 
 #ifdef USE_MULTICORE
@@ -254,16 +255,3 @@ void unusedPinsInit(void)
     IOTraversePins(unusedPinInit);
 }
 
-const mcuTypeInfo_t *getMcuTypeInfo(void)
-{
-    static const mcuTypeInfo_t info = {
-#if defined(RP2350A)
-        .id = MCU_TYPE_RP2350A, .name = "RP2350A"
-#elif defined(RP2350B)
-        .id = MCU_TYPE_RP2350B, .name = "RP2350B"
-#else
-#error MCU Type info not defined for PICO / variant
-#endif
-    };
-    return &info;
-}

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "drivers/bus_quadspi_types.h"
 #include "drivers/io_types.h"
 #include "drivers/bus.h"
 
@@ -114,11 +115,11 @@ bool quadSpiInstructionWithAddress1LINE(const extDevice_t *dev, uint8_t instruct
 
 //bool quadSpiIsBusBusy(SPI_TypeDef *instance);
 
-uint16_t quadSpiGetErrorCounter(QUADSPI_TypeDef *instance);
-void quadSpiResetErrorCounter(QUADSPI_TypeDef *instance);
+uint16_t quadSpiGetErrorCounter(quadSpiResource_t *instance);
+void quadSpiResetErrorCounter(quadSpiResource_t *instance);
 
-quadSpiDevice_e quadSpiDeviceByInstance(QUADSPI_TypeDef *instance);
-QUADSPI_TypeDef *quadSpiInstanceByDevice(quadSpiDevice_e device);
+quadSpiDevice_e quadSpiDeviceByInstance(quadSpiResource_t *instance);
+quadSpiResource_t *quadSpiInstanceByDevice(quadSpiDevice_e device);
 
 // BusDevice API - similar to SPI
 bool quadSpiSetBusInstance(extDevice_t *dev, uint32_t device);

@@ -33,8 +33,8 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/position.h"
+#include "flight/position_estimator.h"
 #include "rx/rx.h"
-#include "sensors/compass.h"
 
 #include "pg/pos_hold.h"
 #include "pos_hold.h"
@@ -44,7 +44,6 @@ typedef struct posHoldState_s {
     bool isControlOk;
     bool areSensorsOk;
     float deadband;
-    bool useStickAdjustment;
 } posHoldState_t;
 
 static posHoldState_t posHold;
@@ -52,56 +51,73 @@ static posHoldState_t posHold;
 void posHoldInit(void)
 {
     posHold.deadband = posHoldConfig()->deadband * 0.01f;
-    posHold.useStickAdjustment = posHoldConfig()->deadband;
 }
 
 static void posHoldCheckSticks(void)
 {
-    // if failsafe is active, eg landing mode, don't update the original start point
-    if (!failsafeIsActive() && posHold.useStickAdjustment) {
-        const bool sticksDeflected = (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
-        setSticksActiveStatus(sticksDeflected);
+    if (failsafeIsActive()) {
+        setSticksActiveStatus(false);
+        return;
     }
+    const bool sticksDeflected = (getRcDeflectionAbs(FD_ROLL) > posHold.deadband) || (getRcDeflectionAbs(FD_PITCH) > posHold.deadband);
+    setSticksActiveStatus(sticksDeflected);
 }
 
 static bool sensorsOk(void)
 {
-    if (!STATE(GPS_FIX)) {
-        return false;
+    // Optical flow position hold is heading-agnostic: the same yaw is used
+    // to project flow into ENU and to rotate the correction back to body
+    // frame, so a heading error cancels. GPS-assisted hold is not: GPS
+    // provides absolute ENU measurements and a bad yaw in the body-frame
+    // correction rotation will cause a flyaway.
+    // Use the runtime GPS state (fix present + config allows GPS) rather than
+    // the configured source alone, so AUTO mode with no GPS hardware correctly
+
+    if (!positionEstimatorIsValidXY()) {
+        return false; // always need valid XY data, can be optical only
     }
-    if (
-#ifdef USE_MAG
-        !compassIsHealthy() &&
-#endif
-        (!posHoldConfig()->posHoldWithoutMag || !canUseGPSHeading)) {
-        return false;
+
+    if (positionEstimatorIsHeadingRequired()) {
+        return imuIsHeadingValid(); // if heading is essential (ie no optical flow), pass or fail based on whether or not heading exists.
+    } else {
+        return true; // if no heading is needed, we don't care about it (optical flow situation)
     }
-    return true;
 }
 
 void updatePosHold(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
-    if (FLIGHT_MODE(POS_HOLD_MODE)) {
+    if (FLIGHT_MODE(POS_HOLD_MODE) || FLIGHT_MODE(GPS_RESCUE_MODE)) {
         if (!posHold.isEnabled) {
-            resetPositionControl(&gpsSol.llh, POSHOLD_TASK_RATE_HZ); // sets target location to current location
+            resetPositionControl(POSHOLD_TASK_RATE_HZ);
             posHold.isControlOk = true;
             posHold.isEnabled = true;
         }
     } else {
+        if (posHold.isEnabled) {
+            setSticksActiveStatus(false);
+        }
         posHold.isEnabled = false;
     }
 
-    if (posHold.isEnabled && posHold.isControlOk) {
+    if (posHold.isEnabled) {
+        posHoldCheckSticks();
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
-            posHoldCheckSticks();
-            posHold.isControlOk = positionControl(); // false only on sanity check failure
+            posHold.isControlOk = positionControl();
+        } else {
+            for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {
+                autopilotAngle[i] = 0.0f;
+            }
         }
     }
 }
 
+bool isAutopilotInControl(void)
+{
+    return posHold.isEnabled && posHold.isControlOk && posHold.areSensorsOk;
+}
+
 bool posHoldFailure(void) {
-    // used only to display warning in OSD if requested but failing
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
 

@@ -42,7 +42,7 @@ typedef struct dmaPeripheralMapping_s {
 } dmaPeripheralMapping_t;
 
 typedef struct dmaTimerMapping_s {
-    void *tim;
+    timerResource_t *tim;
     uint8_t channel;
     dmaChannelSpec_t channelSpec[MAX_TIMER_DMA_OPTIONS];
 } dmaTimerMapping_t;
@@ -101,34 +101,34 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
 
 static const dmaTimerMapping_t dmaTimerMapping[] = {
     // Generated from 'timer_def.h'
-    { TMR1, TC(CH1), { DMA(2, 6, 0), DMA(2, 1, 6), DMA(2, 3, 6) } },
-    { TMR1, TC(CH2), { DMA(2, 6, 0), DMA(2, 2, 6) } },
-    { TMR1, TC(CH3), { DMA(2, 6, 0), DMA(2, 6, 6) } },
-    { TMR1, TC(CH4), { DMA(2, 4, 6) } },
+    { (timerResource_t *)TMR1, TC(CH1), { DMA(2, 6, 0), DMA(2, 1, 6), DMA(2, 3, 6) } },
+    { (timerResource_t *)TMR1, TC(CH2), { DMA(2, 6, 0), DMA(2, 2, 6) } },
+    { (timerResource_t *)TMR1, TC(CH3), { DMA(2, 6, 0), DMA(2, 6, 6) } },
+    { (timerResource_t *)TMR1, TC(CH4), { DMA(2, 4, 6) } },
 
-    { TMR2, TC(CH1), { DMA(1, 5, 3) } },
-    { TMR2, TC(CH2), { DMA(1, 6, 3) } },
-    { TMR2, TC(CH3), { DMA(1, 1, 3) } },
-    { TMR2, TC(CH4), { DMA(1, 7, 3), DMA(1, 6, 3) } },
+    { (timerResource_t *)TMR2, TC(CH1), { DMA(1, 5, 3) } },
+    { (timerResource_t *)TMR2, TC(CH2), { DMA(1, 6, 3) } },
+    { (timerResource_t *)TMR2, TC(CH3), { DMA(1, 1, 3) } },
+    { (timerResource_t *)TMR2, TC(CH4), { DMA(1, 7, 3), DMA(1, 6, 3) } },
 
-    { TMR3, TC(CH1), { DMA(1, 4, 5) } },
-    { TMR3, TC(CH2), { DMA(1, 5, 5) } },
-    { TMR3, TC(CH3), { DMA(1, 7, 5) } },
-    { TMR3, TC(CH4), { DMA(1, 2, 5) } },
+    { (timerResource_t *)TMR3, TC(CH1), { DMA(1, 4, 5) } },
+    { (timerResource_t *)TMR3, TC(CH2), { DMA(1, 5, 5) } },
+    { (timerResource_t *)TMR3, TC(CH3), { DMA(1, 7, 5) } },
+    { (timerResource_t *)TMR3, TC(CH4), { DMA(1, 2, 5) } },
 
-    { TMR4, TC(CH1), { DMA(1, 0, 2) } },
-    { TMR4, TC(CH2), { DMA(1, 3, 2) } },
-    { TMR4, TC(CH3), { DMA(1, 7, 2) } },
+    { (timerResource_t *)TMR4, TC(CH1), { DMA(1, 0, 2) } },
+    { (timerResource_t *)TMR4, TC(CH2), { DMA(1, 3, 2) } },
+    { (timerResource_t *)TMR4, TC(CH3), { DMA(1, 7, 2) } },
 
-    { TMR5, TC(CH1), { DMA(1, 2, 6) } },
-    { TMR5, TC(CH2), { DMA(1, 4, 6) } },
-    { TMR5, TC(CH3), { DMA(1, 0, 6) } },
-    { TMR5, TC(CH4), { DMA(1, 1, 6), DMA(1, 3, 6) } },
+    { (timerResource_t *)TMR5, TC(CH1), { DMA(1, 2, 6) } },
+    { (timerResource_t *)TMR5, TC(CH2), { DMA(1, 4, 6) } },
+    { (timerResource_t *)TMR5, TC(CH3), { DMA(1, 0, 6) } },
+    { (timerResource_t *)TMR5, TC(CH4), { DMA(1, 1, 6), DMA(1, 3, 6) } },
 
-    { TMR8, TC(CH1), { DMA(2, 2, 0), DMA(2, 2, 7) } },
-    { TMR8, TC(CH2), { DMA(2, 2, 0), DMA(2, 3, 7) } },
-    { TMR8, TC(CH3), { DMA(2, 2, 0), DMA(2, 4, 7) } },
-    { TMR8, TC(CH4), { DMA(2, 7, 7) } },
+    { (timerResource_t *)TMR8, TC(CH1), { DMA(2, 2, 0), DMA(2, 2, 7) } },
+    { (timerResource_t *)TMR8, TC(CH2), { DMA(2, 2, 0), DMA(2, 3, 7) } },
+    { (timerResource_t *)TMR8, TC(CH3), { DMA(2, 2, 0), DMA(2, 4, 7) } },
+    { (timerResource_t *)TMR8, TC(CH4), { DMA(2, 7, 7) } },
 };
 #undef TC
 #undef DMA
@@ -166,7 +166,7 @@ dmaoptValue_t dmaoptByTag(ioTag_t ioTag)
     return DMA_OPT_UNUSED;
 }
 
-const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(void *tim, uint8_t channel, dmaoptValue_t dmaopt)
+const dmaChannelSpec_t *dmaGetChannelSpecByTimerValue(timerResource_t *tim, uint8_t channel, dmaoptValue_t dmaopt)
 {
     if (dmaopt < 0 || dmaopt >= MAX_TIMER_DMA_OPTIONS) {
         return NULL;

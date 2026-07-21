@@ -133,7 +133,16 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         bufferSize = loadDmaBuffer(&motor->timer->dmaBurstBuffer[timerLookupChannelIndex(motor->timerHardware->channel)], 4, packet);
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+        /* TIM burst-DMA: TIM internally generates DBL+1=4 DMA requests
+         * per update event, each consumes one word. BNDT (in source bytes
+         * on GPDMA) must cover bufferSize bit-periods × 4 CCRs ×
+         * 4 bytes/word = bufferSize * 16 bytes per frame. Pre-N6 stream
+         * DMAs counted transfer events, where bufferSize * 4 sufficed. */
+        motor->timer->dmaBurstLength = bufferSize * 4 * 4;
+#else
         motor->timer->dmaBurstLength = bufferSize * 4;
+#endif
     } else
 #endif
     {
@@ -142,14 +151,33 @@ FAST_CODE void pwmWriteDshotInt(uint8_t index, uint16_t value)
         motor->timer->timerDmaSources |= motor->timerDmaSource;
 
 #ifdef USE_FULL_LL_DRIVER
+#if defined(STM32N6) || defined(STM32H5) || defined(STM32C5)
+        /* GPDMA channels have no auto-reload — CSAR keeps the post-frame
+         * end-pointer and the next EnableResource would replay from the
+         * wrong address (drifting forward by bufferSize each kick, until
+         * it walks off the buffer and DMA reads back zeros → silent
+         * outputs). Rewind the source pointer back to the start of the
+         * per-motor DMA buffer before each kick. */
+        xLL_EX_DMA_SetMemoryAddress(motor->dmaRef, (uint32_t)motor->dmaBuffer);
+        /* GPDMA BNDT is in bytes, not transfers; SrcDataWidth = WORD here */
+        xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize * 4);
+#else
         xLL_EX_DMA_SetDataLength(motor->dmaRef, bufferSize);
+#endif
         xLL_EX_DMA_EnableResource(motor->dmaRef);
 #else
+#ifdef X32M7
+        xDMA_Cmd(motor->dmaRef, DISABLE);
+#endif
         xDMA_SetCurrDataCounter(motor->dmaRef, bufferSize);
 
 // XXX we can remove this ifdef if we add a new macro for the TRUE/ENABLE constants
 #ifdef AT32F435
         xDMA_Cmd(motor->dmaRef, TRUE);
+#elif defined(X32M7)
+        xDMA_Cmd(motor->dmaRef, DISABLE);
+        xDMA_MemoryTargetConfig(motor->dmaRef, (uint32_t)motor->dmaBuffer, 0);
+        xDMA_Cmd(motor->dmaRef, ENABLE);
 #else
         xDMA_Cmd(motor->dmaRef, ENABLE);
 #endif
@@ -169,20 +197,34 @@ static uint32_t decodeTelemetryPacket(const uint32_t buffer[], uint32_t count)
     uint32_t oldValue = buffer[0];
     int bits = 0;
     int len;
+    // Level after the first (always falling) edge is 0; toggled on each edge.
+    int level = 0;
     for (uint32_t i = 1; i <= count; i++) {
         if (i < count) {
             int diff = buffer[i] - oldValue;
             if (bits >= 21) {
-                break;
+                break; // all bits consumed
             }
             len = (diff + 8) / 16;
+            if (len <= 0) {
+                break; // guard UB: 1 << (len-1) undefined when len <= 0
+            }
+            level ^= 1;
         } else {
+            // Only pad trailing 1s when the final run is high (level==1).
+            // level==0 means the pullup return-to-idle may have been captured
+            // as a spurious extra edge; skip padding so the bits != 21 check
+            // below rejects the packet (returns 0xffff / DSHOT_TELEMETRY_INVALID).
             len = 21 - bits;
+            if (len <= 0 || level == 0) {
+                break; // done or spurious pullup edge
+            }
         }
-
         value <<= len;
         value |= 1 << (len - 1);
-        oldValue = buffer[i];
+        if (i < count) {
+            oldValue = buffer[i];
+        }
         bits += len;
     }
     if (bits != 21) {
@@ -242,11 +284,13 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 #endif
 
 #ifdef USE_FULL_LL_DRIVER
-            LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
+            LL_EX_TIM_DisableIT((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #elif defined(AT32F435)
-            tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+            tmr_dma_request_enable((tmr_type *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+#elif defined(X32M7)
+            TIM_EnableDma((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #else
-            TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
+            TIM_DMACmd((TIM_TypeDef *)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif
 
             uint16_t rawValue;

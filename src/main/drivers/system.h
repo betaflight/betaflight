@@ -86,7 +86,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz
 
 extern uint32_t hse_value;
-extern uint32_t cachedRccCsrValue;
+extern uint32_t cachedResetFlags;
 
 typedef void extiCallbackHandlerFunc(void);
 

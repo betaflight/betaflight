@@ -707,7 +707,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
             case FSSP_DATAID_FUEL       :
                 {
                     uint32_t data;
-                    if (batteryConfig()->batteryCapacity > 0) {
+                    if (currentBatteryProfile->batteryCapacity > 0) {
                         data = calculateBatteryPercentageRemaining();
                     } else {
                         data = getMAhDrawn();
@@ -914,12 +914,13 @@ void handleSmartPortTelemetry(void)
     if (telemetryState == TELEMETRY_STATE_INITIALIZED_SERIAL && smartPortSerialPort) {
         smartPortPayload_t *payload = NULL;
         bool clearToSend = false;
-        while (serialRxBytesWaiting(smartPortSerialPort) > 0 && !payload) {
+        uint32_t rxBytesWaiting = serialRxBytesWaiting(smartPortSerialPort);
+        while (rxBytesWaiting-- > 0 && !payload) {
             uint8_t c = serialRead(smartPortSerialPort);
             payload = smartPortDataReceive(c, &clearToSend, serialReadyToSend, true);
         }
 
-            processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
+        processSmartPortTelemetry(payload, &clearToSend, &requestTimeout);
     }
 }
 #endif

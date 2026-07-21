@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define MAVLINK_COMM_NUM_BUFFERS 1
+#define MAVLINK_COMM_NUM_BUFFERS 2
 #define RSSI_DBM_MIN (-130)
 #define RSSI_DBM_MAX 0
 
@@ -26,11 +26,17 @@
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
-void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg);
 bool mavlinkRxInit(const rxConfig_t *initialRxConfig, rxRuntimeState_t *rxRuntimeState);
 #if defined(USE_SERIALRX_MAVLINK)
 bool isValidMavlinkTxBuffer (void);
 bool shouldSendMavlinkTelemetry(void);
+#define MAVLINK_RX_QUEUE_SIZE 16
+typedef struct mavlinkRxQueue_s {
+    mavlink_message_t msgs[MAVLINK_RX_QUEUE_SIZE];
+    volatile uint8_t head;
+    volatile uint8_t tail;
+} mavlinkRxQueue_t;
+bool mavlinkGetNextQueueMessage(mavlink_message_t *msg);
 #else
 static inline bool isValidMavlinkTxBuffer(void) { return false; }
 static inline bool shouldSendMavlinkTelemetry(void) { return false; }
