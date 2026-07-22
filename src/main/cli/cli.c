@@ -6039,8 +6039,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
         if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW)) {
             cliPrintf("I2C%d UNUSABLE AT INIT: SCL=%s SDA=%s (line held low: short / stuck device / non-functional pin)",
                 I2C_DEV_TO_CFG(device),
-                (health & I2C_HEALTH_SCL_LOW) ? "LOW" : "ok",
-                (health & I2C_HEALTH_SDA_LOW) ? "LOW" : "ok");
+                (health & I2C_HEALTH_SCL_LOW) ? "LOW" : "HIGH",
+                (health & I2C_HEALTH_SDA_LOW) ? "LOW" : "HIGH");
             cliPrintLinefeed();
         }
         if (health & (I2C_HEALTH_SCL_NOPULL | I2C_HEALTH_SDA_NOPULL)) {

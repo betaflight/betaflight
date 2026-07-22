@@ -345,15 +345,17 @@ void i2cInit(i2cDevice_e device)
 
     // External pull-up presence — only meaningful when not relying on the
     // internal pull-up. Internal pull-down engaged: a real external pull-up
-    // overrides it (HIGH), its absence reads LOW. Informational only.
+    // overrides it (HIGH), its absence reads LOW. Informational only. Skip a
+    // line already held low above: it reads low here regardless, so we cannot
+    // conclude anything about its pull-up.
     if (!pDev->pullUp) {
         IOConfigGPIO(scl, IOCFG_IPD);
         IOConfigGPIO(sda, IOCFG_IPD);
         delayMicroseconds(10);
-        if (!IORead(scl)) {
+        if (!(busHealth & I2C_HEALTH_SCL_LOW) && !IORead(scl)) {
             busHealth |= I2C_HEALTH_SCL_NOPULL;
         }
-        if (!IORead(sda)) {
+        if (!(busHealth & I2C_HEALTH_SDA_LOW) && !IORead(sda)) {
             busHealth |= I2C_HEALTH_SDA_NOPULL;
         }
     }
