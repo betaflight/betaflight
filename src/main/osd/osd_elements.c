@@ -160,6 +160,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+#include "flight/pos_hold.h"
 
 #include "io/gps.h"
 #include "io/vtx.h"
@@ -1178,6 +1179,15 @@ static void osdElementReadyMode(osdElementParms_t *element)
     }
 }
 
+#ifdef USE_POSITION_HOLD
+static void osdElementPosHoldReady(osdElementParms_t *element)
+{
+    if (posHoldReady()) {
+        strcpy(element->buff, "POSH RDY");
+    }
+}
+#endif
+
 #ifdef USE_ACC
 static void osdElementGForce(osdElementParms_t *element)
 {
@@ -2047,6 +2057,9 @@ static const uint8_t osdElementDisplayOrder[] = {
     OSD_DISARMED,
     OSD_NUMERICAL_HEADING,
     OSD_READY_MODE,
+#ifdef USE_POSITION_HOLD
+    OSD_POS_HOLD_READY,
+#endif
 #ifdef USE_VARIO
     OSD_NUMERICAL_VARIO,
 #endif
@@ -2160,6 +2173,9 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
     [OSD_WARNINGS]                = osdElementWarnings,
     [OSD_AVG_CELL_VOLTAGE]        = osdElementAverageCellVoltage,
     [OSD_READY_MODE]              = osdElementReadyMode,
+#ifdef USE_POSITION_HOLD
+    [OSD_POS_HOLD_READY]          = osdElementPosHoldReady,
+#endif
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,

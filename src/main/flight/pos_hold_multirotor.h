@@ -29,6 +29,7 @@ void updatePosHold(timeUs_t currentTimeUs);
 bool isAutopilotInControl(void);
 
 bool posHoldFailure(void);
+bool posHoldReady(void);
 
 #endif // USE_POSITION_HOLD
 #endif // !USE_WING

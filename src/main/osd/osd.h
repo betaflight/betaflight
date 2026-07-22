@@ -202,6 +202,10 @@ typedef enum {
     OSD_CUSTOM_SERIAL_TEXT,
     OSD_BATTERY_PROFILE_NAME,
 
+#ifdef USE_POSITION_HOLD
+    OSD_POS_HOLD_READY,         // pre-engagement Position Hold readiness indicator
+#endif
+
 #if defined(USE_GPS) && ENABLE_FLIGHT_PLAN
     // Waypoint elements
     OSD_WP_NUMBER,              // "WP 3/12" - current/total
