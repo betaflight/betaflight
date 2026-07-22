@@ -61,6 +61,10 @@
 #define FAST_CODE_NOINLINE
 #endif
 
+#ifndef SRAM_CODE
+#define SRAM_CODE
+#endif
+
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif

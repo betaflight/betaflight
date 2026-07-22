@@ -59,6 +59,10 @@ extern uint8_t _efastram_data;
 extern uint8_t _sfastram_bss;
 extern uint8_t _efastram_bss;
 
+extern uint32_t __sram_code_load_start__;
+extern uint32_t __sram_code_start__;
+extern uint32_t __sram_code_end__;
+
 extern uint32_t __app_data_load_start__;
 extern uint32_t __app_data_start__;
 extern uint32_t __app_data_end__;
@@ -166,6 +170,9 @@ BOOT_CODE void _main(void)
                     (volatile uint32_t *)&_efastram_data);
     boot_zero_words((volatile uint32_t *)&_sfastram_bss,
                     (volatile uint32_t *)&_efastram_bss);
+    boot_copy_words(&__sram_code_start__,
+                    &__sram_code_load_start__,
+                    &__sram_code_end__);
     boot_copy_words(&_sdata, &_sidata, &_edata);
     boot_zero_words(&_sbss, &_ebss);
     boot_copy_words(&__app_data_start__,

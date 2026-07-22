@@ -64,6 +64,29 @@ SECTIONS
         . = ALIGN(4);
     } > FLASH
 
+    /* ===== Stage 1b: non-real-time code relocated to AHB_SRAM =====
+     *
+     * Functions tagged SRAM_CODE (see platform.h) don't run in the
+     * gyro/PID/motor-output path, so they don't need ITCM's zero-wait-state
+     * fetch. Moving them here relieves ITCM pressure (betaflight/betaflight#15462).
+     * Must precede .runtime_image: ld assigns each input section to the
+     * first output section whose pattern matches it, so this has to come
+     * before the catch-all *(.text) *(.text*) below. Filename-based input
+     * wildcards (as used for the boot-stage SDK object below) don't work
+     * here because LTO merges translation units before final object
+     * emission; explicit section attributes survive LTO, filename globs
+     * do not.
+     */
+    .sram_code :
+    {
+        . = ALIGN(4);
+        __sram_code_start__ = .;
+        *(.sram_code)
+        . = ALIGN(4);
+        __sram_code_end__ = .;
+    } > AHB_SRAM AT > FLASH
+    __sram_code_load_start__ = LOADADDR(.sram_code);
+
     /* ===== Stage 2: Runtime image copied into ITCM as one block ===== */
 
     .runtime_image :
