@@ -695,6 +695,10 @@ static void calcActiveAdjustmentRanges(void)
     for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t * const adjustmentRange = adjustmentRanges(i);
         if (memcmp(adjustmentRange, &defaultAdjustmentRange, sizeof(defaultAdjustmentRange)) != 0) {
+            if (adjustmentRange->adjustmentConfig == 0 ||
+                adjustmentRange->adjustmentConfig > (ADJUSTMENT_FUNCTION_COUNT - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET)) {
+                continue;
+            }
             const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentConfig - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
             if (adjustmentRange->adjustmentCenter == 0 && adjustmentConfig->mode != ADJUSTMENT_MODE_SELECT) {
                 timedAdjustmentState_t *adjustmentState = &stepwiseAdjustments[stepwiseAdjustmentCount++];

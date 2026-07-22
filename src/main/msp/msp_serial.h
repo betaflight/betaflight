@@ -76,7 +76,10 @@ typedef enum {
     MSP_PENDING_BOOTLOADER_FLASH,
 } mspPendingSystemRequest_e;
 
+#ifndef MSP_PORT_INBUF_SIZE
 #define MSP_PORT_INBUF_SIZE 192
+#endif
+
 #define MSP_PORT_OUTBUF_SIZE_MIN 512 // As of 2021/08/10 MSP_BOXNAMES generates a 307 byte response for page 1. There has been overflow issues with 320 byte buffer.
 
 #ifdef USE_FLASHFS
@@ -103,6 +106,18 @@ typedef struct __attribute__((packed)) {
 } mspHeaderV2_t;
 
 #define MSP_MAX_HEADER_SIZE     9
+
+#if defined(USE_LED_STRIP_STATUS_MODE)
+#include "io/ledstrip.h"
+#ifndef MSP_LED_STRIP_PROFILE_INBUF_MARGIN
+#define MSP_LED_STRIP_PROFILE_INBUF_MARGIN 8
+#endif
+#define MSP_LED_STRIP_PROFILE_MIN_INBUF_SIZE (LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE + MSP_MAX_HEADER_SIZE + MSP_LED_STRIP_PROFILE_INBUF_MARGIN)
+#if MSP_PORT_INBUF_SIZE < MSP_LED_STRIP_PROFILE_MIN_INBUF_SIZE
+#undef MSP_PORT_INBUF_SIZE
+#define MSP_PORT_INBUF_SIZE MSP_LED_STRIP_PROFILE_MIN_INBUF_SIZE
+#endif
+#endif
 
 struct serialPort_s;
 typedef struct mspPort_s {

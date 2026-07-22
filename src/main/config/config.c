@@ -183,7 +183,8 @@ static void activateConfig(void)
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle, throttleCorrectionConfig()->throttle_correction_value);
 
 #if defined(USE_LED_STRIP_STATUS_MODE)
-    reevaluateLedConfig();
+    syncSimpleLedProfilesFromConfig();
+    syncActiveLedProfileConfig();
 #endif
 
     initActiveBoxIds();
