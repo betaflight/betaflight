@@ -65,7 +65,12 @@
 #include "flight/pos_hold.h"
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+#include "flight/flight_plan_capture.h"
 #include "flight/flight_plan_nav.h"
+#endif
+
+#ifdef USE_OSD_NAV_MAP
+#include "flight/nav_trail.h"
 #endif
 
 #if defined(USE_DYN_NOTCH_FILTER)
@@ -1070,6 +1075,14 @@ void processRxModes(timeUs_t currentTimeUs)
 #endif
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    // Waypoint capture runs whether or not the mission is engaged - the whole
+    // point is marking waypoints while flying around before engaging. The
+    // channel-validity guard keeps rxfail aux substitution from ghost-editing
+    // the plan during signal loss.
+    flightPlanCaptureUpdate(currentTimeUs,
+                            IS_RC_MODE_ACTIVE(BOXWPCAPTURE),
+                            rxAreFlightChannelsValid());
+
     // During failsafe the mission flies only while the failsafe state machine
     // has chosen to (rx-loss policy). In the stage-1 window before failsafe
     // activates, rxfail substitution already drives the aux channels, so the
@@ -1106,6 +1119,12 @@ void processRxModes(timeUs_t currentTimeUs)
             flightPlanNavDisengage();
         }
     }
+#endif
+
+#ifdef USE_OSD_NAV_MAP
+    // record the flown trail for the OSD minimap; internally rate-limited and
+    // needs only the GPS solution, home and the ARMED state
+    navTrailUpdate(currentTimeUs);
 #endif
 
 #ifdef USE_ALTITUDE_HOLD
