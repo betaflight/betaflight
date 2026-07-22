@@ -62,6 +62,8 @@ otg_core_type otg_core_struct;
 
 #define APP_TX_BLOCK_SIZE 512
 
+#define CDC_SEND_TIMEOUT_MS 2
+
 volatile uint8_t UserRxBuffer[APP_RX_DATA_SIZE];/* Received Data over USB are stored in this buffer */
 volatile uint8_t UserTxBuffer[APP_TX_DATA_SIZE];/* Received Data over UART (CDC interface) are stored in this buffer */
 uint32_t BuffLength;
@@ -249,9 +251,10 @@ uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
     uint32_t i;
     for (i = 0; i < sendLength; i++) {
         // Bounded to 2ms per byte; return partial count on timeout.
-        uint32_t deadline = millis() + 2;
+        // Subtraction form avoids millis() wraparound false-triggering the deadline.
+        uint32_t start = millis();
         while (CDC_Send_FreeBytes() == 0) {
-            if (millis() >= deadline) {
+            if (millis() - start >= CDC_SEND_TIMEOUT_MS) {
                 return i;
             }
         }
