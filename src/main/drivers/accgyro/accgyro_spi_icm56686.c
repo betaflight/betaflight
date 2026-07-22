@@ -239,13 +239,6 @@ static bool icm56686_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
         return false;
     }
 
-#if 0
-// In testing, this does NOT work, registers do NOT take the values.
-    spiWriteReg(dev, ICM56686_REG_IREG_ADDR_15_8, (reg >> 8) & 0xFF);
-    spiWriteReg(dev, ICM56686_REG_IREG_ADDR_7_0, reg & 0xFF);
-    spiWriteReg(dev, ICM56686_REG_IREG_DATA, value);
-#else
-
     // An IREG write must be a single auto-incrementing SPI burst: the register
     // byte (IREG_ADDR_15_8 = 0x7C) followed by addr_msb (-> 0x7C), addr_lsb
     // (-> 0x7D) and the data (-> 0x7E), all with CS held low. Writing the three
@@ -253,7 +246,6 @@ static bool icm56686_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
     // (confirmed on hardware: writes reported done but never changed the target).
     uint8_t buf[3] = { (uint8_t)((reg >> 8) & 0xFF), (uint8_t)(reg & 0xFF), value };
     spiWriteRegBuf(dev, ICM56686_REG_IREG_ADDR_15_8, buf, sizeof(buf));
-#endif
 
     const bool ok = icm56686_waitIregDone(dev);
     bprintf("[icm56686] IREG wr 0x%04X = 0x%02X -> %s", reg, value, ok ? "ok" : "FAIL");
@@ -265,16 +257,11 @@ static bool icm56686_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
 // reads IREG_DATA. Returns true on success.
 static bool icm56686_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *value)
 {
-#if 1
     // Programming the registers ICM56686_REG_IREG_ADDR_15_8 and ICM56686_REG_IREG_ADDR_7_0 sequentially also seems to work.
     // This might prevent a spurious read request (in the case of writing separately) after writing the MSB (15_8).
     // Note also, icm56686_write_reg requires programming the reqisters and data all at once, without releasing CS until the end.
     uint8_t buf[2] = {(reg >> 8) & 0xFF, reg & 0xFF};
     spiWriteRegBuf(dev, ICM56686_REG_IREG_ADDR_15_8, buf, sizeof(buf));
-#else
-    spiWriteReg(dev, ICM56686_REG_IREG_ADDR_15_8, (reg >> 8) & 0xFF);
-    spiWriteReg(dev, ICM56686_REG_IREG_ADDR_7_0, reg & 0xFF);
-#endif
 
     if (!icm56686_waitIregDone(dev)) {
         return false;
@@ -419,30 +406,10 @@ bool icm56686AccReadSPI(accDev_t *acc)
         return false;
     }
 
-#if 0
-// Are we allowed to assume CPU stores int16 LE?
-    acc->ADCRaw[X] = *(uint16_t *)(&raw[0]);
-    acc->ADCRaw[Y] = *(uint16_t *)(&raw[2]);
-    acc->ADCRaw[Z] = *(uint16_t *)(&raw[4]);
-#else
     acc->ADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
     acc->ADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
     acc->ADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-#endif
 
-#if 0
-    // Dump first sample for testing. With the board flat and accelerometer calibarated, exactly one axis should read
-    // ~+/-2048 (1g at +/-16g, 16-bit) and the others ~0. Check LE vs BE.
-    static bool accFirstSample = true;
-    if (accFirstSample) {
-        accFirstSample = false;
-        bprintf("[icm56686] acc raw %02X %02X %02X %02X %02X %02X",
-                raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
-        bprintf("[icm56686] acc LE x=%d y=%d z=%d | BE x=%d y=%d z=%d",
-                (int16_t)((raw[1] << 8) | raw[0]), (int16_t)((raw[3] << 8) | raw[2]), (int16_t)((raw[5] << 8) | raw[4]),
-                (int16_t)((raw[0] << 8) | raw[1]), (int16_t)((raw[2] << 8) | raw[3]), (int16_t)((raw[4] << 8) | raw[5]));
-    }
-#endif
     return true;
 }
 
@@ -462,24 +429,6 @@ void icm56686GyroInit(gyroDev_t *gyro)
     bprintf("[icm56686] setting SREG_CTRL to 16-bit little-endian (was 0x0A at reset)");
     icm56686_write_ireg(dev, ICM56686_SREG_CTRL_IREG_ADDR, ICM56686_SREG_CTRL_16BIT_LE);
 
-#if 1
-    // Testing while getting IREG writes to work, to be removed...
-    
-    // Verify the write stuck and select the data format accordingly. 0x00 = 16-bit
-    // little-endian (FS_SEL honoured); anything else (incl. the 0x0A reset, or a
-    // failed read) means we are still in 20-bit big-endian hi-res mode.
-    uint8_t sregCtrl = 0xFF;
-    const bool sregRead = icm56686_read_ireg(dev, ICM56686_SREG_CTRL_IREG_ADDR, &sregCtrl);
-    bool icm56686BigEndian = !(sregRead && sregCtrl == ICM56686_SREG_CTRL_16BIT_LE);
-    bprintf("[icm56686] SREG_CTRL readback = 0x%02X -> %s", sregCtrl,
-            icm56686BigEndian ? "20-bit big-endian (4000dps/32g)" : "16-bit little-endian (2000dps/16g)");
-    if (icm56686BigEndian) {
-        // fail
-        bprintf("*** unexpected still in BE mode ***");
-        return;
-    }
-#endif
-    
     // Power up both sensors in Low-Noise mode.
     icm56686_enableSensors(dev, true);
     delay(ICM56686_SENSOR_ENABLE_DELAY_MS);
@@ -558,30 +507,10 @@ bool icm56686GyroReadSPI(gyroDev_t *gyro)
             return false;
         }
 
-#if 0
-// Are we allowed to assume CPU stores int16 LE?
-        gyro->gyroADCRaw[X] = *(uint16_t *)(&raw[0]);
-        gyro->gyroADCRaw[Y] = *(uint16_t *)(&raw[2]);
-        gyro->gyroADCRaw[Z] = *(uint16_t *)(&raw[4]);
-#else
         gyro->gyroADCRaw[X] = (int16_t)((raw[1] << 8) | raw[0]);
         gyro->gyroADCRaw[Y] = (int16_t)((raw[3] << 8) | raw[2]);
         gyro->gyroADCRaw[Z] = (int16_t)((raw[5] << 8) | raw[4]);
-#endif
 
-#if 0
-        // Dump raw bytes for first sample, both byte-order decodings.
-        // At rest gyro should be ~0 either way.
-        static bool gyroFirstSample = true;
-        if (gyroFirstSample) {
-            gyroFirstSample = false;
-            bprintf("[icm56686] gyro raw %02X %02X %02X %02X %02X %02X",
-                    raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
-            bprintf("[icm56686] gyro LE x=%d y=%d z=%d | BE x=%d y=%d z=%d",
-                    (int16_t)((raw[1] << 8) | raw[0]), (int16_t)((raw[3] << 8) | raw[2]), (int16_t)((raw[5] << 8) | raw[4]),
-                    (int16_t)((raw[0] << 8) | raw[1]), (int16_t)((raw[2] << 8) | raw[3]), (int16_t)((raw[4] << 8) | raw[5]));
-        }
-#endif
         break;
     }
 
