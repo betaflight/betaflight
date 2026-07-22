@@ -25,7 +25,7 @@ RUN apt-get update && \
     ssh \
     btop \
     xxd \
-    openocd \
+    gdb-multiarch \
     && rm -rf /var/lib/apt/lists/*
 
 # Generate en_US.UTF-8 locale
@@ -71,6 +71,33 @@ RUN git clone git://git.code.sf.net/p/stm32flash/code stm32flash-code && \
     make install && \
     cd .. && \
     rm -rf stm32flash-code
+
+# Build OpenOCD from STMicroelectronics' fork.
+# The Debian-packaged OpenOCD (0.12.0) has no STM32H5 support: neither
+# target/stm32h5x.cfg nor the stm32h5x flash driver are present (H5 landed
+# after the 0.12.0 release; mainline master and the xpack builds don't have it
+# yet either). Without them `make openocd-gdb` cannot flash or debug H5
+# (H562/H563) boards. ST's fork ships both and keeps the other STM32 families
+# working. Built from source because no current distro/prebuilt package carries
+# H5 support.
+ARG OPENOCD_ST_REF=openocd-cubeide-r7
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    libusb-1.0-0-dev \
+    libhidapi-dev && \
+    git clone --depth 1 -b ${OPENOCD_ST_REF} https://github.com/STMicroelectronics/OpenOCD /tmp/openocd-st && \
+    cd /tmp/openocd-st && \
+    ./bootstrap && \
+    ./configure --enable-stlink --disable-werror --disable-doc --prefix=/usr/local && \
+    make -j"$(nproc)" && \
+    make install && \
+    cd / && \
+    rm -rf /tmp/openocd-st && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for DevPod/VSCodium
 ARG USERNAME=devpod
