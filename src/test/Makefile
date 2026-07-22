@@ -595,6 +595,17 @@ flight_plan_nav_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
 
+flight_plan_capture_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_capture.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
+flight_plan_capture_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
+
 flight_plan_rescue_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
@@ -609,6 +620,23 @@ flight_plan_rescue_unittest_DEFINES := \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1 \
 		ENABLE_RESCUE_PLAN=1
+
+osd_nav_map_unittest_SRC := \
+		$(USER_DIR)/osd/osd_nav_map.c \
+		$(USER_DIR)/flight/nav_trail.c \
+		$(USER_DIR)/pg/osd_nav_map.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c
+
+osd_nav_map_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_OSD= \
+		USE_OSD_NAV_MAP=
 
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
