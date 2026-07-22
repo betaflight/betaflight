@@ -68,11 +68,6 @@
 #include "sensors/gyro.h"
 #include "pg/gyrodev.h"
 
-// Initial version for testing / verification: use bprintf (PICO trace helper)
-#ifndef bprintf
-#define bprintf(fmt, ...) do {} while (0)
-#endif
-
 // Forward declarations of the SPI read functions (defined further down).
 bool icm56686AccReadSPI(accDev_t *acc);
 bool icm56686GyroReadSPI(gyroDev_t *gyro);
@@ -224,7 +219,6 @@ static bool icm56686_waitIregDone(const extDevice_t *dev)
         }
         delayMicroseconds(10);
     }
-    bprintf("[icm56686] IREG_DONE timeout");
     return false;
 }
 
@@ -235,7 +229,6 @@ static bool icm56686_waitIregDone(const extDevice_t *dev)
 static bool icm56686_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t value)
 {
     if (ARMING_FLAG(ARMED)) {
-        bprintf("[icm56686] refusing IREG write 0x%04X while ARMED", reg);
         return false;
     }
 
@@ -248,7 +241,6 @@ static bool icm56686_write_ireg(const extDevice_t *dev, uint16_t reg, uint8_t va
     spiWriteRegBuf(dev, ICM56686_REG_IREG_ADDR_15_8, buf, sizeof(buf));
 
     const bool ok = icm56686_waitIregDone(dev);
-    bprintf("[icm56686] IREG wr 0x%04X = 0x%02X -> %s", reg, value, ok ? "ok" : "FAIL");
     return ok;
 }
 
@@ -271,7 +263,6 @@ static bool icm56686_read_ireg(const extDevice_t *dev, uint16_t reg, uint8_t *va
     // The address auto-increments and a new pre-fetch is triggered; let it settle.
     icm56686_waitIregDone(dev);
 
-    bprintf("[icm56686] IREG rd 0x%04X = 0x%02X", reg, *value);
     return true;
 }
 
@@ -281,7 +272,6 @@ static bool icm56686_modify_ireg(const extDevice_t *dev, uint16_t reg, uint8_t m
 {
     uint8_t cur = 0;
     if (!icm56686_read_ireg(dev, reg, &cur)) {
-        bprintf("[icm56686] modify 0x%04X: read failed, writing field directly", reg);
         return icm56686_write_ireg(dev, reg, value & mask);
     }
     const uint8_t next = (cur & ~mask) | (value & mask);
@@ -314,7 +304,6 @@ static void icm56686_enableSensors(const extDevice_t *dev, bool enable)
         ? (ICM56686_GYRO_MODE_LN | ICM56686_ACCEL_MODE_LN)
         : (ICM56686_GYRO_MODE_OFF | ICM56686_ACCEL_MODE_OFF);
 
-    bprintf("[icm56686] PWR_MGMT0 <= 0x%02X (%s)", value, enable ? "LN/LN" : "OFF");
     spiWriteReg(dev, ICM56686_PWR_MGMT0, value);
 }
 
@@ -327,8 +316,6 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
     uint8_t attemptsRemaining = 20;
     uint32_t waited_us = 0;
 
-    bprintf("[icm56686] detect: soft reset via REG_MISC2");
-
     // The ICM-56686 has no bank-select register; soft reset is REG_MISC2 bit 1.
     spiWriteReg(dev, ICM56686_REG_MISC2, ICM56686_SOFT_RESET);
 
@@ -337,11 +324,9 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
         delayMicroseconds(10);
         waited_us += 10;
         if (waited_us >= ICM56686_RESET_TIMEOUT_US) {
-            bprintf("[icm56686] detect: soft reset TIMEOUT");
             return MPU_NONE;
         }
     }
-    bprintf("[icm56686] detect: reset done after %u us", waited_us);
 
     // Put power management into a known (off) state after reset.
     spiWriteReg(dev, ICM56686_PWR_MGMT0, 0x00);
@@ -349,15 +334,12 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
     do {
         delay(1);
         const uint8_t whoAmI = spiReadRegMsk(dev, ICM56686_WHO_AM_I);
-        bprintf("[icm56686] WHO_AM_I = 0x%02X (expecting 0x%02X), attempts left %u",
-                whoAmI, ICM56686_WHO_AM_I_CONST, attemptsRemaining);
         if (whoAmI == ICM56686_WHO_AM_I_CONST) {
             icmDetected = ICM_56686_SPI;
             break;
         }
     } while (attemptsRemaining--);
 
-    bprintf("[icm56686] detect result: %s", icmDetected == ICM_56686_SPI ? "FOUND" : "not found");
     return icmDetected;
 }
 
@@ -367,8 +349,6 @@ uint8_t icm56686SpiDetect(const extDevice_t *dev)
 void icm56686AccInit(accDev_t *acc)
 {
     const extDevice_t *dev = &acc->gyro->dev;
-
-    bprintf("[icm56686] accInit");
 
     // Accel sensitivity 16-bit 16G in icm56686GyroInit (which runs first)
     // 16-bit mode uses +/-16g -> 2048 LSB/g.
@@ -420,13 +400,11 @@ void icm56686GyroInit(gyroDev_t *gyro)
 {
     const extDevice_t *dev = &gyro->dev;
 
-    bprintf("[icm56686] gyroInit: SPI clk <= %d Hz", ICM56686_MAX_SPI_CLK_HZ);
     spiSetClkDivisor(dev, spiCalculateDivider(ICM56686_MAX_SPI_CLK_HZ));
 
     mpuGyroInit(gyro);
 
     // Configure 16-bit, little-endian sensor output (chip default is 20-bit big-endian).
-    bprintf("[icm56686] setting SREG_CTRL to 16-bit little-endian (was 0x0A at reset)");
     icm56686_write_ireg(dev, ICM56686_SREG_CTRL_IREG_ADDR, ICM56686_SREG_CTRL_16BIT_LE);
 
     // Power up both sensors in Low-Noise mode.
@@ -434,7 +412,6 @@ void icm56686GyroInit(gyroDev_t *gyro)
     delay(ICM56686_SENSOR_ENABLE_DELAY_MS);
 
     // Accel ODR 1.6 kHz with 16G range.
-    bprintf("[icm56686] ACCEL_CONFIG0 <= 16G / 1.6kHz");
     spiWriteReg(dev, ICM56686_ACCEL_CONFIG0, ICM56686_ACCEL_FS_SEL_16G | ICM56686_ACCEL_ODR_1K6_LN);
     delay(ICM56686_ACCEL_STARTUP_TIME_MS);
 
@@ -442,16 +419,7 @@ void icm56686GyroInit(gyroDev_t *gyro)
     icm56686_modify_ireg(dev, ICM56686_GYRO_SRC_CTRL_IREG_ADDR,
                          ICM56686_GYRO_SRC_CTRL_MASK, ICM56686_GYRO_SRC_CTRL_SRC_PREFILT_ON);
 
-    // Diagnostic: does this IREG write stick? (SREG_CTRL above did not.) If this
-    // reads back 0x28 the filter writes are applying and the SREG_CTRL failure is
-    // register-specific; if it reads 0x20 (reset) then IREG writes fail in general.
-    uint8_t srcChk = 0xFF;
-    if (icm56686_read_ireg(dev, ICM56686_GYRO_SRC_CTRL_IREG_ADDR, &srcChk)) {
-        bprintf("[icm56686] GYRO_SRC_CTRL readback = 0x%02X (expect 0x28)", srcChk);
-    }
-
     const uint8_t lpfSel = getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf);
-    bprintf("[icm56686] gyro UI LPF select = %u (field<<4)", lpfSel);
     icm56686_modify_ireg(dev, ICM56686_GYRO_UI_LPF_CFG_IREG_ADDR,
                          ICM56686_GYRO_UI_LPFBW_MASK, (uint8_t)(lpfSel << 4));
 
@@ -466,14 +434,12 @@ void icm56686GyroInit(gyroDev_t *gyro)
     gyro->tempScale = 1.0f / 128.0f;
     gyro->tempZero = 25.0f;
 
-    bprintf("[icm56686] GYRO_CONFIG0 <= 2000dps / 6.4kHz");
     spiWriteReg(dev, ICM56686_GYRO_CONFIG0, ICM56686_GYRO_FS_SEL_2000DPS | ICM56686_GYRO_ODR_6K4_LN);
     delay(ICM56686_GYRO_STARTUP_TIME_MS);
 
     gyro->gyroShortPeriod = clockMicrosToCycles(HZ_TO_US(gyro->gyroSampleRateHz));
 
     // Data-ready interrupt on INT1: push-pull, active-high, pulsed.
-    bprintf("[icm56686] configuring INT1 (PP, active-high, pulsed, DRDY)");
     spiWriteReg(dev, ICM56686_INT1_CONFIG2,
                 ICM56686_INT1_MODE_PULSED | ICM56686_INT1_DRIVE_CIRCUIT_PP | ICM56686_INT1_POLARITY_ACTIVE_HIGH);
     spiWriteReg(dev, ICM56686_INT1_CONFIG0, ICM56686_INT1_STATUS_EN_DRDY);
@@ -482,15 +448,12 @@ void icm56686GyroInit(gyroDev_t *gyro)
     gyro->accDataReg = ICM56686_ACCEL_DATA_X1;
     gyro->gyroDataReg = ICM56686_GYRO_DATA_X1;
     gyro->gyroDmaMaxDuration = 0; // DRDY interrupt paces reads
-
-    bprintf("[icm56686] gyroInit complete");
 }
 
 bool icm56686GyroReadSPI(gyroDev_t *gyro)
 {
     switch (gyro->gyroModeSPI) {
     case GYRO_EXTI_INIT:
-        bprintf("[icm56686] icm56686GyroReadSPI GYRO_EXTI_INIT");
         memset(gyro->dev.txBuf, 0xff, ICM56686_SPI_BUFFER_SIZE);
         gyro->gyroDmaMaxDuration = 0;
         // DMA path not yet enabled for this device; use direct reads.
@@ -503,7 +466,6 @@ bool icm56686GyroReadSPI(gyroDev_t *gyro)
         uint8_t raw[ICM56686_DATA_LENGTH];
         const bool ack = spiReadRegMskBufRB(&gyro->dev, ICM56686_GYRO_DATA_X1, raw, ICM56686_DATA_LENGTH);
         if (!ack) {
-            bprintf("[icm56686] read reg no ack");
             return false;
         }
 
@@ -516,7 +478,6 @@ bool icm56686GyroReadSPI(gyroDev_t *gyro)
 
     case GYRO_EXTI_INT_DMA:
         // TODO (future)
-        bprintf("*** unexpected DMA ***");
         // rxBuf[0] is the dummy byte from the register address phase
         gyro->gyroADCRaw[X] = (int16_t)((gyro->dev.rxBuf[2] << 8) | gyro->dev.rxBuf[1]);
         gyro->gyroADCRaw[Y] = (int16_t)((gyro->dev.rxBuf[4] << 8) | gyro->dev.rxBuf[3]);
