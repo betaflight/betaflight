@@ -300,7 +300,7 @@ protected:
         // Leg-line carrot tracking (PG reset template is not applied under test).
         cfg->navCornerSpeed = 220;         // 2.2 m/s floor
         cfg->navCornerDeltaV = 440;        // 4.4 m/s per-corner budget
-        cfg->navDecel = 100;               // 1.0 m/s^2
+        cfg->navDecel = 250;               // 2.5 m/s^2
         cfg->navAccel = 250;               // 2.5 m/s^2
         cfg->navCarrotLeadTime = 12;       // 1.2 s
         cfg->navCarrotLeadMax = 2500;      // 25 m
@@ -1532,9 +1532,13 @@ TEST_F(FlightPlanNavCarrotTest, CarrotTracksLegLineNotCraftCrossTrack)
     flightPlanNavEngage();   // craft at the origin: leg0 is origin -> (0,100), due north
     step();                  // anchor the leg and march
 
-    // Wind pushes the craft 20 m east of the leg line, halfway along.
+    // Wind pushes the craft 20 m east of the leg line, halfway along. The
+    // along-track measurement is PT1-filtered (0.2 s), so give it a few cycles
+    // to converge on the displaced position.
     setCraftMetres(20.0f, 50.0f);
-    step();
+    for (int i = 0; i < 8; i++) {
+        step();
+    }
 
     // The carrot rides the leg line (E = 0), not the craft (E = 20), so the
     // position controller is commanded to pull back onto the drawn line. It sits
@@ -1679,4 +1683,96 @@ TEST_F(FlightPlanNavCarrotTest, CornerSkipsModifierBetweenLegs)
     // modifier's west coordinates, which would drive the override negative.
     EXPECT_GT(g_navHeadingOverrideDeg, 0.0f);
     EXPECT_LT(g_navHeadingOverrideDeg, 90.0f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, OverspeedGovernorHoldsCarrotWithHysteresis)
+{
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYOVER);
+    addWaypointMetres(0.0f, 600.0f, 15000, WAYPOINT_TYPE_FLYOVER); // straight on (last)
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();   // anchor the leg; craft parked at the origin
+
+    // On profile: the carrot marches away from the parked craft. Keep this
+    // phase short so the hold below happens well inside the minimum 6 m lead
+    // cap — a carrot parked ON the cap would mask a broken governor.
+    for (int i = 0; i < 3; i++) {
+        step();
+    }
+    const float marchingN = g_lastTarget.targetEfM.y;
+    EXPECT_GT(marchingN, 0.05f);
+
+    // Craft carries 15 m/s against the 10 m/s cruise profile (tailwind /
+    // catch-up): the governor holds the carrot so braking authority returns.
+    g_stubEstimate.velocity.v[ENU_N] = 1500.0f;
+    for (int i = 0; i < 20; i++) {
+        step();   // speed filter converges, carrot speed slews to a stop
+    }
+    const float heldN = g_lastTarget.targetEfM.y;
+    EXPECT_LT(heldN, 5.5f);   // held by the governor, not parked on the lead cap
+    for (int i = 0; i < 10; i++) {
+        step();
+    }
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
+
+    // Speed drops into the hysteresis band (10.9 m/s: below the 11.5 entry,
+    // above the 10.75 release). A single-threshold governor resumes marching
+    // here and chatters cruise/freeze at fix rate; the hold must stick.
+    g_stubEstimate.velocity.v[ENU_N] = 1090.0f;
+    for (int i = 0; i < 20; i++) {
+        step();
+    }
+    EXPECT_NEAR(g_lastTarget.targetEfM.y, heldN, 0.01f);
+
+    // Fully back on profile (craft moving gently up the leg so the lead window
+    // opens ahead): the carrot marches again.
+    g_stubEstimate.velocity.v[ENU_N] = 200.0f;
+    for (int i = 0; i < 20; i++) {
+        setCraftMetres(0.0f, (i + 1) * 0.2f);
+        step();
+    }
+    EXPECT_GT(g_lastTarget.targetEfM.y, heldN + 0.5f);
+}
+
+TEST_F(FlightPlanNavCarrotTest, ChaseLagCompensationCrossesGateNearCornerSpeed)
+{
+    addWaypointMetres(0.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY);   // 90 deg corner here
+    addWaypointMetres(300.0f, 300.0f, 15000, WAYPOINT_TYPE_FLYBY); // east leg (last)
+    g_stubMicros = 1'000'000;
+    flightPlanNavEngage();
+    step();
+
+    // First-order pursuit: the craft chases the commanded carrot with the same
+    // time constant as the configured carrot lead (1.2 s) — the chase lag the
+    // brake compensation exists for. Without the compensation the carrot itself
+    // reaches corner speed at the gate but the craft, answering ~1.2 s late,
+    // crosses hot by roughly lag * decel.
+    const float dt = 0.1f;
+    const float tauS = 1.2f;
+    float craftE = 0.0f;
+    float craftN = 0.0f;
+    float crossingSpeedMps = -1.0f;
+    float maxSpeedMps = 0.0f;
+    for (int i = 0; i < 1500 && crossingSpeedMps < 0.0f; i++) {
+        const float velE = (g_lastTarget.targetEfM.x - craftE) / tauS;
+        const float velN = (g_lastTarget.targetEfM.y - craftN) / tauS;
+        craftE += velE * dt;
+        craftN += velN * dt;
+        setCraftMetres(craftE, craftN);
+        g_stubEstimate.velocity.v[ENU_E] = velE * 100.0f;
+        g_stubEstimate.velocity.v[ENU_N] = velN * 100.0f;
+        const float speedMps = sqrtf(velE * velE + velN * velN);
+        maxSpeedMps = fmaxf(maxSpeedMps, speedMps);
+        step();
+        if (flightPlanNavGetCurrentIndex() == 1) {
+            crossingSpeedMps = speedMps;
+        }
+    }
+
+    // The leg actually cruised, and the CRAFT (not just the carrot) crossed the
+    // corner gate near the 90-degree corner speed (4.4 m/s delta-v budget ->
+    // 3.1 m/s), instead of several m/s hot.
+    EXPECT_GT(maxSpeedMps, 8.0f);
+    ASSERT_GE(crossingSpeedMps, 0.0f);
+    EXPECT_LT(crossingSpeedMps, 4.3f);
 }
