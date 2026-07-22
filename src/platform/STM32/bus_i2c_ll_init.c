@@ -28,8 +28,10 @@
 #if defined(USE_I2C) && !defined(USE_SOFT_I2C) && !defined(USE_I3C_AS_I2C)
 
 #include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
+#include "platform/io_impl.h"
 #include "platform/rcc.h"
 
 #include "drivers/bus_i2c.h"
@@ -405,6 +407,21 @@ void i2cInit(i2cDevice_e device)
     // H5 Clock sources:
     //   I2C12  : PCLK1 (APB1)
     //   I2C34  : PCLK3 (APB3)
+    // Explicitly select the kernel clock source rather than trusting the reset
+    // default (I2CxSEL=0). The APB clock enable (APB1L/APB3ENR) only gates
+    // register access; SCL is generated from the *kernel* clock, so if anything
+    // (bootloader, prior state) left I2CxSEL pointing elsewhere the peripheral's
+    // registers respond but the bus never clocks. Pin these to the source the
+    // TIMINGR below is computed against.
+    if (I2Cx == I2C1) {
+        __HAL_RCC_I2C1_CONFIG(RCC_I2C1CLKSOURCE_PCLK1);
+    } else if (I2Cx == I2C2) {
+        __HAL_RCC_I2C2_CONFIG(RCC_I2C2CLKSOURCE_PCLK1);
+    } else if (I2Cx == I2C3) {
+        __HAL_RCC_I2C3_CONFIG(RCC_I2C3CLKSOURCE_PCLK3);
+    } else if (I2Cx == I2C4) {
+        __HAL_RCC_I2C4_CONFIG(RCC_I2C4CLKSOURCE_PCLK3);
+    }
     i2cPclk = (I2Cx == I2C3 || I2Cx == I2C4) ? HAL_RCC_GetPCLK3Freq() : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32N6)
     // N6 Clock sources:
@@ -439,5 +456,57 @@ void i2cInit(i2cDevice_e device)
     HAL_NVIC_SetPriority(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
     HAL_NVIC_EnableIRQ(hardware->ev_irq);
 }
+
+#if defined(STM32H5)
+// TEMPORARY (Development Instrumentation) — see bus_i2c.h. Read the live post-init
+// registers that determine whether a configured I2C bus can actually clock.
+bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs)
+{
+    if (device < 0 || device >= I2CDEV_COUNT || !regs) {
+        return false;
+    }
+
+    const i2cDevice_t *pDev = &i2cDevice[device];
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)pDev->reg;
+    if (!I2Cx || !pDev->scl || !pDev->sda) {
+        return false;  // bus not configured
+    }
+
+    uint8_t selPos;
+    bool busClockOn;
+    if (I2Cx == I2C1) {
+        selPos = RCC_CCIPR4_I2C1SEL_Pos;
+        busClockOn = (RCC->APB1LENR & RCC_APB1LENR_I2C1EN) != 0;
+    } else if (I2Cx == I2C2) {
+        selPos = RCC_CCIPR4_I2C2SEL_Pos;
+        busClockOn = (RCC->APB1LENR & RCC_APB1LENR_I2C2EN) != 0;
+    } else if (I2Cx == I2C3) {
+        selPos = RCC_CCIPR4_I2C3SEL_Pos;
+        busClockOn = (RCC->APB3ENR & RCC_APB3ENR_I2C3EN) != 0;
+    } else if (I2Cx == I2C4) {
+        selPos = RCC_CCIPR4_I2C4SEL_Pos;
+        busClockOn = (RCC->APB3ENR & RCC_APB3ENR_I2C4EN) != 0;
+    } else {
+        return false;
+    }
+
+    regs->clkSel = (RCC->CCIPR4 >> selPos) & 0x3;
+    regs->busClockOn = busClockOn;
+    regs->peEnabled = (I2Cx->CR1 & I2C_CR1_PE) != 0;
+    regs->timingr = I2Cx->TIMINGR;
+
+    GPIO_TypeDef *sclGpio = IO_GPIO(pDev->scl);
+    const int sclPin = IO_GPIOPinIdx(pDev->scl);
+    regs->sclMode = (sclGpio->MODER >> (sclPin * 2)) & 0x3;
+    regs->sclAf = (sclGpio->AFR[sclPin >> 3] >> ((sclPin & 7) * 4)) & 0xF;
+
+    GPIO_TypeDef *sdaGpio = IO_GPIO(pDev->sda);
+    const int sdaPin = IO_GPIOPinIdx(pDev->sda);
+    regs->sdaMode = (sdaGpio->MODER >> (sdaPin * 2)) & 0x3;
+    regs->sdaAf = (sdaGpio->AFR[sdaPin >> 3] >> ((sdaPin & 7) * 4)) & 0xF;
+
+    return true;
+}
+#endif
 
 #endif

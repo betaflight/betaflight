@@ -90,3 +90,20 @@ uint8_t i2cGetRegisteredDeviceCount(void);
 #define I2C_HEALTH_SDA_NOPULL  (1 << 4)  // no external SDA pull-up detected (info only)
 void i2cReportBusHealth(i2cDevice_e device, uint8_t health);
 uint8_t i2cGetBusHealth(i2cDevice_e device);
+
+#if defined(STM32H5)
+// TEMPORARY (Development Instrumentation): live register snapshot for an I2C bus,
+// to localise a dead-bus fault to clock-mux vs peripheral-enable vs pin/AF in a
+// single flash. Remove once the H5 I2C3 bring-up issue is resolved.
+typedef struct i2cDebugRegs_s {
+    uint8_t clkSel;      // RCC_CCIPR4 I2CxSEL field (0 = PCLKx, the expected default)
+    bool busClockOn;     // RCC APBxENR I2CxEN
+    bool peEnabled;      // I2Cx->CR1 PE
+    uint32_t timingr;    // I2Cx->TIMINGR (0 = uninitialised)
+    uint8_t sclMode;     // SCL pin MODER (2 = alternate function)
+    uint8_t sclAf;       // SCL pin AF selection (expect 4 for I2C)
+    uint8_t sdaMode;     // SDA pin MODER
+    uint8_t sdaAf;       // SDA pin AF selection
+} i2cDebugRegs_t;
+bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs);
+#endif

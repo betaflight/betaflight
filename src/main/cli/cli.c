@@ -5968,6 +5968,40 @@ bool cliSetSettingByName(const char *cmdline)
     return true;
 }
 
+#if defined(STM32H5) && defined(USE_I2C)
+// TEMPORARY (Development Instrumentation): dump the post-init registers that
+// decide whether a configured I2C bus can clock, side by side across buses, so
+// a dead bus is localised to clock-mux / peripheral-enable / pin-AF in one flash.
+static void cliI2cRegs(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    static const char *clkSrc[] = { "PCLK", "PLL3R", "HSI", "CSI" };
+    bool any = false;
+    for (int device = 0; device < I2CDEV_COUNT; device++) {
+        i2cDebugRegs_t r;
+        if (!i2cGetDebugRegs(device, &r)) {
+            continue;
+        }
+        any = true;
+        cliPrintLinef("I2C%d: clkSrc=%s(%d) busClk=%s PE=%s TIMINGR=0x%08lx "
+            "SCL[mode=%d af=%d] SDA[mode=%d af=%d]",
+            I2C_DEV_TO_CFG(device),
+            clkSrc[r.clkSel & 0x3], r.clkSel,
+            r.busClockOn ? "on" : "OFF",
+            r.peEnabled ? "yes" : "NO",
+            (unsigned long)r.timingr,
+            r.sclMode, r.sclAf, r.sdaMode, r.sdaAf);
+    }
+    if (!any) {
+        cliPrintLine("No configured I2C buses.");
+    } else {
+        cliPrintLine("(expect: clkSrc=PCLK, busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4)");
+    }
+}
+#endif
+
 static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
@@ -8348,6 +8382,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gyroregisters", "dump gyro config registers contents", NULL, cliDumpGyroRegisters),
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
+#if defined(STM32H5) && defined(USE_I2C)
+    CLI_COMMAND_DEF("i2c_regs", "dump I2C bus init registers (H5 bring-up aid)", NULL, cliI2cRegs),
+#endif
 #if ENABLE_LCD_CONSOLE
     CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
 #endif
