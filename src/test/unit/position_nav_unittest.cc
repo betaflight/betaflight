@@ -340,6 +340,42 @@ TEST_F(PositionNavTest, AutoClearDeactivatesOnReach)
     EXPECT_FALSE(positionNavHasActiveTarget());
 }
 
+// --- Move target ---
+
+TEST_F(PositionNavTest, MoveTargetPreservesRampAndRedirectsVelocity)
+{
+    const vector3_t target = {{ 10.0f, 0.0f, 0.0f }};
+    positionNavSetTargetEf(&target, 5.0f, 1.0f, 0.5f, false, testCallback, NULL);
+    positionNavSetAccelLimits(1.0f, 0.0f);
+
+    // Build up a ramped velocity toward the first target.
+    positionEstimate3d_t est = makeEstimate(0.0f, 0.0f, 0.0f, 0.0f);
+    for (int i = 0; i < 100; i++) {
+        positionNavUpdate(0.01f, &est);
+    }
+    const vector3_t velBefore = positionNavGetTargetVelocityCmS();
+    EXPECT_NEAR(velBefore.x, 100.0f, 5.0f);  // ~1 m/s after 1 s at 1 m/s^2
+
+    // Move the target north: the very next update must not restart the ramp
+    // from zero — the accel limit only bends the existing velocity.
+    const vector3_t moved = {{ 0.0f, 10.0f, 0.0f }};
+    positionNavMoveTargetEf(&moved);
+    EXPECT_TRUE(positionNavHasActiveTarget());
+    EXPECT_NEAR(positionNavGetActiveCommand()->targetPosEfM.y, 10.0f, 0.001f);
+
+    positionNavUpdate(0.01f, &est);
+    const vector3_t velAfter = positionNavGetTargetVelocityCmS();
+    EXPECT_GT(vector3Norm(&velAfter), 90.0f);
+    EXPECT_EQ(callbackCount, 0);
+}
+
+TEST_F(PositionNavTest, MoveTargetWithoutActiveCommandIsNoOp)
+{
+    const vector3_t moved = {{ 5.0f, 5.0f, 0.0f }};
+    positionNavMoveTargetEf(&moved);
+    EXPECT_FALSE(positionNavHasActiveTarget());
+}
+
 // --- Clear target ---
 
 TEST_F(PositionNavTest, ClearTargetDeactivates)

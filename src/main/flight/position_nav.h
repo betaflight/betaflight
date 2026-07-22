@@ -64,6 +64,11 @@ void positionNavSetTargetEf(
     void *userData
 );
 
+// Moves the active command's target position without disturbing the velocity
+// ramp, completion state, or callback — for continuously moving targets (hold
+// pattern carrots). No-op when there is no active command.
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM);
+
 void positionNavClearTarget(void);
 
 bool positionNavHasActiveTarget(void);

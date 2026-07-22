@@ -52,9 +52,12 @@
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO
 
-// use simulatior's attitude directly
-// disable this if wants to test AHRS algorithm
+// SITL runs the real attitude estimator (Mahony + mag/COG fusion) against the
+// virtual gyro/acc/mag feeds. Build with -DSITL_ATTITUDE_DIRECT to bypass it
+// and set attitude straight from the FDM quaternion (legacy behaviour).
+#if defined(SITL_ATTITUDE_DIRECT)
 #undef USE_IMU_CALC
+#endif
 
 //#define ENABLE_SIMULATOR_ACC_SYNC 1
 //#define ENABLE_SIMULATOR_GYRO_SYNC 1

@@ -18,6 +18,7 @@ Usage:
 """
 
 import argparse
+import json
 import math
 import os
 import shutil
@@ -27,6 +28,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 
 MSP_STATUS = 101
 MSP_RAW_GPS = 106
@@ -56,6 +58,7 @@ RC_LOW = 1000
 RC_HIGH = 2000
 
 VERBOSE = False
+TELEMETRY_PORT = 9005  # ground-truth JSON fan-out for external visualisers, 0 disables
 
 
 def log(msg):
@@ -280,12 +283,19 @@ class FdmFeed(threading.Thread):
     first packet's origin (the FC un-mirrors).
     """
 
-    def __init__(self, motors=None):
+    def __init__(self, motors=None, initial_yaw_deg=0.0, status=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.model = MotionModel()
+        self.model.yaw = math.radians(initial_yaw_deg)
         self.motors = motors
+        self.status = status
+        self.sid = uuid.uuid4().hex[:8]  # telemetry session id: lets visualisers detect restarts
         self.running = True
+        self.gps_valid = True     # False emits out-of-range lat/lon: the FC's GPS goes dark
+        self.history = []         # (t, east, north, up, ve, vn, vu, heading_deg) at ~10 Hz
+        self._hist_lock = threading.Lock()
+        self._hist_decim = 0
         self.t0 = time.monotonic()
 
     def move_east(self, metres):
@@ -300,6 +310,38 @@ class FdmFeed(threading.Thread):
     def heading_deg(self):
         return math.degrees(self.model.yaw) % 360.0
 
+    def snapshot_history(self):
+        with self._hist_lock:
+            return list(self.history)
+
+    def max_altitude(self):
+        return max((s[3] for s in self.snapshot_history()), default=0.0)
+
+    def time_to_home(self, radius_m=10.0, after_t=0.0):
+        """First recorded time the craft is within radius_m of home, after after_t."""
+        for s in self.snapshot_history():
+            if s[0] > after_t and math.hypot(s[1], s[2]) < radius_m:
+                return s[0]
+        return None
+
+    def touchdown(self, after_t=0.0):
+        """(t, east, north) of the first on-ground sample following airborne flight."""
+        airborne = False
+        for s in self.snapshot_history():
+            if s[0] < after_t:
+                continue
+            if s[3] > 1.0:
+                airborne = True
+            elif airborne and s[3] <= 0.01:
+                return (s[0], s[1], s[2])
+        return None
+
+    def max_distance_from_home(self, after_t=0.0):
+        return max((math.hypot(s[1], s[2]) for s in self.snapshot_history() if s[0] >= after_t), default=0.0)
+
+    def now_t(self):
+        return time.monotonic() - self.t0
+
     def run(self):
         last = time.monotonic()
         while self.running:
@@ -309,8 +351,45 @@ class FdmFeed(threading.Thread):
             m = self.motors.motors if self.motors else [0.0] * 4
             self.model.step(dt, m)
 
+            self._hist_decim += 1
+            if self._hist_decim >= 5:  # ~10 Hz of the 50 Hz loop
+                self._hist_decim = 0
+                with self._hist_lock:
+                    self.history.append((now - self.t0,
+                                         self.model.pos[0], self.model.pos[1], self.model.pos[2],
+                                         self.model.vel[0], self.model.vel[1], self.model.vel[2],
+                                         self.heading_deg()))
+
             lat_true = HOME_LAT + self.model.pos[1] / M_PER_DEG
             lon_true = HOME_LON + self.model.pos[0] / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
+
+            if TELEMETRY_PORT:
+                try:
+                    # Ground-truth state for external visualisers. The model
+                    # keeps pitch nose-down/yaw-CW positive; emit display
+                    # conventions (pitch nose-up positive) once, here.
+                    self.sock.sendto(json.dumps({
+                        "sid": self.sid,
+                        "t": now - self.t0,
+                        "pos": list(self.model.pos),
+                        "vel": list(self.model.vel),
+                        "att": [math.degrees(self.model.roll),
+                                -math.degrees(self.model.pitch),
+                                math.degrees(self.model.yaw) % 360.0],
+                        "rates": [math.degrees(self.model.rates[0]),
+                                  -math.degrees(self.model.rates[1]),
+                                  math.degrees(self.model.rates[2])],
+                        "motors": list(m),
+                        "lat": lat_true,
+                        "lon": lon_true,
+                        "alt": HOME_ALT_M + self.model.pos[2],
+                        "gps": bool(self.gps_valid),
+                        "armed": self.status.armed if self.status else None,
+                        "modes": self.status.modes if self.status else [],
+                        "home": [HOME_LAT, HOME_LON, HOME_ALT_M],
+                    }).encode(), ("127.0.0.1", TELEMETRY_PORT))
+                except OSError:
+                    pass  # fire-and-forget; a visualiser must never affect a scenario
 
             # The FC's bridge computes q = Rz(+90) * Rx(180) * q_packet * Rx(180),
             # so emit the true NWU attitude pre-rotated by Rz(-90) and
@@ -330,6 +409,11 @@ class FdmFeed(threading.Thread):
             )
             f_body = quat_rotate_inv(q_nwu, f_world_nwu)
 
+            # Out-of-range lat/lon = GPS-loss sentinel; the FC skips the
+            # virtual GPS update and its receive timeout trips, while IMU
+            # feeds stay live. (NaN would be folded away by -ffast-math.)
+            lon_pkt = 2.0 * HOME_LON - lon_true if self.gps_valid else 999.0
+            lat_pkt = 2.0 * HOME_LAT - lat_true if self.gps_valid else 999.0
             pkt = struct.pack(
                 "<18d",
                 now - self.t0,
@@ -340,8 +424,8 @@ class FdmFeed(threading.Thread):
                 -f_body[0], -f_body[1], -f_body[2],                              # negated NWU-body specific force
                 q[0], q[1], q[2], q[3],
                 self.model.vel[0], self.model.vel[1], self.model.vel[2],         # ENU m/s
-                2.0 * HOME_LON - lon_true,                                       # mirrored for the bridge
-                2.0 * HOME_LAT - lat_true,
+                lon_pkt,                                                         # mirrored for the bridge
+                lat_pkt,
                 HOME_ALT_M + self.model.pos[2],
                 101325.0,
             )
@@ -358,19 +442,23 @@ class Msp:
     def __init__(self, sock):
         self.sock = sock
         self.buf = b""
+        # serialises request/reply pairs: the status poller thread shares this
+        # connection with scenario bodies
+        self.lock = threading.Lock()
 
     def request(self, cmd, payload=b"", timeout=2.0):
-        frame = struct.pack("<BB", len(payload), cmd) + payload
-        checksum = 0
-        for b in frame:
-            checksum ^= b
-        self.sock.sendall(b"$M<" + frame + bytes([checksum]))
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            reply = self._read_frame(cmd, deadline)
-            if reply is not None:
-                return reply
-        raise TimeoutError(f"no MSP reply for cmd {cmd}")
+        with self.lock:
+            frame = struct.pack("<BB", len(payload), cmd) + payload
+            checksum = 0
+            for b in frame:
+                checksum ^= b
+            self.sock.sendall(b"$M<" + frame + bytes([checksum]))
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                reply = self._read_frame(cmd, deadline)
+                if reply is not None:
+                    return reply
+            raise TimeoutError(f"no MSP reply for cmd {cmd}")
 
     def _read_frame(self, want_cmd, deadline):
         while time.monotonic() < deadline:
@@ -516,6 +604,42 @@ class Sitl:
             self.proc = None
 
 
+class StatusPoller(threading.Thread):
+    """5 Hz MSP_STATUS poll feeding true arm/mode state into the telemetry
+    fan-out. Read-only observer: errors are swallowed and the last state kept,
+    so it can never fail a scenario."""
+
+    BOX_NAMES = {
+        BOX_ARM: "ARM",
+        BOX_ALTHOLD: "ALTHOLD",
+        BOX_POSHOLD: "POSHOLD",
+        BOX_FAILSAFE: "FAILSAFE",
+        BOX_GPSRESCUE: "GPSRESCUE",
+        BOX_AUTOPILOT: "AUTOPILOT",
+    }
+
+    def __init__(self, sitl):
+        super().__init__(daemon=True)
+        self.sitl = sitl
+        self.running = True
+        self.armed = False
+        self.modes = []
+
+    def run(self):
+        while self.running:
+            try:
+                if self.sitl.msp is not None:
+                    modes = self.sitl.modes()
+                    self.armed = BOX_ARM in modes
+                    self.modes = [self.BOX_NAMES.get(b, f"BOX{b}") for b in sorted(modes) if b != BOX_ARM]
+            except (TimeoutError, RuntimeError, OSError):
+                pass
+            time.sleep(0.2)
+
+    def shutdown(self):
+        self.running = False
+
+
 def wait_for(description, predicate, timeout=20.0, interval=0.2):
     deadline = time.monotonic() + timeout
     last = None
@@ -532,6 +656,13 @@ WP_LAT = HOME_LAT + 300.0 / M_PER_DEG  # default waypoint 300 m north of home
 WP_EAST_LON = HOME_LON + 150.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))  # 150 m east
 WP_NORTH40_LAT = HOME_LAT + 40.0 / M_PER_DEG  # short leg for the landing mission
 WP_EAST25_LON = HOME_LON + 25.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
+WP_NORTH90_LAT = HOME_LAT + 90.0 / M_PER_DEG  # far leg for the backwards-engage mission
+# ~130 deg corner: a 60 m north leg into wp0, then out to (42 m east, 25 m north),
+# so the outgoing leg bears ~130 deg and the pre-turn swings the nose past 90 deg
+# off the inbound leg
+WP_NORTH60_LAT = HOME_LAT + 60.0 / M_PER_DEG
+WP_CORNER_LAT = HOME_LAT + 25.0 / M_PER_DEG
+WP_CORNER_LON = HOME_LON + 42.0 / (M_PER_DEG * math.cos(math.radians(HOME_LAT)))
 
 
 def base_config(extra):
@@ -544,10 +675,12 @@ def base_config(extra):
         "aux 0 0 0 1700 2100 0 0",   # ARM on AUX1
         "aux 1 56 1 1700 2100 0 0",  # AUTOPILOT on AUX2
         "aux 2 1 2 1700 2100 0 0",   # ANGLE on AUX3 (heading-validation flight)
+        # the estimator needs the truth-fed virtual mag as a heading source
+        "set trust_mag = ON",
         # matches the MotionModel plant: atan(K_DRAG * v / g) over cruise speeds
         "set ap_velocity_drag_coeff = 440",
         # 10 m above home, 5 m/s — low and quick keeps landing scenarios short
-        f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
+        f"waypoint insert 0 {WP_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
     ] + extra
 
 
@@ -688,6 +821,73 @@ def scenario_mission_yaw(sitl, rc, fdm):
     log(f"leg flown nose-first, heading {fdm.heading_deg():.0f} deg at arrival")
 
 
+def scenario_mission_engage_backwards(sitl, rc, fdm):
+    """Engage with the nose pointing away from the first leg (initial_yaw_deg=180,
+    leg runs north). In the default VELOCITY yaw mode no course develops while the
+    craft sits still, so the executor must rotate the nose onto the leg and fly it
+    rather than freezing the carrot into a STALL abort."""
+    boot_and_engage(sitl, rc, fdm)
+
+    # Departing at all proves it didn't deadlock: a frozen carrot never moves,
+    # develops no course, and aborts STALLED after 30 s.
+    wait_for(
+        "rotates onto the leg and departs (>15 m from home)",
+        lambda: fdm.distance_from_home() > 15.0,
+        timeout=40,
+    )
+
+    def on_leg():
+        err = (fdm.heading_deg() - 0.0 + 180.0) % 360.0 - 180.0
+        return abs(err) < 30.0
+
+    wait_for("nose swung onto the northbound leg (~000)", on_leg, timeout=25)
+
+    wait_for(
+        "reaches the far waypoint (ground truth)",
+        lambda: fdm.distance_to_wp(0.0, 90.0) < 10.0,
+        timeout=120,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm on the backwards-engage mission"
+    log(f"rotated onto the leg from a backwards engage, heading {fdm.heading_deg():.0f} deg")
+
+
+def scenario_mission_corner(sitl, rc, fdm):
+    """A ~130 deg corner. The pre-turn deliberately swings the nose past 90 deg
+    off the inbound leg approaching the gate; the march gate must exempt the
+    pre-turn so the craft carries corner speed through the gate instead of
+    freezing in it (the hairpin-stall bug)."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "flies the first leg to the corner waypoint",
+        lambda: fdm.distance_to_wp(0.0, 60.0) < 12.0,
+        timeout=90,
+        interval=1.0,
+    )
+
+    # Sample ground speed while crossing the corner: a stalled gate would drop it
+    # toward zero; a working pre-turn carries it through near the corner speed.
+    corner_samples = []
+
+    def carried_through():
+        if fdm.distance_to_wp(0.0, 60.0) < 20.0:
+            corner_samples.append(math.hypot(fdm.model.vel[0], fdm.model.vel[1]))
+        return fdm.distance_to_wp(42.0, 25.0) < 10.0
+
+    wait_for(
+        "carries through the corner to the second waypoint",
+        carried_through,
+        timeout=120,
+        interval=1.0,
+    )
+    assert corner_samples, "never sampled near the corner"
+    corner_min = min(corner_samples)
+    assert corner_min > 0.8, f"stalled in the corner: min ground speed {corner_min:.2f} m/s"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the corner mission"
+    log(f"carried the corner, min ground speed {corner_min:.2f} m/s over {len(corner_samples)} samples")
+
+
 def scenario_mission_land(sitl, rc, fdm):
     """LAND waypoint: fly the first leg north, divert to the offset LAND
     waypoint, arrive through the 3D hold gate, loiter for the waypoint
@@ -722,6 +922,119 @@ def scenario_mission_land(sitl, rc, fdm):
     dist = fdm.distance_to_wp(25.0, 40.0)
     assert dist < 10.0, f"landed {dist:.1f} m from the LAND waypoint"
     log(f"landed {dist:.1f} m from the LAND waypoint")
+
+
+def scenario_mission_takeoff(sitl, rc, fdm):
+    """TAKEOFF waypoint: climb in place to the waypoint altitude (its lat/lon
+    are advisory), then fly the following leg. The climb must not translate."""
+    boot_and_engage(sitl, rc, fdm)
+    t_engage = fdm.now_t()
+
+    wait_for(
+        "climb through 12 m (TAKEOFF target 15 m)",
+        lambda: fdm.model.pos[2] > 12.0,
+        timeout=90,
+        interval=0.5,
+    )
+    t_top = fdm.now_t()
+
+    # Horizontal drift during the climb, relative to where the mission engaged
+    # (TAKEOFF holds the current position, not home).
+    climb = [s for s in fdm.snapshot_history() if t_engage <= s[0] <= t_top]
+    assert climb, "no recorded samples during the climb"
+    e0, n0 = climb[0][1], climb[0][2]
+    drift = max(math.hypot(s[1] - e0, s[2] - n0) for s in climb)
+    assert drift < 8.0, f"translated {drift:.1f} m during the TAKEOFF climb"
+    log(f"climbed to {fdm.model.pos[2]:.1f} m with {drift:.1f} m drift")
+
+    wait_for(
+        "leg to the north waypoint after the climb",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the takeoff mission"
+
+
+def hold_window_samples(fdm, centre_e, centre_n, t0, t1):
+    """(distances, azimuth sweep in rad) of history samples in [t0, t1],
+    measured about the hold point. Sweep accumulates wrapped step deltas, so
+    systematic circulation grows it while hover noise cancels out."""
+    pts = [s for s in fdm.snapshot_history() if t0 <= s[0] <= t1]
+    dists = [math.hypot(s[1] - centre_e, s[2] - centre_n) for s in pts]
+    azimuths = [math.atan2(s[2] - centre_n, s[1] - centre_e) for s in pts]
+    sweep = 0.0
+    for a, b in zip(azimuths, azimuths[1:]):
+        sweep += (b - a + math.pi) % (2.0 * math.pi) - math.pi
+    return dists, sweep
+
+
+def scenario_mission_orbit(sitl, rc, fdm):
+    """HOLD with the ORBIT pattern: after arriving at the hold point the
+    vehicle must circulate around it on the hold radius for the duration."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "arrival at the hold point",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    t_arrive = fdm.now_t()
+
+    # Analysis window: skip 12 s (arrival braking + pattern spin-up), observe
+    # 40 s of the 60 s hold. Carrot rate 0.25 rad/s -> ~1.6 laps in the window.
+    wait_for("orbit window elapsed", lambda: fdm.now_t() > t_arrive + 52.0,
+             timeout=70, interval=2.0)
+    dists, sweep = hold_window_samples(fdm, 0.0, 40.0, t_arrive + 12.0, t_arrive + 52.0)
+    assert len(dists) > 250, f"recorder too sparse over the hold window: {len(dists)} samples"
+
+    mean_dist = sum(dists) / len(dists)
+    log(f"orbit mean radius {mean_dist:.1f} m, peak {max(dists):.1f} m, "
+        f"swept {math.degrees(sweep):.0f} deg")
+    # The vehicle rides the ring with pursuit lag (a little inside) plus the
+    # loop phase lag (a little outside); a hover at the hold point would sit
+    # near zero and a runaway pursuit far outside.
+    assert 3.0 < mean_dist < 12.0, f"orbit radius off: mean {mean_dist:.1f} m from the hold point"
+    assert max(dists) < 16.0, f"orbit excursion: {max(dists):.1f} m from the hold point"
+    assert sweep > math.radians(270.0), f"no sustained circulation: swept {math.degrees(sweep):.0f} deg"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the orbit"
+
+
+def scenario_mission_figure8(sitl, rc, fdm):
+    """HOLD with the FIGURE8 pattern: bounded excursion about the hold point
+    with repeated passes back through the centre."""
+    boot_and_engage(sitl, rc, fdm)
+
+    wait_for(
+        "arrival at the hold point",
+        lambda: fdm.distance_to_wp(0.0, 40.0) < 10.0,
+        timeout=90,
+        interval=1.0,
+    )
+    t_arrive = fdm.now_t()
+
+    wait_for("figure-8 window elapsed", lambda: fdm.now_t() > t_arrive + 52.0,
+             timeout=70, interval=2.0)
+    dists, _ = hold_window_samples(fdm, 0.0, 40.0, t_arrive + 12.0, t_arrive + 52.0)
+    assert len(dists) > 250, f"recorder too sparse over the hold window: {len(dists)} samples"
+
+    # Lemniscate on an 8 m radius: lobes reach the ring, the path re-crosses
+    # the centre twice per cycle (~25 s), and never leaves the hold radius.
+    log(f"figure-8 peak {max(dists):.1f} m from the hold point")
+    assert max(dists) < 13.0, f"figure-8 excursion: {max(dists):.1f} m from the hold point"
+    assert max(dists) > 4.0, f"no pattern motion: peak {max(dists):.1f} m from the hold point"
+    crossings = 0
+    away = False
+    for d in dists:
+        if d > 5.0:
+            away = True
+        elif away and d < 4.0:
+            crossings += 1
+            away = False
+    assert crossings >= 2, f"path did not re-cross the centre: {crossings} passes"
+    assert BOX_ARM in sitl.modes(), "unexpected disarm during the figure-8"
+    log(f"figure-8 {crossings} centre passes")
 
 
 def scenario_rx_loss(sitl, rc, fdm, policy):
@@ -830,6 +1143,224 @@ def scenario_geofence_rth_rxloss(sitl, rc, fdm):
     log(f"landed {dist:.1f} m from home under failsafe")
 
 
+# --- A/B rescue scenarios -------------------------------------------------
+# Legacy GPS rescue (binary A) vs the ENABLE_RESCUE_PLAN mission rescue
+# (binary B, built with -DENABLE_RESCUE_PLAN=1) must produce the same
+# qualitative outcome: return, land near home, disarm, no flyaway. The two
+# controllers differ by design, so parity is metric bands, never trajectories.
+
+RESCUE_CFG = [
+    "set failsafe_procedure = GPS-RESCUE",
+    # FIXED_ALT: the default MAX mode keys the return altitude to each leg's
+    # own outbound peak, which varies run to run and would dominate the A/B
+    # altitude comparison; MAX synthesis is unit-tested instead
+    "set gps_rescue_alt_mode = FIXED_ALT",
+    "set gps_rescue_return_alt = 15",     # short climb keeps runs quick
+    "set ap_yaw_mode = FIXED",
+    "set ap_waypoint_hold_radius = 400",
+    "set ap_landing_descent_rate = 200",
+    "set landing_disarm_threshold = 10",   # jerk-based touchdown disarm
+    "aux 3 3 3 1700 2100 0 0",   # ALTHOLD on AUX4: pilot-flown hold after the mission leg
+    "aux 4 11 3 1700 2100 0 0",  # POSHOLD on AUX4
+    "feature BLACKBOX",
+    "set blackbox_device = VIRTUAL",       # .BFL artifact in the scenario dir
+]
+
+
+def fly_out_and_park(sitl, rc, fdm, dist_m):
+    """Mission leg out to dist_m, then hand to pilot-held ALTHOLD+POSHOLD."""
+    boot_and_engage(sitl, rc, fdm)
+    wait_for(
+        f"vehicle {dist_m:.0f} m out",
+        lambda: fdm.distance_from_home() > dist_m,
+        timeout=90,
+        interval=1.0,
+    )
+    rc.set(7, RC_HIGH)  # AUX4: ALTHOLD + POSHOLD (pilot hold)
+    rc.set(5, 1000)     # AUX2: AUTOPILOT off
+    wait_for(
+        "pilot hold (AUTOPILOT off, POSHOLD on)",
+        lambda: (lambda m: BOX_AUTOPILOT not in m and BOX_POSHOLD in m)(sitl.modes()),
+        timeout=10,
+    )
+    time.sleep(2.0)
+
+
+def rescue_engagement_asserts(sitl, variant):
+    # Legacy rescue enables GPS_RESCUE_MODE without the FAILSAFE box; the
+    # mission rescue runs under FAILSAFE + AUTOPILOT.
+    if variant == "A":
+        wait_for("legacy GPS rescue engaged", lambda: BOX_GPSRESCUE in sitl.modes(), timeout=20)
+        assert BOX_AUTOPILOT not in sitl.modes(), "mission engaged on the legacy binary"
+    else:
+        wait_for(
+            "rescue mission engaged (FAILSAFE + AUTOPILOT)",
+            lambda: (lambda m: BOX_FAILSAFE in m and BOX_AUTOPILOT in m)(sitl.modes()),
+            timeout=20,
+        )
+        assert BOX_GPSRESCUE not in sitl.modes(), "legacy rescue engaged on the rescue-plan binary"
+
+
+def rescue_metrics(fdm, t0, kill_dist):
+    return {
+        "kill_dist": kill_dist,
+        "max_alt": max((s[3] for s in fdm.snapshot_history() if s[0] >= t0), default=0.0),
+        "max_dist": fdm.max_distance_from_home(after_t=t0),
+        "time_to_home": fdm.time_to_home(radius_m=20.0, after_t=t0),
+        "touchdown": fdm.touchdown(after_t=t0),
+    }
+
+
+def scenario_rescue_ab(sitl, rc, fdm, variant):
+    fly_out_and_park(sitl, rc, fdm, 120.0)
+    kill_dist = fdm.distance_from_home()
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "returns within 20 m of home",
+        lambda: fdm.distance_from_home() < 20.0,
+        timeout=120,
+        interval=1.0,
+    )
+    wait_for(
+        "touchdown disarms",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=120,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    td_dist = math.hypot(td[1], td[2])
+    assert td_dist < 15.0, f"landed {td_dist:.1f} m from home"
+    log(f"[{variant}] landed {td_dist:.1f} m from home, peak alt {m['max_alt']:.1f} m")
+    m["td_dist"] = td_dist
+    return m
+
+
+def scenario_rescue_heading(sitl, rc, fdm, variant):
+    """No mag, true heading east while the FC believes north: the rescue must
+    recover heading via GPS course-over-ground (pitch-forward phase) before
+    flying home."""
+    rc.start()
+    fdm.start()
+    wait_for("GPS fix + RX recovery (arming flags clear)", lambda: sitl.status()["arming_flags"] == 0, timeout=40)
+    sitl.acc_calibrate()
+    time.sleep(2.0)
+    wait_for("recalibration complete", lambda: sitl.status()["arming_flags"] == 0, timeout=20)
+
+    rc.set(6, RC_HIGH)  # ANGLE
+    for attempt in range(3):
+        rc.set(4, RC_HIGH)
+        try:
+            wait_for("armed", lambda: BOX_ARM in sitl.modes(), timeout=8)
+            break
+        except AssertionError:
+            if attempt == 2:
+                raise
+            rc.set(4, 1000)
+            time.sleep(1.0)
+    rc.set(2, 1600)
+    rc.set(7, RC_HIGH)  # ALTHOLD + POSHOLD hover (switch must be off at arm time)
+    wait_for("climbed clear of ground", lambda: fdm.model.pos[2] > 6.0, timeout=20)
+    rc.set(2, 1300)
+    time.sleep(2.0)
+
+    kill_dist = fdm.distance_from_home()
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC at hover (heading wrong by 90 deg)")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    # heading recovery needs forward flight: the craft must depart, learn its
+    # heading from GPS course, then come home and land
+    wait_for(
+        "touchdown disarms (heading recovered, rescue completed)",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=240,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    td = m["touchdown"]
+    assert td is not None, "no touchdown recorded"
+    td_dist = math.hypot(td[1], td[2])
+    assert td_dist < 30.0, f"landed {td_dist:.1f} m from home"
+    log(f"[{variant}] recovered heading and landed {td_dist:.1f} m from home")
+    m["td_dist"] = td_dist
+    return m
+
+
+def scenario_rescue_gps_loss(sitl, rc, fdm, variant):
+    fly_out_and_park(sitl, rc, fdm, 120.0)
+    kill_dist = fdm.distance_from_home()
+    t0 = fdm.now_t()
+    log(f"[{variant}] killing RC {kill_dist:.0f} m out")
+    rc.stop_stream()
+
+    rescue_engagement_asserts(sitl, variant)
+    wait_for(
+        "return underway (30 m closer)",
+        lambda: fdm.distance_from_home() < kill_dist - 30.0,
+        timeout=90,
+        interval=1.0,
+    )
+    loss_dist = fdm.distance_from_home()
+    log(f"[{variant}] GPS dark {loss_dist:.0f} m out")
+    fdm.gps_valid = False
+
+    # A: legacy emergency descent (baro only). B: mission aborts on estimator
+    # loss and failsafe degrades to the baro auto-landing. Both must get down
+    # and disarm without flying away.
+    wait_for(
+        "descends and disarms without GPS",
+        lambda: fdm.model.on_ground() and BOX_ARM not in sitl.modes(),
+        timeout=180,
+        interval=1.0,
+    )
+    m = rescue_metrics(fdm, t0, kill_dist)
+    assert m["max_dist"] < kill_dist + 40.0, f"flew away after GPS loss: {m['max_dist']:.0f} m"
+    log(f"[{variant}] down and disarmed after GPS loss")
+    return m
+
+
+def compare_rescue_ab(mA, mB):
+    alt_delta = abs(mA["max_alt"] - mB["max_alt"])
+    assert alt_delta <= 7.0, f"peak altitude diverged: A {mA['max_alt']:.1f} B {mB['max_alt']:.1f}"
+    for m, tag in ((mA, "A"), (mB, "B")):
+        assert m["max_dist"] <= m["kill_dist"] + 25.0, f"{tag} flyaway: {m['max_dist']:.0f} m"
+    if "td_dist" in mA and "td_dist" in mB:
+        assert abs(mA["td_dist"] - mB["td_dist"]) <= 10.0, \
+            f"touchdown diverged: A {mA['td_dist']:.1f} B {mB['td_dist']:.1f}"
+    if mA.get("time_to_home") and mB.get("time_to_home"):
+        slow = max(mA["time_to_home"], mB["time_to_home"])
+        assert abs(mA["time_to_home"] - mB["time_to_home"]) <= 0.5 * slow, \
+            f"time-to-home diverged: A {mA['time_to_home']:.0f}s B {mB['time_to_home']:.0f}s"
+    log(f"A/B parity: alt Δ{alt_delta:.1f} m")
+
+
+def compare_rescue_heading(mA, mB):
+    # the pitch-forward heading-recovery excursion is legitimate travel from a
+    # hover start; bound it rather than compare to the kill distance. Altitude
+    # during the 35 deg dash differs with dash length and phase ordering, so
+    # the band is wide; the load-bearing asserts are recovery + touchdown.
+    for m, tag in ((mA, "A"), (mB, "B")):
+        assert m["max_dist"] <= 150.0, f"{tag} heading-recovery excursion ran away: {m['max_dist']:.0f} m"
+    alt_delta = abs(mA["max_alt"] - mB["max_alt"])
+    assert alt_delta <= 15.0, f"peak altitude diverged: A {mA['max_alt']:.1f} B {mB['max_alt']:.1f}"
+    log(f"A/B parity: both recovered heading, alt Δ{alt_delta:.1f} m")
+
+
+def compare_rescue_loss(mA, mB):
+    # after GPS loss both descend wherever they are; only the safety
+    # properties compare
+    for m, tag in ((mA, "A"), (mB, "B")):
+        assert m["max_dist"] <= m["kill_dist"] + 40.0, f"{tag} flyaway: {m['max_dist']:.0f} m"
+    log("A/B parity: both descended and disarmed after GPS loss")
+
+
 SCENARIOS = {
     "baseline": (lambda s, r, f: boot_and_engage(s, r, f), []),
     # FIXED yaw: this scenario validates pure translation control; yaw-coupled
@@ -839,7 +1370,25 @@ SCENARIOS = {
     "mission_yaw": (
         scenario_mission_yaw,
         # redirect the default waypoint east so the course demands a 90 deg swing
-        [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit"],
+        [f"waypoint update 0 {HOME_LAT:.7f} {WP_EAST_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none"],
+    ),
+    "mission_engage_backwards": (
+        scenario_mission_engage_backwards,
+        [
+            # two north legs so the first is a pass-through carrot leg; the nose
+            # starts backwards (initial_yaw_deg) in the default VELOCITY yaw mode
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+            f"waypoint insert 1 {WP_NORTH90_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+        ],
+        {"initial_yaw_deg": 180.0},
+    ),
+    "mission_corner": (
+        scenario_mission_corner,
+        [
+            # 60 m north into the corner, then out on a ~130 deg turn
+            f"waypoint update 0 {WP_NORTH60_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+            f"waypoint insert 1 {WP_CORNER_LAT:.7f} {WP_CORNER_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyby 0 none",
+        ],
     ),
     "mission_land": (
         scenario_mission_land,
@@ -847,14 +1396,43 @@ SCENARIOS = {
             "set ap_yaw_mode = FIXED",
             # short north leg, then LAND at an offset so the executor must fly
             # to the landing point before descending
-            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 orbit",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
             # 5 s pre-descent loiter at the LAND waypoint
-            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 50 orbit",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {WP_EAST25_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 land 50 none",
             # SITL's 15-20 Hz position loop wanders during braking; a fatter
             # 3D gate keeps arrival deterministic
             "set ap_waypoint_hold_radius = 400",
             "set ap_landing_descent_rate = 200",  # keep the descent short
             "set landing_disarm_threshold = 10",   # jerk-based touchdown disarm
+        ],
+    ),
+    "mission_takeoff": (
+        scenario_mission_takeoff,
+        [
+            "set ap_yaw_mode = FIXED",
+            # TAKEOFF's lat/lon are advisory; the climb happens in place
+            f"waypoint update 0 {HOME_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 15) * 100)} 500 takeoff 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 15) * 100)} 500 flyover 0 none",
+        ],
+    ),
+    "mission_orbit": (
+        scenario_mission_orbit,
+        [
+            "set ap_yaw_mode = FIXED",
+            # 8 m pattern radius: caps the carrot at 2 m/s (0.25 rad/s), big
+            # enough to be unambiguous against SITL's coarse position loop
+            "set ap_waypoint_hold_radius = 800",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 orbit",
+        ],
+    ),
+    "mission_figure8": (
+        scenario_mission_figure8,
+        [
+            "set ap_yaw_mode = FIXED",
+            "set ap_waypoint_hold_radius = 800",
+            f"waypoint update 0 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 flyover 0 none",
+            f"waypoint insert 1 {WP_NORTH40_LAT:.7f} {HOME_LON:.7f} {int((HOME_ALT_M + 10) * 100)} 500 hold 600 figure8",
         ],
     ),
     "rx_disable": (lambda s, r, f: scenario_rx_loss(s, r, f, "DISABLE"), ["set ap_rx_loss_policy = DISABLE"]),
@@ -895,58 +1473,110 @@ SCENARIOS = {
             "set landing_disarm_threshold = 10",
         ],
     ),
+    "rescue_ab": (
+        scenario_rescue_ab,
+        RESCUE_CFG,
+        {"ab": True, "compare": compare_rescue_ab},
+    ),
+    "rescue_heading_recovery": (
+        scenario_rescue_heading,
+        RESCUE_CFG + ["set mag_hardware = NONE"],
+        {"ab": True, "compare": compare_rescue_heading, "initial_yaw_deg": 90.0},
+    ),
+    "rescue_gps_loss": (
+        scenario_rescue_gps_loss,
+        RESCUE_CFG,
+        {"ab": True, "compare": compare_rescue_loss},
+    ),
 }
 
 
-def run_scenario(name, binary, workdir):
-    body, extra_cfg = SCENARIOS[name]
-    scenario_dir = os.path.join(workdir, name)
-    shutil.rmtree(scenario_dir, ignore_errors=True)
-    os.makedirs(scenario_dir)
+def decode_blackbox_logs(scenario_dir):
+    """Best-effort: decode .BFL artifacts when blackbox_decode is available.
+    Never gates pass/fail — the trajectory recorder is the authority."""
+    if not shutil.which("blackbox_decode"):
+        return
+    for entry in sorted(os.listdir(scenario_dir)):
+        if entry.upper().endswith(".BFL"):
+            subprocess.run(["blackbox_decode", os.path.join(scenario_dir, entry)],
+                           capture_output=True, check=False)
 
-    log(f"=== scenario: {name}")
-    sitl = Sitl(binary, scenario_dir)
-    rc = motors = fdm = None
+
+def run_leg(name, variant, body, extra_cfg, opts, binary, leg_dir):
+    os.makedirs(leg_dir)
+    sitl = Sitl(binary, leg_dir)
+    rc = motors = fdm = poller = None
     try:
         # feed construction can fail (port 9002 bind); it must fail the
         # scenario, not abort the suite
         rc = RcFeed()
         motors = MotorFeed()
-        fdm = FdmFeed(motors)
+        poller = StatusPoller(sitl) if TELEMETRY_PORT else None
+        fdm = FdmFeed(motors, initial_yaw_deg=opts.get("initial_yaw_deg", 0.0), status=poller)
         sitl.provision(base_config(extra_cfg))
         sitl.start()
         motors.start()
-        body(sitl, rc, fdm)
+        if poller:
+            poller.start()
+        if variant is None:
+            return body(sitl, rc, fdm)
+        return body(sitl, rc, fdm, variant)
+    finally:
+        for feed in (rc, fdm, motors, poller):
+            if feed is not None:
+                feed.shutdown()
+        sitl.stop()
+        decode_blackbox_logs(leg_dir)
+
+
+def run_scenario(name, binary, workdir, binary_b=None):
+    spec = SCENARIOS[name]
+    body, extra_cfg = spec[0], spec[1]
+    opts = spec[2] if len(spec) > 2 else {}
+    scenario_dir = os.path.join(workdir, name)
+    shutil.rmtree(scenario_dir, ignore_errors=True)
+    os.makedirs(scenario_dir)
+
+    log(f"=== scenario: {name}")
+    try:
+        if opts.get("ab"):
+            if binary_b is None:
+                log(f"=== SKIP: {name} (A/B scenario, no --binary-b)")
+                return None
+            metrics_a = run_leg(name, "A", body, extra_cfg, opts, binary, os.path.join(scenario_dir, "A"))
+            metrics_b = run_leg(name, "B", body, extra_cfg, opts, binary_b, os.path.join(scenario_dir, "B"))
+            opts["compare"](metrics_a, metrics_b)
+        else:
+            run_leg(name, None, body, extra_cfg, opts, binary, os.path.join(scenario_dir, "run"))
         log(f"=== PASS: {name}")
         return True
     except (AssertionError, RuntimeError, TimeoutError, OSError) as e:
         log(f"=== FAIL: {name}: {e}")
         return False
-    finally:
-        for feed in (rc, fdm, motors):
-            if feed is not None:
-                feed.shutdown()
-        sitl.stop()
 
 
 def main():
-    global VERBOSE
+    global VERBOSE, TELEMETRY_PORT
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--binary", required=True, help="path to betaflight_SITL.elf (built with USE_FLIGHT_PLAN)")
+    ap.add_argument("--binary-b", help="rescue-plan binary (-DENABLE_RESCUE_PLAN=1) for A/B scenarios")
     ap.add_argument("--scenario", default="all", choices=["all"] + list(SCENARIOS))
     ap.add_argument("--workdir", default="/tmp/sitl_harness")
+    ap.add_argument("--telemetry-port", type=int, default=TELEMETRY_PORT,
+                    help="UDP port for ground-truth JSON telemetry (0 disables)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     VERBOSE = args.verbose
+    TELEMETRY_PORT = args.telemetry_port
 
     os.makedirs(args.workdir, exist_ok=True)
     names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
-    results = {name: run_scenario(name, args.binary, args.workdir) for name in names}
+    results = {name: run_scenario(name, args.binary, args.workdir, args.binary_b) for name in names}
 
     log("--- summary")
     for name, ok in results.items():
-        log(f"{'PASS' if ok else 'FAIL'}  {name}")
-    sys.exit(0 if all(results.values()) else 1)
+        log(f"{'PASS' if ok else 'SKIP' if ok is None else 'FAIL'}  {name}")
+    sys.exit(0 if all(ok is not False for ok in results.values()) else 1)
 
 
 if __name__ == "__main__":
