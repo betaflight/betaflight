@@ -223,9 +223,9 @@ static void setScalingFactors(void)
  *  It's not relevant to our use case, so ignore the difference for now)
  *
  * Called from fc/init.c
- * Emsr: as the Artery's hardware limits ,adc sample is not very accurate,
- * so we use oversample and enlarge the sample time to 640.5 adc cycles 
- * to improve the accuracy, but it will reduce the sample rate.
+ * Sample time of 640.5 cycles with oversampling enabled improves ADC
+ * accuracy on Artery hardware, at the cost of sample rate; acceptable
+ * for slow-changing inputs (vbat, current, rssi, temp).
  *
  * @param config - defines the channels to use for each external input (vbat, rssi, current, external) and also has calibration values for the temperature sensor
  *
