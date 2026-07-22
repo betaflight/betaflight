@@ -6027,25 +6027,28 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
 #if defined(USE_I2C)
-    // Report any configured bus that was not healthy at init. Showing the
-    // per-line levels distinguishes an electrical fault (line LOW → pull-ups/
-    // wiring/short) from lines HIGH yet unusable (peripheral/pin-mapping fault).
+    // Report per-bus init health. Two independent lines: an unusable bus (a line
+    // held low despite the internal pull-up — short/stuck/non-functional pin),
+    // and, separately, a missing external pull-up (informational — a bus using
+    // the internal pull-up is never flagged here).
     for (int device = 0; device < I2CDEV_COUNT; device++) {
         const uint8_t health = i2cGetBusHealth(device);
         if (!(health & I2C_HEALTH_CHECKED)) {
             continue;  // bus not configured / not checked
         }
-        if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW | I2C_HEALTH_NOT_IDLE)) {
-            cliPrintf("I2C%d NOT HEALTHY AT INIT: SCL=%s SDA=%s idle=%s",
+        if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW)) {
+            cliPrintf("I2C%d UNUSABLE AT INIT: SCL=%s SDA=%s (line held low: short / stuck device / non-functional pin)",
                 I2C_DEV_TO_CFG(device),
-                (health & I2C_HEALTH_SCL_LOW) ? "LOW" : "high",
-                (health & I2C_HEALTH_SDA_LOW) ? "LOW" : "high",
-                (health & I2C_HEALTH_NOT_IDLE) ? "NO" : "yes");
-            if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW)) {
-                cliPrint(" (line low: check pull-ups/wiring/short)");
-            } else {
-                cliPrint(" (lines high: suspect peripheral/pin-mapping, not pull-ups)");
-            }
+                (health & I2C_HEALTH_SCL_LOW) ? "LOW" : "ok",
+                (health & I2C_HEALTH_SDA_LOW) ? "LOW" : "ok");
+            cliPrintLinefeed();
+        }
+        if (health & (I2C_HEALTH_SCL_NOPULL | I2C_HEALTH_SDA_NOPULL)) {
+            cliPrintf("I2C%d: no external pull-up detected (%s%s%s) - fit pull-ups or enable the pull-up option",
+                I2C_DEV_TO_CFG(device),
+                (health & I2C_HEALTH_SCL_NOPULL) ? "SCL" : "",
+                ((health & I2C_HEALTH_SCL_NOPULL) && (health & I2C_HEALTH_SDA_NOPULL)) ? "+" : "",
+                (health & I2C_HEALTH_SDA_NOPULL) ? "SDA" : "");
             cliPrintLinefeed();
         }
     }

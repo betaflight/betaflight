@@ -326,27 +326,41 @@ void i2cInit(i2cDevice_e device)
     // Enable RCC
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    // Bus-health diagnostic. Sample the idle line levels with the internal
-    // pull-down engaged: a healthy external pull-up (few kOhm) overrides it and
-    // reads HIGH, a missing/weak pull-up or a held line reads LOW. Then confirm
-    // the bus can be driven to idle. Recorded for CLI status so a dead bus is
-    // visible instead of failing silently; reporting the actual levels tells a
-    // line stuck LOW (pull-ups/wiring) apart from lines HIGH yet unusable
-    // (peripheral/pin-mapping fault). Init continues regardless.
-    IOConfigGPIO(scl, IOCFG_IPD);
-    IOConfigGPIO(sda, IOCFG_IPD);
-    delayMicroseconds(10);  // settle against the external pull-up
+    // Bus-health diagnostic (recorded for CLI status; init continues regardless).
     uint8_t busHealth = I2C_HEALTH_CHECKED;
+
+    // Usability: engage the internal pull-up. An unloaded, functional line
+    // reaches HIGH; if it stays LOW it is being held down (short, stuck device,
+    // or a non-functional pin). Pull-strategy agnostic — a board relying on the
+    // internal pull-up passes this, so it is never mis-flagged.
+    IOConfigGPIO(scl, IOCFG_IPU);
+    IOConfigGPIO(sda, IOCFG_IPU);
+    delayMicroseconds(10);
     if (!IORead(scl)) {
         busHealth |= I2C_HEALTH_SCL_LOW;
     }
     if (!IORead(sda)) {
         busHealth |= I2C_HEALTH_SDA_LOW;
     }
-    if (!i2cUnstick(scl, sda)) {
-        busHealth |= I2C_HEALTH_NOT_IDLE;
+
+    // External pull-up presence — only meaningful when not relying on the
+    // internal pull-up. Internal pull-down engaged: a real external pull-up
+    // overrides it (HIGH), its absence reads LOW. Informational only.
+    if (!pDev->pullUp) {
+        IOConfigGPIO(scl, IOCFG_IPD);
+        IOConfigGPIO(sda, IOCFG_IPD);
+        delayMicroseconds(10);
+        if (!IORead(scl)) {
+            busHealth |= I2C_HEALTH_SCL_NOPULL;
+        }
+        if (!IORead(sda)) {
+            busHealth |= I2C_HEALTH_SDA_NOPULL;
+        }
     }
+
     i2cReportBusHealth(device, busHealth);
+
+    i2cUnstick(scl, sda);
 
     // Init pins
 #if defined(STM32F7)

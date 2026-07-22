@@ -70,16 +70,23 @@ bool i2cBusy(i2cDevice_e device, bool *error);
 uint16_t i2cGetErrorCounter(void);
 uint8_t i2cGetRegisteredDeviceCount(void);
 
-// Startup bus-health diagnostic. i2cInit samples the idle line levels (with the
-// internal pull-down engaged, so a healthy external pull-up reads HIGH and a
-// missing/weak one reads LOW) and whether the bus could be driven to idle, then
-// records it here so a dead bus is visible in CLI status instead of failing
-// silently. Reporting the actual per-line levels distinguishes an electrical
-// fault (line stuck LOW → pull-ups/wiring/short) from lines that are HIGH yet
-// the peripheral still can't talk (firmware/pin-mapping/AF fault).
-#define I2C_HEALTH_CHECKED  (1 << 0)  // bus was configured and checked at init
-#define I2C_HEALTH_SCL_LOW  (1 << 1)  // SCL read low under internal pull-down
-#define I2C_HEALTH_SDA_LOW  (1 << 2)  // SDA read low under internal pull-down
-#define I2C_HEALTH_NOT_IDLE (1 << 3)  // bus could not be released to idle-high
+// Startup bus-health diagnostic recorded by i2cInit() and surfaced in CLI
+// status so a dead bus is visible instead of failing silently. Two independent
+// checks, kept separate so a board that legitimately relies on the MCU internal
+// pull-up is never mis-reported as faulty:
+//
+//   1. Usability (pull-strategy agnostic): engage the internal pull-UP and read.
+//      An unloaded, functional line reaches HIGH; if it stays LOW something is
+//      holding it down — a short, a stuck device, or a non-functional pin. This
+//      is the actual "bus unusable" signal (*_LOW bits).
+//   2. External pull-up presence: only when the board is NOT using the internal
+//      pull-up. Engage the internal pull-DOWN — a real external pull-up (few
+//      kOhm) overrides it and reads HIGH, its absence reads LOW. Purely
+//      informational (a wiring note), NOT an unusable-bus condition (*_NOPULL).
+#define I2C_HEALTH_CHECKED     (1 << 0)  // bus was configured and checked at init
+#define I2C_HEALTH_SCL_LOW     (1 << 1)  // SCL held low despite internal pull-up (unusable)
+#define I2C_HEALTH_SDA_LOW     (1 << 2)  // SDA held low despite internal pull-up (unusable)
+#define I2C_HEALTH_SCL_NOPULL  (1 << 3)  // no external SCL pull-up detected (info only)
+#define I2C_HEALTH_SDA_NOPULL  (1 << 4)  // no external SDA pull-up detected (info only)
 void i2cReportBusHealth(i2cDevice_e device, uint8_t health);
 uint8_t i2cGetBusHealth(i2cDevice_e device);

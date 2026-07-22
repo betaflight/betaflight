@@ -463,25 +463,38 @@ void i2cInit(i2cDevice_e device)
 
     I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
-    // Bus-health diagnostic: sample idle line levels with the internal pull-down
-    // engaged (healthy external pull-up reads HIGH, missing/weak reads LOW), then
-    // confirm the bus can be driven to idle. Recorded for CLI status so a dead
-    // bus is visible instead of failing silently; the per-line levels separate an
-    // electrical fault from lines HIGH yet unusable (peripheral/pin-mapping).
-    IOConfigGPIO(scl, IOCFG_IPD);
-    IOConfigGPIO(sda, IOCFG_IPD);
-    delayMicroseconds(10);  // settle against the external pull-up
+    // Bus-health diagnostic (recorded for CLI status; init continues regardless).
+    // Same semantics as the LL path.
     uint8_t busHealth = I2C_HEALTH_CHECKED;
+
+    // Usability: internal pull-up engaged — an unloaded functional line reaches
+    // HIGH; still LOW means held down (short/stuck device/non-functional pin).
+    IOConfigGPIO(scl, IOCFG_IPU);
+    IOConfigGPIO(sda, IOCFG_IPU);
+    delayMicroseconds(10);
     if (!IORead(scl)) {
         busHealth |= I2C_HEALTH_SCL_LOW;
     }
     if (!IORead(sda)) {
         busHealth |= I2C_HEALTH_SDA_LOW;
     }
-    if (!i2cUnstick(scl, sda)) {
-        busHealth |= I2C_HEALTH_NOT_IDLE;
+
+    // External pull-up presence (informational; skipped when using internal pull-up).
+    if (!pDev->pullUp) {
+        IOConfigGPIO(scl, IOCFG_IPD);
+        IOConfigGPIO(sda, IOCFG_IPD);
+        delayMicroseconds(10);
+        if (!IORead(scl)) {
+            busHealth |= I2C_HEALTH_SCL_NOPULL;
+        }
+        if (!IORead(sda)) {
+            busHealth |= I2C_HEALTH_SDA_NOPULL;
+        }
     }
+
     i2cReportBusHealth(device, busHealth);
+
+    i2cUnstick(scl, sda);
 
     // Init pins
 #ifdef STM32F4
