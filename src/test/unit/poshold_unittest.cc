@@ -214,14 +214,78 @@ TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)
 
 // -- Flyaway detection --
 
-TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
+TEST_F(PosHoldTest, FlyawayDetectionRetriesOnceThenTriggers)
 {
     initAndSettleAt(0, 0, 0);
 
-    // exceed sanity check distance
-    testEstimate.position.x = 3000.0f; 
-    // expect positionControl to be false
-    EXPECT_FALSE(positionControl()); 
+    // Progressive runaway at a constant 15 m/s (bad-mag style): the estimate
+    // keeps moving and never meets the braking stop/stall conditions, so the
+    // fence has to catch it in BOTH the settled phase (first sustained trip,
+    // which spends the one-shot retry) and the post-retry braking phase
+    // (second trip, which must fail). No artificial settling in between.
+    bool failed = false;
+    int failedAt = -1;
+    for (int i = 0; i < 800 && !failed; i++) {
+        testEstimate.position.x += 15.0f;      // 15 cm per 10 ms tick
+        testEstimate.velocity.x = 1500.0f;
+        failed = !positionControl();
+        failedAt = i;
+    }
+    EXPECT_TRUE(failed);
+    // The failure must land AFTER the retry re-anchored (first sustained trip
+    // is ~2.3 s in): a single trip alone no longer fails the hold.
+    EXPECT_GT(failedAt, 300);
+}
+
+TEST_F(PosHoldTest, SingleOutlierFixIsAbsorbedHoldingLastOutput)
+{
+    initAndSettleAt(0, 0, 0);
+    const float rollBefore = autopilotAngle[AI_ROLL];
+    const float pitchBefore = autopilotAngle[AI_PITCH];
+
+    // A single 30 m multipath spike, well beyond the 20 m fence.
+    testEstimate.position.x = 3000.0f;
+    EXPECT_TRUE(positionControl());
+    // The spike is not fed to the PIDs: the previous output is held, no
+    // lunge toward the angle clamp and no POSHOLD FAIL.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollBefore, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchBefore, 0.01f);
+
+    // The next fixes are normal again: control simply carries on.
+    testEstimate.position.x = 0.0f;
+    for (int i = 0; i < 100; i++) {
+        EXPECT_TRUE(positionControl());
+    }
+}
+
+TEST_F(PosHoldTest, ResumeAfterFrozenExcursionDoesNotSpikeTheOutput)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // real motion first, so the A-term history holds a meaningful velocity
+    testEstimate.velocity.x = 300.0f;
+    for (int i = 0; i < 50; i++) {
+        EXPECT_TRUE(positionControl());
+    }
+
+    // a sub-latch excursion freezes the output; meanwhile the craft stops,
+    // so the frozen A-term history goes badly stale
+    testEstimate.position.x = 3000.0f;
+    testEstimate.velocity.x = 0.0f;
+    for (int i = 0; i < 80; i++) {   // 0.8 s, inside the 1 s latch window
+        EXPECT_TRUE(positionControl());
+    }
+    const float rollFrozen = autopilotAngle[AI_ROLL];
+    const float pitchFrozen = autopilotAngle[AI_PITCH];
+
+    // resumption must not step the output: the D/A filter chain and the
+    // A-term history freeze together (coherently), and the explicit
+    // re-baseline pins that property against future restructuring. Measured
+    // transient in this scenario is < 0.05 deg.
+    testEstimate.position.x = 0.0f;
+    EXPECT_TRUE(positionControl());
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollFrozen, 0.25f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFrozen, 0.25f);
 }
 
 // -- Displacement response: heading North (yaw = 0) --
