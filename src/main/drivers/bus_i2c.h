@@ -104,6 +104,9 @@ typedef struct i2cDebugRegs_s {
     uint8_t sclAf;       // SCL pin AF selection (expect 4 for I2C)
     uint8_t sdaMode;     // SDA pin MODER
     uint8_t sdaAf;       // SDA pin AF selection
+    bool sclLevel;       // live SCL line level from IDR now (input buffer stays live in AF-OD; 1 = idle high)
+    bool sdaLevel;       // live SDA line level from IDR now (1 = idle high)
+    uint8_t initHealth;  // bus-health bitmask recorded at i2cInit() (I2C_HEALTH_* bits)
 } i2cDebugRegs_t;
 bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs);
 #endif

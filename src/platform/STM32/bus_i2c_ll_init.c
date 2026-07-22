@@ -404,25 +404,35 @@ void i2cInit(i2cDevice_e device)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (I2Cx == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32H5)
-    // H5 Clock sources:
-    //   I2C12  : PCLK1 (APB1)
-    //   I2C34  : PCLK3 (APB3)
+    // H5 kernel clock sources:
+    //   I2C1/2 (APB1) : PCLK1
+    //   I2C3/4 (APB3) : HSI (64 MHz), NOT PCLK3
     // Explicitly select the kernel clock source rather than trusting the reset
     // default (I2CxSEL=0). The APB clock enable (APB1L/APB3ENR) only gates
     // register access; SCL is generated from the *kernel* clock, so if anything
     // (bootloader, prior state) left I2CxSEL pointing elsewhere the peripheral's
     // registers respond but the bus never clocks. Pin these to the source the
     // TIMINGR below is computed against.
+    //
+    // I2C3/4 are deliberately taken off PCLK3: at the H5's full clock the APB3
+    // kernel would be 250 MHz, which is the *absolute maximum* fI2C_ker_ck and
+    // only "specified by design, not tested in production" (DS14258 Table 21).
+    // HSI (64 MHz) is well inside the tested envelope, independent of the system
+    // clock, and ample for up to Fast-mode Plus. HSI is kept enabled in
+    // SystemClock_Config(). I2C1/2 stay on PCLK1 (proven working on shipping H5
+    // boards) to keep the blast radius on the untested APB3 path only.
     if (I2Cx == I2C1) {
         __HAL_RCC_I2C1_CONFIG(RCC_I2C1CLKSOURCE_PCLK1);
     } else if (I2Cx == I2C2) {
         __HAL_RCC_I2C2_CONFIG(RCC_I2C2CLKSOURCE_PCLK1);
     } else if (I2Cx == I2C3) {
-        __HAL_RCC_I2C3_CONFIG(RCC_I2C3CLKSOURCE_PCLK3);
+        __HAL_RCC_I2C3_CONFIG(RCC_I2C3CLKSOURCE_HSI);
     } else if (I2Cx == I2C4) {
-        __HAL_RCC_I2C4_CONFIG(RCC_I2C4CLKSOURCE_PCLK3);
+        __HAL_RCC_I2C4_CONFIG(RCC_I2C4CLKSOURCE_HSI);
     }
-    i2cPclk = (I2Cx == I2C3 || I2Cx == I2C4) ? HAL_RCC_GetPCLK3Freq() : HAL_RCC_GetPCLK1Freq();
+    i2cPclk = (I2Cx == I2C3 || I2Cx == I2C4)
+        ? (HSI_VALUE >> ((RCC->CR & RCC_CR_HSIDIV) >> RCC_CR_HSIDIV_Pos))
+        : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32N6)
     // N6 Clock sources:
     //   I2C123 : PCLK1 (APB1)
@@ -499,11 +509,19 @@ bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs)
     const int sclPin = IO_GPIOPinIdx(pDev->scl);
     regs->sclMode = (sclGpio->MODER >> (sclPin * 2)) & 0x3;
     regs->sclAf = (sclGpio->AFR[sclPin >> 3] >> ((sclPin & 7) * 4)) & 0xF;
+    regs->sclLevel = (sclGpio->IDR >> sclPin) & 0x1;
 
     GPIO_TypeDef *sdaGpio = IO_GPIO(pDev->sda);
     const int sdaPin = IO_GPIOPinIdx(pDev->sda);
     regs->sdaMode = (sdaGpio->MODER >> (sdaPin * 2)) & 0x3;
     regs->sdaAf = (sdaGpio->AFR[sdaPin >> 3] >> ((sdaPin & 7) * 4)) & 0xF;
+    regs->sdaLevel = (sdaGpio->IDR >> sdaPin) & 0x1;
+
+    // Init-time bus-health bitmask (what the check in i2cInit() saw at boot).
+    // Compared against the live SCL/SDA levels above, this localises a
+    // boot-time-low / powered-late bus: init health says LOW but the line reads
+    // HIGH now => the bus was not driven high when i2cInit() ran.
+    regs->initHealth = i2cGetBusHealth(device);
 
     return true;
 }

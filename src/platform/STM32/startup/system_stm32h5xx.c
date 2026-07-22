@@ -248,8 +248,17 @@ void SystemClock_Config(void)
     MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
 
     RCC_OscInitTypeDef oscInit = {0};
-    oscInit.OscillatorType   = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI48;
+    // Keep HSI running alongside HSE/PLL: the I2C3/I2C4 (APB3) kernel clock is
+    // sourced from HSI (see bus_i2c_ll_init.c) so it stays inside the I2C
+    // "production-tested" envelope instead of PCLK's 250 MHz. HSI is on by reset
+    // default, but assert it explicitly so nothing downstream can leave those
+    // buses without a kernel clock. HSI is the SYSCLK at this point, so the HAL
+    // only re-applies the calibration here (HSIDIV/on-state are untouched) —
+    // HSICalibrationValue must therefore be the default, not the {0} above.
+    oscInit.OscillatorType   = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
     oscInit.HSEState         = RCC_HSE_ON;
+    oscInit.HSIState         = RCC_HSI_ON;
+    oscInit.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
     oscInit.HSI48State       = RCC_HSI48_ON;
     oscInit.PLL.PLLState     = RCC_PLL_ON;
     oscInit.PLL.PLLSource    = RCC_PLL1_SOURCE_HSE;

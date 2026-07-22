@@ -5993,18 +5993,24 @@ static void cliI2cRegs(const char *cmdName, char *cmdline)
         }
         any = true;
         cliPrintLinef("I2C%d: clkSrc=%s(%d) busClk=%s PE=%s TIMINGR=0x%08lx "
-            "SCL[mode=%d af=%d] SDA[mode=%d af=%d]",
+            "SCL[mode=%d af=%d now=%s] SDA[mode=%d af=%d now=%s] "
+            "initHealth=0x%02x[SCL=%s SDA=%s]",
             I2C_DEV_TO_CFG(device),
             clkSrc[r.clkSel & 0x3], r.clkSel,
             r.busClockOn ? "on" : "OFF",
             r.peEnabled ? "yes" : "NO",
             (unsigned long)r.timingr,
-            r.sclMode, r.sclAf, r.sdaMode, r.sdaAf);
+            r.sclMode, r.sclAf, r.sclLevel ? "HIGH" : "LOW",
+            r.sdaMode, r.sdaAf, r.sdaLevel ? "HIGH" : "LOW",
+            r.initHealth,
+            (r.initHealth & I2C_HEALTH_SCL_LOW) ? "low@init" : "ok",
+            (r.initHealth & I2C_HEALTH_SDA_LOW) ? "low@init" : "ok");
     }
     if (!any) {
         cliPrintLine("No configured I2C buses.");
     } else {
-        cliPrintLine("(expect: clkSrc=PCLK, busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4)");
+        cliPrintLine("(expect: I2C1/2 clkSrc=PCLK, I2C3/4 clkSrc=HSI; busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4, now=HIGH)");
+        cliPrintLine("(now=LOW while a meter reads high => bus not driven high when i2cInit ran: powered-late rail)");
     }
 }
 #endif
