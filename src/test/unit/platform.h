@@ -40,6 +40,7 @@
 #define FAST_CODE_PREF
 #define FAST_DATA_ZERO_INIT
 #define FAST_DATA
+#define SRAM_CODE
 
 
 #define PID_PROFILE_COUNT 4
