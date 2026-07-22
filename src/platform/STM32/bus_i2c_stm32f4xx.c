@@ -463,11 +463,25 @@ void i2cInit(i2cDevice_e device)
 
     I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
-    // Confirm the bus can be released to idle-high; a stuck-low line is almost
-    // always missing pull-ups or a device holding the bus. Record it so a dead
-    // bus is visible (CLI status) rather than failing silently.
-    const bool busIdle = i2cUnstick(scl, sda);
-    i2cSetBusStuck(device, !busIdle);
+    // Bus-health diagnostic: sample idle line levels with the internal pull-down
+    // engaged (healthy external pull-up reads HIGH, missing/weak reads LOW), then
+    // confirm the bus can be driven to idle. Recorded for CLI status so a dead
+    // bus is visible instead of failing silently; the per-line levels separate an
+    // electrical fault from lines HIGH yet unusable (peripheral/pin-mapping).
+    IOConfigGPIO(scl, IOCFG_IPD);
+    IOConfigGPIO(sda, IOCFG_IPD);
+    delayMicroseconds(10);  // settle against the external pull-up
+    uint8_t busHealth = I2C_HEALTH_CHECKED;
+    if (!IORead(scl)) {
+        busHealth |= I2C_HEALTH_SCL_LOW;
+    }
+    if (!IORead(sda)) {
+        busHealth |= I2C_HEALTH_SDA_LOW;
+    }
+    if (!i2cUnstick(scl, sda)) {
+        busHealth |= I2C_HEALTH_NOT_IDLE;
+    }
+    i2cReportBusHealth(device, busHealth);
 
     // Init pins
 #ifdef STM32F4

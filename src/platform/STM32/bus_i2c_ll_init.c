@@ -326,13 +326,27 @@ void i2cInit(i2cDevice_e device)
     // Enable RCC
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
-    // Drive the bus idle and confirm both lines actually reach a valid high.
-    // If they cannot (stuck low), the bus is electrically dead — almost always
-    // missing external pull-ups or a device holding a line. Record it so the
-    // failure is visible (CLI status) rather than silent. Init continues; a
-    // dead bus simply times out on every transaction.
-    const bool busIdle = i2cUnstick(scl, sda);
-    i2cSetBusStuck(device, !busIdle);
+    // Bus-health diagnostic. Sample the idle line levels with the internal
+    // pull-down engaged: a healthy external pull-up (few kOhm) overrides it and
+    // reads HIGH, a missing/weak pull-up or a held line reads LOW. Then confirm
+    // the bus can be driven to idle. Recorded for CLI status so a dead bus is
+    // visible instead of failing silently; reporting the actual levels tells a
+    // line stuck LOW (pull-ups/wiring) apart from lines HIGH yet unusable
+    // (peripheral/pin-mapping fault). Init continues regardless.
+    IOConfigGPIO(scl, IOCFG_IPD);
+    IOConfigGPIO(sda, IOCFG_IPD);
+    delayMicroseconds(10);  // settle against the external pull-up
+    uint8_t busHealth = I2C_HEALTH_CHECKED;
+    if (!IORead(scl)) {
+        busHealth |= I2C_HEALTH_SCL_LOW;
+    }
+    if (!IORead(sda)) {
+        busHealth |= I2C_HEALTH_SDA_LOW;
+    }
+    if (!i2cUnstick(scl, sda)) {
+        busHealth |= I2C_HEALTH_NOT_IDLE;
+    }
+    i2cReportBusHealth(device, busHealth);
 
     // Init pins
 #if defined(STM32F7)

@@ -6027,18 +6027,27 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 
 #if defined(USE_I2C)
-    // Flag any configured bus that could not be released to idle at init.
-    // Stuck-low lines are almost always a hardware fault (missing external
-    // pull-ups, or a device holding the bus) rather than a firmware issue.
-    const uint16_t i2cStuckBusMask = i2cGetStuckBusMask();
-    if (i2cStuckBusMask) {
-        cliPrint("I2C BUS STUCK LOW AT INIT (check pull-ups/wiring):");
-        for (int device = 0; device < I2CDEV_COUNT; device++) {
-            if (i2cStuckBusMask & (1U << device)) {
-                cliPrintf(" I2C%d", I2C_DEV_TO_CFG(device));
-            }
+    // Report any configured bus that was not healthy at init. Showing the
+    // per-line levels distinguishes an electrical fault (line LOW → pull-ups/
+    // wiring/short) from lines HIGH yet unusable (peripheral/pin-mapping fault).
+    for (int device = 0; device < I2CDEV_COUNT; device++) {
+        const uint8_t health = i2cGetBusHealth(device);
+        if (!(health & I2C_HEALTH_CHECKED)) {
+            continue;  // bus not configured / not checked
         }
-        cliPrintLinefeed();
+        if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW | I2C_HEALTH_NOT_IDLE)) {
+            cliPrintf("I2C%d NOT HEALTHY AT INIT: SCL=%s SDA=%s idle=%s",
+                I2C_DEV_TO_CFG(device),
+                (health & I2C_HEALTH_SCL_LOW) ? "LOW" : "high",
+                (health & I2C_HEALTH_SDA_LOW) ? "LOW" : "high",
+                (health & I2C_HEALTH_NOT_IDLE) ? "NO" : "yes");
+            if (health & (I2C_HEALTH_SCL_LOW | I2C_HEALTH_SDA_LOW)) {
+                cliPrint(" (line low: check pull-ups/wiring/short)");
+            } else {
+                cliPrint(" (lines high: suspect peripheral/pin-mapping, not pull-ups)");
+            }
+            cliPrintLinefeed();
+        }
     }
 #endif
 
