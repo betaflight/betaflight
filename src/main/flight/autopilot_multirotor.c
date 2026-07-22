@@ -862,25 +862,6 @@ distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT,
         pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
 
-    ap.derivativeStale = false;
-
-    bool buildupClamped = false;
-    if (velocityMode) {
-        // velocityBuildupMaxPitch bounds the velocity-proportional drive vector (now pidD)
-        // so the pitch bias while building up to speed is limited.
-        const float buildupMaxDeg = autopilotConfig()->velocityBuildupMaxPitch;
-        const float dMag = vector2Norm(&pidD);
-        if (dMag > buildupMaxDeg) {
-            buildupClamped = true;
-            const float scale = (dMag > 0.001f) ? buildupMaxDeg / dMag : 0.0f;
-            vector2Scale(&pidD, &pidD, scale);
-            // Re-sum the vectors with the scaled D component
-            for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-                pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
-            }
-        }
-    }
-
     // Rotation from Earth Frame to Body Frame
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     vector2_t headingV;
