@@ -65,7 +65,11 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     // Leg-line carrot path tracking and turn-angle cornering
     .navCornerSpeed = 220,            // 2.2 m/s corner-speed floor
     .navCornerDeltaV = 440,           // 4.4 m/s per-corner delta-v budget
-    .navDecel = 100,                  // 1.0 m/s^2 approach deceleration
+    .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the chase-lag
+                                      // compensated profile this stays trackable through the
+                                      // pursuit dynamics (brake authority grows with the gap
+                                      // and with drag, both rising with speed), and long legs
+                                      // no longer begin braking hundreds of metres out
     .navAccel = 250,                  // 2.5 m/s^2 carrot slew
     .navCarrotLeadTime = 12,          // 1.2 s carrot lead
     .navCarrotLeadMax = 2500,         // 25 m maximum carrot lead
