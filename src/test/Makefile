@@ -574,7 +574,8 @@ position_estimator_unittest_SRC := \
 position_estimator_unittest_DEFINES := \
 		USE_GPS= \
 		USE_BARO= \
-		USE_RANGEFINDER=
+		USE_RANGEFINDER= \
+		USE_OPTICALFLOW=
 
 position_nav_unittest_SRC := \
 		$(USER_DIR)/flight/position_nav.c \

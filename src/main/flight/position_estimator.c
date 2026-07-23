@@ -211,6 +211,13 @@ static float rangefinderAltOffsetCm = 0.0f;
 static bool rangefinderOffsetSet = false;
 #endif
 
+#ifdef USE_OPTICALFLOW
+static bool opticalFlowDataAvailable = false;
+static timeUs_t opticalFlowTimestampUs = 0;
+static timeDelta_t opticalFlowHoldDurationUs = 0;
+static float opticalFlowMeasurementNoiseScale = 1.0f;
+#endif
+
 static void initZCalEntries(void)
 {
     for (int i = 0; i < CAL_Z_COUNT; i++) {
@@ -264,6 +271,12 @@ void positionEstimatorInit(void)
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;
     rangefinderOffsetSet = false;
+#endif
+#ifdef USE_OPTICALFLOW
+    opticalFlowDataAvailable = false;
+    opticalFlowTimestampUs = 0;
+    opticalFlowHoldDurationUs = 0;
+    opticalFlowMeasurementNoiseScale = 1.0f;
 #endif
 
     initZCalEntries();
@@ -380,6 +393,43 @@ static float opticalFlowR(int16_t quality)
     // Scale R inversely with quality: better quality = lower noise
     const float qualityNorm = constrainf((float)(quality - minQuality) / (100.0f - minQuality), 0.01f, 1.0f);
     return R_OPTICALFLOW_VEL / qualityNorm;
+}
+
+// Optical-flow drivers expose the timestamp of the last processed sensor
+// sample. Use its measured cadence after the first sample; delayMs is only the
+// nominal first-sample fallback. This avoids mistaking a driver's faster
+// polling rate (such as the UP-T1 rangefinder's 2x polling) for its data rate.
+STATIC_UNIT_TESTED bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale)
+{
+    const bool hasNewData = !opticalFlowDataAvailable || flow->timeStampUs != opticalFlowTimestampUs;
+    if (hasNewData) {
+        timeDelta_t sourceIntervalUs = (timeDelta_t)flow->dev.delayMs * 1000;
+        if (opticalFlowDataAvailable) {
+            const timeDelta_t measuredIntervalUs = cmpTimeUs(flow->timeStampUs, opticalFlowTimestampUs);
+            if (measuredIntervalUs > 0 && measuredIntervalUs <= OPTICALFLOW_HARDWARE_TIMEOUT_US) {
+                sourceIntervalUs = measuredIntervalUs;
+            }
+        }
+
+        opticalFlowDataAvailable = true;
+        opticalFlowTimestampUs = flow->timeStampUs;
+        opticalFlowHoldDurationUs = sourceIntervalUs;
+        opticalFlowMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, opticalFlowTimestampUs);
+    const bool withinHoldInterval = opticalFlowDataAvailable &&
+        opticalFlowHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < opticalFlowHoldDurationUs;
+    if (!hasNewData && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = opticalFlowMeasurementNoiseScale;
+    return true;
 }
 #endif
 
@@ -541,6 +591,7 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     }
 
     if (!sensors(SENSOR_OPTICALFLOW) || !isOpticalflowHealthy()) {
+        opticalFlowDataAvailable = false;
         return;
     }
 
@@ -581,6 +632,11 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
+    float noiseScale;
+    if (!opticalFlowMeasurementReadyForFusion(nowUs, flow, &noiseScale)) {
+        return;
+    }
+
     // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height.
     // Flow sensor X axis measures rightward motion; Y axis measures forward motion.
     const float flowRight   = flow->processedFlowRates.x * altitudeCm;
@@ -599,8 +655,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     const float velEast  =  velForward * sinYaw - velRight * cosYaw;
     const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
-    kalmanUpdateVelocity(&kfEast, velEast, flowR);
-    kalmanUpdateVelocity(&kfNorth, velNorth, flowR);
+    kalmanUpdateVelocity(&kfEast, velEast, flowR * noiseScale);
+    kalmanUpdateVelocity(&kfNorth, velNorth, flowR * noiseScale);
 
     lastXYMeasurementUs = nowUs;
 #else
