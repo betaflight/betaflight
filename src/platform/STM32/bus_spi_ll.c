@@ -214,6 +214,25 @@ void spiInternalResetDescriptors(busDevice_t *bus)
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
     LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
+#if defined(STM32H7)
+    if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+        // BDMA channel-based init for D3 domain peripherals (e.g., SPI6)
+        memset(dmaInitTx, 0, sizeof(*dmaInitTx));
+        dmaInitTx->PeriphRequest = bus->dmaTx->channel;
+        dmaInitTx->Direction = LL_BDMA_DIRECTION_MEMORY_TO_PERIPH;
+        dmaInitTx->PeriphOrM2MSrcAddress = (uint32_t)&instance->TXDR;
+
+        if (bus->dmaRx) {
+            LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
+            memset(dmaInitRx, 0, sizeof(*dmaInitRx));
+            dmaInitRx->PeriphRequest = bus->dmaRx->channel;
+            dmaInitRx->PeriphOrM2MSrcAddress = (uint32_t)&instance->RXDR;
+            dmaInitRx->Priority = LL_BDMA_PRIORITY_MEDIUM;
+        }
+        return;
+    }
+#endif
+
     LL_DMA_StructInit(dmaInitTx);
 #if defined(STM32G4) || defined(STM32H7)
     dmaInitTx->PeriphRequest = bus->dmaTx->channel;
@@ -262,8 +281,16 @@ void spiInternalResetStream(dmaChannelDescriptor_t *descriptor)
     LL_DMA_DisableChannel(descriptor->dma, descriptor->stream);
     while (LL_DMA_IsEnabledChannel(descriptor->dma, descriptor->stream));
 #else
-    LL_DMA_DisableStream(descriptor->dma, descriptor->stream);
-    while (LL_DMA_IsEnabledStream(descriptor->dma, descriptor->stream));
+#if defined(STM32H7)
+    if (IS_BDMA_DESCRIPTOR(descriptor)) {
+        LL_BDMA_DisableChannel(descriptor->dma, descriptor->stream);
+        while (LL_BDMA_IsEnabledChannel(descriptor->dma, descriptor->stream));
+    } else
+#endif
+    {
+        LL_DMA_DisableStream(descriptor->dma, descriptor->stream);
+        while (LL_DMA_IsEnabledStream(descriptor->dma, descriptor->stream));
+    }
 #endif
 
     // Clear any pending interrupt flags
@@ -377,6 +404,37 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
     uint8_t *txData = segment->u.buffers.txData;
     LL_DMA_InitTypeDef *dmaInitTx = bus->dmaInitTx;
 
+#if defined(STM32H7)
+    if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+        // BDMA path: no cache ops needed (SRAM4 is not cached)
+        static BDMA_RAM uint8_t bdmaDummyTxByte;
+        static BDMA_RAM uint8_t bdmaDummyRxByte;
+
+        if (txData) {
+            dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)txData;
+            dmaInitTx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_INCREMENT;
+        } else {
+            bdmaDummyTxByte = 0xff;
+            dmaInitTx->MemoryOrM2MDstAddress = (uint32_t)&bdmaDummyTxByte;
+            dmaInitTx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_NOINCREMENT;
+        }
+        dmaInitTx->NbData = len;
+
+        uint8_t *rxData = segment->u.buffers.rxData;
+        LL_DMA_InitTypeDef *dmaInitRx = bus->dmaInitRx;
+
+        if (rxData) {
+            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)rxData;
+            dmaInitRx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_INCREMENT;
+        } else {
+            dmaInitRx->MemoryOrM2MDstAddress = (uint32_t)&bdmaDummyRxByte;
+            dmaInitRx->MemoryOrM2MDstIncMode = LL_BDMA_MEMORY_NOINCREMENT;
+        }
+        dmaInitRx->NbData = len;
+        return;
+    }
+#endif
+
     if (txData) {
 #ifdef __DCACHE_PRESENT
 #ifdef STM32H7
@@ -479,6 +537,38 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
     dmaChannelDescriptor_t *dmaTx = bus->dmaTx;
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
+
+#if defined(STM32H7)
+    if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+        // BDMA channel-based DMA for D3 domain peripherals (e.g., SPI6)
+        dmaRx->userParam = (uint32_t)dev;
+
+        DMA_CLEAR_FLAG(dmaTx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+
+        BDMA_Channel_TypeDef *channelRegsRx = (BDMA_Channel_TypeDef *)dmaRx->ref;
+
+        // Disable channels to enable update
+        ((BDMA_Channel_TypeDef *)dmaTx->ref)->CCR = 0U;
+        channelRegsRx->CCR = 0U;
+
+        // Use the Rx interrupt as this occurs once the SPI operation is complete
+        LL_EX_BDMA_EnableIT_TC(channelRegsRx);
+
+        // Update channels
+        LL_BDMA_Init(dmaTx->dma, dmaTx->stream, (LL_BDMA_InitTypeDef *)bus->dmaInitTx);
+        LL_BDMA_Init(dmaRx->dma, dmaRx->stream, (LL_BDMA_InitTypeDef *)bus->dmaInitRx);
+
+        // Enable SPI DMA
+        LL_SPI_SetTransferSize(instance, dev->bus->curSegment->len);
+        LL_BDMA_EnableChannel(dmaTx->dma, dmaTx->stream);
+        LL_BDMA_EnableChannel(dmaRx->dma, dmaRx->stream);
+        SET_BIT(instance->CFG1, SPI_CFG1_RXDMAEN | SPI_CFG1_TXDMAEN);
+        LL_SPI_Enable(instance);
+        LL_SPI_StartMasterTransfer(instance);
+        return;
+    }
+#endif
 
 #if !defined(STM32G4) && !defined(STM32H7)
     if (dmaRx) {
@@ -614,6 +704,22 @@ void spiInternalStopDMA (const extDevice_t *dev)
     dmaChannelDescriptor_t *dmaRx = bus->dmaRx;
     SPI_TypeDef *instance = (SPI_TypeDef *)bus->busType_u.spi.instance;
 
+#if defined(STM32H7)
+    if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+        // BDMA channel-based stop for D3 domain peripherals
+        LL_BDMA_DisableChannel(dmaRx->dma, dmaRx->stream);
+        LL_BDMA_DisableChannel(dmaTx->dma, dmaTx->stream);
+
+        DMA_CLEAR_FLAG(dmaRx, DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_TCIF);
+
+        LL_SPI_DisableDMAReq_TX(instance);
+        LL_SPI_DisableDMAReq_RX(instance);
+        LL_SPI_ClearFlag_TXTF(instance);
+        LL_SPI_Disable(instance);
+        return;
+    }
+#endif
+
 #if !defined(STM32G4) && !defined(STM32H7)
     if (dmaRx) {
 #endif
@@ -718,20 +824,29 @@ FAST_CODE void spiSequenceStart(const extDevice_t *dev)
             break;
         }
 #ifdef STM32H7
-        // Check if RX data can be DMAed
-        if ((checkSegment->u.buffers.rxData) &&
-            // DTCM can't be accessed by DMA1/2 on the H7
-            (IS_DTCM(checkSegment->u.buffers.rxData) ||
-             // Memory declared as DMA_RAM will have an address between &_dmaram_start__ and &_dmaram_end__
-             (((checkSegment->u.buffers.rxData < &_dmaram_start__) || (checkSegment->u.buffers.rxData >= &_dmaram_end__)) &&
-             (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
-            dmaSafe = false;
-            break;
-        }
-        // Check if TX data can be DMAed
-        else if ((checkSegment->u.buffers.txData) && IS_DTCM(checkSegment->u.buffers.txData)) {
-            dmaSafe = false;
-            break;
+        if (IS_BDMA_DESCRIPTOR(bus->dmaTx)) {
+            // BDMA can only access D3 domain memory (SRAM4)
+            if ((checkSegment->u.buffers.rxData && !IS_SRAM4(checkSegment->u.buffers.rxData)) ||
+                (checkSegment->u.buffers.txData && !IS_SRAM4(checkSegment->u.buffers.txData))) {
+                dmaSafe = false;
+                break;
+            }
+        } else {
+            // Check if RX data can be DMAed
+            if ((checkSegment->u.buffers.rxData) &&
+                // DTCM can't be accessed by DMA1/2 on the H7
+                (IS_DTCM(checkSegment->u.buffers.rxData) ||
+                 // Memory declared as DMA_RAM will have an address between &_dmaram_start__ and &_dmaram_end__
+                 (((checkSegment->u.buffers.rxData < &_dmaram_start__) || (checkSegment->u.buffers.rxData >= &_dmaram_end__)) &&
+                 (((uint32_t)checkSegment->u.buffers.rxData & (CACHE_LINE_SIZE - 1)) || (checkSegment->len & (CACHE_LINE_SIZE - 1)))))) {
+                dmaSafe = false;
+                break;
+            }
+            // Check if TX data can be DMAed
+            else if ((checkSegment->u.buffers.txData) && IS_DTCM(checkSegment->u.buffers.txData)) {
+                dmaSafe = false;
+                break;
+            }
         }
 #elif defined(STM32F7)
         if ((checkSegment->u.buffers.rxData) &&
