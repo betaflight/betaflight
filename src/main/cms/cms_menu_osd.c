@@ -159,6 +159,9 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"PIT ANG",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE]},
     {"ROL ANG",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE]},
     {"HEADING",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING]},
+#ifdef USE_POSITION_HOLD
+    {"POS HOLD READY",     OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_POS_HOLD_READY]},
+#endif
 #ifdef USE_VARIO
     {"VARIO",              OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO]},
 #endif
