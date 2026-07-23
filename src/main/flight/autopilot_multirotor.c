@@ -130,6 +130,7 @@ static float throttleOut = 0.0f;
 static vector2_t targetPosition;
 static vector2_t targetVelocity;
 static vector2_t previousTargetVelocity; // for feedforward when target velocity changes
+static vector2_t targetAcceleration;
 static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
@@ -373,9 +374,10 @@ void initPositionHold(void)
     resetDistanceError();
     targetVelocity.v[EF_EAST]  = 0.0f;
     targetVelocity.v[EF_NORTH] = 0.0f;
+    targetAcceleration.v[EF_EAST]  = 0.0f;
+    targetAcceleration.v[EF_NORTH] = 0.0f;
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
-
     ap.isPosHoldBraking = true; // arrest any entry speed before capturing the hold point
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
@@ -388,6 +390,8 @@ static void initNavMode(void)
     resetDistanceError();
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
+    targetAcceleration.v[EF_EAST]  = 0.0f;
+    targetAcceleration.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
@@ -426,13 +430,19 @@ void handlepositionControlFailure(void)
 
 void sticksSetTargetVelocity(void)
 {
-    float stickPitch = getSetpointRate(PITCH);
-    float stickRoll  = getSetpointRate(ROLL);
+    const float stickPitch = getSetpointRate(PITCH);
+    const float stickRoll  = getSetpointRate(ROLL);
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cosf(headingRad);
     const float sinYaw = sinf(headingRad);
     targetVelocity.v[EF_NORTH] = (stickPitch * cosYaw) - (stickRoll * sinYaw);
     targetVelocity.v[EF_EAST]  = (stickPitch * sinYaw) + (stickRoll * cosYaw);
+#ifdef USE_FEEDFORWARD
+    const float stickFFPitch = getFeedforward(PITCH);
+    const float stickFFRoll  = getFeedforward(ROLL);
+    targetAcceleration.v[EF_NORTH] = (stickFFPitch * cosYaw) - (stickFFRoll * sinYaw);
+    targetAcceleration.v[EF_EAST]  = (stickFFPitch * sinYaw) + (stickFFRoll * cosYaw);
+#endif
 }
 
 void autopilotSetYawRateLimit(float rateLimitDps)
@@ -632,6 +642,8 @@ bool positionControl(void)
             // No stick input
             targetVelocity.v[EF_EAST]  = 0.0f;
             targetVelocity.v[EF_NORTH] = 0.0f;
+            targetAcceleration.v[EF_EAST]  = 0.0f;
+            targetAcceleration.v[EF_NORTH] = 0.0f;
             if (ap.wasSticksActive) {
                 // Sticks were active and have just been released: capture the current point and begin braking.
                 targetPosition = currentPosition; //final update the target location
@@ -681,7 +693,7 @@ bool positionControl(void)
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-        const float tgtVelAcceleration = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        float tgtVelAcceleration = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
         const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] =  velocity.v[axis];
@@ -698,8 +710,10 @@ bool positionControl(void)
             }
         } else {
             // in Position Hold Mode
-            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis]; 
-
+#ifdef USE_FEEDFORWARD
+            tgtVelAcceleration = targetAcceleration.v[axis]; // use smoothed feedforward like in acro
+#endif
+            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
             if (ap.isPosHoldBraking) {
                 dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
             } else if (ap.sticksActive) {
