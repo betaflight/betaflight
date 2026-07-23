@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-gen_cli_docs.py — Generate docs/CLI/parameters-reference.md from settings.c
+gen_cli_docs.py — Generate docs/CLI-parameters-reference.md from settings.c
 
 Parses valueTable[], lookupTables[], and section comments from settings.c/h
 to produce a complete, always-current CLI parameter reference in Markdown.
@@ -10,7 +10,7 @@ No external dependencies (Python 3.6+ stdlib only).
 Usage (from repo root):
     python3 docs/gen_cli_docs.py
     python3 docs/gen_cli_docs.py --settings src/main/cli/settings.c
-    python3 docs/gen_cli_docs.py --output docs/CLI/parameters-reference.md
+    python3 docs/gen_cli_docs.py --output docs/CLI-parameters-reference.md
 """
 
 import re
@@ -580,8 +580,8 @@ def main():
         help='Path to parameter_names.h (default: src/main/fc/parameter_names.h)'
     )
     parser.add_argument(
-        '--output', default='docs/CLI/parameters-reference.md',
-        help='Output path (default: docs/CLI/parameters-reference.md)'
+        '--output', default='docs/CLI-parameters-reference.md',
+        help='Output path (default: docs/CLI-parameters-reference.md)'
     )
     args = parser.parse_args()
 
