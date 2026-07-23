@@ -190,6 +190,10 @@ static sensorCalEntry_t zCal[CAL_Z_COUNT];
 
 #ifdef USE_GPS
 static uint16_t gpsStamp = 0;
+static bool gpsDataAvailable = false;
+static timeUs_t gpsDataReceivedAtUs = 0;
+static timeDelta_t gpsDataHoldDurationUs = 0;
+static float gpsMeasurementNoiseScale = 1.0f;
 static gpsLocation_t armLocationGps;
 static bool gpsArmLocationSet = false;
 static float gpsAltOffsetCm = 0.0f;
@@ -244,6 +248,10 @@ void positionEstimatorInit(void)
 
 #ifdef USE_GPS
     gpsStamp = 0;
+    gpsDataAvailable = false;
+    gpsDataReceivedAtUs = 0;
+    gpsDataHoldDurationUs = 0;
+    gpsMeasurementNoiseScale = 1.0f;
     gpsArmLocationSet = false;
     gpsAltOffsetCm = 0.0f;
     gpsAltOffsetSet = false;
@@ -324,6 +332,38 @@ static uint16_t gpsDopOrFallback(uint16_t preferredDop, uint16_t fallbackDop)
 {
     return (preferredDop >= GPS_DOP_MIN_VALID) ? preferredDop : fallbackDop;
 }
+
+// Hold each GPS sample until the next one is expected so it can be fused at the
+// altitude task rate. Scaling R by the number of repeated updates preserves
+// approximately the same information per second as fusion at the GPS rate.
+STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const bool hasNewData = gpsHasNewData(&gpsStamp);
+    if (hasNewData) {
+        const float gpsFrequencyHz = getGpsDataFrequencyHz();
+
+        gpsDataAvailable = true;
+        gpsDataReceivedAtUs = nowUs;
+        if (gpsFrequencyHz > 0.0f) {
+            gpsDataHoldDurationUs = (timeDelta_t)lrintf(1000000.0f / gpsFrequencyHz);
+            gpsMeasurementNoiseScale = fmaxf((float)TASK_ALTITUDE_RATE_HZ / gpsFrequencyHz, 1.0f);
+        } else {
+            // An invalid frequency cannot define a safe hold interval.
+            gpsDataHoldDurationUs = 0;
+            gpsMeasurementNoiseScale = 1.0f;
+        }
+    }
+
+    const bool withinHoldInterval = gpsDataAvailable &&
+        gpsDataHoldDurationUs > 0 &&
+        cmpTimeUs(nowUs, gpsDataReceivedAtUs) < gpsDataHoldDurationUs;
+    if (!hasNewData && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = gpsMeasurementNoiseScale;
+    return true;
+}
 #endif
 
 #ifdef USE_OPTICALFLOW
@@ -347,10 +387,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_GPS
     if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX)) {
+        gpsDataAvailable = false;
         return;
     }
 
-    if (!gpsHasNewData(&gpsStamp)) {
+    float noiseScale;
+    if (!gpsMeasurementReadyForFusion(nowUs, &noiseScale)) {
         return;
     }
 
@@ -382,12 +424,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // v[EF_EAST] = East (lon), v[EF_NORTH] = North (lat) relative to the arm point.
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
-        const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
+        const float rPos = gpsR(R_GPS_POS_BASE, xyDop) * noiseScale;
         kalmanUpdatePosition(&kfEast, gpsDistCm.v[EF_EAST], rPos);
         kalmanUpdatePosition(&kfNorth, gpsDistCm.v[EF_NORTH], rPos);
 
         // GPS velocity (NED from UBX) -> ENU
-        const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);
+        const float rVel = gpsR(R_GPS_VEL_BASE, xyDop) * noiseScale;
         kalmanUpdateVelocity(&kfEast, (float)gpsSol.velned.velE, rVel);
         kalmanUpdateVelocity(&kfNorth, (float)gpsSol.velned.velN, rVel);
 
@@ -405,7 +447,7 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // altitude_prefer_baro=100 means strongly prefer baro, so GPS R should be higher
         const float baroPreference = positionConfig()->altitude_prefer_baro * 0.01f;
         const uint16_t altDop = gpsDopOrFallback(gpsSol.dop.vdop, gpsSol.dop.pdop);
-        const float gpsAltR = gpsR(R_GPS_ALT_BASE, altDop) * (1.0f + baroPreference * 2.0f);
+        const float gpsAltR = gpsR(R_GPS_ALT_BASE, altDop) * (1.0f + baroPreference * 2.0f) * noiseScale;
 
         const float gpsRelativeAltCm = gpsSol.llh.altCm - gpsAltOffsetCm;
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR);
