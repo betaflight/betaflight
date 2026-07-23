@@ -109,6 +109,10 @@
 #define PIO_OSD_INDEX 2
 #endif
 
+#ifdef REMOVE_MSP_DISPLAYPORT
+#undef USE_MSP_DISPLAYPORT
+#endif
+
 // Various untested or unsupported elements are undefined below
 
 #undef USE_RX_SPI
@@ -166,4 +170,3 @@
 #undef USE_VTX_COMMON
 
 #undef USE_RPM_LIMIT
-#undef USE_OSD_HD

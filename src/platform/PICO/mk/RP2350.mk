@@ -577,6 +577,9 @@ MCU_COMMON_SRC = \
             PICO/osd/font_betaflight.c \
             PICO/osd/fb_osd_pico.c \
             PICO/osd/osd_element_ah.c \
+            PICO/osd/osd_element_altitude.c \
+            PICO/osd/osd_element_compassbar.c \
+            PICO/osd/osd_element_crosshairs.c \
             PICO/osd/osd_elements_pico.c \
             PICO/osd/osd_pico.c \
             PICO/persistent.c \
