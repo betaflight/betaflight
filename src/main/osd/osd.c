@@ -149,6 +149,15 @@ static displayPort_t *osdDisplayPort;
 static osdDisplayPortDevice_e osdDisplayPortDeviceType;
 static bool osdIsReady;
 
+uint16_t osdGetCapacityAlarm(void)
+{
+    if (currentBatteryProfile && currentBatteryProfile->batteryCapacity > 0) {
+        return currentBatteryProfile->batteryCapacity;
+    }
+
+    return osdConfig()->cap_alarm;
+}
+
 static bool suppressStatsDisplay = false;
 
 static bool backgroundLayerSupported = false;
