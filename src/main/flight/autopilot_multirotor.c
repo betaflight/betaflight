@@ -632,11 +632,11 @@ bool positionControl(void)
         if (ap.sticksActive) {
             if (!ap.wasSticksActive) {
                 // initialise sticksActive
+                resetDistanceError();
                 ap.sanityCheckDistance = calculateSanityCheckDistance();
                 ap.isPosHoldBraking = false;
             }
             sticksSetTargetVelocity(); //generate target velocities from stick position and heading
-            targetPosition = currentPosition; // zero out the P activity
             posHoldStartPosition = currentPosition; // in case pilot flies a very long way away
         } else {
             // No stick input
@@ -697,7 +697,6 @@ bool positionControl(void)
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
         const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] =  velocity.v[axis];
-
         bool shouldIntegrateDistanceError = true;
 
         if (velocityMode) {
@@ -713,19 +712,22 @@ bool positionControl(void)
 #ifdef USE_FEEDFORWARD
             tgtVelAcceleration = targetAcceleration.v[axis]; // use smoothed feedforward like in acro
 #endif
-            distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
-            if (ap.isPosHoldBraking) {
-                dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
-            } else if (ap.sticksActive) {
-                // both velocity target and position target are actively changed according to setpoint
-                shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value 
+            if (ap.sticksActive) {
+                //  velocity target is set according to setpoint
+                shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value
+                distanceError.v[axis] += velocityError.v[axis] * dt; // virtual distance error like velocityMode
+            } else {
+                distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
+                if (ap.isPosHoldBraking) {
+                    dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
+                }
             }
-        }
-        //these things happen in all modes
-        distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-        if (shouldIntegrateDistanceError) {
-            distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
-            distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
+            //these things happen in all modes
+            distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
+            if (shouldIntegrateDistanceError) {
+                distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
+                distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
+            }
         }
 
         pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
@@ -735,9 +737,9 @@ bool positionControl(void)
         pidA.v[axis] = acceleration * xyPid.Ka;
         pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + tgtVelAcceleration * xyPid.Kf;
         // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
-        const float noisyPids = pidA.v[axis] + pidD.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
+        const float noisyPids = pidP.v[axis] + pidA.v[axis] + pidD.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
         float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
-        pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + noisyPidsFiltered;
+        pidSumVectorEF.v[axis] = pidI.v[axis] + noisyPidsFiltered;
     }   // End for loop
     previousTargetVelocity = targetVelocity;
 
