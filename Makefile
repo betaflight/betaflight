@@ -874,8 +874,15 @@ targets-ci-grouped-print:
 		done; \
 		for t in $(CI_TARGETS); do \
 			config_h="$(CONFIG_DIR)/configs/$$t/config.h"; \
-			[ -f "$$config_h" ] || config_h=$$(ls $(CONFIG_DIR)/configs/*/$$t/config.h 2>/dev/null | head -1); \
-			if [ -n "$$config_h" ] && [ -f "$$config_h" ]; then \
+			if [ ! -f "$$config_h" ]; then \
+				config_h=""; \
+				for c in $(CONFIG_DIR)/configs/*/$$t/config.h; do \
+					[ -f "$$c" ] || continue; \
+					if [ -n "$$config_h" ]; then echo "Ambiguous CI target $$t matches multiple configs" >&2; config_h=""; break; fi; \
+					config_h="$$c"; \
+				done; \
+			fi; \
+			if [ -n "$$config_h" ]; then \
 				mcu=$$(grep -m1 'FC_TARGET_MCU' "$$config_h" | awk '{print $$NF}'); \
 				echo "CONFIG $$t $$mcu"; \
 			fi; \

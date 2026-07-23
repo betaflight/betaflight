@@ -27,12 +27,18 @@ endif
 
 # Locate the board's config directory, accepting a flat (configs/<BOARD>) or a
 # manufacturer-grouped (configs/<MANUFACTURER_ID>/<BOARD>) layout. A flat match
-# wins; otherwise search one level down for the manufacturer directory.
-CONFIG_MATCHES     := $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h) $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
+# wins; otherwise search one manufacturer level down and reject only a grouped
+# name that resolves to more than one manufacturer.
+CONFIG_FLAT_MATCH  := $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h)
+ifneq ($(CONFIG_FLAT_MATCH),)
+CONFIG_PATH        := $(patsubst %/,%,$(dir $(CONFIG_FLAT_MATCH)))
+else
+CONFIG_MATCHES     := $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
 ifneq ($(word 2,$(CONFIG_MATCHES)),)
 $(error Ambiguous CONFIG '$(CONFIG)' matches multiple configs: $(CONFIG_MATCHES))
 endif
 CONFIG_PATH        := $(patsubst %/,%,$(dir $(firstword $(CONFIG_MATCHES))))
+endif
 ifeq ($(CONFIG_PATH),)
 $(error CONFIG '$(CONFIG)' not found under $(CONFIG_DIR)/configs (flat or <manufacturer>/<board>).)
 endif
