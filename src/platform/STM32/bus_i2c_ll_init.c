@@ -28,8 +28,10 @@
 #if defined(USE_I2C) && !defined(USE_SOFT_I2C) && !defined(USE_I3C_AS_I2C)
 
 #include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
+#include "platform/io_impl.h"
 #include "platform/rcc.h"
 
 #include "drivers/bus_i2c.h"
@@ -326,6 +328,42 @@ void i2cInit(i2cDevice_e device)
     // Enable RCC
     RCC_ClockCmd(hardware->rcc, ENABLE);
 
+    // Bus-health diagnostic (recorded for CLI status; init continues regardless).
+    uint8_t busHealth = I2C_HEALTH_CHECKED;
+
+    // Usability: engage the internal pull-up. An unloaded, functional line
+    // reaches HIGH; if it stays LOW it is being held down (short, stuck device,
+    // or a non-functional pin). Pull-strategy agnostic — a board relying on the
+    // internal pull-up passes this, so it is never mis-flagged.
+    IOConfigGPIO(scl, IOCFG_IPU);
+    IOConfigGPIO(sda, IOCFG_IPU);
+    delayMicroseconds(10);
+    if (!IORead(scl)) {
+        busHealth |= I2C_HEALTH_SCL_LOW;
+    }
+    if (!IORead(sda)) {
+        busHealth |= I2C_HEALTH_SDA_LOW;
+    }
+
+    // External pull-up presence — only meaningful when not relying on the
+    // internal pull-up. Internal pull-down engaged: a real external pull-up
+    // overrides it (HIGH), its absence reads LOW. Informational only. Skip a
+    // line already held low above: it reads low here regardless, so we cannot
+    // conclude anything about its pull-up.
+    if (!pDev->pullUp) {
+        IOConfigGPIO(scl, IOCFG_IPD);
+        IOConfigGPIO(sda, IOCFG_IPD);
+        delayMicroseconds(10);
+        if (!(busHealth & I2C_HEALTH_SCL_LOW) && !IORead(scl)) {
+            busHealth |= I2C_HEALTH_SCL_NOPULL;
+        }
+        if (!(busHealth & I2C_HEALTH_SDA_LOW) && !IORead(sda)) {
+            busHealth |= I2C_HEALTH_SDA_NOPULL;
+        }
+    }
+
+    i2cReportBusHealth(device, busHealth);
+
     i2cUnstick(scl, sda);
 
     // Init pins
@@ -366,10 +404,35 @@ void i2cInit(i2cDevice_e device)
     //   I2C4   : D3PCLK1 (rcc_pclk4 for APB4)
     i2cPclk = (I2Cx == I2C4) ? HAL_RCCEx_GetD3PCLK1Freq() : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32H5)
-    // H5 Clock sources:
-    //   I2C12  : PCLK1 (APB1)
-    //   I2C34  : PCLK3 (APB3)
-    i2cPclk = (I2Cx == I2C3 || I2Cx == I2C4) ? HAL_RCC_GetPCLK3Freq() : HAL_RCC_GetPCLK1Freq();
+    // H5 kernel clock sources:
+    //   I2C1/2 (APB1) : PCLK1
+    //   I2C3/4 (APB3) : HSI (64 MHz), NOT PCLK3
+    // Explicitly select the kernel clock source rather than trusting the reset
+    // default (I2CxSEL=0). The APB clock enable (APB1L/APB3ENR) only gates
+    // register access; SCL is generated from the *kernel* clock, so if anything
+    // (bootloader, prior state) left I2CxSEL pointing elsewhere the peripheral's
+    // registers respond but the bus never clocks. Pin these to the source the
+    // TIMINGR below is computed against.
+    //
+    // I2C3/4 are deliberately taken off PCLK3: at the H5's full clock the APB3
+    // kernel would be 250 MHz, which is the *absolute maximum* fI2C_ker_ck and
+    // only "specified by design, not tested in production" (DS14258 Table 21).
+    // HSI (64 MHz) is well inside the tested envelope, independent of the system
+    // clock, and ample for up to Fast-mode Plus. HSI is kept enabled in
+    // SystemClock_Config(). I2C1/2 stay on PCLK1 (proven working on shipping H5
+    // boards) to keep the blast radius on the untested APB3 path only.
+    if (I2Cx == I2C1) {
+        __HAL_RCC_I2C1_CONFIG(RCC_I2C1CLKSOURCE_PCLK1);
+    } else if (I2Cx == I2C2) {
+        __HAL_RCC_I2C2_CONFIG(RCC_I2C2CLKSOURCE_PCLK1);
+    } else if (I2Cx == I2C3) {
+        __HAL_RCC_I2C3_CONFIG(RCC_I2C3CLKSOURCE_HSI);
+    } else if (I2Cx == I2C4) {
+        __HAL_RCC_I2C4_CONFIG(RCC_I2C4CLKSOURCE_HSI);
+    }
+    i2cPclk = (I2Cx == I2C3 || I2Cx == I2C4)
+        ? (HSI_VALUE >> ((RCC->CR & RCC_CR_HSIDIV) >> RCC_CR_HSIDIV_Pos))
+        : HAL_RCC_GetPCLK1Freq();
 #elif defined(STM32N6)
     // N6 Clock sources:
     //   I2C123 : PCLK1 (APB1)
@@ -403,5 +466,74 @@ void i2cInit(i2cDevice_e device)
     HAL_NVIC_SetPriority(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
     HAL_NVIC_EnableIRQ(hardware->ev_irq);
 }
+
+#if defined(STM32H5)
+// TEMPORARY (Development Instrumentation) — see bus_i2c.h. Read the live post-init
+// registers that determine whether a configured I2C bus can actually clock.
+bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs)
+{
+    if (device < 0 || device >= I2CDEV_COUNT || !regs) {
+        return false;
+    }
+
+    const i2cDevice_t *pDev = &i2cDevice[device];
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)pDev->reg;
+    if (!I2Cx || !pDev->scl || !pDev->sda) {
+        return false;  // bus not configured
+    }
+
+    uint8_t selPos;
+    bool busClockOn;
+    if (I2Cx == I2C1) {
+        selPos = RCC_CCIPR4_I2C1SEL_Pos;
+        busClockOn = (RCC->APB1LENR & RCC_APB1LENR_I2C1EN) != 0;
+    } else if (I2Cx == I2C2) {
+        selPos = RCC_CCIPR4_I2C2SEL_Pos;
+        busClockOn = (RCC->APB1LENR & RCC_APB1LENR_I2C2EN) != 0;
+    } else if (I2Cx == I2C3) {
+        selPos = RCC_CCIPR4_I2C3SEL_Pos;
+        busClockOn = (RCC->APB3ENR & RCC_APB3ENR_I2C3EN) != 0;
+    } else if (I2Cx == I2C4) {
+        selPos = RCC_CCIPR4_I2C4SEL_Pos;
+        busClockOn = (RCC->APB3ENR & RCC_APB3ENR_I2C4EN) != 0;
+    } else {
+        return false;
+    }
+
+    regs->clkSel = (RCC->CCIPR4 >> selPos) & 0x3;
+    regs->busClockOn = busClockOn;
+    regs->peEnabled = (I2Cx->CR1 & I2C_CR1_PE) != 0;
+    regs->timingr = I2Cx->TIMINGR;
+
+    GPIO_TypeDef *sclGpio = IO_GPIO(pDev->scl);
+    const int sclPin = IO_GPIOPinIdx(pDev->scl);
+    regs->sclMode = (sclGpio->MODER >> (sclPin * 2)) & 0x3;
+    regs->sclAf = (sclGpio->AFR[sclPin >> 3] >> ((sclPin & 7) * 4)) & 0xF;
+    regs->sclLevel = (sclGpio->IDR >> sclPin) & 0x1;
+
+    GPIO_TypeDef *sdaGpio = IO_GPIO(pDev->sda);
+    const int sdaPin = IO_GPIOPinIdx(pDev->sda);
+    regs->sdaMode = (sdaGpio->MODER >> (sdaPin * 2)) & 0x3;
+    regs->sdaAf = (sdaGpio->AFR[sdaPin >> 3] >> ((sdaPin & 7) * 4)) & 0xF;
+    regs->sdaLevel = (sdaGpio->IDR >> sdaPin) & 0x1;
+
+    // Init-time bus-health bitmask (what the check in i2cInit() saw at boot).
+    // Compared against the live SCL/SDA levels above, this localises a
+    // boot-time-low / powered-late bus: init health says LOW but the line reads
+    // HIGH now => the bus was not driven high when i2cInit() ran.
+    regs->initHealth = i2cGetBusHealth(device);
+
+    // Kernel-clock health: is HSI (the I2C3/4 kernel source) actually locked,
+    // and at what division? Closes the question of whether clkSrc=HSI in the
+    // line above is a live 64 MHz clock or a selected-but-dead source.
+    regs->hsiReady = (RCC->CR & RCC_CR_HSIRDY) != 0;
+    regs->hsiDiv = (RCC->CR & RCC_CR_HSIDIV) >> RCC_CR_HSIDIV_Pos;
+
+    // Last-failure capture from the transaction unit (separate translation unit).
+    i2cGetFailDiag(device, regs);
+
+    return true;
+}
+#endif
 
 #endif

@@ -32,6 +32,11 @@
 
 static uint8_t i2cRegisteredDeviceCount = 0;
 
+// Per-bus health sampled at init (I2C_HEALTH_* bits). Populated by i2cInit()
+// via i2cReportBusHealth(); platforms that never call it leave entries at 0
+// (I2C_HEALTH_CHECKED clear → not reported).
+static uint8_t i2cBusHealth[I2CDEV_COUNT];
+
 bool i2cBusWriteRegister(const extDevice_t *dev, uint8_t reg, uint8_t data)
 {
     return i2cWrite(dev->bus->busType_u.i2c.device, dev->busType_u.i2c.address, reg, data);
@@ -99,5 +104,23 @@ void i2cBusDeviceRegister(const extDevice_t *dev)
 uint8_t i2cGetRegisteredDeviceCount(void)
 {
     return i2cRegisteredDeviceCount;
+}
+
+void i2cReportBusHealth(i2cDevice_e device, uint8_t health)
+{
+    if (device < 0 || device >= I2CDEV_COUNT) {
+        return;
+    }
+
+    i2cBusHealth[device] = health;
+}
+
+uint8_t i2cGetBusHealth(i2cDevice_e device)
+{
+    if (device < 0 || device >= I2CDEV_COUNT) {
+        return 0;
+    }
+
+    return i2cBusHealth[device];
 }
 #endif
