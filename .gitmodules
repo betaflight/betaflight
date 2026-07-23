@@ -1,5 +1,5 @@
 [submodule "config"]
 	path = src/config
 	url = https://github.com/betaflight/config.git
-	branch = master
+	branch = 4.5-config
 	ignore = dirty
