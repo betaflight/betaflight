@@ -34,6 +34,7 @@ bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale);
 bool rangefinderMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
+bool baroMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 }
@@ -59,6 +60,9 @@ static bool rfUseFakeMicrosTimestamp = true;
 static timeUs_t rfSampleTimeUs = 0;
 static timeDelta_t rfSampleIntervalUs = 10000;
 static float baroAltCm = 0.0f;
+static bool baroUseFakeMicrosTimestamp = true;
+static timeUs_t baroSampleTimeUs = 0;
+static timeDelta_t baroSampleIntervalUs = 10000;
 static timeUs_t fakeMicros = 0;
 static bool gpsAlwaysHasNewData = true;
 static bool gpsDataIsNew = false;
@@ -72,6 +76,8 @@ int32_t rangefinderGetLatestAltitude(void) { return lrintf(rfAltCm); }
 timeUs_t rangefinderGetLatestSampleTimeUs(void) { return rfUseFakeMicrosTimestamp ? fakeMicros : rfSampleTimeUs; }
 timeDelta_t rangefinderGetSampleIntervalUs(void) { return rfSampleIntervalUs; }
 float getBaroAltitude(void) { return baroAltCm; }
+timeUs_t getBaroLatestSampleTimeUs(void) { return baroUseFakeMicrosTimestamp ? fakeMicros : baroSampleTimeUs; }
+timeDelta_t getBaroSampleIntervalUs(void) { return baroSampleIntervalUs; }
 
 timeUs_t micros(void) { return fakeMicros; }
 
@@ -131,6 +137,9 @@ protected:
         rfSampleTimeUs = 0;
         rfSampleIntervalUs = 10000;
         baroAltCm = 100.0f;
+        baroUseFakeMicrosTimestamp = true;
+        baroSampleTimeUs = 0;
+        baroSampleIntervalUs = 10000;
         gpsSol.llh.altCm = 100.0f;
         gpsSol.dop.pdop = 100; // pDOP 1.0
 
@@ -260,6 +269,38 @@ TEST_F(PositionEstimatorTest, RangefinderUpsamplingTracksSourceInterval)
 
     rfSampleTimeUs = 200000;
     EXPECT_TRUE(rangefinderMeasurementReadyForFusion(200000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, BarometerMeasurementsUseCompletedSampleRate)
+{
+    baroUseFakeMicrosTimestamp = false;
+    baroSampleTimeUs = 100000;
+    baroSampleIntervalUs = 25000; // Default barometer rate is 40 Hz.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.5f);
+    EXPECT_TRUE(baroMeasurementReadyForFusion(110000, &noiseScale));
+    EXPECT_TRUE(baroMeasurementReadyForFusion(120000, &noiseScale));
+    EXPECT_FALSE(baroMeasurementReadyForFusion(130000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, BarometerUpsamplingTracksSlowerTargetRate)
+{
+    baroUseFakeMicrosTimestamp = false;
+    baroSampleTimeUs = 100000;
+    baroSampleIntervalUs = 50000; // Some targets configure barometers at 20 Hz.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 5.0f);
+    EXPECT_TRUE(baroMeasurementReadyForFusion(140000, &noiseScale));
+    EXPECT_FALSE(baroMeasurementReadyForFusion(150000, &noiseScale));
+
+    baroSampleTimeUs = 150000;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(150000, &noiseScale));
 }
 
 TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)

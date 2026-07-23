@@ -204,6 +204,10 @@ static bool gpsAltOffsetSet = false;
 static float baroAltOffsetCm = 0.0f;
 static float baroAltAccumulator = 0.0f;
 static bool baroOffsetSet = false;
+static bool baroDataAvailable = false;
+static timeUs_t baroTimestampUs = 0;
+static timeDelta_t baroHoldDurationUs = 0;
+static float baroMeasurementNoiseScale = 1.0f;
 #endif
 
 #ifdef USE_RANGEFINDER
@@ -271,6 +275,10 @@ void positionEstimatorInit(void)
     baroAltOffsetCm = 0.0f;
     baroAltAccumulator = 0.0f;
     baroOffsetSet = false;
+    baroDataAvailable = false;
+    baroTimestampUs = 0;
+    baroHoldDurationUs = 0;
+    baroMeasurementNoiseScale = 1.0f;
 #endif
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;
@@ -383,6 +391,39 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *nois
     }
 
     *noiseScale = gpsMeasurementNoiseScale;
+    return true;
+}
+#endif
+
+#ifdef USE_BARO
+// A complete pressure-conversion cycle can be slower than the barometer task's
+// scheduler rate. Use timestamps from valid altitude samples so conversion
+// delays and target-specific barometer rates are both accounted for.
+STATIC_UNIT_TESTED bool baroMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const timeUs_t sampleTimeUs = getBaroLatestSampleTimeUs();
+    const bool hasNewData = !baroDataAvailable || sampleTimeUs != baroTimestampUs;
+    if (hasNewData) {
+        const timeDelta_t sourceIntervalUs = getBaroSampleIntervalUs();
+
+        baroDataAvailable = true;
+        baroTimestampUs = sampleTimeUs;
+        baroHoldDurationUs = sourceIntervalUs;
+        baroMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, baroTimestampUs);
+    const bool withinHoldInterval = baroDataAvailable &&
+        baroHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < baroHoldDurationUs;
+    if ((!hasNewData || baroHoldDurationUs > 0) && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = baroMeasurementNoiseScale;
     return true;
 }
 #endif
@@ -556,6 +597,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_BARO
     if (!sensors(SENSOR_BARO)) {
+        baroDataAvailable = false;
         return;
     }
 
@@ -566,6 +608,11 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     }
 
     const float baroAltCm = getBaroAltitude();
+
+    float noiseScale;
+    if (!baroMeasurementReadyForFusion(nowUs, &noiseScale)) {
+        return;
+    }
 
     if (!baroOffsetSet) {
         // Capture disarmed baseline once; keep live relative altitude while disarmed.
@@ -578,7 +625,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     const float baroPreference = constrainf(positionConfig()->altitude_prefer_baro * 0.01f, 0.01f, 1.0f);
     const float baroR = R_BARO_ALT / baroPreference;
 
-    kalmanUpdatePosition(&kfUp, baroAltCm - baroAltOffsetCm, baroR);
+    kalmanUpdatePosition(&kfUp, baroAltCm - baroAltOffsetCm, baroR * noiseScale);
     lastZMeasurementUs = nowUs;
 
     zCal[CAL_Z_BARO].rawReading = baroAltCm;
