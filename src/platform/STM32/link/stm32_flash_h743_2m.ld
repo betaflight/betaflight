@@ -168,6 +168,19 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  /* phone-flash updater: its code and rodata are copied to RAM at burn time and run from there, so the */
+  /* erase/program loop keeps executing while all flash access is stalled. empty unless USE_PHONE_CONFIG. */
+  _siram_flash = LOADADDR(.ram_flash);
+  .ram_flash :
+  {
+    . = ALIGN(4);
+    _sram_flash = .;
+    *(.ram_flash)
+    *(.ram_flash*)
+    . = ALIGN(4);
+    _eram_flash = .;
+  } >RAM AT >FLASH1
+
   /* Uninitialized data section */
   . = ALIGN(4);
   .sram2 (NOLOAD) :

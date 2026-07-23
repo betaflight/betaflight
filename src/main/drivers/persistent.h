@@ -52,6 +52,7 @@ typedef enum {
 #define RESET_MSC_REQUEST               3  // MSC invocation was requested
 #define RESET_FORCED                    4  // Reset due to unknown reset reason
 #define RESET_BOOTLOADER_REQUEST_FLASH  5
+#define RESET_PHONECONFIG_REQUEST       6  // Phone-config (USB network) mode was requested
 
 void persistentObjectInit(void);
 uint32_t persistentObjectRead(persistentObjectId_e id);

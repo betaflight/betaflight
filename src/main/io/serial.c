@@ -49,6 +49,10 @@
 #include "drivers/serial_usb_vcp.h"
 #endif
 
+#ifdef USE_PHONE_CONFIG
+#include "io/phoneconfig.h"
+#endif
+
 #include "config/config.h"
 
 #include "io/serial.h"
@@ -667,8 +671,20 @@ void serialInit(bool softserialEnabled)
 {
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
+#ifdef USE_PHONE_CONFIG
+    // in phone-config mode usb is a cdc-ncm gadget, not the cdc-acm vcp, so the vcp port is dropped
+    const bool dropVcpPort = phoneConfigCheckBootAndReset();
+#endif
+
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
+
+#ifdef USE_PHONE_CONFIG
+        if (dropVcpPort && serialPortUsageList[index].identifier == SERIAL_PORT_USB_VCP) {
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            continue;
+        }
+#endif
 
 #if SERIAL_TRAIT_PIN_CONFIG
         const int resourceIndex = serialResourceIndex(serialPortUsageList[index].identifier);

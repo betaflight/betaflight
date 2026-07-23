@@ -54,6 +54,10 @@
 #include "drivers/usb_msc.h"
 #endif
 
+#ifdef USE_PHONE_CONFIG
+#include "io/phoneconfig.h"
+#endif
+
 #include "scheduler/scheduler.h"
 
 #ifdef CONFIG_IN_FILE
@@ -99,11 +103,19 @@ int main(int argc, char * argv[])
     }
 #endif
 
-#ifdef USE_VCP
-    // initialise the USB CDC interface using core 0 all USB code, including
-    // interrupts, must run on core 0
-    usbVcpInit();
+#ifdef USE_PHONE_CONFIG
+    if (phoneConfigCheckBootAndReset()) {
+        // usb comes up as a cdc-ncm gadget instead of the cdc-acm vcp, the full fc still boots
+        phoneConfigUsbStart();
+    } else
 #endif
+    {
+#ifdef USE_VCP
+        // initialise the USB CDC interface using core 0 all USB code, including
+        // interrupts, must run on core 0
+        usbVcpInit();
+#endif
+    }
 
 #ifdef ENABLE_MULTICORE_INIT
     // Now perform the final initialisation

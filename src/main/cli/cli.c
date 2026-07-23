@@ -80,6 +80,7 @@ bool cliMode = false;
 #include "drivers/lcd_console.h"
 #include "drivers/light_led.h"
 #include "drivers/motor.h"
+#include "io/phoneconfig.h"
 #include "drivers/rangefinder/rangefinder_hcsr04.h"
 #include "drivers/resource.h"
 #include "drivers/sdcard.h"
@@ -4275,7 +4276,18 @@ static void cliRebootEx(rebootTarget_e rebootTarget)
 {
     cliPrint("\r\nRebooting");
     cliWriterFlush();
-    waitForSerialPortToFinishTransmitting(cliPort);
+
+#ifdef USE_PHONE_CONFIG
+    // in phone-config the virtual msp port is drained by a scheduler task that can't run while we
+    // spin in waitForSerialPortToFinishTransmitting(), so skip that wait here or it would hang. a
+    // firmware reboot (e.g. 'save') re-enters phone-config below rather than normal mode, so the
+    // usb-ncm link comes straight back and the configurator reconnects with the saved config applied.
+    if (!phoneConfigCheckBootAndReset())
+#endif
+    {
+        waitForSerialPortToFinishTransmitting(cliPort);
+    }
+
     motorShutdown();
 
     switch (rebootTarget) {
@@ -4291,6 +4303,11 @@ static void cliRebootEx(rebootTarget_e rebootTarget)
 #endif
     case REBOOT_TARGET_FIRMWARE:
     default:
+#ifdef USE_PHONE_CONFIG
+        if (phoneConfigCheckBootAndReset()) {
+            systemResetToPhoneConfig();   // re-enter phone-config so the link returns (never returns)
+        }
+#endif
         systemReset();
 
         break;
@@ -8212,6 +8229,25 @@ static void cliMsc(const char *cmdName, char *cmdline)
 }
 #endif
 
+#if defined(USE_PHONE_CONFIG)
+static void cliPhoneConfig(const char *cmdName, char *cmdline)
+{
+    UNUSED(cmdName);
+    UNUSED(cmdline);
+
+    cliPrintHashLine("Restarting in phone-config (USB network) mode");
+    cliPrint("\r\nRebooting. Power-cycle the board to return to normal Betaflight.");
+    cliPrint("\r\nRecover any time via DFU: hold the BOOT button while plugging in USB.");
+    cliWriterFlush();
+    if (!phoneConfigCheckBootAndReset()) {
+        waitForSerialPortToFinishTransmitting(cliPort);
+    }
+    motorShutdown();
+
+    systemResetToPhoneConfig();
+}
+#endif
+
 typedef void cliCommandFn(const char* name, char *cmdline);
 
 typedef struct {
@@ -8354,6 +8390,9 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
     CLI_COMMAND_DEF("options", "show build options", NULL, cliOptions),
+#ifdef USE_PHONE_CONFIG
+    CLI_COMMAND_DEF("phoneconfig", "reboot into phone usb-network mode", NULL, cliPhoneConfig),
+#endif
 #ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
@@ -8613,7 +8652,13 @@ bool cliProcess(void)
 static void cliExit(const bool reboot)
 {
     cliWriterFlush();
-    waitForSerialPortToFinishTransmitting(cliPort);
+#ifdef USE_PHONE_CONFIG
+    // the virtual msp port drains from a scheduler task, so the busy-wait below would hang
+    if (!phoneConfigCheckBootAndReset())
+#endif
+    {
+        waitForSerialPortToFinishTransmitting(cliPort);
+    }
     cliClearInputBuffer();
     cliMode = false;
     cliInteractive = false;
@@ -8637,7 +8682,14 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
         setPrintfSerialPort(cliPort);
     }
 
-    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufBlockingShim, serialPort);
+#ifdef USE_PHONE_CONFIG
+    const bufWrite_t cliWriteFn = phoneConfigCheckBootAndReset()
+        ? (bufWrite_t)serialWriteBufShim
+        : (bufWrite_t)serialWriteBufBlockingShim;
+#else
+    const bufWrite_t cliWriteFn = (bufWrite_t)serialWriteBufBlockingShim;
+#endif
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer), cliWriteFn, serialPort);
     cliErrorWriter = cliWriter = &cliWriterDesc;
 
     if (interactive) {

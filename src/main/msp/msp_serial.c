@@ -42,6 +42,10 @@
 
 #include "pg/msp.h"
 
+#if defined(USE_PHONE_CONFIG)
+#include "io/phoneconfig.h"
+#endif
+
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort, bool sharedWithTelemetry)
@@ -88,6 +92,21 @@ void mspSerialAllocatePorts(void)
         portConfig = findNextSerialPortConfig(FUNCTION_MSP);
     }
 }
+
+#if defined(USE_PHONE_CONFIG)
+// register an externally-owned serial port as an msp port, used by phone-config mode's tcp/msp
+// bridge which has no uart serial-port config to drive mspSerialAllocatePorts().
+mspPort_t *mspSerialRegisterPort(serialPort_t *serialPort)
+{
+    for (int i = 0; i < MAX_MSP_PORT_COUNT; i++) {
+        if (mspPorts[i].port == NULL) {
+            resetMspPort(&mspPorts[i], serialPort, false);
+            return &mspPorts[i];
+        }
+    }
+    return NULL;
+}
+#endif
 
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
@@ -515,7 +534,14 @@ static void mspProcessPacket(mspPort_t *mspPort, mspProcessCommandFnPtr mspProce
     }
 
     if (mspPostProcessFn) {
-        waitForSerialPortToFinishTransmitting(mspPort->port);
+#if defined(USE_PHONE_CONFIG)
+        // the phone-config virtual msp port drains from a scheduler task, so this wait would hang here;
+        // the reboot it precedes (e.g. after a 'save') re-enters phone-config and the link comes back
+        if (!phoneConfigCheckBootAndReset())
+#endif
+        {
+            waitForSerialPortToFinishTransmitting(mspPort->port);
+        }
         mspPostProcessFn(mspPort->port);
     }
 }

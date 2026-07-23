@@ -121,6 +121,7 @@ COMMON_SRC = \
             drivers/serial_lcd_console.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
+            io/phoneconfig.c \
             drivers/timer_common.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \

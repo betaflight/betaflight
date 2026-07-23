@@ -290,4 +290,9 @@ uint8_t usbVcpIsConnected(void)
 {
     return usbIsConnected();
 }
+
+uint8_t usbVcpIsConfigured(void)
+{
+    return usbIsConfigured();
+}
 #endif

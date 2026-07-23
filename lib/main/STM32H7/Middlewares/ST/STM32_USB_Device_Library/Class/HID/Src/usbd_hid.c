@@ -120,6 +120,9 @@ USBD_ClassTypeDef USBD_HID = {
   USBD_HID_GetFSCfgDesc,
   USBD_HID_GetOtherSpeedCfgDesc,
   USBD_HID_GetDeviceQualifierDesc,
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+  NULL,   /* GetUsrStrDescriptor */
+#endif
 };
 
 /* USB HID device FS Configuration Descriptor */

@@ -87,9 +87,39 @@ jobs:
       - name: Run all unit tests
         run: make EXTRA_FLAGS=-Werror test-all
 
+  phone-config:
+    name: Phone-config (FOXEERF722V4)
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Restore ARM toolchain from cache
+        uses: actions/cache/restore@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-arm
+
+      - name: Install tools (fallback)
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=arm platform-tools-install
+
+      - name: Hydrate configuration
+        run: make configs
+
+      # USE_PHONE_CONFIG is an OPTIONS flag no plain target build exercises, so build one representative
+      # F7 target with it here to keep the phone-config usb-ncm / lwip / burn code compiling under -Werror
+      - name: Build FOXEERF722V4 with USE_PHONE_CONFIG
+        run: make EXTRA_FLAGS=-Werror FOXEERF722V4 OPTIONS='USE_PHONE_CONFIG'
+
   result:
     name: Complete
-    needs: [sdk-pipeline, test]
+    needs: [sdk-pipeline, test, phone-config]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -99,4 +129,8 @@ jobs:
 
       - name: Check test result
         if: ${{ needs.test.result != 'success' }}
+        run: exit 1
+
+      - name: Check phone-config result
+        if: ${{ needs.phone-config.result != 'success' }}
         run: exit 1

@@ -117,6 +117,9 @@ USBD_ClassTypeDef  USBD_MSC =
   USBD_MSC_GetFSCfgDesc,
   USBD_MSC_GetOtherSpeedCfgDesc,
   USBD_MSC_GetDeviceQualifierDescriptor,
+#if (USBD_SUPPORT_USER_STRING_DESC == 1U)
+  NULL,   /* GetUsrStrDescriptor */
+#endif
 };
 
 /* USB Mass storage device Configuration Descriptor */

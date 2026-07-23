@@ -460,8 +460,18 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev ,
 
     default:
 #if (USBD_SUPPORT_USER_STRING == 1U)
-      pbuf = pdev->pClass->GetUsrStrDescriptor(pdev, (req->wValue) , &len);
-      break;
+      /* betaflight: guard against classes without a user-string handler (matches the h7 core); a
+         windows 0xEE probe in normal vcp/msc mode would otherwise call through a NULL pointer */
+      if (pdev->pClass->GetUsrStrDescriptor != NULL)
+      {
+        pbuf = pdev->pClass->GetUsrStrDescriptor(pdev, (req->wValue), &len);
+        break;
+      }
+      else
+      {
+        USBD_CtlError(pdev, req);
+        return;
+      }
 #else
        USBD_CtlError(pdev , req);
       return;
