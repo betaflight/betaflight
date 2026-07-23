@@ -429,6 +429,8 @@ static void initNavMode(void)
     resetDistanceError();
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
+    targetAcceleration.v[EF_EAST]  = 0.0f;
+    targetAcceleration.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
