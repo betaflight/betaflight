@@ -209,6 +209,10 @@ static bool baroOffsetSet = false;
 #ifdef USE_RANGEFINDER
 static float rangefinderAltOffsetCm = 0.0f;
 static bool rangefinderOffsetSet = false;
+static bool rangefinderDataAvailable = false;
+static timeUs_t rangefinderTimestampUs = 0;
+static timeDelta_t rangefinderHoldDurationUs = 0;
+static float rangefinderMeasurementNoiseScale = 1.0f;
 #endif
 
 #ifdef USE_OPTICALFLOW
@@ -271,6 +275,10 @@ void positionEstimatorInit(void)
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;
     rangefinderOffsetSet = false;
+    rangefinderDataAvailable = false;
+    rangefinderTimestampUs = 0;
+    rangefinderHoldDurationUs = 0;
+    rangefinderMeasurementNoiseScale = 1.0f;
 #endif
 #ifdef USE_OPTICALFLOW
     opticalFlowDataAvailable = false;
@@ -375,6 +383,39 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *nois
     }
 
     *noiseScale = gpsMeasurementNoiseScale;
+    return true;
+}
+#endif
+
+#ifdef USE_RANGEFINDER
+// rangefinderProcess() timestamps only actual device samples, so its measured
+// interval remains correct when a driver task polls faster than the hardware
+// data rate (the UP-T1 polls at 100 Hz for a 50 Hz data stream, for example).
+STATIC_UNIT_TESTED bool rangefinderMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const timeUs_t sampleTimeUs = rangefinderGetLatestSampleTimeUs();
+    const bool hasNewData = !rangefinderDataAvailable || sampleTimeUs != rangefinderTimestampUs;
+    if (hasNewData) {
+        const timeDelta_t sourceIntervalUs = rangefinderGetSampleIntervalUs();
+
+        rangefinderDataAvailable = true;
+        rangefinderTimestampUs = sampleTimeUs;
+        rangefinderHoldDurationUs = sourceIntervalUs;
+        rangefinderMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, rangefinderTimestampUs);
+    const bool withinHoldInterval = rangefinderDataAvailable &&
+        rangefinderHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < rangefinderHoldDurationUs;
+    if ((!hasNewData || rangefinderHoldDurationUs > 0) && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = rangefinderMeasurementNoiseScale;
     return true;
 }
 #endif
@@ -558,6 +599,12 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
 
     float altCm;
     if (!rangefinderSampleAltitudeCm(&altCm, positionConfig()->rangefinder_max_range_cm)) {
+        rangefinderDataAvailable = false;
+        return;
+    }
+
+    float noiseScale;
+    if (!rangefinderMeasurementReadyForFusion(nowUs, &noiseScale)) {
         return;
     }
 
@@ -573,7 +620,7 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
         rfR *= 0.25f;  // even lower noise -> stronger pull
     }
 
-    kalmanUpdatePosition(&kfUp, altCm - rangefinderAltOffsetCm, rfR);
+    kalmanUpdatePosition(&kfUp, altCm - rangefinderAltOffsetCm, rfR * noiseScale);
     lastZMeasurementUs = nowUs;
 
     zCal[CAL_Z_RF].rawReading = altCm;

@@ -131,6 +131,7 @@ static uint8_t tfReceivePosition;
 static const uint8_t tfConfigCmd[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
 static int lidarTFValue;
+static bool hasLidarTFNewData = false;
 static unsigned lidarTFerrors = 0;
 
 
@@ -165,6 +166,7 @@ static void lidarTFInit(rangefinderDev_t *dev)
 
     tfFrameState = TF_FRAME_STATE_WAIT_START1;
     tfReceivePosition = 0;
+    hasLidarTFNewData = false;
 }
 
 static int tfProcessFrame(const uint8_t* frame, int len)
@@ -250,6 +252,7 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
 
             if (c == cksum) {
                 lidarTFValue = tfProcessFrame(tfFrame, TF_FRAME_LENGTH);
+                hasLidarTFNewData = true;
                 lastFrameReceivedMs = timeNowMs;
             } else {
                 // Checksum error. Simply ignore the current frame.
@@ -272,11 +275,15 @@ static void lidarTFUpdate(rangefinderDev_t *dev)
 }
 
 // Return most recent device output in cm
-// TODO - handle timeout; return value only once (see lidarMT)
 static int32_t lidarTFGetDistance(rangefinderDev_t *dev)
 {
     UNUSED(dev);
 
+    if (!hasLidarTFNewData) {
+        return RANGEFINDER_NO_NEW_DATA;
+    }
+
+    hasLidarTFNewData = false;
     return lidarTFValue;
 }
 

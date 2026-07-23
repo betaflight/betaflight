@@ -33,6 +33,7 @@ bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 #include "sensors/sensors.h"
 
 bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale);
+bool rangefinderMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 }
@@ -54,6 +55,9 @@ attitudeEulerAngles_t attitude;
 static uint32_t enabledSensors = 0;
 static bool rfHealthy = false;
 static float rfAltCm = 0.0f;
+static bool rfUseFakeMicrosTimestamp = true;
+static timeUs_t rfSampleTimeUs = 0;
+static timeDelta_t rfSampleIntervalUs = 10000;
 static float baroAltCm = 0.0f;
 static timeUs_t fakeMicros = 0;
 static bool gpsAlwaysHasNewData = true;
@@ -65,6 +69,8 @@ static bool opticalFlowHealthy = true;
 bool sensors(uint32_t mask) { return (enabledSensors & mask) != 0; }
 bool rangefinderIsHealthy(void) { return rfHealthy; }
 int32_t rangefinderGetLatestAltitude(void) { return lrintf(rfAltCm); }
+timeUs_t rangefinderGetLatestSampleTimeUs(void) { return rfUseFakeMicrosTimestamp ? fakeMicros : rfSampleTimeUs; }
+timeDelta_t rangefinderGetSampleIntervalUs(void) { return rfSampleIntervalUs; }
 float getBaroAltitude(void) { return baroAltCm; }
 
 timeUs_t micros(void) { return fakeMicros; }
@@ -121,6 +127,9 @@ protected:
         enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
         rfHealthy = true;
         rfAltCm = 100.0f;
+        rfUseFakeMicrosTimestamp = true;
+        rfSampleTimeUs = 0;
+        rfSampleIntervalUs = 10000;
         baroAltCm = 100.0f;
         gpsSol.llh.altCm = 100.0f;
         gpsSol.dop.pdop = 100; // pDOP 1.0
@@ -218,6 +227,39 @@ TEST_F(PositionEstimatorTest, OpticalFlowUpsamplingTracksMeasuredSampleRate)
     EXPECT_FLOAT_EQ(noiseScale, 4.0f);
     EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(190000, &testOpticalFlow, &noiseScale));
     EXPECT_FALSE(opticalFlowMeasurementReadyForFusion(200000, &testOpticalFlow, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, RangefinderMeasurementsUseMeasuredDataRate)
+{
+    rfUseFakeMicrosTimestamp = false;
+    rfSampleTimeUs = 100000;
+    rfSampleIntervalUs = 20000; // UP-T1 frames are 50 Hz despite 100 Hz polling.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+
+    // Reuse the 50 Hz sample on the intervening 100 Hz estimator call.
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(110000, &noiseScale));
+    EXPECT_FALSE(rangefinderMeasurementReadyForFusion(120000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, RangefinderUpsamplingTracksSourceInterval)
+{
+    rfUseFakeMicrosTimestamp = false;
+    rfSampleTimeUs = 100000;
+    rfSampleIntervalUs = 100000; // e.g. a 10 Hz HC-SR04.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(190000, &noiseScale));
+    EXPECT_FALSE(rangefinderMeasurementReadyForFusion(200000, &noiseScale));
+
+    rfSampleTimeUs = 200000;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(200000, &noiseScale));
 }
 
 TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
