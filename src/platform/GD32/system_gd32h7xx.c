@@ -89,6 +89,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_DMA0);
     rcu_periph_clock_enable(RCU_DMA1);
     rcu_periph_clock_enable(RCU_DMAMUX);
+    rcu_periph_clock_enable(RCU_ADC0);
 
     rcu_periph_clock_enable(RCU_SYSCFG);
 
