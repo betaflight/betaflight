@@ -143,26 +143,28 @@ TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorNotActive_BeeperSounds)
     EXPECT_TRUE(isBeeperOn());
 }
 
-TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BeeperSilent)
+TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_NoBattery_BeeperSilent)
 {
-    // BEEPER_USB set in off_flags AND configurator active → should be silenced
+    // BEEPER_USB set in off_flags, configurator active, no battery (bench) → should be silenced
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = true;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     beeper(BEEPER_RX_SET);
     EXPECT_FALSE(isBeeperOn());
 }
 
-TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BatteryPresent_BeeperSilent)
+TEST_F(BeeperTest, BeeperUsbFlagOn_ConfiguratorActive_BatteryPresent_BeeperSounds)
 {
-    // Key regression: BEEPER_USB + configurator active + battery present → must be silent
-    // Previously this would have sounded because only BATTERY_NOT_PRESENT was checked
+    // Regression betaflight#15423: BEEPER_USB + configurator active + battery present
+    // must still sound — USB suppression is a bench-only (no battery) feature.
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = true;
     simulatorBatteryState = BATTERY_OK;  // battery present!
 
     beeper(BEEPER_RX_SET);
-    EXPECT_FALSE(isBeeperOn());
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 TEST_F(BeeperTest, BeeperMute_SilencesBeeper)
@@ -178,10 +180,11 @@ TEST_F(BeeperTest, BeeperMute_SilencesBeeper)
 
 TEST_F(BeeperTest, BeeperUsbFlagOn_UsbInserted_ConfiguratorNotActive_BeeperSilent)
 {
-    // USB cable present but MSP idle (>5s polling gap) → must still be silenced
+    // USB cable present but MSP idle (>5s polling gap), no battery (bench) → must still be silenced
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorMspConfiguratorActive = false;
     simulatorUsbCableInserted = true;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     beeper(BEEPER_RX_SET);
     EXPECT_FALSE(isBeeperOn());
@@ -228,6 +231,7 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
     simulatorFailsafeRxDataReceived = true;
     simulatorMotorsRunning = false;
     simulatorLastDisarmTimeUs = 0;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
 
     beeper(BEEPER_RX_SET);
@@ -236,6 +240,25 @@ TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_Silent)
     beeperUpdate(simulatorCurrentTimeUs);
 
     EXPECT_EQ(dshotCommandWriteCount, 0);
+}
+
+TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorActive_BatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: USB flag + configurator active + battery present
+    // must still fire the DShot beacon — bench-only suppression must not affect flight.
+    simulatorBoxBeeperOn = true;
+    simulatorFailsafeRxDataReceived = true;
+    simulatorMotorsRunning = false;
+    simulatorLastDisarmTimeUs = 0;
+    simulatorBatteryState = BATTERY_OK;
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+
+    beeper(BEEPER_RX_SET);
+    simulatorCurrentTimeUs = 250000000;
+    simulatorMspConfiguratorActive = true;
+    beeperUpdate(simulatorCurrentTimeUs);
+
+    EXPECT_GT(dshotCommandWriteCount, 0);
 }
 
 TEST_F(BeeperTest, DshotBeaconRxSet_UsbFlagOn_ConfiguratorNotActive_Sounds)
@@ -307,6 +330,7 @@ TEST_F(BeeperTest, SequencePlayback_NotSuppressed_Sounds)
 TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
 {
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
 
     // Queue the sequence while NOT suppressed (USB idle, configurator idle).
     simulatorUsbCableInserted = false;
@@ -319,6 +343,23 @@ TEST_F(BeeperTest, SequencePlayback_SuppressedAfterQueue_StaysSilent)
     // beeperUpdate() must re-check suppression on the BeepOn step and stay silent.
     beeperUpdate(simulatorCurrentTimeUs);
     EXPECT_FALSE(isBeeperOn());
+}
+
+TEST_F(BeeperTest, SequencePlayback_SuppressedConditionsButBatteryPresent_Sounds)
+{
+    // Regression betaflight#15423: even if USB/configurator suppression conditions
+    // are met, a battery present means suppression must not engage.
+    beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
+    simulatorBatteryState = BATTERY_OK;
+
+    simulatorUsbCableInserted = false;
+    simulatorMspConfiguratorActive = false;
+    beeper(BEEPER_RX_SET);
+
+    simulatorMspConfiguratorActive = true;
+
+    beeperUpdate(simulatorCurrentTimeUs);
+    EXPECT_TRUE(isBeeperOn());
 }
 
 // =============================================================================
