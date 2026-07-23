@@ -1567,8 +1567,16 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
     const int usedCapacity = getMAhDrawn();
     int displayBasis = usedCapacity;
 
-    if (mAhDrawn >= osdConfig()->cap_alarm) {
-        element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+    if (currentBatteryProfile->batteryCapacity) {
+        if (mAhDrawn >= osdConfig()->cap_alarm) {
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        }
+    } else {
+        if (getBatteryState() == BATTERY_CRITICAL) {
+            element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
+        } else if (getBatteryState() == BATTERY_WARNING) {
+            element->attr = DISPLAYPORT_SEVERITY_WARNING;
+        }
     }
 
     switch (element->type) {
@@ -2729,14 +2737,19 @@ void osdUpdateAlarms(void)
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
-        SET_BLINK(OSD_MAIN_BATT_USAGE);
         SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
         CLR_BLINK(OSD_MAH_DRAWN);
-        CLR_BLINK(OSD_MAIN_BATT_USAGE);
         CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
+    if ((currentBatteryProfile->batteryCapacity && getMAhDrawn() >= osdConfig()->cap_alarm) ||
+        (!currentBatteryProfile->batteryCapacity && getBatteryState() != BATTERY_OK)) {
+        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    } else {
+        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    }
+   
     if ((alt >= osdConfig()->alt_alarm) && ARMING_FLAG(ARMED)) {
         SET_BLINK(OSD_ALTITUDE);
     } else {
