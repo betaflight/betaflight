@@ -523,6 +523,15 @@ bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs)
     // HIGH now => the bus was not driven high when i2cInit() ran.
     regs->initHealth = i2cGetBusHealth(device);
 
+    // Kernel-clock health: is HSI (the I2C3/4 kernel source) actually locked,
+    // and at what division? Closes the question of whether clkSrc=HSI in the
+    // line above is a live 64 MHz clock or a selected-but-dead source.
+    regs->hsiReady = (RCC->CR & RCC_CR_HSIRDY) != 0;
+    regs->hsiDiv = (RCC->CR & RCC_CR_HSIDIV) >> RCC_CR_HSIDIV_Pos;
+
+    // Last-failure capture from the transaction unit (separate translation unit).
+    i2cGetFailDiag(device, regs);
+
     return true;
 }
 #endif

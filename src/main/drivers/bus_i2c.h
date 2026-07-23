@@ -91,6 +91,26 @@ uint8_t i2cGetRegisteredDeviceCount(void);
 void i2cReportBusHealth(i2cDevice_e device, uint8_t health);
 uint8_t i2cGetBusHealth(i2cDevice_e device);
 
+// Classification of the last failed transaction, recorded by the transaction
+// path so a dead bus can be told apart from a silent (but healthy) bus:
+//   NACK    - address/data byte not acknowledged; the peripheral clocked the
+//             bus correctly, the target simply did not answer (wiring/address/
+//             sensor-rail issue, NOT the peripheral).
+//   BERR    - misplaced START/STOP: bus contention / protocol violation.
+//   ARLO    - arbitration lost: another master or a line stuck low mid-frame.
+//   OVR     - over/under-run (slave mode; unexpected here).
+//   TIMEOUT - the foreground state machine gave up with no completion IRQ; the
+//             peripheral never advanced (e.g. START never issued, BUSY stuck,
+//             no kernel clock reaching the bus).
+typedef enum {
+    I2C_FAIL_NONE = 0,
+    I2C_FAIL_NACK,
+    I2C_FAIL_BERR,
+    I2C_FAIL_ARLO,
+    I2C_FAIL_OVR,
+    I2C_FAIL_TIMEOUT,
+} i2cFailReason_e;
+
 #if defined(STM32H5)
 // TEMPORARY (Development Instrumentation): live register snapshot for an I2C bus,
 // to localise a dead-bus fault to clock-mux vs peripheral-enable vs pin/AF in a
@@ -107,6 +127,30 @@ typedef struct i2cDebugRegs_s {
     bool sclLevel;       // live SCL line level from IDR now (input buffer stays live in AF-OD; 1 = idle high)
     bool sdaLevel;       // live SDA line level from IDR now (1 = idle high)
     uint8_t initHealth;  // bus-health bitmask recorded at i2cInit() (I2C_HEALTH_* bits)
+    // Kernel-clock health — closes the "is HSI actually the running I2C3/4
+    // kernel source?" question on the record (I2C1/2 stay on PCLK, so these are
+    // only meaningful for the HSI-sourced buses).
+    bool hsiReady;       // RCC_CR HSIRDY (kernel oscillator locked)
+    uint8_t hsiDiv;      // RCC_CR HSIDIV (0=>/1 .. 3=>/8); kernel = 64 MHz >> hsiDiv
+    // Last-failure capture (from the transaction path). lastIsr/lastCr2 are the
+    // raw I2Cx->ISR / I2Cx->CR2 sampled at the moment of failure, so no bit is
+    // lost to interpretation; the per-reason counters summarise the boot-time
+    // device-detection sweep.
+    uint32_t lastIsr;
+    uint32_t lastCr2;
+    uint8_t  lastReason; // i2cFailReason_e
+    uint16_t failTotal;
+    uint16_t failNack;
+    uint16_t failBerr;
+    uint16_t failArlo;
+    uint16_t failOvr;
+    uint16_t failTimeout;
 } i2cDebugRegs_t;
 bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs);
+// Copy the transaction-path failure capture for a bus into regs (lives in the
+// LL transaction unit, separate from the init unit that fills the rest).
+void i2cGetFailDiag(i2cDevice_e device, i2cDebugRegs_t *regs);
+// Zero a bus's failure capture — used by "i2c_regs scan" so the live sweep's
+// result is not confused with the boot-time counts.
+void i2cResetFailDiag(i2cDevice_e device);
 #endif

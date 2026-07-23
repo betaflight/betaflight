@@ -5979,10 +5979,45 @@ bool cliSetSettingByName(const char *cmdline)
 // TEMPORARY (Development Instrumentation): dump the post-init registers that
 // decide whether a configured I2C bus can clock, side by side across buses, so
 // a dead bus is localised to clock-mux / peripheral-enable / pin-AF in one flash.
+static const char *i2cFailReasonName(uint8_t reason)
+{
+    static const char *names[] = { "none", "NACK", "BERR", "ARLO", "OVR", "TIMEOUT" };
+    return (reason < ARRAYLEN(names)) ? names[reason] : "?";
+}
+
+// Decode the decisive ISR/CR2 status bits into a compact human string, keeping
+// the raw hex alongside so nothing is lost to interpretation.
+static void cliI2cPrintFailCapture(int cfgId, const i2cDebugRegs_t *r)
+{
+    if (r->failTotal == 0) {
+        cliPrintLinef("I2C%d: fail=none (no failed transaction recorded)", cfgId);
+        return;
+    }
+    const uint32_t isr = r->lastIsr;
+    cliPrintLinef("I2C%d: fails=%u [NACK=%u BERR=%u ARLO=%u OVR=%u TIMEOUT=%u] last=%s "
+        "ISR=0x%08lx[%s%s%s%s%s%s%s%s] CR2=0x%08lx[%sNBYTES=%lu]",
+        cfgId,
+        r->failTotal, r->failNack, r->failBerr, r->failArlo, r->failOvr, r->failTimeout,
+        i2cFailReasonName(r->lastReason),
+        (unsigned long)isr,
+        (isr & I2C_ISR_BUSY)    ? "BUSY "    : "",
+        (isr & I2C_ISR_NACKF)   ? "NACKF "   : "",
+        (isr & I2C_ISR_BERR)    ? "BERR "    : "",
+        (isr & I2C_ISR_ARLO)    ? "ARLO "    : "",
+        (isr & I2C_ISR_OVR)     ? "OVR "     : "",
+        (isr & I2C_ISR_TIMEOUT) ? "TIMEOUT " : "",
+        (isr & I2C_ISR_TC)      ? "TC "      : "",
+        (isr & I2C_ISR_TXIS)    ? "TXIS "    : "",
+        (unsigned long)r->lastCr2,
+        (r->lastCr2 & I2C_CR2_START) ? "START " : "",
+        (unsigned long)((r->lastCr2 & I2C_CR2_NBYTES) >> I2C_CR2_NBYTES_Pos));
+}
+
 static void cliI2cRegs(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
-    UNUSED(cmdline);
+
+    const bool scan = strcasecmp(cmdline, "scan") == 0;
 
     static const char *clkSrc[] = { "PCLK", "PLL3R", "HSI", "CSI" };
     bool any = false;
@@ -5992,10 +6027,11 @@ static void cliI2cRegs(const char *cmdName, char *cmdline)
             continue;
         }
         any = true;
+        const int cfgId = I2C_DEV_TO_CFG(device);
         cliPrintLinef("I2C%d: clkSrc=%s(%d) busClk=%s PE=%s TIMINGR=0x%08lx "
             "SCL[mode=%d af=%d now=%s] SDA[mode=%d af=%d now=%s] "
-            "initHealth=0x%02x[SCL=%s SDA=%s]",
-            I2C_DEV_TO_CFG(device),
+            "initHealth=0x%02x[SCL=%s SDA=%s] HSI=%s/%u",
+            cfgId,
             clkSrc[r.clkSel & 0x3], r.clkSel,
             r.busClockOn ? "on" : "OFF",
             r.peEnabled ? "yes" : "NO",
@@ -6004,13 +6040,51 @@ static void cliI2cRegs(const char *cmdName, char *cmdline)
             r.sdaMode, r.sdaAf, r.sdaLevel ? "HIGH" : "LOW",
             r.initHealth,
             (r.initHealth & I2C_HEALTH_SCL_LOW) ? "low@init" : "ok",
-            (r.initHealth & I2C_HEALTH_SDA_LOW) ? "low@init" : "ok");
+            (r.initHealth & I2C_HEALTH_SDA_LOW) ? "low@init" : "ok",
+            r.hsiReady ? "rdy" : "OFF", (unsigned)(1u << r.hsiDiv));
+
+        if (scan) {
+            // Active address sweep: reset the capture, probe every 7-bit
+            // address, and report which answered. Zero ACKs with every attempt
+            // a TIMEOUT => the peripheral never clocks the bus; zero ACKs with
+            // NACKs => the bus clocks fine and nothing is listening; any ACK =>
+            // addressing works and the target is alive at that address.
+            i2cResetFailDiag(device);
+            int acks = 0;
+            uint8_t ackAddr[8];
+            for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
+                uint8_t b;
+                if (i2cRead(device, addr, 0xFF, 1, &b)) {
+                    if (acks < (int)ARRAYLEN(ackAddr)) {
+                        ackAddr[acks] = addr;
+                    }
+                    acks++;
+                }
+            }
+            if (acks == 0) {
+                cliPrintLinef("I2C%d: scan 0x08-0x77 -> no devices answered", cfgId);
+            } else {
+                cliPrintf("I2C%d: scan 0x08-0x77 -> %d answered:", cfgId, acks);
+                for (int i = 0; i < acks && i < (int)ARRAYLEN(ackAddr); i++) {
+                    cliPrintf(" 0x%02x", ackAddr[i]);
+                }
+                cliPrintLinefeed();
+            }
+            // Refresh the capture from the sweep just performed.
+            i2cGetFailDiag(device, &r);
+        }
+
+        cliI2cPrintFailCapture(cfgId, &r);
     }
     if (!any) {
         cliPrintLine("No configured I2C buses.");
     } else {
-        cliPrintLine("(expect: I2C1/2 clkSrc=PCLK, I2C3/4 clkSrc=HSI; busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4, now=HIGH)");
+        cliPrintLine("(expect: I2C1/2 clkSrc=PCLK, I2C3/4 clkSrc=HSI; busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4, now=HIGH, HSI=rdy)");
         cliPrintLine("(now=LOW while a meter reads high => bus not driven high when i2cInit ran: powered-late rail)");
+        cliPrintLine("(last=NACK => bus clocks, target silent; last=TIMEOUT + BUSY/START stuck => peripheral not clocking)");
+        if (!scan) {
+            cliPrintLine("(run 'i2c_regs scan' to actively probe every address and refresh the failure capture)");
+        }
     }
 }
 #endif
@@ -8396,7 +8470,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
 #if defined(STM32H5) && defined(USE_I2C)
-    CLI_COMMAND_DEF("i2c_regs", "dump I2C bus init registers (H5 bring-up aid)", NULL, cliI2cRegs),
+    CLI_COMMAND_DEF("i2c_regs", "dump I2C bus regs + failure capture (H5 bring-up aid)", "[scan]", cliI2cRegs),
 #endif
 #if ENABLE_LCD_CONSOLE
     CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),
