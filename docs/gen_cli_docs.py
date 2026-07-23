@@ -16,9 +16,7 @@ Usage (from repo root):
 import re
 import sys
 import argparse
-import subprocess
 from pathlib import Path
-from datetime import date
 from collections import OrderedDict
 
 
@@ -109,7 +107,12 @@ def parse_enum_members(text, enum_name):
 
 
 def parse_lookup_table_array(text):
-    """Returns ordered list of variable names from lookupTables[] = { LOOKUP_TABLE_ENTRY(x)... }"""
+    """Returns ordered list of variable names from lookupTables[].
+
+    Entries appear in one of two forms:
+        LOOKUP_TABLE_ENTRY(name)        — fixed-size table
+        { name, RUNTIME_COUNT_MACRO }   — variable-size table (e.g. acc/baro/mag hardware)
+    """
     m = re.search(
         r'const lookupTableEntry_t lookupTables\[\]\s*=\s*\{(.+?)^\};',
         text, re.DOTALL | re.MULTILINE
@@ -124,20 +127,32 @@ def parse_lookup_table_array(text):
         em = re.search(r'LOOKUP_TABLE_ENTRY\((\w+)\)', s)
         if em:
             entries.append(em.group(1))
+            continue
+        em = re.match(r'\{\s*(\w+)\s*,\s*\w+\s*\}', s)
+        if em:
+            entries.append(em.group(1))
     return entries
 
 
 def build_table_map(h_text, c_text, lookup_defs):
-    """Returns dict: TABLE_xxx -> [string_values]."""
+    """Returns dict: TABLE_xxx -> [string_values].
+
+    lookupTableIndex_e (settings.h) and lookupTables[] (settings.c) are positionally
+    matched 1:1 by the firmware itself (the enum value indexes directly into the array),
+    so a parsed-count mismatch means an entry was missed on one side and every mapping
+    after it would silently point at the wrong values — fail loudly instead.
+    """
     enum_members = parse_enum_members(h_text, 'lookupTableIndex_e')
     lookup_array = parse_lookup_table_array(c_text)
+    if len(enum_members) != len(lookup_array):
+        sys.exit(
+            f"ERROR: lookupTableIndex_e has {len(enum_members)} members but "
+            f"lookupTables[] has {len(lookup_array)} entries — parsed lookup-table "
+            f"mapping cannot be trusted to be aligned. Fix the parser before proceeding."
+        )
     result = {}
-    for i, name in enumerate(enum_members):
-        if i < len(lookup_array):
-            var = lookup_array[i]
-            result[name] = lookup_defs.get(var, [])
-        else:
-            result[name] = []
+    for name, var in zip(enum_members, lookup_array):
+        result[name] = lookup_defs.get(var, [])
     return result
 
 
@@ -445,10 +460,8 @@ def _format_requires(ifdef_conds):
     return ', '.join(f'`{c}`' for c in dict.fromkeys(simple))  # deduplicated, ordered
 
 
-def generate_markdown(entries, table_map, settings_c_path, git_hash=None,
+def generate_markdown(entries, table_map, settings_c_path,
                       fw_version=None, msp_version=None):
-    today = date.today().isoformat()
-    ref = git_hash or 'unknown'
     fw_str  = f' | Firmware: `{fw_version}`'  if fw_version  else ''
     msp_str = f' | MSP: `{msp_version}`'      if msp_version else ''
 
@@ -460,8 +473,8 @@ def generate_markdown(entries, table_map, settings_c_path, git_hash=None,
     lines = [
         '# CLI Parameters Reference',
         '',
-        '> **Auto-generated** — do not edit manually.',
-        f'> Source: `{settings_c_path}` | Generated: {today} | Commit: `{ref}`{fw_str}{msp_str}',
+        '> **Auto-generated** — do not edit manually. Regenerate with `python3 docs/gen_cli_docs.py`.',
+        f'> Source: `{settings_c_path}`{fw_str}{msp_str}',
         '',
         '---',
         '',
@@ -513,17 +526,6 @@ def generate_markdown(entries, table_map, settings_c_path, git_hash=None,
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-
-def _git_hash(path):
-    try:
-        r = subprocess.run(
-            ['git', 'rev-parse', '--short', 'HEAD'],
-            cwd=path, capture_output=True, text=True, timeout=5
-        )
-        return r.stdout.strip() if r.returncode == 0 else None
-    except Exception:
-        return None
-
 
 def _firmware_version(repo_root: Path):
     """Return 'MAJOR.MINOR.PATCH' from src/main/build/version.h, or None."""
@@ -607,6 +609,7 @@ def main():
     extra_sources = [
         c_path.parent.parent / 'sensors' / 'current.c',
         c_path.parent.parent / 'sensors' / 'voltage.c',
+        c_path.parent.parent / 'sensors' / 'sensors.c',
         c_path.parent.parent / 'build'   / 'debug.c',
     ]
 
@@ -637,7 +640,6 @@ def main():
             break
         repo_root = repo_root.parent
 
-    git_hash   = _git_hash(repo_root)
     fw_version = _firmware_version(repo_root)
     msp_version = _msp_version(repo_root)
 
@@ -648,7 +650,7 @@ def main():
 
     print(f"Generating {out_path}...")
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    md = generate_markdown(entries, table_map, str(c_path), git_hash,
+    md = generate_markdown(entries, table_map, str(c_path),
                            fw_version=fw_version, msp_version=msp_version)
     out_path.write_text(md)
 
