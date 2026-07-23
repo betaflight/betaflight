@@ -235,6 +235,10 @@ static SD_Error_t       SD_FindSCR                  (uint32_t *pSCR);
 void SDIO_DMA_ST3_IRQHandler(dmaChannelDescriptor_t *dma);
 void SDIO_DMA_ST6_IRQHandler(dmaChannelDescriptor_t *dma);
 
+void sdioPinConfigure(void)
+{
+
+}
 
 /*!
     \brief      Prepare the state machine for transfer
@@ -1231,13 +1235,12 @@ static SD_Error_t SD_FindSCR(uint32_t *pSCR)
     return ErrorState;
 }
 
-/*!
-    \brief      Initialize the SDIO module, DMA, and IO
-    \param[in]  dma: DMA stream pointer
-    \param[out] none
-    \retval     initialization success status
-*/
-bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
+void sdioInitialize(void)
+{
+
+}
+
+bool SD_InitialiseHardware(dmaResource_t *dma)
 {
     const dmaIdentifier_e dmaIdentifier = dmaGetIdentifier((dmaResource_t *)dma);
 
@@ -1264,12 +1267,12 @@ bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 
     uint8_t is4BitWidth = sdioConfig()->use4BitWidth;
 
-    const IO_t d0 = IOGetByTag(IO_TAG(PC8));
-    const IO_t d1 = IOGetByTag(IO_TAG(PC9));
-    const IO_t d2 = IOGetByTag(IO_TAG(PC10));
-    const IO_t d3 = IOGetByTag(IO_TAG(PC11));
-    const IO_t clk = IOGetByTag(IO_TAG(PC12));
-    const IO_t cmd = IOGetByTag(IO_TAG(PD2));
+    const IO_t d0  = IOGetByTag(sdioPinConfig()->D0Pin);
+    const IO_t d1  = IOGetByTag(sdioPinConfig()->D1Pin);
+    const IO_t d2  = IOGetByTag(sdioPinConfig()->D2Pin);
+    const IO_t d3  = IOGetByTag(sdioPinConfig()->D3Pin);
+    const IO_t clk = IOGetByTag(sdioPinConfig()->CKPin);
+    const IO_t cmd = IOGetByTag(sdioPinConfig()->CMDPin);
 
     IOInit(d0, OWNER_SDCARD, 0);
     if (is4BitWidth) {

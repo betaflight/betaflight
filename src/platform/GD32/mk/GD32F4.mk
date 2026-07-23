@@ -159,7 +159,7 @@ MCU_COMMON_SRC = \
             GD32/light_ws2811strip_stdperiph.c \
             GD32/persistent_gd32.c \
             GD32/rcu_gd32.c \
-            GD32/sdio_gdf4xx.c \
+            GD32/sdio_gd32f4xx.c \
             GD32/serial_uart_stdperiph.c \
             GD32/serial_uart_gd32f4xx.c \
             GD32/system_gd32f4xx.c \
