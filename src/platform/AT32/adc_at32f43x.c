@@ -223,6 +223,9 @@ static void setScalingFactors(void)
  *  It's not relevant to our use case, so ignore the difference for now)
  *
  * Called from fc/init.c
+ * Sample time of 640.5 cycles with oversampling enabled improves ADC
+ * accuracy on Artery hardware, at the cost of sample rate; acceptable
+ * for slow-changing inputs (vbat, current, rssi, temp).
  *
  * @param config - defines the channels to use for each external input (vbat, rssi, current, external) and also has calibration values for the temperature sensor
  *
@@ -302,7 +305,7 @@ void adcInit(const adcConfig_t *config)
 
         adcOperatingConfig[i].adcDevice = dev;
         adcOperatingConfig[i].adcChannel = adcTagMap[map].channel;
-        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_92_5;
+        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_640_5;
         adcOperatingConfig[i].enabled = true;
 
         nChannelsUsed[dev] += 1;    // increase the active channel count for this device
@@ -351,7 +354,8 @@ void adcInit(const adcConfig_t *config)
         adcInitDevice(adc->ADCx, nChannelsUsed[dev]);
 
         // Set the oversampling ratio and matching shift
-        adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_64, ADC_OVERSAMPLE_SHIFT_6);
+        adc_ordinary_oversample_enable(adc->ADCx, TRUE);
+        adc_oversample_ratio_shift_set(adc->ADCx, ADC_OVERSAMPLE_RATIO_4, ADC_OVERSAMPLE_SHIFT_2);
 
 #ifdef USE_DMA_SPEC
 
