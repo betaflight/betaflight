@@ -1,7 +1,7 @@
 # CLI Parameters Reference
 
 > **Auto-generated** — do not edit manually.
-> Source: `src/main/cli/settings.c` | Generated: 2026-07-16 | Commit: `45c3501877` | Firmware: `2026.6.0` | MSP: `0.1.48`
+> Source: `src/main/cli/settings.c` | Generated: 2026-07-23 | Commit: `6f12c2b4f` | Firmware: `2026.6.0` | MSP: `0.1.48`
 
 ---
 
@@ -52,6 +52,7 @@
 - [OSD Config](#osd-config)
 - [OSD Element Config](#osd-element-config)
 - [OSD Custom Text Config](#osd-custom-text-config)
+- [OSD Nav Map Config](#osd-nav-map-config)
 - [System Config](#system-config)
 - [VTX Settings Config](#vtx-settings-config)
 - [VTX Config](#vtx-config)
@@ -172,7 +173,7 @@
 | `baro_spi_device` | uint8 | hardware | `0` – `5` | `USE_BARO` |
 | `baro_i2c_device` | uint8 | hardware | `0` – `5` | `USE_BARO` |
 | `baro_i2c_address` | uint8 | hardware | `0` – `I2C_ADDR7_MAX` | `USE_BARO` |
-| `baro_hardware` | uint8 | master | `PWM`, `ONESHOT125`, `ONESHOT42`, `MULTISHOT`, `BRUSHED`, `DSHOT150`, `DSHOT300`, `DSHOT600`, `PROSHOT1000`, `DISABLED` | `USE_BARO` |
+| `baro_hardware` | uint8 | master | `PWM`, `ONESHOT125`, `ONESHOT42`, `MULTISHOT`, `BRUSHED`, `DSHOT150`, `DSHOT300`, `DSHOT600`, `PROSHOT1000`, `DISABLED`, `DRONECAN` | `USE_BARO` |
 
 ## RX Config
 
@@ -931,12 +932,21 @@
 | `osd_wp_direction_pos` | uint16 | master | `0` – `OSD_POSCFG_MAX` | `USE_OSD`, `USE_GPS` |
 | `osd_wp_next_number_pos` | uint16 | master | `0` – `OSD_POSCFG_MAX` | `USE_OSD`, `USE_GPS` |
 | `osd_wp_eta_pos` | uint16 | master | `0` – `OSD_POSCFG_MAX` | `USE_OSD`, `USE_GPS` |
+| `osd_nav_map_pos` | uint16 | master | `0` – `OSD_POSCFG_MAX` | `USE_OSD`, `USE_OSD_NAV_MAP` |
 
 ## OSD Custom Text Config
 
 | Parameter | Type | Scope | Range / Values | Requires |
 |-----------|------|-------|----------------|----------|
 | `osd_custom_serial_text_terminator` | uint8 | master | `CLASSIC`, `HYPERBOLIC` | `USE_OSD` |
+
+## OSD Nav Map Config
+
+| Parameter | Type | Scope | Range / Values | Requires |
+|-----------|------|-------|----------------|----------|
+| `osd_nav_map_mode` | uint8 | master | `0` – `OSD_NAV_MAP_MODE_COUNT - 1` | `USE_OSD`, `USE_OSD_NAV_MAP` |
+| `osd_nav_map_centre` | uint8 | master | `0` – `OSD_NAV_MAP_CENTRE_COUNT - 1` | `USE_OSD`, `USE_OSD_NAV_MAP` |
+| `osd_nav_map_min_scale_m` | uint16 | master | `20` – `5000` | `USE_OSD`, `USE_OSD_NAV_MAP` |
 
 ## System Config
 
@@ -1166,6 +1176,8 @@
 | `dronecan_enabled` | uint8 | hardware | `OFF`, `ON` |
 | `dronecan_node_id` | uint8 | hardware | `0` – `127` |
 | `dronecan_device` | uint8 | hardware | `1` – `CANDEV_COUNT` |
+| `dronecan_esc_rate_hz` | uint16 | hardware | `50` – `500` |
+| `dronecan_dna_enabled` | uint8 | hardware | `OFF`, `ON` |
 
 ## Mco Config
 
@@ -1275,6 +1287,7 @@
 | `ap_position_i` | uint8 | master | `0` – `200` | `!USE_WING` |
 | `ap_position_d` | uint8 | master | `0` – `200` | `!USE_WING` |
 | `ap_position_a` | uint8 | master | `0` – `200` | `!USE_WING` |
+| `ap_position_f` | uint8 | master | `0` – `200` | `!USE_WING` |
 | `ap_position_cutoff` | uint8 | master | `10` – `250` | `!USE_WING` |
 | `ap_stop_threshold` | uint8 | master | `0` – `100` | `!USE_WING` |
 | `ap_max_angle` | uint8 | master | `10` – `70` | `!USE_WING` |
@@ -1293,6 +1306,13 @@
 | `ap_yaw_d` | uint16 | master | `0` – `200` | `!USE_WING` |
 | `ap_max_yaw_rate` | uint16 | master | `10` – `360` | `!USE_WING` |
 | `ap_min_forward_velocity` | uint16 | master | `10` – `500` | `!USE_WING` |
+| `ap_nav_corner_speed` | uint16 | master | `50` – `2000` | `!USE_WING` |
+| `ap_nav_corner_delta_v` | uint16 | master | `100` – `4000` | `!USE_WING` |
+| `ap_nav_decel` | uint16 | master | `20` – `1000` | `!USE_WING` |
+| `ap_nav_accel` | uint16 | master | `20` – `1000` | `!USE_WING` |
+| `ap_nav_carrot_lead_time` | uint8 | master | `2` – `40` | `!USE_WING` |
+| `ap_nav_carrot_lead_max` | uint16 | master | `600` – `6000` | `!USE_WING` |
+| `ap_nav_preturn_dist` | uint16 | master | `500` – `5000` | `!USE_WING` |
 | `ap_velocity_buildup_max_pitch` | uint8 | master | `0` – `20` | `!USE_WING` |
 | `ap_max_turn_rate` | uint8 | master | `1` – `90` | `!USE_WING` |
 | `ap_hold_orbit_radius` | uint16 | master | `300` – `5000` | `!USE_WING` |
