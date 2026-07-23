@@ -30,11 +30,13 @@ float simulatedPrevSetpointRate[3] = { 0,0,0 };
 float simulatedRcDeflection[3] = { 0,0,0 };
 float simulatedMaxRcDeflectionAbs = 0;
 float simulatedMixerGetRcThrottle = 0;
+float simulatedThrottle = 0; // used by adrc.c's adrcUpdatePerLoopState()
 float simulatedRcCommandDelta[3] = { 1,1,1 };
 float simulatedRawSetpoint[3] = { 0,0,0 };
 float simulatedMaxRate[3] = { 670,670,670 };
 float simulatedFeedforward[3] = { 0,0,0 };
 float simulatedMotorMixRange = 0.0f;
+bool simulatedYawSpinDetected = false;
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint8_t debugMode;
@@ -90,6 +92,7 @@ extern "C" {
 
     bool unitLaunchControlActive = false;
     launchControlMode_e unitLaunchControlMode = LAUNCH_CONTROL_MODE_NORMAL;
+    bool unitCrashFlipModeActive = false;
 
     float getMotorMixRange(void) { return simulatedMotorMixRange; }
     float getSetpointRate(int axis) { return simulatedSetpointRate[axis]; }
@@ -99,12 +102,15 @@ extern "C" {
     // used by auto-disarm code
     float getMaxRcDeflectionAbs() { return fabsf(simulatedMaxRcDeflectionAbs); }
     float mixerGetRcThrottle() { return fabsf(simulatedMixerGetRcThrottle); }
+    float mixerGetThrottle(void) { return simulatedThrottle; }
+    float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
 
 
     bool isBelowLandingAltitude(void) { return false; }
 
     void systemBeep(bool) { }
     bool gyroOverflowDetected(void) { return false; }
+    bool gyroYawSpinDetected(void) { return simulatedYawSpinDetected; }
     float getRcDeflection(int axis) { return simulatedRcDeflection[axis]; }
     float getRcDeflectionRaw(int axis) { return simulatedRcDeflection[axis]; }
     float getRawSetpoint(int axis) { return simulatedRawSetpoint[axis]; }
@@ -113,6 +119,7 @@ extern "C" {
     }
     void beeperConfirmationBeeps(uint8_t) { }
     bool isLaunchControlActive(void) {return unitLaunchControlActive; }
+    bool isCrashFlipModeActive(void) { return unitCrashFlipModeActive; }
     void disarm(flightLogDisarmReason_e) { }
     float getMaxRcRate(int axis)
     {
@@ -190,6 +197,7 @@ void resetTest(void)
     loopIter = 0;
     pidRuntime.tpaFactor = 1.0f;
     simulatedMotorMixRange = 0.0f;
+    simulatedYawSpinDetected = false;
 
     pidStabilisationState(PID_STABILISATION_OFF);
     DISABLE_ARMING_FLAG(ARMED);
@@ -203,6 +211,7 @@ void resetTest(void)
         pidData[axis].S = 0;
         pidData[axis].Sum = 0;
         simulatedSetpointRate[axis] = 0;
+        simulatedPrevSetpointRate[axis] = 0;
         simulatedRcDeflection[axis] = 0;
         simulatedRawSetpoint[axis] = 0;
         gyro.gyroADCf[axis] = 0;
@@ -213,6 +222,7 @@ void resetTest(void)
 
     flightModeFlags = 0;
     unitLaunchControlActive = false;
+    unitCrashFlipModeActive = false;
     pidProfile->launchControlMode = unitLaunchControlMode;
     pidInit(pidProfile);
     loadControlRateProfile();
@@ -707,6 +717,231 @@ TEST(pidControllerTest, testCrashRecoveryMode)
     // Add additional verifications
 }
 
+#ifdef USE_ADRC
+static void prepareCrashRecoveryTest(pidType_e pidType, pidCrashRecovery_e crashRecovery, bool gpsRescue)
+{
+    resetTest();
+    pidProfile->pid_type = pidType;
+    pidProfile->pid[PID_ROLL].D = 0;
+    pidProfile->pid[PID_PITCH].D = 0;
+    pidProfile->pid[PID_YAW].D = 0;
+    pidProfile->crash_recovery = crashRecovery;
+    pidInit(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    sensorsSet(SENSOR_ACC);
+    if (gpsRescue) {
+        ENABLE_FLIGHT_MODE(GPS_RESCUE_MODE);
+    }
+    simulatedMotorMixRange = 1.2f;
+
+    // Prime the static D-term history and, for GPS Rescue, start its one-second
+    // crash-detection guard before applying the gyro step.
+    gyro.gyroADCf[FD_ROLL] = 0.0f;
+    pidController(pidProfile, 2000000);
+}
+
+static void triggerRollCrash(void)
+{
+    gyro.gyroADCf[FD_ROLL] = 800.0f;
+    pidController(pidProfile, 4000000);
+}
+
+TEST(pidControllerTest, testAdrcCrashDetectionAndItermSuppressionDoNotRequireClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    triggerRollCrash();
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcGpsRescueCrashDetectionAndItermSuppressionDoNotRequireClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_OFF, true);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    triggerRollCrash();
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcPitchCrashClearsEarlierAxisItermInSameLoop)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    pidRuntime.adrc.z3[FD_ROLL] = pidProfile->pidSumLimit * pidRuntime.adrc.coefficient[FD_ROLL].b0;
+
+    gyro.gyroADCf[FD_PITCH] = 800.0f;
+    pidController(pidProfile, 4000000);
+
+    EXPECT_TRUE(crashRecoveryModeActive());
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    const float sumWithoutI = pidData[FD_ROLL].P + pidData[FD_ROLL].D
+        + pidData[FD_ROLL].F + pidData[FD_ROLL].S;
+    EXPECT_FLOAT_EQ(sumWithoutI, pidData[FD_ROLL].Sum);
+    EXPECT_FLOAT_EQ(constrainf(sumWithoutI, -pidProfile->pidSumLimit, pidProfile->pidSumLimit),
+        pidRuntime.adrc.lastOutput[FD_ROLL]);
+}
+
+TEST(pidControllerTest, testAdrcCrashRecoveryExitKeepsItermBumpless)
+{
+    prepareCrashRecoveryTest(PID_TYPE_ADRC, PID_CRASH_RECOVERY_ON, false);
+    const timeUs_t crashTimeUs = 3000000;
+    pidRuntime.inCrashRecoveryMode = true;
+    pidRuntime.crashDetectedAtUs = crashTimeUs;
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        const float sumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+    }
+
+    pidController(pidProfile, crashTimeUs + targetPidLooptime);
+    EXPECT_TRUE(crashRecoveryModeActive());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        const float sumLimit = (axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+    }
+
+    simulatedMotorMixRange = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 0.0f;
+    pidController(pidProfile, crashTimeUs + 2 * targetPidLooptime);
+    EXPECT_FALSE(crashRecoveryModeActive());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
+
+    pidController(pidProfile, crashTimeUs + 3 * targetPidLooptime);
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+    }
+}
+
+#ifdef USE_YAW_SPIN_RECOVERY
+TEST(pidControllerTest, testAdrcYawSpinRecoveryExitKeepsDisturbanceItermBumpless)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->adrc.gyroFilterHz = 0;
+    pidProfile->adrc.sigmaDecay = 0;
+    pidInitConfig(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    simulatedThrottle = pidProfile->adrc.hoverThrottlePercent * 0.01f;
+
+    const float recoveryOutput[XYZ_AXIS_COUNT] = { 100.0f, -125.0f, 150.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = 0.0f;
+        adrcResetState(&pidRuntime.adrc, axis);
+        pidRuntime.adrc.z3[axis] = ((axis == FD_YAW) ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit)
+            * pidRuntime.adrc.coefficient[axis].b0;
+        pidRuntime.adrc.lastOutput[axis] = recoveryOutput[axis];
+    }
+    pidRuntime.adrc.liftoff = true;
+
+    // A saturated disturbance estimate must be removed before the active recovery observer step;
+    // otherwise stale z3 enters z2 once even though the published I term is zeroed afterwards.
+    simulatedYawSpinDetected = true;
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        const float expectedZ2 = pidRuntime.dT * pidRuntime.adrc.coefficient[axis].b0 * recoveryOutput[axis];
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_NEAR(expectedZ2, pidRuntime.adrc.z2[axis], 1.0e-3f);
+        EXPECT_FLOAT_EQ(recoveryOutput[axis], pidRuntime.adrc.lastOutput[axis]);
+        EXPECT_FLOAT_EQ(pidData[axis].P + pidData[axis].D + pidData[axis].F + pidData[axis].S,
+            pidData[axis].Sum);
+    }
+
+    // Hold disturbance I at zero for the first loop after detection clears. Deliberately move
+    // the gyro now so this loop would create fresh z3 without the one-loop exit guard.
+    const float recoveryExitGyro[XYZ_AXIS_COUNT] = { 10.0f, -12.0f, 8.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = recoveryExitGyro[axis];
+    }
+    simulatedYawSpinDetected = false;
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z1[axis]));
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z2[axis]));
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(recoveryOutput[axis], pidRuntime.adrc.lastOutput[axis]);
+        EXPECT_FLOAT_EQ(pidData[axis].P + pidData[axis].D + pidData[axis].F + pidData[axis].S,
+            pidData[axis].Sum);
+    }
+
+    // The next clean loop may resume disturbance estimation from zero.
+    pidController(pidProfile, currentTestTime());
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        EXPECT_NE(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_NE(0.0f, pidData[axis].I);
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.z3[axis]));
+        EXPECT_TRUE(std::isfinite(pidRuntime.adrc.lastOutput[axis]));
+    }
+}
+#endif
+
+TEST(pidControllerTest, testAdrcArmTransitionStartsFreshEpoch)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->adrc.gyroFilterHz = 0;
+    pidProfile->adrc.sigmaDecay = 0;
+    pidInitConfig(pidProfile);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
+        gyro.gyroADCf[axis] = 0.0f;
+    }
+
+    // Arm cycle 1: open the gate via the throttle condition, then land carrying a stale
+    // disturbance estimate (the post-landing ground-contact windup measured in flight).
+    simulatedThrottle = 0.6f;
+    pidController(pidProfile, currentTestTime());
+    EXPECT_TRUE(pidRuntime.adrc.liftoff);
+    pidRuntime.adrc.z3[FD_ROLL] = 100000.0f;
+
+    // Disarm. With the stock default pid_at_min_throttle = ON, pidStabilisationEnabled stays true
+    // while disarmed, so the stabilisation-disabled reset branch must not be relied on here.
+    DISABLE_ARMING_FLAG(ARMED);
+    simulatedThrottle = 0.0f;
+    pidController(pidProfile, currentTestTime());
+
+    // Re-arm: a fresh epoch must begin - gate closed, no inherited disturbance trim. Fails on the
+    // pre-ADRC-017 code, where the gate and z3 survive the disarm into the next arm cycle.
+    ENABLE_ARMING_FLAG(ARMED);
+    pidController(pidProfile, currentTestTime());
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+    EXPECT_NEAR(0.0f, pidRuntime.adrc.z3[FD_ROLL], 1.0f);
+}
+
+TEST(pidControllerTest, testClassicCrashDetectionStillRequiresClassicD)
+{
+    prepareCrashRecoveryTest(PID_TYPE_CLASSIC, PID_CRASH_RECOVERY_ON, false);
+
+    triggerRollCrash();
+
+    EXPECT_FALSE(crashRecoveryModeActive());
+}
+#endif
+
 TEST(pidControllerTest, testFeedForward)
 // NOTE: THIS DOES NOT TEST THE FEEDFORWARD CALCULATIONS, which are now in rc.c, and return setpointDelta
 // This test only validates the feedforward value calculated in pid.c for a given simulated setpointDelta
@@ -1180,4 +1415,237 @@ TEST(pidControllerTest, testTpaHyperbolic)
 
     pidUpdateTpaFactor(1.0);
     EXPECT_NEAR(0.9f, pidRuntime.tpaFactor, 0.01f);
+}
+
+TEST(pidControllerTest, testAdrcStateResetsOnDisarmedControlLawChange)
+{
+    resetTest();
+    ASSERT_FALSE(ARMING_FLAG(ARMED));
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    gyro.gyroADCf[FD_ROLL] = 300.0f;
+    pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+
+    // Stock stick/MSP profile selection is disarmed. Define that supported configuration
+    // transition explicitly: neither controller may inherit the other's integrator/output state.
+    pidData[FD_ROLL].I = 75.0f;
+    pidRuntime.adrc.z3[FD_ROLL] = 12345.0f;
+    pidRuntime.adrc.lastOutput[FD_ROLL] = 400.0f;
+    pidRuntime.adrc.liftoff = true;
+
+    pidProfile->pid_type = PID_TYPE_CLASSIC;
+    pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(0.0f, pidData[FD_ROLL].I);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+
+    gyro.gyroADCf[FD_ROLL] = 900.0f;
+
+    // Selecting ADRC again while disarmed prepares the next arming epoch from the current gyro;
+    // this is configuration hygiene, not a promise of unsupported in-flight profile handover.
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(900.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+}
+
+TEST(pidControllerTest, testAdrcEsoNotReseedOnRepeatedInitUnderSameType)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    gyro.gyroADCf[FD_ROLL] = 300.0f;
+    pidInitConfig(pidProfile);
+    EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+
+    // Adjustment ranges call pidInitConfig() while ADRC stays active. The z3 disturbance/trim
+    // estimate must survive, and z1 must not be force-seeded again either - only a genuine
+    // control-law configuration change should reset controller memory.
+    ENABLE_ARMING_FLAG(ARMED);
+    pidRuntime.adrc.liftoff = true;
+    pidRuntime.adrc.z3[FD_ROLL] = 12345.0f;
+    gyro.gyroADCf[FD_ROLL] = 900.0f;
+    pidInitConfig(pidProfile); // pid_type unchanged - must be a no-op for the ESO state
+
+    EXPECT_FLOAT_EQ(12345.0f, pidRuntime.adrc.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(300.0f, pidRuntime.adrc.z1[FD_ROLL]);
+    EXPECT_TRUE(pidRuntime.adrc.liftoff);
+}
+
+TEST(pidControllerTest, testAdrcCrashFlipHoldsControllerResetThroughAutoRearm)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidProfile->iterm_relax = ITERM_RELAX_OFF;
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        // Isolate the ADRC transition from the independent feedforward path.
+        pidProfile->pid[axis].F = 0;
+    }
+    pidInitConfig(pidProfile);
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+
+    unitCrashFlipModeActive = true;
+    simulatedThrottle = 0.0f; // mixTable() publishes zero collective authority in Crash Flip.
+    pidRuntime.adrc.liftoff = true;
+    pidRuntime.adrc.gyroActiveS = 1.0f;
+
+    const float crashFlipGyro[XYZ_AXIS_COUNT] = { 600.0f, -450.0f, 0.0f };
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        const float sumLimit = axis == FD_YAW ? pidProfile->pidSumLimitYaw : pidProfile->pidSumLimit;
+        gyro.gyroADCf[axis] = crashFlipGyro[axis];
+        simulatedSetpointRate[axis] = -crashFlipGyro[axis];
+        pidData[axis].Sum = 2.0f * sumLimit;
+        pidRuntime.adrc.z1[axis] = -crashFlipGyro[axis];
+        pidRuntime.adrc.z2[axis] = 50000.0f;
+        pidRuntime.adrc.z3[axis] = sumLimit * pidRuntime.adrc.coefficient[axis].b0;
+        pidRuntime.adrc.lastOutput[axis] = sumLimit;
+    }
+
+    // Six test loops exceed the 25 ms gyro liftoff hold. Turtle-mode rotation must neither open
+    // the ADRC gate nor retain the saturated control/observer state while the mixer owns motors.
+    for (int loop = 0; loop < 6; loop++) {
+        pidController(pidProfile, currentTestTime());
+
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].P);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].D);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].F);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].S);
+            EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+            EXPECT_FLOAT_EQ(crashFlipGyro[axis], pidRuntime.adrc.z1[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+            EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        }
+        EXPECT_FALSE(pidRuntime.adrc.liftoff);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.gyroActiveS);
+    }
+
+    // Auto-rearm exits Crash Flip without a disarm. With the pilot command matched to the current
+    // rate, the first normal loop must start from the last clean gyro-seeded state, not turtle state.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        simulatedPrevSetpointRate[axis] = crashFlipGyro[axis];
+        simulatedSetpointRate[axis] = crashFlipGyro[axis];
+    }
+    unitCrashFlipModeActive = false;
+    pidController(pidProfile, currentTestTime());
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        SCOPED_TRACE(axis);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].P);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].I);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].D);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].F);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].S);
+        EXPECT_FLOAT_EQ(0.0f, pidData[axis].Sum);
+        EXPECT_FLOAT_EQ(crashFlipGyro[axis], pidRuntime.adrc.z1[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z2[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.z3[axis]);
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
+    EXPECT_FALSE(pidRuntime.adrc.liftoff);
+}
+
+TEST(pidControllerTest, testClassicPidStillRunsDuringCrashFlip)
+{
+    resetTest();
+    ASSERT_EQ(PID_TYPE_CLASSIC, pidProfile->pid_type);
+
+    ENABLE_ARMING_FLAG(ARMED);
+    pidStabilisationState(PID_STABILISATION_ON);
+    unitCrashFlipModeActive = true;
+    simulatedSetpointRate[FD_ROLL] = 500.0f;
+
+    pidController(pidProfile, currentTestTime());
+
+    EXPECT_NE(0.0f, pidData[FD_ROLL].P);
+    EXPECT_NE(0.0f, pidData[FD_ROLL].Sum);
+}
+
+TEST(pidControllerTest, testAdrcAppliedOutputUsesMixerAuthorityAndAxisLimits)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    pidData[FD_ROLL].Sum = 800.0f;
+    pidData[FD_PITCH].Sum = -800.0f;
+    pidData[FD_YAW].Sum = 600.0f;
+
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
+
+    // The proportional mixer scale (0.5 here) must NOT be multiplied into the feedback: b0 is
+    // flight-calibrated with the mixer's proportional normalization inside the loop, and feeding
+    // scale*u re-defines b0 and over-gains the loop by 1/scale at low throttle (flight-measured
+    // 24-26 Hz limit cycle, A/B 2026-07-12). Positive scale only means "the command was applied".
+    EXPECT_FLOAT_EQ(500.0f, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    EXPECT_FLOAT_EQ(-500.0f, pidRuntime.adrc.lastOutput[FD_PITCH]);
+    EXPECT_FLOAT_EQ(400.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+
+    // Yaw-spin recovery raises the mixer clamp to PIDSUM_LIMIT_MAX. Feed the same effective
+    // limit back to the observer instead of silently clipping at the profile's normal yaw limit.
+    pidData[FD_YAW].Sum = 900.0f;
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, PIDSUM_LIMIT_MAX);
+    EXPECT_FLOAT_EQ(900.0f, pidRuntime.adrc.lastOutput[FD_YAW]);
+}
+
+TEST(pidControllerTest, testAdrcSaturatedAppliedOutputFeedsNextObserverStep)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    pidRuntime.adrc.liftoff = true;
+    pidRuntime.adrc.b0ThrottleScale = 1.0f;
+    pidData[FD_ROLL].Sum = 800.0f;
+
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
+
+    const float expectedAppliedOutput = 500.0f;
+    ASSERT_FLOAT_EQ(expectedAppliedOutput, pidRuntime.adrc.lastOutput[FD_ROLL]);
+    const float z2Before = pidRuntime.adrc.z2[FD_ROLL];
+    const float expectedZ2 = z2Before + pidRuntime.dT
+        * pidRuntime.adrc.coefficient[FD_ROLL].b0 * expectedAppliedOutput;
+
+    adrcApplyControl(&pidRuntime.adrc, FD_ROLL, 0.0f, 0.0f, pidRuntime.dT, pidProfile->pidSumLimit);
+
+    EXPECT_NEAR(expectedZ2, pidRuntime.adrc.z2[FD_ROLL], 1.0e-3f);
+}
+
+TEST(pidControllerTest, testAdrcAppliedOutputRejectsInvalidScaleAndClassicProfiles)
+{
+    resetTest();
+
+    pidProfile->pid_type = PID_TYPE_ADRC;
+    pidInitConfig(pidProfile);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        pidData[axis].Sum = 100.0f;
+    }
+
+    pidUpdateAdrcAppliedOutput(pidProfile, -1.0f, pidProfile->pidSumLimitYaw);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        pidRuntime.adrc.lastOutput[axis] = 42.0f;
+    }
+
+    pidUpdateAdrcAppliedOutput(pidProfile, NAN, pidProfile->pidSumLimitYaw);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(0.0f, pidRuntime.adrc.lastOutput[axis]);
+        pidRuntime.adrc.lastOutput[axis] = 42.0f;
+    }
+
+    pidProfile->pid_type = PID_TYPE_CLASSIC;
+    pidUpdateAdrcAppliedOutput(pidProfile, 0.5f, pidProfile->pidSumLimitYaw);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_FLOAT_EQ(42.0f, pidRuntime.adrc.lastOutput[axis]);
+    }
 }

@@ -1,0 +1,736 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Characterization tests for the ported danusha2345/ADRC-betaflight fixes: the liftoff gate
+// (fix #8/#10b), the throttle-scaled b0 (fix #10a) and the z3 leaky decay (fix #11). adrc.c has no
+// pid.c/pidRuntime coupling, so these exercise its public API directly against a stubbed throttle
+// and gyro reading, instead of needing a full pidController() mock harness.
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include <math.h>
+
+static float simulatedThrottle = 0.0f;
+
+extern "C" {
+    #include "common/axis.h"
+    #include "common/maths.h"
+    #include "common/filter.h"
+
+    #include "build/debug.h"
+
+    #include "sensors/gyro.h"
+
+    #include "flight/adrc.h"
+
+    gyro_t gyro;
+
+    float mixerGetAdrcThrottle(void) { return simulatedThrottle; }
+}
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+int16_t debug[DEBUG16_VALUE_COUNT];
+uint8_t debugMode;
+
+namespace {
+
+constexpr float TEST_DT = 0.008f; // 125 Hz-equivalent test looptime
+
+void resetGyro()
+{
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        gyro.gyroADCf[axis] = 0.0f;
+    }
+}
+
+class AdrcUnittest : public ::testing::Test {
+protected:
+    adrcProfile_t profile;
+    adrcRuntime_t runtime;
+
+    void SetUp() override
+    {
+        simulatedThrottle = 0.0f;
+        resetGyro();
+        adrcResetProfile(&profile);
+        adrcInitConfig(&profile, &runtime, TEST_DT);
+        for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+            adrcResetState(&runtime, axis);
+        }
+        adrcResetGate(&runtime);
+    }
+
+    // The b0 schedule reads a low-passed collective (~80 ms tau); run enough loops for the filter
+    // to fully settle on the current simulatedThrottle before asserting steady-state values.
+    void settleB0ThrottleScale()
+    {
+        for (int i = 0; i < 400; i++) {
+            adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        }
+    }
+};
+
+} // namespace
+
+TEST_F(AdrcUnittest, GateStaysClosedAtIdle)
+{
+    simulatedThrottle = 0.0f;
+    resetGyro();
+    for (int i = 0; i < 200; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateOpensImmediatelyOnThrottle)
+{
+    simulatedThrottle = 0.5f; // above the default liftoffThrottlePercent (40%)
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateOpenDropsGroundEpochOutputBeforeFirstControlStep)
+{
+    // Reproduce the logged Airmode takeoff failure: the gate opens while the observer still
+    // carries a nonzero command from the ground-constrained previous loop. The observer itself
+    // remains live and coherent while gated; only that stale actuator input must not cross epochs.
+    gyro.gyroADCf[FD_ROLL] = 300.0f;
+    runtime.gyroFilter[FD_ROLL].state = 300.0f;
+    runtime.gyroFilter[FD_ROLL].state1 = 300.0f;
+    runtime.z1[FD_ROLL] = 300.0f;
+    runtime.vRef[FD_ROLL] = 300.0f;
+    runtime.lastOutput[FD_ROLL] = 500.0f;
+
+    simulatedThrottle = 0.5f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    ASSERT_TRUE(runtime.liftoff);
+    EXPECT_FLOAT_EQ(300.0f, runtime.gyroFilter[FD_ROLL].state);
+    EXPECT_FLOAT_EQ(300.0f, runtime.gyroFilter[FD_ROLL].state1);
+    EXPECT_FLOAT_EQ(300.0f, runtime.z1[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z2[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(300.0f, runtime.vRef[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.lastOutput[FD_ROLL]);
+
+    // With measurement == setpoint, the first airborne control step must be exactly neutral;
+    // any output here comes solely from stale observer/output state crossing the gate.
+    const adrcOutput_t output = adrcApplyControl(&runtime, FD_ROLL, 300.0f, 300.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(0.0f, output.P);
+    EXPECT_FLOAT_EQ(0.0f, output.I);
+    EXPECT_FLOAT_EQ(0.0f, output.D);
+}
+
+TEST_F(AdrcUnittest, LiftoffThrottleThresholdIsConfigurable)
+{
+    profile.liftoffThrottlePercent = 70;
+
+    simulatedThrottle = 0.5f; // above the default (40%) but below this profile's 70%
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FALSE(runtime.liftoff);
+
+    simulatedThrottle = 0.75f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateOpensOnSustainedRotationWithoutThrottle)
+{
+    simulatedThrottle = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default liftoffGyroDps (20)
+
+    // A single loop is shorter than the default liftoffHoldMs (25ms) sustain requirement.
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_FALSE(runtime.liftoff);
+
+    // After enough loops the sustained-rotation hold is satisfied (toss-launch path).
+    for (int i = 0; i < 10; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, LiftoffGyroAndHoldThresholdsAreConfigurable)
+{
+    profile.liftoffGyroDps = 50;
+    profile.liftoffHoldMs = 100; // needs a longer sustain than the default 25ms
+
+    simulatedThrottle = 0.0f;
+    gyro.gyroADCf[FD_ROLL] = 25.0f; // above the default (20dps) but below this profile's 50dps
+    for (int i = 0; i < 20; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+
+    gyro.gyroADCf[FD_ROLL] = 60.0f;
+    // 100ms / 8ms per loop = 12.5 loops - 10 loops (80ms) must not yet satisfy the longer hold.
+    for (int i = 0; i < 10; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_FALSE(runtime.liftoff);
+
+    for (int i = 0; i < 10; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, GateStaysOpenThroughSustainedFloat)
+{
+    // Simulate already airborne.
+    simulatedThrottle = 0.6f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    ASSERT_TRUE(runtime.liftoff);
+
+    // A smooth ballistic float: zero throttle, near-zero rotation, sustained well past a second -
+    // indistinguishable from a landing by throttle+gyro alone. The first freestyle log on this
+    // branch hit exactly this three times (1-4 deg/s floats over 500ms) and lost its live z3 each
+    // time before the opt-in mid-air re-arm heuristic that used to cause this was removed entirely
+    // (ADRC-020); the gate now has no re-arm path at all and must stay open until disarm.
+    simulatedThrottle = 0.0f;
+    resetGyro();
+    for (int i = 0; i < 200; i++) {
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    }
+    EXPECT_TRUE(runtime.liftoff);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleTracksSquareOfThrottleRatioAboveHover)
+{
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9; // raise the ceiling out of the way - the quadratic law itself is under test
+
+    simulatedThrottle = 0.35f; // at hover
+    settleB0ThrottleScale();
+    EXPECT_NEAR(1.0f, runtime.b0ThrottleScale, 1e-4f);
+
+    simulatedThrottle = 0.70f; // 2x hover -> scale should be 2^2 = 4
+    settleB0ThrottleScale();
+    EXPECT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleNeverGoesBelowOne)
+{
+    profile.hoverThrottlePercent = 35;
+    simulatedThrottle = 0.0f; // below hover
+    settleB0ThrottleScale();
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleClampsToMax)
+{
+    // The default ceiling is 3: the quadratic law was only community-validated up to ~x3, and the
+    // first freestyle log showed the extrapolated region under-gains the control law severalfold
+    // on throttle punches (see adrcResetProfile()).
+    profile.hoverThrottlePercent = 10; // low hover setting so full throttle exceeds the clamp
+    simulatedThrottle = 1.0f;          // ratio = 10, ratio^2 = 100 -> clamps to the default max (3)
+    settleB0ThrottleScale();
+    EXPECT_NEAR(3.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleMaxIsConfigurable)
+{
+    profile.hoverThrottlePercent = 10; // ratio = 10, ratio^2 = 100 at full throttle
+    profile.b0ThrottleScaleMax = 20;
+    simulatedThrottle = 1.0f;
+    settleB0ThrottleScale();
+    EXPECT_NEAR(20.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleReleasesGraduallyOnThrottleChop)
+{
+    // A throttle chop must not collapse the scale within one loop: the z3 that adapted through
+    // the inflated b0 during the high-throttle phase over-applies the moment the divisor snaps
+    // back to 1, swinging the craft against the punch (flight-measured ~90 deg/s uncommanded
+    // pitch "rebound", 2026-07-12). The low-passed collective (~80 ms tau) releases the scale on
+    // the same timescale the ESO re-adapts.
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9;
+
+    simulatedThrottle = 0.70f;
+    settleB0ThrottleScale();
+    ASSERT_NEAR(4.0f, runtime.b0ThrottleScale, 1e-3f);
+
+    simulatedThrottle = 0.35f; // chop back to hover
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+    EXPECT_GT(runtime.b0ThrottleScale, 3.5f);   // still near the pre-chop value one loop later
+
+    settleB0ThrottleScale();
+    EXPECT_NEAR(1.0f, runtime.b0ThrottleScale, 1e-3f);
+}
+
+TEST_F(AdrcUnittest, B0ThrottleScaleIgnoresLoopRateCollectiveModulation)
+{
+    // The published collective includes the mixer's per-loop constrain, which tracks the loop's
+    // own axis activity (airmode raises collective to make room for the mix). Fed raw, that
+    // modulated the effective gain at the ~25 Hz loop resonance (debug d7 swinging 1.0..2.8 at a
+    // steady stick - flight A/B 2026-07-12). The b0 schedule must respond to the average, not the
+    // per-loop swings.
+    profile.hoverThrottlePercent = 35;
+    profile.b0ThrottleScaleMax = 9;
+
+    simulatedThrottle = 0.525f; // settle at the mean of the modulation below
+    settleB0ThrottleScale();
+    const float meanScale = runtime.b0ThrottleScale;
+
+    float minScale = meanScale, maxScale = meanScale;
+    for (int i = 0; i < 500; i++) {
+        simulatedThrottle = (i & 1) ? 0.70f : 0.35f; // +/-50% collective swing, alternating loops
+        adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+        if (i >= 250) { // measure after the transient
+            minScale = fminf(minScale, runtime.b0ThrottleScale);
+            maxScale = fmaxf(maxScale, runtime.b0ThrottleScale);
+        }
+    }
+    // Unfiltered, the scale would swing the full 1.0..4.0 range; filtered it must stay close to
+    // the mean response.
+    EXPECT_LT(maxScale - minScale, 0.5f);
+    EXPECT_NEAR(meanScale, (maxScale + minScale) * 0.5f, 0.5f);
+}
+
+TEST_F(AdrcUnittest, Z3LeakyDecayBleedsTowardZero)
+{
+    profile.sigmaDecay = 30; // decay rate 3.0 - a fast leak, easy to observe over few iterations
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    // Exercise the profile's own configured decay rate, not the (also nonzero) gated decay rate
+    // that applies while grounded - see gatedZ3DecayRate in adrc.h.
+    runtime.liftoff = true;
+
+    runtime.z3[FD_ROLL] = 1000.0f;
+    // With gyroRate == z1 (errorEso == 0), only the decay term drives z3, isolating its effect.
+    for (int i = 0; i < 50; i++) {
+        adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    }
+    EXPECT_LT(fabsf(runtime.z3[FD_ROLL]), 1000.0f);
+}
+
+TEST_F(AdrcUnittest, Z3DecaysFasterWhenGroundedThanConfiguredDecayRate)
+{
+    // sigmaDecay = 0 (pure integrator) is the worst case for windup while grounded - the gated
+    // decay must override it regardless of what the profile configures.
+    profile.sigmaDecay = 0;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    ASSERT_FALSE(runtime.liftoff);
+
+    runtime.z3[FD_ROLL] = 1000.0f;
+    // With gyroRate == z1 (errorEso == 0), only the decay term drives z3, isolating its effect.
+    adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    // A single step at the default gated rate (20/s) should visibly erode z3 even though
+    // sigmaDecay == 0 would otherwise leave it untouched (see Z3IsPureIntegratorWhenDecayDisabled,
+    // airborne case).
+    EXPECT_LT(runtime.z3[FD_ROLL], 1000.0f);
+}
+
+TEST_F(AdrcUnittest, GatedZ3DecayHasProtectiveFloor)
+{
+    profile.gatedZ3DecayRate = 0; // attempt to disable the gated decay entirely
+    profile.sigmaDecay = 0;       // and the airborne decay - the worst case for grounded windup
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    ASSERT_FALSE(runtime.liftoff); // grounded - the gated rate is the only one that would apply
+
+    // adrc_gated_z3_decay = 0 must NOT disable the grounded anti-windup - it is floored (tau ~1s)
+    // so z3 cannot hold a wound-up value while the craft sits armed at idle.
+    EXPECT_FLOAT_EQ(1.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
+
+    // One step (errorEso == 0, so only the decay term drives z3): 1000 * (1 - 1.0*0.008) = 992 -
+    // decaying at the floor rate, neither untouched (the pre-fix 0-disables-it behavior) nor at
+    // the default 20/s (which would give 840).
+    runtime.z3[FD_ROLL] = 1000.0f;
+    adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    EXPECT_NEAR(992.0f, runtime.z3[FD_ROLL], 0.5f);
+
+    // And the floor also tracks the airborne decay: gated must never be the slower of the two.
+    profile.sigmaDecay = 50;      // airborne 5.0/s
+    profile.gatedZ3DecayRate = 10; // grounded 1.0/s - slower than airborne, must be lifted to 5.0/s
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    EXPECT_FLOAT_EQ(5.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
+}
+
+TEST_F(AdrcUnittest, Z3IsPureIntegratorWhenDecayDisabled)
+{
+    profile.sigmaDecay = 0;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+    // sigmaDecay only governs z3's decay while airborne - while ungated, z3 always uses the much
+    // faster gatedZ3DecayRate regardless of this setting, so it can't wind up while grounded (see
+    // adrc.c). Simulate airborne so sigmaDecay == 0 actually yields a pure integrator here.
+    runtime.liftoff = true;
+
+    runtime.z3[FD_ROLL] = 1000.0f;
+    const float z3Before = runtime.z3[FD_ROLL];
+    // errorEso == 0 (gyroRate == z1) and no decay -> z3 must not move at all.
+    adrcApplyControl(&runtime, FD_ROLL, runtime.z1[FD_ROLL], runtime.z1[FD_ROLL], TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(z3Before, runtime.z3[FD_ROLL]);
+}
+
+TEST_F(AdrcUnittest, ResetSeedsGyroFilterSoHandoverHasNoEsoKick)
+{
+    // adrcResetState() must seed the gyro filter together with z1: seeding z1 from the raw gyro
+    // while the filter re-converges from zero would produce errorEso ~ gyro on the very next
+    // loop, kicking z3 by -beta3*errorEso*dT (~ -122 000 at 1000 deg/s and 8 kHz) - the opposite
+    // of the smooth handover needed after boot, a disarmed controller-type switch, or recovery
+    // from invalid observer state.
+    constexpr float dT = 0.000125f; // 8 kHz
+    adrcInitConfig(&profile, &runtime, dT);
+
+    gyro.gyroADCf[FD_ROLL] = 1000.0f;
+    adrcResetState(&runtime, FD_ROLL);
+
+    adrcApplyControl(&runtime, FD_ROLL, gyro.gyroADCf[FD_ROLL], 1000.0f, dT, 500.0f);
+    EXPECT_NEAR(0.0f, runtime.z3[FD_ROLL], 100.0f);   // no false disturbance kick
+    EXPECT_NEAR(1000.0f, runtime.z1[FD_ROLL], 10.0f); // observer starts on the measurement
+}
+
+TEST_F(AdrcUnittest, GyroLpfZeroIsPassThroughNotFrozen)
+{
+    // 0 means "filter disabled" everywhere else in Betaflight; a naive pt2FilterGain(0, dT) == 0
+    // would instead freeze the ESO's gyro input at zero - a blind controller that flies away on
+    // arm. With the filter bypassed the observer must still see the gyro and start tracking it.
+    profile.gyroFilterHz = 0;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    adrcApplyControl(&runtime, FD_ROLL, 100.0f, 0.0f, TEST_DT, 500.0f);
+    EXPECT_GT(runtime.z1[FD_ROLL], 0.0f); // frozen-at-zero input would leave z1 exactly 0
+}
+
+TEST_F(AdrcUnittest, Z2TracksHardManeuverAcceleration)
+{
+    // A hard 5" snap produces 12-25k deg/s^2 of real angular acceleration; feed a 20 000 deg/s^2
+    // gyro ramp at a realistic 8 kHz looptime and require z2 to actually track it. An
+    // authority-derived z2 bound (pidSumLimit*b0/kd = 500*2000/120 ~ 8 300 deg/s^2 at the shipped
+    // defaults) rails well below this and would fail here.
+    constexpr float dT = 0.000125f; // 8 kHz
+    adrcInitConfig(&profile, &runtime, dT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    float rate = 0.0f;
+    for (int i = 0; i < 800; i++) { // 0.1 s: 0 -> 2000 deg/s
+        rate += 20000.0f * dT;
+        adrcApplyControl(&runtime, FD_ROLL, rate, rate, dT, 500.0f);
+    }
+    EXPECT_GT(runtime.z2[FD_ROLL], 10000.0f);
+}
+
+TEST_F(AdrcUnittest, ControlTermsAreNotClampedIndividually)
+{
+    // Mid-snap P legitimately exceeds pidSumLimit while an opposing D partially cancels it; the
+    // final authority clamp belongs to the mixer's constrainf(Sum). Per-term clamps would cut the
+    // net drive severalfold here (P clamped to 500 with D = -300 nets 200, instead of the
+    // validated 900 - 300 = 600).
+    constexpr float dT = 0.000125f;
+    adrcInitConfig(&profile, &runtime, dT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    runtime.z2[FD_ROLL] = 5000.0f; // plausible mid-snap acceleration estimate
+    // gyro == z1 == 0 (errorEso == 0), so the preset states pass through the ESO update unchanged.
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, dT, 500.0f);
+    EXPECT_GT(out.P, 500.0f);          // kp*err/b0 = 3600*500/2000 = 900 - must not clamp to 500
+    EXPECT_NEAR(-300.0f, out.D, 5.0f); // -kd*z2/b0 = -120*5000/2000
+}
+
+TEST_F(AdrcUnittest, InitConfigFloorsOutOfRangeCoefficients)
+{
+    // The CLI table constrains wc/wo/b0 to sane minimums, but values can still arrive out of
+    // range via PG/EEPROM (e.g. a stale save from before the floors were added). adrcInitConfig()
+    // must floor them itself as defense-in-depth: wo == 0 would freeze the observer outright (all
+    // betas 0, z1 stuck at its arm-time value while P keeps acting on it), and wc == 0 would zero
+    // the whole control law - both fail silently, with nothing in the CLI to hint at why.
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        profile.wc[axis] = 0;
+        profile.wo[axis] = 0;
+        profile.b0[axis] = 0;
+    }
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        EXPECT_GE(runtime.coefficient[axis].wc, 5.0f);
+        EXPECT_GE(runtime.coefficient[axis].wo, 10.0f);
+        EXPECT_GE(runtime.coefficient[axis].b0, 100.0f);
+        // Derived gains must be computed from the floored values, not the raw zeros.
+        EXPECT_GT(runtime.coefficient[axis].kp, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].kd, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta1, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta2, 0.0f);
+        EXPECT_GT(runtime.coefficient[axis].beta3, 0.0f);
+    }
+}
+
+TEST_F(AdrcUnittest, InitConfigPassesThroughInRangeCoefficientsUnmodified)
+{
+    // The floor must not perturb legitimate in-range tunes.
+    constexpr float dT = 0.000125f; // 8 kHz, safely above the requested observer bandwidth
+    profile.wc[FD_ROLL] = 60;
+    profile.wo[FD_ROLL] = 100;
+    profile.b0[FD_ROLL] = 2000;
+    adrcInitConfig(&profile, &runtime, dT);
+
+    EXPECT_FLOAT_EQ(60.0f, runtime.coefficient[FD_ROLL].wc);
+    EXPECT_FLOAT_EQ(100.0f, runtime.coefficient[FD_ROLL].wo);
+    EXPECT_FLOAT_EQ(2000.0f, runtime.coefficient[FD_ROLL].b0);
+}
+
+TEST_F(AdrcUnittest, InitConfigCapsObserverBandwidthAgainstLoopTime)
+{
+    profile.wo[FD_ROLL] = 600;
+
+    adrcInitConfig(&profile, &runtime, 1.0f / 200.0f);
+    EXPECT_FLOAT_EQ(100.0f, runtime.coefficient[FD_ROLL].wo);
+
+    // The shipped roll/pitch default is exactly safe at the slowest supported 200 Hz loop.
+    profile.wo[FD_ROLL] = 100;
+    adrcInitConfig(&profile, &runtime, 1.0f / 200.0f);
+    EXPECT_FLOAT_EQ(100.0f, runtime.coefficient[FD_ROLL].wo);
+
+    // At 1.6 kHz and faster, the entire CLI range remains available.
+    profile.wo[FD_ROLL] = 600;
+    adrcInitConfig(&profile, &runtime, 1.0f / 1600.0f);
+    EXPECT_FLOAT_EQ(600.0f, runtime.coefficient[FD_ROLL].wo);
+}
+
+TEST_F(AdrcUnittest, InitConfigCapsCorruptUpperRangeValues)
+{
+    constexpr float dT = 0.000125f; // 8 kHz
+    profile.wc[FD_ROLL] = UINT16_MAX;
+    profile.wo[FD_ROLL] = UINT16_MAX;
+    profile.sigmaDecay = UINT8_MAX;
+    profile.gatedZ3DecayRate = UINT16_MAX;
+    profile.tdHz = UINT16_MAX;
+    profile.gyroFilterHz = UINT16_MAX;
+    adrcInitConfig(&profile, &runtime, dT);
+
+    EXPECT_FLOAT_EQ(300.0f, runtime.coefficient[FD_ROLL].wc);
+    EXPECT_FLOAT_EQ(600.0f, runtime.coefficient[FD_ROLL].wo);
+    EXPECT_FLOAT_EQ(10.0f, runtime.coefficient[FD_ROLL].decayRate);
+    EXPECT_FLOAT_EQ(200.0f, runtime.coefficient[FD_ROLL].gatedDecayRate);
+    EXPECT_FLOAT_EQ(pt1FilterGain(LPF_MAX_HZ, dT), runtime.coefficient[FD_ROLL].tdFilterGain);
+    EXPECT_FLOAT_EQ(pt2FilterGain(LPF_MAX_HZ, dT), runtime.gyroFilter[FD_ROLL].k);
+}
+
+TEST_F(AdrcUnittest, GateBlocksB0uFeedbackWhenClosed)
+{
+    // Grounded (gate closed): a large lastOutput must not feed b0*u into z2.
+    ASSERT_FALSE(runtime.liftoff);
+    runtime.lastOutput[FD_ROLL] = 500.0f;
+    const float z2Before = runtime.z2[FD_ROLL];
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 0.0f, TEST_DT, 500.0f);
+    // With errorEso == 0 (z1 starts at gyro==0) and the gate closed, z2 should not move from the
+    // b0*u term - only from -beta2*errorEso, which is also 0 here.
+    EXPECT_FLOAT_EQ(z2Before, runtime.z2[FD_ROLL]);
+}
+
+TEST_F(AdrcUnittest, TdDisabledByDefaultTracksSetpointExactly)
+{
+    // tdHz == 0 (the default) must bypass the tracking differentiator entirely - vRef should
+    // follow a setpoint step with zero lag, matching pre-TD behavior exactly.
+    ASSERT_EQ(0, profile.tdHz);
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(500.0f, runtime.vRef[FD_ROLL]);
+}
+
+TEST_F(AdrcUnittest, TdEnabledSmoothsSetpointStep)
+{
+    // With the TD enabled, a setpoint step must not appear in vRef instantly - it should lag
+    // behind, unlike the disabled (direct passthrough) case above. The PT1 discretization remains
+    // monotonic even at this deliberately slow 125 Hz-equivalent test looptime.
+    profile.tdHz = 5;
+    adrcInitConfig(&profile, &runtime, TEST_DT);
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        adrcResetState(&runtime, axis);
+    }
+
+    adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    EXPECT_GT(500.0f, runtime.vRef[FD_ROLL]);
+    EXPECT_LT(0.0f, runtime.vRef[FD_ROLL]);
+
+    // Run it long enough to settle - vRef should converge on the setpoint once it stops moving.
+    for (int i = 0; i < 500; i++) {
+        adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    }
+    EXPECT_NEAR(500.0f, runtime.vRef[FD_ROLL], 1.0f);
+}
+
+TEST_F(AdrcUnittest, TdSweepIsFiniteAndMonotonicAtSupportedLoopRates)
+{
+    const int loopRatesHz[] = { 200, 1600, 4000, 8000 };
+
+    profile.gyroFilterHz = 0;
+    for (const int loopRateHz : loopRatesHz) {
+        const float dT = 1.0f / loopRateHz;
+        for (int cutoffHz = 1; cutoffHz <= LPF_MAX_HZ; cutoffHz++) {
+            SCOPED_TRACE(::testing::Message() << "loopRateHz=" << loopRateHz << ", cutoffHz=" << cutoffHz);
+            profile.tdHz = cutoffHz;
+            adrcInitConfig(&profile, &runtime, dT);
+            gyro.gyroADCf[FD_ROLL] = 0.0f;
+            adrcResetState(&runtime, FD_ROLL);
+
+            for (int i = 0; i < 100; i++) {
+                const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, dT, 500.0f);
+                ASSERT_TRUE(isfinite(runtime.vRef[FD_ROLL]));
+                ASSERT_TRUE(isfinite(out.P));
+                ASSERT_TRUE(isfinite(out.I));
+                ASSERT_TRUE(isfinite(out.D));
+                ASSERT_GE(runtime.vRef[FD_ROLL], 0.0f);
+                ASSERT_LE(runtime.vRef[FD_ROLL], 500.0f);
+            }
+        }
+    }
+}
+
+TEST_F(AdrcUnittest, RepeatedResetSeedsTdReferenceBumplessly)
+{
+    constexpr float dT = 0.000125f; // 8 kHz
+    profile.tdHz = 5;
+    profile.gyroFilterHz = 0;
+    adrcInitConfig(&profile, &runtime, dT);
+    gyro.gyroADCf[FD_ROLL] = 500.0f;
+
+    // pidResetIterm() can repeat every loop during a 3D reversal. The reset reference must start
+    // from the measured rate, so a positive setpoint error cannot manufacture a negative P pulse.
+    for (int i = 0; i < 100; i++) {
+        adrcResetState(&runtime, FD_ROLL);
+        const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 500.0f, 1000.0f, dT, 500.0f);
+        ASSERT_TRUE(isfinite(out.P));
+        EXPECT_GE(out.P, 0.0f);
+        EXPECT_GE(runtime.vRef[FD_ROLL], 500.0f);
+        EXPECT_LE(runtime.vRef[FD_ROLL], 1000.0f);
+    }
+}
+
+TEST_F(AdrcUnittest, EsoSweepConvergesAtSupportedLoopRates)
+{
+    const int loopRatesHz[] = { 200, 1600, 4000, 8000 };
+
+    profile.gyroFilterHz = 0;
+    // Exercise the maximum permitted decay on both paths; zero-decay behavior is covered by
+    // Z3IsPureIntegratorWhenDecayDisabled and is less restrictive for Euler stability.
+    profile.sigmaDecay = 100;
+    profile.gatedZ3DecayRate = 2000;
+    for (const int loopRateHz : loopRatesHz) {
+        const float dT = 1.0f / loopRateHz;
+        for (int wo = 10; wo <= 600; wo++) {
+            for (int liftoff = 0; liftoff <= 1; liftoff++) {
+                SCOPED_TRACE(::testing::Message() << "loopRateHz=" << loopRateHz << ", wo=" << wo
+                    << ", liftoff=" << liftoff);
+                profile.wo[FD_ROLL] = wo;
+                adrcInitConfig(&profile, &runtime, dT);
+                gyro.gyroADCf[FD_ROLL] = 0.0f;
+                adrcResetState(&runtime, FD_ROLL);
+                runtime.liftoff = liftoff;
+
+                for (int i = 0; i < loopRateHz / 2; i++) {
+                    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 1000.0f, 1000.0f, dT, 500.0f);
+                    ASSERT_TRUE(isfinite(runtime.z1[FD_ROLL]));
+                    ASSERT_TRUE(isfinite(runtime.z2[FD_ROLL]));
+                    ASSERT_TRUE(isfinite(runtime.z3[FD_ROLL]));
+                    ASSERT_TRUE(isfinite(out.P));
+                    ASSERT_TRUE(isfinite(out.I));
+                    ASSERT_TRUE(isfinite(out.D));
+                }
+
+                EXPECT_NEAR(1000.0f, runtime.z1[FD_ROLL], 500.0f);
+            }
+        }
+    }
+}
+
+TEST_F(AdrcUnittest, HighFsrGyroDoesNotHitLegacyTwoKdpsStateLimit)
+{
+    constexpr float dT = 0.000125f; // 8 kHz
+    profile.gyroFilterHz = 0;
+    adrcInitConfig(&profile, &runtime, dT);
+    gyro.gyroADCf[FD_ROLL] = 3900.0f;
+    adrcResetState(&runtime, FD_ROLL);
+
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 3900.0f, 3900.0f, dT, 500.0f);
+    EXPECT_GT(runtime.z1[FD_ROLL], 3500.0f);
+    EXPECT_TRUE(isfinite(out.P));
+    EXPECT_TRUE(isfinite(out.I));
+    EXPECT_TRUE(isfinite(out.D));
+}
+
+TEST_F(AdrcUnittest, CorruptZeroB0ScaleMaxIsSanitized)
+{
+    profile.hoverThrottlePercent = 5;
+    profile.b0ThrottleScaleMax = 0; // impossible through CLI, possible in stale/corrupt PG data
+    simulatedThrottle = 1.0f;
+    adrcUpdatePerLoopState(&runtime, &profile, TEST_DT);
+
+    EXPECT_GE(runtime.b0ThrottleScale, 1.0f);
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 0.0f, 500.0f, TEST_DT, 500.0f);
+    EXPECT_TRUE(isfinite(out.P));
+    EXPECT_TRUE(isfinite(out.I));
+    EXPECT_TRUE(isfinite(out.D));
+}
+
+TEST_F(AdrcUnittest, NonFiniteRuntimeStateRecoversToFiniteOutput)
+{
+    runtime.z1[FD_ROLL] = NAN;
+    runtime.z2[FD_ROLL] = INFINITY;
+    runtime.z3[FD_ROLL] = -INFINITY;
+    runtime.vRef[FD_ROLL] = NAN;
+    runtime.lastOutput[FD_ROLL] = INFINITY;
+    runtime.gyroFilter[FD_ROLL].state = NAN;
+    runtime.b0ThrottleScale = NAN;
+
+    const adrcOutput_t out = adrcApplyControl(&runtime, FD_ROLL, 100.0f, 200.0f, TEST_DT, 500.0f);
+    EXPECT_FLOAT_EQ(100.0f, runtime.z1[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z2[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.z3[FD_ROLL]);
+    EXPECT_FLOAT_EQ(0.0f, runtime.lastOutput[FD_ROLL]);
+    EXPECT_FLOAT_EQ(1.0f, runtime.b0ThrottleScale);
+    EXPECT_TRUE(isfinite(runtime.z1[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.z2[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.z3[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.vRef[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.lastOutput[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.b0ThrottleScale));
+    EXPECT_TRUE(isfinite(out.P));
+    EXPECT_TRUE(isfinite(out.I));
+    EXPECT_TRUE(isfinite(out.D));
+
+    const adrcOutput_t invalidInputOut = adrcApplyControl(&runtime, FD_ROLL, INFINITY, NAN, NAN, NAN);
+    EXPECT_TRUE(isfinite(runtime.z1[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.z2[FD_ROLL]));
+    EXPECT_TRUE(isfinite(runtime.z3[FD_ROLL]));
+    EXPECT_TRUE(isfinite(invalidInputOut.P));
+    EXPECT_TRUE(isfinite(invalidInputOut.I));
+    EXPECT_TRUE(isfinite(invalidInputOut.D));
+}

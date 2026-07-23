@@ -183,6 +183,20 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/filter.c \
 		$(USER_DIR)/common/maths.c
 
+config_eeprom_unittest_SRC := \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/config/config_eeprom.c \
+		$(USER_DIR)/config/config_streamer.c \
+		$(USER_DIR)/pg/pg.c
+
+config_eeprom_unittest_DEFINES := \
+		CONFIG_IN_RAM= \
+		EEPROM_SIZE=4096
+
+config_eeprom_unittest_INCLUDE_DIRS := \
+		$(TEST_DIR)/config_eeprom
+
 
 encoding_unittest_SRC := \
 		$(USER_DIR)/common/encoding.c
@@ -543,16 +557,46 @@ pid_unittest_SRC :=  \
 		$(USER_DIR)/drivers/accgyro/gyro_sync.c \
 		$(USER_DIR)/fc/controlrate_profile.c \
 		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/adrc.c \
 		$(USER_DIR)/flight/pid.c \
 		$(USER_DIR)/flight/pid_init.c \
 		$(USER_DIR)/pg/pg.c
 
 pid_unittest_DEFINES := \
+		USE_ADRC= \
+		USE_YAW_SPIN_RECOVERY= \
 		USE_ITERM_RELAX= \
 		USE_RC_SMOOTHING_FILTER= \
 		USE_LAUNCH_CONTROL= \
 		USE_FEEDFORWARD= \
 		USE_ADVANCED_TPA= \
+
+# Reuse pid_unittest.cc's established platform stubs and reset helpers, but keep the ADRC gate
+# feedback-loop checks in a focused binary that can be mutation-tested independently.
+adrc_gate_e2e_unittest_SRC := \
+		$(pid_unittest_SRC) \
+		$(TEST_DIR)/pid_unittest.cc
+
+adrc_gate_e2e_unittest_DEFINES := $(pid_unittest_DEFINES)
+
+adrc_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/filter.c \
+		$(USER_DIR)/flight/adrc.c
+
+adrc_unittest_DEFINES := \
+		USE_ADRC=
+
+adrc_mixer_unittest_SRC := \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/flight/mixer.c
+
+adrc_mixer_unittest_DEFINES := \
+		USE_ADRC= \
+		USE_ALTITUDE_HOLD= \
+		USE_GPS_RESCUE= \
+		USE_THRUST_LINEARIZATION= \
+		USE_YAW_SPIN_RECOVERY=
 
 position_rescue_geometry_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
@@ -1010,6 +1054,13 @@ endif
 
 $(OBJECT_DIR)/$1/$(basename $1).o: $(TEST_DIR)/$(basename $1).cc
 	@echo "compiling $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
+                $$(foreach def,$$($1_DEFINES),-D $$(def)) \
+                -c $$< -o $$@
+
+$(OBJECT_DIR)/$1/%.cc.o: $(TEST_DIR)/%.cc
+	@echo "compiling test c++ file: $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $$(call test_cflags,$$($1_INCLUDE_DIRS)) \
                 $$(foreach def,$$($1_DEFINES),-D $$(def)) \
