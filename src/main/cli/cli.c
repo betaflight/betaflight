@@ -105,6 +105,7 @@ bool cliMode = false;
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -113,6 +114,7 @@ bool cliMode = false;
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/dronecan/dronecan.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -137,6 +139,7 @@ bool cliMode = false;
 #include "pg/bus_i2c.h"
 #include "pg/bus_spi.h"
 #include "pg/can.h"
+#include "pg/dronecan.h"
 #include "pg/flight_plan.h"
 #include "pg/gyrodev.h"
 #include "pg/max7456.h"
@@ -326,7 +329,7 @@ static void cliWriterFlushInternal(bufWriter_t *writer)
 
 static void cliPrintInternal(bufWriter_t *writer, const char *str)
 {
-    if (writer) {
+    if (writer && str) {
         while (*str) {
             bufWriterAppend(writer, *str++);
         }
@@ -1106,6 +1109,9 @@ static void cliShowArgumentRangeError(const char *cmdName, char *name, int min, 
 
 static const char *nextArg(const char *currentArg)
 {
+    if (!currentArg) {
+        return NULL;
+    }
     const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
@@ -2139,7 +2145,9 @@ static void cliLed(const char *cmdName, char *cmdline)
         i = atoi(ptr);
         if (i >= 0 && i < LED_STRIP_MAX_LENGTH) {
             ptr = nextArg(cmdline);
-            if (parseLedStripConfig(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseLedStripConfig(i, ptr)) {
                 generateLedConfig((ledConfig_t *)&ledStripStatusModeConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
                 cliDumpPrintLinef(0, false, format, i, ledConfigBuffer);
             } else {
@@ -2176,9 +2184,11 @@ static void cliColor(const char *cmdName, char *cmdline)
     } else {
         const char *ptr = cmdline;
         const int i = atoi(ptr);
-        if (i < LED_CONFIGURABLE_COLOR_COUNT) {
+        if (i >= 0 && i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
-            if (parseColor(i, ptr)) {
+            if (!ptr) {
+                cliShowInvalidArgumentCountError(cmdName);
+            } else if (parseColor(i, ptr)) {
                 const hsvColor_t *color = &ledStripStatusModeConfig()->colors[i];
                 cliDumpPrintLinef(0, false, format, i, color->h, color->s, color->v);
             } else {
@@ -2563,12 +2573,15 @@ static void cliServoMix(const char *cmdName, char *cmdline)
 #if ENABLE_FLIGHT_PLAN
 
 static const char * const waypointTypeNames[] = {
-    "FLYOVER", "FLYBY", "HOLD", "LAND"
+    "FLYOVER", "FLYBY", "HOLD", "LAND", "TAKEOFF",
+    "ALT_CHANGE", "DELAY", "YAW_RATE"
 };
+STATIC_ASSERT(WAYPOINT_TYPE_COUNT == ARRAYLEN(waypointTypeNames), waypointTypeNames_array_length_mismatch);
 
 static const char * const waypointPatternNames[] = {
-    "ORBIT", "FIGURE8"
+    "NONE", "ORBIT", "FIGURE8"
 };
+STATIC_ASSERT(WAYPOINT_PATTERN_COUNT == ARRAYLEN(waypointPatternNames), waypointPatternNames_array_length_mismatch);
 
 // Parse decimal coordinate string to int32 (degrees * 10^7)
 // Accepts formats like: -33.5429890, 151.6664560, -33.5, 151
@@ -2849,9 +2862,35 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
             }
         }
 
-        // TODO: Add runtime status when Phase 3 (waypoint tracker) is complete
-        // This will show: current waypoint, state, distance, bearing, etc.
-        cliPrintLine("\nRuntime status: Not yet implemented (requires Phase 3)");
+        cliPrintLine("\nRuntime status:");
+        if (!flightPlanNavIsActive()) {
+            cliPrintLine("  inactive");
+            return;
+        }
+
+        static const char * const stateNames[] = {
+            "IDLE", "TARGETING", "HOLDING", "COMPLETE", "LANDING", "ABORTED",
+        };
+        const flightPlanNavState_e state = flightPlanNavGetState();
+        cliPrintLinef("  state: %s", (state < ARRAYLEN(stateNames)) ? stateNames[state] : "UNKNOWN");
+        const uint8_t currentDisplay = (config->waypointCount == 0) ? 0 : flightPlanNavGetCurrentIndex() + 1;
+        cliPrintLinef("  current waypoint: %u/%u", currentDisplay, config->waypointCount);
+
+        const float distanceM = flightPlanNavGetDistanceToWaypointM();
+        if (distanceM >= 0.0f) {
+            const uint32_t distanceCm = lrintf(distanceM * 100.0f);
+            const int32_t bearingDeg = flightPlanNavGetBearingToWaypointDeciDeg() / 10;
+            cliPrintLinef("  distance: %u.%02um  bearing: %ld deg  eta: %us",
+                distanceCm / 100, distanceCm % 100, (long)bearingDeg, flightPlanNavGetEtaSeconds());
+        }
+
+        if (state == FP_NAV_ABORTED) {
+            static const char * const abortNames[] = {
+                "NONE", "GPS LOST", "STALLED", "FLYAWAY", "HEADING", "MAG FAULT",
+            };
+            const flightPlanAbortReason_e reason = flightPlanNavGetAbortReason();
+            cliPrintLinef("  abort reason: %s", (reason < ARRAYLEN(abortNames)) ? abortNames[reason] : "UNKNOWN");
+        }
         return;
     }
 
@@ -2987,7 +3026,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!typeFound) {
-        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND");
+        cliPrintErrorLinef(cmdName, "INVALID TYPE. USE: FLYOVER, FLYBY, HOLD, LAND, TAKEOFF, ALT_CHANGE, DELAY, YAW_RATE");
         return;
     }
 
@@ -3002,7 +3041,7 @@ static void cliWaypoint(const char *cmdName, char *cmdline)
         }
     }
     if (!patternFound) {
-        cliPrintErrorLinef(cmdName, "INVALID PATTERN. USE: ORBIT, FIGURE8");
+        cliPrintErrorLinef(cmdName, "INVALID PATTERN. USE: NONE, ORBIT, FIGURE8");
         return;
     }
 
@@ -3188,7 +3227,8 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
     cliWriterFlush();
     flashfsEraseCompletely();
 
-    while (!flashfsIsReady() && !flashfsIsEraseInProgress()) {
+    while (!flashfsIsReady()) {
+        flashfsEraseAsync();
 #ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {
@@ -5451,11 +5491,18 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
             const char *typeName = sensorTypeName(i);
             if (names && typeName) {
                 cliPrintf("%s: ", typeName);
+                bool first = true;
                 for (int j = 0; j < count; j++) {
-                    if (j > 0) {
+                    // Name tables can have NULL holes for hardware enum values not
+                    // compiled into this build (e.g. MAG_DRONECAN without ENABLE_DRONECAN).
+                    if (!names[j]) {
+                        continue;
+                    }
+                    if (!first) {
                         cliPrint(",");
                     }
                     cliPrint(names[j]);
+                    first = false;
                 }
                 cliPrintLinefeed();
             }
@@ -6059,8 +6106,8 @@ static void cliStatus(const char *cmdName, char *cmdline)
         } else {
             cliPrint("NOT CONNECTED, ");
         }
-        if (gpsConfig()->provider == GPS_MSP) {
-            cliPrint("MSP, ");
+        if (GPS_PROVIDER_REQUIRES_NO_SERIAL_PORT(gpsConfig()->provider)) {
+            cliPrint(lookupTables[TABLE_GPS_PROVIDER].values[gpsConfig()->provider]);
         } else {
             const serialPortConfig_t *gpsPortConfig = findSerialPortConfig(FUNCTION_GPS);
             if (!gpsPortConfig) {
@@ -6074,24 +6121,78 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 }
                 cliPrint("), ");
             }
-        }
-        if (gpsData.state <= GPS_STATE_CONFIGURE) {
-            cliPrint("NOT CONFIGURED");
-        } else {
-            if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
-                cliPrint("auto config OFF");
+            if (gpsData.state <= GPS_STATE_CONFIGURE) {
+                cliPrint("NOT CONFIGURED");
             } else {
-                cliPrint("configured");
+                if (gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF) {
+                    cliPrint("auto config OFF");
+                } else {
+                    cliPrint("configured");
+                }
+            }
+#ifdef USE_GPS_UBLOX
+            if (gpsConfig()->provider == GPS_UBLOX) {
+                cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
+            }
+#endif
+        }
+        if (gpsIsHealthy()) {
+            cliPrintLinefeed();
+            cliPrintf("  sats: %d", gpsSol.numSat);
+
+            uint16_t cnoSum = 0;
+            uint8_t cnoCount = 0;
+            for (unsigned i = 0; i < GPS_numCh; i++) {
+                if (GPS_svinfo[i].cno > 0) {
+                    cnoSum += GPS_svinfo[i].cno;
+                    cnoCount++;
+                }
+            }
+            if (cnoCount > 0) {
+                cliPrintf(", signal: %d dBHz", cnoSum / cnoCount);
+            }
+
+            if (gpsSol.dop.hdop > 0) {
+                cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
+            }
+
+            if (gpsSol.dop.vdop > 0) {
+                cliPrintf(", vdop: %d.%02d", gpsSol.dop.vdop / 100, gpsSol.dop.vdop % 100);
+            }
+
+            if (STATE(GPS_FIX)) {
+                const int32_t lat = gpsSol.llh.lat;
+                const int32_t lon = gpsSol.llh.lon;
+                const int32_t altCm = gpsSol.llh.altCm;
+                cliPrintf(", pos: %s%d.%07d %s%d.%07d, alt: %s%d.%02dm",
+                    lat < 0 ? "-" : "", ABS(lat) / 10000000, ABS(lat) % 10000000,
+                    lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
+                    altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
+            } else {
+                cliPrint(", pos: no fix");
+            }
+
+            if (gpsSol.dateTime.valid) {
+                cliPrintf(", %04d-%02d-%02dT%02d:%02d:%02dZ",
+                    gpsSol.dateTime.year, gpsSol.dateTime.month, gpsSol.dateTime.day,
+                    gpsSol.dateTime.hour, gpsSol.dateTime.min, gpsSol.dateTime.sec);
             }
         }
-#ifdef USE_GPS_UBLOX
-        cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
-#endif
     } else {
         cliPrint("NOT ENABLED");
     }
     cliPrintLinefeed();
 #endif // USE_GPS
+
+#if ENABLE_DRONECAN
+    if (dronecanConfig()->enabled) {
+        if (dronecanIsInitialised()) {
+            cliPrintLinef("DroneCAN: node %d, device %d", dronecanConfig()->node_id, dronecanConfig()->device);
+        } else {
+            cliPrintLine("DroneCAN: NOT RUNNING (check dronecan_node_id and dronecan_device)");
+        }
+    }
+#endif
 
 #if defined(USE_OSD)
     osdDisplayPortDevice_e displayPortDeviceType;
@@ -6168,6 +6269,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
     UNUSED(cmdline);
     int averageLoadSum = 0;
+    static timeUs_t lastTasksTimeUs;
+    timeDelta_t timeSinceTasksUs = cmpTimeUs(micros(), lastTasksTimeUs);
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
@@ -6186,8 +6289,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         if (taskInfo.isEnabled) {
             int taskFrequency = taskInfo.averageDeltaTime10thUs == 0 ? 0 : lrintf(1e7f / taskInfo.averageDeltaTime10thUs);
             cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
-            const int maxLoad = taskInfo.maxExecutionTimeUs == 0 ? 0 : (taskInfo.maxExecutionTimeUs * taskFrequency) / 1000;
-            const int averageLoad = taskInfo.averageExecutionTime10thUs == 0 ? 0 : (taskInfo.averageExecutionTime10thUs * taskFrequency) / 10000;
+            const int maxLoad = taskInfo.maxLoad10thPct;
+            const int averageLoad = taskInfo.movingAverageLoad10thPct;
             if (taskId != TASK_SERIAL) {
                 averageLoadSum += averageLoad;
             }
@@ -6212,9 +6315,14 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
     }
     if (systemConfig()->task_statistics) {
+        static timeUs_t lastCheckFuncTotalUs;
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
-        cliPrintLinef("RX Check Function %19d %7d %25d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs, checkFuncInfo.totalExecutionTimeUs / 1000);
+        timeDelta_t checkFuncTotalSinceUs = checkFuncInfo.totalExecutionTimeUs - lastCheckFuncTotalUs;
+        lastCheckFuncTotalUs = checkFuncInfo.totalExecutionTimeUs;
+        uint32_t checkFuncAvgLoad10 = timeSinceTasksUs ? (uint32_t)((checkFuncTotalSinceUs * 1000.0f) / timeSinceTasksUs) : 0;
+        cliPrintLinef("Check Functions (RX, ...) %11d %7d %12d.%1d%% %9d", checkFuncInfo.maxExecutionTimeUs, checkFuncInfo.averageExecutionTimeUs,
+                      checkFuncAvgLoad10 / 10, checkFuncAvgLoad10 %10, checkFuncInfo.totalExecutionTimeUs / 1000);
         cliPrintLinef("Total (excluding SERIAL) %33d.%1d%%", averageLoadSum/10, averageLoadSum%10);
         if (debugMode == DEBUG_SCHEDULER_DETERMINISM) {
             extern int32_t schedLoopStartCycles, taskGuardCycles;
@@ -6223,6 +6331,8 @@ static void cliTasks(const char *cmdName, char *cmdline)
         }
         schedulerResetCheckFunctionMaxExecutionTime();
     }
+
+    lastTasksTimeUs = micros();
 }
 
 static void printVersion(bool printBoardInfo)
@@ -6647,6 +6757,7 @@ const cliResourceValue_t resourceTable[] = {
 #if ENABLE_CAN
     DEFW( OWNER_CAN_TX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagTx, CANDEV_COUNT ),
     DEFW( OWNER_CAN_RX,        PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagRx, CANDEV_COUNT ),
+    DEFW( OWNER_CAN_SILENT,    PG_CAN_PIN_CONFIG, canPinConfig_t, ioTagSilent, CANDEV_COUNT ),
 #endif
 #ifdef USE_ESCSERIAL
     DEFS( OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, escSerialConfig_t, ioTag ),
@@ -6770,16 +6881,17 @@ static void printResource(dumpFlags_t dumpMask, const char *headingStr)
             const bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
+            const int resourceOrdinal = resourceIndexToInput(resourceTable[i].owner, index);
             headingStr = cliPrintSectionHeading(dumpMask, !equalsDefault, headingStr);
             if (ioTagDefault) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             } else if (defaultConfig) {
-                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
             if (ioTag) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+                cliDumpPrintLinef(dumpMask, equalsDefault, format, owner, resourceOrdinal, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             } else if (!(dumpMask & HIDE_UNUSED)) {
-                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                cliDumpPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, resourceOrdinal);
             }
         }
     }
@@ -6790,7 +6902,7 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
     cliPrintf("%s", getOwnerName(resourceTable[owner].owner));
 
     if (resourceTable[owner].maxIndex > 0) {
-        cliPrintf(" %d", RESOURCE_INDEX(index));
+        cliPrintf(" %d", resourceIndexToInput(resourceTable[owner].owner, index));
     }
 }
 
@@ -6871,7 +6983,7 @@ static void showDma(void)
 
         cliPrintf(dmaGetDisplayString(), dmaGetDeviceNumber(i), dmaGetDeviceIndex(i));
         if (owner->index > 0) {
-            cliPrintLinef(" %s %d", getOwnerName(owner->owner), owner->index);
+            cliPrintLinef(" %s %d", getOwnerName(owner->owner), resourceIndexToInput(owner->owner, owner->index - 1));
         } else {
             cliPrintLinef(" %s", getOwnerName(owner->owner));
         }
@@ -6936,7 +7048,6 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #undef DEFA
 #undef DEFW
 
-#define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
 #if !defined(DMA_CHANREQ_STRING)
@@ -6958,6 +7069,23 @@ static void optToString(int optval, char *buf)
     }
 }
 
+// A dmaopt instance number follows the same per-platform base as the matching pin
+// resource, so `dma SPI_SDO N` agrees with `resource SPI_SCK N`. TIMUP is special:
+// its timers are numbered non-contiguously, taken straight from the platform.
+static resourceOwner_e dmaoptResourceOwner(dmaPeripheral_e peripheral)
+{
+    switch (peripheral) {
+    case DMA_PERIPH_SPI_SDO:
+    case DMA_PERIPH_SPI_SDI:
+        return OWNER_SPI_SCK;
+    case DMA_PERIPH_UART_TX:
+    case DMA_PERIPH_UART_RX:
+        return OWNER_SERIAL_TX;
+    default:
+        return OWNER_FREE;   // ADC/SDIO/...: no per-platform base, 1-based naming
+    }
+}
+
 static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
 {
     if (entry->peripheral == DMA_PERIPH_TIMUP) {
@@ -6967,7 +7095,7 @@ static int getDmaOptDisplayNumber(dmaoptEntry_t *entry, int index)
         }
         return dispNum;
     }
-    return DMA_OPT_UI_INDEX(index);
+    return resourceIndexToInput(dmaoptResourceOwner(entry->peripheral), index);
 }
 
 static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
@@ -6983,8 +7111,8 @@ static int displayNumberToDmaOptIndex(dmaoptEntry_t *entry, int dispNum)
         return timerGetIndexByNumber(dispNum);
     }
 
-    const int index = dispNum - 1;
-    return (index < 0 ||  index >= entry->maxIndex) ? -1 : index;
+    const int index = resourceInputToIndex(dmaoptResourceOwner(entry->peripheral), dispNum);
+    return (index < 0 || index >= entry->maxIndex) ? -1 : index;
 }
 
 static void printPeripheralDmaoptDetails(dmaoptEntry_t *entry, int index, const dmaoptValue_t dmaopt, const bool equalsDefault, const dumpFlags_t dumpMask, printFn *printValue)
@@ -7485,7 +7613,7 @@ static void showTimers(void)
                 }
 
                 if (timerOwner->index > 0) {
-                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), timerOwner->index);
+                    cliPrintLinef("    CH%d%s: %s %d", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner), resourceIndexToInput(timerOwner->owner, timerOwner->index - 1));
                 } else {
                     cliPrintLinef("    CH%d%s: %s", timerIndex + 1, timer->output & TIMER_OUTPUT_N_CHANNEL ? "N" : " ", getOwnerName(timerOwner->owner));
                 }
@@ -7649,7 +7777,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
             cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf(" %d", ioRecs[i].index);
+                cliPrintf(" %d", resourceIndexToInput(ioRecs[i].owner, ioRecs[i].index - 1));
             }
             cliPrintLinefeed();
         }
@@ -7681,14 +7809,22 @@ static void cliResource(const char *cmdName, char *cmdline)
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    int index = pch ? atoi(pch) : 0;
+    int index = 0;
 
-    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
-        if (index <= 0 || index > RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex)) {
-            cliShowArgumentRangeError(cmdName, "INDEX", 1, RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex));
+    // A leading numeric token is the resource ordinal (the dump always emits one,
+    // even for single-instance resources). Pins begin with a letter (or "NONE"),
+    // so a non-numeric token here is the pin of a single-instance resource given
+    // without an ordinal. The ordinal base (0 or 1) is per-owner, see resource.c.
+    const bool haveIndex = pch && pch[0] >= '0' && pch[0] <= '9';
+    if (resourceTable[resourceIndex].maxIndex > 0 || haveIndex) {
+        const resourceOwner_e owner = resourceTable[resourceIndex].owner;
+        const int maxCount = RESOURCE_VALUE_MAX_INDEX(resourceTable[resourceIndex].maxIndex);
+        const int candidate = haveIndex ? resourceInputToIndex(owner, atoi(pch)) : -1;
+        if (!haveIndex || candidate < 0 || candidate >= maxCount) {
+            cliShowArgumentRangeError(cmdName, "INDEX", resourceIndexToInput(owner, 0), resourceIndexToInput(owner, maxCount - 1));
             return;
         }
-        index -= 1;
+        index = candidate;
 
         pch = strtok_r(NULL, " ", &saveptr);
     }
@@ -7729,7 +7865,7 @@ static void cliResource(const char *cmdName, char *cmdline)
         if (tag) {
             tfp_sprintf(ioName, "%c%02d", IO_GPIOPortIdxByTag(tag) + 'A', IO_GPIOPinIdxByTag(tag));
         }
-        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), RESOURCE_INDEX(index), tag ? ioName : "NONE");
+        cliPrintLinef("# resource %s %d %s", getOwnerName(resourceTable[resourceIndex].owner), resourceIndexToInput(resourceTable[resourceIndex].owner, index), tag ? ioName : "NONE");
     }
 }
 #endif

@@ -10,7 +10,7 @@ MEMORY
     ITCM     (xrw) : ORIGIN = 0x00000000, LENGTH = 0x0009FC00   /* 640 KB - 1KB            */
     DTCM     (xrw) : ORIGIN = 0x20000000, LENGTH = 0x00060000   /* 384 KB                  */
     AXI_SRAM (xrw) : ORIGIN = 0x24000000, LENGTH = 0x00020000   /* 128 KB                   */
-    AHB_SRAM (xrw) : ORIGIN = 0x30000000, LENGTH = 0x00058000   /* 352 KB                   */
+    AHB_SRAM (xrw) : ORIGIN = 0x30000000, LENGTH = 0x00050000   /* 320 KB (excl. SRAM5 @ 0x30050000 for FDCAN) */
 }
 
 
@@ -144,7 +144,7 @@ SECTIONS
         *(.dmaram_data*)
         . = ALIGN(32);
         _edmaram_data = .;
-    } > AHB_SRAM AT > FLASH
+    } > AXI_SRAM AT > FLASH
 
     .dmaram_bss (NOLOAD) :
     {
@@ -159,7 +159,7 @@ SECTIONS
         _edmaram_bss = .;
         __dmaram_bss_end__ = _edmaram_bss;
         _dmaram_end__ = .;
-    } > AHB_SRAM
+    } > AXI_SRAM
 
     _sfastram_idata = LOADADDR(.fastram_data);
 

@@ -67,6 +67,7 @@ SRC_DIR         := $(ROOT)/src/main
 LIB_MAIN_DIR    := $(ROOT)/lib/main
 LIB_MODULES_DIR := $(ROOT)/lib/modules
 OBJECT_DIR      := $(ROOT)/obj/main
+SRC_MANIFEST    := $(OBJECT_DIR)/.src_manifest
 BIN_DIR         := $(ROOT)/obj
 CMSIS_DIR       := $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    := $(SRC_DIR)
@@ -197,7 +198,7 @@ include $(TARGET_DIR)/target.mk
 endif
 
 REVISION := norevision
-ifneq ($(wildcard .git/),)
+ifneq ($(wildcard .git),)
 ifeq ($(shell git diff --shortstat),)
 REVISION := $(shell git rev-parse --short=9 HEAD)
 endif
@@ -210,6 +211,16 @@ EXTRA_LD_FLAGS  :=
 # Default Tool options - can be overridden in {mcu}.mk files.
 #
 DEBUG_MIXED = no
+
+# Link-time optimisation is enabled by default. An {mcu}.mk can set "LTO := no"
+# (e.g. for an XIP / run-from-RAM layout that relies on per-function sections)
+# to strip the LTO flags from every optimisation profile and the link.
+LTO ?= yes
+
+# Promotion of float to double is treated as an error by default. An {mcu}.mk can
+# set "DOUBLE_PROMOTION := no" to disable the diagnostic entirely
+# (-Wno-double-promotion) instead.
+DOUBLE_PROMOTION ?= yes
 
 ifeq ($(DEBUG),INFO)
 DEBUG_MIXED = yes
@@ -318,6 +329,23 @@ endif
 #
 
 #
+# Resolve per-family build toggles now that the {mcu}.mk has been included.
+#
+
+# Disabling LTO routes its flags through CFLAGS_DISABLED so they are stripped
+# from every optimisation profile (CC_*_OPTIMISATION) and from LTO_FLAGS/LD_FLAGS.
+ifeq ($(LTO),no)
+CFLAGS_DISABLED += -flto=auto -fuse-linker-plugin
+endif
+
+# Select whether double-promotion is an error (default) or disabled entirely.
+ifeq ($(DOUBLE_PROMOTION),no)
+WARN_DOUBLE_PROMOTION := -Wno-double-promotion
+else
+WARN_DOUBLE_PROMOTION := -Wdouble-promotion
+endif
+
+#
 # Tool options.
 #
 CC_DEBUG_OPTIMISATION   := $(OPTIMISE_DEFAULT)
@@ -350,7 +378,7 @@ CFLAGS     += $(ARCH_FLAGS) \
               $(addprefix -isystem,$(SYS_INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
               -std=gnu17 \
-              -Wall -Wextra -Werror -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Wall -Wextra -Werror -Wunsafe-loop-optimizations $(WARN_DOUBLE_PROMOTION) \
               $(EXTRA_WARNING_FLAGS) \
               -ffunction-sections \
               -fdata-sections \
@@ -472,7 +500,14 @@ $(TARGET_LST): $(TARGET_ELF)
 ifeq ($(EXST),no)
 $(TARGET_BIN): $(TARGET_ELF)
 	@echo "Creating BIN $(TARGET_BIN)" "$(STDOUT)"
+# A platform may set BIN_FROM_ELF_CMD to generate the binary from the ELF its
+# own way (e.g. ESP32 wraps it into a bootable image with esptool elf2image);
+# otherwise fall back to a plain objcopy raw dump.
+ifdef BIN_FROM_ELF_CMD
+	$(V1) $(BIN_FROM_ELF_CMD)
+else
 	$(V1) $(OBJCOPY) -O binary $< $@
+endif
 
 $(TARGET_HEX): $(TARGET_ELF)
 	@echo "Creating HEX $(TARGET_HEX)" "$(STDOUT)"
@@ -710,38 +745,39 @@ $(AUTOHYDRATE_STAMPS):
 	$(V1) git submodule update --init -- "$(@:/.git=)" \
 	    || { echo "submodule update failed: $(@:/.git=)"; exit 1; }
 
-# Drop .d files whose recorded source path no longer exists. The most
-# common trigger is pulling across a source-move commit (e.g. promoting
-# an embedded vendor tree to a submodule) — gcc's -MMD pinned the .o to
-# the previous path, and make then bails with "No rule to make target
-# <old-path>" before the compiler ever runs to regenerate the .d. Cheap
-# scan: just stat the first .c prereq the .d declares.
-.PHONY: clean-stale-deps
-clean-stale-deps:
-	$(V1) if [ -d "$(OBJECT_DIR)" ]; then \
-	    find "$(OBJECT_DIR)" -name '*.d' 2>/dev/null | while IFS= read -r dfile; do \
-	        src=$$(awk '{ for (i=1; i<=NF; i++) if ($$i ~ /\.c$$/) { print $$i; exit } }' "$$dfile" 2>/dev/null); \
-	        if [ -n "$$src" ] && [ ! -f "$$src" ]; then \
-	            echo "Removing stale dependency file: $$dfile (source moved: $$src)"; \
-	            $(RM) "$$dfile"; \
-	        fi; \
-	    done; \
-	fi
+# Drop .d files when a source is removed (deleted, moved, or promoted to
+# a submodule). gcc's -MMD pins the .o to the old path; without cleanup
+# make bails with "No rule to make target <old-path>". A manifest of all
+# compiled sources is written to $(SRC_MANIFEST); on each build we compare
+# the current source list against it. If any sources were removed all .d
+# files are deleted so gcc can regenerate them cleanly. If nothing changed
+# the cost is a single cmp call.
+.PHONY: validate-deps
+validate-deps:
+	$(V1) mkdir -p "$(OBJECT_DIR)"; \
+	printf '%s\n' $(SRC) | sort > "$(SRC_MANIFEST).new"; \
+	if [ -f "$(SRC_MANIFEST)" ] && ! cmp -s "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new"; then \
+	    if comm -23 "$(SRC_MANIFEST)" "$(SRC_MANIFEST).new" | grep -q .; then \
+	        echo "Sources removed — clearing stale dependency files"; \
+	        find "$(OBJECT_DIR)" -name '*.d' -delete 2>/dev/null; \
+	    fi; \
+	fi; \
+	mv -f "$(SRC_MANIFEST).new" "$(SRC_MANIFEST)"
 
 .PHONY: binary
-binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+binary: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_BIN)
 
 .PHONY: hex
-hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+hex: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_HEX)
 
 .PHONY: uf2
-uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) clean-stale-deps
+uf2: $(PLATFORM_SDK_STAMP) $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_UF2)
 
 .PHONY: exe
-exe: $(AUTOHYDRATE_STAMPS) clean-stale-deps
+exe: $(AUTOHYDRATE_STAMPS) validate-deps
 	$(V1) $(MAKE) $(MAKE_PARALLEL) $(TARGET_EXE)
 
 # FWO (Firmware Output) is the default output for building the firmware

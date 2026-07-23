@@ -50,9 +50,6 @@
 
 #include "pg/motor.h"
 
-// Maximum time to wait for telemetry reception to complete
-#define DSHOT_TELEMETRY_TIMEOUT 2000
-
 // For MCUs that use MPU to control DMA coherency, there might be a performance hit
 // on manipulating input buffer content especially if it is read multiple times,
 // as the buffer region is attributed as not cachable.
@@ -282,6 +279,7 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
         if (bbPort->direction == DSHOT_BITBANG_DIRECTION_INPUT) {
+            bbPort->telemetryPending = false;
 #ifdef DEBUG_COUNT_INTERRUPT
             bbPort->inputIrq++;
 #endif
@@ -295,6 +293,7 @@ FAST_IRQ_HANDLER void bbDMAIrqHandler(dmaChannelDescriptor_t *descriptor)
             // Switch to input
 
             bbSwitchToInput(bbPort);
+            bbPort->telemetryPending = true;
 
             bbTIM_DMACmd(bbPort->timhw->tim, bbPort->dmaSource, TRUE);
         }
@@ -451,23 +450,21 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorProtocolTypes_e pwmP
 
 static bool bbTelemetryWait(void)
 {
-    // Wait for telemetry reception to complete
-    bool telemetryPending;
+    // If telemetry input DMA is still running, abort it rather than busy-waiting.
+    // Skipping one telemetry frame is harmless; busy-waiting can block TASK_RX for
+    // tens of milliseconds on high-loop-rate targets (e.g. F7 at 8K with bidirDSHOT).
+    // bbUpdateComplete() handles the port still being in INPUT direction.
     bool telemetryWait = false;
-    const timeUs_t startTimeUs = micros();
 
-    do {
-        telemetryPending = false;
-        for (int i = 0; i < usedMotorPorts; i++) {
-            telemetryPending |= bbPorts[i].telemetryPending;
+    for (int i = 0; i < usedMotorPorts; i++) {
+        if (bbPorts[i].telemetryPending) {
+            bbTIM_DMACmd(bbPorts[i].timhw->tim, bbPorts[i].dmaSource, FALSE);
+            bbDMA_Cmd(&bbPorts[i], FALSE);
+            bbPorts[i].telemetryPending = false;
+            bbPorts[i].telemetryAborted = true;
+            telemetryWait = true;
         }
-
-        telemetryWait |= telemetryPending;
-
-        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
-            break;
-        }
-    } while (telemetryPending);
+    }
 
     if (telemetryWait) {
         DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
@@ -498,6 +495,11 @@ static bool bbDecodeTelemetry(void)
         }
 #endif
         for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < dshotMotorCount; motorIndex++) {
+            if (bbMotors[motorIndex].bbPort->telemetryAborted) {
+                // Aborted reception; already counted in debug[2] by bbTelemetryWait().
+                // Don't bump debug[1] (missing-edge) - an abort is not a missing edge.
+                continue;
+            }
 
             uint32_t rawValue = decode_bb_bitband(
                 bbMotors[motorIndex].bbPort->portInputBuffer,
@@ -527,6 +529,10 @@ static bool bbDecodeTelemetry(void)
         }
 
         dshotTelemetryState.rawValueState = DSHOT_RAW_VALUE_STATE_NOT_PROCESSED;
+
+        for (int i = 0; i < usedMotorPorts; i++) {
+            bbPorts[i].telemetryAborted = false;
+        }
     }
 #endif
 
@@ -540,11 +546,6 @@ static void bbWriteInt(uint8_t motorIndex, uint16_t value)
     if (!bbmotor->configured) {
         return;
     }
-
-    // fetch requestTelemetry from motors. Needs to be refactored.
-    motorDmaOutput_t * const motor = getMotorDmaOutput(motorIndex);
-    bbmotor->protocolControl.requestTelemetry = motor->protocolControl.requestTelemetry;
-    motor->protocolControl.requestTelemetry = false;
 
     // If there is a command ready to go overwrite the value and send that instead
     if (dshotCommandIsProcessing()) {

@@ -49,10 +49,10 @@
 #include "flight/gps_rescue.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/rpm_filter.h"
 
 #include "io/gps.h"
 
+#include "pg/autopilot.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
@@ -170,7 +170,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
             // NOTE: dynamic lpf is enabled by default so this setting is actually
             // overridden and the static lowpass 1 is disabled. We can't set this
             // value to 0 otherwise Configurator versions 10.4 and earlier will also
-            // reset the lowpass filter type to PT1 overriding the desired BIQUAD setting.
+            // reset the lowpass filter type to PT1 overriding the desired Butterworth setting.
         .dterm_lpf2_static_hz = DTERM_LPF2_HZ_DEFAULT,   // second Dterm LPF ON by default
         .dterm_lpf1_type = FILTER_PT1,
         .dterm_lpf2_type = FILTER_PT1,
@@ -185,8 +185,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .integrated_yaw_relax = 200,
         .thrustLinearization = 0,
         .d_max = D_MAX_DEFAULT,
-        .d_max_gain = 37,
-        .d_max_advance = 20,
+        .d_max_gain = 0,
+        .d_max_advance = 35,
         .motor_output_limit = 100,
         .auto_profile_cell_count = AUTO_PROFILE_CELL_COUNT_STAY,
         .profileName = { 0 },
@@ -584,7 +584,11 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #endif // USE_WING
 
 #ifdef USE_GPS_RESCUE
-    angleTarget += gpsRescueAngle[axis] / 100.0f; // Angle is in centidegrees, stepped on roll at 10Hz but not on pitch
+    if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
+        angleLimit = (float)autopilotConfig()->maxAngle;
+        angleFeedforward = 0.0f;
+    }
 #endif
 #if defined(USE_POSITION_HOLD) && !defined(USE_WING)
     if (FLIGHT_MODE(POS_HOLD_MODE)) {
@@ -594,8 +598,8 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
             angleTarget = autopilotAngle[axis]; // autopilotAngle in degrees
             angleLimit = 85.0f; // allow autopilot to use whatever angle it needs to stop
         }
-        // limit pilot requested angle to half the autopilot angle to avoid excess speed and chaotic stops
-        angleLimit = fminf(0.5f * autopilotConfig()->maxAngle, angleLimit);
+        // limit pilot requested angle to max autopilot angle to avoid excess speed
+        angleLimit = fminf((float)autopilotConfig()->maxAngle, angleLimit);
     }
 #endif
 
@@ -882,7 +886,7 @@ static FAST_CODE_NOINLINE void disarmOnImpact(void)
         && ((getMaxRcDeflectionAbs() < 0.05f && mixerGetRcThrottle() < 0.05f)
 #ifdef USE_ALTITUDE_HOLD
             // or, in altitude hold mode, where throttle can be non-zero
-            || FLIGHT_MODE(ALT_HOLD_MODE)
+            || FLIGHT_MODE(ALT_HOLD_MODE | GPS_RESCUE_MODE)
 #endif
         )) {
         // increase sensitivity by 50% when low and in altitude hold or failsafe landing
@@ -1129,10 +1133,6 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
     rotateItermAndAxisError();
-
-#ifdef USE_RPM_FILTER
-    rpmFilterUpdate();
-#endif
 
     if (pidRuntime.useEzDisarm) {
         disarmOnImpact();
@@ -1523,9 +1523,10 @@ void dynLpfDTermUpdate(float throttle)
                 pt1FilterUpdateCutoff(&pidRuntime.dtermLowpass[axis].pt1Filter, pt1FilterGain(cutoffFreq, pidRuntime.dT));
             }
             break;
-        case DYN_LPF_BIQUAD:
+        case DYN_LPF_SVF:
+            cutoffFreq = MIN(cutoffFreq, 0.475f / pidRuntime.dT); // constrain to be below the nyquist
             for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                biquadFilterUpdateLPF(&pidRuntime.dtermLowpass[axis].biquadFilter, cutoffFreq, targetPidLooptime);
+                svfLowpassFilterUpdate(&pidRuntime.dtermLowpass[axis].svfLowpassFilter, cutoffFreq, pidRuntime.dT);
             }
             break;
         case DYN_LPF_PT2:

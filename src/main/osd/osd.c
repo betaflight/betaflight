@@ -464,6 +464,11 @@ void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
     osdElementConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS((midCol - 1), (midRow - 1));
     osdElementConfig->item_pos[OSD_CAMERA_FRAME]       = OSD_POS((midCol - 12), (midRow - 6));
     osdElementConfig->item_pos[OSD_UP_DOWN_REFERENCE]  = OSD_POS((midCol - 2), (midRow - 1));
+#ifdef USE_OSD_NAV_MAP
+    // multi-row map: default to the top-left corner so it never overlaps the
+    // centred defaults of the single-row elements
+    osdElementConfig->item_pos[OSD_NAV_MAP]            = OSD_POS(1, 1);
+#endif
 }
 
 static void osdDrawLogo(int x, int y, displayPortSeverity_e fontSel)
@@ -1484,14 +1489,16 @@ void osdUpdate(timeUs_t currentTimeUs)
     case OSD_STATE_UPDATE_ALARMS:
         osdUpdateAlarms();
 
-        if (resumeRefreshAt) {
-            osdState = OSD_STATE_TRANSFER;
-        } else {
-            osdState = OSD_STATE_UPDATE_CANVAS;
-        }
+        // Pass through OSD_STATE_UPDATE_CANVAS even when short circuiting (resumeRefreshAt), for stats purposes (task rate).
+        osdState = OSD_STATE_UPDATE_CANVAS;
         break;
 
     case OSD_STATE_UPDATE_CANVAS:
+        if (resumeRefreshAt) {
+            osdState = OSD_STATE_TRANSFER;
+            break;
+        }
+
         // Hide OSD when OSDSW mode is active
         if (IS_RC_MODE_ACTIVE(BOXOSD)) {
             displayClearScreen(osdDisplayPort, DISPLAY_CLEAR_NONE);

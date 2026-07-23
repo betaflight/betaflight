@@ -17,17 +17,15 @@ ENTRY(Reset_Handler)
 0x20000000 to 0x2003FFFF  256K SRAM (SRAM1 128K + SRAM2 128K)
 
 0x08000000 to 0x080FFFFF 1024K full flash,
-0x08000000 to 0x0801FFFF  128K isr vector, startup code,
-0x08020000 to 0x0803FFFF  128K config, // FLASH_Sector_1
-0x08040000 to 0x080FFFFF  768K firmware,
+0x08000000 to 0x080FBFFF 1008K isr vector, startup code, firmware,
+0x080FC000 to 0x080FFFFF   16K config (last two 8K pages),
 */
 
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 128K
-    FLASH_CONFIG (r)  : ORIGIN = 0x08020000, LENGTH = 128K
-    FLASH1 (rx)       : ORIGIN = 0x08040000, LENGTH = 768K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 1008K
+    FLASH_CONFIG (r)  : ORIGIN = 0x080FC000, LENGTH = 16K
 
     RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 256K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
@@ -76,18 +74,18 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH1
+  } >FLASH
 
   .ARM.extab   :
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } >FLASH1
+  } >FLASH
 
   .ARM :
   {
     __exidx_start = .;
     *(.ARM.exidx*) __exidx_end = .;
-  } >FLASH1
+  } >FLASH
 
   .pg_registry :
   {
@@ -95,14 +93,14 @@ SECTIONS
     KEEP (*(.pg_registry))
     KEEP (*(SORT(.pg_registry.*)))
     PROVIDE_HIDDEN (__pg_registry_end = .);
-  } >FLASH1
+  } >FLASH
 
   .pg_resetdata :
   {
     PROVIDE_HIDDEN (__pg_resetdata_start = .);
     KEEP (*(.pg_resetdata))
     PROVIDE_HIDDEN (__pg_resetdata_end = .);
-  } >FLASH1
+  } >FLASH
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -117,7 +115,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -162,7 +160,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efastram_data = .;
-  } >FASTRAM AT >FLASH1
+  } >FASTRAM AT >FLASH
 
   . = ALIGN(4);
   .fastram_bss (NOLOAD) :
@@ -191,7 +189,7 @@ SECTIONS
     *(.dmaram_data*)
     . = ALIGN(32);
     _edmaram_data = .;
-  } >RAM AT >FLASH1
+  } >RAM AT >FLASH
 
   . = ALIGN(32);
   .dmaram_bss (NOLOAD) :

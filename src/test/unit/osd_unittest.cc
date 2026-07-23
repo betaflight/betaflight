@@ -103,6 +103,7 @@ extern "C" {
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
+    uint8_t simulationBatteryPercentage;
     uint32_t simulationBatteryAmperage;
     uint32_t simulationMahDrawn;
     float simulationWhDrawn;
@@ -124,14 +125,19 @@ void setDefaultSimulationState()
 {
     memset(osdElementConfigMutable(), 0, sizeof(osdElementConfig_t));
 
+    rtcTime_t rtcTime = simulationTime / 1000;
+    rtcSet(&rtcTime);
+
     osdConfigMutable()->enabled_stats = 0;
     osdConfigMutable()->framerate_hz = 12;
+    timeConfigMutable()->tz_offsetMinutes = 0;
 
     rssi = 1024;
 
     simulationBatteryState = BATTERY_OK;
     simulationBatteryCellCount = 4;
     simulationBatteryVoltage = 1680;
+    simulationBatteryPercentage = 100;
     simulationBatteryAmperage = 0;
     simulationMahDrawn = 0;
     simulationWhDrawn = 0;
@@ -521,6 +527,43 @@ TEST_F(OsdTest, TestStatsTiming)
     displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:13.60");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:01");
+}
+
+TEST_F(OsdTest, TestRtcDateTimeVariantsUseTimezoneOffset)
+{
+    // given
+    // this RTC time and timezone offset
+    dateTime_t dateTime;
+    dateTime.year = 2026;
+    dateTime.month = 5;
+    dateTime.day = 30;
+    dateTime.hours = 22;
+    dateTime.minutes = 30;
+    dateTime.seconds = 15;
+    dateTime.millis = 0;
+    rtcSetDateTime(&dateTime);
+    timeConfigMutable()->tz_offsetMinutes = 120;
+
+    // when
+    // the short date/time variant is formatted
+    char buffer[FORMATTED_DATE_TIME_BUFSIZE];
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_2);
+    EXPECT_TRUE(osdFormatRtcDateTime(buffer));
+
+    // then
+    // the short date/time variant uses local time
+    EXPECT_STREQ("05.31 00:30", buffer);
+
+    // when
+    // the time-only variant is formatted
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_3);
+    EXPECT_TRUE(osdFormatRtcDateTime(buffer));
+
+    // then
+    // the time-only variant uses local time
+    EXPECT_STREQ("00:30:15", buffer);
+
+    osdSetActiveElementTypeForTest(OSD_ELEMENT_TYPE_1);
 }
 
 /*
@@ -1296,6 +1339,157 @@ TEST_F(OsdTest, TestHdPositioning)
     displayPortTestBufferSubstring(53, 1, "  0.00%c", SYM_AMP);
 }
 
+TEST_F(OsdTest, TestBatteryUsageCapacityZero)
+{
+    batteryProfilesMutable(0)->batteryCapacity = 0;
+
+    // TYPE 3
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_3 << 14);
+    osdAnalyzeActiveElements();
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 0;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 42;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c42%%", SYM_MAH);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 100;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+
+    // TYPE 4
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_4 << 14);
+    osdAnalyzeActiveElements();
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 0;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c100%%", SYM_MAH);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 42;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c58%%", SYM_MAH);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 100;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1, "%c0%%", SYM_MAH);
+
+    // TYPE 1
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_1 << 14);
+    osdAnalyzeActiveElements();
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 0;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 42;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_END,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 100;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL);
+
+    // TYPE 2
+    osdElementConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE] =
+        OSD_POS(2, 1) | OSD_PROFILE_1_FLAG | (OSD_ELEMENT_TYPE_2 << 14);
+    osdAnalyzeActiveElements();
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 0;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 42;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_FULL,
+        SYM_PB_END,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
+    displayClearScreen(&testDisplayPort, DISPLAY_CLEAR_WAIT);
+    simulationBatteryPercentage = 100;
+    osdRefresh();
+    displayPortTestBufferSubstring(2, 1,
+        "%c%c%c%c%c%c%c%c%c%c%c%c",
+        SYM_PB_START,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY,
+        SYM_PB_EMPTY);
+}
+
 // STUBS
 extern "C" {
     bool featureIsEnabled(uint32_t f) { return simulationFeatureFlags & f; }
@@ -1352,6 +1546,10 @@ extern "C" {
 
     uint16_t getBatteryAverageCellVoltage() {
         return simulationBatteryVoltage / simulationBatteryCellCount;
+    }
+
+    uint8_t calculateBatteryPercentageRemaining(void) {
+        return simulationBatteryPercentage;
     }
 
     int32_t getAmperage() {

@@ -40,13 +40,17 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/autopilot.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/pid.h"
 #include "flight/pid_init.h"
 
+#include "pg/autopilot.h"
+
 #include "pg/rx.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
@@ -651,7 +655,14 @@ FAST_CODE void processRcCommand(void)
                 rcDeflectionAbs[axis] = 0;
             } else
 #endif
-            {
+            if ((axis == FD_YAW) && FLIGHT_MODE(AUTOPILOT_MODE) && autopilotYawControlActive()
+                && fabsf(rcCommand[FD_YAW]) < (float)autopilotConfig()->stickDeadband) {
+                // Mission yaw control, injected the same way as GPS rescue;
+                // a yaw stick deflection past the deadband hands yaw back to the pilot.
+                angleRate = autopilotGetYawRate();
+                rcDeflection[axis] = 0;
+                rcDeflectionAbs[axis] = 0;
+            } else {
                 // scale rcCommandf to range [-1.0, 1.0]
                 float rcCommandf;
                 if (axis == FD_YAW) {

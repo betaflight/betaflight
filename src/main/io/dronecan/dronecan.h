@@ -73,4 +73,11 @@ bool dronecanRegisterSubscriber(const dronecanSubscriber_t *subscriber);
 // each one having to re-discover the pool.
 CanardInstance *dronecanGetInstance(void);
 
+// Drain libcanard's TX queue into the CAN driver. Safe to call from any task
+// context (the cooperative scheduler serialises libcanard access). Used by the
+// PID-loop ESC emission to push a freshly-queued RawCommand straight out, and
+// by the dronecan task as a fallback for anything left when the driver ring
+// was momentarily full. No-op until the stack is initialised.
+void dronecanFlushTx(void);
+
 #endif // ENABLE_DRONECAN

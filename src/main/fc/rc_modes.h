@@ -83,6 +83,7 @@ typedef enum {
     BOXBEEPERMUTE,
     BOXREADY,
     BOXLAPTIMERRESET,
+    BOXWPCAPTURE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -95,6 +96,8 @@ typedef enum {
 typedef struct boxBitmask_s { uint32_t bits[(CHECKBOX_ITEM_COUNT + 31) / 32]; } boxBitmask_t;
 
 #define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
+
+#define STICKY_MODE_BOOT_DELAY_US (5 * 1000 * 1000)
 
 #define CHANNEL_RANGE_MIN 900
 #define CHANNEL_RANGE_MAX 2100

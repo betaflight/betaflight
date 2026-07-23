@@ -66,6 +66,19 @@ atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
+beeper_unittest_SRC := \
+		$(USER_DIR)/io/beeper.c
+
+beeper_unittest_DEFINES := \
+		USE_BEEPER= \
+		USE_DSHOT=
+
+compass_ist8310_unittest_SRC := \
+		$(USER_DIR)/drivers/compass/compass_ist8310.c
+
+compass_ist8310_unittest_DEFINES := \
+                USE_MAG_IST8310=
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c
 
@@ -94,6 +107,17 @@ baro_ms5611_unittest_SRC := \
 baro_ms5611_unittest_DEFINES := \
                 USE_BARO_MS5611= \
                 USE_BARO_SPI_MS5611=
+
+accgyro_spi_icm426xx_unittest_SRC := \
+		$(USER_DIR)/drivers/accgyro/accgyro_spi_icm426xx.c
+
+accgyro_spi_icm426xx_unittest_DEFINES := \
+                USE_GYRO_SPI_ICM42605= \
+                USE_ACCGYRO_ICM42622P= \
+                USE_ACCGYRO_ICM42686P= \
+                USE_GYRO_SPI_ICM42688P= \
+                USE_ACCGYRO_IIM42652= \
+                USE_ACCGYRO_IIM42653=
 
 # This test is disabled due to build errors.
 # Its source code is archived in unit/battery_unittest.cc.txt
@@ -168,10 +192,24 @@ flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/fc/runtime_config.c \
-		$(USER_DIR)/flight/failsafe.c
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
 
 flight_failsafe_unittest_DEFINES := \
-		USE_GPS_RESCUE=
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1
+
+flight_failsafe_rescue_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/flight/failsafe.c \
+		$(USER_DIR)/pg/autopilot.c
+
+flight_failsafe_rescue_unittest_DEFINES := \
+		USE_GPS_RESCUE= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
 
 
 flight_imu_unittest_SRC := \
@@ -193,6 +231,25 @@ flight_mixer_unittest :=  \
 
 gps_conversion_unittest_SRC := \
 		$(USER_DIR)/common/gps_conversion.c
+
+
+dronecan_gnss_unittest_SRC := \
+		$(TEST_DIR)/dronecan_gnss_libcanard.c
+
+dronecan_gnss_unittest_DEFINES := \
+		ENABLE_DRONECAN=1
+
+dronecan_gnss_unittest_INCLUDE_DIRS := \
+		$(ROOT)/lib/modules/dronecan/libcanard
+
+# libcanard is a submodule the firmware Makefile hydrates on demand; a test-only
+# checkout (CI's test job) arrives without it.
+$(ROOT)/lib/modules/dronecan/libcanard/canard.c:
+	git -C $(ROOT) submodule update --init -- lib/modules/dronecan/libcanard
+
+$(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_libcanard.c.o \
+$(OBJECT_DIR)/dronecan_gnss_unittest/dronecan_gnss_unittest.o: \
+		$(ROOT)/lib/modules/dronecan/libcanard/canard.c
 
 
 io_serial_unittest_SRC := \
@@ -220,6 +277,15 @@ motor_output_unittest_SRC := \
 
 motor_output_unittest_DEFINES := \
 		USE_DSHOT=
+
+msp_serial_unittest_SRC := \
+		$(USER_DIR)/msp/msp_serial.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
+
+msp_serial_unittest_DEFINES := \
+		USE_CLI= \
+		USE_MSP_DISPLAYPORT=
 
 osd_unittest_SRC := \
 		$(USER_DIR)/osd/osd.c \
@@ -298,6 +364,14 @@ rx_ibus_unittest_SRC := \
 		$(USER_DIR)/rx/ibus.c
 
 
+rx_msp_override_unittest_SRC := \
+		$(USER_DIR)/rx/msp.c
+
+rx_msp_override_unittest_DEFINES := \
+		USE_RX_MSP= \
+		USE_RX_MSP_OVERRIDE=
+
+
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \
@@ -346,6 +420,12 @@ sensor_gyro_unittest_SRC := \
 		$(USER_DIR)/pg/pg.c \
 		$(USER_DIR)/pg/gyrodev.c
 
+sitl_gyro_unittest_SRC := \
+		$(TEST_DIR)/sitl_gyro_unittest_c.c
+
+sitl_gyro_unittest_INCLUDE_DIRS := \
+		$(ROOT)/src/platform/SIMULATOR
+
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
@@ -392,12 +472,52 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus_shared.c \
 		$(USER_DIR)/telemetry/ibus.c
 
+telemetry_mavlink_mission_unittest_SRC := \
+		$(USER_DIR)/telemetry/mavlink_mission.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/autopilot.c
+
+telemetry_mavlink_mission_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_TELEMETRY= \
+		USE_TELEMETRY_MAVLINK= \
+		ENABLE_TELEMETRY_MAVLINK_MISSION=1
+
 transponder_ir_unittest_SRC := \
 		$(USER_DIR)/drivers/transponder_ir_ilap.c \
 		$(USER_DIR)/drivers/transponder_ir_arcitimer.c
 
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
+
+DRONECAN_LIBCANARD_DIR := $(ROOT)/lib/modules/dronecan/libcanard
+
+dronecan_mag_unittest_SRC := \
+		$(USER_DIR)/io/dronecan/dronecan_mag.c \
+		$(TEST_DIR)/dronecan_mag_canard.c
+
+dronecan_mag_unittest_DEFINES := \
+		ENABLE_DRONECAN=1 \
+		USE_MAG=
+
+dronecan_mag_unittest_INCLUDE_DIRS := \
+		$(DRONECAN_LIBCANARD_DIR)
+
+# The hydration rule for canard.c lives with the dronecan_gnss test above;
+# every object of this test depends on it.
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_canard.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/io/dronecan/dronecan_mag.c.o \
+$(OBJECT_DIR)/dronecan_mag_unittest/dronecan_mag_unittest.o: $(DRONECAN_LIBCANARD_DIR)/canard.c
+
+
+.PHONY: check-pg-ids
+check-pg-ids:
+	@pg=$(USER_DIR)/pg/pg_ids.h; \
+	if [ ! -f "$$pg" ]; then echo "pg_ids.h not found at $$pg"; exit 1; fi; \
+	awk -f $(TEST_DIR)/check_pg_ids.awk $$pg
+
 
 huffman_unittest_SRC := \
 		$(USER_DIR)/common/huffman.c \
@@ -465,13 +585,59 @@ flight_plan_nav_unittest_SRC := \
 		$(USER_DIR)/flight/flight_plan_nav.c \
 		$(USER_DIR)/pg/autopilot.c \
 		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/gps_rescue_multirotor.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/vector.c
 
 flight_plan_nav_unittest_DEFINES := \
 		USE_GPS= \
+		USE_GPS_RESCUE= \
 		USE_FLIGHT_PLAN= \
 		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_capture_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_capture.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
+flight_plan_capture_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1
+
+flight_plan_rescue_unittest_SRC := \
+		$(USER_DIR)/flight/flight_plan_nav.c \
+		$(USER_DIR)/pg/autopilot.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/pg/gps_rescue_multirotor.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/vector.c
+
+flight_plan_rescue_unittest_DEFINES := \
+		USE_GPS= \
+		USE_GPS_RESCUE= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		ENABLE_RESCUE_PLAN=1
+
+osd_nav_map_unittest_SRC := \
+		$(USER_DIR)/osd/osd_nav_map.c \
+		$(USER_DIR)/flight/nav_trail.c \
+		$(USER_DIR)/pg/osd_nav_map.c \
+		$(USER_DIR)/pg/flight_plan.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/vector.c
+
+osd_nav_map_unittest_DEFINES := \
+		USE_GPS= \
+		USE_FLIGHT_PLAN= \
+		ENABLE_FLIGHT_PLAN=1 \
+		USE_OSD= \
+		USE_OSD_NAV_MAP=
+
 rcdevice_unittest_DEFINES := \
 		USE_RCDEVICE=
 
@@ -607,15 +773,18 @@ COMMON_FLAGS += -Wno-c99-designator
 # no warning expected on clang
 COMMON_FLAGS += -Werror
 
+# The vendored MAVLink headers forward-declare mavlink_message_t and then
+# redefine it identically; harmless, but flagged as a C11 feature under gnu99.
+COMMON_FLAGS += -Wno-typedef-redefinition
+
 ifeq ($(shell expr $(CC_VERSION_MAJOR) \< $(CC_VERSION_CHECK_MIN) \| $(CC_VERSION_MAJOR) \> $(CC_VERSION_CHECK_MAX)),1)
 $(error $(CC) $(CC_VERSION) is not supported. The officially supported version of clang is 'clang-18'. If this is not found, 'clang' is used as a fallback. The version of the compiler must be between $(CC_VERSION_CHECK_MIN) and $(CC_VERSION_CHECK_MAX).)
 endif
 
-COMMON_FLAGS += -fblocks
 ifndef CYGWIN
-ifneq ($(OSFAMILY), macosx)
-LDFLAGS	     += -lBlocksRuntime
-endif # !macosx
+ifeq ($(OSFAMILY), macosx)
+COMMON_FLAGS += -fblocks
+endif
 endif # !CYGWIN
 
 else ifeq ($(shell $(CC) -v 2>&1 | grep -q "gcc version" && echo "gcc"),gcc)
@@ -689,7 +858,7 @@ include $(MAKE_SCRIPT_DIR)/build_verbosity.mk
 # House-keeping build targets.
 
 ## test        : Build and run the non target specific Unit Tests (default goal)
-test: $(TESTS:%=test_%)
+test: check-pg-ids $(TESTS:%=test_%)
 
 ## test-all : Build and run all Unit Tests
 test-all: $(TESTS_ALL:%=test_%)

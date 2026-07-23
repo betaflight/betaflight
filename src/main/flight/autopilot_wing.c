@@ -62,11 +62,6 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     UNUSED(velLimitCmS);
 }
 
-void setSticksActiveStatus(bool areSticksActive)
-{
-    UNUSED(areSticksActive);
-}
-
 bool positionControl(void)
 {
     return false;
@@ -85,6 +80,21 @@ float getAutopilotThrottle(void)
 bool isAutopilotInControl(void)
 {
     return false;
+}
+
+float autopilotGetYawRate(void)
+{
+    return 0.0f;
+}
+
+bool autopilotYawControlActive(void)
+{
+    return false;
+}
+
+void autopilotSetYawRateLimit(float rateLimitDps)
+{
+    UNUSED(rateLimitDps);
 }
 
 #endif // USE_WING

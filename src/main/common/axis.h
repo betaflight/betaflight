@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "common/utils.h"
+
 typedef enum {
     X = 0,
     Y,
@@ -45,11 +47,44 @@ typedef enum {
 #define RP_AXIS_COUNT 2
 #define EF_AXIS_COUNT 2
 
-// NED (North-East-Down) coordinate frame - aviation standard
+// Earth-frame axis indices.
+//
+// These names encode three things at every call site: the frame, the axis,
+// and the positive direction. Indexing a vector with e.g. NWU_W makes it
+// obvious that the value is West-positive, so the sign of any North/East/Up
+// conversion is visible in the code rather than carried in a reader's head.
+// Do NOT reintroduce bare .x/.y for earth-frame quantities - the inability to
+// tell which axis (and which sign) .x meant was the root cause of the
+// getLinearAccelENU East-West inversion.
+
+// NWU (North-West-Up): the body->earth frame produced by rMat in imu.c.
+// matrixVectorMul(&v, &rMat, &bodyVec) yields a vector indexed by these.
 typedef enum {
-    NED_NORTH = 0,  // X-axis in NED frame
-    NED_EAST = 1,   // Y-axis in NED frame
-    NED_DOWN = 2    // Z-axis in NED frame
-} axisNED_e;
+    NWU_N = 0,  // +North
+    NWU_W = 1,  // +West
+    NWU_U = 2   // +Up
+} axisNWU_e;
+
+// ENU (East-North-Up): the navigation frame used by the position estimator
+// and autopilot. The position/velocity vector3_t fields are indexed by these.
+typedef enum {
+    ENU_E = 0,  // +East
+    ENU_N = 1,  // +North
+    ENU_U = 2   // +Up
+} axisENU_e;
+
+// Horizontal earth-frame (East-North) index for the 2-axis position/velocity
+// PID arrays. Matches the first two ENU indices (see EF_AXIS_COUNT).
+typedef enum {
+    EF_EAST = 0,   // +East
+    EF_NORTH = 1   // +North
+} efAxis_e;
+
+// The autopilot stores into EF_AXIS_COUNT arrays by EF_EAST/EF_NORTH while
+// reading the estimate by ENU_E/ENU_N; that is only correct because the two
+// horizontal frames share index values. Lock the invariant so a future
+// reordering of either enum fails to compile rather than silently swapping axes.
+STATIC_ASSERT((int)EF_EAST == (int)ENU_E, ef_east_must_match_enu_east);
+STATIC_ASSERT((int)EF_NORTH == (int)ENU_N, ef_north_must_match_enu_north);
 
 #define GET_DIRECTION(isReversed) ((isReversed) ? -1 : 1)

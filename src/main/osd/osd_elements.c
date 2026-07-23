@@ -154,6 +154,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/flight_plan_nav.h"
 #include "flight/gps_rescue.h"
 #include "flight/position.h"
 #include "flight/imu.h"
@@ -168,8 +169,12 @@
 #include "osd/osd_custom_text.h"
 #endif
 #include "osd/osd_elements.h"
+#ifdef USE_OSD_NAV_MAP
+#include "osd/osd_nav_map.h"
+#endif
 #include "osd/osd_warnings.h"
 
+#include "pg/flight_plan.h"
 #include "pg/motor.h"
 #include "pg/pilot.h"
 #include "pg/stats.h"
@@ -253,6 +258,12 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31) / 32];
 
 // Current element and render status
 static osdElementParms_t activeElement;
+#ifdef UNIT_TEST
+void osdSetActiveElementTypeForTest(osdElementType_e type)
+{
+    activeElement.type = type;
+}
+#endif
 static bool displayPendingForeground;
 static bool displayPendingBackground;
 static char elementBuff[OSD_ELEMENT_BUFFER_LENGTH];
@@ -482,12 +493,15 @@ bool osdFormatRtcDateTime(char *buffer)
         return false;
     }
 
+    dateTime_t localDateTime;
+    dateTimeUTCToLocal(&dateTime, &localDateTime);
+
     switch (activeElement.type) {
     case OSD_ELEMENT_TYPE_3: 
-        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds); 
+        tfp_sprintf(buffer, "%02d:%02d:%02d", localDateTime.hours, localDateTime.minutes, localDateTime.seconds);
         break;
     case OSD_ELEMENT_TYPE_2:
-        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
+        tfp_sprintf(buffer, "%02d.%02d %02d:%02d", localDateTime.month, localDateTime.day, localDateTime.hours, localDateTime.minutes);
         break;
     case OSD_ELEMENT_TYPE_1:
     default:
@@ -599,7 +613,7 @@ static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directi
     return direction; // return segment number
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+uint8_t osdGetDirectionSymbolFromHeading(int heading)
 {
     heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
@@ -828,7 +842,8 @@ static void osdElementArtificialHorizon(osdElementParms_t *element)
 static void osdElementUpDownReference(osdElementParms_t *element)
 {
 // Up/Down reference feature displays reference points on the OSD at Zenith and Nadir
-    const float earthUpinBodyFrame[3] = {-rMat.m[2][0], -rMat.m[2][1], -rMat.m[2][2]}; //transforum the up vector to the body frame
+    // The earth-Up row (NWU_U) of rMat is earth-up expressed per body axis; negate to point down.
+    const float earthUpinBodyFrame[3] = {-rMat.m[NWU_U][X], -rMat.m[NWU_U][Y], -rMat.m[NWU_U][Z]};
 
     if (fabsf(earthUpinBodyFrame[2]) < SINE_25_DEG && fabsf(earthUpinBodyFrame[1]) < SINE_25_DEG) {
         float thetaB; // pitch from body frame to zenith/nadir
@@ -1125,14 +1140,7 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
-    // Note that flight mode display has precedence in what to display.
-    //  1. FS
-    //  2. GPS RESCUE
-    //  3. PASSTHRU
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
-    //  5. AIR
-    //  6. ACRO
-
+    // Note that flight mode display has precedence in what to display, FS first, ACRO last
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
@@ -1292,6 +1300,111 @@ static void osdElementEfficiency(osdElementParms_t *element)
         tfp_sprintf(element->buff, "----%c/%c", SYM_MAH, unitSymbol);
     }
 }
+
+#if ENABLE_FLIGHT_PLAN
+static void osdPutHyphen(osdElementParms_t *element)
+{
+    element->buff[0] = SYM_HYPHEN;
+    element->buff[1] = '\0';
+}
+
+// Current waypoint clamped into the stored plan; valid only when count > 0.
+static uint8_t osdWpCurrentIndex(uint8_t count)
+{
+    const uint8_t index = flightPlanNavGetCurrentIndex();
+    return (index < count) ? index : (uint8_t)(count - 1);
+}
+
+static void osdElementWpNumber(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "WP%u/%u", osdWpCurrentIndex(count) + 1, count);
+}
+
+static void osdElementWpNextNumber(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    const uint8_t next = osdWpCurrentIndex(count) + 1;
+    if (next >= count) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "NEXT%u", next + 1);
+}
+
+static void osdFormatWaypointCoordinate(char *buff, int32_t value, char leadingSymbol)
+{
+    *buff++ = leadingSymbol;
+    if (value < 0) {
+        *buff++ = SYM_HYPHEN;
+    }
+    tfp_sprintf(buff, "%u.%07u", abs(value) / GPS_DEGREES_DIVIDER, abs(value) % GPS_DEGREES_DIVIDER);
+}
+
+static void osdElementWpCoordinate(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    const waypoint_t *wp = &flightPlanConfig()->waypoints[osdWpCurrentIndex(count)];
+    if (element->item == OSD_WP_CURRENT_LON) {
+        osdFormatWaypointCoordinate(element->buff, wp->longitude, SYM_LON);
+    } else {
+        osdFormatWaypointCoordinate(element->buff, wp->latitude, SYM_LAT);
+    }
+}
+
+static void osdElementWpAltitude(osdElementParms_t *element)
+{
+    const uint8_t count = flightPlanConfig()->waypointCount;
+    if (count == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    osdFormatAltitudeString(element->buff, flightPlanConfig()->waypoints[osdWpCurrentIndex(count)].altitude, element->type);
+}
+
+static void osdElementWpDistance(osdElementParms_t *element)
+{
+    const float distanceM = flightPlanNavGetDistanceToWaypointM();
+    if (distanceM < 0.0f) {
+        osdPutHyphen(element);
+        return;
+    }
+    osdFormatDistanceString(element->buff, lrintf(distanceM), SYM_NONE);
+}
+
+static void osdElementWpDirection(osdElementParms_t *element)
+{
+    const int32_t bearingDeci = flightPlanNavGetBearingToWaypointDeciDeg();
+    if (bearingDeci < 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(bearingDeci - attitude.values.yaw));
+    element->buff[1] = 0;
+}
+
+static void osdElementWpEta(osdElementParms_t *element)
+{
+    const uint16_t etaSeconds = flightPlanNavGetEtaSeconds();
+    if (etaSeconds == 0) {
+        osdPutHyphen(element);
+        return;
+    }
+    tfp_sprintf(element->buff, "%02u:%02u", etaSeconds / 60, etaSeconds % 60);
+}
+#endif // ENABLE_FLIGHT_PLAN
 #endif // USE_GPS
 
 #ifdef USE_GPS_LAP_TIMER
@@ -1468,6 +1581,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
             int displayPercent = 0;
             if (currentBatteryProfile->batteryCapacity) {
                 displayPercent = constrain(lrintf(100.0f * displayBasis / currentBatteryProfile->batteryCapacity), 0, 100);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_4) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                displayPercent = voltagePercent;
             }
             tfp_sprintf(element->buff, "%c%d%%", SYM_MAH, displayPercent);
             break;
@@ -1486,6 +1605,12 @@ static void osdElementMainBatteryUsage(osdElementParms_t *element)
                 const float batteryRemaining = (float)constrain(currentBatteryProfile->batteryCapacity - displayBasis, 0, currentBatteryProfile->batteryCapacity);
                 const float stepSize = (float)currentBatteryProfile->batteryCapacity / (float)MAIN_BATT_USAGE_STEPS;
                 remainingCapacityBars = ceilf(batteryRemaining / stepSize);
+            } else if (getBatteryState() != BATTERY_NOT_PRESENT) {
+                uint8_t voltagePercent = calculateBatteryPercentageRemaining();
+                if (element->type == OSD_ELEMENT_TYPE_2) {
+                    voltagePercent = 100 - voltagePercent;
+                }
+                remainingCapacityBars = (voltagePercent * MAIN_BATT_USAGE_STEPS + 99) / 100; // integer ceil
             }
 
             // Create empty battery indicator bar
@@ -2038,6 +2163,19 @@ const osdElementDrawFn osdElementDrawFunction[OSD_ITEM_COUNT] = {
 #ifdef USE_GPS
     [OSD_GPS_LON]                 = osdElementGpsCoordinate,
     [OSD_GPS_LAT]                 = osdElementGpsCoordinate,
+#if ENABLE_FLIGHT_PLAN
+    [OSD_WP_NUMBER]               = osdElementWpNumber,
+    [OSD_WP_CURRENT_LAT]          = osdElementWpCoordinate,
+    [OSD_WP_CURRENT_LON]          = osdElementWpCoordinate,
+    [OSD_WP_CURRENT_ALT]          = osdElementWpAltitude,
+    [OSD_WP_DISTANCE]             = osdElementWpDistance,
+    [OSD_WP_DIRECTION]            = osdElementWpDirection,
+    [OSD_WP_NEXT_NUMBER]          = osdElementWpNextNumber,
+    [OSD_WP_ETA]                  = osdElementWpEta,
+#endif
+#ifdef USE_OSD_NAV_MAP
+    [OSD_NAV_MAP]                 = osdElementNavMap,
+#endif
 #endif
     [OSD_DEBUG]                   = osdElementDebug,
     [OSD_DEBUG2]                  = osdElementDebug2,
@@ -2196,6 +2334,19 @@ void osdAddActiveElements(void)
         osdAddActiveElement(OSD_HOME_DIR);
         osdAddActiveElement(OSD_FLIGHT_DIST);
         osdAddActiveElement(OSD_EFFICIENCY);
+#if ENABLE_FLIGHT_PLAN
+        osdAddActiveElement(OSD_WP_NUMBER);
+        osdAddActiveElement(OSD_WP_CURRENT_LAT);
+        osdAddActiveElement(OSD_WP_CURRENT_LON);
+        osdAddActiveElement(OSD_WP_CURRENT_ALT);
+        osdAddActiveElement(OSD_WP_DISTANCE);
+        osdAddActiveElement(OSD_WP_DIRECTION);
+        osdAddActiveElement(OSD_WP_NEXT_NUMBER);
+        osdAddActiveElement(OSD_WP_ETA);
+#endif
+#ifdef USE_OSD_NAV_MAP
+        osdAddActiveElement(OSD_NAV_MAP);
+#endif
     }
 #endif // GPS
 

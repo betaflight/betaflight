@@ -51,6 +51,8 @@
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
+#include "flight/flight_plan_capture.h"
+#include "flight/flight_plan_nav.h"
 #include "flight/pos_hold.h"
 
 #include "io/beeper.h"
@@ -176,6 +178,21 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     static armingDisableFlags_e armingDisabledDisplayFlag = 0;
 
     warningText[0] = '\0';
+
+#ifdef USE_GPS_RESCUE
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
+        && FLIGHT_MODE(GPS_RESCUE_MODE)
+        && !gpsRescueIsOK()) {
+
+        tfp_sprintf(warningText, "RESCUE FAIL");
+        // when a rescue sanity check is active (rescue has failed)
+        // takes precedence over RXLOSS warning which otherwise is shown throughout the rescue
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
+#endif
+
     *displayAttr = DISPLAYPORT_SEVERITY_NORMAL;
     *blinking = false;
 
@@ -342,39 +359,106 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
     }
 
 #ifdef USE_GPS_RESCUE
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       !gpsRescueIsDisabled() &&
-       !gpsRescueIsAvailable()) {
-        tfp_sprintf(warningText, "RESCUE N/A");
-        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
-        *blinking = true;
-        return;
-    }
-
-    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_DISABLED) &&
-       ARMING_FLAG(ARMED) &&
-       gpsRescueIsConfigured() &&
-       gpsRescueIsDisabled()) {
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_UNAVAILABLE)
+        && ARMING_FLAG(ARMED)
+        && gpsRescueIsConfigured() // show this warning on arming (not waiting for the rescue to start)
+        && !gpsRescueIsAvailable()) {
 
         statistic_t *stats = osdGetStats();
         if (cmpTimeUs(stats->armed_time, OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US) < 0) {
-            tfp_sprintf(warningText, "RESCUE OFF");
+            tfp_sprintf(warningText, "RESCUE N/A");
+            // tell the user that GPS Rescue won't be available if requested later in the flight
+            // auto-remove the message after the warning duration timeout (5s)
             *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
             *blinking = true;
             return;
         }
     }
+    if (osdWarnGetState(OSD_WARNING_GPS_RESCUE_FAILING)
+        && ARMING_FLAG(ARMED)
+        && gpsRescueIsConfigured()
+        && !gpsRescueIsHeadingOK()) {
 
+        tfp_sprintf(warningText, "HEADING N/A");
+        // show this warning until IMU heading is oriented by pilot flying straight ahead
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    }
 #endif // USE_GPS_RESCUE
 
 #ifdef USE_POSITION_HOLD
-    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure()) {
+    // A mission abort (e.g. the heading-fault level park) routes through the
+    // position-hold failure path too; let the specific WP warning below own it
+    // rather than masking it with the generic POSHOLD FAIL.
+    bool missionAbortActive = false;
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    missionAbortActive = FLIGHT_MODE(AUTOPILOT_MODE) && flightPlanNavGetAbortReason() != FP_ABORT_NONE;
+#endif
+    if (osdWarnGetState(OSD_WARNING_POSHOLD_FAILED) && posHoldFailure() && !missionAbortActive) {
         tfp_sprintf(warningText, "POSHOLD FAIL");
         *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
         *blinking = true;
         return;
+    }
+#endif
+
+#if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
+    if (osdWarnGetState(OSD_WARNING_AUTOPILOT_ABORT)
+        && FLIGHT_MODE(AUTOPILOT_MODE)
+        && flightPlanNavGetAbortReason() != FP_ABORT_NONE) {
+        switch (flightPlanNavGetAbortReason()) {
+        case FP_ABORT_ESTIMATOR:
+            tfp_sprintf(warningText, "WP GPS LOST");
+            break;
+        case FP_ABORT_STALLED:
+            tfp_sprintf(warningText, "WP STALLED");
+            break;
+        case FP_ABORT_FLYAWAY:
+            tfp_sprintf(warningText, "WP FLYAWAY");
+            break;
+        case FP_ABORT_HEADING:
+            tfp_sprintf(warningText, "WP HEADING");
+            break;
+        case FP_ABORT_MAG_FAULT:
+            tfp_sprintf(warningText, "WP MAG FAULT");
+            break;
+        default:
+            tfp_sprintf(warningText, "WP ABORT");
+            break;
+        }
+        *displayAttr = DISPLAYPORT_SEVERITY_CRITICAL;
+        *blinking = true;
+        return;
+    }
+
+    // Waypoint capture confirmations ("WP3 SET" / "WP2 DELETED" / "WP FULL").
+    // Shown outside AUTOPILOT mode too - capture happens before engaging - and
+    // below every critical warning; the cue self-expires.
+    {
+        const char *captureMsg = flightPlanCaptureOsdMessage();
+        if (captureMsg != NULL) {
+            tfp_sprintf(warningText, "%s", captureMsg);
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+    }
+
+    // Mission progress cues, below every critical warning above. The mode
+    // itself is shown by the flight-mode indicator; these surface the two
+    // states that are otherwise invisible: the terminal descent and arrival.
+    if (FLIGHT_MODE(AUTOPILOT_MODE)) {
+        if (flightPlanNavGetState() == FP_NAV_LANDING) {
+            tfp_sprintf(warningText, "WP LANDING");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            return;
+        }
+        if (flightPlanNavGetState() == FP_NAV_COMPLETE) {
+            tfp_sprintf(warningText, "WP COMPLETE");
+            *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+            *blinking = true;
+            return;
+        }
     }
 #endif
 

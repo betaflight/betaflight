@@ -76,6 +76,7 @@ void positionNavSetTargetEf(
     cmd.cruiseSpeedMps = cruiseSpeedMps;
     cmd.acceptanceRadiusM = acceptanceRadiusM;
     cmd.completionSpeedMps = completionSpeedMps;
+    cmd.altitudeArrivalRequired = true;
 
     cmd.callback = callback;
     cmd.callbackUserData = userData;
@@ -84,6 +85,14 @@ void positionNavSetTargetEf(
     vector3Zero(&currentTargetVelCmS);
     withinAcceptanceRadius = false;
     withinAcceptanceAltitude = false;
+}
+
+void positionNavMoveTargetEf(const vector3_t *targetPosEfM)
+{
+    if (!cmd.active) {
+        return;
+    }
+    cmd.targetPosEfM = *targetPosEfM;
 }
 
 void positionNavClearTarget(void)
@@ -118,6 +127,11 @@ void positionNavSetAccelLimits(float maxAccelMps2, float maxDecelMps2)
     cmd.maxDecelMps2 = maxDecelMps2;
 }
 
+void positionNavSetAltitudeArrivalRequired(bool required)
+{
+    cmd.altitudeArrivalRequired = required;
+}
+
 void positionNavSetAutoClearOnReach(bool autoClear)
 {
     cmd.autoClearOnReach = autoClear;
@@ -130,17 +144,17 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
         return;
     }
 
-    const float posEastM  = est->position.x * 0.01f;
-    const float posNorthM = est->position.y * 0.01f;
-    const float posUpM    = est->position.z * 0.01f;
+    const float posEastM  = est->position.v[ENU_E] * 0.01f;
+    const float posNorthM = est->position.v[ENU_N] * 0.01f;
+    const float posUpM    = est->position.v[ENU_U] * 0.01f;
 
-    vector3_t errorEfM = {{
-        cmd.targetPosEfM.x - posEastM,
-        cmd.targetPosEfM.y - posNorthM,
-        cmd.includeAltitude ? (cmd.targetPosEfM.z - posUpM) : 0.0f
+    vector3_t errorEfM = {.v = {
+        [ENU_E] = cmd.targetPosEfM.v[ENU_E] - posEastM,
+        [ENU_N] = cmd.targetPosEfM.v[ENU_N] - posNorthM,
+        [ENU_U] = cmd.includeAltitude ? (cmd.targetPosEfM.v[ENU_U] - posUpM) : 0.0f
     }};
 
-    const float horizDistM = sqrtf(sq(errorEfM.x) + sq(errorEfM.y));
+    const float horizDistM = sqrtf(sq(errorEfM.v[ENU_E]) + sq(errorEfM.v[ENU_N]));
     const float distanceM = cmd.includeAltitude ? vector3Norm(&errorEfM) : horizDistM;
 
     vector3_t dirEf;
@@ -173,15 +187,11 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     previousTargetVelMps = targetVelMps;
 
-    currentTargetVelCmS = (vector3_t){{
-        targetVelMps.x * 100.0f,
-        targetVelMps.y * 100.0f,
-        targetVelMps.z * 100.0f
-    }};
+    vector3Scale(&currentTargetVelCmS, &targetVelMps, 100.0f);  // m/s -> cm/s, ENU
 
-    const float horizSpeedMps = sqrtf(sq(est->velocity.x) + sq(est->velocity.y)) * 0.01f;
-    const float absVzMps = fabsf(est->velocity.z * 0.01f);
-    const float absErrZM = fabsf(cmd.targetPosEfM.z - posUpM);
+    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    const float absVzMps = fabsf(est->velocity.v[ENU_U] * 0.01f);
+    const float absErrZM = fabsf(cmd.targetPosEfM.v[ENU_U] - posUpM);
 
     if (!withinAcceptanceRadius) {
         if (horizDistM <= cmd.acceptanceRadiusM) {
@@ -209,7 +219,8 @@ void positionNavUpdate(float dt, const positionEstimate3d_t *est)
 
     const bool horizSpeedOk = (horizSpeedMps <= cmd.completionSpeedMps);
     const bool vertSpeedOk = !cmd.includeAltitude || (absVzMps <= cmd.completionSpeedMps);
-    const bool reached = withinAcceptanceRadius && withinAcceptanceAltitude && horizSpeedOk && vertSpeedOk;
+    const bool altitudeOk = withinAcceptanceAltitude || !cmd.altitudeArrivalRequired;
+    const bool reached = withinAcceptanceRadius && altitudeOk && horizSpeedOk && vertSpeedOk;
 
     if (reached && !cmd.completionSignalled) {
         const bool autoClearOnReach = cmd.autoClearOnReach;

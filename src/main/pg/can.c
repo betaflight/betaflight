@@ -37,12 +37,18 @@
 #ifndef CAN1_RX_PIN
 #define CAN1_RX_PIN NONE
 #endif
+#ifndef CAN1_SILENT_PIN
+#define CAN1_SILENT_PIN NONE
+#endif
 
 #ifndef CAN2_TX_PIN
 #define CAN2_TX_PIN NONE
 #endif
 #ifndef CAN2_RX_PIN
 #define CAN2_RX_PIN NONE
+#endif
+#ifndef CAN2_SILENT_PIN
+#define CAN2_SILENT_PIN NONE
 #endif
 
 #ifndef CAN3_TX_PIN
@@ -51,20 +57,89 @@
 #ifndef CAN3_RX_PIN
 #define CAN3_RX_PIN NONE
 #endif
+#ifndef CAN3_SILENT_PIN
+#define CAN3_SILENT_PIN NONE
+#endif
+
+#ifndef CAN4_TX_PIN
+#define CAN4_TX_PIN NONE
+#endif
+#ifndef CAN4_RX_PIN
+#define CAN4_RX_PIN NONE
+#endif
+#ifndef CAN4_SILENT_PIN
+#define CAN4_SILENT_PIN NONE
+#endif
+
+#ifndef CAN5_TX_PIN
+#define CAN5_TX_PIN NONE
+#endif
+#ifndef CAN5_RX_PIN
+#define CAN5_RX_PIN NONE
+#endif
+#ifndef CAN5_SILENT_PIN
+#define CAN5_SILENT_PIN NONE
+#endif
+
+#ifndef CAN6_TX_PIN
+#define CAN6_TX_PIN NONE
+#endif
+#ifndef CAN6_RX_PIN
+#define CAN6_RX_PIN NONE
+#endif
+#ifndef CAN6_SILENT_PIN
+#define CAN6_SILENT_PIN NONE
+#endif
+
+#ifndef CAN7_TX_PIN
+#define CAN7_TX_PIN NONE
+#endif
+#ifndef CAN7_RX_PIN
+#define CAN7_RX_PIN NONE
+#endif
+#ifndef CAN7_SILENT_PIN
+#define CAN7_SILENT_PIN NONE
+#endif
+
+#ifndef CAN8_TX_PIN
+#define CAN8_TX_PIN NONE
+#endif
+#ifndef CAN8_RX_PIN
+#define CAN8_RX_PIN NONE
+#endif
+#ifndef CAN8_SILENT_PIN
+#define CAN8_SILENT_PIN NONE
+#endif
 
 typedef struct canDefaultConfig_s {
     canDevice_e device;
     ioTag_t tx;
     ioTag_t rx;
+    ioTag_t silent;
 } canDefaultConfig_t;
 
 static const canDefaultConfig_t canDefaultConfig[] = {
-    { CANDEV_1, IO_TAG(CAN1_TX_PIN), IO_TAG(CAN1_RX_PIN) },
-    { CANDEV_2, IO_TAG(CAN2_TX_PIN), IO_TAG(CAN2_RX_PIN) },
-    { CANDEV_3, IO_TAG(CAN3_TX_PIN), IO_TAG(CAN3_RX_PIN) },
+    { CANDEV_1, IO_TAG(CAN1_TX_PIN), IO_TAG(CAN1_RX_PIN), IO_TAG(CAN1_SILENT_PIN) },
+    { CANDEV_2, IO_TAG(CAN2_TX_PIN), IO_TAG(CAN2_RX_PIN), IO_TAG(CAN2_SILENT_PIN) },
+    { CANDEV_3, IO_TAG(CAN3_TX_PIN), IO_TAG(CAN3_RX_PIN), IO_TAG(CAN3_SILENT_PIN) },
+#if CANDEV_COUNT > 3
+    { CANDEV_4, IO_TAG(CAN4_TX_PIN), IO_TAG(CAN4_RX_PIN), IO_TAG(CAN4_SILENT_PIN) },
+#endif
+#if CANDEV_COUNT > 4
+    { CANDEV_5, IO_TAG(CAN5_TX_PIN), IO_TAG(CAN5_RX_PIN), IO_TAG(CAN5_SILENT_PIN) },
+#endif
+#if CANDEV_COUNT > 5
+    { CANDEV_6, IO_TAG(CAN6_TX_PIN), IO_TAG(CAN6_RX_PIN), IO_TAG(CAN6_SILENT_PIN) },
+#endif
+#if CANDEV_COUNT > 6
+    { CANDEV_7, IO_TAG(CAN7_TX_PIN), IO_TAG(CAN7_RX_PIN), IO_TAG(CAN7_SILENT_PIN) },
+#endif
+#if CANDEV_COUNT > 7
+    { CANDEV_8, IO_TAG(CAN8_TX_PIN), IO_TAG(CAN8_RX_PIN), IO_TAG(CAN8_SILENT_PIN) },
+#endif
 };
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(canPinConfig_t, CANDEV_COUNT, canPinConfig, PG_CAN_PIN_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(canPinConfig_t, CANDEV_COUNT, canPinConfig, PG_CAN_PIN_CONFIG, 1);
 
 void pgResetFn_canPinConfig(canPinConfig_t *config)
 {
@@ -72,6 +147,7 @@ void pgResetFn_canPinConfig(canPinConfig_t *config)
         const canDefaultConfig_t *defconf = &canDefaultConfig[i];
         config[defconf->device].ioTagTx = defconf->tx;
         config[defconf->device].ioTagRx = defconf->rx;
+        config[defconf->device].ioTagSilent = defconf->silent;
     }
 }
 
