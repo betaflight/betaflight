@@ -22,6 +22,7 @@ extern "C" {
 // STATIC_UNIT_TESTED in position_estimator.c — gravity-removed earth-frame
 // linear acceleration in ENU (cm/s^2).
 void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp);
+bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 #include "io/gps.h"
 
@@ -51,6 +52,9 @@ static bool rfHealthy = false;
 static float rfAltCm = 0.0f;
 static float baroAltCm = 0.0f;
 static timeUs_t fakeMicros = 0;
+static bool gpsAlwaysHasNewData = true;
+static bool gpsDataIsNew = false;
+static float gpsDataFrequencyHz = 100.0f;
 
 bool sensors(uint32_t mask) { return (enabledSensors & mask) != 0; }
 bool rangefinderIsHealthy(void) { return rfHealthy; }
@@ -61,9 +65,16 @@ timeUs_t micros(void) { return fakeMicros; }
 
 bool gpsHasNewData(uint16_t *gpsStamp)
 {
+    if (!gpsAlwaysHasNewData && !gpsDataIsNew) {
+        return false;
+    }
+
+    gpsDataIsNew = false;
     (*gpsStamp)++;
     return true;
 }
+
+float getGpsDataFrequencyHz(void) { return gpsDataFrequencyHz; }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
@@ -107,6 +118,9 @@ protected:
         stateFlags = GPS_FIX;
         armingFlags = ARMED;
         fakeMicros = 0;
+        gpsAlwaysHasNewData = true;
+        gpsDataIsNew = false;
+        gpsDataFrequencyHz = 100.0f;
 
         positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_RANGEFINDER_PREFER;
         positionConfigMutable()->altitude_prefer_baro = 100;
@@ -115,6 +129,50 @@ protected:
         positionEstimatorInit();
     }
 };
+
+TEST_F(PositionEstimatorTest, GPSMeasurementsAreHeldAtAltitudeTaskRate)
+{
+    gpsAlwaysHasNewData = false;
+    gpsDataFrequencyHz = 10.0f;
+    gpsDataIsNew = true;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(10000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+
+    // A 10 Hz GPS sample is reused for all ten 100 Hz altitude-task calls in
+    // its 100 ms source interval.
+    for (timeUs_t nowUs = 20000; nowUs <= 100000; nowUs += 10000) {
+        EXPECT_TRUE(gpsMeasurementReadyForFusion(nowUs, &noiseScale));
+        EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+    }
+
+    // Do not continue fusing a stale held sample if the next one is late.
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(110000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, GPSUpsamplingTracksSourceFrequency)
+{
+    gpsAlwaysHasNewData = false;
+    gpsDataFrequencyHz = 20.0f;
+    gpsDataIsNew = true;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(0, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 5.0f);
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(40000, &noiseScale));
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(50000, &noiseScale));
+
+    // The source rate can change at runtime as the receiver's nav interval changes.
+    gpsDataFrequencyHz = 5.0f;
+    gpsDataIsNew = true;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(50000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 20.0f);
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(240000, &noiseScale));
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(250000, &noiseScale));
+}
 
 TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
 {
