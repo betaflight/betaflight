@@ -827,8 +827,9 @@ bool processRx(timeUs_t currentTimeUs)
 
     updateRcRefreshRate(currentTimeUs, isRxReceivingSignal());
 
-    // in 3D mode, we need to be able to disarm by switch at any time
-    if (featureIsEnabled(FEATURE_3D)) {
+    // in 3D mode, disarm by switch at any time, except a failsafe-substituted BOXARM reading
+    // during an active rescue -- must not cut the rescue short.
+    if (featureIsEnabled(FEATURE_3D) && !(FLIGHT_MODE(GPS_RESCUE_MODE) && failsafeIsActive())) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
             disarm(DISARM_REASON_SWITCH);
     }
