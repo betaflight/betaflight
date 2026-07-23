@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "platform/dma.h"
 #include "common/maths.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
@@ -434,7 +435,6 @@ static void vsync_callback_debug(void)
     static uint32_t n_to_c;
 
     if (ddc % NN == 0) {
-        schedulerIgnoreTaskExecTime();
 #if 0
         bprintf("%d vsync_callback busy %d %d nisz %d dmb %d (previous tainted n to c %d)",
                 ddc, business, busybuf, nisz, dmb, n_to_c);

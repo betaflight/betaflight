@@ -28,22 +28,23 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 7);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 9);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
     .hoverThrottle = 1275,
     .throttleMin = 1100,
     .throttleMax = 1900,
-    .altitudeP = 15,
-    .altitudeI = 15,
-    .altitudeD = 15,
-    .altitudeF = 15,
+    .altitudeP = 30,
+    .altitudeI = 30,
+    .altitudeD = 30,
+    .altitudeF = 30,
     .positionP = 30,
     .positionI = 30,
-    .positionII = 30,
     .positionD = 30,
-    .positionCutoff = 80,
+    .positionA = 30,
+    .positionF = 30,
+    .positionCutoff = 30,
     .stopThreshold = 10,
     .maxAngle = 50,
 
@@ -60,6 +61,19 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .waypointHoldRadius = 200,        // 2m for HOLD/LAND
     .stickDeadband = 50,              // RC units
     .throttleDeadband = 50,           // RC units
+
+    // Leg-line carrot path tracking and turn-angle cornering
+    .navCornerSpeed = 220,            // 2.2 m/s corner-speed floor
+    .navCornerDeltaV = 440,           // 4.4 m/s per-corner delta-v budget
+    .navDecel = 250,                  // 2.5 m/s^2 approach deceleration; with the chase-lag
+                                      // compensated profile this stays trackable through the
+                                      // pursuit dynamics (brake authority grows with the gap
+                                      // and with drag, both rising with speed), and long legs
+                                      // no longer begin braking hundreds of metres out
+    .navAccel = 250,                  // 2.5 m/s^2 carrot slew
+    .navCarrotLeadTime = 12,          // 1.2 s carrot lead
+    .navCarrotLeadMax = 2500,         // 25 m maximum carrot lead
+    .navPreturnDist = 1500,           // 15 m pre-turn blend zone
 
     // Yaw control parameters
     .yawMode = YAW_MODE_VELOCITY,     // Default: follow velocity

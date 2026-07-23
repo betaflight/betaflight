@@ -1,10 +1,19 @@
 /*
- * CMSIS system file for the Betaflight N6 OpenBootloader. Mirrors the
- * FSBL stub's bring-up (debug clock + VDDIO supplies + AXISRAM1..6
- * enable + XSPI2 reset) and adds SystemClock_Config_Impl, called from
- * main() after HAL_Init to crank the chip to a clock fast enough for
- * USB OTG_HS at FS speeds. Boot ROM hands us off at HSI/4 ≈ 16 MHz
- * which is fine for HAL_Init but too slow for the USB SOF stream.
+ * CMSIS system file for the Betaflight N6 OpenBootloader.
+ *
+ * Built with -mcmse so __ARM_FEATURE_CMSE=3 and the CMSIS headers resolve
+ * every peripheral pointer (RCC, RIFSC, GPIOx, DBGMCU, TAMP, PWR, RTC,
+ * EXTI, GPDMA1, HPDMA1, RNG, SYSCFG, ...) to its secure-alias base. OBL
+ * is the only S-state code on the device, so all of its peripheral
+ * accesses must go through the secure aliases.
+ *
+ * SystemInit opens every relevant slave + master so the NS application
+ * can reach RAM, XSPI memory-mapped flash and AHB/APB peripherals after
+ * the BXNS hand-off in jump_to_bf().
+ *
+ * SystemClock_Config_Impl is called from main() to lift the CPU from
+ * the boot-ROM hand-off clock (HSI/4 ≈ 16 MHz) to 400 MHz so USB OTG_HS
+ * gets a clean SOF stream when the OBL DFU branch runs.
  */
 
 #include "stm32n6xx.h"
@@ -39,57 +48,97 @@ void SystemInit(void)
     SCB_DisableDCache();
     SCB_InvalidateDCache();
 
-    /* Debug subsystem clock — RCC_S->MISCENSR.DBGENS at 0x56028A48 bit 0.
-     * Hardcoded secure-alias address; the CMSIS RCC macro resolves to the
-     * NS alias in this no-mcmse build and an NS-tagged AHB transaction
-     * gets gated to DBGMCU/TAMP/RIFSC. */
-    *(volatile uint32_t *)0x56028A48UL = 1UL;
-    (void)*(volatile uint32_t *)0x56028248UL;
+    /* Debug subsystem clock. */
+    RCC->MISCENSR = RCC_MISCENSR_DBGENS;
+    (void)RCC->MISCENR;
 
-    /* APB3 bus clock — DBGMCU is at APB3+0x1000 (0x54001000 secure /
-     * 0x44001000 NS); without APB3 ungated all loads/stores to that
-     * window read 0 / drop. RCC_S->BUSENSR.APB3ENS at 0x56028A44 bit 10. */
-    *(volatile uint32_t *)0x56028A44UL = (1UL << 10);
-    (void)*(volatile uint32_t *)0x56028244UL;
+    /* APB3 bus clock — DBGMCU lives on APB3 and accesses there read 0 /
+     * silently drop until the bus is ungated. */
+    RCC->BUSENSR = RCC_BUSENSR_APB3ENS;
+    (void)RCC->BUSENR;
 
-    /* RIFSC: every peripheral slave NS+Unpriv, debug-AP master CID 0.
-     *   RISC_SECCFGRx[0..5]  at 0x54024010..0x54024024
-     *   RISC_PRIVCFGRx[0..5] at 0x54024030..0x54024044
-     *   RIMC_CR              at 0x54024C00 */
-    {
-        volatile uint32_t * const seccfg  = (volatile uint32_t *)0x54024010UL;
-        volatile uint32_t * const privcfg = (volatile uint32_t *)0x54024030UL;
-        for (uint32_t i = 0; i < 6U; i++) {
-            seccfg[i]  = 0;
-            privcfg[i] = 0;
-        }
-        volatile uint32_t * const rimc_cr = (volatile uint32_t *)0x54024C00UL;
-        *rimc_cr &= ~0x7UL;
-        (void)*rimc_cr;
+    /* RIFSC: every peripheral slave NS+Unpriv, debug-AP master CID 0. */
+    for (uint32_t i = 0; i < 6U; i++) {
+        RIFSC->RISC_SECCFGRx[i]  = 0;
+        RIFSC->RISC_PRIVCFGRx[i] = 0;
     }
+    RIFSC->RIMC_CR &= ~0x7UL;
+    (void)RIFSC->RIMC_CR;
 
     /* DBGMCU.CR: hold the M55 debuggable across run / sleep / stop /
      * standby so SWD attach to running user code works on OPEN-lifecycle
-     * silicon. DBGMCU_S->CR at 0x54001004; bit 20 DBGCLKEN, bits 0/1/2
-     * DBG_SLEEP / DBG_STOP / DBG_STANDBY. NS-alias mirror written too
-     * because RIFSC tagging follows the address alias. */
-    {
-        const uint32_t cr_val = (1UL << 20)
-                              | (1UL <<  0)
-                              | (1UL <<  1)
-                              | (1UL <<  2);
-        *(volatile uint32_t *)0x54001004UL = cr_val;
-        (void)*(volatile uint32_t *)0x54001004UL;
-        *(volatile uint32_t *)0x44001004UL = cr_val;
-        (void)*(volatile uint32_t *)0x44001004UL;
-    }
+     * silicon. */
+    DBGMCU->CR = DBGMCU_CR_DBGCLKEN
+               | DBGMCU_CR_DBG_SLEEP
+               | DBGMCU_CR_DBG_STOP
+               | DBGMCU_CR_DBG_STANDBY;
+    (void)DBGMCU->CR;
 
     /* TAMP is RIF-aware: its security/priv gating lives in its own
      * SECCFGR/PRIVCFGR (not RIFSC). Opening to NS+Unpriv exposes all
      * 32 BKPxR for read/write from NS world. */
-    *(volatile uint32_t *)0x56004420UL = 0;
-    *(volatile uint32_t *)0x56004424UL = 0;
-    (void)*(volatile uint32_t *)0x56004420UL;
+    TAMP->SECCFGR  = 0;
+    TAMP->PRIVCFGR = 0;
+    (void)TAMP->SECCFGR;
+
+    /* GPIO SECCFGR + PRIVCFGR per port — every pin NS + Unpriv. Without
+     * these the NS application's pinmux for SPI / I2C / UART / etc. is
+     * silently rejected even with RIFSC opened. The bank-enable on
+     * AHB4ENSR has to happen first: writes to a GPIO bank with its
+     * clock gated off silently drop on the N6, so the SECCFGR loop
+     * below would no-op for any port the boot ROM hadn't already
+     * ungated. */
+    RCC->AHB4ENSR = RCC_AHB4ENR_GPIOAEN_Msk | RCC_AHB4ENR_GPIOBEN_Msk
+                  | RCC_AHB4ENR_GPIOCEN_Msk | RCC_AHB4ENR_GPIODEN_Msk
+                  | RCC_AHB4ENR_GPIOEEN_Msk | RCC_AHB4ENR_GPIOFEN_Msk
+                  | RCC_AHB4ENR_GPIOGEN_Msk | RCC_AHB4ENR_GPIOHEN_Msk
+                  | RCC_AHB4ENR_GPIONEN_Msk | RCC_AHB4ENR_GPIOOEN_Msk
+                  | RCC_AHB4ENR_GPIOPEN_Msk | RCC_AHB4ENR_GPIOQEN_Msk;
+    (void)RCC->AHB4ENR;
+
+    static GPIO_TypeDef * const gpio_banks[] = {
+        GPIOA, GPIOB, GPIOC, GPIOD,
+        GPIOE, GPIOF, GPIOG, GPIOH,
+        GPION, GPIOO, GPIOP, GPIOQ,
+    };
+    for (unsigned i = 0; i < sizeof(gpio_banks) / sizeof(gpio_banks[0]); i++) {
+        gpio_banks[i]->SECCFGR  = 0;
+        gpio_banks[i]->PRIVCFGR = 0;
+    }
+
+    /* GPDMA1 + HPDMA1: clock-enable first (boot ROM hands them off
+     * ungated) then open per-controller SECCFGR + PRIVCFGR. SECCFGR is
+     * a bit-per-channel register at controller +0x00; writing 0 routes
+     * every channel under NS attribution. */
+    RCC->AHB1ENSR = RCC_AHB1ENSR_GPDMA1ENS;
+    RCC->AHB5ENSR = RCC_AHB5ENSR_HPDMA1ENS;
+    GPDMA1->SECCFGR  = 0;
+    GPDMA1->PRIVCFGR = 0;
+    HPDMA1->SECCFGR  = 0;
+    HPDMA1->PRIVCFGR = 0;
+
+    /* Per-peripheral SECCFGR + PRIVCFGR — peripherals carrying their
+     * own security config above RIFSC. Clearing each = NS + Unpriv. */
+    RCC->SECCFGR0  = 0;
+    RCC->SECCFGR1  = 0;
+    RCC->SECCFGR2  = 0;
+    RCC->SECCFGR3  = 0;
+    RCC->SECCFGR4  = 0;
+    PWR->SECCFGR   = 0;
+    PWR->PRIVCFGR  = 0;
+    EXTI->SECCFGR1  = 0;
+    EXTI->PRIVCFGR1 = 0;
+    EXTI->SECCFGR2  = 0;
+    EXTI->PRIVCFGR2 = 0;
+    EXTI->SECCFGR3  = 0;
+    EXTI->PRIVCFGR3 = 0;
+    RTC->SECCFGR   = 0;
+
+    /* RIMC master attributes — every bus master (CPU, DMAs, USB, ETH, …)
+     * presents as NS + Unpriv + CID 0 by default. */
+    for (unsigned i = 0; i < 13U; i++) {
+        RIFSC->RIMC_ATTRx[i] = 0;
+    }
 
     /* RNG reset + clock-disable. The boot ROM may have left it ticking. */
     RCC->AHB3RSTSR = RCC_AHB3RSTSR_RNGRSTS;
@@ -120,14 +169,13 @@ void SystemInit(void)
 
     /* Pulse APB4ENR2 bit 4 — required by ST's reference bring-up to
      * lower power; no documented register name. */
-    RCC->APB4ENR2 |= 0x00000010UL;
+    RCC->APB4ENR2 |=  0x00000010UL;
     (void)RCC->APB4ENR2;
-    RCC->APB4ENR2 &= ~(0x00000010UL);
+    RCC->APB4ENR2 &= ~0x00000010UL;
 
     /* LSI on. IWDG is clocked from LSI exclusively; without this the
      * watchdog hardware never ticks and a wedged BF never resets back
-     * into OBL recovery. Boot ROM doesn't reliably leave LSI on. N6 RCC
-     * uses set/clear registers: CSR.LSIONS sets, SR.LSIRDY reads ready. */
+     * into OBL recovery. Boot ROM doesn't reliably leave LSI on. */
     RCC->CSR = RCC_CSR_LSIONS;
     while ((RCC->SR & RCC_SR_LSIRDY) == 0U) {
         ;
@@ -155,8 +203,18 @@ void SystemInit(void)
     RCC->APB4ENCR2 = RCC_APB4ENCR2_SYSCFGENC;
 
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
-    SCB->CPACR |= ((3UL << 20U) | (3UL << 22U));   /* CP10/CP11 full access */
+    SCB->CPACR |= ((3UL << 20U) | (3UL << 22U));   /* CP10/CP11 full S access */
 #endif
+
+    /* NSACR — bits 10/11 grant NS access to CP10/CP11 (FPU + MVE).
+     * 0x0FFF is the broadest "NS can touch every implemented CP" set;
+     * the harmless bits 0..7 hand future-proof access. NSACR is
+     * Secure-only-writable so it has to be set here, before the BXNS
+     * hand-off. (AIRCR.BFHFNMINS is deferred to jump_to_bf — flipping it
+     * here routes any S-side fault during OBL's own remaining execution
+     * to an NS state that doesn't yet have a vector table or stack,
+     * which deterministically wedges the chip into LOCKUP.) */
+    SCB->NSACR = 0x00000FFFUL;
 }
 
 void SystemCoreClockUpdate(void)
@@ -290,9 +348,6 @@ void SystemCoreClockUpdate(void)
  *                 once memory-mapped mode is on)
  *   USB1_OTG_HS = HSE_DIRECT / 2 (handled in usbd_conf.c::HAL_PCD_MspInit)
  *   USBPHYC_CR.FSEL = 0b010 (24 MHz) — set in HAL_PCD_MspInit
- *
- * Called from main() after HAL_Init. The boot ROM hands us off at HSI/4
- * (~16 MHz CPU) which is enough for HAL_Init but too slow for USB SOFs.
  */
 void SystemClock_Config_Impl(void)
 {

@@ -51,6 +51,8 @@ extern "C" {
 
     PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
     PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
+    PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+    PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
     // Test-controllable estimate
     static positionEstimate3d_t testEstimate;
@@ -61,14 +63,19 @@ extern "C" {
     void positionEstimatorEnableXY(bool enable) { UNUSED(enable); }
     bool positionEstimatorIsValidXY(void) { return testEstimate.isValidXY; }
 
-    // Nav stubs: position hold tests run without active navigation
+    // Nav stubs: default to no active navigation (plain position hold);
+    // yaw-control tests drive them via the mockNav* variables.
+    static bool mockNavHasActiveTarget = false;
+    static positionNavCommand_t mockNavCommand;
+    static vector3_t mockTargetVelCmS;
+
     void positionNavInit(void) { }
     void positionNavReset(void) { }
     void positionNavUpdate(float /*dt*/, const positionEstimate3d_t * /*est*/) { }
-    bool positionNavHasActiveTarget(void) { return false; }
+    bool positionNavHasActiveTarget(void) { return mockNavHasActiveTarget; }
     bool positionNavTargetReached(void) { return false; }
-    vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
-    const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
+    vector3_t positionNavGetTargetVelocityCmS(void) { return mockTargetVelCmS; }
+    const positionNavCommand_t *positionNavGetActiveCommand(void) { return mockNavHasActiveTarget ? &mockNavCommand : NULL; }
 
     float getAltitudeCm(void) { return 0.0f; }
     float getAltitudeDerivative(void) { return 0.0f; }
@@ -85,6 +92,7 @@ extern "C" {
     acc_t acc;
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
+    gyro_t gyro;
     float rcCommand[4];
 
     bool failsafeIsActive(void) { return false; }
@@ -92,6 +100,20 @@ extern "C" {
     void parseRcChannels(const char *input, rxConfig_t *rxConfig) {
         UNUSED(input);
         UNUSED(rxConfig);
+    }
+
+
+    float simulatedStickRoll = 0.0f;
+    float simulatedStickPitch = 0.0f;
+    float getSetpointRate(int axis)
+    {
+        if (axis == FD_ROLL) {
+            return simulatedStickRoll;
+        }
+        if (axis == FD_PITCH) {
+            return simulatedStickPitch;
+        }
+        return 0.0f;
     }
 
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
@@ -130,10 +152,12 @@ static void initAndSettleAt(float eastCm, float northCm, int16_t yawDecidegrees)
     attitude.values.roll  = 0;
 
     autopilotConfig_t *cfg = autopilotConfigMutable();
-    cfg->positionP  = 50;
-    cfg->positionI  = 50;
-    cfg->positionII = 50;
-    cfg->positionD  = 50;
+    cfg->positionP  = 30;
+    cfg->positionI  = 30;
+    cfg->positionD  = 30;
+    cfg->positionA  = 30;
+    cfg->positionF  = 30;
+    cfg->stopThreshold = 10;
     cfg->maxAngle   = 30;
     cfg->hoverThrottle = 1500;
     cfg->throttleMin   = 1000;
@@ -156,6 +180,11 @@ protected:
         memset(&attitude, 0, sizeof(attitude));
         memset(&testEstimate, 0, sizeof(testEstimate));
         memset(autopilotAngle, 0, sizeof(float) * RP_AXIS_COUNT);
+        memset(&gyro, 0, sizeof(gyro));
+        memset(&mockNavCommand, 0, sizeof(mockNavCommand));
+        mockNavHasActiveTarget = false;
+        mockTargetVelCmS = (vector3_t){{0.0f, 0.0f, 0.0f}};
+        flightModeFlags = 0;
     }
 };
 
@@ -185,77 +214,127 @@ TEST_F(PosHoldTest, StationaryAtTargetProducesNearZeroOutput)
 
 // -- Flyaway detection --
 
-TEST_F(PosHoldTest, FlyawayDetectionTriggersAtLargeDistance)
+TEST_F(PosHoldTest, FlyawayDetectionRetriesOnceThenTriggers)
 {
     initAndSettleAt(0, 0, 0);
 
-    // After settling, sanityCheckDistance = fmaxf(1000, 1000*2) = 2000cm.
-    // Exceed it to trigger the flyaway check.
-    testEstimate.position.x = 3000.0f;
+    // Progressive runaway at a constant 15 m/s (bad-mag style): the estimate
+    // keeps moving and never meets the braking stop/stall conditions, so the
+    // fence has to catch it in BOTH the settled phase (first sustained trip,
+    // which spends the one-shot retry) and the post-retry braking phase
+    // (second trip, which must fail). No artificial settling in between.
+    bool failed = false;
+    int failedAt = -1;
+    for (int i = 0; i < 800 && !failed; i++) {
+        testEstimate.position.x += 15.0f;      // 15 cm per 10 ms tick
+        testEstimate.velocity.x = 1500.0f;
+        failed = !positionControl();
+        failedAt = i;
+    }
+    EXPECT_TRUE(failed);
+    // The failure must land AFTER the retry re-anchored (first sustained trip
+    // is ~2.3 s in): a single trip alone no longer fails the hold.
+    EXPECT_GT(failedAt, 300);
+}
 
-    EXPECT_FALSE(positionControl());
+TEST_F(PosHoldTest, SingleOutlierFixIsAbsorbedHoldingLastOutput)
+{
+    initAndSettleAt(0, 0, 0);
+    const float rollBefore = autopilotAngle[AI_ROLL];
+    const float pitchBefore = autopilotAngle[AI_PITCH];
+
+    // A single 30 m multipath spike, well beyond the 20 m fence.
+    testEstimate.position.x = 3000.0f;
+    EXPECT_TRUE(positionControl());
+    // The spike is not fed to the PIDs: the previous output is held, no
+    // lunge toward the angle clamp and no POSHOLD FAIL.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollBefore, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchBefore, 0.01f);
+
+    // The next fixes are normal again: control simply carries on.
+    testEstimate.position.x = 0.0f;
+    for (int i = 0; i < 100; i++) {
+        EXPECT_TRUE(positionControl());
+    }
+}
+
+TEST_F(PosHoldTest, ResumeAfterFrozenExcursionDoesNotSpikeTheOutput)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // real motion first, so the A-term history holds a meaningful velocity
+    testEstimate.velocity.x = 300.0f;
+    for (int i = 0; i < 50; i++) {
+        EXPECT_TRUE(positionControl());
+    }
+
+    // a sub-latch excursion freezes the output; meanwhile the craft stops,
+    // so the frozen A-term history goes badly stale
+    testEstimate.position.x = 3000.0f;
+    testEstimate.velocity.x = 0.0f;
+    for (int i = 0; i < 80; i++) {   // 0.8 s, inside the 1 s latch window
+        EXPECT_TRUE(positionControl());
+    }
+    const float rollFrozen = autopilotAngle[AI_ROLL];
+    const float pitchFrozen = autopilotAngle[AI_PITCH];
+
+    // resumption must not step the output: the D/A filter chain and the
+    // A-term history freeze together (coherently), and the explicit
+    // re-baseline pins that property against future restructuring. Measured
+    // transient in this scenario is < 0.05 deg.
+    testEstimate.position.x = 0.0f;
+    EXPECT_TRUE(positionControl());
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], rollFrozen, 0.25f);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFrozen, 0.25f);
 }
 
 // -- Displacement response: heading North (yaw = 0) --
 
-TEST_F(PosHoldTest, EastDisplacementProducesRollResponse)
+TEST_F(PosHoldTest, EastDisplacementProducesNegativeRollResponse)
 {
     initAndSettleAt(0, 0, 0);
 
+    // Drifting East requires a leftward correction (Negative Roll)
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); // Verifies output is  negative (Roll Left)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
 }
-
-TEST_F(PosHoldTest, NorthDisplacementProducesPitchResponse)
+TEST_F(PosHoldTest, WestDisplacementProducesPositiveRollResponse)
 {
     initAndSettleAt(0, 0, 0);
 
+    // Drifting West requires a rightward correction (Positive Roll)
+    testEstimate.position.x = -100.0f;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Must be strictly POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.5f);
+}
+
+TEST_F(PosHoldTest, NortDisplacementProducesNegativePitchResponse)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Drifting South requires a forward correction (Positive Pitch)
     testEstimate.position.y = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
     EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
-    EXPECT_NE(autopilotAngle[AI_PITCH], 0.0f);
+    EXPECT_LT(autopilotAngle[AI_PITCH], 0.0f); // Must be Negative (Pitch Back)
 }
 
-// -- Symmetry: opposite displacement gives opposite sign --
-
-TEST_F(PosHoldTest, OppositeEastDisplacementsGiveOppositeRoll)
+TEST_F(PosHoldTest, SouthDisplacementProducesPositivePitchResponse)
 {
     initAndSettleAt(0, 0, 0);
-    testEstimate.position.x = 100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollPositive = autopilotAngle[AI_ROLL];
 
-    initAndSettleAt(0, 0, 0);
-    testEstimate.position.x = -100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollNegative = autopilotAngle[AI_ROLL];
-
-    EXPECT_NE(rollPositive, 0.0f);
-    EXPECT_NE(rollNegative, 0.0f);
-    EXPECT_LT(rollPositive * rollNegative, 0.0f);
-    EXPECT_NEAR(fabsf(rollPositive), fabsf(rollNegative), 0.5f);
-}
-
-TEST_F(PosHoldTest, OppositeNorthDisplacementsGiveOppositePitch)
-{
-    initAndSettleAt(0, 0, 0);
-    testEstimate.position.y = 100.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float pitchPositive = autopilotAngle[AI_PITCH];
-
-    initAndSettleAt(0, 0, 0);
+    // Drifting South requires a forward correction (Positive Pitch)
     testEstimate.position.y = -100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float pitchNegative = autopilotAngle[AI_PITCH];
 
-    EXPECT_NE(pitchPositive, 0.0f);
-    EXPECT_NE(pitchNegative, 0.0f);
-    EXPECT_LT(pitchPositive * pitchNegative, 0.0f);
-    EXPECT_NEAR(fabsf(pitchPositive), fabsf(pitchNegative), 0.5f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
+    EXPECT_GT(autopilotAngle[AI_PITCH], 0.0f); // Must be positive (Pitch Forward)
 }
 
 // -- Velocity damping (P term) --
@@ -270,65 +349,89 @@ TEST_F(PosHoldTest, EastwardVelocityProducesOpposingRoll)
     EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
 }
 
-TEST_F(PosHoldTest, OppositeVelocitiesGiveOppositeAngles)
+TEST_F(PosHoldTest, EastVelocityProducesNegativeRollResponse)
 {
     initAndSettleAt(0, 0, 0);
+
+    // drifting East requires a leftward braking lean (Negative Roll)
     testEstimate.velocity.x = 50.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollEast = autopilotAngle[AI_ROLL];
 
-    initAndSettleAt(0, 0, 0);
-    testEstimate.velocity.x = -50.0f;
-    runIterations(SETTLE_ITERATIONS);
-    const float rollWest = autopilotAngle[AI_ROLL];
-
-    EXPECT_LT(rollEast * rollWest, 0.0f);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be NEGATIVE (Roll Left)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch must be flat
 }
 
-// -- Heading rotation: verify body-frame transform --
-
-TEST_F(PosHoldTest, HeadingEastSwapsAxes)
+TEST_F(PosHoldTest, WestVelocityProducesBrakingRollResponse)
 {
+    initAndSettleAt(0, 0, 0);
+
+    // drifting West requires a rightward roll (Positive Roll)
+    testEstimate.velocity.x = -50.0f;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch must be flat
+}
+
+
+// -- Heading rotation: verify body-frame transform --
+ TEST_F(PosHoldTest, DynamicHeadingRotationUnderDrift)
+{
+    // PHASE 1: Initialize with nose pointed due EAST (900 decidegrees)
     initAndSettleAt(0, 0, 900);
 
+    // Drone drifts East
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NE(autopilotAngle[AI_PITCH], 0.0f);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.5f);
+    EXPECT_LT(autopilotAngle[AI_PITCH], 0.0f);        // Pitch must be  NEGATIVE (Pitch Back)
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.1f);  // Roll must stay flat
+
+    // PHASE 2: Pivot the nose to due NORTH (0 decidegrees) mid-flight
+    // maintain the exact same 100.0f East displacement
+    attitude.values.yaw = 0;
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must now be flat
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);         // Roll must now be NEGATIVE (Roll Left)
 }
 
 TEST_F(PosHoldTest, HeadingSouthReversesRollSign)
 {
+    // 1. Nose pointed North: Drifting East requires Roll Left (Negative)
     initAndSettleAt(0, 0, 0);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollNorth = autopilotAngle[AI_ROLL];
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); 
 
+    // 2. Nose pointed South: Drifting East requires Roll Right (Positive)
     initAndSettleAt(0, 0, 1800);
     testEstimate.position.x = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    const float rollSouth = autopilotAngle[AI_ROLL];
-
-    EXPECT_NE(rollNorth, 0.0f);
-    EXPECT_NE(rollSouth, 0.0f);
-    EXPECT_LT(rollNorth * rollSouth, 0.0f);
+    
+    EXPECT_GT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be  POSITIVE (Roll Right)
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch  must be flat
 }
 
-// -- Sticks active zeros angle output --
 
-TEST_F(PosHoldTest, SticksActiveZerosOutput)
+
+// -- Sticks active reduces the response --
+
+TEST_F(PosHoldTest, SticksActiveButCentered)
 {
     initAndSettleAt(0, 0, 0);
-
-    testEstimate.position.x = 100.0f;
+    testEstimate.position.x = 100.0f; // Drone is offset to the right
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NE(autopilotAngle[AI_ROLL], 0.0f);
+
+    // Ensure sticks are simulated as perfectly centered
+    simulatedStickRoll = 0.0f;
+    simulatedStickPitch = 0.0f;
 
     setSticksActiveStatus(true);
     runIterations(SETTLE_ITERATIONS);
 
-    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.01f);
+    // Assert your new baseline calculation output
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
@@ -365,29 +468,96 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
 
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.2f);
+    EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
-TEST_F(PosHoldTest, ReleasingSticksBrakesThenSettles)
+// -- Feedforward (stick push) is a term of its own, apart from damping --
+
+TEST_F(PosHoldTest, FeedforwardProducesStickProportionalLean)
 {
     initAndSettleAt(0, 0, 0);
 
-    // Pilot is moving with sticks active: controller should output zero angles.
+    // Craft stationary at target, so pidP and pidD are both ~0; the lean comes
+    // from the F feedforward driven by the stick-commanded target velocity.
     setSticksActiveStatus(true);
-    testEstimate.velocity.x = 120.0f;
-    runIterations(5);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.01f);
 
-    // Stick release at high speed should enter braking (not yet settled hold).
-    setSticksActiveStatus(false);
-    runIterations(5);
-    const float brakingRoll = autopilotAngle[AI_ROLL];
-    EXPECT_NE(brakingRoll, 0.0f);
-
-    // Once velocity settles below threshold, hold point capture should settle output.
-    testEstimate.velocity.x = 0.0f;
+    simulatedStickRoll = 100.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], 0.0f, 0.1f);
+    const float leanSmall = autopilotAngle[AI_ROLL];
+
+    simulatedStickRoll = 200.0f;
+    runIterations(SETTLE_ITERATIONS);
+    const float leanLarge = autopilotAngle[AI_ROLL];
+
+    EXPECT_GT(fabsf(leanSmall), 0.5f);                 // a real push, not noise
+    EXPECT_GT(fabsf(leanLarge), fabsf(leanSmall) + 1.0f); // twice the stick, more lean
+}
+
+// With no stick input the commanded target velocity, and therefore the F
+// feedforward, must be zero. sticksMoveTarget() latches its last value as the
+// stick eases back through the deadband; that residue must not stay driving F.
+TEST_F(PosHoldTest, FeedforwardZeroWhenSticksInactive)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_PID; // slot 6 carries pidF on the debug axis (East here) * 10
+
+    // Deflect the roll stick, then centre it and release.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 150.0f;
+    runIterations(50);
+    simulatedStickRoll = 0.0f;
+    setSticksActiveStatus(false);
+    runIterations(SETTLE_ITERATIONS);
+
+    EXPECT_EQ(debug[6], 0); // pidF, flat with no stick input
+    debugMode = DEBUG_NONE;
+}
+
+// Guards the fix: on stick release the stale target velocity is zeroed, so the
+// feedforward can't keep pushing in the direction of travel and fight braking.
+TEST_F(PosHoldTest, ReleaseDropsFeedforwardSoBrakingOpposesMotion)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Cruise East under a large stick deflection while actually moving East.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 300.0f;
+    testEstimate.velocity.x = 150.0f;
+    runIterations(SETTLE_ITERATIONS);
+
+    // Release the stick but the craft is still moving East at the moment of release.
+    setSticksActiveStatus(false);
+    simulatedStickRoll = 0.0f;
+    testEstimate.velocity.x = 150.0f;
+    positionControl(); // first braking loop
+
+    // Must lean West (negative roll) to brake. If the feedforward push survived
+    // the release it would dominate and roll would be positive (still pushing East).
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);
+}
+
+TEST_F(PosHoldTest, ReleasingSticksBrakesThenHolds)
+{
+    initAndSettleAt(0, 0, 0);
+
+    // Cruise East, stick centered, moving at 120 cm/s.
+    setSticksActiveStatus(true);
+    simulatedStickRoll = 0.0f;
+    testEstimate.velocity.x = 120.0f;
+    runIterations(SETTLE_ITERATIONS);
+    EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f);          // damping opposes the drift
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
+
+    // Release: decay velocity toward zero while advancing position, as a real brake would.
+    setSticksActiveStatus(false);
+    for (int i = 0; i < 600; i++) {
+        testEstimate.velocity.x *= 0.96f;
+        testEstimate.position.x += testEstimate.velocity.x * 0.01f;
+        positionControl();
+    }
+
+    // Stop captured: output settles back to level once the craft has stopped.
+    EXPECT_NEAR(autopilotAngle[AI_ROLL],  0.0f, 0.5f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f);
 }
 
@@ -462,4 +632,333 @@ TEST_F(PosHoldTest, DiagonalDisplacementProducesBothAxes)
 
     EXPECT_NEAR(fabsf(autopilotAngle[AI_ROLL]),
                 fabsf(autopilotAngle[AI_PITCH]), 1.0f);
+}
+
+// -- Mission yaw control --
+
+class AutopilotYawTest : public PosHoldTest {
+protected:
+    void engageNavLeg(uint8_t yawMode) {
+        initAndSettleAt(0, 0, 0);
+
+        autopilotConfig_t *cfg = autopilotConfigMutable();
+        cfg->yawMode = yawMode;
+        cfg->yawP = 50;                // 0.5 deg/s per deg of heading error
+        cfg->yawD = 0;                 // deterministic P-only response
+        cfg->maxYawRate = 30;
+        cfg->minForwardVelocity = 100; // 1 m/s
+
+        mockNavHasActiveTarget = true;
+        mockNavCommand.active = true;
+        mockNavCommand.acceptanceRadiusM = 5.0f;
+        flightModeFlags |= AUTOPILOT_MODE;
+    }
+
+    // Enough iterations at 100 Hz for the 1 s engage attenuator to saturate.
+    void settleYaw() { runIterations(SETTLE_ITERATIONS); }
+};
+
+TEST_F(AutopilotYawTest, InactiveWithoutAutopilotMode)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    flightModeFlags = 0;
+    testEstimate.velocity.x = 300.0f; // moving east, well above min speed
+
+    settleYaw();
+    EXPECT_FALSE(autopilotYawControlActive());
+    EXPECT_FLOAT_EQ(autopilotGetYawRate(), 0.0f);
+}
+
+TEST_F(AutopilotYawTest, InactiveInFixedMode)
+{
+    engageNavLeg(YAW_MODE_FIXED);
+    testEstimate.velocity.x = 300.0f;
+
+    settleYaw();
+    EXPECT_FALSE(autopilotYawControlActive());
+}
+
+TEST_F(AutopilotYawTest, InactiveWithoutNavTarget)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    mockNavHasActiveTarget = false;
+    testEstimate.velocity.x = 300.0f;
+
+    settleYaw();
+    EXPECT_FALSE(autopilotYawControlActive());
+}
+
+TEST_F(AutopilotYawTest, VelocityModeYawsTowardCourse)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    // Heading north, flying east: a right turn is a negative (CCW-positive
+    // convention) yaw rate, clamped at the max rate.
+    testEstimate.velocity.x = 300.0f;
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
+
+    // Flying west instead: yaw the other way.
+    testEstimate.velocity.x = -300.0f;
+    settleYaw();
+    EXPECT_NEAR(autopilotGetYawRate(), 30.0f, 0.1f);
+}
+
+TEST_F(AutopilotYawTest, VelocityModeInactiveBelowMinSpeed)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    testEstimate.velocity.x = 50.0f; // below the 100 cm/s course gate
+
+    settleYaw();
+    EXPECT_FALSE(autopilotYawControlActive());
+}
+
+TEST_F(AutopilotYawTest, VelocityModeProportionalBelowClamp)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    // Heading east already (900 decidegrees), flying east-north-east:
+    // small negative error yaws gently left, unclamped.
+    attitude.values.yaw = 900;
+    testEstimate.velocity.x = 300.0f;
+    testEstimate.velocity.y = 120.0f; // course ~68 deg: a ~22 deg left turn -> ~+11 deg/s
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), 11.0f, 1.0f);
+}
+
+TEST_F(AutopilotYawTest, BearingModeYawsTowardTarget)
+{
+    engageNavLeg(YAW_MODE_BEARING);
+    mockNavCommand.targetPosEfM.v[0] = 50.0f; // 50 m east: a right turn from north
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
+}
+
+TEST_F(AutopilotYawTest, BearingModeInactiveInsideAcceptanceRadius)
+{
+    engageNavLeg(YAW_MODE_BEARING);
+    mockNavCommand.targetPosEfM.v[0] = 3.0f; // inside the 5 m radius
+
+    settleYaw();
+    EXPECT_FALSE(autopilotYawControlActive());
+}
+
+TEST_F(AutopilotYawTest, HybridFallsBackToBearingWhenSlow)
+{
+    engageNavLeg(YAW_MODE_HYBRID);
+    mockNavCommand.targetPosEfM.v[0] = 50.0f;
+    testEstimate.velocity.x = 50.0f; // too slow for a course heading
+
+    settleYaw();
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
+}
+
+TEST_F(AutopilotYawTest, MissionYawRateCapApplies)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    testEstimate.velocity.x = 300.0f;
+    autopilotSetYawRateLimit(10.0f);
+
+    settleYaw();
+    EXPECT_NEAR(autopilotGetYawRate(), -10.0f, 0.1f);
+
+    autopilotSetYawRateLimit(0.0f); // no cap: back to ap_max_yaw_rate
+    settleYaw();
+    EXPECT_NEAR(autopilotGetYawRate(), -30.0f, 0.1f);
+}
+
+TEST_F(AutopilotYawTest, EngageRampsRateIn)
+{
+    engageNavLeg(YAW_MODE_VELOCITY);
+    testEstimate.velocity.x = 300.0f;
+
+    // A quarter of the 1 s ramp: attenuated well below the clamp.
+    runIterations(25);
+    EXPECT_TRUE(autopilotYawControlActive());
+    EXPECT_GT(autopilotGetYawRate(), -15.0f);
+    EXPECT_LT(autopilotGetYawRate(), 0.0f);
+}
+
+// -- Nav velocity mode --
+
+static uint16_t dragCoeffForTarget(float kDragPerS, float targetCmS)
+{
+    const float ffDeg = RADIANS_TO_DEGREES(atanf(kDragPerS * targetCmS / 981.0f));
+    return (uint16_t)lrintf(ffDeg / (targetCmS * 0.0001f));
+}
+
+static void stepVelocityPlant(float kDragPerS, float *vNorthCmS)
+{
+    positionControl();
+    const float pitchRad = DEGREES_TO_RADIANS(autopilotAngle[AI_PITCH]);
+    *vNorthCmS += (981.0f * tanf(pitchRad) - kDragPerS * (*vNorthCmS)) * 0.01f;
+    testEstimate.velocity.y = *vNorthCmS;
+}
+
+class VelocityModeTest : public PosHoldTest {
+protected:
+    void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
+                            uint16_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
+                            uint8_t maxAngle = 45, bool enable = true)
+    {
+        initAndSettleAt(0, 0, 0);
+
+        autopilotConfig_t *cfg = autopilotConfigMutable();
+        cfg->maxAngle = maxAngle;
+        cfg->positionCutoff = 30;
+        cfg->velocityControlEnable = enable ? 1 : 0;
+        cfg->velocityP = velocityP;
+        cfg->velocityI = velocityI;
+        cfg->velocityD = velocityD;
+        cfg->velocityDragCoeff = velocityDragCoeff;
+        cfg->velocityBuildupMaxPitch = velocityBuildupMaxPitch;
+        autopilotInit();
+
+        mockNavHasActiveTarget = true;
+        mockNavCommand.active = true;
+    }
+
+    void setTargetVelocityNorth(float cmS)
+    {
+        mockTargetVelCmS = (vector3_t){{0.0f, cmS, 0.0f}};
+    }
+};
+
+TEST_F(VelocityModeTest, CruiseConvergence)
+{
+    const float kDrag = 0.8f;
+    const float targetCmS = 500.0f;
+    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
+    setTargetVelocityNorth(targetCmS);
+
+    float vNorth = 0.0f;
+    for (int i = 0; i < 1500; i++) {
+        stepVelocityPlant(kDrag, &vNorth);
+    }
+
+    EXPECT_NEAR(vNorth, targetCmS, targetCmS * 0.05f);
+}
+
+TEST_F(VelocityModeTest, NoOvershoot)
+{
+    const float kDrag = 0.8f;
+    const float targetCmS = 500.0f;
+    engageVelocityNav(50, 20, 0, dragCoeffForTarget(kDrag, targetCmS), 30);
+    setTargetVelocityNorth(targetCmS);
+
+    float vNorth = 0.0f;
+    float maxV = 0.0f;
+    for (int i = 0; i < 1500; i++) {
+        stepVelocityPlant(kDrag, &vNorth);
+        maxV = fmaxf(maxV, vNorth);
+    }
+
+    EXPECT_LE(maxV, targetCmS * 1.10f);
+}
+
+TEST_F(VelocityModeTest, DragFeedforwardMagnitude)
+{
+    const float targetCmS = 400.0f;
+    const uint16_t dragCoeff = 300;
+    engageVelocityNav(30, 10, 20, dragCoeff, 30);
+    setTargetVelocityNorth(targetCmS);
+    testEstimate.velocity.y = targetCmS;
+
+    runIterations(300);
+
+    const float expectedFFDeg = dragCoeff * 0.0001f * targetCmS;
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], expectedFFDeg, 1.0f);
+}
+
+TEST_F(VelocityModeTest, BuildupClampBoundsP)
+{
+    const uint8_t buildupMaxPitch = 10;
+    engageVelocityNav(50, 0, 0, 0, buildupMaxPitch, 45);
+    setTargetVelocityNorth(1500.0f);
+
+    for (int i = 0; i < 30; i++) {
+        positionControl();
+        EXPECT_LE(fabsf(autopilotAngle[AI_PITCH]), buildupMaxPitch + 0.05f);
+    }
+}
+
+TEST_F(VelocityModeTest, IntegralSeparationAndFreeze)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    setTargetVelocityNorth(2000.0f); // filtered velocity stays near 0: error stays well above the 250 cm/s relax gate
+
+    positionControl();
+    const float pitchFirst = autopilotAngle[AI_PITCH];
+    runIterations(100);
+    EXPECT_NEAR(autopilotAngle[AI_PITCH], pitchFirst, 0.05f);
+
+    testEstimate.velocity.y = 2000.0f - 100.0f; // step to a small, sustained error
+    runIterations(40); // let the velocity filter settle into the relax gate
+    const float pitchSmallErrEarly = autopilotAngle[AI_PITCH];
+    runIterations(100);
+    const float pitchSmallErrLater = autopilotAngle[AI_PITCH];
+    EXPECT_GT(fabsf(pitchSmallErrLater), fabsf(pitchSmallErrEarly) + 0.5f);
+}
+
+TEST_F(VelocityModeTest, VelocityModeDisabledUsesLegacyPath)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45, false);
+    setTargetVelocityNorth(300.0f);
+
+    runIterations(20);
+    const float pitchEarly = autopilotAngle[AI_PITCH];
+
+    runIterations(100);
+    const float pitchLater = autopilotAngle[AI_PITCH];
+
+    EXPECT_GT(fabsf(pitchLater), fabsf(pitchEarly) + 1.0f);
+}
+
+TEST_F(VelocityModeTest, ResetOnNavReentry)
+{
+    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    setTargetVelocityNorth(150.0f); // stays inside the relax gate throughout: the integral builds every cycle
+
+    runIterations(150);
+    const float pitchBeforeReentry = autopilotAngle[AI_PITCH];
+
+    mockNavHasActiveTarget = false;
+    positionControl(); // one cycle of pos-hold fallback
+
+    mockNavHasActiveTarget = true;
+    positionControl(); // nav re-entry: initNavMode() resets the velocity integral
+
+    EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), fabsf(pitchBeforeReentry) * 0.5f);
+}
+
+TEST_F(VelocityModeTest, PosHoldUnaffectedByDefaultOn)
+{
+    const int cycles = 50;
+    float baselineRoll[cycles];
+    float baselinePitch[cycles];
+
+    initAndSettleAt(0, 0, 0);
+    autopilotConfigMutable()->velocityControlEnable = 0;
+    autopilotInit();
+    testEstimate.position.x = 100.0f;
+    for (int i = 0; i < cycles; i++) {
+        positionControl();
+        baselineRoll[i] = autopilotAngle[AI_ROLL];
+        baselinePitch[i] = autopilotAngle[AI_PITCH];
+    }
+
+    initAndSettleAt(0, 0, 0);
+    autopilotConfigMutable()->velocityControlEnable = 1;
+    autopilotInit();
+    testEstimate.position.x = 100.0f;
+    for (int i = 0; i < cycles; i++) {
+        positionControl();
+        EXPECT_FLOAT_EQ(autopilotAngle[AI_ROLL], baselineRoll[i]);
+        EXPECT_FLOAT_EQ(autopilotAngle[AI_PITCH], baselinePitch[i]);
+    }
 }

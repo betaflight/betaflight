@@ -277,9 +277,11 @@ static void configureCANBusses(void)
 {
     canPinConfigure(canPinConfig(0));
     const uint32_t bitrate = (uint32_t)canConfig()->bitrate_khz * 1000U;
-    canInit(CANDEV_1, bitrate);
-    canInit(CANDEV_2, bitrate);
-    canInit(CANDEV_3, bitrate);
+    // Try every CAN device the platform advertises.  canInit() returns
+    // false for absent / unconfigured devices; that is harmless.
+    for (int dev = 0; dev < CANDEV_COUNT; dev++) {
+        canInit((canDevice_e)dev, bitrate);
+    }
 }
 #endif
 
@@ -773,7 +775,11 @@ void initPhase3(void)
         LED0_TOGGLE;
 #if defined(USE_BEEPER)
         delay(25);
-        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT))) {
+        // This boot beep bypasses beeper()/beeperUsbSuppressed(), so honour BEEPER_USB
+        // here directly. MSP is not up yet, but usbCableIsInserted() is already valid.
+        const bool usbSuppressed = (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
+            && usbCableIsInserted();
+        if (!(beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_SYSTEM_INIT)) && !usbSuppressed) {
             BEEP_ON;
         }
         delay(25);

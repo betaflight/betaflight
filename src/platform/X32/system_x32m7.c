@@ -50,10 +50,11 @@ void SystemCoreClockUpdate(void)
 
 void systemReset(void)
 {
+    SCB_DisableDCache();
+    SCB_DisableICache();
+
     __disable_irq();
     NVIC_SystemReset();
-    while (1) {
-    }
 }
 
 void systemResetToBootloader(bootloaderRequestType_e requestType)
@@ -323,9 +324,85 @@ ErrorStatus SetSysClockToPLL1(uint32_t PLL_source, uint64_t sysclk_freq)
     
 }
 
+static void CacheInit(void)
+{
+    /* Invalidate before enabling to avoid stale cache state. */
+    SCB_InvalidateICache();
+    SCB_InvalidateDCache();
+    SCB_EnableICache();
+    SCB_EnableDCache();
+}
+static void MPU_Config(void)
+{
+    MPU_Region_InitType MPU_InitStruct;
+
+    /* Disable the MPU */
+    MPU_Disable();
+
+    /* Configure the MPU as Strongly ordered for not defined regions */
+    MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+    MPU_InitStruct.BaseAddress      = 0x15000000;
+    MPU_InitStruct.Size             = MPU_REGION_SIZE_2MB;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;  
+    MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
+    MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
+    MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
+    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
+    MPU_InitStruct.SubRegionDisable = 0x00; 
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE; 
+    MPU_ConfigRegion(&MPU_InitStruct);
+
+    /* Region 0: AXI SRAM 0x24000000 128KB  Normal, WB-WA, Shareable
+     * TEX=001, C=1, B=1 -> Normal memory, outer+inner write-back write-allocate
+     * Note: DMA transfers to/from this region require SCB_CleanDCache /
+     *       SCB_InvalidateDCache_by_Addr to maintain coherency. */
+    MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number           = MPU_REGION_NUMBER1;
+    MPU_InitStruct.BaseAddress      = 0x30000000UL;
+    MPU_InitStruct.Size             = MPU_REGION_SIZE_256KB;
+    MPU_InitStruct.SubRegionDisable = 0x00U;
+    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
+    MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+    MPU_InitStruct.IsBufferable     = MPU_ACCESS_BUFFERABLE;
+    MPU_ConfigRegion(&MPU_InitStruct);
+
+    MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number           = MPU_REGION_NUMBER2;
+    MPU_InitStruct.BaseAddress      = 0x30040000UL;
+    MPU_InitStruct.Size             = MPU_REGION_SIZE_128KB;
+    MPU_InitStruct.SubRegionDisable = 0x00U;
+    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
+    MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+    MPU_InitStruct.IsBufferable     = MPU_ACCESS_BUFFERABLE;
+    MPU_ConfigRegion(&MPU_InitStruct);
+
+    MPU_InitStruct.Number           = MPU_REGION_NUMBER3;
+    MPU_InitStruct.BaseAddress      = 0x24000000UL;
+    MPU_InitStruct.Size             = MPU_REGION_SIZE_128KB;
+    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
+    MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+    MPU_InitStruct.IsBufferable     = MPU_ACCESS_BUFFERABLE;
+    MPU_ConfigRegion(&MPU_InitStruct);
+
+    /* Enable the MPU */
+    MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+}
+
 void systemInit(void)
 {
     ErrorStatus status;
+	MPU_Config();
+    CacheInit();
     persistentObjectInit();
     systemProcessResetReason();
 

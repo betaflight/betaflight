@@ -180,7 +180,7 @@ TEST_F(AltholdControlUnittest, AltitudeControlRespectsVelocityLimit)
     testAltitudeCm = 0.0f;
     testAltitudeDerivativeCmS = 0.0f;
 
-    altitudeControl(800.0f, 0.01f, 0.0f, 100.0f);
+    altitudeControl(200.0f, 0.01f, 0.0f, 100.0f);
     const float limitedThrottle = getAutopilotThrottle();
 
     resetAltitudeControl();
@@ -219,6 +219,7 @@ extern "C" {
     acc_t acc;
     attitudeEulerAngles_t attitude;
     gpsSolutionData_t gpsSol;
+    gyro_t gyro;
 
     float testAltitudeCm = 0.0f;
     float testAltitudeDerivativeCmS = 0.0f;
@@ -231,12 +232,17 @@ extern "C" {
     float getAltitudeDerivativeControl(void) { return testAltitudeDerivativeCmS; }
     float getCosTiltAngle(void) { return testCosTiltAngle; }
     float getGpsDataIntervalSeconds(void) { return 0.01f; }
-    float getGpsDataFrequencyHz(void) { return 10.0f; }
+
     float rcCommand[4];
 
     bool gpsHasNewData(uint16_t* gpsStamp) {
         UNUSED(*gpsStamp);
         return true;
+    }
+    float getSetpointRate(int axis)
+    {
+        UNUSED(axis);
+        return 0.0f;
     }
 
     void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, vector2_t* /*dest*/) { }

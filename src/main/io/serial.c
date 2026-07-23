@@ -735,11 +735,19 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
     // special handling is necessary OR performed.
+
+    // On a DTR-less host link (e.g. a BLE/UART bridge) the only way out of
+    // passthrough is a power cycle. Give those links a "+++" escape: a '+++'
+    // that begins after >=1 s of host silence reboots the FC out of passthrough
+    // (GPS keeps power and its fix; the BLE link survives the reset). The idle
+    // guard is what makes it safe: the binary config stream never pauses for
+    // 1 s, so a stray '+' in it can't arm the escape. USB VCP is excluded, so
+    // its DTR-reset behaviour is unchanged.
+    const bool escEnabled = right->identifier != SERIAL_PORT_USB_VCP;
+    uint32_t hostIdleMs = millis();   // time of last host->FC byte
+    int escCount = 0;                 // consecutive '+' since the idle guard
+
     while (1) {
-        // TODO: maintain a timestamp of last data received. Use this to
-        // implement a guard interval and check for `+++` as an escape sequence
-        // to return to CLI command mode.
-        // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
         if (serialRxBytesWaiting(left)) {
             LED0_ON;
             uint8_t c = serialRead(left);
@@ -756,6 +764,18 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
              while (!serialTxBytesFree(left));
              serialWrite(left, c);
              rightC(c);
+             if (escEnabled) {
+                 const uint32_t nowMs = millis();
+                 // first '+' must follow a >=1 s gap; '+++' then reboots
+                 if (c == '+' && (escCount > 0 || nowMs - hostIdleMs >= 1000)) {
+                     if (++escCount >= 3) {
+                         systemReset();
+                     }
+                 } else {
+                     escCount = 0;
+                 }
+                 hostIdleMs = nowMs;
+             }
              LED0_OFF;
          }
      }

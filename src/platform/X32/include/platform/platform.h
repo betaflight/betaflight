@@ -85,6 +85,9 @@ extern uint32_t systemUniqueId[3];
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
+
+#define CANDEV_COUNT 8
+#define ENABLE_CAN 1
 #define USE_ADC_INTERNAL
 #define USE_DMA_SPEC
 #ifdef USE_DSHOT
@@ -95,6 +98,10 @@ extern uint32_t systemUniqueId[3];
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 #define USE_ADC_DEVICE_0
+
+#if !defined(ENABLE_AFATFS_DMA_CACHE)
+#define ENABLE_AFATFS_DMA_CACHE 1
+#endif
 
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
@@ -115,17 +122,35 @@ extern uint32_t systemUniqueId[3];
 #define X32_DCACHE_ENABLED() ((SCB->CCR & SCB_CCR_DC_Msk) != 0U)
 #define X32_CLEAN_DCACHE_BY_ADDR(addr, size) do { \
     if (X32_DCACHE_ENABLED()) { \
-        SCB_CleanDCache_by_Addr((uint32_t *)(addr), (size)); \
+        const uint32_t txChunkAddr = (uint32_t)(addr) & ~(uint32_t)CACHE_LINE_MASK;\
+        const int32_t  txChunkSize = (int32_t)((((uint32_t)(addr) - txChunkAddr) \
+                                                     + (size) + CACHE_LINE_SIZE - 1)\
+                                                    & ~(uint32_t)CACHE_LINE_MASK);\
+        SCB_CleanDCache_by_Addr((uint32_t *)(txChunkAddr), (txChunkSize)); \
     } \
 } while (0)
 #define X32_INVALIDATE_DCACHE_BY_ADDR(addr, size) do { \
     if (X32_DCACHE_ENABLED()) { \
-        SCB_InvalidateDCache_by_Addr((uint32_t *)(addr), (size)); \
+        const uint32_t txChunkAddr = (uint32_t)(addr) & ~(uint32_t)CACHE_LINE_MASK;\
+        const int32_t  txChunkSize = (int32_t)((((uint32_t)(addr) - txChunkAddr) \
+                                                     + (size) + CACHE_LINE_SIZE - 1)\
+                                                    & ~(uint32_t)CACHE_LINE_MASK);\
+        SCB_InvalidateDCache_by_Addr((uint32_t *)(txChunkAddr), (txChunkSize)); \
+    } \
+} while (0)
+#define X32_CLEAN_INVALIDATE_DCACHE_BY_ADDR(addr, size) do { \
+    if (X32_DCACHE_ENABLED()) { \
+        const uint32_t txChunkAddr = (uint32_t)(addr) & ~(uint32_t)CACHE_LINE_MASK;\
+        const int32_t  txChunkSize = (int32_t)((((uint32_t)(addr) - txChunkAddr) \
+                                                     + (size) + CACHE_LINE_SIZE - 1)\
+                                                    & ~(uint32_t)CACHE_LINE_MASK);\
+        SCB_CleanInvalidateDCache_by_Addr((uint32_t *)(txChunkAddr), (txChunkSize)); \
     } \
 } while (0)
 #else
 #define X32_CLEAN_DCACHE_BY_ADDR(addr, size) do { (void)(addr); (void)(size); } while (0)
 #define X32_INVALIDATE_DCACHE_BY_ADDR(addr, size) do { (void)(addr); (void)(size); } while (0)
+#define X32_CLEAN_INVALIDATE_DCACHE_BY_ADDR(addr, size) do { (void)(addr); (void)(size); } while (0)
 #endif
 
 extern uint8_t _dmaram_start__;
@@ -155,6 +180,7 @@ typedef USART_Module        USART_TypeDef;
 typedef EXTI_Module         EXTI_TypeDef;
 typedef EXTI_InitType       EXTI_InitTypeDef;
 typedef NVIC_InitType       NVIC_InitTypeDef;
+typedef FDCAN_Module        FDCAN_GlobalTypeDef;
 
 #define DMA_InitTypeDef            DMA_ChInitType
 #define TIM_OCInitTypeDef          OCInitType

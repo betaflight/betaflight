@@ -26,9 +26,11 @@
 
 #include "pg/flight_plan.h"
 
+#include "pg/flight_plan.h"
+
 #if ENABLE_FLIGHT_PLAN
 
-PG_REGISTER_WITH_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig, PG_FLIGHT_PLAN_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig, PG_FLIGHT_PLAN_CONFIG, 1);
 
 PG_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig,
     .waypointCount = 0,
@@ -36,3 +38,4 @@ PG_RESET_TEMPLATE(flightPlanConfig_t, flightPlanConfig,
 );
 
 #endif // ENABLE_FLIGHT_PLAN
+

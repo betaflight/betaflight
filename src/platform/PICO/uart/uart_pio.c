@@ -354,7 +354,6 @@ bool serialUART_pio(uartPort_t *s, uint32_t baudRate, portMode_e mode, portOptio
 
 void uartReconfigure_pio(uartPort_t *s)
 {
-    bprintf("uartReconfigure for port %p with PIO %p, mode = 0x%x", s, uartPio, s->port.mode);
     const serialPortIdentifier_e identifier = s->port.identifier;
     pioDetails_t *uartPioDetailsPtr = UART_PIO_DETAILS_PTR(identifier);
     uint sm_tx = uartPioDetailsPtr->sm_tx;
@@ -368,8 +367,11 @@ void uartReconfigure_pio(uartPort_t *s)
 
     // (re)init program, with baud rate
     // Arrange GPIO including pullup for RX, assign PIO SM pins, FIFO, clock, enable SM
+#if defined(PICO_TRACE_UART_EXTRA) && defined(PICO_TRACE)
+    bprintf("uartReconfigure for port %p with PIO %p, mode = 0x%x", s, uartPio, s->port.mode);
     bprintf("uartReconfigure_pio init rx, tx programs, pins %d, %d, (requested) baudrate %d",
             uartPioDetailsPtr->rxPin, uartPioDetailsPtr->txPin, s->port.baudRate);
+#endif
     uart_rx_program_init(uartPio, sm_rx, rxProgram_offset, uartPioDetailsPtr->rxPin, s->port.baudRate);
     uartDevice_t *uartDev = uartDeviceFromIdentifier(identifier);
     IO_t txIO = IOGetByTag(uartDev->tx.pin);

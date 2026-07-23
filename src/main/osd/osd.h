@@ -214,6 +214,10 @@ typedef enum {
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
 
+#ifdef USE_OSD_NAV_MAP
+    OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
+#endif
+
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -300,7 +304,7 @@ typedef enum {
     OSD_WARNING_FAIL_SAFE,
     OSD_WARNING_LAUNCH_CONTROL,
     OSD_WARNING_GPS_RESCUE_UNAVAILABLE,
-    OSD_WARNING_GPS_RESCUE_DISABLED,
+    OSD_WARNING_GPS_RESCUE_FAILING,
     OSD_WARNING_RSSI,
     OSD_WARNING_LINK_QUALITY,
     OSD_WARNING_RSSI_DBM,
@@ -308,6 +312,7 @@ typedef enum {
     OSD_WARNING_RSNR,
     OSD_WARNING_LOAD,
     OSD_WARNING_POSHOLD_FAILED,
+    OSD_WARNING_AUTOPILOT_ABORT,
     OSD_WARNING_COUNT // MUST BE LAST
 } osdWarningsFlags_e;
 
@@ -327,7 +332,7 @@ STATIC_ASSERT(OSD_WARNING_COUNT <= 32, osdwarnings_overflow);
 #define ESC_TEMP_ALARM_OFF         0
 #define ESC_CURRENT_ALARM_OFF     -1
 
-#define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 3000000 // 3 seconds
+#define OSD_GPS_RESCUE_DISABLED_WARNING_DURATION_US 5000000 // 5 seconds
 
 extern const uint16_t osdTimerDefault[OSD_TIMER_COUNT];
 extern const osd_stats_e osdStatsDisplayOrder[OSD_STAT_COUNT];
