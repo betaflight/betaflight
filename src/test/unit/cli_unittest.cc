@@ -230,6 +230,15 @@ int32_t taskGuardCycles;
 
 uint32_t micros(void) {return 0;}
 
+// serial_feature_map decomposer is referenced by cliSerial(); the CLI unit
+// tests do not exercise it, so a stub is sufficient.
+bool serialApplyFunctionMask(serialPortIdentifier_e identifier, uint32_t mask)
+{
+    (void)identifier;
+    (void)mask;
+    return true;
+}
+
 int32_t getAmperage(void)
 {
     return 100;

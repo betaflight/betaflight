@@ -62,6 +62,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/serial_feature_map.h"
 #include "io/vtx.h"
 
 #include "msp/msp_box.h"
@@ -230,6 +231,12 @@ static void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfigMutable())) {
         PG_RESET(serialConfig);
     }
+
+    // Populate the per-feature UART fields from the legacy functionMask
+    // bitmask so pre-existing configs keep working during the migration
+    // window.  Idempotent — running it every boot is fine while the
+    // legacy mask is still the source of truth.
+    serialBackfillFeatureFields();
 
 #if defined(USE_GPS)
     const serialPortConfig_t *gpsSerial = findSerialPortConfig(FUNCTION_GPS);

@@ -80,6 +80,7 @@
 #include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
+#include "io/serial.h"
 
 #include "osd/osd.h"
 #include "osd/osd_elements.h"
@@ -433,6 +434,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 #ifdef USE_RACE_PRO
     osdConfig->osd_show_spec_prearm = true;
 #endif // USE_RACE_PRO
+
+    osdConfig->osd_uart = SERIAL_PORT_NONE;
+    osdConfig->osd_custom_text_uart = SERIAL_PORT_NONE;
 }
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig)
