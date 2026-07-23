@@ -1346,6 +1346,20 @@ static void updateDronecanGPS(void)
     gpsSol = incoming;
     gpsSol.time = gpsData.now;
 
+#ifdef USE_RTC_TIME
+    if (!rtcHasTime() && gpsSol.dateTime.valid) {
+        dateTime_t dt;
+        dt.year = gpsSol.dateTime.year;
+        dt.month = gpsSol.dateTime.month;
+        dt.day = gpsSol.dateTime.day;
+        dt.hours = gpsSol.dateTime.hour;
+        dt.minutes = gpsSol.dateTime.min;
+        dt.seconds = gpsSol.dateTime.sec;
+        dt.millis = gpsSol.dateTime.millis;
+        rtcSetDateTime(&dt);
+    }
+#endif
+
     gpsData.lastNavMessage = gpsData.now;
     sensorsSet(SENSOR_GPS);
 
@@ -1368,25 +1382,40 @@ static void updateVirtualGPS(void)
     static uint32_t nextUpdateTime = 0;
 
     if (cmp32(gpsData.now, nextUpdateTime) > 0) {
-        if (gpsData.state == GPS_STATE_INITIALIZED) {
-            gpsSetState(GPS_STATE_RECEIVING_DATA);
+        // Freshness is a feeder-thread counter, checked against this task's
+        // own clock: a stale feed leaves lastNavMessage frozen so the
+        // RECEIVING_DATA timeout below trips, exactly as a real receiver
+        // going dark. Fresh data recovers from the post-timeout DETECT_BAUD
+        // parking state.
+        static uint32_t lastCount = 0;
+        static uint32_t lastCountChangeMs = 0;
+        const uint32_t count = getVirtualGPSUpdateCount();
+        if (count != lastCount) {
+            lastCount = count;
+            lastCountChangeMs = gpsData.now;
         }
+        const bool fresh = (lastCountChangeMs != 0) && (cmp32(gpsData.now, lastCountChangeMs) < GPS_TIMEOUT_MS);
 
-        getVirtualGPS(&gpsSol);
-        gpsSol.time = gpsData.now;
+        if (fresh) {
+            if (gpsData.state == GPS_STATE_INITIALIZED || gpsData.state == GPS_STATE_DETECT_BAUD) {
+                gpsSetState(GPS_STATE_RECEIVING_DATA);
+            }
+            getVirtualGPS(&gpsSol);
+            gpsSol.time = gpsData.now;
 
-        gpsData.lastNavMessage = gpsData.now;
-        sensorsSet(SENSOR_GPS);
+            gpsData.lastNavMessage = gpsData.now;
+            sensorsSet(SENSOR_GPS);
 
-        if (gpsSol.numSat > 3) {
-            gpsSetFixState(GPS_FIX);
-        } else {
-            gpsSetFixState(0);
+            if (gpsSol.numSat > 3) {
+                gpsSetFixState(GPS_FIX);
+            } else {
+                gpsSetFixState(0);
+            }
+            GPS_update ^= GPS_DIRECT_TICK;
+
+            calculateNavInterval();
+            onGpsNewData();
         }
-        GPS_update ^= GPS_DIRECT_TICK;
-
-        calculateNavInterval();
-        onGpsNewData();
 
         nextUpdateTime = gpsData.now + updateInterval;
     }
@@ -2013,6 +2042,48 @@ static bool gpsNewFrameNMEA(char c)
 }
 #endif // USE_GPS_NMEA
 
+// Days from start of year for each month (non-leap year first row, leap year second row)
+static const uint16_t gpsMonthDays[2][12] = {
+    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }, // Non-leap year
+    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }  // Leap year
+};
+
+// Convert Unix seconds and milliseconds to gpsDateTime_t
+void gpsUnixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
+{
+    dt->sec = unixSeconds % 60;
+    unixSeconds /= 60;
+    dt->min = unixSeconds % 60;
+    unixSeconds /= 60;
+    dt->hour = unixSeconds % 24;
+    int32_t days = unixSeconds / 24;
+
+    // Calculate year and day of year from 1970
+    int year = 1970;
+    while (true) {
+        int daysInYear = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 366 : 365;
+        if (days < daysInYear) {
+            break;
+        }
+        days -= daysInYear;
+        year++;
+    }
+    dt->year = year;
+
+    int isLeap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 1 : 0;
+
+    int month;
+    for (month = 11; month > 0; month--) {
+        if (days >= gpsMonthDays[isLeap][month]) {
+            break;
+        }
+    }
+    dt->month = month + 1;
+    dt->day = days - gpsMonthDays[isLeap][month] + 1;
+
+    dt->millis = millis;
+}
+
 #ifdef USE_GPS_UBLOX
 // UBX support
 typedef struct ubxNavPosllh_s {
@@ -2245,48 +2316,6 @@ static uint16_t ubxFrameParsePayloadCounter;
 // Current GPS-UTC leap seconds offset (as of 2017, 18 leap seconds)
 #define GPS_LEAP_SECONDS 18
 
-// Days from start of year for each month (non-leap year first row, leap year second row)
-static const uint16_t gpsMonthDays[2][12] = {
-    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }, // Non-leap year
-    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }  // Leap year
-};
-
-// Convert Unix seconds and milliseconds to gpsDateTime_t
-static void unixSecondsToDateTime(gpsDateTime_t *dt, int64_t unixSeconds, uint16_t millis)
-{
-    dt->sec = unixSeconds % 60;
-    unixSeconds /= 60;
-    dt->min = unixSeconds % 60;
-    unixSeconds /= 60;
-    dt->hour = unixSeconds % 24;
-    int32_t days = unixSeconds / 24;
-
-    // Calculate year and day of year from 1970
-    int year = 1970;
-    while (true) {
-        int daysInYear = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 366 : 365;
-        if (days < daysInYear) {
-            break;
-        }
-        days -= daysInYear;
-        year++;
-    }
-    dt->year = year;
-
-    int isLeap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 1 : 0;
-
-    int month;
-    for (month = 11; month > 0; month--) {
-        if (days >= gpsMonthDays[isLeap][month]) {
-            break;
-        }
-    }
-    dt->month = month + 1;
-    dt->day = days - gpsMonthDays[isLeap][month] + 1;
-
-    dt->millis = millis;
-}
-
 // Convert date/time to Unix seconds (UTC)
 static int64_t dateTimeToUnixSeconds(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec)
 {
@@ -2443,8 +2472,25 @@ static void gpsWeekTimeToDateTime(gpsDateTime_t *dt, int16_t week, uint32_t time
     }
 
     int64_t unixSeconds = gpsSeconds + GPS_EPOCH_OFFSET_SECONDS - GPS_LEAP_SECONDS;
-    unixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
+    gpsUnixSecondsToDateTime(dt, unixSeconds, (uint16_t)millis);
 }
+
+#ifdef USE_RTC_TIME
+// Set system clock once when GPS time is available
+static void setRtcDateTimeFromGps(void) {
+    if (!rtcHasTime() && gpsSol.dateTime.valid) {
+        dateTime_t dt;
+        dt.year = gpsSol.dateTime.year;
+        dt.month = gpsSol.dateTime.month;
+        dt.day = gpsSol.dateTime.day;
+        dt.hours = gpsSol.dateTime.hour;
+        dt.minutes = gpsSol.dateTime.min;
+        dt.seconds = gpsSol.dateTime.sec;
+        dt.millis = gpsSol.dateTime.millis;
+        rtcSetDateTime(&dt);
+    }
+}
+#endif
 
 static bool UBLOX_parse_gps(void)
 {
@@ -2490,6 +2536,9 @@ static bool UBLOX_parse_gps(void)
         ubxHaveNewSpeed = true;
         // Store GPS date/time for telemetry, applying nano correction per u-blox spec.
         gpsDateTimeFromNavPvt(&gpsSol.dateTime, &ubxRcvMsgPayload.ubxNavPvt);
+#ifdef USE_RTC_TIME
+        setRtcDateTimeFromGps();
+#endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SAT):
 #ifdef USE_DASHBOARD
@@ -2577,11 +2626,7 @@ static bool UBLOX_parse_gps(void)
                                   ubxRcvMsgPayload.ubxNavSol.time_nsec);
         }
 #ifdef USE_RTC_TIME
-        // Set system clock once when GPS time is available
-        if (!rtcHasTime() && gpsSol.dateTime.valid) {
-            rtcTime_t temp_time = (((int64_t) ubxRcvMsgPayload.ubxNavSol.week) * 7 * 24 * 60 * 60 * 1000) + ubxRcvMsgPayload.ubxNavSol.time + (ubxRcvMsgPayload.ubxNavSol.time_nsec / 1000000) + 315964800000LL - 18000;
-            rtcSet(&temp_time);
-        }
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_VELNED):
@@ -2596,18 +2641,7 @@ static bool UBLOX_parse_gps(void)
         gpsSol.velned.velD = (int16_t)ubxRcvMsgPayload.ubxNavVelned.ned_down; // cm/s
         ubxHaveNewSpeed = true;
 #ifdef USE_RTC_TIME
-        // Set system clock once when GPS time is available
-        if (!rtcHasTime() && gpsSol.dateTime.valid) {
-            dateTime_t dt;
-            dt.year = gpsSol.dateTime.year;
-            dt.month = gpsSol.dateTime.month;
-            dt.day = gpsSol.dateTime.day;
-            dt.hours = gpsSol.dateTime.hour;
-            dt.minutes = gpsSol.dateTime.min;
-            dt.seconds = gpsSol.dateTime.sec;
-            dt.millis = gpsSol.dateTime.millis;
-            rtcSetDateTime(&dt);
-        }
+        setRtcDateTimeFromGps();
 #endif
         break;
     case CLSMSG(CLASS_NAV, MSG_NAV_SVINFO):
