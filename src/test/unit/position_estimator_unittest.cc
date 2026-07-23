@@ -28,8 +28,11 @@ bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+
+bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale);
 
 PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 }
@@ -46,6 +49,7 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 acc_t acc;
 matrix33_t rMat;
 gpsSolutionData_t gpsSol;
+attitudeEulerAngles_t attitude;
 
 static uint32_t enabledSensors = 0;
 static bool rfHealthy = false;
@@ -55,6 +59,8 @@ static timeUs_t fakeMicros = 0;
 static bool gpsAlwaysHasNewData = true;
 static bool gpsDataIsNew = false;
 static float gpsDataFrequencyHz = 100.0f;
+static opticalflow_t testOpticalFlow;
+static bool opticalFlowHealthy = true;
 
 bool sensors(uint32_t mask) { return (enabledSensors & mask) != 0; }
 bool rangefinderIsHealthy(void) { return rfHealthy; }
@@ -75,6 +81,8 @@ bool gpsHasNewData(uint16_t *gpsStamp)
 }
 
 float getGpsDataFrequencyHz(void) { return gpsDataFrequencyHz; }
+bool isOpticalflowHealthy(void) { return opticalFlowHealthy; }
+const opticalflow_t *getOpticalFlowData(void) { return &testOpticalFlow; }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
@@ -99,6 +107,8 @@ protected:
         memset(&acc, 0, sizeof(acc));
         memset(&rMat, 0, sizeof(rMat));
         memset(&gpsSol, 0, sizeof(gpsSol));
+        memset(&attitude, 0, sizeof(attitude));
+        memset(&testOpticalFlow, 0, sizeof(testOpticalFlow));
         memset(debug, 0, sizeof(debug));
 
         // Identity rotation and 1G reciprocal scale so zero accel stays zero.
@@ -121,6 +131,7 @@ protected:
         gpsAlwaysHasNewData = true;
         gpsDataIsNew = false;
         gpsDataFrequencyHz = 100.0f;
+        opticalFlowHealthy = true;
 
         positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_RANGEFINDER_PREFER;
         positionConfigMutable()->altitude_prefer_baro = 100;
@@ -172,6 +183,41 @@ TEST_F(PositionEstimatorTest, GPSUpsamplingTracksSourceFrequency)
     EXPECT_FLOAT_EQ(noiseScale, 20.0f);
     EXPECT_TRUE(gpsMeasurementReadyForFusion(240000, &noiseScale));
     EXPECT_FALSE(gpsMeasurementReadyForFusion(250000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, OpticalFlowMeasurementsUseNominalRateForFirstSample)
+{
+    testOpticalFlow.dev.delayMs = 20; // UP-T1 optical flow is nominally 50 Hz.
+    testOpticalFlow.timeStampUs = 100000;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(100000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(110000, &testOpticalFlow, &noiseScale));
+    EXPECT_FALSE(opticalFlowMeasurementReadyForFusion(120000, &testOpticalFlow, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, OpticalFlowUpsamplingTracksMeasuredSampleRate)
+{
+    testOpticalFlow.dev.delayMs = 20;
+    testOpticalFlow.timeStampUs = 100000;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(100000, &testOpticalFlow, &noiseScale));
+
+    // A timestamp change after 20 ms confirms the nominal 50 Hz source rate.
+    testOpticalFlow.timeStampUs = 120000;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(120000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+
+    // If the actual sensor cadence changes, use it instead of the task/polling rate.
+    testOpticalFlow.timeStampUs = 160000;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(160000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 4.0f);
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(190000, &testOpticalFlow, &noiseScale));
+    EXPECT_FALSE(opticalFlowMeasurementReadyForFusion(200000, &testOpticalFlow, &noiseScale));
 }
 
 TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
