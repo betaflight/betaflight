@@ -10,7 +10,7 @@
 # 4.1.0 released with the config area at the following offsets
 # STM32F405: 0x080FC000
 # STM32F411: 0x08002808
-# STM32F7X2: 0x08002808
+# STM32F722: 0x08002808
 # STM32F745: 0x08002808
 # STM32F405 uses a separate flash page for its unified config, so if a user flashes STM32F405 without 'Full Chip Erase' the unified target configuration will stay put.
 
