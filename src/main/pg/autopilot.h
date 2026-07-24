@@ -70,9 +70,6 @@ typedef struct autopilotConfig_s {
 
     // Velocity-based position control with drag compensation (nav path only; pos-hold is unaffected)
     uint8_t velocityControlEnable;    // 0=legacy pseudo-distance→angle, 1=velocity-PID→angle (default 1)
-    uint8_t velocityP;                // velocity loop P gain, scaled by 10 (default 50 = 5.0)
-    uint8_t velocityI;                // velocity loop I gain, scaled by 10 (default 10 = 1.0)
-    uint8_t velocityD;                // velocity loop D gain, scaled by 10 (default 5 = 0.5)
     uint16_t velocityDragCoeff;       // linear drag feedforward: degrees = coeff * target cm/s, scaled by 10000 (default 50 = 0.0050, 2.5 deg at 5 m/s)
     uint16_t maxVelocity;             // cm/s, maximum velocity setpoint (default 1000 = 10 m/s)
 

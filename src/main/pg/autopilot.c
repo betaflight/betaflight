@@ -50,11 +50,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
 
     // Velocity-based position control with drag compensation
     .velocityControlEnable = 1,       // Enabled by default
-    .velocityP = 50,                  // 5.0 P gain
-    .velocityI = 10,                  // 1.0 I gain
-    .velocityD = 5,                   // 0.5 D gain
     .velocityDragCoeff = 50,          // 0.0050 drag coefficient
-    .maxVelocity = 1000,              // 10 m/s max velocity
+    .maxVelocity = 500,              // 5 m/s max velocity
 
     // Waypoint navigation parameters
     .waypointArrivalRadius = 500,     // 5m for FLYOVER/FLYBY
