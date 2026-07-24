@@ -332,11 +332,15 @@ static bool i2cHandleHardwareFailure(i2cDevice_e device, i2cFailReason_e reason)
 {
     I2C_TypeDef *I2Cx = (I2C_TypeDef *)i2cDevice[device].reg;
     i2cState_t *state = &i2cDevice[device].state;
-    // Snapshot before clearing so the raw ISR still shows NACKF for a NACK
-    // failure; the foreground poll loops deliberately leave the flag set for us.
+    // Snapshot before clearing so the raw ISR still shows the error bit that
+    // triggered the failure; the foreground poll loops deliberately leave the
+    // flag set for us.
     i2cCaptureFail(device, reason);
-    if (reason == I2C_FAIL_NACK) {
-        LL_I2C_ClearFlag_NACK(I2Cx);
+    switch (reason) {
+    case I2C_FAIL_NACK: LL_I2C_ClearFlag_NACK(I2Cx); break;
+    case I2C_FAIL_ARLO: LL_I2C_ClearFlag_ARLO(I2Cx); break;
+    case I2C_FAIL_BERR: LL_I2C_ClearFlag_BERR(I2Cx); break;
+    default: break;
     }
     i2cRecoverFromISRError(I2Cx, state);
     return false;
@@ -345,6 +349,29 @@ static bool i2cHandleHardwareFailure(i2cDevice_e device, i2cFailReason_e reason)
 uint16_t i2cGetErrorCounter(void)
 {
     return i2cErrorCount;
+}
+
+// Poll for a terminating condition inside a blocking transfer loop. Returns the
+// failure reason, or I2C_FAIL_NONE to keep waiting. ARLO/BERR are checked
+// alongside NACK so a bus fault (e.g. an SDA that cannot be driven high) is
+// reported and counted for what it is, instead of only surfacing as the 10 ms
+// timeout it would otherwise decay into. The flag is left set for
+// i2cHandleHardwareFailure() to snapshot before clearing.
+static i2cFailReason_e i2cPollFailure(I2C_TypeDef *I2Cx, timeUs_t timeoutStartUs)
+{
+    if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
+        return I2C_FAIL_NACK;
+    }
+    if (LL_I2C_IsActiveFlag_ARLO(I2Cx)) {
+        return I2C_FAIL_ARLO;
+    }
+    if (LL_I2C_IsActiveFlag_BERR(I2Cx)) {
+        return I2C_FAIL_BERR;
+    }
+    if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+        return I2C_FAIL_TIMEOUT;
+    }
+    return I2C_FAIL_NONE;
 }
 
 // Blocking write
@@ -380,11 +407,9 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
         // Wait for TXIS
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, data);
@@ -396,22 +421,18 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
         // Wait for TXIS then send register address
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, reg_);
 
         // Wait for TXIS then send data byte
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, data);
@@ -419,11 +440,9 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
     // Wait for STOP flag (AUTOEND generates stop automatically)
     while (!LL_I2C_IsActiveFlag_STOP(I2Cx)) {
-        if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-            return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-        }
-        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-            return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+        const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+        if (fail != I2C_FAIL_NONE) {
+            return i2cHandleHardwareFailure(device, fail);
         }
     }
     LL_I2C_ClearFlag_STOP(I2Cx);
@@ -479,11 +498,9 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
         // so the ISR only deals with data bytes
         timeUs_t timeoutStartUs = microsISR();
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, reg_);
@@ -542,22 +559,18 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
         // Wait for TXIS then send register address
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, reg_);
 
         // Wait for Transfer Complete (TC) - SOFTEND means no auto-stop
         while (!LL_I2C_IsActiveFlag_TC(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
 
@@ -570,11 +583,9 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
     // Read all bytes
     for (uint8_t i = 0; i < len; i++) {
         while (!LL_I2C_IsActiveFlag_RXNE(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         buf[i] = LL_I2C_ReceiveData8(I2Cx);
@@ -582,11 +593,9 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
 
     // Wait for STOP flag (AUTOEND generates stop automatically)
     while (!LL_I2C_IsActiveFlag_STOP(I2Cx)) {
-        if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-            return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-        }
-        if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-            return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+        const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+        if (fail != I2C_FAIL_NONE) {
+            return i2cHandleHardwareFailure(device, fail);
         }
     }
     LL_I2C_ClearFlag_STOP(I2Cx);
@@ -644,11 +653,9 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
         // Wait for TXIS to send the register address byte synchronously
         timeUs_t timeoutStartUs = microsISR();
         while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
-            if (LL_I2C_IsActiveFlag_NACK(I2Cx)) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_NACK);
-            }
-            if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
-                return i2cHandleHardwareFailure(device, I2C_FAIL_TIMEOUT);
+            const i2cFailReason_e fail = i2cPollFailure(I2Cx, timeoutStartUs);
+            if (fail != I2C_FAIL_NONE) {
+                return i2cHandleHardwareFailure(device, fail);
             }
         }
         LL_I2C_TransmitData8(I2Cx, reg_);
