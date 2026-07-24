@@ -97,8 +97,8 @@
 
 #define XY_DISTANCE_SCALE    0.0015f   // distance P / velocity I
 #define XY_DISTANCE_I_SCALE  0.00015f  // distance I
-#define XY_VELOCITY_SCALE    0.002f    // distance D / velocity P (opposes velocity)
-#define XY_ACCEL_SCALE       0.0005f   // distance Acceleration / velocity D
+#define XY_VELOCITY_SCALE    0.003f    // distance D / velocity P (opposes velocity)
+#define XY_ACCEL_SCALE       0.0006f   // distance Acceleration / velocity D
 #define XY_F_SCALE           0.03f / POSHOLD_TASK_RATE_HZ   //  velocity target delta scale factor
 #define XY_DRAG_SCALE        0.0002f  //  velocity based drag correction factor, cancels up to half the D at speed must be less than D scale
 
@@ -719,7 +719,7 @@ bool positionControl(void)
             } else {
                 distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
                 if (ap.isPosHoldBraking) {
-                    dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.001f; // stronger D when stopping from high velocity
+                    dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.0005f; // stronger D when stopping from high velocity, doubled at 20m/s
                 }
             }
             //these things happen in all modes
