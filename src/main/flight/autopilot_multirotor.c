@@ -139,8 +139,6 @@ static float setpointVelocityGainPitch;  // to set max velocity at full stick
 static float setpointVelocityGainRoll;
 
 static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT];
-static pt2Filter_t posPidSumLpf[EF_AXIS_COUNT];
-
 static bool isPositionHeld;
 static bool wasPositionHeld = false;
 static bool wasNavActive = false;
@@ -185,7 +183,6 @@ static void initPidLpfs(void)
     const float k = pt2FilterGain(cutoffHz, HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ));
     for (unsigned i = 0; i < EF_AXIS_COUNT; i++) {
         pt3FilterInit(&posNoisyPidsLpf[i], k);
-        pt2FilterInit(&posPidSumLpf[i], k);
     }
 }
 
@@ -390,7 +387,6 @@ static void initNavMode(void)
     initPidLpfs();
     resetDistanceError();
     resetDistanceErrorIntegral();
-    resetDistanceError();
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
     targetAcceleration.v[EF_EAST]  = 0.0f;
