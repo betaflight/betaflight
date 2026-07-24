@@ -214,6 +214,9 @@ typedef enum {
     OSD_WP_ETA,                 // Estimated time to waypoint
 #endif
 
+#ifdef USE_OSD_NAV_MAP
+    OSD_NAV_MAP,                // minimap of home, flight plan and flown trail
+#endif
 #ifdef USE_AIRPLANE_SAS
     OSD_AOA_LIMITER,
 #endif

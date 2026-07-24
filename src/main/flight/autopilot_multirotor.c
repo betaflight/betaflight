@@ -100,6 +100,15 @@
 #define POSITION_F_SCALE       0.0017f
 #define POSHOLD_STALL_CHECK_SPEED_CMS  45.0f // below this speed a deceleration reversal means braking has stalled to a stop
 #define SANITY_CHECK_DISTANCE 2000.0f //20m, increased when stopping from speeds above 10m/s
+// The settled-hold flyaway fence is graded, not instant: an excursion must
+// persist this long before it counts as a failure. Field logs show single-fix
+// multipath excursions of 12-51 m while parked in a clean hover; instant
+// tripping turned each one into a POSHOLD FAIL with a level-out step.
+#define SANITY_VIOLATION_LATCH_S 1.0f
+// One automatic re-anchor is allowed per healthy stretch; this much clean
+// settled time earns it back. A genuine flyaway trips again immediately after
+// its retry and stays failed.
+#define SANITY_RETRY_REPLENISH_S 10.0f
 #define ERROR_DISTANCE_LIMIT  2000.0f // TO DO: test set to a useful value, this is 20m
 #define POSITION_I_LIMIT      2000.0f // TO DO: test and set to a useful value, this is 20m
 
@@ -169,6 +178,9 @@ static void disableYawControl(void);
 
 typedef struct autopilotState_s {
     float sanityCheckDistance;
+    float sanityViolationS;     // time the settled hold has spent beyond the fence
+    float violationFreeS;       // clean settled time since the last violation; replenishes the retry
+    bool sanityRetryUsed;       // one automatic re-anchor per healthy stretch
     bool sticksActive;
     bool wasSticksActive;
     bool navActive;
@@ -177,7 +189,10 @@ typedef struct autopilotState_s {
     float speedXYOneLoopAgo;
     float speedTwoLoopsAgo;
     float prevDeltaSpeedXY;     // speed delta one loop ago, for the stall inflection test
+    float speedTrendCmS;        // ~0.5 s lowpass of speedXY: reference for "is the craft slowing?"
+    bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
+    bool derivativeStale;       // output was frozen past the fence: re-baseline the A-term on resume
     unsigned debugAxis;
 } autopilotState_t;
 
@@ -228,6 +243,8 @@ void autopilotInit(void)
     ap.speedXY = 0.0f;
     ap.speedXYOneLoopAgo = 0.0f;
     ap.speedTwoLoopsAgo = 0.0f;
+    ap.speedTrendCmS = 0.0f;
+    ap.speedSlowing = false;
     ap.prevDeltaSpeedXY = 0.0f;
     ap.isPosHoldBraking = false;
     abortNavRequested = false;
@@ -402,6 +419,20 @@ void initPositionHold(void)
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
 
+// Re-anchor the hold at the craft's current position — what a pilot cycling
+// the mode switch achieves, callable from recovery paths (sensor dropout
+// recovery, the one-shot sanity retry). Enters through the normal braking
+// capture so any speed the craft picked up meanwhile is arrested first, and
+// the fence is re-sized to the current ground speed.
+void positionControlReanchor(void)
+{
+    initPositionHold();
+    ap.sanityCheckDistance = calculateSanityCheckDistance();
+    ap.sanityViolationS = 0.0f;
+    ap.violationFreeS = 0.0f;
+    ap.derivativeStale = false;
+}
+
 static void initNavMode(void)
 {
     initPidLpfs();
@@ -428,6 +459,9 @@ void resetPositionControl(unsigned taskRateHz)
     positionNavReset();
     wasNavActive = false; // will be enabled as required
     ap.sanityCheckDistance = calculateSanityCheckDistance(); // Set an initial sanity check distance
+    ap.sanityViolationS = 0.0f;
+    ap.violationFreeS = 0.0f;
+    ap.sanityRetryUsed = false;
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
     resetDistanceErrorIntegral();
@@ -442,6 +476,23 @@ void handlepositionControlFailure(void)
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 6, 100);
     DEBUG_SET(DEBUG_AUTOPILOT_STOP, 7, 100);
 
+}
+
+// A sanity-fence violation has outlived the persistence window: spend the
+// one-shot retry if it is available (re-anchor and carry on), otherwise level
+// out and fail the hold.
+static bool sanityViolationExpired(void)
+{
+    if (!ap.sanityRetryUsed) {
+        ap.sanityRetryUsed = true;
+        positionControlReanchor();
+        return true;
+    }
+    disableYawControl();
+    autopilotAngle[AI_ROLL]  = 0.0f; // Level out
+    autopilotAngle[AI_PITCH] = 0.0f;
+    handlepositionControlFailure();
+    return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
 }
 
 void sticksMoveTarget(void)
@@ -635,6 +686,12 @@ bool positionControl(void)
     ap.prevDeltaSpeedXY = ap.speedXYOneLoopAgo - ap.speedTwoLoopsAgo;
     ap.speedTwoLoopsAgo = ap.speedXYOneLoopAgo;
     ap.speedXYOneLoopAgo = ap.speedXY;
+    // "Is the craft actually slowing?" — speed measured against its own ~0.5 s
+    // average, judged before the average absorbs the new sample. Lets the
+    // braking-phase fence tell brake physics (speed falling, distance growth
+    // is expected) from a flyaway (speed held or rising).
+    ap.speedSlowing = ap.speedXY < ap.speedTrendCmS - 20.0f;
+    ap.speedTrendCmS += (dt / (0.5f + dt)) * (ap.speedXY - ap.speedTrendCmS);
 
     if (ap.navActive) {
         isPositionHeld = false;
@@ -681,17 +738,67 @@ bool positionControl(void)
                 if (stopped || stalled) {
                     updatePositionHoldTarget(); // capture the stopped point as the hold target
                     ap.isPosHoldBraking = false;
+                } else {
+                    // The fence watches the brake too. Braking suppresses the
+                    // settled check below, and a genuine flyaway (a bad-mag
+                    // toilet bowl accelerates, so it never meets the stop or
+                    // stall conditions) would otherwise ride the moving target
+                    // indefinitely — including straight after the one-shot
+                    // retry, which re-enters through this braking capture.
+                    // While the craft is actually slowing, growing distance is
+                    // brake physics and the fence rides just ahead of it (so a
+                    // fast entry whose stopping distance beats 2 s of entry
+                    // speed cannot false-trip); beyond the fence and NOT
+                    // slowing runs the same violation clock as the settled
+                    // hold.
+                    vector2_t brakeDeltaV;
+                    vector2Sub(&brakeDeltaV, &posHoldStartPosition, &currentPosition);
+                    const float brakeDistance = vector2Norm(&brakeDeltaV);
+                    if (brakeDistance > ap.sanityCheckDistance) {
+                        if (ap.speedSlowing) {
+                            ap.sanityCheckDistance = brakeDistance + 2.0f * ap.speedXY;
+                            ap.sanityViolationS = 0.0f;
+                        } else {
+                            ap.violationFreeS = 0.0f;
+                            ap.sanityViolationS += dt;
+                            if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+                                return sanityViolationExpired();
+                            }
+                        }
+                    } else {
+                        ap.sanityViolationS = 0.0f;
+                    }
                 }
             } else {
                 // Settled hold: guard against a position-estimate flyaway.
+                // Graded, not instant: a single bad fix (multipath excursions
+                // of 12-51 m appear in field logs during a clean hover) must
+                // not fail the hold — fed to the PIDs it would also slam P
+                // into the angle clamp, so the previous output is held while
+                // a brief excursion passes. Only a persistent one fails, and
+                // the first sustained trip earns one automatic re-anchor at
+                // the current spot (what a pilot cycling the switch does):
+                // an isolated mid-flight glitch self-heals, while a genuine
+                // flyaway trips again immediately and stays failed.
                 vector2_t deltaPosV;
                 vector2Sub(&deltaPosV, &posHoldStartPosition, &currentPosition);
                 if (vector2Norm(&deltaPosV) > ap.sanityCheckDistance) {
-                    disableYawControl();
-                    autopilotAngle[AI_ROLL]  = 0.0f; // Level out
-                    autopilotAngle[AI_PITCH] = 0.0f;
-                    handlepositionControlFailure();
-                    return false; // Return failure, allow angle mode control, and show pos hold fail message in OSD
+                    ap.violationFreeS = 0.0f;
+                    ap.sanityViolationS += dt;
+                    if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
+                        return sanityViolationExpired();
+                    }
+                    // The A-term history is now stale; mark it so the resume
+                    // loop re-baselines instead of differentiating across the
+                    // frozen window (one spurious spike against old velocity)
+                    ap.derivativeStale = true;
+                    return true; // brief excursion: hold the previous command
+                } else {
+                    ap.sanityViolationS = 0.0f;
+                    ap.violationFreeS += dt;
+                    if (ap.violationFreeS > SANITY_RETRY_REPLENISH_S) {
+                        ap.sanityRetryUsed = false;
+                    }
                 }
             }
         }
@@ -710,6 +817,11 @@ bool positionControl(void)
         const float velocityFiltered = pt2FilterApply(&posDtermLpf[axis], velocity.v[axis]);
         velocityFilteredV.v[axis] = velocityFiltered;
         velocityError.v[axis] = targetVelocity.v[axis] - velocityFiltered;
+        if (ap.derivativeStale) {
+            // frozen-output fixes were skipped: no delta across the window,
+            // so resumption cannot spike A against second-old velocity
+            previousVelocity.v[axis] = velocityFiltered;
+        }
         const float accelerationRaw = (previousVelocity.v[axis] - velocityFiltered) * POSHOLD_TASK_RATE_HZ;
         previousVelocity.v[axis] = velocityFiltered;
         const float acceleration = pt2FilterApply(&posAccelLpf[axis], accelerationRaw);
@@ -763,6 +875,7 @@ bool positionControl(void)
 
         pidSumVectorEF.v[axis] = pidP.v[axis] + pidI.v[axis] + pidD.v[axis] + pidA.v[axis] + pidF.v[axis];
     } // End for loop
+    ap.derivativeStale = false;
 
     bool buildupClamped = false;
     if (velocityMode) {

@@ -101,8 +101,16 @@ void updatePosHold(timeUs_t currentTimeUs) {
 
     if (posHold.isEnabled) {
         posHoldCheckSticks();
+        const bool sensorsWereOk = posHold.areSensorsOk;
         posHold.areSensorsOk = sensorsOk();
         if (posHold.areSensorsOk) {
+            if (!sensorsWereOk) {
+                // Sensors came back after a dropout: the craft drifted while
+                // blind, so resuming against the pre-dropout target would
+                // lurch toward it — or trip the sanity fence on the spot.
+                // Re-anchor the hold at the current position instead.
+                positionControlReanchor();
+            }
             posHold.isControlOk = positionControl();
         } else {
             for (unsigned i = 0; i < RP_AXIS_COUNT; i++) {

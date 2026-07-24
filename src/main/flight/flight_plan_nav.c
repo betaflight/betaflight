@@ -105,6 +105,13 @@
 #define FP_OVERSPEED_MARGIN_MPS  1.5f    // measured-speed governor margin over the profile speed
 #define FP_OVERRUN_LAT_M         8.0f    // a fast gate miss still counts within this lateral corridor
 #define FP_CARROT_NO_ARRIVAL_M   -1.0f   // acceptance radius sentinel: positionNav never self-completes a carrot leg
+// The GPS-fed position estimate steps a metre or two on every fix. Shaping the
+// carrot directly from it turns that noise into lean and throttle twitches at
+// cruise, and lets the overspeed governor chatter between cruise and freeze.
+// Filter the measurements that shape the carrot (not the sensors themselves);
+// gate detection and pre-turn timing stay on the raw estimate so a crossing
+// still counts, and the nose still starts swinging, the moment they happen.
+#define FP_MEAS_FILTER_S         0.20f   // PT1 tau on along-track position and ground speed
 
 // Landing descends toward a target far below the current position so vertical
 // arrival can never trigger; touchdown detection is what ends the descent.
@@ -212,6 +219,10 @@ static struct {
     vector2_t carrotPrevEnuM;   // last commanded carrot; the next leg anchors here
     bool      carrotPrevValid;
     bool      inPreTurn;        // blending the nose onto the next leg (excluded from the heading-fault check)
+    float     alongFiltM;       // PT1-filtered along-track position; shapes the carrot floor and trapezoid
+    float     speedFiltMps;     // PT1-filtered horizontal ground speed; feeds the overspeed governor
+    bool      measFiltValid;
+    bool      overspeedHold;    // hysteretic governor: holding the carrot until the craft is back on profile
 
     // Landing state
     timeUs_t landingStartUs;
@@ -655,6 +666,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
         fp.legStartEnuM = fp.carrotPrevValid ? fp.carrotPrevEnuM : craft;
         fp.legProgressM = 0.0f;
         fp.legValid = true;
+        fp.measFiltValid = false;   // new leg, new along-track frame: re-seed the filters
     }
 
     const vector2_t legVec = { .x = wp.x - fp.legStartEnuM.x, .y = wp.y - fp.legStartEnuM.y };
@@ -666,17 +678,48 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     }
     const float craftAlongM = (craft.x - fp.legStartEnuM.x) * legDir.x + (craft.y - fp.legStartEnuM.y) * legDir.y;
 
+    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
+    if (!fp.measFiltValid || dtS <= 0.0f) {
+        fp.alongFiltM = craftAlongM;
+        fp.speedFiltMps = horizSpeedMps;
+        fp.measFiltValid = true;
+    } else {
+        const float alpha = dtS / (FP_MEAS_FILTER_S + dtS);
+        fp.alongFiltM += alpha * (craftAlongM - fp.alongFiltM);
+        fp.speedFiltMps += alpha * (horizSpeedMps - fp.speedFiltMps);
+    }
+
     // Trapezoidal profile keyed on the craft's distance to the gate: cruise, then
     // decelerate to cross at the corner speed. The carrot speed slews (no
     // full-cruise leap at leg starts) and is deliberately not reset at leg
     // switches, so speed carries smoothly through corners.
-    const float remainingM = fmaxf(legLenM - craftAlongM - arriveM, 0.0f);
-    float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingM));
+    // Pre-turn timing keeps the raw along-track (the nose must start swinging on
+    // time); the trapezoid and carrot floor use the filtered copy.
+    const float remainingRawM  = fmaxf(legLenM - craftAlongM - arriveM, 0.0f);
+    const float remainingFiltM = fmaxf(legLenM - fp.alongFiltM - arriveM, 0.0f);
+
+    // Chase-lag compensation: the craft answers the carrot's braking roughly one
+    // pursuit-lead time later (the chase equilibrium sits a lead behind), so a
+    // profile keyed on raw remaining distance is crossed hot by about
+    // lag * decel. Start the brake one lag-distance early and the craft — not
+    // just the carrot — arrives at corner speed, riding the last stretch AT
+    // corner speed instead of still braking through the gate.
+    const float brakeLagM = fp.carrotSpeedMps * leadTimeS;
+    const float remainingBrakeM = fmaxf(remainingFiltM - brakeLagM, 0.0f);
+    float desiredMps = fminf(fp.legCruiseMps, sqrtf(sq(cornerSpeedMps) + 2.0f * decelMps2 * remainingBrakeM));
 
     // Governor on measured speed: a craft carrying more than the profile (tailwind,
-    // catch-up) makes the carrot surrender braking authority; freeze it instead.
-    const float horizSpeedMps = sqrtf(sq(est->velocity.v[ENU_E]) + sq(est->velocity.v[ENU_N])) * 0.01f;
-    if (horizSpeedMps > desiredMps + FP_OVERSPEED_MARGIN_MPS) {
+    // catch-up) makes the carrot surrender braking authority; hold it instead.
+    // Hysteretic on the filtered speed — enter at the full margin, release at half
+    // — because a hard 0/cruise toggle around a single threshold chattered the
+    // position target at fix rate (rhythmic pitch jerks at cruise). The accel
+    // slew below bleeds the carrot speed smoothly rather than stepping it.
+    if (fp.speedFiltMps > desiredMps + FP_OVERSPEED_MARGIN_MPS) {
+        fp.overspeedHold = true;
+    } else if (fp.speedFiltMps < desiredMps + 0.5f * FP_OVERSPEED_MARGIN_MPS) {
+        fp.overspeedHold = false;
+    }
+    if (fp.overspeedHold) {
         desiredMps = 0.0f;
     }
 
@@ -693,7 +736,7 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     float noseBearingDeg = legBearingDeg;
     if (haveNext) {
         const float preturnM = cfg->navPreturnDist * 0.01f;
-        const float t = 1.0f - constrainf((remainingM - 5.0f) / fmaxf(preturnM - 5.0f, 1.0f), 0.0f, 1.0f);
+        const float t = 1.0f - constrainf((remainingRawM - 5.0f) / fmaxf(preturnM - 5.0f, 1.0f), 0.0f, 1.0f);
         const vector2_t nextLeg = { .x = next.x - wp.x, .y = next.y - wp.y };
         if (t > 0.0f && vector2Norm(&nextLeg) > 1.0f) {
             const float nextBearingDeg = RADIANS_TO_DEGREES(atan2_approx(nextLeg.x, nextLeg.y));
@@ -717,7 +760,11 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
 
     // Pure-pursuit lead, with the carrot allowed a bounded gap behind the craft —
     // the only thing positionNav brakes for — so an overrun bites firmly.
-    const float alongFloorM = fmaxf(craftAlongM, 0.0f);
+    // The floor rides the filtered along-track: on the raw estimate, every
+    // metre-scale GPS step dragged the clamp (and with it the position target)
+    // back and forth at fix rate — the main source of lean twitch, and via
+    // tilt-throttle coupling, altitude pumping at cruise.
+    const float alongFloorM = fmaxf(fp.alongFiltM, 0.0f);
     const float leadM     = constrainf(fp.carrotSpeedMps * leadTimeS, FP_CARROT_LEAD_MIN_M, leadMaxM);
     const float brakeGapM = 0.25f * fp.carrotSpeedMps + 1.5f;
     fp.legProgressM = constrainf(fp.legProgressM, alongFloorM - brakeGapM, alongFloorM + leadM);
@@ -1170,6 +1217,8 @@ void flightPlanNavInit(void)
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
     fp.inPreTurn = false;
+    fp.measFiltValid = false;
+    fp.overspeedHold = false;
 #if ENABLE_RESCUE_PLAN
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
@@ -1195,6 +1244,8 @@ void flightPlanNavEngage(void)
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
     fp.inPreTurn = false;
+    fp.measFiltValid = false;
+    fp.overspeedHold = false;
     autopilotForceLevelPark(false);   // a fresh engage clears any latched heading-fault park
     autopilotSetNavHeadingOverride(false, 0.0f);
     clearModifierState();
@@ -1262,6 +1313,8 @@ void flightPlanNavDisengage(void)
     fp.carrotSpeedMps = 0.0f;
     fp.carrotPrevValid = false;
     fp.inPreTurn = false;
+    fp.measFiltValid = false;
+    fp.overspeedHold = false;
     autopilotForceLevelPark(false);
     autopilotSetNavHeadingOverride(false, 0.0f);
 #if ENABLE_RESCUE_PLAN
@@ -1288,6 +1341,8 @@ bool flightPlanNavInjectPlan(const waypoint_t *waypoints, uint8_t count)
     fp.abortReason = FP_ABORT_NONE;
     fp.carrotPrevValid = false;   // a fresh plan re-anchors on the craft
     fp.carrotSpeedMps = 0.0f;
+    fp.measFiltValid = false;
+    fp.overspeedHold = false;
 #if ENABLE_RESCUE_PLAN
     fp.isRescuePlan = false;
 #endif
@@ -1346,6 +1401,8 @@ void flightPlanNavUpdate(timeUs_t currentTimeUs)
         // carrot leg on the craft's current position, not a stale carrot.
         fp.carrotPrevValid = false;
         fp.carrotSpeedMps = 0.0f;
+        fp.measFiltValid = false;
+        fp.overspeedHold = false;
         dispatchWaypoint();
         return;
     }

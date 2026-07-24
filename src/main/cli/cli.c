@@ -329,7 +329,7 @@ static void cliWriterFlushInternal(bufWriter_t *writer)
 
 static void cliPrintInternal(bufWriter_t *writer, const char *str)
 {
-    if (writer) {
+    if (writer && str) {
         while (*str) {
             bufWriterAppend(writer, *str++);
         }
@@ -5491,11 +5491,18 @@ static void cliSensorHardware(const char *cmdName, char *cmdline)
             const char *typeName = sensorTypeName(i);
             if (names && typeName) {
                 cliPrintf("%s: ", typeName);
+                bool first = true;
                 for (int j = 0; j < count; j++) {
-                    if (j > 0) {
+                    // Name tables can have NULL holes for hardware enum values not
+                    // compiled into this build (e.g. MAG_DRONECAN without ENABLE_DRONECAN).
+                    if (!names[j]) {
+                        continue;
+                    }
+                    if (!first) {
                         cliPrint(",");
                     }
                     cliPrint(names[j]);
+                    first = false;
                 }
                 cliPrintLinefeed();
             }
@@ -6128,6 +6135,48 @@ static void cliStatus(const char *cmdName, char *cmdline)
                 cliPrintf(", version =  %s", gpsData.platformVersion != UBX_VERSION_UNDEF ? ubloxVersionMap[gpsData.platformVersion].str : "unknown");
             }
 #endif
+        }
+        if (gpsIsHealthy()) {
+            cliPrintLinefeed();
+            cliPrintf("  sats: %d", gpsSol.numSat);
+
+            uint16_t cnoSum = 0;
+            uint8_t cnoCount = 0;
+            for (unsigned i = 0; i < GPS_numCh; i++) {
+                if (GPS_svinfo[i].cno > 0) {
+                    cnoSum += GPS_svinfo[i].cno;
+                    cnoCount++;
+                }
+            }
+            if (cnoCount > 0) {
+                cliPrintf(", signal: %d dBHz", cnoSum / cnoCount);
+            }
+
+            if (gpsSol.dop.hdop > 0) {
+                cliPrintf(", hdop: %d.%02d", gpsSol.dop.hdop / 100, gpsSol.dop.hdop % 100);
+            }
+
+            if (gpsSol.dop.vdop > 0) {
+                cliPrintf(", vdop: %d.%02d", gpsSol.dop.vdop / 100, gpsSol.dop.vdop % 100);
+            }
+
+            if (STATE(GPS_FIX)) {
+                const int32_t lat = gpsSol.llh.lat;
+                const int32_t lon = gpsSol.llh.lon;
+                const int32_t altCm = gpsSol.llh.altCm;
+                cliPrintf(", pos: %s%d.%07d %s%d.%07d, alt: %s%d.%02dm",
+                    lat < 0 ? "-" : "", ABS(lat) / 10000000, ABS(lat) % 10000000,
+                    lon < 0 ? "-" : "", ABS(lon) / 10000000, ABS(lon) % 10000000,
+                    altCm < 0 ? "-" : "", ABS(altCm) / 100, ABS(altCm) % 100);
+            } else {
+                cliPrint(", pos: no fix");
+            }
+
+            if (gpsSol.dateTime.valid) {
+                cliPrintf(", %04d-%02d-%02dT%02d:%02d:%02dZ",
+                    gpsSol.dateTime.year, gpsSol.dateTime.month, gpsSol.dateTime.day,
+                    gpsSol.dateTime.hour, gpsSol.dateTime.min, gpsSol.dateTime.sec);
+            }
         }
     } else {
         cliPrint("NOT ENABLED");
