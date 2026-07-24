@@ -27,6 +27,15 @@
 #define CORE_CM7
 #endif
 
+/* All code defaults into ITCM on X32M7B (see x32_flash_m7b_2m.ld); ITCM has
+ * no spare headroom (betaflight/betaflight#15462). SRAM_CODE moves a
+ * function's .text into AHB_SRAM instead, for code that doesn't run in the
+ * gyro/PID/motor-output path and doesn't need zero-wait-state fetch. Only
+ * .text moves -- string/const literals the function references still land
+ * in the default .rodata (ITCM), since GCC doesn't retarget those via a
+ * function's section attribute. */
+#define SRAM_CODE           __attribute__((section(".sram_code")))
+
 #include "x32m7xx.h"
 #include "system_x32m7xx.h"
 

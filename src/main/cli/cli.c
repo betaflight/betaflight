@@ -1183,7 +1183,7 @@ static void printRxFailsafe(dumpFlags_t dumpMask, const rxFailsafeChannelConfig_
     }
 }
 
-static void cliRxFailsafe(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliRxFailsafe(const char *cmdName, char *cmdline)
 {
     uint8_t channel;
     char buf[3];
@@ -1307,7 +1307,7 @@ static void printAux(dumpFlags_t dumpMask, const modeActivationCondition_t *mode
     }
 }
 
-static void cliAux(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliAux(const char *cmdName, char *cmdline)
 {
     int i, val = 0;
     const char *ptr;
@@ -1411,7 +1411,7 @@ static void printSerial(dumpFlags_t dumpMask, const serialConfig_t *serialConfig
     }
 }
 
-static void cliSerial(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSerial(const char *cmdName, char *cmdline)
 {
     const char *format = "serial %s %d %ld %ld %ld %ld";
     if (isEmpty(cmdline)) {
@@ -1571,7 +1571,7 @@ static portOptions_e cliParseSerialOptions(const char *tok)
     return options;
 }
 
-static void cliSerialPassthrough(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSerialPassthrough(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -1836,7 +1836,7 @@ static void printAdjustmentRange(dumpFlags_t dumpMask, const adjustmentRange_t *
     }
 }
 
-static void cliAdjustmentRange(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliAdjustmentRange(const char *cmdName, char *cmdline)
 {
     const char *format = "adjrange %u 0 %u %u %u %u %u %u %u";
     const char *ptr;
@@ -1967,7 +1967,7 @@ static void printMotorMix(dumpFlags_t dumpMask, const motorMixer_t *customMotorM
 }
 #endif // USE_QUAD_MIXER_ONLY
 
-static void cliMotorMix(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMotorMix(const char *cmdName, char *cmdline)
 {
 #ifdef USE_QUAD_MIXER_ONLY
     UNUSED(cmdName);
@@ -2060,7 +2060,7 @@ static void printRxRange(dumpFlags_t dumpMask, const rxChannelRangeConfig_t *cha
     }
 }
 
-static void cliRxRange(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliRxRange(const char *cmdName, char *cmdline)
 {
     const char *format = "rxrange %u %u %u";
     int i, validArgumentCount = 0;
@@ -2131,7 +2131,7 @@ static void printLed(dumpFlags_t dumpMask, const ledConfig_t *ledConfigs, const 
     }
 }
 
-static void cliLed(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliLed(const char *cmdName, char *cmdline)
 {
     const char *format = "led %u %s";
     char ledConfigBuffer[20];
@@ -2176,7 +2176,7 @@ static void printColor(dumpFlags_t dumpMask, const hsvColor_t *colors, const hsv
     }
 }
 
-static void cliColor(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliColor(const char *cmdName, char *cmdline)
 {
     const char *format = "color %u %d,%u,%u";
     if (isEmpty(cmdline)) {
@@ -2241,7 +2241,7 @@ static void printModeColor(dumpFlags_t dumpMask, const ledStripStatusModeConfig_
     cliDumpPrintLinef(dumpMask, equalsDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
-static void cliModeColor(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliModeColor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         printModeColor(DUMP_MASTER, ledStripStatusModeConfig(), NULL, NULL);
@@ -2331,7 +2331,7 @@ static void printServo(dumpFlags_t dumpMask, const servoParam_t *servoParams, co
     }
 }
 
-static void cliServo(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliServo(const char *cmdName, char *cmdline)
 {
     const char *format = "servo %u %d %d %d %d %d";
     enum { SERVO_ARGUMENT_COUNT = 6 };
@@ -2456,7 +2456,7 @@ static void printServoMix(dumpFlags_t dumpMask, const servoMixer_t *customServoM
     }
 }
 
-static void cliServoMix(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliServoMix(const char *cmdName, char *cmdline)
 {
     int args[8], check = 0;
     int len = strlen(cmdline);
@@ -2775,7 +2775,7 @@ static void printWaypoint(dumpFlags_t dumpMask, const flightPlanConfig_t *flight
     }
 }
 
-static void cliWaypoint(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliWaypoint(const char *cmdName, char *cmdline)
 {
     flightPlanConfig_t *config = flightPlanConfigMutable();
 
@@ -3106,7 +3106,7 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
     }
 }
 
-static void cliSdInfo(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSdInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3175,7 +3175,7 @@ static void cliSdInfo(const char *cmdName, char *cmdline)
 #endif
 
 #ifdef USE_FLASH_CHIP
-static void cliFlashInfo(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFlashInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3208,7 +3208,7 @@ static void cliFlashInfo(const char *cmdName, char *cmdline)
 #endif // USE_FLASH_CHIP
 
 #if defined(USE_FLASHFS) && defined(USE_FLASH_CHIP)
-static void cliFlashErase(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFlashErase(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3246,7 +3246,7 @@ static void cliFlashErase(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_FLASH_TOOLS
-static void cliFlashVerify(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFlashVerify(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -3258,7 +3258,7 @@ static void cliFlashVerify(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliFlashWrite(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFlashWrite(const char *cmdName, char *cmdline)
 {
     const uint32_t address = atoi(cmdline);
     char *text = strchr(cmdline, ' ');
@@ -3275,7 +3275,7 @@ static void cliFlashWrite(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliFlashRead(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFlashRead(const char *cmdName, char *cmdline)
 {
     uint32_t address = atoi(cmdline);
 
@@ -3345,7 +3345,7 @@ static void printVtx(dumpFlags_t dumpMask, const vtxConfig_t *vtxConfig, const v
     }
 }
 
-static void cliVtx(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliVtx(const char *cmdName, char *cmdline)
 {
     const char *format = "vtx %u %u %u %u %u %u %u";
     const char *ptr;
@@ -3590,7 +3590,7 @@ static void printVtxTable(dumpFlags_t dumpMask, const vtxTableConfig_t *currentC
     headingStr = printVtxTablePowerLabels(dumpMask, currentConfig, defaultConfig, headingStr);
 }
 
-static void cliVtxTable(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliVtxTable(const char *cmdName, char *cmdline)
 {
     char *tok;
     char *saveptr;
@@ -3790,7 +3790,7 @@ static void cliVtxTable(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliVtxInfo(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliVtxInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -3822,7 +3822,7 @@ static void applySimplifiedTuningAllProfiles(void)
     }
 }
 
-static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSimplifiedTuning(const char *cmdName, char *cmdline)
 {
     if (strcasecmp(cmdline, "apply") == 0) {
         applySimplifiedTuningAllProfiles();
@@ -3855,7 +3855,7 @@ static void printBoardName(dumpFlags_t dumpMask)
     }
 }
 
-static void cliBoardName(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBoardName(const char *cmdName, char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     const char *boardName = getBoardName();
@@ -3878,7 +3878,7 @@ static void printManufacturerId(dumpFlags_t dumpMask)
     }
 }
 
-static void cliManufacturerId(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliManufacturerId(const char *cmdName, char *cmdline)
 {
     const unsigned int len = strlen(cmdline);
     const char *manufacturerId = getManufacturerId();
@@ -3902,7 +3902,7 @@ static void writeSignature(char *signatureStr, const uint8_t *signature)
     }
 }
 
-static void cliSignature(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSignature(const char *cmdName, char *cmdline)
 {
     const int len = strlen(cmdline);
 
@@ -3956,7 +3956,7 @@ static void cliSignature(const char *cmdName, char *cmdline)
 
 #endif // USE_BOARD_INFO
 
-static void cliMcuId(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMcuId(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -3965,7 +3965,7 @@ static void cliMcuId(const char *cmdName, char *cmdline)
 }
 
 #if ENABLE_LCD_CONSOLE
-static void cliLcd(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliLcd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4046,7 +4046,7 @@ static void printFeatureList(const char* header, uint32_t mask, const char* deli
     }
 }
 
-static void cliFeature(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliFeature(const char *cmdName, char *cmdline)
 {
     uint32_t len = strlen(cmdline);
     const uint32_t mask = featureConfig()->enabledFeatures;
@@ -4175,20 +4175,20 @@ static void processBeeperCommand(const char *cmdName, char *cmdline, uint32_t *o
 }
 
 #if defined(USE_DSHOT)
-static void cliBeacon(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBeacon(const char *cmdName, char *cmdline)
 {
     processBeeperCommand(cmdName, cmdline, &(beeperConfigMutable()->dshotBeaconOffFlags), DSHOT_BEACON_ALLOWED_MODES);
 }
 #endif
 
-static void cliBeeper(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBeeper(const char *cmdName, char *cmdline)
 {
     processBeeperCommand(cmdName, cmdline, &(beeperConfigMutable()->beeper_off_flags), BEEPER_ALLOWED_MODES);
 }
 #endif
 
 #if defined(USE_RX_BIND)
-static void cliRxBind(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliRxBind(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
     if (!startRxBind()) {
@@ -4225,7 +4225,7 @@ static void printMap(dumpFlags_t dumpMask, const rxConfig_t *rxConfig, const rxC
     cliDumpPrintLinef(dumpMask, equalsDefault, formatMap, buf);
 }
 
-static void cliMap(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMap(const char *cmdName, char *cmdline)
 {
     uint32_t i;
     char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
@@ -4302,7 +4302,7 @@ static void cliReboot(void)
     cliRebootEx(REBOOT_TARGET_FIRMWARE);
 }
 
-static void cliBootloader(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBootloader(const char *cmdName, char *cmdline)
 {
     rebootTarget_e rebootTarget;
     if (
@@ -4328,7 +4328,7 @@ static void cliBootloader(const char *cmdName, char *cmdline)
     cliRebootEx(rebootTarget);
 }
 
-static void cliExitCmd(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliExitCmd(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
 
@@ -4342,7 +4342,7 @@ static void cliExitCmd(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_GPS
-static void cliGpsPassthrough(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliGpsPassthrough(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4378,7 +4378,7 @@ static void cliPrintGyroRegisters(uint8_t whichSensor)
     }
 }
 
-static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDumpGyroRegisters(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -4597,7 +4597,7 @@ static void executeEscInfoCommand(const char *cmdName, uint8_t escIndex)
 }
 #endif // USE_ESC_SENSOR && USE_ESC_SENSOR_INFO
 
-static void cliDshotProg(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDshotProg(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline) || !isMotorProtocolDshot()) {
         cliShowParseError(cmdName);
@@ -4668,7 +4668,7 @@ static void cliDshotProg(const char *cmdName, char *cmdline)
 #endif // USE_DSHOT
 
 #ifdef USE_ESCSERIAL
-static void cliEscPassthrough(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliEscPassthrough(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -4724,7 +4724,7 @@ static void cliEscPassthrough(const char *cmdName, char *cmdline)
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
-static void cliMixer(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMixer(const char *cmdName, char *cmdline)
 {
     int len;
 
@@ -4759,7 +4759,7 @@ static void cliMixer(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliMotor(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMotor(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliShowInvalidArgumentCountError(cmdName);
@@ -4815,7 +4815,7 @@ static void cliMotor(const char *cmdName, char *cmdline)
 }
 
 #ifndef MINIMAL_CLI
-static void cliPlaySound(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliPlaySound(const char *cmdName, char *cmdline)
 {
     int i;
     const char *name;
@@ -4849,7 +4849,7 @@ static void cliPlaySound(const char *cmdName, char *cmdline)
 }
 #endif
 
-static void cliProfile(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("profile %d", getPidProfileIndexToUse());
@@ -4865,7 +4865,7 @@ static void cliProfile(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliRateProfile(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliRateProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("rateprofile %d", getRateProfileIndexToUse());
@@ -4920,7 +4920,7 @@ static void cliDumpRateProfile(const char *cmdName, uint8_t rateProfileIndex, du
 }
 
 // Prints or switches the active battery profile.
-static void cliBatteryProfile(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBatteryProfile(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         cliPrintLinef("battery_profile %d", getBatteryProfileIndexToUse());
@@ -4970,7 +4970,7 @@ static void resetCommandBatch(void)
     commandBatchError = false;
 }
 
-static void cliBatch(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliBatch(const char *cmdName, char *cmdline)
 {
     if (strncasecmp(cmdline, "start", 5) == 0) {
         if (!commandBatchActive) {
@@ -5032,7 +5032,7 @@ static bool tryPrepareSave(const char *cmdName)
     return true;
 }
 
-static void cliSave(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSave(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdline);
 
@@ -5047,7 +5047,7 @@ static void cliSave(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliDefaults(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDefaults(const char *cmdName, char *cmdline)
 {
     bool saveConfigs = true;
     uint16_t parameterGroupId = 0;
@@ -5481,7 +5481,7 @@ STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 }
 
 #if defined(USE_SENSOR_NAMES)
-static void cliSensorHardware(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliSensorHardware(const char *cmdName, char *cmdline)
 {
     if (isEmpty(cmdline)) {
         // List all sensor types and their supported hardware
@@ -5975,7 +5975,7 @@ bool cliSetSettingByName(const char *cmdline)
     return true;
 }
 
-static void cliStatus(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliStatus(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6264,7 +6264,7 @@ static void cliStatus(const char *cmdName, char *cmdline)
     cliPrintLinefeed();
 }
 
-static void cliTasks(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliTasks(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6363,7 +6363,7 @@ static void printVersion(bool printBoardInfo)
 #endif
 }
 
-static void cliOptions(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliOptions(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6375,7 +6375,7 @@ static void cliOptions(const char *cmdName, char *cmdline)
     }
 }
 
-static void cliVersion(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliVersion(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -6387,7 +6387,7 @@ static void cliVersion(const char *cmdName, char *cmdline)
 // `dxr <hex-addr> [count]` — read `count` 32-bit words from `<hex-addr>`.
 // Defaults to 1 word, capped at 64. Address is forced to 4-byte alignment.
 // No fault protection: hand it valid peripheral or SRAM addresses only.
-static void cliMemRead(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMemRead(const char *cmdName, char *cmdline)
 {
     char *p = skipSpace(cmdline);
     if (!*p) {
@@ -6426,7 +6426,7 @@ static void cliMemRead(const char *cmdName, char *cmdline)
 // back. Reports both the written and observed values so the caller can
 // see writes that were silently dropped (e.g. RIFSC after the boot ROM
 // finishes its handoff).
-static void cliMemWrite(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMemWrite(const char *cmdName, char *cmdline)
 {
     char *p = skipSpace(cmdline);
     if (!*p) {
@@ -6458,7 +6458,7 @@ static void cliMemWrite(const char *cmdName, char *cmdline)
 }
 #endif // ENABLE_DEBUG_CLI_COMMANDS
 
-static void cliEnv(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliEnv(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
 
@@ -6645,7 +6645,7 @@ static void cliEnv(const char *cmdName, char *cmdline)
 }
 
 #ifdef USE_RC_SMOOTHING_FILTER
-static void cliRcSmoothing(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliRcSmoothing(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -7292,7 +7292,7 @@ static void printDmaopt(dumpFlags_t dumpMask, const char *headingStr)
 #endif
 }
 
-static void cliDmaopt(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
     char *saveptr;
@@ -7626,7 +7626,7 @@ static void showTimers(void)
     }
 }
 
-static void cliTimer(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliTimer(const char *cmdName, char *cmdline)
 {
     int len = strlen(cmdline);
 
@@ -7754,7 +7754,7 @@ static void cliTimer(const char *cmdName, char *cmdline)
 #endif
 
 #if defined(USE_RESOURCE_MGMT)
-static void cliResource(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliResource(const char *cmdName, char *cmdline)
 {
     char *pch = NULL;
     char *saveptr;
@@ -7872,7 +7872,7 @@ static void cliResource(const char *cmdName, char *cmdline)
 
 #ifdef USE_DSHOT_TELEMETRY
 
-static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDshotTelemetryInfo(const char *cmdName, char *cmdline)
 {
     UNUSED(cmdName);
     UNUSED(cmdline);
@@ -8172,18 +8172,18 @@ static void printConfig(const char *cmdName, char *cmdline, bool doDiff)
     restoreConfigs(0);
 }
 
-static void cliDump(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDump(const char *cmdName, char *cmdline)
 {
     printConfig(cmdName, cmdline, false);
 }
 
-static void cliDiff(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliDiff(const char *cmdName, char *cmdline)
 {
     printConfig(cmdName, cmdline, true);
 }
 
 #if defined(USE_USB_MSC)
-static void cliMsc(const char *cmdName, char *cmdline)
+SRAM_CODE static void cliMsc(const char *cmdName, char *cmdline)
 {
     if (mscCheckFilesystemReady()) {
 #ifdef USE_RTC_TIME
