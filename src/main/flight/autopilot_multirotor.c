@@ -709,26 +709,26 @@ bool positionControl(void)
         } else {
             // in Position Hold Mode
 #ifdef USE_FEEDFORWARD
-            tgtVelAcceleration = targetAcceleration.v[axis]; // use smoothed feedforward like in acro
+            tgtVelAcceleration = targetAcceleration.v[axis]; // from sticks using setpoint feedforward like in acro
 #endif
             if (ap.sticksActive) {
-                //  velocity target is set according to setpoint
+                // position hold with sticks active - velocity target according to setpoint
                 shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value
                 distanceError.v[axis] += velocityError.v[axis] * dt; // virtual distance error like velocityMode
             } else {
+                // position hold but sticks not active
                 distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
                 if (ap.isPosHoldBraking) {
                     dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.0005f; // stronger D when stopping from high velocity, doubled at 20m/s
                 }
             }
-            //these things happen in all modes
-            distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-            if (shouldIntegrateDistanceError) {
-                distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
-                distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-            }
         }
-
+        //these things happen in all modes
+         distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
+        if (shouldIntegrateDistanceError) {
+                distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
+        }
+        distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
         pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
         pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
         pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
