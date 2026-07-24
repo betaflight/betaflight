@@ -1,5 +1,3 @@
-TARGET_MCU_FAMILY := RP2350
-
 # Default flash size (for Betaflight checks), can override in config.mk by setting TARGET_FLASH_SIZE
 MCU_FLASH_SIZE  = 8192
 
