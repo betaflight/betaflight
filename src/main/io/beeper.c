@@ -430,7 +430,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     if (!areMotorsRunning()) {
         const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
-        const bool usbIn = usbCableIsInserted();
+        const bool usbIn = usbCableIsActive();
 
         // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
         if (activeMode == BEEPER_RX_LOST

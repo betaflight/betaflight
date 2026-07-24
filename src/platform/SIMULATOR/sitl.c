@@ -784,6 +784,11 @@ bool usbCableIsInserted(void)
     return false;
 }
 
+bool usbCableIsActive(void)
+{
+    return false;
+}
+
 const mcuTypeInfo_t *getMcuTypeInfo(void)
 {
     static const mcuTypeInfo_t info = { .id = MCU_TYPE_SIMULATOR, .name = "SIMULATOR" };
