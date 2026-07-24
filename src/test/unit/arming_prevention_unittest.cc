@@ -1198,6 +1198,11 @@ void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, 
         UNUSED(axis);
         return 0.0f;
     }
+    float getMaxRcRate(int axis)
+{
+    UNUSED(axis);
+    return 720.0f;
+}
 
     float getGpsCosLat(void) { return 1.0f; }
 }
