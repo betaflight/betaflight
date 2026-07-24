@@ -801,7 +801,7 @@ bool positionControl(void)
 
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         float dTermBrakingBoost = 1.0f;
-        const float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
+        float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
         previousTargetVelocity.v[axis] = targetVelocity.v[axis];
         bool shouldIntegrateDistanceError = true;
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
