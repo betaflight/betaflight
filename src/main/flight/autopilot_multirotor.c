@@ -737,9 +737,9 @@ bool positionControl(void)
         pidA.v[axis] = acceleration * xyPid.Ka;
         pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + tgtVelAcceleration * xyPid.Kf;
         // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
-        const float noisyPids = pidP.v[axis] + pidA.v[axis] + pidD.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
+        const float noisyPids = pidP.v[axis] + pidA.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
         float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
-        pidSumVectorEF.v[axis] = pidI.v[axis] + noisyPidsFiltered;
+        pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
     previousTargetVelocity = targetVelocity;
 
