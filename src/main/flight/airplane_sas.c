@@ -257,7 +257,7 @@ static float FAST_CODE_NOINLINE computePower(float speedRelation, uint8_t power)
     case 10:
         return speedRelation;
     case 5:
-        return fsqrt(speedRelation);
+        return sqrtf(speedRelation);
     case 30:
         return speedRelation * speedRelation * speedRelation;
     default:
