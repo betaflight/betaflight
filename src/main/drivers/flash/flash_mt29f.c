@@ -150,7 +150,7 @@ struct {
     { 0x2C14, 1024, 64, 2048, false }, // 1Gb, 3.3V version - tested
 	// Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m79a-2gb-nand-spi-auto.pdf
     { 0x2C24, 2048, 64, 2048, true }, // 2Gb, 3.3V version - tested   // from m79a-2gb-nand-spi-auto.pdf and m78a-1gb-3v-nand-spi.pdf datasheets
-    { 0x2C36, 3096, 64, 2048, true }, // 3Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
+    { 0x2C36, 3072, 64, 2048, true }, // 3Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
     { 0x2C46, 4096, 64, 2048, true }, // 4Gb, 3.3V version - untested // from m78a-1gb-3v-nand-spi.pdf datasheet only
     // Micron MT29F4G01ABAFDWB-IT:F
     // Datasheet: https://www.micron.com/content/dam/micron/global/secure/products/data-sheet/nand-flash/70-series/m70a-4gb-3v-nand-spi.pdf
