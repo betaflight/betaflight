@@ -21,11 +21,11 @@
 #pragma once
 
 #ifndef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "G473"
+#define TARGET_BOARD_IDENTIFIER "G474"
 #endif
 
 #ifndef USBD_PRODUCT_STRING
-#define USBD_PRODUCT_STRING     "Betaflight - STM32G473"
+#define USBD_PRODUCT_STRING     "Betaflight - STM32G474"
 #endif
 
 #define USE_I2C_DEVICE_1
