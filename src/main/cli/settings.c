@@ -2015,9 +2015,6 @@ const clivalue_t valueTable[] = {
 
     // Velocity-based position control with drag compensation
     { PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityControlEnable) },
-    { PARAM_NAME_AP_VELOCITY_P,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityP) },
-    { PARAM_NAME_AP_VELOCITY_I,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityI) },
-    { PARAM_NAME_AP_VELOCITY_D,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityD) },
     { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
     { PARAM_NAME_AP_MAX_VELOCITY,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, maxVelocity) },
 

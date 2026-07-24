@@ -179,9 +179,6 @@
 
 // Velocity-based position control with drag compensation
 #define PARAM_NAME_AP_VELOCITY_CONTROL_ENABLE "ap_velocity_control_enable"
-#define PARAM_NAME_AP_VELOCITY_P "ap_velocity_p"
-#define PARAM_NAME_AP_VELOCITY_I "ap_velocity_i"
-#define PARAM_NAME_AP_VELOCITY_D "ap_velocity_d"
 #define PARAM_NAME_AP_VELOCITY_DRAG_COEFF "ap_velocity_drag_coeff"
 #define PARAM_NAME_AP_MAX_VELOCITY "ap_max_velocity"
 
