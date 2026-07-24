@@ -151,7 +151,6 @@ static float setpointVelocityGainPitch;  // to set max velocity at full stick
 static float setpointVelocityGainRoll;
 
 static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT];
-
 static bool isPositionHeld;
 static bool wasPositionHeld = false;
 static bool wasNavActive = false;
@@ -420,17 +419,12 @@ void positionControlReanchor(void)
 static void initNavMode(void)
 {
     initPidLpfs();
-    resetDistanceError();
     resetDistanceErrorIntegral();
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
     targetAcceleration.v[EF_EAST]  = 0.0f;
     targetAcceleration.v[EF_NORTH] = 0.0f;
     resetDistanceError();
-    previousTargetVelocity.v[EF_EAST]  = 0.0f;
-    previousTargetVelocity.v[EF_NORTH] = 0.0f;
-    targetAcceleration.v[EF_EAST]  = 0.0f;
-    targetAcceleration.v[EF_NORTH] = 0.0f;
     ap.isPosHoldBraking = false;
 }
 
