@@ -803,61 +803,7 @@ bool positionControl(void)
     const bool velocityMode = ap.navActive && autopilotConfig()->velocityControlEnable;
 
 
-    for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
-        float dTermBrakingBoost = 1.0f;
-        const float targetVelDelta = (targetVelocity.v[axis] - previousTargetVelocity.v[axis]) * POSHOLD_TASK_RATE_HZ; //cm/s per second
-        previousTargetVelocity.v[axis] = targetVelocity.v[axis];
-        bool shouldIntegrateDistanceError = true;
-        velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
-        const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
-        if (ap.derivativeStale) {
-            // frozen-output fixes were skipped: no delta across the window,
-            // so resumption cannot spike A against second-old velocity
-        previousVelocity.v[axis] =  velocity.v[axis];
-        }
-
-        if (velocityMode) {
-            // Nav velocity loop: track the commanded ground velocity directly.
-            distanceErrorIntegral.v[axis] = 0.0f; // force distance error integral to zero
-            shouldIntegrateDistanceError = false; // do not allow second integral accumulation
-            if (fabsf(velocityError.v[axis]) < XY_VELOCITY_I_RELAX_CMS
-                && (!wasAngleSaturated || (velocityError.v[axis] * distanceError.v[axis]) < 0.0f)) {
-                distanceError.v[axis] += velocityError.v[axis] * dt; // make a virtual distance error from integral of velocityError
-            }
-        } else {
-            // in Position Hold Mode
-#ifdef USE_FEEDFORWARD
-            targetVelDelta = targetAcceleration.v[axis]; // from sticks using setpoint feedforward like in acro
-#endif
-            if (ap.sticksActive) {
-                // position hold with sticks active - velocity target according to setpoint
-                shouldIntegrateDistanceError = false; // avoid iTerm windup, but retain current value
-                distanceError.v[axis] += velocityError.v[axis] * dt; // virtual distance error like velocityMode
-            } else {
-                // position hold but sticks not active
-                distanceError.v[axis] = targetPosition.v[axis] - currentPosition.v[axis];
-                if (ap.isPosHoldBraking) {
-                    dTermBrakingBoost = 1.0f + fabsf(velocity.v[axis]) * 0.0005f; // stronger D when stopping from high velocity, doubled at 20m/s
-                }
-            }
-        }
-distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT, ERROR_DISTANCE_LIMIT);
-        if (shouldIntegrateDistanceError) {
-                distanceErrorIntegral.v[axis] += distanceError.v[axis] * dt;
-        }
-        distanceErrorIntegral.v[axis] = constrainf(distanceErrorIntegral.v[axis], -POSITION_I_LIMIT, POSITION_I_LIMIT);
-        pidP.v[axis] = distanceError.v[axis] * xyPid.Kp; // P factor from distance error, real or virtual
-        pidI.v[axis] = distanceErrorIntegral.v[axis] * xyPid.Ki; // integral of distance error, forced to zero when there is no hard position source
-        pidD.v[axis] = -velocity.v[axis] * xyPid.Kd * dTermBrakingBoost; // damping on measured velocity
-        pidD.v[axis] += velocity.v[axis] *xyKDrag; // drag compensation reduces damping at higher speed
-        pidA.v[axis] = acceleration * xyPid.Ka;
-        pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + targetVelDelta * xyPid.Kf;
-        // in F, we use Kd on the constant target velocity component to balance D when craft is at target velocity; using D on the delta provides tunable acceleration deceleration responsiveness
-        const float noisyPids = pidP.v[axis] + pidA.v[axis] + pidF.v[axis]; // these get double PT2 for integration and smoothing
-        float noisyPidsFiltered = pt3FilterApply(&posNoisyPidsLpf[axis], noisyPids);
-        pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
-    }   // End for loop
-
+<<<
     // Rotation from Earth Frame to Body Frame
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     vector2_t headingV;
