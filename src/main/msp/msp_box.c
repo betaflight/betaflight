@@ -298,6 +298,10 @@ void initActiveBoxIds(void)
     }
 #endif
 
+#if defined(USE_BRUSHED_FLIPOVERAFTERCRASH) && defined(BRUSHED_REVERSE_PIN)
+    BME(BOXCRASHFLIP);
+#endif
+
     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);
     }
