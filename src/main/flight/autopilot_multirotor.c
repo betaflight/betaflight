@@ -135,6 +135,8 @@ static vector2_t posHoldStartPosition;
 static vector2_t distanceError;          // deviation from intended position
 static vector2_t distanceErrorIntegral;  // integral of position error
 static vector2_t previousVelocity;       // for acceleration
+static float setpointVelocityGainPitch;  // to set max velocity at full stick
+static float setpointVelocityGainRoll;
 
 static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT];
 static pt2Filter_t posPidSumLpf[EF_AXIS_COUNT];
@@ -191,7 +193,8 @@ void autopilotInit(void)
 {
     const autopilotConfig_t *cfg = autopilotConfig();
     initPidLpfs();
-
+    setpointVelocityGainRoll = cfg->maxVelocity / getMaxRcRate(ROLL);
+    setpointVelocityGainPitch = cfg->maxVelocity / getMaxRcRate(PITCH);
     ap.maxAngle = cfg->maxAngle;
     ap.debugAxis = (gyroConfig()->gyro_filter_debug_axis == FD_PITCH) ? 1 : 0; // 1 for Pitch / North, 0 for Roll / East
 
@@ -430,16 +433,16 @@ void handlepositionControlFailure(void)
 
 void sticksSetTargetVelocity(void)
 {
-    const float stickPitch = getSetpointRate(PITCH);
-    const float stickRoll  = getSetpointRate(ROLL);
+    const float stickPitch = getSetpointRate(PITCH) * setpointVelocityGainPitch;
+    const float stickRoll  = getSetpointRate(ROLL) * setpointVelocityGainRoll;
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cosf(headingRad);
     const float sinYaw = sinf(headingRad);
     targetVelocity.v[EF_NORTH] = (stickPitch * cosYaw) - (stickRoll * sinYaw);
     targetVelocity.v[EF_EAST]  = (stickPitch * sinYaw) + (stickRoll * cosYaw);
 #ifdef USE_FEEDFORWARD
-    const float stickFFPitch = getFeedforward(PITCH);
-    const float stickFFRoll  = getFeedforward(ROLL);
+    const float stickFFPitch = getFeedforward(PITCH) * setpointVelocityGainPitch;
+    const float stickFFRoll  = getFeedforward(ROLL) * setpointVelocityGainRoll;
     targetAcceleration.v[EF_NORTH] = (stickFFPitch * cosYaw) - (stickFFRoll * sinYaw);
     targetAcceleration.v[EF_EAST]  = (stickFFPitch * sinYaw) + (stickFFRoll * cosYaw);
 #endif
