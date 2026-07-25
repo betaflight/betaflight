@@ -1141,6 +1141,13 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
 static void osdElementFlymode(osdElementParms_t *element)
 {
     // Note that flight mode display has precedence in what to display, FS first, ACRO last
+#if ENABLE_RESCUE_PLAN
+    // GPS rescue flown as an autopilot mission still annunciates as RESC, in
+    // preference to the generic failsafe indication, so the pilot sees a rescue.
+    if (flightPlanNavIsRescuePlanActive()) {
+        strcpy(element->buff, "RESC");
+    } else
+#endif
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
         strcpy(element->buff, "!FS!");
     } else if (FLIGHT_MODE(GPS_RESCUE_MODE)) {
