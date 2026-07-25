@@ -271,14 +271,29 @@ static void FAST_CODE_NOINLINE psasComputeAirspeedGains(const pidProfile_t *pidP
         return;
     }
 
+    // Use Acro mode TPA hyperbolic curves for PSAS
+    if (pidProfile->psas_speed_curve_mode == SPEED_CURVE_MODE_TPA) {
+        for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            float tpaCurve = getTpaFactor(pidProfile, axis, TERM_D);
+            if (pidProfile->psas_speed_main_curve_enable[axis]) {
+                psasRuntime.speed_gains.main[axis] = tpaCurve;
+            }
+            if (pidProfile->psas_speed_stick_curve_enable[axis]) {
+                psasRuntime.speed_gains.stick[axis] = tpaCurve;
+            }
+        }
+        return;
+    }
+
+    // Compute PSAS hyperbolic curves
     float speed;
-    if (pidProfile->psas_speed_use_gps) {
+    if (pidProfile->psas_speed_curve_mode == SPEED_CURVE_MODE_GPS) { // Use GPS speed for PSAS curves
         if (STATE(GPS_FIX) && gpsSol.numSat > GPS_MIN_SAT_COUNT) {
             speed = 0.01f * gpsSol.speed3d;
         } else {
             speed = pidProfile->psas_speed_optimum_vref;
         }
-    } else {
+    } else { // SPEED_CURVE_MODE_AIRSPEED - Use TPA airspeed estimation for PSAS curves
 #ifdef USE_WING
         speed = pidRuntime.tpaSpeed.speed;
 #else

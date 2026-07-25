@@ -187,6 +187,12 @@ typedef enum {
     YAW_TYPE_DIFF_THRUST,
 } yawType_e;
 
+typedef enum psasSpeedCurveMode_e {
+    SPEED_CURVE_MODE_TPA,      // Use just Acro mode TPA hyperbolic curves
+    SPEED_CURVE_MODE_AIRSPEED, // Use PSAS hyperbolic curves with TPA airspeed estimation
+    SPEED_CURVE_MODE_GPS,      // Use PSAS hyperbolic curves with GPS speed
+} psasSpeedCurveMode_t;
+
 #define MAX_PROFILE_NAME_LENGTH 8u
 
 typedef struct pidProfile_s {
@@ -354,14 +360,14 @@ typedef struct pidProfile_s {
     uint8_t psas_roll_to_yaw_link;              // The maximal yaw control value to support roll rotation, % *0.1
     uint8_t psas_speed_main_curve_enable[XYZ_AXIS_COUNT]; // Enable speed curves for the damping and stability gains
     uint8_t psas_speed_stick_curve_enable[XYZ_AXIS_COUNT]; // Enable speed curves for the stick gains
-    uint8_t psas_speed_optimum_vref;            // Reference speed value which has optimal plane settins m/s 
+    uint8_t psas_speed_optimum_vref;            // Reference speed value which has optimal plane settins m/s
     uint8_t psas_speed_main_curve_power;        // Speed gain curves power for damping, stability, pitch and yaw sticks *0.1
     uint8_t psas_speed_roll_stick_curve_power;  // Speed gain curves power for roll stick *0.1
     uint16_t psas_speed_main_curve_min;         // Speed gain minimum for damping and stability *0.01
     uint16_t psas_speed_main_curve_max;         // Speed gain maximum for damping and stability *0.01
     uint16_t psas_speed_stick_curve_min;        // Speed gain minimum for sticks *0.01
     uint16_t psas_speed_stick_curve_max;        // Speed gain maximum for sticks *0.01
-    uint8_t psas_speed_use_gps;                 // Use GPS speed for PSAS curves in non wind condition
+    uint8_t psas_speed_curve_mode;             // Speed curves mode (psasSpeedCurveMode_e enum values)
 #endif
 } pidProfile_t;
 
@@ -616,3 +622,5 @@ float dynLpfCutoffFreq(float throttle, uint16_t dynLpfMin, uint16_t dynLpfMax, u
 #ifdef USE_CHIRP
 bool  pidChirpIsFinished();
 #endif
+
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term);

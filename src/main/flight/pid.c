@@ -315,7 +315,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .psas_speed_main_curve_max = 200,      // Speed gain maximum for damping and stability *0.01
         .psas_speed_stick_curve_min = 50,      // Speed gain minimum for sticks *0.01
         .psas_speed_stick_curve_max = 200,     // Speed gain maximum for sticks *0.01
-        .psas_speed_use_gps = 0                // Use GPS speed for PSAS curves in non wind condition
+        .psas_speed_curve_mode = SPEED_CURVE_MODE_TPA // Use just Acro mode TPA hyperbolic curves
 #endif
     );
 }
@@ -1009,7 +1009,7 @@ static FAST_CODE_NOINLINE float applyLaunchControl(int axis, const rollAndPitchT
 }
 #endif
 
-static float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
+float getTpaFactor(const pidProfile_t *pidProfile, int axis, term_e term)
 {
     float tpaFactor = pidRuntime.tpaFactor;
 

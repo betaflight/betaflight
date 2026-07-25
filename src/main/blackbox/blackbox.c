@@ -2103,7 +2103,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_PITCH_MAIN_ENABLE, "%d", currentPidProfile->psas_speed_main_curve_enable[1]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_YAW_STICK_ENABLE, "%d", currentPidProfile->psas_speed_stick_curve_enable[2]);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_YAW_MAIN_ENABLE, "%d", currentPidProfile->psas_speed_main_curve_enable[2]);
-        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_USE_GPS, "%d", currentPidProfile->psas_speed_use_gps);
+        BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_CURVE_MODE, "%d", currentPidProfile->psas_speed_curve_mode);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_OPTIMUM_VREF, "%d", currentPidProfile->psas_speed_optimum_vref);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_MAIN_CURVE_POWER, "%d", currentPidProfile->psas_speed_main_curve_power);
         BLACKBOX_PRINT_HEADER_LINE(PARAM_NAME_PSAS_SPEED_ROLL_STICK_CURVE_POWER, "%d", currentPidProfile->psas_speed_roll_stick_curve_power);

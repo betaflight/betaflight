@@ -580,6 +580,12 @@ static const char * const lookupTableTransponderProvider[] = {
 };
 #endif
 
+#ifdef USE_AIRPLANE_SAS
+static const char * const lookupTablePsasSpeedCurveMode[] = {
+    "TPA", "AIRSPEED", "GPS"
+};
+#endif
+
 #define LOOKUP_TABLE_ENTRY(name) { name, ARRAYLEN(name) }
 
 const lookupTableEntry_t lookupTables[] = {
@@ -725,6 +731,9 @@ const lookupTableEntry_t lookupTables[] = {
 #endif // USE_WING
 #ifdef USE_TRANSPONDER
     LOOKUP_TABLE_ENTRY(lookupTableTransponderProvider),
+#endif
+#ifdef USE_AIRPLANE_SAS
+    LOOKUP_TABLE_ENTRY(lookupTablePsasSpeedCurveMode),
 #endif
 };
 
@@ -1450,7 +1459,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_main_curve_max) },
     { PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 10, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_stick_curve_min) },
     { PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX, VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { 100, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_stick_curve_max) },
-    { PARAM_NAME_PSAS_SPEED_USE_GPS, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_use_gps) },
+    { PARAM_NAME_PSAS_SPEED_CURVE_MODE, VAR_UINT8 | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PSAS_SPEED_CURVE_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, psas_speed_curve_mode) },
 #endif
 // PG_TELEMETRY_CONFIG
 #ifdef USE_TELEMETRY

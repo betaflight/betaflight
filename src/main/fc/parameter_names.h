@@ -369,7 +369,7 @@
 #define PARAM_NAME_PSAS_SPEED_MAIN_CURVE_MAX "psas_speed_main_curve_max"
 #define PARAM_NAME_PSAS_SPEED_STICK_CURVE_MIN "psas_speed_stick_curve_min"
 #define PARAM_NAME_PSAS_SPEED_STICK_CURVE_MAX "psas_speed_stick_curve_max"
-#define PARAM_NAME_PSAS_SPEED_USE_GPS "psas_speed_use_gps"
+#define PARAM_NAME_PSAS_SPEED_CURVE_MODE "psas_speed_curve_mode"
 #endif
 
 #ifdef USE_TRANSPONDER
