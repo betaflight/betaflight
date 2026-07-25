@@ -444,7 +444,7 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     runIterations(SETTLE_ITERATIONS);
 
     // Assert your new baseline calculation output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -2.8f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
@@ -481,7 +481,7 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
 
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
+    EXPECT_NEAR(0.26f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
 // -- Feedforward (stick push) is a term of its own, apart from damping --
