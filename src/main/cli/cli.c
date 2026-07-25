@@ -6018,6 +6018,7 @@ static void cliI2cRegs(const char *cmdName, char *cmdline)
     UNUSED(cmdName);
 
     const bool scan = strcasecmp(cmdline, "scan") == 0;
+    const bool padtest = strcasecmp(cmdline, "padtest") == 0;
 
     static const char *clkSrc[] = { "PCLK", "PLL3R", "HSI", "CSI" };
     bool any = false;
@@ -6074,16 +6075,28 @@ static void cliI2cRegs(const char *cmdName, char *cmdline)
             i2cGetFailDiag(device, &r);
         }
 
+        if (padtest) {
+            // Drive the pins as plain GPIO and scope them: a clean square wave
+            // on a bus the peripheral can't clock isolates the fault to the
+            // I2C peripheral / AF path (not the pin, pull-up or wiring).
+            cliPrintLinef("I2C%d: pad toggle - scope SCL then SDA (~50 kHz, ~0.3 s each); reboot to restore", cfgId);
+            cliI2cPrintFailCapture(cfgId, &r);
+            i2cPadToggleTest(device);
+            continue;
+        }
+
         cliI2cPrintFailCapture(cfgId, &r);
     }
     if (!any) {
         cliPrintLine("No configured I2C buses.");
+    } else if (padtest) {
+        cliPrintLine("(pad toggle done - reboot to restore I2C)");
     } else {
         cliPrintLine("(expect: I2C1/2 clkSrc=PCLK, I2C3/4 clkSrc=HSI; busClk=on, PE=yes, TIMINGR!=0, mode=2, af=4, now=HIGH, HSI=rdy)");
         cliPrintLine("(now=LOW while a meter reads high => bus not driven high when i2cInit ran: powered-late rail)");
         cliPrintLine("(last=NACK => bus clocks, target silent; last=TIMEOUT + BUSY/START stuck => peripheral not clocking)");
         if (!scan) {
-            cliPrintLine("(run 'i2c_regs scan' to actively probe every address and refresh the failure capture)");
+            cliPrintLine("(run 'i2c_regs scan' to probe every address, or 'i2c_regs padtest' to scope the pads as GPIO)");
         }
     }
 }
@@ -8470,7 +8483,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("help", "display command help", "[search string]", cliHelp),
 #if defined(STM32H5) && defined(USE_I2C)
-    CLI_COMMAND_DEF("i2c_regs", "dump I2C bus regs + failure capture (H5 bring-up aid)", "[scan]", cliI2cRegs),
+    CLI_COMMAND_DEF("i2c_regs", "dump I2C bus regs + failure capture (H5 bring-up aid)", "[scan|padtest]", cliI2cRegs),
 #endif
 #if ENABLE_LCD_CONSOLE
     CLI_COMMAND_DEF("lcd", "show LCD console grid contents (debug aid)", NULL, cliLcd),

@@ -534,6 +534,53 @@ bool i2cGetDebugRegs(i2cDevice_e device, i2cDebugRegs_t *regs)
 
     return true;
 }
+
+// TEMPORARY (Development Instrumentation) — see bus_i2c.h. Bit-bang SCL then SDA
+// as open-drain GPIO so each pad can be scoped on its own. Open-drain mirrors
+// the I2C drive (low = actively sunk, high = released to the external pull-up),
+// so a clean square wave here proves the pin, pull-up and wiring are all good
+// and localises a dead bus to the I2C peripheral / AF routing.
+void i2cPadToggleTest(i2cDevice_e device)
+{
+    if (device < 0 || device >= I2CDEV_COUNT) {
+        return;
+    }
+    const i2cDevice_t *pDev = &i2cDevice[device];
+    const IO_t scl = pDev->scl;
+    const IO_t sda = pDev->sda;
+    if (!scl || !sda) {
+        return;
+    }
+
+    // Release the pins from the peripheral before driving them by hand.
+    I2C_TypeDef *I2Cx = (I2C_TypeDef *)pDev->reg;
+    if (I2Cx) {
+        LL_I2C_Disable(I2Cx);
+    }
+
+    IOConfigGPIO(scl, IOCFG_OUT_OD);
+    IOConfigGPIO(sda, IOCFG_OUT_OD);
+    IOHi(scl);
+    IOHi(sda);
+    delayMicroseconds(50);
+
+    // ~50 kHz for ~0.3 s per line — a long, countable burst to scope. SCL first
+    // with SDA parked high, then SDA with SCL parked high, so each pad is
+    // unambiguous on the trace.
+    for (int i = 0; i < 15000; i++) {
+        IOLo(scl);
+        delayMicroseconds(10);
+        IOHi(scl);
+        delayMicroseconds(10);
+    }
+    delayMicroseconds(1000);
+    for (int i = 0; i < 15000; i++) {
+        IOLo(sda);
+        delayMicroseconds(10);
+        IOHi(sda);
+        delayMicroseconds(10);
+    }
+}
 #endif
 
 #endif

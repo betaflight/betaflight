@@ -153,4 +153,9 @@ void i2cGetFailDiag(i2cDevice_e device, i2cDebugRegs_t *regs);
 // Zero a bus's failure capture — used by "i2c_regs scan" so the live sweep's
 // result is not confused with the boot-time counts.
 void i2cResetFailDiag(i2cDevice_e device);
+// Drive SCL then SDA as plain open-drain GPIO so the pads can be scoped
+// independently of the I2C peripheral. A clean square wave here on a bus the
+// peripheral cannot clock isolates the fault to the peripheral/AF path rather
+// than the pin, pull-up or wiring. Leaves the pins as GPIO — reboot to restore.
+void i2cPadToggleTest(i2cDevice_e device);
 #endif
