@@ -117,6 +117,7 @@
 #define POSITION_I_LIMIT      2000.0f        // TO DO: test and set to a useful value, this is 20m
 #define XY_VELOCITY_I_RELAX_CMS   250.0f     // in Nav mode only, integrate only near the target speed, so the
                                              // integral cannot wind up during the accel phase
+#define BRAKING_MODE_THRESHOLD 100.0f       // enable braking mode if starting position hold above this speed
 static pidCoefficient_t xyPid;
 static float xyKDrag = 0.0f;
 
@@ -178,6 +179,7 @@ typedef struct autopilotState_s {
     float speedTrendCmS;        // ~0.5 s lowpass of speedXY: reference for "is the craft slowing?"
     bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
+    unsigned brakingTimer;
     bool derivativeStale;       // output was frozen past the fence: re-baseline the A-term on resume
     unsigned debugAxis;
 } autopilotState_t;
@@ -384,9 +386,21 @@ static void resetDistanceErrorIntegral(void)
     distanceErrorIntegral = (vector2_t){{ 0.0f, 0.0f }};
 }
 
+static void setBrakingMode (void)
+{
+    if (ap.speedXY > BRAKING_MODE_THRESHOLD){ // maybe share POSHOLD_VELOCITY_REVERSAL_THRESHOLD ??
+        ap.isPosHoldBraking = true; // arrest entry speed before capturing the hold point, boost dTerm
+        ap.brakingTimer = 0;
+    } else {
+        ap.isPosHoldBraking = false;
+    }
+
+}
+
 void initPositionHold(void)
 {
     updatePositionHoldTarget();
+    setBrakingMode();
     resetDistanceError();
     targetVelocity.v[EF_EAST]  = 0.0f;
     targetVelocity.v[EF_NORTH] = 0.0f;
@@ -394,7 +408,6 @@ void initPositionHold(void)
     targetAcceleration.v[EF_NORTH] = 0.0f;
     previousTargetVelocity.v[EF_EAST]  = 0.0f;
     previousTargetVelocity.v[EF_NORTH] = 0.0f;
-    ap.isPosHoldBraking = true; // arrest any entry speed before capturing the hold point
     // nb: we do not reset the distanceError integral, to hold its opposition to wind between quick stick inputs
 }
 
@@ -619,7 +632,6 @@ bool positionControl(void)
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const timeDelta_t posholdDtUs = getTaskDeltaTimeUs(TASK_SELF);
     const float dt = (posholdDtUs > 0) ? (posholdDtUs * 1e-6f) : HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ);
-    static int brakingTimer = 0;
 
     if (!est->isValidXY) {
         disableYawControl();
@@ -682,7 +694,6 @@ bool positionControl(void)
         // Control mode should be position hold
         if (!isPositionHeld) {
             initPositionHold();
-            brakingTimer = 0;
             ap.sanityCheckDistance = calculateSanityCheckDistance();
             isPositionHeld = true;
         }
@@ -707,26 +718,25 @@ bool positionControl(void)
                 targetPosition = currentPosition; //final update the target location
                 posHoldStartPosition = currentPosition; // in case of a drift after centering the sticks
                 ap.sanityCheckDistance = calculateSanityCheckDistance();
-                ap.isPosHoldBraking = true;
-                brakingTimer = 0;
+                setBrakingMode(); // enter braking mode or not, according to speed
             }
             if (ap.isPosHoldBraking) {
                 targetPosition = currentPosition; // Drag target location every frame while braking to avoid P and I climb
-                brakingTimer += 1; //
-                if (brakingTimer > POSHOLD_TASK_RATE_HZ) { // one second, might be better at 1.5 or 2.0s but this is pretty good
-                    brakingTimer = POSHOLD_TASK_RATE_HZ;
+                ap.brakingTimer += 1; //
+                if (ap.brakingTimer > POSHOLD_TASK_RATE_HZ) { // one second, might be better at 1.5 or 2.0s but this is pretty good
+                    ap.brakingTimer = POSHOLD_TASK_RATE_HZ;
                 }
                 // Braking mode; ends when velocity is below the stop threshold or when the dominant velocity vector reverses sign
                 const float vectorDotProduct = (velocity.v[EF_NORTH] * previousVelocity.v[EF_NORTH]) + 
                                                (velocity.v[EF_EAST]  * previousVelocity.v[EF_EAST]);
                 const bool velocityCrossingZero = vectorDotProduct < -POSHOLD_VELOCITY_REVERSAL_THRESHOLD; // some deadband
                 const bool stopped = (ap.speedXY < (float)autopilotConfig()->stopThreshold);
-                const bool timedOut = brakingTimer >= POSHOLD_TASK_RATE_HZ;
+                const bool timedOut = ap.brakingTimer >= POSHOLD_TASK_RATE_HZ;
                 if (stopped || timedOut || velocityCrossingZero) {
                     targetPosition = currentPosition; //update the final target location
                     posHoldStartPosition = currentPosition; // reset the  start position for sanity checks
-                    brakingTimer = 0;
-                    ap.isPosHoldBraking = false;
+                    ap.isPosHoldBraking = false; // terminate braking mode
+                    ap.brakingTimer = 0;
                 } else {
                     // The fence watches the brake too. Braking suppresses the
                     // settled check below, and a genuine flyaway (a bad-mag
