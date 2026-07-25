@@ -458,6 +458,7 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sanityViolationS = 0.0f;
     ap.violationFreeS = 0.0f;
     ap.sanityRetryUsed = false;
+    ap.derivativeStale = false;
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
     resetDistanceErrorIntegral();
@@ -787,10 +788,11 @@ bool positionControl(void)
                     if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
                         return sanityViolationExpired();
                     }
+                    // FIX THIS
                     // The A-term history is now stale; mark it so the resume
                     // loop re-baselines instead of differentiating across the
                     // frozen window (one spurious spike against old velocity)
-                    ap.derivativeStale = true;
+                    ap.derivativeStale = false;
                     return true; // brief excursion: hold the previous command
                 } else {
                     ap.sanityViolationS = 0.0f;
@@ -816,7 +818,7 @@ bool positionControl(void)
         bool shouldIntegrateDistanceError = true;
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
         const float acceleration = (previousVelocity.v[axis] -  velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
-        if (ap.derivativeStale) {
+        if (!ap.derivativeStale) {
             // frozen-output fixes were skipped: no delta across the window,
             // so resumption cannot spike A against second-old velocity
         previousVelocity.v[axis] =  velocity.v[axis];
@@ -864,7 +866,7 @@ distanceError.v[axis] = constrainf(distanceError.v[axis], -ERROR_DISTANCE_LIMIT,
         pidSumVectorEF.v[axis] = pidI.v[axis] + pidD.v[axis] + noisyPidsFiltered;
     }   // End for loop
     
-    ap.derivativeStale = false;
+    ap.derivativeStale = false; // FIX THIS
 
     bool buildupClamped = false;
     if (velocityMode) {
