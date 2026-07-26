@@ -1235,7 +1235,7 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_AIRPLANE_SAS
-    if (IS_RC_MODE_ACTIVE(BOXAIRPLANESAS)) {
+    if (isFixedWing() && IS_RC_MODE_ACTIVE(BOXAIRPLANESAS)) {
         ENABLE_FLIGHT_MODE(AIRPLANE_SAS_MODE);
     } else {
         DISABLE_FLIGHT_MODE(AIRPLANE_SAS_MODE);

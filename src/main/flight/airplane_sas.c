@@ -81,6 +81,7 @@ static void psasFiltersReset(void)
 void psasInit(const pidProfile_t *pidProfile)
 {
     psasFiltersInit(pidProfile);
+    psasRuntime.speed_gains.isEnabled = false;
     for (uint8_t axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         psasRuntime.stick_gain[axis] = pidProfile->psas_stick_gain[axis];
         psasRuntime.damping_gain[axis] = pidProfile->psas_damping_gain[axis] * 0.001f;

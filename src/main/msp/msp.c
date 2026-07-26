@@ -4533,6 +4533,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         currentPidProfile->psas_speed_stick_curve_min = sbufReadU16(src);
         currentPidProfile->psas_speed_stick_curve_max = sbufReadU16(src);
         currentPidProfile->psas_speed_curve_mode = sbufReadU8(src);
+        pidInitConfig(currentPidProfile);
         break;
 #endif
 
