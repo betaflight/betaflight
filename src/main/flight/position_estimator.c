@@ -192,8 +192,11 @@ static sensorCalEntry_t zCal[CAL_Z_COUNT];
 static uint16_t gpsStamp = 0;
 static bool gpsDataAvailable = false;
 static timeUs_t gpsDataReceivedAtUs = 0;
-static timeDelta_t gpsDataHoldDurationUs = 0;
+static timeUs_t gpsDataHoldDurationUs = 0;
 static float gpsMeasurementNoiseScale = 1.0f;
+static vector2_t gpsVelocityMeasurement;
+static vector2_t previousGpsVelocityMeasurement;
+static bool previousGpsVelocityMeasurementValid = false;
 static gpsLocation_t armLocationGps;
 static bool gpsArmLocationSet = false;
 static float gpsAltOffsetCm = 0.0f;
@@ -267,6 +270,9 @@ void positionEstimatorInit(void)
     gpsDataReceivedAtUs = 0;
     gpsDataHoldDurationUs = 0;
     gpsMeasurementNoiseScale = 1.0f;
+    gpsVelocityMeasurement = (vector2_t){{0.0f, 0.0f}};
+    previousGpsVelocityMeasurement = (vector2_t){{0.0f, 0.0f}};
+    previousGpsVelocityMeasurementValid = false;
     gpsArmLocationSet = false;
     gpsAltOffsetCm = 0.0f;
     gpsAltOffsetSet = false;
@@ -362,6 +368,33 @@ static uint16_t gpsDopOrFallback(uint16_t preferredDop, uint16_t fallbackDop)
     return (preferredDop >= GPS_DOP_MIN_VALID) ? preferredDop : fallbackDop;
 }
 
+// Average adjacent native-rate GPS velocity samples before upsampling. This
+// suppresses alternating sample noise with only half a GPS interval of group
+// delay; keeping the previous raw sample avoids turning this into a recursive
+// low-pass filter.
+static void gpsUpdateVelocityMeasurement(void)
+{
+    const vector2_t current = {{
+        (float)gpsSol.velned.velE,
+        (float)gpsSol.velned.velN,
+    }};
+
+    if (previousGpsVelocityMeasurementValid) {
+        gpsVelocityMeasurement.x = 0.5f * (current.x + previousGpsVelocityMeasurement.x);
+        gpsVelocityMeasurement.y = 0.5f * (current.y + previousGpsVelocityMeasurement.y);
+    } else {
+        gpsVelocityMeasurement = current;
+    }
+
+    previousGpsVelocityMeasurement = current;
+    previousGpsVelocityMeasurementValid = true;
+}
+
+STATIC_UNIT_TESTED const vector2_t *gpsGetVelocityMeasurement(void)
+{
+    return &gpsVelocityMeasurement;
+}
+
 // Hold each GPS sample until the next one is expected so it can be fused at the
 // altitude task rate. Scaling R by the number of repeated updates preserves
 // approximately the same information per second as fusion at the GPS rate.
@@ -371,10 +404,18 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *nois
     if (hasNewData) {
         const float gpsFrequencyHz = getGpsDataFrequencyHz();
 
+        const timeUs_t timeSincePreviousDataUs = nowUs - gpsDataReceivedAtUs;
+        if (gpsDataAvailable &&
+            gpsDataHoldDurationUs > 0 &&
+            timeSincePreviousDataUs > gpsDataHoldDurationUs + gpsDataHoldDurationUs / 2) {
+            // Do not average across a missing frame or receiver outage.
+            previousGpsVelocityMeasurementValid = false;
+        }
+        gpsUpdateVelocityMeasurement();
         gpsDataAvailable = true;
         gpsDataReceivedAtUs = nowUs;
         if (gpsFrequencyHz > 0.0f) {
-            gpsDataHoldDurationUs = (timeDelta_t)lrintf(1000000.0f / gpsFrequencyHz);
+            gpsDataHoldDurationUs = (timeUs_t)lrintf(1000000.0f / gpsFrequencyHz);
             gpsMeasurementNoiseScale = fmaxf((float)TASK_ALTITUDE_RATE_HZ / gpsFrequencyHz, 1.0f);
         } else {
             // An invalid frequency cannot define a safe hold interval.
@@ -385,7 +426,7 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *nois
 
     const bool withinHoldInterval = gpsDataAvailable &&
         gpsDataHoldDurationUs > 0 &&
-        cmpTimeUs(nowUs, gpsDataReceivedAtUs) < gpsDataHoldDurationUs;
+        nowUs - gpsDataReceivedAtUs < gpsDataHoldDurationUs;
     if (!hasNewData && !withinHoldInterval) {
         return false;
     }
@@ -520,6 +561,7 @@ static void feedGPSMeasurements(timeUs_t nowUs)
 #ifdef USE_GPS
     if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX)) {
         gpsDataAvailable = false;
+        previousGpsVelocityMeasurementValid = false;
         return;
     }
 
@@ -562,8 +604,9 @@ static void feedGPSMeasurements(timeUs_t nowUs)
 
         // GPS velocity (NED from UBX) -> ENU
         const float rVel = gpsR(R_GPS_VEL_BASE, xyDop) * noiseScale;
-        kalmanUpdateVelocity(&kfEast, (float)gpsSol.velned.velE, rVel);
-        kalmanUpdateVelocity(&kfNorth, (float)gpsSol.velned.velN, rVel);
+        const vector2_t *gpsVelocity = gpsGetVelocityMeasurement();
+        kalmanUpdateVelocity(&kfEast, gpsVelocity->v[EF_EAST], rVel);
+        kalmanUpdateVelocity(&kfNorth, gpsVelocity->v[EF_NORTH], rVel);
 
         lastXYMeasurementUs = nowUs;
     }
