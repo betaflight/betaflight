@@ -225,6 +225,12 @@ typedef enum {
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
+// Number of elements that existed as of MSP API 1.46 (Betaflight 4.5). MSP-query type OSD
+// consumers - the DJI V1 air unit / Caddx Vista render the OSD themselves from MSP_OSD_CONFIG -
+// stop accepting the reply once it grows beyond what 4.5 produced, so they are served a reply
+// truncated to this many elements. Never change this value; it describes a released wire format.
+#define OSD_ITEM_COUNT_API_1_46 80
+
 // *** IMPORTANT ***
 // Whenever new elements are added to 'osd_items_e', make sure to increment
 // the parameter group version for 'osdConfig' in 'osd.c'
