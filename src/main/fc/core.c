@@ -66,8 +66,8 @@
 
 #if ENABLE_FLIGHT_PLAN && !defined(USE_WING)
 #include "flight/flight_plan_capture.h"
-#include "flight/flight_plan_nav.h"
 #endif
+#include "flight/flight_plan_nav.h"
 
 #ifdef USE_OSD_NAV_MAP
 #include "flight/nav_trail.h"
