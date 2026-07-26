@@ -154,9 +154,6 @@ static vector2_t distanceError;          // deviation from intended position (re
 static vector2_t distanceErrorIntegral;  // integral of position error
 static vector2_t previousVelocity;       // for acceleration
 
-static float setpointVelocityGainRoll;   // maps full stick to maxVelocity
-static float setpointVelocityGainPitch;
-
 static pt3Filter_t posNoisyPidsLpf[EF_AXIS_COUNT]; // smooths P + A + F together
 
 static bool isPositionHeld;
@@ -245,9 +242,6 @@ void autopilotInit(void)
     xyPid.Ka = cfg->positionA * XY_ACCEL_SCALE;
     xyPid.Kf = cfg->positionF * XY_F_SCALE;
     xyKDrag  = cfg->velocityDragCoeff * XY_DRAG_SCALE;
-
-    setpointVelocityGainRoll  = cfg->maxVelocity / getMaxRcRate(ROLL);
-    setpointVelocityGainPitch = cfg->maxVelocity / getMaxRcRate(PITCH);
 
     ap.sticksActive = false;
     ap.wasSticksActive = false;
@@ -526,8 +520,12 @@ static bool sanityViolationExpired(void)
 // target velocity into P/I, so there is no targetPosition integration here.
 void sticksSetTargetVelocity(void)
 {
-    const float stickPitch = getSetpointRate(PITCH) * setpointVelocityGainPitch;
-    const float stickRoll  = getSetpointRate(ROLL)  * setpointVelocityGainRoll;
+    // full stick maps to maxVelocity; the rates can change between flights, so scale per loop
+    const float velocityGainPitch = autopilotConfig()->maxVelocity / getMaxRcRate(PITCH);
+    const float velocityGainRoll  = autopilotConfig()->maxVelocity / getMaxRcRate(ROLL);
+
+    const float stickPitch = getSetpointRate(PITCH) * velocityGainPitch;
+    const float stickRoll  = getSetpointRate(ROLL)  * velocityGainRoll;
 
     const float headingRad = DECIDEGREES_TO_RADIANS(attitude.values.yaw);
     const float cosYaw = cosf(headingRad);
@@ -537,8 +535,8 @@ void sticksSetTargetVelocity(void)
     targetVelocity.v[EF_EAST]  = (stickPitch * sinYaw) + (stickRoll * cosYaw);
 
 #ifdef USE_FEEDFORWARD
-    const float ffPitch = getFeedforward(PITCH) * setpointVelocityGainPitch;
-    const float ffRoll  = getFeedforward(ROLL)  * setpointVelocityGainRoll;
+    const float ffPitch = getFeedforward(PITCH) * velocityGainPitch;
+    const float ffRoll  = getFeedforward(ROLL)  * velocityGainRoll;
     targetAcceleration.v[EF_NORTH] = (ffPitch * cosYaw) - (ffRoll * sinYaw);
     targetAcceleration.v[EF_EAST]  = (ffPitch * sinYaw) + (ffRoll * cosYaw);
 #endif
