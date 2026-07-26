@@ -1145,7 +1145,7 @@ static void osdElementFlymode(osdElementParms_t *element)
     // GPS rescue flown as an autopilot mission annunciates ahead of the
     // generic failsafe indication, so the pilot sees a rescue.
     if (flightPlanNavIsRescuePlanActive()) {
-        strcpy(element->buff, "NAV RESCUE");
+        strcpy(element->buff, "N-RESC");
     } else
 #endif
     if (FLIGHT_MODE(FAILSAFE_MODE)) {
