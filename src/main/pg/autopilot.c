@@ -49,7 +49,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation
-    .velocityDragCoeff = 50,          // 0.0050 drag coefficient
+    .velocityDragCoeff = 50,          // 5 deg at 5 m/s, half the nominal maximum
     .maxVelocity = 500,               // 5 m/s max velocity setpoint at full stick
 
     // Waypoint navigation parameters

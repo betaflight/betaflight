@@ -807,7 +807,7 @@ protected:
     // The former nav velocity gains fold onto the unified position gains:
     // velocity_P -> position_D, velocity_I -> position_P, velocity_D -> position_A.
     void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
-                            uint16_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
+                            uint8_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
                             uint8_t maxAngle = 45)
     {
         initAndSettleAt(0, 0, 0);

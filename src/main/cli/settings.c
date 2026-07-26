@@ -2022,7 +2022,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
 
     // Velocity-based position control with drag compensation
-    { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
+    { PARAM_NAME_AP_VELOCITY_DRAG_COEFF, VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, velocityDragCoeff) },
     { PARAM_NAME_AP_MAX_VELOCITY,        VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 100, 5000 },  PG_AUTOPILOT, offsetof(autopilotConfig_t, maxVelocity) },
 
 // Phase 3: Waypoint navigation & yaw control
