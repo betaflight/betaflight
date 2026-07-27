@@ -802,11 +802,9 @@ TEST_F(AutopilotYawTest, EngageRampsRateIn)
 // carrot (targetPosEfM) with the commanded velocity as feedforward; a bounded
 // nav position error stops the speed-proportional carrot lead running away.
 
-class VelocityModeTest : public PosHoldTest {
+class NavModeTest : public PosHoldTest {
 protected:
-    // The former nav velocity gains fold onto the unified position gains:
-    // velocity_P -> position_D, velocity_I -> position_P, velocity_D -> position_A.
-    void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
+    void engageNav(uint8_t positionD, uint8_t positionP, uint8_t positionA,
                             uint8_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
                             uint8_t maxAngle = 45)
     {
@@ -815,9 +813,9 @@ protected:
         autopilotConfig_t *cfg = autopilotConfigMutable();
         cfg->maxAngle = maxAngle;
         cfg->positionCutoff = 30;
-        cfg->positionD = velocityP;
-        cfg->positionP = velocityI;
-        cfg->positionA = velocityD;
+        cfg->positionD = positionD;
+        cfg->positionP = positionP;
+        cfg->positionA = positionA;
         cfg->velocityDragCoeff = velocityDragCoeff;
         cfg->velocityBuildupMaxPitch = velocityBuildupMaxPitch;
         autopilotInit();
@@ -839,11 +837,11 @@ protected:
     }
 };
 
-TEST_F(VelocityModeTest, NavAnchorsToCarrotAhead)
+TEST_F(NavModeTest, NavAnchorsToCarrotAhead)
 {
     // Carrot 50 m north, craft at the origin: the position anchor produces a
     // lean toward the carrot (pitch), with negligible roll.
-    engageVelocityNav(30, 30, 0, 0, 30, 45);
+    engageNav(30, 30, 0, 0, 30, 45);
     setNavCarrot(0.0f, 50.0f);
     setTargetVelocityNorth(0.0f);
 
@@ -853,12 +851,12 @@ TEST_F(VelocityModeTest, NavAnchorsToCarrotAhead)
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
-TEST_F(VelocityModeTest, NavPositionErrorIsBounded)
+TEST_F(NavModeTest, NavPositionErrorIsBounded)
 {
     // The carrot lead grows with speed; NAV_ERROR_DISTANCE_LIMIT bounds the
     // position error so a distant carrot cannot drive P without limit. Two
     // carrots well beyond the bound must produce the same (clamped) lean.
-    engageVelocityNav(30, 30, 0, 0, 30, 45);
+    engageNav(30, 30, 0, 0, 30, 45);
     setTargetVelocityNorth(0.0f);
 
     setNavCarrot(0.0f, 50.0f);
@@ -872,11 +870,11 @@ TEST_F(VelocityModeTest, NavPositionErrorIsBounded)
     EXPECT_NEAR(pitchFar, pitchNear, 0.5f);
 }
 
-TEST_F(VelocityModeTest, NavVelocityFeedforward)
+TEST_F(NavModeTest, NavVelocityFeedforward)
 {
     // Carrot coincident with the craft (zero position error), so the lean comes
     // purely from the target-velocity feedforward (F = targetVel * Kd).
-    engageVelocityNav(30, 30, 0, 0, 30, 45);
+    engageNav(30, 30, 0, 0, 30, 45);
     setNavCarrot(0.0f, 0.0f);
     setTargetVelocityNorth(300.0f);
     testEstimate.velocity.y = 0.0f;
@@ -887,12 +885,12 @@ TEST_F(VelocityModeTest, NavVelocityFeedforward)
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), 2.0f);
 }
 
-TEST_F(VelocityModeTest, NavForcesIntegralZero)
+TEST_F(NavModeTest, NavForcesIntegralZero)
 {
     // Nav runs the I_ZERO policy: with a fixed carrot error the output is carried
     // by P alone and must not creep upward over time from an accumulating
     // integral (which is what a settled position hold would do).
-    engageVelocityNav(30, 30, 0, 0, 30, 45);
+    engageNav(30, 30, 0, 0, 30, 45);
     setNavCarrot(0.0f, 3.0f); // 3 m north, inside the nav error bound
     setTargetVelocityNorth(0.0f);
 
@@ -904,9 +902,9 @@ TEST_F(VelocityModeTest, NavForcesIntegralZero)
     EXPECT_NEAR(pitchLater, pitchEarly, 0.5f);
 }
 
-TEST_F(VelocityModeTest, ResetOnNavReentry)
+TEST_F(NavModeTest, ResetOnNavReentry)
 {
-    engageVelocityNav(30, 50, 0, 0, 30, 45);
+    engageNav(30, 50, 0, 0, 30, 45);
     setTargetVelocityNorth(150.0f); // stays inside the relax gate throughout: the integral builds every cycle
 
     runIterations(150);
@@ -921,7 +919,7 @@ TEST_F(VelocityModeTest, ResetOnNavReentry)
     EXPECT_LT(fabsf(autopilotAngle[AI_PITCH]), fabsf(pitchBeforeReentry) * 0.5f);
 }
 
-TEST_F(VelocityModeTest, PosHoldUnaffectedByDefaultOn)
+TEST_F(NavModeTest, PositionControlResetIsDeterministic)
 {
     const int cycles = 50;
     float baselineRoll[cycles];

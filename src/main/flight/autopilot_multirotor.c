@@ -241,7 +241,7 @@ void autopilotInit(void)
     xyPid.Kd = cfg->positionD * XY_VELOCITY_SCALE;
     xyPid.Ka = cfg->positionA * XY_ACCEL_SCALE;
     xyPid.Kf = cfg->positionF * XY_F_SCALE;
-    xyKDrag  = cfg->velocityDragCoeff * XY_DRAG_SCALE;
+    xyKDrag  = fminf(cfg->velocityDragCoeff * XY_DRAG_SCALE, 0.5f * xyPid.Kd); // keep drag a fraction of D so it can never reverse net damping
 
     ap.sticksActive = false;
     ap.wasSticksActive = false;
@@ -483,7 +483,6 @@ void resetPositionControl(unsigned taskRateHz)
     ap.derivativeStale = false;
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
-    resetDistanceError();
     resetDistanceErrorIntegral();
 }
 

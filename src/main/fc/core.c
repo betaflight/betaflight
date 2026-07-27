@@ -978,6 +978,8 @@ void processRxModes(timeUs_t currentTimeUs)
         && !featureIsEnabled(FEATURE_3D)
         && !isAirmodeEnabled()
         && !FLIGHT_MODE(GPS_RESCUE_MODE)  // disable auto-disarm when GPS Rescue is active
+        && !flightPlanNavIsRescuePlanActive()  // ... or a plan rescue / fallback descent is flying
+        && !flightPlanNavIsRescueDescentActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {

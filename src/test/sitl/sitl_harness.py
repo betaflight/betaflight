@@ -1525,7 +1525,7 @@ SCENARIOS = {
     ),
     "rescue_heading_recovery": (
         scenario_rescue_heading,
-        RESCUE_CFG + ["set mag_hardware = NONE"],
+        [*RESCUE_CFG, "set mag_hardware = NONE"],
         {"initial_yaw_deg": 90.0},
     ),
     "rescue_gps_loss": (
@@ -1534,7 +1534,7 @@ SCENARIOS = {
     ),
     "rescue_switch_descent": (
         scenario_rescue_switch_descent,
-        RESCUE_CFG + ["aux 5 46 4 1700 2100 0 0"],   # BOXGPSRESCUE on AUX5
+        [*RESCUE_CFG, "aux 5 46 4 1700 2100 0 0"],   # BOXGPSRESCUE on AUX5
     ),
 }
 
