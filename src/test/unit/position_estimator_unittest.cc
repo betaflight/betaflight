@@ -18,12 +18,12 @@ extern "C" {
 #include "flight/imu.h"
 #include "flight/position.h"
 #include "flight/position_estimator.h"
+#include "flight/position_filter.h"
 
 // STATIC_UNIT_TESTED in position_estimator.c — gravity-removed earth-frame
 // linear acceleration in ENU (cm/s^2).
 void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp);
 bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
-const vector2_t *gpsGetVelocityMeasurement(void);
 
 #include "io/gps.h"
 
@@ -41,6 +41,22 @@ PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 }
 
 #include "gtest/gtest.h"
+
+TEST(PositionFilterTest, AccelerationMeasurementDrivesAllThreeStates)
+{
+    positionKalman_t kf;
+    kalmanInit(&kf, 0.0f, 0.0f, 0.0f,
+        10000.0f, 10000.0f, 1000000.0f, 1000.0f);
+
+    for (int i = 0; i < 100; i++) {
+        kalmanPredict(&kf, 0.01f);
+        kalmanUpdateAcceleration(&kf, 100.0f, 100.0f);
+    }
+
+    EXPECT_NEAR(kalmanGetAcceleration(&kf), 100.0f, 1.0f);
+    EXPECT_NEAR(kalmanGetVelocity(&kf), 99.0f, 2.0f);
+    EXPECT_NEAR(kalmanGetPosition(&kf), 49.0f, 2.0f);
+}
 
 extern "C" {
 uint8_t armingFlags = 0;
@@ -202,51 +218,6 @@ TEST_F(PositionEstimatorTest, GPSUpsamplingTracksSourceFrequency)
     EXPECT_FLOAT_EQ(noiseScale, 20.0f);
     EXPECT_TRUE(gpsMeasurementReadyForFusion(240000, &noiseScale));
     EXPECT_FALSE(gpsMeasurementReadyForFusion(250000, &noiseScale));
-}
-
-TEST_F(PositionEstimatorTest, GPSVelocityUsesNativeRateTwoPointAverage)
-{
-    gpsAlwaysHasNewData = false;
-    gpsDataFrequencyHz = 10.0f;
-    positionEstimatorInit();
-
-    float noiseScale;
-    gpsSol.velned.velE = 100;
-    gpsSol.velned.velN = -40;
-    gpsDataIsNew = true;
-    EXPECT_TRUE(gpsMeasurementReadyForFusion(0, &noiseScale));
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_EAST], 100.0f);
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_NORTH], -40.0f);
-
-    gpsSol.velned.velE = 140;
-    gpsSol.velned.velN = 20;
-    gpsDataIsNew = true;
-    EXPECT_TRUE(gpsMeasurementReadyForFusion(100000, &noiseScale));
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_EAST], 120.0f);
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_NORTH], -10.0f);
-
-    // Changing gpsSol without a new GPS frame must not change the held average.
-    gpsSol.velned.velE = 1000;
-    gpsSol.velned.velN = 1000;
-    EXPECT_TRUE(gpsMeasurementReadyForFusion(110000, &noiseScale));
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_EAST], 120.0f);
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_NORTH], -10.0f);
-
-    // Average adjacent raw samples, not the previous averaged result.
-    gpsSol.velned.velE = 180;
-    gpsSol.velned.velN = 40;
-    gpsDataIsNew = true;
-    EXPECT_TRUE(gpsMeasurementReadyForFusion(200000, &noiseScale));
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_EAST], 160.0f);
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_NORTH], 30.0f);
-
-    // A missing GPS frame resets the average instead of mixing stale velocity.
-    gpsSol.velned.velE = 220;
-    gpsSol.velned.velN = 60;
-    gpsDataIsNew = true;
-    EXPECT_TRUE(gpsMeasurementReadyForFusion(400000, &noiseScale));
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_EAST], 220.0f);
-    EXPECT_FLOAT_EQ(gpsGetVelocityMeasurement()->v[EF_NORTH], 60.0f);
 }
 
 TEST_F(PositionEstimatorTest, OpticalFlowMeasurementsUseNominalRateForFirstSample)

@@ -23,20 +23,25 @@
 
 #include <stdbool.h>
 
-// 2-state Kalman filter for one axis: [position, velocity]
-// Driven by acceleration control input, corrected by position or velocity measurements.
+// 3-state constant-acceleration Kalman filter for one axis:
+// [position, velocity, acceleration]. Process noise models unknown jerk;
+// position, velocity, and acceleration are all accepted as measurements.
 typedef struct positionKalman_s {
-    float x[2];      // state: [0]=position (cm), [1]=velocity (cm/s)
-    float P[2][2];   // error covariance
-    float Q_accel;   // process noise: accelerometer variance (cm/s^2)^2
+    float x[3];
+    float P[3][3];
+    float Q_jerk;    // continuous jerk spectral density
 } positionKalman_t;
 
-void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel, float initialPosVar, float initialVelVar, float qAccel);
-void kalmanPredict(positionKalman_t *kf, float dt, float accel);
+void kalmanInit(positionKalman_t *kf, float initialPos, float initialVel, float initialAccel,
+                float initialPosVar, float initialVelVar, float initialAccelVar, float qJerk);
+void kalmanPredict(positionKalman_t *kf, float dt);
 void kalmanUpdatePosition(positionKalman_t *kf, float measuredPos, float R);
 void kalmanUpdateVelocity(positionKalman_t *kf, float measuredVel, float R);
+void kalmanUpdateAcceleration(positionKalman_t *kf, float measuredAccel, float R);
 
 static inline float kalmanGetPosition(const positionKalman_t *kf) { return kf->x[0]; }
 static inline float kalmanGetVelocity(const positionKalman_t *kf) { return kf->x[1]; }
+static inline float kalmanGetAcceleration(const positionKalman_t *kf) { return kf->x[2]; }
 static inline float kalmanGetPositionVariance(const positionKalman_t *kf) { return kf->P[0][0]; }
 static inline float kalmanGetVelocityVariance(const positionKalman_t *kf) { return kf->P[1][1]; }
+static inline float kalmanGetAccelerationVariance(const positionKalman_t *kf) { return kf->P[2][2]; }

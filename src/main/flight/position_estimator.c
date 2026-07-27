@@ -66,15 +66,17 @@
 #include "pg/pos_hold.h"
 #endif
 
-// Accelerometer process noise in (cm/s^2)^2.
-// Accounts for vibration, bias drift, attitude errors.
-// Higher = less trust in accel dead-reckoning, more reliance on sensor corrections.
-#define Q_ACCEL_XY          50000.0f
-#define Q_ACCEL_Z           20000.0f // lower value favours faster acc changes, 700.0f is too low
+// Constant-acceleration model tuning. Jerk process noise allows acceleration
+// to change; accelerometer R accounts for vibration, bias, and attitude error.
+#define Q_JERK_XY           50000.0f
+#define Q_JERK_Z            20000.0f
+#define R_ACCEL_XY          50000.0f
+#define R_ACCEL_Z           20000.0f
 
 // Initial covariance values
 #define INITIAL_POS_VAR     10000.0f    // cm^2  (1m uncertainty)
 #define INITIAL_VEL_VAR     10000.0f    // (cm/s)^2
+#define INITIAL_ACCEL_VAR   1000000.0f  // (cm/s^2)^2; acquire IMU acceleration quickly
 
 // Measurement noise base values (R)
 #define R_GPS_POS_BASE       500.0f      // cm^2 at pDOP=1.0
@@ -181,7 +183,7 @@ static positionKalman_t kfUp;
 static positionEstimate3d_t estimate;
 
 static bool xyEnabled = false;
-static float qaccelXY = Q_ACCEL_XY; // value to use for QAccel
+static float qJerkXY = Q_JERK_XY;
 
 static timeUs_t lastXYMeasurementUs = 0;
 static timeUs_t lastZMeasurementUs = 0;
@@ -194,9 +196,6 @@ static bool gpsDataAvailable = false;
 static timeUs_t gpsDataReceivedAtUs = 0;
 static timeUs_t gpsDataHoldDurationUs = 0;
 static float gpsMeasurementNoiseScale = 1.0f;
-static vector2_t gpsVelocityMeasurement;
-static vector2_t previousGpsVelocityMeasurement;
-static bool previousGpsVelocityMeasurementValid = false;
 static gpsLocation_t armLocationGps;
 static bool gpsArmLocationSet = false;
 static float gpsAltOffsetCm = 0.0f;
@@ -247,14 +246,15 @@ void positionEstimatorInit(void)
 {
 
 #if defined(USE_POSITION_HOLD)
-    qaccelXY = Q_ACCEL_XY * ((autopilotConfig()->positionA > 1) ?  (30.0f / autopilotConfig()->positionA ) : 15.0f);
+    qJerkXY = Q_JERK_XY * ((autopilotConfig()->positionA > 1) ?  (30.0f / autopilotConfig()->positionA ) : 15.0f);
     // when user reduces positionA, , they want more accelerometer influence (up to 15x more), and vice versa
 #endif
-    kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
-    kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
-    kalmanInit(&kfUp, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
+    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z);
     estimate.position = (vector3_t){{0, 0, 0}};
     estimate.velocity = (vector3_t){{0, 0, 0}};
+    estimate.acceleration = (vector3_t){{0, 0, 0}};
     estimate.trustXY = 0.0f;
     estimate.trustZ = 0.0f;
     estimate.isValidXY = false;
@@ -270,9 +270,6 @@ void positionEstimatorInit(void)
     gpsDataReceivedAtUs = 0;
     gpsDataHoldDurationUs = 0;
     gpsMeasurementNoiseScale = 1.0f;
-    gpsVelocityMeasurement = (vector2_t){{0.0f, 0.0f}};
-    previousGpsVelocityMeasurement = (vector2_t){{0.0f, 0.0f}};
-    previousGpsVelocityMeasurementValid = false;
     gpsArmLocationSet = false;
     gpsAltOffsetCm = 0.0f;
     gpsAltOffsetSet = false;
@@ -307,12 +304,14 @@ void positionEstimatorInit(void)
 void positionEstimatorEnableXY(bool enable)
 {
     if (enable && !xyEnabled) {
-        kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
-        kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, qaccelXY);
+        kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+        kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
         estimate.position.v[ENU_E] = 0.0f;
         estimate.position.v[ENU_N] = 0.0f;
         estimate.velocity.v[ENU_E] = 0.0f;
         estimate.velocity.v[ENU_N] = 0.0f;
+        estimate.acceleration.v[ENU_E] = 0.0f;
+        estimate.acceleration.v[ENU_N] = 0.0f;
         lastXYMeasurementUs = 0;
         estimate.isValidXY = false;
 #ifdef USE_GPS
@@ -368,33 +367,6 @@ static uint16_t gpsDopOrFallback(uint16_t preferredDop, uint16_t fallbackDop)
     return (preferredDop >= GPS_DOP_MIN_VALID) ? preferredDop : fallbackDop;
 }
 
-// Average adjacent native-rate GPS velocity samples before upsampling. This
-// suppresses alternating sample noise with only half a GPS interval of group
-// delay; keeping the previous raw sample avoids turning this into a recursive
-// low-pass filter.
-static void gpsUpdateVelocityMeasurement(void)
-{
-    const vector2_t current = {{
-        (float)gpsSol.velned.velE,
-        (float)gpsSol.velned.velN,
-    }};
-
-    if (previousGpsVelocityMeasurementValid) {
-        gpsVelocityMeasurement.x = 0.5f * (current.x + previousGpsVelocityMeasurement.x);
-        gpsVelocityMeasurement.y = 0.5f * (current.y + previousGpsVelocityMeasurement.y);
-    } else {
-        gpsVelocityMeasurement = current;
-    }
-
-    previousGpsVelocityMeasurement = current;
-    previousGpsVelocityMeasurementValid = true;
-}
-
-STATIC_UNIT_TESTED const vector2_t *gpsGetVelocityMeasurement(void)
-{
-    return &gpsVelocityMeasurement;
-}
-
 // Hold each GPS sample until the next one is expected so it can be fused at the
 // altitude task rate. Scaling R by the number of repeated updates preserves
 // approximately the same information per second as fusion at the GPS rate.
@@ -404,14 +376,6 @@ STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *nois
     if (hasNewData) {
         const float gpsFrequencyHz = getGpsDataFrequencyHz();
 
-        const timeUs_t timeSincePreviousDataUs = nowUs - gpsDataReceivedAtUs;
-        if (gpsDataAvailable &&
-            gpsDataHoldDurationUs > 0 &&
-            timeSincePreviousDataUs > gpsDataHoldDurationUs + gpsDataHoldDurationUs / 2) {
-            // Do not average across a missing frame or receiver outage.
-            previousGpsVelocityMeasurementValid = false;
-        }
-        gpsUpdateVelocityMeasurement();
         gpsDataAvailable = true;
         gpsDataReceivedAtUs = nowUs;
         if (gpsFrequencyHz > 0.0f) {
@@ -561,7 +525,6 @@ static void feedGPSMeasurements(timeUs_t nowUs)
 #ifdef USE_GPS
     if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX)) {
         gpsDataAvailable = false;
-        previousGpsVelocityMeasurementValid = false;
         return;
     }
 
@@ -604,9 +567,8 @@ static void feedGPSMeasurements(timeUs_t nowUs)
 
         // GPS velocity (NED from UBX) -> ENU
         const float rVel = gpsR(R_GPS_VEL_BASE, xyDop) * noiseScale;
-        const vector2_t *gpsVelocity = gpsGetVelocityMeasurement();
-        kalmanUpdateVelocity(&kfEast, gpsVelocity->v[EF_EAST], rVel);
-        kalmanUpdateVelocity(&kfNorth, gpsVelocity->v[EF_NORTH], rVel);
+        kalmanUpdateVelocity(&kfEast, (float)gpsSol.velned.velE, rVel);
+        kalmanUpdateVelocity(&kfNorth, (float)gpsSol.velned.velN, rVel);
 
         lastXYMeasurementUs = nowUs;
     }
@@ -835,15 +797,18 @@ void positionEstimatorUpdate(void)
     float accelEast, accelNorth, accelUp;
     getLinearAccelENU(&accelEast, &accelNorth, &accelUp);
 
-    // Z-axis: always runs (for altitude hold, OSD, vario).
-    // While disarmed, predict with zero acceleration so covariance continues to evolve
-    // and incoming baro/rangefinder updates remain responsive.
-    kalmanPredict(&kfUp, dt, ARMING_FLAG(ARMED) ? accelUp : 0.0f);
+    // Z-axis: always runs (for altitude hold, OSD, vario). While disarmed,
+    // measure zero acceleration so covariance continues to evolve without
+    // integrating small gravity-removal errors.
+    kalmanPredict(&kfUp, dt);
+    kalmanUpdateAcceleration(&kfUp, ARMING_FLAG(ARMED) ? accelUp : 0.0f, R_ACCEL_Z);
 
     // XY axes: only when a consumer is active
     if (xyEnabled && ARMING_FLAG(ARMED)) {
-        kalmanPredict(&kfEast, dt, accelEast);
-        kalmanPredict(&kfNorth, dt, accelNorth);
+        kalmanPredict(&kfEast, dt);
+        kalmanPredict(&kfNorth, dt);
+        kalmanUpdateAcceleration(&kfEast, accelEast, R_ACCEL_XY);
+        kalmanUpdateAcceleration(&kfNorth, accelNorth, R_ACCEL_XY);
     }
 
     // Feed sensor measurements (order does not matter)
@@ -863,6 +828,9 @@ void positionEstimatorUpdate(void)
     estimate.velocity.v[ENU_E] = kalmanGetVelocity(&kfEast);
     estimate.velocity.v[ENU_N] = kalmanGetVelocity(&kfNorth);
     estimate.velocity.v[ENU_U] = kalmanGetVelocity(&kfUp);
+    estimate.acceleration.v[ENU_E] = kalmanGetAcceleration(&kfEast);
+    estimate.acceleration.v[ENU_N] = kalmanGetAcceleration(&kfNorth);
+    estimate.acceleration.v[ENU_U] = kalmanGetAcceleration(&kfUp);
 
     // Validity: based on recent measurement updates
     if (xyEnabled) {
@@ -935,9 +903,10 @@ bool positionEstimatorIsHeadingRequired(void)
 
 void positionEstimatorResetZ(void)
 {
-    kalmanInit(&kfUp, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_Z);
+    kalmanInit(&kfUp, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, Q_JERK_Z);
     estimate.position.v[ENU_U] = 0.0f;
     estimate.velocity.v[ENU_U] = 0.0f;
+    estimate.acceleration.v[ENU_U] = 0.0f;
     estimate.isValidZ = false;
     lastZMeasurementUs = 0;
 #ifdef USE_GPS
@@ -959,12 +928,14 @@ void positionEstimatorResetZ(void)
 
 void positionEstimatorResetXY(void)
 {
-    kalmanInit(&kfEast, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
-    kalmanInit(&kfNorth, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, Q_ACCEL_XY);
+    kalmanInit(&kfEast, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
+    kalmanInit(&kfNorth, 0.0f, 0.0f, 0.0f, INITIAL_POS_VAR, INITIAL_VEL_VAR, INITIAL_ACCEL_VAR, qJerkXY);
     estimate.position.v[ENU_E] = 0.0f;
     estimate.position.v[ENU_N] = 0.0f;
     estimate.velocity.v[ENU_E] = 0.0f;
     estimate.velocity.v[ENU_N] = 0.0f;
+    estimate.acceleration.v[ENU_E] = 0.0f;
+    estimate.acceleration.v[ENU_N] = 0.0f;
     estimate.isValidXY = false;
     lastXYMeasurementUs = 0;
 #ifdef USE_GPS

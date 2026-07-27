@@ -270,26 +270,23 @@ TEST_F(PosHoldTest, ResumeAfterFrozenExcursionDoesNotSpikeTheOutput)
 {
     initAndSettleAt(0, 0, 0);
 
-    // real motion first, so the A-term history holds a meaningful velocity
+    // Establish real motion before a sub-latch excursion freezes the output.
     testEstimate.velocity.x = 300.0f;
     for (int i = 0; i < 50; i++) {
         EXPECT_TRUE(positionControl());
     }
 
-    // a sub-latch excursion freezes the output; meanwhile the craft stops,
-    // so the frozen A-term history goes badly stale
+    // The estimator reports that the craft has stopped during the excursion.
     testEstimate.position.x = 3000.0f;
     testEstimate.velocity.x = 0.0f;
+    testEstimate.acceleration.x = 0.0f;
     for (int i = 0; i < 80; i++) {   // 0.8 s, inside the 1 s latch window
         EXPECT_TRUE(positionControl());
     }
     const float rollFrozen = autopilotAngle[AI_ROLL];
 
-    // Resume. previousVelocity was not refreshed during the frozen window, so
-    // without the A-term one-shot re-baseline the loop would differentiate the
-    // 300 cm/s of stale velocity into an enormous acceleration term and slam the
-    // angle to maxAngle. The one-shot forces A = 0 for the first resumed loop, so
-    // the output reflects the now-stopped craft rather than a spike.
+    // Resume. The A-term consumes the current Kalman acceleration state rather
+    // than differentiating velocity across the frozen window, so it cannot spike.
     testEstimate.position.x = 0.0f;
     EXPECT_TRUE(positionControl());
     EXPECT_LT(fabsf(autopilotAngle[AI_ROLL]), fabsf(rollFrozen)); // no upward spike past the held value
@@ -367,6 +364,22 @@ TEST_F(PosHoldTest, EastVelocityProducesNegativeRollResponse)
 
     EXPECT_LT(autopilotAngle[AI_ROLL], 0.0f); // Roll must be NEGATIVE (Roll Left)
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.1f); // Pitch must be flat
+}
+
+TEST_F(PosHoldTest, KalmanAccelerationDrivesAccelerationTerm)
+{
+    initAndSettleAt(0, 0, 0);
+    debugMode = DEBUG_AUTOPILOT_PID;
+
+    testEstimate.acceleration.x = 100.0f;
+    positionControl();
+    EXPECT_EQ(debug[5], -15);
+
+    testEstimate.acceleration.x = -100.0f;
+    positionControl();
+    EXPECT_EQ(debug[5], 15);
+
+    debugMode = DEBUG_NONE;
 }
 
 TEST_F(PosHoldTest, WestVelocityProducesBrakingRollResponse)

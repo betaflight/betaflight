@@ -199,7 +199,6 @@ typedef struct autopilotState_s {
     bool speedSlowing;          // speed is meaningfully below its own trend
     bool isPosHoldBraking;      // decelerating toward a captured hold point
     unsigned brakingTimer;      // loops spent in the current braking phase
-    bool derivativeStale;       // output was frozen past the fence: re-baseline the A-term on resume
     xyAnchorMode_e anchor;      // position-anchor selection for this loop
     xyIntegralPolicy_e iPolicy; // integral policy for this loop
     unsigned debugAxis;
@@ -445,7 +444,6 @@ void positionControlReanchor(void)
     ap.sanityCheckDistance = calculateSanityCheckDistance();
     ap.sanityViolationS = 0.0f;
     ap.violationFreeS = 0.0f;
-    ap.derivativeStale = false;
 }
 
 static void initNavMode(void)
@@ -480,7 +478,6 @@ void resetPositionControl(unsigned taskRateHz)
     ap.sanityViolationS = 0.0f;
     ap.violationFreeS = 0.0f;
     ap.sanityRetryUsed = false;
-    ap.derivativeStale = false;
     initPositionHold(); // sets target location, resets distance error, enables start mode
     previousVelocity = *(const vector2_t *)&positionEstimatorGetEstimate()->velocity.v; // for smooth A in any mode
     resetDistanceErrorIntegral();
@@ -838,10 +835,6 @@ bool positionControl(void)
                     if (ap.sanityViolationS > SANITY_VIOLATION_LATCH_S) {
                         return sanityViolationExpired();
                     }
-                    // The A-term history is now stale; mark it so the resume
-                    // loop re-baselines instead of differentiating across the
-                    // frozen window (one spurious spike against old velocity)
-                    ap.derivativeStale = true;
                     return true; // brief excursion: hold the previous command
                 } else {
                     ap.sanityViolationS = 0.0f;
@@ -868,15 +861,9 @@ bool positionControl(void)
     for (unsigned axis = 0; axis < EF_AXIS_COUNT; axis++) {
         velocityError.v[axis] = targetVelocity.v[axis] - velocity.v[axis];
 
-        // Acceleration (A term), differentiated from measured velocity. One-shot
-        // re-baseline after a frozen sanity window so resumption cannot spike
-        // against stale velocity; previousVelocity is refreshed every loop.
-        float acceleration;
-        if (ap.derivativeStale) {
-            acceleration = 0.0f;
-        } else {
-            acceleration = (previousVelocity.v[axis] - velocity.v[axis]) * POSHOLD_TASK_RATE_HZ;
-        }
+        // Preserve the A-term's opposing sign while consuming the Kalman
+        // acceleration state directly instead of differentiating velocity.
+        const float acceleration = -est->acceleration.v[axis];
         previousVelocity.v[axis] = velocity.v[axis];
 
         // Distance error: real (position anchor) or virtual (integral of the
@@ -929,8 +916,6 @@ bool positionControl(void)
         // tunable acceleration feedforward.
         pidF.v[axis] = targetVelocity.v[axis] * xyPid.Kd + targetVelDelta * xyPid.Kf;
     } // End for loop
-    ap.derivativeStale = false;
-
     // Buildup clamp: only in the anchor-off fallback, where the velocity-error
     // drive (D + F = Kd*velocityError plus the accel feedforward) itself carries
     // the cruise tilt and would otherwise slam the pitch while accelerating. When
