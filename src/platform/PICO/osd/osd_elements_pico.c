@@ -30,6 +30,7 @@
 #include <math.h>
 
 #include "common/printf.h"
+#include "drivers/osd_symbols.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "fc/rc_controls.h"
@@ -75,6 +76,11 @@ static void renderCharAtAlignedEx(uint8_t ch, int px, int py, int bpc, int rows)
 bool isWideChar(uint8_t ch)
 {
 #if OSD_FB_ENABLE_SMALLFONT
+    if (ch >= SYM_LOGO_START) {
+        // Not applicable to logo characters, which are not written using string method
+        return false;
+    }
+
     uint8_t mode4 = fontData[ch / 4];
     uint8_t mode = (mode4 >> (2 * (ch % 4))) & 0x3;
     return mode / 2;
@@ -537,15 +543,21 @@ typedef struct {
 
 static charMode_t getCharMode(uint8_t ch)
 {
-    uint8_t mode4 = fontData[ch / 4];
-    uint8_t mode = (mode4 >> (2 * (ch % 4))) & 0x3;
     charMode_t ret;
-    // 0 -> bpc = 2, rows = 8
-    // 1 -> bpc = 2, rows = 12
-    // 2 -> bpc = 4, rows = 8
-    // 3 -> bpc = 4, rows = 12
-    ret.bpc = (mode / 2) ? 4 : 2;
-    ret.rows = (mode % 2) ? 12 : 8;
+    if (ch >= SYM_LOGO_START) {
+        ret.bpc = 3;
+        ret.rows = 18;
+    } else {
+        uint8_t mode4 = fontData[ch / 4];
+        uint8_t mode = (mode4 >> (2 * (ch % 4))) & 0x3;
+        // 0 -> bpc = 2, rows = 8
+        // 1 -> bpc = 2, rows = 12
+        // 2 -> bpc = 4, rows = 8
+        // 3 -> bpc = 4, rows = 12
+        ret.bpc = (mode / 2) ? 4 : 2;
+        ret.rows = (mode % 2) ? 12 : 8;
+    }
+
     return ret;
 }
 
