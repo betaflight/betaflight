@@ -64,7 +64,7 @@
 typedef float (applyRatesFn)(const int axis, float rcCommandf, const float rcCommandfAbs);
 // note that rcCommand[] is an external float
 
-static float rawSetpoint[XYZ_AXIS_COUNT];
+STATIC_UNIT_TESTED float rawSetpoint[XYZ_AXIS_COUNT];
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3]; // deflection range -1 to 1
 static float maxRcDeflectionAbs;
@@ -265,12 +265,12 @@ static float applyQuickRates(const int axis, float rcCommandf, const float rcCom
     return angleRate;
 }
 
-static void scaleRawSetpointToFpvCamAngle(void)
+STATIC_UNIT_TESTED void scaleRawSetpointToFpvCamAngle(void)
 {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
-    static uint8_t lastFpvCamAngleDegrees = 0;
-    float cosFactor = 1.0f;
-    float sinFactor = 0.0f;
+    static int16_t lastFpvCamAngleDegrees = -1;
+    static float cosFactor = 1.0f;
+    static float sinFactor = 0.0f;
 
     if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
