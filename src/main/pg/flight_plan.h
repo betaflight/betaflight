@@ -47,8 +47,10 @@ typedef enum {
 } waypointType_e;
 
 typedef enum {
-    WAYPOINT_PATTERN_ORBIT = 0,
-    WAYPOINT_PATTERN_FIGURE8
+    WAYPOINT_PATTERN_NONE = 0,      // station-keep at the hold point
+    WAYPOINT_PATTERN_ORBIT,
+    WAYPOINT_PATTERN_FIGURE8,
+    WAYPOINT_PATTERN_COUNT
 } waypointPattern_e;
 
 typedef struct {

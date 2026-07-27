@@ -70,7 +70,7 @@ typedef struct svfLowpassFilter_s {
 typedef struct svfNotchFilter_s {
     float a1;
     float a2q;  // a2 * q
-    float fq;   // f / q
+    float fq;   // f * Q
     float ic1q; // State 1 scaled by q
     float ic2;  // State 2 (unscaled)
 } svfNotchFilter_t;

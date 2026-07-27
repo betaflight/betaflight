@@ -676,16 +676,21 @@ float positionEstimatorGetTrustXY(void)
     return estimate.trustXY;
 }
 
-bool positionEstimatorIsGPSContributing(void)
+bool positionEstimatorIsHeadingRequired(void)
 {
-    // GPS contributes XY measurements only when a fix is present and the
-    // configured source does not exclude it.  Used by pos_hold to decide
-    // whether a valid heading is required before allowing position control.
+    // If configured for optical flow only, heading is not required
 #if defined(USE_GPS) && defined(USE_POSITION_HOLD) && !defined(USE_WING)
     if (posHoldConfig()->positionSource == POSHOLD_SOURCE_OPTICALFLOW_ONLY) {
         return false;
     }
 #endif
+
+    // If optical flow is active and spatial tracking is healthy, heading is optional
+    if (sensors(SENSOR_OPTICALFLOW) && positionEstimatorIsValidXY()) {
+        return false;
+    }
+
+    // Otherwise we strictly require a valid heading to prevent a flyaway
 #ifdef USE_GPS
     return sensors(SENSOR_GPS) && STATE(GPS_FIX);
 #else

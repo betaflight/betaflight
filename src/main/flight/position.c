@@ -166,7 +166,7 @@ float getAltitudeDerivative(void)
 
 float getAltitudeCmControl(void)
 {
-    return controlAltitudeCm;
+    return controlAltitudeCm; // un-filtered current altitude in cm
 }
 
 float getAltitudeDerivativeControl(void)

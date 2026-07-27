@@ -46,6 +46,7 @@ motorProtocolFamily_e motorGetProtocolFamily(void);
 
 bool isMotorProtocolDshot(void);
 bool isMotorProtocolBidirDshot(void);
+bool isMotorProtocolDronecan(void);
 bool isMotorProtocolEnabled(void);
 
 void motorDisable(void);

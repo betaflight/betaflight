@@ -85,6 +85,9 @@ extern uint32_t systemUniqueId[3];
 #define USE_RPM_FILTER
 #define USE_DYN_IDLE
 #define USE_DYN_NOTCH_FILTER
+
+#define CANDEV_COUNT 8
+#define ENABLE_CAN 1
 #define USE_ADC_INTERNAL
 #define USE_DMA_SPEC
 #ifdef USE_DSHOT
@@ -177,6 +180,7 @@ typedef USART_Module        USART_TypeDef;
 typedef EXTI_Module         EXTI_TypeDef;
 typedef EXTI_InitType       EXTI_InitTypeDef;
 typedef NVIC_InitType       NVIC_InitTypeDef;
+typedef FDCAN_Module        FDCAN_GlobalTypeDef;
 
 #define DMA_InitTypeDef            DMA_ChInitType
 #define TIM_OCInitTypeDef          OCInitType

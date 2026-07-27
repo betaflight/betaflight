@@ -54,7 +54,10 @@ PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
     .halfDuplex = true
 );
 
-static uint8_t locked = 0;
+// Latched on first arm and intentionally never cleared for the rest of the session, so band
+// and channel can no longer be changed by switch once the craft has been armed. STATIC_UNIT_TESTED
+// (still 'static' in firmware builds) so unit tests can reset it between cases.
+STATIC_UNIT_TESTED uint8_t locked = 0;
 
 void vtxControlInit(void)
 {
@@ -109,15 +112,15 @@ void vtxUpdateActivatedChannel(void)
     }
 
     if (vtxCommonDevice()) {
-        static uint8_t lastIndex = -1;
-
+        // Apply every active activation condition, like updateActivatedModes() does for mode
+        // ranges. Stopping at the first match (or remembering only the last applied index)
+        // starves higher-indexed conditions when three or more are active at once, so band,
+        // channel and power assigned to separate switches could not all take effect. When two
+        // active conditions set the same field, the highest-indexed one wins (last write).
         for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
             const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
-            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
-                && index != lastIndex) {
-                lastIndex = index;
-
+            if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)) {
                 if (!locked) {
                     if (vtxChannelActivationCondition->band > 0) {
                         vtxSettingsConfigMutable()->band = vtxChannelActivationCondition->band;
@@ -130,7 +133,6 @@ void vtxUpdateActivatedChannel(void)
                 if (vtxChannelActivationCondition->power > 0) {
                     vtxSettingsConfigMutable()->power = vtxChannelActivationCondition->power;
                 }
-                break;
             }
         }
     }

@@ -217,6 +217,8 @@ void spiInitDevice(spiDevice_e device)
     IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG, spi->sckAF);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_SDI_CFG, spi->misoAF);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
+    /*Enable all SPI mode , not I2S mode*/
+    AFIO_ConfigSPII2SMode(0x1E000000,SPI_MODE);
 
     SPI_I2S_DeInit(instance);
     spiApplyConfig(instance, 8, false);

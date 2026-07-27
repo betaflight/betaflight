@@ -62,12 +62,14 @@ extern "C" {
     #include "scheduler/scheduler.h"
 
     #include "sensors/acceleration.h"
+    #include "sensors/compass.h"
     #include "sensors/gyro.h"
 
     #include "telemetry/telemetry.h"
 
     PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+    PG_REGISTER(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
     PG_REGISTER(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
@@ -91,14 +93,19 @@ extern "C" {
     pidProfile_t *currentPidProfile;
     controlRateConfig_t *currentControlRateProfile;
     attitudeEulerAngles_t attitude;
+
     gpsSolutionData_t gpsSol;
+    uint16_t GPS_distanceToHome;
+    gpsLocation_t GPS_home_llh;
+    uint32_t GPS_distanceToHomeCm = 0;
+    int16_t GPS_directionToHome = 0;
+
     uint32_t targetPidLooptime;
     bool cmsInMenu = false;
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
-    uint32_t GPS_distanceToHomeCm = 0;
-    int16_t GPS_directionToHome = 0;
     acc_t acc = {};
+    gyro_t gyro = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
 
@@ -1133,6 +1140,7 @@ extern "C" {
     bool isFixedWing(void) { return false; }
     void compassStartCalibration(void) {}
     bool compassIsCalibrationComplete(void) { return true; }
+    bool compassEnabledAndCalibrated(void) { return true; }
     bool isUpright(void) { return mockIsUpright; }
     void blackboxLogEvent(FlightLogEvent, union flightLogEventData_u *) {};
     void gyroFiltering(timeUs_t) {};
@@ -1143,6 +1151,7 @@ extern "C" {
     void pinioBoxTaskControl(void) {}
     void schedulerSetNextStateTime(timeDelta_t) {}
 
+    bool isAltitudeAvailable(void)  { return true; }
     float getAltitudeCm(void) {return 0.0f;}
     float getAltitudeDerivative(void) {return 0.0f;}
     float getAltitudeCmControl(void) { return 0.0f; }
@@ -1177,12 +1186,18 @@ void GPS_distance2d(const gpsLocation_t* /*from*/, const gpsLocation_t* /*to*/, 
     bool positionNavTargetReached(void) { return false; }
     vector3_t positionNavGetTargetVelocityCmS(void) { return (vector3_t){{0, 0, 0}}; }
     const positionNavCommand_t *positionNavGetActiveCommand(void) { return NULL; }
+    bool imuIsHeadingValid(void) { return true; }
 
     bool canUseGPSHeading;
-    bool compassIsHealthy;
-
     bool gpsHasNewData(uint16_t* gpsStamp) {
-         UNUSED(*gpsStamp);
-         return true;
-     }
+        UNUSED(*gpsStamp);
+        return true;
+    }
+    float getSetpointRate(int axis)
+    {
+        UNUSED(axis);
+        return 0.0f;
+    }
+
+    float getGpsCosLat(void) { return 1.0f; }
 }

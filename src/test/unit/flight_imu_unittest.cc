@@ -421,7 +421,7 @@ extern "C" {
     uint32_t millis(void) { return 0; }
     uint32_t micros(void) { return 0; }
 
-    bool compassIsHealthy(void) { return true; }
+    bool compassEnabledAndCalibrated(void) { return true; }
     bool baroIsCalibrated(void) { return true; }
     void performBaroCalibrationCycle(void) {}
     float baroCalculateAltitude(void) { return 0; }
@@ -438,7 +438,6 @@ extern "C" {
     float gyroGetFilteredDownsampled(int) { return 0.0f; }
     float baroUpsampleAltitude()  { return 0.0f; }
     float getBaroAltitude(void) { return 3000.0f; }
-    float gpsRescueGetImuYawCogGain(void) { return 1.0f; }
     float getRcDeflectionAbs(int) { return 0.0f; }
 
     void positionEstimatorInit(void) { }

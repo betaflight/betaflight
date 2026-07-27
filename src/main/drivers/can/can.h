@@ -29,12 +29,31 @@
 #include "drivers/can/can_types.h"
 #include "drivers/io_types.h"
 
+#ifndef CANDEV_COUNT
+#define CANDEV_COUNT 3
+#endif
+
 typedef enum {
     CANINVALID = -1,
     CANDEV_1 = 0,
     CANDEV_2,
     CANDEV_3,
-    CANDEV_COUNT
+#if CANDEV_COUNT > 3
+    CANDEV_4,
+#endif
+#if CANDEV_COUNT > 4
+    CANDEV_5,
+#endif
+#if CANDEV_COUNT > 5
+    CANDEV_6,
+#endif
+#if CANDEV_COUNT > 6
+    CANDEV_7,
+#endif
+#if CANDEV_COUNT > 7
+    CANDEV_8,
+#endif
+    CANDEV_COUNT_PLACEHOLDER
 } canDevice_e;
 
 // Macros to convert between CLI device number (1-based) and canDevice_e (0-based).

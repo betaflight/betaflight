@@ -89,7 +89,7 @@ static void altHoldProcessTransitions(void) {
 static void altHoldUpdateTargetAltitude(void)
 {
     // User can adjust the target altitude with throttle, but only when
-    // - throttle is outside the deadband region, and
+    // - throttle is outside deadband, and
     // - throttle is not low (zero), and
     // - deadband is not configured to zero
 
@@ -125,8 +125,8 @@ static void altHoldUpdateTargetAltitude(void)
         // constant (set) deceleration target in the last 2m
         stickFactor = -(0.9f + constrainf(getAltitudeCmControl() / 2000.0f, 0.1f, 9.0f));
     }
-    altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
 
+    altHold.targetVelocity = stickFactor * altHold.maxClimbRate;
     // prevent pilot altitude adjustments from moving the target altitude so far away from current altitude
     // that it might be difficult to get back to a similar target altitude in a reasonable time.
     // the altitude target cannot be moved to a location that cannot be reached in 1s at maxClimbRate
@@ -176,6 +176,6 @@ void updateAltHold(timeUs_t currentTimeUs) {
 bool isAltHoldActive(void) {
     return altHold.isActive;
 }
-#endif
 
+#endif // USE_ALTITUDE_HOLD
 #endif // !USE_WING
