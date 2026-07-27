@@ -174,7 +174,7 @@ struct {
     { 0x0B4018, 96, 80, 256, 256 },
     //Giantec GT25Q80A
     //Datasheet: https://www.giantec-semi.com/uploads/pdf/250709/GT25Q80A%20DS_V2.1.pdf
-    {0xC46014, 104, 104, 256, 16},
+    {0xC46014, 104, 104, 16, 256},
     //Giantec GT25Q16A
     //Datasheet: https://www.giantec-semi.com/uploads/pdf/250709/GT25Q16A%20U%20DS_V2.2.pdf
     {0xC46015, 104, 104, 512, 16},
