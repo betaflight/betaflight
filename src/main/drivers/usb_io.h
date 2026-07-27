@@ -24,4 +24,10 @@ void usbGenerateDisconnectPulse(void);
 
 void usbCableDetectDeinit(void);
 void usbCableDetectInit(void);
+
+// Has USB been connected since boot. Without a USB detect pin this latches: it cannot see the
+// cable being pulled, so it stays true for the rest of the session.
 bool usbCableIsInserted(void);
+
+// Is USB connected right now. Clears on unplug, so use this for anything decided repeatedly.
+bool usbCableIsActive(void);
