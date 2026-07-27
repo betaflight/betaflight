@@ -5130,7 +5130,7 @@ static void cliPrintVarDefault(const char *cmdName, const clivalue_t *value)
     }
 }
 
-STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliGet(const char *cmdName, char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
@@ -5346,7 +5346,7 @@ static bool cliParseArrayValue(const char *valStr, const clivalue_t *val, void *
     return true;
 }
 
-STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliSet(const char *cmdName, char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     char *eqptr;
@@ -7443,7 +7443,7 @@ RAM_CODE static void cliDmaopt(const char *cmdName, char *cmdline)
 #endif // USE_DMA_SPEC
 
 #ifdef USE_DMA
-static void cliDma(const char *cmdName, char* cmdline)
+RAM_CODE static void cliDma(const char *cmdName, char* cmdline)
 {
     int len = strlen(cmdline);
     if (len && strncasecmp(cmdline, "show", len) == 0) {
@@ -8242,7 +8242,7 @@ typedef struct {
 // Prints CLI commands that match the optional search string in cmdline.
 // Searches both command names and descriptions; descriptions may be NULL for
 // some commands and are skipped safely. Prints all commands when cmdline is empty.
-STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
+RAM_CODE STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline);
 
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
@@ -8424,7 +8424,7 @@ const clicmd_t cmdTable[] = {
 // Prints CLI commands that match the optional search string in cmdline.
 // Searches both command names and descriptions; descriptions may be NULL for
 // some commands and are skipped safely. Prints all commands when cmdline is empty.
-STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
+RAM_CODE STATIC_UNIT_TESTED void cliHelp(const char *cmdName, char *cmdline)
 {
     bool anyMatches = false;
 
