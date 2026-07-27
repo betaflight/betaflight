@@ -105,6 +105,7 @@ extern "C" {
     float axisPID_P[3], axisPID_I[3], axisPID_D[3], axisPIDSum[3];
     rxRuntimeState_t rxRuntimeState = {};
     acc_t acc = {};
+    gyro_t gyro = {};
     bool mockIsUpright = false;
     uint8_t activePidLoopDenom = 1;
 

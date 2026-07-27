@@ -82,4 +82,19 @@ bool isAutopilotInControl(void)
     return false;
 }
 
+float autopilotGetYawRate(void)
+{
+    return 0.0f;
+}
+
+bool autopilotYawControlActive(void)
+{
+    return false;
+}
+
+void autopilotSetYawRateLimit(float rateLimitDps)
+{
+    UNUSED(rateLimitDps);
+}
+
 #endif // USE_WING

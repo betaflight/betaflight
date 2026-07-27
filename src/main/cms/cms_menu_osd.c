@@ -123,6 +123,16 @@ const OSD_Entry menuOsdActiveElemsEntries[] =
     {"HOME DIR",           OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HOME_DIR]},
     {"HOME DIST",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_HOME_DIST]},
     {"FLIGHT DIST",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_FLIGHT_DIST]},
+#if ENABLE_FLIGHT_PLAN
+    {"WP NUMBER",          OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_NUMBER]},
+    {"WP LAT",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_CURRENT_LAT]},
+    {"WP LON",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_CURRENT_LON]},
+    {"WP ALT",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_CURRENT_ALT]},
+    {"WP DIST",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_DISTANCE]},
+    {"WP DIR",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_DIRECTION]},
+    {"WP NEXT",            OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_NEXT_NUMBER]},
+    {"WP ETA",             OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_WP_ETA]},
+#endif
 #endif // GPS
     {"COMPASS BAR",        OME_VISIBLE | DYNAMIC, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR]},
 #ifdef USE_ESC_SENSOR

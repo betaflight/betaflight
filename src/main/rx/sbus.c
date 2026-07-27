@@ -70,7 +70,13 @@
 
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
 
-#define SBUS_TIME_NEEDED_PER_BYTE SBUS_TIME_NEEDED_PER_FRAME / SBUS_FRAME_SIZE
+#define SBUS_TIME_NEEDED_PER_BYTE (SBUS_TIME_NEEDED_PER_FRAME / SBUS_FRAME_SIZE) // ~120us per byte at 100k baud 8E2
+
+// An interbyte gap larger than this marks a frame boundary. Bytes within a frame
+// arrive about one byte period apart (~120us at 100k baud, ~60us at 200k). The
+// shortest inter-frame gap is ~1000us on fast-refresh receivers, so this sits
+// well clear of both.
+#define SBUS_INTERBYTE_TIMEOUT_US ((timeDelta_t)(5 * SBUS_TIME_NEEDED_PER_BYTE)) // ~600us
 
 #if !defined(SBUS_PORT_OPTIONS)
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
@@ -106,6 +112,7 @@ typedef union sbusFrame_u {
 typedef struct sbusFrameData_s {
     sbusFrame_t frame;
     timeUs_t startAtUs;
+    timeUs_t lastByteAtUs;
     uint8_t position;
     bool done;
 } sbusFrameData_t;
@@ -117,9 +124,13 @@ static void sbusDataReceive(uint16_t c, void *data)
 
     const timeUs_t nowUs = microsISR();
 
-    const timeDelta_t sbusFrameTime = cmpTimeUs(nowUs, sbusFrameData->startAtUs);
+    // Resync on a frame boundary detected from the gap since the previous byte.
+    // A gap beyond the timeout means a new frame has started, so drop back to
+    // hunting for the begin byte. Total packet time is not tracked.
+    const timeDelta_t interByteUs = cmpTimeUs(nowUs, sbusFrameData->lastByteAtUs);
+    sbusFrameData->lastByteAtUs = nowUs;
 
-    if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500) || sbusFrameTime > (long)(sbusFrameData->position * SBUS_TIME_NEEDED_PER_BYTE + 240)) {
+    if (interByteUs > SBUS_INTERBYTE_TIMEOUT_US) {
         sbusFrameData->position = 0;
     }
 
@@ -136,7 +147,7 @@ static void sbusDataReceive(uint16_t c, void *data)
             sbusFrameData->done = false;
         } else {
             sbusFrameData->done = true;
-            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, sbusFrameTime);
+            DEBUG_SET(DEBUG_SBUS, DEBUG_SBUS_FRAME_TIME, cmpTimeUs(nowUs, sbusFrameData->startAtUs));
         }
     }
 }
