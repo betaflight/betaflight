@@ -66,7 +66,7 @@ SECTIONS
 
     /* ===== Stage 1b: non-real-time code relocated to AHB_SRAM =====
      *
-     * Functions tagged SRAM_CODE (see platform.h) don't run in the
+     * Functions tagged RAM_CODE (see platform.h) don't run in the
      * gyro/PID/motor-output path, so they don't need ITCM's zero-wait-state
      * fetch. Moving them here relieves ITCM pressure (betaflight/betaflight#15462).
      * Must precede .runtime_image: ld assigns each input section to the
@@ -77,15 +77,15 @@ SECTIONS
      * emission; explicit section attributes survive LTO, filename globs
      * do not.
      */
-    .sram_code :
+    .ram_code :
     {
         . = ALIGN(4);
-        __sram_code_start__ = .;
-        *(.sram_code)
+        __ram_code_start__ = .;
+        *(.ram_code)
         . = ALIGN(4);
-        __sram_code_end__ = .;
+        __ram_code_end__ = .;
     } > AHB_SRAM AT > FLASH
-    __sram_code_load_start__ = LOADADDR(.sram_code);
+    __ram_code_load_start__ = LOADADDR(.ram_code);
 
     /* ===== Stage 2: Runtime image copied into ITCM as one block ===== */
 

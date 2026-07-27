@@ -61,10 +61,6 @@
 #define FAST_CODE_NOINLINE
 #endif
 
-#ifndef SRAM_CODE
-#define SRAM_CODE
-#endif
-
 #ifndef CCM_CODE
 #define CCM_CODE
 #endif
@@ -100,6 +96,10 @@
 #define MMFLASH_CODE_NOINLINE      RAM_CODE NOINLINE
 #define MMFLASH_DATA               FAST_DATA
 #define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
+#endif
+
+#ifndef RAM_CODE
+#define RAM_CODE
 #endif
 
 #ifndef MMFLASH_CODE
