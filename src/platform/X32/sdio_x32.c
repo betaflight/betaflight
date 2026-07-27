@@ -353,10 +353,19 @@ static Status_card sdSendCommand(sd_card_t *card, uint32_t index, uint32_t argum
         return status;
     }
 
+    bool cmdLineIdle = false;
+
     for (uint32_t spins = 0; spins < SD_CMD_IDLE_TIMEOUT; spins++) {
         if ((card->SDHOSTx->PRESTS & SDHOST_PRESTS_CMDINHC) == 0) {
+            cmdLineIdle = true;
             break;
         }
+    }
+
+    if (!cmdLineIdle) {
+        // The command never released the CMD line, so nothing can be trusted about it -
+        // including the success SDMMC_WaitCommandDone() reported.
+        return Status_Fail;
     }
 
     // Pick up a response that landed after SDMMC_WaitCommandDone() had already sampled the
@@ -676,8 +685,13 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     {
         persacle_value = SD_XIN_CLK/card->card_workmode.busClock_Hz/2;
     }
-    SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value);
-     
+    /* Switching to the working clock can fail the same way as the 400kHz setup above;
+     * continuing would leave the card configured for a clock that is not running.
+     */
+    if (SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value) != SDMMC_SUCCESS) {
+        return Status_Fail;
+    }
+
     /* This function is not necessary. Depending on the hardware and card, 
        you can decide whether to enable TX CLK delay and how much delay to use */
     SDMMC_EnableManualTuningOut(card->SDMMCx,8,ENABLE);
