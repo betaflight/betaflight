@@ -2108,9 +2108,10 @@ case MSP_NAME:
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, currentPidProfile->tpa_mode);
-        sbufWriteU8(dst, currentPidProfile->tpa_rate);
-        sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
+        sbufWriteU8(dst, currentPidProfile->tpa_d_rate);
+        sbufWriteU16(dst, currentPidProfile->tpa_d_breakpoint); 
+        sbufWriteU8(dst, currentPidProfile->tpa_p_rate);
+        sbufWriteU16(dst, currentPidProfile->tpa_p_breakpoint); 
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -3514,11 +3515,12 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 4) {
+        if (sbufBytesRemaining(src) >= 6) {
             // Added in API 1.45
-            currentPidProfile->tpa_mode = sbufReadU8(src);
-            currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
-            currentPidProfile->tpa_breakpoint = sbufReadU16(src);
+            currentPidProfile->tpa_d_rate = MIN(sbufReadU8(src), TPA_MAX);
+            currentPidProfile->tpa_d_breakpoint = sbufReadU16(src);
+            currentPidProfile->tpa_p_rate = MIN(sbufReadU8(src), TPA_MAX);
+            currentPidProfile->tpa_p_breakpoint = sbufReadU16(src);
         }
 
         pidInitConfig(currentPidProfile);
