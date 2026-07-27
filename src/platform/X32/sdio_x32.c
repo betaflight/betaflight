@@ -633,8 +633,13 @@ static Status_card SD_PowerOnInit(sd_card_t* card)
     {
         persacle_value = SD_XIN_CLK/card->card_workmode.busClock_Hz/2;
     }
-    SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value);
-     
+    /* Switching to the working clock can fail the same way as the 400kHz setup above;
+     * continuing would leave the card configured for a clock that is not running.
+     */
+    if (SDMMC_SetSdClock(card->SDHOSTx,DISABLE,persacle_value) != SDMMC_SUCCESS) {
+        return Status_Fail;
+    }
+
     /* This function is not necessary. Depending on the hardware and card, 
        you can decide whether to enable TX CLK delay and how much delay to use */
     SDMMC_EnableManualTuningOut(card->SDMMCx,8,ENABLE);
