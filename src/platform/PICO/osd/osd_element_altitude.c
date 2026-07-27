@@ -46,7 +46,7 @@ typedef struct {
     char altString[6]; // -9999 to 99999 should be enough (ft or m)
     int16_t x;
     int16_t y;
-    int16_t val;
+    int32_t val;
     // int32_t max; // for trying out different ladder appearance above alt_max
     bool isBlink;
     char unitSymbol;
@@ -114,6 +114,7 @@ bool renderAltitudeUntil(uint32_t limit_micros)
 #define ALTITUDE_NUM_CHARS (9) // number of chars in the ladder
 
     static int state;
+    static int32_t charNum;
     static int16_t strX;
     static int16_t strY;
     static int16_t strWidth;
@@ -121,7 +122,6 @@ bool renderAltitudeUntil(uint32_t limit_micros)
     static int8_t minIndex;
     static int8_t subIndex; // sub-substate used in some cases.
     static int8_t charOffset;
-    static int8_t charNum;
 
     while (!renderAltitudeComplete && cmpTimeUs(limit_micros, micros()) > 0) {
         switch (state) {
@@ -187,7 +187,7 @@ bool renderAltitudeUntil(uint32_t limit_micros)
                 // Calculate the index of char at / below the pointer (for val>0) / above the pointer (for val<0), and the corresponding position offset.
                 charNum = infoAltitude.val / ALTITUDE_DELTA;
                 charOffset = ((infoAltitude.val * ALTITUDE_CHAR_SPACING) / ALTITUDE_DELTA) % ALTITUDE_CHAR_SPACING;
-                minIndex = charNum - ALTITUDE_NUM_CHARS / 2;
+                minIndex = - ALTITUDE_NUM_CHARS / 2;
 
                 // centering (even up the number of notches above and below the central pointer)
                 if (charOffset > ALTITUDE_CHAR_SPACING / 2) {
@@ -207,9 +207,9 @@ bool renderAltitudeUntil(uint32_t limit_micros)
 
         case 7:
             if (index < minIndex + ALTITUDE_NUM_CHARS) {
-                if (index == 0) {
+                if (index + charNum == 0) {
                     // double horizontal line at maker for alt = 0.
-                    int32_t charY = infoAltitude.y - (index - charNum) * ALTITUDE_CHAR_SPACING + charOffset;
+                    int32_t charY = infoAltitude.y - index * ALTITUDE_CHAR_SPACING + charOffset;
                     switch (subIndex) {
                     case 0:
                         iterLineInit(infoAltitude.x - PICO_OSD_GLYPH_WIDTH, charY, infoAltitude.x, charY);
@@ -228,8 +228,8 @@ bool renderAltitudeUntil(uint32_t limit_micros)
                         break;
                     }
                 } else {
-                    int32_t charY = strY - (index - charNum) * ALTITUDE_CHAR_SPACING + charOffset;
-                    int32_t altAtChar = index * ALTITUDE_DELTA;
+                    int32_t charY = strY - index * ALTITUDE_CHAR_SPACING + charOffset;
+                    int32_t altAtChar = (index + charNum) * ALTITUDE_DELTA;
                     // char charSelect = altAtChar < 0 ? SYM_ALT_BELOWZERO : altAtChar < infoAltitude.max ? SYM_ALT_LADDER : SYM_ALT_ABOVEMAX;
                     char charSelect = altAtChar < 0 ? SYM_ALT_BELOWZERO : SYM_ALT_LADDER;
                     renderCharAt(charSelect, infoAltitude.x - PICO_OSD_GLYPH_WIDTH, charY);
