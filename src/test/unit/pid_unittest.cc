@@ -409,32 +409,32 @@ TEST(pidControllerTest, testPidLevel)
 
     currentPidSetpointRoll = 200;
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(51.456356, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(26.1591, calculatedAngleSetpoint);
     currentPidSetpointPitch = -200;
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-51.456356, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-26.1591, calculatedAngleSetpoint);
 
     currentPidSetpointRoll = 400;
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(128.94597, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(78.724869, calculatedAngleSetpoint);
     currentPidSetpointPitch = -400;
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-128.94597, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-78.724869, calculatedAngleSetpoint);
 
     // Test attitude response
     attitude.values.roll = -275;
     attitude.values.pitch = 275;
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(242.76686, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(163.06772, calculatedAngleSetpoint);
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-242.76686, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-163.06772, calculatedAngleSetpoint);
 
     // Disable ANGLE_MODE
     disableFlightMode(ANGLE_MODE);
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(393.44571, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(389.57309, calculatedAngleSetpoint);
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-392.88422, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-388.67987, calculatedAngleSetpoint);
 
     // Test level mode expo
     enableFlightMode(ANGLE_MODE);
@@ -444,9 +444,9 @@ TEST(pidControllerTest, testPidLevel)
     currentPidSetpointPitch = -400;
     // need to set some rates type and some expo here ??? HELP !!
     calculatedAngleSetpoint = pidLevel(FD_ROLL, pidProfile, &angleTrim, currentPidSetpointRoll, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(231.55479, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(233.46765, calculatedAngleSetpoint);
     calculatedAngleSetpoint = pidLevel(FD_PITCH, pidProfile, &angleTrim, currentPidSetpointPitch, calcHorizonLevelStrength());
-    EXPECT_FLOAT_EQ(-231.55479, calculatedAngleSetpoint);
+    EXPECT_FLOAT_EQ(-233.46765, calculatedAngleSetpoint);
 }
 
 

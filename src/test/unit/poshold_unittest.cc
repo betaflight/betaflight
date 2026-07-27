@@ -116,6 +116,19 @@ extern "C" {
         return 0.0f;
     }
 
+
+    float simulatedMaxRcRate = 720.0f;
+    float getMaxRcRate(int axis)
+    {
+        if (axis == FD_ROLL) {
+            return simulatedMaxRcRate;
+        }
+        if (axis == FD_PITCH) {
+            return simulatedMaxRcRate;
+        }
+        return 720.0f;
+    }
+
     timeDelta_t getTaskDeltaTimeUs(taskId_e taskId)
     {
         UNUSED(taskId);
@@ -431,7 +444,7 @@ TEST_F(PosHoldTest, SticksActiveButCentered)
     runIterations(SETTLE_ITERATIONS);
 
     // Assert your new baseline calculation output
-    EXPECT_NEAR(autopilotAngle[AI_ROLL], -0.9045f, 0.01f);
+    EXPECT_NEAR(autopilotAngle[AI_ROLL], -2.8f, 0.01f);
     EXPECT_NEAR(autopilotAngle[AI_PITCH], 0.0f, 0.01f);
 }
 
@@ -468,7 +481,7 @@ TEST_F(PosHoldTest, VelocityTransitionSimulatesFallbackAndRecovery)
 
     testEstimate.velocity.x = 0.0f;
     runIterations(SETTLE_ITERATIONS);
-    EXPECT_NEAR(-0.7f, autopilotAngle[AI_ROLL], 0.1f);
+    EXPECT_NEAR(0.26f, autopilotAngle[AI_ROLL], 0.1f);
 }
 
 // -- Feedforward (stick push) is a term of its own, apart from damping --
@@ -802,7 +815,7 @@ static void stepVelocityPlant(float kDragPerS, float *vNorthCmS)
 
 class VelocityModeTest : public PosHoldTest {
 protected:
-    void engageVelocityNav(uint8_t velocityP, uint8_t velocityI, uint8_t velocityD,
+    void engageVelocityNav(uint8_t positionD, uint8_t positionP, uint8_t positionA,
                             uint16_t velocityDragCoeff, uint8_t velocityBuildupMaxPitch,
                             uint8_t maxAngle = 45, bool enable = true)
     {
@@ -812,9 +825,9 @@ protected:
         cfg->maxAngle = maxAngle;
         cfg->positionCutoff = 30;
         cfg->velocityControlEnable = enable ? 1 : 0;
-        cfg->velocityP = velocityP;
-        cfg->velocityI = velocityI;
-        cfg->velocityD = velocityD;
+        cfg->positionD = positionD;
+        cfg->positionP = positionP;
+        cfg->positionA = positionA;
         cfg->velocityDragCoeff = velocityDragCoeff;
         cfg->velocityBuildupMaxPitch = velocityBuildupMaxPitch;
         autopilotInit();

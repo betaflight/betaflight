@@ -55,7 +55,7 @@
 #define D_MAX_SETPOINT_GAIN_FACTOR 0.00008f // same DMax gain with either rate of change source; not intended preserve legacy behaviour
 #endif
 
-#define ATTITUDE_CUTOFF_HZ 50
+#define ATTITUDE_CUTOFF_HZ 20
 
 static void pidSetTargetLooptime(uint32_t pidLooptime)
 {

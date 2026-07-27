@@ -190,6 +190,10 @@ static sensorCalEntry_t zCal[CAL_Z_COUNT];
 
 #ifdef USE_GPS
 static uint16_t gpsStamp = 0;
+static bool gpsDataAvailable = false;
+static timeUs_t gpsDataReceivedAtUs = 0;
+static timeDelta_t gpsDataHoldDurationUs = 0;
+static float gpsMeasurementNoiseScale = 1.0f;
 static gpsLocation_t armLocationGps;
 static bool gpsArmLocationSet = false;
 static float gpsAltOffsetCm = 0.0f;
@@ -200,11 +204,26 @@ static bool gpsAltOffsetSet = false;
 static float baroAltOffsetCm = 0.0f;
 static float baroAltAccumulator = 0.0f;
 static bool baroOffsetSet = false;
+static bool baroDataAvailable = false;
+static timeUs_t baroTimestampUs = 0;
+static timeDelta_t baroHoldDurationUs = 0;
+static float baroMeasurementNoiseScale = 1.0f;
 #endif
 
 #ifdef USE_RANGEFINDER
 static float rangefinderAltOffsetCm = 0.0f;
 static bool rangefinderOffsetSet = false;
+static bool rangefinderDataAvailable = false;
+static timeUs_t rangefinderTimestampUs = 0;
+static timeDelta_t rangefinderHoldDurationUs = 0;
+static float rangefinderMeasurementNoiseScale = 1.0f;
+#endif
+
+#ifdef USE_OPTICALFLOW
+static bool opticalFlowDataAvailable = false;
+static timeUs_t opticalFlowTimestampUs = 0;
+static timeDelta_t opticalFlowHoldDurationUs = 0;
+static float opticalFlowMeasurementNoiseScale = 1.0f;
 #endif
 
 static void initZCalEntries(void)
@@ -244,6 +263,10 @@ void positionEstimatorInit(void)
 
 #ifdef USE_GPS
     gpsStamp = 0;
+    gpsDataAvailable = false;
+    gpsDataReceivedAtUs = 0;
+    gpsDataHoldDurationUs = 0;
+    gpsMeasurementNoiseScale = 1.0f;
     gpsArmLocationSet = false;
     gpsAltOffsetCm = 0.0f;
     gpsAltOffsetSet = false;
@@ -252,10 +275,24 @@ void positionEstimatorInit(void)
     baroAltOffsetCm = 0.0f;
     baroAltAccumulator = 0.0f;
     baroOffsetSet = false;
+    baroDataAvailable = false;
+    baroTimestampUs = 0;
+    baroHoldDurationUs = 0;
+    baroMeasurementNoiseScale = 1.0f;
 #endif
 #ifdef USE_RANGEFINDER
     rangefinderAltOffsetCm = 0.0f;
     rangefinderOffsetSet = false;
+    rangefinderDataAvailable = false;
+    rangefinderTimestampUs = 0;
+    rangefinderHoldDurationUs = 0;
+    rangefinderMeasurementNoiseScale = 1.0f;
+#endif
+#ifdef USE_OPTICALFLOW
+    opticalFlowDataAvailable = false;
+    opticalFlowTimestampUs = 0;
+    opticalFlowHoldDurationUs = 0;
+    opticalFlowMeasurementNoiseScale = 1.0f;
 #endif
 
     initZCalEntries();
@@ -324,6 +361,104 @@ static uint16_t gpsDopOrFallback(uint16_t preferredDop, uint16_t fallbackDop)
 {
     return (preferredDop >= GPS_DOP_MIN_VALID) ? preferredDop : fallbackDop;
 }
+
+// Hold each GPS sample until the next one is expected so it can be fused at the
+// altitude task rate. Scaling R by the number of repeated updates preserves
+// approximately the same information per second as fusion at the GPS rate.
+STATIC_UNIT_TESTED bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const bool hasNewData = gpsHasNewData(&gpsStamp);
+    if (hasNewData) {
+        const float gpsFrequencyHz = getGpsDataFrequencyHz();
+
+        gpsDataAvailable = true;
+        gpsDataReceivedAtUs = nowUs;
+        if (gpsFrequencyHz > 0.0f) {
+            gpsDataHoldDurationUs = (timeDelta_t)lrintf(1000000.0f / gpsFrequencyHz);
+            gpsMeasurementNoiseScale = fmaxf((float)TASK_ALTITUDE_RATE_HZ / gpsFrequencyHz, 1.0f);
+        } else {
+            // An invalid frequency cannot define a safe hold interval.
+            gpsDataHoldDurationUs = 0;
+            gpsMeasurementNoiseScale = 1.0f;
+        }
+    }
+
+    const bool withinHoldInterval = gpsDataAvailable &&
+        gpsDataHoldDurationUs > 0 &&
+        cmpTimeUs(nowUs, gpsDataReceivedAtUs) < gpsDataHoldDurationUs;
+    if (!hasNewData && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = gpsMeasurementNoiseScale;
+    return true;
+}
+#endif
+
+#ifdef USE_BARO
+// A complete pressure-conversion cycle can be slower than the barometer task's
+// scheduler rate. Use timestamps from valid altitude samples so conversion
+// delays and target-specific barometer rates are both accounted for.
+STATIC_UNIT_TESTED bool baroMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const timeUs_t sampleTimeUs = getBaroLatestSampleTimeUs();
+    const bool hasNewData = !baroDataAvailable || sampleTimeUs != baroTimestampUs;
+    if (hasNewData) {
+        const timeDelta_t sourceIntervalUs = getBaroSampleIntervalUs();
+
+        baroDataAvailable = true;
+        baroTimestampUs = sampleTimeUs;
+        baroHoldDurationUs = sourceIntervalUs;
+        baroMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, baroTimestampUs);
+    const bool withinHoldInterval = baroDataAvailable &&
+        baroHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < baroHoldDurationUs;
+    if ((!hasNewData || baroHoldDurationUs > 0) && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = baroMeasurementNoiseScale;
+    return true;
+}
+#endif
+
+#ifdef USE_RANGEFINDER
+// rangefinderProcess() timestamps only actual device samples, so its measured
+// interval remains correct when a driver task polls faster than the hardware
+// data rate (the UP-T1 polls at 100 Hz for a 50 Hz data stream, for example).
+STATIC_UNIT_TESTED bool rangefinderMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale)
+{
+    const timeUs_t sampleTimeUs = rangefinderGetLatestSampleTimeUs();
+    const bool hasNewData = !rangefinderDataAvailable || sampleTimeUs != rangefinderTimestampUs;
+    if (hasNewData) {
+        const timeDelta_t sourceIntervalUs = rangefinderGetSampleIntervalUs();
+
+        rangefinderDataAvailable = true;
+        rangefinderTimestampUs = sampleTimeUs;
+        rangefinderHoldDurationUs = sourceIntervalUs;
+        rangefinderMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, rangefinderTimestampUs);
+    const bool withinHoldInterval = rangefinderDataAvailable &&
+        rangefinderHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < rangefinderHoldDurationUs;
+    if ((!hasNewData || rangefinderHoldDurationUs > 0) && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = rangefinderMeasurementNoiseScale;
+    return true;
+}
 #endif
 
 #ifdef USE_OPTICALFLOW
@@ -341,16 +476,55 @@ static float opticalFlowR(int16_t quality)
     const float qualityNorm = constrainf((float)(quality - minQuality) / (100.0f - minQuality), 0.01f, 1.0f);
     return R_OPTICALFLOW_VEL / qualityNorm;
 }
+
+// Optical-flow drivers expose the timestamp of the last processed sensor
+// sample. Use its measured cadence after the first sample; delayMs is only the
+// nominal first-sample fallback. This avoids mistaking a driver's faster
+// polling rate (such as the UP-T1 rangefinder's 2x polling) for its data rate.
+STATIC_UNIT_TESTED bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale)
+{
+    const bool hasNewData = !opticalFlowDataAvailable || flow->timeStampUs != opticalFlowTimestampUs;
+    if (hasNewData) {
+        timeDelta_t sourceIntervalUs = (timeDelta_t)flow->dev.delayMs * 1000;
+        if (opticalFlowDataAvailable) {
+            const timeDelta_t measuredIntervalUs = cmpTimeUs(flow->timeStampUs, opticalFlowTimestampUs);
+            if (measuredIntervalUs > 0 && measuredIntervalUs <= OPTICALFLOW_HARDWARE_TIMEOUT_US) {
+                sourceIntervalUs = measuredIntervalUs;
+            }
+        }
+
+        opticalFlowDataAvailable = true;
+        opticalFlowTimestampUs = flow->timeStampUs;
+        opticalFlowHoldDurationUs = sourceIntervalUs;
+        opticalFlowMeasurementNoiseScale = fmaxf(
+            (float)TASK_ALTITUDE_RATE_HZ * sourceIntervalUs * 1e-6f,
+            1.0f);
+    }
+
+    const timeDelta_t sampleAgeUs = cmpTimeUs(nowUs, opticalFlowTimestampUs);
+    const bool withinHoldInterval = opticalFlowDataAvailable &&
+        opticalFlowHoldDurationUs > 0 &&
+        sampleAgeUs >= 0 &&
+        sampleAgeUs < opticalFlowHoldDurationUs;
+    if (!hasNewData && !withinHoldInterval) {
+        return false;
+    }
+
+    *noiseScale = opticalFlowMeasurementNoiseScale;
+    return true;
+}
 #endif
 
 static void feedGPSMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_GPS
     if (!sensors(SENSOR_GPS) || !STATE(GPS_FIX)) {
+        gpsDataAvailable = false;
         return;
     }
 
-    if (!gpsHasNewData(&gpsStamp)) {
+    float noiseScale;
+    if (!gpsMeasurementReadyForFusion(nowUs, &noiseScale)) {
         return;
     }
 
@@ -382,12 +556,12 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // v[EF_EAST] = East (lon), v[EF_NORTH] = North (lat) relative to the arm point.
 
         const uint16_t xyDop = gpsDopOrFallback(gpsSol.dop.hdop, gpsSol.dop.pdop);
-        const float rPos = gpsR(R_GPS_POS_BASE, xyDop);
+        const float rPos = gpsR(R_GPS_POS_BASE, xyDop) * noiseScale;
         kalmanUpdatePosition(&kfEast, gpsDistCm.v[EF_EAST], rPos);
         kalmanUpdatePosition(&kfNorth, gpsDistCm.v[EF_NORTH], rPos);
 
         // GPS velocity (NED from UBX) -> ENU
-        const float rVel = gpsR(R_GPS_VEL_BASE, xyDop);
+        const float rVel = gpsR(R_GPS_VEL_BASE, xyDop) * noiseScale;
         kalmanUpdateVelocity(&kfEast, (float)gpsSol.velned.velE, rVel);
         kalmanUpdateVelocity(&kfNorth, (float)gpsSol.velned.velN, rVel);
 
@@ -405,7 +579,7 @@ static void feedGPSMeasurements(timeUs_t nowUs)
         // altitude_prefer_baro=100 means strongly prefer baro, so GPS R should be higher
         const float baroPreference = positionConfig()->altitude_prefer_baro * 0.01f;
         const uint16_t altDop = gpsDopOrFallback(gpsSol.dop.vdop, gpsSol.dop.pdop);
-        const float gpsAltR = gpsR(R_GPS_ALT_BASE, altDop) * (1.0f + baroPreference * 2.0f);
+        const float gpsAltR = gpsR(R_GPS_ALT_BASE, altDop) * (1.0f + baroPreference * 2.0f) * noiseScale;
 
         const float gpsRelativeAltCm = gpsSol.llh.altCm - gpsAltOffsetCm;
         kalmanUpdatePosition(&kfUp, gpsRelativeAltCm, gpsAltR);
@@ -423,6 +597,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
 {
 #ifdef USE_BARO
     if (!sensors(SENSOR_BARO)) {
+        baroDataAvailable = false;
         return;
     }
 
@@ -433,6 +608,11 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     }
 
     const float baroAltCm = getBaroAltitude();
+
+    float noiseScale;
+    if (!baroMeasurementReadyForFusion(nowUs, &noiseScale)) {
+        return;
+    }
 
     if (!baroOffsetSet) {
         // Capture disarmed baseline once; keep live relative altitude while disarmed.
@@ -445,7 +625,7 @@ static void feedBaroMeasurements(timeUs_t nowUs)
     const float baroPreference = constrainf(positionConfig()->altitude_prefer_baro * 0.01f, 0.01f, 1.0f);
     const float baroR = R_BARO_ALT / baroPreference;
 
-    kalmanUpdatePosition(&kfUp, baroAltCm - baroAltOffsetCm, baroR);
+    kalmanUpdatePosition(&kfUp, baroAltCm - baroAltOffsetCm, baroR * noiseScale);
     lastZMeasurementUs = nowUs;
 
     zCal[CAL_Z_BARO].rawReading = baroAltCm;
@@ -466,6 +646,12 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
 
     float altCm;
     if (!rangefinderSampleAltitudeCm(&altCm, positionConfig()->rangefinder_max_range_cm)) {
+        rangefinderDataAvailable = false;
+        return;
+    }
+
+    float noiseScale;
+    if (!rangefinderMeasurementReadyForFusion(nowUs, &noiseScale)) {
         return;
     }
 
@@ -481,7 +667,7 @@ static void feedRangefinderMeasurements(timeUs_t nowUs)
         rfR *= 0.25f;  // even lower noise -> stronger pull
     }
 
-    kalmanUpdatePosition(&kfUp, altCm - rangefinderAltOffsetCm, rfR);
+    kalmanUpdatePosition(&kfUp, altCm - rangefinderAltOffsetCm, rfR * noiseScale);
     lastZMeasurementUs = nowUs;
 
     zCal[CAL_Z_RF].rawReading = altCm;
@@ -499,6 +685,7 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     }
 
     if (!sensors(SENSOR_OPTICALFLOW) || !isOpticalflowHealthy()) {
+        opticalFlowDataAvailable = false;
         return;
     }
 
@@ -539,6 +726,11 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
         return;  // quality too low
     }
 
+    float noiseScale;
+    if (!opticalFlowMeasurementReadyForFusion(nowUs, flow, &noiseScale)) {
+        return;
+    }
+
     // Convert flow rates (rad/s) to velocity (cm/s) in body frame, scaled by rangefinder height.
     // Flow sensor X axis measures rightward motion; Y axis measures forward motion.
     const float flowRight   = flow->processedFlowRates.x * altitudeCm;
@@ -557,8 +749,8 @@ static void feedOpticalFlowMeasurements(timeUs_t nowUs)
     const float velEast  =  velForward * sinYaw - velRight * cosYaw;
     const float velNorth =  velForward * cosYaw + velRight * sinYaw;
 
-    kalmanUpdateVelocity(&kfEast, velEast, flowR);
-    kalmanUpdateVelocity(&kfNorth, velNorth, flowR);
+    kalmanUpdateVelocity(&kfEast, velEast, flowR * noiseScale);
+    kalmanUpdateVelocity(&kfNorth, velNorth, flowR * noiseScale);
 
     lastXYMeasurementUs = nowUs;
 #else

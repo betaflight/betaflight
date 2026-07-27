@@ -22,13 +22,19 @@ extern "C" {
 // STATIC_UNIT_TESTED in position_estimator.c — gravity-removed earth-frame
 // linear acceleration in ENU (cm/s^2).
 void getLinearAccelENU(float *accelEast, float *accelNorth, float *accelUp);
+bool gpsMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 #include "io/gps.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/opticalflow.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
+
+bool opticalFlowMeasurementReadyForFusion(timeUs_t nowUs, const opticalflow_t *flow, float *noiseScale);
+bool rangefinderMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
+bool baroMeasurementReadyForFusion(timeUs_t nowUs, float *noiseScale);
 
 PG_REGISTER(positionConfig_t, positionConfig, PG_POSITION, 0);
 }
@@ -45,25 +51,50 @@ int16_t debug[DEBUG16_VALUE_COUNT];
 acc_t acc;
 matrix33_t rMat;
 gpsSolutionData_t gpsSol;
+attitudeEulerAngles_t attitude;
 
 static uint32_t enabledSensors = 0;
 static bool rfHealthy = false;
 static float rfAltCm = 0.0f;
+static bool rfUseFakeMicrosTimestamp = true;
+static timeUs_t rfSampleTimeUs = 0;
+static timeDelta_t rfSampleIntervalUs = 10000;
 static float baroAltCm = 0.0f;
+static bool baroUseFakeMicrosTimestamp = true;
+static timeUs_t baroSampleTimeUs = 0;
+static timeDelta_t baroSampleIntervalUs = 10000;
 static timeUs_t fakeMicros = 0;
+static bool gpsAlwaysHasNewData = true;
+static bool gpsDataIsNew = false;
+static float gpsDataFrequencyHz = 100.0f;
+static opticalflow_t testOpticalFlow;
+static bool opticalFlowHealthy = true;
 
 bool sensors(uint32_t mask) { return (enabledSensors & mask) != 0; }
 bool rangefinderIsHealthy(void) { return rfHealthy; }
 int32_t rangefinderGetLatestAltitude(void) { return lrintf(rfAltCm); }
+timeUs_t rangefinderGetLatestSampleTimeUs(void) { return rfUseFakeMicrosTimestamp ? fakeMicros : rfSampleTimeUs; }
+timeDelta_t rangefinderGetSampleIntervalUs(void) { return rfSampleIntervalUs; }
 float getBaroAltitude(void) { return baroAltCm; }
+timeUs_t getBaroLatestSampleTimeUs(void) { return baroUseFakeMicrosTimestamp ? fakeMicros : baroSampleTimeUs; }
+timeDelta_t getBaroSampleIntervalUs(void) { return baroSampleIntervalUs; }
 
 timeUs_t micros(void) { return fakeMicros; }
 
 bool gpsHasNewData(uint16_t *gpsStamp)
 {
+    if (!gpsAlwaysHasNewData && !gpsDataIsNew) {
+        return false;
+    }
+
+    gpsDataIsNew = false;
     (*gpsStamp)++;
     return true;
 }
+
+float getGpsDataFrequencyHz(void) { return gpsDataFrequencyHz; }
+bool isOpticalflowHealthy(void) { return opticalFlowHealthy; }
+const opticalflow_t *getOpticalFlowData(void) { return &testOpticalFlow; }
 
 void GPS_distance2d(const gpsLocation_t *from, const gpsLocation_t *to, vector2_t *dest)
 {
@@ -88,6 +119,8 @@ protected:
         memset(&acc, 0, sizeof(acc));
         memset(&rMat, 0, sizeof(rMat));
         memset(&gpsSol, 0, sizeof(gpsSol));
+        memset(&attitude, 0, sizeof(attitude));
+        memset(&testOpticalFlow, 0, sizeof(testOpticalFlow));
         memset(debug, 0, sizeof(debug));
 
         // Identity rotation and 1G reciprocal scale so zero accel stays zero.
@@ -100,13 +133,23 @@ protected:
         enabledSensors = SENSOR_GPS | SENSOR_BARO | SENSOR_RANGEFINDER;
         rfHealthy = true;
         rfAltCm = 100.0f;
+        rfUseFakeMicrosTimestamp = true;
+        rfSampleTimeUs = 0;
+        rfSampleIntervalUs = 10000;
         baroAltCm = 100.0f;
+        baroUseFakeMicrosTimestamp = true;
+        baroSampleTimeUs = 0;
+        baroSampleIntervalUs = 10000;
         gpsSol.llh.altCm = 100.0f;
         gpsSol.dop.pdop = 100; // pDOP 1.0
 
         stateFlags = GPS_FIX;
         armingFlags = ARMED;
         fakeMicros = 0;
+        gpsAlwaysHasNewData = true;
+        gpsDataIsNew = false;
+        gpsDataFrequencyHz = 100.0f;
+        opticalFlowHealthy = true;
 
         positionConfigMutable()->altitude_source = ALTITUDE_SOURCE_RANGEFINDER_PREFER;
         positionConfigMutable()->altitude_prefer_baro = 100;
@@ -115,6 +158,150 @@ protected:
         positionEstimatorInit();
     }
 };
+
+TEST_F(PositionEstimatorTest, GPSMeasurementsAreHeldAtAltitudeTaskRate)
+{
+    gpsAlwaysHasNewData = false;
+    gpsDataFrequencyHz = 10.0f;
+    gpsDataIsNew = true;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(10000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+
+    // A 10 Hz GPS sample is reused for all ten 100 Hz altitude-task calls in
+    // its 100 ms source interval.
+    for (timeUs_t nowUs = 20000; nowUs <= 100000; nowUs += 10000) {
+        EXPECT_TRUE(gpsMeasurementReadyForFusion(nowUs, &noiseScale));
+        EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+    }
+
+    // Do not continue fusing a stale held sample if the next one is late.
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(110000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, GPSUpsamplingTracksSourceFrequency)
+{
+    gpsAlwaysHasNewData = false;
+    gpsDataFrequencyHz = 20.0f;
+    gpsDataIsNew = true;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(0, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 5.0f);
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(40000, &noiseScale));
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(50000, &noiseScale));
+
+    // The source rate can change at runtime as the receiver's nav interval changes.
+    gpsDataFrequencyHz = 5.0f;
+    gpsDataIsNew = true;
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(50000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 20.0f);
+    EXPECT_TRUE(gpsMeasurementReadyForFusion(240000, &noiseScale));
+    EXPECT_FALSE(gpsMeasurementReadyForFusion(250000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, OpticalFlowMeasurementsUseNominalRateForFirstSample)
+{
+    testOpticalFlow.dev.delayMs = 20; // UP-T1 optical flow is nominally 50 Hz.
+    testOpticalFlow.timeStampUs = 100000;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(100000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(110000, &testOpticalFlow, &noiseScale));
+    EXPECT_FALSE(opticalFlowMeasurementReadyForFusion(120000, &testOpticalFlow, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, OpticalFlowUpsamplingTracksMeasuredSampleRate)
+{
+    testOpticalFlow.dev.delayMs = 20;
+    testOpticalFlow.timeStampUs = 100000;
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(100000, &testOpticalFlow, &noiseScale));
+
+    // A timestamp change after 20 ms confirms the nominal 50 Hz source rate.
+    testOpticalFlow.timeStampUs = 120000;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(120000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+
+    // If the actual sensor cadence changes, use it instead of the task/polling rate.
+    testOpticalFlow.timeStampUs = 160000;
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(160000, &testOpticalFlow, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 4.0f);
+    EXPECT_TRUE(opticalFlowMeasurementReadyForFusion(190000, &testOpticalFlow, &noiseScale));
+    EXPECT_FALSE(opticalFlowMeasurementReadyForFusion(200000, &testOpticalFlow, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, RangefinderMeasurementsUseMeasuredDataRate)
+{
+    rfUseFakeMicrosTimestamp = false;
+    rfSampleTimeUs = 100000;
+    rfSampleIntervalUs = 20000; // UP-T1 frames are 50 Hz despite 100 Hz polling.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.0f);
+
+    // Reuse the 50 Hz sample on the intervening 100 Hz estimator call.
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(110000, &noiseScale));
+    EXPECT_FALSE(rangefinderMeasurementReadyForFusion(120000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, RangefinderUpsamplingTracksSourceInterval)
+{
+    rfUseFakeMicrosTimestamp = false;
+    rfSampleTimeUs = 100000;
+    rfSampleIntervalUs = 100000; // e.g. a 10 Hz HC-SR04.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 10.0f);
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(190000, &noiseScale));
+    EXPECT_FALSE(rangefinderMeasurementReadyForFusion(200000, &noiseScale));
+
+    rfSampleTimeUs = 200000;
+    EXPECT_TRUE(rangefinderMeasurementReadyForFusion(200000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, BarometerMeasurementsUseCompletedSampleRate)
+{
+    baroUseFakeMicrosTimestamp = false;
+    baroSampleTimeUs = 100000;
+    baroSampleIntervalUs = 25000; // Default barometer rate is 40 Hz.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 2.5f);
+    EXPECT_TRUE(baroMeasurementReadyForFusion(110000, &noiseScale));
+    EXPECT_TRUE(baroMeasurementReadyForFusion(120000, &noiseScale));
+    EXPECT_FALSE(baroMeasurementReadyForFusion(130000, &noiseScale));
+}
+
+TEST_F(PositionEstimatorTest, BarometerUpsamplingTracksSlowerTargetRate)
+{
+    baroUseFakeMicrosTimestamp = false;
+    baroSampleTimeUs = 100000;
+    baroSampleIntervalUs = 50000; // Some targets configure barometers at 20 Hz.
+    positionEstimatorInit();
+
+    float noiseScale;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(100000, &noiseScale));
+    EXPECT_FLOAT_EQ(noiseScale, 5.0f);
+    EXPECT_TRUE(baroMeasurementReadyForFusion(140000, &noiseScale));
+    EXPECT_FALSE(baroMeasurementReadyForFusion(150000, &noiseScale));
+
+    baroSampleTimeUs = 150000;
+    EXPECT_TRUE(baroMeasurementReadyForFusion(150000, &noiseScale));
+}
 
 TEST_F(PositionEstimatorTest, RangefinderPreferFallsBackAndRecovers)
 {
