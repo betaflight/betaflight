@@ -1,0 +1,123 @@
+/*
+ * This file is part of Cleanflight and Betaflight.
+ *
+ * Cleanflight and Betaflight are free software. You can redistribute
+ * this software and/or modify this software under the terms of the
+ * GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * Cleanflight and Betaflight are distributed in the hope that they
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software.
+ *
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <stdint.h>
+
+extern "C" {
+    #include "platform.h"
+
+    #include "build/debug.h"
+
+    #include "common/axis.h"
+    #include "common/maths.h"
+    #include "common/vector.h"
+
+    #include "pg/pg.h"
+    #include "pg/pg_ids.h"
+    #include "pg/rx.h"
+    #include "pg/autopilot.h"
+
+    #include "fc/rc.h"
+    #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
+    #include "fc/runtime_config.h"
+
+    #include "config/config.h"
+
+    #include "rx/rx.h"
+
+    #include "sensors/battery.h"
+
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
+    PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+    PG_REGISTER(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+    PG_REGISTER(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 0);
+
+    uint16_t flightModeFlags = 0;
+    int16_t debug[DEBUG16_VALUE_COUNT];
+    uint8_t debugMode;
+    float rcCommand[4];
+    float rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    rxRuntimeState_t rxRuntimeState;
+
+    bool isRxReceivingSignal(void) { return true; }
+    bool failsafeIsActive(void) { return false; }
+    bool featureIsEnabled(const uint32_t) { return false; }
+    bool IS_RC_MODE_ACTIVE(boxId_e) { return false; }
+    bool autopilotYawControlActive(void) { return false; }
+    float autopilotGetYawRate(void) { return 0.0f; }
+    void imuQuaternionHeadfreeTransformVectorEarthToBody(vector3_t *) { }
+
+    const lowVoltageCutoff_t *getLowVoltageCutoff(void)
+    {
+        static const lowVoltageCutoff_t cutoff = { false, 0, 0 };
+        return &cutoff;
+    }
+}
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+class FpvCamAngleTest : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        PG_RESET(rxConfig);
+        rawSetpoint[ROLL] = 100.0f;
+        rawSetpoint[PITCH] = 0.0f;
+        rawSetpoint[YAW] = 50.0f;
+    }
+};
+
+TEST_F(FpvCamAngleTest, CachedFactorsPersistAcrossCallsWithUnchangedAngle)
+{
+    rxConfigMutable()->fpvCamAngleDegrees = 45;
+
+    scaleRawSetpointToFpvCamAngle();
+    const float roll1 = rawSetpoint[ROLL];
+    const float yaw1 = rawSetpoint[YAW];
+
+    // re-apply the same raw inputs; angle is unchanged so the recompute
+    // branch is skipped and cached cos/sin factors must still be in effect,
+    // not silently reset to the identity (cos=1, sin=0) locals
+    rawSetpoint[ROLL] = 100.0f;
+    rawSetpoint[YAW] = 50.0f;
+    scaleRawSetpointToFpvCamAngle();
+    const float roll2 = rawSetpoint[ROLL];
+    const float yaw2 = rawSetpoint[YAW];
+
+    EXPECT_FLOAT_EQ(roll1, roll2);
+    EXPECT_FLOAT_EQ(yaw1, yaw2);
+}
+
+TEST_F(FpvCamAngleTest, FactorsRecomputeWhenAngleChanges)
+{
+    rxConfigMutable()->fpvCamAngleDegrees = 45;
+    scaleRawSetpointToFpvCamAngle();
+    const float roll45 = rawSetpoint[ROLL];
+    const float yaw45 = rawSetpoint[YAW];
+
+    rawSetpoint[ROLL] = 100.0f;
+    rawSetpoint[YAW] = 50.0f;
+    rxConfigMutable()->fpvCamAngleDegrees = 90;
+    scaleRawSetpointToFpvCamAngle();
+
+    EXPECT_NE(roll45, rawSetpoint[ROLL]);
+    EXPECT_NE(yaw45, rawSetpoint[YAW]);
+}
