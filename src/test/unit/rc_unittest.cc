@@ -18,6 +18,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint.h>
+#include <math.h>
 
 extern "C" {
     #include "platform.h"
@@ -75,13 +76,41 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+// sincosf_approx() has ~3.3e-6 max error (see maths_unittest); this tolerance
+// only needs to distinguish a real rotation from the identity (cos=1, sin=0)
+// fallback that the pre-fix non-static locals produced.
+static const float FACTOR_TOLERANCE = 1e-3f;
+
+static const float TEST_ROLL_INPUT = 100.0f;
+static const float TEST_YAW_INPUT = 50.0f;
+
+static void expectRawSetpointMatchesAngle(int angleDegrees)
+{
+    const float angleRad = DEGREES_TO_RADIANS(angleDegrees);
+    const float expectedRoll = TEST_ROLL_INPUT * cosf(angleRad) - TEST_YAW_INPUT * sinf(angleRad);
+    const float expectedYaw = TEST_YAW_INPUT * cosf(angleRad) + TEST_ROLL_INPUT * sinf(angleRad);
+
+    EXPECT_NEAR(expectedRoll, rawSetpoint[ROLL], FACTOR_TOLERANCE);
+    EXPECT_NEAR(expectedYaw, rawSetpoint[YAW], FACTOR_TOLERANCE);
+}
+
 class FpvCamAngleTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
         PG_RESET(rxConfig);
-        rawSetpoint[ROLL] = 100.0f;
+
+        // scaleRawSetpointToFpvCamAngle() caches cos/sin factors in a function-local
+        // static, so leftover state from a previous test in this binary must be
+        // invalidated before each test sets its own angle.
+        rxConfigMutable()->fpvCamAngleDegrees = 255;
+        rawSetpoint[ROLL] = 0.0f;
         rawSetpoint[PITCH] = 0.0f;
-        rawSetpoint[YAW] = 50.0f;
+        rawSetpoint[YAW] = 0.0f;
+        scaleRawSetpointToFpvCamAngle();
+
+        rawSetpoint[ROLL] = TEST_ROLL_INPUT;
+        rawSetpoint[PITCH] = 0.0f;
+        rawSetpoint[YAW] = TEST_YAW_INPUT;
     }
 };
 
@@ -90,34 +119,26 @@ TEST_F(FpvCamAngleTest, CachedFactorsPersistAcrossCallsWithUnchangedAngle)
     rxConfigMutable()->fpvCamAngleDegrees = 45;
 
     scaleRawSetpointToFpvCamAngle();
-    const float roll1 = rawSetpoint[ROLL];
-    const float yaw1 = rawSetpoint[YAW];
+    expectRawSetpointMatchesAngle(45);
 
     // re-apply the same raw inputs; angle is unchanged so the recompute
     // branch is skipped and cached cos/sin factors must still be in effect,
     // not silently reset to the identity (cos=1, sin=0) locals
-    rawSetpoint[ROLL] = 100.0f;
-    rawSetpoint[YAW] = 50.0f;
+    rawSetpoint[ROLL] = TEST_ROLL_INPUT;
+    rawSetpoint[YAW] = TEST_YAW_INPUT;
     scaleRawSetpointToFpvCamAngle();
-    const float roll2 = rawSetpoint[ROLL];
-    const float yaw2 = rawSetpoint[YAW];
-
-    EXPECT_FLOAT_EQ(roll1, roll2);
-    EXPECT_FLOAT_EQ(yaw1, yaw2);
+    expectRawSetpointMatchesAngle(45);
 }
 
 TEST_F(FpvCamAngleTest, FactorsRecomputeWhenAngleChanges)
 {
     rxConfigMutable()->fpvCamAngleDegrees = 45;
     scaleRawSetpointToFpvCamAngle();
-    const float roll45 = rawSetpoint[ROLL];
-    const float yaw45 = rawSetpoint[YAW];
+    expectRawSetpointMatchesAngle(45);
 
-    rawSetpoint[ROLL] = 100.0f;
-    rawSetpoint[YAW] = 50.0f;
+    rawSetpoint[ROLL] = TEST_ROLL_INPUT;
+    rawSetpoint[YAW] = TEST_YAW_INPUT;
     rxConfigMutable()->fpvCamAngleDegrees = 90;
     scaleRawSetpointToFpvCamAngle();
-
-    EXPECT_NE(roll45, rawSetpoint[ROLL]);
-    EXPECT_NE(yaw45, rawSetpoint[YAW]);
+    expectRawSetpointMatchesAngle(90);
 }
