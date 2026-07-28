@@ -463,6 +463,39 @@ void i2cInit(i2cDevice_e device)
 
     I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
 
+    // Bus-health diagnostic (recorded for CLI status; init continues regardless).
+    // Same semantics as the LL path.
+    uint8_t busHealth = I2C_HEALTH_CHECKED;
+
+    // Usability: internal pull-up engaged — an unloaded functional line reaches
+    // HIGH; still LOW means held down (short/stuck device/non-functional pin).
+    IOConfigGPIO(scl, IOCFG_IPU);
+    IOConfigGPIO(sda, IOCFG_IPU);
+    delayMicroseconds(10);
+    if (!IORead(scl)) {
+        busHealth |= I2C_HEALTH_SCL_LOW;
+    }
+    if (!IORead(sda)) {
+        busHealth |= I2C_HEALTH_SDA_LOW;
+    }
+
+    // External pull-up presence (informational; skipped when using internal
+    // pull-up). Skip a line already held low: it reads low here regardless, so
+    // its pull-up state is indeterminate.
+    if (!pDev->pullUp) {
+        IOConfigGPIO(scl, IOCFG_IPD);
+        IOConfigGPIO(sda, IOCFG_IPD);
+        delayMicroseconds(10);
+        if (!(busHealth & I2C_HEALTH_SCL_LOW) && !IORead(scl)) {
+            busHealth |= I2C_HEALTH_SCL_NOPULL;
+        }
+        if (!(busHealth & I2C_HEALTH_SDA_LOW) && !IORead(sda)) {
+            busHealth |= I2C_HEALTH_SDA_NOPULL;
+        }
+    }
+
+    i2cReportBusHealth(device, busHealth);
+
     i2cUnstick(scl, sda);
 
     // Init pins
