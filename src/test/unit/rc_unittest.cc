@@ -71,6 +71,13 @@ extern "C" {
         static const lowVoltageCutoff_t cutoff = { false, 0, 0 };
         return &cutoff;
     }
+
+    // Not declared in rc.h: every other STATIC_UNIT_TESTED symbol in this codebase
+    // (rc_adjustments.c's stepwiseAdjustments, imu.c's q/qP, etc.) is exposed to its
+    // unittest the same way, since a header declaration would give every other .c
+    // file that includes rc.h a stray prototype for a static-in-production symbol.
+    void scaleRawSetpointToFpvCamAngle(void);
+    extern float rawSetpoint[XYZ_AXIS_COUNT];
 }
 
 #include "unittest_macros.h"

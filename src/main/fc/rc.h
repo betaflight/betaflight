@@ -59,6 +59,3 @@ float getFeedforward(int axis);
 void updateRcRefreshRate(timeUs_t currentTimeUs, bool rxReceivingSignal);
 float getCurrentRxRateHz(void);
 bool getRxRateValid(void);
-
-STATIC_UNIT_TESTED void scaleRawSetpointToFpvCamAngle(void);
-STATIC_UNIT_TESTED extern float rawSetpoint[XYZ_AXIS_COUNT];
