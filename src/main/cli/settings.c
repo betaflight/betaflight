@@ -476,6 +476,9 @@ static const char * const lookupTableLEDProfile[] = {
     "RACE", "BEACON"
 };
 #endif
+static const char * const lookupTableLEDBlinkPattern[] = {
+    "AUTO", "FLASH", NULL, "DOUBLE"
+};
 #endif
 
 const char * const lookupTableLedstripColors[COLOR_COUNT] = {
@@ -691,6 +694,7 @@ const lookupTableEntry_t lookupTables[] = {
     LOOKUP_TABLE_ENTRY(lookupTableSpaMode),
 #ifdef USE_LED_STRIP
     LOOKUP_TABLE_ENTRY(lookupTableLEDProfile),
+    LOOKUP_TABLE_ENTRY(lookupTableLEDBlinkPattern),
     LOOKUP_TABLE_ENTRY(lookupTableLedstripColors),
 #endif
 
@@ -1482,6 +1486,48 @@ const clivalue_t valueTable[] = {
     { "ledstrip_brightness",        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 5, 100 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_brightness) },
     { "ledstrip_rainbow_delta",     VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_delta) },
     { "ledstrip_rainbow_freq",      VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_rainbow_freq) },
+    { "ledstrip_larson_freq",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_larson_freq) },
+    { "ledstrip_blink_period_ms",   VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 50, 10000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_period_ms) },
+    { "ledstrip_blink_on_ms",       VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 10000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_on_ms) },
+    { "ledstrip_blink_pattern",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_BLINK_PATTERN }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_pattern) },
+    { "ledstrip_blink_flash_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 300 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_flash_ms) },
+    { "ledstrip_blink_gap_ms",    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 20, 300 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_gap_ms) },
+    { "ledstrip_blink_pause_ms",  VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { LED_BLINK_PAUSE_MS_MIN_ALTERNATE, 2000 }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_blink_pause_ms) },
+#ifdef USE_LED_STRIP_STATUS_MODE
+    { "ledstrip_profile_1_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[0]) },
+    { "ledstrip_profile_2_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[1]) },
+    { "ledstrip_profile_3_name",    VAR_UINT8  | MASTER_VALUE | MODE_STRING, .config.string = { 1, MAX_LED_PROFILE_NAME_LENGTH, STRING_FLAGS_NONE }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profileNames[2]) },
+    { "ledstrip_profile_1_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_brightness) },
+    { "ledstrip_profile_2_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_brightness) },
+    { "ledstrip_profile_3_brightness", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_brightness) },
+    { "ledstrip_profile_1_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_larson_freq) },
+    { "ledstrip_profile_2_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_larson_freq) },
+    { "ledstrip_profile_3_larson_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 255 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_larson_freq) },
+    { "ledstrip_profile_1_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_rainbow_delta) },
+    { "ledstrip_profile_2_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_rainbow_delta) },
+    { "ledstrip_profile_3_rainbow_delta", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, HSV_HUE_MAX }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_rainbow_delta) },
+    { "ledstrip_profile_1_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_rainbow_freq) },
+    { "ledstrip_profile_2_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_rainbow_freq) },
+    { "ledstrip_profile_3_rainbow_freq", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_rainbow_freq) },
+    { "ledstrip_profile_1_blink_period", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_period) },
+    { "ledstrip_profile_2_blink_period", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_period) },
+    { "ledstrip_profile_3_blink_period", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_period) },
+    { "ledstrip_profile_1_blink_on_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_on_ms) },
+    { "ledstrip_profile_2_blink_on_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_on_ms) },
+    { "ledstrip_profile_3_blink_on_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_on_ms) },
+    { "ledstrip_profile_1_blink_pattern", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_BLINK_PATTERN }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_pattern) },
+    { "ledstrip_profile_2_blink_pattern", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_BLINK_PATTERN }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_pattern) },
+    { "ledstrip_profile_3_blink_pattern", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LED_BLINK_PATTERN }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_pattern) },
+    { "ledstrip_profile_1_blink_flash_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_flash_ms) },
+    { "ledstrip_profile_2_blink_flash_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_flash_ms) },
+    { "ledstrip_profile_3_blink_flash_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_flash_ms) },
+    { "ledstrip_profile_1_blink_gap_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_gap_ms) },
+    { "ledstrip_profile_2_blink_gap_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_gap_ms) },
+    { "ledstrip_profile_3_blink_gap_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 300 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_gap_ms) },
+    { "ledstrip_profile_1_blink_pause_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[0].profile_blink_pause_ms) },
+    { "ledstrip_profile_2_blink_pause_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[1].profile_blink_pause_ms) },
+    { "ledstrip_profile_3_blink_pause_ms", VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 2000 }, PG_LED_STRIP_STATUS_MODE_CONFIG, offsetof(ledStripProfilesConfig_t, profiles[2].profile_blink_pause_ms) },
+#endif
 #endif
 
 // PG_TRANSPONDER_CONFIG

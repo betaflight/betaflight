@@ -33,7 +33,7 @@ void cliProcessConfigFile(const char *filename);
 #endif
 
 #ifdef USE_CLI
-#define CLI_IN_BUFFER_SIZE  256
+#define CLI_IN_BUFFER_SIZE  768
 #define CLI_OUT_BUFFER_SIZE 64
 
 int cliGetSettingByName(const char *name, char *buf, int bufLen);

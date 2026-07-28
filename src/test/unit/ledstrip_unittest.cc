@@ -71,10 +71,17 @@ extern "C" {
     void reevaluateLedConfig();
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+
+    static void prepareLedStripStatusProfileTest(void)
+    {
+        ledStripConfigMutable()->ledstrip_profile = LED_PROFILE_STATUS;
+    }
 }
 
 TEST(LedStripTest, parseLedStripConfig)
 {
+    prepareLedStripStatusProfileTest();
+
     // given
     memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
@@ -196,6 +203,8 @@ TEST(LedStripTest, parseLedStripConfig)
 
 TEST(LedStripTest, smallestGridWithCenter)
 {
+    prepareLedStripStatusProfileTest();
+
     // given
     memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
@@ -224,6 +233,8 @@ TEST(LedStripTest, smallestGridWithCenter)
 
 TEST(LedStripTest, smallestGrid)
 {
+    prepareLedStripStatusProfileTest();
+
     // given
     memset(&ledStripStatusModeConfigMutable()->ledConfigs, 0, sizeof(ledStripStatusModeConfigMutable()->ledConfigs));
 
@@ -255,6 +266,8 @@ extern hsvColor_t *colors;
 
 TEST(ColorTest, parseColor)
 {
+    prepareLedStripStatusProfileTest();
+
     // given
     memset(ledStripStatusModeConfigMutable()->colors, 0, sizeof(hsvColor_t) * LED_CONFIGURABLE_COLOR_COUNT);
 

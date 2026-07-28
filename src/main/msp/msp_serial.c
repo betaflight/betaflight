@@ -180,11 +180,13 @@ static void mspSerialProcessReceivedPacketData(mspPort_t *mspPort, uint8_t c)
             mspPort->checksum1 ^= c;
             if (mspPort->offset == sizeof(mspHeaderV1_t)) {
                 mspHeaderV1_t * hdr = (mspHeaderV1_t *)&mspPort->inBuf[0];
-                // Check incoming buffer size limit
+                // Check incoming buffer size limit (V1 size field is uint8_t; larger payloads use jumbo/MSPv2)
+#if MSP_PORT_INBUF_SIZE <= 255
                 if (hdr->size > MSP_PORT_INBUF_SIZE) {
                     mspPort->packetState = MSP_IDLE;
-                }
-                else if (hdr->cmd == MSP_V2_FRAME_ID) {
+                } else
+#endif
+                if (hdr->cmd == MSP_V2_FRAME_ID) {
                     // MSPv1 payload must be big enough to hold V2 header + extra checksum
                     if (hdr->size >= sizeof(mspHeaderV2_t) + 1) {
                         mspPort->mspVersion = MSP_V2_OVER_V1;

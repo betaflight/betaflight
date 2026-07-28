@@ -224,6 +224,164 @@ static bool fontHasBeenUpdated = false;
 
 static int mspDescriptor = 0;
 
+#ifdef USE_LED_STRIP_STATUS_MODE
+static void sbufWriteLedStripProfileConfig(sbuf_t *dst, const ledStripStatusModeConfig_t *profile)
+{
+    for (int i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
+        sbufWriteU32(dst, profile->ledConfigs[i]);
+    }
+    for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        const hsvColor_t *color = &profile->colors[i];
+        sbufWriteU16(dst, color->h);
+        sbufWriteU8(dst, color->s);
+        sbufWriteU8(dst, color->v);
+    }
+    for (int i = 0; i < LED_MODE_COUNT; i++) {
+        for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
+            sbufWriteU8(dst, i);
+            sbufWriteU8(dst, j);
+            sbufWriteU8(dst, profile->modeColors[i].color[j]);
+        }
+    }
+    for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
+        sbufWriteU8(dst, LED_MODE_COUNT);
+        sbufWriteU8(dst, j);
+        sbufWriteU8(dst, profile->specialColors.color[j]);
+    }
+    sbufWriteU8(dst, LED_AUX_CHANNEL);
+    sbufWriteU8(dst, 0);
+    sbufWriteU8(dst, profile->ledstrip_aux_channel);
+    sbufWriteU8(dst, profile->profile_brightness);
+    sbufWriteU16(dst, profile->profile_larson_freq);
+    sbufWriteU16(dst, profile->profile_rainbow_delta);
+    sbufWriteU16(dst, profile->profile_rainbow_freq);
+    sbufWriteU16(dst, profile->profile_blink_period);
+    sbufWriteU16(dst, profile->profile_blink_on_ms);
+    sbufWriteU8(dst, profile->profile_blink_pattern);
+    sbufWriteU16(dst, profile->profile_blink_flash_ms);
+    sbufWriteU16(dst, profile->profile_blink_gap_ms);
+    sbufWriteU16(dst, profile->profile_blink_pause_ms);
+}
+
+_Static_assert(MSP_PORT_INBUF_SIZE >= LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE + MSP_MAX_HEADER_SIZE,
+    "MSP inBuf too small for LED strip profile config");
+
+static bool sbufReadLedStripProfileConfig(sbuf_t *src, ledStripStatusModeConfig_t *profile)
+{
+    if (sbufBytesRemaining(src) < LED_STRIP_MAX_LENGTH * (int)sizeof(uint32_t)) {
+        return false;
+    }
+    for (int i = 0; i < LED_STRIP_MAX_LENGTH; i++) {
+        profile->ledConfigs[i] = sbufReadU32(src);
+    }
+    if (sbufBytesRemaining(src) < LED_CONFIGURABLE_COLOR_COUNT * 4) {
+        return false;
+    }
+    for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        hsvColor_t *color = &profile->colors[i];
+        color->h = sbufReadU16(src);
+        color->s = sbufReadU8(src);
+        color->v = sbufReadU8(src);
+    }
+    const int modeColorEntries = LED_MODE_COUNT * LED_DIRECTION_COUNT + LED_SPECIAL_COLOR_COUNT + 1;
+    if (sbufBytesRemaining(src) < modeColorEntries * 3) {
+        return false;
+    }
+    for (int entry = 0; entry < modeColorEntries; entry++) {
+        const ledModeIndex_e modeIdx = sbufReadU8(src);
+        const int funIdx = sbufReadU8(src);
+        const int colorIndex = sbufReadU8(src);
+        if (colorIndex < 0 || colorIndex >= LED_CONFIGURABLE_COLOR_COUNT) {
+            return false;
+        }
+        if (modeIdx < LED_MODE_COUNT) {
+            if (funIdx < 0 || funIdx >= LED_DIRECTION_COUNT) {
+                return false;
+            }
+            profile->modeColors[modeIdx].color[funIdx] = colorIndex;
+        } else if (modeIdx == LED_SPECIAL) {
+            if (funIdx < 0 || funIdx >= LED_SPECIAL_COLOR_COUNT) {
+                return false;
+            }
+            profile->specialColors.color[funIdx] = colorIndex;
+        } else if (modeIdx == LED_AUX_CHANNEL) {
+            if (funIdx != 0) {
+                return false;
+            }
+            profile->ledstrip_aux_channel = colorIndex;
+        } else {
+            return false;
+        }
+    }
+    if (sbufBytesRemaining(src) >= 1) {
+        profile->profile_brightness = sbufReadU8(src);
+    } else {
+        profile->profile_brightness = LED_STRIP_PROFILE_BRIGHTNESS_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_larson_freq = sbufReadU16(src);
+    } else {
+        profile->profile_larson_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_rainbow_delta = sbufReadU16(src);
+    } else {
+        profile->profile_rainbow_delta = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_rainbow_freq = sbufReadU16(src);
+    } else {
+        profile->profile_rainbow_freq = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_period = sbufReadU16(src);
+    } else {
+        profile->profile_blink_period = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_on_ms = sbufReadU16(src);
+    } else if (sbufBytesRemaining(src) >= 1) {
+        const uint8_t blinkPercent = sbufReadU8(src);
+        const uint16_t periodMs = profile->profile_blink_period;
+
+        if (blinkPercent == 0 || periodMs == 0) {
+            profile->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+        } else {
+            uint16_t onMs = (uint16_t)((uint32_t)periodMs * blinkPercent / 100);
+
+            if (onMs < 1) {
+                onMs = 1;
+            }
+
+            profile->profile_blink_on_ms = onMs;
+        }
+    } else {
+        profile->profile_blink_on_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 1) {
+        profile->profile_blink_pattern = migrateLedBlinkPattern(sbufReadU8(src));
+    } else {
+        profile->profile_blink_pattern = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_flash_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_flash_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_gap_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_gap_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    if (sbufBytesRemaining(src) >= 2) {
+        profile->profile_blink_pause_ms = sbufReadU16(src);
+    } else {
+        profile->profile_blink_pause_ms = LED_STRIP_PROFILE_OVERLAY_USE_MASTER;
+    }
+    return true;
+}
+#endif
+
 mspDescriptor_t mspDescriptorAlloc(void)
 {
     return (mspDescriptor_t)mspDescriptor++;
@@ -2672,6 +2830,20 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
                     textVar = currentBatteryProfile->profileName;
                     break;
 
+#ifdef USE_LED_STRIP_STATUS_MODE
+                case MSP2TEXT_LED_STRIP_PROFILE_NAME: {
+                    if (sbufBytesRemaining(src) < 1) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    const uint8_t profileIndex = sbufReadU8(src);
+                    if (profileIndex >= LED_PROFILE_COUNT) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    textVar = ledStripProfileName(profileIndex);
+                    break;
+                }
+#endif
+
                 default:
                     return MSP_RESULT_ERROR;
             }
@@ -2688,7 +2860,33 @@ static mspResult_e mspFcProcessOutCommandWithArg(mspDescriptor_t srcDesc, int16_
         sbufWriteU8(dst, ledStripConfig()->ledstrip_brightness);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_delta);
         sbufWriteU16(dst, ledStripConfig()->ledstrip_rainbow_freq);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_larson_freq);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_period_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_on_ms);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_blink_pattern);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_flash_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_gap_ms);
+        sbufWriteU16(dst, ledStripConfig()->ledstrip_blink_pause_ms);
         break;
+#endif
+
+#ifdef USE_LED_STRIP_STATUS_MODE
+    case MSP2_GET_LED_STRIP_PROFILE_COUNT:
+        sbufWriteU8(dst, LED_PROFILE_COUNT);
+        break;
+
+    case MSP2_GET_LED_STRIP_PROFILE_CONFIG: {
+        if (sbufBytesRemaining(src) < 1) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint8_t profileIndex = sbufReadU8(src);
+        if (profileIndex >= LED_PROFILE_COUNT) {
+            return MSP_RESULT_ERROR;
+        }
+        sbufWriteU8(dst, profileIndex);
+        sbufWriteLedStripProfileConfig(dst, ledStripProfileConfig(profileIndex));
+        break;
+    }
 #endif
 
     case MSP2_BATTERY_PROFILE: {
@@ -4216,7 +4414,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = sbufReadU8(src);
-            if (i >= LED_STRIP_MAX_LENGTH || dataSize != (1 + 4)) {
+            if (i >= LED_STRIP_MAX_LENGTH || dataSize < (1 + 4) || dataSize > (1 + 4 + 1)) {
                 return MSP_RESULT_ERROR;
             }
 #ifdef USE_LED_STRIP_STATUS_MODE
@@ -4228,7 +4426,7 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 #endif
             // API 1.41 - selected ledstrip_profile
             if (sbufBytesRemaining(src) >= 1) {
-                ledStripConfigMutable()->ledstrip_profile = sbufReadU8(src);
+                setLedProfile(sbufReadU8(src));
             }
         }
         break;
@@ -4372,6 +4570,21 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                     textSpace = MAX_BATTERY_PROFILE_NAME_LENGTH;
                     break;
 
+#ifdef USE_LED_STRIP_STATUS_MODE
+                case MSP2TEXT_LED_STRIP_PROFILE_NAME: {
+                    if (sbufBytesRemaining(src) < 1) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    const uint8_t profileIndex = sbufReadU8(src);
+                    if (profileIndex >= LED_PROFILE_COUNT) {
+                        return MSP_RESULT_ERROR;
+                    }
+                    textVar = ledStripProfileNameMutable(profileIndex);
+                    textSpace = MAX_LED_PROFILE_NAME_LENGTH;
+                    break;
+                }
+#endif
+
                 case MSP2TEXT_CUSTOM_MSG_0:
                 case MSP2TEXT_CUSTOM_MSG_0 + 1:
                 case MSP2TEXT_CUSTOM_MSG_0 + 2:
@@ -4406,7 +4619,59 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         ledStripConfigMutable()->ledstrip_brightness = sbufReadU8(src);
         ledStripConfigMutable()->ledstrip_rainbow_delta = sbufReadU16(src);
         ledStripConfigMutable()->ledstrip_rainbow_freq = sbufReadU16(src);
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_larson_freq = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_period_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_on_ms = sbufReadU16(src);
+        } else if (sbufBytesRemaining(src) >= 1) {
+            const uint8_t blinkPercent = sbufReadU8(src);
+            const uint16_t periodMs = ledStripConfig()->ledstrip_blink_period_ms;
+            uint16_t onMs = (periodMs > 0) ? (uint16_t)((uint32_t)periodMs * blinkPercent / 100) : LED_BLINK_ON_MS_DEFAULT;
+
+            if (onMs < 1) {
+                onMs = 1;
+            }
+
+            ledStripConfigMutable()->ledstrip_blink_on_ms = onMs;
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            ledStripConfigMutable()->ledstrip_blink_pattern = migrateLedBlinkPattern(sbufReadU8(src));
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_flash_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_gap_ms = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 2) {
+            ledStripConfigMutable()->ledstrip_blink_pause_ms = sbufReadU16(src);
+        }
         break;
+#endif
+
+#ifdef USE_LED_STRIP_STATUS_MODE
+    case MSP2_SET_LED_STRIP_PROFILE_CONFIG: {
+        if (sbufBytesRemaining(src) < 1) {
+            return MSP_RESULT_ERROR;
+        }
+        const uint8_t profileIndex = sbufReadU8(src);
+        if (profileIndex >= LED_PROFILE_COUNT) {
+            return MSP_RESULT_ERROR;
+        }
+        ledStripStatusModeConfig_t profileConfig;
+        if (!sbufReadLedStripProfileConfig(src, &profileConfig)) {
+            return MSP_RESULT_ERROR;
+        }
+        *ledStripProfileConfigMutable(profileIndex) = profileConfig;
+        if (profileIndex == ledStripConfig()->ledstrip_profile) {
+            syncActiveLedProfileConfig();
+        }
+        break;
+    }
 #endif
 
     case MSP2_SET_BATTERY_PROFILE: {

@@ -36,6 +36,9 @@
 #define MSP2_SET_BATTERY_PROFILE            0x300F
 #define MSP2_CLI_SETTING                    0x3010
 #define MSP2_CLI_SETTING_INFO               0x3011
+#define MSP2_GET_LED_STRIP_PROFILE_COUNT    0x3012  // returns LED_PROFILE_COUNT (uint8)
+#define MSP2_GET_LED_STRIP_PROFILE_CONFIG   0x3013  // payload: profileIndex (uint8); response: profileIndex + profile blob
+#define MSP2_SET_LED_STRIP_PROFILE_CONFIG   0x3014  // payload: profileIndex + profile blob; requires MSP_PORT_INBUF_SIZE >= LED_STRIP_PROFILE_MSP_SET_PAYLOAD_SIZE
 
 // MSP2_SET_TEXT and MSP2_GET_TEXT variable types
 #define MSP2TEXT_PILOT_NAME                      1
@@ -47,4 +50,5 @@
 #define MSP2TEXT_CUSTOM_MSG_0                    7  // CUSTOM_MSG_MAX_NUM  entries are allocated
 #define CUSTOM_MSG_MAX_NUM                       4
 #define MSP2TEXT_BATTERY_PROFILE_NAME        11
-// next new variable type must be >= MSP2TEXT_BATTERY_PROFILE_NAME + 1 (12)
+#define MSP2TEXT_LED_STRIP_PROFILE_NAME      12
+// next new variable type must be >= MSP2TEXT_LED_STRIP_PROFILE_NAME + 1 (13)

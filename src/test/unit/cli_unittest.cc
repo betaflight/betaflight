@@ -81,7 +81,7 @@ extern "C" {
     PG_REGISTER(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
-    PG_REGISTER(ledStripStatusModeConfig_t, ledStripStatusModeConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 0);
+    PG_REGISTER(ledStripProfilesConfig_t, ledStripProfilesConfig, PG_LED_STRIP_STATUS_MODE_CONFIG, 3);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
     PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
@@ -306,6 +306,36 @@ void dashboardShowFixedPage(pageId_e){}
 void dashboardUpdate(timeUs_t) {}
 
 bool parseLedStripConfig(int, const char *){return false; }
+
+uint8_t migrateLedBlinkPattern(uint8_t pattern)
+{
+    if (pattern == LED_BLINK_PATTERN_DOUBLE_DEPRECATED) {
+        return LED_BLINK_PATTERN_BEACON;
+    }
+    return pattern;
+}
+
+const ledStripStatusModeConfig_t *ledStripActiveProfileConfig(void)
+{
+    return &ledStripProfilesConfig()->profiles[ledStripConfig()->ledstrip_profile];
+}
+
+ledStripStatusModeConfig_t *ledStripActiveProfileConfigMutable(void)
+{
+    return &ledStripProfilesConfigMutable()->profiles[ledStripConfig()->ledstrip_profile];
+}
+
+void syncActiveLedProfileConfig(void) {}
+
+void syncSimpleLedProfilesFromConfig(void) {}
+
+void setLedProfile(uint8_t profile)
+{
+    if (profile < LED_PROFILE_COUNT) {
+        ledStripConfigMutable()->ledstrip_profile = (ledProfile_e)profile;
+    }
+}
+
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 void parseRcChannels(const char *, rxConfig_t *){}
