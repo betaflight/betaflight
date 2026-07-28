@@ -97,12 +97,15 @@ STATIC_ASSERT(BEEPER_ALL - 1 < sizeof(uint32_t) * 8, "BEEPER_GET_FLAG bits excee
 static bool beeperUsbSuppressed(void)
 {
     // BEEPER_USB ("ON_USB") silences the beeper on the bench when powered via USB with
-    // no battery present. usbCableIsInserted() / mspSerialIsConfiguratorActive() detect
-    // the USB/configurator link; the battery check preserves in-flight beeper behavior
-    // regardless of USB/configurator state (see betaflight#15423 - PR #14976 regression).
+    // no battery present. usbCableIsActive() is the literal detection, immune to gaps in
+    // MSP polling and non-latching (unlike usbCableIsInserted(), which stays true for the
+    // rest of the session after a single bench connection on targets without a USB detect
+    // pin — see #15477); mspSerialIsConfiguratorActive() covers wireless MSP links. The
+    // battery check preserves in-flight beeper behavior regardless of USB/configurator
+    // state (see betaflight#15423 - PR #14976 regression).
     return (beeperConfig()->beeper_off_flags & BEEPER_GET_FLAG(BEEPER_USB))
         && getBatteryState() == BATTERY_NOT_PRESENT
-        && (usbCableIsInserted() || mspSerialIsConfiguratorActive());
+        && (usbCableIsActive() || mspSerialIsConfiguratorActive());
 }
 
 /* Beeper Sound Sequences: (Square wave generation)
@@ -441,14 +444,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
     bool dshotBeaconRequested = false;
 
     if (!areMotorsRunning()) {
-        const beeperMode_e activeMode = currentBeeperEntry ? currentBeeperEntry->mode : BEEPER_SILENCE;
-
-        // Drive the ESC beacon whenever the beeper has entered the RX_LOST sequence.
+        // Taken from the failsafe state, not from currentBeeperEntry: keying the beacon off
+        // the piezo sequence meant anything silencing the beeper (BEEPER MUTE switch held
+        // through the RX loss, BEEPER_USB suppression) also silenced the lost-model finder.
         // NOTE: the two beacon paths intentionally use different USB-suppression criteria.
         // RX_LOST is a lost-model finder, so it is silenced whenever a configurator is
         // attached (bench environment) regardless of the BEEPER_USB flag — you never want
         // it screaming on the desk, but it must still fire in the field with no link.
-        if (activeMode == BEEPER_RX_LOST
+        if (failsafeIsMonitoring() && !failsafeIsReceivingRxData()
             && !mspSerialIsConfiguratorActive()
             && !(beeperConfig()->dshotBeaconOffFlags & BEEPER_GET_FLAG(BEEPER_RX_LOST)) ) {
             dshotBeaconRequested = true;
