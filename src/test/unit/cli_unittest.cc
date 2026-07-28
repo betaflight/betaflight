@@ -485,6 +485,33 @@ TEST(CLIUnittest, TestGetSettingByNameZeroBuffer)
     EXPECT_EQ(0, written);
 }
 
+#ifdef USE_MSP_CLI_COMMAND
+// Reboot/mode-switch/passthrough commands must be refused: cliExecuteCommand runs them
+// against a NULL-vTable port, so reaching waitForSerialPortToFinishTransmitting() would fault.
+TEST(CLIUnittest, TestCliExecuteCommandRefusesDangerous)
+{
+    char buf[64];
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("bl", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("msc", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("serialpassthrough 1", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("defaults", buf, sizeof(buf)));
+    EXPECT_FALSE(cliMode);
+}
+
+// 'exit' is a no-op (never reboots), and bad arguments are rejected.
+TEST(CLIUnittest, TestCliExecuteCommandGuards)
+{
+    char buf[64];
+    EXPECT_EQ(0, cliExecuteCommand("exit", buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand(NULL, buf, sizeof(buf)));
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, 0));
+
+    cliMode = true; // already in a CLI session -> must refuse to avoid clobbering state
+    EXPECT_EQ(CLI_COMMAND_REFUSED, cliExecuteCommand("version", buf, sizeof(buf)));
+    cliMode = false;
+}
+#endif
+
 // Verifies cliSetSettingByName sets an array value and round-trips via get.
 TEST(CLIUnittest, TestSetSettingByNameArray)
 {

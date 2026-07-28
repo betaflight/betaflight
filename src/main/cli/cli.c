@@ -8658,15 +8658,7 @@ void cliEnter(serialPort_t *serialPort, bool interactive)
     }
 }
 
-#ifdef CONFIG_IN_FILE
-#include <stdio.h>
-
-static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
-{
-    UNUSED(arg);
-    fwrite(data, 1, count, stdout);
-}
-
+#if defined(CONFIG_IN_FILE) || defined(USE_MSP_CLI_COMMAND)
 // Check if a line (after stripping comments/whitespace) matches a command name
 static bool lineIsCommand(const char *line, const char *command)
 {
@@ -8683,6 +8675,92 @@ static bool lineIsCommand(const char *line, const char *command)
     char next = line[cmdLen];
     return (next == '\0' || next == ' ' || next == '\t' ||
             next == '\n' || next == '\r' || next == '#');
+}
+#endif
+
+#ifdef USE_MSP_CLI_COMMAND
+typedef struct cliCaptureSink_s {
+    char *buf;
+    int cap;
+    int total;
+} cliCaptureSink_t;
+
+static void cliCaptureBufWrite(void *arg, const uint8_t *data, int count)
+{
+    cliCaptureSink_t *sink = (cliCaptureSink_t *)arg;
+    for (int i = 0; i < count; i++) {
+        if (sink->total < sink->cap) {
+            sink->buf[sink->total] = (char)data[i];
+        }
+        sink->total++;
+    }
+}
+
+int cliExecuteCommand(const char *cmdline, char *outBuf, int outBufLen)
+{
+    if (cliMode || !cmdline || !outBuf || outBufLen <= 0) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    // The fabricated port below has a NULL vTable, so any command that reaches
+    // waitForSerialPortToFinishTransmitting() (reboot/mode-switch/passthrough) would
+    // fault. Handle those here instead of dispatching them: 'save' persists without
+    // the reboot, 'exit' is a no-op, bare 'defaults' (which reboots) is refused.
+    if (lineIsCommand(cmdline, "exit")) {
+        return 0;
+    }
+    if (lineIsCommand(cmdline, "bl") || lineIsCommand(cmdline, "msc") ||
+        lineIsCommand(cmdline, "serialpassthrough")) {
+        return CLI_COMMAND_REFUSED;
+    }
+    if (lineIsCommand(cmdline, "defaults") && !strcasestr(cmdline, "nosave")) {
+        return CLI_COMMAND_REFUSED;
+    }
+
+    cliCaptureSink_t sink = { .buf = outBuf, .cap = outBufLen, .total = 0 };
+
+    cliMode = true;
+    cliInteractive = false;
+
+    static serialPort_t dummyPort;
+    memset(&dummyPort, 0, sizeof(dummyPort));
+    cliPort = &dummyPort;
+
+    bufWriterInit(&cliWriterDesc, cliWriteBuffer, sizeof(cliWriteBuffer),
+                  (bufWrite_t)cliCaptureBufWrite, &sink);
+    cliErrorWriter = cliWriter = &cliWriterDesc;
+    cliClearInputBuffer();
+
+    if (lineIsCommand(cmdline, "save")) {
+        if (tryPrepareSave("save")) {
+            writeEEPROM();
+            cliPrintHashLine("saving");
+        }
+    } else {
+        for (const char *p = cmdline; *p; p++) {
+            processCharacter(*p);
+        }
+        processCharacter('\n');
+    }
+
+    cliWriterFlush();
+
+    cliMode = false;
+    cliInteractive = false;
+    cliWriter = cliErrorWriter = NULL;
+    cliPort = NULL;
+
+    return sink.total;
+}
+#endif
+
+#ifdef CONFIG_IN_FILE
+#include <stdio.h>
+
+static void stdoutBufWrite(void *arg, const uint8_t *data, int count)
+{
+    UNUSED(arg);
+    fwrite(data, 1, count, stdout);
 }
 
 void cliProcessConfigFile(const char *filename)
