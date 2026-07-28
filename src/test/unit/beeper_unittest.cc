@@ -391,6 +391,7 @@ TEST_F(BeeperTest, DshotBeaconRxLost_UsbUnpluggedAfterSession_Sounds)
     beeperConfigMutable()->dshotBeaconOffFlags = 0;
     beeperConfigMutable()->beeper_off_flags = BEEPER_GET_FLAG(BEEPER_USB);
     simulatorFailsafeRxDataReceived = false;
+    simulatorBatteryState = BATTERY_NOT_PRESENT;
     simulatorUsbActive = false;          // cable pulled, MSP has gone quiet
     simulatorMspConfiguratorActive = false;
 
