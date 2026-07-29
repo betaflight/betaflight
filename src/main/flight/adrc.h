@@ -27,7 +27,7 @@
 #include "common/filter.h"
 
 // Experimental: Active Disturbance Rejection Control (ADRC), an opt-in, per-profile alternative
-// to classic PID rate control, selected via pidProfile_t.pid_type. A second-order linear ESO
+// to classic PID rate control, selected via pidProfile_t.pid_type. A third-order linear ESO
 // (Extended State Observer) estimates the plant state (rate, its derivative, and a lumped
 // disturbance term) and a virtual PD control law drives the estimated rate to setpoint.
 //
