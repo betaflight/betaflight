@@ -28,7 +28,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 9);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 10);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -49,12 +49,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .maxAngle = 50,
 
     // Velocity-based position control with drag compensation
-    .velocityControlEnable = 1,       // Enabled by default
-    .velocityP = 50,                  // 5.0 P gain
-    .velocityI = 10,                  // 1.0 I gain
-    .velocityD = 5,                   // 0.5 D gain
-    .velocityDragCoeff = 50,          // 0.0050 drag coefficient
-    .maxVelocity = 1000,              // 10 m/s max velocity
+    .velocityDragCoeff = 50,          // 5 deg at 5 m/s, half the nominal maximum
+    .maxVelocity = 500,               // 5 m/s max velocity setpoint at full stick
 
     // Waypoint navigation parameters
     .waypointArrivalRadius = 500,     // 5m for FLYOVER/FLYBY
