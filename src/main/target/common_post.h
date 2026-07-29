@@ -98,6 +98,10 @@
 #define MMFLASH_DATA_ZERO_INIT     FAST_DATA_ZERO_INIT
 #endif
 
+#ifndef RAM_CODE
+#define RAM_CODE
+#endif
+
 #ifndef MMFLASH_CODE
 #define MMFLASH_CODE
 #endif
