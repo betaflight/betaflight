@@ -370,7 +370,7 @@ static configStreamerResult_e x32EraseFlashIfNeeded(uintptr_t address)
 
 void configUnlock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(UM324xF)
     HAL_FLASH_Unlock();
 #elif defined(X32M7)
     // NOP
@@ -385,7 +385,7 @@ void configUnlock(void)
 
 void configLock(void)
 {
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32H5) || defined(STM32C5) || defined(STM32G4) || defined(UM324xF)
         HAL_FLASH_Lock();
 #if defined(STM32H5)
         // On H5 the instruction cache also caches const/data reads from the
@@ -447,6 +447,8 @@ void configClearFlags(void)
     // SMU flash operations return status directly.
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
+#elif defined(UM324xF)
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPDS | FLASH_FLAG_PVFS | FLASH_FLAG_EVFS);
 #else
 # error "Unsupported CPU"
 #endif
@@ -616,6 +618,19 @@ configStreamerResult_e configWriteWord(uintptr_t address, config_streamer_buffer
     // C5 programs 128 bits (quad-word) at a time; DataAddress points to 4 x uint32_t
     STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == 16,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
     const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_QUADWORD, address, (uint32_t)buffer);
+    if (status != HAL_OK) {
+        return CONFIG_RESULT_ADDRESS_INVALID;
+    }
+#elif defined(UM324xF)
+    if (address % FLASH_PAGE_SIZE == 0) {
+        const HAL_StatusTypeDef status = HAL_FLASH_Erase_Page(address);
+        if (status != HAL_OK) {
+            return CONFIG_RESULT_FAILURE;
+        }
+    }
+
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t),  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD,address,*buffer);
     if (status != HAL_OK) {
         return CONFIG_RESULT_ADDRESS_INVALID;
     }
