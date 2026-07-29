@@ -86,8 +86,9 @@ extern "C" {
 
 // sincosf_approx() has ~3.3e-6 max error (see maths_unittest); this tolerance
 // only needs to distinguish a real rotation from the identity (cos=1, sin=0)
-// fallback that the pre-fix non-static locals produced.
-static const float FACTOR_TOLERANCE = 1e-3f;
+// fallback that the pre-fix non-static locals produced, so it's set well
+// above that approximation error with margin to spare.
+static const float SETPOINT_TOLERANCE = 1e-2f;
 
 static const float TEST_ROLL_INPUT = 100.0f;
 static const float TEST_YAW_INPUT = 50.0f;
@@ -98,8 +99,8 @@ static void expectRawSetpointMatchesAngle(int angleDegrees)
     const float expectedRoll = TEST_ROLL_INPUT * cosf(angleRad) - TEST_YAW_INPUT * sinf(angleRad);
     const float expectedYaw = TEST_YAW_INPUT * cosf(angleRad) + TEST_ROLL_INPUT * sinf(angleRad);
 
-    EXPECT_NEAR(expectedRoll, rawSetpoint[ROLL], FACTOR_TOLERANCE);
-    EXPECT_NEAR(expectedYaw, rawSetpoint[YAW], FACTOR_TOLERANCE);
+    EXPECT_NEAR(expectedRoll, rawSetpoint[ROLL], SETPOINT_TOLERANCE);
+    EXPECT_NEAR(expectedYaw, rawSetpoint[YAW], SETPOINT_TOLERANCE);
 }
 
 class FpvCamAngleTest : public ::testing::Test {
@@ -109,7 +110,9 @@ protected:
 
         // scaleRawSetpointToFpvCamAngle() caches cos/sin factors in a function-local
         // static, so leftover state from a previous test in this binary must be
-        // invalidated before each test sets its own angle.
+        // invalidated before each test sets its own angle. 255 is outside the
+        // CLI-enforced 0-90 range (fpv_mix_degrees in cli/settings.c) but still a
+        // valid uint8_t value, so it can never collide with a real test angle.
         rxConfigMutable()->fpvCamAngleDegrees = 255;
         rawSetpoint[ROLL] = 0.0f;
         rawSetpoint[PITCH] = 0.0f;
