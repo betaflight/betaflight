@@ -509,4 +509,14 @@ uint8_t usbVcpIsConnected(void)
     return usbIsConnected();
 }
 
+/**
+ * @brief  Check if the host is driving the USB VCP link right now.
+ *
+ * @return 1 if the link is in use, 0 otherwise.
+ */
+uint8_t usbVcpIsActive(void)
+{
+    return usbIsConnected() && usbIsConfigured();
+}
+
 #endif /* USE_VCP */
