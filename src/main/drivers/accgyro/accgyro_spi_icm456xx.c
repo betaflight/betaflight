@@ -414,10 +414,14 @@ void icm456xxAccInit(accDev_t *acc)
     }
 
     // ACCEL_SRC_CTRL is a two-bit enum; value 2 enables both the interpolator and FIR AAF.
-    (void)icm456xx_enableAccelAAFandInterpolator(dev);
+    if (!icm456xx_enableAccelAAFandInterpolator(dev)) {
+        failureMode(FAILURE_ACC_INIT);
+    }
 
     // Set the Accel UI LPF bandwidth cut-off to ODR/8 (Section 7.3 of datasheet)
-    (void)icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8);
+    if (!icm456xx_configureLPF(dev, ICM456XX_ACCEL_UI_LPF_CFG_IREG_ADDR, ICM456XX_ACCEL_UI_LPFBW_ODR_DIV_8)) {
+        failureMode(FAILURE_ACC_INIT);
+    }
 
     // Set up register addresses for combined DMA reads
     // Accel and gyro data are contiguous: accel at 0x00, gyro at 0x06
@@ -450,10 +454,14 @@ void icm456xxGyroInit(gyroDev_t *gyro)
     }
 
     // GYRO_SRC_CTRL is bits 6:5; enum value 2 enables both the interpolator and FIR AAF.
-    (void)icm456xx_enableGyroAAFandInterpolator(dev);
+    if (!icm456xx_enableGyroAAFandInterpolator(dev)) {
+        failureMode(FAILURE_GYRO_INIT_FAILED);
+    }
 
     // Set the Gyro UI LPF bandwidth cut-off (Section 7.3 of datasheet)
-    (void)icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf));
+    if (!icm456xx_configureLPF(dev, ICM456XX_GYRO_UI_LPF_CFG_IREG_ADDR, getGyroLpfConfig(gyroConfig()->gyro_hardware_lpf))) {
+        failureMode(FAILURE_GYRO_INIT_FAILED);
+    }
 
     switch (gyro->mpuDetectionResult.sensor) {
     case ICM_45686_SPI:
