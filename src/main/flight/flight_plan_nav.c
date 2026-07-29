@@ -183,6 +183,7 @@ static struct {
     bool isRescuePlan;          // the active injected plan is a failsafe rescue
     bool rescueHeadingHold;     // pitch-forward heading recovery in progress
     timeUs_t rescueHeadingStartUs;
+    bool rescueDescentActive;   // altitude-only fallback descent (no executor)
 #endif
 
     // HOLD pattern sub-target generation
@@ -797,6 +798,20 @@ static void updateLegCarrot(float dtS, timeUs_t currentTimeUs, const positionEst
     positionNavMoveTargetEf(&carrot);
 }
 
+// Descent rate for the landing profile. Rescue contexts (an active rescue plan's
+// LAND leg, or the altitude-only fallback descent) honour gpsRescueConfig()'s
+// descendRate for legacy feel; every other landing (mission/geofence) keeps the
+// autopilot landingDescentRate.
+static float landingDescentRateCmS(void)
+{
+#if ENABLE_RESCUE_PLAN
+    if (fp.rescueDescentActive || (fp.active && fp.isRescuePlan)) {
+        return (float)gpsRescueConfig()->descendRate;
+    }
+#endif
+    return (float)autopilotConfig()->landingDescentRate;
+}
+
 static void startLanding(timeUs_t currentTimeUs, float targetEastM, float targetNorthM)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
@@ -806,7 +821,7 @@ static void startLanding(timeUs_t currentTimeUs, float targetEastM, float target
         [ENU_U] = est->position.v[ENU_U] * 0.01f - FP_LANDING_TARGET_DEPTH_M,
     }};
 
-    const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, autopilotConfig()->landingDescentRate * 0.01f);
+    const float descentMps = MAX(FP_LANDING_MIN_RATE_MPS, landingDescentRateCmS() * 0.01f);
     positionNavSetTargetEf(&targetM, descentMps, 1.0f, 0.1f, true, NULL, NULL);
 
     fp.state = FP_NAV_LANDING;
@@ -819,7 +834,7 @@ static void updateLanding(timeUs_t currentTimeUs)
 {
     const positionEstimate3d_t *est = positionEstimatorGetEstimate();
     const float verticalVelocityCmS = est->velocity.v[ENU_U];
-    const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, autopilotConfig()->landingDescentRate);
+    const float commandedDescentCmS = MAX(FP_LANDING_MIN_RATE_MPS * 100.0f, landingDescentRateCmS());
 
     if (!fp.landingDescentEstablished
         && verticalVelocityCmS < -0.25f * commandedDescentCmS) {
@@ -991,6 +1006,46 @@ bool flightPlanNavStageRescuePlan(void)
 bool flightPlanNavIsRescuePlanActive(void)
 {
     return fp.active && fp.isRescuePlan;
+}
+
+// Vertical-velocity cap the alt-hold coupling honours while a rescue is flying:
+// ascendRate on the climb, descendRate on the LAND leg and the fallback descent.
+// Zero everywhere else, so mission and pilot alt-hold keep the alt-hold climbRate.
+float flightPlanNavGetRescueVerticalRateCmS(void)
+{
+    if (fp.rescueDescentActive) {
+        return (float)gpsRescueConfig()->descendRate;
+    }
+    if (fp.active && fp.isRescuePlan) {
+        return (fp.state == FP_NAV_LANDING) ? (float)gpsRescueConfig()->descendRate
+                                            : (float)gpsRescueConfig()->ascendRate;
+    }
+    return 0.0f;
+}
+
+// Altitude-only fallback descent. Runs independently of the executor (fp.active):
+// the switch-rescue staging-failure case has no GPS fix at all, so the position
+// controller cannot run. alt-hold owns the throttle (its landing branch, gated on
+// this being active); updateLanding() reuses the one landing touchdown detector
+// and disarms on touchdown.
+void flightPlanNavRescueDescent(bool request, timeUs_t currentTimeUs)
+{
+    if (!request) {
+        fp.rescueDescentActive = false;
+        return;
+    }
+    if (!fp.rescueDescentActive) {
+        fp.rescueDescentActive = true;
+        fp.landingStartUs = currentTimeUs;
+        fp.touchdownQuietStartUs = 0;
+        fp.landingDescentEstablished = false;
+    }
+    updateLanding(currentTimeUs);
+}
+
+bool flightPlanNavIsRescueDescentActive(void)
+{
+    return fp.rescueDescentActive;
 }
 #endif // ENABLE_RESCUE_PLAN
 
@@ -1223,6 +1278,7 @@ void flightPlanNavInit(void)
     fp.stagedCount = 0;
     fp.isRescuePlan = false;
     fp.rescueHeadingHold = false;
+    fp.rescueDescentActive = false;
 #endif
     clearModifierState();
 }
